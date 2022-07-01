@@ -1,0 +1,15 @@
+!.gitkeep
+.vscode
+arc*.img
+arc*.vmdk
+*.zip
+.buildroot
+test*.sh
+docker/syno-compiler/Dockerfile
+cache
+*.bak
+*.o
+/files/board/arc/p3/addons
+/files/board/arc/p3/lkms
+/files/board/arc/p3/modules
+/tests

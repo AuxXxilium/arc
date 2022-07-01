@@ -1,0 +1,41 @@
+FROM alpine:3.14 AS stage
+ARG PLATFORMS="@@@PLATFORMS@@@"
+ARG TOOLKIT_VER="@@@TOOLKIT_VER@@@"
+
+# Copy downloaded toolkits
+ADD cache /cache
+# Extract toolkits
+RUN for V in ${PLATFORMS}; do \
+      echo "${V}" | while IFS=':' read PLATFORM KVER; do \
+        echo -e "${PLATFORM}\t${KVER}" >> /opt/platforms && \
+        echo "Extracting ds.${PLATFORM}-${TOOLKIT_VER}.dev.txz" && \
+        mkdir "/opt/${PLATFORM}" && \
+        tar -xaf "/cache/ds.${PLATFORM}-${TOOLKIT_VER}.dev.txz" -C "/opt/${PLATFORM}" --strip-components=9 \
+          "usr/local/x86_64-pc-linux-gnu/x86_64-pc-linux-gnu/sys-root/usr/lib/modules/DSM-${TOOLKIT_VER}" && \
+        echo "Extracting ${PLATFORM}-toolchain.txz" && \
+        tar -xaf "/cache/${PLATFORM}-toolchain.txz" -C "/opt/${PLATFORM}" --strip-components=1; \
+      done; \
+    done
+
+# Final image
+FROM debian:8-slim
+ENV SHELL=/bin/bash \
+    ARCH=x86_64
+
+RUN apt update --yes && \
+    apt install --yes --no-install-recommends --no-install-suggests --allow-unauthenticated \
+      ca-certificates nano curl bc kmod git gettext texinfo autopoint gawk sudo \
+      build-essential make ncurses-dev libssl-dev autogen automake pkg-config libtool xsltproc gperf && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    useradd --home-dir /input --no-create-home --shell /bin/bash --uid 1000 arc && \
+    echo "arc ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/arc
+
+COPY --from=stage /opt /opt
+COPY files/ /
+
+WORKDIR /input
+VOLUME /input /output
+USER arc
+
+ENTRYPOINT ["/opt/do.sh"]
