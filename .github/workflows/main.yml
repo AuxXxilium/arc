@@ -1,0 +1,121 @@
+name: Build image
+
+on:
+  release:
+    types: [published]
+  
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # Check cache
+      - name: Cache buildroot
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: .buildroot
+          key: ${{ runner.os }}-${{ hashFiles('files/configs/arc_defconfig') }}
+
+      # Install  dependencies
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libelf-dev qemu-utils
+          sudo cp -f files/board/arc/overlayfs/usr/bin/yq /usr/bin/yq
+
+      # Prepare buildroot for first make (for cache)
+      - name: Prepare buildroot
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --single-branch -b 2022.02 https://github.com/buildroot/buildroot.git .buildroot
+          # Copy files
+          echo "Copying files"
+          cp -Ru files/* .buildroot
+          cd .buildroot
+          echo "Generating default config"
+          make BR2_EXTERNAL=../external arc_defconfig
+          echo "First make"
+          make BR2_EXTERNAL=../external
+
+      # Build incremental from cache
+      - name: Build image
+        id: build
+        run: |
+          VERSION=`<VERSION`
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          # Remove old files
+          rm -rf .buildroot/output/target/opt/arc
+          rm -rf .buildroot/board/arc/overlayfs
+          rm -rf .buildroot/board/arc/p1
+          rm -rf .buildroot/board/arc/p3
+          # Get latest LKMs
+          echo "Getting latest LKMs"
+          TAG=`curl -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
+          curl -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip
+          rm -rf files/board/arc/p3/lkms/*
+          unzip /tmp/rp-lkms.zip -d files/board/arc/p3/lkms
+          # Get latest addons and install its
+          echo "Getting latest Addons"
+          TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
+          curl -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip
+          mkdir -p /tmp/addons
+          unzip /tmp/addons.zip -d /tmp/addons
+          DEST_PATH="files/board/arc/p3/addons"
+          echo "Installing addons to ${DEST_PATH}"
+          for PKG in `ls /tmp/addons/*.addon`; do
+            ADDON=`basename ${PKG} | sed 's|.addon||'`
+            mkdir -p "${DEST_PATH}/${ADDON}"
+            echo "Extracting ${PKG} to ${DEST_PATH}/${ADDON}"
+            tar xaf "${PKG}" -C "${DEST_PATH}/${ADDON}"
+          done
+          # Copy files
+          echo "Copying files"
+          sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/board/arc/overlayfs/opt/arc/include/consts.sh
+          cp -Ru files/* .buildroot/
+          cd .buildroot
+          echo "Generating default config"
+          make BR2_EXTERNAL=../external arc_defconfig
+          echo "Version: ${VERSION}"
+          echo "Building..."
+          make BR2_EXTERNAL=../external
+          cd -
+          qemu-img convert -O vmdk arc.img arc-dyn.vmdk
+          qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
+
+      # Zip image and generate checksum
+      - name: Pack
+        shell: bash
+        run: |
+          zip -9 "arc-${{ steps.build.outputs.VERSION }}.img.zip" arc.img
+          zip -9 "arc-${{ steps.build.outputs.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
+          zip -9 "arc-${{ steps.build.outputs.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+          sha256sum update-list.yml > sha256sum
+          yq '.replace | explode(.) | to_entries | map([.key])[] | .[]' update-list.yml | while read F; do
+            (cd `dirname ${F}` && sha256sum `basename ${F}`) >> sha256sum
+          done
+          yq '.replace | explode(.) | to_entries | map([.key])[] | .[]' update-list.yml | xargs zip -9j "update.zip" sha256sum update-list.yml
+
+      # Upload artifact
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: Images
+          path: |
+            arc.img
+            arc*.vmdk
+          retention-days: 5
+
+      # Publish a release if is a tag
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            arc-${{ steps.build.outputs.VERSION }}.img.zip
+            arc-${{ steps.build.outputs.VERSION }}.vmdk-dyn.zip
+            arc-${{ steps.build.outputs.VERSION }}.vmdk-flat.zip
+            update.zip

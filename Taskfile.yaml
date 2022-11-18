@@ -12,11 +12,8 @@ tasks:
     cmds:
       - ./build.sh
 
-  compile-lkms:
+  compile-kpatch:
+    dir: kpatch
     cmds:
-      - ./compile-lkm.sh
-
-  compile-addons:
-    dir: addons
-    cmds:
-      - ./compile-addons.sh {{.CLI_ARGS}}
+      - make clean all
+      - mv kpatch ../files/board/arc/overlayfs/opt/arc/
