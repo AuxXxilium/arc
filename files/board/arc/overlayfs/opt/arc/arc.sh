@@ -97,6 +97,8 @@ function backtitle() {
 ###############################################################################
 # Make Model Config
 function arcMenu() {
+  NEXT="l"
+  # Loop menu
   RESTRICT=1
   FLGBETA=0
   dialog --backtitle "`backtitle`" --title "Model" --aspect 18 \
