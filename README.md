@@ -24,7 +24,7 @@ Another important point is that the loader detects whether or not the CPU has th
 
 I developed a simple patch to no longer display the DUMMY port error on models without device-tree, the user will be able to install without having to worry about it.
 
-# All in One Loader - Confirmed working
+# ARC Loader - Confirmed working
 
 - CPU:
   - Intel (looks like all)
@@ -44,6 +44,11 @@ I developed a simple patch to no longer display the DUMMY port error on models w
 - SATA:
   - VMWare SATA
   - Intel Native SATA 3rd to 12th Gen
+
+- Hypervisor:
+  - VMware vSphere ESXi
+  - unRaid
+  - Proxmox
 
 # Thanks
 

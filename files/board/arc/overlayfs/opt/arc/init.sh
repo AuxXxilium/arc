@@ -194,5 +194,9 @@ mkdir -p "${ADDONS_PATH}"
 mkdir -p "${LKM_PATH}"
 mkdir -p "${MODULES_PATH}"
 
+# Create symlinks for ARC
+ln -s /opt/arc/kmod /opt/arc/modinfo
+ln -s /opt/arc/kmod /opt/arc/depmod
+
 install-addons.sh
 arc.sh
