@@ -18,11 +18,13 @@ platform: "broadwellnk"
 unique: "synology_broadwellnk_rs4021xs+"
 beta: true
 dom: 2
-serial:
-  prefix:
-    - "0000"
-  middle: "XXX"
-  suffix: "alpha"
+serial: "2160T2RMHS00P"
+mac1: "001132FE1AA1"
+mac2: "001132FE1AA2"
+mac3: "001132FE1AA3"
+mac4: "001132FE1AA4"
+mac5: "001132FE1AA5"
+mac6: "001132FE1AA6"
 disks: 16
 dt: false
 builds:

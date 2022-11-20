@@ -17,14 +17,11 @@ platform: "geminilake"
 unique: "synology_geminilake_920+"
 dom: 2
 dt: true
-serial:
-  prefix:
-    - "2030"
-    - "2040"
-    - "20C0"
-    - "2150"
-  middle: "SBR"
-  suffix: "alpha"
+serial: "2050SBR8RK93S"
+mac1: "001132CD9427"
+mac2: "001132CD9428"
+mac3: "001132CD9429"
+mac4: "001132CD9430"
 disks: 4
 builds:
   42218:

@@ -19,11 +19,11 @@ cmdline: &cmdline
 platform: "v1000"
 unique: "synology_v1000_1621+"
 dom: 2
-serial:
-  prefix:
-    - "2080"
-  middle: "S7R"
-  suffix: "alpha"
+serial: "2080S7RJ512X9"
+mac1: "001132D626F0"
+mac2: "001132D626F1"
+mac3: "001132D626F2"
+mac4: "001132D626F3"
 disks: 6
 dt: true
 builds:

@@ -4,7 +4,6 @@
 . /opt/arc/include/addons.sh
 . /opt/arc/include/modules.sh
 . /opt/arc/include/consts.sh
-. /opt/arc/include/arcconsts.sh
 
 # Check partition 3 space, if < 2GiB uses ramdisk
 RAMCACHE=0
@@ -98,116 +97,92 @@ function backtitle() {
 ###############################################################################
 # Make Model Config
 function arcMenu() {
-  NEXT="a"
-  # Loop menu
+  RESTRICT=1
+  FLGBETA=0
+  dialog --backtitle "`backtitle`" --title "Model" --aspect 18 \
+    --infobox "Reading models" 0 0
   while true; do
-    dialog --backtitle "`backtitle`" --default-item ${NEXT} \
-      --menu "Choose an Option" 0 0 0 \
-      a "DS3622xs+" \
-      s "RS4021xs+" \
-      l "DVA3219 Beta" \
-      j "DVA3221 Beta" \
-      v "DS1621+ Beta" \
-      n "DS920+ Beta" \
-      e "Exit" \
-      2>${TMP_PATH}/resp
+    echo "" > "${TMP_PATH}/menu"
+    FLGNEX=0
+    while read M; do
+      M="`basename ${M}`"
+      M="${M::-4}"
+      PLATFORM=`readModelKey "${M}" "platform"`
+      DT="`readModelKey "${M}" "dt"`"
+      BETA="`readModelKey "${M}" "beta"`"
+      SN="`readModelKey "${M}" "serial"`"
+      MAC1="`readModelKey "${M}" "mac1"`"
+      MAC2="`readModelKey "${M}" "mac2"`"
+      MAC3="`readModelKey "${M}" "mac3"`"
+      MAC4="`readModelKey "${M}" "mac4"`"
+      [ "${BETA}" = "true" -a ${FLGBETA} -eq 0 ] && continue
+      # Check id model is compatible with CPU
+      COMPATIBLE=1
+      if [ ${RESTRICT} -eq 1 ]; then
+        for F in `readModelArray "${M}" "flags"`; do
+          if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
+            COMPATIBLE=0
+            FLGNEX=1
+            break
+          fi
+        done
+      fi
+      [ "${DT}" = "true" ] && DT="-DT" || DT=""
+      [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
+    done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
+    [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible \Zn\"" >> "${TMP_PATH}/menu"
+    [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta \Zn\"" >> "${TMP_PATH}/menu"
+    dialog --backtitle "`backtitle`" --colors --menu "Choose the model" 0 0 0 \
+      --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
-    case "`<${TMP_PATH}/resp`" in
-      a) NEXT='a'
-        MODEL="DS3622xs+"
-        MAC1="$MAC1_DS3622xs"
-        MAC2="$MAC2_DS3622xs"
-        MAC3="$MAC3_DS3622xs"
-        MAC4="$MAC4_DS3622xs"
-        writeConfigKey "model"  "$MODEL"            "${USER_CONFIG_FILE}"
-        writeConfigKey "build"  "$BUILD_ARC"        "${USER_CONFIG_FILE}"
-        writeConfigKey "sn"     "$SN_DS3622xs"           "${USER_CONFIG_FILE}"
-        arcbuild
-        ;;
-      s) NEXT='s'
-        MODEL="RS4021xs+"
-        MAC1="$MAC1_RS4021xs"
-        MAC2="$MAC2_RS4021xs"
-        MAC3="$MAC3_RS4021xs"
-        MAC4="$MAC4_RS4021xs"
-        writeConfigKey "model"  "$MODEL"            "${USER_CONFIG_FILE}"
-        writeConfigKey "build"  "$BUILD_ARC"        "${USER_CONFIG_FILE}"
-        writeConfigKey "sn"     "$SN_RS4021xs"           "${USER_CONFIG_FILE}"
-        arcbuild
-        ;;
-      l) NEXT='l'
-        MODEL="DVA3219"
-        MAC1="$MAC1_DVA3219"
-        MAC2="$MAC2_DVA3219"
-        MAC3="$MAC3_DVA3219"
-        MAC4="$MAC4_DVA3219"
-        writeConfigKey "model"  "$MODEL"            "${USER_CONFIG_FILE}"
-        writeConfigKey "build"  "$BUILD_ARC"        "${USER_CONFIG_FILE}"
-        writeConfigKey "sn"     "$SN_DVA3219"           "${USER_CONFIG_FILE}"
-        arcbuild
-        ;;
-        j) NEXT='e'
-        MODEL="DVA3221"
-        MAC1="$MAC1_DVA3221"
-        MAC2="$MAC2_DVA3221"
-        MAC3="$MAC3_DVA3221"
-        MAC4="$MAC4_DVA3221"
-        writeConfigKey "model"  "$MODEL"            "${USER_CONFIG_FILE}"
-        writeConfigKey "build"  "$BUILD_ARC"        "${USER_CONFIG_FILE}"
-        writeConfigKey "sn"     "$SN_DVA3221"           "${USER_CONFIG_FILE}"
-        arcbuild
-        ;;
-      v) NEXT='v'
-        MODEL="DS1621+"
-        MAC1="$MAC1_DS1621"
-        MAC2="$MAC2_DS1621"
-        MAC3="$MAC3_DS1621"
-        MAC4="$MAC4_DS1621"
-        writeConfigKey "model"  "$MODEL"            "${USER_CONFIG_FILE}"
-        writeConfigKey "build"  "$BUILD_ARC"        "${USER_CONFIG_FILE}"
-        writeConfigKey "sn"     "$SN_DS1621"           "${USER_CONFIG_FILE}"
-        arcbuild
-        ;;
-      n) NEXT='n'
-        MODEL="DS920+"
-        MAC1="$MAC1_DS920s"
-        MAC2="$MAC2_DS920"
-        MAC3="$MAC3_DS920"
-        MAC4="$MAC4_DS920"
-        writeConfigKey "model"  "$MODEL"            "${USER_CONFIG_FILE}"
-        writeConfigKey "build"  "$BUILD_ARC"        "${USER_CONFIG_FILE}"
-        writeConfigKey "sn"     "$SN_DS920"           "${USER_CONFIG_FILE}"
-        arcbuild
-        ;;
-      e) return ;;
-    esac
+    resp=$(<${TMP_PATH}/resp)
+    [ -z "${resp}" ] && return
+    if [ "${resp}" = "f" ]; then
+      RESTRICT=0
+      continue
+    fi
+    if [ "${resp}" = "b" ]; then
+      FLGBETA=1
+      continue
+    fi
+    # If user change model, clean buildnumber and S/N
+    if [ "${MODEL}" != "${resp}" ]; then
+      MODEL=${resp}
+      writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
+      BUILD="42962"
+      writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
+      writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+      # Delete old files
+      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+      DIRTY=1
+    fi
+    break
   done
+  arcbuild
 }
 
 ###############################################################################
 # Adding Synoinfo and Addons
 function arcbuild() {
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-  SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
-  PLATFORM="`readModelKey "${MODEL}" "platform"`"
-  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r`"
-  dialog --clear --no-items --backtitle "`backtitle`"
-  dialog --backtitle "`backtitle`" --title "ARC Config" \
-    --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
+  dialog --clear --no-items --backtitle "`backtitle`" \
+    --menu "Choose a build number" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
+  [ $? -ne 0 ] && return
+  resp=$(<${TMP_PATH}/resp)
+  [ -z "${resp}" ] && return
+  if [ "${BUILD}" != "${resp}" ]; then
+    dialog --backtitle "`backtitle`" --title "Build Number" \
+      --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
+    BUILD=${resp}
+    writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
     # Delete synoinfo and reload model/build synoinfo
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
     while IFS="=" read KEY VALUE; do
       writeConfigKey "synoinfo.${KEY}" "${VALUE}" "${USER_CONFIG_FILE}"
     done < <(readModelMap "${MODEL}" "builds.${BUILD}.synoinfo")
-    # Read addons from user config
-    unset ADDONS
-    declare -A ADDONS
-    while IFS="=" read KEY VALUE; do
-      [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
-    done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
     # Check addons
+    PLATFORM="`readModelKey "${MODEL}" "platform"`"
+    KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
     while IFS="=" read ADDON PARAM; do
       [ -z "${ADDON}" ] && continue
       if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
@@ -221,6 +196,8 @@ function arcbuild() {
     done < <(getAllModules "${PLATFORM}" "${KVER}")
     # Remove old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+    DIRTY=1
+  fi
   dialog --backtitle "`backtitle`" --title "ARC Config" \
     --infobox "Configuration successfull!" 0 0  
     arcdiskconf

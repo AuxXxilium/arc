@@ -20,12 +20,11 @@ platform: "denverton"
 unique: "synology_denverton_dva3219"
 beta: true
 dom: 2
-serial:
-  prefix:
-    - "1930"
-    - "1940"
-  middle: "RFR"
-  suffix: "alpha"
+serial: "1930RFR8HJTK4"
+mac1: "001132A9E866"
+mac2: "001132A9E867"
+mac3: "001132A9E868"
+mac4: "001132A9E869"
 flags:
   - "fma"
 disks: 4
