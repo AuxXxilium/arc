@@ -3,7 +3,8 @@
 . /opt/arc/include/functions.sh
 . /opt/arc/include/addons.sh
 . /opt/arc/include/modules.sh
-. /opt/arc/include/aioconsts.sh
+. /opt/arc/include/consts.sh
+. /opt/arc/include/arcconsts.sh
 
 # Check partition 3 space, if < 2GiB uses ramdisk
 RAMCACHE=0
@@ -25,9 +26,12 @@ if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
     HYPERVISOR=$(lscpu | grep Hypervisor | awk '{print $3}')
 fi
 
-# Get SCSI Config
-if [ $(lspci -nn | grep -ie "\[0100\]" -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-    writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
+# Get DISK Config
+if [ $(lspci -nn | grep -ie "\[0100\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
+    RAIDSCSI="1"
+fi
+if [ $(lspci -nn | grep -ie "\[0106\]" -ie "\[0104\]" | wc -l) -gt 0 ]; then
+    SATAHBA="1"
 fi
 
 # Dirty flag
@@ -39,7 +43,6 @@ LAYOUT="`readConfigKey "layout" "${USER_CONFIG_FILE}"`"
 KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
 DIRECTBOOT="`readConfigKey "directboot" "${USER_CONFIG_FILE}"`"
-PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 
 ###############################################################################
@@ -70,10 +73,12 @@ function backtitle() {
     BACKTITLE+=" (no IP)"
   fi
     BACKTITLE+=" |"
-  if [ -n "$PORTMAP" ]; then
-    BACKTITLE+=" RAID/SAS"
+  if [ "$RAIDSCSI" -gt 0 ]; then
+    BACKTITLE+=" RAID/SCSI"
+  elif [ "$SATAHBA" -gt 0 ]; then
+    BACKTITLE+=" SATA/HBA"
   else
-    BACKTITLE+=" SATA"
+    BACKTITLE+=" No HDD found"
   fi
     BACKTITLE+=" |"
   if [ -n "${HYPERVISOR}" ]; then
@@ -110,129 +115,73 @@ function arcMenu() {
     case "`<${TMP_PATH}/resp`" in
       a) NEXT='a'
         MODEL="DS3622xs+"
-        SN_AIO=$SN_3622
-        MAC1_AIO=$MAC1_3622
-        MAC2_AIO=$MAC2_3622
-        MAC3_AIO=$MAC3_3622
-        MAC4_AIO=$MAC4_3622
-        writeConfigKey "model"  "${MODEL}"            "${USER_CONFIG_FILE}"
-        writeConfigKey "build"  "${BUILD_AIO}"        "${USER_CONFIG_FILE}"
-        writeConfigKey "sn"     "${SN_AIO}"           "${USER_CONFIG_FILE}"
-        buildconf
+        MAC1="$MAC1_DS3622xs"
+        MAC2="$MAC2_DS3622xs"
+        MAC3="$MAC3_DS3622xs"
+        MAC4="$MAC4_DS3622xs"
+        writeConfigKey "model"  "$MODEL"            "${USER_CONFIG_FILE}"
+        writeConfigKey "build"  "$BUILD_ARC"        "${USER_CONFIG_FILE}"
+        writeConfigKey "sn"     "$SN_DS3622xs"           "${USER_CONFIG_FILE}"
+        arcbuild
         ;;
       s) NEXT='s'
         MODEL="RS4021xs+"
-        SN_AIO=$SN_4021
-        MAC1_AIO=$MAC1_4021
-        MAC2_AIO=$MAC2_4021
-        MAC3_AIO=$MAC3_4021
-        MAC4_AIO=$MAC4_4021
-        writeConfigKey "model"  "${MODEL}"            "${USER_CONFIG_FILE}"
-        writeConfigKey "build"  "${BUILD_AIO}"        "${USER_CONFIG_FILE}"
-        writeConfigKey "sn"     "${SN_AIO}"           "${USER_CONFIG_FILE}"
-        buildconf
+        MAC1="$MAC1_RS4021xs"
+        MAC2="$MAC2_RS4021xs"
+        MAC3="$MAC3_RS4021xs"
+        MAC4="$MAC4_RS4021xs"
+        writeConfigKey "model"  "$MODEL"            "${USER_CONFIG_FILE}"
+        writeConfigKey "build"  "$BUILD_ARC"        "${USER_CONFIG_FILE}"
+        writeConfigKey "sn"     "$SN_RS4021xs"           "${USER_CONFIG_FILE}"
+        arcbuild
         ;;
       l) NEXT='l'
         MODEL="DVA3219"
-        SN_AIO=$SN_3219
-        MAC1_AIO=$MAC1_3219
-        MAC2_AIO=$MAC2_3219
-        MAC3_AIO=$MAC3_3219
-        MAC4_AIO=$MAC4_3219
-        writeConfigKey "model"  "${MODEL}"            "${USER_CONFIG_FILE}"
-        writeConfigKey "build"  "${BUILD_AIO}"        "${USER_CONFIG_FILE}"
-        writeConfigKey "sn"     "${SN_AIO}"           "${USER_CONFIG_FILE}"
-        buildconf
+        MAC1="$MAC1_DVA3219"
+        MAC2="$MAC2_DVA3219"
+        MAC3="$MAC3_DVA3219"
+        MAC4="$MAC4_DVA3219"
+        writeConfigKey "model"  "$MODEL"            "${USER_CONFIG_FILE}"
+        writeConfigKey "build"  "$BUILD_ARC"        "${USER_CONFIG_FILE}"
+        writeConfigKey "sn"     "$SN_DVA3219"           "${USER_CONFIG_FILE}"
+        arcbuild
         ;;
         j) NEXT='e'
         MODEL="DVA3221"
-        SN_AIO=$SN_3221
-        MAC1_AIO=$MAC1_3221
-        MAC2_AIO=$MAC2_3221
-        MAC3_AIO=$MAC3_3221
-        MAC4_AIO=$MAC4_3221
-        writeConfigKey "model"  "${MODEL}"            "${USER_CONFIG_FILE}"
-        writeConfigKey "build"  "${BUILD_AIO}"        "${USER_CONFIG_FILE}"
-        writeConfigKey "sn"     "${SN_AIO}"           "${USER_CONFIG_FILE}"
-        buildconf
+        MAC1="$MAC1_DVA3221"
+        MAC2="$MAC2_DVA3221"
+        MAC3="$MAC3_DVA3221"
+        MAC4="$MAC4_DVA3221"
+        writeConfigKey "model"  "$MODEL"            "${USER_CONFIG_FILE}"
+        writeConfigKey "build"  "$BUILD_ARC"        "${USER_CONFIG_FILE}"
+        writeConfigKey "sn"     "$SN_DVA3221"           "${USER_CONFIG_FILE}"
+        arcbuild
         ;;
       v) NEXT='v'
         MODEL="DS1621+"
-        SN_AIO=$SN_1621
-        MAC1_AIO=$MAC1_1621
-        MAC2_AIO=$MAC2_1621
-        MAC3_AIO=$MAC3_1621
-        MAC4_AIO=$MAC4_1621
-        writeConfigKey "model"  "${MODEL}"            "${USER_CONFIG_FILE}"
-        writeConfigKey "build"  "${BUILD_AIO}"        "${USER_CONFIG_FILE}"
-        writeConfigKey "sn"     "${SN_AIO}"           "${USER_CONFIG_FILE}"
-        buildconf
+        MAC1="$MAC1_DS1621"
+        MAC2="$MAC2_DS1621"
+        MAC3="$MAC3_DS1621"
+        MAC4="$MAC4_DS1621"
+        writeConfigKey "model"  "$MODEL"            "${USER_CONFIG_FILE}"
+        writeConfigKey "build"  "$BUILD_ARC"        "${USER_CONFIG_FILE}"
+        writeConfigKey "sn"     "$SN_DS1621"           "${USER_CONFIG_FILE}"
+        arcbuild
         ;;
       n) NEXT='n'
         MODEL="DS920+"
-        SN_AIO=$SN_920
-        MAC1_AIO=$MAC1_920
-        MAC2_AIO=$MAC2_920
-        MAC3_AIO=$MAC3_920
-        MAC4_AIO=$MAC4_920
-        writeConfigKey "model"  "${MODEL}"            "${USER_CONFIG_FILE}"
-        writeConfigKey "build"  "${BUILD_AIO}"        "${USER_CONFIG_FILE}"
-        writeConfigKey "sn"     "${SN_AIO}"           "${USER_CONFIG_FILE}"
-        buildconf
+        MAC1="$MAC1_DS920s"
+        MAC2="$MAC2_DS920"
+        MAC3="$MAC3_DS920"
+        MAC4="$MAC4_DS920"
+        writeConfigKey "model"  "$MODEL"            "${USER_CONFIG_FILE}"
+        writeConfigKey "build"  "$BUILD_ARC"        "${USER_CONFIG_FILE}"
+        writeConfigKey "sn"     "$SN_DS920"           "${USER_CONFIG_FILE}"
+        arcbuild
         ;;
       e) return ;;
     esac
   done
-}
-
-###############################################################################
-# Make Network Config
-function arcnet() {
-  lshw -class network -short > "${TMP_PATH}/netconf"
-  if grep -R "eth0" "${TMP_PATH}/netconf"
-  then
-    if grep -R "eth1" "${TMP_PATH}/netconf"
-    then
-      if grep -R "eth2" "${TMP_PATH}/netconf"
-      then
-        if grep -R "eth3" "${TMP_PATH}/netconf"
-        then
-          echo "4 Network Adapter found"
-          writeConfigKey "cmdline.mac1"      "${MAC1_AIO}" "${USER_CONFIG_FILE}"
-          writeConfigKey "cmdline.mac2"      "${MAC2_AIO}" "${USER_CONFIG_FILE}"
-          writeConfigKey "cmdline.mac3"      "${MAC3_AIO}" "${USER_CONFIG_FILE}"
-          writeConfigKey "cmdline.mac4"      "${MAC4_AIO}" "${USER_CONFIG_FILE}"
-          writeConfigKey "cmdline.netif_num" "4"           "${USER_CONFIG_FILE}"
-        else
-          echo "3 Network Adapter found"
-          writeConfigKey "cmdline.mac1"      "${MAC1_AIO}" "${USER_CONFIG_FILE}"
-          writeConfigKey "cmdline.mac2"      "${MAC2_AIO}" "${USER_CONFIG_FILE}"
-          writeConfigKey "cmdline.mac3"      "${MAC3_AIO}" "${USER_CONFIG_FILE}"
-          writeConfigKey "cmdline.netif_num" "3"           "${USER_CONFIG_FILE}"
-        fi
-      else
-        echo "2 Network Adapter found"
-        writeConfigKey "cmdline.mac1"      "${MAC1_AIO}" "${USER_CONFIG_FILE}"
-        writeConfigKey "cmdline.mac2"      "${MAC2_AIO}" "${USER_CONFIG_FILE}"
-        writeConfigKey "cmdline.netif_num" "2"           "${USER_CONFIG_FILE}"
-      fi
-    else
-      echo "1 Network Adapter found"
-      writeConfigKey "cmdline.mac1"      "${MAC1_AIO}" "${USER_CONFIG_FILE}"
-      writeConfigKey "cmdline.netif_num" "1"           "${USER_CONFIG_FILE}"
-    fi
-  else
-    echo "No Network Adapter found"
-  fi
-  MAC1="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
-  MAC="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
-  ip link set dev eth0 address ${MAC} 2>&1 | dialog --backtitle "`backtitle`" \
-    --title "Load AiO MAC" --progressbox "Set new MAC" 20 70
-  sleep 5
-  /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
-    --title "Load AiO MAC" --progressbox "Renewing IP" 20 70
-  sleep 5
-  IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
 }
 
 ###############################################################################
@@ -245,7 +194,7 @@ function arcbuild() {
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r`"
   dialog --clear --no-items --backtitle "`backtitle`"
-  dialog --backtitle "`backtitle`" --title "AiO Conf" \
+  dialog --backtitle "`backtitle`" --title "ARC Config" \
     --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
     # Delete synoinfo and reload model/build synoinfo
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
@@ -266,14 +215,199 @@ function arcbuild() {
       fi
     done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
     # Rebuild modules
+    deleteConfigKey "modules" "${USER_CONFIG_FILE}"
     writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-    while read ID DESC; do
-      writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-    done < <(getAllModules "${PLATFORM}" "${KVER}")
+    kmod list | awk '{print$1}' | awk 'NR>1' >> modlist.yml
+    modlist="modlist.yml"
+    while read line; do
+    writeConfigKey "modules.${line}" "{}" "${USER_CONFIG_FILE}"
+    done < "$modlist"
+
     # Remove old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-    DIRTY=1
+  dialog --backtitle "`backtitle`" --title "ARC Config" \
+    --infobox "Configuration successfull!" 0 0  
+    arcdiskconf
+}
+
+###############################################################################
+# Adding Synoinfo and Addons
+function arcdiskconf() {
+    dialog --backtitle "`backtitle`" --title "ARC Config" \
+        --infobox "ARC Disk configuration started!" 0 0  
+    let diskidxmapidx=0
+    badportfail=false
+    sataportmap=""
+    diskidxmap=""
+
+    maxdisks="`readModelKey "${MODEL}" "disks"`"
+
+    # look for dummy SATA flagged by kernel (bad ports)
+    dmys=$(dmesg | grep ": DUMMY$" | awk -F"] ata" '{print $2}' | awk -F: '{print $1}' | sort -n)
+
+    # if we cannot find usb disk, the boot disk must be intended for SATABOOT
+    if [ $(ls -la /sys/block/sd* | fgrep "/usb" | wc -l) -eq 0 ]; then
+        loaderdisk=$(mount | grep -i optional | grep cde | awk -F / '{print $3}' | uniq | cut -c 1-3)
+        sbpci=$(ls -la /sys/block/$loaderdisk | awk -F"/ata" '{print $1}' | awk -F"/" '{print $NF}' | cut --complement -f1 -d:)
+    fi
+
+    # get all SATA controllers PCI class 106
+    # 100 = SCSI, 104 = RAIDHBA, 107 = SAS - none of these appear to honor sataportmap/diskidxmap
+        pcis=$(
+        lspci -d ::104
+        lspci -d ::106 | awk '{print $1}'
+    )
+
+    # loop through controllers in correct order
+    for pci in $pcis; do
+        # get attached block devices (exclude CD-ROMs)
+        ports=$(ls -la /sys/class/ata_device | fgrep "$pci" | wc -l)
+        drives=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+        echo -e "\nFound \"$(lspci -s $pci | sed "s/\ .*://")\""
+        echo -n "Detected $ports ports/$drives drives. "
+
+        # look for bad ports on this controller
+        badports=""
+        for dmy in $dmys; do
+            badpci=$(ls -la /sys/class/ata_port/ata$dmy | awk -F"/ata$dmy/ata_port/" '{print $1}' | awk -F"/" '{print $NF}' | cut --complement -f1 -d:)
+            [ "$pci" = "$badpci" ] && badports=$(echo $badports$dmy" ")
+        done
+        # display the bad ports, referenced to controller port numbering
+        if [ ! -z "$badports" ]; then
+            # minmap is invalid with bad ports!
+            [ "$1" = "minmap" ] && badportfail=true
+            # get first port of PCI adapter with bad ports
+            badportbase=$(ls -la /sys/class/ata_port | fgrep "$badpci" | awk -F"/ata_port/ata" '{print $2}' | sort -n | head -1)
+            echo -n "Bad ports:"
+            for badport in $badports; do
+                let badport=$badport-$badportbase+1
+                echo -n " "$badport
+            done
+            echo -n ". "
+        fi
+        # SATABOOT controller? (if so, it has to be mapped as first controller, we think)
+        if [ "$pci" = "$sbpci" ]; then
+            [ ${drives} -gt 1 ]
+            sataportmap=$sataportmap"1"
+            diskidxmap=$diskidxmap$(printf "%02X" $maxdisks)
+        else
+            if [ "$pci" = "00:1f.2" ] && [ "$HYPERVISOR" = "KVM" ]; then
+                # KVM q35 bogus controller?
+                sataportmap=$sataportmap"1"
+                diskidxmap=$diskidxmap$(printf "%02X" $maxdisks)
+            else
+                # handle VMware virtual SATA controller insane port count
+                if [ "$HYPERVISOR" = "VMware" ] && [ $ports -eq 30 ]; then
+                    ports=8
+                else
+                    # if minmap and not vmware virtual sata, don't update sataportmap/diskidxmap
+                    if [ "$1" = "minmap" ]; then
+                        echo
+                        continue
+                    fi
+                fi
+                # if badports are in the port range, set the fail flag
+                if [ ! -z "$badports" ]; then
+                    for badport in $badports; do
+                        let badport=$badport-$badportbase+1
+                        [ $ports -ge $badport ] && badportfail=true
+                    done
+                fi
+                if [ $ports -gt 9 ]; then
+                    let ports=$ports+48
+                    portchar=$(printf \\$(printf "%o" $ports))
+                else
+                    portchar=$ports
+                fi
+                sataportmap=$sataportmap$portchar
+                diskidxmap=$diskidxmap$(printf "%02x" $diskidxmapidx)
+                let diskidxmapidx=$diskidxmapidx+$ports
+            fi
+        fi
+    done
+
+    # ports > maxdisks?
+    [ "$diskidxmapidx" -gt "$maxdisks" ]
+
+    # fix kernel panic if 1st position is set to 0 ports (from no SATA mappings or deliberate user selection)
+    [ -z "$sataportmap" -o "${sataportmap:0:1}" = "0" ] && sataportmap=1${sataportmap:1}
+
+    # handle no assigned SATA ports affecting SCSI mapping problem
+    [ -z "$diskidxmap" ] && diskidxmap="00"
+
+    # now advise on SCSI drives for user peace of mind
+    # 100 = SCSI, 104 = RAIDHBA, 107 = SAS - none of these honor sataportmap/diskidxmap
+    pcis=$(
+        lspci -d ::100
+        lspci -d ::107 | awk '{print $1}'
+    )
+    [ ! -z "$pcis" ] && echo
+    # loop through non-SATA controllers
+    for pci in $pcis; do
+        # get attached block devices (exclude CD-ROMs)
+        drivesscsi=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+        echo "Found RAID/SCSI \""$(lspci -s $pci | sed "s/\ .*://")"\" ($drivesscsi drives)"
+    done
+    writeConfigKey "cmdline.SataPortMap" "$sataportmap" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline.DiskIdxMap" "$diskidxmap" "${USER_CONFIG_FILE}"
+    dialog --backtitle "`backtitle`" --title "ARC Config" \
+      --infobox "ARC Disk configuration successfull! SataPortMap=${sataportmap} | DiskIdxMap=${diskidxmap}" 0 0  
+    sleep 5
     arcnet
+}
+
+###############################################################################
+# Make Network Config
+function arcnet() {
+  lshw -class network -short > "${TMP_PATH}/netconf"
+  if grep -R "eth0" "${TMP_PATH}/netconf"
+  then
+    if grep -R "eth1" "${TMP_PATH}/netconf"
+    then
+      if grep -R "eth2" "${TMP_PATH}/netconf"
+      then
+        if grep -R "eth3" "${TMP_PATH}/netconf"
+        then
+          echo "4 Network Adapter found"
+          writeConfigKey "cmdline.mac1"           "$MAC1" "${USER_CONFIG_FILE}"
+          writeConfigKey "cmdline.mac2"           "$MAC2" "${USER_CONFIG_FILE}"
+          writeConfigKey "cmdline.mac3"           "$MAC3" "${USER_CONFIG_FILE}"
+          writeConfigKey "cmdline.mac4"           "$MAC4" "${USER_CONFIG_FILE}"
+          writeConfigKey "cmdline.netif_num" "4"            "${USER_CONFIG_FILE}"
+        else
+          echo "3 Network Adapter found"
+          writeConfigKey "cmdline.mac1"           "$MAC1" "${USER_CONFIG_FILE}"
+          writeConfigKey "cmdline.mac2"           "$MAC2" "${USER_CONFIG_FILE}"
+          writeConfigKey "cmdline.mac3"           "$MAC3" "${USER_CONFIG_FILE}"
+          writeConfigKey "cmdline.netif_num" "3"            "${USER_CONFIG_FILE}"
+        fi
+      else
+        echo "2 Network Adapter found"
+        writeConfigKey "cmdline.mac1"             "$MAC1" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.mac2"             "$MAC2" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.netif_num" "2"              "${USER_CONFIG_FILE}"
+      fi
+    else
+      echo "1 Network Adapter found"
+      writeConfigKey "cmdline.mac1"               "$MAC1" "${USER_CONFIG_FILE}"
+      writeConfigKey "cmdline.netif_num" "1"                "${USER_CONFIG_FILE}"
+    fi
+  else
+    echo "No Network Adapter found"
+  fi
+  MAC1="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
+  MAC="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
+  ip link set dev eth0 address ${MAC} 2>&1 | dialog --backtitle "`backtitle`" \
+    --title "Load ARC MAC Table" --infobox "Set new MAC" 0 0
+  sleep 5
+  /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
+    --title "Load ARC MAC Table" --progressbox "Renewing IP" 20 70
+  sleep 5
+  IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
+  dialog --backtitle "`backtitle`" --title "ARC Config" \
+      --infobox "ARC Network configuration successfull!" 0 0
+  sleep 5
+  dialog --clear --no-items --backtitle "`backtitle`"
 }
 
 ###############################################################################
@@ -286,10 +420,10 @@ function extractDsmFiles() {
 
   if [ ${RAMCACHE} -eq 0 ]; then
     OUT_PATH="${CACHE_PATH}/dl"
-    echo "Cache in disk"
+    echo "Cache to disk"
   else
     OUT_PATH="${TMP_PATH}/dl"
-    echo "Cache in ram"
+    echo "Cache to ram"
   fi
   mkdir -p "${OUT_PATH}"
 
@@ -462,7 +596,7 @@ function make() {
   echo "Cleaning"
   rm -rf "${UNTAR_PAT_PATH}"
 
-  echo "Ready!" && echo "Ready!" >> "${LOG_AIO}"
+  echo "Ready!"
   sleep 3
   DIRTY=0
   return 0
@@ -539,10 +673,9 @@ function alldrives() {
 ###############################################################################
 # Shows available Drives
 function alldrivessas() {
-        if [ $(lspci -nn | grep -ie "\[0100\]" -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
+        if [ $(lspci -nn | grep -ie "\[0100\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
         pcis=$(
         lspci -d ::100
-        lspci -d ::104
         lspci -d ::107 | awk '{print $1}'
         )
         [ ! -z "$pcis" ]
@@ -551,7 +684,7 @@ function alldrivessas() {
         # get attached block devices (exclude CD-ROMs)
         DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
         done
-        for PCI in `lspci -nn | grep -ie "\[0100\]" -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
+        for PCI in `lspci -nn | grep -ie "\[0100\]" -ie "\[0107\]" | awk '{print$1}'`; do
           NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
           TEXT+="\Z1SCSI/RAID/SAS Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
           TEXT+="\nDrives: \Z2\Zb${DRIVES}\Zn connected"
@@ -962,25 +1095,28 @@ function sysinfo() {
         )
         CPUINFO=$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')
         MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
-        SCSIPCI=$(lspci -nn | grep -ie "\[0100\]" -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}')
+        SCSIPCI=$(lspci -nn | grep -ie "\[0100\]" -ie "\[0107\]" | awk '{print$1}')
         SCSIINFO=$(lspci -s "${SCSIPCI}" | sed "s/\ .*://")
-        SATAPCI=$(lspci -nn | grep -ie "\[0106\]" | awk '{print$1}')
+        SATAPCI=$(lspci -nn | grep -ie "\[0106\]" -ie "\[0104\]" | awk '{print$1}')
         SATAINFO=$(lspci -s "${SATAPCI}" | sed "s/\ .*://")
+        MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
         TEXT=""
         TEXT+="\nSystem: \Zb${TYPEINFO}\Zn"
         if [ -n $HYPERVISOR ]; then
-        TEXT+="\nOS: \Zb$HYPERVISOR\Zn\n"
+        TEXT+="\nHypervisor: \Zb$HYPERVISOR\Zn\n"
         fi
         TEXT+="\nCPU: \Zb${CPUINFO}\Zn"
         TEXT+="\nRAM: \Zb${MEMINFO}GB\Zn\n"
-        if [ -n "$PORTMAP" ]; then
-        TEXT+="\nStorage Mode: \ZbSCSI/RAID/SAS Mode enabled\Zn\n"
-        TEXT+="\nSCSI/RAID/SAS Controller dedected:\n\Zb${SCSIINFO}\Zn\n"
-        TEXT+="\nSATA Controller dedected:\n\Zb${SATAINFO}\Zn"
-        else
-        TEXT+="\nStorage Mode: \ZbSCSI/RAID/SAS Mode disabled\Zn\n"
-        TEXT+="\nSATA Controller dedected:\n\Zb${SATAINFO}\Zn"
+        if [ -n "$RAIDSCSI" ]; then
+        TEXT+="\nStorage Mode: \ZbSCSI/RAID Mode enabled\Zn\n"
+        TEXT+="\nRAID/SCSI Controller dedected:\n\Zb${SCSIINFO}\Zn\n"
         fi
+        if [ -n "$SATAHBA" ]; then
+        TEXT+="\nStorage Mode: \ZbSATA/HBA Mode enabled\Zn\n"
+        TEXT+="\nSATA/HBA Controller dedected:\n\Zb${SATAINFO}\Zn"
+        fi
+        TEXT+="\n"
+        TEXT+="\nModules: \Zb${MODULESINFO}\n"
         TEXT+="\n"
         dialog --backtitle "`backtitle`" --title "Systeminformation" --aspect 18 --colors --msgbox "${TEXT}" 0 0 
 }
@@ -1007,11 +1143,6 @@ while true; do
   if [ -n "${MODEL}" ]; then
   echo "g \"Show Controller/Drives \" "                                                     >> "${TMP_PATH}/menu"
   fi
-  if [ -n "$PORTMAP" ]; then
-  echo "j \"SCSI/RAID Controller is enabled\" "                                             >> "${TMP_PATH}/menu"
-  else
-  echo "j \"SCSI/RAID Controller is diabled\" "                                             >> "${TMP_PATH}/menu"
-  fi
   if [ -n "${MODEL}" ]; then
   echo "a \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
   echo "o \"Modules \" "                                                                    >> "${TMP_PATH}/menu"
@@ -1030,19 +1161,6 @@ while true; do
   [ $? -ne 0 ] && break
   case `<"${TMP_PATH}/resp"` in
     m) arcMenu; NEXT="l" ;;
-    j) [ "${PORTMAP}" = "" ] && PORTMAP='1' || PORTMAP=''
-       if [ -n "$PORTMAP" ]; then
-       writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
-       deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-       readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-       backtitle
-       else
-       deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-       deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-       readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-       backtitle
-       fi
-       ;;
     l) make; NEXT="b" ;;
     b) boot ;;
     g) alldrives ;;
@@ -1062,4 +1180,4 @@ while true; do
   esac
 done
 clear
-echo -e "Call \033[1;32maio.sh\033[0m to return to menu"
+echo -e "Call \033[1;32marc.sh\033[0m to return to menu"

@@ -4,3 +4,6 @@
 [submodule "addons"]
 	path = addons
 	url = https://github.com/AuxXxilium/arc-addons
+[submodule "modules"]
+	path = modules
+	url = https://github.com/AuxXxilium/arc-modules

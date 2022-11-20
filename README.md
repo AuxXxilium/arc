@@ -24,7 +24,17 @@ Another important point is that the loader detects whether or not the CPU has th
 
 I developed a simple patch to no longer display the DUMMY port error on models without device-tree, the user will be able to install without having to worry about it.
 
-# All in One Loader - Confirmed working
+# Choose a Model
+
+- DS3622xs+ / RS4021xs+
+  - For best Hardwaresupport you should use one of them.
+  - Support for RAID/SCSI/HBA Controllers
+
+- DS920+ / DS1621+ / DVA3219 / DVA3221
+  - Possible to get i915 (Intel Graphics) working
+  - No Support for RAID/SCSI/HBA Controllers
+
+# ARC Loader - Confirmed working
 
 - CPU:
   - Intel (looks like all)
@@ -44,6 +54,11 @@ I developed a simple patch to no longer display the DUMMY port error on models w
 - SATA:
   - VMWare SATA
   - Intel Native SATA 3rd to 12th Gen
+
+- Hypervisor:
+  - VMware vSphere ESXi (up to 7.0U3)
+  - unRaid
+  - Proxmox
 
 # Thanks
 

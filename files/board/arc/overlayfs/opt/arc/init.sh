@@ -195,4 +195,6 @@ mkdir -p "${LKM_PATH}"
 mkdir -p "${MODULES_PATH}"
 
 install-addons.sh
+if ! loaderIsConfigured; then
 arc.sh
+fi

@@ -30,14 +30,10 @@ fi
 echo "Getting latest Addons"
 rm -Rf /tmp/addons
 mkdir -p /tmp/addons
-if [ -d ../arc-addons ]; then
-  cp ../arc-addons/*.addon /tmp/addons/
-else
   TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
   curl -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip
   rm -rf /tmp/addons
   unzip /tmp/addons.zip -d /tmp/addons
-fi
 DEST_PATH="files/board/arc/p3/addons"
 echo "Installing addons to ${DEST_PATH}"
 for PKG in `ls /tmp/addons/*.addon`; do
@@ -49,23 +45,14 @@ done
 
 # Get latest modules
 echo "Getting latest modules"
+mkdir -p "${PWD}/files/board/arc/p3/modules"
 MODULES_DIR="${PWD}/files/board/arc/p3/modules"
-if [ -d ../arc-modules ]; then
-  cd ../arc-modules
-  for D in `ls -d *-*`; do
-    echo "${D}"
-    (cd ${D} && tar caf "${MODULES_DIR}/${D}.tgz" *.ko)
-  done
-  (cd firmware && tar caf "${MODULES_DIR}/firmware.tgz" *)
-  cd -
-else
   TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
   while read PLATFORM KVER; do
     FILE="${PLATFORM}-${KVER}"
     curl -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/${FILE}.tgz" -o "${MODULES_DIR}/${FILE}.tgz"
   done < PLATFORMS
   curl -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/firmware.tgz" -o "${MODULES_DIR}/firmware.tgz"
-fi
 
 # Copy files
 echo "Copying files"
