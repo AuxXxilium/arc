@@ -130,8 +130,8 @@ function arcMenu() {
       [ "${DT}" = "true" ] && DT="-DT" || DT=""
       [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
     done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
-    [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible \Zn\"" >> "${TMP_PATH}/menu"
-    [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta \Zn\"" >> "${TMP_PATH}/menu"
+    [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >> "${TMP_PATH}/menu"
+    [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models \Zn\"" >> "${TMP_PATH}/menu"
     dialog --backtitle "`backtitle`" --colors --menu "Choose the model" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
