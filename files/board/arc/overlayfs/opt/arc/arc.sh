@@ -270,10 +270,8 @@ function arcdiskconf() {
                 diskidxmap=$diskidxmap$(printf "%02X" $maxdisks)
             else
                 # handle VMware virtual SATA controller insane port count
-                if [ "$HYPERVISOR" = "VMware" ] && [ $ports -eq 30 ]; then
+                if [ "$HYPERVISOR" = "VMware" ] && [ ${SATAHBA} -gt 0 ] && [ $ports -eq 30 ]; then
                     ports=8
-                elif [ "$HYPERVISOR" = "VMware" ] && [ "$RAIDSCSI" -gt 0 ]; then
-                    ports=1
                 else
                     # if minmap and not vmware virtual sata, don't update sataportmap/diskidxmap
                     if [ "$1" = "minmap" ]; then
@@ -288,6 +286,9 @@ function arcdiskconf() {
                         [ $ports -ge $badport ] && badportfail=true
                     done
                 fi
+		if [ "$HYPERVISOR" = "VMware" ] && [ ${RAIDSCSI} -gt 0 ]; then
+                    ports=1
+		fi
                 if [ $ports -gt 9 ]; then
                     let ports=$ports+48
                     portchar=$(printf \\$(printf "%o" $ports))
