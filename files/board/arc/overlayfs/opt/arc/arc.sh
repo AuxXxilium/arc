@@ -200,7 +200,7 @@ function arcbuild() {
   fi
   dialog --backtitle "`backtitle`" --title "ARC Config" \
     --infobox "Configuration successfull!" 0 0  
-    arcdiskconf
+  arcdiskconf
 }
 
 ###############################################################################
@@ -272,6 +272,8 @@ function arcdiskconf() {
                 # handle VMware virtual SATA controller insane port count
                 if [ "$HYPERVISOR" = "VMware" ] && [ $ports -eq 30 ]; then
                     ports=8
+                elif [ "$HYPERVISOR" = "VMware" ] && [ "$RAIDSCSI" -gt 0 ]; then
+                    ports=1
                 else
                     # if minmap and not vmware virtual sata, don't update sataportmap/diskidxmap
                     if [ "$1" = "minmap" ]; then
@@ -314,7 +316,7 @@ function arcdiskconf() {
         lspci -d ::100
         lspci -d ::107 | awk '{print $1}'
     )
-    [ ! -z "$pcis" ] && echo
+    [ ! -z "$pcis" ]
     # loop through non-SATA controllers
     for pci in $pcis; do
         # get attached block devices (exclude CD-ROMs)
