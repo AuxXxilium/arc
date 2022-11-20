@@ -164,40 +164,30 @@ function arcMenu() {
 ###############################################################################
 # Adding Synoinfo and Addons
 function arcbuild() {
-  ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r`"
-  dialog --clear --no-items --backtitle "`backtitle`" \
-    --menu "Choose a build number" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
-  [ $? -ne 0 ] && return
-  resp=$(<${TMP_PATH}/resp)
-  [ -z "${resp}" ] && return
-  if [ "${BUILD}" != "${resp}" ]; then
-    dialog --backtitle "`backtitle`" --title "Build Number" \
-      --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
-    BUILD=${resp}
-    writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
-    # Delete synoinfo and reload model/build synoinfo
-    writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
-    while IFS="=" read KEY VALUE; do
-      writeConfigKey "synoinfo.${KEY}" "${VALUE}" "${USER_CONFIG_FILE}"
-    done < <(readModelMap "${MODEL}" "builds.${BUILD}.synoinfo")
-    # Check addons
-    PLATFORM="`readModelKey "${MODEL}" "platform"`"
-    KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-    while IFS="=" read ADDON PARAM; do
-      [ -z "${ADDON}" ] && continue
-      if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
-        deleteConfigKey "addons.${ADDON}" "${USER_CONFIG_FILE}"
-      fi
-    done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-    # Rebuild modules
-    writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-    while read ID DESC; do
-      writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-    done < <(getAllModules "${PLATFORM}" "${KVER}")
-    # Remove old files
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-    DIRTY=1
-  fi
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  PLATFORM="`readModelKey "${MODEL}" "platform"`"
+  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  # Delete synoinfo and reload model/build synoinfo  
+  writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
+  while IFS="=" read KEY VALUE; do
+    writeConfigKey "synoinfo.${KEY}" "${VALUE}" "${USER_CONFIG_FILE}"
+  done < <(readModelMap "${MODEL}" "builds.${BUILD}.synoinfo")
+  # Check addons
+  while IFS="=" read ADDON PARAM; do
+    [ -z "${ADDON}" ] && continue
+    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
+      deleteConfigKey "addons.${ADDON}" "${USER_CONFIG_FILE}"
+    fi
+  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+  # Rebuild modules
+  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+  while read ID DESC; do
+    writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+  done < <(getAllModules "${PLATFORM}" "${KVER}")
+  # Remove old files
+  rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+  DIRTY=1
   dialog --backtitle "`backtitle`" --title "ARC Config" \
     --infobox "Configuration successfull!" 0 0  
   arcdiskconf
@@ -286,9 +276,9 @@ function arcdiskconf() {
                         [ $ports -ge $badport ] && badportfail=true
                     done
                 fi
-		if [ "$HYPERVISOR" = "VMware" ] && [ ${RAIDSCSI} -gt 0 ]; then
+		            if [ "$HYPERVISOR" = "VMware" ] && [ ${RAIDSCSI} -gt 0 ]; then
                     ports=1
-		fi
+		            fi
                 if [ $ports -gt 9 ]; then
                     let ports=$ports+48
                     portchar=$(printf \\$(printf "%o" $ports))
