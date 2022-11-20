@@ -215,14 +215,10 @@ function arcbuild() {
       fi
     done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
     # Rebuild modules
-    deleteConfigKey "modules" "${USER_CONFIG_FILE}"
     writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-    kmod list | awk '{print$1}' | awk 'NR>1' >> modlist.yml
-    modlist="modlist.yml"
-    while read line; do
-    writeConfigKey "modules.${line}" "{}" "${USER_CONFIG_FILE}"
-    done < "$modlist"
-
+    while read ID DESC; do
+      writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+    done < <(getAllModules "${PLATFORM}" "${KVER}")
     # Remove old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   dialog --backtitle "`backtitle`" --title "ARC Config" \
