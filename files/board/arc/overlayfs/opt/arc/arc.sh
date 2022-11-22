@@ -16,6 +16,12 @@ fi
 # Export LKM: dev to userconfig
 writeConfigKey "lkm" "dev" "${USER_CONFIG_FILE}"
 
+# Export latest Build to userconfig
+writeConfigKey "build" "42962" "${USER_CONFIG_FILE}"
+
+# Export Network Adapter
+lshw -class network -short > "${TMP_PATH}/netconf"
+
 # Get actual IP
 IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
 
@@ -31,6 +37,9 @@ if [ $(lspci -nn | grep -ie "\[0100\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
 fi
 if [ $(lspci -nn | grep -ie "\[0106\]" -ie "\[0104\]" | wc -l) -gt 0 ]; then
     SATAHBA="1"
+fi
+if [ ${RAIDSCSI} -gt 0 ]; then
+writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
 fi
 
 # Dirty flag
@@ -151,8 +160,6 @@ function arcMenu() {
     if [ "${MODEL}" != "${resp}" ]; then
       MODEL=${resp}
       writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
-      BUILD="42962"
-      writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
@@ -190,136 +197,38 @@ function arcbuild() {
   # Remove old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
-  dialog --backtitle "`backtitle`" --title "ARC Config" \
-    --infobox "Configuration successfull!" 0 0  
+  dialog --backtitle "`backtitle`" --title "ARC Model Config" \
+    --infobox "Model Configuration successfull!" 0 0  
   arcdiskconf
 }
 
 ###############################################################################
 # Adding Synoinfo and Addons
 function arcdiskconf() {
-    dialog --backtitle "`backtitle`" --title "ARC Config" \
-        --infobox "ARC Disk configuration started!" 0 0  
-    let diskidxmapidx=0
-    badportfail=false
-    sataportmap=""
-    diskidxmap=""
-
-    maxdisks="`readModelKey "${MODEL}" "disks"`"
-
-    # look for dummy SATA flagged by kernel (bad ports)
-    dmys=$(dmesg | grep ": DUMMY$" | awk -F"] ata" '{print $2}' | awk -F: '{print $1}' | sort -n)
-
-    # if we cannot find usb disk, the boot disk must be intended for SATABOOT
-    if [ $(ls -la /sys/block/sd* | fgrep "/usb" | wc -l) -eq 0 ]; then
-        loaderdisk=$(mount | grep -i optional | grep cde | awk -F / '{print $3}' | uniq | cut -c 1-3)
-        sbpci=$(ls -la /sys/block/$loaderdisk | awk -F"/ata" '{print $1}' | awk -F"/" '{print $NF}' | cut --complement -f1 -d:)
+    dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
+        --infobox "ARC Disk configuration started!" 0 0
+    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ ${SATAHBA} -gt 0 ]
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     fi
-
-    # get all SATA controllers PCI class 106
-    # 100 = SCSI, 104 = RAIDHBA, 107 = SAS - none of these appear to honor sataportmap/diskidxmap
-        pcis=$(
-        lspci -d ::104
-        lspci -d ::106 | awk '{print $1}'
-    )
-
-    # loop through controllers in correct order
-    for pci in $pcis; do
-        # get attached block devices (exclude CD-ROMs)
-        ports=$(ls -la /sys/class/ata_device | fgrep "$pci" | wc -l)
-        drives=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
-        echo -e "\nFound \"$(lspci -s $pci | sed "s/\ .*://")\""
-        echo -n "Detected $ports ports/$drives drives. "
-
-        # look for bad ports on this controller
-        badports=""
-        for dmy in $dmys; do
-            badpci=$(ls -la /sys/class/ata_port/ata$dmy | awk -F"/ata$dmy/ata_port/" '{print $1}' | awk -F"/" '{print $NF}' | cut --complement -f1 -d:)
-            [ "$pci" = "$badpci" ] && badports=$(echo $badports$dmy" ")
-        done
-        # display the bad ports, referenced to controller port numbering
-        if [ ! -z "$badports" ]; then
-            # minmap is invalid with bad ports!
-            [ "$1" = "minmap" ] && badportfail=true
-            # get first port of PCI adapter with bad ports
-            badportbase=$(ls -la /sys/class/ata_port | fgrep "$badpci" | awk -F"/ata_port/ata" '{print $2}' | sort -n | head -1)
-            echo -n "Bad ports:"
-            for badport in $badports; do
-                let badport=$badport-$badportbase+1
-                echo -n " "$badport
-            done
-            echo -n ". "
-        fi
-        # SATABOOT controller? (if so, it has to be mapped as first controller, we think)
-        if [ "$pci" = "$sbpci" ]; then
-            [ ${drives} -gt 1 ]
-            sataportmap=$sataportmap"1"
-            diskidxmap=$diskidxmap$(printf "%02X" $maxdisks)
-        else
-            if [ "$pci" = "00:1f.2" ] && [ "$HYPERVISOR" = "KVM" ]; then
-                # KVM q35 bogus controller?
-                sataportmap=$sataportmap"1"
-                diskidxmap=$diskidxmap$(printf "%02X" $maxdisks)
-            else
-                # handle VMware virtual SATA controller insane port count
-                if [ "$HYPERVISOR" = "VMware" ] && [ ${SATAHBA} -gt 0 ] && [ $ports -eq 30 ]; then
-                    ports=8
-                else
-                    # if minmap and not vmware virtual sata, don't update sataportmap/diskidxmap
-                    if [ "$1" = "minmap" ]; then
-                        echo
-                        continue
-                    fi
-                fi
-                # if badports are in the port range, set the fail flag
-                if [ ! -z "$badports" ]; then
-                    for badport in $badports; do
-                        let badport=$badport-$badportbase+1
-                        [ $ports -ge $badport ] && badportfail=true
-                    done
-                fi
-		            if [ "$HYPERVISOR" = "VMware" ] && [ ${RAIDSCSI} -gt 0 ]; then
-                    ports=1
-		            fi
-                if [ $ports -gt 9 ]; then
-                    let ports=$ports+48
-                    portchar=$(printf \\$(printf "%o" $ports))
-                else
-                    portchar=$ports
-                fi
-                sataportmap=$sataportmap$portchar
-                diskidxmap=$diskidxmap$(printf "%02x" $diskidxmapidx)
-                let diskidxmapidx=$diskidxmapidx+$ports
-            fi
-        fi
-    done
-
-    # ports > maxdisks?
-    [ "$diskidxmapidx" -gt "$maxdisks" ]
-
-    # fix kernel panic if 1st position is set to 0 ports (from no SATA mappings or deliberate user selection)
-    [ -z "$sataportmap" -o "${sataportmap:0:1}" = "0" ] && sataportmap=1${sataportmap:1}
-
-    # handle no assigned SATA ports affecting SCSI mapping problem
-    [ -z "$diskidxmap" ] && diskidxmap="00"
-
-    # now advise on SCSI drives for user peace of mind
-    # 100 = SCSI, 104 = RAIDHBA, 107 = SAS - none of these honor sataportmap/diskidxmap
-    pcis=$(
-        lspci -d ::100
-        lspci -d ::107 | awk '{print $1}'
-    )
-    [ ! -z "$pcis" ]
-    # loop through non-SATA controllers
-    for pci in $pcis; do
-        # get attached block devices (exclude CD-ROMs)
-        drivesscsi=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
-        echo "Found RAID/SCSI \""$(lspci -s $pci | sed "s/\ .*://")"\" ($drivesscsi drives)"
-    done
-    writeConfigKey "cmdline.SataPortMap" "$sataportmap" "${USER_CONFIG_FILE}"
-    writeConfigKey "cmdline.DiskIdxMap" "$diskidxmap" "${USER_CONFIG_FILE}"
-    dialog --backtitle "`backtitle`" --title "ARC Config" \
-      --infobox "ARC Disk configuration successfull! SataPortMap=${sataportmap} | DiskIdxMap=${diskidxmap}" 0 0  
+    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ ${RAIDSCSI} -gt 0 ]
+    writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
+    fi
+    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ ${SATAHBA} -gt 0 ]
+    delteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    fi
+    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ ${RAIDSCSI} -gt 0 ]
+    writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
+    fi
+    if [ "$MASHINE" != "VIRTUAL" ] && [ ${SATAHBA} -gt 0 ]
+    delteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    fi
+    if [ "$MASHINE" != "VIRTUAL" ] && [ ${RAIDSCSI} -gt 0 ]
+    writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
+    fi
+    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+    PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
+    dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
+      --infobox "ARC Disk configuration successfull!" 0 0  
     sleep 5
     arcnet
 }
@@ -327,7 +236,6 @@ function arcdiskconf() {
 ###############################################################################
 # Make Network Config
 function arcnet() {
-  lshw -class network -short > "${TMP_PATH}/netconf"
   if grep -R "eth0" "${TMP_PATH}/netconf"
   then
     if grep -R "eth1" "${TMP_PATH}/netconf"
@@ -350,7 +258,7 @@ function arcnet() {
           ip link set dev eth2 address ${MACN3} 2>&1
           ip link set dev eth1 address ${MACN2} 2>&1
           ip link set dev eth0 address ${MACN1} 2>&1 | dialog --backtitle "`backtitle`" \
-            --title "Load ARC MAC Table" --infobox "Set new MAC" 0 0
+            --title "Load ARC MAC Table" --infobox "Set new MAC for 4 Adapter" 0 0
         else
           echo "3 Network Adapter found"
           writeConfigKey "cmdline.mac1"           "$MAC1" "${USER_CONFIG_FILE}"
@@ -363,7 +271,7 @@ function arcnet() {
           ip link set dev eth2 address ${MACN3} 2>&1
           ip link set dev eth1 address ${MACN2} 2>&1
           ip link set dev eth0 address ${MACN1} 2>&1 | dialog --backtitle "`backtitle`" \
-            --title "Load ARC MAC Table" --infobox "Set new MAC" 0 0
+            --title "Load ARC MAC Table" --infobox "Set new MAC for 3 Adapter" 0 0
         fi
       else
         echo "2 Network Adapter found"
@@ -374,7 +282,7 @@ function arcnet() {
         MACN2="${MAC2:0:2}:${MAC2:2:2}:${MAC2:4:2}:${MAC2:6:2}:${MAC2:8:2}:${MAC2:10:2}"
         ip link set dev eth1 address ${MACN2} 2>&1
         ip link set dev eth0 address ${MACN1} 2>&1 | dialog --backtitle "`backtitle`" \
-          --title "Load ARC MAC Table" --infobox "Set new MAC" 0 0
+          --title "Load ARC MAC Table" --infobox "Set new MAC for 2 Adapter" 0 0
       fi
     else
       echo "1 Network Adapter found"
@@ -382,7 +290,7 @@ function arcnet() {
       writeConfigKey "cmdline.netif_num" "1"                "${USER_CONFIG_FILE}"
       MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
       ip link set dev eth0 address ${MACN1} 2>&1 | dialog --backtitle "`backtitle`" \
-        --title "Load ARC MAC Table" --infobox "Set new MAC" 0 0
+        --title "Load ARC MAC Table" --infobox "Set new MAC for 1 Adapter" 0 0
     fi
   else
     echo "No Network Adapter found"
@@ -1131,6 +1039,12 @@ while true; do
   if [ -n "${MODEL}" ]; then
   echo "g \"Show Controller/Drives \" "                                                     >> "${TMP_PATH}/menu"
   fi
+  if [ "$RAIDSCSI" -gt 0 ]; then
+  echo "j \"RAID/SCSI Controller enabled \" "                                               >> "${TMP_PATH}/menu"
+  elif [ "$SATAHBA" -gt 0 ]; then
+  echo "j \"RAID/SCSI Controller disabled \" "                                              >> "${TMP_PATH}/menu"
+  else
+  fi
   if [ -n "${MODEL}" ]; then
   echo "a \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
   echo "o \"Modules \" "                                                                    >> "${TMP_PATH}/menu"
@@ -1152,6 +1066,17 @@ while true; do
     l) make; NEXT="b" ;;
     b) boot ;;
     g) alldrives ;;
+    j) [ "${PORTMAP}" = "" ] && PORTMAP='1' || PORTMAP=''
+       if [ -n "$PORTMAP" ]; then
+       writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
+       readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+       backtitle
+       else
+       deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+       readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+       backtitle
+       fi
+       ;;
     a) addonMenu ;;
     o) selectModules ;;
     u) editUserConfig ;;
