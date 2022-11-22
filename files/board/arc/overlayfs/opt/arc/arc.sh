@@ -1012,11 +1012,14 @@ function sysinfo() {
         fi
         TEXT+="\nCPU: \Zb${CPUINFO}\Zn"
         TEXT+="\nRAM: \Zb${MEMINFO}GB\Zn\n"
-        if [ -n "$RAIDSCSI" ]; then
+        if [ -n "$RAIDSCSI"]; then
         TEXT+="\nStorage Mode: \ZbSCSI/RAID Mode enabled\Zn\n"
         TEXT+="\nRAID/SCSI Controller dedected:\n\Zb${SCSIINFO}\Zn\n"
-        fi
-        if [ -n "$SATAHBA" ]; then
+        elif [ -n "$RAIDSCSI" ] && [ -n "$SATAHBA" ]; then
+        TEXT+="\nStorage Mode: \ZbSCSI/RAID Mode enabled\Zn\n"
+        TEXT+="\nRAID/SCSI Controller dedected:\n\Zb${SCSIINFO}\Zn\n"
+        TEXT+="\nSATA/HBA Controller dedected:\n\Zb${SATAINFO}\Zn\n"
+        else
         TEXT+="\nStorage Mode: \ZbSATA/HBA Mode enabled\Zn\n"
         TEXT+="\nSATA/HBA Controller dedected:\n\Zb${SATAINFO}\Zn"
         fi
@@ -1052,7 +1055,6 @@ while true; do
   echo "j \"RAID/SCSI Controller enabled \" "                                               >> "${TMP_PATH}/menu"
   elif [ "$SATAHBA" -gt 0 ]; then
   echo "j \"RAID/SCSI Controller disabled \" "                                              >> "${TMP_PATH}/menu"
-  else
   fi
   if [ -n "${MODEL}" ]; then
   echo "a \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
