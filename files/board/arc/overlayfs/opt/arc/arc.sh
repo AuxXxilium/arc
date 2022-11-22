@@ -35,7 +35,7 @@ fi
 if [ $(lspci -nn | grep -ie "\[0100\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
     RAIDSCSI="1"
 fi
-if [ $(lspci -nn | grep -ie "\[0106\]" -ie "\[0104\]" | wc -l) -gt 0 ]; then
+if [ $(lspci -nn | grep -ie "\[0106\]" | wc -l) -gt 0 ]; then
     SATAHBA="1"
 fi
 if [ ${RAIDSCSI} -gt 0 ]; then
@@ -144,7 +144,6 @@ function arcMenu() {
       [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
     done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >> "${TMP_PATH}/menu"
-    [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models \Zn\"" >> "${TMP_PATH}/menu"
     dialog --backtitle "`backtitle`" --colors --menu "Choose the model" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
@@ -152,10 +151,6 @@ function arcMenu() {
     [ -z "${resp}" ] && return
     if [ "${resp}" = "f" ]; then
       RESTRICT=0
-      continue
-    fi
-    if [ "${resp}" = "b" ]; then
-      FLGBETA=1
       continue
     fi
     # If user change model, clean buildnumber and S/N
@@ -1002,7 +997,7 @@ function sysinfo() {
         MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
         SCSIPCI=$(lspci -nn | grep -ie "\[0100\]" -ie "\[0107\]" | awk '{print$1}')
         SCSIINFO=$(lspci -s "${SCSIPCI}" | sed "s/\ .*://")
-        SATAPCI=$(lspci -nn | grep -ie "\[0106\]" -ie "\[0104\]" | awk '{print$1}')
+        SATAPCI=$(lspci -nn | grep -ie "\[0106\]" | awk '{print$1}')
         SATAINFO=$(lspci -s "${SATAPCI}" | sed "s/\ .*://")
         MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
         TEXT=""
@@ -1012,15 +1007,15 @@ function sysinfo() {
         fi
         TEXT+="\nCPU: \Zb${CPUINFO}\Zn"
         TEXT+="\nRAM: \Zb${MEMINFO}GB\Zn\n"
-        if [ -n "$RAIDSCSI"]; then
+        if [ "$RAIDSCSI" -gt 0 ]; then
         TEXT+="\nStorage Mode: \ZbSCSI/RAID Mode enabled\Zn\n"
-        TEXT+="\nRAID/SCSI Controller dedected:\n\Zb${SCSIINFO}\Zn\n"
-        elif [ -n "$RAIDSCSI" ] && [ -n "$SATAHBA" ]; then
-        TEXT+="\nStorage Mode: \ZbSCSI/RAID Mode enabled\Zn\n"
-        TEXT+="\nRAID/SCSI Controller dedected:\n\Zb${SCSIINFO}\Zn\n"
-        TEXT+="\nSATA/HBA Controller dedected:\n\Zb${SATAINFO}\Zn\n"
         else
         TEXT+="\nStorage Mode: \ZbSATA/HBA Mode enabled\Zn\n"
+        fi
+        if if [ "$RAIDSCSI" -gt 0 ]; then
+        TEXT+="\nRAID/SCSI Controller dedected:\n\Zb${SCSIINFO}\Zn\n"
+        TEXT+="\nSATA/HBA Controller dedected:\n\Zb${SATAINFO}\Zn\n"      
+        else
         TEXT+="\nSATA/HBA Controller dedected:\n\Zb${SATAINFO}\Zn"
         fi
         TEXT+="\n"
