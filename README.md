@@ -6,7 +6,7 @@
 
 ## You must have at least 4GB of RAM, both in baremetal and VMs
 
-## The DSM kernel is compatible with SATA ports, not SAS/SCSI/etc. For device-tree models only SATA ports work. For the other models, another type of disks may work.
+## The DSM kernel is compatible with SATA ports, not SAS/SCSI/etc. For device-tree models (DT) only SATA ports work. For the other models, another type of disks may work.
 
 # Use
 
