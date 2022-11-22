@@ -211,22 +211,22 @@ function arcbuild() {
 function arcdiskconf() {
     dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
         --infobox "ARC Disk configuration started!" 0 0
-    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ ${SATAHBA} -gt 0 ]
+    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ ${SATAHBA} -gt 0 ]; then
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     fi
-    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ ${RAIDSCSI} -gt 0 ]
+    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ ${RAIDSCSI} -gt 0 ]; then
     writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
     fi
-    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ ${SATAHBA} -gt 0 ]
+    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ ${SATAHBA} -gt 0 ]; then
     delteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     fi
-    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ ${RAIDSCSI} -gt 0 ]
+    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ ${RAIDSCSI} -gt 0 ]; then
     writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
     fi
-    if [ "$MASHINE" != "VIRTUAL" ] && [ ${SATAHBA} -gt 0 ]
+    if [ "$MASHINE" != "VIRTUAL" ] && [ ${SATAHBA} -gt 0 ]; then
     delteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     fi
-    if [ "$MASHINE" != "VIRTUAL" ] && [ ${RAIDSCSI} -gt 0 ]
+    if [ "$MASHINE" != "VIRTUAL" ] && [ ${RAIDSCSI} -gt 0 ]; then
     writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
     fi
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
