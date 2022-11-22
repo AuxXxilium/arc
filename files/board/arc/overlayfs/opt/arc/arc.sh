@@ -1083,7 +1083,7 @@ while true; do
        readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
        backtitle
        else
-       deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+       deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
        readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
        backtitle
        fi
