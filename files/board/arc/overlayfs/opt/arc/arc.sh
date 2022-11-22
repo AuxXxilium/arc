@@ -121,11 +121,6 @@ function arcMenu() {
       PLATFORM=`readModelKey "${M}" "platform"`
       DT="`readModelKey "${M}" "dt"`"
       BETA="`readModelKey "${M}" "beta"`"
-      SN="`readModelKey "${M}" "serial"`"
-      MAC1="`readModelKey "${M}" "mac1"`"
-      MAC2="`readModelKey "${M}" "mac2"`"
-      MAC3="`readModelKey "${M}" "mac3"`"
-      MAC4="`readModelKey "${M}" "mac4"`"
       [ "${BETA}" = "true" -a ${FLGBETA} -eq 0 ] && continue
       # Check id model is compatible with CPU
       COMPATIBLE=1
@@ -160,7 +155,6 @@ function arcMenu() {
     if [ "${MODEL}" != "${resp}" ]; then
       MODEL=${resp}
       writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
-      writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
       DIRTY=1
@@ -177,6 +171,9 @@ function arcbuild() {
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  # Write Serial to Userconfig
+  SN="`readModelKey "${MODEL}" "serial"`"
+  writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
   # Delete synoinfo and reload model/build synoinfo  
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS="=" read KEY VALUE; do
@@ -236,6 +233,11 @@ function arcdiskconf() {
 ###############################################################################
 # Make Network Config
 function arcnet() {
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  MAC1="`readModelKey "${MODEL}" "mac1"`"
+  MAC2="`readModelKey "${MODEL}" "mac2"`"
+  MAC3="`readModelKey "${MODEL}" "mac3"`"
+  MAC4="`readModelKey "${MODEL}" "mac4"`"
   if grep -R "eth0" "${TMP_PATH}/netconf"
   then
     if grep -R "eth1" "${TMP_PATH}/netconf"
