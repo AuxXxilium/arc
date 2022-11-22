@@ -107,6 +107,13 @@ function backtitle() {
 # Make Model Config
 function arcMenu() {
   NEXT="l"
+  # Delete old Config before we start
+  deleteConfigKey "model" "${USER_CONFIG_FILE}"
+  deleteConfigKey "sn" "${USER_CONFIG_FILE}"
+  deleteConfigKey "mac1" "${USER_CONFIG_FILE}"
+  deleteConfigKey "mac2" "${USER_CONFIG_FILE}"
+  deleteConfigKey "mac3" "${USER_CONFIG_FILE}"
+  deleteConfigKey "mac4" "${USER_CONFIG_FILE}"
   # Loop menu
   RESTRICT=1
   FLGBETA=0
