@@ -16,7 +16,6 @@ cmdline: &cmdline
   vender_format_version: 2
 platform: "broadwellnk"
 unique: "synology_broadwellnk_rs4021xs+"
-beta: true
 dom: 2
 serial: "2160T2RMHS00P"
 mac1: "001132FE1AA1"
