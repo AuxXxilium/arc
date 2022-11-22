@@ -1,6 +1,6 @@
 version: 1
 name: powersched
-system: true
+#system: true
 description: "Utility to configure RTC according to DSM power schedule"
 compile-script: compile.sh
 all:
