@@ -103,13 +103,6 @@ function backtitle() {
 # Make Model Config
 function arcMenu() {
   NEXT="l"
-  # Delete old Config before we start
-  writeConfigKey "model" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "mac1" "" "${USER_CONFIG_FILE}"
-  deleteConfigKey "mac2" "${USER_CONFIG_FILE}"
-  deleteConfigKey "mac3" "${USER_CONFIG_FILE}"
-  deleteConfigKey "mac4" "${USER_CONFIG_FILE}"
   # Loop menu
   RESTRICT=1
   FLGBETA=0
@@ -149,14 +142,11 @@ function arcMenu() {
       RESTRICT=0
       continue
     fi
-    # If user change model, clean buildnumber and S/N
-    if [ "${MODEL}" != "${resp}" ]; then
-      MODEL=${resp}
-      writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
-      # Delete old files
-      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-      DIRTY=1
-    fi
+    MODEL=${resp}
+    writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
+    # Delete old files
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+    DIRTY=1
     break
   done
   arcbuild
