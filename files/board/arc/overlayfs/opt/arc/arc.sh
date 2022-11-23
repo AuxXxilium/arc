@@ -32,13 +32,9 @@ if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
 fi
 
 # Get DISK Config
-if [ $(lspci -nn | grep -ie "\[0100\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-    RAIDSCSI="1"
-fi
-if [ $(lspci -nn | grep -ie "\[0106\]" | wc -l) -gt 0 ]; then
-    SATAHBA="1"
-fi
-if [ ${RAIDSCSI} -gt 0 ]; then
+RAIDSCSI=$(lspci -nn | grep -ie "raid" -ie "scsi" | wc -l)
+SATAHBA=$(lspci -nn | grep -ie "sata" -ie "sas" | wc -l)
+if [ "$RAIDSCSI" -gt 0 ]; then
 writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
 fi
 
@@ -108,9 +104,9 @@ function backtitle() {
 function arcMenu() {
   NEXT="l"
   # Delete old Config before we start
-  deleteConfigKey "model" "${USER_CONFIG_FILE}"
-  deleteConfigKey "sn" "${USER_CONFIG_FILE}"
-  deleteConfigKey "mac1" "${USER_CONFIG_FILE}"
+  writeConfigKey "model" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "mac1" "" "${USER_CONFIG_FILE}"
   deleteConfigKey "mac2" "${USER_CONFIG_FILE}"
   deleteConfigKey "mac3" "${USER_CONFIG_FILE}"
   deleteConfigKey "mac4" "${USER_CONFIG_FILE}"
@@ -206,22 +202,22 @@ function arcbuild() {
 function arcdiskconf() {
     dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
         --infobox "ARC Disk configuration started!" 0 0
-    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ ${SATAHBA} -gt 0 ]; then
+    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ "$SATAHBA" -gt 0 ]; then
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     fi
-    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ ${RAIDSCSI} -gt 0 ]; then
+    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ "$RAIDSCSI" -gt 0 ]; then
     writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
     fi
-    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ ${SATAHBA} -gt 0 ]; then
+    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ "$SATAHBA" -gt 0 ]; then
     delteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     fi
-    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ ${RAIDSCSI} -gt 0 ]; then
+    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ "$RAIDSCSI" -gt 0 ]; then
     writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
     fi
-    if [ "$MASHINE" != "VIRTUAL" ] && [ ${SATAHBA} -gt 0 ]; then
+    if [ "$MASHINE" != "VIRTUAL" ] && [ "$SATAHBA" -gt 0 ]; then
     delteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     fi
-    if [ "$MASHINE" != "VIRTUAL" ] && [ ${RAIDSCSI} -gt 0 ]; then
+    if [ "$MASHINE" != "VIRTUAL" ] && [ "$RAIDSCSI" -gt 0 ]; then
     writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
     fi
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
@@ -543,7 +539,7 @@ function editUserConfig() {
 function alldrives() {
         TEXT=""
         NUMPORTS=0
-        for PCI in `lspci -nn | grep -ie "\[0106\]" | awk '{print$1}'`; do
+        for PCI in `lspci -nn | grep -ie "sata" -ie "sas" | awk '{print$1}'`; do
           NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
           TEXT+="\Z1SATA Controller\Zn dedected:\n\Zb${NAME}\Zn\n\nPorts: "
           unset HOSTPORTS
@@ -573,18 +569,15 @@ function alldrives() {
 ###############################################################################
 # Shows available Drives
 function alldrivessas() {
-        if [ $(lspci -nn | grep -ie "\[0100\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-        pcis=$(
-        lspci -d ::100
-        lspci -d ::107 | awk '{print $1}'
-        )
+        if [ "$RAIDSCSI" -gt 0 ]; then
+        pcis=$(lspci -nn | grep -ie "raid" -ie "scsi" | awk '{print $1}')
         [ ! -z "$pcis" ]
         # loop through non-SATA controllers
         for pci in $pcis; do
         # get attached block devices (exclude CD-ROMs)
         DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
         done
-        for PCI in `lspci -nn | grep -ie "\[0100\]" -ie "\[0107\]" | awk '{print$1}'`; do
+        for PCI in `lspci -nn | grep -ie "raid" -ie "scsi" | awk '{print$1}'`; do
           NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
           TEXT+="\Z1SCSI/RAID/SAS Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
           TEXT+="\nDrives: \Z2\Zb${DRIVES}\Zn connected"
@@ -995,9 +988,9 @@ function sysinfo() {
         )
         CPUINFO=$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')
         MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
-        SCSIPCI=$(lspci -nn | grep -ie "\[0100\]" -ie "\[0107\]" | awk '{print$1}')
+        SCSIPCI=$(lspci -nn | grep -ie "raid" -ie "scsi" | awk '{print$1}')
         SCSIINFO=$(lspci -s "${SCSIPCI}" | sed "s/\ .*://")
-        SATAPCI=$(lspci -nn | grep -ie "\[0106\]" | awk '{print$1}')
+        SATAPCI=$(lspci -nn | grep -ie "sata" -ie "sas" | awk '{print$1}')
         SATAINFO=$(lspci -s "${SATAPCI}" | sed "s/\ .*://")
         MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
         TEXT=""
@@ -1009,14 +1002,18 @@ function sysinfo() {
         TEXT+="\nRAM: \Zb${MEMINFO}GB\Zn\n"
         if [ "$RAIDSCSI" -gt 0 ]; then
         TEXT+="\nStorage Mode: \ZbSCSI/RAID Mode enabled\Zn\n"
-        else
+        elif [ "$SATAHBA" -gt 0 ]; then
         TEXT+="\nStorage Mode: \ZbSATA/HBA Mode enabled\Zn\n"
+        else
+        TEXT+="\nStorage Mode: \ZbNo Controller found\Zn\n"
         fi
-        if if [ "$RAIDSCSI" -gt 0 ]; then
+        if [ "$RAIDSCSI" -gt 0 ]; then
         TEXT+="\nRAID/SCSI Controller dedected:\n\Zb${SCSIINFO}\Zn\n"
         TEXT+="\nSATA/HBA Controller dedected:\n\Zb${SATAINFO}\Zn\n"      
-        else
+        elif [ "$SATAHBA" -gt 0 ]; then
         TEXT+="\nSATA/HBA Controller dedected:\n\Zb${SATAINFO}\Zn"
+        else
+        TEXT+="\nNo Drives found\Zn"
         fi
         TEXT+="\n"
         TEXT+="\nModules: \Zb${MODULESINFO}\n"
