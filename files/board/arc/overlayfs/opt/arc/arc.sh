@@ -1012,6 +1012,197 @@ function sysinfo() {
 }
 
 ###############################################################################
+# Let user edit cmdline
+function cmdlineMenu() {
+  unset CMDLINE
+  declare -A CMDLINE
+  while IFS="=" read KEY VALUE; do
+    [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
+  done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
+  echo "a \"Add/edit a cmdline item\""                          > "${TMP_PATH}/menu"
+  echo "d \"Delete cmdline item(s)\""                           >> "${TMP_PATH}/menu"
+  echo "c \"Define a custom MAC\""                              >> "${TMP_PATH}/menu"
+  echo "s \"Show user cmdline\""                                >> "${TMP_PATH}/menu"
+  echo "m \"Show Model/Build cmdline\""                         >> "${TMP_PATH}/menu"
+  echo "e \"Exit\""                                             >> "${TMP_PATH}/menu"
+  # Loop menu
+  while true; do
+    dialog --backtitle "`backtitle`" --menu "Choose a option" 0 0 0 \
+      --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    case "`<${TMP_PATH}/resp`" in
+      a)
+        dialog --backtitle "`backtitle`" --title "User cmdline" \
+          --inputbox "Type a name of cmdline" 0 0 \
+          2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && continue
+        NAME="`sed 's/://g' <"${TMP_PATH}/resp"`"
+        [ -z "${NAME}" ] && continue
+        dialog --backtitle "`backtitle`" --title "User cmdline" \
+          --inputbox "Type a value of '${NAME}' cmdline" 0 0 "${CMDLINE[${NAME}]}" \
+          2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && continue
+        VALUE="`<"${TMP_PATH}/resp"`"
+        CMDLINE[${NAME}]="${VALUE}"
+        writeConfigKey "cmdline.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
+        ;;
+      d)
+        if [ ${#CMDLINE[@]} -eq 0 ]; then
+          dialog --backtitle "`backtitle`" --msgbox "No user cmdline to remove" 0 0 
+          continue
+        fi
+        ITEMS=""
+        for I in "${!CMDLINE[@]}"; do
+          [ -z "${CMDLINE[${I}]}" ] && ITEMS+="${I} \"\" off " || ITEMS+="${I} ${CMDLINE[${I}]} off "
+        done
+        dialog --backtitle "`backtitle`" \
+          --checklist "Select cmdline to remove" 0 0 0 ${ITEMS} \
+          2>"${TMP_PATH}/resp"
+        [ $? -ne 0 ] && continue
+        RESP=`<"${TMP_PATH}/resp"`
+        [ -z "${RESP}" ] && continue
+        for I in ${RESP}; do
+          unset CMDLINE[${I}]
+          deleteConfigKey "cmdline.${I}" "${USER_CONFIG_FILE}"
+        done
+        ;;
+      c)
+        while true; do
+          dialog --backtitle "`backtitle`" --title "User cmdline" \
+            --inputbox "Type a custom MAC address" 0 0 "${CMDLINE['mac1']}"\
+            2>${TMP_PATH}/resp
+          [ $? -ne 0 ] && break
+          MAC="`<"${TMP_PATH}/resp"`"
+          [ -z "${MAC}" ] && MAC="`readConfigKey "original-mac" "${USER_CONFIG_FILE}"`"
+          MAC1="`echo "${MAC}" | sed 's/://g'`"
+          [ ${#MAC1} -eq 12 ] && break
+          dialog --backtitle "`backtitle`" --title "User cmdline" --msgbox "Invalid MAC" 0 0
+        done
+        CMDLINE["mac1"]="${MAC1}"
+        CMDLINE["netif_num"]=1
+        writeConfigKey "cmdline.mac1"      "${MAC1}" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.netif_num" "1"       "${USER_CONFIG_FILE}"
+        MAC="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
+        ip link set dev eth0 address ${MAC} 2>&1 | dialog --backtitle "`backtitle`" \
+          --title "User cmdline" --progressbox "Changing mac" 20 70
+        /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
+          --title "User cmdline" --progressbox "Renewing IP" 20 70
+        IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
+        ;;
+      s)
+        ITEMS=""
+        for KEY in ${!CMDLINE[@]}; do
+          ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
+        done
+        dialog --backtitle "`backtitle`" --title "User cmdline" \
+          --aspect 18 --msgbox "${ITEMS}" 0 0
+        ;;
+      m)
+        ITEMS=""
+        while IFS="=" read KEY VALUE; do
+          ITEMS+="${KEY}: ${VALUE}\n"
+        done < <(readModelMap "${MODEL}" "builds.${BUILD}.cmdline")
+        dialog --backtitle "`backtitle`" --title "Model/build cmdline" \
+          --aspect 18 --msgbox "${ITEMS}" 0 0
+        ;;
+      e) return ;;
+    esac
+  done
+}
+
+###############################################################################
+# let user edit synoinfo
+function synoinfoMenu() {
+  # Get dt flag from model
+  DT="`readModelKey "${MODEL}" "dt"`"
+  # Read synoinfo from user config
+  unset SYNOINFO
+  declare -A SYNOINFO
+  while IFS="=" read KEY VALUE; do
+    [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
+  done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
+
+  echo "a \"Add/edit synoinfo item\""     > "${TMP_PATH}/menu"
+  echo "d \"Delete synoinfo item(s)\""    >> "${TMP_PATH}/menu"
+  if [ "${DT}" != "true" ]; then
+    echo "x \"Set maxdisks manually\""    >> "${TMP_PATH}/menu"
+  fi
+  echo "t \"Map USB Drive to internal\""  >> "${TMP_PATH}/menu"
+  echo "s \"Show synoinfo entries\""      >> "${TMP_PATH}/menu"
+  echo "e \"Exit\""                       >> "${TMP_PATH}/menu"
+
+  # menu loop
+  while true; do
+    dialog --backtitle "`backtitle`" --menu "Choose a option" 0 0 0 \
+      --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    case "`<${TMP_PATH}/resp`" in
+      a)
+        dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
+          --inputbox "Type a name of synoinfo entry" 0 0 \
+          2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && continue
+        NAME="`<"${TMP_PATH}/resp"`"
+        [ -z "${NAME}" ] && continue
+        dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
+          --inputbox "Type a value of '${NAME}' entry" 0 0 "${SYNOINFO[${NAME}]}" \
+          2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && continue
+        VALUE="`<"${TMP_PATH}/resp"`"
+        SYNOINFO[${NAME}]="${VALUE}"
+        writeConfigKey "synoinfo.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
+        DIRTY=1
+        ;;
+      d)
+        if [ ${#SYNOINFO[@]} -eq 0 ]; then
+          dialog --backtitle "`backtitle`" --msgbox "No synoinfo entries to remove" 0 0 
+          continue
+        fi
+        ITEMS=""
+        for I in "${!SYNOINFO[@]}"; do
+          [ -z "${SYNOINFO[${I}]}" ] && ITEMS+="${I} \"\" off " || ITEMS+="${I} ${SYNOINFO[${I}]} off "
+        done
+        dialog --backtitle "`backtitle`" \
+          --checklist "Select synoinfo entry to remove" 0 0 0 ${ITEMS} \
+          2>"${TMP_PATH}/resp"
+        [ $? -ne 0 ] && continue
+        RESP=`<"${TMP_PATH}/resp"`
+        [ -z "${RESP}" ] && continue
+        for I in ${RESP}; do
+          unset SYNOINFO[${I}]
+          deleteConfigKey "synoinfo.${I}" "${USER_CONFIG_FILE}"
+        done
+        DIRTY=1
+        ;;
+      x)
+        MAXDISKS=`readConfigKey "maxdisks" "${USER_CONFIG_FILE}"`
+        dialog --backtitle "`backtitle`" --title "Maxdisks" \
+          --inputbox "Type a value for maxdisks" 0 0 "${MAXDISKS}" \
+          2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && continue
+        VALUE="`<"${TMP_PATH}/resp"`"
+        [ "${VALUE}" != "${MAXDISKS}" ] && writeConfigKey "maxdisks" "${VALUE}" "${USER_CONFIG_FILE}"
+        ;;
+      t)
+        writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
+        dialog --backtitle "`backtitle`" --msgbox "External USB Drives mapped" 0 0 
+        ;;
+      s)
+        ITEMS=""
+        for KEY in ${!SYNOINFO[@]}; do
+          ITEMS+="${KEY}: ${SYNOINFO[$KEY]}\n"
+        done
+        dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
+          --aspect 18 --msgbox "${ITEMS}" 0 0
+        ;;
+      e) return ;;
+    esac
+  done
+}
+
+###############################################################################
 ###############################################################################
 
 if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${BUILD}" -a loaderIsConfigured ]; then
@@ -1030,21 +1221,22 @@ while true; do
   echo "b \"Boot the Loader \" "                                                            >> "${TMP_PATH}/menu"
   fi
   echo "= \"======== Enhanced ======== \" "                                                 >> "${TMP_PATH}/menu"
-  if [ -n "${MODEL}" ]; then
   echo "g \"Show Controller/Drives \" "                                                     >> "${TMP_PATH}/menu"
-  fi
+  echo "t \"Systeminfo \" "                                                                 >> "${TMP_PATH}/menu"
   if [ "$RAIDSCSI" -gt 0 ]; then
   echo "j \"RAID/SCSI Controller enabled \" "                                               >> "${TMP_PATH}/menu"
   elif [ "$SATAHBA" -gt 0 ]; then
   echo "j \"RAID/SCSI Controller disabled \" "                                              >> "${TMP_PATH}/menu"
   fi
   if [ -n "${MODEL}" ]; then
+  echo "+ \"======== Config ======== \" "                                                   >> "${TMP_PATH}/menu"
   echo "a \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
   echo "o \"Modules \" "                                                                    >> "${TMP_PATH}/menu"
   echo "u \"Edit user config \" "                                                           >> "${TMP_PATH}/menu"
-  fi
-  echo "t \"Sysinfo \" "                                                                    >> "${TMP_PATH}/menu"
+  echo "x \"Cmdline menu \" "                                                               >> "${TMP_PATH}/menu"
+  echo "i \"Synoinfo menu \" "                                                              >> "${TMP_PATH}/menu"
   echo "r \"Switch direct boot: \Z4${DIRECTBOOT}\Zn \" "                                    >> "${TMP_PATH}/menu"
+  fi
   echo "# \"======== Settings ======== \" "                                                 >> "${TMP_PATH}/menu"
   echo "k \"Choose a keymap \" "                                                            >> "${TMP_PATH}/menu"
   [ ${RAMCACHE} -eq 0 -a -d "${CACHE_PATH}/dl" ] && echo "c \"Clean disk cache \" "         >> "${TMP_PATH}/menu"
@@ -1074,6 +1266,8 @@ while true; do
     o) selectModules ;;
     u) editUserConfig ;;
     t) sysinfo ;;
+    x) cmdlineMenu ;;
+    i) synoinfoMenu ;;
     r) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
     writeConfigKey "directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
     NEXT="b"
