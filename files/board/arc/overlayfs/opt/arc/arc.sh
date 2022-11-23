@@ -711,7 +711,7 @@ function selectModules() {
   done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
   # menu loop
   while true; do
-    dialog --backtitle "`backtitle`" --menu "Choose a option" 0 0 0 \
+    dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
       s "Show selected Modules" \
       a "Select all Modules" \
       d "Deselect all Modules" \
@@ -1024,7 +1024,7 @@ function cmdlineMenu() {
   echo "e \"Exit\""                                             >> "${TMP_PATH}/menu"
   # Loop menu
   while true; do
-    dialog --backtitle "`backtitle`" --menu "Choose a option" 0 0 0 \
+    dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     case "`<${TMP_PATH}/resp`" in
@@ -1130,7 +1130,7 @@ function synoinfoMenu() {
 
   # menu loop
   while true; do
-    dialog --backtitle "`backtitle`" --menu "Choose a option" 0 0 0 \
+    dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     case "`<${TMP_PATH}/resp`" in
@@ -1242,7 +1242,7 @@ while true; do
   echo "p \"Update Menu\" "                                                                 >> "${TMP_PATH}/menu"
   echo "e \"Exit\" "                                                                        >> "${TMP_PATH}/menu"
   dialog --clear --default-item ${NEXT} --backtitle "`backtitle`" --colors \
-    --menu "Choose the option" 0 0 0 --file "${TMP_PATH}/menu" \
+    --menu "Choose an Option" 0 0 0 --file "${TMP_PATH}/menu" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && break
   case `<"${TMP_PATH}/resp"` in
