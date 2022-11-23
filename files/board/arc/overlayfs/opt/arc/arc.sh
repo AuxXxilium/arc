@@ -13,9 +13,6 @@ if [ `cat /sys/block/${LOADER_DEVICE_NAME}/${LOADER_DEVICE_NAME}3/size` -lt 4194
   RAMCACHE=1
 fi
 
-# Export LKM: dev to userconfig
-writeConfigKey "lkm" "dev" "${USER_CONFIG_FILE}"
-
 # Export latest Build to userconfig
 writeConfigKey "build" "42962" "${USER_CONFIG_FILE}"
 
@@ -1184,6 +1181,7 @@ function synoinfoMenu() {
         [ "${VALUE}" != "${MAXDISKS}" ] && writeConfigKey "maxdisks" "${VALUE}" "${USER_CONFIG_FILE}"
         ;;
       t)
+        writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
@@ -1235,6 +1233,7 @@ while true; do
   echo "u \"Edit user config \" "                                                           >> "${TMP_PATH}/menu"
   echo "x \"Cmdline menu \" "                                                               >> "${TMP_PATH}/menu"
   echo "i \"Synoinfo menu \" "                                                              >> "${TMP_PATH}/menu"
+  echo "l \"Switch LKM version: \Z4${LKM}\Zn\""                                             >> "${TMP_PATH}/menu"
   echo "r \"Switch direct boot: \Z4${DIRECTBOOT}\Zn \" "                                    >> "${TMP_PATH}/menu"
   fi
   echo "# \"======== Settings ======== \" "                                                 >> "${TMP_PATH}/menu"
@@ -1268,6 +1267,11 @@ while true; do
     t) sysinfo ;;
     x) cmdlineMenu ;;
     i) synoinfoMenu ;;
+    l) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
+      writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
+      DIRTY=1
+      NEXT="o"
+      ;;
     r) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
     writeConfigKey "directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
     NEXT="b"
