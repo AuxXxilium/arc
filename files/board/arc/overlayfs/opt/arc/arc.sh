@@ -33,6 +33,7 @@ RAIDSCSI=$(lspci -nn | grep -ie "raid" -ie "scsi" | wc -l)
 SATAHBA=$(lspci -nn | grep -ie "sata" -ie "sas" | wc -l)
 if [ "$RAIDSCSI" -gt 0 ]; then
 writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
+PORTMAP="1"
 fi
 
 # Dirty flag
@@ -187,8 +188,14 @@ function arcbuild() {
 ###############################################################################
 # Adding Synoinfo and Addons
 function arcdiskconf() {
+  if [ "$DT" = "true" ] && [ "$RAIDSCSI" -gt 0 ]; then
     dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
-        --infobox "ARC Disk configuration started!" 0 0
+      --infobox "Device Tree Model selected - NO Raid/SCSI supported!" 0 0
+    sleep 5
+    exit
+  else
+  dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
+      --infobox "ARC Disk configuration started!" 0 0
     if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ "$SATAHBA" -gt 0 ]; then
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     fi
@@ -212,7 +219,8 @@ function arcdiskconf() {
     dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
       --infobox "ARC Disk configuration successfull!" 0 0  
     sleep 5
-    arcnet
+  arcnet
+  fi
 }
 
 ###############################################################################
@@ -550,12 +558,6 @@ function alldrives() {
         TEXT+="\nTotal of ports: ${NUMPORTS}\n"
         TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected."
         TEXT+="\n \n"
-        alldrivessas
-}
-
-###############################################################################
-# Shows available Drives
-function alldrivessas() {
         if [ "$RAIDSCSI" -gt 0 ]; then
         pcis=$(lspci -nn | grep -ie "raid" -ie "scsi" | awk '{print $1}')
         [ ! -z "$pcis" ]
@@ -1002,7 +1004,6 @@ function sysinfo() {
         else
         TEXT+="\nNo Drives found\Zn"
         fi
-        TEXT+="\n"
         TEXT+="\nModules: \Zb${MODULESINFO}\n"
         TEXT+="\n"
         dialog --backtitle "`backtitle`" --title "Systeminformation" --aspect 18 --colors --msgbox "${TEXT}" 0 0 
@@ -1218,23 +1219,30 @@ while true; do
   if loaderIsConfigured; then
   echo "b \"Boot the Loader \" "                                                            >> "${TMP_PATH}/menu"
   fi
-  echo "= \"======== Enhanced ======== \" "                                                 >> "${TMP_PATH}/menu"
+  echo "= \"========= System ========= \" "                                                 >> "${TMP_PATH}/menu"
   echo "g \"Show Controller/Drives \" "                                                     >> "${TMP_PATH}/menu"
   echo "t \"Systeminfo \" "                                                                 >> "${TMP_PATH}/menu"
-  if [ "$RAIDSCSI" -gt 0 ]; then
-  echo "j \"RAID/SCSI Controller enabled \" "                                               >> "${TMP_PATH}/menu"
-  elif [ "$SATAHBA" -gt 0 ]; then
-  echo "j \"RAID/SCSI Controller disabled \" "                                              >> "${TMP_PATH}/menu"
+  if [ -n "${PORTMAP}" ]; then
+  echo "j \"RAID/SCSI Mode enabled \" "                                                     >> "${TMP_PATH}/menu"
+  else
+  echo "j \"RAID/SCSI Mode disabled \" "                                                    >> "${TMP_PATH}/menu"
   fi
   if [ -n "${MODEL}" ]; then
-  echo "+ \"======== Config ======== \" "                                                   >> "${TMP_PATH}/menu"
+  echo "+ \"======= Enhanced ======= \" "                                                   >> "${TMP_PATH}/menu"
   echo "a \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
   echo "o \"Modules \" "                                                                    >> "${TMP_PATH}/menu"
+  if [ "${ADV}" = "" ]; then
+  echo "z \"Show Advanced Options \" "                                                      >> "${TMP_PATH}/menu"
+  elif [ "${ADV}" = "1" ]; then
+  echo "z \"Hide Advanced Options \" "                                                      >> "${TMP_PATH}/menu"
+  fi
+  if [ -n "${ADV}" ]; then
+  echo "x \"Cmdline \" "                                                                    >> "${TMP_PATH}/menu"
+  echo "i \"Synoinfo \" "                                                                   >> "${TMP_PATH}/menu"
   echo "u \"Edit user config \" "                                                           >> "${TMP_PATH}/menu"
-  echo "x \"Cmdline menu \" "                                                               >> "${TMP_PATH}/menu"
-  echo "i \"Synoinfo menu \" "                                                              >> "${TMP_PATH}/menu"
   echo "l \"Switch LKM version: \Z4${LKM}\Zn\""                                             >> "${TMP_PATH}/menu"
   echo "r \"Switch direct boot: \Z4${DIRECTBOOT}\Zn \" "                                    >> "${TMP_PATH}/menu"
+  fi
   fi
   echo "# \"======== Settings ======== \" "                                                 >> "${TMP_PATH}/menu"
   echo "k \"Choose a keymap \" "                                                            >> "${TMP_PATH}/menu"
@@ -1250,8 +1258,9 @@ while true; do
     l) make; NEXT="b" ;;
     b) boot ;;
     g) alldrives ;;
+    t) sysinfo ;;
     j) [ "${PORTMAP}" = "" ] && PORTMAP='1' || PORTMAP=''
-       if [ -n "$PORTMAP" ]; then
+       if [ -n "${PORTMAP}" ]; then
        writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
        readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
        backtitle
@@ -1264,13 +1273,15 @@ while true; do
     a) addonMenu ;;
     o) selectModules ;;
     u) editUserConfig ;;
-    t) sysinfo ;;
+    z) [ "${ADV}" = "" ] && ADV='1' || ADV=''
+       ARV="${ADV}"
+       ;;
     x) cmdlineMenu ;;
     i) synoinfoMenu ;;
     l) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
       writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
       DIRTY=1
-      NEXT="o"
+      NEXT="l"
       ;;
     r) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
     writeConfigKey "directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
