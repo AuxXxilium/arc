@@ -1017,11 +1017,11 @@ function cmdlineMenu() {
   while IFS="=" read KEY VALUE; do
     [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
   done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
-  echo "a \"Add/edit a cmdline item\""                          > "${TMP_PATH}/menu"
-  echo "d \"Delete cmdline item(s)\""                           >> "${TMP_PATH}/menu"
+  echo "a \"Add/edit a Cmdline item\""                          > "${TMP_PATH}/menu"
+  echo "d \"Delete Cmdline item(s)\""                           >> "${TMP_PATH}/menu"
   echo "c \"Define a custom MAC\""                              >> "${TMP_PATH}/menu"
-  echo "s \"Show user cmdline\""                                >> "${TMP_PATH}/menu"
-  echo "m \"Show Model/Build cmdline\""                         >> "${TMP_PATH}/menu"
+  echo "s \"Show user Cmdline\""                                >> "${TMP_PATH}/menu"
+  echo "m \"Show Model/Build Cmdline\""                         >> "${TMP_PATH}/menu"
   echo "e \"Exit\""                                             >> "${TMP_PATH}/menu"
   # Loop menu
   while true; do
@@ -1120,13 +1120,13 @@ function synoinfoMenu() {
     [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
   done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 
-  echo "a \"Add/edit synoinfo item\""     > "${TMP_PATH}/menu"
-  echo "d \"Delete synoinfo item(s)\""    >> "${TMP_PATH}/menu"
+  echo "a \"Add/edit Synoinfo item\""     > "${TMP_PATH}/menu"
+  echo "d \"Delete Synoinfo item(s)\""    >> "${TMP_PATH}/menu"
   if [ "${DT}" != "true" ]; then
     echo "x \"Set maxdisks manually\""    >> "${TMP_PATH}/menu"
   fi
   echo "t \"Map USB Drive to internal\""  >> "${TMP_PATH}/menu"
-  echo "s \"Show synoinfo entries\""      >> "${TMP_PATH}/menu"
+  echo "s \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
   echo "e \"Exit\""                       >> "${TMP_PATH}/menu"
 
   # menu loop
