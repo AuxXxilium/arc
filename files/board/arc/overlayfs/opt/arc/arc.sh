@@ -190,7 +190,7 @@ function arcbuild() {
 function arcdiskconf() {
   if [ "$DT" = "true" ] && [ "$RAIDSCSI" -gt 0 ]; then
     dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
-      --infobox "Device Tree Model selected - NO Raid/SCSI supported!" 0 0
+      --infobox "Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
     sleep 5
     exit
   else
