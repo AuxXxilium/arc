@@ -1,6 +1,6 @@
 version: 1
 name: remove-pma
-description: "Create a systemd timer to remove *.pma files from Surveillance Station (#215 issue)"
+description: "Create a cron entry to remove *.pma files from Surveillance Station (#215 issue)"
 all:
   install-script: "install.sh"
 available-for:
@@ -11,3 +11,4 @@ available-for:
   denverton-4.4.180:
   geminilake-4.4.180:
   v1000-4.4.180:
+  r1000-4.4.180:
