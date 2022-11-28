@@ -23,6 +23,8 @@ mac2: "001132CD9428"
 mac3: "001132CD9429"
 mac4: "001132CD9430"
 disks: 4
+flags:
+  - "fma"
 builds:
   42218:
     ver: "7.0.1"
