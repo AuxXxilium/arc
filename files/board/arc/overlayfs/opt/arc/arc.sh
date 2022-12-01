@@ -13,9 +13,6 @@ if [ `cat /sys/block/${LOADER_DEVICE_NAME}/${LOADER_DEVICE_NAME}3/size` -lt 4194
   CLEARCACHE=1
 fi
 
-# Export latest Build to userconfig
-writeConfigKey "build" "42962" "${USER_CONFIG_FILE}"
-
 # Export Network Adapter
 lshw -class network -short > "${TMP_PATH}/netconf"
 
@@ -103,6 +100,8 @@ function backtitle() {
 # Make Model Config
 function arcMenu() {
   NEXT="l"
+  # Export latest Build to userconfig
+  writeConfigKey "build" "42962" "${USER_CONFIG_FILE}"
   # Loop menu
   RESTRICT=1
   FLGBETA=0
@@ -170,6 +169,7 @@ function arcbuild() {
   writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
   fi
   if [ ${FLGMAN} -eq 1 ]; then
+  # Generate Serial and write to Userconfig
   SERIAL=`generateSerial "${MODEL}"`
   SN="${SERIAL}"
   writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
@@ -232,6 +232,7 @@ function arcdiskconf() {
 ###############################################################################
 # Make Network Config
 function arcnet() {
+  # Check for man models and write network config
   if [ ${FLGMAN} -eq 0 ]; then
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   MAC1="`readModelKey "${MODEL}" "mac1"`"
@@ -305,6 +306,7 @@ function arcnet() {
   dialog --backtitle "`backtitle`" --title "ARC Config" \
       --infobox "ARC Network configuration successfull!" 0 0
   fi
+  # If man build is selected - go from here 
   sleep 5
   dialog --clear --no-items --backtitle "`backtitle`"
 }
