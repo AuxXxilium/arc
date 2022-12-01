@@ -34,6 +34,8 @@ SATAHBA=$(lspci -nn | grep -ie "sata" -ie "sas" | wc -l)
 if [ "$RAIDSCSI" -gt 0 ]; then
 writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
 PORTMAP="1"
+else
+PORTMAP="0"
 fi
 
 # Dirty flag
@@ -208,25 +210,17 @@ function arcdiskconf() {
   else
   dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
       --infobox "ARC Disk configuration started!" 0 0
-    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ "$SATAHBA" -gt 0 ]; then
-    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-    fi
+    delteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ "$RAIDSCSI" -gt 0 ]; then
     writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
-    fi
-    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ "$SATAHBA" -gt 0 ]; then
-    delteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     fi
     if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ "$RAIDSCSI" -gt 0 ]; then
     writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
     fi
-    if [ "$MASHINE" != "VIRTUAL" ] && [ "$SATAHBA" -gt 0 ]; then
-    delteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-    fi
     if [ "$MASHINE" != "VIRTUAL" ] && [ "$RAIDSCSI" -gt 0 ]; then
     writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
     fi
-    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
     dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
       --infobox "ARC Disk configuration successfull!" 0 0  
@@ -1256,7 +1250,7 @@ while true; do
   echo "= \"========= System ========= \" "                                                 >> "${TMP_PATH}/menu"
   echo "g \"Show Controller/Drives \" "                                                     >> "${TMP_PATH}/menu"
   echo "t \"Systeminfo \" "                                                                 >> "${TMP_PATH}/menu"
-  if [ -n "${PORTMAP}" ]; then
+  if [ "${PORTMAP}" = "1" ]; then
   echo "j \"RAID/SCSI Mode enabled \" "                                                     >> "${TMP_PATH}/menu"
   else
   echo "j \"RAID/SCSI Mode disabled \" "                                                    >> "${TMP_PATH}/menu"
@@ -1265,12 +1259,12 @@ while true; do
   echo "+ \"======= Enhanced ======= \" "                                                   >> "${TMP_PATH}/menu"
   echo "a \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
   echo "o \"Modules \" "                                                                    >> "${TMP_PATH}/menu"
-  if [ "${ADV}" = "" ]; then
+  if [ "${ADV}" = "0" ]; then
   echo "z \"Show Advanced Options \" "                                                      >> "${TMP_PATH}/menu"
   elif [ "${ADV}" = "1" ]; then
   echo "z \"Hide Advanced Options \" "                                                      >> "${TMP_PATH}/menu"
   fi
-  if [ -n "${ADV}" ]; then
+  if [ "${ADV}" = "1" ]; then
   echo "x \"Cmdline \" "                                                                    >> "${TMP_PATH}/menu"
   echo "i \"Synoinfo \" "                                                                   >> "${TMP_PATH}/menu"
   echo "u \"Edit user config \" "                                                           >> "${TMP_PATH}/menu"
@@ -1293,12 +1287,12 @@ while true; do
     b) boot ;;
     g) alldrives ;;
     t) sysinfo ;;
-    j) [ "${PORTMAP}" = "" ] && PORTMAP='1' || PORTMAP=''
-       if [ -n "${PORTMAP}" ]; then
+    j) [ "${PORTMAP}" = "0" ] && PORTMAP='1' || PORTMAP='0'
+       if [ "${PORTMAP}" = "1" ]; then
        writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
        readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
        backtitle
-       else
+       elif [ "${PORTMAP}" = "0" ]; then
        deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
        readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
        backtitle
@@ -1307,7 +1301,7 @@ while true; do
     a) addonMenu ;;
     o) selectModules ;;
     u) editUserConfig ;;
-    z) [ "${ADV}" = "" ] && ADV='1' || ADV=''
+    z) [ "${ADV}" = "0" ] && ADV='1' || ADV='0'
        ARV="${ADV}"
        ;;
     x) cmdlineMenu ;;
