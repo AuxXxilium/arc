@@ -162,9 +162,16 @@ function arcbuild() {
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  if [ ${FLGMAN} -eq 0 ]; then
   # Write Serial to Userconfig
   SN="`readModelKey "${MODEL}" "serial"`"
   writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+  fi
+  if [ ${FLGMAN} -eq 1 ]; then
+  SERIAL=`generateSerial "${MODEL}"`
+  SN="${SERIAL}"
+  writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+  fi
   # Delete synoinfo and reload model/build synoinfo  
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS="=" read KEY VALUE; do
@@ -231,6 +238,7 @@ function arcdiskconf() {
 ###############################################################################
 # Make Network Config
 function arcnet() {
+  if [ ${FLGMAN} -eq 0 ]; then
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   MAC1="`readModelKey "${MODEL}" "mac1"`"
   MAC2="`readModelKey "${MODEL}" "mac2"`"
@@ -302,6 +310,7 @@ function arcnet() {
   IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
   dialog --backtitle "`backtitle`" --title "ARC Config" \
       --infobox "ARC Network configuration successfull!" 0 0
+  fi
   sleep 5
   dialog --clear --no-items --backtitle "`backtitle`"
 }
