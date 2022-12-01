@@ -14,7 +14,7 @@ cmdline: &cmdline
   vender_format_version: 2
 platform: "r1000"
 unique: "synology_r1000_923+"
-beta: true
+man: true
 dom: 2
 dt: true
 serial:
