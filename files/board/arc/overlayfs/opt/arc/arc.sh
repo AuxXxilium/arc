@@ -623,7 +623,7 @@ function addonMenu() {
   # Loop menu
   while true; do
     dialog --backtitle "`backtitle`" --default-item ${NEXT} \
-      --menu "Choose an Option" 0 0 0 \
+      --menu "Choose an option" 0 0 0 \
       a "Add an Addon" \
       d "Delete Addon(s)" \
       s "Show user Addons" \
@@ -636,11 +636,11 @@ function addonMenu() {
       a) NEXT='a'
         rm "${TMP_PATH}/menu"
         while read ADDON DESC; do
-          arrayExistItem "${ADDON}" "${!ADDONS[@]}" && continue
+          arrayExistItem "${ADDON}" "${!ADDONS[@]}" && continue          # Check if addon has already been added
           echo "${ADDON} \"${DESC}\"" >> "${TMP_PATH}/menu"
         done < <(availableAddons "${PLATFORM}" "${KVER}")
         if [ ! -f "${TMP_PATH}/menu" ] ; then 
-          dialog --backtitle "`backtitle`" --msgbox "No available addons to add" 0 0 
+          dialog --backtitle "`backtitle`" --msgbox "No available Addons to add" 0 0 
           NEXT="e"
           continue
         fi
@@ -650,7 +650,7 @@ function addonMenu() {
         ADDON="`<"${TMP_PATH}/resp"`"
         [ -z "${ADDON}" ] && continue
         dialog --backtitle "`backtitle`" --title "params" \
-          --inputbox "Type a opcional params to addon" 0 0 \
+          --inputbox "Type a optional params to Addon" 0 0 \
           2>${TMP_PATH}/resp
         [ $? -ne 0 ] && continue
         ADDONS[${ADDON}]="`<"${TMP_PATH}/resp"`"
@@ -667,7 +667,7 @@ function addonMenu() {
           ITEMS+="${I} ${I} off "
         done
         dialog --backtitle "`backtitle`" --no-tags \
-          --checklist "Select addon to remove" 0 0 0 ${ITEMS} \
+          --checklist "Select Addon to remove" 0 0 0 ${ITEMS} \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
         ADDON="`<"${TMP_PATH}/resp"`"
