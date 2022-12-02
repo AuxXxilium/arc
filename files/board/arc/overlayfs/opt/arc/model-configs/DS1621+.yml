@@ -25,6 +25,8 @@ mac2: "001132D626F1"
 mac3: "001132D626F2"
 mac4: "001132D626F3"
 disks: 6
+flags:
+  - "fma"
 dt: true
 builds:
   42218:
