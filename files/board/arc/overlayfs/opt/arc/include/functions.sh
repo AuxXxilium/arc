@@ -1,6 +1,6 @@
 
-. /opt/arpl/include/consts.sh
-. /opt/arpl/include/configFile.sh
+. /opt/arc/include/consts.sh
+. /opt/arc/include/configFile.sh
 
 ###############################################################################
 # Read key value from model config file

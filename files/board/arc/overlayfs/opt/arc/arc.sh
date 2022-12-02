@@ -7,7 +7,7 @@
 
 # Check partition 3 space, if < 2GiB is necessary clean cache folder
 CLEARCACHE=0
-LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
+LOADER_DISK="`blkid | grep 'LABEL="ARC3"' | cut -d3 -f1`"
 LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
 if [ `cat /sys/block/${LOADER_DEVICE_NAME}/${LOADER_DEVICE_NAME}3/size` -lt 4194304 ]; then
   CLEARCACHE=1
