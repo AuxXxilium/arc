@@ -115,7 +115,6 @@ function arcMenu() {
       M="${M::-4}"
       PLATFORM=`readModelKey "${M}" "platform"`
       DT="`readModelKey "${M}" "dt"`"
-      continue
       # Check id model is compatible with CPU
       COMPATIBLE=1
       if [ ${RESTRICT} -eq 1 ]; then
