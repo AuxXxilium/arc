@@ -156,17 +156,9 @@ function arcbuild() {
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-  if [ ${FLGMAN} -eq 0 ]; then
   # Write Serial to Userconfig
   SN="`readModelKey "${MODEL}" "serial"`"
   writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-  fi
-  if [ ${FLGMAN} -eq 1 ]; then
-  # Generate Serial and write to Userconfig
-  SERIAL=`generateSerial "${MODEL}"`
-  SN="${SERIAL}"
-  writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-  fi
   # Delete synoinfo and reload model/build synoinfo  
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS="=" read KEY VALUE; do
@@ -1242,7 +1234,7 @@ while true; do
   echo "= \"========= System ========= \" "                                                 >> "${TMP_PATH}/menu"
   echo "g \"Show Controller/Drives \" "                                                     >> "${TMP_PATH}/menu"
   echo "t \"Systeminfo \" "                                                                 >> "${TMP_PATH}/menu"
-  if [ "${PORTMAP}" = "1" ]; then
+  if [ -n "${PORTMAP}" ]; then
   echo "j \"RAID/SCSI Mode enabled \" "                                                     >> "${TMP_PATH}/menu"
   else
   echo "j \"RAID/SCSI Mode disabled \" "                                                    >> "${TMP_PATH}/menu"
@@ -1251,12 +1243,12 @@ while true; do
   echo "+ \"======= Enhanced ======= \" "                                                   >> "${TMP_PATH}/menu"
   echo "a \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
   echo "o \"Modules \" "                                                                    >> "${TMP_PATH}/menu"
-  if [ "${ADV}" = "0" ]; then
-  echo "z \"Show Advanced Options \" "                                                      >> "${TMP_PATH}/menu"
-  elif [ "${ADV}" = "1" ]; then
+  if [ -n "${ADV}" ]; then
   echo "z \"Hide Advanced Options \" "                                                      >> "${TMP_PATH}/menu"
+  else
+  echo "z \"Show Advanced Options \" "                                                      >> "${TMP_PATH}/menu"
   fi
-  if [ "${ADV}" = "1" ]; then
+  if [ -n "${ADV}" ]; then
   echo "x \"Cmdline \" "                                                                    >> "${TMP_PATH}/menu"
   echo "i \"Synoinfo \" "                                                                   >> "${TMP_PATH}/menu"
   echo "u \"Edit user config \" "                                                           >> "${TMP_PATH}/menu"
@@ -1279,12 +1271,12 @@ while true; do
     b) boot ;;
     g) alldrives ;;
     t) sysinfo ;;
-    j) [ "${PORTMAP}" = "0" ] && PORTMAP='1' || PORTMAP='0'
-       if [ "${PORTMAP}" = "1" ]; then
+    j) [ "${PORTMAP}" = "" ] && PORTMAP='1' || PORTMAP=''
+       if [ -n "${PORTMAP}" ]; then
        writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
        readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
        backtitle
-       elif [ "${PORTMAP}" = "0" ]; then
+       else
        deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
        readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
        backtitle
@@ -1293,7 +1285,7 @@ while true; do
     a) addonMenu ;;
     o) selectModules ;;
     u) editUserConfig ;;
-    z) [ "${ADV}" = "0" ] && ADV='1' || ADV='0'
+    z) [ "${ADV}" = "" ] && ADV='1' || ADV=''
        ARV="${ADV}"
        ;;
     x) cmdlineMenu ;;
