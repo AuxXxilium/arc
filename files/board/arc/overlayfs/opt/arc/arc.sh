@@ -115,8 +115,7 @@ function arcMenu() {
       M="${M::-4}"
       PLATFORM=`readModelKey "${M}" "platform"`
       DT="`readModelKey "${M}" "dt"`"
-      MAN="`readModelKey "${M}" "man"`"
-      [ "${MAN}" = "true" -a ${FLGMAN} -eq 0 ] && continue
+      continue
       # Check id model is compatible with CPU
       COMPATIBLE=1
       if [ ${RESTRICT} -eq 1 ]; then
@@ -132,7 +131,6 @@ function arcMenu() {
       [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
     done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >> "${TMP_PATH}/menu"
-    [ ${FLGMAN} -eq 0 ] && echo "b \"\Z1Show manual Models \Zn\"" >> "${TMP_PATH}/menu"
     dialog --backtitle "`backtitle`" --colors --menu "Choose the model" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
@@ -140,10 +138,6 @@ function arcMenu() {
     [ -z "${resp}" ] && return
     if [ "${resp}" = "f" ]; then
       RESTRICT=0
-      continue
-    fi
-    if [ "${resp}" = "b" ]; then
-      FLGMAN=1
       continue
     fi
     MODEL=${resp}
@@ -233,7 +227,6 @@ function arcdiskconf() {
 # Make Network Config
 function arcnet() {
   # Check for man models and write network config
-  if [ ${FLGMAN} -eq 0 ]; then
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   MAC1="`readModelKey "${MODEL}" "mac1"`"
   MAC2="`readModelKey "${MODEL}" "mac2"`"
@@ -305,8 +298,6 @@ function arcnet() {
   IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
   dialog --backtitle "`backtitle`" --title "ARC Config" \
       --infobox "ARC Network configuration successfull!" 0 0
-  fi
-  # If man build is selected - go from here 
   sleep 5
   dialog --clear --no-items --backtitle "`backtitle`"
 }
