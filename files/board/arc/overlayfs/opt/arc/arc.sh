@@ -32,7 +32,7 @@ if [ "$RAIDSCSI" -gt 0 ]; then
 writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
 PORTMAP="1"
 else
-PORTMAP="0"
+PORTMAP=""
 fi
 
 # Dirty flag
