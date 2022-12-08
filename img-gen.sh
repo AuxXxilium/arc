@@ -58,6 +58,7 @@ MODULES_DIR="${PWD}/files/board/arc/p3/modules"
 echo "Copying files"
 VERSION=`cat VERSION`
 sed 's/^arc_VERSION=.*/arc_VERSION="'${VERSION}'"/' -i files/board/arc/overlayfs/opt/arc/include/consts.sh
+echo "${VERSION}" > files/board/arc/p1/ARC-VERSION
 cp -Ru files/* .buildroot/
 
 cd .buildroot

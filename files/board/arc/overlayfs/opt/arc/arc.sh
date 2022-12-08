@@ -100,8 +100,16 @@ function backtitle() {
 # Make Model Config
 function arcMenu() {
   NEXT="l"
-  # Export latest Build to userconfig
-  writeConfigKey "build" "42962" "${USER_CONFIG_FILE}"
+  if [ -z "${1}" ]; then
+    # Export latest Build to userconfig
+    writeConfigKey "build" "42962" "${USER_CONFIG_FILE}"
+    resp=$(<${TMP_PATH}/resp)
+    [ -z "${resp}" ] && return
+  else
+    if ! arrayExistItem "${1}" ${ITEMS}; then return; fi
+    resp="${1}"
+  fi
+  if [ -z "${1}" ]; then
   # Loop menu
   RESTRICT=1
   FLGBETA=0
@@ -138,14 +146,17 @@ function arcMenu() {
     if [ "${resp}" = "f" ]; then
       RESTRICT=0
       continue
-    fi
+  fi
+      break
+    done
+  else
+    resp="${1}"
+  fi
     MODEL=${resp}
     writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
     # Delete old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
     DIRTY=1
-    break
-  done
   arcbuild
 }
 
@@ -506,17 +517,6 @@ function make() {
 }
 
 ###############################################################################
-# Calls boot.sh to boot into DSM kernel/ramdisk
-function boot() {
-  [ ${DIRTY} -eq 1 ] && dialog --backtitle "`backtitle`" --title "Alert" \
-    --yesno "Config changed, would you like to rebuild the loader?" 0 0
-  if [ $? -eq 0 ]; then
-    make || return
-  fi
-  boot.sh
-}
-
-###############################################################################
 # Permits user edit the user config
 function editUserConfig() {
   while true; do
@@ -711,6 +711,49 @@ function addonMenu() {
 }
 
 ###############################################################################
+# Try to recovery a DSM already installed
+function tryRecoveryDSM() {
+  dialog --backtitle "`backtitle`" --title "Try to recover DSM" --aspect 18 \
+    --infobox "Trying to recover a DSM installed system" 0 0
+  if findAndMountDSMRoot; then
+    MODEL=""
+    BUILD=""
+    if [ -f "${DSMROOT_PATH}/.syno/patch/VERSION" ]; then
+      eval `cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep unique`
+      eval `cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep base`
+      if [ -n "${unique}" ] ; then
+        while read F; do
+          M="`basename ${F}`"
+          M="${M::-4}"
+          UNIQUE=`readModelKey "${M}" "unique"`
+          [ "${unique}" = "${UNIQUE}" ] || continue
+          # Found
+          modelMenu "${M}"
+        done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
+        if [ -n "${MODEL}" ]; then
+          buildMenu ${base}
+          if [ -n "${BUILD}" ]; then
+            cp "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
+            cp "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
+            MSG="Found a installation:\nModel: ${MODEL}\nBuildnumber: ${BUILD}"
+            SN=`_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf"`
+            if [ -n "${SN}" ]; then
+              writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+              MSG+="\nSerial: ${SN}"
+            fi
+            dialog --backtitle "`backtitle`" --title "Try to recover DSM" \
+              --aspect 18 --msgbox "${MSG}" 0 0
+          fi
+        fi
+      fi
+    fi
+  else
+    dialog --backtitle "`backtitle`" --title "Try recovery DSM" --aspect 18 \
+      --msgbox "Unfortunately I couldn't mount the DSM partition!" 0 0
+  fi
+}
+
+###############################################################################
 # Permit user select the modules to include
 function selectModules() {
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
@@ -875,7 +918,7 @@ function updateMenu() {
         dialog --backtitle "`backtitle`" --title "Update ARC" --aspect 18 \
           --yesno "ARC updated with success to ${TAG}!\nReboot?" 0 0
         [ $? -ne 0 ] && continue
-        reboot
+         arc-reboot.sh config
         exit
         ;;
 
@@ -1214,6 +1257,17 @@ function synoinfoMenu() {
 }
 
 ###############################################################################
+# Calls boot.sh to boot into DSM kernel/ramdisk
+function boot() {
+  [ ${DIRTY} -eq 1 ] && dialog --backtitle "`backtitle`" --title "Alert" \
+    --yesno "Config changed, would you like to rebuild the loader?" 0 0
+  if [ $? -eq 0 ]; then
+    make || return
+  fi
+  boot.sh
+}
+
+###############################################################################
 ###############################################################################
 
 if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${BUILD}" -a loaderIsConfigured ]; then
@@ -1226,7 +1280,9 @@ while true; do
   echo "- \"========== Main ========== \" "                                                 > "${TMP_PATH}/menu"
   echo "m \"Choose Model for Loader \" "                                                    >> "${TMP_PATH}/menu"
   if [ -n "${MODEL}" ]; then
-  echo "l \"Build the Loader \" "                                                           >> "${TMP_PATH}/menu"
+    if [ -n "${BUILD}" ]; then
+      echo "l \"Build the Loader \" "                                                       >> "${TMP_PATH}/menu"
+    fi
   fi
   if loaderIsConfigured; then
   echo "b \"Boot the Loader \" "                                                            >> "${TMP_PATH}/menu"
@@ -1252,6 +1308,7 @@ while true; do
   echo "x \"Cmdline \" "                                                                    >> "${TMP_PATH}/menu"
   echo "i \"Synoinfo \" "                                                                   >> "${TMP_PATH}/menu"
   echo "u \"Edit user config \" "                                                           >> "${TMP_PATH}/menu"
+  echo "t \"Try to recovery a DSM installed system\""                                       >> "${TMP_PATH}/menu"
   echo "l \"Switch LKM version: \Z4${LKM}\Zn\""                                             >> "${TMP_PATH}/menu"
   echo "r \"Switch direct boot: \Z4${DIRECTBOOT}\Zn \" "                                    >> "${TMP_PATH}/menu"
   fi
@@ -1290,6 +1347,7 @@ while true; do
        ;;
     x) cmdlineMenu ;;
     i) synoinfoMenu ;;
+    t) tryRecoveryDSM ;;
     l) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
       writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
       DIRTY=1

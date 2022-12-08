@@ -2,4 +2,5 @@ replace:
   ".buildroot/output/images/bzImage": "/mnt/p3/bzImage-arc"
   ".buildroot/output/images/rootfs.cpio.xz": "/mnt/p3/initrd-arc"
   "files/board/arc/p1/grub/grub.cfg": "/mnt/p1/grub/grub.cfg"
+  "files/board/arc/p1/ARC-VERSION" : "/mnt/p1/ARC-VERSION"
 remove:

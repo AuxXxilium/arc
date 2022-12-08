@@ -83,6 +83,7 @@ jobs:
           # Copy files
           echo "Copying files"
           sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/board/arc/overlayfs/opt/arc/include/consts.sh
+          echo "${VERSION}" > files/board/arc/p1/ARC-VERSION
           cp -Ru files/* .buildroot/
           cd .buildroot
           echo "Generating default config"
