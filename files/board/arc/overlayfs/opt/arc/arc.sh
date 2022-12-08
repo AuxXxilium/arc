@@ -1308,14 +1308,14 @@ while true; do
   echo "x \"Cmdline \" "                                                                    >> "${TMP_PATH}/menu"
   echo "i \"Synoinfo \" "                                                                   >> "${TMP_PATH}/menu"
   echo "u \"Edit user config \" "                                                           >> "${TMP_PATH}/menu"
-  echo "t \"Try to recovery a DSM installed system\""                                       >> "${TMP_PATH}/menu"
-  echo "l \"Switch LKM version: \Z4${LKM}\Zn\""                                             >> "${TMP_PATH}/menu"
+  echo "t \"Recover an installed DSM \" "                                                   >> "${TMP_PATH}/menu"
+  echo "l \"Switch LKM version: \Z4${LKM}\Zn\" "                                            >> "${TMP_PATH}/menu"
   echo "r \"Switch direct boot: \Z4${DIRECTBOOT}\Zn \" "                                    >> "${TMP_PATH}/menu"
   fi
   fi
   echo "# \"======== Settings ======== \" "                                                 >> "${TMP_PATH}/menu"
   echo "k \"Choose a keymap \" "                                                            >> "${TMP_PATH}/menu"
-  [ ${CLEARCACHE} -eq 0 -a -d "${CACHE_PATH}/dl" ] && echo "c \"Clean disk cache\""         >> "${TMP_PATH}/menu"
+  [ ${CLEARCACHE} -eq 0 -a -d "${CACHE_PATH}/dl" ] && echo "c \"Clean disk cache\" "        >> "${TMP_PATH}/menu"
   echo "p \"Update Menu\" "                                                                 >> "${TMP_PATH}/menu"
   echo "e \"Exit\" "                                                                        >> "${TMP_PATH}/menu"
   dialog --clear --default-item ${NEXT} --backtitle "`backtitle`" --colors \
