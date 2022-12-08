@@ -88,8 +88,8 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   # Initialize with real MAC
   writeConfigKey "cmdline.netif_num" "1" "${USER_CONFIG_FILE}"
   writeConfigKey "cmdline.mac1" "${MACF}" "${USER_CONFIG_FILE}"
-  writeConfigKey "original-mac" "${MACF}" "${USER_CONFIG_FILE}"
 fi
+writeConfigKey "original-mac" "${MACF}" "${USER_CONFIG_FILE}"
 
 # Set custom MAC if defined
 MAC1=`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`
