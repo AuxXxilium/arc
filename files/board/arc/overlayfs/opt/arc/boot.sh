@@ -93,7 +93,7 @@ fi
 NETIF_NUM=${CMDLINE["netif_num"]}
 MACS=0
 for N in `seq 1 9`; do
-  [ -n "${CMDLINE["mac${N}"]}" ] && MACS=$((${MACS}+2))
+  [ -n "${CMDLINE["mac${N}"]}" ] && MACS=$((${MACS}+1))
 done
 if [ ${NETIF_NUM} -ne ${MACS} ]; then
   echo -e "\033[1;33m*** netif_num is not equal to macX amount, set netif_num to ${MACS} ***\033[0m"
