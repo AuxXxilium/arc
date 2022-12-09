@@ -186,7 +186,7 @@ function arcbuild() {
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read ID DESC; do
     writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-  done < <(getAllModules "${PLATFORM}" "${KVER}")
+  done < <(kmod list | awk '{print$1}' | awk 'NR>1')
   # Remove old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
@@ -1134,7 +1134,6 @@ function cmdlineMenu() {
         CMDLINE["mac1"]="${MAC1}"
         CMDLINE["netif_num"]=1
         writeConfigKey "cmdline.mac1"      "${MAC1}" "${USER_CONFIG_FILE}"
-        writeConfigKey "cmdline.netif_num" "1"       "${USER_CONFIG_FILE}"
         MAC="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
         ip link set dev eth0 address ${MAC} 2>&1 | dialog --backtitle "`backtitle`" \
           --title "User cmdline" --progressbox "Changing mac" 20 70
@@ -1308,7 +1307,7 @@ while true; do
   echo "x \"Cmdline \" "                                                                    >> "${TMP_PATH}/menu"
   echo "i \"Synoinfo \" "                                                                   >> "${TMP_PATH}/menu"
   echo "u \"Edit user config \" "                                                           >> "${TMP_PATH}/menu"
-  echo "t \"Recover an installed DSM \" "                                                   >> "${TMP_PATH}/menu"
+  echo "t \"DSM Recovery \" "                                                               >> "${TMP_PATH}/menu"
   echo "l \"Switch LKM version: \Z4${LKM}\Zn\" "                                            >> "${TMP_PATH}/menu"
   echo "r \"Switch direct boot: \Z4${DIRECTBOOT}\Zn \" "                                    >> "${TMP_PATH}/menu"
   fi
