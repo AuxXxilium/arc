@@ -234,65 +234,31 @@ function arcnet() {
   MAC2="`readModelKey "${MODEL}" "mac2"`"
   MAC3="`readModelKey "${MODEL}" "mac3"`"
   MAC4="`readModelKey "${MODEL}" "mac4"`"
-  if grep -R "eth0" "${TMP_PATH}/netconf"
-  then
-    if grep -R "eth1" "${TMP_PATH}/netconf"
-    then
-      if grep -R "eth2" "${TMP_PATH}/netconf"
-      then
-        if grep -R "eth3" "${TMP_PATH}/netconf"
-        then
-          echo "4 Network Adapter found"
-          writeConfigKey "cmdline.mac1"           "$MAC1" "${USER_CONFIG_FILE}"
-          writeConfigKey "cmdline.mac2"           "$MAC2" "${USER_CONFIG_FILE}"
-          writeConfigKey "cmdline.mac3"           "$MAC3" "${USER_CONFIG_FILE}"
-          writeConfigKey "cmdline.mac4"           "$MAC4" "${USER_CONFIG_FILE}"
-          writeConfigKey "cmdline.netif_num" "4"            "${USER_CONFIG_FILE}"
-          MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
-          MACN2="${MAC2:0:2}:${MAC2:2:2}:${MAC2:4:2}:${MAC2:6:2}:${MAC2:8:2}:${MAC2:10:2}"
-          MACN3="${MAC3:0:2}:${MAC3:2:2}:${MAC3:4:2}:${MAC3:6:2}:${MAC3:8:2}:${MAC3:10:2}"
-          MACN4="${MAC4:0:2}:${MAC4:2:2}:${MAC4:4:2}:${MAC4:6:2}:${MAC4:8:2}:${MAC4:10:2}"
-          ip link set dev eth3 address ${MACN4} 2>&1
-          ip link set dev eth2 address ${MACN3} 2>&1
-          ip link set dev eth1 address ${MACN2} 2>&1
-          ip link set dev eth0 address ${MACN1} 2>&1 | dialog --backtitle "`backtitle`" \
-            --title "Load ARC MAC Table" --infobox "Set new MAC for 4 Adapter" 0 0
-        else
-          echo "3 Network Adapter found"
-          writeConfigKey "cmdline.mac1"           "$MAC1" "${USER_CONFIG_FILE}"
-          writeConfigKey "cmdline.mac2"           "$MAC2" "${USER_CONFIG_FILE}"
-          writeConfigKey "cmdline.mac3"           "$MAC3" "${USER_CONFIG_FILE}"
-          writeConfigKey "cmdline.netif_num" "3"            "${USER_CONFIG_FILE}"
-          MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
-          MACN2="${MAC2:0:2}:${MAC2:2:2}:${MAC2:4:2}:${MAC2:6:2}:${MAC2:8:2}:${MAC2:10:2}"
-          MACN3="${MAC3:0:2}:${MAC3:2:2}:${MAC3:4:2}:${MAC3:6:2}:${MAC3:8:2}:${MAC3:10:2}"
-          ip link set dev eth2 address ${MACN3} 2>&1
-          ip link set dev eth1 address ${MACN2} 2>&1
-          ip link set dev eth0 address ${MACN1} 2>&1 | dialog --backtitle "`backtitle`" \
-            --title "Load ARC MAC Table" --infobox "Set new MAC for 3 Adapter" 0 0
-        fi
-      else
-        echo "2 Network Adapter found"
-        writeConfigKey "cmdline.mac1"             "$MAC1" "${USER_CONFIG_FILE}"
-        writeConfigKey "cmdline.mac2"             "$MAC2" "${USER_CONFIG_FILE}"
-        writeConfigKey "cmdline.netif_num" "2"              "${USER_CONFIG_FILE}"
-        MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
-        MACN2="${MAC2:0:2}:${MAC2:2:2}:${MAC2:4:2}:${MAC2:6:2}:${MAC2:8:2}:${MAC2:10:2}"
-        ip link set dev eth1 address ${MACN2} 2>&1
-        ip link set dev eth0 address ${MACN1} 2>&1 | dialog --backtitle "`backtitle`" \
-          --title "Load ARC MAC Table" --infobox "Set new MAC for 2 Adapter" 0 0
-      fi
-    else
-      echo "1 Network Adapter found"
-      writeConfigKey "cmdline.mac1"               "$MAC1" "${USER_CONFIG_FILE}"
-      writeConfigKey "cmdline.netif_num" "1"                "${USER_CONFIG_FILE}"
-      MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
-      ip link set dev eth0 address ${MACN1} 2>&1 | dialog --backtitle "`backtitle`" \
-        --title "Load ARC MAC Table" --infobox "Set new MAC for 1 Adapter" 0 0
-    fi
-  else
-    echo "No Network Adapter found"
+  # Export Network Adapter Amount
+  NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
+  writeConfigKey "cmdline.netif_num" "${NETNUM}"            "${USER_CONFIG_FILE}"
+  if grep -R "eth0" "${TMP_PATH}/netconf"; then
+    writeConfigKey "cmdline.mac1"           "$MAC1" "${USER_CONFIG_FILE}"
+    MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
+    ip link set dev eth0 address ${MACN1} 2>&1
   fi
+  if grep -R "eth1" "${TMP_PATH}/netconf"; then
+    writeConfigKey "cmdline.mac2"           "$MAC2" "${USER_CONFIG_FILE}"
+    MACN2="${MAC2:0:2}:${MAC2:2:2}:${MAC2:4:2}:${MAC2:6:2}:${MAC2:8:2}:${MAC2:10:2}"
+    ip link set dev eth1 address ${MACN2} 2>&1
+  fi
+  if grep -R "eth2" "${TMP_PATH}/netconf"; then
+    writeConfigKey "cmdline.mac2"           "$MAC3" "${USER_CONFIG_FILE}"
+    MACN3="${MAC3:0:2}:${MAC3:2:2}:${MAC3:4:2}:${MAC3:6:2}:${MAC3:8:2}:${MAC3:10:2}"
+    ip link set dev eth2 address ${MACN3} 2>&1
+  fi
+  if grep -R "eth3" "${TMP_PATH}/netconf"; then
+    writeConfigKey "cmdline.mac3"           "$MAC4" "${USER_CONFIG_FILE}"
+    MACN4="${MAC4:0:2}:${MAC4:2:2}:${MAC4:4:2}:${MAC4:6:2}:${MAC4:8:2}:${MAC4:10:2}"
+    ip link set dev eth3 address ${MACN4} 2>&1
+  fi
+  dialog --backtitle "`backtitle`" \
+          --title "Load ARC MAC Table" --infobox "Set new MAC for ${NETNUM} Adapter" 0 0
   sleep 5
   /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
     --title "Restart DHCP" --progressbox "Renewing IP" 20 70
