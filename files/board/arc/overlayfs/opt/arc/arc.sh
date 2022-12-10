@@ -188,6 +188,7 @@ function arcbuild() {
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
   gzip -dc "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" | tar xf - -C "${TMP_PATH}/modules"
+  # Write modules to userconfig
   while read ID DESC; do
     if [ -f "${TMP_PATH}/modules/${ID}.ko" ]; then
     writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
