@@ -25,17 +25,6 @@ if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
     HYPERVISOR=$(lscpu | grep Hypervisor | awk '{print $3}')
 fi
 
-# Get DISK Config
-RAIDSCSI=$(lspci -nn | grep -ie "raid" -ie "scsi" | wc -l)
-SATAHBA=$(lspci -nn | grep -ie "sata" -ie "hba" | wc -l)
-if [ "${RAIDSCSI}" -gt 0 ] && [ "${SATAHBA}" -gt 0 ]; then
-  PORTMAP=""
-elif [ "${SATAHBA}" -gt 0 ]; then
-  PORTMAP=""
-elif [ "${RAIDSCSI}" -gt 0 ]; then
-  PORTMAP="1"
-fi
-
 # Dirty flag
 DIRTY=0
 
@@ -46,6 +35,7 @@ KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
 DIRECTBOOT="`readConfigKey "directboot" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
+PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -199,37 +189,7 @@ function arcbuild() {
   DIRTY=1
   dialog --backtitle "`backtitle`" --title "ARC Model Config" \
     --infobox "Model Configuration successfull!" 0 0  
-  arcdiskconf
-}
-
-###############################################################################
-# Adding Synoinfo and Addons
-function arcdiskconf() {
-  if [ "$DT" = "true" ] && [ -n "${PORTMAP}" ]; then
-    dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
-      --infobox "Device Tree Model selected - RAID/SCSI Controller not supported!" 0 0
-    sleep 5
-    exit
-  else
-  dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
-      --infobox "ARC Disk configuration started!" 0 0
-    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-    if [ "${MASHINE}" = "VIRTUAL" ] && [ "${HYPERVISOR}" = "VMware" ] && [ -n "${RAIDSCSI}" ]; then
-    writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
-    fi
-    if [ "${MASHINE}" = "VIRTUAL" ] && [ "${HYPERVISOR}" = "KVM" ] && [ -n "${PORTMAP}" ]; then
-    writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
-    fi
-    if [ "${MASHINE}" != "VIRTUAL" ] && [ -n "${PORTMAP}" ]; then
-    writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
-    fi
-    PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
-    dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
-      --infobox "ARC Disk configuration successfull!" 0 0  
-    sleep 5
   arcnet
-  fi
 }
 
 ###############################################################################
