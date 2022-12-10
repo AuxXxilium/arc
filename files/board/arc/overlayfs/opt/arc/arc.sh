@@ -76,12 +76,6 @@ function backtitle() {
   else
     BACKTITLE+=" Baremetal"
   fi
-    BACKTITLE+=" |"
-  if [ -n "${KEYMAP}" ]; then
-    BACKTITLE+=" (${LAYOUT}/${KEYMAP})"
-  else
-    BACKTITLE+=" (qwerty/us)"
-  fi
   echo ${BACKTITLE}
 }
 
