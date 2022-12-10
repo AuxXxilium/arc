@@ -184,9 +184,16 @@ function arcbuild() {
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
   # Rebuild modules
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+  # Unzip modules for temporary folder
+  rm -rf "${TMP_PATH}/modules"
+  mkdir -p "${TMP_PATH}/modules"
+  gzip -dc "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" | tar xf - -C "${TMP_PATH}/modules"
   while read ID DESC; do
+    if [ -f "${TMP_PATH}/modules/${ID}.ko" ]; then
     writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+    fi
   done < <(kmod list | awk '{print$1}' | awk 'NR>1')
+  rm -rf "${TMP_PATH}/modules"
   # Remove old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
