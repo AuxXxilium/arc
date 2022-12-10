@@ -972,25 +972,21 @@ function sysinfo() {
         MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
         TEXT=""
         TEXT+="\nSystem: \Zb${TYPEINFO}\Zn"
-        if [ -n $HYPERVISOR ]; then
-        TEXT+="\nHypervisor: \Zb$HYPERVISOR\Zn\n"
+        if [ -n ${HYPERVISOR} ]; then
+        TEXT+="\nHypervisor: \Zb${HYPERVISOR}\Zn\n"
         fi
         TEXT+="\nCPU: \Zb${CPUINFO}\Zn"
         TEXT+="\nRAM: \Zb${MEMINFO}GB\Zn\n"
-        if [ "$RAIDSCSI" -gt 0 ]; then
+        if [ -n "${PORTMAP}" ]; then
         TEXT+="\nStorage Mode: \ZbSCSI/RAID Mode enabled\Zn\n"
-        elif [ "$SATAHBA" -gt 0 ]; then
-        TEXT+="\nStorage Mode: \ZbSATA/HBA Mode enabled\Zn\n"
         else
-        TEXT+="\nStorage Mode: \ZbNo Controller found\Zn\n"
+        TEXT+="\nStorage Mode: \ZbSATA/HBA Mode enabled\Zn\n"
         fi
-        if [ "$RAIDSCSI" -gt 0 ]; then
+        if [ -n "${PORTMAP}" ]; then
         TEXT+="\nRAID/SCSI Controller dedected:\n\Zb${SCSIINFO}\Zn\n"
         TEXT+="\nSATA/HBA Controller dedected:\n\Zb${SATAINFO}\Zn\n"      
-        elif [ "$SATAHBA" -gt 0 ]; then
-        TEXT+="\nSATA/HBA Controller dedected:\n\Zb${SATAINFO}\Zn"
         else
-        TEXT+="\nNo Drives found\Zn"
+        TEXT+="\nSATA/HBA Controller dedected:\n\Zb${SATAINFO}\Zn"
         fi
         TEXT+="\nModules: \Zb${MODULESINFO}\n"
         TEXT+="\n"
