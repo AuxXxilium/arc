@@ -165,19 +165,11 @@ function arcbuild() {
       deleteConfigKey "addons.${ADDON}" "${USER_CONFIG_FILE}"
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  # Rebuild modules
+    # Rebuild modules
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-  # Unzip modules for temporary folder
-  rm -rf "${TMP_PATH}/modules"
-  mkdir -p "${TMP_PATH}/modules"
-  gzip -dc "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" | tar xf - -C "${TMP_PATH}/modules"
-  # Write modules to userconfig
   while read ID DESC; do
-    if [ -f "${TMP_PATH}/modules/${ID}.ko" ]; then
     writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-    fi
-  done < <(kmod list | awk '{print$1}' | awk 'NR>1')
-  rm -rf "${TMP_PATH}/modules"
+  done < <(getAllModules "${PLATFORM}" "${KVER}")
   # Remove old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
@@ -699,6 +691,7 @@ function selectModules() {
       s "Show selected Modules" \
       a "Select all Modules" \
       d "Deselect all Modules" \
+      b "Automated Modules selection" \
       c "Choose Modules to include" \
       e "Exit" \
       2>${TMP_PATH}/resp
@@ -726,6 +719,25 @@ function selectModules() {
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         unset USERMODULES
         declare -A USERMODULES
+        ;;
+      b) dialog --backtitle "`backtitle`" --title "Modules" \
+           --infobox "Automated modules selection" 0 0
+        writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+        unset USERMODULES
+        declare -A USERMODULES
+        # Rebuild modules
+        writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+        # Unzip modules for temporary folder
+        rm -rf "${TMP_PATH}/modules"
+        mkdir -p "${TMP_PATH}/modules"
+        gzip -dc "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" | tar xf - -C "${TMP_PATH}/modules"
+        # Write modules to userconfig
+        while read ID DESC; do
+        if [ -f "${TMP_PATH}/modules/${ID}.ko" ]; then
+          writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+        fi
+        done < <(kmod list | awk '{print$1}' | awk 'NR>1')
+        rm -rf "${TMP_PATH}/modules"
         ;;
       c)
         rm -f "${TMP_PATH}/opts"
