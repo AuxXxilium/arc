@@ -74,7 +74,7 @@ function backtitle() {
   if [ -n "${HYPERVISOR}" ]; then
     BACKTITLE+=" ${HYPERVISOR}"
   else
-    BACKTITLE+=" Baremetal"
+    BACKTITLE+=" Native"
   fi
   echo ${BACKTITLE}
 }
@@ -220,14 +220,14 @@ function arcnet() {
   fi
   dialog --backtitle "`backtitle`" \
           --title "Load ARC MAC Table" --infobox "Set new MAC for ${NETNUM} Adapter" 0 0
-  sleep 5
+  sleep 3
   /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
     --title "Restart DHCP" --progressbox "Renewing IP" 20 70
   sleep 5
   IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
   dialog --backtitle "`backtitle`" --title "ARC Config" \
       --infobox "ARC Network configuration successfull!" 0 0
-  sleep 5
+  sleep 3
   dialog --clear --no-items --backtitle "`backtitle`"
 }
 
@@ -955,7 +955,7 @@ function updateMenu() {
 # Shows Systeminfo to user
 function sysinfo() {
         TYPEINFO=$(vserver=$(lscpu | grep Hypervisor | wc -l)
-            if [ $vserver -gt 0 ]; then echo "VM"; else echo "Baremetal"; fi
+            if [ $vserver -gt 0 ]; then echo "VM"; else echo "Native"; fi
         )
         CPUINFO=$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')
         MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
