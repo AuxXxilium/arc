@@ -27,12 +27,13 @@ fi
 
 # Get DISK Config
 RAIDSCSI=$(lspci -nn | grep -ie "raid" -ie "scsi" | wc -l)
-SATAHBA=$(lspci -nn | grep -ie "sata" -ie "sas" | wc -l)
-if [ "$RAIDSCSI" -gt 0 ]; then
-writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
-PORTMAP="1"
-else
-PORTMAP=""
+SATAHBA=$(lspci -nn | grep -ie "sata" -ie "hba" | wc -l)
+if [ "${RAIDSCSI}" -gt 0 ] && [ "${SATAHBA}" -gt 0 ]; then
+  PORTMAP=""
+elif [ "${SATAHBA}" -gt 0 ]; then
+  PORTMAP=""
+elif [ "${RAIDSCSI}" -gt 0 ]; then
+  PORTMAP="1"
 fi
 
 # Dirty flag
@@ -74,12 +75,10 @@ function backtitle() {
     BACKTITLE+=" (no IP)"
   fi
     BACKTITLE+=" |"
-  if [ "$RAIDSCSI" -gt 0 ]; then
+  if [ -n "${PORTMAP}" ]; then
     BACKTITLE+=" RAID/SCSI"
-  elif [ "$SATAHBA" -gt 0 ]; then
-    BACKTITLE+=" SATA/HBA"
   else
-    BACKTITLE+=" No HDD found"
+    BACKTITLE+=" SATA/HBA"
   fi
     BACKTITLE+=" |"
   if [ -n "${HYPERVISOR}" ]; then
@@ -206,23 +205,23 @@ function arcbuild() {
 ###############################################################################
 # Adding Synoinfo and Addons
 function arcdiskconf() {
-  if [ "$DT" = "true" ] && [ "$RAIDSCSI" -gt 0 ]; then
+  if [ "$DT" = "true" ] && [ -n "${PORTMAP}" ]; then
     dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
-      --infobox "Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
+      --infobox "Device Tree Model selected - RAID/SCSI Controller not supported!" 0 0
     sleep 5
     exit
   else
   dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
       --infobox "ARC Disk configuration started!" 0 0
-    delteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ "$RAIDSCSI" -gt 0 ]; then
+    if [ "${MASHINE}" = "VIRTUAL" ] && [ "${HYPERVISOR}" = "VMware" ] && [ -n "${RAIDSCSI}" ]; then
     writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
     fi
-    if [ "$MASHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ "$RAIDSCSI" -gt 0 ]; then
+    if [ "${MASHINE}" = "VIRTUAL" ] && [ "${HYPERVISOR}" = "KVM" ] && [ -n "${PORTMAP}" ]; then
     writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
     fi
-    if [ "$MASHINE" != "VIRTUAL" ] && [ "$RAIDSCSI" -gt 0 ]; then
+    if [ "${MASHINE}" != "VIRTUAL" ] && [ -n "${PORTMAP}" ]; then
     writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
     fi
     PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
