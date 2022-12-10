@@ -1280,7 +1280,7 @@ while true; do
   echo "x \"Cmdline \" "                                                                    >> "${TMP_PATH}/menu"
   echo "i \"Synoinfo \" "                                                                   >> "${TMP_PATH}/menu"
   echo "u \"Edit user config \" "                                                           >> "${TMP_PATH}/menu"
-  echo "t \"DSM Recovery \" "                                                               >> "${TMP_PATH}/menu"
+  echo "v \"DSM Recovery \" "                                                               >> "${TMP_PATH}/menu"
   echo "l \"Switch LKM version: \Z4${LKM}\Zn\" "                                            >> "${TMP_PATH}/menu"
   echo "r \"Switch direct boot: \Z4${DIRECTBOOT}\Zn \" "                                    >> "${TMP_PATH}/menu"
   fi
@@ -1319,7 +1319,7 @@ while true; do
        ;;
     x) cmdlineMenu ;;
     i) synoinfoMenu ;;
-    t) tryRecoveryDSM ;;
+    v) tryRecoveryDSM ;;
     l) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
       writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
       DIRTY=1
