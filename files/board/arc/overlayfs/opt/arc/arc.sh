@@ -1246,6 +1246,7 @@ while true; do
   echo "l \"Switch LKM version: \Z4${LKM}\Zn\" "                                            >> "${TMP_PATH}/menu"
   echo "r \"Switch direct boot: \Z4${DIRECTBOOT}\Zn \" "                                    >> "${TMP_PATH}/menu"
   fi
+  fi
   echo "# \"======== Settings ======== \" "                                                 >> "${TMP_PATH}/menu"
   echo "k \"Choose a keymap \" "                                                            >> "${TMP_PATH}/menu"
   if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
