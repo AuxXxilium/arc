@@ -86,6 +86,7 @@ function arcMenu() {
   if [ -z "${1}" ]; then
     # Export latest Build to userconfig
     writeConfigKey "build" "42962" "${USER_CONFIG_FILE}"
+    # Start ARC build process
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
   else
