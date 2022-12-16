@@ -972,9 +972,9 @@ function sysinfo() {
         )
         CPUINFO=$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')
         MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
-        SCSIPCI=$(lspci -nn | grep -ie "raid" -ie "scsi" | awk '{print$1}')
+        SCSIPCI=$(lspci -nn | grep -ie "\[0100\]" -ie "\[0107\]" | awk '{print$1}')
         SCSIINFO=$(lspci -s "${SCSIPCI}" | sed "s/\ .*://")
-        SATAPCI=$(lspci -nn | grep -ie "sata" | awk '{print$1}')
+        SATAPCI=$(lspci -nn | grep -ie "\[0104\]" | awk '{print$1}')
         SATAINFO=$(lspci -s "${SATAPCI}" | sed "s/\ .*://")
         MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
         TEXT=""
