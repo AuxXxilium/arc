@@ -202,17 +202,17 @@ function arcnet() {
     ip link set dev eth1 address ${MACN2} 2>&1
   fi
   if grep -R "eth2" "${TMP_PATH}/netconf"; then
-    writeConfigKey "cmdline.mac2"           "$MAC3" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline.mac3"           "$MAC3" "${USER_CONFIG_FILE}"
     MACN3="${MAC3:0:2}:${MAC3:2:2}:${MAC3:4:2}:${MAC3:6:2}:${MAC3:8:2}:${MAC3:10:2}"
     ip link set dev eth2 address ${MACN3} 2>&1
   fi
   if grep -R "eth3" "${TMP_PATH}/netconf"; then
-    writeConfigKey "cmdline.mac3"           "$MAC4" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline.mac4"           "$MAC4" "${USER_CONFIG_FILE}"
     MACN4="${MAC4:0:2}:${MAC4:2:2}:${MAC4:4:2}:${MAC4:6:2}:${MAC4:8:2}:${MAC4:10:2}"
     ip link set dev eth3 address ${MACN4} 2>&1
   fi
   dialog --backtitle "`backtitle`" \
-          --title "Load ARC MAC Table" --infobox "Set new MAC for ${NETNUM} Adapter" 0 0
+          --title "Loading ARC MAC Table" --infobox "Set new MAC for ${NETNUM} Adapter" 0 0
   sleep 3
   /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
     --title "Restart DHCP" --progressbox "Renewing IP" 20 70
