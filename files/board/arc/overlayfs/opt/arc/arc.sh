@@ -25,6 +25,11 @@ if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
     HYPERVISOR=$(lscpu | grep Hypervisor | awk '{print $3}')
 fi
 
+# Get SCSI Config
+if [ $(lspci -nn | grep -ie "\[0100\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
+    writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
+fi
+
 # Dirty flag
 DIRTY=0
 
