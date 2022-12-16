@@ -25,6 +25,11 @@ if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
     HYPERVISOR=$(lscpu | grep Hypervisor | awk '{print $3}')
 fi
 
+# Get SCSI Config
+if [ $(lspci -nn | grep -ie "\[0100\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
+    writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
+fi
+
 # Dirty flag
 DIRTY=0
 
@@ -68,7 +73,7 @@ function backtitle() {
   if [ -n "${PORTMAP}" ]; then
     BACKTITLE+=" RAID/SCSI"
   else
-    BACKTITLE+=" SATA/HBA"
+    BACKTITLE+=" SATA"
   fi
     BACKTITLE+=" |"
   if [ -n "${HYPERVISOR}" ]; then
@@ -972,9 +977,9 @@ function sysinfo() {
         )
         CPUINFO=$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')
         MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
-        SCSIPCI=$(lspci -nn | grep -ie "raid" -ie "scsi" | awk '{print$1}')
+        SCSIPCI=$(lspci -nn | grep -ie "\[0100\]" -ie "\[0107\]" | awk '{print$1}')
         SCSIINFO=$(lspci -s "${SCSIPCI}" | sed "s/\ .*://")
-        SATAPCI=$(lspci -nn | grep -ie "sata" -ie "sas" | awk '{print$1}')
+        SATAPCI=$(lspci -nn | grep -ie "\[0104\]" | awk '{print$1}')
         SATAINFO=$(lspci -s "${SATAPCI}" | sed "s/\ .*://")
         MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
         TEXT=""
@@ -987,15 +992,15 @@ function sysinfo() {
         if [ -n "${PORTMAP}" ]; then
         TEXT+="\nStorage Mode: \ZbSCSI/RAID Mode enabled\Zn\n"
         else
-        TEXT+="\nStorage Mode: \ZbSATA/HBA Mode enabled\Zn\n"
+        TEXT+="\nStorage Mode: \ZbSATA Mode enabled\Zn\n"
         fi
         if [ -n "${PORTMAP}" ]; then
         TEXT+="\nRAID/SCSI Controller dedected:\n\Zb${SCSIINFO}\Zn\n"
-        TEXT+="\nSATA/HBA Controller dedected:\n\Zb${SATAINFO}\Zn\n"      
+        TEXT+="\nSATA Controller dedected:\n\Zb${SATAINFO}\Zn\n"      
         else
-        TEXT+="\nSATA/HBA Controller dedected:\n\Zb${SATAINFO}\Zn"
+        TEXT+="\nSATA Controller dedected:\n\Zb${SATAINFO}\Zn"
         fi
-        TEXT+="\nModules: \Zb${MODULESINFO}\n"
+        TEXT+="\nModules loaded: \Zb${MODULESINFO}\n"
         TEXT+="\n"
         dialog --backtitle "`backtitle`" --title "Systeminformation" --aspect 18 --colors --msgbox "${TEXT}" 0 0 
 }
