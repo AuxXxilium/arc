@@ -43,6 +43,16 @@ I developed a simple patch to no longer display the DUMMY port error on models w
   - CPU needs FMA3 Instructions
   - Can make trouble in Hypervisor
 
+## Recommended BIOS/UEFI Settings for Native/Baremetal
+
+  - Disable Fastboot
+  - Disable Secure Boot
+  - Enable OptionROM/OpROM
+  - Disable PXE Boot
+  - Disable SRV-IO
+  - Use UEFI if possible
+  - Use USB Stick as first Boot device
+
 ## ARC Loader - Confirmed working
 
 - CPU:
