@@ -27,6 +27,6 @@ CPUINFO=$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/
 MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
 SCSIPCI=$(lspci -nn | grep -ie "\[0100\]" grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}')
 SCSIINFO=$(lspci -s "${SCSIPCI}" | sed "s/\ .*://")
-SATAPCI=$(lspci -nn | grep -ie "\[0106\]" | awk '{print$1}')
+SATAPCI=$(lspci -nn | grep -ie "\[0101\]" -ie "\[0106\]" | awk '{print$1}')
 SATAINFO=$(lspci -s "${SATAPCI}" | sed "s/\ .*://")
 MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
