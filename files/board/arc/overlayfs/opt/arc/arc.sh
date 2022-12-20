@@ -57,16 +57,10 @@ function backtitle() {
     BACKTITLE+=" (no IP)"
   fi
     BACKTITLE+=" |"
-  if [ -n "${PORTMAP}" ]; then
-    BACKTITLE+=" RAID/SCSI"
-  else
-    BACKTITLE+=" SATA"
-  fi
-    BACKTITLE+=" |"
   if [ -n "${HYPERVISOR}" ]; then
-    BACKTITLE+=" ${HYPERVISOR}"
+    BACKTITLE+=" ${MACHINE}/${HYPERVISOR}"
   else
-    BACKTITLE+=" Native"
+    BACKTITLE+=" ${MACHINE}"
   fi
   echo ${BACKTITLE}
 }
@@ -168,6 +162,30 @@ function arcbuild() {
   DIRTY=1
   dialog --backtitle "`backtitle`" --title "ARC Model Config" \
     --infobox "Model Configuration successfull!" 0 0  
+  arcdisk
+}
+
+###############################################################################
+# Make Disk Config
+function arcdisk() {
+  # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
+  if [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ] && [ "${MACHINE}" -eq "VIRTUAL"]; then
+    writeConfigKey "cmdline.SataPortMap" "18" "${USER_CONFIG_FILE}"
+  elif [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ] && [ "${MACHINE}" -eq "NATIVE" ]; then
+    writeConfigKey "cmdline.SataPortMap" "8" "${USER_CONFIG_FILE}"
+  elif [ $(lspci -nn | grep -ie "\[0106\]" | wc -l) -gt 0 ] && [ $(lspci -nn | grep -ie "\[0107\]" | wc -l) -gt 0 ] && [ "${MACHINE}" -eq "NATIVE" ]; then
+    writeConfigKey "cmdline.SataPortMap" "88" "${USER_CONFIG_FILE}"
+  elif [ $(lspci -nn | grep -ie "\[0106\]" | wc -l) -gt 0 ] && [ "${MACHINE}" -eq "NATIVE" ]; then
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+  else
+    dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
+      --infobox "Your Disk configuration is not known! ABORT!!!" 0 0
+    sleep 3
+    return 1
+  fi
+  dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
+   --infobox "Disk configuration successfull!" 0 0
+    sleep 3
   arcnet
 }
 
@@ -458,7 +476,7 @@ function editUserConfig() {
 function alldrives() {
         TEXT=""
         NUMPORTS=0
-        for PCI in `lspci -nn | grep -ie "sata" -ie "sas" | awk '{print$1}'`; do
+        for PCI in `lspci -nn | grep -ie "\[0106\]" | awk '{print$1}'`; do
           NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
           TEXT+="\Z1SATA Controller\Zn dedected:\n\Zb${NAME}\Zn\n\nPorts: "
           unset HOSTPORTS
@@ -482,15 +500,15 @@ function alldrives() {
         TEXT+="\nTotal of ports: ${NUMPORTS}\n"
         TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected."
         TEXT+="\n \n"
-        if [ "$RAIDSCSI" -gt 0 ]; then
-        pcis=$(lspci -nn | grep -ie "raid" -ie "scsi" | awk '{print $1}')
+        if [ "$ADRAID" -eq 1 ]; then
+        pcis=$(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
         [ ! -z "$pcis" ]
         # loop through non-SATA controllers
         for pci in $pcis; do
         # get attached block devices (exclude CD-ROMs)
         DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
         done
-        for PCI in `lspci -nn | grep -ie "raid" -ie "scsi" | awk '{print$1}'`; do
+        for PCI in `lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
           NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
           TEXT+="\Z1SCSI/RAID/SAS Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
           TEXT+="\nDrives: \Z2\Zb${DRIVES}\Zn connected"
@@ -959,6 +977,12 @@ function updateMenu() {
 ###############################################################################
 # Shows Systeminfo to user
 function sysinfo() {
+        # Checks for Systeminfo Menu
+        TYPEINFO=$(vserver=$(lscpu | grep Hypervisor | wc -l))
+        if [ $vserver -gt 0 ]; then echo "VM"; else echo "Native"; fi
+        CPUINFO=$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')
+        MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
+        # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
         TEXT=""
         TEXT+="\nSystem: \Zb${TYPEINFO}\Zn"
         if [ -n "${HYPERVISOR}" ]; then
@@ -966,17 +990,17 @@ function sysinfo() {
         fi
         TEXT+="\nCPU: \Zb${CPUINFO}\Zn"
         TEXT+="\nRAM: \Zb${MEMINFO}GB\Zn\n"
-        if [ -n "${PORTMAP}" ]; then
-        TEXT+="\nStorage Mode: \ZbSCSI/RAID Mode enabled\Zn\n"
-        else
-        TEXT+="\nStorage Mode: \ZbSATA Mode enabled\Zn\n"
-        fi
-        if [ -n "${PORTMAP}" ]; then
+        if [ "$ADRAID" -eq 1 ]; then
+        SCSIPCI=$(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}')
+        SCSIINFO=$(lspci -s "${SCSIPCI}" | sed "s/\ .*://")
         TEXT+="\nRAID/SCSI Controller dedected:\n\Zb${SCSIINFO}\Zn\n"
-        TEXT+="\nSATA Controller dedected:\n\Zb${SATAINFO}\Zn\n"      
-        else
-        TEXT+="\nSATA Controller dedected:\n\Zb${SATAINFO}\Zn"
         fi
+        if [ "$ADSATA" -eq 1 ]; then
+        SATAPCI=$(lspci -nn | grep -ie "\[0106\]" | awk '{print$1}')
+        SATAINFO=$(lspci -s "${SATAPCI}" | sed "s/\ .*://")
+        TEXT+="\nSATA Controller dedected:\n\Zb${SATAINFO}\Zn\n"
+        fi
+        MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
         TEXT+="\nModules loaded: \Zb${MODULESINFO}\n"
         TEXT+="\n"
         dialog --backtitle "`backtitle`" --title "Systeminformation" --aspect 18 --colors --msgbox "${TEXT}" 0 0 
@@ -1207,11 +1231,6 @@ while true; do
   echo "= \"========= System ========= \" "                                                 >> "${TMP_PATH}/menu"
   echo "g \"Show Controller/Drives \" "                                                     >> "${TMP_PATH}/menu"
   echo "t \"Systeminfo \" "                                                                 >> "${TMP_PATH}/menu"
-  if [ -n "${PORTMAP}" ]; then
-  echo "j \"RAID/SCSI Mode enabled \" "                                                     >> "${TMP_PATH}/menu"
-  else
-  echo "j \"RAID/SCSI Mode disabled \" "                                                    >> "${TMP_PATH}/menu"
-  fi
   if [ -n "${MODEL}" ]; then
   echo "+ \"======= Enhanced ======= \" "                                                   >> "${TMP_PATH}/menu"
   echo "a \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
@@ -1247,17 +1266,6 @@ while true; do
     b) boot ;;
     g) alldrives ;;
     t) sysinfo ;;
-    j) [ "${PORTMAP}" = "" ] && PORTMAP='1' || PORTMAP=''
-       if [ -n "${PORTMAP}" ]; then
-       writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
-       readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-       backtitle
-       else
-       deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-       readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-       backtitle
-       fi
-       ;;
     a) addonMenu ;;
     o) selectModules ;;
     u) editUserConfig ;;
