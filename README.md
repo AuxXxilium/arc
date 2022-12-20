@@ -54,6 +54,11 @@ I developed a simple patch to no longer display the DUMMY port error on models w
   - Use UEFI if possible
   - Use USB Stick as first Boot device
 
+## Recommended Settings for VM
+  - ARC Loader Disk at SATA 0:0
+  - Data Disks at SCSI 0:0 - 0:8 or SATA 0:1 - 0:8
+  - ESXi - Networking - vSwitch - Edit - Security - MAC address changes - ACCEPT
+
 ## ARC Loader - Confirmed working
 
 - CPU:
