@@ -169,13 +169,13 @@ function arcbuild() {
 # Make Disk Config
 function arcdisk() {
   # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
-  if [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ] && [ "${MACHINE}" -eq "VIRTUAL"]; then
+  if [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ] && [ "${VIRTUALMACHINE}" -eq "1" ]; then
     writeConfigKey "cmdline.SataPortMap" "18" "${USER_CONFIG_FILE}"
-  elif [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ] && [ "${MACHINE}" -eq "NATIVE" ]; then
+  elif [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ] && [ "${VIRTUALMACHINE}" -eq "0" ]; then
     writeConfigKey "cmdline.SataPortMap" "8" "${USER_CONFIG_FILE}"
-  elif [ $(lspci -nn | grep -ie "\[0106\]" | wc -l) -gt 0 ] && [ $(lspci -nn | grep -ie "\[0107\]" | wc -l) -gt 0 ] && [ "${MACHINE}" -eq "NATIVE" ]; then
+  elif [ $(lspci -nn | grep -ie "\[0106\]" | wc -l) -gt 0 ] && [ $(lspci -nn | grep -ie "\[0107\]" | wc -l) -gt 0 ] && [ "${VIRTUALMACHINE}" -eq "0" ]; then
     writeConfigKey "cmdline.SataPortMap" "88" "${USER_CONFIG_FILE}"
-  elif [ $(lspci -nn | grep -ie "\[0106\]" | wc -l) -gt 0 ] && [ "${MACHINE}" -eq "NATIVE" ]; then
+  elif [ $(lspci -nn | grep -ie "\[0106\]" | wc -l) -gt 0 ] && [ "${VIRTUALMACHINE}" -eq "0" ]; then
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
   else
     dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
