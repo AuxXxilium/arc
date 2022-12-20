@@ -1016,6 +1016,7 @@ function cmdlineMenu() {
   done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
   echo "a \"Add/edit a Cmdline item\""                          > "${TMP_PATH}/menu"
   echo "d \"Delete Cmdline item(s)\""                           >> "${TMP_PATH}/menu"
+  echo "f \"Define a custom SataPortMap\""                      >> "${TMP_PATH}/menu"
   echo "c \"Define a custom MAC\""                              >> "${TMP_PATH}/menu"
   echo "s \"Show user Cmdline\""                                >> "${TMP_PATH}/menu"
   echo "m \"Show Model/Build Cmdline\""                         >> "${TMP_PATH}/menu"
@@ -1060,6 +1061,17 @@ function cmdlineMenu() {
           unset CMDLINE[${I}]
           deleteConfigKey "cmdline.${I}" "${USER_CONFIG_FILE}"
         done
+        ;;
+      f)
+        while true; do
+          dialog --backtitle "`backtitle`" --title "Custom SataPortMap" \
+            --inputbox "Type a custom SataPortMap" 0 0 "${CMDLINE['SataPortMap']}"\
+            2>${TMP_PATH}/resp
+          [ $? -ne 0 ] && break
+          PORTMAP="`<"${TMP_PATH}/resp"`"
+          [ -z "${PORTMAP}" ] && PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
+        done
+        writeConfigKey "cmdline.SataPortMap"      "${PORTMAP}" "${USER_CONFIG_FILE}"
         ;;
       c)
         while true; do
