@@ -45,6 +45,7 @@ I developed a simple patch to no longer display the DUMMY port error on models w
 
 ## Recommended BIOS/UEFI Settings for Native/Baremetal
 
+  - Set SATA Controller to AHCI Mode
   - Disable Fastboot
   - Disable Secure Boot
   - Enable OptionROM/OpROM
