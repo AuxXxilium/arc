@@ -169,19 +169,23 @@ function arcbuild() {
 # Make Disk Config
 function arcdisk() {
   # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
-  if [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ] && [ "${VIRTUALMACHINE}" -eq "1" ]; then
+  if [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -eq "2" ] && [ "${VIRTUALMACHINE}" -eq "1" ]; then
+    writeConfigKey "cmdline.SataPortMap" "188" "${USER_CONFIG_FILE}"
+  elif [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -eq "1" ] && [ "${VIRTUALMACHINE}" -eq "1" ]; then
     writeConfigKey "cmdline.SataPortMap" "18" "${USER_CONFIG_FILE}"
-  elif [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ] && [ "${VIRTUALMACHINE}" -eq "0" ]; then
-    writeConfigKey "cmdline.SataPortMap" "8" "${USER_CONFIG_FILE}"
-  elif [ $(lspci -nn | grep -ie "\[0106\]" | wc -l) -gt 0 ] && [ $(lspci -nn | grep -ie "\[0107\]" | wc -l) -gt 0 ] && [ "${VIRTUALMACHINE}" -eq "0" ]; then
+  elif [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -eq "2" ] && [ "${VIRTUALMACHINE}" -eq "0" ]; then
     writeConfigKey "cmdline.SataPortMap" "88" "${USER_CONFIG_FILE}"
-  elif [ $(lspci -nn | grep -ie "\[0106\]" | wc -l) -gt 0 ] && [ "${VIRTUALMACHINE}" -eq "0" ]; then
+  elif [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -eq "1" ] && [ "${VIRTUALMACHINE}" -eq "0" ]; then
+    writeConfigKey "cmdline.SataPortMap" "8" "${USER_CONFIG_FILE}"
+  elif [ $(lspci -nn | grep -ie "\[0106\]" | wc -l) -gt "0" ] && [ $(lspci -nn | grep -ie "\[0107\]" | wc -l) -gt "0" ] && [ "${VIRTUALMACHINE}" -eq "0" ]; then
+    writeConfigKey "cmdline.SataPortMap" "88" "${USER_CONFIG_FILE}"
+  elif [ $(lspci -nn | grep -ie "\[0106\]" | wc -l) -gt "0" ] && [ "${VIRTUALMACHINE}" -eq "0" ]; then
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
   else
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
-      --infobox "Your Disk configuration is not known! ABORT!!!" 0 0
+      --infobox "Your Disk configuration is not known! Loader will use universal Diskconfig" 0 0
     sleep 3
-    return 1
   fi
   dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
    --infobox "Disk configuration successfull!" 0 0
