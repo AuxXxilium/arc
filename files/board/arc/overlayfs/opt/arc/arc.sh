@@ -995,13 +995,13 @@ function sysinfo() {
         TEXT+="\nHypervisor: \Zb${HYPERVISOR}\Zn\n"
         fi
         TEXT+="\nCPU: \Zb${CPUINFO}\Zn"
-        TEXT+="\nRAM: \Zb${MEMINFO}GB\Zn\n"
+        TEXT+="\nRAM: \Zb${MEMINFO}GB\Zn\n\n"
         if [ "$ADSATA" -eq "1" ]; then
         for PCI in `lspci -nn | grep -ie "\[0106\]" | awk '{print$1}'`; do
           NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
           TEXT+="\Z1SATA Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
         done
-        TEXT+="\n\n"
+        TEXT+="\n"
         fi
         if [ "$ADRAID" -eq "1" ]; then
         for PCI in `lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
