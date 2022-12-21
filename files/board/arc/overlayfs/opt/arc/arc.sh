@@ -480,6 +480,7 @@ function editUserConfig() {
 function alldrives() {
         TEXT=""
         NUMPORTS=0
+        if [ "$ADSATA" -eq "1" ]; then
         for PCI in `lspci -nn | grep -ie "\[0106\]" | awk '{print$1}'`; do
           NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
           TEXT+="\Z1SATA Controller\Zn dedected:\n\Zb${NAME}\Zn\n\nPorts: "
@@ -504,7 +505,8 @@ function alldrives() {
         TEXT+="\nTotal of ports: ${NUMPORTS}\n"
         TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected."
         TEXT+="\n \n"
-        if [ "$ADRAID" -eq 1 ]; then
+        fi
+        if [ "$ADRAID" -eq "1" ]; then
         pcis=$(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
         [ ! -z "$pcis" ]
         # loop through non-SATA controllers
@@ -994,15 +996,25 @@ function sysinfo() {
         fi
         TEXT+="\nCPU: \Zb${CPUINFO}\Zn"
         TEXT+="\nRAM: \Zb${MEMINFO}GB\Zn\n"
-        if [ "$ADRAID" -eq 1 ]; then
-        SCSIPCI=$(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}')
-        SCSIINFO=$(lspci -s "${SCSIPCI}" | sed "s/\ .*://")
-        TEXT+="\nRAID/SCSI Controller dedected:\n\Zb${SCSIINFO}\Zn\n"
+        if [ "$ADSATA" -eq "1" ]; then
+        for PCI in `lspci -nn | grep -ie "\[0106\]" | awk '{print$1}'`; do
+          NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+          TEXT+="\Z1SATA Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
+        done
+        TEXT+="\n\n"
         fi
-        if [ "$ADSATA" -eq 1 ]; then
-        SATAPCI=$(lspci -nn | grep -ie "\[0106\]" | awk '{print$1}')
-        SATAINFO=$(lspci -s "${SATAPCI}" | sed "s/\ .*://")
-        TEXT+="\nSATA Controller dedected:\n\Zb${SATAINFO}\Zn\n"
+        if [ "$ADRAID" -eq "1" ]; then
+        pcis=$(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
+        [ ! -z "$pcis" ]
+        # loop through non-SATA controllers
+        for pci in $pcis; do
+        # get attached block devices (exclude CD-ROMs)
+        DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+        done
+        for PCI in `lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
+          NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+          TEXT+="\Z1SCSI/RAID/SAS Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
+        done
         fi
         MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
         TEXT+="\nModules loaded: \Zb${MODULESINFO}\n"
