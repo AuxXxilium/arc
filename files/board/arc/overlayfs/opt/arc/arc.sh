@@ -1004,13 +1004,6 @@ function sysinfo() {
         TEXT+="\n\n"
         fi
         if [ "$ADRAID" -eq "1" ]; then
-        pcis=$(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
-        [ ! -z "$pcis" ]
-        # loop through non-SATA controllers
-        for pci in $pcis; do
-        # get attached block devices (exclude CD-ROMs)
-        DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
-        done
         for PCI in `lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
           NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
           TEXT+="\Z1SCSI/RAID/SAS Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
