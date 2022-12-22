@@ -27,7 +27,6 @@ KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
 DIRECTBOOT="`readConfigKey "directboot" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
-PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -169,27 +168,18 @@ function arcbuild() {
 # Make Disk Config
 function arcdisk() {
   # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
-  if [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -eq "2" ] && [ "${VIRTUALMACHINE}" -eq "1" ]; then
-    writeConfigKey "cmdline.SataPortMap" "188" "${USER_CONFIG_FILE}"
-  elif [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -eq "1" ] && [ "${VIRTUALMACHINE}" -eq "1" ]; then
-    writeConfigKey "cmdline.SataPortMap" "18" "${USER_CONFIG_FILE}"
-  elif [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -eq "2" ] && [ "${VIRTUALMACHINE}" -eq "0" ]; then
-    writeConfigKey "cmdline.SataPortMap" "88" "${USER_CONFIG_FILE}"
-  elif [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -eq "1" ] && [ "${VIRTUALMACHINE}" -eq "0" ]; then
-    writeConfigKey "cmdline.SataPortMap" "8" "${USER_CONFIG_FILE}"
-  elif [ $(lspci -nn | grep -ie "\[0106\]" | wc -l) -gt "0" ] && [ $(lspci -nn | grep -ie "\[0107\]" | wc -l) -gt "0" ] && [ "${VIRTUALMACHINE}" -eq "0" ]; then
-    writeConfigKey "cmdline.SataPortMap" "88" "${USER_CONFIG_FILE}"
-  elif [ $(lspci -nn | grep -ie "\[0106\]" | wc -l) -gt "0" ] && [ "${VIRTUALMACHINE}" -eq "0" ]; then
-    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-  else
+  if [ "${VIRTUALMACHINE}" -eq "1" ]; then
     if [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt "0" ]; then
-      writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
     else
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     fi
-    dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
-      --infobox "Your Disk configuration is not known! Loader will use universal Diskconfig" 0 0
-    sleep 3
+  elif [ "${VIRTUALMACHINE}" -eq "0" ]; then
+    if [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt "0" ]; then
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    else
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    fi
   fi
   dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
    --infobox "Disk configuration successfull!" 0 0
@@ -230,7 +220,7 @@ function arcnet() {
     ip link set dev eth3 address ${MACN4} 2>&1
   fi
   dialog --backtitle "`backtitle`" \
-          --title "Loading ARC MAC Table" --infobox "Set new MAC for ${NETNUM} Adapter" 0 03
+          --title "Loading ARC MAC Table" --infobox "Set new MAC for ${NETNUM} Adapter" 0 0
   sleep 3
   /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
     --title "Restart DHCP" --progressbox "Renewing IP" 20 70
@@ -1230,7 +1220,9 @@ function boot() {
   if [ $? -eq 0 ]; then
     make || return
   fi
-  reboot
+  dialog --backtitle "`backtitle`" --title "ARC Reboot" \
+    --infobox "Rebooting to DSM - Please stay patient!" 0 0
+  exec reboot
 }
 
 ###############################################################################
