@@ -223,7 +223,7 @@ function arcnet() {
     MACN3="${MAC3:0:2}:${MAC3:2:2}:${MAC3:4:2}:${MAC3:6:2}:${MAC3:8:2}:${MAC3:10:2}"
     ip link set dev eth2 address ${MACN3} 2>&1
   fi
-  if [ "${NETNUM}" -gt "4" ]; then
+  if [ "${NETNUM}" -gt "3" ]; then
     MAC4="`readModelKey "${MODEL}" "mac4"`"
     writeConfigKey "cmdline.mac4"           "$MAC4" "${USER_CONFIG_FILE}"
     MACN4="${MAC4:0:2}:${MAC4:2:2}:${MAC4:4:2}:${MAC4:6:2}:${MAC4:8:2}:${MAC4:10:2}"
