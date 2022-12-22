@@ -51,10 +51,12 @@ I developed a simple patch to no longer display the DUMMY port error on models w
   - Enable OptionROM/OpROM
   - Disable PXE Boot
   - Disable SRV-IO
+  - Disable rBAR
   - Use UEFI if possible
   - Use USB Stick as first Boot device
 
 ## Recommended Settings for VM
+
   - ARC Loader Disk at SATA 0:0
   - Data Disks at SCSI 0:0 - 0:8 or SATA 0:1 - 0:8
   - ESXi - Networking - vSwitch - Edit - Security - MAC address changes - ACCEPT
@@ -70,12 +72,13 @@ I developed a simple patch to no longer display the DUMMY port error on models w
   + Broadcom NetXtreme BCM5719
   + Intel E1000/E1000e
   + Intel i211/i219/i225/i226/i350
+  + Intel 82599ES SFI/SFP+
   + Marvel FastLinQ Edge
   + Realtek R8125/R8169
   + VMWare VMXNet3
   + VirtIO Net
 
-- SAS/SCSI:
+- SCSI:
   + VMWare PVSCSI (with Comandline - SataPortMap = 1)
   + VirtIO SCSI (with Comandline - SataPortMap = 1)
 
