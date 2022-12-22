@@ -1,7 +1,4 @@
 
-# Check for Network Adapter
-lshw -class network -short > "${TMP_PATH}/netconf"
-
 # Check for Hypervisor
 if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
     MACHINE="VIRTUAL"
