@@ -1,4 +1,4 @@
-ARC_VERSION="22.12.22"
+ARC_VERSION="22.12.23"
 
 # Define paths
 TMP_PATH="/tmp"

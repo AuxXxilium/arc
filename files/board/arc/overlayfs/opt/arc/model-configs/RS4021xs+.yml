@@ -14,7 +14,6 @@ cmdline: &cmdline
   syno_hdd_detect: 0
   syno_port_thaw: 1
   vender_format_version: 2
-  elevator: elevator
 platform: "broadwellnk"
 unique: "synology_broadwellnk_rs4021xs+"
 dom: 2
@@ -32,6 +31,7 @@ builds:
     ver: "7.0.1"
     kver: "4.4.180"
     rd-compressed: false
+    efi-bug: no
     cmdline:
       <<: *cmdline
     synoinfo:
@@ -53,6 +53,7 @@ builds:
     ver: "7.1"
     kver: "4.4.180"
     rd-compressed: false
+    efi-bug: no
     cmdline:
       <<: *cmdline
     synoinfo:
@@ -74,6 +75,7 @@ builds:
     ver: "7.1.1"
     kver: "4.4.180"
     rd-compressed: false
+    efi-bug: no
     cmdline:
       <<: *cmdline
     synoinfo:

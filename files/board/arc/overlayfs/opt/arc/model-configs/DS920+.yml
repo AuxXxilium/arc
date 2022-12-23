@@ -13,7 +13,6 @@ cmdline: &cmdline
   syno_ttyS0: "serial,0x3f8"
   syno_ttyS1: "serial,0x2f8"
   vender_format_version: 2
-  elevator: elevator
 platform: "geminilake"
 unique: "synology_geminilake_920+"
 dom: 2
@@ -31,6 +30,7 @@ builds:
     ver: "7.0.1"
     kver: "4.4.180"
     rd-compressed: false
+    efi-bug: no
     cmdline:
       <<: *cmdline
     synoinfo:
@@ -51,6 +51,7 @@ builds:
     ver: "7.1.0"
     kver: "4.4.180"
     rd-compressed: false
+    efi-bug: no
     cmdline:
       <<: *cmdline
     synoinfo:
@@ -71,6 +72,7 @@ builds:
     ver: "7.1.1"
     kver: "4.4.180"
     rd-compressed: false
+    efi-bug: no
     cmdline:
       <<: *cmdline
     synoinfo:

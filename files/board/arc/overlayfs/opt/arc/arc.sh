@@ -1220,9 +1220,9 @@ function boot() {
   if [ $? -eq 0 ]; then
     make || return
   fi
-  dialog --backtitle "`backtitle`" --title "ARC Reboot" \
-    --infobox "Rebooting to DSM - Please stay patient!" 0 0
-  exec reboot
+  dialog --backtitle "`backtitle`" --title "ARC Boot" \
+    --infobox "Booting to DSM - Please stay patient!" 0 0
+  boot.sh
 }
 
 ###############################################################################

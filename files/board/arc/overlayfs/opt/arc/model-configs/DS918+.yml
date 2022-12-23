@@ -15,7 +15,6 @@ cmdline: &cmdline
   vender_format_version: 2
   syno_port_thaw: 1
   syno_hdd_detect: 0
-  elevator: elevator
 platform: "apollolake"
 unique: "synology_apollolake_918+"
 dom: 2
@@ -32,6 +31,7 @@ builds:
     ver: "7.0.1"
     kver: "4.4.180"
     rd-compressed: false
+    efi-bug: no
     cmdline:
       <<: *cmdline
     synoinfo:
@@ -53,6 +53,7 @@ builds:
     ver: "7.1.0"
     kver: "4.4.180"
     rd-compressed: false
+    efi-bug: no
     cmdline:
       <<: *cmdline
     synoinfo:
@@ -74,6 +75,7 @@ builds:
     ver: "7.1.1"
     kver: "4.4.180"
     rd-compressed: false
+    efi-bug: no
     cmdline:
       <<: *cmdline
     synoinfo:
