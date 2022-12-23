@@ -80,7 +80,7 @@ done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 # Read EFI bug value
 EFI_BUG="`readModelKey "${MODEL}" "builds.${BUILD}.efi-bug"`"
 
-LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
+LOADER_DISK="`blkid | grep 'LABEL="ARC3"' | cut -d3 -f1`"
 BUS=`udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2`
 if [ "${BUS}" = "ata" ]; then
   LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
