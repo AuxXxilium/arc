@@ -523,6 +523,7 @@ function alldrives() {
 ###############################################################################
 # Shows option to manage addons
 function addonMenu() {
+  NEXT="1"
   # Read 'platform' and kernel version to check if addon exists
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
@@ -686,6 +687,7 @@ function tryRecoveryDSM() {
 ###############################################################################
 # Permit user select the modules to include
 function selectModules() {
+  NEXT="1"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   dialog --backtitle "`backtitle`" --title "Modules" --aspect 18 \
@@ -811,6 +813,7 @@ function keymapMenu() {
 ###############################################################################
 # Shows update menu to user
 function updateMenu() {
+  NEXT="1"
   while true; do
     dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
       1 "Update ARC" \
@@ -1016,6 +1019,7 @@ function sysinfo() {
 ###############################################################################
 # Let user edit cmdline
 function cmdlineMenu() {
+  NEXT="1"
   unset CMDLINE
   declare -A CMDLINE
   while IFS="=" read KEY VALUE; do
@@ -1126,6 +1130,7 @@ function cmdlineMenu() {
 ###############################################################################
 # let user edit synoinfo
 function synoinfoMenu() {
+  NEXT="1"
   # Get dt flag from model
   DT="`readModelKey "${MODEL}" "dt"`"
   # Read synoinfo from user config
@@ -1285,17 +1290,18 @@ while true; do
     1) arcMenu; NEXT="4" ;;
     4) make; NEXT="5" ;;
     5) boot ;;
-    a) alldrives ;;
-    b) sysinfo ;;
-    2) addonMenu ;;
-    3) selectModules ;;
+    a) alldrives; NEXT="a" ;;
+    b) sysinfo; NEXT="b" ;;
+    2) addonMenu; NEXT="2" ;;
+    3) selectModules; NEXT="3" ;;
     x) [ "${ADV}" = "" ] && ADV='1' || ADV=''
        ARV="${ADV}"
+       NEXT="x"
        ;;
-    f) cmdlineMenu ;;
-    g) synoinfoMenu ;;
-    h) editUserConfig ;;
-    i) tryRecoveryDSM ;;
+    f) cmdlineMenu; NEXT="f" ;;
+    g) synoinfoMenu; NEXT="g" ;;
+    h) editUserConfig; NEXT="h" ;;
+    i) tryRecoveryDSM; NEXT="i" ;;
     j) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
       writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
       DIRTY=1
@@ -1305,10 +1311,10 @@ while true; do
     writeConfigKey "directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
     NEXT="4"
     ;;
-    c) keymapMenu ;;
+    c) keymapMenu; NEXT="c" ;;
     d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
       --prgbox "rm -rfv \"${CACHE_PATH}/dl\"" 0 0 ;;
-    e) updateMenu ;;
+    e) updateMenu; NEXT="e" ;;
     0) break ;;
   esac
 done
