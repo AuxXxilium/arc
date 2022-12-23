@@ -67,7 +67,6 @@ function backtitle() {
 ###############################################################################
 # Make Model Config
 function arcMenu() {
-  NEXT="l"
   if [ -z "${1}" ]; then
     # Export latest Build to userconfig
     writeConfigKey "build" "42962" "${USER_CONFIG_FILE}"
@@ -168,6 +167,8 @@ function arcbuild() {
 # Make Disk Config
 function arcdisk() {
   # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
+  deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
   if [ "${VIRTUALMACHINE}" -eq "1" ]; then
     if [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt "0" ]; then
     writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
@@ -531,21 +532,20 @@ function addonMenu() {
   while IFS="=" read KEY VALUE; do
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  NEXT="a"
   # Loop menu
   while true; do
     dialog --backtitle "`backtitle`" --default-item ${NEXT} \
       --menu "Choose an option" 0 0 0 \
-      a "Add an Addon" \
-      d "Delete Addon(s)" \
-      s "Show user Addons" \
-      m "Show all available Addons" \
-      o "Download a external Addon" \
-      e "Exit" \
+      1 "Add an Addon" \
+      2 "Delete Addon(s)" \
+      3 "Show user Addons" \
+      4 "Show all available Addons" \
+      5 "Download a external Addon" \
+      0 "Exit" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     case "`<${TMP_PATH}/resp`" in
-      a) NEXT='a'
+      1)
         rm "${TMP_PATH}/menu"
         while read ADDON DESC; do
           arrayExistItem "${ADDON}" "${!ADDONS[@]}" && continue          # Check if addon has already been added
@@ -553,7 +553,7 @@ function addonMenu() {
         done < <(availableAddons "${PLATFORM}" "${KVER}")
         if [ ! -f "${TMP_PATH}/menu" ] ; then 
           dialog --backtitle "`backtitle`" --msgbox "No available Addons to add" 0 0 
-          NEXT="e"
+          NEXT="0"
           continue
         fi
         dialog --backtitle "`backtitle`" --menu "Select an addon" 0 0 0 \
@@ -569,7 +569,7 @@ function addonMenu() {
         writeConfigKey "addons.${ADDON}" "${VALUE}" "${USER_CONFIG_FILE}"
         DIRTY=1
         ;;
-      d) NEXT='d'
+      2)
         if [ ${#ADDONS[@]} -eq 0 ]; then
           dialog --backtitle "`backtitle`" --msgbox "No user addons to remove" 0 0 
           continue
@@ -590,7 +590,7 @@ function addonMenu() {
         done
         DIRTY=1
         ;;
-      s) NEXT='s'
+      3)
         ITEMS=""
         for KEY in ${!ADDONS[@]}; do
           ITEMS+="${KEY}: ${ADDONS[$KEY]}\n"
@@ -598,7 +598,7 @@ function addonMenu() {
         dialog --backtitle "`backtitle`" --title "User addons" \
           --msgbox "${ITEMS}" 0 0
         ;;
-      m) NEXT='m'
+      4)
         MSG=""
         while read MODULE DESC; do
           if arrayExistItem "${MODULE}" "${!ADDONS[@]}"; then
@@ -611,7 +611,7 @@ function addonMenu() {
         dialog --backtitle "`backtitle`" --title "Available addons" \
           --colors --msgbox "${MSG}" 0 0
         ;;
-      o)
+      5)
         TEXT="please enter the complete URL to download.\n"
         dialog --backtitle "`backtitle`" --aspect 18 --colors --inputbox "${TEXT}" 0 0 \
           2>${TMP_PATH}/resp
@@ -635,7 +635,7 @@ function addonMenu() {
             --msgbox "File format not recognized!" 0 0
         fi
         ;;
-      e) return ;;
+      0) return ;;
     esac
   done
 }
@@ -699,23 +699,25 @@ function selectModules() {
   # menu loop
   while true; do
     dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
-      s "Show selected Modules" \
-      a "Select all Modules" \
-      d "Deselect all Modules" \
-      b "Automated Modules selection" \
-      c "Choose Modules to include" \
-      e "Exit" \
+      1 "Show selected Modules" \
+      2 "Select all Modules" \
+      3 "Deselect all Modules" \
+      4 "Automated Modules selection" \
+      5 "Choose Modules to include" \
+      0 "Exit" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break
     case "`<${TMP_PATH}/resp`" in
-      s) ITEMS=""
+      1)
+        ITEMS=""
         for KEY in ${!USERMODULES[@]}; do
           ITEMS+="${KEY}: ${USERMODULES[$KEY]}\n"
         done
         dialog --backtitle "`backtitle`" --title "User modules" \
           --msgbox "${ITEMS}" 0 0
         ;;
-      a) dialog --backtitle "`backtitle`" --title "Modules" \
+      2)
+        dialog --backtitle "`backtitle`" --title "Modules" \
            --infobox "Selecting all modules" 0 0
         unset USERMODULES
         declare -A USERMODULES
@@ -725,13 +727,15 @@ function selectModules() {
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done <<<${ALLMODULES}
         ;;
-      d) dialog --backtitle "`backtitle`" --title "Modules" \
+      3)
+        dialog --backtitle "`backtitle`" --title "Modules" \
            --infobox "Deselecting all modules" 0 0
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         unset USERMODULES
         declare -A USERMODULES
         ;;
-      b) dialog --backtitle "`backtitle`" --title "Modules" \
+      4)
+        dialog --backtitle "`backtitle`" --title "Modules" \
            --infobox "Automated modules selection" 0 0
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         unset USERMODULES
@@ -750,7 +754,7 @@ function selectModules() {
         done < <(kmod list | awk '{print$1}' | awk 'NR>1')
         rm -rf "${TMP_PATH}/modules"
         ;;
-      c)
+      5)
         rm -f "${TMP_PATH}/opts"
         while read ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
@@ -772,7 +776,7 @@ function selectModules() {
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done
         ;;
-      e)
+      0)
         break
         ;;
     esac
@@ -809,15 +813,15 @@ function keymapMenu() {
 function updateMenu() {
   while true; do
     dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
-      a "Update ARC" \
-      d "Update Addons" \
-      l "Update LKMs" \
-      m "Update Modules" \
-      e "Exit" \
+      1 "Update ARC" \
+      2 "Update Addons" \
+      3 "Update LKMs" \
+      4 "Update Modules" \
+      0 "Exit" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     case "`<${TMP_PATH}/resp`" in
-      a)
+      1)
         dialog --backtitle "`backtitle`" --title "Update ARC" --aspect 18 \
           --infobox "Checking last version" 0 0
         ACTUALVERSION="v${ARC_VERSION}"
@@ -872,7 +876,7 @@ function updateMenu() {
         exit
         ;;
 
-      d)
+      2)
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
           --infobox "Checking last version" 0 0
         TAG=`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
@@ -907,7 +911,7 @@ function updateMenu() {
           --msgbox "Addons updated with success!" 0 0
         ;;
 
-      l)
+      3)
         dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
           --infobox "Checking last version" 0 0
         TAG=`curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
@@ -932,7 +936,7 @@ function updateMenu() {
         dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
           --msgbox "LKMs updated with success!" 0 0
         ;;
-      m)
+      4)
         unset PLATFORMS
         declare -A PLATFORMS
         while read M; do
@@ -969,7 +973,7 @@ function updateMenu() {
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
           --msgbox "Modules updated with success!" 0 0
         ;;
-      e) return ;;
+      0) return ;;
     esac
   done
 }
@@ -1017,20 +1021,20 @@ function cmdlineMenu() {
   while IFS="=" read KEY VALUE; do
     [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
   done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
-  echo "a \"Add/edit a Cmdline item\""                          > "${TMP_PATH}/menu"
-  echo "d \"Delete Cmdline item(s)\""                           >> "${TMP_PATH}/menu"
-  echo "f \"Define a custom SataPortMap\""                      >> "${TMP_PATH}/menu"
-  echo "c \"Define a custom MAC\""                              >> "${TMP_PATH}/menu"
-  echo "s \"Show user Cmdline\""                                >> "${TMP_PATH}/menu"
-  echo "m \"Show Model/Build Cmdline\""                         >> "${TMP_PATH}/menu"
-  echo "e \"Exit\""                                             >> "${TMP_PATH}/menu"
+  echo "1 \"Add/edit a Cmdline item\""                          > "${TMP_PATH}/menu"
+  echo "2 \"Delete Cmdline item(s)\""                           >> "${TMP_PATH}/menu"
+  echo "3 \"Define a custom SataPortMap\""                      >> "${TMP_PATH}/menu"
+  echo "4 \"Define a custom MAC\""                              >> "${TMP_PATH}/menu"
+  echo "5 \"Show user Cmdline\""                                >> "${TMP_PATH}/menu"
+  echo "6 \"Show Model/Build Cmdline\""                         >> "${TMP_PATH}/menu"
+  echo "0 \"Exit\""                                             >> "${TMP_PATH}/menu"
   # Loop menu
   while true; do
     dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     case "`<${TMP_PATH}/resp`" in
-      a)
+      1)
         dialog --backtitle "`backtitle`" --title "User cmdline" \
           --inputbox "Type a name of cmdline" 0 0 \
           2>${TMP_PATH}/resp
@@ -1045,7 +1049,7 @@ function cmdlineMenu() {
         CMDLINE[${NAME}]="${VALUE}"
         writeConfigKey "cmdline.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
         ;;
-      d)
+      2)
         if [ ${#CMDLINE[@]} -eq 0 ]; then
           dialog --backtitle "`backtitle`" --msgbox "No user cmdline to remove" 0 0 
           continue
@@ -1065,7 +1069,7 @@ function cmdlineMenu() {
           deleteConfigKey "cmdline.${I}" "${USER_CONFIG_FILE}"
         done
         ;;
-      f)
+      3)
         while true; do
           dialog --backtitle "`backtitle`" --title "Custom SataPortMap" \
             --inputbox "Type a custom SataPortMap" 0 0 "${CMDLINE['SataPortMap']}"\
@@ -1076,7 +1080,7 @@ function cmdlineMenu() {
         done
         writeConfigKey "cmdline.SataPortMap"      "${PORTMAP}" "${USER_CONFIG_FILE}"
         ;;
-      c)
+      4)
         while true; do
           dialog --backtitle "`backtitle`" --title "User cmdline" \
             --inputbox "Type a custom MAC address" 0 0 "${CMDLINE['mac1']}"\
@@ -1098,7 +1102,7 @@ function cmdlineMenu() {
           --title "User cmdline" --progressbox "Renewing IP" 20 70
         IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
         ;;
-      s)
+      5)
         ITEMS=""
         for KEY in ${!CMDLINE[@]}; do
           ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
@@ -1106,7 +1110,7 @@ function cmdlineMenu() {
         dialog --backtitle "`backtitle`" --title "User cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      m)
+      6)
         ITEMS=""
         while IFS="=" read KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
@@ -1114,7 +1118,7 @@ function cmdlineMenu() {
         dialog --backtitle "`backtitle`" --title "Model/build cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      e) return ;;
+      0) return ;;
     esac
   done
 }
@@ -1131,14 +1135,14 @@ function synoinfoMenu() {
     [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
   done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 
-  echo "a \"Add/edit Synoinfo item\""     > "${TMP_PATH}/menu"
-  echo "d \"Delete Synoinfo item(s)\""    >> "${TMP_PATH}/menu"
+  echo "1 \"Add/edit Synoinfo item\""     > "${TMP_PATH}/menu"
+  echo "2 \"Delete Synoinfo item(s)\""    >> "${TMP_PATH}/menu"
   if [ "${DT}" != "true" ]; then
-    echo "x \"Set maxdisks manually\""    >> "${TMP_PATH}/menu"
+    echo "3 \"Set maxdisks manually\""    >> "${TMP_PATH}/menu"
   fi
-  echo "t \"Map USB Drive to internal\""  >> "${TMP_PATH}/menu"
-  echo "s \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
-  echo "e \"Exit\""                       >> "${TMP_PATH}/menu"
+  echo "4 \"Map USB Drive to internal\""  >> "${TMP_PATH}/menu"
+  echo "5 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
+  echo "0 \"Exit\""                       >> "${TMP_PATH}/menu"
 
   # menu loop
   while true; do
@@ -1146,7 +1150,7 @@ function synoinfoMenu() {
       --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     case "`<${TMP_PATH}/resp`" in
-      a)
+      1)
         dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
           --inputbox "Type a name of synoinfo entry" 0 0 \
           2>${TMP_PATH}/resp
@@ -1162,7 +1166,7 @@ function synoinfoMenu() {
         writeConfigKey "synoinfo.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
         DIRTY=1
         ;;
-      d)
+      2)
         if [ ${#SYNOINFO[@]} -eq 0 ]; then
           dialog --backtitle "`backtitle`" --msgbox "No synoinfo entries to remove" 0 0 
           continue
@@ -1183,7 +1187,7 @@ function synoinfoMenu() {
         done
         DIRTY=1
         ;;
-      x)
+      3)
         MAXDISKS=`readConfigKey "maxdisks" "${USER_CONFIG_FILE}"`
         dialog --backtitle "`backtitle`" --title "Maxdisks" \
           --inputbox "Type a value for maxdisks" 0 0 "${MAXDISKS}" \
@@ -1192,14 +1196,14 @@ function synoinfoMenu() {
         VALUE="`<"${TMP_PATH}/resp"`"
         [ "${VALUE}" != "${MAXDISKS}" ] && writeConfigKey "maxdisks" "${VALUE}" "${USER_CONFIG_FILE}"
         ;;
-      t)
+      4)
         writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
         dialog --backtitle "`backtitle`" --msgbox "External USB Drives mapped" 0 0 
         ;;
-      s)
+      5)
         ITEMS=""
         for KEY in ${!SYNOINFO[@]}; do
           ITEMS+="${KEY}: ${SYNOINFO[$KEY]}\n"
@@ -1207,7 +1211,7 @@ function synoinfoMenu() {
         dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      e) return ;;
+      0) return ;;
     esac
   done
 }
@@ -1233,79 +1237,79 @@ if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${BUILD}" -a loaderIsConfigured ]; the
   boot
 fi
 # Main loop
-NEXT="m"
+NEXT="1"
 while true; do
-  echo "- \"========== Main ========== \" "                                                 > "${TMP_PATH}/menu"
-  echo "m \"Choose Model for Loader \" "                                                    >> "${TMP_PATH}/menu"
+  echo "= \"\Z4========== Main ========== \Zn\" "                                            > "${TMP_PATH}/menu"
+  echo "1 \"Choose Model for Loader \" "                                                    >> "${TMP_PATH}/menu"
   if [ -n "${MODEL}" ]; then
     if [ -n "${BUILD}" ]; then
-      echo "l \"Build the Loader \" "                                                       >> "${TMP_PATH}/menu"
+      echo "4 \"Build the Loader \" "                                                       >> "${TMP_PATH}/menu"
     fi
   fi
   if loaderIsConfigured; then
-  echo "b \"Boot the Loader \" "                                                            >> "${TMP_PATH}/menu"
+  echo "5 \"Boot the Loader \" "                                                            >> "${TMP_PATH}/menu"
   fi
-  echo "= \"========= System ========= \" "                                                 >> "${TMP_PATH}/menu"
-  echo "g \"Show Controller/Drives \" "                                                     >> "${TMP_PATH}/menu"
-  echo "t \"Systeminfo \" "                                                                 >> "${TMP_PATH}/menu"
+  echo "= \"\Z4========== Info ========== \Zn\" "                                           >> "${TMP_PATH}/menu"
+  echo "a \"Show Controller/Drives \" "                                                     >> "${TMP_PATH}/menu"
+  echo "b \"Systeminfo \" "                                                                 >> "${TMP_PATH}/menu"
   if [ -n "${MODEL}" ]; then
-  echo "+ \"======= Enhanced ======= \" "                                                   >> "${TMP_PATH}/menu"
-  echo "a \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
-  echo "o \"Modules \" "                                                                    >> "${TMP_PATH}/menu"
+  echo "= \"\Z4========= System ========= \Zn\" "                                           >> "${TMP_PATH}/menu"
+  echo "2 \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
+  echo "3 \"Modules \" "                                                                    >> "${TMP_PATH}/menu"
   if [ -n "${ADV}" ]; then
-  echo "z \"Hide Advanced Options \" "                                                      >> "${TMP_PATH}/menu"
+  echo "x \"\Z1Hide Advanced Options \Zn\" "                                                >> "${TMP_PATH}/menu"
   else
-  echo "z \"Show Advanced Options \" "                                                      >> "${TMP_PATH}/menu"
+  echo "x \"\Z1Show Advanced Options \Zn\" "                                                >> "${TMP_PATH}/menu"
   fi
   if [ -n "${ADV}" ]; then
-  echo "x \"Cmdline \" "                                                                    >> "${TMP_PATH}/menu"
-  echo "i \"Synoinfo \" "                                                                   >> "${TMP_PATH}/menu"
-  echo "u \"Edit user config \" "                                                           >> "${TMP_PATH}/menu"
-  echo "v \"DSM Recovery \" "                                                               >> "${TMP_PATH}/menu"
-  echo "l \"Switch LKM version: \Z4${LKM}\Zn\" "                                            >> "${TMP_PATH}/menu"
-  echo "r \"Switch direct boot: \Z4${DIRECTBOOT}\Zn \" "                                    >> "${TMP_PATH}/menu"
+  echo "f \"Cmdline \" "                                                                    >> "${TMP_PATH}/menu"
+  echo "g \"Synoinfo \" "                                                                   >> "${TMP_PATH}/menu"
+  echo "h \"Edit user config \" "                                                           >> "${TMP_PATH}/menu"
+  echo "i \"DSM Recovery \" "                                                               >> "${TMP_PATH}/menu"
+  echo "j \"Switch LKM version: \Z4${LKM}\Zn\" "                                            >> "${TMP_PATH}/menu"
+  echo "k \"Switch direct boot: \Z4${DIRECTBOOT}\Zn \" "                                    >> "${TMP_PATH}/menu"
   fi
   fi
-  echo "# \"======== Settings ======== \" "                                                 >> "${TMP_PATH}/menu"
-  echo "k \"Choose a keymap \" "                                                            >> "${TMP_PATH}/menu"
+  echo "= \"\Z4===== Loader Settings ==== \Zn\" "                                           >> "${TMP_PATH}/menu"
+  echo "c \"Choose a keymap \" "                                                            >> "${TMP_PATH}/menu"
   if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
-  echo "c \"Clean disk cache\""                                                             >> "${TMP_PATH}/menu"
+  echo "d \"Clean disk cache \""                                                            >> "${TMP_PATH}/menu"
   fi
-  echo "p \"Update Menu\" "                                                                 >> "${TMP_PATH}/menu"
-  echo "e \"Exit\" "                                                                        >> "${TMP_PATH}/menu"
+  echo "e \"Update Menu \" "                                                                >> "${TMP_PATH}/menu"
+  echo "0 \"\Z1Exit\Zn\" "                                                                  >> "${TMP_PATH}/menu"
   dialog --clear --default-item ${NEXT} --backtitle "`backtitle`" --colors \
     --menu "Choose an Option" 0 0 0 --file "${TMP_PATH}/menu" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && break
   case `<"${TMP_PATH}/resp"` in
-    m) arcMenu; NEXT="l" ;;
-    l) make; NEXT="b" ;;
-    b) boot ;;
-    g) alldrives ;;
-    t) sysinfo ;;
-    a) addonMenu ;;
-    o) selectModules ;;
-    u) editUserConfig ;;
-    z) [ "${ADV}" = "" ] && ADV='1' || ADV=''
+    1) arcMenu; NEXT="4" ;;
+    4) make; NEXT="5" ;;
+    5) boot ;;
+    a) alldrives ;;
+    b) sysinfo ;;
+    2) addonMenu ;;
+    3) selectModules ;;
+    x) [ "${ADV}" = "" ] && ADV='1' || ADV=''
        ARV="${ADV}"
        ;;
-    x) cmdlineMenu ;;
-    i) synoinfoMenu ;;
-    v) tryRecoveryDSM ;;
-    l) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
+    f) cmdlineMenu ;;
+    g) synoinfoMenu ;;
+    h) editUserConfig ;;
+    i) tryRecoveryDSM ;;
+    j) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
       writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
       DIRTY=1
-      NEXT="l"
+      NEXT="4"
       ;;
-    r) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
+    k) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
     writeConfigKey "directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-    NEXT="b"
+    NEXT="4"
     ;;
-    k) keymapMenu ;;
-    c) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
+    c) keymapMenu ;;
+    d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
       --prgbox "rm -rfv \"${CACHE_PATH}/dl\"" 0 0 ;;
-    p) updateMenu ;;
-    e) break ;;
+    e) updateMenu ;;
+    0) break ;;
   esac
 done
 clear
