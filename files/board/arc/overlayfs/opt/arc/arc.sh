@@ -114,7 +114,7 @@ function arcMenu() {
     if [ "${resp}" = "f" ]; then
       RESTRICT=0
       continue
-  fi
+    fi
       break
     done
   else
