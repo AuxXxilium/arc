@@ -19,7 +19,15 @@ cmdline: &cmdline
 platform: "apollolake"
 unique: "synology_apollolake_918+"
 dom: 2
-serial: "1890PDN993218"
+serial:
+  prefix:
+    - "1780"
+    - "1790"
+    - "1860"
+    - "1980"
+  middle: "PDN"
+  suffix: "numeric"
+arcserial: "1890PDN993218"
 mac1: "0011329A73BB"
 mac2: "0011329A73BC"
 mac3: "0011329A73BD"

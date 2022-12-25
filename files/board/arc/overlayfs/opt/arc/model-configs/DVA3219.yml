@@ -21,7 +21,13 @@ platform: "denverton"
 unique: "synology_denverton_dva3219"
 beta: true
 dom: 2
-serial: "1930RFR8HJTK4"
+serial:
+  prefix:
+    - "1930"
+    - "1940"
+  middle: "RFR"
+  suffix: "alpha"
+arcserial: "1930RFR8HJTK4"
 mac1: "001132A9E866"
 mac2: "001132A9E867"
 mac3: "001132A9E868"

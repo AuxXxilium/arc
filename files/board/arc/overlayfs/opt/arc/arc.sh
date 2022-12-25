@@ -68,8 +68,6 @@ function backtitle() {
 # Make Model Config
 function arcMenu() {
   if [ -z "${1}" ]; then
-    # Export latest Build to userconfig
-    writeConfigKey "build" "42962" "${USER_CONFIG_FILE}"
     # Start ARC build process
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
@@ -125,19 +123,75 @@ function arcMenu() {
     # Delete old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
     DIRTY=1
+  buildMenu
+}
+
+###############################################################################
+# Shows available buildnumbers from a model to user choose one
+function buildMenu() {
+  ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r`"
+  if [ -z "${1}" ]; then
+    dialog --clear --no-items --backtitle "`backtitle`" \
+      --menu "Choose a build number" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    resp=$(<${TMP_PATH}/resp)
+    [ -z "${resp}" ] && return
+  else
+    if ! arrayExistItem "${1}" ${ITEMS}; then return; fi
+    resp="${1}"
+  fi
+  if [ "${BUILD}" != "${resp}" ]; then
+    dialog --backtitle "`backtitle`" --title "Build Number" \
+      --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
+    BUILD=${resp}
+    writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
+  fi
+  arcpatch
+}
+
+###############################################################################
+# Shows menu to user type one or generate randomly
+function arcpatch() {
+  # Check for model config
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  while true; do
+    dialog --clear --backtitle "`backtitle`" \
+      --menu "Choose an option" 0 0 0 \
+      1 "Install with Arc Patch" \
+      2 "Install without Arc Patch" \
+    2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    resp=$(<${TMP_PATH}/resp)
+    [ -z "${resp}" ] && return
+    if [ "${resp}" = "2" ]; then
+	ARCPATCH="0"
+	# Generate random serial
+	SERIAL=`generateSerial "${MODEL}"`
+	SN="${SERIAL}"
+  	writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+	dialog --backtitle "`backtitle`" --title "ARC Config" \
+	  --infobox "Installing ARC without Patch!" 0 0
+      	break
+    elif [ "${resp}" = "1" ]; then
+	ARCPATCH="1"
+  	SN="`readModelKey "${MODEL}" "arcserial"`"
+  	writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+	dialog --backtitle "`backtitle`" --title "ARC Config" \
+      	  --infobox "Installing ARC with Patch!" 0 0
+      	break
+    fi
+  done
   arcbuild
 }
 
 ###############################################################################
 # Adding Synoinfo and Addons
 function arcbuild() {
+  # Check for model config
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-  # Write Serial to Userconfig
-  SN="`readModelKey "${MODEL}" "serial"`"
-  writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
   # Delete synoinfo and reload model/build synoinfo  
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS="=" read KEY VALUE; do
@@ -191,6 +245,7 @@ function arcdisk() {
 ###############################################################################
 # Make Network Config
 function arcnet() {
+  if [ "${ARCPATCH}" -eq "1" ]; then 
   # Check for model config
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   # Export Network Adapter Amount
@@ -230,7 +285,55 @@ function arcnet() {
   dialog --backtitle "`backtitle`" --title "ARC Config" \
       --infobox "ARC Network configuration successfull!" 0 0
   sleep 3
+  fi
+  dialog --backtitle "`backtitle`" --title "ARC Config" \
+      --infobox "ARC configuration successfull!" 0 0
+  sleep 3
   dialog --clear --no-items --backtitle "`backtitle`"
+}
+
+###############################################################################
+# Building Loader
+function make() {
+  clear
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+  PLATFORM="`readModelKey "${MODEL}" "platform"`"
+  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+
+  # Check if all addon exists
+  while IFS="=" read ADDON PARAM; do
+    [ -z "${ADDON}" ] && continue
+    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
+      dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+        --msgbox "Addon ${ADDON} not found!" 0 0
+      return 1
+    fi
+  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+
+  [ ! -f "${ORI_ZIMAGE_FILE}" -o ! -f "${ORI_RDGZ_FILE}" ] && extractDsmFiles
+
+  /opt/arc/zimage-patch.sh
+  if [ $? -ne 0 ]; then
+    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+      --msgbox "zImage not patched:\n`<"${LOG_FILE}"`" 0 0
+    return 1
+  fi
+
+  /opt/arc/ramdisk-patch.sh
+  if [ $? -ne 0 ]; then
+    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+      --msgbox "Ramdisk not patched:\n`<"${LOG_FILE}"`" 0 0
+    return 1
+  fi
+
+  echo "Cleaning"
+  rm -rf "${UNTAR_PAT_PATH}"
+
+  echo "Ready!"
+  sleep 3
+  DIRTY=0
+  return 0
 }
 
 ###############################################################################
@@ -399,50 +502,6 @@ function extractDsmFiles() {
   cp "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
   rm -rf "${UNTAR_PAT_PATH}"
   echo "DSM extract complete" 
-}
-
-###############################################################################
-# Building Loader
-function make() {
-  clear
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-  PLATFORM="`readModelKey "${MODEL}" "platform"`"
-  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-
-  # Check if all addon exists
-  while IFS="=" read ADDON PARAM; do
-    [ -z "${ADDON}" ] && continue
-    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
-      dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-        --msgbox "Addon ${ADDON} not found!" 0 0
-      return 1
-    fi
-  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-
-  [ ! -f "${ORI_ZIMAGE_FILE}" -o ! -f "${ORI_RDGZ_FILE}" ] && extractDsmFiles
-
-  /opt/arc/zimage-patch.sh
-  if [ $? -ne 0 ]; then
-    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-      --msgbox "zImage not patched:\n`<"${LOG_FILE}"`" 0 0
-    return 1
-  fi
-
-  /opt/arc/ramdisk-patch.sh
-  if [ $? -ne 0 ]; then
-    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-      --msgbox "Ramdisk not patched:\n`<"${LOG_FILE}"`" 0 0
-    return 1
-  fi
-
-  echo "Cleaning"
-  rm -rf "${UNTAR_PAT_PATH}"
-
-  echo "Ready!"
-  sleep 3
-  DIRTY=0
-  return 0
 }
 
 ###############################################################################
