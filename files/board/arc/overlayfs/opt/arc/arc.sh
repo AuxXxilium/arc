@@ -223,28 +223,27 @@ function arcbuild() {
 ###############################################################################
 # Make Disk Config
 function arcdisk() {
-  # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
-  if [ "$DT" = "true" ] && [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt "0" ]; then
+  # Check for diskconfig
+  if [ "$DT" = "true" ] && [ "$ADRAID" -gt 0 ]; then
     dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
       --infobox "Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
     sleep 5
     return 1
   else
-  deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-  if [ "${VIRTUALMACHINE}" -eq "1" ]; then
-    if [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt "0" ]; then
+    dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
+      --infobox "ARC Disk configuration started!" 0 0
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+    sleep 3
+    if [ "$MACHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ "$ADRAID" -gt 0 ]; then
     writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
-    else
-    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     fi
-  elif [ "${VIRTUALMACHINE}" -eq "0" ]; then
-    if [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt "0" ]; then
-    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-    else
-    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    if [ "$MACHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ "$ADRAID" -gt 0 ]; then
+    writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
     fi
-  fi
+    if [ "$MACHINE" = "NATIVE" ] && [ "$ADRAID" -gt 0 ] && [ "$ADSATA" -gt 0 ]; then
+    writeConfigKey "cmdline.SataPortMap" "8" "${USER_CONFIG_FILE}"
+    fi
   dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
     --infobox "Disk configuration successfull!" 0 0
   sleep 3

@@ -3,10 +3,8 @@
 if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
     MACHINE="VIRTUAL"
     HYPERVISOR=$(lscpu | grep Hypervisor | awk '{print $3}')
-    VIRTUALMACHINE="1"
 else
     MACHINE="NATIVE"
-    VIRTUALMACHINE="0"
 fi
 
 # Check for RAID/SCSI
