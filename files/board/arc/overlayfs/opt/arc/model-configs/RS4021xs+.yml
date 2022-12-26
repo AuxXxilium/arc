@@ -20,8 +20,9 @@ unique: "synology_broadwellnk_rs4021xs+"
 dom: 2
 serial:
   prefix:
-    - "0000"
-  middle: "XXX"
+    - "2160"
+    - "20A0"
+  middle: "T2R"
   suffix: "alpha"
 arcserial: "2160T2RMHS00P"
 mac1: "001132FE1AA1"

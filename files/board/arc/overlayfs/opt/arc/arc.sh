@@ -27,6 +27,7 @@ KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
 DIRECTBOOT="`readConfigKey "directboot" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
+CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -164,19 +165,18 @@ function arcpatch() {
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
     if [ "${resp}" = "2" ]; then
-	ARCPATCH="0"
-	# Generate random serial
-	SERIAL=`generateSerial "${MODEL}"`
-	SN="${SERIAL}"
+	  ARCPATCH="0"
+	  # Generate random serial
+	  SN=`generateSerial "${MODEL}"`
   	writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-	dialog --backtitle "`backtitle`" --title "ARC Config" \
+	  dialog --backtitle "`backtitle`" --title "ARC Config" \
 	  --infobox "Installing ARC without Patch!" 0 0
       	break
     elif [ "${resp}" = "1" ]; then
-	ARCPATCH="1"
+	  ARCPATCH="1"
   	SN="`readModelKey "${MODEL}" "arcserial"`"
   	writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-	dialog --backtitle "`backtitle`" --title "ARC Config" \
+	  dialog --backtitle "`backtitle`" --title "ARC Config" \
       	  --infobox "Installing ARC with Patch!" 0 0
       	break
     fi
@@ -213,14 +213,23 @@ function arcbuild() {
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
   dialog --backtitle "`backtitle`" --title "ARC Model Config" \
-    --infobox "Model Configuration successfull!" 0 0  
+    --infobox "Model Configuration successfull!" 0 0
+  sleep 3
   arcdisk
 }
 
 ###############################################################################
 # Make Disk Config
 function arcdisk() {
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  DT="`readModelKey "${MODEL}" "dt"`"
   # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
+  if [ "$DT" = "true" ] && [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt "0" ]; then
+    dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
+      --infobox "Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
+    sleep 5
+    return 1
+  else
   deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
   if [ "${VIRTUALMACHINE}" -eq "1" ]; then
@@ -240,17 +249,18 @@ function arcdisk() {
    --infobox "Disk configuration successfull!" 0 0
     sleep 3
   arcnet
+  fi
 }
 
 ###############################################################################
 # Make Network Config
 function arcnet() {
-  if [ "${ARCPATCH}" -eq "1" ]; then 
-  # Check for model config
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   # Export Network Adapter Amount
   NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
   writeConfigKey "cmdline.netif_num" "${NETNUM}"            "${USER_CONFIG_FILE}"
+  if [ "${ARCPATCH}" -eq "1" ]; then 
+  # Check for model config
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   if [ "${NETNUM}" -gt "0" ]; then
     MAC1="`readModelKey "${MODEL}" "mac1"`"
     writeConfigKey "cmdline.mac1"           "$MAC1" "${USER_CONFIG_FILE}"
@@ -286,9 +296,11 @@ function arcnet() {
       --infobox "ARC Network configuration successfull!" 0 0
   sleep 3
   fi
+  writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" --title "ARC Config" \
       --infobox "ARC configuration successfull!" 0 0
   sleep 3
+  CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
   dialog --clear --no-items --backtitle "`backtitle`"
 }
 
@@ -1305,10 +1317,8 @@ NEXT="1"
 while true; do
   echo "= \"\Z4========== Main ========== \Zn\" "                                            > "${TMP_PATH}/menu"
   echo "1 \"Choose Model for Loader \" "                                                    >> "${TMP_PATH}/menu"
-  if [ -n "${MODEL}" ]; then
-    if [ -n "${BUILD}" ]; then
+  if [ -n "${MODEL}" ] && [ -n "${BUILD}" ] && [ "${CONFDONE}" -eq "1" ]; then
       echo "4 \"Build the Loader \" "                                                       >> "${TMP_PATH}/menu"
-    fi
   fi
   if loaderIsConfigured; then
   echo "5 \"Boot the Loader \" "                                                            >> "${TMP_PATH}/menu"

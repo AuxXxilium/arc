@@ -90,17 +90,18 @@ function generateRandomValue() {
 # 1 - Model
 # Returns serial number
 function generateSerial() {
-  SERIAL="`readModelArray "${1}" "serial.prefix" | sort -R | tail -1`"
-  SERIAL+=`readModelKey "${1}" "serial.middle"`
+  SERIALP="`readModelArray "${1}" "serial.prefix" | sort -R | tail -1`"
+  SERIALM=`readModelKey "${1}" "serial.middle"`
   case "`readModelKey "${1}" "serial.suffix"`" in
     numeric)
-      SERIAL+=$(random)      
+      SERIALS=$(random)      
       ;;
     alpha)
-      SERIAL+=$(generateRandomLetter)$(generateRandomValue)$(generateRandomValue)$(generateRandomValue)$(generateRandomValue)$(generateRandomLetter)
+      SERIALS=$(generateRandomLetter)$(generateRandomValue)$(generateRandomValue)$(generateRandomValue)$(generateRandomValue)$(generateRandomLetter)
       ;;
   esac
-  echo ${SERIAL}
+  SN=${SERIALP}${SERIALM}${SERIALS}
+  echo ${SN}
 }
 
 ###############################################################################
