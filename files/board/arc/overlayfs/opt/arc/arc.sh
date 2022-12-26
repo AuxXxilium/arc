@@ -147,6 +147,7 @@ function buildMenu() {
     BUILD=${resp}
     writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
   fi
+  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
   arcpatch
 }
 
@@ -185,6 +186,7 @@ function arcpatch() {
       	break
     fi
   done
+  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
   arcbuild
 }
 
@@ -214,6 +216,7 @@ function arcbuild() {
   dialog --backtitle "`backtitle`" --title "ARC Model Config" \
     --infobox "Model Configuration successfull!" 0 0
   sleep 3
+  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
   arcdisk
 }
 
@@ -243,8 +246,9 @@ function arcdisk() {
     fi
   fi
   dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
-   --infobox "Disk configuration successfull!" 0 0
-    sleep 3
+    --infobox "Disk configuration successfull!" 0 0
+  sleep 3
+  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
   arcnet
   fi
 }
@@ -256,42 +260,42 @@ function arcnet() {
   NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
   writeConfigKey "cmdline.netif_num" "${NETNUM}"            "${USER_CONFIG_FILE}"
   if [ "${ARCPATCH}" -eq "1" ]; then 
-  # Check for model config
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  if [ "${NETNUM}" -gt "0" ]; then
-    MAC1="`readModelKey "${MODEL}" "mac1"`"
-    writeConfigKey "cmdline.mac1"           "$MAC1" "${USER_CONFIG_FILE}"
-    MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
-    ip link set dev eth0 address ${MACN1} 2>&1
-  fi
-  if [ "${NETNUM}" -gt "1" ]; then
-    MAC2="`readModelKey "${MODEL}" "mac2"`"
-    writeConfigKey "cmdline.mac2"           "$MAC2" "${USER_CONFIG_FILE}"
-    MACN2="${MAC2:0:2}:${MAC2:2:2}:${MAC2:4:2}:${MAC2:6:2}:${MAC2:8:2}:${MAC2:10:2}"
-    ip link set dev eth1 address ${MACN2} 2>&1
-  fi
-  if [ "${NETNUM}" -gt "2" ]; then
-    MAC3="`readModelKey "${MODEL}" "mac3"`"
-    writeConfigKey "cmdline.mac3"           "$MAC3" "${USER_CONFIG_FILE}"
-    MACN3="${MAC3:0:2}:${MAC3:2:2}:${MAC3:4:2}:${MAC3:6:2}:${MAC3:8:2}:${MAC3:10:2}"
-    ip link set dev eth2 address ${MACN3} 2>&1
-  fi
-  if [ "${NETNUM}" -gt "3" ]; then
-    MAC4="`readModelKey "${MODEL}" "mac4"`"
-    writeConfigKey "cmdline.mac4"           "$MAC4" "${USER_CONFIG_FILE}"
-    MACN4="${MAC4:0:2}:${MAC4:2:2}:${MAC4:4:2}:${MAC4:6:2}:${MAC4:8:2}:${MAC4:10:2}"
-    ip link set dev eth3 address ${MACN4} 2>&1
-  fi
-  dialog --backtitle "`backtitle`" \
-          --title "Loading ARC MAC Table" --infobox "Set new MAC for ${NETNUM} Adapter" 0 0
-  sleep 3
-  /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
-    --title "Restart DHCP" --progressbox "Renewing IP" 20 70
-  sleep 5
-  IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
-  dialog --backtitle "`backtitle`" --title "ARC Config" \
-      --infobox "ARC Network configuration successfull!" 0 0
-  sleep 3
+    # Check for model config
+    MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+    if [ "${NETNUM}" -gt "0" ]; then
+      MAC1="`readModelKey "${MODEL}" "mac1"`"
+      writeConfigKey "cmdline.mac1"           "$MAC1" "${USER_CONFIG_FILE}"
+      MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
+      ip link set dev eth0 address ${MACN1} 2>&1
+    fi
+    if [ "${NETNUM}" -gt "1" ]; then
+      MAC2="`readModelKey "${MODEL}" "mac2"`"
+      writeConfigKey "cmdline.mac2"           "$MAC2" "${USER_CONFIG_FILE}"
+      MACN2="${MAC2:0:2}:${MAC2:2:2}:${MAC2:4:2}:${MAC2:6:2}:${MAC2:8:2}:${MAC2:10:2}"
+      ip link set dev eth1 address ${MACN2} 2>&1
+    fi
+    if [ "${NETNUM}" -gt "2" ]; then
+      MAC3="`readModelKey "${MODEL}" "mac3"`"
+      writeConfigKey "cmdline.mac3"           "$MAC3" "${USER_CONFIG_FILE}"
+      MACN3="${MAC3:0:2}:${MAC3:2:2}:${MAC3:4:2}:${MAC3:6:2}:${MAC3:8:2}:${MAC3:10:2}"
+      ip link set dev eth2 address ${MACN3} 2>&1
+    fi
+    if [ "${NETNUM}" -gt "3" ]; then
+      MAC4="`readModelKey "${MODEL}" "mac4"`"
+      writeConfigKey "cmdline.mac4"           "$MAC4" "${USER_CONFIG_FILE}"
+      MACN4="${MAC4:0:2}:${MAC4:2:2}:${MAC4:4:2}:${MAC4:6:2}:${MAC4:8:2}:${MAC4:10:2}"
+      ip link set dev eth3 address ${MACN4} 2>&1
+    fi
+    dialog --backtitle "`backtitle`" \
+            --title "Loading ARC MAC Table" --infobox "Set new MAC for ${NETNUM} Adapter" 0 0
+    sleep 3
+    /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
+      --title "Restart DHCP" --progressbox "Renewing IP" 20 70
+    sleep 5
+    IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
+    dialog --backtitle "`backtitle`" --title "ARC Config" \
+        --infobox "ARC Network configuration successfull!" 0 0
+    sleep 3
   fi
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" --title "ARC Config" \
@@ -341,6 +345,8 @@ function make() {
   rm -rf "${UNTAR_PAT_PATH}"
 
   echo "Ready!"
+  dialog --backtitle "`backtitle`" --title "Arc Build" \
+    --infobox "Arc Build successfull! You can boot now." 0 0
   sleep 3
   DIRTY=0
   return 0
