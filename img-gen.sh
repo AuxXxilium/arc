@@ -28,6 +28,7 @@ TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest 
 curl -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip
 rm -rf /tmp/addons
 unzip /tmp/addons.zip -d /tmp/addons
+rm -rf files/board/arc/p3/addons/*
 DEST_PATH="files/board/arc/p3/addons"
 echo "Installing addons to ${DEST_PATH}"
 for PKG in `ls /tmp/addons/*.addon`; do
@@ -39,6 +40,7 @@ done
 
 # Get latest modules
 echo "Getting latest modules"
+rm -rf files/board/arc/p3/modules/*
 MODULES_DIR="${PWD}/files/board/arc/p3/modules"
 TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
 while read PLATFORM KVER; do
