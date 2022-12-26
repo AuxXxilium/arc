@@ -153,8 +153,12 @@ function buildMenu() {
 ###############################################################################
 # Shows menu to user type one or generate randomly
 function arcpatch() {
-  # Check for model config
+  # Read model config for buildconfig
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  PLATFORM="`readModelKey "${MODEL}" "platform"`"
+  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  DT="`readModelKey "${MODEL}" "dt"`"
   while true; do
     dialog --clear --backtitle "`backtitle`" \
       --menu "Choose an option" 0 0 0 \
@@ -187,11 +191,6 @@ function arcpatch() {
 ###############################################################################
 # Adding Synoinfo and Addons
 function arcbuild() {
-  # Check for model config
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  PLATFORM="`readModelKey "${MODEL}" "platform"`"
-  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   # Delete synoinfo and reload model/build synoinfo  
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS="=" read KEY VALUE; do
@@ -221,8 +220,6 @@ function arcbuild() {
 ###############################################################################
 # Make Disk Config
 function arcdisk() {
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  DT="`readModelKey "${MODEL}" "dt"`"
   # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
   if [ "$DT" = "true" ] && [ $(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt "0" ]; then
     dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
@@ -308,6 +305,7 @@ function arcnet() {
 # Building Loader
 function make() {
   clear
+  # Read modelconfig for build
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
