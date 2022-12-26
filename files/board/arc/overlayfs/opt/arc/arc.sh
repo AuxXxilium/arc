@@ -241,8 +241,8 @@ function arcdisk() {
     if [ "$MACHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ "$ADRAID" -gt 0 ]; then
     writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
     fi
-    if [ "$MACHINE" = "NATIVE" ] && [ "$ADRAID" -gt 0 ]; then
-    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    if [ "$MACHINE" = "NATIVE" ] && [ "$ADRAID" -gt 0 ] && [ "$ADSATA" -gt 0 ]; then
+    writeConfigKey "cmdline.SataPortMap" "8" "${USER_CONFIG_FILE}"
     fi
   dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
     --infobox "Disk configuration successfull!" 0 0
