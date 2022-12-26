@@ -1155,8 +1155,8 @@ function cmdlineMenu() {
           [ $? -ne 0 ] && break
           PORTMAP="`<"${TMP_PATH}/resp"`"
           [ -z "${PORTMAP}" ] && PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
+          writeConfigKey "cmdline.SataPortMap"      "${PORTMAP}" "${USER_CONFIG_FILE}"
         done
-        writeConfigKey "cmdline.SataPortMap"      "${PORTMAP}" "${USER_CONFIG_FILE}"
         ;;
       4)
         while true; do
