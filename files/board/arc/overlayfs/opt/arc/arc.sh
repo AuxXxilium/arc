@@ -285,6 +285,18 @@ function arcnet() {
       MACN4="${MAC4:0:2}:${MAC4:2:2}:${MAC4:4:2}:${MAC4:6:2}:${MAC4:8:2}:${MAC4:10:2}"
       ip link set dev eth3 address ${MACN4} 2>&1
     fi
+    if [ "${NETNUM}" -gt "4" ]; then
+      MAC5="`readModelKey "${MODEL}" "mac5"`"
+      writeConfigKey "cmdline.mac5"           "$MAC5" "${USER_CONFIG_FILE}"
+      MACN4="${MAC5:0:2}:${MAC5:2:2}:${MAC5:4:2}:${MAC5:6:2}:${MAC5:8:2}:${MAC5:10:2}"
+      ip link set dev eth3 address ${MACN5} 2>&1
+    fi
+    if [ "${NETNUM}" -gt "5" ]; then
+      MAC6="`readModelKey "${MODEL}" "mac6"`"
+      writeConfigKey "cmdline.mac6"           "$MAC6" "${USER_CONFIG_FILE}"
+      MACN4="${MAC6:0:2}:${MAC6:2:2}:${MAC6:4:2}:${MAC6:6:2}:${MAC6:8:2}:${MAC6:10:2}"
+      ip link set dev eth3 address ${MACN6} 2>&1
+    fi
     dialog --backtitle "`backtitle`" \
             --title "Loading ARC MAC Table" --infobox "Set new MAC for ${NETNUM} Adapter" 0 0
     sleep 3
