@@ -23,9 +23,13 @@ serial:
     - "2270"
   middle: "TQR"
   suffix: "alpha"
-arcserial: "2270TQR5Q067B"
-mac1: "9009D019775A"
-mac2: "9009D01978A5"
+arcserial: "2270TQRD59Q2"
+mac1: "9009D028843F"
+mac2: "9009D0288440"
+mac3: "9009D0288441"
+mac4: "9009D0288442"
+mac5: "9009D019775A"
+mac6: "9009D01978A5"
 disks: 4
 builds:
   42962:
