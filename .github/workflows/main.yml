@@ -56,12 +56,14 @@ jobs:
           echo "Getting latest LKMs"
           TAG=`curl -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
           curl -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip
+          echo "Version: ${TAG}"
           rm -rf files/board/arc/p3/lkms/*
           unzip /tmp/rp-lkms.zip -d files/board/arc/p3/lkms
           # Get latest addons and install its
           echo "Getting latest Addons"
           TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
           curl -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip
+          echo "Version: ${TAG}"
           mkdir -p /tmp/addons
           unzip /tmp/addons.zip -d /tmp/addons
           rm -rf files/board/arc/p3/addons/*
@@ -83,6 +85,7 @@ jobs:
             curl -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/${FILE}.tgz" -o "${MODULES_DIR}/${FILE}.tgz"
           done < PLATFORMS
           curl -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/firmware.tgz" -o "${MODULES_DIR}/firmware.tgz"
+          echo "Version: ${TAG}"
           # Copy files
           echo "Copying files"
           sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/board/arc/overlayfs/opt/arc/include/consts.sh

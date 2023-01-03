@@ -17,6 +17,7 @@ echo "Getting latest LKMs"
 echo "  Downloading from github"
 TAG=`curl -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
 curl -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip
+echo "Version: ${TAG}"
 rm -rf files/board/arc/p3/lkms/*
 unzip /tmp/rp-lkms.zip -d files/board/arc/p3/lkms
 
@@ -26,6 +27,7 @@ rm -Rf /tmp/addons
 mkdir -p /tmp/addons
 TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
 curl -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip
+echo "Version: ${TAG}"
 rm -rf /tmp/addons
 unzip /tmp/addons.zip -d /tmp/addons
 rm -rf files/board/arc/p3/addons/*
@@ -48,6 +50,7 @@ while read PLATFORM KVER; do
   curl -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/${FILE}.tgz" -o "${MODULES_DIR}/${FILE}.tgz"
 done < PLATFORMS
 curl -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/firmware.tgz" -o "${MODULES_DIR}/firmware.tgz"
+echo "Version: ${TAG}"
 
 # Copy files
 echo "Copying files"
