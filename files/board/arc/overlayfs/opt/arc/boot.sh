@@ -10,7 +10,7 @@ loaderIsConfigured || die "Loader is not configured!"
 # Print text centralized
 clear
 [ -z "${COLUMNS}" ] && COLUMNS=50
-TITLE="Welcome to ARC Redpill Loader v${ARC_VERSION}"
+TITLE="ARC Redpill Loader v${ARC_VERSION}"
 printf "\033[1;44m%*s\n" ${COLUMNS} ""
 printf "\033[1;44m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;32m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"

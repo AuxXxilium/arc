@@ -23,7 +23,7 @@ fi
 
 # Shows title
 clear
-TITLE="Welcome to ARC Redpill Loader v${ARC_VERSION}"
+TITLE="ARC Redpill Loader v${ARC_VERSION}"
 printf "\033[1;44m%*s\n" $COLUMNS ""
 printf "\033[1;44m%*s\033[A\n" $COLUMNS ""
 printf "\033[1;32m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
