@@ -54,9 +54,12 @@ echo "Version: ${TAG}"
 
 # Copy files
 echo "Copying files"
-VERSION=`cat VERSION`
-sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/board/arc/overlayfs/opt/arc/include/consts.sh
+VERSION=$(date +'%y.%m.%d')
+rm -f files/board/arc/p1/ARC-VERSION
+rm -f VERSION
 echo "${VERSION}" > files/board/arc/p1/ARC-VERSION
+echo "${VERSION}" > VERSION
+sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/board/arc/overlayfs/opt/arc/include/consts.sh
 cp -Ru files/* .buildroot/
 
 cd .buildroot
