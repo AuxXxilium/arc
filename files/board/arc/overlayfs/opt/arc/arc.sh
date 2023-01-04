@@ -235,14 +235,38 @@ function arcdisk() {
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     sleep 3
-    if [ "$MACHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "VMware" ] && [ "$ADRAID" -gt 0 ]; then
-    writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
+    if [ "$ADSATA" -gt 0 ]; then
+      pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
+      [ ! -z "$pcis" ]
+      # loop through non-SATA controllers
+      for pci in $pcis; do
+      # get attached block devices (exclude CD-ROMs)
+      SATADRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      done
     fi
-    if [ "$MACHINE" = "VIRTUAL" ] && [ "$HYPERVISOR" = "KVM" ] && [ "$ADRAID" -gt 0 ]; then
-    writeConfigKey "cmdline.SataPortMap" "1" "${USER_CONFIG_FILE}"
+    if [ "$ADRAID" -gt 0 ]; then
+      pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
+      [ ! -z "$pcis" ]
+      # loop through non-SATA controllers
+      for pci in $pcis; do
+      # get attached block devices (exclude CD-ROMs)
+      RAIDDRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      done
     fi
-    if [ "$MACHINE" = "NATIVE" ] && [ "$ADRAID" -gt 0 ] && [ "$ADSATA" -gt 0 ]; then
-    writeConfigKey "cmdline.SataPortMap" "8" "${USER_CONFIG_FILE}"
+    if [ "$SATADRIVES" -gt 8 ]; then
+    SATADRIVES=8
+    fi
+    if [ "$RAIDDRIVES" -gt 8 ]; then
+    RAIDDRIVES=8
+    fi
+    if [ "$ADSATA" -eq 1 ]; then
+    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES" "${USER_CONFIG_FILE}"
+    fi
+    if [ "$ADSATA" -eq 2 ]; then
+    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$SATADRIVES" "${USER_CONFIG_FILE}"
+    fi
+    if [ "$ADRAID" -eq 1 ] && [ "$ADSATA" -eq 1 ]; then
+    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$RAIDDRIVES" "${USER_CONFIG_FILE}"
     fi
   dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
     --infobox "Disk configuration successfull!" 0 0
@@ -550,7 +574,7 @@ function alldrives() {
         TEXT=""
         NUMPORTS=0
         if [ "$ADSATA" -eq "1" ]; then
-        for PCI in `lspci -nn | grep -ie "\[0106\]" | awk '{print$1}'`; do
+        for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print$1}'`; do
           NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
           TEXT+="\Z1SATA Controller\Zn dedected:\n\Zb${NAME}\Zn\n\nPorts: "
           unset HOSTPORTS
@@ -576,14 +600,14 @@ function alldrives() {
         TEXT+="\n \n"
         fi
         if [ "$ADRAID" -eq "1" ]; then
-        pcis=$(lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
+        pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
         [ ! -z "$pcis" ]
         # loop through non-SATA controllers
         for pci in $pcis; do
         # get attached block devices (exclude CD-ROMs)
         DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
         done
-        for PCI in `lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
+        for PCI in `lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
           NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
           TEXT+="\Z1SCSI/RAID/SAS Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
           TEXT+="\nDrives: \Z2\Zb${DRIVES}\Zn connected"
