@@ -277,6 +277,61 @@ function arcdisk() {
 }
 
 ###############################################################################
+# Make Disk Config
+function newarcdisk() {
+  # Check for diskconfig
+  if [ "$DT" = "true" ] && [ "$ADRAID" -gt 0 ]; then
+    dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
+      --infobox "Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
+    sleep 5
+    return 1
+  else
+    dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
+      --infobox "ARC Disk configuration started!" 0 0
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+    sleep 3
+    if [ "$ADSATA" -gt 0 ]; then
+      pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
+      [ ! -z "$pcis" ]
+      # loop through non-SATA controllers
+      for pci in $pcis; do
+      # get attached block devices (exclude CD-ROMs)
+      SATADRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      done
+    fi
+    if [ "$ADRAID" -gt 0 ]; then
+      pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
+      [ ! -z "$pcis" ]
+      # loop through non-SATA controllers
+      for pci in $pcis; do
+      # get attached block devices (exclude CD-ROMs)
+      RAIDDRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      done
+    fi
+    if [ "$SATADRIVES" -gt 8 ]; then
+    SATADRIVES=8
+    fi
+    if [ "$RAIDDRIVES" -gt 8 ]; then
+    RAIDDRIVES=8
+    fi
+    if [ "$ADSATA" -eq 1 ]; then
+    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES" "${USER_CONFIG_FILE}"
+    fi
+    if [ "$ADSATA" -eq 2 ]; then
+    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$SATADRIVES" "${USER_CONFIG_FILE}"
+    fi
+    if [ "$ADRAID" -eq 1 ] && [ "$ADSATA" -eq 1 ]; then
+    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$RAIDDRIVES" "${USER_CONFIG_FILE}"
+    fi
+  dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
+    --infobox "Disk configuration successfull!" 0 0
+  sleep 3
+  writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
+  fi
+}
+
+###############################################################################
 # Make Network Config
 function arcnet() {
   # Export Network Adapter Amount
@@ -1357,6 +1412,7 @@ while true; do
   echo "= \"\Z4========= System ========= \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "2 \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
   echo "3 \"Modules \" "                                                                    >> "${TMP_PATH}/menu"
+  echo "n \"New Disk Config \" "                                                            >> "${TMP_PATH}/menu"
   if [ -n "${ADV}" ]; then
   echo "x \"\Z1Hide Advanced Options \Zn\" "                                                >> "${TMP_PATH}/menu"
   else
@@ -1390,6 +1446,7 @@ while true; do
     b) sysinfo; NEXT="b" ;;
     2) addonMenu; NEXT="2" ;;
     3) selectModules; NEXT="3" ;;
+    n) newarcdisk; NEXT="4" ;;
     x) [ "${ADV}" = "" ] && ADV='1' || ADV=''
        ARV="${ADV}"
        NEXT="x"
