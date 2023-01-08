@@ -327,7 +327,6 @@ function newarcdisk() {
   dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
     --infobox "Disk configuration successfull!" 0 0
   sleep 3
-  writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
   fi
 }
 
@@ -392,6 +391,7 @@ function make() {
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
 
   # Check if all addon exists
   while IFS="=" read ADDON PARAM; do
@@ -427,6 +427,7 @@ function make() {
     --infobox "Arc Build successfull! You can boot now." 0 0
   sleep 3
   DIRTY=0
+  writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
   return 0
 }
 
