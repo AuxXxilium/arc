@@ -19,8 +19,7 @@ cmdline: &cmdline
   elevator: elevator
 platform: "denverton"
 unique: "synology_denverton_dva3219"
-beta: true
-dom: 2
+dom: 1
 serial:
   prefix:
     - "1930"

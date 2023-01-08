@@ -16,7 +16,7 @@ cmdline: &cmdline
   elevator: elevator
 platform: "geminilake"
 unique: "synology_geminilake_920+"
-dom: 2
+dom: 1
 dt: true
 serial:
   prefix:
