@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libelf-dev qemu-utils
+          sudo apt-get install -y libelf-dev libssl-dev qemu-utils build-essential
           sudo cp -f files/board/arc/overlayfs/usr/bin/yq /usr/bin/yq
 
       # Prepare buildroot for first make (for cache)
