@@ -265,7 +265,7 @@ function arcdisk() {
     writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$RAIDDRIVES" "${USER_CONFIG_FILE}"
     fi
   dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-    --infobox "Disk configuration successfull!" 0 0
+    --infobox "Disk configuration successfull!\n\nSata: $SATADRIVES Drives\nRaid/SCSI: $RAIDDRIVES Drives\n" 0 0
   sleep 3
   writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
   arcnet
@@ -322,7 +322,7 @@ function newarcdisk() {
     fi
   dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
     --infobox "Disk configuration successfull!\n\nSata: $SATADRIVES Drives\nRaid/SCSI: $RAIDDRIVES Drives\n" 0 0
-  sleep 5
+  sleep 3
   fi
 }
 
