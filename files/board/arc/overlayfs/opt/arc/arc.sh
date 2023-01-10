@@ -57,9 +57,6 @@ function backtitle() {
     BACKTITLE+=" (no IP)"
   fi
     BACKTITLE+=" |"
-  if [ -n "${HYPERVISOR}" ]; then
-    BACKTITLE+=" ${MACHINE}/${HYPERVISOR}"
-  else
     BACKTITLE+=" ${MACHINE}"
   fi
   echo ${BACKTITLE}
