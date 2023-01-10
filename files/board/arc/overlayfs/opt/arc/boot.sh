@@ -3,6 +3,7 @@
 set -e
 
 . /opt/arc/include/functions.sh
+. /opt/arc/include/hardware.sh
 
 # Sanity check
 loaderIsConfigured || die "Loader is not configured!"
@@ -85,8 +86,14 @@ BUS=`udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d=
 if [ "${BUS}" = "ata" ]; then
   LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
   SIZE=$((`cat /sys/block/${LOADER_DEVICE_NAME}/size`/2048+10))
-  # Read SATADoM type
-  DOM="`readModelKey "${MODEL}" "dom"`"
+  # Set SATADoM by Hardware
+  if [ "${MACHINE}" = "NATIVE" ]; then
+  DOM="1"
+  elif [ "${MACHINE}" = "VIRTUAL" ]; then
+  DOM="2"
+  else
+  DOME="2"
+  fi
 fi
 
 # Validate netif_num
