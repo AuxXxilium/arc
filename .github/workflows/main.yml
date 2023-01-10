@@ -89,6 +89,7 @@ jobs:
           # Copy files
           echo "Copying files"
           VERSION=$(date +'%y.%m.%d')
+          ARC-VERSION=${VERSION}
           rm -f files/board/arc/p1/ARC-VERSION
           rm -f VERSION
           echo "${VERSION}" > files/board/arc/p1/ARC-VERSION
