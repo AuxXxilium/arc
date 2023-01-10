@@ -89,7 +89,6 @@ jobs:
           # Copy files
           echo "Copying files"
           VERSION=$(date +'%y.%m.%d')
-          ARC-VERSION=${VERSION}
           rm -f files/board/arc/p1/ARC-VERSION
           rm -f VERSION
           echo "${VERSION}" > files/board/arc/p1/ARC-VERSION
@@ -110,9 +109,9 @@ jobs:
       - name: Pack
         shell: bash
         run: |
-          zip -9 "arc-${{ steps.build.outputs.VERSION }}.img.zip" arc.img
-          zip -9 "arc-${{ steps.build.outputs.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
-          zip -9 "arc-${{ steps.build.outputs.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+          zip -9 "arc.img.zip" arc.img
+          zip -9 "arc.vmdk-dyn.zip" arc-dyn.vmdk
+          zip -9 "arc.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
           sha256sum update-list.yml > sha256sum
           yq '.replace | explode(.) | to_entries | map([.key])[] | .[]' update-list.yml | while read F; do
             (cd `dirname ${F}` && sha256sum `basename ${F}`) >> sha256sum
