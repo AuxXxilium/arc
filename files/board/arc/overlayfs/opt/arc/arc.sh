@@ -102,7 +102,7 @@ function arcMenu() {
       [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
     done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >> "${TMP_PATH}/menu"
-    dialog --backtitle "`backtitle`" --colors --menu "Choose the model" 0 0 0 \
+    dialog --backtitle "`backtitle`" --colors --menu "Choose Model for Arc" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     resp=$(<${TMP_PATH}/resp)
@@ -139,7 +139,7 @@ function buildMenu() {
     resp="${1}"
   fi
   if [ "${BUILD}" != "${resp}" ]; then
-    dialog --backtitle "`backtitle`" --title "Build Number" \
+    dialog --backtitle "`backtitle`" --title "Arc DSM Build Number" \
       --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
     BUILD=${resp}
     writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
@@ -171,15 +171,15 @@ function arcpatch() {
 	  # Generate random serial
 	  SN=`generateSerial "${MODEL}"`
   	writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-	  dialog --backtitle "`backtitle`" --title "ARC Config" \
-	  --infobox "Installing ARC without Patch!" 0 0
+	  dialog --backtitle "`backtitle`" --title "Arc Config" \
+	  --infobox "Installing without Arc Patch!" 0 0
       	break
     elif [ "${resp}" = "1" ]; then
 	  ARCPATCH="1"
   	SN="`readModelKey "${MODEL}" "arcserial"`"
   	writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-	  dialog --backtitle "`backtitle`" --title "ARC Config" \
-      	  --infobox "Installing ARC with Patch!" 0 0
+	  dialog --backtitle "`backtitle`" --title "Arc Config" \
+      	  --infobox "Installing with Arc Patch!" 0 0
       	break
     fi
   done
@@ -210,7 +210,7 @@ function arcbuild() {
   # Remove old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
-  dialog --backtitle "`backtitle`" --title "ARC Model Config" \
+  dialog --backtitle "`backtitle`" --title "Arc Model Config" \
     --infobox "Model Configuration successfull!" 0 0
   sleep 3
   writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
@@ -222,12 +222,12 @@ function arcbuild() {
 function arcdisk() {
   # Check for diskconfig
   if [ "$DT" = "true" ] && [ "$ADRAID" -gt 0 ]; then
-    dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
+    dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
       --infobox "Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
     sleep 5
     return 1
   else
-    dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
+    dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
       --infobox "ARC Disk configuration started!" 0 0
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
@@ -265,7 +265,7 @@ function arcdisk() {
     if [ "$ADRAID" -eq 1 ] && [ "$ADSATA" -eq 1 ]; then
     writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$RAIDDRIVES" "${USER_CONFIG_FILE}"
     fi
-  dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
+  dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
     --infobox "Disk configuration successfull!" 0 0
   sleep 3
   writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
@@ -278,12 +278,12 @@ function arcdisk() {
 function newarcdisk() {
   # Check for diskconfig
   if [ "$DT" = "true" ] && [ "$ADRAID" -gt 0 ]; then
-    dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
+    dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
       --infobox "Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
     sleep 5
     return 1
   else
-    dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
+    dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
       --infobox "ARC Disk configuration started!" 0 0
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
@@ -309,9 +309,9 @@ function newarcdisk() {
     if [ "$SATADRIVES" -gt 8 ]; then
     SATADRIVES=8
     fi
-    if [ "$RAIDDRIVES" -gt 8 ]; then
-    RAIDDRIVES=8
-    fi
+    #if [ "$RAIDDRIVES" -gt 8 ]; then
+    #RAIDDRIVES=8
+    #fi
     if [ "$ADSATA" -eq 1 ]; then
     writeConfigKey "cmdline.SataPortMap" "$SATADRIVES" "${USER_CONFIG_FILE}"
     fi
@@ -319,11 +319,11 @@ function newarcdisk() {
     writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$SATADRIVES" "${USER_CONFIG_FILE}"
     fi
     if [ "$ADRAID" -eq 1 ] && [ "$ADSATA" -eq 1 ]; then
-    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$RAIDDRIVES" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES" "${USER_CONFIG_FILE}"
     fi
-  dialog --backtitle "`backtitle`" --title "ARC Disk Config" \
-    --infobox "Disk configuration successfull!" 0 0
-  sleep 3
+  dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+    --infobox "Disk configuration successfull!\n\nSata: $SATADRIVES Drives\nRaid/SCSI: $RAIDDRIVES Drives\n" 0 0
+  sleep 5
   fi
 }
 
@@ -361,18 +361,57 @@ function arcnet() {
       ip link set dev eth3 address ${MACN4} 2>&1
     fi
     dialog --backtitle "`backtitle`" \
-            --title "Loading ARC MAC Table" --infobox "Set new MAC for ${NETNUM} Adapter" 0 0
+            --title "Loading Arc MAC Table" --infobox "Set new MAC for ${NETNUM} Adapter" 0 0
     sleep 3
     /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
       --title "Restart DHCP" --progressbox "Renewing IP" 20 70
     sleep 5
     IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
-    dialog --backtitle "`backtitle`" --title "ARC Config" \
-        --infobox "ARC Network configuration successfull!" 0 0
+    dialog --backtitle "`backtitle`" --title "Arc Config" \
+        --infobox "Network configuration successfull!" 0 0
+    sleep 3
+  else
+      if [ "${NETNUM}" -gt "0" ]; then
+      MACA1=`ip link show eth0 | awk '/ether/{print$2}'`
+      MAC1=`echo ${MACA1} | sed 's/://g'`
+      writeConfigKey "cmdline.mac1"           "$MAC1" "${USER_CONFIG_FILE}"
+      MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
+      ip link set dev eth0 address ${MACN1} 2>&1
+    fi
+    if [ "${NETNUM}" -gt "1" ]; then
+      MACA2=`ip link show eth0 | awk '/ether/{print$2}'`
+      MAC2=`echo ${MACA2} | sed 's/://g'`
+      writeConfigKey "cmdline.mac2"           "$MAC2" "${USER_CONFIG_FILE}"
+      MACN2="${MAC2:0:2}:${MAC2:2:2}:${MAC2:4:2}:${MAC2:6:2}:${MAC2:8:2}:${MAC2:10:2}"
+      ip link set dev eth1 address ${MACN2} 2>&1
+    fi
+    if [ "${NETNUM}" -gt "2" ]; then
+      MACA3=`ip link show eth0 | awk '/ether/{print$2}'`
+      MAC3=`echo ${MACA3} | sed 's/://g'`
+      writeConfigKey "cmdline.mac3"           "$MAC3" "${USER_CONFIG_FILE}"
+      MACN3="${MAC3:0:2}:${MAC3:2:2}:${MAC3:4:2}:${MAC3:6:2}:${MAC3:8:2}:${MAC3:10:2}"
+      ip link set dev eth2 address ${MACN3} 2>&1
+    fi
+    if [ "${NETNUM}" -gt "3" ]; then
+      MACA4=`ip link show eth0 | awk '/ether/{print$2}'`
+      MAC4=`echo ${MACA4} | sed 's/://g'`
+      writeConfigKey "cmdline.mac4"           "$MAC4" "${USER_CONFIG_FILE}"
+      MACN4="${MAC4:0:2}:${MAC4:2:2}:${MAC4:4:2}:${MAC4:6:2}:${MAC4:8:2}:${MAC4:10:2}"
+      ip link set dev eth3 address ${MACN4} 2>&1
+    fi
+    dialog --backtitle "`backtitle`" \
+            --title "Loading Hardware MAC Table" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
+    sleep 3
+    /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
+      --title "Restart DHCP" --progressbox "Renewing IP" 20 70
+    sleep 5
+    IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
+    dialog --backtitle "`backtitle`" --title "Arc Config" \
+      --infobox "Network configuration successfull!" 0 0
     sleep 3
   fi
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
-  dialog --backtitle "`backtitle`" --title "ARC Config" \
+  dialog --backtitle "`backtitle`" --title "Arc Config" \
       --infobox "ARC configuration successfull!" 0 0
   sleep 3
   CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
