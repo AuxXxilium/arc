@@ -58,7 +58,6 @@ function backtitle() {
   fi
     BACKTITLE+=" |"
     BACKTITLE+=" ${MACHINE}"
-  fi
   echo ${BACKTITLE}
 }
 
