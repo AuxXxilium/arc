@@ -134,7 +134,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            arc-${{ steps.build.outputs.VERSION }}.img.zip
-            arc-${{ steps.build.outputs.VERSION }}.vmdk-dyn.zip
-            arc-${{ steps.build.outputs.VERSION }}.vmdk-flat.zip
+            arc.img.zip
+            arc.vmdk-dyn.zip
+            arc.vmdk-flat.zip
             update.zip
