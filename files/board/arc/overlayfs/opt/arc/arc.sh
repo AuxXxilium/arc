@@ -221,6 +221,7 @@ function arcbuild() {
 function arcdisk() {
   # Check for diskconfig
   if [ "$DT" = "true" ] && [ "$ADRAID" -gt 0 ]; then
+    # There is no Raid/SCSI Support for DT Models
     dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
       --infobox "Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
     sleep 5
@@ -231,6 +232,7 @@ function arcdisk() {
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     sleep 3
+    # Get Number of Sata Drives
     if [ "$ADSATA" -gt 0 ]; then
       pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
       [ ! -z "$pcis" ]
@@ -240,6 +242,7 @@ function arcdisk() {
       SATADRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
       done
     fi
+    # Get Number of Raid/SCSI Drives
     if [ "$ADRAID" -gt 0 ]; then
       pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
       [ ! -z "$pcis" ]
@@ -249,20 +252,40 @@ function arcdisk() {
       RAIDDRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
       done
     fi
+    # Maximum Number of Drives per Controller is 8 > So we have to limit it to 8
     if [ "$SATADRIVES" -gt 8 ]; then
     SATADRIVES=8
     fi
     if [ "$RAIDDRIVES" -gt 8 ]; then
     RAIDDRIVES=8
     fi
+    # Set SataPortMap for Native and VMWare ESXi
     if [ "$ADSATA" -eq 1 ]; then
     writeConfigKey "cmdline.SataPortMap" "$SATADRIVES" "${USER_CONFIG_FILE}"
     fi
     if [ "$ADSATA" -eq 2 ]; then
     writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$SATADRIVES" "${USER_CONFIG_FILE}"
     fi
-    if [ "$ADRAID" -eq 1 ] && [ "$ADSATA" -eq 1 ]; then
+    if [ "$ADSATA" -eq 1 ] && [ "$ADRAID" -eq 1 ]; then
     writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$RAIDDRIVES" "${USER_CONFIG_FILE}"
+    fi
+    # Set SataPortMap for Proxmox (only 1 Drive per Sata Controller)
+    if [ "${MACHINE}" -eq "VIRTUAL" ]; then
+      if [ "$ADSATA" -eq 4 ]; then
+      writeConfigKey "cmdline.SataPortMap" "1111" "${USER_CONFIG_FILE}"
+      fi
+      if [ "$ADSATA" -eq 5 ]; then
+      writeConfigKey "cmdline.SataPortMap" "11111" "${USER_CONFIG_FILE}"
+      fi
+      if [ "$ADSATA" -eq 6 ]; then
+      writeConfigKey "cmdline.SataPortMap" "111111" "${USER_CONFIG_FILE}"
+      fi
+      if [ "$ADSATA" -eq 7 ]; then
+      writeConfigKey "cmdline.SataPortMap" "1111111" "${USER_CONFIG_FILE}"
+      fi
+      if [ "$ADSATA" -eq 8 ]; then
+      writeConfigKey "cmdline.SataPortMap" "11111111" "${USER_CONFIG_FILE}"
+      fi
     fi
   dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
     --infobox "Disk configuration successfull!\n\nSata: $SATADRIVES Drives\nRaid/SCSI: $RAIDDRIVES Drives\n" 0 0
@@ -277,6 +300,7 @@ function arcdisk() {
 function newarcdisk() {
   # Check for diskconfig
   if [ "$DT" = "true" ] && [ "$ADRAID" -gt 0 ]; then
+    # There is no Raid/SCSI Support for DT Models
     dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
       --infobox "Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
     sleep 5
@@ -287,6 +311,7 @@ function newarcdisk() {
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     sleep 3
+    # Get Number of Sata Drives
     if [ "$ADSATA" -gt 0 ]; then
       pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
       [ ! -z "$pcis" ]
@@ -296,6 +321,7 @@ function newarcdisk() {
       SATADRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
       done
     fi
+    # Get Number of Raid/SCSI Drives
     if [ "$ADRAID" -gt 0 ]; then
       pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
       [ ! -z "$pcis" ]
@@ -305,20 +331,40 @@ function newarcdisk() {
       RAIDDRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
       done
     fi
+    # Maximum Number of Drives per Controller is 8 > So we have to limit it to 8
     if [ "$SATADRIVES" -gt 8 ]; then
     SATADRIVES=8
     fi
-    #if [ "$RAIDDRIVES" -gt 8 ]; then
-    #RAIDDRIVES=8
-    #fi
+    if [ "$RAIDDRIVES" -gt 8 ]; then
+    RAIDDRIVES=8
+    fi
+    # Set SataPortMap for Native and VMWare ESXi
     if [ "$ADSATA" -eq 1 ]; then
     writeConfigKey "cmdline.SataPortMap" "$SATADRIVES" "${USER_CONFIG_FILE}"
     fi
     if [ "$ADSATA" -eq 2 ]; then
     writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$SATADRIVES" "${USER_CONFIG_FILE}"
     fi
-    if [ "$ADRAID" -eq 1 ] && [ "$ADSATA" -eq 1 ]; then
-    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES" "${USER_CONFIG_FILE}"
+    if [ "$ADSATA" -eq 1 ] && [ "$ADRAID" -eq 1 ]; then
+    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$RAIDDRIVES" "${USER_CONFIG_FILE}"
+    fi
+    # Set SataPortMap for Proxmox (only 1 Drive per Sata Controller)
+    if [ "${MACHINE}" -eq "VIRTUAL" ]; then
+      if [ "$ADSATA" -eq 4 ]; then
+      writeConfigKey "cmdline.SataPortMap" "1111" "${USER_CONFIG_FILE}"
+      fi
+      if [ "$ADSATA" -eq 5 ]; then
+      writeConfigKey "cmdline.SataPortMap" "11111" "${USER_CONFIG_FILE}"
+      fi
+      if [ "$ADSATA" -eq 6 ]; then
+      writeConfigKey "cmdline.SataPortMap" "111111" "${USER_CONFIG_FILE}"
+      fi
+      if [ "$ADSATA" -eq 7 ]; then
+      writeConfigKey "cmdline.SataPortMap" "1111111" "${USER_CONFIG_FILE}"
+      fi
+      if [ "$ADSATA" -eq 8 ]; then
+      writeConfigKey "cmdline.SataPortMap" "11111111" "${USER_CONFIG_FILE}"
+      fi
     fi
   dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
     --infobox "Disk configuration successfull!\n\nSata: $SATADRIVES Drives\nRaid/SCSI: $RAIDDRIVES Drives\n" 0 0
@@ -329,31 +375,31 @@ function newarcdisk() {
 ###############################################################################
 # Make Network Config
 function arcnet() {
-  # Export Network Adapter Amount
+  # Export Network Adapter Amount - DSM 
   NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
   writeConfigKey "cmdline.netif_num" "${NETNUM}"            "${USER_CONFIG_FILE}"
-  if [ "${ARCPATCH}" -eq "1" ]; then 
-    # Check for model config
+  if [ "$ARCPATCH" -eq 1 ]; then 
+    # Install with Arc Patch - Check for model config and set custom Mac Address
     MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-    if [ "${NETNUM}" -gt "0" ]; then
+    if [ "$NETNUM" -gt 0 ]; then
       MAC1="`readModelKey "${MODEL}" "mac1"`"
       writeConfigKey "cmdline.mac1"           "$MAC1" "${USER_CONFIG_FILE}"
       MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
       ip link set dev eth0 address ${MACN1} 2>&1
     fi
-    if [ "${NETNUM}" -gt "1" ]; then
+    if [ "$NETNUM" -gt 1 ]; then
       MAC2="`readModelKey "${MODEL}" "mac2"`"
       writeConfigKey "cmdline.mac2"           "$MAC2" "${USER_CONFIG_FILE}"
       MACN2="${MAC2:0:2}:${MAC2:2:2}:${MAC2:4:2}:${MAC2:6:2}:${MAC2:8:2}:${MAC2:10:2}"
       ip link set dev eth1 address ${MACN2} 2>&1
     fi
-    if [ "${NETNUM}" -gt "2" ]; then
+    if [ "$NETNUM" -gt 2 ]; then
       MAC3="`readModelKey "${MODEL}" "mac3"`"
       writeConfigKey "cmdline.mac3"           "$MAC3" "${USER_CONFIG_FILE}"
       MACN3="${MAC3:0:2}:${MAC3:2:2}:${MAC3:4:2}:${MAC3:6:2}:${MAC3:8:2}:${MAC3:10:2}"
       ip link set dev eth2 address ${MACN3} 2>&1
     fi
-    if [ "${NETNUM}" -gt "3" ]; then
+    if [ "$NETNUM" -gt 3 ]; then
       MAC4="`readModelKey "${MODEL}" "mac4"`"
       writeConfigKey "cmdline.mac4"           "$MAC4" "${USER_CONFIG_FILE}"
       MACN4="${MAC4:0:2}:${MAC4:2:2}:${MAC4:4:2}:${MAC4:6:2}:${MAC4:8:2}:${MAC4:10:2}"
@@ -362,36 +408,30 @@ function arcnet() {
     dialog --backtitle "`backtitle`" \
             --title "Loading Arc MAC Table" --infobox "Set new MAC for ${NETNUM} Adapter" 0 0
     sleep 3
-    /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
-      --title "Restart DHCP" --progressbox "Renewing IP" 20 70
-    sleep 5
-    IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
-    dialog --backtitle "`backtitle`" --title "Arc Config" \
-        --infobox "Network configuration successfull!" 0 0
-    sleep 3
   else
-      if [ "${NETNUM}" -gt "0" ]; then
+      # Install without Arc Patch - Set Hardware Mac Address
+      if [ "$NETNUM" -gt 0 ]; then
       MACA1=`ip link show eth0 | awk '/ether/{print$2}'`
       MAC1=`echo ${MACA1} | sed 's/://g'`
       writeConfigKey "cmdline.mac1"           "$MAC1" "${USER_CONFIG_FILE}"
       MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
       ip link set dev eth0 address ${MACN1} 2>&1
     fi
-    if [ "${NETNUM}" -gt "1" ]; then
+    if [ "$NETNUM" -gt 1 ]; then
       MACA2=`ip link show eth0 | awk '/ether/{print$2}'`
       MAC2=`echo ${MACA2} | sed 's/://g'`
       writeConfigKey "cmdline.mac2"           "$MAC2" "${USER_CONFIG_FILE}"
       MACN2="${MAC2:0:2}:${MAC2:2:2}:${MAC2:4:2}:${MAC2:6:2}:${MAC2:8:2}:${MAC2:10:2}"
       ip link set dev eth1 address ${MACN2} 2>&1
     fi
-    if [ "${NETNUM}" -gt "2" ]; then
+    if [ "$NETNUM" -gt 2 ]; then
       MACA3=`ip link show eth0 | awk '/ether/{print$2}'`
       MAC3=`echo ${MACA3} | sed 's/://g'`
       writeConfigKey "cmdline.mac3"           "$MAC3" "${USER_CONFIG_FILE}"
       MACN3="${MAC3:0:2}:${MAC3:2:2}:${MAC3:4:2}:${MAC3:6:2}:${MAC3:8:2}:${MAC3:10:2}"
       ip link set dev eth2 address ${MACN3} 2>&1
     fi
-    if [ "${NETNUM}" -gt "3" ]; then
+    if [ "$NETNUM" -gt 3 ]; then
       MACA4=`ip link show eth0 | awk '/ether/{print$2}'`
       MAC4=`echo ${MACA4} | sed 's/://g'`
       writeConfigKey "cmdline.mac4"           "$MAC4" "${USER_CONFIG_FILE}"
@@ -401,14 +441,14 @@ function arcnet() {
     dialog --backtitle "`backtitle`" \
             --title "Loading Hardware MAC Table" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
     sleep 3
-    /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
-      --title "Restart DHCP" --progressbox "Renewing IP" 20 70
-    sleep 5
-    IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
-    dialog --backtitle "`backtitle`" --title "Arc Config" \
-      --infobox "Network configuration successfull!" 0 0
-    sleep 3
   fi
+  /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
+    --title "Restart DHCP" --progressbox "Renewing IP" 20 70
+  sleep 5
+  IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
+  dialog --backtitle "`backtitle`" --title "Arc Config" \
+      --infobox "Network configuration successfull!" 0 0
+  sleep 3
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
       --infobox "ARC configuration successfull!" 0 0
@@ -1181,30 +1221,39 @@ function updateMenu() {
 function sysinfo() {
         # Checks for Systeminfo Menu
         TYPEINFO=$(vserver=$(lscpu | grep Hypervisor | wc -l))
-        if [ $vserver -gt 0 ]; then echo "VM"; else echo "Native"; fi
         CPUINFO=$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')
         MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
-        # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
+        VENDOR=$(dmidecode -s system-product-name)
         TEXT=""
-        TEXT+="\nSystem: \Zb${TYPEINFO}\Zn"
-        if [ -n "${HYPERVISOR}" ]; then
-        TEXT+="\nHypervisor: \Zb${HYPERVISOR}\Zn\n"
-        fi
+        TEXT+="\nSystem: \Zb${MACHINE}\Zn"
+        TEXT+="\nVendor: \Zb${VENDOR}\Zn"
         TEXT+="\nCPU: \Zb${CPUINFO}\Zn"
         TEXT+="\nRAM: \Zb${MEMINFO}GB\Zn\n\n"
-        if [ "$ADSATA" -eq "1" ]; then
-        for PCI in `lspci -nn | grep -ie "\[0106\]" | awk '{print$1}'`; do
-          NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+        # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
+        # Get Information for Sata Controller
+        if [ "$ADSATA" -gt 0 ]; then
+        for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print$1}'`; do
+          # Get Name of Controller
+          NAME=`lspci -s "$PCI" | sed "s/\ .*://"`
+          # Get Amount of Drives connected
+          SATADRIVES=$(ls -la /sys/block | fgrep "$PCI" | grep -v "sr.$" | wc -l)
           TEXT+="\Z1SATA Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
+          TEXT+="\Z1Drives\Zn dedected:\n\Zb${SATADRIVES}\Zn\n"
         done
         TEXT+="\n"
         fi
-        if [ "$ADRAID" -eq "1" ]; then
-        for PCI in `lspci -nn | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
-          NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+        # Get Information for Raid/SCSI Controller
+        if [ "$ADRAID" -gt 0 ]; then
+        for PCI in `lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
+          # Get Name of Controller
+          NAME=`lspci -s "$PCI" | sed "s/\ .*://"`
+          # Get Amount of Drives connected
+          RAIDDRIVES=$(ls -la /sys/block | fgrep "$PCI" | grep -v "sr.$" | wc -l)
           TEXT+="\Z1SCSI/RAID/SAS Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
+          TEXT+="\Z1Drives\Zn dedected:\n\Zb${RAIDDRIVES}\Zn\n"
         done
         fi
+        # List loaded Modules
         MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
         TEXT+="\nModules loaded: \Zb${MODULESINFO}\n"
         TEXT+="\n"
