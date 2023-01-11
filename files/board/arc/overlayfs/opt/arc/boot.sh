@@ -92,7 +92,7 @@ if [ "${BUS}" = "ata" ]; then
   elif [ "${MACHINE}" = "VIRTUAL" ]; then
   DOM="2"
   else
-  DOME="2"
+  DOM="2"
   fi
 fi
 
