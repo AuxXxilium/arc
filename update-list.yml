@@ -4,3 +4,4 @@ replace:
   "files/board/arc/p1/grub/grub.cfg": "/mnt/p1/grub/grub.cfg"
   "files/board/arc/p1/ARC-VERSION" : "/mnt/p1/ARC-VERSION"
 remove:
+  "/mnt/p1/grub/locales"
