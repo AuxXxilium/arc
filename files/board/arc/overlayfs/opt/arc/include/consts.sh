@@ -1,9 +1,5 @@
 
-<<<<<<< HEAD:files/board/arc/overlayfs/opt/arc/include/consts.sh
-ARC_VERSION="23.01.04"
-=======
-ARPL_VERSION="1.0-beta10b"
->>>>>>> 04fd54c (Fixing grub.cfg bug invalid font):files/board/arpl/overlayfs/opt/arpl/include/consts.sh
+ARC_VERSION="23.01.01"
 
 # Define paths
 TMP_PATH="/tmp"
