@@ -1058,6 +1058,8 @@ function keymapMenu() {
 # Shows update menu to user
 function updateMenu() {
   NEXT="1"
+  PLATFORM="`readModelKey "${MODEL}" "platform"`"
+  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   while true; do
     dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
       1 "Update ARC" \
@@ -1109,14 +1111,20 @@ function updateMenu() {
         dialog --backtitle "`backtitle`" --title "Update ARC" --aspect 18 \
           --infobox "Installing new files" 0 0
         # Process update-list.yml
-        while IFS="=" read KEY VALUE; do
-          mkdir -p "`dirname "${VALUE}"`"
-          mv /tmp/`basename "${KEY}"` "${VALUE}"
-        done < <(readConfigMap "replace" "/tmp/update-list.yml")
         while read F; do
           [ -f "${F}" ] && rm -f "${F}"
           [ -d "${F}" ] && rm -Rf "${F}"
         done < <(readConfigArray "remove" "/tmp/update-list.yml")
+        while IFS="=" read KEY VALUE; do
+          if [ "${KEY: -1}" = "/" ]; then
+            rm -Rf "${VALUE}"
+            mkdir -p "${VALUE}"
+            gzip -dc "/tmp/`basename "${KEY}"`.tgz" | tar xf - -C "${VALUE}"
+          else
+            mkdir -p "`dirname "${VALUE}"`"
+            mv "/tmp/`basename "${KEY}"`" "${VALUE}"
+          fi
+        done < <(readConfigMap "replace" "/tmp/update-list.yml")
         dialog --backtitle "`backtitle`" --title "Update ARC" --aspect 18 \
           --yesno "ARC updated with success to ${TAG}!\nReboot?" 0 0
         [ $? -ne 0 ] && continue
@@ -1217,11 +1225,13 @@ function updateMenu() {
           rm "${MODULES_PATH}/${P}.tgz"
           mv "/tmp/${P}.tgz" "${MODULES_PATH}/${P}.tgz"
         done
-        # Rebuild modules
-        writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-        while read ID DESC; do
-          writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-        done < <(getAllModules "${PLATFORM}" "${KVER}")
+        # Rebuild modules if model/buildnumber is selected
+        if [ -n "${PLATFORM}" -a -n "${KVER}" ]; then
+          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+          while read ID DESC; do
+            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+          done < <(getAllModules "${PLATFORM}" "${KVER}")
+        fi
         DIRTY=1
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
           --msgbox "Modules updated with success!" 0 0
