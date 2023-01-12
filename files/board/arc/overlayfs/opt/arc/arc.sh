@@ -269,8 +269,11 @@ function arcdisk() {
     if [ "$ADSATA" -eq 1 ] && [ "$ADRAID" -eq 1 ]; then
     writeConfigKey "cmdline.SataPortMap" "$SATADRIVES" "${USER_CONFIG_FILE}"
     fi
-    # Set SataPortMap for Proxmox (only 1 Drive per Sata Controller)
+    # Set SataPortMap for Proxmox/Unraid (only 1 Drive per Sata Controller)
     if [ "${MACHINE}" -eq "VIRTUAL" ]; then
+      if [ "$ADSATA" -eq 3 ]; then
+      writeConfigKey "cmdline.SataPortMap" "111" "${USER_CONFIG_FILE}"
+      fi
       if [ "$ADSATA" -eq 4 ]; then
       writeConfigKey "cmdline.SataPortMap" "1111" "${USER_CONFIG_FILE}"
       fi
@@ -350,6 +353,9 @@ function newarcdisk() {
     fi
     # Set SataPortMap for Proxmox (only 1 Drive per Sata Controller)
     if [ "${MACHINE}" -eq "VIRTUAL" ]; then
+      if [ "$ADSATA" -eq 3 ]; then
+      writeConfigKey "cmdline.SataPortMap" "111" "${USER_CONFIG_FILE}"
+      fi
       if [ "$ADSATA" -eq 4 ]; then
       writeConfigKey "cmdline.SataPortMap" "1111" "${USER_CONFIG_FILE}"
       fi
