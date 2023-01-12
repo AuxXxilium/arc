@@ -269,8 +269,11 @@ function arcdisk() {
     if [ "$ADSATA" -eq 1 ] && [ "$ADRAID" -eq 1 ]; then
     writeConfigKey "cmdline.SataPortMap" "$SATADRIVES" "${USER_CONFIG_FILE}"
     fi
-    # Set SataPortMap for Proxmox (only 1 Drive per Sata Controller)
+    # Set SataPortMap for Proxmox/Unraid (only 1 Drive per Sata Controller)
     if [ "${MACHINE}" -eq "VIRTUAL" ]; then
+      if [ "$ADSATA" -eq 3 ]; then
+      writeConfigKey "cmdline.SataPortMap" "111" "${USER_CONFIG_FILE}"
+      fi
       if [ "$ADSATA" -eq 4 ]; then
       writeConfigKey "cmdline.SataPortMap" "1111" "${USER_CONFIG_FILE}"
       fi
@@ -350,6 +353,9 @@ function newarcdisk() {
     fi
     # Set SataPortMap for Proxmox (only 1 Drive per Sata Controller)
     if [ "${MACHINE}" -eq "VIRTUAL" ]; then
+      if [ "$ADSATA" -eq 3 ]; then
+      writeConfigKey "cmdline.SataPortMap" "111" "${USER_CONFIG_FILE}"
+      fi
       if [ "$ADSATA" -eq 4 ]; then
       writeConfigKey "cmdline.SataPortMap" "1111" "${USER_CONFIG_FILE}"
       fi
@@ -377,7 +383,16 @@ function newarcdisk() {
 function arcnet() {
   # Export Network Adapter Amount - DSM 
   NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
+  # Hardlimit to 4 Mac because of Redpill doesn't more at this time
+  if [ "$NETNUM" -gt 4 ]; then
+  NETNUM="4"
+  fi
   writeConfigKey "cmdline.netif_num" "${NETNUM}"            "${USER_CONFIG_FILE}"
+  # Delete old Mac Address from Userconfig
+  #deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.mac2" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.mac3" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.mac4" "${USER_CONFIG_FILE}"
   if [ "$ARCPATCH" -eq 1 ]; then 
     # Install with Arc Patch - Check for model config and set custom Mac Address
     MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
