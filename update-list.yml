@@ -1,8 +1,6 @@
+remove:
 replace:
   ".buildroot/output/images/bzImage": "/mnt/p3/bzImage-arc"
   ".buildroot/output/images/rootfs.cpio.xz": "/mnt/p3/initrd-arc"
-  "files/board/arc/p1/grub/grub.cfg": "/mnt/p1/grub/grub.cfg"
   "files/board/arc/p1/ARC-VERSION" : "/mnt/p1/ARC-VERSION"
-  "files/board/arc/p1/grub/fonts/unicode.pf2": "/mnt/p1/grub/fonts/unicode.pf2"
-remove:
-  "/mnt/p1/grub/locales"
+  "files/board/arpl/p1/grub/": "/mnt/p1/grub/"
