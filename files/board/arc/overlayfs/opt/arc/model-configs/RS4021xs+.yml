@@ -6,7 +6,6 @@ synoinfo: &synoinfo
   esataportcfg: "0x0"
   support_led_brightness_adjustment: "no"
   support_syno_hybrid_raid: "yes"
-  supportraidgroup: "no"
   rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
