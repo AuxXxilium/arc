@@ -1058,6 +1058,8 @@ function keymapMenu() {
 # Shows update menu to user
 function updateMenu() {
   NEXT="1"
+  PLATFORM="`readModelKey "${MODEL}" "platform"`"
+  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   while true; do
     dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
       1 "Update ARC" \
@@ -1217,11 +1219,13 @@ function updateMenu() {
           rm "${MODULES_PATH}/${P}.tgz"
           mv "/tmp/${P}.tgz" "${MODULES_PATH}/${P}.tgz"
         done
-        # Rebuild modules
-        writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-        while read ID DESC; do
-          writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-        done < <(getAllModules "${PLATFORM}" "${KVER}")
+        # Rebuild modules if model/buildnumber is selected
+        if [ -n "${PLATFORM}" -a -n "${KVER}" ]; then
+          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+          while read ID DESC; do
+            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+          done < <(getAllModules "${PLATFORM}" "${KVER}")
+        fi
         DIRTY=1
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
           --msgbox "Modules updated with success!" 0 0
