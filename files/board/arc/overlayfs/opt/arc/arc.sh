@@ -377,7 +377,16 @@ function newarcdisk() {
 function arcnet() {
   # Export Network Adapter Amount - DSM 
   NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
+  # Hardlimit to 4 Mac because of Redpill doesn't more at this time
+  if [ "$NETNUM" -gt 4 ]; then
+  NETNUM="4"
+  fi
   writeConfigKey "cmdline.netif_num" "${NETNUM}"            "${USER_CONFIG_FILE}"
+  # Delete old Mac Address from Userconfig
+  #deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.mac2" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.mac3" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.mac4" "${USER_CONFIG_FILE}"
   if [ "$ARCPATCH" -eq 1 ]; then 
     # Install with Arc Patch - Check for model config and set custom Mac Address
     MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
