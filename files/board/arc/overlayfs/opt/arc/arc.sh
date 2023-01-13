@@ -32,7 +32,7 @@ CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
-  BACKTITLE="ARC v${ARC_VERSION} |"
+  BACKTITLE="Arc v${ARC_VERSION} |"
   if [ -n "${MODEL}" ]; then
     BACKTITLE+=" ${MODEL}"
   else
@@ -228,7 +228,7 @@ function arcdisk() {
     return 1
   else
     dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-      --infobox "ARC Disk configuration started!" 0 0
+      --infobox "Arc Disk configuration started!" 0 0
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     sleep 3
@@ -310,7 +310,7 @@ function newarcdisk() {
     return 1
   else
     dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-      --infobox "ARC Disk configuration started!" 0 0
+      --infobox "Arc Disk configuration started!" 0 0
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     sleep 3
@@ -466,7 +466,7 @@ function arcnet() {
   sleep 3
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
-      --infobox "ARC configuration successfull!" 0 0
+      --infobox "Arc configuration successfull!" 0 0
   sleep 3
   CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
   dialog --clear --no-items --backtitle "`backtitle`"
@@ -1062,7 +1062,7 @@ function updateMenu() {
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   while true; do
     dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
-      1 "Update ARC" \
+      1 "Update Arc Loader" \
       2 "Update Addons" \
       3 "Update LKMs" \
       4 "Update Modules" \
@@ -1071,44 +1071,44 @@ function updateMenu() {
     [ $? -ne 0 ] && return
     case "`<${TMP_PATH}/resp`" in
       1)
-        dialog --backtitle "`backtitle`" --title "Update ARC" --aspect 18 \
+        dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
           --infobox "Checking last version" 0 0
         ACTUALVERSION="v${ARC_VERSION}"
         TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
         if [ $? -ne 0 -o -z "${TAG}" ]; then
-          dialog --backtitle "`backtitle`" --title "Update ARC" --aspect 18 \
+          dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           continue
         fi
         if [ "${ACTUALVERSION}" = "${TAG}" ]; then
-          dialog --backtitle "`backtitle`" --title "Update ARC" --aspect 18 \
+          dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
           [ $? -ne 0 ] && continue
         fi
-        dialog --backtitle "`backtitle`" --title "Update ARC" --aspect 18 \
+        dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
           --infobox "Downloading last version ${TAG}" 0 0
         # Download update file
         STATUS=`curl --insecure -w "%{http_code}" -L \
           "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o /tmp/update.zip`
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-          dialog --backtitle "`backtitle`" --title "Update ARC" --aspect 18 \
+          dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --msgbox "Error downloading update file" 0 0
           continue
         fi
         unzip -oq /tmp/update.zip -d /tmp
         if [ $? -ne 0 ]; then
-          dialog --backtitle "`backtitle`" --title "Update ARC" --aspect 18 \
+          dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --msgbox "Error extracting update file" 0 0
           continue
         fi
         # Check checksums
         (cd /tmp && sha256sum --status -c sha256sum)
         if [ $? -ne 0 ]; then
-          dialog --backtitle "`backtitle`" --title "Update ARC" --aspect 18 \
+          dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --msgbox "Checksum do not match!" 0 0
           continue
         fi
-        dialog --backtitle "`backtitle`" --title "Update ARC" --aspect 18 \
+        dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
           --infobox "Installing new files" 0 0
         # Process update-list.yml
         while read F; do
@@ -1125,7 +1125,7 @@ function updateMenu() {
             mv "/tmp/`basename "${KEY}"`" "${VALUE}"
           fi
         done < <(readConfigMap "replace" "/tmp/update-list.yml")
-        dialog --backtitle "`backtitle`" --title "Update ARC" --aspect 18 \
+        dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
           --yesno "ARC updated with success to ${TAG}!\nReboot?" 0 0
         [ $? -ne 0 ] && continue
          arc-reboot.sh config
@@ -1498,7 +1498,7 @@ function boot() {
   if [ $? -eq 0 ]; then
     make || return
   fi
-  dialog --backtitle "`backtitle`" --title "ARC Boot" \
+  dialog --backtitle "`backtitle`" --title "Arc Boot" \
     --infobox "Booting to DSM - Please stay patient!" 0 0
   boot.sh
 }

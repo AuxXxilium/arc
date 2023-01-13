@@ -23,7 +23,7 @@ fi
 
 # Shows title
 clear
-TITLE="ARC Redpill Loader v${ARC_VERSION}"
+TITLE="Arc Loader v${ARC_VERSION}"
 printf "\033[1;44m%*s\n" $COLUMNS ""
 printf "\033[1;44m%*s\033[A\n" $COLUMNS ""
 printf "\033[1;32m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
@@ -182,7 +182,7 @@ echo
 echo -e "User config is on \033[1;32m${USER_CONFIG_FILE}\033[0m"
 echo -e "Default SSH Root password is \033[1;31mARC-R3dp1lL\033[0m"
 echo
-echo -e "Loading \033[1;31mARC\033[0m"
+echo -e "Loading \033[1;31mArc\033[0m"
 echo
 
 # Check memory
