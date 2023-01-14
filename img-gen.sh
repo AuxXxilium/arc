@@ -73,9 +73,9 @@ qemu-img convert -O vmdk arc.img arc-dyn.vmdk
 qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
 [ -x test.sh ] && ./test.sh
 rm -f *.zip
-zip -9 "arc-${VERSION}.img.zip" arc.img
-zip -9 "arc-${VERSION}.vmdk-dyn.zip" arc-dyn.vmdk
-zip -9 "arc-${VERSION}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+zip -9 "arc.img.zip" arc.img
+zip -9 "arc.vmdk-dyn.zip" arc-dyn.vmdk
+zip -9 "arc.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
 sha256sum update-list.yml > sha256sum
 zip -9j update.zip update-list.yml
 while read F; do
