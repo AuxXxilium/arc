@@ -47,7 +47,11 @@ jobs:
       - name: Build image
         id: build
         run: |
-          VERSION=`<VERSION`
+          VERSION=$(date +'%y.%m.%d')
+          rm -f files/board/arc/p1/ARC-VERSION
+          rm -f VERSION
+          echo "${VERSION}" > VERSION
+          echo "${VERSION}" > files/board/arpl/p1/ARPL-VERSION
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
           # Remove old files
           rm -rf .buildroot/output/target/opt/arpl
@@ -85,12 +89,7 @@ jobs:
           curl -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/firmware.tgz" -o "${MODULES_DIR}/firmware.tgz"
           # Copy files
           echo "Copying files"
-          VERSION=$(date +'%y.%m.%d')
-          rm -f files/board/arc/p1/ARC-VERSION
-          rm -f VERSION
           sed 's/^ARPL_VERSION=.*/ARPL_VERSION="'${VERSION}'"/' -i files/board/arpl/overlayfs/opt/arpl/include/consts.sh
-          echo "${VERSION}" > VERSION
-          echo "${VERSION}" > files/board/arpl/p1/ARPL-VERSION
           cp -Ru files/* .buildroot/
           cd .buildroot
           echo "Generating default config"
