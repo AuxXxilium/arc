@@ -31,6 +31,8 @@ mac4: "9009D0288442"
 mac5: "9009D019775A"
 mac6: "9009D01978A5"
 disks: 4
+flags:
+  - "fma"
 builds:
   42962:
     ver: "7.1.1"
