@@ -452,21 +452,21 @@ function arcnet() {
       ip link set dev eth0 address ${MACN1} 2>&1
     fi
     if [ "$NETNUM" -gt 1 ]; then
-      MACA2=`ip link show eth0 | awk '/ether/{print$2}'`
+      MACA2=`ip link show eth1 | awk '/ether/{print$2}'`
       MAC2=`echo ${MACA2} | sed 's/://g'`
       writeConfigKey "cmdline.mac2"           "$MAC2" "${USER_CONFIG_FILE}"
       MACN2="${MAC2:0:2}:${MAC2:2:2}:${MAC2:4:2}:${MAC2:6:2}:${MAC2:8:2}:${MAC2:10:2}"
       ip link set dev eth1 address ${MACN2} 2>&1
     fi
     if [ "$NETNUM" -gt 2 ]; then
-      MACA3=`ip link show eth0 | awk '/ether/{print$2}'`
+      MACA3=`ip link show eth2 | awk '/ether/{print$2}'`
       MAC3=`echo ${MACA3} | sed 's/://g'`
       writeConfigKey "cmdline.mac3"           "$MAC3" "${USER_CONFIG_FILE}"
       MACN3="${MAC3:0:2}:${MAC3:2:2}:${MAC3:4:2}:${MAC3:6:2}:${MAC3:8:2}:${MAC3:10:2}"
       ip link set dev eth2 address ${MACN3} 2>&1
     fi
     if [ "$NETNUM" -gt 3 ]; then
-      MACA4=`ip link show eth0 | awk '/ether/{print$2}'`
+      MACA4=`ip link show eth3 | awk '/ether/{print$2}'`
       MAC4=`echo ${MACA4} | sed 's/://g'`
       writeConfigKey "cmdline.mac4"           "$MAC4" "${USER_CONFIG_FILE}"
       MACN4="${MAC4:0:2}:${MAC4:2:2}:${MAC4:4:2}:${MAC4:6:2}:${MAC4:8:2}:${MAC4:10:2}"
