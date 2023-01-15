@@ -4,7 +4,6 @@ synoinfo: &synoinfo
   support_memory_compatibility: "no"
   support_bde_internal_10g: "no"
   esataportcfg: "0x0"
-  support_oob_ctl: "no"
   support_led_brightness_adjustment: "no"
   supportraidgroup: "yes"
   rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
