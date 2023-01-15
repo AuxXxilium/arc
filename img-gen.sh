@@ -25,9 +25,9 @@ unzip /tmp/rp-lkms.zip -d files/board/arpl/p3/lkms
 echo "Getting latest Addons"
 rm -Rf /tmp/addons
 mkdir -p /tmp/addons
-TAG=`curl -s https://api.github.com/repos/AuxXxilium/arpl-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
+TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
 echo "Version: ${TAG}"
-curl -L "https://github.com/fbelavenuto/arpl-addons/AuxXxilium/download/${TAG}/addons.zip" -o /tmp/addons.zip
+curl -L "https://github.com/AuxXxilium/arc-addons/AuxXxilium/download/${TAG}/addons.zip" -o /tmp/addons.zip
 rm -rf /tmp/addons
 unzip /tmp/addons.zip -d /tmp/addons
 DEST_PATH="files/board/arpl/p3/addons"
@@ -42,13 +42,13 @@ done
 # Get latest modules
 echo "Getting latest modules"
 MODULES_DIR="${PWD}/files/board/arpl/p3/modules"
-TAG=`curl -s https://api.github.com/repos/AuxXxilium/arpl-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
+TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
 echo "Version: ${TAG}"
 while read PLATFORM KVER; do
   FILE="${PLATFORM}-${KVER}"
-  curl -L "https://github.com/AuxXxilium/arpl-modules/releases/download/${TAG}/${FILE}.tgz" -o "${MODULES_DIR}/${FILE}.tgz"
+  curl -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/${FILE}.tgz" -o "${MODULES_DIR}/${FILE}.tgz"
 done < PLATFORMS
-curl -L "https://github.com/AuxXxilium/arpl-modules/releases/download/${TAG}/firmware.tgz" -o "${MODULES_DIR}/firmware.tgz"
+curl -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/firmware.tgz" -o "${MODULES_DIR}/firmware.tgz"
 
 # Copy files
 echo "Copying files"
