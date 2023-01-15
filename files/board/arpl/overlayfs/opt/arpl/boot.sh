@@ -10,7 +10,7 @@ loaderIsConfigured || die "Loader is not configured!"
 # Print text centralized
 clear
 [ -z "${COLUMNS}" ] && COLUMNS=50
-TITLE="Welcome to Automated Redpill Loader v${ARPL_VERSION}"
+TITLE="Arc Loader v${ARPL_VERSION}"
 printf "\033[1;44m%*s\n" ${COLUMNS} ""
 printf "\033[1;44m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;32m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
@@ -154,6 +154,6 @@ if [ "${EFI_BUG}" = "yes" -a ${EFI} -eq 1 ]; then
 else
   kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
 fi
-echo -e "\033[1;37mBooting...\033[0m"
+echo -e "\033[1;37mBooting DSM...\033[0m"
 poweroff
 while true; do sleep 1; done # infinity loop

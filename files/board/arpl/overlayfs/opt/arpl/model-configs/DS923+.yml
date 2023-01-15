@@ -3,9 +3,9 @@ synoinfo: &synoinfo
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_led_brightness_adjustment: "no"
-  rss_server: "https://raw.githubusercontent.com/fbelavenuto/arpl/main/rss.xml"
-  rss_server_ssl: "https://raw.githubusercontent.com/fbelavenuto/arpl/main/rss.xml"
-  rss_server_v2: "https://raw.githubusercontent.com/fbelavenuto/arpl/main/rss.json"
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
 cmdline: &cmdline
   SMBusHddDynamicPower: 1
   synoboot2:
@@ -16,16 +16,20 @@ cmdline: &cmdline
 platform: "r1000"
 unique: "synology_r1000_923+"
 beta: true
-dom: 2
+dom: 1
 dt: true
 serial:
   prefix:
-    - "2030"
-    - "2040"
-    - "20C0"
-    - "2150"
+    - "2270"
   middle: "TQR"
   suffix: "alpha"
+arcserial: "2270TQRD59Q2"
+mac1: "9009D028843F"
+mac2: "9009D0288440"
+mac3: "9009D0288441"
+mac4: "9009D0288442"
+mac5: "9009D019775A"
+mac6: "9009D01978A5"
 disks: 4
 builds:
   42962:

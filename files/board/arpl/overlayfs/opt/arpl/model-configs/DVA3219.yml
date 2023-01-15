@@ -7,9 +7,9 @@ synoinfo: &synoinfo
   supportraidgroup: "no"
   support_syno_hybrid_raid: "yes"
   support_led_brightness_adjustment: "no"
-  rss_server: "https://raw.githubusercontent.com/fbelavenuto/arpl/main/rss.xml"
-  rss_server_ssl: "https://raw.githubusercontent.com/fbelavenuto/arpl/main/rss.xml"
-  rss_server_v2: "https://raw.githubusercontent.com/fbelavenuto/arpl/main/rss.json"
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
 cmdline: &cmdline
   syno_hdd_powerup_seq: 0
   HddHotplug: 0
@@ -19,14 +19,20 @@ cmdline: &cmdline
   elevator: elevator
 platform: "denverton"
 unique: "synology_denverton_dva3219"
-beta: true
-dom: 2
+dom: 1
 serial:
   prefix:
     - "1930"
     - "1940"
   middle: "RFR"
   suffix: "alpha"
+arcserial: "1930RFR8HJTK4"
+mac1: "001132A9E866"
+mac2: "001132A9E867"
+mac3: "001132A9E868"
+mac4: "001132A9E869"
+mac5: "9009D019775A"
+mac6: "9009D01978A5"
 flags:
   - "fma"
 disks: 4

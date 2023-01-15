@@ -6,10 +6,9 @@ synoinfo: &synoinfo
   support_led_brightness_adjustment: "no"
   support_leds_lp3943: ""
   buzzeroffen: "0xffff"
-  rss_server: "https://raw.githubusercontent.com/fbelavenuto/arpl/main/rss.xml"
-  rss_server_ssl: "https://raw.githubusercontent.com/fbelavenuto/arpl/main/rss.xml"
-  rss_server_v2: "https://raw.githubusercontent.com/fbelavenuto/arpl/main/rss.json"
-  #support_ssd_cache: yes
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
 cmdline: &cmdline
   syno_hdd_powerup_seq: 0
   HddHotplug: 0
@@ -19,7 +18,7 @@ cmdline: &cmdline
   elevator: elevator
 platform: "apollolake"
 unique: "synology_apollolake_918+"
-dom: 2
+dom: 1
 serial:
   prefix:
     - "1780"
@@ -28,6 +27,13 @@ serial:
     - "1980"
   middle: "PDN"
   suffix: "numeric"
+arcserial: "1890PDN993218"
+mac1: "0011329A73BB"
+mac2: "0011329A73BC"
+mac3: "0011329A73BD"
+mac4: "0011329A73BE"
+mac5: "9009D019775A"
+mac6: "9009D01978A5"
 disks: 4
 flags:
   - "fma"
