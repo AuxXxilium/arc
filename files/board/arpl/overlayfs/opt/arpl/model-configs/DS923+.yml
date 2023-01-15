@@ -16,7 +16,7 @@ cmdline: &cmdline
 platform: "r1000"
 unique: "synology_r1000_923+"
 beta: true
-dom: 1
+dom: 2
 dt: true
 serial:
   prefix:

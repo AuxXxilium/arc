@@ -18,7 +18,7 @@ cmdline: &cmdline
   elevator: elevator
 platform: "apollolake"
 unique: "synology_apollolake_918+"
-dom: 1
+dom: 2
 serial:
   prefix:
     - "1780"

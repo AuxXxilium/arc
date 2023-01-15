@@ -19,7 +19,7 @@ cmdline: &cmdline
   elevator: elevator
 platform: "v1000"
 unique: "synology_v1000_1621+"
-dom: 1
+dom: 2
 serial:
   prefix:
     - "2080"

@@ -19,7 +19,7 @@ cmdline: &cmdline
   elevator: elevator
 platform: "broadwellnk"
 unique: "synology_broadwellnk_rs4021xs+"
-dom: 1
+dom: 2
 serial:
   prefix:
     - "2160"
