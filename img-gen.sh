@@ -67,13 +67,15 @@ echo "Version: ${VERSION}"
 echo "Building... Drink a coffee and wait!"
 make BR2_EXTERNAL=../external -j`nproc`
 cd -
-qemu-img convert -O vmdk arpl.img arpl-dyn.vmdk
-qemu-img convert -O vmdk -o adapter_type=lsilogic arpl.img -o subformat=monolithicFlat arpl.vmdk
+rm -f arc.img
+cp -f arpl.img arc.img
+qemu-img convert -O vmdk arc.img arc-dyn.vmdk
+qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
 [ -x test.sh ] && ./test.sh
 rm -f *.zip
-zip -9 "arpl-${VERSION}.img.zip" arpl.img
-zip -9 "arpl-${VERSION}.vmdk-dyn.zip" arpl-dyn.vmdk
-zip -9 "arpl-${VERSION}.vmdk-flat.zip" arpl.vmdk arpl-flat.vmdk
+zip -9 "arc.img.zip" arc.img
+zip -9 "arc.vmdk-dyn.zip" arc-dyn.vmdk
+zip -9 "arc.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
 sha256sum update-list.yml > sha256sum
 zip -9j update.zip update-list.yml
 while read F; do
