@@ -1607,4 +1607,10 @@ while true; do
   esac
 done
 clear
-echo -e "Call \033[1;32marc.sh\033[0m to return to menu"
+# Inform user
+echo
+echo -e "Call \033[1;32marc.sh\033[0m to return to loader"
+echo
+echo -e "User config is on \033[1;32m${USER_CONFIG_FILE}\033[0m"
+echo -e "Default SSH Root password is \033[1;31mRedp1lL-1s-4weSomE\033[0m"
+echo
