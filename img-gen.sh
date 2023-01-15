@@ -27,7 +27,7 @@ rm -Rf /tmp/addons
 mkdir -p /tmp/addons
 TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
 echo "Version: ${TAG}"
-curl -L "https://github.com/AuxXxilium/arc-addons/AuxXxilium/download/${TAG}/addons.zip" -o /tmp/addons.zip
+curl -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip
 rm -rf /tmp/addons
 unzip /tmp/addons.zip -d /tmp/addons
 DEST_PATH="files/board/arpl/p3/addons"
