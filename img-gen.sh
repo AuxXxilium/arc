@@ -14,30 +14,22 @@ rm -rf ".buildroot/board/arpl/p3"
 
 # Get latest LKMs
 echo "Getting latest LKMs"
-if [ `ls ../redpill-lkm/output | wc -l` -eq 0 ]; then
-  echo "  Downloading from github"
-  TAG=`curl -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
-  curl -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip
-  rm -rf files/board/arpl/p3/lkms/*
-  unzip /tmp/rp-lkms.zip -d files/board/arpl/p3/lkms
-else
-  echo "  Copying from ../redpill-lkm/output"
-  rm -rf files/board/arpl/p3/lkms/*
-  cp -f ../redpill-lkm/output/* files/board/arpl/p3/lkms
-fi
+echo "  Downloading from github"
+TAG=`curl -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
+echo "Version: ${TAG}"
+curl -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip
+rm -rf files/board/arpl/p3/lkms/*
+unzip /tmp/rp-lkms.zip -d files/board/arpl/p3/lkms
 
 # Get latest addons and install its
 echo "Getting latest Addons"
 rm -Rf /tmp/addons
 mkdir -p /tmp/addons
-if [ -d ../arpl-addons ]; then
-  cp ../arpl-addons/*.addon /tmp/addons/
-else
-  TAG=`curl -s https://api.github.com/repos/AuxXxilium/arpl-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
-  curl -L "https://github.com/fbelavenuto/arpl-addons/AuxXxilium/download/${TAG}/addons.zip" -o /tmp/addons.zip
-  rm -rf /tmp/addons
-  unzip /tmp/addons.zip -d /tmp/addons
-fi
+TAG=`curl -s https://api.github.com/repos/AuxXxilium/arpl-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
+echo "Version: ${TAG}"
+curl -L "https://github.com/fbelavenuto/arpl-addons/AuxXxilium/download/${TAG}/addons.zip" -o /tmp/addons.zip
+rm -rf /tmp/addons
+unzip /tmp/addons.zip -d /tmp/addons
 DEST_PATH="files/board/arpl/p3/addons"
 echo "Installing addons to ${DEST_PATH}"
 for PKG in `ls /tmp/addons/*.addon`; do
@@ -50,22 +42,13 @@ done
 # Get latest modules
 echo "Getting latest modules"
 MODULES_DIR="${PWD}/files/board/arpl/p3/modules"
-if [ -d ../arpl-modules ]; then
-  cd ../arpl-modules
-  for D in `ls -d *-*`; do
-    echo "${D}"
-    (cd ${D} && tar caf "${MODULES_DIR}/${D}.tgz" *.ko)
-  done
-  (cd firmware && tar caf "${MODULES_DIR}/firmware.tgz" *)
-  cd -
-else
-  TAG=`curl -s https://api.github.com/repos/AuxXxilium/arpl-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
-  while read PLATFORM KVER; do
-    FILE="${PLATFORM}-${KVER}"
-    curl -L "https://github.com/AuxXxilium/arpl-modules/releases/download/${TAG}/${FILE}.tgz" -o "${MODULES_DIR}/${FILE}.tgz"
-  done < PLATFORMS
-  curl -L "https://github.com/AuxXxilium/arpl-modules/releases/download/${TAG}/firmware.tgz" -o "${MODULES_DIR}/firmware.tgz"
-fi
+TAG=`curl -s https://api.github.com/repos/AuxXxilium/arpl-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
+echo "Version: ${TAG}"
+while read PLATFORM KVER; do
+  FILE="${PLATFORM}-${KVER}"
+  curl -L "https://github.com/AuxXxilium/arpl-modules/releases/download/${TAG}/${FILE}.tgz" -o "${MODULES_DIR}/${FILE}.tgz"
+done < PLATFORMS
+curl -L "https://github.com/AuxXxilium/arpl-modules/releases/download/${TAG}/firmware.tgz" -o "${MODULES_DIR}/firmware.tgz"
 
 # Copy files
 echo "Copying files"
