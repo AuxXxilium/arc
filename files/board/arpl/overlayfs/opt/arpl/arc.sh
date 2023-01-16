@@ -253,64 +253,37 @@ function arcdisk() {
     sleep 3
     # Get Number of Sata Drives
     if [ "$ADSATA" -gt 0 ]; then
+      rm -f ${TMP_PATH}/satadrives
+      touch ${TMP_PATH}/raiddrives
       pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
       [ ! -z "$pcis" ]
-      # loop through non-SATA controllers
+      # loop through SATA controllers
       for pci in $pcis; do
       # get attached block devices (exclude CD-ROMs)
       SATADRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      echo -n "$SATADRIVES" >> ${TMP_PATH}/satadrives
       done
     fi
     # Get Number of Raid/SCSI Drives
     if [ "$ADRAID" -gt 0 ]; then
+      rm -f ${TMP_PATH}/raiddrives
+      touch ${TMP_PATH}/raiddrives
       pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
       [ ! -z "$pcis" ]
       # loop through non-SATA controllers
       for pci in $pcis; do
       # get attached block devices (exclude CD-ROMs)
       RAIDDRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      echo -n "$RAIDDRIVES" >> ${TMP_PATH}/raiddrives
       done
     fi
-    # Maximum Number of Drives per Controller is 8 > So we have to limit it to 8
-    if [ "$SATADRIVES" -gt 8 ]; then
-    SATADRIVES=8
-    fi
-    if [ "$RAIDDRIVES" -gt 8 ]; then
-    RAIDDRIVES=8
-    fi
-    # Set SataPortMap for Native and VMWare ESXi
-    if [ "$ADSATA" -eq 1 ]; then
-    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES" "${USER_CONFIG_FILE}"
-    fi
-    if [ "$ADSATA" -eq 2 ]; then
-    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$SATADRIVES" "${USER_CONFIG_FILE}"
-    fi
-    if [ "$ADSATA" -eq 1 ] && [ "$ADRAID" -eq 1 ]; then
-    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$RAIDDRIVES" "${USER_CONFIG_FILE}"
-    fi
-    # Set SataPortMap for Proxmox/Unraid (only 1 Drive per Sata Controller)
-    if [ "${MACHINE}" -eq "VIRTUAL" ]; then
-      if [ "$ADSATA" -eq 3 ]; then
-      writeConfigKey "cmdline.SataPortMap" "111" "${USER_CONFIG_FILE}"
-      fi
-      if [ "$ADSATA" -eq 4 ]; then
-      writeConfigKey "cmdline.SataPortMap" "1111" "${USER_CONFIG_FILE}"
-      fi
-      if [ "$ADSATA" -eq 5 ]; then
-      writeConfigKey "cmdline.SataPortMap" "11111" "${USER_CONFIG_FILE}"
-      fi
-      if [ "$ADSATA" -eq 6 ]; then
-      writeConfigKey "cmdline.SataPortMap" "111111" "${USER_CONFIG_FILE}"
-      fi
-      if [ "$ADSATA" -eq 7 ]; then
-      writeConfigKey "cmdline.SataPortMap" "1111111" "${USER_CONFIG_FILE}"
-      fi
-      if [ "$ADSATA" -eq 8 ]; then
-      writeConfigKey "cmdline.SataPortMap" "11111111" "${USER_CONFIG_FILE}"
-      fi
+    # Set SataPortMap
+    if [ "$ADSATA" -gt 0 ]; then
+    DRIVES=$(awk '{print$1}' ${TMP_PATH}/satadrives)
+    writeConfigKey "cmdline.SataPortMap" "$DRIVES" "${USER_CONFIG_FILE}"
     fi
   dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-    --infobox "Disk configuration successfull!\n\nSata: $SATADRIVES Drives\nRaid/SCSI: $RAIDDRIVES Drives\n" 0 0
+    --infobox "Disk configuration successfull!" 0 0
   sleep 3
   writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
   arcnet
@@ -335,64 +308,37 @@ function newarcdisk() {
     sleep 3
     # Get Number of Sata Drives
     if [ "$ADSATA" -gt 0 ]; then
+      rm -f ${TMP_PATH}/satadrives
+      touch ${TMP_PATH}/raiddrives
       pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
       [ ! -z "$pcis" ]
-      # loop through non-SATA controllers
+      # loop through SATA controllers
       for pci in $pcis; do
       # get attached block devices (exclude CD-ROMs)
       SATADRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      echo -n "$SATADRIVES" >> ${TMP_PATH}/satadrives
       done
     fi
     # Get Number of Raid/SCSI Drives
     if [ "$ADRAID" -gt 0 ]; then
+      rm -f ${TMP_PATH}/raiddrives
+      touch ${TMP_PATH}/raiddrives
       pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
       [ ! -z "$pcis" ]
       # loop through non-SATA controllers
       for pci in $pcis; do
       # get attached block devices (exclude CD-ROMs)
       RAIDDRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      echo -n "$RAIDDRIVES" >> ${TMP_PATH}/raiddrives
       done
     fi
-    # Maximum Number of Drives per Controller is 8 > So we have to limit it to 8
-    if [ "$SATADRIVES" -gt 8 ]; then
-    SATADRIVES=8
-    fi
-    if [ "$RAIDDRIVES" -gt 8 ]; then
-    RAIDDRIVES=8
-    fi
-    # Set SataPortMap for Native and VMWare ESXi
-    if [ "$ADSATA" -eq 1 ]; then
-    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES" "${USER_CONFIG_FILE}"
-    fi
-    if [ "$ADSATA" -eq 2 ]; then
-    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$SATADRIVES" "${USER_CONFIG_FILE}"
-    fi
-    if [ "$ADSATA" -eq 1 ] && [ "$ADRAID" -eq 1 ]; then
-    writeConfigKey "cmdline.SataPortMap" "$SATADRIVES$RAIDDRIVES" "${USER_CONFIG_FILE}"
-    fi
-    # Set SataPortMap for Proxmox (only 1 Drive per Sata Controller)
-    if [ "${MACHINE}" -eq "VIRTUAL" ]; then
-      if [ "$ADSATA" -eq 3 ]; then
-      writeConfigKey "cmdline.SataPortMap" "111" "${USER_CONFIG_FILE}"
-      fi
-      if [ "$ADSATA" -eq 4 ]; then
-      writeConfigKey "cmdline.SataPortMap" "1111" "${USER_CONFIG_FILE}"
-      fi
-      if [ "$ADSATA" -eq 5 ]; then
-      writeConfigKey "cmdline.SataPortMap" "11111" "${USER_CONFIG_FILE}"
-      fi
-      if [ "$ADSATA" -eq 6 ]; then
-      writeConfigKey "cmdline.SataPortMap" "111111" "${USER_CONFIG_FILE}"
-      fi
-      if [ "$ADSATA" -eq 7 ]; then
-      writeConfigKey "cmdline.SataPortMap" "1111111" "${USER_CONFIG_FILE}"
-      fi
-      if [ "$ADSATA" -eq 8 ]; then
-      writeConfigKey "cmdline.SataPortMap" "11111111" "${USER_CONFIG_FILE}"
-      fi
+    # Set SataPortMap
+    if [ "$ADSATA" -gt 0 ]; then
+    DRIVES=$(awk '{print$1}' ${TMP_PATH}/satadrives)
+    writeConfigKey "cmdline.SataPortMap" "$DRIVES" "${USER_CONFIG_FILE}"
     fi
   dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-    --infobox "Disk configuration successfull!\n\nSata: $SATADRIVES Drives\nRaid/SCSI: $RAIDDRIVES Drives\n" 0 0
+    --infobox "Disk configuration successfull!" 0 0
   sleep 3
   fi
 }
@@ -731,56 +677,6 @@ function editUserConfig() {
     rm -f "${MOD_RDGZ_FILE}"
   fi
   DIRTY=1
-}
-
-###############################################################################
-# Shows available Drives
-function alldrives() {
-        TEXT=""
-        NUMPORTS=0
-        if [ "$ADSATA" -eq "1" ]; then
-        for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print$1}'`; do
-          NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
-          TEXT+="\Z1SATA Controller\Zn dedected:\n\Zb${NAME}\Zn\n\nPorts: "
-          unset HOSTPORTS
-          declare -A HOSTPORTS
-          while read LINE; do
-            ATAPORT="`echo ${LINE} | grep -o 'ata[0-9]*'`"
-            PORT=`echo ${ATAPORT} | sed 's/ata//'`
-            HOSTPORTS[${PORT}]=`echo ${LINE} | grep -o 'host[0-9]*$'`
-          done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
-          while read PORT; do
-            ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
-            PCMD=`cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd`
-            [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
-            [ ${ATTACH} -eq 1 ] && TEXT+="\Z2\Zb"
-            [ ${DUMMY} -eq 1 ] && TEXT+="\Z1"
-            TEXT+="${PORT}\Zn "
-            NUMPORTS=$((${NUMPORTS}+1))
-          done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
-          TEXT+="\n"
-        done
-        TEXT+="\nTotal of ports: ${NUMPORTS}\n"
-        TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected."
-        TEXT+="\n \n"
-        fi
-        if [ "$ADRAID" -eq "1" ]; then
-        pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
-        [ ! -z "$pcis" ]
-        # loop through non-SATA controllers
-        for pci in $pcis; do
-        # get attached block devices (exclude CD-ROMs)
-        DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
-        done
-        for PCI in `lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
-          NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
-          TEXT+="\Z1SCSI/RAID/SAS Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
-          TEXT+="\nDrives: \Z2\Zb${DRIVES}\Zn connected"
-          TEXT+="\n\n"
-        done
-        fi
-        dialog --backtitle "`backtitle`" --colors --aspect 18 \
-          --msgbox "${TEXT}" 0 0
 }
 
 ###############################################################################
@@ -1268,12 +1164,23 @@ function sysinfo() {
         CPUINFO=$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')
         MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
         VENDOR=$(dmidecode -s system-product-name)
+        MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+        PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
+        MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
         TEXT=""
-        TEXT+="\nSystem: \Zb${MACHINE}\Zn"
+        # Print System Informations
+        TEXT+="\n\Z4System:\Zn"
+        TEXT+="\nTyp: \Zb${MACHINE}\Zn"
         TEXT+="\nVendor: \Zb${VENDOR}\Zn"
         TEXT+="\nCPU: \Zb${CPUINFO}\Zn"
-        TEXT+="\nRAM: \Zb${MEMINFO}GB\Zn\n\n"
+        TEXT+="\nRAM: \Zb${MEMINFO}GB\Zn\n"
+        # Print Config Informations
+        TEXT+="\n\Z4Config:\Zn"
+        TEXT+="\nModel: \Zb${MODEL}\Zn"
+        TEXT+="\nSataPortMap: \Zb${PORTMAP}\Zn"
+        TEXT+="\nModules loaded: \Zb${MODULESINFO}\Zn\n"
         # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
+        TEXT+="\n\Z4Storage:\Zn"
         # Get Information for Sata Controller
         if [ "$ADSATA" -gt 0 ]; then
         for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print$1}'`; do
@@ -1281,7 +1188,7 @@ function sysinfo() {
           NAME=`lspci -s "$PCI" | sed "s/\ .*://"`
           # Get Amount of Drives connected
           SATADRIVES=$(ls -la /sys/block | fgrep "$PCI" | grep -v "sr.$" | wc -l)
-          TEXT+="\Z1SATA Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
+          TEXT+="\n\Z1SATA Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
           TEXT+="\Z1Drives\Zn dedected:\n\Zb${SATADRIVES}\Zn\n"
         done
         TEXT+="\n"
@@ -1293,14 +1200,10 @@ function sysinfo() {
           NAME=`lspci -s "$PCI" | sed "s/\ .*://"`
           # Get Amount of Drives connected
           RAIDDRIVES=$(ls -la /sys/block | fgrep "$PCI" | grep -v "sr.$" | wc -l)
-          TEXT+="\Z1SCSI/RAID/SAS Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
+          TEXT+="\n\Z1SCSI/RAID/SAS Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
           TEXT+="\Z1Drives\Zn dedected:\n\Zb${RAIDDRIVES}\Zn\n"
         done
         fi
-        # List loaded Modules
-        MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
-        TEXT+="\nModules loaded: \Zb${MODULESINFO}\n"
-        TEXT+="\n"
         dialog --backtitle "`backtitle`" --title "Systeminformation" --aspect 18 --colors --msgbox "${TEXT}" 0 0 
 }
 
@@ -1541,8 +1444,7 @@ while true; do
   echo "5 \"Boot the Loader \" "                                                            >> "${TMP_PATH}/menu"
   fi
   echo "= \"\Z4========== Info ========== \Zn\" "                                           >> "${TMP_PATH}/menu"
-  echo "a \"Show Controller/Drives \" "                                                     >> "${TMP_PATH}/menu"
-  echo "b \"Systeminfo \" "                                                                 >> "${TMP_PATH}/menu"
+  echo "a \"Systeminfo \" "                                                                 >> "${TMP_PATH}/menu"
   if [ -n "${MODEL}" ]; then
   echo "= \"\Z4========= System ========= \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "2 \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
@@ -1577,8 +1479,7 @@ while true; do
     1) arcMenu; NEXT="4" ;;
     4) make; NEXT="5" ;;
     5) boot ;;
-    a) alldrives; NEXT="a" ;;
-    b) sysinfo; NEXT="b" ;;
+    a) sysinfo; NEXT="a" ;;
     2) addonMenu; NEXT="2" ;;
     3) selectModules; NEXT="3" ;;
     n) newarcdisk; NEXT="4" ;;
