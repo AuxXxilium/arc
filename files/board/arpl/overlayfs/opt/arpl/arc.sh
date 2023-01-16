@@ -1201,7 +1201,6 @@ function sysinfo() {
           TEXT+="\n\Z1SATA Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
           TEXT+="\Z1Drives\Zn dedected:\n\Zb${SATADRIVES}\Zn\n"
         done
-        TEXT+="\n"
         fi
         # Get Information for Raid/SCSI Controller
         if [ "$ADRAID" -gt 0 ]; then
