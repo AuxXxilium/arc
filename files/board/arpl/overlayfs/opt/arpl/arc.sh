@@ -277,8 +277,13 @@ function arcdisk() {
       echo -n "$RAIDDRIVES" >> ${TMP_PATH}/raiddrives
       done
     fi
-    # Set SataPortMap
-    if [ "$ADSATA" -gt 0 ]; then
+    # Set SataPortMap for multiple Sata Controller
+    if [ "$ADSATA" -gt 1 ]; then
+    DRIVES=$(awk '{print$1}' ${TMP_PATH}/satadrives)
+    writeConfigKey "cmdline.SataPortMap" "$DRIVES" "${USER_CONFIG_FILE}"
+    fi
+    # Set SataPortMap for Raid/SCSI Controller
+    if [ "$ADSATA" -gt 0 ] && [ "$ADRAID" -gt 0 ]; then
     DRIVES=$(awk '{print$1}' ${TMP_PATH}/satadrives)
     writeConfigKey "cmdline.SataPortMap" "$DRIVES" "${USER_CONFIG_FILE}"
     fi
@@ -332,8 +337,13 @@ function newarcdisk() {
       echo -n "$RAIDDRIVES" >> ${TMP_PATH}/raiddrives
       done
     fi
-    # Set SataPortMap
-    if [ "$ADSATA" -gt 0 ]; then
+    # Set SataPortMap for multiple Sata Controller
+    if [ "$ADSATA" -gt 1 ]; then
+    DRIVES=$(awk '{print$1}' ${TMP_PATH}/satadrives)
+    writeConfigKey "cmdline.SataPortMap" "$DRIVES" "${USER_CONFIG_FILE}"
+    fi
+    # Set SataPortMap for Raid/SCSI Controller
+    if [ "$ADSATA" -gt 0 ] && [ "$ADRAID" -gt 0 ]; then
     DRIVES=$(awk '{print$1}' ${TMP_PATH}/satadrives)
     writeConfigKey "cmdline.SataPortMap" "$DRIVES" "${USER_CONFIG_FILE}"
     fi
