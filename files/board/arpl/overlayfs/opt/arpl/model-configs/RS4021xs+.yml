@@ -22,7 +22,6 @@ dom: 2
 serial:
   prefix:
     - "2160"
-    - "20A0"
   middle: "T2R"
   suffix: "alpha"
 arcserial: "2160T2RMHS00P"
