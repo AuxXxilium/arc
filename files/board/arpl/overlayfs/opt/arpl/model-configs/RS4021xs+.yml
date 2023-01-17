@@ -4,8 +4,8 @@ synoinfo: &synoinfo
   support_memory_compatibility: "no"
   support_bde_internal_10g: "no"
   esataportcfg: "0x0"
+  support_oob_ctl: "no"
   support_led_brightness_adjustment: "no"
-  supportraidgroup: "yes"
   rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
@@ -18,7 +18,7 @@ cmdline: &cmdline
   elevator: elevator
 platform: "broadwellnk"
 unique: "synology_broadwellnk_rs4021xs+"
-dom: 1
+dom: 2
 serial:
   prefix:
     - "2160"

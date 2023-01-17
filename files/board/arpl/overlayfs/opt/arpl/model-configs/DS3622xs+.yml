@@ -6,7 +6,6 @@ synoinfo: &synoinfo
   support_bde_internal_10g: "no"
   support_oob_ctl: "no"
   support_led_brightness_adjustment: "no"
-  supportraidgroup: "yes"
   rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"     # http://update7.synology.com/autoupdate/genRSS.php
   rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml" # https://update7.synology.com/autoupdate/genRSS.php
   rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json" # https://update7.synology.com/autoupdate/v2/getList
