@@ -1176,6 +1176,7 @@ function sysinfo() {
         VENDOR=$(dmidecode -s system-product-name)
         MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
         PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
+        ADDONSINFO="`readConfigMap "addons" "${USER_CONFIG_FILE}"`"
         MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
         TEXT=""
         # Print System Informations
@@ -1186,8 +1187,10 @@ function sysinfo() {
         TEXT+="\nRAM: \Zb${MEMINFO}GB\Zn\n"
         # Print Config Informations
         TEXT+="\n\Z4Config:\Zn"
+        TEXT+="\nArc: \Zbv${ARPL_VERSION}\Zn"
         TEXT+="\nModel: \Zb${MODEL}\Zn"
         TEXT+="\nSataPortMap: \Zb${PORTMAP}\Zn"
+        TEXT+="\nAddons: \Zb${ADDONSINFO}\Zn\n"
         TEXT+="\nModules loaded: \Zb${MODULESINFO}\Zn\n"
         # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
         TEXT+="\n\Z4Storage:\Zn"
