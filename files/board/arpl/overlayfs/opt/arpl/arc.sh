@@ -1442,7 +1442,7 @@ function boot() {
 
 if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${BUILD}" -a loaderIsConfigured ]; then
   make
-  boot
+  boot && exit 0 || sleep 5
 fi
 # Main loop
 NEXT="1"
@@ -1490,7 +1490,7 @@ while true; do
   case `<"${TMP_PATH}/resp"` in
     1) arcMenu; NEXT="4" ;;
     4) make; NEXT="5" ;;
-    5) boot ;;
+    5) boot && exit 0 || sleep 5 ;;
     a) sysinfo; NEXT="a" ;;
     2) addonMenu; NEXT="2" ;;
     3) selectModules; NEXT="3" ;;
