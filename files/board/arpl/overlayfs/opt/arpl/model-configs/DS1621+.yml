@@ -38,46 +38,6 @@ flags:
   - "fma"
 dt: true
 builds:
-  42218:
-    ver: "7.0.1"
-    kver: "4.4.180"
-    rd-compressed: false
-    cmdline:
-      <<: *cmdline
-    synoinfo:
-      <<: *synoinfo
-    pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.0.1/42218/DSM_DS1621%2B_42218.pat"
-      hash: "19f56827ba8bf0397d42cd1d6f83c447f092c2c1bbb70d8a2ad3fbd427e866df"
-      ramdisk-hash: "73512c7bceb34cf7f7f93c2703db60496da0e27274fc45e5aefa0366c9734d6e"
-      zimage-hash: "f4648d0dd6b29ef6149b0ff46afe1fe32f81730aa79af72f37ffd3647c76f586"
-      md5-hash: "f82cbabbfef3fdf2cba45da77d14959b"
-    patch:
-      - "ramdisk-common-disable-root-pwd.patch"
-      - "ramdisk-common-init-script.patch"
-      - "ramdisk-common-etc-rc.patch"
-      - "ramdisk-common-post-init-script.patch"
-
-  42661:
-    ver: "7.1.0"
-    kver: "4.4.180"
-    rd-compressed: false
-    cmdline:
-      <<: *cmdline
-    synoinfo:
-      <<: *synoinfo
-    pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.1/42661-1/DSM_DS1621%2B_42661.pat"
-      hash: "381077302a89398a9fb5ec516217578d6f33b0219fe95135e80fd93cddbf88c4"
-      ramdisk-hash: "8fd5eb40fb088af97d3beee85b6275c2ceb368b08453eb5a5d00d42cc7d578d1"
-      zimage-hash: "d939b5937be00a644aae64c33633619a7c310433e60a515c77bbef00b0a7e6b6"
-      md5-hash: "b4b72eb8d4e84b2e2a8c29fc0a1ac6aa"
-    patch:
-      - "ramdisk-common-disable-root-pwd.patch"
-      - "ramdisk-common-init-script.patch"
-      - "ramdisk-common-etc-rc.patch"
-      - "ramdisk-42661-post-init-script.patch"
-
   42962:
     ver: "7.1.1"
     kver: "4.4.180"
