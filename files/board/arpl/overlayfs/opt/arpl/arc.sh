@@ -1053,7 +1053,7 @@ function updateMenu() {
         dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
           --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
         [ $? -ne 0 ] && continue
-         arc-reboot.sh config
+         arpl-reboot.sh config
         exit
         ;;
 
