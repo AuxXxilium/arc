@@ -34,8 +34,6 @@ mac4: "001132D84A83"
 mac5: "9009D019775A"
 mac6: "9009D01978A5"
 disks: 6
-flags:
-  - "fma"
 dt: true
 builds:
   42962:
