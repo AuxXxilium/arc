@@ -23,13 +23,13 @@ unzip /tmp/rp-lkms.zip -d files/board/arpl/p3/lkms
 
 # Get latest addons and install its
 echo "Getting latest Addons"
-rm -Rf /tmp/addons
+rm -rf /tmp/addons
 mkdir -p /tmp/addons
 TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
 echo "Version: ${TAG}"
 curl -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip
-rm -rf /tmp/addons
 unzip /tmp/addons.zip -d /tmp/addons
+rm -rf files/board/arpl/p3/addons/*
 DEST_PATH="files/board/arpl/p3/addons"
 echo "Installing addons to ${DEST_PATH}"
 for PKG in `ls /tmp/addons/*.addon`; do
@@ -41,6 +41,7 @@ done
 
 # Get latest modules
 echo "Getting latest modules"
+rm -rf files/board/arpl/p3/modules/*
 MODULES_DIR="${PWD}/files/board/arpl/p3/modules"
 TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
 echo "Version: ${TAG}"
@@ -58,7 +59,7 @@ rm -f VERSION
 echo "${VERSION}" > files/board/arpl/p1/ARPL-VERSION
 echo "${VERSION}" > VERSION
 sed 's/^ARPL_VERSION=.*/ARPL_VERSION="'${VERSION}'"/' -i files/board/arpl/overlayfs/opt/arpl/include/consts.sh
-cp -Ru files/* .buildroot/
+cp -rf files/* .buildroot/
 
 cd .buildroot
 echo "Generating default config"
