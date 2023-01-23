@@ -6,7 +6,8 @@ synoinfo: &synoinfo
   rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
-  #supportraidgroup: "no"
+  supportraidgroup: "no"
+  support_ssd_cache: "yes"
 cmdline: &cmdline
   intel_iommu: "igfx_off"
   HddEnableDynamicPower: 1
@@ -18,7 +19,6 @@ cmdline: &cmdline
 platform: "geminilake"
 unique: "synology_geminilake_920+"
 dom: 2
-dt: true
 serial:
   prefix:
     - "2030"
@@ -35,6 +35,7 @@ mac4: "001132CD9430"
 mac5: "9009D019775A"
 mac6: "9009D01978A5"
 disks: 4
+dt: true
 flags:
   - "fma"
 builds:

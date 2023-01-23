@@ -9,7 +9,8 @@ synoinfo: &synoinfo
   rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"     # http://update7.synology.com/autoupdate/genRSS.php
   rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml" # https://update7.synology.com/autoupdate/genRSS.php
   rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json" # https://update7.synology.com/autoupdate/v2/getList
-  #supportraidgroup: "no"
+  supportraidgroup: "yes"
+  support_ssd_cache: "yes"
 cmdline: &cmdline
   syno_hdd_powerup_seq: 0
   HddHotplug: 0
@@ -33,6 +34,7 @@ mac4: "001132FA6CD7"
 mac5: "001132FA6CD3"
 mac6: "9009D019775A"
 disks: 12
+dt: false
 builds:
   42962:
     ver: "7.1.1"

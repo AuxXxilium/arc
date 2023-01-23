@@ -4,13 +4,12 @@ synoinfo: &synoinfo
   support_memory_compatibility: "no"
   esataportcfg: "0x00"
   support_bde_internal_10g: "no"
-  supportraidgroup: "no"
   support_syno_hybrid_raid: "yes"
   support_led_brightness_adjustment: "no"
   rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
-  #supportraidgroup: "no"
+  supportraidgroup: "yes"
 cmdline: &cmdline
   syno_hdd_powerup_seq: 0
   HddHotplug: 0
@@ -37,6 +36,7 @@ mac6: "9009D01978A5"
 flags:
   - "fma"
 disks: 4
+dt: false
 builds:
   42962:
     ver: "7.1.1"
