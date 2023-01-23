@@ -9,8 +9,8 @@ synoinfo: &synoinfo
   rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
-  #support_ssd_cache: "yes"
-  #supportraidgroup: "no"
+  support_ssd_cache: "yes"
+  supportraidgroup: "no"
 cmdline: &cmdline
   syno_hdd_powerup_seq: 0
   HddHotplug: 0
@@ -37,6 +37,7 @@ mac4: "0011329A73BE"
 mac5: "9009D019775A"
 mac6: "9009D01978A5"
 disks: 4
+dt: true
 flags:
   - "fma"
 builds:
