@@ -1240,7 +1240,7 @@ function sysinfo() {
           TEXT+="\Z1Drives\Zn dedected:\n\Zb${RAIDDRIVES}\Zn\n"
         done
         fi
-        dialog --backtitle "`backtitle`" --title "Systeminformation" --aspect 18 --colors --msgbox "${TEXT}" 0 0 
+        dialog --backtitle "`backtitle`" --title "Arc Sysinfo" --aspect 18 --colors --msgbox "${TEXT}" 0 0 
 }
 
 ###############################################################################
