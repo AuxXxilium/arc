@@ -1175,7 +1175,9 @@ function sysinfo() {
         MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
         VENDOR=$(dmidecode -s system-product-name)
         MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+        NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
         PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
+        CONFINFO="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
         ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
         MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
         TEXT=""
@@ -1189,6 +1191,14 @@ function sysinfo() {
         TEXT+="\n\Z4Config:\Zn"
         TEXT+="\nArc: \Zb${ARPL_VERSION}\Zn"
         TEXT+="\nModel: \Zb${MODEL}\Zn"
+        if [ "$CONFINFO" -eq 1 ]; then
+        TEXT+="\nConfig: \ZbComplete\Zn"
+        elif [ "$CONFINFO" -eq 0 ]; then
+        TEXT+="\nConfig: \ZbIncomplete\Zn"
+        else
+        TEXT+="\nConfig: \ZbError\Zn"
+        fi
+        TEXT+="\nNetwork: \Zb${NETNUM} Adapter\Zn"
         TEXT+="\nSataPortMap: \Zb${PORTMAP}\Zn"
         TEXT+="\nAddons loaded: \Zb"${ADDONSINFO}"\Zn"
         TEXT+="\nModules loaded: \Zb${MODULESINFO}\Zn\n"
@@ -1425,6 +1435,38 @@ function synoinfoMenu() {
 }
 
 ###############################################################################
+# let user reset config
+function reset() {
+  # Reset full userconfig
+  writeConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
+  writeConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "model" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "build" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "maxdisks" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "layout" "qwertz" "${USER_CONFIG_FILE}"
+  writeConfigKey "keymap" "de" "${USER_CONFIG_FILE}"
+  writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
+  writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
+  writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
+  writeConfigKey "addons.misc" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
+  # Initialize with real MAC
+  writeConfigKey "cmdline.netif_num" "1" "${USER_CONFIG_FILE}"
+  writeConfigKey "cmdline.mac1" "${MACF}" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.mac2" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.mac3" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.mac4" "${USER_CONFIG_FILE}"
+  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
+}
+
+###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
   [ ${DIRTY} -eq 1 ] && dialog --backtitle "`backtitle`" --title "Alert" \
@@ -1456,12 +1498,13 @@ while true; do
   echo "5 \"Boot the Loader \" "                                                            >> "${TMP_PATH}/menu"
   fi
   echo "= \"\Z4========== Info ========== \Zn\" "                                           >> "${TMP_PATH}/menu"
-  echo "a \"Systeminfo \" "                                                                 >> "${TMP_PATH}/menu"
+  echo "a \"Sysinfo \" "                                                                    >> "${TMP_PATH}/menu"
   if [ -n "${MODEL}" ]; then
   echo "= \"\Z4========= System ========= \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "2 \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
   echo "3 \"Modules \" "                                                                    >> "${TMP_PATH}/menu"
-  echo "n \"New Disk Config \" "                                                            >> "${TMP_PATH}/menu"
+  echo "n \"Update Disk Config \" "                                                         >> "${TMP_PATH}/menu"
+  echo "r \"Reset User Config \" "                                                          >> "${TMP_PATH}/menu"
   if [ -n "${ADV}" ]; then
   echo "x \"\Z1Hide Advanced Options \Zn\" "                                                >> "${TMP_PATH}/menu"
   else
@@ -1495,6 +1538,7 @@ while true; do
     2) addonMenu; NEXT="2" ;;
     3) selectModules; NEXT="3" ;;
     n) newarcdisk; NEXT="4" ;;
+    n) reset; NEXT="1" ;;
     x) [ "${ADV}" = "" ] && ADV='1' || ADV=''
        ARV="${ADV}"
        NEXT="x"
