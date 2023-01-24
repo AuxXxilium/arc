@@ -250,11 +250,11 @@ function arcdisk() {
       --infobox "Arc Disk configuration started!" 0 0
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-    sleep 3
+    sleep 1
     # Get Number of Sata Drives
     if [ "$ADSATA" -gt 0 ]; then
       rm -f ${TMP_PATH}/satadrives
-      touch ${TMP_PATH}/raiddrives
+      touch ${TMP_PATH}/satadrives
       pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
       [ ! -z "$pcis" ]
       # loop through SATA controllers
@@ -281,15 +281,21 @@ function arcdisk() {
     if [ "$ADSATA" -gt 1 ]; then
     DRIVES=$(awk '{print$1}' ${TMP_PATH}/satadrives)
     writeConfigKey "cmdline.SataPortMap" "$DRIVES" "${USER_CONFIG_FILE}"
+		dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+    --infobox "SataPortMap: $DRIVES" 0 0
+  	sleep 3
     fi
     # Set SataPortMap for Raid/SCSI Controller
     if [ "$ADSATA" -gt 0 ] && [ "$ADRAID" -gt 0 ]; then
     DRIVES=$(awk '{print$1}' ${TMP_PATH}/satadrives)
     writeConfigKey "cmdline.SataPortMap" "$DRIVES" "${USER_CONFIG_FILE}"
+		dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+    --infobox "SataPortMap: $DRIVES" 0 0
+  	sleep 3
     fi
   dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
     --infobox "Disk configuration successfull!" 0 0
-  sleep 3
+  sleep 1
   writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
   arcnet
   fi
@@ -298,6 +304,8 @@ function arcdisk() {
 ###############################################################################
 # Make Disk Config
 function newarcdisk() {
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  DT="`readModelKey "${MODEL}" "dt"`"
   # Check for diskconfig
   if [ "$DT" = "true" ] && [ "$ADRAID" -gt 0 ]; then
     # There is no Raid/SCSI Support for DT Models
@@ -314,7 +322,7 @@ function newarcdisk() {
     # Get Number of Sata Drives
     if [ "$ADSATA" -gt 0 ]; then
       rm -f ${TMP_PATH}/satadrives
-      touch ${TMP_PATH}/raiddrives
+      touch ${TMP_PATH}/satadrives
       pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
       [ ! -z "$pcis" ]
       # loop through SATA controllers
@@ -341,15 +349,21 @@ function newarcdisk() {
     if [ "$ADSATA" -gt 1 ]; then
     DRIVES=$(awk '{print$1}' ${TMP_PATH}/satadrives)
     writeConfigKey "cmdline.SataPortMap" "$DRIVES" "${USER_CONFIG_FILE}"
+		dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+    --infobox "SataPortMap: $DRIVES" 0 0
+  	sleep 3
     fi
     # Set SataPortMap for Raid/SCSI Controller
     if [ "$ADSATA" -gt 0 ] && [ "$ADRAID" -gt 0 ]; then
     DRIVES=$(awk '{print$1}' ${TMP_PATH}/satadrives)
     writeConfigKey "cmdline.SataPortMap" "$DRIVES" "${USER_CONFIG_FILE}"
+		dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+    --infobox "SataPortMap: $DRIVES" 0 0
+  	sleep 3
     fi
   dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-    --infobox "Disk configuration successfull!" 0 0
-  sleep 3
+    --infobox "Disk configuration update successfull!" 0 0
+  sleep 1
   fi
 }
 
