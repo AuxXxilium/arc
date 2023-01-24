@@ -1490,12 +1490,12 @@ fi
 NEXT="1"
 while true; do
   echo "= \"\Z4========== Main ========== \Zn\" "                                            > "${TMP_PATH}/menu"
-  echo "1 \"Choose Model for Loader \" "                                                    >> "${TMP_PATH}/menu"
+  echo "1 \"Choose Model for Arc Loader \" "                                                    >> "${TMP_PATH}/menu"
   if [ -n "${MODEL}" ] && [ -n "${BUILD}" ] && [ "${CONFDONE}" -eq "1" ]; then
-      echo "4 \"Build the Loader \" "                                                       >> "${TMP_PATH}/menu"
+      echo "4 \"Build Arc Loader \" "                                                       >> "${TMP_PATH}/menu"
   fi
   if loaderIsConfigured; then
-  echo "5 \"Boot the Loader \" "                                                            >> "${TMP_PATH}/menu"
+  echo "5 \"Boot Arc Loader \" "                                                            >> "${TMP_PATH}/menu"
   fi
   echo "= \"\Z4========== Info ========== \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "a \"Sysinfo \" "                                                                    >> "${TMP_PATH}/menu"
