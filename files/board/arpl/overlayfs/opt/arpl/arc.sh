@@ -1452,7 +1452,7 @@ function synoinfoMenu() {
 # let user reset config
 function reset() {
   # Reset full userconfig
-  writeConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
+  writeConfigKey "lkm" "dev" "${USER_CONFIG_FILE}"
   writeConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "model" "" "${USER_CONFIG_FILE}"
   writeConfigKey "build" "" "${USER_CONFIG_FILE}"
@@ -1478,6 +1478,7 @@ function reset() {
   deleteConfigKey "cmdline.mac3" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac4" "${USER_CONFIG_FILE}"
   writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
+  readConfigKey "confdone" "${USER_CONFIG_FILE}"
 }
 
 ###############################################################################
