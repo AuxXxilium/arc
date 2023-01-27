@@ -430,10 +430,6 @@ function arcnet() {
             --title "Loading Hardware MAC Table" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
     sleep 3
   fi
-  /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
-    --title "Restart DHCP" --progressbox "Renewing IP" 20 70
-  sleep 5
-  IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
   dialog --backtitle "`backtitle`" --title "Arc Config" \
       --infobox "Network configuration successfull!" 0 0
   sleep 3
@@ -1476,8 +1472,9 @@ function boot() {
     make || return
   fi
   dialog --backtitle "`backtitle`" --title "Arc Boot" \
-    --infobox "Booting to DSM - Please stay patient!" 0 0
-  boot.sh
+    --infobox "Rebooting to DSM - Please stay patient!" 0 0
+  sleep 3
+  exec reboot
 }
 
 ###############################################################################
