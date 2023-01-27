@@ -175,6 +175,7 @@ function arcpatch() {
 	  # Generate random serial
 	  SN=`generateSerial "${MODEL}"`
   	writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arcpatch" "no" "${USER_CONFIG_FILE}"
 	  dialog --backtitle "`backtitle`" --title "Arc Config" \
 	  --infobox "Installing without Arc Patch!" 0 0
       	break
@@ -182,6 +183,7 @@ function arcpatch() {
 	  ARCPATCH="1"
   	SN="`readModelKey "${MODEL}" "arcserial"`"
   	writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arcpatch" "yes" "${USER_CONFIG_FILE}"
 	  dialog --backtitle "`backtitle`" --title "Arc Config" \
       	  --infobox "Installing with Arc Patch!" 0 0
       	break
@@ -236,47 +238,45 @@ function arcdisk() {
       --infobox "Arc Disk configuration started!" 0 0
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+    rm -f ${TMP_PATH}/drives
+    touch ${TMP_PATH}/drives
     sleep 1
     # Get Number of Sata Drives
     if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 0 ]; then
-      rm -f ${TMP_PATH}/satadrives
-      touch ${TMP_PATH}/satadrives
       pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
       [ ! -z "$pcis" ]
       # loop through SATA controllers
       for pci in $pcis; do
       # get attached block devices (exclude CD-ROMs)
-      SATADRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
-      echo -n "$SATADRIVES" >> ${TMP_PATH}/satadrives
+      DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      echo -n "${DRIVES}" >> ${TMP_PATH}/drives
       done
     fi
     # Get Number of Raid/SCSI Drives
     if [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-      rm -f ${TMP_PATH}/raiddrives
-      touch ${TMP_PATH}/raiddrives
       pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
       [ ! -z "$pcis" ]
       # loop through non-SATA controllers
       for pci in $pcis; do
       # get attached block devices (exclude CD-ROMs)
-      RAIDDRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
-      echo -n "$RAIDDRIVES" >> ${TMP_PATH}/raiddrives
+      DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      echo -n "${DRIVES}" >> ${TMP_PATH}/drives
       done
     fi
     # Set SataPortMap for multiple Sata Controller
     if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 1 ]; then
-    DRIVES=$(awk '{print$1}' ${TMP_PATH}/satadrives)
-    writeConfigKey "cmdline.SataPortMap" "$DRIVES" "${USER_CONFIG_FILE}"
+    DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
+    writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
 		dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-    --infobox "SataPortMap: $DRIVES" 0 0
+    --infobox "SataPortMap: ${DRIVES}" 0 0
   	sleep 3
     fi
     # Set SataPortMap for Raid/SCSI Controller
     if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 0 ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-    DRIVES=$(awk '{print$1}' ${TMP_PATH}/satadrives)
-    writeConfigKey "cmdline.SataPortMap" "$DRIVES" "${USER_CONFIG_FILE}"
+    DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
+    writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
 		dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-    --infobox "SataPortMap: $DRIVES" 0 0
+    --infobox "SataPortMap: ${DRIVES}" 0 0
   	sleep 3
     fi
   dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
@@ -292,7 +292,7 @@ function arcdisk() {
 function newarcdisk() {
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   DT="`readModelKey "${MODEL}" "dt"`"
-  # Check for diskconfig
+    # Check for diskconfig
   if [ "$DT" = "true" ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
     # There is no Raid/SCSI Support for DT Models
     dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
@@ -304,47 +304,45 @@ function newarcdisk() {
       --infobox "Arc Disk configuration started!" 0 0
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-    sleep 3
+    rm -f ${TMP_PATH}/drives
+    touch ${TMP_PATH}/drives
+    sleep 1
     # Get Number of Sata Drives
     if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 0 ]; then
-      rm -f ${TMP_PATH}/satadrives
-      touch ${TMP_PATH}/satadrives
       pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
       [ ! -z "$pcis" ]
       # loop through SATA controllers
       for pci in $pcis; do
       # get attached block devices (exclude CD-ROMs)
-      SATADRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
-      echo -n "$SATADRIVES" >> ${TMP_PATH}/satadrives
+      DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      echo -n "${DRIVES}" >> ${TMP_PATH}/drives
       done
     fi
     # Get Number of Raid/SCSI Drives
     if [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-      rm -f ${TMP_PATH}/raiddrives
-      touch ${TMP_PATH}/raiddrives
       pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
       [ ! -z "$pcis" ]
       # loop through non-SATA controllers
       for pci in $pcis; do
       # get attached block devices (exclude CD-ROMs)
-      RAIDDRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
-      echo -n "$RAIDDRIVES" >> ${TMP_PATH}/raiddrives
+      DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      echo -n "${DRIVES}" >> ${TMP_PATH}/drives
       done
     fi
     # Set SataPortMap for multiple Sata Controller
     if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 1 ]; then
-    DRIVES=$(awk '{print$1}' ${TMP_PATH}/satadrives)
-    writeConfigKey "cmdline.SataPortMap" "$DRIVES" "${USER_CONFIG_FILE}"
+    DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
+    writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
 		dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-    --infobox "SataPortMap: $DRIVES" 0 0
+    --infobox "SataPortMap: ${DRIVES}" 0 0
   	sleep 3
     fi
     # Set SataPortMap for Raid/SCSI Controller
     if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 0 ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-    DRIVES=$(awk '{print$1}' ${TMP_PATH}/satadrives)
-    writeConfigKey "cmdline.SataPortMap" "$DRIVES" "${USER_CONFIG_FILE}"
+    DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
+    writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
 		dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-    --infobox "SataPortMap: $DRIVES" 0 0
+    --infobox "SataPortMap: ${DRIVES}" 0 0
   	sleep 3
     fi
   dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
@@ -1178,6 +1176,7 @@ function sysinfo() {
         NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
         PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
         CONFINFO="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+        ARCPATCH="`readConfigKey "arcpatch" "${USER_CONFIG_FILE}"`"
         ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
         MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
         TEXT=""
@@ -1198,6 +1197,7 @@ function sysinfo() {
         else
         TEXT+="\nConfig: \ZbError\Zn"
         fi
+        TEXT+="\nArcpatch: \Zb${ARCPATCH}\Zn"
         TEXT+="\nNetwork: \Zb${NETNUM} Adapter\Zn"
         TEXT+="\nSataPortMap: \Zb${PORTMAP}\Zn"
         TEXT+="\nAddons loaded: \Zb"${ADDONSINFO}"\Zn"
@@ -1504,14 +1504,14 @@ while true; do
   echo "= \"\Z4========= System ========= \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "2 \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
   echo "3 \"Modules \" "                                                                    >> "${TMP_PATH}/menu"
-  echo "n \"Update Disk Config \" "                                                         >> "${TMP_PATH}/menu"
-  echo "r \"Reset User Config \" "                                                          >> "${TMP_PATH}/menu"
   if [ -n "${ADV}" ]; then
   echo "x \"\Z1Hide Advanced Options \Zn\" "                                                >> "${TMP_PATH}/menu"
   else
   echo "x \"\Z1Show Advanced Options \Zn\" "                                                >> "${TMP_PATH}/menu"
   fi
   if [ -n "${ADV}" ]; then
+  echo "n \"Update Disk Map \" "                                                            >> "${TMP_PATH}/menu"
+  echo "r \"Reset User Config \" "                                                          >> "${TMP_PATH}/menu"
   echo "f \"Cmdline \" "                                                                    >> "${TMP_PATH}/menu"
   echo "g \"Synoinfo \" "                                                                   >> "${TMP_PATH}/menu"
   echo "h \"Edit user config \" "                                                           >> "${TMP_PATH}/menu"
