@@ -230,7 +230,7 @@ function arcdisk() {
   if [ "$DT" = "true" ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
     # There is no Raid/SCSI Support for DT Models
     dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-      --infobox "Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
+      --infobox "WARN: Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
     sleep 5
     return 1
   else
@@ -249,19 +249,32 @@ function arcdisk() {
       for pci in $pcis; do
       # get attached block devices (exclude CD-ROMs)
       DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      if [ ${DRIVES} -gt 8 ]; then
+      DRIVES=8
+      WARNON=1
+      fi
       echo -n "${DRIVES}" >> ${TMP_PATH}/drives
       done
     fi
     # Get Number of Raid/SCSI Drives
-    if [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-      pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
-      [ ! -z "$pcis" ]
+    #if [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
+    #  pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
+    #  [ ! -z "$pcis" ]
       # loop through non-SATA controllers
-      for pci in $pcis; do
+    #  for pci in $pcis; do
       # get attached block devices (exclude CD-ROMs)
-      DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
-      echo -n "${DRIVES}" >> ${TMP_PATH}/drives
-      done
+    #  DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+    #  if [ ${DRIVES} -gt 8 ]; then
+    #  DRIVES=8
+    #  WARNON=1
+    #  fi
+    #  echo -n "${DRIVES}" >> ${TMP_PATH}/drives
+    #  done
+    #fi
+    if [ ${WARNON} -eq 1 ]; then
+		dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+    --infobox "WARN: Your Controller has more than 8 Drives connected. Max Drives per Controller: 8" 0 0
+    sleep 5
     fi
     # Set SataPortMap for multiple Sata Controller
     if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 1 ]; then
@@ -292,11 +305,11 @@ function arcdisk() {
 function newarcdisk() {
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   DT="`readModelKey "${MODEL}" "dt"`"
-    # Check for diskconfig
+  # Check for diskconfig
   if [ "$DT" = "true" ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
     # There is no Raid/SCSI Support for DT Models
     dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-      --infobox "Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
+      --infobox "WARN: Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
     sleep 5
     return 1
   else
@@ -315,19 +328,32 @@ function newarcdisk() {
       for pci in $pcis; do
       # get attached block devices (exclude CD-ROMs)
       DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      if [ ${DRIVES} -gt 8 ]; then
+      DRIVES=8
+      WARNON=1
+      fi
       echo -n "${DRIVES}" >> ${TMP_PATH}/drives
       done
     fi
     # Get Number of Raid/SCSI Drives
-    if [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-      pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
-      [ ! -z "$pcis" ]
+    #if [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
+    #  pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
+    #  [ ! -z "$pcis" ]
       # loop through non-SATA controllers
-      for pci in $pcis; do
+    #  for pci in $pcis; do
       # get attached block devices (exclude CD-ROMs)
-      DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
-      echo -n "${DRIVES}" >> ${TMP_PATH}/drives
-      done
+    #  DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+    #  if [ ${DRIVES} -gt 8 ]; then
+    #  DRIVES=8
+    #  WARNON=1
+    #  fi
+    #  echo -n "${DRIVES}" >> ${TMP_PATH}/drives
+    #  done
+    #fi
+    if [ ${WARNON} -eq 1 ]; then
+		dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+    --infobox "WARN: Your Controller has more than 8 Drives connected. Max Drives per Controller: 8" 0 0
+    sleep 5
     fi
     # Set SataPortMap for multiple Sata Controller
     if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 1 ]; then
@@ -346,7 +372,7 @@ function newarcdisk() {
   	sleep 3
     fi
   dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-    --infobox "Disk configuration update successfull!" 0 0
+    --infobox "Disk configuration successfull!" 0 0
   sleep 1
   fi
 }
