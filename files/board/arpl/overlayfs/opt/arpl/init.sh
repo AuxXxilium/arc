@@ -23,7 +23,7 @@ fi
 
 # Shows title
 clear
-TITLE="Welcome to Automated Redpill Loader v${ARPL_VERSION}"
+TITLE="Arc Loader v${ARPL_VERSION}"
 printf "\033[1;44m%*s\n" $COLUMNS ""
 printf "\033[1;44m%*s\033[A\n" $COLUMNS ""
 printf "\033[1;32m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
@@ -185,7 +185,7 @@ done
 
 # Inform user
 echo
-echo -e "Call \033[1;32mmenu.sh\033[0m to configure loader"
+echo -e "Call \033[1;32marc.sh\033[0m to configure loader"
 echo
 echo -e "User config is on \033[1;32m${USER_CONFIG_FILE}\033[0m"
 echo -e "Default SSH Root password is \033[1;31mRedp1lL-1s-4weSomE\033[0m"
@@ -202,3 +202,4 @@ mkdir -p "${LKM_PATH}"
 mkdir -p "${MODULES_PATH}"
 
 install-addons.sh
+arc.sh

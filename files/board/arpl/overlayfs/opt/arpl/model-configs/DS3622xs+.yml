@@ -4,16 +4,16 @@ synoinfo: &synoinfo
   support_memory_compatibility: "no"
   esataportcfg: "0x00"
   support_bde_internal_10g: "no"
-  support_oob_ctl: "no"
   support_led_brightness_adjustment: "no"
-  rss_server: "https://raw.githubusercontent.com/fbelavenuto/arpl/main/rss.xml"     # http://update7.synology.com/autoupdate/genRSS.php
-  rss_server_ssl: "https://raw.githubusercontent.com/fbelavenuto/arpl/main/rss.xml" # https://update7.synology.com/autoupdate/genRSS.php
-  rss_server_v2: "https://raw.githubusercontent.com/fbelavenuto/arpl/main/rss.json" # https://update7.synology.com/autoupdate/v2/getList
-  #supportraidgroup: "no"
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"     # http://update7.synology.com/autoupdate/genRSS.php
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml" # https://update7.synology.com/autoupdate/genRSS.php
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json" # https://update7.synology.com/autoupdate/v2/getList
+  support_ssd_cache: "yes"
 cmdline: &cmdline
   syno_hdd_powerup_seq: 0
   HddHotplug: 0
   vender_format_version: 2
+  syno_port_thaw: 1
   syno_hdd_detect: 0
   elevator: elevator
 platform: "broadwellnk"
@@ -21,56 +21,19 @@ unique: "synology_broadwellnk_3622xs+"
 dom: 1
 serial:
   prefix:
-    - "2030"
-    - "2040"
-    - "20C0"
     - "2150"
   middle: "SQR"
   suffix: "alpha"
+arcserial: "2150SQRW1ZAHH"
+mac1: "001132FA6CD4"
+mac2: "001132FA6CD5"
+mac3: "001132FA6CD6"
+mac4: "001132FA6CD7"
+mac5: "001132FA6CD3"
+mac6: "9009D019775A"
 disks: 12
+dt: false
 builds:
-  42218:
-    ver: "7.0.1"
-    kver: "4.4.180"
-    rd-compressed: false
-    cmdline:
-      <<: *cmdline
-    synoinfo:
-      <<: *synoinfo
-    pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"
-      hash: "f38329b8cdc5824a8f01fb1e377d3b1b6bd23da365142a01e2158beff5b8a424"
-      ramdisk-hash: "a95d4ab06189460f3b3d13a33e421887b5f3ea09a10535ae0d4c92beb7ff631d"
-      zimage-hash: "06964b68e5ccdedd4363dff3986f99686d3c9cb5225e8e4c3d840a1d9cd1330b"
-      md5-hash: "bc0235e45a8423f4c46dc0d9699759b5"
-    patch:
-      - "ramdisk-common-disable-root-pwd.patch"
-      - "ramdisk-common-init-script.patch"
-      - "ramdisk-common-etc-rc.patch"
-      - "ramdisk-common-post-init-script.patch"
-      - "ramdisk-common-disable-disabled-ports.patch"
-
-  42661:
-    ver: "7.1.0"
-    kver: "4.4.180"
-    rd-compressed: false
-    cmdline:
-      <<: *cmdline
-    synoinfo:
-      <<: *synoinfo
-    pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.1/42661-1/DSM_DS3622xs%2B_42661.pat"
-      hash: "53d0a4f1667288b6e890c4fdc48422557ff26ea8a2caede0955c5f45b560cccd"
-      ramdisk-hash: "df8a055d6bc901229f0ba53ed5b4fe024bdf9a1b42f0c32483adefcdac14db4d"
-      zimage-hash: "e073dd84054f652811e0ae1932af2c7cdbd5fb6e5f18f265097072b8af4605e8"
-      md5-hash: "7af76cca8226ecf95b25630bffa76b3d"
-    patch:
-      - "ramdisk-common-disable-root-pwd.patch"
-      - "ramdisk-common-init-script.patch"
-      - "ramdisk-common-etc-rc.patch"
-      - "ramdisk-42661-post-init-script.patch"
-      - "ramdisk-42661-disable-disabled-ports.patch"
-
   42962:
     ver: "7.1.1"
     kver: "4.4.180"
