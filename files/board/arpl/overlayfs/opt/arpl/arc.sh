@@ -198,11 +198,11 @@ function arcpatch() {
 function arcbuild() {
   # Delete synoinfo and reload model/build synoinfo  
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
-  while IFS="=" read KEY VALUE; do
+  while IFS=': ' read KEY VALUE; do
     writeConfigKey "synoinfo.${KEY}" "${VALUE}" "${USER_CONFIG_FILE}"
   done < <(readModelMap "${MODEL}" "builds.${BUILD}.synoinfo")
   # Check addons
-  while IFS="=" read ADDON PARAM; do
+  while IFS=': ' read ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
     if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
       deleteConfigKey "addons.${ADDON}" "${USER_CONFIG_FILE}"
@@ -522,7 +522,7 @@ function make() {
   deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
 
   # Check if all addon exists
-  while IFS="=" read ADDON PARAM; do
+  while IFS=': ' read ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
     if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
       dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
@@ -762,7 +762,7 @@ function addonMenu() {
   # Read addons from user config
   unset ADDONS
   declare -A ADDONS
-  while IFS="=" read KEY VALUE; do
+  while IFS=': ' read KEY VALUE; do
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
   # Loop menu
@@ -927,7 +927,7 @@ function selectModules() {
   ALLMODULES=`getAllModules "${PLATFORM}" "${KVER}"`
   unset USERMODULES
   declare -A USERMODULES
-  while IFS="=" read KEY VALUE; do
+  while IFS=': ' read KEY VALUE; do
     [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
   done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
   # menu loop
@@ -1103,7 +1103,7 @@ function updateMenu() {
           [ -f "${F}" ] && rm -f "${F}"
           [ -d "${F}" ] && rm -Rf "${F}"
         done < <(readConfigArray "remove" "/tmp/update-list.yml")
-        while IFS="=" read KEY VALUE; do
+        while IFS ': ' read KEY VALUE; do
           if [ "${KEY: -1}" = "/" ]; then
             rm -Rf "${VALUE}"
             mkdir -p "${VALUE}"
@@ -1303,7 +1303,7 @@ function cmdlineMenu() {
   NEXT="1"
   unset CMDLINE
   declare -A CMDLINE
-  while IFS="=" read KEY VALUE; do
+  while IFS=': ' read KEY VALUE; do
     [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
   done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
   echo "1 \"Add/edit a Cmdline item\""                          > "${TMP_PATH}/menu"
@@ -1397,7 +1397,7 @@ function cmdlineMenu() {
         ;;
       6)
         ITEMS=""
-        while IFS="=" read KEY VALUE; do
+        while IFS=': ' read KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
         done < <(readModelMap "${MODEL}" "builds.${BUILD}.cmdline")
         dialog --backtitle "`backtitle`" --title "Model/build cmdline" \
@@ -1412,22 +1412,17 @@ function cmdlineMenu() {
 # let user edit synoinfo
 function synoinfoMenu() {
   NEXT="1"
-  # Get dt flag from model
-  DT="`readModelKey "${MODEL}" "dt"`"
   # Read synoinfo from user config
   unset SYNOINFO
   declare -A SYNOINFO
-  while IFS="=" read KEY VALUE; do
+  while IFS=': ' read KEY VALUE; do
     [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
   done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 
   echo "1 \"Add/edit Synoinfo item\""     > "${TMP_PATH}/menu"
   echo "2 \"Delete Synoinfo item(s)\""    >> "${TMP_PATH}/menu"
-  if [ "${DT}" != "true" ]; then
-    echo "3 \"Set maxdisks manually\""    >> "${TMP_PATH}/menu"
-  fi
-  echo "4 \"Map USB Drive to internal\""  >> "${TMP_PATH}/menu"
-  echo "5 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
+  echo "3 \"Map USB Drive to internal\""  >> "${TMP_PATH}/menu"
+  echo "4 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
   echo "0 \"Exit\""                       >> "${TMP_PATH}/menu"
 
   # menu loop
@@ -1474,22 +1469,13 @@ function synoinfoMenu() {
         DIRTY=1
         ;;
       3)
-        MAXDISKS=`readConfigKey "maxdisks" "${USER_CONFIG_FILE}"`
-        dialog --backtitle "`backtitle`" --title "Maxdisks" \
-          --inputbox "Type a value for maxdisks" 0 0 "${MAXDISKS}" \
-          2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && continue
-        VALUE="`<"${TMP_PATH}/resp"`"
-        [ "${VALUE}" != "${MAXDISKS}" ] && writeConfigKey "maxdisks" "${VALUE}" "${USER_CONFIG_FILE}"
-        ;;
-      4)
         writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
         dialog --backtitle "`backtitle`" --msgbox "External USB Drives mapped" 0 0 
         ;;
-      5)
+      4)
         ITEMS=""
         for KEY in ${!SYNOINFO[@]}; do
           ITEMS+="${KEY}: ${SYNOINFO[$KEY]}\n"
