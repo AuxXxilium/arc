@@ -59,31 +59,31 @@ declare -A USERMODULES
 
 # Read synoinfo and addons from config
 while IFS=': ' read KEY VALUE; do
-  [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
+  [ -n "${KEY}" ] && SYNOINFO["$KEY"]="${VALUE}"
 done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 while IFS=': ' read KEY VALUE; do
-  [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
+  [ -n "${KEY}" ] && ADDONS["$KEY"]="${VALUE}"
 done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
 # Read modules from user config
 while IFS=': ' read KEY VALUE; do
-  [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
+  [ -n "${KEY}" ] && USERMODULES["$KEY"]="${VALUE}"
 done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 # Patches
 while read f; do
   echo -n "."
-  echo "Patching with ${f}" >"${LOG_FILE}" 2>&1
-  (cd "${RAMDISK_PATH}" && patch -p1 < "${PATCH_PATH}/${f}") >>"${LOG_FILE}" 2>&1 || dieLog
+  echo "Patching with ${f}" >"${LOG_FILE}" || dieLog
+  (cd "${RAMDISK_PATH}" && patch -p1 < "${PATCH_PATH}/${f}")
 done < <(readModelArray "${MODEL}" "builds.${BUILD}.patch")
 
 # Patch /etc/synoinfo.conf
 echo -n "."
 for KEY in ${!SYNOINFO[@]}; do
-  _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc/synoinfo.conf" >"${LOG_FILE}" 2>&1 || dieLog
+  _set_conf_kv "${KEY}" "${SYNOINFO[$KEY]}" "${RAMDISK_PATH}/etc/synoinfo.conf"
 done
 # Add serial number to synoinfo.conf, to help to recovery a installed DSM
-_set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc/synoinfo.conf" >"${LOG_FILE}" 2>&1 || dieLog
+_set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc/synoinfo.conf"
 
 # Patch /sbin/init.post
 echo -n "."
@@ -125,7 +125,7 @@ cp "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
 gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" > "${RAMDISK_PATH}/usr/lib/modules/rp.ko"
 
 # Addons
-#MAXDISKS=`readConfigKey "maxdisks" "${USER_CONFIG_FILE}"`
+MAXDISKS=`readConfigKey "maxdisks" "${USER_CONFIG_FILE}"`
 # Check if model needs Device-tree dynamic patch
 DT="`readModelKey "${MODEL}" "dt"`"
 
@@ -140,11 +140,16 @@ echo "export LAYOUT=${LAYOUT}"                  >> "${RAMDISK_PATH}/addons/addon
 echo "export KEYMAP=${KEYMAP}"                  >> "${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
-# Required addons: eudev, disks, wol
+# Required addons: eudev, dtbpatch/maxdisks, wol
 installAddon eudev
 echo "/addons/eudev.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-installAddon disks
-echo "/addons/disks.sh \${1} ${DT} ${UNIQUE}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+if [ "${DT}" = "true" ]; then
+  installAddon dtbpatch
+  echo "/addons/dtbpatch.sh \${1} ${UNIQUE}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+else
+  installAddon maxdisks
+  echo "/addons/maxdisks.sh \${1} ${MAXDISKS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+fi
 installAddon wol
 echo "/addons/wol.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 # User addons
@@ -163,9 +168,9 @@ done
 # Reassembly ramdisk
 echo -n "."
 if [ "${RD_COMPRESSED}" == "true" ]; then
-  (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root | xz -9 --format=lzma > "${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || dieLog
+  (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root | xz -9 --format=lzma > "${MOD_RDGZ_FILE}")
 else
-  (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root > "${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || dieLog
+  (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root > "${MOD_RDGZ_FILE}")
 fi
 
 # Clean

@@ -308,7 +308,7 @@ function arcnet() {
   # Export Network Adapter Amount - DSM 
   NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
   # Hardlimit to 4 Mac because of Redpill doesn't more at this time
-  if [ "$NETNUM" -gt 4 ]; then
+  if [ ${NETNUM} -gt 4 ]; then
   NETNUM="4"
   fi
   writeConfigKey "cmdline.netif_num" "${NETNUM}"            "${USER_CONFIG_FILE}"
@@ -317,22 +317,22 @@ function arcnet() {
   deleteConfigKey "cmdline.mac2" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac3" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac4" "${USER_CONFIG_FILE}"
-  if [ "$ARCPATCH" -eq 1 ]; then 
+  if [ ${ARCPATCH} -eq 1 ]; then 
     # Install with Arc Patch - Check for model config and set custom Mac Address
     MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-    if [ "$NETNUM" -gt 0 ]; then
+    if [ ${NETNUM} -gt 0 ]; then
       MAC1="`readModelKey "${MODEL}" "mac1"`"
       writeConfigKey "cmdline.mac1"           "$MAC1" "${USER_CONFIG_FILE}"
     fi
-    if [ "$NETNUM" -gt 1 ]; then
+    if [ ${NETNUM} -gt 1 ]; then
       MAC2="`readModelKey "${MODEL}" "mac2"`"
       writeConfigKey "cmdline.mac2"           "$MAC2" "${USER_CONFIG_FILE}"
     fi
-    if [ "$NETNUM" -gt 2 ]; then
+    if [ ${NETNUM} -gt 2 ]; then
       MAC3="`readModelKey "${MODEL}" "mac3"`"
       writeConfigKey "cmdline.mac3"           "$MAC3" "${USER_CONFIG_FILE}"
     fi
-    if [ "$NETNUM" -gt 3 ]; then
+    if [ ${NETNUM} -gt 3 ]; then
       MAC4="`readModelKey "${MODEL}" "mac4"`"
       writeConfigKey "cmdline.mac4"           "$MAC4" "${USER_CONFIG_FILE}"
     fi
@@ -341,22 +341,22 @@ function arcnet() {
     sleep 3
   else
       # Install without Arc Patch - Set Hardware Mac Address
-      if [ "$NETNUM" -gt 0 ]; then
+      if [ ${NETNUM} -gt 0 ]; then
       MACA1=`ip link show eth0 | awk '/ether/{print$2}'`
       MAC1=`echo ${MACA1} | sed 's/://g'`
       writeConfigKey "cmdline.mac1"           "$MAC1" "${USER_CONFIG_FILE}"
     fi
-    if [ "$NETNUM" -gt 1 ]; then
+    if [ ${NETNUM} -gt 1 ]; then
       MACA2=`ip link show eth1 | awk '/ether/{print$2}'`
       MAC2=`echo ${MACA2} | sed 's/://g'`
       writeConfigKey "cmdline.mac2"           "$MAC2" "${USER_CONFIG_FILE}"
     fi
-    if [ "$NETNUM" -gt 2 ]; then
+    if [ ${NETNUM} -gt 2 ]; then
       MACA3=`ip link show eth2 | awk '/ether/{print$2}'`
       MAC3=`echo ${MACA3} | sed 's/://g'`
       writeConfigKey "cmdline.mac3"           "$MAC3" "${USER_CONFIG_FILE}"
     fi
-    if [ "$NETNUM" -gt 3 ]; then
+    if [ ${NETNUM} -gt 3 ]; then
       MACA4=`ip link show eth3 | awk '/ether/{print$2}'`
       MAC4=`echo ${MACA4} | sed 's/://g'`
       writeConfigKey "cmdline.mac4"           "$MAC4" "${USER_CONFIG_FILE}"
@@ -382,22 +382,22 @@ function arcnet() {
     elif [ "${resp}" = "1" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Config" \
         --infobox "IP/MAC will now be changed!" 0 0
-      if [ "$NETNUM" -gt 0 ]; then
+      if [ ${NETNUM} -gt 0 ]; then
         MAC1="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
         MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
         ip link set dev eth0 address ${MACN1} 2>&1
       fi
-      if [ "$NETNUM" -gt 1 ]; then
+      if [ ${NETNUM} -gt 1 ]; then
         MAC2="`readConfigKey "cmdline.mac2" "${USER_CONFIG_FILE}"`"
         MACN2="${MAC2:0:2}:${MAC2:2:2}:${MAC2:4:2}:${MAC2:6:2}:${MAC2:8:2}:${MAC2:10:2}"
         ip link set dev eth1 address ${MACN2} 2>&1
       fi
-      if [ "$NETNUM" -gt 2 ]; then
+      if [ ${NETNUM} -gt 2 ]; then
         MAC3="`readConfigKey "cmdline.mac3" "${USER_CONFIG_FILE}"`"
         MACN3="${MAC3:0:2}:${MAC3:2:2}:${MAC3:4:2}:${MAC3:6:2}:${MAC3:8:2}:${MAC3:10:2}"
         ip link set dev eth2 address ${MACN3} 2>&1
       fi
-      if [ "$NETNUM" -gt 3 ]; then
+      if [ ${NETNUM} -gt 3 ]; then
         MAC4="`readConfigKey "cmdline.mac4" "${USER_CONFIG_FILE}"`"
         MACN4="${MAC4:0:2}:${MAC4:2:2}:${MAC4:4:2}:${MAC4:6:2}:${MAC4:8:2}:${MAC4:10:2}"
         ip link set dev eth3 address ${MACN4} 2>&1
@@ -786,49 +786,6 @@ function addonMenu() {
 }
 
 ###############################################################################
-# Try to recovery a DSM already installed
-function tryRecoveryDSM() {
-  dialog --backtitle "`backtitle`" --title "Try to recover DSM" --aspect 18 \
-    --infobox "Trying to recover a DSM installed system" 0 0
-  if findAndMountDSMRoot; then
-    MODEL=""
-    BUILD=""
-    if [ -f "${DSMROOT_PATH}/.syno/patch/VERSION" ]; then
-      eval `cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep unique`
-      eval `cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep base`
-      if [ -n "${unique}" ] ; then
-        while read F; do
-          M="`basename ${F}`"
-          M="${M::-4}"
-          UNIQUE=`readModelKey "${M}" "unique"`
-          [ "${unique}" = "${UNIQUE}" ] || continue
-          # Found
-          modelMenu "${M}"
-        done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
-        if [ -n "${MODEL}" ]; then
-          buildMenu ${base}
-          if [ -n "${BUILD}" ]; then
-            cp "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
-            cp "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
-            MSG="Found a installation:\nModel: ${MODEL}\nBuildnumber: ${BUILD}"
-            SN=`_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf"`
-            if [ -n "${SN}" ]; then
-              writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-              MSG+="\nSerial: ${SN}"
-            fi
-            dialog --backtitle "`backtitle`" --title "Try to recover DSM" \
-              --aspect 18 --msgbox "${MSG}" 0 0
-          fi
-        fi
-      fi
-    fi
-  else
-    dialog --backtitle "`backtitle`" --title "Try recovery DSM" --aspect 18 \
-      --msgbox "Unfortunately I couldn't mount the DSM partition!" 0 0
-  fi
-}
-
-###############################################################################
 # Permit user select the modules to include
 function selectModules() {
   NEXT="1"
@@ -1136,8 +1093,11 @@ function synoinfoMenu() {
 
   echo "1 \"Add/edit Synoinfo item\""     > "${TMP_PATH}/menu"
   echo "2 \"Delete Synoinfo item(s)\""    >> "${TMP_PATH}/menu"
-  echo "3 \"Map USB Drive to internal\""  >> "${TMP_PATH}/menu"
-  echo "4 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
+  if [ "${DT}" != "true" ]; then
+    echo "3 \"Set maxdisks manually\""    >> "${TMP_PATH}/menu"
+  fi
+  echo "4 \"Map USB Drive to internal\""  >> "${TMP_PATH}/menu"
+  echo "5 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
   echo "0 \"Exit\""                       >> "${TMP_PATH}/menu"
 
   # menu loop
@@ -1184,13 +1144,22 @@ function synoinfoMenu() {
         DIRTY=1
         ;;
       3)
+        MAXDISKS=`readConfigKey "maxdisks" "${USER_CONFIG_FILE}"`
+        dialog --backtitle "`backtitle`" --title "Maxdisks" \
+          --inputbox "Type a value for maxdisks" 0 0 "${MAXDISKS}" \
+          2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && continue
+        VALUE="`<"${TMP_PATH}/resp"`"
+        [ "${VALUE}" != "${MAXDISKS}" ] && writeConfigKey "maxdisks" "${VALUE}" "${USER_CONFIG_FILE}"
+        ;;
+      4)
         writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
         dialog --backtitle "`backtitle`" --msgbox "External USB Drives mapped" 0 0 
         ;;
-      4)
+      5)
         ITEMS=""
         for KEY in ${!SYNOINFO[@]}; do
           ITEMS+="${KEY}: ${SYNOINFO[$KEY]}\n"
@@ -1433,28 +1402,28 @@ function sysinfo() {
         TEXT=""
         # Print System Informations
         TEXT+="\n\Z4System:\Zn"
-        TEXT+="\nTyp: \Zb${MACHINE}\Zn"
-        TEXT+="\nVendor: \Zb${VENDOR}\Zn"
-        TEXT+="\nCPU: \Zb${CPUINFO}\Zn"
-        TEXT+="\nRAM: \Zb${MEMINFO}GB\Zn\n"
+        TEXT+="\nTyp: \Zb"${MACHINE}"\Zn"
+        TEXT+="\nVendor: \Zb"${VENDOR}"\Zn"
+        TEXT+="\nCPU: \Zb"${CPUINFO}"\Zn"
+        TEXT+="\nRAM: \Zb"${MEMINFO}"GB\Zn\n"
         # Print Config Informations
         TEXT+="\n\Z4Config:\Zn"
-        TEXT+="\nArc: \Zb${ARPL_VERSION}\Zn"
-        TEXT+="\nModel: \Zb${MODEL}\Zn"
-        if [ "$CONFINFO" -eq 1 ]; then
+        TEXT+="\nArc: \Zb"${ARPL_VERSION}"\Zn"
+        TEXT+="\nModel: \Zb"${MODEL}"\Zn"
+        if [ ${CONFINFO} -eq 1 ]; then
         TEXT+="\nConfig: \ZbComplete\Zn"
-        elif [ "$CONFINFO" -eq 0 ]; then
+        elif [ ${CONFINFO} -eq 0 ]; then
         TEXT+="\nConfig: \ZbIncomplete\Zn"
         else
         TEXT+="\nConfig: \ZbError\Zn"
         fi
-        TEXT+="\nArcpatch: \Zb${ARCPATCH}\Zn"
-        TEXT+="\nLKM: \Zb${LKM}\Zn"
-        TEXT+="\nNetwork: \Zb${NETNUM} Adapter\Zn"
-        TEXT+="\nIP: \Zb${IP}\Zn"
-        TEXT+="\nSataPortMap: \Zb${PORTMAP}\Zn"
+        TEXT+="\nArcpatch: \Zb"${ARCPATCH}"\Zn"
+        TEXT+="\nLKM: \Zb"${LKM}"\Zn"
+        TEXT+="\nNetwork: \Zb"${NETNUM}" Adapter\Zn"
+        TEXT+="\nIP: \Zb"${IP}"\Zn"
+        TEXT+="\nSataPortMap: \Zb"${PORTMAP}"\Zn"
         TEXT+="\nAddons loaded: \Zb"${ADDONSINFO}"\Zn"
-        TEXT+="\nModules loaded: \Zb${MODULESINFO}\Zn\n"
+        TEXT+="\nModules loaded: \Zb"${MODULESINFO}"\Zn\n"
         # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
         TEXT+="\n\Z4Storage:\Zn"
         # Get Information for Sata Controller
@@ -1464,8 +1433,8 @@ function sysinfo() {
           NAME=`lspci -s "$PCI" | sed "s/\ .*://"`
           # Get Amount of Drives connected
           SATADRIVES=$(ls -la /sys/block | fgrep "$PCI" | grep -v "sr.$" | wc -l)
-          TEXT+="\n\Z1SATA Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
-          TEXT+="\Z1Drives\Zn dedected:\n\Zb${SATADRIVES}\Zn\n"
+          TEXT+="\n\Z1SATA Controller\Zn dedected:\n\Zb"${NAME}"\Zn\n"
+          TEXT+="\Z1Drives\Zn dedected:\n\Zb"${SATADRIVES}"\Zn\n"
         done
         fi
         # Get Information for Raid/SCSI Controller
@@ -1475,8 +1444,8 @@ function sysinfo() {
           NAME=`lspci -s "$PCI" | sed "s/\ .*://"`
           # Get Amount of Drives connected
           RAIDDRIVES=$(ls -la /sys/block | fgrep "$PCI" | grep -v "sr.$" | wc -l)
-          TEXT+="\n\Z1SCSI/RAID/SAS Controller\Zn dedected:\n\Zb${NAME}\Zn\n"
-          TEXT+="\Z1Drives\Zn dedected:\n\Zb${RAIDDRIVES}\Zn\n"
+          TEXT+="\n\Z1SCSI/RAID/SAS Controller\Zn dedected:\n\Zb"${NAME}"\Zn\n"
+          TEXT+="\Z1Drives\Zn dedected:\n\Zb"${RAIDDRIVES}"\Zn\n"
         done
         fi
         dialog --backtitle "`backtitle`" --title "Arc Sysinfo" --aspect 18 --colors --msgbox "${TEXT}" 0 0 
@@ -1516,6 +1485,49 @@ function reset() {
 }
 
 ###############################################################################
+# Try to recovery a DSM already installed
+function tryRecoveryDSM() {
+  dialog --backtitle "`backtitle`" --title "Try to recover DSM" --aspect 18 \
+    --infobox "Trying to recover a DSM installed system" 0 0
+  if findAndMountDSMRoot; then
+    MODEL=""
+    BUILD=""
+    if [ -f "${DSMROOT_PATH}/.syno/patch/VERSION" ]; then
+      eval `cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep unique`
+      eval `cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep base`
+      if [ -n "${unique}" ] ; then
+        while read F; do
+          M="`basename ${F}`"
+          M="${M::-4}"
+          UNIQUE=`readModelKey "${M}" "unique"`
+          [ "${unique}" = "${UNIQUE}" ] || continue
+          # Found
+          modelMenu "${M}"
+        done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
+        if [ -n "${MODEL}" ]; then
+          buildMenu ${base}
+          if [ -n "${BUILD}" ]; then
+            cp "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
+            cp "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
+            MSG="Found a installation:\nModel: ${MODEL}\nBuildnumber: ${BUILD}"
+            SN=`_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf"`
+            if [ -n "${SN}" ]; then
+              writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+              MSG+="\nSerial: ${SN}"
+            fi
+            dialog --backtitle "`backtitle`" --title "Try to recover DSM" \
+              --aspect 18 --msgbox "${MSG}" 0 0
+          fi
+        fi
+      fi
+    fi
+  else
+    dialog --backtitle "`backtitle`" --title "Try recovery DSM" --aspect 18 \
+      --msgbox "Unfortunately I couldn't mount the DSM partition!" 0 0
+  fi
+}
+
+###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
   [ ${DIRTY} -eq 1 ] && dialog --backtitle "`backtitle`" --title "Alert" \
@@ -1541,7 +1553,7 @@ NEXT="1"
 while true; do
   echo "= \"\Z4========== Main ========== \Zn\" "                                            > "${TMP_PATH}/menu"
   echo "1 \"Choose Model for Arc Loader \" "                                                >> "${TMP_PATH}/menu"
-  if [ "${CONFDONE}" -eq "1" ]; then
+  if [ ${CONFDONE} -eq 1 ]; then
       echo "4 \"Build Arc Loader \" "                                                       >> "${TMP_PATH}/menu"
   fi
   if loaderIsConfigured; then
@@ -1549,7 +1561,7 @@ while true; do
   fi
   echo "= \"\Z4========== Info ========== \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "a \"Sysinfo \" "                                                                    >> "${TMP_PATH}/menu"
-  if [ -n "${MODEL}" ]; then
+  if [ ${CONFDONE} -eq 1 ]; then
   echo "= \"\Z4========= System ========= \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "2 \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
   echo "3 \"Modules \" "                                                                    >> "${TMP_PATH}/menu"
