@@ -72,8 +72,8 @@ done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 # Patches
 while read f; do
-  echo -n "."
-  echo "Patching with ${f}" >"${LOG_FILE}" || dieLog
+  echo -n "." >"${LOG_FILE}" || dieLog
+  echo "Patching with ${f}" >>"${LOG_FILE}" || dieLog
   (cd "${RAMDISK_PATH}" && patch -p1 < "${PATCH_PATH}/${f}")
 done < <(readModelArray "${MODEL}" "builds.${BUILD}.patch")
 
