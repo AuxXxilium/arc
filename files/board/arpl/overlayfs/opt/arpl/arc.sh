@@ -144,17 +144,17 @@ function buildMenu() {
   fi
   if [ "${BUILD}" != "${resp}" ]; then
     dialog --backtitle "`backtitle`" --title "Arc DSM Build Number" \
-      --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
+      --infobox "Set DSM Build Number" 0 0
     BUILD=${resp}
     writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
   fi
   writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
-  arcpatch
+  arcbuild
 }
 
 ###############################################################################
 # Shows menu to user type one or generate randomly
-function arcpatch() {
+function arcbuild() {
   # Read model config for buildconfig
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
@@ -189,27 +189,21 @@ function arcpatch() {
       break
     fi
   done
-  DIRTY=1
-  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
-  arcbuild
-}
-
-###############################################################################
-# Adding Synoinfo and Addons
-function arcbuild() {
+  dialog --backtitle "`backtitle`" --title "Arc Config" \
+    --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
   # Delete synoinfo and reload model/build synoinfo  
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
-  while IFS="=" read KEY VALUE; do
+  while IFS=': ' read KEY VALUE; do
     writeConfigKey "synoinfo.${KEY}" "${VALUE}" "${USER_CONFIG_FILE}"
   done < <(readModelMap "${MODEL}" "builds.${BUILD}.synoinfo")
   # Check addons
-  while IFS="=" read ADDON PARAM; do
+  while IFS=': ' read ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
     if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
       deleteConfigKey "addons.${ADDON}" "${USER_CONFIG_FILE}"
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-    # Rebuild modules
+  # Rebuild modules
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read ID DESC; do
     writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
@@ -217,7 +211,7 @@ function arcbuild() {
   # Remove old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
-  dialog --backtitle "`backtitle`" --title "Arc Model Config" \
+  dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Model Configuration successfull!" 0 0
   sleep 3
   writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
@@ -230,13 +224,13 @@ function arcdisk() {
   # Check for diskconfig
   if [ "$DT" = "true" ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
     # There is no Raid/SCSI Support for DT Models
-    dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+    dialog --backtitle "`backtitle`" --title "Arc Config" \
       --infobox "WARN: Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
     sleep 5
     return 1
   else
-    dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-      --infobox "Arc Disk configuration started!" 0 0
+    dialog --backtitle "`backtitle`" --title "Arc Config" \
+      --infobox "Disk configuration started!" 0 0
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     rm -f ${TMP_PATH}/drives
     touch ${TMP_PATH}/drives
@@ -276,7 +270,7 @@ function arcdisk() {
     #  done
     #fi
     if [ ${WARNON} -eq 1 ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+      dialog --backtitle "`backtitle`" --title "Arc Config" \
         --infobox "WARN: Your Controller has more than 8 Drives connected. Max Drives per Controller: 8" 0 0
       sleep 5
     fi
@@ -285,22 +279,21 @@ function arcdisk() {
       DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
       if [ ${DRIVES} -gt 0 ]; then
         writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
-        dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+        dialog --backtitle "`backtitle`" --title "Arc Config" \
           --infobox "SataPortMap: ${DRIVES}" 0 0
       fi
-  	sleep 3
     fi
     # Set SataPortMap for Raid/SCSI Controller
     if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 0 ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
       DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
       if [ ${DRIVES} -gt 0 ]; then
         writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
-        dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+        dialog --backtitle "`backtitle`" --title "Arc Config" \
           --infobox "SataPortMap: ${DRIVES}" 0 0
       fi
-  	sleep 3
     fi
-  dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+  sleep 3
+  dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Disk configuration successfull!" 0 0
   sleep 1
   DIRTY=1
@@ -344,7 +337,7 @@ function arcnet() {
       writeConfigKey "cmdline.mac4"           "$MAC4" "${USER_CONFIG_FILE}"
     fi
     dialog --backtitle "`backtitle`" \
-      --title "Loading Arc MAC Table" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
+      --title "Arc Config" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
     sleep 3
   else
       # Install without Arc Patch - Set Hardware Mac Address
@@ -369,7 +362,7 @@ function arcnet() {
       writeConfigKey "cmdline.mac4"           "$MAC4" "${USER_CONFIG_FILE}"
     fi
     dialog --backtitle "`backtitle`" \
-      --title "Loading Hardware MAC Table" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
+      --title "Arc Config" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
     sleep 3
   fi
   while true; do
@@ -382,12 +375,12 @@ function arcnet() {
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
     if [ "${resp}" = "2" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Net Config" \
+      dialog --backtitle "`backtitle`" --title "Arc Config" \
         --infobox "IP/MAC will be changed on first boot!" 0 0
       sleep 3
       break
     elif [ "${resp}" = "1" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Net Config" \
+      dialog --backtitle "`backtitle`" --title "Arc Config" \
         --infobox "IP/MAC will now be changed!" 0 0
       if [ "$NETNUM" -gt 0 ]; then
         MAC1="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
@@ -417,7 +410,7 @@ function arcnet() {
       break
     fi
   done
-  dialog --backtitle "`backtitle`" --title "Arc Net Config" \
+  dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Network configuration successfull!" 0 0
   sleep 3
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
@@ -441,7 +434,7 @@ function make() {
   deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
 
   # Check if all addon exists
-  while IFS="=" read ADDON PARAM; do
+  while IFS=': ' read ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
     if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
       dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
@@ -681,7 +674,7 @@ function addonMenu() {
   # Read addons from user config
   unset ADDONS
   declare -A ADDONS
-  while IFS="=" read KEY VALUE; do
+  while IFS=': ' read KEY VALUE; do
     [ -n "${KEY}" ] && ADDONS["$KEY"]="${VALUE}"
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
   # Loop menu
@@ -846,7 +839,7 @@ function selectModules() {
   ALLMODULES=`getAllModules "${PLATFORM}" "${KVER}"`
   unset USERMODULES
   declare -A USERMODULES
-  while IFS="=" read KEY VALUE; do
+  while IFS=': ' read KEY VALUE; do
     [ -n "${KEY}" ] && USERMODULES["$KEY"]="${VALUE}"
   done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
   # menu loop
@@ -944,12 +937,12 @@ function newarcdisk() {
   # Check for diskconfig
   if [ "$DT" = "true" ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
     # There is no Raid/SCSI Support for DT Models
-    dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+    dialog --backtitle "`backtitle`" --title "Arc Config" \
       --infobox "WARN: Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
     sleep 5
     return 1
   else
-    dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+    dialog --backtitle "`backtitle`" --title "Arc Config" \
       --infobox "Arc Disk configuration started!" 0 0
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     rm -f ${TMP_PATH}/drives
@@ -962,13 +955,13 @@ function newarcdisk() {
       # loop through SATA controllers
       for pci in $pcis; do
       # get attached block devices (exclude CD-ROMs)
-      DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+        DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
       if [ ${DRIVES} -gt 8 ]; then
-      DRIVES=8
-      WARNON=1
+        DRIVES=8
+        WARNON=1
       fi
       if [ ${DRIVES} -gt 0 ]; then
-      echo -n "${DRIVES}" >> ${TMP_PATH}/drives
+        echo -n "${DRIVES}" >> ${TMP_PATH}/drives
       fi
       done
     fi
@@ -990,31 +983,30 @@ function newarcdisk() {
     #  done
     #fi
     if [ ${WARNON} -eq 1 ]; then
-		dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-    --infobox "WARN: Your Controller has more than 8 Drives connected. Max Drives per Controller: 8" 0 0
-    sleep 5
+      dialog --backtitle "`backtitle`" --title "Arc Config" \
+        --infobox "WARN: Your Controller has more than 8 Drives connected. Max Drives per Controller: 8" 0 0
+      sleep 5
     fi
     # Set SataPortMap for multiple Sata Controller
     if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 1 ]; then
-    DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
-    if [ ${DRIVES} -gt 0 ]; then
-    writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
-		dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-    --infobox "SataPortMap: ${DRIVES}" 0 0
-    fi
-  	sleep 3
+      DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
+      if [ ${DRIVES} -gt 0 ]; then
+        writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
+        dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+          --infobox "SataPortMap: ${DRIVES}" 0 0
+      fi
     fi
     # Set SataPortMap for Raid/SCSI Controller
     if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 0 ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-    DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
-    if [ ${DRIVES} -gt 0 ]; then
-    writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
-		dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-    --infobox "SataPortMap: ${DRIVES}" 0 0
+      DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
+      if [ ${DRIVES} -gt 0 ]; then
+        writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
+        dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+          --infobox "SataPortMap: ${DRIVES}" 0 0
+      fi
     fi
-  	sleep 3
-    fi
-  dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
+  sleep 3
+  dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Disk reconfiguration successfull!" 0 0
   sleep 1
   fi
@@ -1026,7 +1018,7 @@ function cmdlineMenu() {
   NEXT="1"
   unset CMDLINE
   declare -A CMDLINE
-  while IFS="=" read KEY VALUE; do
+  while IFS=': ' read KEY VALUE; do
     [ -n "${KEY}" ] && CMDLINE["$KEY"]="${VALUE}"
   done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
   echo "1 \"Add/edit a Cmdline item\""                          > "${TMP_PATH}/menu"
@@ -1120,7 +1112,7 @@ function cmdlineMenu() {
         ;;
       6)
         ITEMS=""
-        while IFS="=" read KEY VALUE; do
+        while IFS=': ' read KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
         done < <(readModelMap "${MODEL}" "builds.${BUILD}.cmdline")
         dialog --backtitle "`backtitle`" --title "Model/build cmdline" \
@@ -1135,22 +1127,17 @@ function cmdlineMenu() {
 # let user edit synoinfo
 function synoinfoMenu() {
   NEXT="1"
-  # Get dt flag from model
-  DT="`readModelKey "${MODEL}" "dt"`"
   # Read synoinfo from user config
   unset SYNOINFO
   declare -A SYNOINFO
-  while IFS="=" read KEY VALUE; do
+  while IFS=': ' read KEY VALUE; do
     [ -n "${KEY}" ] && SYNOINFO["$KEY"]="${VALUE}"
   done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 
   echo "1 \"Add/edit Synoinfo item\""     > "${TMP_PATH}/menu"
   echo "2 \"Delete Synoinfo item(s)\""    >> "${TMP_PATH}/menu"
-  if [ "${DT}" != "true" ]; then
-    echo "3 \"Set maxdisks manually\""    >> "${TMP_PATH}/menu"
-  fi
-  echo "4 \"Map USB Drive to internal\""  >> "${TMP_PATH}/menu"
-  echo "5 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
+  echo "3 \"Map USB Drive to internal\""  >> "${TMP_PATH}/menu"
+  echo "4 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
   echo "0 \"Exit\""                       >> "${TMP_PATH}/menu"
 
   # menu loop
@@ -1197,22 +1184,13 @@ function synoinfoMenu() {
         DIRTY=1
         ;;
       3)
-        MAXDISKS=`readConfigKey "maxdisks" "${USER_CONFIG_FILE}"`
-        dialog --backtitle "`backtitle`" --title "Maxdisks" \
-          --inputbox "Type a value for maxdisks" 0 0 "${MAXDISKS}" \
-          2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && continue
-        VALUE="`<"${TMP_PATH}/resp"`"
-        [ "${VALUE}" != "${MAXDISKS}" ] && writeConfigKey "maxdisks" "${VALUE}" "${USER_CONFIG_FILE}"
-        ;;
-      4)
         writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
         dialog --backtitle "`backtitle`" --msgbox "External USB Drives mapped" 0 0 
         ;;
-      5)
+      4)
         ITEMS=""
         for KEY in ${!SYNOINFO[@]}; do
           ITEMS+="${KEY}: ${SYNOINFO[$KEY]}\n"
@@ -1311,7 +1289,7 @@ function updateMenu() {
           [ -f "${F}" ] && rm -f "${F}"
           [ -d "${F}" ] && rm -Rf "${F}"
         done < <(readConfigArray "remove" "/tmp/update-list.yml")
-        while IFS="=" read KEY VALUE; do
+        while IFS=': ' read KEY VALUE; do
           if [ "${KEY: -1}" = "/" ]; then
             rm -Rf "${VALUE}"
             mkdir -p "${VALUE}"
@@ -1554,6 +1532,7 @@ function boot() {
 ###############################################################################
 
 if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${BUILD}" -a loaderIsConfigured ]; then
+  install-addons.sh
   make
   boot && exit 0 || sleep 5
 fi

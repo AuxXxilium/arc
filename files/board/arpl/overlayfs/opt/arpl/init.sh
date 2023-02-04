@@ -77,7 +77,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "model" "" "${USER_CONFIG_FILE}"
   writeConfigKey "build" "" "${USER_CONFIG_FILE}"
   writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "maxdisks" "" "${USER_CONFIG_FILE}"
+  #writeConfigKey "maxdisks" "" "${USER_CONFIG_FILE}"
   writeConfigKey "layout" "qwertz" "${USER_CONFIG_FILE}"
   writeConfigKey "keymap" "de" "${USER_CONFIG_FILE}"
   writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
