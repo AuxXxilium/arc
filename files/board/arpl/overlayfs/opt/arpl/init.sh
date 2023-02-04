@@ -51,8 +51,8 @@ ln -s "${CACHE_PATH}/ssh" "/etc/ssh"
 rm -rf ~/.bash_history
 ln -s ${CACHE_PATH}/.bash_history ~/.bash_history
 touch ~/.bash_history
-if ! grep -q "menu.sh" ~/.bash_history; then
-  echo "menu.sh " >> ~/.bash_history
+if ! grep -q "arc.sh" ~/.bash_history; then
+  echo "arc.sh " >> ~/.bash_history
 fi
 # Check if exists directories into P3 partition, if yes remove and link it
 if [ -d "${CACHE_PATH}/model-configs" ]; then
