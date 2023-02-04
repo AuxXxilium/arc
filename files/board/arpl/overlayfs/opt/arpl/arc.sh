@@ -763,7 +763,7 @@ function addonMenu() {
   unset ADDONS
   declare -A ADDONS
   while IFS="=" read KEY VALUE; do
-    [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
+    [ -n "${KEY}" ] && ADDONS["$KEY"]="${VALUE}"
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
   # Loop menu
   while true; do
@@ -928,7 +928,7 @@ function selectModules() {
   unset USERMODULES
   declare -A USERMODULES
   while IFS="=" read KEY VALUE; do
-    [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
+    [ -n "${KEY}" ] && USERMODULES["$KEY"]="${VALUE}"
   done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
   # menu loop
   while true; do
@@ -957,7 +957,7 @@ function selectModules() {
         declare -A USERMODULES
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         while read ID DESC; do
-          USERMODULES["${ID}"]=""
+          USERMODULES["$ID"]=""
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done <<<${ALLMODULES}
         ;;
@@ -1006,13 +1006,218 @@ function selectModules() {
         declare -A USERMODULES
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         for ID in ${resp}; do
-          USERMODULES["${ID}"]=""
+          USERMODULES["$ID"]=""
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done
         ;;
       0)
         break
         ;;
+    esac
+  done
+}
+
+###############################################################################
+# Let user edit cmdline
+function cmdlineMenu() {
+  NEXT="1"
+  unset CMDLINE
+  declare -A CMDLINE
+  while IFS="=" read KEY VALUE; do
+    [ -n "${KEY}" ] && CMDLINE["$KEY"]="${VALUE}"
+  done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
+  echo "1 \"Add/edit a Cmdline item\""                          > "${TMP_PATH}/menu"
+  echo "2 \"Delete Cmdline item(s)\""                           >> "${TMP_PATH}/menu"
+  echo "3 \"Define a custom SataPortMap\""                      >> "${TMP_PATH}/menu"
+  echo "4 \"Define a custom MAC\""                              >> "${TMP_PATH}/menu"
+  echo "5 \"Show user Cmdline\""                                >> "${TMP_PATH}/menu"
+  echo "6 \"Show Model/Build Cmdline\""                         >> "${TMP_PATH}/menu"
+  echo "0 \"Exit\""                                             >> "${TMP_PATH}/menu"
+  # Loop menu
+  while true; do
+    dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
+      --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    case "`<${TMP_PATH}/resp`" in
+      1)
+        dialog --backtitle "`backtitle`" --title "User cmdline" \
+          --inputbox "Type a name of cmdline" 0 0 \
+          2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && continue
+        NAME="`sed 's/://g' <"${TMP_PATH}/resp"`"
+        [ -z "${NAME}" ] && continue
+        dialog --backtitle "`backtitle`" --title "User cmdline" \
+          --inputbox "Type a value of '${NAME}' cmdline" 0 0 "${CMDLINE[${NAME}]}" \
+          2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && continue
+        VALUE="`<"${TMP_PATH}/resp"`"
+        CMDLINE[${NAME}]="${VALUE}"
+        writeConfigKey "cmdline.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
+        ;;
+      2)
+        if [ ${#CMDLINE[@]} -eq 0 ]; then
+          dialog --backtitle "`backtitle`" --msgbox "No user cmdline to remove" 0 0 
+          continue
+        fi
+        ITEMS=""
+        for I in "${!CMDLINE[@]}"; do
+          [ -z "${CMDLINE[${I}]}" ] && ITEMS+="${I} \"\" off " || ITEMS+="${I} ${CMDLINE[${I}]} off "
+        done
+        dialog --backtitle "`backtitle`" \
+          --checklist "Select cmdline to remove" 0 0 0 ${ITEMS} \
+          2>"${TMP_PATH}/resp"
+        [ $? -ne 0 ] && continue
+        RESP=`<"${TMP_PATH}/resp"`
+        [ -z "${RESP}" ] && continue
+        for I in ${RESP}; do
+          unset CMDLINE[${I}]
+          deleteConfigKey "cmdline.${I}" "${USER_CONFIG_FILE}"
+        done
+        ;;
+      3)
+        while true; do
+          dialog --backtitle "`backtitle`" --title "Custom SataPortMap" \
+            --inputbox "Type a custom SataPortMap" 0 0 "${CMDLINE['SataPortMap']}"\
+            2>${TMP_PATH}/resp
+          [ $? -ne 0 ] && break
+          PORTMAP="`<"${TMP_PATH}/resp"`"
+          [ -z "${PORTMAP}" ] && PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
+          writeConfigKey "cmdline.SataPortMap"      "${PORTMAP}" "${USER_CONFIG_FILE}"
+        done
+        ;;
+      4)
+        while true; do
+          dialog --backtitle "`backtitle`" --title "User cmdline" \
+            --inputbox "Type a custom MAC address" 0 0 "${CMDLINE['mac1']}"\
+            2>${TMP_PATH}/resp
+          [ $? -ne 0 ] && break
+          MAC="`<"${TMP_PATH}/resp"`"
+          [ -z "${MAC}" ] && MAC="`readConfigKey "original-mac" "${USER_CONFIG_FILE}"`"
+          MAC1="`echo "${MAC}" | sed 's/://g'`"
+          [ ${#MAC1} -eq 12 ] && break
+          dialog --backtitle "`backtitle`" --title "User cmdline" --msgbox "Invalid MAC" 0 0
+        done
+        CMDLINE["mac1"]="${MAC1}"
+        CMDLINE["netif_num"]=1
+        writeConfigKey "cmdline.mac1"      "${MAC1}" "${USER_CONFIG_FILE}"
+        MAC="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
+        ip link set dev eth0 address ${MAC} 2>&1 | dialog --backtitle "`backtitle`" \
+          --title "User cmdline" --progressbox "Changing mac" 20 70
+        /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
+          --title "User cmdline" --progressbox "Renewing IP" 20 70
+        IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
+        ;;
+      5)
+        ITEMS=""
+        for KEY in ${!CMDLINE[@]}; do
+          ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
+        done
+        dialog --backtitle "`backtitle`" --title "User cmdline" \
+          --aspect 18 --msgbox "${ITEMS}" 0 0
+        ;;
+      6)
+        ITEMS=""
+        while IFS="=" read KEY VALUE; do
+          ITEMS+="${KEY}: ${VALUE}\n"
+        done < <(readModelMap "${MODEL}" "builds.${BUILD}.cmdline")
+        dialog --backtitle "`backtitle`" --title "Model/build cmdline" \
+          --aspect 18 --msgbox "${ITEMS}" 0 0
+        ;;
+      0) return ;;
+    esac
+  done
+}
+
+###############################################################################
+# let user edit synoinfo
+function synoinfoMenu() {
+  NEXT="1"
+  # Get dt flag from model
+  DT="`readModelKey "${MODEL}" "dt"`"
+  # Read synoinfo from user config
+  unset SYNOINFO
+  declare -A SYNOINFO
+  while IFS="=" read KEY VALUE; do
+    [ -n "${KEY}" ] && SYNOINFO["$KEY"]="${VALUE}"
+  done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
+
+  echo "1 \"Add/edit Synoinfo item\""     > "${TMP_PATH}/menu"
+  echo "2 \"Delete Synoinfo item(s)\""    >> "${TMP_PATH}/menu"
+  if [ "${DT}" != "true" ]; then
+    echo "3 \"Set maxdisks manually\""    >> "${TMP_PATH}/menu"
+  fi
+  echo "4 \"Map USB Drive to internal\""  >> "${TMP_PATH}/menu"
+  echo "5 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
+  echo "0 \"Exit\""                       >> "${TMP_PATH}/menu"
+
+  # menu loop
+  while true; do
+    dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
+      --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    case "`<${TMP_PATH}/resp`" in
+      1)
+        dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
+          --inputbox "Type a name of synoinfo entry" 0 0 \
+          2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && continue
+        NAME="`<"${TMP_PATH}/resp"`"
+        [ -z "${NAME}" ] && continue
+        dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
+          --inputbox "Type a value of '${NAME}' entry" 0 0 "${SYNOINFO[${NAME}]}" \
+          2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && continue
+        VALUE="`<"${TMP_PATH}/resp"`"
+        SYNOINFO[${NAME}]="${VALUE}"
+        writeConfigKey "synoinfo.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
+        DIRTY=1
+        ;;
+      2)
+        if [ ${#SYNOINFO[@]} -eq 0 ]; then
+          dialog --backtitle "`backtitle`" --msgbox "No synoinfo entries to remove" 0 0 
+          continue
+        fi
+        ITEMS=""
+        for I in "${!SYNOINFO[@]}"; do
+          [ -z "${SYNOINFO[${I}]}" ] && ITEMS+="${I} \"\" off " || ITEMS+="${I} ${SYNOINFO[${I}]} off "
+        done
+        dialog --backtitle "`backtitle`" \
+          --checklist "Select synoinfo entry to remove" 0 0 0 ${ITEMS} \
+          2>"${TMP_PATH}/resp"
+        [ $? -ne 0 ] && continue
+        RESP=`<"${TMP_PATH}/resp"`
+        [ -z "${RESP}" ] && continue
+        for I in ${RESP}; do
+          unset SYNOINFO[${I}]
+          deleteConfigKey "synoinfo.${I}" "${USER_CONFIG_FILE}"
+        done
+        DIRTY=1
+        ;;
+      3)
+        MAXDISKS=`readConfigKey "maxdisks" "${USER_CONFIG_FILE}"`
+        dialog --backtitle "`backtitle`" --title "Maxdisks" \
+          --inputbox "Type a value for maxdisks" 0 0 "${MAXDISKS}" \
+          2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && continue
+        VALUE="`<"${TMP_PATH}/resp"`"
+        [ "${VALUE}" != "${MAXDISKS}" ] && writeConfigKey "maxdisks" "${VALUE}" "${USER_CONFIG_FILE}"
+        ;;
+      4)
+        writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
+        dialog --backtitle "`backtitle`" --msgbox "External USB Drives mapped" 0 0 
+        ;;
+      5)
+        ITEMS=""
+        for KEY in ${!SYNOINFO[@]}; do
+          ITEMS+="${KEY}: ${SYNOINFO[$KEY]}\n"
+        done
+        dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
+          --aspect 18 --msgbox "${ITEMS}" 0 0
+        ;;
+      0) return ;;
     esac
   done
 }
@@ -1190,7 +1395,7 @@ function updateMenu() {
           ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${M}.yml"`"
           for B in ${ITEMS}; do
             KVER=`readModelKey "${M}" "builds.${B}.kver"`
-            PLATFORMS["${P}-${KVER}"]=""
+            PLATFORMS["$P-$KVER"]=""
           done
         done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
@@ -1233,7 +1438,6 @@ function updateMenu() {
 # Shows Systeminfo to user
 function sysinfo() {
         # Checks for Systeminfo Menu
-        TYPEINFO=$(vserver=$(lscpu | grep Hypervisor | wc -l))
         CPUINFO=$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')
         MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
         VENDOR=$(dmidecode -s system-product-name)
@@ -1298,211 +1502,6 @@ function sysinfo() {
 }
 
 ###############################################################################
-# Let user edit cmdline
-function cmdlineMenu() {
-  NEXT="1"
-  unset CMDLINE
-  declare -A CMDLINE
-  while IFS="=" read KEY VALUE; do
-    [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-  done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
-  echo "1 \"Add/edit a Cmdline item\""                          > "${TMP_PATH}/menu"
-  echo "2 \"Delete Cmdline item(s)\""                           >> "${TMP_PATH}/menu"
-  echo "3 \"Define a custom SataPortMap\""                      >> "${TMP_PATH}/menu"
-  echo "4 \"Define a custom MAC\""                              >> "${TMP_PATH}/menu"
-  echo "5 \"Show user Cmdline\""                                >> "${TMP_PATH}/menu"
-  echo "6 \"Show Model/Build Cmdline\""                         >> "${TMP_PATH}/menu"
-  echo "0 \"Exit\""                                             >> "${TMP_PATH}/menu"
-  # Loop menu
-  while true; do
-    dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
-      --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
-    case "`<${TMP_PATH}/resp`" in
-      1)
-        dialog --backtitle "`backtitle`" --title "User cmdline" \
-          --inputbox "Type a name of cmdline" 0 0 \
-          2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && continue
-        NAME="`sed 's/://g' <"${TMP_PATH}/resp"`"
-        [ -z "${NAME}" ] && continue
-        dialog --backtitle "`backtitle`" --title "User cmdline" \
-          --inputbox "Type a value of '${NAME}' cmdline" 0 0 "${CMDLINE[${NAME}]}" \
-          2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && continue
-        VALUE="`<"${TMP_PATH}/resp"`"
-        CMDLINE[${NAME}]="${VALUE}"
-        writeConfigKey "cmdline.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
-        ;;
-      2)
-        if [ ${#CMDLINE[@]} -eq 0 ]; then
-          dialog --backtitle "`backtitle`" --msgbox "No user cmdline to remove" 0 0 
-          continue
-        fi
-        ITEMS=""
-        for I in "${!CMDLINE[@]}"; do
-          [ -z "${CMDLINE[${I}]}" ] && ITEMS+="${I} \"\" off " || ITEMS+="${I} ${CMDLINE[${I}]} off "
-        done
-        dialog --backtitle "`backtitle`" \
-          --checklist "Select cmdline to remove" 0 0 0 ${ITEMS} \
-          2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && continue
-        RESP=`<"${TMP_PATH}/resp"`
-        [ -z "${RESP}" ] && continue
-        for I in ${RESP}; do
-          unset CMDLINE[${I}]
-          deleteConfigKey "cmdline.${I}" "${USER_CONFIG_FILE}"
-        done
-        ;;
-      3)
-        while true; do
-          dialog --backtitle "`backtitle`" --title "Custom SataPortMap" \
-            --inputbox "Type a custom SataPortMap" 0 0 "${CMDLINE['SataPortMap']}"\
-            2>${TMP_PATH}/resp
-          [ $? -ne 0 ] && break
-          PORTMAP="`<"${TMP_PATH}/resp"`"
-          [ -z "${PORTMAP}" ] && PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
-          writeConfigKey "cmdline.SataPortMap"      "${PORTMAP}" "${USER_CONFIG_FILE}"
-        done
-        ;;
-      4)
-        while true; do
-          dialog --backtitle "`backtitle`" --title "User cmdline" \
-            --inputbox "Type a custom MAC address" 0 0 "${CMDLINE['mac1']}"\
-            2>${TMP_PATH}/resp
-          [ $? -ne 0 ] && break
-          MAC="`<"${TMP_PATH}/resp"`"
-          [ -z "${MAC}" ] && MAC="`readConfigKey "original-mac" "${USER_CONFIG_FILE}"`"
-          MAC1="`echo "${MAC}" | sed 's/://g'`"
-          [ ${#MAC1} -eq 12 ] && break
-          dialog --backtitle "`backtitle`" --title "User cmdline" --msgbox "Invalid MAC" 0 0
-        done
-        CMDLINE["mac1"]="${MAC1}"
-        CMDLINE["netif_num"]=1
-        writeConfigKey "cmdline.mac1"      "${MAC1}" "${USER_CONFIG_FILE}"
-        MAC="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
-        ip link set dev eth0 address ${MAC} 2>&1 | dialog --backtitle "`backtitle`" \
-          --title "User cmdline" --progressbox "Changing mac" 20 70
-        /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
-          --title "User cmdline" --progressbox "Renewing IP" 20 70
-        IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
-        ;;
-      5)
-        ITEMS=""
-        for KEY in ${!CMDLINE[@]}; do
-          ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
-        done
-        dialog --backtitle "`backtitle`" --title "User cmdline" \
-          --aspect 18 --msgbox "${ITEMS}" 0 0
-        ;;
-      6)
-        ITEMS=""
-        while IFS="=" read KEY VALUE; do
-          ITEMS+="${KEY}: ${VALUE}\n"
-        done < <(readModelMap "${MODEL}" "builds.${BUILD}.cmdline")
-        dialog --backtitle "`backtitle`" --title "Model/build cmdline" \
-          --aspect 18 --msgbox "${ITEMS}" 0 0
-        ;;
-      0) return ;;
-    esac
-  done
-}
-
-###############################################################################
-# let user edit synoinfo
-function synoinfoMenu() {
-  NEXT="1"
-  # Get dt flag from model
-  DT="`readModelKey "${MODEL}" "dt"`"
-  # Read synoinfo from user config
-  unset SYNOINFO
-  declare -A SYNOINFO
-  while IFS="=" read KEY VALUE; do
-    [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
-  done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
-
-  echo "1 \"Add/edit Synoinfo item\""     > "${TMP_PATH}/menu"
-  echo "2 \"Delete Synoinfo item(s)\""    >> "${TMP_PATH}/menu"
-  if [ "${DT}" != "true" ]; then
-    echo "3 \"Set maxdisks manually\""    >> "${TMP_PATH}/menu"
-  fi
-  echo "4 \"Map USB Drive to internal\""  >> "${TMP_PATH}/menu"
-  echo "5 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
-  echo "0 \"Exit\""                       >> "${TMP_PATH}/menu"
-
-  # menu loop
-  while true; do
-    dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
-      --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
-    case "`<${TMP_PATH}/resp`" in
-      1)
-        dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
-          --inputbox "Type a name of synoinfo entry" 0 0 \
-          2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && continue
-        NAME="`<"${TMP_PATH}/resp"`"
-        [ -z "${NAME}" ] && continue
-        dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
-          --inputbox "Type a value of '${NAME}' entry" 0 0 "${SYNOINFO[${NAME}]}" \
-          2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && continue
-        VALUE="`<"${TMP_PATH}/resp"`"
-        SYNOINFO[${NAME}]="${VALUE}"
-        writeConfigKey "synoinfo.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
-        DIRTY=1
-        ;;
-      2)
-        if [ ${#SYNOINFO[@]} -eq 0 ]; then
-          dialog --backtitle "`backtitle`" --msgbox "No synoinfo entries to remove" 0 0 
-          continue
-        fi
-        ITEMS=""
-        for I in "${!SYNOINFO[@]}"; do
-          [ -z "${SYNOINFO[${I}]}" ] && ITEMS+="${I} \"\" off " || ITEMS+="${I} ${SYNOINFO[${I}]} off "
-        done
-        dialog --backtitle "`backtitle`" \
-          --checklist "Select synoinfo entry to remove" 0 0 0 ${ITEMS} \
-          2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && continue
-        RESP=`<"${TMP_PATH}/resp"`
-        [ -z "${RESP}" ] && continue
-        for I in ${RESP}; do
-          unset SYNOINFO[${I}]
-          deleteConfigKey "synoinfo.${I}" "${USER_CONFIG_FILE}"
-        done
-        DIRTY=1
-        ;;
-      3)
-        MAXDISKS=`readConfigKey "maxdisks" "${USER_CONFIG_FILE}"`
-        dialog --backtitle "`backtitle`" --title "Maxdisks" \
-          --inputbox "Type a value for maxdisks" 0 0 "${MAXDISKS}" \
-          2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && continue
-        VALUE="`<"${TMP_PATH}/resp"`"
-        [ "${VALUE}" != "${MAXDISKS}" ] && writeConfigKey "maxdisks" "${VALUE}" "${USER_CONFIG_FILE}"
-        ;;
-      4)
-        writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
-        dialog --backtitle "`backtitle`" --msgbox "External USB Drives mapped" 0 0 
-        ;;
-      5)
-        ITEMS=""
-        for KEY in ${!SYNOINFO[@]}; do
-          ITEMS+="${KEY}: ${SYNOINFO[$KEY]}\n"
-        done
-        dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
-          --aspect 18 --msgbox "${ITEMS}" 0 0
-        ;;
-      0) return ;;
-    esac
-  done
-}
-
-###############################################################################
 # let user reset config
 function reset() {
   # Reset full userconfig
@@ -1560,7 +1559,7 @@ NEXT="1"
 while true; do
   echo "= \"\Z4========== Main ========== \Zn\" "                                            > "${TMP_PATH}/menu"
   echo "1 \"Choose Model for Arc Loader \" "                                                >> "${TMP_PATH}/menu"
-  if [ -n "${MODEL}" ] && [ -n "${BUILD}" ] && [ "${CONFDONE}" -eq "1" ]; then
+  if [ "${CONFDONE}" -eq "1" ]; then
       echo "4 \"Build Arc Loader \" "                                                       >> "${TMP_PATH}/menu"
   fi
   if loaderIsConfigured; then
