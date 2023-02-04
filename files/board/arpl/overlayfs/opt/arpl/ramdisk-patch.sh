@@ -72,9 +72,9 @@ done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 # Patches
 while read f; do
-  echo -n "." >"${LOG_FILE}" 2>&1
-  echo "Patching with ${f}" >>"${LOG_FILE}" 2>&1 || dieLog
-  (cd "${RAMDISK_PATH}" && patch -p1 < "${PATCH_PATH}/${f}")
+  echo -n "."
+  echo "Patching with ${f}" >"${LOG_FILE}" 2>&1
+  (cd "${RAMDISK_PATH}" && patch -p1 < "${PATCH_PATH}/${f}") >>"$LOG_FILE" 2>&1 || dieLog
 done < <(readModelArray "${MODEL}" "builds.${BUILD}.patch")
 
 # Patch /etc/synoinfo.conf
@@ -168,9 +168,9 @@ done
 # Reassembly ramdisk
 echo -n "."
 if [ "${RD_COMPRESSED}" == "true" ]; then
-  (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root | xz -9 --format=lzma > "${MOD_RDGZ_FILE}")
+  (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root | xz -9 --format=lzma > "${MOD_RDGZ_FILE}") >"$LOG_FILE" 2>&1 || dieLog
 else
-  (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root > "${MOD_RDGZ_FILE}")
+  (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root > "${MOD_RDGZ_FILE}") >"$LOG_FILE" 2>&1 || dieLog
 fi
 
 # Clean

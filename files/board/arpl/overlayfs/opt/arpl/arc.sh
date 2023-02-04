@@ -1410,9 +1410,9 @@ function sysinfo() {
         TEXT+="\n\Z4Config:\Zn"
         TEXT+="\nArc: \Zb"${ARPL_VERSION}"\Zn"
         TEXT+="\nModel: \Zb"${MODEL}"\Zn"
-        if [ ${CONFINFO} -eq 1 ]; then
+        if [ ${CONFINFO} == 1 ]; then
         TEXT+="\nConfig: \ZbComplete\Zn"
-        elif [ ${CONFINFO} -eq 0 ]; then
+        elif [ ${CONFINFO} == 0 ]; then
         TEXT+="\nConfig: \ZbIncomplete\Zn"
         else
         TEXT+="\nConfig: \ZbError\Zn"
@@ -1553,7 +1553,7 @@ NEXT="1"
 while true; do
   echo "= \"\Z4========== Main ========== \Zn\" "                                            > "${TMP_PATH}/menu"
   echo "1 \"Choose Model for Arc Loader \" "                                                >> "${TMP_PATH}/menu"
-  if [ ${CONFDONE} -eq 1 ]; then
+  if [ ${CONFDONE} == 1 ]; then
       echo "4 \"Build Arc Loader \" "                                                       >> "${TMP_PATH}/menu"
   fi
   if loaderIsConfigured; then
@@ -1561,7 +1561,7 @@ while true; do
   fi
   echo "= \"\Z4========== Info ========== \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "a \"Sysinfo \" "                                                                    >> "${TMP_PATH}/menu"
-  if [ ${CONFDONE} -eq 1 ]; then
+  if [ ${CONFDONE} == 1 ]; then
   echo "= \"\Z4========= System ========= \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "2 \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
   echo "3 \"Modules \" "                                                                    >> "${TMP_PATH}/menu"
