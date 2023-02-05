@@ -148,7 +148,7 @@ function buildMenu() {
     BUILD=${resp}
     writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
   fi
-  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
+  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
   arcbuild
 }
 
@@ -214,7 +214,6 @@ function arcbuild() {
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Model Configuration successfull!" 0 0
   sleep 3
-  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
   arcdisk
 }
 
@@ -297,7 +296,6 @@ function arcdisk() {
     --infobox "Disk configuration successfull!" 0 0
   sleep 1
   DIRTY=1
-  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
   arcnet
   fi
 }
@@ -1394,7 +1392,7 @@ function sysinfo() {
         MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
         NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
         PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
-        CONFINFO="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+        CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
         ARCPATCH="`readConfigKey "arcpatch" "${USER_CONFIG_FILE}"`"
         LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
         ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
@@ -1410,12 +1408,10 @@ function sysinfo() {
         TEXT+="\n\Z4Config:\Zn"
         TEXT+="\nArc: \Zb"${ARPL_VERSION}"\Zn"
         TEXT+="\nModel: \Zb"${MODEL}"\Zn"
-        if [ ${CONFINFO} == 1 ]; then
+        if [ -n "${CONFDONE}" ]; then
         TEXT+="\nConfig: \ZbComplete\Zn"
-        elif [ ${CONFINFO} == 0 ]; then
-        TEXT+="\nConfig: \ZbIncomplete\Zn"
         else
-        TEXT+="\nConfig: \ZbError\Zn"
+        TEXT+="\nConfig: \ZbIncomplete\Zn"
         fi
         TEXT+="\nArcpatch: \Zb"${ARCPATCH}"\Zn"
         TEXT+="\nLKM: \Zb"${LKM}"\Zn"
@@ -1480,7 +1476,7 @@ function reset() {
   deleteConfigKey "cmdline.mac2" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac3" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac4" "${USER_CONFIG_FILE}"
-  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
+  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
   readConfigKey "confdone" "${USER_CONFIG_FILE}"
 }
 
@@ -1553,7 +1549,7 @@ NEXT="1"
 while true; do
   echo "= \"\Z4========== Main ========== \Zn\" "                                            > "${TMP_PATH}/menu"
   echo "1 \"Choose Model for Arc Loader \" "                                                >> "${TMP_PATH}/menu"
-  if [ ${CONFDONE} == 1 ]; then
+  if [ -n "${CONFDONE}" ]; then
       echo "4 \"Build Arc Loader \" "                                                       >> "${TMP_PATH}/menu"
   fi
   if loaderIsConfigured; then
@@ -1561,7 +1557,7 @@ while true; do
   fi
   echo "= \"\Z4========== Info ========== \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "a \"Sysinfo \" "                                                                    >> "${TMP_PATH}/menu"
-  if [ ${CONFDONE} == 1 ]; then
+  if [ -n "${CONFDONE}" ]; then
   echo "= \"\Z4========= System ========= \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "2 \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
   echo "3 \"Modules \" "                                                                    >> "${TMP_PATH}/menu"
