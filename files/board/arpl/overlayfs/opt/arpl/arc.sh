@@ -252,22 +252,22 @@ function arcdisk() {
       done
     fi
     # Get Number of Raid/SCSI Drives
-    #if [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-    #  pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
-    #  [ ! -z "$pcis" ]
+    if [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
+      pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
+      [ ! -z "$pcis" ]
       # loop through non-SATA controllers
-    #  for pci in $pcis; do
+      for pci in $pcis; do
       # get attached block devices (exclude CD-ROMs)
-    #  DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
-    #  if [ ${DRIVES} -gt 8 ]; then
-    #  DRIVES=8
-    #  WARNON=1
-    #  fi
-    #  if [ ${DRIVES} -gt 0 ]; then
-    #  echo -n "${DRIVES}" >> ${TMP_PATH}/drives
-    #  fi
-    #  done
-    #fi
+        DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      if [ ${DRIVES} -gt 8 ]; then
+        DRIVES=8
+        WARNON=1
+      fi
+      if [ ${DRIVES} -gt 0 ]; then
+        echo -n "${DRIVES}" >> ${TMP_PATH}/drives
+      fi
+      done
+    fi
     if [ ${WARNON} -eq 1 ]; then
       dialog --backtitle "`backtitle`" --title "Arc Config" \
         --infobox "WARN: Your Controller has more than 8 Drives connected. Max Drives per Controller: 8" 0 0
@@ -921,22 +921,22 @@ function newarcdisk() {
       done
     fi
     # Get Number of Raid/SCSI Drives
-    #if [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-    #  pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
-    #  [ ! -z "$pcis" ]
+    if [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
+      pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
+      [ ! -z "$pcis" ]
       # loop through non-SATA controllers
-    #  for pci in $pcis; do
+      for pci in $pcis; do
       # get attached block devices (exclude CD-ROMs)
-    #  DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
-    #  if [ ${DRIVES} -gt 8 ]; then
-    #  DRIVES=8
-    #  WARNON=1
-    #  fi
-    #  if [ ${DRIVES} -gt 0 ]; then
-    #  echo -n "${DRIVES}" >> ${TMP_PATH}/drives
-    #  fi
-    #  done
-    #fi
+        DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
+      if [ ${DRIVES} -gt 8 ]; then
+        DRIVES=8
+        WARNON=1
+      fi
+      if [ ${DRIVES} -gt 0 ]; then
+        echo -n "${DRIVES}" >> ${TMP_PATH}/drives
+      fi
+      done
+    fi
     if [ ${WARNON} -eq 1 ]; then
       dialog --backtitle "`backtitle`" --title "Arc Config" \
         --infobox "WARN: Your Controller has more than 8 Drives connected. Max Drives per Controller: 8" 0 0
