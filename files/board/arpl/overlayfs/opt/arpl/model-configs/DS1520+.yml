@@ -33,6 +33,46 @@ mac6: "9009D01978A5"
 disks: 6
 dt: true
 builds:
+  42218:
+    ver: "7.0.1"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/release/7.0.1/42218/DSM_DS1520%2B_42218.pat"
+      hash: "b8864e2becd8ce5a6083db993564c8c0b982df8300a006b56695a0495a670aa3"
+      ramdisk-hash: "7679ab11e895302425533c64e0dded211b38b8af71f2dd268c47a68bc9f6818a"
+      zimage-hash: "70e93678f3932c35c5e884f950e50b36f8dc6366f96dd9a454c8d47ecbaee5de"
+      md5-hash: "d1ebc3c9a2b9e04980a85c4784904f91"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-common-post-init-script.patch"
+
+  42661:
+    ver: "7.1.0"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/release/7.1/42661-1/DSM_DS1520%2B_42661.pat"
+      hash: "3a8499c5f72d7241b81781ec741d4019eaa506e6e7a4fd17ce54fb149f6ffae6"
+      ramdisk-hash: "b18f14b8420a217d7b6dd3696786ecccfbe7c325d342475531a68a7df831cffc"
+      zimage-hash: "1d0e5b76e08e3483f6bf06d23b5978ec498b855bde23db1f96f343db4c43337d"
+      md5-hash: "1d8ecfcb2a956488ae355c79a72bb9ec"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42661-post-init-script.patch"
+
   42962:
     ver: "7.1.1"
     kver: "4.4.180"

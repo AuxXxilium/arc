@@ -38,6 +38,48 @@ dt: false
 flags:
   - "fma"
 builds:
+  42218:
+    ver: "7.0.1"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/release/7.0.1/42218/DSM_DS918%2B_42218.pat"
+      hash: "a662d11999c266dfa86c54f7ba01045c6644c191124195a22d056d618790dffe"
+      ramdisk-hash: "d27320b536da0ac82d7959e0492180b3a25ef78a3997f65cc4ccddc426b921bd"
+      zimage-hash: "7311b04f7462847f529cf966c7b332097354692485c8157643d89441e2a81cd0"
+      md5-hash: "0c8a0d2dc6f1d7e37ee63d74760808b8"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-common-post-init-script.patch"
+      - "ramdisk-common-disable-disabled-ports.patch"
+
+  42661:
+    ver: "7.1.0"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/release/7.1/42661-1/DSM_DS918%2B_42661.pat"
+      hash: "4e8a9d82a8a1fde5af9a934391080b7bf6b91811d9583acb73b90fb6577e22d7"
+      ramdisk-hash: "ef8c87b6e68226339e5623d048252f5be3089c0831e41298a4695f2bfa65f00e"
+      zimage-hash: "9ce0d3452f08afaf95d52292ff20cbac6d69e17d5b9953377e4ac90c9ac7397d"
+      md5-hash: "2c49260d2646a0944b56933f7d4029fb"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42661-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"
+
   42962:
     ver: "7.1.1"
     kver: "4.4.180"
