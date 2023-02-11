@@ -268,7 +268,7 @@ function arcdisk() {
       fi
       done
     fi
-    if [ ${WARNON} -eq 1 ]; then
+    if [ -n "$WARNON" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Config" \
         --infobox "WARN: Your Controller has more than 8 Drives connected. Max Drives per Controller: 8" 0 0
       sleep 5
