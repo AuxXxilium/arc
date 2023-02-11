@@ -1151,7 +1151,7 @@ function synoinfoMenu() {
         [ "${VALUE}" != "${MAXDISKS}" ] && writeConfigKey "maxdisks" "${VALUE}" "${USER_CONFIG_FILE}"
         ;;
       4)
-        writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
+        writeConfigKey "maxdisks" "24" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
