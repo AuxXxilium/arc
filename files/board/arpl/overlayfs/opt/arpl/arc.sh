@@ -673,7 +673,7 @@ function addonMenu() {
   unset ADDONS
   declare -A ADDONS
   while IFS=': ' read KEY VALUE; do
-    [ -n "${KEY}" ] && ADDONS["$KEY"]="${VALUE}"
+    [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
   # Loop menu
   while true; do
@@ -795,7 +795,7 @@ function selectModules() {
   unset USERMODULES
   declare -A USERMODULES
   while IFS=': ' read KEY VALUE; do
-    [ -n "${KEY}" ] && USERMODULES["$KEY"]="${VALUE}"
+    [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
   done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
   # menu loop
   while true; do
@@ -824,7 +824,7 @@ function selectModules() {
         declare -A USERMODULES
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         while read ID DESC; do
-          USERMODULES["$ID"]=""
+          USERMODULES["${ID}"]=""
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done <<<${ALLMODULES}
         ;;
@@ -873,7 +873,7 @@ function selectModules() {
         declare -A USERMODULES
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         for ID in ${resp}; do
-          USERMODULES["$ID"]=""
+          USERMODULES["${ID}"]=""
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done
         ;;
@@ -974,7 +974,7 @@ function cmdlineMenu() {
   unset CMDLINE
   declare -A CMDLINE
   while IFS=': ' read KEY VALUE; do
-    [ -n "${KEY}" ] && CMDLINE["$KEY"]="${VALUE}"
+    [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
   done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
   echo "1 \"Add/edit a Cmdline item\""                          > "${TMP_PATH}/menu"
   echo "2 \"Delete Cmdline item(s)\""                           >> "${TMP_PATH}/menu"
@@ -1086,7 +1086,7 @@ function synoinfoMenu() {
   unset SYNOINFO
   declare -A SYNOINFO
   while IFS=': ' read KEY VALUE; do
-    [ -n "${KEY}" ] && SYNOINFO["$KEY"]="${VALUE}"
+    [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
   done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 
   echo "1 \"Add/edit Synoinfo item\""     > "${TMP_PATH}/menu"
@@ -1213,7 +1213,7 @@ function updateMenu() {
     case "`<${TMP_PATH}/resp`" in
       1)
         dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
-          --infobox "Checking last version" 0 0
+          --infobox "Checking latest version" 0 0
         ACTUALVERSION="v${ARPL_VERSION}"
         TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
         if [ $? -ne 0 -o -z "${TAG}" ]; then
@@ -1227,7 +1227,7 @@ function updateMenu() {
           [ $? -ne 0 ] && continue
         fi
         dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
-          --infobox "Downloading last version ${TAG}" 0 0
+          --infobox "Downloading latest version ${TAG}" 0 0
         # Download update file
         STATUS=`curl --insecure -w "%{http_code}" -L \
           "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o /tmp/update.zip`
@@ -1275,7 +1275,7 @@ function updateMenu() {
 
       2)
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
-          --infobox "Checking last version" 0 0
+          --infobox "Checking latest version" 0 0
         TAG=`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
@@ -1283,7 +1283,7 @@ function updateMenu() {
           continue
         fi
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
-          --infobox "Downloading last version" 0 0
+          --infobox "Downloading latest version: ${TAG}" 0 0
         STATUS=`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip`
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
@@ -1291,7 +1291,7 @@ function updateMenu() {
           continue
         fi
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
-          --infobox "Extracting last version" 0 0
+          --infobox "Extracting latest version" 0 0
         rm -rf /tmp/addons
         mkdir -p /tmp/addons
         unzip /tmp/addons.zip -d /tmp/addons >/dev/null 2>&1
@@ -1305,12 +1305,12 @@ function updateMenu() {
         done
         DIRTY=1
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
-          --msgbox "Addons updated with success!" 0 0
+          --msgbox "Addons updated with success! ${TAG}" 0 0
         ;;
 
       3)
         dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-          --infobox "Checking last version" 0 0
+          --infobox "Checking latest version" 0 0
         TAG=`curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
@@ -1318,20 +1318,20 @@ function updateMenu() {
           continue
         fi
         dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-          --infobox "Downloading last version" 0 0
+          --infobox "Downloading latest version: ${TAG}" 0 0
         STATUS=`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip`
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-            --msgbox "Error downloading last version" 0 0
+            --msgbox "Error downloading latest version" 0 0
           continue
         fi
         dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-          --infobox "Extracting last version" 0 0
+          --infobox "Extracting latest version" 0 0
         rm -rf "${LKM_PATH}/"*
         unzip /tmp/rp-lkms.zip -d "${LKM_PATH}" >/dev/null 2>&1
         DIRTY=1
         dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-          --msgbox "LKMs updated with success!" 0 0
+          --msgbox "LKMs updated with success! ${TAG}" 0 0
         ;;
       4)
         unset PLATFORMS
@@ -1343,11 +1343,11 @@ function updateMenu() {
           ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${M}.yml"`"
           for B in ${ITEMS}; do
             KVER=`readModelKey "${M}" "builds.${B}.kver"`
-            PLATFORMS["$P-$KVER"]=""
+            PLATFORMS["${P}-${KVER}"]=""
           done
         done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-          --infobox "Checking last version" 0 0
+          --infobox "Checking latest version" 0 0
         TAG=`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
@@ -1356,7 +1356,7 @@ function updateMenu() {
         fi
         for P in ${!PLATFORMS[@]}; do
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-            --infobox "Downloading ${P} modules" 0 0
+            --infobox "Downloading ${P} modules: ${TAG}" 0 0
           STATUS=`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/${P}.tgz" -o "/tmp/${P}.tgz"`
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
@@ -1375,7 +1375,7 @@ function updateMenu() {
         fi
         DIRTY=1
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-          --msgbox "Modules updated with success!" 0 0
+          --msgbox "Modules updated with success! ${TAG}" 0 0
         ;;
       0) return ;;
     esac
