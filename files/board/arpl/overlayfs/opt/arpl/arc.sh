@@ -413,7 +413,7 @@ function arcnet() {
   sleep 3
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
-    --infobox "Arc configuration successfull!" 0 0
+    --infobox "Configuration successfull!" 0 0
   sleep 3
   DIRTY=1
   CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
@@ -462,7 +462,7 @@ function make() {
 
   echo "Ready!"
   dialog --backtitle "`backtitle`" --title "Arc Build" \
-    --infobox "Arc Build successfull! You can boot now." 0 0
+    --infobox "Build successfull! You can boot now." 0 0
   sleep 3
   DIRTY=0
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
