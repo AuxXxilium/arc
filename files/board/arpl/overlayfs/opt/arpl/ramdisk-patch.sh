@@ -143,13 +143,8 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 # Required addons: eudev, dtbpatch/maxdisks, wol
 installAddon eudev
 echo "/addons/eudev.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-if [ "${DT}" = "true" ]; then
-  installAddon dtbpatch
-  echo "/addons/dtbpatch.sh \${1} ${UNIQUE}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-else
-  installAddon maxdisks
-  echo "/addons/maxdisks.sh \${1} ${MAXDISKS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-fi
+installAddon disks
+echo "/addons/disks.sh \${1} ${DT} ${UNIQUE}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon wol
 echo "/addons/wol.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 # User addons
