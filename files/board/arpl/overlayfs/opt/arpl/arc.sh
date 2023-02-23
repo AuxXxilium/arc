@@ -1091,11 +1091,7 @@ function synoinfoMenu() {
 
   echo "1 \"Add/edit Synoinfo item\""     > "${TMP_PATH}/menu"
   echo "2 \"Delete Synoinfo item(s)\""    >> "${TMP_PATH}/menu"
-  if [ "${DT}" != "true" ]; then
-    echo "3 \"Set maxdisks manually\""    >> "${TMP_PATH}/menu"
-  fi
-  echo "4 \"Map USB Drive to internal\""  >> "${TMP_PATH}/menu"
-  echo "5 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
+  echo "3 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
   echo "0 \"Exit\""                       >> "${TMP_PATH}/menu"
 
   # menu loop
@@ -1142,22 +1138,6 @@ function synoinfoMenu() {
         DIRTY=1
         ;;
       3)
-        MAXDISKS=`readConfigKey "maxdisks" "${USER_CONFIG_FILE}"`
-        dialog --backtitle "`backtitle`" --title "Maxdisks" \
-          --inputbox "Type a value for maxdisks" 0 0 "${MAXDISKS}" \
-          2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && continue
-        VALUE="`<"${TMP_PATH}/resp"`"
-        [ "${VALUE}" != "${MAXDISKS}" ] && writeConfigKey "maxdisks" "${VALUE}" "${USER_CONFIG_FILE}"
-        ;;
-      4)
-        writeConfigKey "maxdisks" "24" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
-        dialog --backtitle "`backtitle`" --msgbox "External USB Drives mapped" 0 0 
-        ;;
-      5)
         ITEMS=""
         for KEY in ${!SYNOINFO[@]}; do
           ITEMS+="${KEY}: ${SYNOINFO[$KEY]}\n"
