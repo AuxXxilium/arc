@@ -36,7 +36,7 @@ mac6: "9009D01978A5"
 disks: 4
 dt: false
 flags:
-  - "fma"
+  - "movbe"
 builds:
   42218:
     ver: "7.0.1"

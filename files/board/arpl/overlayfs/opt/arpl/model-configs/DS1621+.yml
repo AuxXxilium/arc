@@ -6,6 +6,9 @@ synoinfo: &synoinfo
   rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  support_syno_hybrid_raid:
+  supportraidgroup:
+  supportnvme: "yes"
 cmdline: &cmdline
   SMBusHddDynamicPower: 1
   syno_hdd_powerup_seq: 0
