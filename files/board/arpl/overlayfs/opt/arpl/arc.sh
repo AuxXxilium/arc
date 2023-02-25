@@ -125,12 +125,12 @@ function arcMenu() {
   # There is no Raid/SCSI Support for DT Models
   WARNON=2
   fi
-  if [ "${WARNON}" -eq "1" ]; then
+  if [ "${WARNON}" = "1" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --infobox "WARN: Your Controller has more than 8 Drives connected. Max Drives per Controller: 8" 0 0
     sleep 5
   fi
-  if [ "${WARNON}" -eq "2" ]; then
+  if [ "${WARNON}" = "2" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --infobox "WARN: You have selected a DT Model - There is no support for Raid/SCSI" 0 0
     sleep 5
