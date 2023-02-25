@@ -121,16 +121,16 @@ function arcMenu() {
   else
     resp="${1}"
   fi
-  if [ "$DT" = "true" ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
+  if [ "$DT" = "true" ] && [ "${SCSICONTROLLER}" -gt 0 ]; then
   # There is no Raid/SCSI Support for DT Models
   WARNON=2
   fi
-  if [ "${WARNON}" = "1" ]; then
+  if [ "${WARNON}" == "1" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --infobox "WARN: Your Controller has more than 8 Drives connected. Max Drives per Controller: 8" 0 0
     sleep 5
   fi
-  if [ "${WARNON}" = "2" ]; then
+  if [ "${WARNON}" == "2" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --infobox "WARN: You have selected a DT Model - There is no support for Raid/SCSI" 0 0
     sleep 5
