@@ -3,6 +3,7 @@
 . /opt/arpl/include/functions.sh
 . /opt/arpl/include/addons.sh
 . /opt/arpl/include/modules.sh
+. /opt/arpl/include/storage.sh
 
 # Check partition 3 space, if < 2GiB is necessary clean cache folder
 CLEARCACHE=0
@@ -120,6 +121,21 @@ function arcMenu() {
   else
     resp="${1}"
   fi
+  if [ "$DT" = "true" ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
+  # There is no Raid/SCSI Support for DT Models
+  WARNON=2
+  fi
+  if [ "${WARNON}" -eq "1" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Warning" \
+      --infobox "WARN: Your Controller has more than 8 Drives connected. Max Drives per Controller: 8" 0 0
+    sleep 5
+  fi
+  if [ "${WARNON}" -eq "2" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Warning" \
+      --infobox "WARN: You have selected a DT Model - There is no support for Raid/SCSI" 0 0
+    sleep 5
+    exit 1
+  fi
     MODEL=${resp}
     writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
     # Delete old files
@@ -214,91 +230,9 @@ function arcbuild() {
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Model Configuration successfull!" 0 0
   sleep 3
-  arcdisk
+  arcnet
 }
 
-###############################################################################
-# Make Disk Config
-function arcdisk() {
-  # Check for diskconfig
-  if [ "$DT" = "true" ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-    # There is no Raid/SCSI Support for DT Models
-    dialog --backtitle "`backtitle`" --title "Arc Config" \
-      --infobox "WARN: Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
-    sleep 5
-    return 1
-  else
-    dialog --backtitle "`backtitle`" --title "Arc Config" \
-      --infobox "Disk configuration started!" 0 0
-    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-    rm -f ${TMP_PATH}/drives
-    touch ${TMP_PATH}/drives
-    sleep 1
-    # Get Number of Sata Drives
-    if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 0 ]; then
-      pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
-      [ ! -z "$pcis" ]
-      # loop through SATA controllers
-      for pci in $pcis; do
-      # get attached block devices (exclude CD-ROMs)
-      DRIVES=$(ls -la /sys/block | fgrep "${pci}" | grep -v "sr.$" | wc -l)
-      if [ "${DRIVES}" -gt 8 ]; then
-        DRIVES=8
-        WARNON=1
-      fi
-      if [ "${DRIVES}" -gt 0 ]; then
-        echo -n "${DRIVES}" >> ${TMP_PATH}/drives
-      fi
-      done
-    fi
-    # Get Number of Raid/SCSI Drives
-    if [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-      pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
-      [ ! -z "$pcis" ]
-      # loop through non-SATA controllers
-      for pci in $pcis; do
-      # get attached block devices (exclude CD-ROMs)
-        DRIVES=$(ls -la /sys/block | fgrep "${pci}" | grep -v "sr.$" | wc -l)
-      if [ "${DRIVES}" -gt 8 ]; then
-        DRIVES=8
-        WARNON=1
-      fi
-      if [ "${DRIVES}" -gt 0 ]; then
-        echo -n "${DRIVES}" >> ${TMP_PATH}/drives
-      fi
-      done
-    fi
-    if [ -n "${WARNON}" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Config" \
-        --infobox "WARN: Your Controller has more than 8 Drives connected. Max Drives per Controller: 8" 0 0
-      sleep 5
-    fi
-    # Set SataPortMap for multiple Sata Controller
-    if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 1 ]; then
-      DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
-      if [ "${DRIVES}" -gt 0 ]; then
-        writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
-        dialog --backtitle "`backtitle`" --title "Arc Config" \
-          --infobox "SataPortMap: ${DRIVES}" 0 0
-      fi
-    fi
-    # Set SataPortMap for Raid/SCSI Controller
-    if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 0 ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-      DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
-      if [ "${DRIVES}" -gt 0 ]; then
-        writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
-        dialog --backtitle "`backtitle`" --title "Arc Config" \
-          --infobox "SataPortMap: ${DRIVES}" 0 0
-      fi
-    fi
-  sleep 3
-  dialog --backtitle "`backtitle`" --title "Arc Config" \
-    --infobox "Disk configuration successfull!" 0 0
-  sleep 1
-  DIRTY=1
-  arcnet
-  fi
-}
 
 ###############################################################################
 # Make Network Config
@@ -462,7 +396,7 @@ function make() {
 
   echo "Ready!"
   dialog --backtitle "`backtitle`" --title "Arc Build" \
-    --infobox "Build successfull! You can boot now." 0 0
+    --infobox "Build successfull! You can boot now. Go to DSM: IP:5000" 0 0
   sleep 3
   DIRTY=0
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
@@ -882,89 +816,6 @@ function selectModules() {
         ;;
     esac
   done
-}
-
-###############################################################################
-# Make Disk Config
-function newarcdisk() {
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  DT="`readModelKey "${MODEL}" "dt"`"
-  # Check for diskconfig
-  if [ "$DT" = "true" ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-    # There is no Raid/SCSI Support for DT Models
-    dialog --backtitle "`backtitle`" --title "Arc Config" \
-      --infobox "WARN: Device Tree Model selected - Raid/SCSI Controller not supported!" 0 0
-    sleep 5
-    return 1
-  else
-    dialog --backtitle "`backtitle`" --title "Arc Config" \
-      --infobox "Arc Disk configuration started!" 0 0
-    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-    rm -f ${TMP_PATH}/drives
-    touch ${TMP_PATH}/drives
-    sleep 1
-    # Get Number of Sata Drives
-    if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 0 ]; then
-      pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
-      [ ! -z "$pcis" ]
-      # loop through SATA controllers
-      for pci in $pcis; do
-      # get attached block devices (exclude CD-ROMs)
-        DRIVES=$(ls -la /sys/block | fgrep "$pci" | grep -v "sr.$" | wc -l)
-      if [ "${DRIVES}" -gt 8 ]; then
-        DRIVES=8
-        WARNON=1
-      fi
-      if [ "${DRIVES}" -gt 0 ]; then
-        echo -n "${DRIVES}" >> ${TMP_PATH}/drives
-      fi
-      done
-    fi
-    # Get Number of Raid/SCSI Drives
-    if [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-      pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
-      [ ! -z "$pcis" ]
-      # loop through non-SATA controllers
-      for pci in $pcis; do
-      # get attached block devices (exclude CD-ROMs)
-        DRIVES=$(ls -la /sys/block | fgrep "${pci}" | grep -v "sr.$" | wc -l)
-      if [ "${DRIVES}" -gt 8 ]; then
-        DRIVES=8
-        WARNON=1
-      fi
-      if [ "${DRIVES}" -gt 0 ]; then
-        echo -n "${DRIVES}" >> ${TMP_PATH}/drives
-      fi
-      done
-    fi
-    if [ -n "${WARNON}" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Config" \
-        --infobox "WARN: Your Controller has more than 8 Drives connected. Max Drives per Controller: 8" 0 0
-      sleep 5
-    fi
-    # Set SataPortMap for multiple Sata Controller
-    if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 1 ]; then
-      DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
-      if [ "${DRIVES}" -gt 0 ]; then
-        writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
-        dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-          --infobox "SataPortMap: ${DRIVES}" 0 0
-      fi
-    fi
-    # Set SataPortMap for Raid/SCSI Controller
-    if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 0 ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
-      DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
-      if [ "${DRIVES}" -gt 0 ]; then
-        writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
-        dialog --backtitle "`backtitle`" --title "Arc Disk Config" \
-          --infobox "SataPortMap: ${DRIVES}" 0 0
-      fi
-    fi
-  sleep 3
-  dialog --backtitle "`backtitle`" --title "Arc Config" \
-    --infobox "Disk reconfiguration successfull!" 0 0
-  sleep 1
-  fi
 }
 
 ###############################################################################
@@ -1547,7 +1398,6 @@ while true; do
   echo "x \"\Z1Show Advanced Options \Zn\" "                                                >> "${TMP_PATH}/menu"
   fi
   if [ -n "${ADV}" ]; then
-  echo "n \"Update Disk Map \" "                                                            >> "${TMP_PATH}/menu"
   echo "f \"Cmdline \" "                                                                    >> "${TMP_PATH}/menu"
   echo "g \"Synoinfo \" "                                                                   >> "${TMP_PATH}/menu"
   echo "h \"Edit User Config \" "                                                           >> "${TMP_PATH}/menu"
@@ -1575,7 +1425,6 @@ while true; do
     a) sysinfo; NEXT="a" ;;
     2) addonMenu; NEXT="2" ;;
     3) selectModules; NEXT="3" ;;
-    n) newarcdisk; NEXT="4" ;;
     n) reset; NEXT="1" ;;
     x) [ "${ADV}" = "" ] && ADV='1' || ADV=''
        ARV="${ADV}"
