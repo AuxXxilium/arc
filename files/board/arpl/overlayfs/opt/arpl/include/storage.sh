@@ -1,11 +1,14 @@
 ###############################################################################
 # Check for diskconfig and set new if necessary
-SATAMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
+SATAPORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
+[ -n "SATAPORTMAP" ] && SATAPORTMAP=0
+SATACONTROLLER=$(lspci -nnk | grep -ie "\[0106\]" | wc -l)
+SCSICONTROLLER=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l)
 rm -f ${TMP_PATH}/drives
 touch ${TMP_PATH}/drives
 sleep 1
 # Get Number of Sata Drives
-if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 0 ]; then
+if [ "${SATACONTROLLER}" -gt 0 ]; then
   pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
   [ ! -z "$pcis" ]
   # loop through SATA controllers
@@ -22,7 +25,7 @@ if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 0 ]; then
   done
 fi
 # Get Number of Raid/SCSI Drives
-if [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
+if [ "${SCSICONTROLLER}" -gt 0 ]; then
   pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
   [ ! -z "$pcis" ]
   # loop through non-SATA controllers
@@ -39,25 +42,29 @@ if [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
   done
 fi
 # Set SataPortMap for multiple Sata Controller
-if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 1 ]; then
+if [ "${SATACONTROLLER}" -gt 1 ]; then
   DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
   if [ "${DRIVES}" -gt 0 ]; then
-    if [ "${DRIVES}" -ne "${SATAMAP}" ]; then
+    if [ "${DRIVES}" -ne "${SATAPORTMAP}" ]; then
       writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
     fi
   fi
 fi
 # Set SataPortMap for multiple Raid/SCSI Controller
-if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 1 ]; then
+if [ "${SCSICONTROLLER}" -gt 1 ]; then
   DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
-  if [ "${DRIVES}" -ne "${SATAMAP}" ]; then
+  if [ "${DRIVES}" -ne "${SATAPORTMAP}" ]; then
     writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
   fi
 fi
 # Set SataPortMap for SATA & Raid/SCSI Controller
-if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 0 ] && [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
+if [ "${SATACONTROLLER}" -gt 0 ] && [ "${SCSICONTROLLER}" -gt 0 ]; then
   DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
-  if [ "${DRIVES}" -ne "${SATAMAP}" ]; then
+  if [ "${DRIVES}" -ne "${SATAPORTMAP}" ]; then
     writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
   fi
+fi
+SATAPORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
+if [ "${SATAPORTMAP}" -eq "0" ]; then
+  deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
 fi
