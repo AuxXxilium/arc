@@ -397,7 +397,7 @@ function make() {
   echo "Ready!"
   dialog --backtitle "`backtitle`" --title "Arc Build" \
     --infobox "Build successfull! You can boot now. Go to DSM: IP:5000" 0 0
-  sleep 3
+  sleep 5
   DIRTY=0
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
   return 0
