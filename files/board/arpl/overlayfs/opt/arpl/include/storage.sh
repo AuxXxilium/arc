@@ -42,23 +42,14 @@ if [ "${SCSICONTROLLER}" -gt 0 ]; then
   done
 fi
 # Only load config if more than 1 Sata Controller or a Raid/SCSI Controller is dedected
-if [ "${SATACONTROLLER}" -gt 1 ] || [ "${SCSICONTROLLER}" -gt 0 ]; then
-  # Set SataPortMap for multiple Sata Controller
-  if [ "${SATACONTROLLER}" -gt 1 ]; then
+if [ "${SATACONTROLLER}" -gt 0 ] || [ "${SCSICONTROLLER}" -gt 0 ]; then
     DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
     if [ "${DRIVES}" -gt 0 ]; then
       if [ "${DRIVES}" != "${SATAPORTMAP}" ]; then
         writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
       fi
     fi
-  fi
-  # Set SataPortMap for multiple Raid/SCSI Controller
-  if [ "${SCSICONTROLLER}" -gt 0 ]; then
-    DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
-    if [ "${DRIVES}" != "${SATAPORTMAP}" ]; then
-      writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
-    fi
-  fi
 else
   deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+  WARNON=3
 fi
