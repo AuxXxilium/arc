@@ -127,18 +127,18 @@ function arcMenu() {
   fi
   if [ "${WARNON}" == "1" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
-      --infobox "WARN: Your Controller has more than 8 Drives connected. Max Drives per Controller: 8" 0 0
+      --infobox "WARN: Your Controller has more than 8 Disks connected. Max Disks per Controller: 8" 0 0
     sleep 5
   fi
   if [ "${WARNON}" == "2" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
-      --infobox "WARN: You have selected a DT Model - There is no support for Raid/SCSI" 0 0
+      --infobox "WARN: You have selected a DT Model. There is no support for Raid/SCSI Controller." 0 0
     sleep 5
     exit 1
   fi
   if [ "${WARNON}" == "3" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
-      --infobox "WARN: No Diskcontroller found" 0 0
+      --infobox "WARN: No Diskcontroller found." 0 0
     sleep 5
     exit 1
   fi
@@ -1260,7 +1260,7 @@ function sysinfo() {
         # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
         TEXT+="\n\Z4Storage:\Zn"
         # Get Information for Sata Controller
-        if [ $(lspci -nnk | grep -ie "\[0106\]" | wc -l) -gt 0 ]; then
+        if [ "${SATACONTROLLER}" -gt 0 ]; then
         for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print$1}'`; do
           # Get Name of Controller
           NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
@@ -1271,17 +1271,19 @@ function sysinfo() {
         done
         fi
         # Get Information for Raid/SCSI Controller
-        if [ $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l) -gt 0 ]; then
+        if [ "${SCSICONTROLLER}" -gt 0 ]; then
         for PCI in `lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
           # Get Name of Controller
           NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
           # Get Amount of Drives connected
           RAIDDRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
-          TEXT+="\n\Z1SCSI/RAID/SAS Controller\Zn dedected:\n\Zb"${NAME}"\Zn\n"
+          TEXT+="\n\Z1SCSI/RAID Controller\Zn dedected:\n\Zb"${NAME}"\Zn\n"
           TEXT+="\Z1Drives\Zn dedected:\n\Zb"${RAIDDRIVES}"\Zn\n"
         done
         fi
-        dialog --backtitle "`backtitle`" --title "Arc Sysinfo" --aspect 18 --colors --msgbox "${TEXT}" 0 0 
+        TEXT+="\nSysinfo File: \Zb"${SYSINFO_PATH}"\Zn"
+        echo "${TEXT}" > "${BOOTLOADER_PATH}\sysinfo.yml"
+        dialog --backtitle "`backtitle`" --title "Arc Sysinfo" --aspect 18 --colors --msgbox "${TEXT}" 0 0
 }
 
 ###############################################################################
