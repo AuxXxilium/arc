@@ -33,48 +33,6 @@ disks: 6
 dt: false
 beta: true
 builds:
-  42218:
-    ver: "7.0.1"
-    kver: "4.4.180"
-    rd-compressed: false
-    cmdline:
-      <<: *cmdline
-    synoinfo:
-      <<: *synoinfo
-    pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.0.1/42218/DSM_DS1621xs%2B_42218.pat"
-      hash: "f7e846e2a22b62613ac5e9d6e154df0213ba4ae64a6556297af627cd1e643e5c"
-      ramdisk-hash: "eaddd97c40a35bbcf4092417364ca4376925fb3eb322cad0cf602d4c7973d147"
-      zimage-hash: "8e0ab965c85b348dfc9dc17392b9cf0a117756f1d1bc4c0f0d19bb610350659d"
-      md5-hash: "b7d85926561ff125928b68e7fffa646b"
-    patch:
-      - "ramdisk-common-disable-root-pwd.patch"
-      - "ramdisk-common-init-script.patch"
-      - "ramdisk-common-etc-rc.patch"
-      - "ramdisk-common-post-init-script.patch"
-      - "ramdisk-common-disable-disabled-ports.patch"
-
-  42661:
-    ver: "7.1.0"
-    kver: "4.4.180"
-    rd-compressed: false
-    cmdline:
-      <<: *cmdline
-    synoinfo:
-      <<: *synoinfo
-    pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.1/42661-1/DSM_DS1621xs%2B_42661.pat"
-      hash: "0a5a243109098587569ab4153923f30025419740fb07d0ea856b06917247ab5c"
-      ramdisk-hash: "da3c2a170fea24052d817cbc4bb5b610a5b05288758d746b60a294ed614239fb"
-      zimage-hash: "9598f66b75e5b303e571241696e02fe7c0add80f13564f8c6b8c0daaf3cb3018"
-      md5-hash: "94e6263912bc758ee3db81c62a94a8f6"
-    patch:
-      - "ramdisk-common-disable-root-pwd.patch"
-      - "ramdisk-common-init-script.patch"
-      - "ramdisk-common-etc-rc.patch"
-      - "ramdisk-42661-post-init-script.patch"
-      - "ramdisk-42661-disable-disabled-ports.patch"
-
   42962:
     ver: "7.1.1"
     kver: "4.4.180"
@@ -85,10 +43,10 @@ builds:
       <<: *synoinfo
     pat:
       url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_DS1621xs%2B_42962.pat"
-      hash: "2a556206201df10245dbcf4cf0366b2f32cb318cd705fbdd74412303d85e7267"
-      ramdisk-hash: "c8d067a9737d67453e0b476d7115c3e12b2daf2450c371c19e44e480a1076a94"
-      zimage-hash: "8e6da6c3c9259d23ee5cae3c71691a75b0a281551d19cb75041df469c7524e72"
-      md5-hash: "3e034e2cdf90209112e0fdad28474970"
+      hash: "199d70693a7eb3a4ff69100bb2634c8b97b115f828bd1f6403d2832cce4e7052"
+      ramdisk-hash: "0c52bac011caa31ec7f76bd9371edc423d6ee162531ad22b39fcb17bcbdc8765"
+      zimage-hash: "8903dc99f7201c8656de618d767c05f91bfd32edd9a3706a50fd223237842bf2"
+      md5-hash: "f1a7238a0bd9adc0cbb5413d49d981a0"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"

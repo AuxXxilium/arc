@@ -37,48 +37,6 @@ mac6: "9009D019775A"
 disks: 12
 dt: false
 builds:
-  42218:
-    ver: "7.0.1"
-    kver: "4.4.180"
-    rd-compressed: false
-    cmdline:
-      <<: *cmdline
-    synoinfo:
-      <<: *synoinfo
-    pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"
-      hash: "a222d37f369d71042057ccb592f40c7c81e9b988a95d69fa166c7c2a611da99c"
-      ramdisk-hash: "11ebadba5d831ad6f31258ab317ed1f7cbfe18243413f9f81291b894b5f7a591"
-      zimage-hash: "d6059bcd7160ed1f775a9323599ac8860b60ada32f0a4f3e5ca166c15a17784e"
-      md5-hash: "b9b452577b38adc82aca42e031be267b"
-    patch:
-      - "ramdisk-common-disable-root-pwd.patch"
-      - "ramdisk-common-init-script.patch"
-      - "ramdisk-common-etc-rc.patch"
-      - "ramdisk-common-post-init-script.patch"
-      - "ramdisk-common-disable-disabled-ports.patch"
-
-  42661:
-    ver: "7.1.0"
-    kver: "4.4.180"
-    rd-compressed: false
-    cmdline:
-      <<: *cmdline
-    synoinfo:
-      <<: *synoinfo
-    pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.1/42661-1/DSM_DS3622xs%2B_42661.pat"
-      hash: "53d0a4f1667288b6e890c4fdc48422557ff26ea8a2caede0955c5f45b560cccd"
-      ramdisk-hash: "df8a055d6bc901229f0ba53ed5b4fe024bdf9a1b42f0c32483adefcdac14db4d"
-      zimage-hash: "e073dd84054f652811e0ae1932af2c7cdbd5fb6e5f18f265097072b8af4605e8"
-      md5-hash: "7af76cca8226ecf95b25630bffa76b3d"
-    patch:
-      - "ramdisk-common-disable-root-pwd.patch"
-      - "ramdisk-common-init-script.patch"
-      - "ramdisk-common-etc-rc.patch"
-      - "ramdisk-42661-post-init-script.patch"
-      - "ramdisk-42661-disable-disabled-ports.patch"
-
   42962:
     ver: "7.1.1"
     kver: "4.4.180"
