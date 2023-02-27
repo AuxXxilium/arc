@@ -147,30 +147,6 @@ function arcMenu() {
     # Delete old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
     DIRTY=1
-  buildMenu
-}
-
-###############################################################################
-# Shows available buildnumbers from a model to user choose one
-function buildMenu() {
-  ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r`"
-  if [ -z "${1}" ]; then
-    dialog --clear --no-items --backtitle "`backtitle`" \
-      --menu "Choose a build number" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
-    resp=$(<${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return
-  else
-    if ! arrayExistItem "${1}" ${ITEMS}; then return; fi
-    resp="${1}"
-  fi
-  if [ "${BUILD}" != "${resp}" ]; then
-    dialog --backtitle "`backtitle`" --title "Arc DSM Build Number" \
-      --infobox "Set DSM Build Number" 0 0
-    BUILD=${resp}
-    writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
-  fi
-  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
   arcbuild
 }
 
@@ -181,6 +157,8 @@ function arcbuild() {
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+  # If Build isn't set - use latest
+  [ -n "BUILD" ] && BUILD=42962
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   DT="`readModelKey "${MODEL}" "dt"`"
   while true; do
@@ -213,6 +191,8 @@ function arcbuild() {
   done
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
+  # Write build number to buildconfig
+  writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
   # Delete synoinfo and reload model/build synoinfo  
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS=': ' read KEY VALUE; do
