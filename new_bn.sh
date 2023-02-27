@@ -18,13 +18,13 @@ KVERS["DS3622xs+"]="4.4.180"
 KVERS["DVA3219"]="4.4.180"
 KVERS["DVA3221"]="4.4.180"
 KVERS["RS4021xs+"]="4.4.180"
-RELEASE="7.1.1"
-BUILDNUMBER="42962"
+RELEASE=$(sed -n 's/^LATEST_RELEASE=\(.*\)/\1/p' < ./files/board/arpl/overlayfs/opt/arpl/include/consts.sh | sed 's!"!!g')
+BUILDNUMBER=$(sed -n 's/^LATEST_DSM=\(.*\)/\1/p' < ./files/board/arpl/overlayfs/opt/arpl/include/consts.sh | sed 's!"!!g')
 EXTRA=""
 
 rm -f new_bn.yml
 
-for MODEL in DS723+ DS918+ DS920+ DS923+ DS1520+ DS1621+ DS1621xs+ DS2422+ DS3617xs DS3622xs+ DVA3221 DVA3219 RS4021xs+; do
+for MODEL in DS723+ DS918+ DS920+ DS923+ DS1520+ DS1621+ DS1621xs+ DS2422+ DS3617xs DS3622xs+ DVA3219 DVA3221 RS4021xs+; do
   MODEL_CODED=`echo ${MODEL} | sed 's/+/%2B/g'`
   URL="https://global.download.synology.com/download/DSM/release/${RELEASE}/${BUILDNUMBER}${EXTRA}/DSM_${MODEL_CODED}_${BUILDNUMBER}.pat"
   #URL="https://archive.synology.com/download/Os/DSM/${RELEASE}-${BUILDNUMBER}/DSM_${MODEL_CODED}_${BUILDNUMBER}.pat"
