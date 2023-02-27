@@ -4,7 +4,7 @@ SATAPORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
 SATACONTROLLER=$(lspci -nnk | grep -ie "\[0106\]" | wc -l)
 SCSICONTROLLER=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l)
 # Only build SataPortMap if more than 1 Sata Controller or a Raid/SCSI Controller is dedected
-if [ "${SATACONTROLLER}" -gt 1 ] || [ "${SCSICONTROLLER}" -gt 0 ]; then
+if [ "${SATACONTROLLER}" -gt 1 ] || [ "${SCSICONTROLLER}" -gt 1 ] || [ "${SATACONTROLLER}" -gt 0 ] && [ "${SCSICONTROLLER}" -gt 0 ]; then
   [ -n "SATAPORTMAP" ] && SATAPORTMAP=0
   rm -f ${TMP_PATH}/drives
   touch ${TMP_PATH}/drives
