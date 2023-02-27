@@ -1,5 +1,6 @@
 
 ARPL_VERSION="v23.01.01"
+LATEST_DSM="42962"
 
 # Define paths
 TMP_PATH="/tmp"

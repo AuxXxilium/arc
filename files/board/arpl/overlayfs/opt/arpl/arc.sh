@@ -158,7 +158,7 @@ function arcbuild() {
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   # If Build isn't set - use latest
-  [ -n "BUILD" ] && BUILD=42962
+  [ -n "BUILD" ] && BUILD=${LATEST_DSM}
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   DT="`readModelKey "${MODEL}" "dt"`"
   while true; do
