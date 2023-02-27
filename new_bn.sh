@@ -70,6 +70,7 @@ for MODEL in DS723+ DS918+ DS920+ DS923+ DS1520+ DS1621+ DS1621xs+ DS2422+ DS361
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
       - "ramdisk-42951-post-init-script.patch"
       - "ramdisk-42661-disable-disabled-ports.patch"
 
