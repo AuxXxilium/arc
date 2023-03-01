@@ -230,36 +230,72 @@ function arcnet() {
   NETNUM="4"
   fi
   writeConfigKey "cmdline.netif_num" "${NETNUM}"            "${USER_CONFIG_FILE}"
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   # Delete old Mac Address from Userconfig
   #deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac2" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac3" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac4" "${USER_CONFIG_FILE}"
+  MAC1="`readModelKey "${MODEL}" "mac1"`"
+  MAC2="`readModelKey "${MODEL}" "mac2"`"
+  MAC3="`readModelKey "${MODEL}" "mac3"`"
+  MAC4="`readModelKey "${MODEL}" "mac4"`"
   if [ "$ARCPATCH" -eq 1 ]; then 
     # Install with Arc Patch - Check for model config and set custom Mac Address
-    MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-    if [ "${NETNUM}" -gt 0 ]; then
-      MAC1="`readModelKey "${MODEL}" "mac1"`"
-      writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-    fi
+    while true; do
+      dialog --clear --backtitle "`backtitle`" \
+        --menu "Choose MAC for first Adapter" 0 0 0 \
+        1 "Use MAC1: ${MAC1}" \
+        2 "Use MAC2: ${MAC2}" \
+        3 "Use MAC3: ${MAC3}" \
+        4 "Use MAC4: ${MAC4}" \
+      2>${TMP_PATH}/resp
+      [ $? -ne 0 ] && return
+      resp=$(<${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return
+      if [ "${resp}" = "1" ]; then
+        if [ "${NETNUM}" -gt 0 ]; then
+          writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
+        fi
+        break
+      elif [ "${resp}" = "2" ]; then
+        if [ "${NETNUM}" -gt 0 ]; then
+          writeConfigKey "cmdline.mac1"           "${MAC2}" "${USER_CONFIG_FILE}"
+        fi
+        break
+      elif [ "${resp}" = "3" ]; then
+        if [ "${NETNUM}" -gt 0 ]; then
+          writeConfigKey "cmdline.mac1"           "${MAC3}" "${USER_CONFIG_FILE}"
+        fi
+        break
+      elif [ "${resp}" = "4" ]; then
+        if [ "${NETNUM}" -gt 0 ]; then
+          writeConfigKey "cmdline.mac1"           "${MAC4}" "${USER_CONFIG_FILE}"
+        fi
+        break
+      fi
+    done
     if [ "${NETNUM}" -gt 1 ]; then
-      MAC2="`readModelKey "${MODEL}" "mac2"`"
+      MACA2=`ip link show eth1 | awk '/ether/{print$2}'`
+      MAC2=`echo ${MACA2} | sed 's/://g'`
       writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
     fi
     if [ "${NETNUM}" -gt 2 ]; then
-      MAC3="`readModelKey "${MODEL}" "mac3"`"
+      MACA3=`ip link show eth2 | awk '/ether/{print$2}'`
+      MAC3=`echo ${MACA3} | sed 's/://g'`
       writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
     fi
     if [ "${NETNUM}" -gt 3 ]; then
-      MAC4="`readModelKey "${MODEL}" "mac4"`"
+      MACA4=`ip link show eth3 | awk '/ether/{print$2}'`
+      MAC4=`echo ${MACA4} | sed 's/://g'`
       writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
     fi
     dialog --backtitle "`backtitle`" \
       --title "Arc Config" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
     sleep 3
   else
-      # Install without Arc Patch - Set Hardware Mac Address
-      if [ "${NETNUM}" -gt 0 ]; then
+    # Install without Arc Patch - Set Hardware Mac Address
+    if [ "${NETNUM}" -gt 0 ]; then
       MACA1=`ip link show eth0 | awk '/ether/{print$2}'`
       MAC1=`echo ${MACA1} | sed 's/://g'`
       writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
