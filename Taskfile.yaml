@@ -7,6 +7,10 @@ tasks:
     cmds:
       - ./img-gen.sh
 
+  build-new:
+    cmds:
+      - ./new_bn.sh
+
   build-docker-img:
     dir: docker
     cmds:
