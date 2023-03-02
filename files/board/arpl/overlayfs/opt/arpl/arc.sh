@@ -971,6 +971,7 @@ function synoinfoMenu() {
   echo "1 \"Add/edit Synoinfo item\""     > "${TMP_PATH}/menu"
   echo "2 \"Delete Synoinfo item(s)\""    >> "${TMP_PATH}/menu"
   echo "3 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
+  echo "4 \"Map USB Drive to internal\""  >> "${TMP_PATH}/menu"
   echo "0 \"Exit\""                       >> "${TMP_PATH}/menu"
 
   # menu loop
@@ -1023,6 +1024,13 @@ function synoinfoMenu() {
         done
         dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
+        ;;
+      4)
+        writeConfigKey "maxdisks" "24" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
+        dialog --backtitle "`backtitle`" --msgbox "External USB Drives mapped" 0 0 
         ;;
       0) return ;;
     esac
@@ -1288,8 +1296,8 @@ function sysinfo() {
           NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
           # Get Amount of Drives connected
           SATADRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
-          TEXT+="\n\Z1SATA Controller\Zn dedected:\n\Zb"${NAME}"\Zn\n"
-          TEXT+="\Z1Drives\Zn dedected:\n\Zb"${SATADRIVES}"\Zn\n"
+          TEXT+="\n\Z1SATA Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
+          TEXT+="\Z1Drives\Zn detected:\n\Zb"${SATADRIVES}"\Zn\n"
         done
         fi
         # Get Information for Raid/SCSI Controller
@@ -1299,8 +1307,8 @@ function sysinfo() {
           NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
           # Get Amount of Drives connected
           RAIDDRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
-          TEXT+="\n\Z1SCSI/RAID Controller\Zn dedected:\n\Zb"${NAME}"\Zn\n"
-          TEXT+="\Z1Drives\Zn dedected:\n\Zb"${RAIDDRIVES}"\Zn\n"
+          TEXT+="\n\Z1SCSI/RAID Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
+          TEXT+="\Z1Drives\Zn detected:\n\Zb"${RAIDDRIVES}"\Zn\n"
         done
         fi
         TEXT+="\nSysinfo File: \Zb"${SYSINFO_PATH}"\Zn"
