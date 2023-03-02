@@ -1,14 +1,15 @@
 id: "DS2422+"
 synoinfo: &synoinfo
-  support_disk_compatibility: "no"
-  support_memory_compatibility: "no"
-  support_led_brightness_adjustment: "no"
   rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  support_disk_compatibility: "no"
+  support_memory_compatibility: "no"
+  support_led_brightness_adjustment: "no"
+  support_bde_internal_10g: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
-  supportnvme: "yes"
+  supportssdcache: "yes"
 cmdline: &cmdline
   SMBusHddDynamicPower: 1
   vender_format_version: 2

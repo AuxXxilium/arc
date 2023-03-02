@@ -1,14 +1,15 @@
 id: "DS918+"
 synoinfo: &synoinfo
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
+  support_bde_internal_10g: "no"
   esataportcfg: "0x00"
   support_led_brightness_adjustment: "no"
   support_leds_lp3943: ""
   buzzeroffen: "0xffff"
-  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
 cmdline: &cmdline
   syno_hdd_powerup_seq: 0
   HddHotplug: 0

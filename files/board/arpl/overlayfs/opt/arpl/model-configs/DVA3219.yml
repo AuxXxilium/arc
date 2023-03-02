@@ -1,13 +1,13 @@
 id: "DVA3219"
 synoinfo: &synoinfo
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   esataportcfg: "0x00"
   support_bde_internal_10g: "no"
   support_led_brightness_adjustment: "no"
-  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
   support_syno_hybrid_raid:
   supportraidgroup:
   supportnvme: "yes"
