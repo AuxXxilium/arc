@@ -158,7 +158,7 @@ function arcbuild() {
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   # If Build isn't set - use latest
-  [ -n "BUILD" ] && BUILD=${LATEST_DSM}
+  [ -n "BUILD" ] && BUILD=${BUILDNUMBER}
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   DT="`readModelKey "${MODEL}" "dt"`"
   while true; do
@@ -240,60 +240,77 @@ function arcnet() {
   MAC2="`readModelKey "${MODEL}" "mac2"`"
   MAC3="`readModelKey "${MODEL}" "mac3"`"
   MAC4="`readModelKey "${MODEL}" "mac4"`"
-  if [ "$ARCPATCH" -eq 1 ]; then 
+  if [ "$ARCPATCH" = "1" ]; then 
     # Install with Arc Patch - Check for model config and set custom Mac Address
     while true; do
       dialog --clear --backtitle "`backtitle`" \
-        --menu "Choose MAC for first Adapter" 0 0 0 \
-        1 "Use MAC1: ${MAC1}" \
-        2 "Use MAC2: ${MAC2}" \
-        3 "Use MAC3: ${MAC3}" \
-        4 "Use MAC4: ${MAC4}" \
+        --menu "Choose MAC for first NIC" 0 0 0 \
+        1 "Set MAC for all NIC" \
+        2 "Use MAC1: ${MAC1}" \
+        3 "Use MAC2: ${MAC2}" \
+        4 "Use MAC3: ${MAC3}" \
+        5 "Use MAC4: ${MAC4}" \
       2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
       resp=$(<${TMP_PATH}/resp)
       [ -z "${resp}" ] && return
+      if [ "${resp}" > "1" ]; then
+        if [ "${resp}" = "2" ]; then
+          if [ "${NETNUM}" -gt 0 ]; then
+            writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
+          fi
+          break
+        elif [ "${resp}" = "3" ]; then
+          if [ "${NETNUM}" -gt 0 ]; then
+            writeConfigKey "cmdline.mac1"           "${MAC2}" "${USER_CONFIG_FILE}"
+          fi
+          break
+        elif [ "${resp}" = "4" ]; then
+          if [ "${NETNUM}" -gt 0 ]; then
+            writeConfigKey "cmdline.mac1"           "${MAC3}" "${USER_CONFIG_FILE}"
+          fi
+          break
+        elif [ "${resp}" = "5" ]; then
+          if [ "${NETNUM}" -gt 0 ]; then
+            writeConfigKey "cmdline.mac1"           "${MAC4}" "${USER_CONFIG_FILE}"
+          fi
+          break
+        fi
+        if [ "${NETNUM}" -gt 1 ]; then
+          MACA2=`ip link show eth1 | awk '/ether/{print$2}'`
+          MAC2=`echo ${MACA2} | sed 's/://g'`
+          writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
+        fi
+        if [ "${NETNUM}" -gt 2 ]; then
+          MACA3=`ip link show eth2 | awk '/ether/{print$2}'`
+          MAC3=`echo ${MACA3} | sed 's/://g'`
+          writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
+        fi
+        if [ "${NETNUM}" -gt 3 ]; then
+          MACA4=`ip link show eth3 | awk '/ether/{print$2}'`
+          MAC4=`echo ${MACA4} | sed 's/://g'`
+          writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
+        fi
+      fi
       if [ "${resp}" = "1" ]; then
         if [ "${NETNUM}" -gt 0 ]; then
           writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
         fi
-        break
-      elif [ "${resp}" = "2" ]; then
-        if [ "${NETNUM}" -gt 0 ]; then
-          writeConfigKey "cmdline.mac1"           "${MAC2}" "${USER_CONFIG_FILE}"
+        if [ "${NETNUM}" -gt 1 ]; then
+          writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
         fi
-        break
-      elif [ "${resp}" = "3" ]; then
-        if [ "${NETNUM}" -gt 0 ]; then
-          writeConfigKey "cmdline.mac1"           "${MAC3}" "${USER_CONFIG_FILE}"
+        if [ "${NETNUM}" -gt 2 ]; then
+          writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
         fi
-        break
-      elif [ "${resp}" = "4" ]; then
-        if [ "${NETNUM}" -gt 0 ]; then
-          writeConfigKey "cmdline.mac1"           "${MAC4}" "${USER_CONFIG_FILE}"
+        if [ "${NETNUM}" -gt 3 ]; then
+          writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
         fi
-        break
       fi
     done
-    if [ "${NETNUM}" -gt 1 ]; then
-      MACA2=`ip link show eth1 | awk '/ether/{print$2}'`
-      MAC2=`echo ${MACA2} | sed 's/://g'`
-      writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
-    fi
-    if [ "${NETNUM}" -gt 2 ]; then
-      MACA3=`ip link show eth2 | awk '/ether/{print$2}'`
-      MAC3=`echo ${MACA3} | sed 's/://g'`
-      writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
-    fi
-    if [ "${NETNUM}" -gt 3 ]; then
-      MACA4=`ip link show eth3 | awk '/ether/{print$2}'`
-      MAC4=`echo ${MACA4} | sed 's/://g'`
-      writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
-    fi
     dialog --backtitle "`backtitle`" \
       --title "Arc Config" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
     sleep 3
-  else
+  elif [ "$ARCPATCH" = "0" ]; then
     # Install without Arc Patch - Set Hardware Mac Address
     if [ "${NETNUM}" -gt 0 ]; then
       MACA1=`ip link show eth0 | awk '/ether/{print$2}'`
@@ -317,6 +334,10 @@ function arcnet() {
     fi
     dialog --backtitle "`backtitle`" \
       --title "Arc Config" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
+    sleep 3
+  else
+    dialog --backtitle "`backtitle`" \
+      --title "Arc Config" --infobox "No Arc Patch option selected" 0 0
     sleep 3
   fi
   while true; do
@@ -403,7 +424,7 @@ function make() {
 
   echo "Ready!"
   dialog --backtitle "`backtitle`" --title "Arc Build" \
-    --infobox "Build successfull! You can boot now. Go to DSM: IP:5000" 0 0
+    --infobox "Build successfull! You can boot now." 0 0
   sleep 5
   DIRTY=0
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
@@ -1296,7 +1317,7 @@ function reset() {
   writeConfigKey "model" "" "${USER_CONFIG_FILE}"
   writeConfigKey "build" "" "${USER_CONFIG_FILE}"
   writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "maxdisks" "" "${USER_CONFIG_FILE}"
+  #writeConfigKey "maxdisks" "" "${USER_CONFIG_FILE}"
   writeConfigKey "layout" "qwertz" "${USER_CONFIG_FILE}"
   writeConfigKey "keymap" "de" "${USER_CONFIG_FILE}"
   writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
@@ -1310,7 +1331,6 @@ function reset() {
   deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
-  # Initialize with real MAC
   writeConfigKey "cmdline.netif_num" "1" "${USER_CONFIG_FILE}"
   writeConfigKey "cmdline.mac1" "${MACF}" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac2" "${USER_CONFIG_FILE}"
@@ -1373,6 +1393,7 @@ function boot() {
   fi
   dialog --backtitle "`backtitle`" --title "Arc Boot" \
     --infobox "Booting to DSM - Please stay patient!" 0 0
+  sleep 5
   exec reboot
 }
 
