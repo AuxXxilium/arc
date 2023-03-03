@@ -44,7 +44,7 @@ jobs:
           echo "Getting latest LKMs"
           TAG=`curl -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
           STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip`
-          echo "Status=${STATUS}"
+          echo "Status: ${STATUS}"
           echo "Version: ${TAG}"
           [ ${STATUS} -ne 200 ] && exit 1
 
@@ -52,7 +52,7 @@ jobs:
           echo "Getting latest Addons"
           TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
           STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip`
-          echo "Status=${STATUS}"
+          echo "Status: ${STATUS}"
           echo "Version: ${TAG}"
           [ ${STATUS} -ne 200 ] && exit 1
 
@@ -63,11 +63,12 @@ jobs:
           while read PLATFORM KVER; do
             FILE="${PLATFORM}-${KVER}"
             STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/${FILE}.tgz" -o "${MODULES_DIR}/${FILE}.tgz"`
-            echo "Status=${STATUS}"
+            echo "Status: ${STATUS}"
+            echo "Version: ${TAG}"
             [ ${STATUS} -ne 200 ] && exit 1
           done < PLATFORMS
           STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/firmware.tgz" -o "${MODULES_DIR}/firmware.tgz"`
-          echo "Status=${STATUS}"
+          echo "Status: ${STATUS}"
           echo "Version: ${TAG}"
           [ ${STATUS} -ne 200 ] && exit 1
           echo OK
@@ -141,6 +142,7 @@ jobs:
           cd -
           rm -f arc.img
           cp -f arpl.img arc.img
+          rm -f arpl.img
           qemu-img convert -O vmdk arc.img arc-dyn.vmdk
           qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
 
