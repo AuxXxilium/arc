@@ -1,7 +1,9 @@
 !.gitkeep
 .vscode
-arpl*.img
+arpl.img
 arpl*.vmdk
+arc.img
+arc*.vmdk
 *.zip
 .buildroot
 test*.sh
@@ -13,4 +15,3 @@ cache
 /files/board/arpl/p3/lkms
 /files/board/arpl/p3/modules
 /tests
-/new_bn.yml
