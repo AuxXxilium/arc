@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ROOT_PATH=$PWD
-TOOL_PATH="$(dirname $(readlink -f "$0"))/syno-extractor"
+TOOL_PATH="$(dirname $(readlink -f "$0"))/files/extractor"
 
 GITHUB_URL="https://raw.githubusercontent.com/AuxXxilium/arc/main/syno-extractor"
 
