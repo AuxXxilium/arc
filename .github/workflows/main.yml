@@ -45,6 +45,7 @@ jobs:
           TAG=`curl -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
           STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip`
           echo "Status=${STATUS}"
+          echo "Version: ${TAG}"
           [ ${STATUS} -ne 200 ] && exit 1
 
           # Get latest addons and install its
@@ -52,6 +53,7 @@ jobs:
           TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
           STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip`
           echo "Status=${STATUS}"
+          echo "Version: ${TAG}"
           [ ${STATUS} -ne 200 ] && exit 1
 
           # Get latest modules
@@ -66,6 +68,7 @@ jobs:
           done < PLATFORMS
           STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/firmware.tgz" -o "${MODULES_DIR}/firmware.tgz"`
           echo "Status=${STATUS}"
+          echo "Version: ${TAG}"
           [ ${STATUS} -ne 200 ] && exit 1
           echo OK
 
