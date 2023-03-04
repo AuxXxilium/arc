@@ -1411,7 +1411,7 @@ function boot() {
 if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${BUILD}" -a loaderIsConfigured ]; then
   install-addons.sh
   make
-  boot && exit 0 || sleep 5
+  boot && exit 0
 fi
 # Main loop
 NEXT="1"
