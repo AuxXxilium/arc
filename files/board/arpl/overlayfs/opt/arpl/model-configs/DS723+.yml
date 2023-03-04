@@ -6,10 +6,11 @@ synoinfo: &synoinfo
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_led_brightness_adjustment: "no"
+  supportnvme: "yes"
   support_syno_hybrid_raid:
   supportraidgroup:
-  supportnvme: "yes"
 cmdline: &cmdline
+  HddEnableDynamicPower: 1
   SMBusHddDynamicPower: 1
   synoboot2:
   syno_ttyS0: "serial,0x3f8"
