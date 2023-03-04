@@ -8,6 +8,11 @@ UNTAR_PAT_PATH="${TMP_PATH}/pat"
 RAMDISK_PATH="${TMP_PATH}/ramdisk"
 LOG_FILE="${TMP_PATH}/log.txt"
 
+MOUNTP1="/mnt/p1"
+MOUNTP2="/mnt/p2"
+MOUNTP3="/mnt/p3"
+BACKUPDIR="${MOUNTP3}/backup"
+
 USER_CONFIG_FILE="${BOOTLOADER_PATH}/user-config.yml"
 GRUB_PATH="${BOOTLOADER_PATH}/grub"
 SYSINFO_PATH="${BOOTLOADER_PATH}/sysinfo.yml"

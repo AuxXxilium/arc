@@ -670,7 +670,7 @@ function addonMenu() {
           --inputbox "Type a optional params to Addon" 0 0 \
           2>${TMP_PATH}/resp
         [ $? -ne 0 ] && continue
-        ADDONS[${ADDON}]="`<"${TMP_PATH}/resp"`"
+        ADDONS["${ADDON}"]="`<"${TMP_PATH}/resp"`"
         writeConfigKey "addons.${ADDON}" "${VALUE}" "${USER_CONFIG_FILE}"
         DIRTY=1
         ;;
@@ -880,7 +880,7 @@ function cmdlineMenu() {
           2>${TMP_PATH}/resp
         [ $? -ne 0 ] && continue
         VALUE="`<"${TMP_PATH}/resp"`"
-        CMDLINE[${NAME}]="${VALUE}"
+        CMDLINE["${NAME}"]="${VALUE}"
         writeConfigKey "cmdline.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
         ;;
       2)
@@ -992,7 +992,7 @@ function synoinfoMenu() {
           2>${TMP_PATH}/resp
         [ $? -ne 0 ] && continue
         VALUE="`<"${TMP_PATH}/resp"`"
-        SYNOINFO[${NAME}]="${VALUE}"
+        SYNOINFO["${NAME}"]="${VALUE}"
         writeConfigKey "synoinfo.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
         DIRTY=1
         ;;
@@ -1060,6 +1060,179 @@ function keymapMenu() {
   writeConfigKey "layout" "${LAYOUT}" "${USER_CONFIG_FILE}"
   writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
   loadkeys /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz
+}
+
+###############################################################################
+# Shows backup menu to user
+function backupMenu() {
+  NEXT="1"
+  CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+  if [ -n "${CONFDONE}" ]; then
+    while true; do
+      dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
+        1 "Backup Config" \
+        2 "Restore Config" \
+        3 "Backup Loader" \
+        4 "Restore Loader" \
+        5 "Show Backup Path" \
+        0 "Exit" \
+        2>${TMP_PATH}/resp
+      [ $? -ne 0 ] && return
+      case "`<${TMP_PATH}/resp`" in
+        1)
+          dialog --backtitle "`backtitle`" --title "Backup Config" --aspect 18 \
+            --infobox "Backup Config to ${BACKUPDIR}" 0 0
+          if [ ! -d "${BACKUPDIR}" ]; then
+            # Make backup dir
+            mkdir ${BACKUPDIR}
+          else
+            # Clean old backup
+            rm -f ${BACKUPDIR}/user-config.yml
+          fi
+          # Copy config to backup
+          cp -f ${USER_CONFIG_FILE} ${BACKUPDIR}/user-config.yml
+          if [ -f "${BACKUPDIR}/user-config.yml" ]; then
+            dialog --backtitle "`backtitle`" --title "Backup Config" --aspect 18 \
+              --msgbox "Backup complete" 0 0
+          else
+            dialog --backtitle "`backtitle`" --title "Backup Config" --aspect 18 \
+              --msgbox "Backup error" 0 0
+          fi
+          ;;
+        2)
+          dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
+            --infobox "Restore Config from ${BACKUPDIR}" 0 0
+          if [ -f "${BACKUPDIR}/user-config.yml" ]; then
+            # Copy config back to location
+            cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
+            dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
+              --msgbox "Restore complete" 0 0
+          else
+            dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
+              --msgbox "No Config Backup found" 0 0
+          fi
+          ;;
+        3)
+          dialog --backtitle "`backtitle`" --title "Backup Loader" --aspect 18 \
+            --infobox "Backup Loader to ${BACKUPDIR}" 0 0
+          if [ ! -d "${BACKUPDIR}" ]; then
+            # Make backup dir
+            mkdir ${BACKUPDIR}
+          else
+            # Clean old backup
+            rm -f ${BACKUPDIR}/arc-backup.tar
+          fi
+          # Copy files to backup
+          cp -f ${USER_CONFIG_FILE} ${BACKUPDIR}/user-config.yml
+          cp -f ${MOUNTP3}/bzImage-arpl ${BACKUPDIR}/bzImage-arpl
+          cp -f ${MOUNTP3}/initrd-arpl ${BACKUPDIR}/initrd-arpl
+          cp -f ${MOUNTP3}/zImage-dsm ${BACKUPDIR}/zImage-dsm
+          cp -f ${MOUNTP3}/initrd-dsm ${BACKUPDIR}/initrd-dsm
+          # Compress backup
+          tar -cvf ${BACKUPDIR}/arc-backup.tar ${BACKUPDIR}/
+          # Clean temp files from backup dir
+          rm -f ${BACKUPDIR}/user-config.yml
+          rm -f ${BACKUPDIR}/bzImage-arpl
+          rm -f ${BACKUPDIR}/initrd-arpl
+          rm -f ${BACKUPDIR}/zImage-dsm
+          rm -f ${BACKUPDIR}/initrd-dsm
+          if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
+            dialog --backtitle "`backtitle`" --title "Backup Loader" --aspect 18 \
+              --msgbox "Backup complete" 0 0
+          else
+            dialog --backtitle "`backtitle`" --title "Backup Loader" --aspect 18 \
+              --msgbox "Backup error" 0 0
+          fi
+          ;;
+        4)
+          dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
+            --infobox "Restore Loader from ${BACKUPDIR}" 0 0
+          if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
+            # Uncompress backup
+            tar -xvf ${BACKUPDIR}/arc-backup.tar -C /
+            # Copy files to locations
+            cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
+            cp -f ${BACKUPDIR}/bzImage-arpl ${MOUNTP3}/bzImage-arpl
+            cp -f ${BACKUPDIR}/initrd-arpl ${MOUNTP3}/initrd-arpl
+            cp -f ${BACKUPDIR}/zImage-dsm ${MOUNTP3}/zImage-dsm
+            cp -f ${BACKUPDIR}/initrd-dsm ${MOUNTP3}/initrd-dsm
+            # Clean temp files from backup dir
+            rm -f ${BACKUPDIR}/user-config.yml
+            rm -f ${BACKUPDIR}/bzImage-arpl
+            rm -f ${BACKUPDIR}/initrd-arpl
+            rm -f ${BACKUPDIR}/zImage-dsm
+            rm -f ${BACKUPDIR}/initrd-dsm
+            dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
+              --msgbox "Restore complete" 0 0
+          else
+            dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
+              --msgbox "No Loader Backup found" 0 0
+          fi
+          ;;
+        5)
+          dialog --backtitle "`backtitle`" --title "Backup Path" --aspect 18 \
+            --msgbox "Open in Explorer: \\\\${IP}\arpl\p3\backup" 0 0
+          ;;
+        0) return ;;
+      esac
+    done
+  else
+    while true; do
+      dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
+        1 "Restore Config" \
+        2 "Restore Loader" \
+        3 "Show Backup Path" \
+        0 "Exit" \
+        2>${TMP_PATH}/resp
+      [ $? -ne 0 ] && return
+      case "`<${TMP_PATH}/resp`" in
+        1)
+          dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
+            --infobox "Restore Config from ${BACKUPDIR}" 0 0
+          if [ -f "${BACKUPDIR}/user-config.yml" ]; then
+            # Copy config back to location
+            cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
+            dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
+              --msgbox "Restore complete" 0 0
+          else
+            dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
+              --msgbox "No Config Backup found" 0 0
+          fi
+          ;;
+        2)
+          dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
+            --infobox "Restore Loader from ${BACKUPDIR}" 0 0
+          if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
+            # Uncompress backup
+            tar -xvf ${BACKUPDIR}/arc-backup.tar -C /
+            # Copy files to locations
+            cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
+            cp -f ${BACKUPDIR}/bzImage-arpl ${MOUNTP3}/bzImage-arpl
+            cp -f ${BACKUPDIR}/initrd-arpl ${MOUNTP3}/initrd-arpl
+            cp -f ${BACKUPDIR}/zImage-dsm ${MOUNTP3}/zImage-dsm
+            cp -f ${BACKUPDIR}/initrd-dsm ${MOUNTP3}/initrd-dsm
+            # Clean temp files from backup dir
+            rm -f ${BACKUPDIR}/user-config.yml
+            rm -f ${BACKUPDIR}/bzImage-arpl
+            rm -f ${BACKUPDIR}/initrd-arpl
+            rm -f ${BACKUPDIR}/zImage-dsm
+            rm -f ${BACKUPDIR}/initrd-dsm
+            sleep 3
+            dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
+              --msgbox "Restore complete" 0 0
+          else
+            dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
+              --msgbox "No Loader Backup found" 0 0
+          fi
+          ;;
+        3)
+          dialog --backtitle "`backtitle`" --title "Backup Path" --aspect 18 \
+            --msgbox "Open in Explorer: \\\\${IP}\arpl\p3\backup" 0 0
+          ;;
+        0) return ;;
+      esac
+    done
+  fi
 }
 
 ###############################################################################
@@ -1312,7 +1485,7 @@ function sysinfo() {
         done
         fi
         TEXT+="\nSysinfo File: \Zb"${SYSINFO_PATH}"\Zn"
-        echo "${TEXT}" > "${BOOTLOADER_PATH}\sysinfo.yml"
+        echo "${TEXT}" > "file://${BOOTLOADER_PATH}\sysinfo.yml"
         dialog --backtitle "`backtitle`" --title "Arc Sysinfo" --aspect 18 --colors --msgbox "${TEXT}" 0 0
 }
 
@@ -1345,7 +1518,7 @@ function reset() {
   deleteConfigKey "cmdline.mac3" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac4" "${USER_CONFIG_FILE}"
   deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
-  readConfigKey "confdone" "${USER_CONFIG_FILE}"
+  CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
 }
 
 ###############################################################################
@@ -1450,6 +1623,7 @@ while true; do
   if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
   echo "d \"Clean disk cache \""                                                            >> "${TMP_PATH}/menu"
   fi
+  echo "t \"Backup Menu \" "                                                                >> "${TMP_PATH}/menu"
   echo "e \"Update Menu \" "                                                                >> "${TMP_PATH}/menu"
   echo "0 \"\Z1Exit\Zn\" "                                                                  >> "${TMP_PATH}/menu"
   dialog --clear --default-item ${NEXT} --backtitle "`backtitle`" --colors \
@@ -1484,6 +1658,7 @@ while true; do
     c) keymapMenu; NEXT="c" ;;
     d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
       --prgbox "rm -rfv \"${CACHE_PATH}/dl\"" 0 0 ;;
+    t) backupMenu; NEXT="t" ;;
     e) updateMenu; NEXT="e" ;;
     0) break ;;
   esac
