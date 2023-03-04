@@ -34,6 +34,7 @@ LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
 DIRECTBOOT="`readConfigKey "directboot" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -61,6 +62,18 @@ function backtitle() {
     BACKTITLE+=" ${IP}"
   else
     BACKTITLE+=" (no IP)"
+  fi
+    BACKTITLE+=" |"
+  if [ -n "${CONFDONE}" ]; then
+    BACKTITLE+=" Config: Y"
+  else
+    BACKTITLE+=" Config: N"
+  fi
+    BACKTITLE+=" |"
+  if [ -n "${BUILDDONE}" ]; then
+    BACKTITLE+=" Build: Y"
+  else
+    BACKTITLE+=" Build: N"
   fi
     BACKTITLE+=" |"
     BACKTITLE+=" ${MACHINE}"
@@ -144,6 +157,8 @@ function arcMenu() {
   fi
     MODEL=${resp}
     writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
+    deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
     # Delete old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
     DIRTY=1
@@ -391,7 +406,6 @@ function make() {
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
 
   # Check if all addon exists
   while IFS=': ' read ADDON PARAM; do
@@ -427,7 +441,8 @@ function make() {
     --infobox "Build successfull! You can boot now." 0 0
   sleep 5
   DIRTY=0
-  writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
+  writeConfigKey "builddone" "1" "${USER_CONFIG_FILE}"
+  BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
   return 0
 }
 
@@ -1066,8 +1081,8 @@ function keymapMenu() {
 # Shows backup menu to user
 function backupMenu() {
   NEXT="1"
-  CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
-  if [ -n "${CONFDONE}" ]; then
+  BUILDDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+  if [ -n "${BUILDDONE}" ]; then
     while true; do
       dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
         1 "Backup Config" \
@@ -1425,6 +1440,8 @@ function updateMenu() {
 ###############################################################################
 # Shows Systeminfo to user
 function sysinfo() {
+        # Delete old Sysinfo
+        rm -f ${SYSINFO_PATH}
         # Checks for Systeminfo Menu
         CPUINFO=$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')
         MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
@@ -1433,6 +1450,7 @@ function sysinfo() {
         NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
         PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
         CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ARCPATCH="`readConfigKey "arcpatch" "${USER_CONFIG_FILE}"`"
         LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
         ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
@@ -1449,9 +1467,21 @@ function sysinfo() {
         TEXT+="\nArc: \Zb"${ARPL_VERSION}"\Zn"
         TEXT+="\nModel: \Zb"${MODEL}"\Zn"
         if [ -n "${CONFDONE}" ]; then
-        TEXT+="\nConfig: \ZbComplete\Zn"
+          TEXT+="\nConfig: \ZbComplete\Zn"
         else
-        TEXT+="\nConfig: \ZbIncomplete\Zn"
+          TEXT+="\nConfig: \ZbIncomplete\Zn"
+        fi
+        if [ -n "${BUILDDONE}" ]; then
+          TEXT+="\nBuild: \ZbComplete\Zn"
+        else
+          TEXT+="\nBuild: \ZbIncomplete\Zn"
+        fi
+        if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
+          TEXT+="\nBackup: \ZbComplete\Zn"
+        elif [ -f "${BACKUPDIR}/user-config.yml" ]; then
+          TEXT+="\nBackup: \ZbOnly Config\Zn"
+        else
+          TEXT+="\nBackup: \ZbNo Backup found\Zn"
         fi
         TEXT+="\nArcpatch: \Zb"${ARCPATCH}"\Zn"
         TEXT+="\nLKM: \Zb"${LKM}"\Zn"
@@ -1484,8 +1514,8 @@ function sysinfo() {
           TEXT+="\Z1Drives\Zn detected:\n\Zb"${RAIDDRIVES}"\Zn\n"
         done
         fi
-        TEXT+="\nSysinfo File: \Zb"${SYSINFO_PATH}"\Zn"
-        echo "${TEXT}" > "file://${BOOTLOADER_PATH}\sysinfo.yml"
+        echo -e ${TEXT} > "${SYSINFO_PATH}"
+        TEXT+="\nSysinfo File: \Zb"\\\\${IP}\\arpl\\p1\\sysinfo.yml"\Zn"
         dialog --backtitle "`backtitle`" --title "Arc Sysinfo" --aspect 18 --colors --msgbox "${TEXT}" 0 0
 }
 
@@ -1518,7 +1548,9 @@ function reset() {
   deleteConfigKey "cmdline.mac3" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac4" "${USER_CONFIG_FILE}"
   deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
+  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
   CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+  BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
 }
 
 ###############################################################################
@@ -1594,7 +1626,7 @@ while true; do
   if [ -n "${CONFDONE}" ]; then
       echo "4 \"Build Arc Loader \" "                                                       >> "${TMP_PATH}/menu"
   fi
-  if loaderIsConfigured; then
+  if [ -n "${BUILDDONE}" ]; then
   echo "5 \"Boot Arc Loader \" "                                                            >> "${TMP_PATH}/menu"
   fi
   echo "= \"\Z4========== Info ========== \Zn\" "                                           >> "${TMP_PATH}/menu"
