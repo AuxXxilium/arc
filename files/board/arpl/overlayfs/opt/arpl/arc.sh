@@ -247,7 +247,7 @@ function arcnet() {
   writeConfigKey "cmdline.netif_num" "${NETNUM}"            "${USER_CONFIG_FILE}"
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   # Delete old Mac Address from Userconfig
-  #deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac2" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac3" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac4" "${USER_CONFIG_FILE}"
@@ -255,7 +255,7 @@ function arcnet() {
   MAC2="`readModelKey "${MODEL}" "mac2"`"
   MAC3="`readModelKey "${MODEL}" "mac3"`"
   MAC4="`readModelKey "${MODEL}" "mac4"`"
-  if [ "$ARCPATCH" = "1" ]; then 
+  if [ "${ARCPATCH}" = "1" ]; then 
     # Install with Arc Patch - Check for model config and set custom Mac Address
     while true; do
       dialog --clear --backtitle "`backtitle`" \
@@ -325,7 +325,7 @@ function arcnet() {
     dialog --backtitle "`backtitle`" \
       --title "Arc Config" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
     sleep 3
-  elif [ "$ARCPATCH" = "0" ]; then
+  elif [ "${ARCPATCH}" = "0" ]; then
     # Install without Arc Patch - Set Hardware Mac Address
     if [ "${NETNUM}" -gt 0 ]; then
       MACA1=`ip link show eth0 | awk '/ether/{print$2}'`
@@ -385,9 +385,6 @@ function arcnet() {
       break
     fi
   done
-  dialog --backtitle "`backtitle`" --title "Arc Config" \
-    --infobox "Network configuration successfull!" 0 0
-  sleep 3
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Configuration successfull!" 0 0
