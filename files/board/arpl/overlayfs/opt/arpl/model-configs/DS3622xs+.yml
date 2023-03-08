@@ -11,7 +11,6 @@ synoinfo: &synoinfo
   support_led_brightness_adjustment: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
-  supportnvme: "yes"
 cmdline: &cmdline
   syno_hdd_powerup_seq: 0
   HddHotplug: 0
@@ -20,7 +19,7 @@ cmdline: &cmdline
   elevator: elevator
 platform: "broadwellnk"
 unique: "synology_broadwellnk_3622xs+"
-dom: 1
+dom: 2
 serial:
   prefix:
     - "2150"

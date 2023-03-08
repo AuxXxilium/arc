@@ -9,7 +9,6 @@ synoinfo: &synoinfo
   support_bde_internal_10g: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
-  supportssdcache: "yes"
 cmdline: &cmdline
   SMBusHddDynamicPower: 1
   vender_format_version: 2
