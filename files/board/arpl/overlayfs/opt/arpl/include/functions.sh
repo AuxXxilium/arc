@@ -91,7 +91,7 @@ function generateRandomValue() {
 # Returns serial number
 function generateSerial() {
   SERIAL="`readModelArray "${1}" "serial.prefix" | sort -R | tail -1`"
-  SERIAL+=`readModelKey "${1}" "serial.middle"`
+  SERIAL+="`readModelKey "${1}" "serial.middle"`"
   case "`readModelKey "${1}" "serial.suffix"`" in
     numeric)
       SERIAL+=$(random)      
@@ -109,8 +109,8 @@ function generateSerial() {
 # 2 - Serial number to test
 # Returns 1 if serial number is valid
 function validateSerial() {
-  PREFIX=`readModelArray "${1}" "serial.prefix"`
-  MIDDLE=`readModelKey "${1}" "serial.middle"`
+  PREFIX="`readModelArray "${1}" "serial.prefix"`"
+  MIDDLE="`readModelKey "${1}" "serial.middle"`"
   S=${2:0:4}
   P=${2:4:3}
   L=${#2}

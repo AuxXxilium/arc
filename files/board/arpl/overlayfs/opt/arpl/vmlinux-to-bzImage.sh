@@ -38,7 +38,7 @@ size_le () {
       }
   )
 }
-SCRIPT_DIR=`dirname $0`
+SCRIPT_DIR="`dirname $0`"
 VMLINUX_MOD=${1}
 ZIMAGE_MOD=${2}
 KVER_MAJOR=${KVER:0:1}
@@ -64,7 +64,7 @@ if [ $KVER_MAJOR -eq 4 ] || [ $KVER_MAJOR -eq 3 ]; then
   file_size_le "${VMLINUX_MOD}" | dd of="${ZIMAGE_MOD}" bs=15745134 seek=1 conv=notrunc >"${LOG_FILE}" 2>&1 || dieLog
   file_size_le "${VMLINUX_MOD}" | dd of="${ZIMAGE_MOD}" bs=15745244 seek=1 conv=notrunc >"${LOG_FILE}" 2>&1 || dieLog
 
-  RUN_SIZE=`objdump -h ${VMLINUX_MOD} | sh "${SCRIPT_DIR}/calc_run_size.sh"`
+  RUN_SIZE="`objdump -h ${VMLINUX_MOD} | sh "${SCRIPT_DIR}/calc_run_size.sh"`"
   size_le ${RUN_SIZE} | dd of=${ZIMAGE_MOD} bs=15745210 seek=1 conv=notrunc >"${LOG_FILE}" 2>&1 || dieLog
   size_le $(($((16#`crc32 "${ZIMAGE_MOD}" | awk '{print$1}'`)) ^ 0xFFFFFFFF)) | dd of="${ZIMAGE_MOD}" conv=notrunc oflag=append >"${LOG_FILE}" 2>&1 || dieLog
 else

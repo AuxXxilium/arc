@@ -6,7 +6,7 @@
 # Usage:
 # objdump -h a.out | sh calc_run_size.sh
 
-NUM='\([0-9a-fA-F]*[ \t]*\)'
+NUM="'\([0-9a-fA-F]*[ \t]*\)'"
 OUT=$(sed -n 's/^[ \t0-9]*.b[sr][sk][ \t]*'"${NUM}${NUM}${NUM}${NUM}"'.*/\1\4/p')
 if [ -z "$OUT" ] ; then
 	echo "Never found .bss or .brk file offset" >&2

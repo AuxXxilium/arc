@@ -12,9 +12,9 @@ function getAllModules() {
   gzip -dc "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" | tar xf - -C "${TMP_PATH}/modules"
   # Get list of all modules
   for F in `ls ${TMP_PATH}/modules/*.ko`; do
-    X=`basename ${F}`
+    X="`basename ${F}`"
     M=${X:0:-3}
-    DESC=`modinfo ${F} | awk -F':' '/description:/{ print $2}' | awk '{sub(/^[ ]+/,""); print}'`
+    DESC="`modinfo ${F} | awk -F':' '/description:/{ print $2}' | awk '{sub(/^[ ]+/,""); print}'`"
     [ -z "${DESC}" ] && DESC="${X}"
     echo "${M} \"${DESC}\""
   done

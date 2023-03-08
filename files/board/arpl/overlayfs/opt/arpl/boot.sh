@@ -79,9 +79,9 @@ done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 [ "${MODEL}" = "DS3615" ] && EFI_BUG=1 || EFI_BUG=0
 
 LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
-BUS=`udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2`
+BUS="`udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2`"
 if [ "${BUS}" = "ata" ]; then
-  LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
+  LOADER_DEVICE_NAME="`echo ${LOADER_DISK} | sed 's|/dev/||'`"
   SIZE=$((`cat /sys/block/${LOADER_DEVICE_NAME}/size`/2048+10))
   # Read SATADoM type
   DOM="`readModelKey "${MODEL}" "dom"`"
@@ -113,8 +113,8 @@ for KEY in ${!CMDLINE[@]}; do
   [ -n "${VALUE}" ] && CMDLINE_DIRECT+="=${VALUE}"
 done
 # Escape special chars
-CMDLINE_LINE=`echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g'`
-CMDLINE_DIRECT=`echo ${CMDLINE_DIRECT} | sed 's/>/\\\\>/g'`
+CMDLINE_LINE="`echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g'`"
+CMDLINE_DIRECT="`echo ${CMDLINE_DIRECT} | sed 's/>/\\\\>/g'`"
 echo -e "Cmdline:\n\033[1;36m${CMDLINE_LINE}\033[0m"
 
 # Wait for an IP

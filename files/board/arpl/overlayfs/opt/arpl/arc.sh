@@ -103,7 +103,7 @@ function arcMenu() {
     while read M; do
       M="`basename ${M}`"
       M="${M::-4}"
-      PLATFORM=`readModelKey "${M}" "platform"`
+      PLATFORM="`readModelKey "${M}" "platform"`"
       DT="`readModelKey "${M}" "dt"`"
       # Check id model is compatible with CPU
       COMPATIBLE=1
@@ -138,18 +138,18 @@ function arcMenu() {
   # There is no Raid/SCSI Support for DT Models
   WARNON=2
   fi
-  if [ "${WARNON}" == "1" ]; then
+  if [ "${WARNON}" -eq 1 ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --infobox "WARN: Your Controller has more than 8 Disks connected. Max Disks per Controller: 8" 0 0
     sleep 5
   fi
-  if [ "${WARNON}" == "2" ]; then
+  if [ "${WARNON}" -eq 2 ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --infobox "WARN: You have selected a DT Model. There is no support for Raid/SCSI Controller." 0 0
     sleep 5
     exit 1
   fi
-  if [ "${WARNON}" == "3" ]; then
+  if [ "${WARNON}" -eq 3 ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --infobox "WARN: No Diskcontroller found." 0 0
     sleep 5
@@ -188,7 +188,7 @@ function arcbuild() {
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
     if [ "${resp}" = "2" ]; then
-      ARCPATCH="0"
+      ARCPATCH=0
       # Generate random serial
       SN="`generateSerial "${MODEL}"`"
       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
@@ -197,7 +197,7 @@ function arcbuild() {
       --infobox "Installing without Arc Patch!" 0 0
       break
     elif [ "${resp}" = "1" ]; then
-      ARCPATCH="1"
+      ARCPATCH=1
       SN="`readModelKey "${MODEL}" "arcserial"`"
       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
       writeConfigKey "arcpatch" "yes" "${USER_CONFIG_FILE}"
@@ -301,7 +301,7 @@ function arcnet() {
           writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
         fi
       fi
-      if [ "${resp}" = "1" ]; then
+      if [ "${resp}" -eq 1 ]; then
           writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
         if [ "${NETNUM}" -gt 1 ]; then
           writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
@@ -354,12 +354,12 @@ function arcnet() {
     [ $? -ne 0 ] && return
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
-    if [ "${resp}" = "2" ]; then
+    if [ "${resp}" -eq 2 ]; then
       dialog --backtitle "`backtitle`" --title "Arc Config" \
         --infobox "IP/MAC will be changed on first boot!" 0 0
       sleep 3
       break
-    elif [ "${resp}" = "1" ]; then
+    elif [ "${resp}" -eq 1 ]; then
       dialog --backtitle "`backtitle`" --title "Arc Config" \
         --infobox "IP/MAC will be changed now!" 0 0
         MAC1="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
@@ -446,7 +446,7 @@ function extractDsmFiles() {
   fi
   mkdir -p "${CACHE_PATH}/dl"
 
-  SPACELEFT=`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}'`  # Check disk space left
+  SPACELEFT="`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}'`"  # Check disk space left
 
   PAT_FILE="${MODEL}-${BUILD}.pat"
   PAT_PATH="${CACHE_PATH}/dl/${PAT_FILE}"
@@ -459,12 +459,12 @@ function extractDsmFiles() {
   else
     echo "Downloading ${PAT_FILE}"
     # Discover remote file size
-    FILESIZE=`curl --insecure -sLI "${PAT_URL}" | grep -i Content-Length | awk '{print$2}'`
+    FILESIZE="`curl --insecure -sLI "${PAT_URL}" | grep -i Content-Length | awk '{print$2}'`"
     if [ 0${FILESIZE} -ge ${SPACELEFT} ]; then
       # No disk space to download, change it to RAMDISK
       PAT_PATH="${TMP_PATH}/${PAT_FILE}"
     fi
-    STATUS=`curl --insecure -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_PATH}" --progress-bar`
+    STATUS="`curl --insecure -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_PATH}" --progress-bar`"
     if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
       rm "${PAT_PATH}"
       dialog --backtitle "`backtitle`" --title "Error downloading" --aspect 18 \
@@ -508,7 +508,7 @@ function extractDsmFiles() {
       ;;
   esac
 
-  SPACELEFT=`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}'`  # Check disk space left
+  SPACELEFT="`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}'`"  # Check disk space left
 
   if [ "${isencrypted}" = "yes" ]; then
     # Check existance of extractor
@@ -522,12 +522,12 @@ function extractDsmFiles() {
       if [ ! -f "${OLDPAT_PATH}" ]; then
         echo "Downloading old pat to extract synology .pat extractor..."
         # Discover remote file size
-        FILESIZE=`curl --insecure -sLI "${OLDPAT_URL}" | grep -i Content-Length | awk '{print$2}'`
+        FILESIZE="`curl --insecure -sLI "${OLDPAT_URL}" | grep -i Content-Length | awk '{print$2}'`"
         if [ 0${FILESIZE} -ge ${SPACELEFT} ]; then
           # No disk space to download, change it to RAMDISK
           OLDPAT_PATH="${TMP_PATH}/DS3622xs+-42218.pat"
         fi
-        STATUS=`curl --insecure -w "%{http_code}" -L "${OLDPAT_URL}" -o "${OLDPAT_PATH}"  --progress-bar`
+        STATUS="`curl --insecure -w "%{http_code}" -L "${OLDPAT_URL}" -o "${OLDPAT_PATH}"  --progress-bar`"
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           rm "${OLDPAT_PATH}"
           dialog --backtitle "`backtitle`" --title "Error downloading" --aspect 18 \
@@ -725,7 +725,7 @@ function addonMenu() {
         [ -z "${URL}" ] && continue
         clear
         echo "Downloading ${URL}"
-        STATUS=`curl --insecure -w "%{http_code}" -L "${URL}" -o "${TMP_PATH}/addon.tgz" --progress-bar`
+        STATUS="`curl --insecure -w "%{http_code}" -L "${URL}" -o "${TMP_PATH}/addon.tgz" --progress-bar`"
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Error downloading" --aspect 18 \
             --msgbox "Check internet, URL or cache disk space" 0 0
@@ -753,7 +753,7 @@ function selectModules() {
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   dialog --backtitle "`backtitle`" --title "Modules" --aspect 18 \
     --infobox "Reading modules" 0 0
-  ALLMODULES=`getAllModules "${PLATFORM}" "${KVER}"`
+  ALLMODULES="`getAllModules "${PLATFORM}" "${KVER}"`"
   unset USERMODULES
   declare -A USERMODULES
   while IFS=': ' read KEY VALUE; do
@@ -896,7 +896,7 @@ function cmdlineMenu() {
           --checklist "Select cmdline to remove" 0 0 0 ${ITEMS} \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
-        RESP=`<"${TMP_PATH}/resp"`
+        RESP="`<"${TMP_PATH}/resp"`"
         [ -z "${RESP}" ] && continue
         for I in ${RESP}; do
           unset CMDLINE[${I}]
@@ -1009,7 +1009,7 @@ function synoinfoMenu() {
           --checklist "Select synoinfo entry to remove" 0 0 0 ${ITEMS} \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
-        RESP=`<"${TMP_PATH}/resp"`
+        RESP="`<"${TMP_PATH}/resp"`"
         [ -z "${RESP}" ] && continue
         for I in ${RESP}; do
           unset SYNOINFO[${I}]
@@ -1269,8 +1269,8 @@ function updateMenu() {
         dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
           --infobox "Downloading latest version ${TAG}" 0 0
         # Download update file
-        STATUS=`curl --insecure -w "%{http_code}" -L \
-          "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o /tmp/update.zip`
+        STATUS="`curl --insecure -w "%{http_code}" -L \
+          "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o /tmp/update.zip`"
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --msgbox "Error downloading update file" 0 0
@@ -1316,7 +1316,7 @@ function updateMenu() {
       2)
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
           --infobox "Checking latest version" 0 0
-        TAG=`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
+        TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
             --msgbox "Error checking new version" 0 0
@@ -1324,7 +1324,7 @@ function updateMenu() {
         fi
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
           --infobox "Downloading latest version: ${TAG}" 0 0
-        STATUS=`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip`
+        STATUS="`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip`"
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
             --msgbox "Error downloading new version" 0 0
@@ -1338,7 +1338,7 @@ function updateMenu() {
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
           --infobox "Installing new addons" 0 0
         for PKG in `ls /tmp/addons/*.addon`; do
-          ADDON=`basename ${PKG} | sed 's|.addon||'`
+          ADDON="`basename ${PKG} | sed 's|.addon||'`"
           rm -rf "${ADDONS_PATH}/${ADDON}"
           mkdir -p "${ADDONS_PATH}/${ADDON}"
           tar xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
@@ -1351,7 +1351,7 @@ function updateMenu() {
       3)
         dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
           --infobox "Checking latest version" 0 0
-        TAG=`curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
+        TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
             --msgbox "Error checking new version" 0 0
@@ -1359,7 +1359,7 @@ function updateMenu() {
         fi
         dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
           --infobox "Downloading latest version: ${TAG}" 0 0
-        STATUS=`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip`
+        STATUS="`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip`"
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
             --msgbox "Error downloading latest version" 0 0
@@ -1379,16 +1379,16 @@ function updateMenu() {
         while read M; do
           M="`basename ${M}`"
           M="${M::-4}"
-          P=`readModelKey "${M}" "platform"`
+          P="`readModelKey "${M}" "platform"`"
           ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${M}.yml"`"
           for B in ${ITEMS}; do
-            KVER=`readModelKey "${M}" "builds.${B}.kver"`
+            KVER="`readModelKey "${M}" "builds.${B}.kver"`"
             PLATFORMS["${P}-${KVER}"]=""
           done
         done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
           --infobox "Checking latest version" 0 0
-        TAG=`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
+        TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --msgbox "Error checking new version" 0 0
@@ -1397,7 +1397,7 @@ function updateMenu() {
         for P in ${!PLATFORMS[@]}; do
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --infobox "Downloading ${P} modules: ${TAG}" 0 0
-          STATUS=`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/${P}.tgz" -o "/tmp/${P}.tgz"`
+          STATUS="`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/${P}.tgz" -o "/tmp/${P}.tgz"`"
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
               --msgbox "Error downloading ${P}.tgz" 0 0
@@ -1481,7 +1481,7 @@ function sysinfo() {
         if [ "${SATACONTROLLER}" -gt 0 ]; then
         for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print$1}'`; do
           # Get Name of Controller
-          NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+          NAME="`lspci -s "${PCI}" | sed "s/\ .*://"`"
           # Get Amount of Drives connected
           SATADRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
           TEXT+="\n\Z1SATA Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
@@ -1492,7 +1492,7 @@ function sysinfo() {
         if [ "${SCSICONTROLLER}" -gt 0 ]; then
         for PCI in `lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
           # Get Name of Controller
-          NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+          NAME="`lspci -s "${PCI}" | sed "s/\ .*://"`"
           # Get Amount of Drives connected
           RAIDDRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
           TEXT+="\n\Z1SCSI/RAID Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
@@ -1547,13 +1547,13 @@ function tryRecoveryDSM() {
     MODEL=""
     BUILD=""
     if [ -f "${DSMROOT_PATH}/.syno/patch/VERSION" ]; then
-      eval `cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep unique`
-      eval `cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep base`
+      eval "`cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep unique`"
+      eval "`cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep base`"
       if [ -n "${unique}" ] ; then
         while read F; do
           M="`basename ${F}`"
           M="${M::-4}"
-          UNIQUE=`readModelKey "${M}" "unique"`
+          UNIQUE="`readModelKey "${M}" "unique"`"
           [ "${unique}" = "${UNIQUE}" ] || continue
           # Found
           modelMenu "${M}"
@@ -1564,7 +1564,7 @@ function tryRecoveryDSM() {
             cp "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
             cp "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
             MSG="Found a installation:\nModel: ${MODEL}\nBuildnumber: ${BUILD}"
-            SN=`_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf"`
+            SN="`_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf"`"
             if [ -n "${SN}" ]; then
               writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
               MSG+="\nSerial: ${SN}"

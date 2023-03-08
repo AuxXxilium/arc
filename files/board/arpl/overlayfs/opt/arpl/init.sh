@@ -66,8 +66,8 @@ if [ -d "${CACHE_PATH}/patch" ]; then
 fi
 
 # Get first MAC address
-MAC=`ip link show eth0 | awk '/ether/{print$2}'`
-MACF=`echo ${MAC} | sed 's/://g'`
+MAC="`ip link show eth0 | awk '/ether/{print$2}'`"
+MACF="`echo ${MAC} | sed 's/://g'`"
 
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
@@ -107,7 +107,7 @@ fi
 # Get the VID/PID if we are in USB
 VID="0x0000"
 PID="0x0000"
-BUS=`udevadm info --query property --name ${LOADER_DISK} | grep BUS | cut -d= -f2`
+BUS="`udevadm info --query property --name ${LOADER_DISK} | grep BUS | cut -d= -f2`"
 if [ "${BUS}" = "usb" ]; then
   VID="0x`udevadm info --query property --name ${LOADER_DISK} | grep ID_VENDOR_ID | cut -d= -f2`"
   PID="0x`udevadm info --query property --name ${LOADER_DISK} | grep ID_MODEL_ID | cut -d= -f2`"
@@ -129,8 +129,8 @@ fi
 echo ")"
 
 # Check if partition 3 occupies all free space, resize if needed
-LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
-SIZEOFDISK=`cat /sys/block/${LOADER_DEVICE_NAME}/size`
+LOADER_DEVICE_NAME="`echo ${LOADER_DISK} | sed 's|/dev/||'`"
+SIZEOFDISK="`cat /sys/block/${LOADER_DEVICE_NAME}/size`"
 ENDSECTOR=$((`fdisk -l ${LOADER_DISK} | awk '/'${LOADER_DEVICE_NAME}3'/{print$3}'`+1))
 if [ ${SIZEOFDISK} -ne ${ENDSECTOR} ]; then
   echo -e "\033[1;36mResizing ${LOADER_DISK}3\033[0m"
@@ -175,7 +175,7 @@ while true; do
     break
   fi
   COUNT=$((${COUNT}+1))
-  IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
+  IP="`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`"
   if [ -n "${IP}" ]; then
     echo -en "OK\nAccess \033[1;34mhttp://${IP}:7681\033[0m to configure the loader via web terminal"
     break
@@ -193,7 +193,7 @@ echo -e "Default SSH Root password is \033[1;31mRedp1lL-1s-4weSomE\033[0m"
 echo
 
 # Check memory
-RAM=`free -m | awk '/Mem:/{print$2}'`
+RAM="`free -m | awk '/Mem:/{print$2}'`"
 if [ ${RAM} -le 3500 ]; then
   echo -e "\033[1;33mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of memory.\033[0m\n"
 fi

@@ -34,7 +34,7 @@ LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 LAYOUT="`readConfigKey "layout" "${USER_CONFIG_FILE}"`"
 KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
-UNIQUE=`readModelKey "${MODEL}" "unique"`
+UNIQUE="`readModelKey "${MODEL}" "unique"`"
 
 if [ ${BUILD} -ne ${buildnumber} ]; then
   echo -e "\033[A\n\033[1;32mBuild number changed from \033[1;31m${BUILD}\033[1;32m to \033[1;31m${buildnumber}\033[0m"
@@ -125,7 +125,7 @@ cp "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
 gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" > "${RAMDISK_PATH}/usr/lib/modules/rp.ko"
 
 # Addons
-MAXDISKS=`readConfigKey "maxdisks" "${USER_CONFIG_FILE}"`
+MAXDISKS="`readConfigKey "maxdisks" "${USER_CONFIG_FILE}"`"
 # Check if model needs Device-tree dynamic patch
 DT="`readModelKey "${MODEL}" "dt"`"
 
