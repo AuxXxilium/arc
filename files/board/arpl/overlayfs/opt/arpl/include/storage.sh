@@ -16,9 +16,7 @@ function getmap() {
       DRIVES=8
       WARNON=1
     fi
-    if [ "${DRIVES}" -gt 0 ]; then
-      echo -n "${DRIVES}" >> ${TMP_PATH}/drives
-    fi
+    echo -n "${DRIVES}" >> ${TMP_PATH}/drives
     done
   fi
   # Get Number of Raid/SCSI Drives
@@ -33,32 +31,24 @@ function getmap() {
       DRIVES=8
       WARNON=1
     fi
-    if [ "${DRIVES}" -gt 0 ]; then
-      echo -n "${DRIVES}" >> ${TMP_PATH}/drives
-    fi
+    echo -n "${DRIVES}" >> ${TMP_PATH}/drives
     done
   fi
-  # Only write to config if more than 1 Sata Controller or a Raid/SCSI Controller is dedected
-      DRIVES=$(awk '{print$1}' ${TMP_PATH}/drives)
-      if [ "${DRIVES}" -gt 0 ]; then
-        if [ "${DRIVES}" != "${SATAPORTMAP}" ]; then
-          writeConfigKey "cmdline.SataPortMap" "${DRIVES}" "${USER_CONFIG_FILE}"
-        fi
+  # Write to config
+      SATAPORTMAP=$(awk '{print$1}' ${TMP_PATH}/drives)
+      if [ "${SATAPORTMAP}" -gt 10 ]; then
+        writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+      fi
+      if [ "${SATAPORTMAP}" -lt 8 ]; then
+        SATAPORTMAP=8
+        writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
       fi
 }
 
-# Check for diskconfig and set new if necessary
+# Check for Controller
 SATAPORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
 SATACONTROLLER=$(lspci -nnk | grep -ie "\[0106\]" | wc -l)
 SCSICONTROLLER=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l)
 
-# Only build SataPortMap if more than 1 Sata Controller or a Raid/SCSI Controller is dedected
-if [ "${SATACONTROLLER}" -gt "1" ] || [ "${SCSICONTROLLER}" -gt "1" ]; then
-  getmap
-elif [ "${SATACONTROLLER}" -gt "0" ] && [ "${SCSICONTROLLER}" -gt "0" ]; then
-  getmap
-elif [ "${SATACONTROLLER}" == 0 ] && [ "${SCSICONTROLLER}" == 0 ]; then
-  WARNON=3
-else
-  deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-fi
+# Launch getmap
+getmap
