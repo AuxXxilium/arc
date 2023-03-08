@@ -159,6 +159,8 @@ function arcMenu() {
     writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
     deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
     deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
+    CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+    BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
     # Delete old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
     DIRTY=1
@@ -188,7 +190,7 @@ function arcbuild() {
     if [ "${resp}" = "2" ]; then
       ARCPATCH="0"
       # Generate random serial
-      SN=`generateSerial "${MODEL}"`
+      SN="`generateSerial "${MODEL}"`"
       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
       writeConfigKey "arcpatch" "no" "${USER_CONFIG_FILE}"
       dialog --backtitle "`backtitle`" --title "Arc Config" \
@@ -284,18 +286,18 @@ function arcnet() {
           break
         fi
         if [ "${NETNUM}" -gt 1 ]; then
-          MACA2=`ip link show eth1 | awk '/ether/{print$2}'`
-          MAC2=`echo ${MACA2} | sed 's/://g'`
+          MACA2="`ip link show eth1 | awk '/ether/{print$2}'`"
+          MAC2="`echo ${MACA2} | sed 's/://g'`"
           writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
         fi
         if [ "${NETNUM}" -gt 2 ]; then
-          MACA3=`ip link show eth2 | awk '/ether/{print$2}'`
-          MAC3=`echo ${MACA3} | sed 's/://g'`
+          MACA3="`ip link show eth2 | awk '/ether/{print$2}'`"
+          MAC3="`echo ${MACA3} | sed 's/://g'`"
           writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
         fi
         if [ "${NETNUM}" -gt 3 ]; then
-          MACA4=`ip link show eth3 | awk '/ether/{print$2}'`
-          MAC4=`echo ${MACA4} | sed 's/://g'`
+          MACA4="`ip link show eth3 | awk '/ether/{print$2}'`"
+          MAC4="`echo ${MACA4} | sed 's/://g'`"
           writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
         fi
       fi
@@ -317,22 +319,22 @@ function arcnet() {
     sleep 3
   elif [ "${ARCPATCH}" -eq 0 ]; then
     # Install without Arc Patch - Set Hardware Mac Address
-      MACA1=`ip link show eth0 | awk '/ether/{print$2}'`
-      MAC1=`echo ${MACA1} | sed 's/://g'`
+      MACA1="`ip link show eth0 | awk '/ether/{print$2}'`"
+      MAC1="`echo ${MACA1} | sed 's/://g'`"
       writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
     if [ "${NETNUM}" -gt 1 ]; then
-      MACA2=`ip link show eth1 | awk '/ether/{print$2}'`
-      MAC2=`echo ${MACA2} | sed 's/://g'`
+      MACA2="`ip link show eth1 | awk '/ether/{print$2}'`"
+      MAC2="`echo ${MACA2} | sed 's/://g'`"
       writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
     fi
     if [ "${NETNUM}" -gt 2 ]; then
-      MACA3=`ip link show eth2 | awk '/ether/{print$2}'`
-      MAC3=`echo ${MACA3} | sed 's/://g'`
+      MACA3="`ip link show eth2 | awk '/ether/{print$2}'`"
+      MAC3="`echo ${MACA3} | sed 's/://g'`"
       writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
     fi
     if [ "${NETNUM}" -gt 3 ]; then
-      MACA4=`ip link show eth3 | awk '/ether/{print$2}'`
-      MAC4=`echo ${MACA4} | sed 's/://g'`
+      MACA4="`ip link show eth3 | awk '/ether/{print$2}'`"
+      MAC4="`echo ${MACA4} | sed 's/://g'`"
       writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
     fi
     dialog --backtitle "`backtitle`" \
@@ -366,7 +368,7 @@ function arcnet() {
       /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
         --title "Restart DHCP" --progressbox "Renewing IP" 20 70
       sleep 5
-      IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
+      IP="`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`"
       sleep 3
       break
     fi
