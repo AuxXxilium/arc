@@ -8,12 +8,10 @@ synoinfo: &synoinfo
   support_bde_internal_10g: "no"
   esataportcfg: "0x0"
   support_led_brightness_adjustment: "no"
-  supportnvme: "yes"
   support_syno_hybrid_raid:
   supportraidgroup:
+  supportnvme: "yes"
 cmdline: &cmdline
-  HddEnableDynamicPower: 1
-  SMBusHddDynamicPower: 1
   syno_hdd_powerup_seq: 0
   HddHotplug: 0
   syno_hdd_detect: 0

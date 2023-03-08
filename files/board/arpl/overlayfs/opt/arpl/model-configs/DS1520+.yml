@@ -7,13 +7,12 @@ synoinfo: &synoinfo
   support_memory_compatibility: "no"
   support_led_brightness_adjustment: "no"
   support_bde_internal_10g: "no"
-  supportnvme: "yes"
   support_syno_hybrid_raid:
   supportraidgroup:
+  supportnvme: "yes"
 cmdline: &cmdline
   intel_iommu: igfx_off
   HddEnableDynamicPower: 1
-  SMBusHddDynamicPower: 1
   vender_format_version: 2
   synoboot2:
   syno_ttyS0: "serial,0x3f8"
