@@ -247,7 +247,7 @@ function arcnet() {
   writeConfigKey "cmdline.netif_num" "${NETNUM}"            "${USER_CONFIG_FILE}"
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   # Delete old Mac Address from Userconfig
-  deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
+  #deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac2" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac3" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac4" "${USER_CONFIG_FILE}"
@@ -255,7 +255,7 @@ function arcnet() {
   MAC2="`readModelKey "${MODEL}" "mac2"`"
   MAC3="`readModelKey "${MODEL}" "mac3"`"
   MAC4="`readModelKey "${MODEL}" "mac4"`"
-  if [ "${ARCPATCH}" = "1" ]; then 
+  if [ "${ARCPATCH}" -eq 1 ]; then 
     # Install with Arc Patch - Check for model config and set custom Mac Address
     while true; do
       dialog --clear --backtitle "`backtitle`" \
@@ -269,26 +269,18 @@ function arcnet() {
       [ $? -ne 0 ] && return
       resp=$(<${TMP_PATH}/resp)
       [ -z "${resp}" ] && return
-      if [ "${resp}" > "1" ]; then
-        if [ "${resp}" = "2" ]; then
-          if [ "${NETNUM}" -gt 0 ]; then
+      if [ "${resp}" -gt 1 ]; then
+        if [ "${resp}" -eq 2 ]; then
             writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-          fi
           break
-        elif [ "${resp}" = "3" ]; then
-          if [ "${NETNUM}" -gt 0 ]; then
+        elif [ "${resp}" -eq 3 ]; then
             writeConfigKey "cmdline.mac1"           "${MAC2}" "${USER_CONFIG_FILE}"
-          fi
           break
-        elif [ "${resp}" = "4" ]; then
-          if [ "${NETNUM}" -gt 0 ]; then
+        elif [ "${resp}" -eq 4 ]; then
             writeConfigKey "cmdline.mac1"           "${MAC3}" "${USER_CONFIG_FILE}"
-          fi
           break
-        elif [ "${resp}" = "5" ]; then
-          if [ "${NETNUM}" -gt 0 ]; then
+        elif [ "${resp}" -eq 5 ]; then
             writeConfigKey "cmdline.mac1"           "${MAC4}" "${USER_CONFIG_FILE}"
-          fi
           break
         fi
         if [ "${NETNUM}" -gt 1 ]; then
@@ -308,9 +300,7 @@ function arcnet() {
         fi
       fi
       if [ "${resp}" = "1" ]; then
-        if [ "${NETNUM}" -gt 0 ]; then
           writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-        fi
         if [ "${NETNUM}" -gt 1 ]; then
           writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
         fi
@@ -325,13 +315,11 @@ function arcnet() {
     dialog --backtitle "`backtitle`" \
       --title "Arc Config" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
     sleep 3
-  elif [ "${ARCPATCH}" = "0" ]; then
+  elif [ "${ARCPATCH}" -eq 0 ]; then
     # Install without Arc Patch - Set Hardware Mac Address
-    if [ "${NETNUM}" -gt 0 ]; then
       MACA1=`ip link show eth0 | awk '/ether/{print$2}'`
       MAC1=`echo ${MACA1} | sed 's/://g'`
       writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-    fi
     if [ "${NETNUM}" -gt 1 ]; then
       MACA2=`ip link show eth1 | awk '/ether/{print$2}'`
       MAC2=`echo ${MACA2} | sed 's/://g'`
@@ -372,11 +360,9 @@ function arcnet() {
     elif [ "${resp}" = "1" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Config" \
         --infobox "IP/MAC will be changed now!" 0 0
-      if [ "${NETNUM}" -gt 0 ]; then
         MAC1="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
         MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
         ip link set dev eth0 address ${MACN1} 2>&1
-      fi
       /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
         --title "Restart DHCP" --progressbox "Renewing IP" 20 70
       sleep 5
