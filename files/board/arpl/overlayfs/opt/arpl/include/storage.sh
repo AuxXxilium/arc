@@ -5,43 +5,46 @@ function getmap() {
   touch ${TMP_PATH}/drives
   sleep 1
   # Get Number of Sata Drives
-  if [ "${SATACONTROLLER}" -gt 0 ]; then
+  if [ "$SATACONTROLLER" -gt "0" ]; then
     pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
     [ ! -z "$pcis" ]
     # loop through SATA controllers
     for pci in $pcis; do
     # get attached block devices (exclude CD-ROMs)
     DRIVES=$(ls -la /sys/block | fgrep "${pci}" | grep -v "sr.$" | wc -l)
-    if [ "${DRIVES}" -gt 8 ]; then
+    if [ "$DRIVES" -gt "8" ]; then
       DRIVES=8
       WARNON=1
     fi
-    echo -n "${DRIVES}" >> ${TMP_PATH}/drives
+    echo -n "$DRIVES" >> ${TMP_PATH}/drives
     done
   fi
   # Get Number of Raid/SCSI Drives
-  if [ "${SCSICONTROLLER}" -gt 0 ]; then
+  if [ "$SCSICONTROLLER" -gt "0" ]; then
     pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
     [ ! -z "$pcis" ]
     # loop through non-SATA controllers
     for pci in $pcis; do
     # get attached block devices (exclude CD-ROMs)
       DRIVES=$(ls -la /sys/block | fgrep "${pci}" | grep -v "sr.$" | wc -l)
-    if [ "${DRIVES}" -gt 8 ]; then
+    if [ "$DRIVES" -gt "8" ]; then
       DRIVES=8
       WARNON=1
     fi
-    echo -n "${DRIVES}" >> ${TMP_PATH}/drives
+    echo -n "$DRIVES" >> ${TMP_PATH}/drives
     done
   fi
   # Write to config
       SATAPORTMAP=$(awk '{print$1}' ${TMP_PATH}/drives)
-      if [ "${SATAPORTMAP}" -gt 10 ]; then
+      if [ "$SATAPORTMAP" -gt "9" ]; then
         writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
       fi
-      if [ "${SATAPORTMAP}" -lt 8 ]; then
+      if [ "$SATAPORTMAP" -lt "9" ]; then
         SATAPORTMAP=8
         writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+      fi
+      if [ "$SATAPORTMAP" -eq "0" ]; then
+        WARNON=3
       fi
 }
 

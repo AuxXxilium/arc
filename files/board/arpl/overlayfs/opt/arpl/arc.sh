@@ -8,13 +8,13 @@
 # Check partition 3 space, if < 2GiB is necessary clean cache folder
 CLEARCACHE=0
 LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
-LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
+LOADER_DEVICE_NAME="`echo ${LOADER_DISK} | sed 's|/dev/||'`"
 if [ `cat /sys/block/${LOADER_DEVICE_NAME}/${LOADER_DEVICE_NAME}3/size` -lt 4194304 ]; then
   CLEARCACHE=1
 fi
 
 # Get actual IP
-IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
+IP="`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`"
 
 # Check for Hypervisor
 if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
@@ -108,7 +108,7 @@ function arcMenu() {
       # Check id model is compatible with CPU
       COMPATIBLE=1
       if [ ${RESTRICT} -eq 1 ]; then
-        for F in `readModelArray "${M}" "flags"`; do
+        for F in "`readModelArray "${M}" "flags"`"; do
           if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
             COMPATIBLE=0
             FLGNEX=1
@@ -134,22 +134,22 @@ function arcMenu() {
   else
     resp="${1}"
   fi
-  if [ "$DT" = "true" ] && [ "${SCSICONTROLLER}" -gt 0 ]; then
+  if [ "$DT" = "true" ] && [ "$SCSICONTROLLER" -gt "0" ]; then
   # There is no Raid/SCSI Support for DT Models
   WARNON=2
   fi
-  if [ "${WARNON}" -eq 1 ]; then
+  if [ "$WARNON" = "1" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --infobox "WARN: Your Controller has more than 8 Disks connected. Max Disks per Controller: 8" 0 0
     sleep 5
   fi
-  if [ "${WARNON}" -eq 2 ]; then
+  if [ "$WARNON" = "2" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --infobox "WARN: You have selected a DT Model. There is no support for Raid/SCSI Controller." 0 0
     sleep 5
     exit 1
   fi
-  if [ "${WARNON}" -eq 3 ]; then
+  if [ "$WARNON" = "3" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --infobox "WARN: No Diskcontroller found." 0 0
     sleep 5
@@ -243,8 +243,8 @@ function arcnet() {
   # Export Network Adapter Amount - DSM 
   NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
   # Hardlimit to 4 Mac because of Redpill doesn't more at this time
-  if [ "${NETNUM}" -gt 4 ]; then
-  NETNUM="4"
+  if [ "$NETNUM" -gt "4" ]; then
+  NETNUM=4
   fi
   writeConfigKey "cmdline.netif_num" "${NETNUM}"            "${USER_CONFIG_FILE}"
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
@@ -257,7 +257,7 @@ function arcnet() {
   MAC2="`readModelKey "${MODEL}" "mac2"`"
   MAC3="`readModelKey "${MODEL}" "mac3"`"
   MAC4="`readModelKey "${MODEL}" "mac4"`"
-  if [ "${ARCPATCH}" -eq 1 ]; then 
+  if [ "$ARCPATCH" -eq "1" ]; then 
     # Install with Arc Patch - Check for model config and set custom Mac Address
     while true; do
       dialog --clear --backtitle "`backtitle`" \
@@ -271,68 +271,68 @@ function arcnet() {
       [ $? -ne 0 ] && return
       resp=$(<${TMP_PATH}/resp)
       [ -z "${resp}" ] && return
-      if [ "${resp}" -gt 1 ]; then
-        if [ "${resp}" -eq 2 ]; then
+      if [ "${resp}" -gt "1" ]; then
+        if [ "${resp}" -eq "2" ]; then
             writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
           break
-        elif [ "${resp}" -eq 3 ]; then
+        elif [ "${resp}" -eq "3" ]; then
             writeConfigKey "cmdline.mac1"           "${MAC2}" "${USER_CONFIG_FILE}"
           break
-        elif [ "${resp}" -eq 4 ]; then
+        elif [ "${resp}" -eq "4" ]; then
             writeConfigKey "cmdline.mac1"           "${MAC3}" "${USER_CONFIG_FILE}"
           break
-        elif [ "${resp}" -eq 5 ]; then
+        elif [ "${resp}" -eq "5" ]; then
             writeConfigKey "cmdline.mac1"           "${MAC4}" "${USER_CONFIG_FILE}"
           break
         fi
-        if [ "${NETNUM}" -gt 1 ]; then
+        if [ "$NETNUM" -gt "1" ]; then
           MACA2="`ip link show eth1 | awk '/ether/{print$2}'`"
           MAC2="`echo ${MACA2} | sed 's/://g'`"
           writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
         fi
-        if [ "${NETNUM}" -gt 2 ]; then
+        if [ "$NETNUM" -gt "2" ]; then
           MACA3="`ip link show eth2 | awk '/ether/{print$2}'`"
           MAC3="`echo ${MACA3} | sed 's/://g'`"
           writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
         fi
-        if [ "${NETNUM}" -gt 3 ]; then
+        if [ "$NETNUM" -gt "3" ]; then
           MACA4="`ip link show eth3 | awk '/ether/{print$2}'`"
           MAC4="`echo ${MACA4} | sed 's/://g'`"
           writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
         fi
       fi
-      if [ "${resp}" -eq 1 ]; then
+      if [ "${resp}" -eq "1" ]; then
           writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-        if [ "${NETNUM}" -gt 1 ]; then
+        if [ "$NETNUM" -gt "1" ]; then
           writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
         fi
-        if [ "${NETNUM}" -gt 2 ]; then
+        if [ "$NETNUM" -gt "2" ]; then
           writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
         fi
-        if [ "${NETNUM}" -gt 3 ]; then
+        if [ "$NETNUM" -gt "3" ]; then
           writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
         fi
       fi
     done
     dialog --backtitle "`backtitle`" \
-      --title "Arc Config" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
+      --title "Arc Config" --infobox "Set MAC for $NETNUM Adapter" 0 0
     sleep 3
-  elif [ "${ARCPATCH}" -eq 0 ]; then
+  elif [ "$ARCPATCH" -eq "0" ]; then
     # Install without Arc Patch - Set Hardware Mac Address
       MACA1="`ip link show eth0 | awk '/ether/{print$2}'`"
       MAC1="`echo ${MACA1} | sed 's/://g'`"
       writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-    if [ "${NETNUM}" -gt 1 ]; then
+    if [ "$NETNUM" -gt "1" ]; then
       MACA2="`ip link show eth1 | awk '/ether/{print$2}'`"
       MAC2="`echo ${MACA2} | sed 's/://g'`"
       writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
     fi
-    if [ "${NETNUM}" -gt 2 ]; then
+    if [ "$NETNUM" -gt "2" ]; then
       MACA3="`ip link show eth2 | awk '/ether/{print$2}'`"
       MAC3="`echo ${MACA3} | sed 's/://g'`"
       writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
     fi
-    if [ "${NETNUM}" -gt 3 ]; then
+    if [ "$NETNUM" -gt "3" ]; then
       MACA4="`ip link show eth3 | awk '/ether/{print$2}'`"
       MAC4="`echo ${MACA4} | sed 's/://g'`"
       writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
@@ -354,12 +354,12 @@ function arcnet() {
     [ $? -ne 0 ] && return
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
-    if [ "${resp}" -eq 2 ]; then
+    if [ "${resp}" -eq "2" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Config" \
         --infobox "IP/MAC will be changed on first boot!" 0 0
       sleep 3
       break
-    elif [ "${resp}" -eq 1 ]; then
+    elif [ "${resp}" -eq "1" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Config" \
         --infobox "IP/MAC will be changed now!" 0 0
         MAC1="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
@@ -1267,7 +1267,7 @@ function updateMenu() {
           [ $? -ne 0 ] && continue
         fi
         dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
-          --infobox "Downloading latest version ${TAG}" 0 0
+          --infobox "Downloading latest version" 0 0
         # Download update file
         STATUS="`curl --insecure -w "%{http_code}" -L \
           "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o /tmp/update.zip`"
@@ -1323,7 +1323,7 @@ function updateMenu() {
           continue
         fi
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
-          --infobox "Downloading latest version: ${TAG}" 0 0
+          --infobox "Downloading latest version" 0 0
         STATUS="`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip`"
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
@@ -1358,7 +1358,7 @@ function updateMenu() {
           continue
         fi
         dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-          --infobox "Downloading latest version: ${TAG}" 0 0
+          --infobox "Downloading latest" 0 0
         STATUS="`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip`"
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
@@ -1396,7 +1396,7 @@ function updateMenu() {
         fi
         for P in ${!PLATFORMS[@]}; do
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-            --infobox "Downloading ${P} modules: ${TAG}" 0 0
+            --infobox "Downloading ${P}" 0 0
           STATUS="`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/${P}.tgz" -o "/tmp/${P}.tgz"`"
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
