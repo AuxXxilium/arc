@@ -1,0 +1,23 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+  build-img:
+    cmds:
+      - ./img-gen.sh
+
+  build-new:
+    cmds:
+      - ./new_bn.sh
+
+  build-docker-img:
+    dir: docker
+    cmds:
+      - ./build.sh
+
+  compile-kpatch:
+    dir: kpatch
+    cmds:
+      - make clean all
+      - mv kpatch ../files/board/arpl/overlayfs/opt/arpl/

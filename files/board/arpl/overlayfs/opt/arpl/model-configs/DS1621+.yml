@@ -1,0 +1,58 @@
+id: "DS1621+"
+synoinfo: &synoinfo
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  support_disk_compatibility: "no"
+  support_memory_compatibility: "no"
+  support_led_brightness_adjustment: "no"
+  support_bde_internal_10g: "no"
+  support_syno_hybrid_raid:
+  supportraidgroup:
+cmdline: &cmdline
+  SMBusHddDynamicPower: 1
+  syno_hdd_powerup_seq: 0
+  HddHotplug: 0
+  vender_format_version: 2
+  syno_hdd_detect: 0
+  synoboot2:
+  syno_ttyS0: "serial,0x3f8"
+  syno_ttyS1: "serial,0x2f8"
+  elevator: elevator
+platform: "v1000"
+unique: "synology_v1000_1621+"
+dom: 2
+serial:
+  prefix:
+    - "2080"
+  middle: "S7R"
+  suffix: "alpha"
+arcserial: "2080S7R668F9S"
+mac1: "001132D84A80"
+mac2: "001132D84A81"
+mac3: "001132D84A82"
+mac4: "001132D84A83"
+mac5: "9009D019775A"
+mac6: "9009D01978A5"
+disks: 6
+dt: true
+builds:
+  42962:
+    ver: "7.1.1"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_DS1621%2B_42962.pat"
+      hash: "bd88dfdf1eccdf7fefcdac67e11929818ae3aea938fd13286c1ac7b5aaa3964f"
+      ramdisk-hash: "7a900e3017b4ee09b792d2ed291b7229476ae3e583fe559bbd9baaa812705aa0"
+      zimage-hash: "b0f296aad0cc3b8adba13483f89770d0a4daf9b9cab335910717448b1eaa8254"
+      md5-hash: "b5e6be956385c1b49825517409265a44"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"

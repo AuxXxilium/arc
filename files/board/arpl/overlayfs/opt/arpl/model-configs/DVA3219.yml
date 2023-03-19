@@ -1,0 +1,59 @@
+id: "DVA3219"
+synoinfo: &synoinfo
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  support_disk_compatibility: "no"
+  support_memory_compatibility: "no"
+  esataportcfg: "0x00"
+  support_bde_internal_10g: "no"
+  support_led_brightness_adjustment: "no"
+  support_syno_hybrid_raid:
+  supportraidgroup:
+cmdline: &cmdline
+  syno_hdd_powerup_seq: 0
+  HddHotplug: 0
+  vender_format_version: 2
+  syno_hdd_detect: 0
+  elevator: elevator
+platform: "denverton"
+unique: "synology_denverton_dva3219"
+dom: 2
+serial:
+  prefix:
+    - "1930"
+    - "1940"
+  middle: "RFR"
+  suffix: "alpha"
+arcserial: "1930RFR8HJTK4"
+mac1: "001132A9E866"
+mac2: "001132A9E867"
+mac3: "001132A9E868"
+mac4: "001132A9E869"
+mac5: "9009D019775A"
+mac6: "9009D01978A5"
+flags:
+  - "movbe"
+disks: 4
+dt: false
+builds:
+  42962:
+    ver: "7.1.1"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_DVA3219_42962.pat"
+      hash: "f03395fd9db108d2c5a684b6ba9b4fadc6b1ab05c4e227d401572c01ec4b3dca"
+      ramdisk-hash: "8a36c36096dfc9dd5bbd572a6174719c5018fe5d932a4859832025719abac4fc"
+      zimage-hash: "3c67cefc969ee3de51b7978b8d86cd53cbb0e49ec43b2240bf9b8aad3f2e2200"
+      md5-hash: "22f43fb4de401436616f943beaf13bd5"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"

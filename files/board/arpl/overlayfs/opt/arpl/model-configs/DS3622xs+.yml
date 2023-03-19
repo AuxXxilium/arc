@@ -1,0 +1,57 @@
+id: "DS3622xs+"
+synoinfo: &synoinfo
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  support_disk_compatibility: "no"
+  support_memory_compatibility: "no"
+  esataportcfg: "0x00"
+  support_bde_internal_10g: "no"
+  support_oob_ctl: "no"
+  support_led_brightness_adjustment: "no"
+  support_syno_hybrid_raid:
+  supportraidgroup:
+cmdline: &cmdline
+  syno_hdd_powerup_seq: 0
+  HddHotplug: 0
+  vender_format_version: 2
+  syno_hdd_detect: 0
+  elevator: elevator
+platform: "broadwellnk"
+unique: "synology_broadwellnk_3622xs+"
+dom: 1
+serial:
+  prefix:
+    - "2150"
+  middle: "SQR"
+  suffix: "alpha"
+arcserial: "2150SQRW1ZAHH"
+mac1: "001132FA6CD4"
+mac2: "001132FA6CD5"
+mac3: "001132FA6CD6"
+mac4: "001132FA6CD7"
+mac5: "001132FA6CD3"
+mac6: "9009D019775A"
+disks: 12
+dt: false
+builds:
+  42962:
+    ver: "7.1.1"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_DS3622xs%2B_42962.pat"
+      hash: "b48aadaba7ff561b7d55aa9ed75f1f2f4c49c0c2f73ece4020f3ffd08f6bbfd0"
+      ramdisk-hash: "432f315818adad4e1ca54040557e164caf2937004e2d009aac8865391353e2f6"
+      zimage-hash: "8903dc99f7201c8656de618d767c05f91bfd32edd9a3706a50fd223237842bf2"
+      md5-hash: "1bf63db06cbc048befc24f277dd520f3"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"

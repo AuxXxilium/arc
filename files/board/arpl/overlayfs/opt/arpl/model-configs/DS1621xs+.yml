@@ -1,0 +1,56 @@
+id: "DS1621xs+"
+synoinfo: &synoinfo
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  support_disk_compatibility: "no"
+  support_memory_compatibility: "no"
+  support_bde_internal_10g: "no"
+  esataportcfg: "0x00"
+  usbportcfg: "0x00"
+  support_led_brightness_adjustment: "no"
+  support_syno_hybrid_raid:
+  supportraidgroup:
+cmdline: &cmdline
+  syno_hdd_powerup_seq: 0
+  HddHotplug: 0
+  vender_format_version: 2
+  syno_hdd_detect: 0
+  elevator: elevator
+platform: "broadwell"
+unique: "synology_broadwell_1621xs+"
+dom: 1
+serial:
+  prefix:
+    - "2070"
+  middle: "RVR"
+  suffix: "alpha"
+arcserial: "2070RVR2JPQTF"
+mac1: "001132D64C73"
+mac2: "001132D64C74"
+mac3: "001132D64C75"
+mac4: "9009D019775A"
+disks: 6
+dt: false
+beta: true
+builds:
+  42962:
+    ver: "7.1.1"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_DS1621xs%2B_42962.pat"
+      hash: "199d70693a7eb3a4ff69100bb2634c8b97b115f828bd1f6403d2832cce4e7052"
+      ramdisk-hash: "0c52bac011caa31ec7f76bd9371edc423d6ee162531ad22b39fcb17bcbdc8765"
+      zimage-hash: "8903dc99f7201c8656de618d767c05f91bfd32edd9a3706a50fd223237842bf2"
+      md5-hash: "f1a7238a0bd9adc0cbb5413d49d981a0"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"

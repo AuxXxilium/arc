@@ -1,0 +1,56 @@
+id: "DS1520+"
+synoinfo: &synoinfo
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  support_disk_compatibility: "no"
+  support_memory_compatibility: "no"
+  support_led_brightness_adjustment: "no"
+  support_bde_internal_10g: "no"
+  support_syno_hybrid_raid:
+  supportraidgroup:
+cmdline: &cmdline
+  intel_iommu: igfx_off
+  HddEnableDynamicPower: 1
+  vender_format_version: 2
+  synoboot2:
+  syno_ttyS0: "serial,0x3f8"
+  syno_ttyS1: "serial,0x2f8"
+  elevator: elevator
+platform: "geminilake"
+unique: "synology_geminilake_1520+"
+dom: 2
+serial:
+  prefix:
+    - "2060"
+  middle: "RYR"
+  suffix: "alpha"
+arcserial: "2060RYR26FDR7"
+mac1: "001132D425DD"
+mac2: "001132D425DE"
+mac3: "001132D425DF"
+mac4: "001132D425F0"
+mac5: "9009D019775A"
+mac6: "9009D01978A5"
+disks: 6
+dt: true
+builds:
+  42962:
+    ver: "7.1.1"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_DS1520%2B_42962.pat"
+      hash: "f19d2ac39fae564797c148929b8fe7c9740ac3a74099bf573b68df8fe0228cb3"
+      ramdisk-hash: "aad75938d165ef5efdbfc4c570c4cd1cc252344d0756dd3d89a44f581aa6be6f"
+      zimage-hash: "89ee173272101e6714728e73930d8b31a414f9f1eca8ab78f45c12fc721138ab"
+      md5-hash: "b7b4a7c7f9160023e1129e4097403828"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"

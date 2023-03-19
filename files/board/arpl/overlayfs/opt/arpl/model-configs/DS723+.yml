@@ -1,0 +1,53 @@
+id: "DS723+"
+synoinfo: &synoinfo
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  support_disk_compatibility: "no"
+  support_memory_compatibility: "no"
+  support_led_brightness_adjustment: "no"
+  support_syno_hybrid_raid:
+  supportraidgroup:
+cmdline: &cmdline
+  SMBusHddDynamicPower: 1
+  synoboot2:
+  syno_ttyS0: "serial,0x3f8"
+  syno_ttyS1: "serial,0x2f8"
+  vender_format_version: 2
+  elevator: elevator
+platform: "r1000"
+unique: "synology_r1000_723+"
+dom: 2
+serial:
+  prefix:
+    - "2270"
+  middle: "TQR"
+  suffix: "alpha"
+arcserial: "2230TPR0VX7T2"
+mac1: "9009D01D104B"
+mac2: "9009D01D104C"
+mac3: "9009D019775A"
+mac4: "9009D01978A5"
+disks: 2
+beta: true
+dt: true
+builds:
+  42962:
+    ver: "7.1.1"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_DS723%2B_42962.pat"
+      hash: "e5a96f3b6c8e0535eea5fd585eb5aeca7f445f6fc976628875dc64b2cbb66180"
+      ramdisk-hash: "706f55c3f280da4890d0b3aa735824b07c82c39fdcc874673445d4d2bce3332b"
+      zimage-hash: "f13c0f3781d2c96071510094b34049e7cb22a92b916e05300da0837fc47a7b3a"
+      md5-hash: "1860b260c80de7103d236f2eae0f0dfb"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"

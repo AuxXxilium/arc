@@ -1,0 +1,60 @@
+id: "DS3617xs"
+synoinfo: &synoinfo
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  support_disk_compatibility: "no"
+  support_memory_compatibility: "no"
+  esataportcfg: "0x00"
+  usbportcfg: "0x8700"
+  support_led_brightness_adjustment: "no"
+  support_bde_internal_10g: "no"
+  support_syno_hybrid_raid:
+  supportraidgroup:
+cmdline: &cmdline
+  syno_hdd_powerup_seq: 0
+  HddHotplug: 0
+  vender_format_version: 2
+  syno_hdd_detect: 0
+  elevator: elevator
+platform: "broadwell"
+unique: "synology_broadwell_3617xs"
+dom: 1
+serial:
+  prefix:
+    - "1130"
+    - "1230"
+    - "1330"
+    - "1430"
+  middle: "ODN"
+  suffix: "numeric"
+arcserial: "1891ODN132500"
+#arcserial: "1691ODN132500"
+mac1: "00113297A516"
+mac2: "00113297A517"
+mac3: "00113297A518"
+mac4: "00113297A519"
+mac5: "9009D019775A"
+disks: 12
+dt: false
+builds:
+  42962:
+    ver: "7.1.1"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_DS3617xs_42962.pat"
+      hash: "2a556206201df10245dbcf4cf0366b2f32cb318cd705fbdd74412303d85e7267"
+      ramdisk-hash: "c8d067a9737d67453e0b476d7115c3e12b2daf2450c371c19e44e480a1076a94"
+      zimage-hash: "8e6da6c3c9259d23ee5cae3c71691a75b0a281551d19cb75041df469c7524e72"
+      md5-hash: "3e034e2cdf90209112e0fdad28474970"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"
