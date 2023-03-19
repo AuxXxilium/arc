@@ -317,8 +317,9 @@ function arcnet() {
     sleep 3
   elif [ "${ARCPATCH}" -eq 0 ]; then
     # Install without Arc Patch - Set Hardware Mac Address
-      MACA1=`ip link show eth0 | awk '/ether/{print$2}'`
-      MAC1=`echo ${MACA1} | sed 's/://g'`
+      MAC1="`readConfigKey "original-mac" "${USER_CONFIG_FILE}"`"
+      #MACA1=`ip link show eth0 | awk '/ether/{print$2}'`
+      #MAC1=`echo ${MACA1} | sed 's/://g'`
       writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
     if [ "${NETNUM}" -gt 1 ]; then
       MACA2=`ip link show eth1 | awk '/ether/{print$2}'`
