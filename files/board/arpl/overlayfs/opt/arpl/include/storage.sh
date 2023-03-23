@@ -38,10 +38,12 @@ function getmap() {
       SATAPORTMAP=$(awk '{print$1}' ${TMP_PATH}/drives)
       if [ "${SATAPORTMAP}" -gt 10 ]; then
         writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.DiskIdxMap" "0" "${USER_CONFIG_FILE}"
       fi
       if [ "${SATAPORTMAP}" -lt 8 ]; then
         SATAPORTMAP=8
         writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.DiskIdxMap" "0" "${USER_CONFIG_FILE}"
       fi
 }
 
