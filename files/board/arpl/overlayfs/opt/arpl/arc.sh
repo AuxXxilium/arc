@@ -239,7 +239,7 @@ function arcbuild() {
 # Make Network Config
 function arcnet() {
   # Export Network Adapter Amount - DSM 
-  NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
+  NETNUM=$(lshw -class network -short | grep -ie "eth[0-9]" | wc -l)
   # Hardlimit to 4 Mac because of Redpill doesn't more at this time
   if [ "${NETNUM}" -gt 4 ]; then
   NETNUM="4"
