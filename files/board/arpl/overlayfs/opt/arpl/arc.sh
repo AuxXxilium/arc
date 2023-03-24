@@ -1372,30 +1372,6 @@ function updateMenu() {
           --msgbox "LKMs updated with success! ${TAG}" 0 0
         ;;
       4)
-        while true; do
-          dialog --clear --backtitle "`backtitle`" \
-            --menu "Choose an option" 0 0 0 \
-            1 "Load Arc Modules" \
-            2 "Load Arc Modules Extended" \
-          2>${TMP_PATH}/resp
-          [ $? -ne 0 ] && return
-          resp=$(<${TMP_PATH}/resp)
-          [ -z "${resp}" ] && return
-          if [ "${resp}" = "1" ]; then
-            MODULESSOURCE="https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest"
-            MODULESLOAD="https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/${P}.tgz"
-            dialog --backtitle "`backtitle`" --title "Update Modules" \
-            --infobox "Load Arc Modules" 0 0
-            break
-          elif [ "${resp}" = "2" ]; then
-            MODULESSOURCE="https://api.github.com/repos/AuxXxilium/arc-modules-ext/releases/latest"
-            MODULESLOAD="https://github.com/AuxXxilium/arc-modules-ext/releases/download/${TAG}/${P}.tgz"
-            dialog --backtitle "`backtitle`" --title "Update Modules" \
-                  --infobox "Load Arc Modules Extended" 0 0
-            break
-          fi
-        done
-        sleep 3
         unset PLATFORMS
         declare -A PLATFORMS
         while read M; do
