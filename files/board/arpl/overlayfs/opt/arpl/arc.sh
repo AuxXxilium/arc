@@ -4,6 +4,7 @@
 . /opt/arpl/include/addons.sh
 . /opt/arpl/include/modules.sh
 . /opt/arpl/include/storage.sh
+. /opt/arpl/include/pcie.sh
 
 # Check partition 3 space, if < 2GiB is necessary clean cache folder
 CLEARCACHE=0
@@ -747,6 +748,8 @@ function addonMenu() {
 # Permit user select the modules to include
 function selectModules() {
   NEXT="1"
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   dialog --backtitle "`backtitle`" --title "Modules" --aspect 18 \
@@ -804,16 +807,16 @@ function selectModules() {
         # Rebuild modules
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         # Unzip modules for temporary folder
-        rm -rf "${TMP_PATH}/modules"
-        mkdir -p "${TMP_PATH}/modules"
-        gzip -dc "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" | tar xf - -C "${TMP_PATH}/modules"
-        # Write modules to userconfig
-        while read ID DESC; do
-        if [ -f "${TMP_PATH}/modules/${ID}.ko" ]; then
-          writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-        fi
-        done < <(kmod list | awk '{print$1}' | awk 'NR>1')
-        rm -rf "${TMP_PATH}/modules"
+        mkdir -p "/tmp/modules"
+        gzip -dc "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" | tar xf - -C "/tmp/modules"
+        touch $MODULE_ALIAS_FILE
+        getmodules
+        USERMODULES="`readConfigMap "modules" "${USER_CONFIG_FILE}"`"
+        dialog --backtitle "`backtitle`" --title "Modules selected" \
+           --infobox "${USERMODULES}" 0 0
+        sleep 5
+        rm -f $MODULE_ALIAS_FILE
+        rm -rf /tmp/modules
         ;;
       5)
         rm -f "${TMP_PATH}/opts"

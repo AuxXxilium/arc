@@ -7,6 +7,7 @@ TMP_PATH="/tmp"
 UNTAR_PAT_PATH="${TMP_PATH}/pat"
 RAMDISK_PATH="${TMP_PATH}/ramdisk"
 LOG_FILE="${TMP_PATH}/log.txt"
+MODULE_ALIAS_FILE="${TMP_PATH}/modules.yml"
 
 MOUNTP1="/mnt/p1"
 MOUNTP2="/mnt/p2"
