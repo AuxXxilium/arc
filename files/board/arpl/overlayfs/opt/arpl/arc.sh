@@ -418,7 +418,23 @@ function arcnet() {
   sleep 3
   DIRTY=1
   CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
-  dialog --clear --no-items --backtitle "`backtitle`"
+  while true; do
+    dialog --clear --backtitle "`backtitle`" \
+      --menu "Build now?" 0 0 0 \
+      1 "Yes - Build Arc Loader now" \
+      2 "No - I want to make changes" \
+    2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    resp=$(<${TMP_PATH}/resp)
+    [ -z "${resp}" ] && return
+    if [ "${resp}" = "1" ]; then
+      make
+      break
+    elif [ "${resp}" = "2" ]; then
+      dialog --clear --no-items --backtitle "`backtitle`"
+      break
+    fi
+  done
 }
 
 ###############################################################################
@@ -467,7 +483,23 @@ function make() {
   DIRTY=0
   writeConfigKey "builddone" "1" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
-  return 0
+  while true; do
+    dialog --clear --backtitle "`backtitle`" \
+      --menu "Boot now?" 0 0 0 \
+      1 "Yes - Boot Arc Loader now" \
+      2 "No - I want to make changes" \
+    2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    resp=$(<${TMP_PATH}/resp)
+    [ -z "${resp}" ] && return
+    if [ "${resp}" = "1" ]; then
+      boot && exit 0
+      break
+    elif [ "${resp}" = "2" ]; then
+      return 0
+      break
+    fi
+  done
 }
 
 ###############################################################################
