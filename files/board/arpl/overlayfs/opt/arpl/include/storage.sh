@@ -23,8 +23,8 @@ function getmap() {
       if [ "${SATAPORTMAP}" -lt 8 ]; then
         SATAPORTMAP=8
       fi
-        writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
-        writeConfigKey "cmdline.DiskIdxMap" "0" "${USER_CONFIG_FILE}"
+      writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+      #writeConfigKey "cmdline.DiskIdxMap" "0" "${USER_CONFIG_FILE}"
 }
 
 # Check for Controller
