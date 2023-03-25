@@ -206,7 +206,7 @@ function arcbuild() {
     fi
   done
   dialog --backtitle "`backtitle`" --title "Arc Config" \
-    --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
+    --infobox "Reconfiguring Synoinfo, Addons" 0 0
   # Write build number to buildconfig
   writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
   # Delete synoinfo and reload model/build synoinfo  
@@ -221,11 +221,50 @@ function arcbuild() {
       deleteConfigKey "addons.${ADDON}" "${USER_CONFIG_FILE}"
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  # Rebuild modules
-  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-  while read ID DESC; do
-    writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-  done < <(getAllModules "${PLATFORM}" "${KVER}")
+  while true; do
+    dialog --clear --backtitle "`backtitle`" \
+      --menu "Choose an option" 0 0 0 \
+      1 "Select Modules automated" \
+      2 "Select all Modules" \
+    2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    resp=$(<${TMP_PATH}/resp)
+    [ -z "${resp}" ] && return
+    if [ "${resp}" = "1" ]; then
+      dialog --backtitle "`backtitle`" --title "Modules" \
+          --infobox "Select Modules automated" 0 0
+      sleep 1
+      unset USERMODULES
+      declare -A USERMODULES
+      # Rebuild modules
+      writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+      # Unzip modules for temporary folder
+      mkdir -p "/tmp/modules"
+      gzip -dc "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" | tar xf - -C "/tmp/modules"
+      touch "$MODULE_ALIAS_FILE"
+      # Get pci Modules from mods.sh
+      getmodules
+      USERMODULES="`readConfigMap "modules" "${USER_CONFIG_FILE}"`"
+      dialog --backtitle "`backtitle`" --title "Modules selected" \
+          --infobox "${USERMODULES}" 0 0
+      sleep 3
+      # Get misc Modules from mods.sh
+      miscmodules
+      rm -f "$MODULE_ALIAS_FILE"
+      rm -rf "/tmp/modules"
+      break
+    elif [ "${resp}" = "2" ]; then
+      dialog --backtitle "`backtitle`" --title "Modules" \
+          --infobox "Select all Modules" 0 0
+      sleep 1
+      # Rebuild modules
+      writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+      while read ID DESC; do
+        writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+      done < <(getAllModules "${PLATFORM}" "${KVER}")
+      break
+    fi
+  done
   # Remove old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
@@ -801,7 +840,6 @@ function selectModules() {
       4)
         dialog --backtitle "`backtitle`" --title "Modules" \
            --infobox "Automated modules selection" 0 0
-        writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         unset USERMODULES
         declare -A USERMODULES
         # Rebuild modules
