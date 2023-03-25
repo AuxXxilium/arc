@@ -224,44 +224,47 @@ function arcbuild() {
   while true; do
     dialog --clear --backtitle "`backtitle`" \
       --menu "Choose an option" 0 0 0 \
-      1 "Select Modules automated" \
-      2 "Select all Modules" \
+      1 "Select all Modules" \
+      2 "Select Modules automated" \
     2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
     if [ "${resp}" = "1" ]; then
       dialog --backtitle "`backtitle`" --title "Modules" \
-          --infobox "Select Modules automated" 0 0
-      sleep 1
-      unset USERMODULES
-      declare -A USERMODULES
-      # Rebuild modules
-      writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-      # Unzip modules for temporary folder
-      mkdir -p "/tmp/modules"
-      gzip -dc "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" | tar xf - -C "/tmp/modules"
-      touch "$MODULE_ALIAS_FILE"
-      # Get pci Modules from mods.sh
-      getmodules
-      USERMODULES="`readConfigMap "modules" "${USER_CONFIG_FILE}"`"
-      dialog --backtitle "`backtitle`" --title "Modules selected" \
-          --infobox "${USERMODULES}" 0 0
-      sleep 3
-      # Get misc Modules from mods.sh
-      miscmodules
-      rm -f "$MODULE_ALIAS_FILE"
-      rm -rf "/tmp/modules"
-      break
-    elif [ "${resp}" = "2" ]; then
-      dialog --backtitle "`backtitle`" --title "Modules" \
           --infobox "Select all Modules" 0 0
       sleep 1
       # Rebuild modules
       writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+      # Select all modules
       while read ID DESC; do
         writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
       done < <(getAllModules "${PLATFORM}" "${KVER}")
+      break
+    elif [ "${resp}" = "2" ]; then
+      dialog --backtitle "`backtitle`" --title "Modules" \
+        --infobox "Select Modules automated" 0 0
+      sleep 1
+      # Rebuild modules
+      writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+      # Unzip modules for temporary folder
+      mkdir -p "${TMP_PATH}/modules"
+      gzip -dc "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" | tar xf - -C "/tmp/modules"
+      touch "$MODULE_ALIAS_FILE"
+      # Get pci modules from mods.sh
+      getmodules
+      # Write loaded modules to userconfig
+      while read ID DESC; do
+        if [ -f "${TMP_PATH}/modules/${ID}.ko" ]; then
+          writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+        fi
+      done < <(kmod list | awk '{print$1}' | awk 'NR>1')
+      USERMODULES="`readConfigMap "modules" "${USER_CONFIG_FILE}"`"
+      dialog --backtitle "`backtitle`" --title "Modules selected" \
+        --infobox "${USERMODULES}" 0 0
+      sleep 3
+      rm -f "$MODULE_ALIAS_FILE"
+      rm -rf "${TMP_PATH}/modules"
       break
     fi
   done
@@ -880,16 +883,20 @@ function selectModules() {
         mkdir -p "/tmp/modules"
         gzip -dc "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" | tar xf - -C "/tmp/modules"
         touch $MODULE_ALIAS_FILE
-        # Get pci Modules from mods.sh
+        # Get pci modules from mods.sh
         getmodules
+        # Write loaded modules to userconfig
+        while read ID DESC; do
+          if [ -f "${TMP_PATH}/modules/${ID}.ko" ]; then
+            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+          fi
+        done < <(kmod list | awk '{print$1}' | awk 'NR>1')
         USERMODULES="`readConfigMap "modules" "${USER_CONFIG_FILE}"`"
         dialog --backtitle "`backtitle`" --title "Modules selected" \
            --infobox "${USERMODULES}" 0 0
         sleep 5
-        # Get misc Modules from mods.sh
-        miscmodules
+        rm -rf "${TMP_PATH}/modules"
         rm -f $MODULE_ALIAS_FILE
-        rm -rf /tmp/modules
         ;;
       5)
         rm -f "${TMP_PATH}/opts"
