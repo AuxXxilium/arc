@@ -1665,7 +1665,7 @@ function boot() {
   fi
   dialog --backtitle "`backtitle`" --title "Arc Boot" \
     --infobox "Booting to DSM - Please stay patient!" 0 0
-  sleep 5
+  sleep 3
   exec reboot
 }
 
@@ -1724,7 +1724,7 @@ while true; do
   case `<"${TMP_PATH}/resp"` in
     1) arcMenu; NEXT="4" ;;
     4) make; NEXT="5" ;;
-    5) boot && exit 0 || sleep 5 ;;
+    5) boot && exit 0 ;;
     a) sysinfo; NEXT="a" ;;
     2) addonMenu; NEXT="2" ;;
     3) selectModules; NEXT="3" ;;
