@@ -5,7 +5,7 @@ function getmap() {
   touch ${TMP_PATH}/drives
   # Get Number of Drives per Controller
   if [ "${SATACONTROLLER}" -gt 0 ] || [ "${SCSICONTROLLER}" -gt 0 ]; then
-    pcis=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0106\]" -ie "\[0107\]" | awk '{print $1}')
+    pcis=$(lspci -nnk | grep -ie "\[0106\]" -ie "\[0104\]" -ie "\[0107\]" | awk '{print $1}')
     [ ! -z "$pcis" ]
     # loop through controllers
     for pci in $pcis; do
