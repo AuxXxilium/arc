@@ -4,7 +4,7 @@
 . /opt/arpl/include/addons.sh
 . /opt/arpl/include/modules.sh
 . /opt/arpl/include/storage.sh
-. /opt/arpl/include/pcie.sh
+. /opt/arpl/include/mods.sh
 
 # Check partition 3 space, if < 2GiB is necessary clean cache folder
 CLEARCACHE=0
@@ -810,11 +810,14 @@ function selectModules() {
         mkdir -p "/tmp/modules"
         gzip -dc "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" | tar xf - -C "/tmp/modules"
         touch $MODULE_ALIAS_FILE
+        # Get pci Modules from mods.sh
         getmodules
         USERMODULES="`readConfigMap "modules" "${USER_CONFIG_FILE}"`"
         dialog --backtitle "`backtitle`" --title "Modules selected" \
            --infobox "${USERMODULES}" 0 0
         sleep 5
+        # Get misc Modules from mods.sh
+        miscmodules
         rm -f $MODULE_ALIAS_FILE
         rm -rf /tmp/modules
         ;;
