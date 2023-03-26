@@ -256,12 +256,15 @@ function arcbuild() {
       # Write loaded modules to userconfig
       while read ID DESC; do
         if [ -f "${TMP_PATH}/modules/${ID}.ko" ]; then
-          writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+          if ! grep -q ${ID} "${USER_CONFIG_FILE}"; then
+            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+          fi
         fi
       done < <(kmod list | awk '{print$1}' | awk 'NR>1')
-      USERMODULES="`readConfigMap "modules" "${USER_CONFIG_FILE}"`"
-      dialog --backtitle "`backtitle`" --title "Modules selected" \
-        --infobox "${USERMODULES}" 0 0
+      # Check loaded modules
+      while IFS=': ' read KEY VALUE; do
+        [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
+      done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
       sleep 3
       rm -f "$MODULE_ALIAS_FILE"
       rm -rf "${TMP_PATH}/modules"
@@ -888,12 +891,15 @@ function selectModules() {
         # Write loaded modules to userconfig
         while read ID DESC; do
           if [ -f "${TMP_PATH}/modules/${ID}.ko" ]; then
-            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+            if ! grep -q ${ID} "${USER_CONFIG_FILE}"; then
+              writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+            fi
           fi
         done < <(kmod list | awk '{print$1}' | awk 'NR>1')
-        USERMODULES="`readConfigMap "modules" "${USER_CONFIG_FILE}"`"
-        dialog --backtitle "`backtitle`" --title "Modules selected" \
-           --infobox "${USERMODULES}" 0 0
+        # Check loaded modules
+        while IFS=': ' read KEY VALUE; do
+          [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
+        done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
         sleep 5
         rm -rf "${TMP_PATH}/modules"
         rm -f $MODULE_ALIAS_FILE
