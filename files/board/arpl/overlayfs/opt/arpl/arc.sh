@@ -1590,6 +1590,31 @@ function sysinfo() {
           TEXT+="\Z1Drives\Zn detected:\n\Zb"${RAIDDRIVES}"\Zn\n"
         done
         fi
+        TEXT+="\n\Z4Controller Ports:\Zn\n"
+        NUMPORTS=0
+        for PCI in `lspci -d ::106 | awk '{print$1}'`; do
+          NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+          TEXT+="\Zb${NAME}\Zn\nPorts: "
+          unset HOSTPORTS
+          declare -A HOSTPORTS
+          while read LINE; do
+            ATAPORT="`echo ${LINE} | grep -o 'ata[0-9]*'`"
+            PORT=`echo ${ATAPORT} | sed 's/ata//'`
+            HOSTPORTS[${PORT}]=`echo ${LINE} | grep -o 'host[0-9]*$'`
+          done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
+          while read PORT; do
+            ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
+            PCMD=`cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd`
+            [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
+            [ ${ATTACH} -eq 1 ] && TEXT+="\Z2\Zb"
+            [ ${DUMMY} -eq 1 ] && TEXT+="\Z1"
+            TEXT+="${PORT}\Zn "
+            NUMPORTS=$((${NUMPORTS}+1))
+          done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
+          TEXT+="\n"
+        done
+        TEXT+="\nTotal of ports: ${NUMPORTS}\n"
+        TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected.\n"
         echo -e ${TEXT} > "${SYSINFO_PATH}"
         TEXT+="\nSysinfo File: \Zb"\\\\${IP}\\arpl\\p1\\sysinfo.yml"\Zn"
         dialog --backtitle "`backtitle`" --title "Arc Sysinfo" --aspect 18 --colors --msgbox "${TEXT}" 0 0
