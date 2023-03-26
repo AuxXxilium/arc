@@ -256,7 +256,7 @@ function arcbuild() {
       # Write loaded modules to userconfig
       while read ID DESC; do
         if [ -f "${TMP_PATH}/modules/${ID}.ko" ]; then
-          if ! grep -q ${ID} "${USER_CONFIG_FILE}"; then
+          if ! grep -q "${ID}" "${USER_CONFIG_FILE}"; then
             writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
           fi
         fi
@@ -891,7 +891,7 @@ function selectModules() {
         # Write loaded modules to userconfig
         while read ID DESC; do
           if [ -f "${TMP_PATH}/modules/${ID}.ko" ]; then
-            if ! grep -q ${ID} "${USER_CONFIG_FILE}"; then
+            if ! grep -q "${ID}" "${USER_CONFIG_FILE}"; then
               writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
             fi
           fi
