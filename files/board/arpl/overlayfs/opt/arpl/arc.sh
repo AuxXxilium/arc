@@ -271,6 +271,8 @@ function arcbuild() {
       break
     fi
   done
+  dialog --backtitle "`backtitle`" --title "Modules selected" \
+    --infobox "${USERMODULES}" 0 0
   # Remove old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
@@ -900,6 +902,8 @@ function selectModules() {
         while IFS=': ' read KEY VALUE; do
           [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
         done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
+        dialog --backtitle "`backtitle`" --title "Modules selected" \
+           --infobox "${USERMODULES}" 0 0
         sleep 5
         rm -rf "${TMP_PATH}/modules"
         rm -f $MODULE_ALIAS_FILE
