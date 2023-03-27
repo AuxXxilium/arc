@@ -109,6 +109,12 @@ function arcMenu() {
       M="${M::-4}"
       PLATFORM=`readModelKey "${M}" "platform"`
       DT="`readModelKey "${M}" "dt"`"
+      DISKS="`readModelKey "${M}" "disks"`"
+      if [ "${PLATFORM}" = "r1000" ] || [ "${PLATFORM}" = "v1000" ]; then
+        CPU="AMD"
+      else
+        CPU="Intel"
+      fi
       # Check id model is compatible with CPU
       COMPATIBLE=1
       if [ ${RESTRICT} -eq 1 ]; then
@@ -121,7 +127,7 @@ function arcMenu() {
         done
       fi
       [ "${DT}" = "true" ] && DT="-DT" || DT=""
-      [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
+      [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
     done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >> "${TMP_PATH}/menu"
     dialog --backtitle "`backtitle`" --colors --menu "Choose Model for Arc" 0 0 0 \
@@ -326,15 +332,15 @@ function arcnet() {
         elif [ "${resp}" = "5" ]; then
             writeConfigKey "cmdline.mac1"           "${MAC4}" "${USER_CONFIG_FILE}"
         fi
-        if [ "$NETNUM" -gt "1" ]; then
+        if [ "${NETNUM}" -gt 1 ]; then
           MAC2=`ip link show eth1 | awk '/ether/{print$2}' | sed 's/://g'`
           writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
         fi
-        if [ "$NETNUM" -gt "2" ]; then
+        if [ "${NETNUM}" -gt 2 ]; then
           MAC3=`ip link show eth2 | awk '/ether/{print$2}' | sed 's/://g'`
           writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
         fi
-        if [ "$NETNUM" -gt "3" ]; then
+        if [ "${NETNUM}" -gt 3 ]; then
           MAC4=`ip link show eth3 | awk '/ether/{print$2}' | sed 's/://g'`
           writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
         fi
@@ -342,13 +348,13 @@ function arcnet() {
       fi
       if [ "${resp}" = "1" ]; then
           writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-        if [ "$NETNUM" -gt "1" ]; then
+        if [ "${NETNUM}" -gt 1 ]; then
           writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
         fi
-        if [ "$NETNUM" -gt "2" ]; then
+        if [ "${NETNUM}" -gt 2 ]; then
           writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
         fi
-        if [ "$NETNUM" -gt "3" ]; then
+        if [ "${NETNUM}" -gt 3 ]; then
           writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
         fi
         break
@@ -363,21 +369,21 @@ function arcnet() {
       #MACA1=`ip link show eth0 | awk '/ether/{print$2}'`
       #MAC1=`echo ${MACA1} | sed 's/://g'`
       writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-    if [ "$NETNUM" -gt "1" ]; then
+    if [ "${NETNUM}" -gt 1 ]; then
       MAC2=`ip link show eth1 | awk '/ether/{print$2}' | sed 's/://g'`
       writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
     fi
-    if [ "$NETNUM" -gt "2" ]; then
+    if [ "${NETNUM}" -gt 2 ]; then
       MAC3=`ip link show eth2 | awk '/ether/{print$2}' | sed 's/://g'`
       writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
     fi
-    if [ "$NETNUM" -gt "3" ]; then
-      MACA4=`ip link show eth3 | awk '/ether/{print$2}' | sed 's/://g'`
+    if [ "${NETNUM}" -gt 3 ]; then
+      MAC4=`ip link show eth3 | awk '/ether/{print$2}' | sed 's/://g'`
       writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
     fi
     dialog --backtitle "`backtitle`" \
       --title "Arc Config" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
-    sleep 3
+    sleep 2
   fi
   while true; do
     dialog --clear --backtitle "`backtitle`" \
@@ -391,7 +397,7 @@ function arcnet() {
     if [ "${resp}" = "2" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Config" \
         --infobox "IP/MAC will be changed on first boot!" 0 0
-      sleep 3
+      sleep 2
       break
     elif [ "${resp}" = "1" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Config" \
@@ -403,14 +409,14 @@ function arcnet() {
         --title "Restart DHCP" --progressbox "Renewing IP" 20 70
       sleep 5
       IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
-      sleep 3
+      sleep 2
       break
     fi
   done
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Configuration successfull!" 0 0
-  sleep 3
+  sleep 1
   DIRTY=1
   CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
   while true; do
@@ -474,7 +480,7 @@ function make() {
   echo "Ready!"
   dialog --backtitle "`backtitle`" --title "Arc Build" \
     --infobox "Build successfull! You can boot now." 0 0
-  sleep 5
+  sleep 2
   DIRTY=0
   writeConfigKey "builddone" "1" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
