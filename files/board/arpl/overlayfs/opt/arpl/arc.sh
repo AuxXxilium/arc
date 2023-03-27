@@ -14,6 +14,9 @@ if [ `cat /sys/block/${LOADER_DEVICE_NAME}/${LOADER_DEVICE_NAME}3/size` -lt 4194
   CLEARCACHE=1
 fi
 
+# Get Number of Ethernet Ports
+NETNUM=$(lshw -class network -short | grep -ie "eth[0-9]" | wc -l)
+
 # Get actual IP
 IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
 
@@ -135,22 +138,22 @@ function arcMenu() {
   else
     resp="${1}"
   fi
-  if [ "$DT" = "true" ] && [ "${SCSICONTROLLER}" -gt 0 ]; then
+  if [ "${DT}" = "true" ] && [ "$SCSICONTROLLER" -gt "0" ]; then
   # There is no Raid/SCSI Support for DT Models
   WARNON=2
   fi
-  if [ "${WARNON}" == "1" ]; then
+  if [ "${WARNON}" = "1" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --infobox "WARN: Your Controller has more than 8 Disks connected. Max Disks per Controller: 8" 0 0
     sleep 5
   fi
-  if [ "${WARNON}" == "2" ]; then
+  if [ "${WARNON}" = "2" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --infobox "WARN: You have selected a DT Model. There is no support for Raid/SCSI Controller." 0 0
     sleep 5
     exit 1
   fi
-  if [ "${WARNON}" == "3" ]; then
+  if [ "${WARNON}" = "3" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --infobox "WARN: No Diskcontroller found." 0 0
     sleep 5
@@ -187,16 +190,16 @@ function arcbuild() {
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
     if [ "${resp}" = "2" ]; then
-      ARCPATCH="0"
+      ARCPATCH=0
       # Generate random serial
-      SN=`generateSerial "${MODEL}"`
+      SN="`generateSerial "${MODEL}"`"
       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
       writeConfigKey "arcpatch" "no" "${USER_CONFIG_FILE}"
       dialog --backtitle "`backtitle`" --title "Arc Config" \
       --infobox "Installing without Arc Patch!" 0 0
       break
     elif [ "${resp}" = "1" ]; then
-      ARCPATCH="1"
+      ARCPATCH=1
       SN="`readModelKey "${MODEL}" "arcserial"`"
       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
       writeConfigKey "arcpatch" "yes" "${USER_CONFIG_FILE}"
@@ -233,7 +236,6 @@ function arcbuild() {
     if [ "${resp}" = "1" ]; then
       dialog --backtitle "`backtitle`" --title "Modules" \
           --infobox "Select all Modules" 0 0
-      sleep 1
       # Rebuild modules
       writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
       # Select all modules
@@ -244,7 +246,6 @@ function arcbuild() {
     elif [ "${resp}" = "2" ]; then
       dialog --backtitle "`backtitle`" --title "Modules" \
         --infobox "Select Modules automated" 0 0
-      sleep 1
       # Rebuild modules
       writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
       # Unzip modules for temporary folder
@@ -286,13 +287,11 @@ function arcbuild() {
 ###############################################################################
 # Make Network Config
 function arcnet() {
-  # Export Network Adapter Amount - DSM 
-  NETNUM=$(lshw -class network -short | grep -ie "eth[0-9]" | wc -l)
   # Hardlimit to 4 Mac because of Redpill doesn't more at this time
-  if [ "${NETNUM}" -gt 4 ]; then
-  NETNUM="4"
+  if [ "$NETNUM" -gt "4" ]; then
+  NETNUM=4
   fi
-  writeConfigKey "cmdline.netif_num" "${NETNUM}"            "${USER_CONFIG_FILE}"
+  writeConfigKey "cmdline.netif_num"              "${NETNUM}" "${USER_CONFIG_FILE}"
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   # Delete old Mac Address from Userconfig
   #deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
@@ -303,7 +302,7 @@ function arcnet() {
   MAC2="`readModelKey "${MODEL}" "mac2"`"
   MAC3="`readModelKey "${MODEL}" "mac3"`"
   MAC4="`readModelKey "${MODEL}" "mac4"`"
-  if [ "${ARCPATCH}" -eq 1 ]; then 
+  if [ "${ARCPATCH}" = "1" ]; then 
     # Install with Arc Patch - Check for model config and set custom Mac Address
     while true; do
       dialog --clear --backtitle "`backtitle`" \
@@ -317,79 +316,67 @@ function arcnet() {
       [ $? -ne 0 ] && return
       resp=$(<${TMP_PATH}/resp)
       [ -z "${resp}" ] && return
-      if [ "${resp}" -gt 1 ]; then
-        if [ "${resp}" -eq 2 ]; then
+      if [ "${resp}" != "1" ]; then
+        if [ "${resp}" = "2" ]; then
             writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-          break
-        elif [ "${resp}" -eq 3 ]; then
+        elif [ "${resp}" = "3" ]; then
             writeConfigKey "cmdline.mac1"           "${MAC2}" "${USER_CONFIG_FILE}"
-          break
-        elif [ "${resp}" -eq 4 ]; then
+        elif [ "${resp}" = "4" ]; then
             writeConfigKey "cmdline.mac1"           "${MAC3}" "${USER_CONFIG_FILE}"
-          break
-        elif [ "${resp}" -eq 5 ]; then
+        elif [ "${resp}" = "5" ]; then
             writeConfigKey "cmdline.mac1"           "${MAC4}" "${USER_CONFIG_FILE}"
-          break
         fi
-        if [ "${NETNUM}" -gt 1 ]; then
-          MACA2=`ip link show eth1 | awk '/ether/{print$2}'`
-          MAC2=`echo ${MACA2} | sed 's/://g'`
+        if [ "$NETNUM" -gt "1" ]; then
+          MAC2=`ip link show eth1 | awk '/ether/{print$2}' | sed 's/://g'`
           writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
         fi
-        if [ "${NETNUM}" -gt 2 ]; then
-          MACA3=`ip link show eth2 | awk '/ether/{print$2}'`
-          MAC3=`echo ${MACA3} | sed 's/://g'`
+        if [ "$NETNUM" -gt "2" ]; then
+          MAC3=`ip link show eth2 | awk '/ether/{print$2}' | sed 's/://g'`
           writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
         fi
-        if [ "${NETNUM}" -gt 3 ]; then
-          MACA4=`ip link show eth3 | awk '/ether/{print$2}'`
-          MAC4=`echo ${MACA4} | sed 's/://g'`
+        if [ "$NETNUM" -gt "3" ]; then
+          MAC4=`ip link show eth3 | awk '/ether/{print$2}' | sed 's/://g'`
           writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
         fi
+        break
       fi
       if [ "${resp}" = "1" ]; then
           writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-        if [ "${NETNUM}" -gt 1 ]; then
+        if [ "$NETNUM" -gt "1" ]; then
           writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
         fi
-        if [ "${NETNUM}" -gt 2 ]; then
+        if [ "$NETNUM" -gt "2" ]; then
           writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
         fi
-        if [ "${NETNUM}" -gt 3 ]; then
+        if [ "$NETNUM" -gt "3" ]; then
           writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
         fi
+        break
       fi
     done
     dialog --backtitle "`backtitle`" \
       --title "Arc Config" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
     sleep 3
-  elif [ "${ARCPATCH}" -eq 0 ]; then
+  elif [ "${ARCPATCH}" = "0" ]; then
     # Install without Arc Patch - Set Hardware Mac Address
       MAC1="`readConfigKey "original-mac" "${USER_CONFIG_FILE}"`"
       #MACA1=`ip link show eth0 | awk '/ether/{print$2}'`
       #MAC1=`echo ${MACA1} | sed 's/://g'`
       writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-    if [ "${NETNUM}" -gt 1 ]; then
-      MACA2=`ip link show eth1 | awk '/ether/{print$2}'`
-      MAC2=`echo ${MACA2} | sed 's/://g'`
+    if [ "$NETNUM" -gt "1" ]; then
+      MAC2=`ip link show eth1 | awk '/ether/{print$2}' | sed 's/://g'`
       writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
     fi
-    if [ "${NETNUM}" -gt 2 ]; then
-      MACA3=`ip link show eth2 | awk '/ether/{print$2}'`
-      MAC3=`echo ${MACA3} | sed 's/://g'`
+    if [ "$NETNUM" -gt "2" ]; then
+      MAC3=`ip link show eth2 | awk '/ether/{print$2}' | sed 's/://g'`
       writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
     fi
-    if [ "${NETNUM}" -gt 3 ]; then
-      MACA4=`ip link show eth3 | awk '/ether/{print$2}'`
-      MAC4=`echo ${MACA4} | sed 's/://g'`
+    if [ "$NETNUM" -gt "3" ]; then
+      MACA4=`ip link show eth3 | awk '/ether/{print$2}' | sed 's/://g'`
       writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
     fi
     dialog --backtitle "`backtitle`" \
       --title "Arc Config" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
-    sleep 3
-  else
-    dialog --backtitle "`backtitle`" \
-      --title "Arc Config" --infobox "No Arc Patch option selected" 0 0
     sleep 3
   fi
   while true; do
@@ -1516,108 +1503,110 @@ function updateMenu() {
 ###############################################################################
 # Shows Systeminfo to user
 function sysinfo() {
-        # Delete old Sysinfo
-        rm -f ${SYSINFO_PATH}
-        # Checks for Systeminfo Menu
-        CPUINFO=$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')
-        MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
-        VENDOR=$(dmidecode -s system-product-name)
-        MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-        NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
-        PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
-        CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
-        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
-        ARCPATCH="`readConfigKey "arcpatch" "${USER_CONFIG_FILE}"`"
-        LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
-        ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
-        MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
-        TEXT=""
-        # Print System Informations
-        TEXT+="\n\Z4System:\Zn"
-        TEXT+="\nTyp: \Zb"${MACHINE}"\Zn"
-        TEXT+="\nVendor: \Zb"${VENDOR}"\Zn"
-        TEXT+="\nCPU: \Zb"${CPUINFO}"\Zn"
-        TEXT+="\nRAM: \Zb"${MEMINFO}"GB\Zn\n"
-        # Print Config Informations
-        TEXT+="\n\Z4Config:\Zn"
-        TEXT+="\nArc: \Zb"${ARPL_VERSION}"\Zn"
-        TEXT+="\nModel: \Zb"${MODEL}"\Zn"
-        if [ -n "${CONFDONE}" ]; then
-          TEXT+="\nConfig: \ZbComplete\Zn"
-        else
-          TEXT+="\nConfig: \ZbIncomplete\Zn"
-        fi
-        if [ -n "${BUILDDONE}" ]; then
-          TEXT+="\nBuild: \ZbComplete\Zn"
-        else
-          TEXT+="\nBuild: \ZbIncomplete\Zn"
-        fi
-        if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
-          TEXT+="\nBackup: \ZbComplete\Zn"
-        elif [ -f "${BACKUPDIR}/user-config.yml" ]; then
-          TEXT+="\nBackup: \ZbOnly Config\Zn"
-        else
-          TEXT+="\nBackup: \ZbNo Backup found\Zn"
-        fi
-        TEXT+="\nArcpatch: \Zb"${ARCPATCH}"\Zn"
-        TEXT+="\nLKM: \Zb"${LKM}"\Zn"
-        TEXT+="\nNetwork: \Zb"${NETNUM}" Adapter\Zn"
-        TEXT+="\nIP: \Zb"${IP}"\Zn"
-        TEXT+="\nSataPortMap: \Zb"${PORTMAP}"\Zn"
-        TEXT+="\nAddons loaded: \Zb"${ADDONSINFO}"\Zn"
-        TEXT+="\nModules loaded: \Zb"${MODULESINFO}"\Zn\n"
-        # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
-        TEXT+="\n\Z4Storage:\Zn"
-        # Get Information for Sata Controller
-        if [ "${SATACONTROLLER}" -gt 0 ]; then
-        for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print$1}'`; do
-          # Get Name of Controller
-          NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
-          # Get Amount of Drives connected
-          SATADRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
-          TEXT+="\n\Z1SATA Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
-          TEXT+="\Z1Drives\Zn detected:\n\Zb"${SATADRIVES}"\Zn\n"
-        done
-        fi
-        # Get Information for Raid/SCSI Controller
-        if [ "${SCSICONTROLLER}" -gt 0 ]; then
-        for PCI in `lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
-          # Get Name of Controller
-          NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
-          # Get Amount of Drives connected
-          RAIDDRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
-          TEXT+="\n\Z1SCSI/RAID Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
-          TEXT+="\Z1Drives\Zn detected:\n\Zb"${RAIDDRIVES}"\Zn\n"
-        done
-        fi
-        TEXT+="\n\Z4Controller Ports:\Zn\n"
-        NUMPORTS=0
-        for PCI in `lspci -d ::106 | awk '{print$1}'`; do
-          NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
-          TEXT+="\Zb${NAME}\Zn\nPorts: "
-          unset HOSTPORTS
-          declare -A HOSTPORTS
-          while read LINE; do
-            ATAPORT="`echo ${LINE} | grep -o 'ata[0-9]*'`"
-            PORT=`echo ${ATAPORT} | sed 's/ata//'`
-            HOSTPORTS[${PORT}]=`echo ${LINE} | grep -o 'host[0-9]*$'`
-          done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
-          while read PORT; do
-            ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
-            PCMD=`cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd`
-            [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
-            [ ${ATTACH} -eq 1 ] && TEXT+="\Z2\Zb"
-            [ ${DUMMY} -eq 1 ] && TEXT+="\Z1"
-            TEXT+="${PORT}\Zn "
-            NUMPORTS=$((${NUMPORTS}+1))
-          done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
-          TEXT+="\n"
-        done
-        TEXT+="\nTotal of ports: ${NUMPORTS}\n"
-        TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected.\n"
-        echo -e ${TEXT} > "${SYSINFO_PATH}"
-        TEXT+="\nSysinfo File: \Zb"\\\\${IP}\\arpl\\p1\\sysinfo.yml"\Zn"
-        dialog --backtitle "`backtitle`" --title "Arc Sysinfo" --aspect 18 --colors --msgbox "${TEXT}" 0 0
+  # Delete old Sysinfo
+  rm -f ${SYSINFO_PATH}
+  # Checks for Systeminfo Menu
+  CPUINFO=$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')
+  MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
+  VENDOR=$(dmidecode -s system-product-name)
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
+  PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
+  CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+  BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+  ARCPATCH="`readConfigKey "arcpatch" "${USER_CONFIG_FILE}"`"
+  LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
+  ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
+  MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
+  TEXT=""
+  # Print System Informations
+  TEXT+="\n\Z4System:\Zn"
+  TEXT+="\nTyp: \Zb"${MACHINE}"\Zn"
+  TEXT+="\nVendor: \Zb"${VENDOR}"\Zn"
+  TEXT+="\nCPU: \Zb"${CPUINFO}"\Zn"
+  TEXT+="\nRAM: \Zb"${MEMINFO}"GB\Zn\n"
+  # Print Config Informations
+  TEXT+="\n\Z4Config:\Zn"
+  TEXT+="\nArc: \Zb"${ARPL_VERSION}"\Zn"
+  TEXT+="\nModel: \Zb"${MODEL}"\Zn"
+  if [ -n "${CONFDONE}" ]; then
+    TEXT+="\nConfig: \ZbComplete\Zn"
+  else
+    TEXT+="\nConfig: \ZbIncomplete\Zn"
+  fi
+  if [ -n "${BUILDDONE}" ]; then
+    TEXT+="\nBuild: \ZbComplete\Zn"
+  else
+    TEXT+="\nBuild: \ZbIncomplete\Zn"
+  fi
+  if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
+    TEXT+="\nBackup: \ZbComplete\Zn"
+  elif [ -f "${BACKUPDIR}/user-config.yml" ]; then
+    TEXT+="\nBackup: \ZbOnly Config\Zn"
+  else
+    TEXT+="\nBackup: \ZbNo Backup found\Zn"
+  fi
+  TEXT+="\nArcpatch: \Zb"${ARCPATCH}"\Zn"
+  TEXT+="\nLKM: \Zb"${LKM}"\Zn"
+  TEXT+="\nNetwork: \Zb"${NETNUM}" Adapter\Zn"
+  TEXT+="\nIP: \Zb"${IP}"\Zn"
+  TEXT+="\nSataPortMap: \Zb"${PORTMAP}"\Zn"
+  TEXT+="\nAddons loaded: \Zb"${ADDONSINFO}"\Zn"
+  TEXT+="\nModules loaded: \Zb"${MODULESINFO}"\Zn\n"
+  # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
+  TEXT+="\n\Z4Storage:\Zn"
+  # Get Information for Sata Controller
+  if [ "$SATACONTROLLER" -gt "0" ]; then
+  for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print$1}'`; do
+    # Get Name of Controller
+    NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+    # Get Amount of Drives connected
+    SATADRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
+    TEXT+="\n\Z1SATA Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
+    TEXT+="\Z1Drives\Zn detected:\n\Zb"${SATADRIVES}"\Zn\n"
+  done
+  fi
+  # Get Information for Raid/SCSI Controller
+  if [ "$SCSICONTROLLER" -gt "0" ]; then
+  for PCI in `lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
+    # Get Name of Controller
+    NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+    # Get Amount of Drives connected
+    RAIDDRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
+    TEXT+="\n\Z1SCSI/RAID Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
+    TEXT+="\Z1Drives\Zn detected:\n\Zb"${RAIDDRIVES}"\Zn\n"
+  done
+  fi
+  if [ "$SATACONTROLLER" -gt "0" ]; then
+  TEXT+="\n\Z4Controller Ports:\Zn\n"
+  NUMPORTS=0
+  for PCI in `lspci -d ::106 | awk '{print$1}'`; do
+    NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+    TEXT+="\Zb${NAME}\Zn\nPorts: "
+    unset HOSTPORTS
+    declare -A HOSTPORTS
+    while read LINE; do
+      ATAPORT="`echo ${LINE} | grep -o 'ata[0-9]*'`"
+      PORT=`echo ${ATAPORT} | sed 's/ata//'`
+      HOSTPORTS[${PORT}]=`echo ${LINE} | grep -o 'host[0-9]*$'`
+    done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
+    while read PORT; do
+      ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
+      PCMD=`cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd`
+      [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
+      [ ${ATTACH} -eq 1 ] && TEXT+="\Z2\Zb"
+      [ ${DUMMY} -eq 1 ] && TEXT+="\Z1"
+      TEXT+="${PORT}\Zn "
+      NUMPORTS=$((${NUMPORTS}+1))
+    done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
+    TEXT+="\n"
+  done
+  TEXT+="\nTotal of ports: ${NUMPORTS}\n"
+  TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected.\n"
+  fi
+  echo -e ${TEXT} > "${SYSINFO_PATH}"
+  TEXT+="\nSysinfo File: \Zb"\\\\${IP}\\arpl\\p1\\sysinfo.yml"\Zn"
+  dialog --backtitle "`backtitle`" --title "Arc Sysinfo" --aspect 18 --colors --msgbox "${TEXT}" 0 0
 }
 
 ###############################################################################
@@ -1639,6 +1628,8 @@ function reset() {
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.misc" "" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
