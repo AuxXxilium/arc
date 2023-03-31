@@ -1,7 +1,7 @@
 # Get SataPortMap for Loader
 function getmap() {
 # Check for Remap usage
-if [ "${REMAP}" -eq 1 ]; then
+if [ "${REMAP}" = "0" ]; then
   # Only load SataPortMap and DiskIdxMap if Sata Controller are loaded
   if [ "${SATACONTROLLER}" -gt 0 ]; then
   SATAPORTMAP=""
