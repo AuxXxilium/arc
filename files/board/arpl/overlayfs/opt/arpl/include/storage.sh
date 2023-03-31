@@ -1,7 +1,7 @@
 # Get SataPortMap for Loader
 function getmap() {
 # Check for Remap usage
-if [ "${REMAP}" = "0" ]; then
+if [ "${REMAP}" -lt 1 ]; then
   # Only load SataPortMap and DiskIdxMap if Sata Controller are loaded
   if [ "${SATACONTROLLER}" -gt 0 ]; then
   SATAPORTMAP=""
@@ -24,6 +24,9 @@ if [ "${REMAP}" = "0" ]; then
     done
   fi
   # Get portmap for remap and config
+  if [ "${SATACONTROLLER}" -gt 1 ]; then
+    writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
   if [ "${SATACONTROLLER}" -gt 0 ] && [ "${SASCONTROLLER}" -gt 0 ]; then
     writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
