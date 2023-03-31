@@ -3,7 +3,9 @@
 set -e
 
 . /opt/arpl/include/functions.sh
+if [ "${REMAP}" != "3" ]; then
 . /opt/arpl/include/storage.sh
+fi
 
 # Sanity check
 loaderIsConfigured || die "Loader is not configured!"

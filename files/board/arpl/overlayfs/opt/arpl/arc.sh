@@ -3,8 +3,8 @@
 . /opt/arpl/include/functions.sh
 . /opt/arpl/include/addons.sh
 . /opt/arpl/include/modules.sh
-. /opt/arpl/include/storage.sh
 . /opt/arpl/include/mods.sh
+. /opt/arpl/include/storage.sh
 
 # Check partition 3 space, if < 2GiB is necessary clean cache folder
 CLEARCACHE=0
@@ -16,6 +16,7 @@ fi
 
 # Get Number of Ethernet Ports
 NETNUM=$(lshw -class network -short | grep -ie "eth[0-9]" | wc -l)
+writeConfigKey "cmdline.netif_num" "${NETNUM}" "${USER_CONFIG_FILE}"
 
 # Get actual IP
 IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
@@ -23,6 +24,8 @@ IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
 # Check for Hypervisor
 if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
   MACHINE="VIRTUAL"
+  # Check for Hypervisor
+  HYPERVISOR=$(lscpu | grep Hypervisor | awk '{print $3}')
 else
   MACHINE="NATIVE"
 fi
@@ -183,7 +186,9 @@ function arcbuild() {
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   # If Build isn't set - use latest
-  [ -n "BUILD" ] && BUILD=${BUILDNUMBER}
+  if [ "$BUILD" != "$BUILDNUMBER" ]; then
+  BUILD=${BUILDNUMBER}
+  fi
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   DT="`readModelKey "${MODEL}" "dt"`"
   while true; do
@@ -272,32 +277,27 @@ function arcbuild() {
       while IFS=': ' read KEY VALUE; do
         [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
       done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
-      sleep 3
+      dialog --backtitle "`backtitle`" --title "Modules selected" \
+        --infobox "${USERMODULES}" 0 0
+      sleep 2
       rm -f "$MODULE_ALIAS_FILE"
       rm -rf "${TMP_PATH}/modules"
       break
     fi
   done
-  dialog --backtitle "`backtitle`" --title "Modules selected" \
-    --infobox "${USERMODULES}" 0 0
   # Remove old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Model Configuration successfull!" 0 0
-  sleep 3
-  arcnet
+  sleep 2
+  arcnetdisk
 }
 
 
 ###############################################################################
-# Make Network Config
-function arcnet() {
-  # Hardlimit to 4 Mac because of Redpill doesn't more at this time
-  if [ "$NETNUM" -gt "4" ]; then
-  NETNUM=4
-  fi
-  writeConfigKey "cmdline.netif_num"              "${NETNUM}" "${USER_CONFIG_FILE}"
+# Make Network and Disk Config
+function arcnetdisk() {
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   # Delete old Mac Address from Userconfig
   #deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
@@ -308,11 +308,13 @@ function arcnet() {
   MAC2="`readModelKey "${MODEL}" "mac2"`"
   MAC3="`readModelKey "${MODEL}" "mac3"`"
   MAC4="`readModelKey "${MODEL}" "mac4"`"
+  dialog --backtitle "`backtitle`" \
+    --title "Arc Network" --infobox " ${NETNUM} Adapter dedected" 0 0
   if [ "${ARCPATCH}" = "1" ]; then 
     # Install with Arc Patch - Check for model config and set custom Mac Address
     while true; do
       dialog --clear --backtitle "`backtitle`" \
-        --menu "Choose MAC for first NIC" 0 0 0 \
+        --menu "Network: MAC for 1. NIC" 0 0 0 \
         1 "Set MAC for all NIC" \
         2 "Use MAC1: ${MAC1}" \
         3 "Use MAC2: ${MAC2}" \
@@ -361,8 +363,8 @@ function arcnet() {
       fi
     done
     dialog --backtitle "`backtitle`" \
-      --title "Arc Config" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
-    sleep 3
+      --title "Arc Network" --infobox "Set MAC for first NIC" 0 0
+    sleep 2
   elif [ "${ARCPATCH}" = "0" ]; then
     # Install without Arc Patch - Set Hardware Mac Address
       MAC1="`readConfigKey "original-mac" "${USER_CONFIG_FILE}"`"
@@ -382,7 +384,7 @@ function arcnet() {
       writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
     fi
     dialog --backtitle "`backtitle`" \
-      --title "Arc Config" --infobox "Set MAC for ${NETNUM} Adapter" 0 0
+      --title "Arc Network" --infobox "Set MAC for all NIC" 0 0
     sleep 2
   fi
   while true; do
@@ -408,11 +410,16 @@ function arcnet() {
       /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
         --title "Restart DHCP" --progressbox "Renewing IP" 20 70
       sleep 5
-      IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
+      IP=`ip route get 1.1.1.1 2>/dev/eth0 | awk '{print$7}'`
       sleep 2
       break
     fi
   done
+  # Get Diskmap for DSM
+  writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
+  getmap
+  dialog --backtitle "`backtitle`" --title "Arc Disks" \
+    --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Configuration successfull!" 0 0
@@ -1528,6 +1535,9 @@ function sysinfo() {
   # Print System Informations
   TEXT+="\n\Z4System:\Zn"
   TEXT+="\nTyp: \Zb"${MACHINE}"\Zn"
+  if [ "$MACHINE" = "VIRTUAL" ]; then
+  TEXT+="\nHypervisor: \Zb"${HYPERVISOR}"\Zn"
+  fi
   TEXT+="\nVendor: \Zb"${VENDOR}"\Zn"
   TEXT+="\nCPU: \Zb"${CPUINFO}"\Zn"
   TEXT+="\nRAM: \Zb"${MEMINFO}"GB\Zn\n"
@@ -1559,7 +1569,7 @@ function sysinfo() {
   TEXT+="\nSataPortMap: \Zb"${PORTMAP}"\Zn"
   TEXT+="\nAddons loaded: \Zb"${ADDONSINFO}"\Zn"
   TEXT+="\nModules loaded: \Zb"${MODULESINFO}"\Zn\n"
-  # Check for Raid/SCSI // 104=RAID // 106=SATA // 107=HBA/SCSI
+  # Check for Controller // 104=RAID // 106=SATA // 107=SAS
   TEXT+="\n\Z4Storage:\Zn"
   # Get Information for Sata Controller
   if [ "$SATACONTROLLER" -gt "0" ]; then
@@ -1572,15 +1582,26 @@ function sysinfo() {
     TEXT+="\Z1Drives\Zn detected:\n\Zb"${SATADRIVES}"\Zn\n"
   done
   fi
-  # Get Information for Raid/SCSI Controller
+  # Get Information for SCSI Controller
   if [ "$SCSICONTROLLER" -gt "0" ]; then
-  for PCI in `lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
+  for PCI in `lspci -nnk | grep -ie "\[0104\]" | awk '{print$1}'`; do
     # Get Name of Controller
     NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
     # Get Amount of Drives connected
-    RAIDDRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
+    SCSIDRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
     TEXT+="\n\Z1SCSI/RAID Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
-    TEXT+="\Z1Drives\Zn detected:\n\Zb"${RAIDDRIVES}"\Zn\n"
+    TEXT+="\Z1Drives\Zn detected:\n\Zb"${SCSIDRIVES}"\Zn\n"
+  done
+  fi
+  # Get Information for SAS Controller
+  if [ "$SASCONTROLLER" -gt "0" ]; then
+  for PCI in `lspci -nnk | -ie "\[0107\]" | awk '{print$1}'`; do
+    # Get Name of Controller
+    NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+    # Get Amount of Drives connected
+    SASDRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
+    TEXT+="\n\Z1SAS Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
+    TEXT+="\Z1Drives\Zn detected:\n\Zb"${SASDRIVES}"\Zn\n"
   done
   fi
   if [ "$SATACONTROLLER" -gt "0" ]; then
