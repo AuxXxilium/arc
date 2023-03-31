@@ -77,7 +77,7 @@ jobs:
       - name: Clone buildroot
         if: steps.br-cache.outputs.cache-hit != 'true'
         run: |
-          git clone --single-branch -b 2022.02.8 https://github.com/buildroot/buildroot.git .buildroot
+          git clone --single-branch -b 2022.02.11 https://github.com/buildroot/buildroot.git .buildroot
           # Copy files
           echo "Copying files"
           cp -Ru files/* .buildroot
