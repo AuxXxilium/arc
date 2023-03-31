@@ -24,12 +24,15 @@ if [ "${REMAP}" -eq 1 ]; then
     done
   fi
   # Get portmap for remap and config
-  if [ "${SATAPORTMAP}" -lt 11 ]; then
-    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-  else
+  if [ "${SATACONTROLLER}" -gt 0 ] && [ "${SASCONTROLLER}" -gt 0 ]; then
     writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
+  elif [ "${SATACONTROLLER}" -gt 0 ] && [ "${SCSICONTROLLER}" -gt 0 ]; then
+    writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
+  else
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
   fi
 fi
 }
