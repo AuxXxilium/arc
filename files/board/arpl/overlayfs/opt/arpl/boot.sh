@@ -65,10 +65,6 @@ CMDLINE['vid']="${VID}"
 CMDLINE['pid']="${PID}"
 CMDLINE['sn']="${SN}"
 
-if [ "${REMAP}" != "3" ]; then
-. /opt/arpl/include/storage.sh
-fi
-
 # Read cmdline
 while IFS=': ' read KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
