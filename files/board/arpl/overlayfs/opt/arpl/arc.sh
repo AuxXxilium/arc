@@ -418,8 +418,10 @@ function arcnetdisk() {
   # Get Diskmap for DSM
   writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
   getmap
+  if [ "${SATAPORTMAP}" -gt 10 ]; then
   dialog --backtitle "`backtitle`" --title "Arc Disks" \
     --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
+  fi
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Configuration successfull!" 0 0

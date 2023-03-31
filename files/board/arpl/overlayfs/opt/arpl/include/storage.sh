@@ -2,7 +2,7 @@
 function getmap() {
 # Check for Remap usage
 REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
-if [ "${REMAP}" != "1" ]; then
+if [ "${REMAP}" -eq 1 ]; then
   # Only load SataPortMap and DiskIdxMap if Sata Controller are loaded
   if [ "${SATACONTROLLER}" -gt 0 ]; then
   SATAPORTMAP=""
