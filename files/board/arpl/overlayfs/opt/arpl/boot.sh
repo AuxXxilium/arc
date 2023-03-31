@@ -48,6 +48,7 @@ PID="`readConfigKey "pid" "${USER_CONFIG_FILE}"`"
 MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
 BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
+REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
 
 echo -e "Model: \033[1;36m${MODEL}\033[0m"
 echo -e "Build: \033[1;36m${BUILD}\033[0m"
