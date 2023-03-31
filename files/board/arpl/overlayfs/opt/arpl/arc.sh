@@ -1595,7 +1595,7 @@ function sysinfo() {
   fi
   # Get Information for SAS Controller
   if [ "$SASCONTROLLER" -gt "0" ]; then
-  for PCI in `lspci -nnk | -ie "\[0107\]" | awk '{print$1}'`; do
+  for PCI in `lspci -nnk | grep -ie "\[0107\]" | awk '{print$1}'`; do
     # Get Name of Controller
     NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
     # Get Amount of Drives connected
