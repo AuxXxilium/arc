@@ -1560,6 +1560,60 @@ function updateMenu() {
 }
 
 ###############################################################################
+# Show Storagemenu to user
+function storageMenu() {
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  # Only load getmap when Sata Controller are dedected
+if [ "${SATACONTROLLER}" -gt 0 ]; then
+  # Ask for Storage Map
+  while true; do
+    dialog --clear --backtitle "`backtitle`" \
+      --menu "Sata Portmap or Remap?" 0 0 0 \
+      1 "Use Portmap for Disks" \
+      2 "Use Remap for Disks" \
+      3 "Set own Map in Userconfig" \
+    2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    resp=$(<${TMP_PATH}/resp)
+    [ -z "${resp}" ] && return
+    if [ "${resp}" = "1" ]; then
+      dialog --backtitle "`backtitle`" --title "Arc Disks" \
+        --infobox "Use Portmap for Sata Controller" 0 0
+      writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
+      sleep 2
+      break
+    elif [ "${resp}" = "2" ]; then
+      dialog --backtitle "`backtitle`" --title "Arc Disks" \
+        --infobox "Use Remap for Sata Controller" 0 0
+      writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
+      sleep 2
+      break
+    elif [ "${resp}" = "3" ]; then
+      dialog --backtitle "`backtitle`" --title "Arc Disks" \
+        --infobox "Set own Map for Sata Controller" 0 0
+      writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
+      sleep 2
+      break
+    fi
+  done
+  # Get Diskmap for DSM
+  REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
+  getmap
+  # Show Map to User
+  if [ "${REMAP}" == "0" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+      --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
+  fi
+  if [ "${REMAP}" == "1" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+      --msgbox "Sata_Remap: ${SATAREMAP}" 0 0
+  fi
+  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+  BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+fi
+}
+
+###############################################################################
 # Shows Systeminfo to user
 function sysinfo() {
   # Delete old Sysinfo
@@ -1800,36 +1854,39 @@ while true; do
   echo "= \"\Z4========== Main ========== \Zn\" "                                            > "${TMP_PATH}/menu"
   echo "1 \"Choose Model for Arc Loader \" "                                                >> "${TMP_PATH}/menu"
   if [ -n "${CONFDONE}" ]; then
-      echo "4 \"Build Arc Loader \" "                                                       >> "${TMP_PATH}/menu"
+    echo "4 \"Build Arc Loader \" "                                                         >> "${TMP_PATH}/menu"
   fi
   if [ -n "${BUILDDONE}" ]; then
-  echo "5 \"Boot Arc Loader \" "                                                            >> "${TMP_PATH}/menu"
+    echo "5 \"Boot Arc Loader \" "                                                          >> "${TMP_PATH}/menu"
   fi
   echo "= \"\Z4========== Info ========== \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "a \"Sysinfo \" "                                                                    >> "${TMP_PATH}/menu"
   if [ -n "${CONFDONE}" ]; then
-  echo "= \"\Z4========= System ========= \Zn\" "                                           >> "${TMP_PATH}/menu"
-  echo "2 \"Addons \" "                                                                     >> "${TMP_PATH}/menu"
-  echo "3 \"Modules \" "                                                                    >> "${TMP_PATH}/menu"
-  if [ -n "${ADV}" ]; then
-  echo "x \"\Z1Hide Advanced Options \Zn\" "                                                >> "${TMP_PATH}/menu"
-  else
-  echo "x \"\Z1Show Advanced Options \Zn\" "                                                >> "${TMP_PATH}/menu"
-  fi
-  if [ -n "${ADV}" ]; then
-  echo "f \"Cmdline \" "                                                                    >> "${TMP_PATH}/menu"
-  echo "g \"Synoinfo \" "                                                                   >> "${TMP_PATH}/menu"
-  echo "h \"Edit User Config \" "                                                           >> "${TMP_PATH}/menu"
-  echo "r \"Reset User Config \" "                                                          >> "${TMP_PATH}/menu"
-  echo "i \"DSM Recovery \" "                                                               >> "${TMP_PATH}/menu"
-  echo "j \"Switch LKM version: \Z4${LKM}\Zn\" "                                            >> "${TMP_PATH}/menu"
-  echo "k \"Switch direct boot: \Z4${DIRECTBOOT}\Zn \" "                                    >> "${TMP_PATH}/menu"
-  fi
+    echo "= \"\Z4========= System ========= \Zn\" "                                         >> "${TMP_PATH}/menu"
+    echo "2 \"Addons \" "                                                                   >> "${TMP_PATH}/menu"
+    echo "3 \"Modules \" "                                                                  >> "${TMP_PATH}/menu"
+    if [ "${SATACONTROLLER}" -gt 0 ]; then
+      echo "s \"Change Storage Map \" "                                                     >> "${TMP_PATH}/menu"
+    fi
+    if [ -n "${ADV}" ]; then
+      echo "x \"\Z1Hide Advanced Options \Zn\" "                                            >> "${TMP_PATH}/menu"
+    else
+      echo "x \"\Z1Show Advanced Options \Zn\" "                                            >> "${TMP_PATH}/menu"
+    fi
+    if [ -n "${ADV}" ]; then
+      echo "f \"Cmdline \" "                                                                >> "${TMP_PATH}/menu"
+      echo "g \"Synoinfo \" "                                                               >> "${TMP_PATH}/menu"
+      echo "h \"Edit User Config \" "                                                       >> "${TMP_PATH}/menu"
+      echo "r \"Reset User Config \" "                                                      >> "${TMP_PATH}/menu"
+      echo "i \"DSM Recovery \" "                                                           >> "${TMP_PATH}/menu"
+      echo "j \"Switch LKM version: \Z4${LKM}\Zn\" "                                        >> "${TMP_PATH}/menu"
+      echo "k \"Switch direct boot: \Z4${DIRECTBOOT}\Zn \" "                                >> "${TMP_PATH}/menu"
+    fi
   fi
   echo "= \"\Z4===== Loader Settings ==== \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "c \"Choose a keymap \" "                                                            >> "${TMP_PATH}/menu"
   if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
-  echo "d \"Clean disk cache \""                                                            >> "${TMP_PATH}/menu"
+    echo "d \"Clean disk cache \""                                                          >> "${TMP_PATH}/menu"
   fi
   echo "t \"Backup Menu \" "                                                                >> "${TMP_PATH}/menu"
   echo "e \"Update Menu \" "                                                                >> "${TMP_PATH}/menu"
@@ -1845,6 +1902,7 @@ while true; do
     a) sysinfo; NEXT="a" ;;
     2) addonMenu; NEXT="2" ;;
     3) selectModules; NEXT="3" ;;
+    s) storageMenu; NEXT="s" ;;
     n) reset; NEXT="1" ;;
     x) [ "${ADV}" = "" ] && ADV='1' || ADV=''
        ARV="${ADV}"
