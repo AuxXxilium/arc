@@ -387,27 +387,28 @@ function arcnetdisk() {
       --title "Arc Network" --infobox "Set MAC for all NIC" 0 0
     sleep 2
   fi
+  # Ask for IP rebind
   while true; do
     dialog --clear --backtitle "`backtitle`" \
       --menu "Restart DHCP?" 0 0 0 \
-      1 "Yes - assign new IP now" \
-      2 "No - assign IP on Boot" \
+      1 "No - Get new IP on Boot" \
+      2 "Yes - Get new IP now" \
     2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
-    if [ "${resp}" = "2" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Config" \
+    if [ "${resp}" = "1" ]; then
+      dialog --backtitle "`backtitle`" --title "Arc Network" \
         --infobox "IP/MAC will be changed on first boot!" 0 0
       sleep 2
       break
-    elif [ "${resp}" = "1" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Config" \
+    elif [ "${resp}" = "2" ]; then
+      dialog --backtitle "`backtitle`" --title "Arc Network" \
         --infobox "IP/MAC will be changed now!" 0 0
         MAC1="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
         MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
         ip link set dev eth0 address ${MACN1} 2>&1
-      /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
+        /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
         --title "Restart DHCP" --progressbox "Renewing IP" 20 70
       sleep 5
       IP=`ip route get 1.1.1.1 2>/dev/eth0 | awk '{print$7}'`
@@ -415,20 +416,59 @@ function arcnetdisk() {
       break
     fi
   done
-  # Get Diskmap for DSM
-  writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
-  REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
-  getmap
-  if [ -n "${SATAPORTMAP}" ]; then
-  dialog --backtitle "`backtitle`" --title "Arc Disks" \
-    --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
+  # Ask for Storage Map
+  if [ "${SATACONTROLLER}" -gt 0 ]; then
+    while true; do
+      dialog --clear --backtitle "`backtitle`" \
+        --menu "Sata Portmap or Remap?" 0 0 0 \
+        1 "Use Portmap for Disks" \
+        2 "Use Remap for Disks" \
+        3 "Set own Map in Userconfig" \
+      2>${TMP_PATH}/resp
+      [ $? -ne 0 ] && return
+      resp=$(<${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return
+      if [ "${resp}" = "1" ]; then
+        dialog --backtitle "`backtitle`" --title "Arc Disks" \
+          --infobox "Use Portmap for Sata Controller" 0 0
+        writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
+        sleep 2
+        break
+      elif [ "${resp}" = "2" ]; then
+        dialog --backtitle "`backtitle`" --title "Arc Disks" \
+          --infobox "Use Remap for Sata Controller" 0 0
+        writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
+        sleep 2
+        break
+      elif [ "${resp}" = "3" ]; then
+        dialog --backtitle "`backtitle`" --title "Arc Disks" \
+          --infobox "Set own Map for Sata Controller" 0 0
+        writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
+        sleep 2
+        break
+      fi
+    done
+    # Get Diskmap for DSM
+    REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
+    getmap
+    # Show Map to User
+    if [ "${REMAP}" == "0" ]; then
+      dialog --backtitle "`backtitle`" --title "Arc Disks" \
+        --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
+    fi
+    if [ "${REMAP}" == "1" ]; then
+      dialog --backtitle "`backtitle`" --title "Arc Disks" \
+        --msgbox "Sata_Remap: ${SATAREMAP}" 0 0
+    fi
   fi
+  # Config is done
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Configuration successfull!" 0 0
   sleep 1
   DIRTY=1
   CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+  # Ask for Build
   while true; do
     dialog --clear --backtitle "`backtitle`" \
       --menu "Build now?" 0 0 0 \
@@ -492,8 +532,10 @@ function make() {
     --infobox "Build successfull! You can boot now." 0 0
   sleep 2
   DIRTY=0
+  # Build is done
   writeConfigKey "builddone" "1" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+  # Ask for Boot
   while true; do
     dialog --clear --backtitle "`backtitle`" \
       --menu "Boot now?" 0 0 0 \
@@ -1527,7 +1569,12 @@ function sysinfo() {
   VENDOR=$(dmidecode -s system-product-name)
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
+  REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
+  if [ "${REMAP}" == "0" ]; then
   PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
+  elif [ "${REMAP}" == "1" ]; then
+  PORTMAP="`readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"`"
+  fi
   CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
   BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
   ARCPATCH="`readConfigKey "arcpatch" "${USER_CONFIG_FILE}"`"
@@ -1569,7 +1616,13 @@ function sysinfo() {
   TEXT+="\nLKM: \Zb"${LKM}"\Zn"
   TEXT+="\nNetwork: \Zb"${NETNUM}" Adapter\Zn"
   TEXT+="\nIP: \Zb"${IP}"\Zn"
+  if [ "${REMAP}" == "0" ]; then
   TEXT+="\nSataPortMap: \Zb"${PORTMAP}"\Zn"
+  elif [ "${REMAP}" == "1" ]; then
+  TEXT+="\nSataRemap: \Zb"${PORTMAP}"\Zn"
+  elif [ "${REMAP}" == "2" ]; then
+  TEXT+="\nPortMap: \Zb"Set by User"\Zn"
+  fi
   TEXT+="\nAddons loaded: \Zb"${ADDONSINFO}"\Zn"
   TEXT+="\nModules loaded: \Zb"${MODULESINFO}"\Zn\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
