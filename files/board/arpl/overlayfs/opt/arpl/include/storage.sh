@@ -59,8 +59,11 @@ function getmap() {
       if [ $line != $newdrive ]; then
         echo -n "$line>$lastdrive:" >> "${TMP_PATH}/remap"
         lastdrive=`expr $lastdrive + 1`
+        if [ $line == $newdrive ]; then
+          lastdrive=`expr $line + 1`
+        fi
       fi
-      newdrive=`expr $newdrive + 1`
+      newdrive=`expr $lastdrive + 1`
     done < <(cat "${TMP_PATH}/ports")
     SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
   fi
