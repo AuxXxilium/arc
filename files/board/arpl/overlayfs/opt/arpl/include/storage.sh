@@ -34,7 +34,8 @@ function getmap() {
       echo -n "0>$MAXDISKSN:" >> "${TMP_PATH}/remap"
     fi
     NUMPORTS=0
-    preline=0
+    newline=0
+    lastline=0
     for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}'`; do
       NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
       DRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
@@ -55,10 +56,11 @@ function getmap() {
       done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
     done
     while read line; do
-      if [ $line != $preline ]; then
-        echo -n "$line>$preline:" >> "${TMP_PATH}/remap"
+      if [ $line != $newline ]; then
+        echo -n "$line>$lastline:" >> "${TMP_PATH}/remap"
+        lastline=`expr $lastline + 1`
       fi
-      preline=`expr $preline + 1`
+      newline=`expr $newline + 1`
     done < <(cat "${TMP_PATH}/ports")
     SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
   fi
