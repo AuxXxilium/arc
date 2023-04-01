@@ -2,71 +2,65 @@
 function getmap() {
   # Check for Remap usage
   if [ "${REMAP}" == "0" ]; then
-    # Only load SataPortMap and DiskIdxMap if Sata Controller are loaded
-    if [ "${SATACONTROLLER}" -gt 0 ]; then
-      SATAPORTMAP=""
-      let DISKIDXMAPIDX=0
-      DISKIDXMAP=""
-      # Get Number of Drives per Controller
-      pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
-      [ ! -z "$pcis" ]
-      # loop through controllers
-      for pci in $pcis; do
-        # get attached block devices (exclude CD-ROMs)
-        DRIVES=$(ls -la /sys/block | fgrep "${pci}" | grep -v "sr.$" | wc -l)
-        if [ "${DRIVES}" -gt 8 ]; then
-          DRIVES=8
-          WARNON=1
-        fi
-        SATAPORTMAP=$SATAPORTMAP$DRIVES
-        DISKIDXMAP=$DISKIDXMAP$(printf "%02x" $DISKIDXMAPIDX)
-        let DISKIDXMAPIDX=$DISKIDXMAPIDX+$DRIVES
-      done
-    fi
+    SATAPORTMAP=""
+    let DISKIDXMAPIDX=0
+    DISKIDXMAP=""
+    # Get Number of Drives per Controller
+    pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
+    [ ! -z "$pcis" ]
+    # loop through controllers
+    for pci in $pcis; do
+      # get attached block devices (exclude CD-ROMs)
+      DRIVES=$(ls -la /sys/block | fgrep "${pci}" | grep -v "sr.$" | wc -l)
+      if [ "${DRIVES}" -gt 8 ]; then
+        DRIVES=8
+        WARNON=1
+      fi
+      SATAPORTMAP=$SATAPORTMAP$DRIVES
+      DISKIDXMAP=$DISKIDXMAP$(printf "%02x" $DISKIDXMAPIDX)
+      let DISKIDXMAPIDX=$DISKIDXMAPIDX+$DRIVES
+    done
   fi
   if [ "${REMAP}" == "1" ]; then
-    # Only load SataPortMap and DiskIdxMap if Sata Controller are loaded
-    if [ "${SATACONTROLLER}" -gt 0 ]; then
-      # Clean old files
-      rm -f "${TMP_PATH}/ports"
-      touch "${TMP_PATH}ports"
-      rm -f "${TMP_PATH}/remap"
-      touch "${TMP_PATH}remap"
-      # Check for VMware
-      if [ "$HYPERVISOR" = "VMware" ]; then
-        MAXDISKS="`readModelKey "${MODEL}" "disks"`"
-        MAXDISKSN=`expr $MAXDISKS + 1`
-        echo -n "0>$MAXDISKSN:" >> "${TMP_PATH}/remap"
-      fi
-      NUMPORTS=0
-      preline=0
-      for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}'`; do
-        NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
-        DRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
-        unset HOSTPORTS
-        declare -A HOSTPORTS
-        while read LINE; do
-          ATAPORT="`echo ${LINE} | grep -o 'ata[0-9]*'`"
-          PORT=`echo ${ATAPORT} | sed 's/ata//'`
-          HOSTPORTS[${PORT}]=`echo ${LINE} | grep -o 'host[0-9]*$'`
-        done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
-        while read PORT; do
-          ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
-          PCMD=`cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd`
-          [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
-          [ ${ATTACH} -eq 1 ] && echo "`expr ${PORT} - 1`" >> "${TMP_PATH}/ports"
-          [ ${DUMMY} -eq 1 ]
-          NUMPORTS=$((${NUMPORTS}+1))
-        done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
-      done
-      while read line; do
-        if [ $line != $preline ]; then
-          echo -n "$line>$preline:" >> "${TMP_PATH}/remap"
-        fi
-        preline=`expr $preline + 1`
-      done < <(cat "${TMP_PATH}/ports")
-      SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
+    # Clean old files
+    rm -f "${TMP_PATH}/ports"
+    touch "${TMP_PATH}ports"
+    rm -f "${TMP_PATH}/remap"
+    touch "${TMP_PATH}remap"
+    # Check for VMware
+    if [ "$HYPERVISOR" = "VMware" ]; then
+      MAXDISKS="`readModelKey "${MODEL}" "disks"`"
+      MAXDISKSN=`expr $MAXDISKS + 1`
+      echo -n "0>$MAXDISKSN:" >> "${TMP_PATH}/remap"
     fi
+    NUMPORTS=0
+    preline=0
+    for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}'`; do
+      NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+      DRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
+      unset HOSTPORTS
+      declare -A HOSTPORTS
+      while read LINE; do
+        ATAPORT="`echo ${LINE} | grep -o 'ata[0-9]*'`"
+        PORT=`echo ${ATAPORT} | sed 's/ata//'`
+        HOSTPORTS[${PORT}]=`echo ${LINE} | grep -o 'host[0-9]*$'`
+      done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
+      while read PORT; do
+        ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
+        PCMD=`cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd`
+        [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
+        [ ${ATTACH} -eq 1 ] && echo "`expr ${PORT} - 1`" >> "${TMP_PATH}/ports"
+        [ ${DUMMY} -eq 1 ]
+        NUMPORTS=$((${NUMPORTS}+1))
+      done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
+    done
+    while read line; do
+      if [ $line != $preline ]; then
+        echo -n "$line>$preline:" >> "${TMP_PATH}/remap"
+      fi
+      preline=`expr $preline + 1`
+    done < <(cat "${TMP_PATH}/ports")
+    SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
   fi
   # Write map for portmap or remap to config
   if [ "${REMAP}" == "0" ]; then

@@ -416,8 +416,9 @@ function arcnetdisk() {
       break
     fi
   done
-  # Ask for Storage Map
+  # Only load getmap when Sata Controller are dedected
   if [ "${SATACONTROLLER}" -gt 0 ]; then
+    # Ask for Storage Map
     while true; do
       dialog --clear --backtitle "`backtitle`" \
         --menu "Sata Portmap or Remap?" 0 0 0 \
