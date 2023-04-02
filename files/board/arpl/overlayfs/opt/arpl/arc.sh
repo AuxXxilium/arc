@@ -418,49 +418,40 @@ function arcnetdisk() {
   done
   # Only load getmap when Sata Controller are dedected
   if [ "${SATACONTROLLER}" -gt 0 ]; then
-    # Ask for Storage Map
-    while true; do
-      dialog --clear --backtitle "`backtitle`" \
-        --menu "Sata Portmap or Remap?" 0 0 0 \
-        1 "Use Portmap for Disks" \
-        2 "Use Remap for Disks" \
-        3 "Set own Map in Userconfig" \
-      2>${TMP_PATH}/resp
-      [ $? -ne 0 ] && return
-      resp=$(<${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return
-      if [ "${resp}" = "1" ]; then
-        dialog --backtitle "`backtitle`" --title "Arc Disks" \
-          --infobox "Use Portmap for Sata Controller" 0 0
-        writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
-        sleep 2
-        break
-      elif [ "${resp}" = "2" ]; then
-        dialog --backtitle "`backtitle`" --title "Arc Disks" \
-          --infobox "Use Remap for Sata Controller" 0 0
-        writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
-        sleep 2
-        break
-      elif [ "${resp}" = "3" ]; then
-        dialog --backtitle "`backtitle`" --title "Arc Disks" \
-          --infobox "Set own Map for Sata Controller" 0 0
-        writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
-        sleep 2
-        break
-      fi
-    done
-    # Get Diskmap for DSM
-    REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
-    getmap
-    # Show Map to User
-    if [ "${REMAP}" == "0" ]; then
+    # Config for Sata and SCSI/SAS Controller with PortMap to get all drives
+    if [ "${SCSICONTROLLER}" -gt 0 ] || [ "${SASCONTROLLER}" -gt 0 ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
-    fi
-    if [ "${REMAP}" == "1" ]; then
+        --infobox "SAS or SCSI Controller found. We have to use SataPortMap for Controller!" 0 0
+      writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
+      sleep 3
+    # Config for only Sata Controller with Remap to remove blank drives
+    elif [ "${SCSICONTROLLER}" -eq 0 ] && [ "${SASCONTROLLER}" -eq 0 ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --msgbox "Sata_Remap: ${SATAREMAP}" 0 0
+        --infobox "No SAS or SCSI Controller found. We can use SataRemap for Controller!" 0 0
+      writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
+      sleep 3
     fi
+  # Config for SCSI/SAS Controller without a Sata Controller
+  elif [ "${SATACONTROLLER}" -eq 0 ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+    --infobox "No SATA Controller found. We have to use SasIdxMap for Controller!" 0 0
+    writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
+  fi
+  # Get Diskmap for DSM
+  REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
+  getmap
+  # Show Map to User
+  if [ "${REMAP}" == "0" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+      --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
+  fi
+  if [ "${REMAP}" == "1" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+      --msgbox "Sata_Remap: ${SATAREMAP}" 0 0
+  fi
+  if [ "${REMAP}" == "2" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+      --msgbox "SasIdxMap: ${SASIDXMAP}" 0 0
   fi
   # Config is done
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
