@@ -168,13 +168,13 @@ function arcMenu() {
     sleep 5
     exit 1
   fi
-    MODEL=${resp}
-    writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
-    deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
-    deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-    # Delete old files
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-    DIRTY=1
+  MODEL=${resp}
+  writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
+  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
+  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
+  # Delete old files
+  rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+  DIRTY=1
   arcbuild
 }
 
@@ -1564,53 +1564,53 @@ function updateMenu() {
 function storageMenu() {
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   # Only load getmap when Sata Controller are dedected
-if [ "${SATACONTROLLER}" -gt 0 ]; then
-  # Ask for Storage Map
-  while true; do
-    dialog --clear --backtitle "`backtitle`" \
-      --menu "Sata Portmap or Remap?" 0 0 0 \
-      1 "Use Portmap for Disks" \
-      2 "Use Remap for Disks" \
-      3 "Set own Map in Userconfig" \
-    2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
-    resp=$(<${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return
-    if [ "${resp}" = "1" ]; then
+  if [ "${SATACONTROLLER}" -gt 0 ]; then
+    # Ask for Storage Map
+    while true; do
+      dialog --clear --backtitle "`backtitle`" \
+        --menu "Sata Portmap or Remap?" 0 0 0 \
+        1 "Use Portmap for Disks" \
+        2 "Use Remap for Disks" \
+        3 "Set own Map in Userconfig" \
+      2>${TMP_PATH}/resp
+      [ $? -ne 0 ] && return
+      resp=$(<${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return
+      if [ "${resp}" = "1" ]; then
+        dialog --backtitle "`backtitle`" --title "Arc Disks" \
+          --infobox "Use Portmap for Sata Controller" 0 0
+        writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
+        sleep 2
+        break
+      elif [ "${resp}" = "2" ]; then
+        dialog --backtitle "`backtitle`" --title "Arc Disks" \
+          --infobox "Use Remap for Sata Controller" 0 0
+        writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
+        sleep 2
+        break
+      elif [ "${resp}" = "3" ]; then
+        dialog --backtitle "`backtitle`" --title "Arc Disks" \
+          --infobox "Set own Map for Sata Controller" 0 0
+        writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
+        sleep 2
+        break
+      fi
+    done
+    # Get Diskmap for DSM
+    REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
+    getmap
+    # Show Map to User
+    if [ "${REMAP}" == "0" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --infobox "Use Portmap for Sata Controller" 0 0
-      writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
-      sleep 2
-      break
-    elif [ "${resp}" = "2" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --infobox "Use Remap for Sata Controller" 0 0
-      writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
-      sleep 2
-      break
-    elif [ "${resp}" = "3" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --infobox "Set own Map for Sata Controller" 0 0
-      writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
-      sleep 2
-      break
+        --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
     fi
-  done
-  # Get Diskmap for DSM
-  REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
-  getmap
-  # Show Map to User
-  if [ "${REMAP}" == "0" ]; then
-    dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
+    if [ "${REMAP}" == "1" ]; then
+      dialog --backtitle "`backtitle`" --title "Arc Disks" \
+        --msgbox "Sata_Remap: ${SATAREMAP}" 0 0
+    fi
+    writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+    BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
   fi
-  if [ "${REMAP}" == "1" ]; then
-    dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --msgbox "Sata_Remap: ${SATAREMAP}" 0 0
-  fi
-  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
-  BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
-fi
 }
 
 ###############################################################################
@@ -1672,11 +1672,11 @@ function sysinfo() {
   TEXT+="\nNetwork: \Zb"${NETNUM}" Adapter\Zn"
   TEXT+="\nIP: \Zb"${IP}"\Zn"
   if [ "${REMAP}" == "0" ]; then
-  TEXT+="\nSataPortMap: \Zb"${PORTMAP}"\Zn"
+    TEXT+="\nSataPortMap: \Zb"${PORTMAP}"\Zn"
   elif [ "${REMAP}" == "1" ]; then
-  TEXT+="\nSataRemap: \Zb"${PORTMAP}"\Zn"
+    TEXT+="\nSataRemap: \Zb"${PORTMAP}"\Zn"
   elif [ "${REMAP}" == "2" ]; then
-  TEXT+="\nPortMap: \Zb"Set by User"\Zn"
+    TEXT+="\nPortMap: \Zb"Set by User"\Zn"
   fi
   TEXT+="\nAddons loaded: \Zb"${ADDONSINFO}"\Zn"
   TEXT+="\nModules loaded: \Zb"${MODULESINFO}"\Zn\n"
@@ -1716,31 +1716,31 @@ function sysinfo() {
   done
   fi
   if [ "$SATACONTROLLER" -gt "0" ]; then
-  TEXT+="\n\Z4Controller Ports:\Zn\n"
-  NUMPORTS=0
-  for PCI in `lspci -d ::106 | awk '{print$1}'`; do
-    NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
-    TEXT+="\Zb${NAME}\Zn\nPorts: "
-    unset HOSTPORTS
-    declare -A HOSTPORTS
-    while read LINE; do
-      ATAPORT="`echo ${LINE} | grep -o 'ata[0-9]*'`"
-      PORT=`echo ${ATAPORT} | sed 's/ata//'`
-      HOSTPORTS[${PORT}]=`echo ${LINE} | grep -o 'host[0-9]*$'`
-    done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
-    while read PORT; do
-      ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
-      PCMD=`cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd`
-      [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
-      [ ${ATTACH} -eq 1 ] && TEXT+="\Z2\Zb"
-      [ ${DUMMY} -eq 1 ] && TEXT+="\Z1"
-      TEXT+="${PORT}\Zn "
-      NUMPORTS=$((${NUMPORTS}+1))
-    done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
-    TEXT+="\n"
-  done
-  TEXT+="\nTotal of ports: ${NUMPORTS}\n"
-  TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected.\n"
+    TEXT+="\n\Z4Controller Ports:\Zn\n"
+    NUMPORTS=0
+    for PCI in `lspci -d ::106 | awk '{print$1}'`; do
+      NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+      TEXT+="\Zb${NAME}\Zn\nPorts: "
+      unset HOSTPORTS
+      declare -A HOSTPORTS
+      while read LINE; do
+        ATAPORT="`echo ${LINE} | grep -o 'ata[0-9]*'`"
+        PORT=`echo ${ATAPORT} | sed 's/ata//'`
+        HOSTPORTS[${PORT}]=`echo ${LINE} | grep -o 'host[0-9]*$'`
+      done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
+      while read PORT; do
+        ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
+        PCMD=`cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd`
+        [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
+        [ ${ATTACH} -eq 1 ] && TEXT+="\Z2\Zb"
+        [ ${DUMMY} -eq 1 ] && TEXT+="\Z1"
+        TEXT+="${PORT}\Zn "
+        NUMPORTS=$((${NUMPORTS}+1))
+      done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
+      TEXT+="\n"
+    done
+    TEXT+="\nTotal of ports: ${NUMPORTS}\n"
+    TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected.\n"
   fi
   echo -e ${TEXT} > "${SYSINFO_PATH}"
   TEXT+="\nSysinfo File: \Zb"\\\\${IP}\\arpl\\p1\\sysinfo.yml"\Zn"

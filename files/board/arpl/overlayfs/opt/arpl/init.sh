@@ -23,7 +23,7 @@ fi
 
 # Shows title
 clear
-TITLE="Arc Loader v${ARPL_VERSION}"
+TITLE="Arc v${ARPL_VERSION}"
 printf "\033[1;44m%*s\n" $COLUMNS ""
 printf "\033[1;44m%*s\033[A\n" $COLUMNS ""
 printf "\033[1;32m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
