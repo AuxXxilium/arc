@@ -42,6 +42,7 @@ DIRECTBOOT="`readConfigKey "directboot" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
 BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+DT="`readModelKey "${MODEL}" "dt"`"
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -299,6 +300,7 @@ function arcbuild() {
 # Make Network and Disk Config
 function arcnetdisk() {
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  DT="`readModelKey "${MODEL}" "dt"`"
   # Delete old Mac Address from Userconfig
   #deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.mac2" "${USER_CONFIG_FILE}"
@@ -417,8 +419,7 @@ function arcnetdisk() {
     fi
   done
   # Only load getmap when Sata Controller are dedected and no DT Model is selected
-  DT="`readModelKey "${MODEL}" "dt"`"
-  if [ "${SATACONTROLLER}" -gt 0 ] && [ "${DT}" != "true" ] then
+  if [ "${SATACONTROLLER}" -gt 0 ] && [ "${DT}" != "true" ]; then
     # Config for Sata and SCSI/SAS Controller with PortMap to get all drives
     if [ "${SCSICONTROLLER}" -gt 0 ] || [ "${SASCONTROLLER}" -gt 0 ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
@@ -433,26 +434,29 @@ function arcnetdisk() {
       sleep 3
     fi
   # Config for SCSI/SAS Controller without a Sata Controller
-  elif [ "${SATACONTROLLER}" -eq 0 ]; then
+  elif [ "${SATACONTROLLER}" -eq 0 ] && [ "${DT}" != "true" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
     --infobox "No SATA Controller found. We have to use SasIdxMap for Controller!" 0 0
     writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
   fi
   # Get Diskmap for DSM
   REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
+  if [ -n "${REMAP}" ]; then
   getmap
+  fi
   # Show Map to User
   if [ "${REMAP}" == "0" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
-  fi
-  if [ "${REMAP}" == "1" ]; then
+  elif [ "${REMAP}" == "1" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "Sata_Remap: ${SATAREMAP}" 0 0
-  fi
-  if [ "${REMAP}" == "2" ]; then
+  elif [ "${REMAP}" == "2" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "SasIdxMap: ${SASIDXMAP}" 0 0
+  else
+    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+      --msgbox "Device Tree Model selected - We don't need this." 0 0
   fi
   # Config is done
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
@@ -1555,54 +1559,66 @@ function updateMenu() {
 # Show Storagemenu to user
 function storageMenu() {
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  # Only load getmap when Sata Controller are dedected
-  if [ "${SATACONTROLLER}" -gt 0 ]; then
-    # Ask for Storage Map
-    while true; do
-      dialog --clear --backtitle "`backtitle`" \
-        --menu "Sata Portmap or Remap?" 0 0 0 \
-        1 "Use Portmap for Disks" \
-        2 "Use Remap for Disks" \
-        3 "Set own Map in Userconfig" \
-      2>${TMP_PATH}/resp
-      [ $? -ne 0 ] && return
-      resp=$(<${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return
-      if [ "${resp}" = "1" ]; then
-        dialog --backtitle "`backtitle`" --title "Arc Disks" \
-          --infobox "Use Portmap for Sata Controller" 0 0
-        writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
-        sleep 2
-        break
-      elif [ "${resp}" = "2" ]; then
-        dialog --backtitle "`backtitle`" --title "Arc Disks" \
-          --infobox "Use Remap for Sata Controller" 0 0
-        writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
-        sleep 2
-        break
-      elif [ "${resp}" = "3" ]; then
-        dialog --backtitle "`backtitle`" --title "Arc Disks" \
-          --infobox "Set own Map for Sata Controller" 0 0
-        writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
-        sleep 2
-        break
-      fi
-    done
-    # Get Diskmap for DSM
-    REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
-    getmap
-    # Show Map to User
-    if [ "${REMAP}" == "0" ]; then
+  DT="`readModelKey "${MODEL}" "dt"`"
+  # Ask for Storage Map
+  while true; do
+    dialog --clear --backtitle "`backtitle`" \
+      --menu "Storageconfig" 0 0 0 \
+      1 "Use SataPortmap for Disks" \
+      2 "Use SataRemap for Disks" \
+      3 "Use SasIdxMap for Disks" \
+      4 "Set own Map in Userconfig" \
+    2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    resp=$(<${TMP_PATH}/resp)
+    [ -z "${resp}" ] && return
+    if [ "${resp}" = "1" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
-    fi
-    if [ "${REMAP}" == "1" ]; then
+        --infobox "Use Portmap for Sata Controller" 0 0
+      writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
+      sleep 2
+      break
+    elif [ "${resp}" = "2" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --msgbox "Sata_Remap: ${SATAREMAP}" 0 0
+        --infobox "Use Remap for Sata Controller" 0 0
+      writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
+      sleep 2
+      break
+    elif [ "${resp}" = "3" ]; then
+      dialog --backtitle "`backtitle`" --title "Arc Disks" \
+        --infobox "Use SasIdxMap" 0 0
+      writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
+      sleep 2
+      break
+    elif [ "${resp}" = "4" ]; then
+      dialog --backtitle "`backtitle`" --title "Arc Disks" \
+        --infobox "Set own Map for Controller" 0 0
+      writeConfigKey "remap" "3" "${USER_CONFIG_FILE}"
+      sleep 2
+      break
     fi
-    writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
-    BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+  done
+  # Get Diskmap for DSM
+  REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
+  if [ -n "${REMAP}" ]; then
+  getmap
   fi
+  # Show Map to User
+  if [ "${REMAP}" == "0" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+      --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
+  elif [ "${REMAP}" == "1" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+      --msgbox "Sata_Remap: ${SATAREMAP}" 0 0
+  elif [ "${REMAP}" == "2" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+      --msgbox "SasIdxMap: ${SASIDXMAP}" 0 0
+  elif [ "${REMAP}" == "3" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+      --msgbox "Set your own Map in Userconfig" 0 0
+  fi
+  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+  BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
 }
 
 ###############################################################################
@@ -1857,7 +1873,7 @@ while true; do
     echo "= \"\Z4========= System ========= \Zn\" "                                         >> "${TMP_PATH}/menu"
     echo "2 \"Addons \" "                                                                   >> "${TMP_PATH}/menu"
     echo "3 \"Modules \" "                                                                  >> "${TMP_PATH}/menu"
-    if [ "${SATACONTROLLER}" -gt 0 ]; then
+    if [ "${DT}" != "true" ]; then
       echo "s \"Change Storage Map \" "                                                     >> "${TMP_PATH}/menu"
     fi
     if [ -n "${ADV}" ]; then

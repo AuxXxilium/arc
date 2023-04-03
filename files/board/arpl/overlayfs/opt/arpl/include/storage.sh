@@ -92,6 +92,11 @@ function getmap() {
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline.SasIdxMap" "${SASIDXMAP}" "${USER_CONFIG_FILE}"
+  elif [ "${REMAP}" == "3" ]; then
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
   fi
 }
 
