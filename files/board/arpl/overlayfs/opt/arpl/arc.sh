@@ -416,8 +416,9 @@ function arcnetdisk() {
       break
     fi
   done
-  # Only load getmap when Sata Controller are dedected
-  if [ "${SATACONTROLLER}" -gt 0 ]; then
+  # Only load getmap when Sata Controller are dedected and no DT Model is selected
+  DT="`readModelKey "${MODEL}" "dt"`"
+  if [ "${SATACONTROLLER}" -gt 0 ] && [ "${DT}" != "true" ] then
     # Config for Sata and SCSI/SAS Controller with PortMap to get all drives
     if [ "${SCSICONTROLLER}" -gt 0 ] || [ "${SASCONTROLLER}" -gt 0 ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
