@@ -426,11 +426,10 @@ function arcnetdisk() {
       --infobox "SATA Controller found. We have to use SataPortMap for Controller!" 0 0
     writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
     sleep 3
-  # Config for only Sata Controller with Remap to remove blank drives
   elif [ "${SATACONTROLLER}" -eq 0 ] && [ "${DT}" != "true" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
         --infobox "No SATA Controller found. We can use SasIdxMap for Controller!" 0 0
-      writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
+      writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
       sleep 3
   elif [ "${DT}" = "true" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
@@ -1560,10 +1559,9 @@ function storageMenu() {
   while true; do
     dialog --clear --backtitle "`backtitle`" \
       --menu "Storageconfig" 0 0 0 \
-      1 "Use SataPortmap for Disks" \
-      2 "Use SataRemap for Disks" \
-      3 "Use SasIdxMap for Disks" \
-      4 "Set own Map in Userconfig" \
+      1 "Use Portmap for Disks" \
+      2 "Use Remap for Disks" \
+      3 "Set own Map in Userconfig" \
     2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     resp=$(<${TMP_PATH}/resp)
@@ -1578,12 +1576,6 @@ function storageMenu() {
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
         --infobox "Use Remap for Sata Controller" 0 0
       writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
-      sleep 2
-      break
-    elif [ "${resp}" = "3" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --infobox "Use SasIdxMap for Controller" 0 0
-      writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
       sleep 2
       break
     elif [ "${resp}" = "4" ]; then
