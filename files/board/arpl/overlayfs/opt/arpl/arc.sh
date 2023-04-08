@@ -447,9 +447,6 @@ function arcnetdisk() {
   if [ "${REMAP}" == "0" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
-  elif [ "${REMAP}" == "2" ]; then
-    dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --msgbox "SasIdxMap: ${SASIDXMAP}" 0 0
   elif [ "${REMAP}" == "3" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "Device Tree Model selected - We don't need this." 0 0
@@ -1582,7 +1579,7 @@ function storageMenu() {
       break
     elif [ "${resp}" = "3" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --infobox "Use SasIdxMap" 0 0
+        --infobox "Use SasIdxMap for Controller" 0 0
       writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
       sleep 2
       break

@@ -72,7 +72,7 @@ function getmap() {
   SASIDXMAP=0
   # Write map for portmap or remap to config
   if [ "${REMAP}" == "0" ]; then
-    if [ "${SATAPORTMAP}" -lt 11 ]; then
+    if [ "${SATAPORTMAP}" -gt 10 ]; then
     writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
@@ -81,7 +81,7 @@ function getmap() {
     elif [ "${SASCONTROLLER}" -gt 0 ]; then
       writeConfigKey "cmdline.SasIdxMap" "${SASIDXMAP}" "${USER_CONFIG_FILE}"
     fi
-    else
+    elif [ "${SATAPORTMAP}" -lt 11 ]; then
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
