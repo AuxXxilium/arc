@@ -68,14 +68,22 @@ function getmap() {
     done < <(cat "${TMP_PATH}/ports")
     SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
   fi
-  # Config for SCSI/SAS Controller without a Sata Controller
-  if [ "${REMAP}" == "2" ]; then
-    SASIDXMAP=0
-  fi
+  # Config for SCSI/SAS Controller
+  SASIDXMAP=0
   # Write map for portmap or remap to config
   if [ "${REMAP}" == "0" ]; then
+    if [ "${SATAPORTMAP}" -lt 11 ]; then
     writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+    if [ "${SASCONTROLLER}" -eq 0 ]; then
+      deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
+    elif [ "${SASCONTROLLER}" -gt 0 ]; then
+      writeConfigKey "cmdline.SasIdxMap" "${SASIDXMAP}" "${USER_CONFIG_FILE}"
+    fi
+    else
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
     if [ "${SASCONTROLLER}" -eq 0 ]; then
       deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
