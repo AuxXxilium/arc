@@ -173,6 +173,7 @@ function arcMenu() {
   writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
   deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
   deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
+  deleteConfigKey "remap" "${USER_CONFIG_FILE}"
   # Delete old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
@@ -420,24 +421,22 @@ function arcnetdisk() {
   done
   # Only load getmap when Sata Controller are dedected and no DT Model is selected
   if [ "${SATACONTROLLER}" -gt 0 ] && [ "${DT}" != "true" ]; then
-    # Config for Sata and SCSI/SAS Controller with PortMap to get all drives
-    if [ "${SCSICONTROLLER}" -gt 0 ] || [ "${SASCONTROLLER}" -gt 0 ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --infobox "SAS or SCSI Controller found. We have to use SataPortMap for Controller!" 0 0
-      writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
-      sleep 3
-    # Config for only Sata Controller with Remap to remove blank drives
-    elif [ "${SCSICONTROLLER}" -eq 0 ] && [ "${SASCONTROLLER}" -eq 0 ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --infobox "No SAS or SCSI Controller found. We can use SataRemap for Controller!" 0 0
-      writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
-      sleep 3
-    fi
-  # Config for SCSI/SAS Controller without a Sata Controller
-  elif [ "${SATACONTROLLER}" -eq 0 ] && [ "${DT}" != "true" ]; then
+  # Config for Sata Controller with PortMap to get all drives
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
-    --infobox "No SATA Controller found. We have to use SasIdxMap for Controller!" 0 0
-    writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
+      --infobox "SATA Controller found. We have to use SataPortMap for Controller!" 0 0
+    writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
+    sleep 3
+  # Config for only Sata Controller with Remap to remove blank drives
+  elif [ "${SATACONTROLLER}" -eq 0 ] && [ "${DT}" != "true" ]; then
+      dialog --backtitle "`backtitle`" --title "Arc Disks" \
+        --infobox "No SATA Controller found. We can use SasIdxMap for Controller!" 0 0
+      writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
+      sleep 3
+  elif [ "${DT}" = "true" ]; then
+      dialog --backtitle "`backtitle`" --title "Arc Disks" \
+        --infobox "Device Tree Model selected." 0 0
+      writeConfigKey "remap" "3" "${USER_CONFIG_FILE}"
+      sleep 3
   fi
   # Get Diskmap for DSM
   REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
@@ -448,13 +447,10 @@ function arcnetdisk() {
   if [ "${REMAP}" == "0" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
-  elif [ "${REMAP}" == "1" ]; then
-    dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --msgbox "Sata_Remap: ${SATAREMAP}" 0 0
   elif [ "${REMAP}" == "2" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "SasIdxMap: ${SASIDXMAP}" 0 0
-  else
+  elif [ "${REMAP}" == "3" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "Device Tree Model selected - We don't need this." 0 0
   fi
