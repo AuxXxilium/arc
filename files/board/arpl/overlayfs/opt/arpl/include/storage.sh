@@ -1,6 +1,6 @@
 # Get PortMap for Loader
 function getmap() {
-  # Config for Sata and SCSI/SAS Controller with PortMap to get all drives
+  # Config for Sata Controller with PortMap to get all drives
   if [ "${REMAP}" == "0" ]; then
     SATAPORTMAP=""
     let DISKIDXMAPIDX=0
@@ -68,21 +68,43 @@ function getmap() {
     done < <(cat "${TMP_PATH}/ports")
     SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
   fi
-  # Config for SCSI/SAS Controller without a Sata Controller
-  if [ "${REMAP}" == "2" ]; then
-    SASIDXMAP=0
-  fi
+  # Config for SCSI/SAS Controller
+  SASIDXMAP=0
   # Write map for portmap or remap to config
   if [ "${REMAP}" == "0" ]; then
-    writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
-    writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
-    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-    deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
+    if [ "${SATAPORTMAP}" -gt 10 ]; then
+      writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+      writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
+      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+      if [ "${SASCONTROLLER}" -eq 0 ]; then
+        deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
+      elif [ "${SASCONTROLLER}" -gt 0 ]; then
+        writeConfigKey "cmdline.SasIdxMap" "${SASIDXMAP}" "${USER_CONFIG_FILE}"
+      fi
+    elif [ "${SATAPORTMAP}" -lt 11 ] && [ "$HYPERVISOR" = "VMware" ]; then
+      writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+      writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
+      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+      if [ "${SASCONTROLLER}" -eq 0 ]; then
+        deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
+      elif [ "${SASCONTROLLER}" -gt 0 ]; then
+        writeConfigKey "cmdline.SasIdxMap" "${SASIDXMAP}" "${USER_CONFIG_FILE}"
+      fi
+    elif [ "${SATAPORTMAP}" -lt 11 ]; then
+      deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+      deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+      if [ "${SASCONTROLLER}" -eq 0 ]; then
+        deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
+      elif [ "${SASCONTROLLER}" -gt 0 ]; then
+        writeConfigKey "cmdline.SasIdxMap" "${SASIDXMAP}" "${USER_CONFIG_FILE}"
+      fi
+    fi
   elif [ "${REMAP}" == "1" ]; then
     if [ -n "${SATAREMAP}" ]; then
-    writeConfigKey "cmdline.sata_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
+      writeConfigKey "cmdline.sata_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
     else
-    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
     fi
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
