@@ -8,6 +8,7 @@ synoinfo: &synoinfo
   support_led_brightness_adjustment: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
+  support_m2_pool: "yes"
 cmdline: &cmdline
   SMBusHddDynamicPower: 1
   synoboot2:
