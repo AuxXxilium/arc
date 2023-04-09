@@ -60,3 +60,23 @@ builds:
       - "ramdisk-common-init-script.patch"
       - "ramdisk-common-etc-rc.patch"
       - "ramdisk-42951-post-init-script.patch"
+
+  64216:
+    ver: "7.2"
+    kver: "4.4.302"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/beta/7.2/64216/DSM_DS920%2B_64216.pat"
+      hash: "ab7062c0ce130fd3883f1b1e6d85bea33ef92f222a421b18567decfb6d76107e"
+      ramdisk-hash: "b2eb45986497bb3d9efe1748c2bc0f856c029e7f89e8fca03cf559ad4c95c155"
+      zimage-hash: "a793c3adb40b20c257a1c26fb48049bfc2d9e88c599e9f9299754f0efc35f89c"
+      md5-hash: "4e64d8e0f749772a3b772fe344d358dd"
+    patch:
+      - "ramdisk-64216-disable-root-pwd.patch"
+      - "ramdisk-64216-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
