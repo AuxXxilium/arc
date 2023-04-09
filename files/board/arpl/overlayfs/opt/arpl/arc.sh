@@ -1252,16 +1252,12 @@ function backupMenu() {
           fi
           # Copy files to backup
           cp -f ${USER_CONFIG_FILE} ${BACKUPDIR}/user-config.yml
-          cp -f ${MOUNTP3}/bzImage-arpl ${BACKUPDIR}/bzImage-arpl
-          cp -f ${MOUNTP3}/initrd-arpl ${BACKUPDIR}/initrd-arpl
           cp -f ${MOUNTP3}/zImage-dsm ${BACKUPDIR}/zImage-dsm
           cp -f ${MOUNTP3}/initrd-dsm ${BACKUPDIR}/initrd-dsm
           # Compress backup
           tar -cvf ${BACKUPDIR}/arc-backup.tar ${BACKUPDIR}/
           # Clean temp files from backup dir
           rm -f ${BACKUPDIR}/user-config.yml
-          rm -f ${BACKUPDIR}/bzImage-arpl
-          rm -f ${BACKUPDIR}/initrd-arpl
           rm -f ${BACKUPDIR}/zImage-dsm
           rm -f ${BACKUPDIR}/initrd-dsm
           if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
@@ -1280,14 +1276,10 @@ function backupMenu() {
             tar -xvf ${BACKUPDIR}/arc-backup.tar -C /
             # Copy files to locations
             cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
-            cp -f ${BACKUPDIR}/bzImage-arpl ${MOUNTP3}/bzImage-arpl
-            cp -f ${BACKUPDIR}/initrd-arpl ${MOUNTP3}/initrd-arpl
             cp -f ${BACKUPDIR}/zImage-dsm ${MOUNTP3}/zImage-dsm
             cp -f ${BACKUPDIR}/initrd-dsm ${MOUNTP3}/initrd-dsm
             # Clean temp files from backup dir
             rm -f ${BACKUPDIR}/user-config.yml
-            rm -f ${BACKUPDIR}/bzImage-arpl
-            rm -f ${BACKUPDIR}/initrd-arpl
             rm -f ${BACKUPDIR}/zImage-dsm
             rm -f ${BACKUPDIR}/initrd-dsm
             dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
@@ -1335,14 +1327,10 @@ function backupMenu() {
             tar -xvf ${BACKUPDIR}/arc-backup.tar -C /
             # Copy files to locations
             cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
-            cp -f ${BACKUPDIR}/bzImage-arpl ${MOUNTP3}/bzImage-arpl
-            cp -f ${BACKUPDIR}/initrd-arpl ${MOUNTP3}/initrd-arpl
             cp -f ${BACKUPDIR}/zImage-dsm ${MOUNTP3}/zImage-dsm
             cp -f ${BACKUPDIR}/initrd-dsm ${MOUNTP3}/initrd-dsm
             # Clean temp files from backup dir
             rm -f ${BACKUPDIR}/user-config.yml
-            rm -f ${BACKUPDIR}/bzImage-arpl
-            rm -f ${BACKUPDIR}/initrd-arpl
             rm -f ${BACKUPDIR}/zImage-dsm
             rm -f ${BACKUPDIR}/initrd-dsm
             sleep 3
