@@ -18,7 +18,7 @@ URIS["v1000"]="Intel%20x86%20Linux%20|%20%28V1000%29"
 URIS["r1000"]="AMD%20x86%20Linux%20|%20%28r1000%29"
 URIS["epyc7002"]="AMD%20x86%20Linux%20Linux%20|%20%28epyc7002%29"
 PLATFORMS["7.1"]="apollolake:4.4.180 broadwell:4.4.180 broadwellnk:4.4.180 bromolow:3.10.108 denverton:4.4.180 geminilake:4.4.180 v1000:4.4.180 r1000:4.4.180 epyc7002:5.10.55"
-#PLATFORMS["7.2"]="apollolake:4.4.302 broadwell:4.4.302 broadwellnk:4.4.302 bromolow:3.10.108 denverton:4.4.302 geminilake:4.4.302 v1000:4.4.302 r1000:4.4.302 epyc7002:5.10.55"
+PLATFORMS["7.2"]="apollolake:4.4.302 broadwell:4.4.302 broadwellnk:4.4.302 bromolow:3.10.108 denverton:4.4.302 geminilake:4.4.302 v1000:4.4.302 r1000:4.4.302 epyc7002:5.10.55"
 
 mkdir -p ${CACHE_DIR}
 
@@ -109,10 +109,10 @@ docker image rm fbelavenuto/syno-compiler:${TOOLKIT_VER} >/dev/null 2>&1
 docker buildx build . --load --tag fbelavenuto/syno-compiler:${TOOLKIT_VER}
 
 # 7.2
-#TOOLKIT_VER="7.2"
-#TOOLCHAIN_VER="7.2-63134"
-#GCCLIB_VER="gcc1220_glibc236"
-#prepare
-#echo "Building ${TOOLKIT_VER}"
-#docker image rm fbelavenuto/syno-compiler:${TOOLKIT_VER} >/dev/null 2>&1
-#docker buildx build . --load --tag fbelavenuto/syno-compiler:${TOOLKIT_VER} --tag fbelavenuto/syno-compiler:latest
+TOOLKIT_VER="7.2"
+TOOLCHAIN_VER="7.2-63134"
+GCCLIB_VER="gcc1220_glibc236"
+prepare
+echo "Building ${TOOLKIT_VER}"
+docker image rm fbelavenuto/syno-compiler:${TOOLKIT_VER} >/dev/null 2>&1
+docker buildx build . --load --tag fbelavenuto/syno-compiler:${TOOLKIT_VER}
