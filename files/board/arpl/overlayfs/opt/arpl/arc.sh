@@ -183,14 +183,24 @@ function arcMenu() {
 ###############################################################################
 # Shows menu to user type one or generate randomly
 function arcbuild() {
+  # Select Build for DSM
+  ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r`"
+  if [ -z "${1}" ]; then
+    dialog --clear --no-items --backtitle "`backtitle`" \
+      --menu "Choose a build number" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    resp=$(<${TMP_PATH}/resp)
+    [ -z "${resp}" ] && return
+  else
+    if ! arrayExistItem "${1}" ${ITEMS}; then return; fi
+    resp="${1}"
+  fi
+  BUILD=${resp}
+  writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
   # Read model config for buildconfig
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-  # If Build isn't set - use latest
-  if [ "$BUILD" != "$BUILDNUMBER" ]; then
-  BUILD=${BUILDNUMBER}
-  fi
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   DT="`readModelKey "${MODEL}" "dt"`"
   while true; do
