@@ -184,7 +184,7 @@ function arcMenu() {
 # Shows menu to user type one or generate randomly
 function arcbuild() {
   # Select Build for DSM
-  ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r`"
+  ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml"`" #without | sort -r 
   if [ -z "${1}" ]; then
     dialog --clear --no-items --backtitle "`backtitle`" \
       --menu "Choose a build number" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
