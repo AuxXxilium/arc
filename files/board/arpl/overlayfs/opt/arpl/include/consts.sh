@@ -1,6 +1,5 @@
 
 ARPL_VERSION="23.01.01"
-BUILDNUMBER="42962"
 
 # Define paths
 TMP_PATH="/tmp"

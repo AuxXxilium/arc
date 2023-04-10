@@ -55,7 +55,9 @@ function backtitle() {
   fi
     BACKTITLE+=" |"
   if [ -n "${BUILD}" ]; then
-    BACKTITLE+=" ${BUILD}"
+    [ "${BUILD}" = "42962" ] && VER="7.1.1"
+    [ "${BUILD}" = "64216" ] && VER="7.2 Beta"
+    BACKTITLE+=" ${VER}"
   else
     BACKTITLE+=" (no build)"
   fi
@@ -184,19 +186,25 @@ function arcMenu() {
 # Shows menu to user type one or generate randomly
 function arcbuild() {
   # Select Build for DSM
-  ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml"`" #without | sort -r 
-  if [ -z "${1}" ]; then
-    dialog --clear --no-items --backtitle "`backtitle`" \
-      --menu "Choose a build number" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
+  while true; do
+    dialog --clear --backtitle "`backtitle`" \
+      --menu "Choose a DSM Version" 0 0 0 \
+      1 "DSM 7.1.1 (stable)" \
+      2 "DSM 7.2 Beta (experimental)" \
+    2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
-  else
-    if ! arrayExistItem "${1}" ${ITEMS}; then return; fi
-    resp="${1}"
-  fi
-  BUILD=${resp}
-  writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
+    if [ "${resp}" = "1" ]; then
+      BUILD="42962"
+      writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
+      break
+    elif [ "${resp}" = "2" ]; then
+      BUILD="64216"
+      writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
+      break
+    fi
+  done
   # Read model config for buildconfig
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
@@ -212,7 +220,15 @@ function arcbuild() {
     [ $? -ne 0 ] && return
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
-    if [ "${resp}" = "2" ]; then
+    if [ "${resp}" = "1" ]; then
+      ARCPATCH=1
+      SN="`readModelKey "${MODEL}" "arcserial"`"
+      writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arcpatch" "yes" "${USER_CONFIG_FILE}"
+      dialog --backtitle "`backtitle`" --title "Arc Config" \
+            --infobox "Installing with Arc Patch!" 0 0
+      break
+    elif [ "${resp}" = "2" ]; then
       ARCPATCH=0
       # Generate random serial
       SN="`generateSerial "${MODEL}"`"
@@ -220,14 +236,6 @@ function arcbuild() {
       writeConfigKey "arcpatch" "no" "${USER_CONFIG_FILE}"
       dialog --backtitle "`backtitle`" --title "Arc Config" \
       --infobox "Installing without Arc Patch!" 0 0
-      break
-    elif [ "${resp}" = "1" ]; then
-      ARCPATCH=1
-      SN="`readModelKey "${MODEL}" "arcserial"`"
-      writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arcpatch" "yes" "${USER_CONFIG_FILE}"
-      dialog --backtitle "`backtitle`" --title "Arc Config" \
-            --infobox "Installing with Arc Patch!" 0 0
       break
     fi
   done
