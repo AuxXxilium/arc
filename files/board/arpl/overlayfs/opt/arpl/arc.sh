@@ -3,7 +3,6 @@
 . /opt/arpl/include/functions.sh
 . /opt/arpl/include/addons.sh
 . /opt/arpl/include/modules.sh
-. /opt/arpl/include/mods.sh
 . /opt/arpl/include/storage.sh
 
 # Check partition 3 space, if < 2GiB is necessary clean cache folder
@@ -240,10 +239,8 @@ function arcbuild() {
     fi
   done
   dialog --backtitle "`backtitle`" --title "Arc Config" \
-    --infobox "Reconfiguring Synoinfo, Addons" 0 0
-  # Write build number to buildconfig
-  writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
-  # Delete synoinfo and reload model/build synoinfo  
+    --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
+  # Delete synoinfo and reload synoinfo from model and build
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS=': ' read KEY VALUE; do
     writeConfigKey "synoinfo.${KEY}" "${VALUE}" "${USER_CONFIG_FILE}"
@@ -255,56 +252,11 @@ function arcbuild() {
       deleteConfigKey "addons.${ADDON}" "${USER_CONFIG_FILE}"
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  while true; do
-    dialog --clear --backtitle "`backtitle`" \
-      --menu "Choose an option" 0 0 0 \
-      1 "Select all Modules" \
-      2 "Select Modules automated" \
-    2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
-    resp=$(<${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return
-    if [ "${resp}" = "1" ]; then
-      dialog --backtitle "`backtitle`" --title "Modules" \
-          --infobox "Select all Modules" 0 0
-      # Rebuild modules
-      writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-      # Select all modules
-      while read ID DESC; do
-        writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-      done < <(getAllModules "${PLATFORM}" "${KVER}")
-      break
-    elif [ "${resp}" = "2" ]; then
-      dialog --backtitle "`backtitle`" --title "Modules" \
-        --infobox "Select Modules automated" 0 0
-      # Rebuild modules
-      writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-      # Unzip modules for temporary folder
-      mkdir -p "${TMP_PATH}/modules"
-      gzip -dc "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" | tar xf - -C "/tmp/modules"
-      touch "$MODULE_ALIAS_FILE"
-      # Get pci modules from mods.sh
-      getmodules
-      # Write loaded modules to userconfig
-      while read ID DESC; do
-        if [ -f "${TMP_PATH}/modules/${ID}.ko" ]; then
-          if ! grep -q "${ID}" "${USER_CONFIG_FILE}"; then
-            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-          fi
-        fi
-      done < <(kmod list | awk '{print$1}' | awk 'NR>1')
-      # Check loaded modules
-      while IFS=': ' read KEY VALUE; do
-        [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
-      done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
-      dialog --backtitle "`backtitle`" --title "Modules selected" \
-        --infobox "${USERMODULES}" 0 0
-      sleep 2
-      rm -f "$MODULE_ALIAS_FILE"
-      rm -rf "${TMP_PATH}/modules"
-      break
-    fi
-  done
+  # Delete modules and reload all modules for platform
+  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+  while read ID DESC; do
+    writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+  done < <(getAllModules "${PLATFORM}" "${KVER}")
   # Remove old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
@@ -778,7 +730,6 @@ function addonMenu() {
       2 "Delete Addon(s)" \
       3 "Show user Addons" \
       4 "Show all available Addons" \
-      5 "Download a external Addon" \
       0 "Exit" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
@@ -849,30 +800,6 @@ function addonMenu() {
         dialog --backtitle "`backtitle`" --title "Available addons" \
           --colors --msgbox "${MSG}" 0 0
         ;;
-      5)
-        TEXT="please enter the complete URL to download.\n"
-        dialog --backtitle "`backtitle`" --aspect 18 --colors --inputbox "${TEXT}" 0 0 \
-          2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && continue
-        URL="`<"${TMP_PATH}/resp"`"
-        [ -z "${URL}" ] && continue
-        clear
-        echo "Downloading ${URL}"
-        STATUS=`curl --insecure -w "%{http_code}" -L "${URL}" -o "${TMP_PATH}/addon.tgz" --progress-bar`
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-          dialog --backtitle "`backtitle`" --title "Error downloading" --aspect 18 \
-            --msgbox "Check internet, URL or cache disk space" 0 0
-          return 1
-        fi
-        ADDON="`untarAddon "${TMP_PATH}/addon.tgz"`"
-        if [ -n "${ADDON}" ]; then
-          dialog --backtitle "`backtitle`" --title "Success" --aspect 18 \
-            --msgbox "Addon '${ADDON}' added to loader" 0 0
-        else
-          dialog --backtitle "`backtitle`" --title "Invalid addon" --aspect 18 \
-            --msgbox "File format not recognized!" 0 0
-        fi
-        ;;
       0) return ;;
     esac
   done
@@ -900,8 +827,7 @@ function selectModules() {
       1 "Show selected Modules" \
       2 "Select all Modules" \
       3 "Deselect all Modules" \
-      4 "Automated Modules selection" \
-      5 "Choose Modules to include" \
+      4 "Choose Modules to include" \
       0 "Exit" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break
@@ -933,37 +859,6 @@ function selectModules() {
         declare -A USERMODULES
         ;;
       4)
-        dialog --backtitle "`backtitle`" --title "Modules" \
-           --infobox "Automated modules selection" 0 0
-        unset USERMODULES
-        declare -A USERMODULES
-        # Rebuild modules
-        writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-        # Unzip modules for temporary folder
-        mkdir -p "/tmp/modules"
-        gzip -dc "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" | tar xf - -C "/tmp/modules"
-        touch $MODULE_ALIAS_FILE
-        # Get pci modules from mods.sh
-        getmodules
-        # Write loaded modules to userconfig
-        while read ID DESC; do
-          if [ -f "${TMP_PATH}/modules/${ID}.ko" ]; then
-            if ! grep -q "${ID}" "${USER_CONFIG_FILE}"; then
-              writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-            fi
-          fi
-        done < <(kmod list | awk '{print$1}' | awk 'NR>1')
-        # Check loaded modules
-        while IFS=': ' read KEY VALUE; do
-          [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
-        done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
-        dialog --backtitle "`backtitle`" --title "Modules selected" \
-           --infobox "${USERMODULES}" 0 0
-        sleep 5
-        rm -rf "${TMP_PATH}/modules"
-        rm -f $MODULE_ALIAS_FILE
-        ;;
-      5)
         rm -f "${TMP_PATH}/opts"
         while read ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
@@ -1003,10 +898,9 @@ function cmdlineMenu() {
   done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
   echo "1 \"Add/edit a Cmdline item\""                          > "${TMP_PATH}/menu"
   echo "2 \"Delete Cmdline item(s)\""                           >> "${TMP_PATH}/menu"
-  echo "3 \"Define a custom SataPortMap\""                      >> "${TMP_PATH}/menu"
-  echo "4 \"Define a custom MAC\""                              >> "${TMP_PATH}/menu"
-  echo "5 \"Show user Cmdline\""                                >> "${TMP_PATH}/menu"
-  echo "6 \"Show Model/Build Cmdline\""                         >> "${TMP_PATH}/menu"
+  echo "3 \"Define a custom MAC\""                              >> "${TMP_PATH}/menu"
+  echo "4 \"Show user Cmdline\""                                >> "${TMP_PATH}/menu"
+  echo "5 \"Show Model/Build Cmdline\""                         >> "${TMP_PATH}/menu"
   echo "0 \"Exit\""                                             >> "${TMP_PATH}/menu"
   # Loop menu
   while true; do
@@ -1051,17 +945,6 @@ function cmdlineMenu() {
         ;;
       3)
         while true; do
-          dialog --backtitle "`backtitle`" --title "Custom SataPortMap" \
-            --inputbox "Type a custom SataPortMap" 0 0 "${CMDLINE['SataPortMap']}"\
-            2>${TMP_PATH}/resp
-          [ $? -ne 0 ] && break
-          PORTMAP="`<"${TMP_PATH}/resp"`"
-          [ -z "${PORTMAP}" ] && PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
-          writeConfigKey "cmdline.SataPortMap"      "${PORTMAP}" "${USER_CONFIG_FILE}"
-        done
-        ;;
-      4)
-        while true; do
           dialog --backtitle "`backtitle`" --title "User cmdline" \
             --inputbox "Type a custom MAC address" 0 0 "${CMDLINE['mac1']}"\
             2>${TMP_PATH}/resp
@@ -1082,7 +965,7 @@ function cmdlineMenu() {
           --title "User cmdline" --progressbox "Renewing IP" 20 70
         IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
         ;;
-      5)
+      4)
         ITEMS=""
         for KEY in ${!CMDLINE[@]}; do
           ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
@@ -1090,7 +973,7 @@ function cmdlineMenu() {
         dialog --backtitle "`backtitle`" --title "User cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      6)
+      5)
         ITEMS=""
         while IFS=': ' read KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
@@ -1117,7 +1000,6 @@ function synoinfoMenu() {
   echo "1 \"Add/edit Synoinfo item\""     > "${TMP_PATH}/menu"
   echo "2 \"Delete Synoinfo item(s)\""    >> "${TMP_PATH}/menu"
   echo "3 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
-  echo "4 \"Map USB Drive to internal\""  >> "${TMP_PATH}/menu"
   echo "0 \"Exit\""                       >> "${TMP_PATH}/menu"
 
   # menu loop
@@ -1170,13 +1052,6 @@ function synoinfoMenu() {
         done
         dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
-        ;;
-      4)
-        writeConfigKey "maxdisks" "24" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
-        dialog --backtitle "`backtitle`" --msgbox "External USB Drives mapped" 0 0 
         ;;
       0) return ;;
     esac
