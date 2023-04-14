@@ -23,7 +23,7 @@ fi
 
 # Shows title
 clear
-TITLE="Welcome to Automated Redpill Loader v${ARPL_VERSION}"
+TITLE="Arc v${ARPL_VERSION}"
 printf "\033[1;44m%*s\n" $COLUMNS ""
 printf "\033[1;44m%*s\033[A\n" $COLUMNS ""
 printf "\033[1;32m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
@@ -51,8 +51,8 @@ ln -s "${CACHE_PATH}/ssh" "/etc/ssh"
 rm -rf ~/.bash_history
 ln -s ${CACHE_PATH}/.bash_history ~/.bash_history
 touch ~/.bash_history
-if ! grep -q "menu.sh" ~/.bash_history; then
-  echo "menu.sh " >> ~/.bash_history
+if ! grep -q "arc.sh" ~/.bash_history; then
+  echo "arc.sh " >> ~/.bash_history
 fi
 # Check if exists directories into P3 partition, if yes remove and link it
 if [ -d "${CACHE_PATH}/model-configs" ]; then
@@ -77,9 +77,9 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "model" "" "${USER_CONFIG_FILE}"
   writeConfigKey "build" "" "${USER_CONFIG_FILE}"
   writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
-#  writeConfigKey "maxdisks" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "layout" "qwerty" "${USER_CONFIG_FILE}"
-  writeConfigKey "keymap" "" "${USER_CONFIG_FILE}"
+  #writeConfigKey "maxdisks" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "layout" "qwertz" "${USER_CONFIG_FILE}"
+  writeConfigKey "keymap" "de" "${USER_CONFIG_FILE}"
   writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
   writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
   writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
@@ -87,6 +87,8 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.misc" "" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   # Initialize with real MAC
   writeConfigKey "cmdline.netif_num" "1" "${USER_CONFIG_FILE}"
@@ -95,7 +97,7 @@ fi
 writeConfigKey "original-mac" "${MACF}" "${USER_CONFIG_FILE}"
 
 # Set custom MAC if defined
-MAC1=`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`
+MAC1="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
 if [ -n "${MAC1}" -a "${MAC1}" != "${MACF}" ]; then
   MAC="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
   echo "Setting MAC to ${MAC}"
@@ -185,7 +187,7 @@ done
 
 # Inform user
 echo
-echo -e "Call \033[1;32mmenu.sh\033[0m to configure loader"
+echo -e "Call \033[1;32marc.sh\033[0m to configure loader"
 echo
 echo -e "User config is on \033[1;32m${USER_CONFIG_FILE}\033[0m"
 echo -e "Default SSH Root password is \033[1;31mRedp1lL-1s-4weSomE\033[0m"
@@ -202,3 +204,4 @@ mkdir -p "${LKM_PATH}"
 mkdir -p "${MODULES_PATH}"
 
 install-addons.sh
+arc.sh

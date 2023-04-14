@@ -42,30 +42,34 @@ jobs:
         run: |
           # Get latest LKMs
           echo "Getting latest LKMs"
-          TAG=`curl -s https://api.github.com/repos/fbelavenuto/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
-          STATUS=`curl -w "%{http_code}" -L "https://github.com/fbelavenuto/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip`
-          echo "Status=${STATUS}"
+          TAG=`curl -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
+          STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip`
+          echo "Status: ${STATUS}"
+          echo "Version: ${TAG}"
           [ ${STATUS} -ne 200 ] && exit 1
 
           # Get latest addons and install its
           echo "Getting latest Addons"
-          TAG=`curl -s https://api.github.com/repos/fbelavenuto/arpl-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
-          STATUS=`curl -w "%{http_code}" -L "https://github.com/fbelavenuto/arpl-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip`
-          echo "Status=${STATUS}"
+          TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
+          STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip`
+          echo "Status: ${STATUS}"
+          echo "Version: ${TAG}"
           [ ${STATUS} -ne 200 ] && exit 1
 
           # Get latest modules
           echo "Getting latest modules"
           MODULES_DIR="files/board/arpl/p3/modules"
-          TAG=`curl -s https://api.github.com/repos/fbelavenuto/arpl-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
+          TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
           while read PLATFORM KVER; do
             FILE="${PLATFORM}-${KVER}"
-            STATUS=`curl -w "%{http_code}" -L "https://github.com/fbelavenuto/arpl-modules/releases/download/${TAG}/${FILE}.tgz" -o "${MODULES_DIR}/${FILE}.tgz"`
-            echo "Status=${STATUS}"
+            STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/${FILE}.tgz" -o "${MODULES_DIR}/${FILE}.tgz"`
+            echo "Status: ${STATUS}"
+            echo "Version: ${TAG}"
             [ ${STATUS} -ne 200 ] && exit 1
           done < PLATFORMS
-          STATUS=`curl -w "%{http_code}" -L "https://github.com/fbelavenuto/arpl-modules/releases/download/${TAG}/firmware.tgz" -o "${MODULES_DIR}/firmware.tgz"`
-          echo "Status=${STATUS}"
+          STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/firmware.tgz" -o "${MODULES_DIR}/firmware.tgz"`
+          echo "Status: ${STATUS}"
+          echo "Version: ${TAG}"
           [ ${STATUS} -ne 200 ] && exit 1
           echo OK
 
@@ -73,7 +77,7 @@ jobs:
       - name: Clone buildroot
         if: steps.br-cache.outputs.cache-hit != 'true'
         run: |
-          git clone --single-branch -b 2022.02 https://github.com/buildroot/buildroot.git .buildroot
+          git clone --single-branch -b 2022.02.8 https://github.com/buildroot/buildroot.git .buildroot
           # Copy files
           echo "Copying files"
           cp -Ru files/* .buildroot
@@ -96,11 +100,15 @@ jobs:
           cd .buildroot
           make BR2_EXTERNAL=../external
 
-      # Build incremental from caches
+      # Build incremental from cache
       - name: Build image
         id: build
         run: |
-          VERSION=`<VERSION`
+          VERSION=$(date +'%y.%m.%d')
+          rm -f files/board/arc/p1/ARC-VERSION
+          rm -f VERSION
+          echo "${VERSION}" > VERSION
+          echo "${VERSION}" > files/board/arpl/p1/ARPL-VERSION
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
           # Remove old files
           rm -rf .buildroot/output/target/opt/arpl
@@ -124,7 +132,6 @@ jobs:
           # Copy files
           echo "Copying files"
           sed 's/^ARPL_VERSION=.*/ARPL_VERSION="'${VERSION}'"/' -i files/board/arpl/overlayfs/opt/arpl/include/consts.sh
-          echo "${VERSION}" > files/board/arpl/p1/ARPL-VERSION
           cp -Ru files/* .buildroot/
           cd .buildroot
           echo "Generating default config"
@@ -133,16 +140,19 @@ jobs:
           echo "Building..."
           make BR2_EXTERNAL=../external
           cd -
-          qemu-img convert -O vmdk arpl.img arpl-dyn.vmdk
-          qemu-img convert -O vmdk -o adapter_type=lsilogic arpl.img -o subformat=monolithicFlat arpl.vmdk
+          rm -f arc.img
+          cp -f arpl.img arc.img
+          rm -f arpl.img
+          qemu-img convert -O vmdk arc.img arc-dyn.vmdk
+          qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
 
       # Zip image and generate checksum
       - name: Pack
         shell: bash
         run: |
-          zip -9 "arpl-${{ steps.build.outputs.VERSION }}.img.zip" arpl.img
-          zip -9 "arpl-${{ steps.build.outputs.VERSION }}.vmdk-dyn.zip" arpl-dyn.vmdk
-          zip -9 "arpl-${{ steps.build.outputs.VERSION }}.vmdk-flat.zip" arpl.vmdk arpl-flat.vmdk
+          zip -9 "arc.img.zip" arc.img
+          zip -9 "arc.vmdk-dyn.zip" arc-dyn.vmdk
+          zip -9 "arc.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
           sha256sum update-list.yml > sha256sum
           zip -9j update.zip update-list.yml
           while read F; do
@@ -157,15 +167,16 @@ jobs:
               zip -9j update.zip "${F}"
             fi
           done < <(yq '.replace | explode(.) | to_entries | map([.key])[] | .[]' update-list.yml)
-          zip -9j update.zip sha256sum 
+          zip -9j update.zip sha256sum
+
       # Upload artifact
       - name: Upload
         uses: actions/upload-artifact@v3
         with:
           name: Images
           path: |
-            arpl.img
-            arpl*.vmdk
+            arc.img
+            arc*.vmdk
           retention-days: 5
 
       # Publish a release if is a tag
@@ -174,7 +185,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            arpl-${{ steps.build.outputs.VERSION }}.img.zip
-            arpl-${{ steps.build.outputs.VERSION }}.vmdk-dyn.zip
-            arpl-${{ steps.build.outputs.VERSION }}.vmdk-flat.zip
+            arc.img.zip
+            arc.vmdk-dyn.zip
+            arc.vmdk-flat.zip
             update.zip

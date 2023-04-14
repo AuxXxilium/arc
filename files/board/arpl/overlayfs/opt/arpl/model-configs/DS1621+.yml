@@ -1,13 +1,15 @@
 id: "DS1621+"
 synoinfo: &synoinfo
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_led_brightness_adjustment: "no"
-  rss_server: "https://raw.githubusercontent.com/fbelavenuto/arpl/main/rss.xml"
-  rss_server_ssl: "https://raw.githubusercontent.com/fbelavenuto/arpl/main/rss.xml"
-  rss_server_v2: "https://raw.githubusercontent.com/fbelavenuto/arpl/main/rss.json"
+  support_bde_internal_10g: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
+  support_m2_pool: "yes"
 cmdline: &cmdline
   SMBusHddDynamicPower: 1
   syno_hdd_powerup_seq: 0
@@ -26,49 +28,16 @@ serial:
     - "2080"
   middle: "S7R"
   suffix: "alpha"
+arcserial: "2080S7R668F9S"
+mac1: "001132D84A80"
+mac2: "001132D84A81"
+mac3: "001132D84A82"
+mac4: "001132D84A83"
+mac5: "9009D019775A"
+mac6: "9009D01978A5"
 disks: 6
 dt: true
 builds:
-  42218:
-    ver: "7.0.1"
-    kver: "4.4.180"
-    rd-compressed: false
-    cmdline:
-      <<: *cmdline
-    synoinfo:
-      <<: *synoinfo
-    pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.0.1/42218/DSM_DS1621%2B_42218.pat"
-      hash: "396144fdcd94d441b4ad665099395cf24a14606742bee9438745ea30bf12b9ef"
-      ramdisk-hash: "127a12bab3835cdf5af4e7ad2a23e78f889408302c55e5052080671cff6da5b7"
-      zimage-hash: "0ab3bf0ff027fb94863ef8822df787194f2d21079ecc66c0b0d4e46d24598855"
-      md5-hash: "1fd1d6e733bb096f418f68e06f81022e"
-    patch:
-      - "ramdisk-common-disable-root-pwd.patch"
-      - "ramdisk-common-init-script.patch"
-      - "ramdisk-common-etc-rc.patch"
-      - "ramdisk-common-post-init-script.patch"
-
-  42661:
-    ver: "7.1.0"
-    kver: "4.4.180"
-    rd-compressed: false
-    cmdline:
-      <<: *cmdline
-    synoinfo:
-      <<: *synoinfo
-    pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.1/42661-1/DSM_DS1621%2B_42661.pat"
-      hash: "381077302a89398a9fb5ec516217578d6f33b0219fe95135e80fd93cddbf88c4"
-      ramdisk-hash: "8fd5eb40fb088af97d3beee85b6275c2ceb368b08453eb5a5d00d42cc7d578d1"
-      zimage-hash: "d939b5937be00a644aae64c33633619a7c310433e60a515c77bbef00b0a7e6b6"
-      md5-hash: "b4b72eb8d4e84b2e2a8c29fc0a1ac6aa"
-    patch:
-      - "ramdisk-common-disable-root-pwd.patch"
-      - "ramdisk-common-init-script.patch"
-      - "ramdisk-common-etc-rc.patch"
-      - "ramdisk-42661-post-init-script.patch"
-
   42962:
     ver: "7.1.1"
     kver: "4.4.180"
@@ -86,5 +55,25 @@ builds:
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
+
+  64216:
+    ver: "7.2"
+    kver: "4.4.302"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/beta/7.2/64216/DSM_DS1621%2B_64216.pat"
+      hash: "0e445518acf031b5eb504f405ba8e362c6022e1a66c0fcfc0cf9d1cc923c5c3c"
+      ramdisk-hash: "2382b2c1108ee925197c21f5dfc0dc83de1ebb7f2477b5b0d16d8e6465558936"
+      zimage-hash: "144c04854b4bdfdbde7dce0801ffdbe9fa23fd3f2ce54a3fa4552925f45cae57"
+      md5-hash: "88bf7c48976a16a7c9370ea34e089471"
+    patch:
+      - "ramdisk-64216-disable-root-pwd.patch"
+      - "ramdisk-64216-init-script.patch"
       - "ramdisk-common-etc-rc.patch"
       - "ramdisk-42951-post-init-script.patch"

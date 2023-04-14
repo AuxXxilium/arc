@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-set -e
-
 . /opt/arpl/include/functions.sh
+
+set -e
 
 # Sanity check
 loaderIsConfigured || die "Loader is not configured!"
@@ -10,7 +10,7 @@ loaderIsConfigured || die "Loader is not configured!"
 # Print text centralized
 clear
 [ -z "${COLUMNS}" ] && COLUMNS=50
-TITLE="Welcome to Automated Redpill Loader v${ARPL_VERSION}"
+TITLE="Arc v${ARPL_VERSION}"
 printf "\033[1;44m%*s\n" ${COLUMNS} ""
 printf "\033[1;44m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;32m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
@@ -74,8 +74,6 @@ done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 
 # Check if machine has EFI
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
-# Read EFI bug value
-[ "${MODEL}" = "DS3615" ] && EFI_BUG=1 || EFI_BUG=0
 
 LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
 BUS=`udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2`
@@ -144,12 +142,7 @@ fi
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
 # Executes DSM kernel via KEXEC
-if [ "${EFI_BUG}" = "yes" -a ${EFI} -eq 1 ]; then
-  echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
-  kexec --noefi -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
-else
-  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
-fi
-echo -e "\033[1;37mBooting...\033[0m"
+kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
+echo -e "\033[1;37mBooting DSM...\033[0m"
 poweroff
 exit 0

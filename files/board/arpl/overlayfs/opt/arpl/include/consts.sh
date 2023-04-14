@@ -1,5 +1,5 @@
 
-ARPL_VERSION="1.1-beta2a"
+ARPL_VERSION="23.01.01"
 
 # Define paths
 TMP_PATH="/tmp"
@@ -7,8 +7,12 @@ UNTAR_PAT_PATH="${TMP_PATH}/pat"
 RAMDISK_PATH="${TMP_PATH}/ramdisk"
 LOG_FILE="${TMP_PATH}/log.txt"
 
+MOUNTP3="/mnt/p3"
+BACKUPDIR="${MOUNTP3}/backup"
+
 USER_CONFIG_FILE="${BOOTLOADER_PATH}/user-config.yml"
 GRUB_PATH="${BOOTLOADER_PATH}/grub"
+SYSINFO_PATH="${BOOTLOADER_PATH}/sysinfo.yml"
 
 ORI_ZIMAGE_FILE="${SLPART_PATH}/zImage"
 ORI_RDGZ_FILE="${SLPART_PATH}/rd.gz"

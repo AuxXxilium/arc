@@ -1,7 +1,9 @@
 !.gitkeep
 .vscode
-arpl*.img
+arpl.img
 arpl*.vmdk
+arc.img
+arc*.vmdk
 *.zip
 .buildroot
 test*.sh
