@@ -129,6 +129,11 @@ function arcMenu() {
             FLGNEX=1
             break
           fi
+          if ["${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
+            COMPATIBLE=0
+            FLGNEX=1
+            break
+          fi
         done
       fi
       [ "${DT}" = "true" ] && DT="-DT" || DT=""
