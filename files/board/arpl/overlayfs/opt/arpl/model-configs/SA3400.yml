@@ -33,7 +33,7 @@ mac4: "001132A91B25"
 mac5: "001132A91B26"
 mac6: "001132A91B27"
 disks: 12
-dt: false
+dt: true
 beta: true
 builds:
   42962:
