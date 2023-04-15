@@ -130,6 +130,10 @@ function arcMenu() {
             break
           fi
         done
+        if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
+          COMPATIBLE=0
+          FLGNEX=1
+        fi
       fi
       [ "${DT}" = "true" ] && DT="-DT" || DT=""
       [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
@@ -162,13 +166,6 @@ function arcMenu() {
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --infobox "WARN: You have selected a DT Model. There is no support for Raid/SCSI Controller." 0 0
     sleep 5
-    exit 1
-  fi
-  if [ "${WARNON}" = "3" ]; then
-    dialog --backtitle "`backtitle`" --title "Arc Warning" \
-      --infobox "WARN: No Diskcontroller found." 0 0
-    sleep 5
-    exit 1
   fi
   MODEL=${resp}
   writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
