@@ -1,0 +1,79 @@
+id: "RS3621xs+"
+synoinfo: &synoinfo
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  support_disk_compatibility: "no"
+  support_memory_compatibility: "no"
+  support_bde_internal_10g: "no"
+  esataportcfg: "0x0"
+  support_led_brightness_adjustment: "no"
+  support_syno_hybrid_raid:
+  supportraidgroup:
+  support_m2_pool: "yes"
+cmdline: &cmdline
+  syno_hdd_powerup_seq: 0
+  HddHotplug: 0
+  syno_hdd_detect: 0
+  vender_format_version: 2
+  elevator: elevator
+platform: "broadwellnk"
+unique: "synology_broadwellnk_rs3621xs+"
+dom: 2
+serial:
+  prefix:
+    - "20A0"
+  middle: "SZR"
+  suffix: "alpha"
+arcserial: "20A0SZR4KRP50"
+mac1: "001132DE6640"
+mac2: "001132DE6641"
+mac3: "001132DE6642"
+mac4: "001132DE6643"
+mac5: "001132DE6644"
+mac6: "9009D019775A"
+disks: 12
+dt: false
+beta: true
+builds:
+  42962:
+    ver: "7.1.1"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_RS3621xs%2B_42962.pat"
+      hash: "f9a92c0b9023940ad53b6e82b57fb68f3797ab9a68c7cd13901e9378de213b23"
+      ramdisk-hash: "2a101dc04ff37464efededae4e66d1fc55b056609b2b43d08e4a58a6f0ff1cb8"
+      zimage-hash: "8903dc99f7201c8656de618d767c05f91bfd32edd9a3706a50fd223237842bf2"
+      md5-hash: "c83efc4494de8d148fedd33b71b7b3b8"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"
+
+  64216:
+    ver: "7.2"
+    kver: "4.4.302"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/beta/7.2/64216/DSM_RS3621xs%2B_64216.pat"
+      hash: "cba6faa66499194394f767997b67b42f12ef937df273a2d0496e9fa138504eab"
+      ramdisk-hash: "e6ecd636070e026f5eb76eb94760417b2e8b5e194ab91be8f20fc1d5817f2a67"
+      zimage-hash: "da68e9d495d11654ec8afeb28351d95ff9c5523b86abd2137e2465665df6f750"
+      md5-hash: "7970860eb019168808491a99f8de8ef8"
+    patch:
+      - "ramdisk-64216-disable-root-pwd.patch"
+      - "ramdisk-64216-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"

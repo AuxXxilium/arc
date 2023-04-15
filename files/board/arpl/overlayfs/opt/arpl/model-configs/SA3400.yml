@@ -1,0 +1,79 @@
+id: "SA3400"
+synoinfo: &synoinfo
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  support_disk_compatibility: "no"
+  support_memory_compatibility: "no"
+  support_bde_internal_10g: "no"
+  esataportcfg: "0x0"
+  support_led_brightness_adjustment: "no"
+  support_syno_hybrid_raid:
+  supportraidgroup:
+  support_m2_pool: "yes"
+cmdline: &cmdline
+  syno_hdd_powerup_seq: 0
+  HddHotplug: 0
+  syno_hdd_detect: 0
+  vender_format_version: 2
+  elevator: elevator
+platform: "broadwellnk"
+unique: "synology_broadwellnk_sa3400"
+dom: 2
+serial:
+  prefix:
+    - "1920"
+  middle: "RJR"
+  suffix: "alpha"
+arcserial: "1920RJR7K1S28"
+mac1: "001132A91B22"
+mac2: "001132A91B23"
+mac3: "001132A91B24"
+mac4: "001132A91B25"
+mac5: "001132A91B26"
+mac6: "001132A91B27"
+disks: 12
+dt: false
+beta: true
+builds:
+  42962:
+    ver: "7.1.1"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_SA3400_42962.pat"
+      hash: "60048951ccf64d4d32b43ba815f92885cf415e852ae6db351f3fb12e63000a41"
+      ramdisk-hash: "41c33a93275da8bed504e808935652151fe0fc99f19caa2f51323e6eef3dbed3"
+      zimage-hash: "8903dc99f7201c8656de618d767c05f91bfd32edd9a3706a50fd223237842bf2"
+      md5-hash: "5b5cddaacd2e62cc556aa128f8cae467"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"
+
+  64216:
+    ver: "7.2"
+    kver: "4.4.302"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/beta/7.2/64216/DSM_SA3400_64216.pat"
+      hash: "68686d3cbd868a9121821319cf8c095eaba4f7565dff8345a495d7f5dfb8f517"
+      ramdisk-hash: "922ff72a93d0ae1b4a0ce5ba4d5cacfcd2778425a662616177c7cb1d9a6a09cf"
+      zimage-hash: "da68e9d495d11654ec8afeb28351d95ff9c5523b86abd2137e2465665df6f750"
+      md5-hash: "ece262a454cd0bf78323fc11aeb8b418"
+    patch:
+      - "ramdisk-64216-disable-root-pwd.patch"
+      - "ramdisk-64216-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"
