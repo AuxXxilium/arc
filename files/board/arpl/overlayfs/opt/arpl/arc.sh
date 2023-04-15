@@ -259,7 +259,7 @@ function arcbuild() {
   DIRTY=1
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Model Configuration successfull!" 0 0
-  sleep 2
+  sleep 1
   arcnetdisk
 }
 
@@ -334,7 +334,7 @@ function arcnetdisk() {
     done
     dialog --backtitle "`backtitle`" \
       --title "Arc Network" --infobox "Set MAC for first NIC" 0 0
-    sleep 2
+    sleep 1
   elif [ "${ARCPATCH}" = "0" ]; then
     # Install without Arc Patch - Set Hardware Mac Address
       MAC1="`readConfigKey "original-mac" "${USER_CONFIG_FILE}"`"
@@ -370,7 +370,7 @@ function arcnetdisk() {
     if [ "${resp}" = "1" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Network" \
         --infobox "IP/MAC will be changed on first boot!" 0 0
-      sleep 2
+      sleep 1
       break
     elif [ "${resp}" = "2" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Network" \
@@ -382,7 +382,7 @@ function arcnetdisk() {
         --title "Restart DHCP" --progressbox "Renewing IP" 20 70
       sleep 5
       IP=`ip route get 1.1.1.1 2>/dev/eth0 | awk '{print$7}'`
-      sleep 2
+      sleep 1
       break
     fi
   done
@@ -392,17 +392,17 @@ function arcnetdisk() {
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --infobox "SATA Controller found. We have to use SataPortMap for Controller!" 0 0
     writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
-    sleep 3
+    sleep 1
   elif [ "${SATACONTROLLER}" -eq 0 ] && [ "${DT}" != "true" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --infobox "No SATA Controller found." 0 0
-      writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
-      sleep 3
+    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+      --infobox "No SATA Controller found." 0 0
+    writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
+    sleep 1
   elif [ "${DT}" = "true" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --infobox "Device Tree Model selected." 0 0
-      writeConfigKey "remap" "3" "${USER_CONFIG_FILE}"
-      sleep 3
+    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+      --infobox "Device Tree Model selected." 0 0
+    writeConfigKey "remap" "3" "${USER_CONFIG_FILE}"
+    sleep 1
   fi
   # Get Diskmap for DSM
   REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
@@ -487,9 +487,6 @@ function make() {
   rm -rf "${UNTAR_PAT_PATH}"
 
   echo "Ready!"
-  dialog --backtitle "`backtitle`" --title "Arc Build" \
-    --infobox "Build successfull! You can boot now." 0 0
-  sleep 2
   DIRTY=0
   # Build is done
   writeConfigKey "builddone" "1" "${USER_CONFIG_FILE}"
@@ -497,7 +494,7 @@ function make() {
   # Ask for Boot
   while true; do
     dialog --clear --backtitle "`backtitle`" \
-      --menu "Boot now?" 0 0 0 \
+      --menu "Build done. Boot now?" 0 0 0 \
       1 "Yes - Boot Arc Loader now" \
       2 "No - I want to make changes" \
     2>${TMP_PATH}/resp
