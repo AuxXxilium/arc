@@ -129,12 +129,11 @@ function arcMenu() {
             FLGNEX=1
             break
           fi
-          if ["${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
-            COMPATIBLE=0
-            FLGNEX=1
-            break
-          fi
         done
+        if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
+          COMPATIBLE=0
+          FLGNEX=1
+        fi
       fi
       [ "${DT}" = "true" ] && DT="-DT" || DT=""
       [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
