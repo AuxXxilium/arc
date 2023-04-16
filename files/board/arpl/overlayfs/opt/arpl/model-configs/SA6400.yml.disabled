@@ -1,4 +1,4 @@
-id: "DS1621xs+"
+id: "SA6400"
 synoinfo: &synoinfo
   rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
@@ -6,49 +6,51 @@ synoinfo: &synoinfo
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_bde_internal_10g: "no"
-  esataportcfg: "0x00"
-  usbportcfg: "0x00"
   support_led_brightness_adjustment: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
   support_m2_pool: "yes"
 cmdline: &cmdline
-  syno_hdd_powerup_seq: 0
-  HddHotplug: 0
+  SMBusHddDynamicPower: 1
+  synoboot2:
+  syno_ttyS0: "serial,0x3f8"
+  syno_ttyS1: "serial,0x2f8"
   vender_format_version: 2
-  syno_hdd_detect: 0
-  elevator: elevator
-platform: "broadwellnk"
-unique: "synology_broadwellnk_1621xs+"
-dom: 1
+  scsi_mod.use_blk_mq: 1
+platform: "epyc7002"
+unique: "synology_epyc7002_sa6400"
+beta: true
+dom: 2
 serial:
   prefix:
-    - "2070"
-  middle: "RVR"
+    - "2270"
+  middle: "UMR"
   suffix: "alpha"
-arcserial: "2070RVR2JPQTF"
-mac1: "001132D64C73"
-mac2: "001132D64C74"
-mac3: "001132D64C75"
-mac4: "9009D019775A"
-disks: 6
-dt: false
+arcserial: "2270UMR8HWA07"
+mac1: "9009D02A95D0"
+mac2: "9009D02A95D1"
+mac3: "9009D02A95D2"
+mac4: "9009D02A95D3"
+mac5: "9009D02A95D4"
+mac6: "9009D02A95D5"
+disks: 16
+dt: true
 beta: true
 builds:
   42962:
     ver: "7.1.1"
-    kver: "4.4.180"
+    kver: "5.10.55"
     rd-compressed: false
     cmdline:
       <<: *cmdline
     synoinfo:
       <<: *synoinfo
     pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_DS1621xs%2B_42962.pat"
-      hash: "199d70693a7eb3a4ff69100bb2634c8b97b115f828bd1f6403d2832cce4e7052"
-      ramdisk-hash: "0c52bac011caa31ec7f76bd9371edc423d6ee162531ad22b39fcb17bcbdc8765"
-      zimage-hash: "8903dc99f7201c8656de618d767c05f91bfd32edd9a3706a50fd223237842bf2"
-      md5-hash: "f1a7238a0bd9adc0cbb5413d49d981a0"
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_SA6400_42962.pat"
+      hash: "83fc408380ebb1381224261de6220b873d7b62a99e715557509ae9553f618a71"
+      ramdisk-hash: "d4efe45fc4dd71758fe365f7eb39d24982d1440b00986259cab9a03577982f68"
+      zimage-hash: "d5b8af848fc585695e35bd1c4f4c953fd8e54435b2799face4f8f350bac6df93"
+      md5-hash: "fdbbea86e280a8f754339a064f9ad2df"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"
@@ -65,14 +67,14 @@ builds:
     synoinfo:
       <<: *synoinfo
     pat:
-      url: "https://global.download.synology.com/download/DSM/beta/7.2/64216/DSM_DS1621xs%2B_64216.pat"
-      hash: "4d86bb0009658d9a5bd17e2200be4d65096a7fe5ce24892d5aa3ebcc1317cc6c"
-      ramdisk-hash: "79302e47121b0277d6a503d3ea00c6d5d0e2955c585513305f31b1372cae921a"
-      zimage-hash: "da68e9d495d11654ec8afeb28351d95ff9c5523b86abd2137e2465665df6f750"
-      md5-hash: "ee328d9e36a779eff3754b301d768f6f"
+      url: "https://global.download.synology.com/download/DSM/beta/7.2/64216/DSM_SA6400_64216.pat"
+      hash: "d9b15dd4aafc09da038fb329b15a8145d5f6ac54a4697b96474a8acd8a860325"
+      ramdisk-hash: "c5f805f13d0ca29f8a5c41b447131ed149df212ee5ea25dabb3fc405ec286a74"
+      zimage-hash: "c1481b8687482b08ec109417394f767abb2a3cdd53c3c8fef79a9569b922cd9c"
+      md5-hash: "d7671bd17ea0fd8b68340ee12de9cd5d"
     patch:
       - "ramdisk-64216-disable-root-pwd.patch"
-      - "ramdisk-64216-init-script.patch"
+      - "ramdisk-64216-sa6400-init-script.patch"
       - "ramdisk-common-etc-rc.patch"
       - "ramdisk-42951-post-init-script.patch"
       - "ramdisk-42661-disable-disabled-ports.patch"

@@ -1,4 +1,4 @@
-id: "DS1621xs+"
+id: "RS3621xs+"
 synoinfo: &synoinfo
   rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
   rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
@@ -6,8 +6,7 @@ synoinfo: &synoinfo
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_bde_internal_10g: "no"
-  esataportcfg: "0x00"
-  usbportcfg: "0x00"
+  esataportcfg: "0x0"
   support_led_brightness_adjustment: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
@@ -15,23 +14,25 @@ synoinfo: &synoinfo
 cmdline: &cmdline
   syno_hdd_powerup_seq: 0
   HddHotplug: 0
-  vender_format_version: 2
   syno_hdd_detect: 0
+  vender_format_version: 2
   elevator: elevator
 platform: "broadwellnk"
-unique: "synology_broadwellnk_1621xs+"
-dom: 1
+unique: "synology_broadwellnk_rs3621xs+"
+dom: 2
 serial:
   prefix:
-    - "2070"
-  middle: "RVR"
+    - "20A0"
+  middle: "SZR"
   suffix: "alpha"
-arcserial: "2070RVR2JPQTF"
-mac1: "001132D64C73"
-mac2: "001132D64C74"
-mac3: "001132D64C75"
-mac4: "9009D019775A"
-disks: 6
+arcserial: "20A0SZR4KRP50"
+mac1: "001132DE6640"
+mac2: "001132DE6641"
+mac3: "001132DE6642"
+mac4: "001132DE6643"
+mac5: "001132DE6644"
+mac6: "9009D019775A"
+disks: 12
 dt: false
 beta: true
 builds:
@@ -44,11 +45,11 @@ builds:
     synoinfo:
       <<: *synoinfo
     pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_DS1621xs%2B_42962.pat"
-      hash: "199d70693a7eb3a4ff69100bb2634c8b97b115f828bd1f6403d2832cce4e7052"
-      ramdisk-hash: "0c52bac011caa31ec7f76bd9371edc423d6ee162531ad22b39fcb17bcbdc8765"
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_RS3621xs%2B_42962.pat"
+      hash: "f9a92c0b9023940ad53b6e82b57fb68f3797ab9a68c7cd13901e9378de213b23"
+      ramdisk-hash: "2a101dc04ff37464efededae4e66d1fc55b056609b2b43d08e4a58a6f0ff1cb8"
       zimage-hash: "8903dc99f7201c8656de618d767c05f91bfd32edd9a3706a50fd223237842bf2"
-      md5-hash: "f1a7238a0bd9adc0cbb5413d49d981a0"
+      md5-hash: "c83efc4494de8d148fedd33b71b7b3b8"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"
@@ -65,11 +66,11 @@ builds:
     synoinfo:
       <<: *synoinfo
     pat:
-      url: "https://global.download.synology.com/download/DSM/beta/7.2/64216/DSM_DS1621xs%2B_64216.pat"
-      hash: "4d86bb0009658d9a5bd17e2200be4d65096a7fe5ce24892d5aa3ebcc1317cc6c"
-      ramdisk-hash: "79302e47121b0277d6a503d3ea00c6d5d0e2955c585513305f31b1372cae921a"
+      url: "https://global.download.synology.com/download/DSM/beta/7.2/64216/DSM_RS3621xs%2B_64216.pat"
+      hash: "cba6faa66499194394f767997b67b42f12ef937df273a2d0496e9fa138504eab"
+      ramdisk-hash: "e6ecd636070e026f5eb76eb94760417b2e8b5e194ab91be8f20fc1d5817f2a67"
       zimage-hash: "da68e9d495d11654ec8afeb28351d95ff9c5523b86abd2137e2465665df6f750"
-      md5-hash: "ee328d9e36a779eff3754b301d768f6f"
+      md5-hash: "7970860eb019168808491a99f8de8ef8"
     patch:
       - "ramdisk-64216-disable-root-pwd.patch"
       - "ramdisk-64216-init-script.patch"
