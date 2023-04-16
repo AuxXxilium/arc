@@ -185,7 +185,7 @@ function arcbuild() {
   while true; do
     dialog --clear --backtitle "`backtitle`" \
       --menu "Choose a DSM Version" 0 0 0 \
-      1 "DSM 7.1.1 (stable)" \
+      1 "DSM 7.1.1" \
       2 "DSM 7.2 Beta (experimental)" \
     2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
@@ -375,10 +375,10 @@ function arcnetdisk() {
     elif [ "${resp}" = "2" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Network" \
         --infobox "IP/MAC will be changed now!" 0 0
-        MAC1="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
-        MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
-        ip link set dev eth0 address ${MACN1} 2>&1
-        /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
+      MAC1="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
+      MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
+      ip link set dev eth0 address ${MACN1} 2>&1
+      /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
         --title "Restart DHCP" --progressbox "Renewing IP" 20 70
       sleep 5
       IP=`ip route get 1.1.1.1 2>/dev/eth0 | awk '{print$7}'`
@@ -390,33 +390,66 @@ function arcnetdisk() {
   if [ "${SATACONTROLLER}" -gt 0 ] && [ "${DT}" != "true" ]; then
   # Config for Sata Controller with PortMap to get all drives
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --infobox "SATA Controller found. We have to use SataPortMap for Controller!" 0 0
-    writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
-    sleep 1
+      --infobox "SATA Controller found. Need PortMap for Controller!" 0 0
+    # Get Diskmap for DSM
+    getmap
+    if [ -n "${SATAPORTMAP}" ] && [ -n "${SATAREMAP}" ]; then
+      # Ask for Portmap
+      while true; do
+        dialog --clear --backtitle "`backtitle`" \
+          --menu "SataPortMap or SataRemap?" 0 0 0 \
+          1 "Use SataPortMap" \
+          2 "Use SataRemap (experimental)" \
+        2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && return
+        resp=$(<${TMP_PATH}/resp)
+        [ -z "${resp}" ] && return
+        if [ "${resp}" = "1" ]; then
+          dialog --backtitle "`backtitle`" --title "Arc Disks" \
+            --infobox "Use SataPortMap!" 0 0
+          writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
+          break
+        elif [ "${resp}" = "2" ]; then
+          dialog --backtitle "`backtitle`" --title "Arc Disks" \
+            --infobox "Use SataRemap! (experimental)" 0 0
+          writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
+          break
+        fi
+      done
+    fi
   elif [ "${SATACONTROLLER}" -eq 0 ] && [ "${DT}" != "true" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --infobox "No SATA Controller found." 0 0
-    writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
-    sleep 1
+      --infobox "No SATA Controller found. Skip this!" 0 0
+    writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
   elif [ "${DT}" = "true" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --infobox "Device Tree Model selected." 0 0
-    writeConfigKey "remap" "3" "${USER_CONFIG_FILE}"
-    sleep 1
+      --infobox "Device Tree Model selected. Skip this!" 0 0
+    writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
   fi
-  # Get Diskmap for DSM
+  sleep 1
   REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
-  if [ -n "${REMAP}" ]; then
-    getmap
-  fi
-  # Show Map to User
-  if [ "${REMAP}" == "0" ] && [ "${SATAPORTMAP}" -gt 10 ]; then
+  # Write Map to config and show Map to User
+  if [ "${REMAP}" == "0" ]; then
+    if [ "${SATAPORTMAP}" -gt 10 ]; then
+      writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+    elif [ "${SATAPORTMAP}" -gt 0 ] && [ "${SASCONTROLLER}" -gt 0 ]; then
+      writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+    elif [ "${SATAPORTMAP}" -lt 11 ]; then
+      writeConfigKey "cmdline.SataPortMap" "8" "${USER_CONFIG_FILE}"
+      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+    fi
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "SataPortMap: ${SATAPORTMAP}" 0 0
-  elif [ "${REMAP}" == "0" ] && [ "$HYPERVISOR" = "VMware" ]; then
+  elif [ "${REMAP}" == "1" ]; then
+    writeConfigKey "cmdline.sata_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --msgbox "SataPortMap: ${SATAPORTMAP}" 0 0
-  elif [ "${REMAP}" == "3" ]; then
+      --msgbox "SataRemap: ${SATAREMAP}" 0 0
+  elif [ "${REMAP}" == "2" ]; then
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "Device Tree Model selected - We don't need this." 0 0
   fi
