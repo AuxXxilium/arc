@@ -1,0 +1,78 @@
+id: "RS1619xs+"
+synoinfo: &synoinfo
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  support_disk_compatibility: "no"
+  support_memory_compatibility: "no"
+  support_bde_internal_10g: "no"
+  esataportcfg: "0x0"
+  support_led_brightness_adjustment: "no"
+  support_syno_hybrid_raid:
+  supportraidgroup:
+  support_m2_pool: "yes"
+cmdline: &cmdline
+  syno_hdd_powerup_seq: 0
+  HddHotplug: 0
+  syno_hdd_detect: 0
+  vender_format_version: 2
+  elevator: elevator
+platform: "broadwellnk"
+unique: "synology_broadwellnk_rs1619xs+"
+dom: 2
+serial:
+  prefix:
+    - "1920"
+  middle: "QPR"
+  suffix: "alpha"
+arcserial: "1920QPRETTP9V"
+mac1: "001132A904CA"
+mac2: "001132A904CB"
+mac3: "001132A904CC"
+mac4: "001132A904CD"
+mac5: "9009D019775A"
+disks: 4
+dt: false
+beta: true
+builds:
+  42962:
+    ver: "7.1.1"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_RS1619xs%2B_42962.pat"
+      hash: "1d9be660cb17180ac4a0b312401455fe1c304d37b0093dbca6cb84ce1538b71b"
+      ramdisk-hash: "3ad55e59e6441f171a292637a3e2a20fd100116802254a6a951a8205da32faf5"
+      zimage-hash: "8903dc99f7201c8656de618d767c05f91bfd32edd9a3706a50fd223237842bf2"
+      md5-hash: "36cb66716fb26ce1e8c0428ea599b242"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"
+
+  64216:
+    ver: "7.2"
+    kver: "4.4.302"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/beta/7.2/64216/DSM_RS1619xs%2B_64216.pat"
+      hash: "0ec9398e390a6b4196df3d3920e7087dc030aec0eb61898115b583bacb568df5"
+      ramdisk-hash: "a668ea7ae89bcfc64e5cbda4f9ee6eafe257ef311d0377f516e4a5c96696ac59"
+      zimage-hash: "da68e9d495d11654ec8afeb28351d95ff9c5523b86abd2137e2465665df6f750"
+      md5-hash: "042f1b37e8a25749f63a3073dc55dd5c"
+    patch:
+      - "ramdisk-64216-disable-root-pwd.patch"
+      - "ramdisk-64216-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"
