@@ -114,6 +114,8 @@ function arcMenu() {
       M="${M::-4}"
       PLATFORM=`readModelKey "${M}" "platform"`
       DT="`readModelKey "${M}" "dt"`"
+      BETA="`readModelKey "${M}" "beta"`"
+      [ "${BETA}" = "true" -a ${FLGBETA} -eq 0 ] && continue
       DISKS="`readModelKey "${M}" "disks"`"
       if [ "${PLATFORM}" = "r1000" ] || [ "${PLATFORM}" = "v1000" ]; then
         CPU="AMD"
@@ -138,12 +140,17 @@ function arcMenu() {
       [ "${DT}" = "true" ] && DT="-DT" || DT=""
       [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
     done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
+    [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models\Zn\"" >> "${TMP_PATH}/menu"
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >> "${TMP_PATH}/menu"
     dialog --backtitle "`backtitle`" --colors --menu "Choose Model for Arc" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
+    if [ "${resp}" = "b" ]; then
+        FLGBETA=1
+        continue
+      fi
     if [ "${resp}" = "f" ]; then
       RESTRICT=0
       continue
