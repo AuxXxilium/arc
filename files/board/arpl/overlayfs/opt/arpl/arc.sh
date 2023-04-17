@@ -7,24 +7,24 @@
 
 # Check partition 3 space, if < 2GiB is necessary clean cache folder
 CLEARCACHE=0
-LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
+LOADER_DISK=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`
 LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
 if [ `cat /sys/block/${LOADER_DEVICE_NAME}/${LOADER_DEVICE_NAME}3/size` -lt 4194304 ]; then
   CLEARCACHE=1
 fi
 
 # Get Number of Ethernet Ports
-NETNUM=$(lshw -class network -short | grep -ie "eth[0-9]" | wc -l)
+NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
 writeConfigKey "cmdline.netif_num" "${NETNUM}" "${USER_CONFIG_FILE}"
 
 # Get actual IP
-IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
+IP=`ifconfig  |  sed -n '/inet.*B/{s/ B.*//; s/.*://p; q}'`
 
 # Check for Hypervisor
 if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
   MACHINE="VIRTUAL"
   # Check for Hypervisor
-  HYPERVISOR=$(lscpu | grep Hypervisor | awk '{print $3}')
+  HYPERVISOR=`lscpu | grep Hypervisor | awk '{print $3}'`
 else
   MACHINE="NATIVE"
 fi
@@ -114,6 +114,8 @@ function arcMenu() {
       M="${M::-4}"
       PLATFORM=`readModelKey "${M}" "platform"`
       DT="`readModelKey "${M}" "dt"`"
+      BETA="`readModelKey "${M}" "beta"`"
+      [ "${BETA}" = "true" -a ${FLGBETA} -eq 0 ] && continue
       DISKS="`readModelKey "${M}" "disks"`"
       if [ "${PLATFORM}" = "r1000" ] || [ "${PLATFORM}" = "v1000" ]; then
         CPU="AMD"
@@ -138,12 +140,17 @@ function arcMenu() {
       [ "${DT}" = "true" ] && DT="-DT" || DT=""
       [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
     done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
+    [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models\Zn\"" >> "${TMP_PATH}/menu"
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >> "${TMP_PATH}/menu"
     dialog --backtitle "`backtitle`" --colors --menu "Choose Model for Arc" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
+    if [ "${resp}" = "b" ]; then
+        FLGBETA=1
+        continue
+      fi
     if [ "${resp}" = "f" ]; then
       RESTRICT=0
       continue
@@ -381,7 +388,7 @@ function arcnetdisk() {
       /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
         --title "Restart DHCP" --progressbox "Renewing IP" 20 70
       sleep 5
-      IP=`ip route get 1.1.1.1 2>/dev/eth0 | awk '{print$7}'`
+      IP=`ifconfig  |  sed -n '/inet.*B/{s/ B.*//; s/.*://p; q}'`
       sleep 1
       break
     fi
@@ -1523,11 +1530,12 @@ function sysinfo() {
   # Delete old Sysinfo
   rm -f ${SYSINFO_PATH}
   # Checks for Systeminfo Menu
-  CPUINFO=$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')
-  MEMINFO=$(free -g | awk 'NR==2' | awk '{print $2}')
-  VENDOR=$(dmidecode -s system-product-name)
+  CPUINFO=`awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//'`
+  MEMINFO=`free -g | awk 'NR==2' | awk '{print $2}'`
+  VENDOR=`dmidecode -s system-product-name`
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  NETNUM=$(lshw -class network -short | grep -ie "eth" | wc -l)
+  NETNUM=`lshw -class network -short | grep -ie "eth" | wc -l`
+  IPLIST="`ifconfig | sed -n '/inet.*B/{s/ B.*//; s/.*://p }'`"
   REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
   if [ "${REMAP}" == "0" ]; then
   PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
@@ -1539,7 +1547,7 @@ function sysinfo() {
   ARCPATCH="`readConfigKey "arcpatch" "${USER_CONFIG_FILE}"`"
   LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
   ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
-  MODULESINFO=$(kmod list | awk '{print$1}' | awk 'NR>1')
+  MODULESINFO="`kmod list | awk '{print$1}' | awk 'NR>1'`"
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4System:\Zn"
@@ -1574,7 +1582,7 @@ function sysinfo() {
   TEXT+="\nArcpatch: \Zb"${ARCPATCH}"\Zn"
   TEXT+="\nLKM: \Zb"${LKM}"\Zn"
   TEXT+="\nNetwork: \Zb"${NETNUM}" Adapter\Zn"
-  TEXT+="\nIP: \Zb"${IP}"\Zn"
+  TEXT+="\nIP: \Zb"${IPLIST}"\Zn"
   if [ "${REMAP}" == "0" ]; then
     TEXT+="\nSataPortMap: \Zb"${PORTMAP}"\Zn"
   elif [ "${REMAP}" == "1" ]; then
@@ -1592,7 +1600,7 @@ function sysinfo() {
     # Get Name of Controller
     NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
     # Get Amount of Drives connected
-    SATADRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
+    SATADRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
     TEXT+="\n\Z1SATA Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
     TEXT+="\Z1Drives\Zn detected:\n\Zb"${SATADRIVES}"\Zn\n"
   done
@@ -1603,7 +1611,7 @@ function sysinfo() {
     # Get Name of Controller
     NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
     # Get Amount of Drives connected
-    SASDRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
+    SASDRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
     TEXT+="\n\Z1SAS Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
     TEXT+="\Z1Drives\Zn detected:\n\Zb"${SASDRIVES}"\Zn\n"
   done

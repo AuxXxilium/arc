@@ -12,11 +12,14 @@ synoinfo: &synoinfo
   supportraidgroup:
   support_m2_pool: "yes"
 cmdline: &cmdline
+  SMBusHddDynamicPower: 1
+  synoboot2:
   syno_hdd_powerup_seq: 0
   HddHotplug: 0
   syno_hdd_detect: 0
   vender_format_version: 2
   elevator: elevator
+  scsi_mod.use_blk_mq: 1
 platform: "broadwellnk"
 unique: "synology_broadwellnk_sa3400"
 dom: 2
@@ -33,7 +36,7 @@ mac4: "001132A91B25"
 mac5: "001132A91B26"
 mac6: "001132A91B27"
 disks: 12
-dt: true
+dt: false
 beta: true
 builds:
   42962:

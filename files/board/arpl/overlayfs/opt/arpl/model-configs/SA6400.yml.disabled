@@ -53,10 +53,9 @@ builds:
       md5-hash: "fdbbea86e280a8f754339a064f9ad2df"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
-      - "ramdisk-common-init-script.patch"
+      - "ramdisk-sa6400-init-script.patch"
       - "ramdisk-common-etc-rc.patch"
       - "ramdisk-42951-post-init-script.patch"
-      - "ramdisk-42661-disable-disabled-ports.patch"
 
   64216:
     ver: "7.2"
@@ -77,4 +76,3 @@ builds:
       - "ramdisk-64216-sa6400-init-script.patch"
       - "ramdisk-common-etc-rc.patch"
       - "ramdisk-42951-post-init-script.patch"
-      - "ramdisk-42661-disable-disabled-ports.patch"
