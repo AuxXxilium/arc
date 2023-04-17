@@ -7,18 +7,18 @@
 
 # Check partition 3 space, if < 2GiB is necessary clean cache folder
 CLEARCACHE=0
-LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
+LOADER_DISK=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`
 LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
 if [ `cat /sys/block/${LOADER_DEVICE_NAME}/${LOADER_DEVICE_NAME}3/size` -lt 4194304 ]; then
   CLEARCACHE=1
 fi
 
 # Get Number of Ethernet Ports
-NETNUM=$(lshw -class network -short | grep -ie "eth[0-9]" | wc -l)
+NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
 writeConfigKey "cmdline.netif_num" "${NETNUM}" "${USER_CONFIG_FILE}"
 
 # Get actual IP
-IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
+IP=`ifconfig  |  sed -n '/inet.*B/{s/ B.*//; s/.*://p; q}'`
 
 # Check for Hypervisor
 if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
@@ -388,7 +388,7 @@ function arcnetdisk() {
       /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
         --title "Restart DHCP" --progressbox "Renewing IP" 20 70
       sleep 5
-      IP=`ip route get 1.1.1.1 2>/dev/eth0 | awk '{print$7}'`
+      IP=`ifconfig  |  sed -n '/inet.*B/{s/ B.*//; s/.*://p; q}'`
       sleep 1
       break
     fi
