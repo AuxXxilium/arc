@@ -33,9 +33,9 @@ jobs:
       # Install dependencies
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libelf-dev qemu-utils
-          sudo cp -f files/board/arpl/overlayfs/usr/bin/yq /usr/bin/yq
+          sudo apt update
+          sudo apt install -y jq libelf-dev qemu-utils
+          sudo snap install yq
 
       # Get latests LKM, addons and modules
       - name: Get latests LKM, addons and Modules
@@ -71,7 +71,7 @@ jobs:
           echo "Status: ${STATUS}"
           echo "Version: ${TAG}"
           [ ${STATUS} -ne 200 ] && exit 1
-          echo OK
+          echo "OK"
 
       # Clone buildroot repository (if not cached)
       - name: Clone buildroot
