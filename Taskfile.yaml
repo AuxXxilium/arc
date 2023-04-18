@@ -11,11 +11,6 @@ tasks:
     cmds:
       - ./new_bn.sh
 
-  build-docker-img:
-    dir: docker
-    cmds:
-      - ./build.sh
-
   compile-kpatch:
     dir: kpatch
     cmds:
