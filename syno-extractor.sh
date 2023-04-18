@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-ROOT_PATH=$PWD/files
-TOOL_PATH="$(dirname $(readlink -f "$0"))/syno-extractor"
+ROOT_PATH=$PWD
+TOOL_PATH="$(dirname $(readlink -f "$0"))/files/extractor"
 
 GITHUB_URL="https://raw.githubusercontent.com/wjz304/Redpill_CustomBuild/main/syno-extractor"
 #GITHUB_URL="https://fastly.jsdelivr.net/gh/wjz304/Redpill_CustomBuild@main/syno-extractor"
