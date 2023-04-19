@@ -1769,9 +1769,9 @@ while true; do
     echo "= \"\Z4========= System ========= \Zn\" "                                         >> "${TMP_PATH}/menu"
     echo "2 \"Addons \" "                                                                   >> "${TMP_PATH}/menu"
     echo "3 \"Modules \" "                                                                  >> "${TMP_PATH}/menu"
-    if [ "${DT}" != "true" ]; then
-      echo "s \"Change Storage Map \" "                                                     >> "${TMP_PATH}/menu"
-    fi
+    #if [ "${DT}" != "true" ]; then
+    #  echo "s \"Change Storage Map \" "                                                     >> "${TMP_PATH}/menu"
+    #fi
     if [ -n "${ADV}" ]; then
       echo "x \"\Z1Hide Advanced Options \Zn\" "                                            >> "${TMP_PATH}/menu"
     else
@@ -1806,7 +1806,7 @@ while true; do
     a) sysinfo; NEXT="a" ;;
     2) addonMenu; NEXT="2" ;;
     3) selectModules; NEXT="3" ;;
-    s) storageMenu; NEXT="s" ;;
+    #s) storageMenu; NEXT="s" ;;
     n) reset; NEXT="1" ;;
     x) [ "${ADV}" = "" ] && ADV='1' || ADV=''
        ARV="${ADV}"
