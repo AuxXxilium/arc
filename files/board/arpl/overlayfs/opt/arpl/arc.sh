@@ -405,21 +405,28 @@ function arcnetdisk() {
       while true; do
         dialog --clear --backtitle "`backtitle`" \
           --menu "SataPortMap or SataRemap?" 0 0 0 \
-          1 "Use SataPortMap" \
-          2 "Use SataRemap (experimental)" \
+          1 "Use SataPortMap with connected Ports" \
+          2 "Use SataPortMap with max Ports" \
+          3 "Use SataRemap (experimental)" \
         2>${TMP_PATH}/resp
         [ $? -ne 0 ] && return
         resp=$(<${TMP_PATH}/resp)
         [ -z "${resp}" ] && return
         if [ "${resp}" = "1" ]; then
           dialog --backtitle "`backtitle`" --title "Arc Disks" \
-            --infobox "Use SataPortMap!" 0 0
-          writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
+            --infobox "Use SataPortMap (con. Ports)!" 0 0
+          writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
           break
         elif [ "${resp}" = "2" ]; then
           dialog --backtitle "`backtitle`" --title "Arc Disks" \
+            --infobox "Use SataPortMap (max. Ports)!" 0 0
+          writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
+          break
+        fi
+        elif [ "${resp}" = "3" ]; then
+          dialog --backtitle "`backtitle`" --title "Arc Disks" \
             --infobox "Use SataRemap! (experimental)" 0 0
-          writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
+          writeConfigKey "remap" "3" "${USER_CONFIG_FILE}"
           break
         fi
       done
@@ -427,38 +434,35 @@ function arcnetdisk() {
   elif [ "${SATACONTROLLER}" -eq 0 ] && [ "${DT}" != "true" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --infobox "No SATA Controller found. Skip this!" 0 0
-    writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
+    writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
   elif [ "${DT}" = "true" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --infobox "Device Tree Model selected. Skip this!" 0 0
-    writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
+    writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
   fi
   sleep 1
   REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
   # Write Map to config and show Map to User
-  if [ "${REMAP}" == "0" ]; then
-    if [ "${SATAPORTMAP}" -gt 10 ]; then
-      writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-    elif [ "${SATAPORTMAP}" -gt 0 ] && [ "${SASCONTROLLER}" -gt 0 ]; then
-      writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-    elif [ "${SATAPORTMAP}" -lt 11 ]; then
-      writeConfigKey "cmdline.SataPortMap" "8" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-    fi
+  if [ "${REMAP}" == "1" ]; then
+    writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "SataPortMap: ${SATAPORTMAP}" 0 0
-  elif [ "${REMAP}" == "1" ]; then
+  elif [ "${REMAP}" == "2" ]; then
+    writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAPMAX}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+      --msgbox "SataPortMap: ${SATAPORTMAPMAX}" 0 0
+    elif [ "${REMAP}" == "3" ]; then
     writeConfigKey "cmdline.sata_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "SataRemap: ${SATAREMAP}" 0 0
-  elif [ "${REMAP}" == "2" ]; then
+  elif [ "${REMAP}" == "0" ]; then
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --msgbox "Device Tree Model selected - We don't need this." 0 0
+      --msgbox "No Sata Controller or DT Model selected - We don't need this." 0 0
   fi
   # Config is done
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
