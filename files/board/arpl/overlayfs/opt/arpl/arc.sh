@@ -422,7 +422,6 @@ function arcnetdisk() {
             --infobox "Use SataPortMap (max. Ports)!" 0 0
           writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
           break
-        fi
         elif [ "${resp}" = "3" ]; then
           dialog --backtitle "`backtitle`" --title "Arc Disks" \
             --infobox "Use SataRemap! (experimental)" 0 0
