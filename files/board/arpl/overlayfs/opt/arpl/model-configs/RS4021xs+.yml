@@ -1,8 +1,8 @@
 id: "RS4021xs+"
 synoinfo: &synoinfo
-  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.json"
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_bde_internal_10g: "no"
@@ -44,11 +44,11 @@ builds:
     synoinfo:
       <<: *synoinfo
     pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_RS4021xs%2B_42962.pat"
-      hash: "fd848be9336d8b5cc9b514e71d447c7612d0f542d373eef61a6d427430daa931"
-      ramdisk-hash: "40775a6b9b4fae2887cd07c0efdfb26e738e2b8de73602657f7bc4407ae4a688"
-      zimage-hash: "8903dc99f7201c8656de618d767c05f91bfd32edd9a3706a50fd223237842bf2"
-      md5-hash: "c8574a8e358fe40a7b49bbf1ddf38491"
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_RS4021xs%2B_42962.pat"
+      hash: "43b61bf14180819f3571139e3a170be29130b2ba815800519efc76ac0435172a"
+      ramdisk-hash: "482eed016adb57e842edbf81835cf91ee33123e1474c774aed58c2e97ac5ad73"
+      zimage-hash: "11c04baa8321263ddeb4eed16bf06a617113470bca6cf4502946b9fc61c20d50"
+      md5-hash: "fc15f132649a8c8626190dc864bbdf8c"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"

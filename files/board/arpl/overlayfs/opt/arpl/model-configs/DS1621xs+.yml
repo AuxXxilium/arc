@@ -1,8 +1,8 @@
 id: "DS1621xs+"
 synoinfo: &synoinfo
-  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.json"
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_bde_internal_10g: "no"
@@ -43,11 +43,11 @@ builds:
     synoinfo:
       <<: *synoinfo
     pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_DS1621xs%2B_42962.pat"
-      hash: "199d70693a7eb3a4ff69100bb2634c8b97b115f828bd1f6403d2832cce4e7052"
-      ramdisk-hash: "0c52bac011caa31ec7f76bd9371edc423d6ee162531ad22b39fcb17bcbdc8765"
-      zimage-hash: "8903dc99f7201c8656de618d767c05f91bfd32edd9a3706a50fd223237842bf2"
-      md5-hash: "f1a7238a0bd9adc0cbb5413d49d981a0"
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS1621xs%2B_42962.pat"
+      hash: "d2272ab531f0f68f8008106dd75b4e303c71db8d95093d186a22c1cf2d970402"
+      ramdisk-hash: "3f3008d60ab7e3ff9b4d05e7ceeac669ff2365edacc5e6a62e5ccc0e4b617ec3"
+      zimage-hash: "89155c534c5088fd28104c2f10543bf167d4e79a1f756b7f932e4a04a3bfaadb"
+      md5-hash: "fffec3510c954fc718a1aecba2f98fc6"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"

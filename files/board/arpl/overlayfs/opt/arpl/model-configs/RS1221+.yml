@@ -1,8 +1,8 @@
 id: "RS1221+"
 synoinfo: &synoinfo
-  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.json"
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_led_brightness_adjustment: "no"
@@ -48,11 +48,11 @@ builds:
     synoinfo:
       <<: *synoinfo
     pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_RS1221%2B_42962.pat"
-      hash: "cccb264c2004a96d7abf08b45cccb8168aebb6b1cea2e72b24770f4811cc22ef"
-      ramdisk-hash: "4b98489dc72496be9a0603b151de4c144cdf20b0429c377a707459b92ef3e6c8"
-      zimage-hash: "b0f296aad0cc3b8adba13483f89770d0a4daf9b9cab335910717448b1eaa8254"
-      md5-hash: "c3bcdbd54760cfe3311171614c524082"
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_RS1221%2B_42962.pat"
+      hash: "8a06aea176eb5f227675c1b75acd02875c2e0a2d3f4e227e87dc85b663bdbe33"
+      ramdisk-hash: "4cc65dd9056d9e095a36828b30d8477ae3d3c385fc95e6ec9eb5d1a904f699ee"
+      zimage-hash: "4f45500024580e03afca1911cf543c48d17cd42944c0c94a8fb686f1384881fe"
+      md5-hash: "441e25883733556af6fb6cbab74090fd"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"

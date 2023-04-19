@@ -1,8 +1,8 @@
 id: "DS723+"
 synoinfo: &synoinfo
-  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.json"
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_led_brightness_adjustment: "no"
@@ -42,11 +42,11 @@ builds:
     synoinfo:
       <<: *synoinfo
     pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_DS723%2B_42962.pat"
-      hash: "e5a96f3b6c8e0535eea5fd585eb5aeca7f445f6fc976628875dc64b2cbb66180"
-      ramdisk-hash: "706f55c3f280da4890d0b3aa735824b07c82c39fdcc874673445d4d2bce3332b"
-      zimage-hash: "f13c0f3781d2c96071510094b34049e7cb22a92b916e05300da0837fc47a7b3a"
-      md5-hash: "1860b260c80de7103d236f2eae0f0dfb"
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS723%2B_42962.pat"
+      hash: "f6fe369af9a8a43cad0a34df769afae8abf466551f7e7599a44646ca75486968"
+      ramdisk-hash: "a4c209f217e3cc18279903059d18e1809d08288c4f9692dda104dd1552f42d80"
+      zimage-hash: "df94509a47f4852abd326198dc916be76f31569d10d99c4199743c2e44cf8305"
+      md5-hash: "a6ee4c7cdba458636479f137b5a16d82"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"

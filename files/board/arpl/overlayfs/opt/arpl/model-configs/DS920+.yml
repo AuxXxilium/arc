@@ -1,8 +1,8 @@
 id: "DS920+"
 synoinfo: &synoinfo
-  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.json"
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_led_brightness_adjustment: "no"
@@ -50,11 +50,11 @@ builds:
     synoinfo:
       <<: *synoinfo
     pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962/DSM_DS920%2B_42962.pat"
-      hash: "90b1bd215b85eb366b3d3b6bef6bb6bef657dd0caba032dae556717b58e44c06"
-      ramdisk-hash: "42053cbfbce34d43c50db2d68786360f644fc88af3e9bbaa6377ffa9953bf158"
-      zimage-hash: "89ee173272101e6714728e73930d8b31a414f9f1eca8ab78f45c12fc721138ab"
-      md5-hash: "ba9fbd499791d19859dd9a53372b016a"
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS920%2B_42962.pat"
+      hash: "f58c15d4d83699884c30e4a4b04b1d2e0db19c477923d920327a897a73c741b6"
+      ramdisk-hash: "043d784fd35ee57eb5279c94a65e66ff2c7c4229728818bc141927a6451e95ee"
+      zimage-hash: "2de065851b8d3a222db1feea696aab12ded7b582876b22ff6e847cd6f2e62ecf"
+      md5-hash: "69792ae34d9b3c6e707d0e3e6b82816f"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"
