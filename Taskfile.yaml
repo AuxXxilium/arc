@@ -7,10 +7,6 @@ tasks:
     cmds:
       - ./img-gen.sh
 
-  build-new:
-    cmds:
-      - ./new_bn.sh
-
   compile-kpatch:
     dir: kpatch
     cmds:
