@@ -1,25 +1,10 @@
 # Get PortMap for Loader
 function getmap() {
-# Config for Sata Controller with PortMap to get all drives
-  [ -n "$SATAPORTMAP" ] && SATAPORTMAP=0
-  rm -f ${TMP_PATH}/drives
-  touch ${TMP_PATH}/drives
-  # Get Number of Drives per Controller
-  pcis=$(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}')
-  [ ! -z "$pcis" ]
-  # Loop through controllers
-  for pci in $pcis; do
-      # Get attached block devices (exclude CD-ROMs)
-      DRIVES=$(ls -la /sys/block | fgrep "${pci}" | grep -v "sr.$" | wc -l)
-      if [ "${DRIVES}" -gt 8 ]; then
-          DRIVES=8
-          WARNON=1
-      fi
-      echo -n "${DRIVES}" >> ${TMP_PATH}/drives
-  done
-  SATAPORTMAP=$(awk '{print$1}' ${TMP_PATH}/drives)
-# Config for only Sata Controller with Remap to remove blank drives
   # Clean old files
+  rm -f "${TMP_PATH}/drivesmax"
+  touch "${TMP_PATH}/drivesmax"
+  rm -f "${TMP_PATH}/drivescon"
+  touch "${TMP_PATH}/drivescon"
   rm -f "${TMP_PATH}/ports"
   touch "${TMP_PATH}ports"
   rm -f "${TMP_PATH}/remap"
@@ -30,9 +15,10 @@ function getmap() {
     MAXDISKSN=`expr $MAXDISKS + 1`
     echo -n "0>$MAXDISKSN:" >> "${TMP_PATH}/remap"
   fi
-  NUMPORTS=0
   lastdrive=0
   for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}'`; do
+    NUMPORTS=0
+    CONPORTS=0
     NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
     DRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
     unset HOSTPORTS
@@ -46,10 +32,14 @@ function getmap() {
       ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
       PCMD=`cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd`
       [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
-      [ ${ATTACH} -eq 1 ] && echo "`expr ${PORT} - 1`" >> "${TMP_PATH}/ports"
+      [ ${ATTACH} -eq 1 ] && CONPORTS=$((${CONPORTS}+1)) && echo "`expr ${PORT} - 1`" >> "${TMP_PATH}/ports"
       [ ${DUMMY} -eq 1 ]
       NUMPORTS=$((${NUMPORTS}+1))
     done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
+    [ ${NUMPORTS} -gt 8 ] && NUMPORTS=8
+    [ ${CONPORTS} -gt 8 ] && CONPORTS=8
+    echo -n "${NUMPORTS}" >> ${TMP_PATH}/drivesmax
+    echo -n "${CONPORTS}" >> ${TMP_PATH}/drivescon
   done
   while read line; do
     if [ $line = 1 ] && [ "$HYPERVISOR" = "VMware" ]; then
@@ -62,6 +52,8 @@ function getmap() {
         lastdrive=`expr $line + 1`
     fi
   done < <(cat "${TMP_PATH}/ports")
+  SATAPORTMAPMAX=$(awk '{print$1}' ${TMP_PATH}/drivesmax)
+  SATAPORTMAP=$(awk '{print$1}' ${TMP_PATH}/drivescon)
   SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
 }
 
