@@ -9,7 +9,6 @@ synoinfo: &synoinfo
   support_bde_internal_10g: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
-  support_m2_pool: "yes"
 cmdline: &cmdline
   intel_iommu: igfx_off
   HddEnableDynamicPower: 1
