@@ -567,6 +567,7 @@ function extractDsmFiles() {
   EXTRACTOR_BIN="syno_extract_system_patch"
   OLDPAT_URL="https://global.download.synology.com/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"
 
+
   if [ -f "${PAT_PATH}" ]; then
     echo "${PAT_FILE} cached."
   else
@@ -576,17 +577,28 @@ function extractDsmFiles() {
       rm -rf "${CACHE_PATH}/dl"
     fi
     mkdir -p "${CACHE_PATH}/dl"
+
+    speed_a="`curl -Lo /dev/null -m 1 -skw "%{speed_download}" "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"`"
+    speed_b="`curl -Lo /dev/null -m 1 -skw "%{speed_download}" "https://global.download.synology.com/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"`"
+    fastest="`echo -e "global.synologydownload.com ${speed_a}\nglobal.download.synology.com ${speed_b}" | sort -k2rn | head -1 | awk '{print $1}'`"
+
+    mirror="`echo ${PAT_URL} | sed 's|^http[s]*://\([^/]*\).*|\1|'`"
+    if [ "${mirror}" != "${fastest}" ]; then
+      echo "`printf "Based on the current network situation, switch to %s mirror to downloading." "${fastest}"`"
+      PAT_URL="`echo ${PAT_URL} | sed "s/${mirror}/${fastest}/"`"
+      OLDPAT_URL="https://${fastest}/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"
+    fi
     echo "Downloading ${PAT_FILE}"
     # Discover remote file size
-    FILESIZE=`curl --insecure -sLI "${PAT_URL}" | grep -i Content-Length | awk '{print$2}'`
+    FILESIZE=`curl -k -sLI "${PAT_URL}" | grep -i Content-Length | awk '{print$2}'`
     if [ 0${FILESIZE} -ge ${SPACELEFT} ]; then
       # No disk space to download, change it to RAMDISK
       PAT_PATH="${TMP_PATH}/${PAT_FILE}"
     fi
-    STATUS=`curl --insecure -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_PATH}" --progress-bar`
+    STATUS=`curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_PATH}" --progress-bar`
     if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
       rm "${PAT_PATH}"
-      dialog --backtitle "`backtitle`" --title "Error downloading" --aspect 18 \
+      dialog --backtitle "`backtitle`" --title "$(TEXT "Error downloading")" --aspect 18 \
         --msgbox "Check internet or cache disk space" 0 0
       return 1
     fi
