@@ -1513,9 +1513,15 @@ function storageMenu() {
       writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
       break
     elif [ "${resp}" = "3" ] && [ -n "${SATAREMAP}" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --infobox "Use SataRemap! (experimental)" 0 0
-      writeConfigKey "remap" "3" "${USER_CONFIG_FILE}"
+      if [ "${SASCONTROLLER}" -gt 0 ]; then
+        dialog --backtitle "`backtitle`" --title "Arc Disks" \
+          --msgbox "SAS Controller detected. Switch to SataPortMap (con. Ports)!" 0 0
+        writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
+      else
+        dialog --backtitle "`backtitle`" --title "Arc Disks" \
+          --infobox "Use SataRemap! (experimental)" 0 0
+        writeConfigKey "remap" "3" "${USER_CONFIG_FILE}"
+      fi
       break
     elif [ "${resp}" = "4" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
