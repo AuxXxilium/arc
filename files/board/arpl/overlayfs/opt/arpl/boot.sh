@@ -120,7 +120,7 @@ echo -n "IP"
 while true; do
   IP=`ifconfig  |  sed -n '/inet.*B/{s/ B.*//; s/.*://p }'`
   if [ -n "${IP}" ]; then
-    echo -ne ": \033[1;32m${IP}\033[0m"
+    echo -e ": \n\033[1;32m${IP}\033[0m"
     break
   elif [ ${COUNT} -eq 30 ]; then
     echo -e ": \033[1;31mERROR\033[0m"
