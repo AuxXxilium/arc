@@ -159,7 +159,10 @@ function arcMenu() {
   else
     resp="${1}"
   fi
-  if [ "${DT}" = "true" ] && [ "$SCSICONTROLLER" -gt "0" ]; then
+  # Read model config for buildconfig
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  DT="`readModelKey "${MODEL}" "dt"`"
+  if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
   # There is no Raid/SCSI Support for DT Models
   WARNON=2
   fi
@@ -207,12 +210,10 @@ function arcbuild() {
       break
     fi
   done
-  # Read model config for buildconfig
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  # Read model values for buildconfig
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-  DT="`readModelKey "${MODEL}" "dt"`"
   while true; do
     dialog --clear --backtitle "`backtitle`" \
       --menu "Choose an option" 0 0 0 \
@@ -763,6 +764,8 @@ function editUserConfig() {
     rm -f "${MOD_RDGZ_FILE}"
   fi
   DIRTY=1
+  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+  BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
 }
 
 ###############################################################################
@@ -813,6 +816,8 @@ function addonMenu() {
         ADDONS["${ADDON}"]="`<"${TMP_PATH}/resp"`"
         writeConfigKey "addons.${ADDON}" "${VALUE}" "${USER_CONFIG_FILE}"
         DIRTY=1
+        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       2)
         if [ ${#ADDONS[@]} -eq 0 ]; then
@@ -834,6 +839,8 @@ function addonMenu() {
           deleteConfigKey "addons.${I}" "${USER_CONFIG_FILE}"
         done
         DIRTY=1
+        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
         ITEMS=""
@@ -906,6 +913,8 @@ function selectModules() {
           USERMODULES["${ID}"]=""
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done <<<${ALLMODULES}
+        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
         dialog --backtitle "`backtitle`" --title "Modules" \
@@ -913,6 +922,8 @@ function selectModules() {
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         unset USERMODULES
         declare -A USERMODULES
+        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       4)
         rm -f "${TMP_PATH}/opts"
@@ -935,6 +946,8 @@ function selectModules() {
           USERMODULES["${ID}"]=""
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done
+        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       0)
         break
@@ -978,6 +991,8 @@ function cmdlineMenu() {
         VALUE="`<"${TMP_PATH}/resp"`"
         CMDLINE["${NAME}"]="${VALUE}"
         writeConfigKey "cmdline.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
+        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       2)
         if [ ${#CMDLINE[@]} -eq 0 ]; then
@@ -998,13 +1013,15 @@ function cmdlineMenu() {
           unset CMDLINE[${I}]
           deleteConfigKey "cmdline.${I}" "${USER_CONFIG_FILE}"
         done
+        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
         for i in $(seq 1 ${NETNUM}); do
           RET=1
           while true; do
             dialog --backtitle "`backtitle`" --title "User cmdline" \
-              --inputbox `"Type a custom MAC address of %s" "eth$(expr ${i} - 1)"` 0 0 "${CMDLINE["mac${i}"]}" \
+              --inputbox "`Type a custom MAC address of %s" "eth$(expr ${i} - 1)`" 0 0 "${CMDLINE["mac${i}"]}" \
               2>${TMP_PATH}/resp
             RET=$?
             [ ${RET} -ne 0 ] && break
@@ -1024,9 +1041,11 @@ function cmdlineMenu() {
               --title "User cmdline" --progressbox "Changing MAC" 20 70
             /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
               --title "User cmdline" --progressbox "Renewing IP" 20 70
-            IP=`ifconfig  |  sed -n '/inet.*B/{s/ B.*//; s/.*://p; q}'`
           fi
         done
+        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+        IP=`ifconfig  |  sed -n '/inet.*B/{s/ B.*//; s/.*://p; q}'`
         ;;
       4)
         ITEMS=""
@@ -1086,6 +1105,8 @@ function synoinfoMenu() {
         SYNOINFO["${NAME}"]="${VALUE}"
         writeConfigKey "synoinfo.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
         DIRTY=1
+        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       2)
         if [ ${#SYNOINFO[@]} -eq 0 ]; then
@@ -1107,6 +1128,8 @@ function synoinfoMenu() {
           deleteConfigKey "synoinfo.${I}" "${USER_CONFIG_FILE}"
         done
         DIRTY=1
+        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
         ITEMS=""
@@ -1195,6 +1218,8 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
               --msgbox "No Config Backup found" 0 0
           fi
+          writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+          BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
           ;;
         3)
           dialog --backtitle "`backtitle`" --title "Backup Loader" --aspect 18 \
@@ -1274,6 +1299,8 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
               --msgbox "No Config Backup found" 0 0
           fi
+          writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+          BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
           ;;
         2)
           dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
