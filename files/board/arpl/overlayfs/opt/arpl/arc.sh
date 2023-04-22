@@ -1000,26 +1000,33 @@ function cmdlineMenu() {
         done
         ;;
       3)
-        while true; do
-          dialog --backtitle "`backtitle`" --title "User cmdline" \
-            --inputbox "Type a custom MAC address" 0 0 "${CMDLINE['mac1']}"\
-            2>${TMP_PATH}/resp
-          [ $? -ne 0 ] && break
-          MAC="`<"${TMP_PATH}/resp"`"
-          [ -z "${MAC}" ] && MAC="`readConfigKey "original-mac" "${USER_CONFIG_FILE}"`"
-          MAC1="`echo "${MAC}" | sed 's/://g'`"
-          [ ${#MAC1} -eq 12 ] && break
-          dialog --backtitle "`backtitle`" --title "User cmdline" --msgbox "Invalid MAC" 0 0
+        for i in $(seq 1 ${NETNUM}); do
+          RET=1
+          while true; do
+            dialog --backtitle "`backtitle`" --title "User cmdline" \
+              --inputbox `"Type a custom MAC address of %s" "eth$(expr ${i} - 1)"` 0 0 "${CMDLINE["mac${i}"]}" \
+              2>${TMP_PATH}/resp
+            RET=$?
+            [ ${RET} -ne 0 ] && break
+            MAC="`<"${TMP_PATH}/resp"`"
+            [ -z "${MAC}" ] && MAC="`readConfigKey "original-mac${i}" "${USER_CONFIG_FILE}"`"
+            MACF="`echo "${MAC}" | sed 's/://g'`"
+            [ ${#MACF} -eq 12 ] && break
+            dialog --backtitle "`backtitle`" --title "User cmdline" --msgbox "Invalid MAC" 0 0
+          done
+          if [ ${RET} -eq 0 ]; then
+            CMDLINE["mac${i}"]="${MACF}"
+            CMDLINE["netif_num"]=${NETNUM}
+            writeConfigKey "cmdline.mac${i}"      "${MACF}" "${USER_CONFIG_FILE}"
+            writeConfigKey "cmdline.netif_num"    "${NETNUM}"  "${USER_CONFIG_FILE}"
+            MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
+            ip link set dev eth$(expr ${i} - 1) address ${MAC} 2>&1 | dialog --backtitle "`backtitle`" \
+              --title "User cmdline" --progressbox "Changing MAC" 20 70
+            /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
+              --title "User cmdline" --progressbox "Renewing IP" 20 70
+            IP=`ifconfig  |  sed -n '/inet.*B/{s/ B.*//; s/.*://p; q}'`
+          fi
         done
-        CMDLINE["mac1"]="${MAC1}"
-        CMDLINE["netif_num"]=1
-        writeConfigKey "cmdline.mac1"      "${MAC1}" "${USER_CONFIG_FILE}"
-        MAC="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
-        ip link set dev eth0 address ${MAC} 2>&1 | dialog --backtitle "`backtitle`" \
-          --title "User cmdline" --progressbox "Changing mac" 20 70
-        /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
-          --title "User cmdline" --progressbox "Renewing IP" 20 70
-        IP=`ip route get 1.1.1.1 2>/dev/null | awk '{print$7}'`
         ;;
       4)
         ITEMS=""
