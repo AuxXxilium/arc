@@ -9,13 +9,10 @@ function getmap() {
   touch "${TMP_PATH}ports"
   rm -f "${TMP_PATH}/remap"
   touch "${TMP_PATH}remap"
-  # Check for VMware
-  if [ "$HYPERVISOR" = "VMware" ]; then
-    MAXDISKS="`readModelKey "${MODEL}" "disks"`"
-    MAXDISKSN=`expr $MAXDISKS + 1`
-    echo -n "0>$MAXDISKSN:" >> "${TMP_PATH}/remap"
-  fi
-  lastdrive=0
+  let DISKIDXMAPIDX=0
+  DISKIDXMAP=""
+  let DISKIDXMAPIDXMAX=0
+  DISKIDXMAPMAX=""
   for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}'`; do
     NUMPORTS=0
     CONPORTS=0
@@ -40,16 +37,27 @@ function getmap() {
     [ ${CONPORTS} -gt 8 ] && CONPORTS=8
     echo -n "${NUMPORTS}" >> ${TMP_PATH}/drivesmax
     echo -n "${CONPORTS}" >> ${TMP_PATH}/drivescon
+    DISKIDXMAP=$DISKIDXMAP$(printf "%02x" $DISKIDXMAPIDX)
+    let DISKIDXMAPIDX=$DISKIDXMAPIDX+$CONPORTS
+    DISKIDXMAPMAX=$DISKIDXMAPMAX$(printf "%02x" $DISKIDXMAPIDXMAX)
+    let DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS
   done
+  LASTDRIVE=0
+  # Check for VMware
+  if [ "$HYPERVISOR" = "VMware" ]; then
+    MAXDISKS="`readModelKey "${MODEL}" "disks"`"
+    MAXDISKSN=`expr $MAXDISKS + 1`
+    echo -n "0>$MAXDISKSN:" >> "${TMP_PATH}/remap"
+  fi
   while read line; do
     if [ $line = 1 ] && [ "$HYPERVISOR" = "VMware" ]; then
-      lastdrive=`expr $lastdrive - 1`
+      LASTDRIVE=`expr $LASTDRIVE - 1`
     fi
-    if [ $line != $lastdrive ]; then
-      echo -n "$line>$lastdrive:" >> "${TMP_PATH}/remap"
-      lastdrive=`expr $lastdrive + 1`
-    elif [ $line == $lastdrive ]; then
-        lastdrive=`expr $line + 1`
+    if [ $line != $LASTDRIVE ]; then
+      echo -n "$line>$LASTDRIVE:" >> "${TMP_PATH}/remap"
+      LASTDRIVE=`expr $LASTDRIVE + 1`
+    elif [ $line == $LASTDRIVE ]; then
+        LASTDRIVE=`expr $line + 1`
     fi
   done < <(cat "${TMP_PATH}/ports")
   SATAPORTMAPMAX=$(awk '{print$1}' ${TMP_PATH}/drivesmax)
