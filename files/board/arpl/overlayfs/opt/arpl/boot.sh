@@ -75,7 +75,7 @@ done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 # Check if machine has EFI
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
 
-LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
+LOADER_DISK=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`
 BUS=`udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2`
 if [ "${BUS}" = "ata" ]; then
   LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
@@ -91,6 +91,7 @@ for N in `seq 1 9`; do
   [ -n "${CMDLINE["mac${N}"]}" ] && MACS=$((${MACS}+1))
 done
 if [ ${NETIF_NUM} -ne ${MACS} ]; then
+  [ ${MACS} -gt 4 ] && MACS=4 && echo -e "\033[1;33m*** WARNING: Only 4 Ethernet ports are supported ***\033[0m"
   echo -e "\033[1;33m*** netif_num is not equal to macX amount, set netif_num to ${MACS} ***\033[0m"
   CMDLINE["netif_num"]=${MACS}
 fi
