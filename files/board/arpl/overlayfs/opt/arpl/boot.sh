@@ -127,8 +127,8 @@ while true; do
     echo -e ": \033[1;31mERROR\033[0m"
     break
   fi
-  COUNT=$((${COUNT}+1))
-  sleep 1
+  COUNT=$((${COUNT}+3))
+  sleep 3
   echo -n "."
 done
 
