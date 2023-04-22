@@ -5,6 +5,8 @@ version: '3'
 tasks:
   build-img:
     cmds:
+      - git reset --hard
+      - git pull
       - ./img-gen.sh
 
   compile-kpatch:
