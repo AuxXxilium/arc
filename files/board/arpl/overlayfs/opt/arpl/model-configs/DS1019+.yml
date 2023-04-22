@@ -1,0 +1,80 @@
+id: "DS1019+"
+synoinfo: &synoinfo
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.json"
+  support_disk_compatibility: "no"
+  support_memory_compatibility: "no"
+  support_bde_internal_10g: "no"
+  esataportcfg: "0x00"
+  support_led_brightness_adjustment: "no"
+  support_leds_lp3943: ""
+  buzzeroffen: "0xffff"
+cmdline: &cmdline
+  syno_hdd_powerup_seq: 0
+  HddHotplug: 0
+  vender_format_version: 2
+  syno_hdd_detect: 0
+  elevator: elevator
+platform: "apollolake"
+unique: "synology_apollolake_1019+"
+dom: 2
+serial:
+  prefix:
+    - "1850"
+  middle: "QXR"
+  suffix: "numeric"
+arcserial: "1850QXRTXWRXT"
+mac1: "00113295B399"
+mac2: "00113295B39A"
+mac3: "00113295B39B"
+mac4: "00113295B39C"
+mac5: "9009D019775A"
+mac6: "9009D01978A5"
+disks: 5
+dt: false
+beta: true
+flags:
+  - "movbe"
+builds:
+  42962:
+    ver: "7.1.1"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS1019%2B_42962.pat"
+      hash: "af2268388df9434679205ffd782ae5c17cd81d733cdcd94b13fc894748ffe321"
+      ramdisk-hash: "c2ef679f95b892d515148b9095f4808dfe2bc4bf1ed0e5f6049fe773a24a6999"
+      zimage-hash: "f372b5faaca87d852579df25fe1e9471fd346448ead932586ffd069e2dc4fb13"
+      md5-hash: "b590bc9f0df784be4d6bae13d551f76b"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"
+
+  64216:
+    ver: "7.2"
+    kver: "4.4.302"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.download.synology.com/download/DSM/beta/7.2/64216/DSM_DS1019%2B_64216.pat"
+      hash: "46e878970f8167aaba391115b1588c3557a8a33e29a7e5c047a8ab7bd02186ad"
+      ramdisk-hash: "8b3a9443275c155f5e8f922e6d5933a48b454322712963f5136b40cd6b34b448"
+      zimage-hash: "449e79815a6812393a8e76d29a8ceee29256f1484cf76b3ddea247a49dc30a27"
+      md5-hash: "bbfd46874412c6c87620947527838c27"
+    patch:
+      - "ramdisk-64216-disable-root-pwd.patch"
+      - "ramdisk-64216-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"
