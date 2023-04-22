@@ -446,21 +446,25 @@ function arcnetdisk() {
     # Write Map to config and show Map to User
     if [ "${REMAP}" == "1" ]; then
       writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+      writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
       deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --msgbox "SataPortMap: ${SATAPORTMAP}" 0 0
+        --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
     elif [ "${REMAP}" == "2" ]; then
       writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAPMAX}" "${USER_CONFIG_FILE}"
+      writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAPMAX}" "${USER_CONFIG_FILE}"
       deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --msgbox "SataPortMap: ${SATAPORTMAPMAX}" 0 0
-      elif [ "${REMAP}" == "3" ]; then
+        --msgbox "SataPortMap: ${SATAPORTMAPMAX} DiskIdxMap: ${DISKIDXMAPMAX}" 0 0
+    elif [ "${REMAP}" == "3" ]; then
       writeConfigKey "cmdline.sata_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
+      deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
       deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
         --msgbox "SataRemap: ${SATAREMAP}" 0 0
     elif [ "${REMAP}" == "0" ]; then
       deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+      deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
       deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
         --msgbox "We don't need this." 0 0
@@ -1535,21 +1539,25 @@ function storageMenu() {
   # Write Map to config and show Map to User
   if [ "${REMAP}" == "1" ]; then
     writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --msgbox "SataPortMap: ${SATAPORTMAP}" 0 0
+      --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
   elif [ "${REMAP}" == "2" ]; then
     writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAPMAX}" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAPMAX}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --msgbox "SataPortMap: ${SATAPORTMAPMAX}" 0 0
-    elif [ "${REMAP}" == "3" ]; then
+      --msgbox "SataPortMap: ${SATAPORTMAPMAX} DiskIdxMap: ${DISKIDXMAPMAX}" 0 0
+  elif [ "${REMAP}" == "3" ]; then
     writeConfigKey "cmdline.sata_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "SataRemap: ${SATAREMAP}" 0 0
   elif [ "${REMAP}" == "0" ]; then
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "We don't need this." 0 0
