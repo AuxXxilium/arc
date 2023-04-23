@@ -1598,6 +1598,7 @@ function sysinfo() {
 # let user reset config
 function reset() {
   # Reset full userconfig
+  MACF="`readConfigKey "original-mac1" "${USER_CONFIG_FILE}"`"
   writeConfigKey "lkm" "dev" "${USER_CONFIG_FILE}"
   writeConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "model" "" "${USER_CONFIG_FILE}"
