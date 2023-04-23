@@ -110,7 +110,6 @@ for i in $(seq 1 ${#MACFS[@]}); do
   MACF="`readConfigKey "cmdline.mac${i}" "${USER_CONFIG_FILE}"`"
   if [ -n "${MACF}" -a "${MACF}" != "${MACFS[$(expr ${i} - 1)]}" ]; then
     MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-    echo `"Setting %s MAC to %s" "eth$(expr ${i} - 1)" "${MAC}"`
     ip link set dev eth$(expr ${i} - 1) address ${MAC} >/dev/null 2>&1 && \
       (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
   fi
