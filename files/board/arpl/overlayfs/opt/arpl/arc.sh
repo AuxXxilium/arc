@@ -132,10 +132,13 @@ function arcMenu() {
             break
           fi
         done
-        if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
-          COMPATIBLE=0
-          FLGNEX=1
-        fi
+        for F in `readModelArray "${M}" "dt"`; do
+          if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
+            COMPATIBLE=0
+            FLGNEX=1
+            break
+          fi
+        done
       fi
       [ "${DT}" = "true" ] && DT="-DT" || DT=""
       [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
@@ -161,8 +164,8 @@ function arcMenu() {
     resp="${1}"
   fi
   # Read model config for buildconfig
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  DT="`readModelKey "${MODEL}" "dt"`"
+  MODEL=${resp}
+  DT="`readModelKey "${resp}" "dt"`"
   if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
   # There is no Raid/SCSI Support for DT Models
   WARNON=2
@@ -182,7 +185,6 @@ function arcMenu() {
       --infobox "WARN: You have more than 4 Ethernet Ports. There are only 4 supported." 0 0
     sleep 5
   fi
-  MODEL=${resp}
   writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
   deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
   deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
