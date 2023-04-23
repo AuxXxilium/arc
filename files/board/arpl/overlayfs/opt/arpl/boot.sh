@@ -88,7 +88,7 @@ fi
 NETIF_NUM=${CMDLINE["netif_num"]}
 NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
 if [ ${NETIF_NUM} -ne ${NETNUM} ]; then
-  [ ${NETNUM} -gt 4 ] && NETNUM=4 && echo -e "\033[1;33m*** WARNING: Only 4 Ethernet ports are supported ***\033[0m"
+  #[ ${NETNUM} -gt 4 ] && NETNUM=4 && echo -e "\033[1;33m*** WARNING: Only 4 Ethernet ports are supported ***\033[0m"
   echo -e "\033[1;33m*** netif_num is not equal to macX amount, set netif_num to ${NETNUM} ***\033[0m"
   CMDLINE["netif_num"]=${NETNUM}
 fi
