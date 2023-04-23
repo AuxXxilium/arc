@@ -184,8 +184,8 @@ function arcMenu() {
   fi
   MODEL=${resp}
   writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
-  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
-  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
+  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
   writeConfigKey "remap" "" "${USER_CONFIG_FILE}"
   # Delete old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
@@ -702,7 +702,7 @@ function editUserConfig() {
     rm -f "${MOD_RDGZ_FILE}"
   fi
   DIRTY=1
-  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
 }
 
@@ -754,7 +754,7 @@ function addonMenu() {
         ADDONS["${ADDON}"]="`<"${TMP_PATH}/resp"`"
         writeConfigKey "addons.${ADDON}" "${VALUE}" "${USER_CONFIG_FILE}"
         DIRTY=1
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       2)
@@ -777,7 +777,7 @@ function addonMenu() {
           deleteConfigKey "addons.${I}" "${USER_CONFIG_FILE}"
         done
         DIRTY=1
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
@@ -851,7 +851,7 @@ function selectModules() {
           USERMODULES["${ID}"]=""
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done <<<${ALLMODULES}
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
@@ -860,7 +860,7 @@ function selectModules() {
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         unset USERMODULES
         declare -A USERMODULES
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       4)
@@ -884,7 +884,7 @@ function selectModules() {
           USERMODULES["${ID}"]=""
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       0)
@@ -929,7 +929,7 @@ function cmdlineMenu() {
         VALUE="`<"${TMP_PATH}/resp"`"
         CMDLINE["${NAME}"]="${VALUE}"
         writeConfigKey "cmdline.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       2)
@@ -951,7 +951,7 @@ function cmdlineMenu() {
           unset CMDLINE[${I}]
           deleteConfigKey "cmdline.${I}" "${USER_CONFIG_FILE}"
         done
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
@@ -981,7 +981,7 @@ function cmdlineMenu() {
               --title "User cmdline" --progressbox "Renewing IP" 20 70
           fi
         done
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         IP=`ifconfig  |  sed -n '/inet.*B/{s/ B.*//; s/.*://p; q}'`
         ;;
@@ -1043,7 +1043,7 @@ function synoinfoMenu() {
         SYNOINFO["${NAME}"]="${VALUE}"
         writeConfigKey "synoinfo.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
         DIRTY=1
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       2)
@@ -1066,7 +1066,7 @@ function synoinfoMenu() {
           deleteConfigKey "synoinfo.${I}" "${USER_CONFIG_FILE}"
         done
         DIRTY=1
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
@@ -1156,7 +1156,8 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
               --msgbox "No Config Backup found" 0 0
           fi
-          writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+          CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+          deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
           BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
           ;;
         3)
@@ -1201,6 +1202,9 @@ function backupMenu() {
             rm -f ${BACKUPDIR}/user-config.yml
             rm -f ${BACKUPDIR}/zImage-dsm
             rm -f ${BACKUPDIR}/initrd-dsm
+            CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+            writeConfigKey "builddone" "1" "${USER_CONFIG_FILE}"
+            BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
             dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
               --msgbox "Restore complete" 0 0
           else
@@ -1237,7 +1241,8 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
               --msgbox "No Config Backup found" 0 0
           fi
-          writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+          CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+          deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
           BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
           ;;
         2)
@@ -1254,7 +1259,8 @@ function backupMenu() {
             rm -f ${BACKUPDIR}/user-config.yml
             rm -f ${BACKUPDIR}/zImage-dsm
             rm -f ${BACKUPDIR}/initrd-dsm
-            sleep 3
+            CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+            BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
             dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
               --msgbox "Restore complete" 0 0
           else
@@ -1466,7 +1472,7 @@ function storageMenu() {
   DT="`readModelKey "${MODEL}" "dt"`"
   # Get Diskmap for DSM
   getmap
-  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
 }
 
@@ -1619,8 +1625,8 @@ function reset() {
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "cmdline.netif_num" "1" "${USER_CONFIG_FILE}"
   writeConfigKey "cmdline.mac1" "${MACF}" "${USER_CONFIG_FILE}"
-  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
-  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
+  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
   CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
   BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
 }
