@@ -42,69 +42,74 @@ function getmap() {
   done
   sleep 1
   REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
-  # Clean old files
-  rm -f "${TMP_PATH}/drivesmax"
-  touch "${TMP_PATH}/drivesmax"
-  rm -f "${TMP_PATH}/drivescon"
-  touch "${TMP_PATH}/drivescon"
-  rm -f "${TMP_PATH}/ports"
-  touch "${TMP_PATH}ports"
-  rm -f "${TMP_PATH}/remap"
-  touch "${TMP_PATH}remap"
-  let DISKIDXMAPIDX=0
-  DISKIDXMAP=""
-  let DISKIDXMAPIDXMAX=0
-  DISKIDXMAPMAX=""
-  for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}'`; do
-    NUMPORTS=0
-    CONPORTS=0
-    NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
-    DRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
-    unset HOSTPORTS
-    declare -A HOSTPORTS
-    while read LINE; do
-      ATAPORT="`echo ${LINE} | grep -o 'ata[0-9]*'`"
-      PORT=`echo ${ATAPORT} | sed 's/ata//'`
-      HOSTPORTS[${PORT}]=`echo ${LINE} | grep -o 'host[0-9]*$'`
-    done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
-    while read PORT; do
-      ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
-      PCMD=`cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd`
-      [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
-      [ ${ATTACH} -eq 1 ] && CONPORTS=$((${CONPORTS}+1)) && echo "`expr ${PORT} - 1`" >> "${TMP_PATH}/ports"
-      [ ${DUMMY} -eq 1 ]
-      NUMPORTS=$((${NUMPORTS}+1))
-    done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
-    [ ${NUMPORTS} -gt 8 ] && NUMPORTS=8
-    [ ${CONPORTS} -gt 8 ] && CONPORTS=8
-    echo -n "${NUMPORTS}" >> ${TMP_PATH}/drivesmax
-    echo -n "${CONPORTS}" >> ${TMP_PATH}/drivescon
-    DISKIDXMAP=$DISKIDXMAP$(printf "%02x" $DISKIDXMAPIDX)
-    let DISKIDXMAPIDX=$DISKIDXMAPIDX+$CONPORTS
-    DISKIDXMAPMAX=$DISKIDXMAPMAX$(printf "%02x" $DISKIDXMAPIDXMAX)
-    let DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS
-  done
-  LASTDRIVE=0
-  # Check for VMware
-  if [ "$HYPERVISOR" = "VMware" ]; then
-    MAXDISKS="`readModelKey "${MODEL}" "disks"`"
-    MAXDISKSN=`expr $MAXDISKS + 1`
-    echo -n "0>$MAXDISKSN:" >> "${TMP_PATH}/remap"
+  if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
+    # Clean old files
+    rm -f "${TMP_PATH}/drivesmax"
+    touch "${TMP_PATH}/drivesmax"
+    rm -f "${TMP_PATH}/drivescon"
+    touch "${TMP_PATH}/drivescon"
+    rm -f "${TMP_PATH}/ports"
+    touch "${TMP_PATH}ports"
+    let DISKIDXMAPIDX=0
+    DISKIDXMAP=""
+    let DISKIDXMAPIDXMAX=0
+    DISKIDXMAPMAX=""
+    for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}'`; do
+      NUMPORTS=0
+      CONPORTS=0
+      NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+      DRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
+      unset HOSTPORTS
+      declare -A HOSTPORTS
+      while read LINE; do
+        ATAPORT="`echo ${LINE} | grep -o 'ata[0-9]*'`"
+        PORT=`echo ${ATAPORT} | sed 's/ata//'`
+        HOSTPORTS[${PORT}]=`echo ${LINE} | grep -o 'host[0-9]*$'`
+      done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
+      while read PORT; do
+        ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
+        PCMD=`cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd`
+        [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
+        [ ${ATTACH} -eq 1 ] && CONPORTS=$((${CONPORTS}+1)) && echo "`expr ${PORT} - 1`" >> "${TMP_PATH}/ports"
+        [ ${DUMMY} -eq 1 ]
+        NUMPORTS=$((${NUMPORTS}+1))
+      done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
+      [ ${NUMPORTS} -gt 8 ] && NUMPORTS=8
+      [ ${CONPORTS} -gt 8 ] && CONPORTS=8
+      echo -n "${NUMPORTS}" >> ${TMP_PATH}/drivesmax
+      echo -n "${CONPORTS}" >> ${TMP_PATH}/drivescon
+      DISKIDXMAP=$DISKIDXMAP$(printf "%02x" $DISKIDXMAPIDX)
+      let DISKIDXMAPIDX=$DISKIDXMAPIDX+$CONPORTS
+      DISKIDXMAPMAX=$DISKIDXMAPMAX$(printf "%02x" $DISKIDXMAPIDXMAX)
+      let DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS
+    done
+    SATAPORTMAPMAX=$(awk '{print$1}' ${TMP_PATH}/drivesmax)
+    SATAPORTMAP=$(awk '{print$1}' ${TMP_PATH}/drivescon)
   fi
-  while read line; do
-    if [ $line = 1 ] && [ "$HYPERVISOR" = "VMware" ]; then
-      LASTDRIVE=`expr $LASTDRIVE - 1`
+  if [ "${REMAP}" == "3" ]; then
+    # Clean old files
+    rm -f "${TMP_PATH}/remap"
+    touch "${TMP_PATH}remap"
+    LASTDRIVE=0
+    # Check for VMware
+    if [ "$HYPERVISOR" = "VMware" ]; then
+      MAXDISKS="`readModelKey "${MODEL}" "disks"`"
+      MAXDISKSN=`expr $MAXDISKS + 1`
+      echo -n "0>$MAXDISKSN:" >> "${TMP_PATH}/remap"
     fi
-    if [ $line != $LASTDRIVE ]; then
-      echo -n "$line>$LASTDRIVE:" >> "${TMP_PATH}/remap"
-      LASTDRIVE=`expr $LASTDRIVE + 1`
-    elif [ $line == $LASTDRIVE ]; then
-        LASTDRIVE=`expr $line + 1`
-    fi
-  done < <(cat "${TMP_PATH}/ports")
-  SATAPORTMAPMAX=$(awk '{print$1}' ${TMP_PATH}/drivesmax)
-  SATAPORTMAP=$(awk '{print$1}' ${TMP_PATH}/drivescon)
-  SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
+    while read line; do
+      if [ $line = 1 ] && [ "$HYPERVISOR" = "VMware" ]; then
+        LASTDRIVE=`expr $LASTDRIVE - 1`
+      fi
+      if [ $line != $LASTDRIVE ]; then
+        echo -n "$line>$LASTDRIVE:" >> "${TMP_PATH}/remap"
+        LASTDRIVE=`expr $LASTDRIVE + 1`
+      elif [ $line == $LASTDRIVE ]; then
+          LASTDRIVE=`expr $line + 1`
+      fi
+    done < <(cat "${TMP_PATH}/ports")
+    SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
+  fi
   # Write Map to config and show Map to User
   if [ "${REMAP}" == "1" ]; then
     writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
