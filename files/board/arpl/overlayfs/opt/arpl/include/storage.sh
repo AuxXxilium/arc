@@ -1,3 +1,6 @@
+
+. /opt/arpl/include/functions.sh
+
 # Get PortMap for Loader
 function getmap() {
   # Ask for Portmap
@@ -41,15 +44,17 @@ function getmap() {
     fi
   done
   sleep 1
+  # Clean old files
+  rm -f "${TMP_PATH}/drivesmax"
+  touch "${TMP_PATH}/drivesmax"
+  rm -f "${TMP_PATH}/drivescon"
+  touch "${TMP_PATH}/drivescon"
+  rm -f "${TMP_PATH}/ports"
+  touch "${TMP_PATH}ports"
+  rm -f "${TMP_PATH}/remap"
+  touch "${TMP_PATH}remap"
   REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
-    # Clean old files
-    rm -f "${TMP_PATH}/drivesmax"
-    touch "${TMP_PATH}/drivesmax"
-    rm -f "${TMP_PATH}/drivescon"
-    touch "${TMP_PATH}/drivescon"
-    rm -f "${TMP_PATH}/ports"
-    touch "${TMP_PATH}ports"
     let DISKIDXMAPIDX=0
     DISKIDXMAP=""
     let DISKIDXMAPIDXMAX=0
@@ -87,9 +92,6 @@ function getmap() {
     SATAPORTMAP=$(awk '{print$1}' ${TMP_PATH}/drivescon)
   fi
   if [ "${REMAP}" == "3" ]; then
-    # Clean old files
-    rm -f "${TMP_PATH}/remap"
-    touch "${TMP_PATH}remap"
     LASTDRIVE=0
     # Check for VMware
     if [ "$HYPERVISOR" = "VMware" ]; then
