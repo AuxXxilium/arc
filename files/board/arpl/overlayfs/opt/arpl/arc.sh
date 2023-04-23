@@ -1599,7 +1599,7 @@ function sysinfo() {
 function reset() {
   # Reset full userconfig
   MACF="`readConfigKey "original-mac1" "${USER_CONFIG_FILE}"`"
-  writeConfigKey "lkm" "dev" "${USER_CONFIG_FILE}"
+  writeConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
   writeConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "model" "" "${USER_CONFIG_FILE}"
   writeConfigKey "build" "" "${USER_CONFIG_FILE}"
@@ -1617,16 +1617,10 @@ function reset() {
   writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
   writeConfigKey "cmdline.netif_num" "1" "${USER_CONFIG_FILE}"
   writeConfigKey "cmdline.mac1" "${MACF}" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.mac2" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.mac3" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.mac4" "${USER_CONFIG_FILE}"
-  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
-  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
+  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
+  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
   CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
   BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
 }
