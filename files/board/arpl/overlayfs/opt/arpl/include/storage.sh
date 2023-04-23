@@ -12,17 +12,17 @@ function getmap() {
     [ $? -ne 0 ] && return
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
-    if [ "${resp}" = "1" ] && [ -n "${SATAPORTMAP}" ]; then
+    if [ "${resp}" = "1" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
         --infobox "Use SataPortMap (active Ports)!" 0 0
       writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
       break
-    elif [ "${resp}" = "2" ] && [ -n "${SATAPORTMAPMAX}" ]; then
+    elif [ "${resp}" = "2" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
         --infobox "Use SataPortMap (max Ports)!" 0 0
       writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
       break
-    elif [ "${resp}" = "3" ] && [ -n "${SATAREMAP}" ]; then
+    elif [ "${resp}" = "3" ]; then
       if [ "${SASCONTROLLER}" -gt 0 ]; then
         dialog --backtitle "`backtitle`" --title "Arc Disks" \
           --msgbox "SAS Controller detected. Switch to SataPortMap (active Ports)!" 0 0
