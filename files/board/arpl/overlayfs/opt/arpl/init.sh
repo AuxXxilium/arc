@@ -71,6 +71,7 @@ MACFS=(`echo ${MACS} | sed 's/://g'`)
 
 # Get Number of Ethernet Ports
 NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
+#[ ${NETNUM} -gt 4 ] && NETNUM=4 && && echo -e "\033[1;33m*** WARNING: Only 4 Ethernet ports are supported ***\033[0m"
 
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
@@ -159,7 +160,15 @@ if [ -f /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz ]; then
 fi
 
 # Enable Wake on Lan, ignore errors
-ethtool -s eth0 wol g 2>/dev/null
+COUNT=0
+while true; do
+  ethtool -s eth${COUNT} wol g 2>/dev/null
+  if [ ${COUNT} -eq ${NETNUM} ]; then
+    echo "WOL active for ${COUNT} Adapter"
+    break
+  fi
+  COUNT=$((${COUNT}+1))
+done
 
 # Decide if boot automatically
 BOOT=1
