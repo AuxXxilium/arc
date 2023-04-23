@@ -29,7 +29,7 @@ function getmap() {
         writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
       else
         dialog --backtitle "`backtitle`" --title "Arc Disks" \
-          --infobox "Use SataRemap! (remove blank drives)" 0 0
+          --infobox "Use SataRemap! (remove blank Drives)" 0 0
         writeConfigKey "remap" "3" "${USER_CONFIG_FILE}"
       fi
       break
