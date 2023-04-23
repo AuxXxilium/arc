@@ -78,6 +78,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
   writeConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
   writeConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "backupboot" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "model" "" "${USER_CONFIG_FILE}"
   writeConfigKey "build" "" "${USER_CONFIG_FILE}"
   writeConfigKey "sn" "" "${USER_CONFIG_FILE}"

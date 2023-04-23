@@ -1727,13 +1727,16 @@ while true; do
       echo "r \"Reset User Config \" "                                                      >> "${TMP_PATH}/menu"
       echo "i \"DSM Recovery \" "                                                           >> "${TMP_PATH}/menu"
       echo "j \"Switch LKM version: \Z4${LKM}\Zn\" "                                        >> "${TMP_PATH}/menu"
-      echo "k \"Switch direct boot: \Z4${DIRECTBOOT}\Zn \" "                                >> "${TMP_PATH}/menu"
+      echo "k \"Direct boot: \Z4${DIRECTBOOT}\Zn \" "                                       >> "${TMP_PATH}/menu"
     fi
   fi
   echo "= \"\Z4===== Loader Settings ==== \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "c \"Choose a keymap \" "                                                            >> "${TMP_PATH}/menu"
   if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
     echo "d \"Clean disk cache \""                                                          >> "${TMP_PATH}/menu"
+  fi
+  if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
+    echo "r \"Boot from Backup: \Z4${BACKUPBOOT}\Zn \" "                                    >> "${TMP_PATH}/menu"
   fi
   echo "t \"Backup Menu \" "                                                                >> "${TMP_PATH}/menu"
   echo "e \"Update Menu \" "                                                                >> "${TMP_PATH}/menu"
@@ -1771,6 +1774,10 @@ while true; do
     c) keymapMenu; NEXT="c" ;;
     d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
       --prgbox "rm -rfv \"${CACHE_PATH}/dl\"" 0 0 ;;
+    r) [ "${BACKUPBOOT}" = "false" ] && BACKUPBOOT='true' || BACKUPBOOT='false'
+    writeConfigKey "backupboot" "${BACKUPBOOT}" "${USER_CONFIG_FILE}"
+    NEXT="5"
+    ;;
     t) backupMenu; NEXT="t" ;;
     e) updateMenu; NEXT="e" ;;
     0) break ;;
