@@ -1,6 +1,3 @@
-
-. /opt/arpl/include/functions.sh
-
 # Get PortMap for Loader
 function getmap() {
   # Ask for Portmap
