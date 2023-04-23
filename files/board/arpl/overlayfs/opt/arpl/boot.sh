@@ -153,9 +153,10 @@ if [ "${BACKUPBOOT}" = "true" ]; then
   poweroff
   exit 0
 fi
-
-# Executes DSM kernel via KEXEC
-kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
-echo -e "\033[1;37mBooting DSM...\033[0m"
-poweroff
-exit 0
+if [ "${BACKUPBOOT}" = "false" ]; then
+  # Executes DSM kernel via KEXEC
+  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
+  echo -e "\033[1;37mBooting DSM...\033[0m"
+  poweroff
+  exit 0
+fi
