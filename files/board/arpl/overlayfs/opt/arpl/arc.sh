@@ -15,6 +15,7 @@ fi
 
 # Get Number of Ethernet Ports
 NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
+#[ ${NETNUM} -gt 4 ] && NETNUM=4 && WARNON=3
 
 # Get actual IP
 IP=`ifconfig  |  sed -n '/inet.*B/{s/ B.*//; s/.*://p; q}'`
@@ -176,11 +177,16 @@ function arcMenu() {
       --infobox "WARN: You have selected a DT Model. There is no support for Raid/SCSI Controller." 0 0
     sleep 5
   fi
+  if [ "${WARNON}" = "3" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Warning" \
+      --infobox "WARN: You have more than 4 Ethernet Ports. There are only 4 supported." 0 0
+    sleep 5
+  fi
   MODEL=${resp}
   writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
-  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
-  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-  deleteConfigKey "remap" "${USER_CONFIG_FILE}"
+  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
+  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+  writeConfigKey "remap" "" "${USER_CONFIG_FILE}"
   # Delete old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
@@ -402,74 +408,6 @@ function arcnetdisk() {
         --infobox "SATA Controller found. Need PortMap for Controller!" 0 0
     # Get Diskmap for DSM
     getmap
-    # Ask for Portmap
-    while true; do
-      dialog --clear --backtitle "`backtitle`" \
-        --menu "SataPortMap or SataRemap?" 0 0 0 \
-        1 "Use SataPortMap with connected Ports" \
-        2 "Use SataPortMap with max Ports" \
-        3 "Use SataRemap (experimental)" \
-        4 "Set my own Portmap" \
-      2>${TMP_PATH}/resp
-      [ $? -ne 0 ] && return
-      resp=$(<${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return
-      if [ "${resp}" = "1" ] && [ -n "${SATAPORTMAP}" ]; then
-        dialog --backtitle "`backtitle`" --title "Arc Disks" \
-          --infobox "Use SataPortMap (con. Ports)!" 0 0
-        writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
-        break
-      elif [ "${resp}" = "2" ] && [ -n "${SATAPORTMAPMAX}" ]; then
-        dialog --backtitle "`backtitle`" --title "Arc Disks" \
-          --infobox "Use SataPortMap (max. Ports)!" 0 0
-        writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
-        break
-      elif [ "${resp}" = "3" ] && [ -n "${SATAREMAP}" ]; then
-        if [ "${SASCONTROLLER}" -gt 0 ]; then
-          dialog --backtitle "`backtitle`" --title "Arc Disks" \
-            --msgbox "SAS Controller detected. Switch to SataPortMap (con. Ports)!" 0 0
-          writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
-        else
-          dialog --backtitle "`backtitle`" --title "Arc Disks" \
-            --infobox "Use SataRemap! (experimental)" 0 0
-          writeConfigKey "remap" "3" "${USER_CONFIG_FILE}"
-        fi
-        break
-      elif [ "${resp}" = "4" ]; then
-        dialog --backtitle "`backtitle`" --title "Arc Disks" \
-          --infobox "Set my own PortMap!" 0 0
-        writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
-        break
-      fi
-    done
-    sleep 1
-    REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
-    # Write Map to config and show Map to User
-    if [ "${REMAP}" == "1" ]; then
-      writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
-      writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
-    elif [ "${REMAP}" == "2" ]; then
-      writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAPMAX}" "${USER_CONFIG_FILE}"
-      writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAPMAX}" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --msgbox "SataPortMap: ${SATAPORTMAPMAX} DiskIdxMap: ${DISKIDXMAPMAX}" 0 0
-    elif [ "${REMAP}" == "3" ]; then
-      writeConfigKey "cmdline.sata_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --msgbox "SataRemap: ${SATAREMAP}" 0 0
-    elif [ "${REMAP}" == "0" ]; then
-      deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --msgbox "We don't need this." 0 0
-    fi
   fi
   # Config is done
   writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
@@ -1528,74 +1466,6 @@ function storageMenu() {
   DT="`readModelKey "${MODEL}" "dt"`"
   # Get Diskmap for DSM
   getmap
-  # Ask for Portmap
-  while true; do
-    dialog --clear --backtitle "`backtitle`" \
-      --menu "SataPortMap or SataRemap?" 0 0 0 \
-      1 "Use SataPortMap with connected Ports" \
-      2 "Use SataPortMap with max Ports" \
-      3 "Use SataRemap (experimental)" \
-      4 "Set my own Portmap" \
-    2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
-    resp=$(<${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return
-    if [ "${resp}" = "1" ] && [ -n "${SATAPORTMAP}" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --infobox "Use SataPortMap (con. Ports)!" 0 0
-      writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
-      break
-    elif [ "${resp}" = "2" ] && [ -n "${SATAPORTMAPMAX}" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --infobox "Use SataPortMap (max. Ports)!" 0 0
-      writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
-      break
-    elif [ "${resp}" = "3" ] && [ -n "${SATAREMAP}" ]; then
-      if [ "${SASCONTROLLER}" -gt 0 ]; then
-        dialog --backtitle "`backtitle`" --title "Arc Disks" \
-          --msgbox "SAS Controller detected. Switch to SataPortMap (con. Ports)!" 0 0
-        writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
-      else
-        dialog --backtitle "`backtitle`" --title "Arc Disks" \
-          --infobox "Use SataRemap! (experimental)" 0 0
-        writeConfigKey "remap" "3" "${USER_CONFIG_FILE}"
-      fi
-      break
-    elif [ "${resp}" = "4" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
-        --infobox "Set my own PortMap!" 0 0
-      writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
-      break
-    fi
-  done
-  sleep 1
-  REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
-  # Write Map to config and show Map to User
-  if [ "${REMAP}" == "1" ]; then
-    writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
-    writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
-    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-    dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
-  elif [ "${REMAP}" == "2" ]; then
-    writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAPMAX}" "${USER_CONFIG_FILE}"
-    writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAPMAX}" "${USER_CONFIG_FILE}"
-    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-    dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --msgbox "SataPortMap: ${SATAPORTMAPMAX} DiskIdxMap: ${DISKIDXMAPMAX}" 0 0
-  elif [ "${REMAP}" == "3" ]; then
-    writeConfigKey "cmdline.sata_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
-    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-    dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --msgbox "SataRemap: ${SATAREMAP}" 0 0
-  elif [ "${REMAP}" == "0" ]; then
-    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-    dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --msgbox "We don't need this." 0 0
-  fi
   writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
 }
@@ -1728,7 +1598,8 @@ function sysinfo() {
 # let user reset config
 function reset() {
   # Reset full userconfig
-  writeConfigKey "lkm" "dev" "${USER_CONFIG_FILE}"
+  MACF="`readConfigKey "original-mac1" "${USER_CONFIG_FILE}"`"
+  writeConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
   writeConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "model" "" "${USER_CONFIG_FILE}"
   writeConfigKey "build" "" "${USER_CONFIG_FILE}"
@@ -1746,16 +1617,10 @@ function reset() {
   writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
   writeConfigKey "cmdline.netif_num" "1" "${USER_CONFIG_FILE}"
   writeConfigKey "cmdline.mac1" "${MACF}" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.mac2" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.mac3" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.mac4" "${USER_CONFIG_FILE}"
-  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
-  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
+  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
+  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
   CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
   BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
 }
@@ -1857,13 +1722,16 @@ while true; do
       echo "r \"Reset User Config \" "                                                      >> "${TMP_PATH}/menu"
       echo "i \"DSM Recovery \" "                                                           >> "${TMP_PATH}/menu"
       echo "j \"Switch LKM version: \Z4${LKM}\Zn\" "                                        >> "${TMP_PATH}/menu"
-      echo "k \"Switch direct boot: \Z4${DIRECTBOOT}\Zn \" "                                >> "${TMP_PATH}/menu"
+      echo "k \"Direct boot: \Z4${DIRECTBOOT}\Zn \" "                                       >> "${TMP_PATH}/menu"
     fi
   fi
   echo "= \"\Z4===== Loader Settings ==== \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "c \"Choose a keymap \" "                                                            >> "${TMP_PATH}/menu"
   if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
     echo "d \"Clean disk cache \""                                                          >> "${TMP_PATH}/menu"
+  fi
+  if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
+    echo "r \"Boot from Backup: \Z4${BACKUPBOOT}\Zn \" "                                    >> "${TMP_PATH}/menu"
   fi
   echo "t \"Backup Menu \" "                                                                >> "${TMP_PATH}/menu"
   echo "e \"Update Menu \" "                                                                >> "${TMP_PATH}/menu"
@@ -1901,6 +1769,10 @@ while true; do
     c) keymapMenu; NEXT="c" ;;
     d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
       --prgbox "rm -rfv \"${CACHE_PATH}/dl\"" 0 0 ;;
+    r) [ "${BACKUPBOOT}" = "false" ] && BACKUPBOOT='true' || BACKUPBOOT='false'
+    writeConfigKey "backupboot" "${BACKUPBOOT}" "${USER_CONFIG_FILE}"
+    NEXT="5"
+    ;;
     t) backupMenu; NEXT="t" ;;
     e) updateMenu; NEXT="e" ;;
     0) break ;;

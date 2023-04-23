@@ -18,6 +18,8 @@ printf "\033[1;44m%*s\033[0m\n" ${COLUMNS} ""
 TITLE="BOOTING..."
 printf "\033[1;33m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
 
+[ "${BACKUPBOOT}" = "true" ] && USER_CONFIG_FILE=${BB_USER_CONFIG_FILE}
+
 # Check if DSM zImage changed, patch it if necessary
 ZIMAGE_HASH="`readConfigKey "zimage-hash" "${USER_CONFIG_FILE}"`"
 if [ "`sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}'`" != "${ZIMAGE_HASH}" ]; then
@@ -88,7 +90,7 @@ fi
 NETIF_NUM=${CMDLINE["netif_num"]}
 NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
 if [ ${NETIF_NUM} -ne ${NETNUM} ]; then
-  [ ${NETNUM} -gt 4 ] && NETNUM=4 && echo -e "\033[1;33m*** WARNING: Only 4 Ethernet ports are supported ***\033[0m"
+  #[ ${NETNUM} -gt 4 ] && NETNUM=4 && echo -e "\033[1;33m*** WARNING: Only 4 Ethernet ports are supported ***\033[0m"
   echo -e "\033[1;33m*** netif_num is not equal to macX amount, set netif_num to ${NETNUM} ***\033[0m"
   CMDLINE["netif_num"]=${NETNUM}
 fi
@@ -137,10 +139,24 @@ if [ "${DIRECT}" = "true" ]; then
   reboot
   exit 0
 fi
+
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
-# Executes DSM kernel via KEXEC
-kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
-echo -e "\033[1;37mBooting DSM...\033[0m"
-poweroff
-exit 0
+BACKUPBOOT="`readConfigKey "backupboot" "${USER_CONFIG_FILE}"`"
+if [ "${BACKUPBOOT}" = "true" ]; then
+  # Uncompress backup
+  tar -xvf ${BACKUPDIR}/arc-backup.tar -C /
+  sleep 1
+  # Executes DSM kernel via KEXEC
+  kexec -l "${BB_MOD_ZIMAGE_FILE}" --initrd "${BB_MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
+  echo -e "\033[1;37mBooting Backup DSM...\033[0m"
+  poweroff
+  exit 0
+fi
+if [ "${BACKUPBOOT}" = "false" ]; then
+  # Executes DSM kernel via KEXEC
+  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
+  echo -e "\033[1;37mBooting DSM...\033[0m"
+  poweroff
+  exit 0
+fi
