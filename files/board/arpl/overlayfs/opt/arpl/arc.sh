@@ -184,9 +184,9 @@ function arcMenu() {
   fi
   MODEL=${resp}
   writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
-  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
-  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-  deleteConfigKey "remap" "${USER_CONFIG_FILE}"
+  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
+  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+  writeConfigKey "remap" "" "${USER_CONFIG_FILE}"
   # Delete old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
