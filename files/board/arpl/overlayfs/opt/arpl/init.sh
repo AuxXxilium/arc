@@ -8,7 +8,7 @@ set -e
 CNT=3
 while true; do
   [ ${CNT} -eq 0 ] && break
-  LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
+  LOADER_DISK=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`
   [ -n "${LOADER_DISK}" ] && break
   CNT=$((${CNT}-1))
   sleep 1
@@ -16,7 +16,7 @@ done
 if [ -z "${LOADER_DISK}" ]; then
   die "Loader disk not found!"
 fi
-NUM_PARTITIONS=$(blkid | grep "${LOADER_DISK}" | cut -d: -f1 | wc -l)
+NUM_PARTITIONS=`blkid | grep "${LOADER_DISK}" | cut -d: -f1 | wc -l`
 if [ $NUM_PARTITIONS -ne 3 ]; then
   die "Loader disk not found!"
 fi
