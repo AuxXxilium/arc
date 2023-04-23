@@ -99,13 +99,13 @@ function getmap() {
     fi
     while read line; do
       if [ $line = 1 ] && [ "$HYPERVISOR" = "VMware" ]; then
-        LASTDRIVE=`expr $LASTDRIVE - 1`
+        LASTDRIVE=$((${LASTDRIVE}-1))
       fi
       if [ $line != $LASTDRIVE ]; then
         echo -n "$line>$LASTDRIVE:" >> "${TMP_PATH}/remap"
-        LASTDRIVE=`expr $LASTDRIVE + 1`
+        LASTDRIVE=$((${LASTDRIVE}+1))
       elif [ $line == $LASTDRIVE ]; then
-          LASTDRIVE=`expr $line + 1`
+          LASTDRIVE=$((${line}+1))
       fi
     done < <(cat "${TMP_PATH}/ports")
     SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
