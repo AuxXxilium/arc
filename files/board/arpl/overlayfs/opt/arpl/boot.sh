@@ -118,7 +118,7 @@ echo -e "Cmdline:\n\033[1;36m${CMDLINE_LINE}\033[0m"
 COUNT=0
 echo -n "IP"
 while true; do
-  IP=`ifconfig  |  sed -n '/inet.*B/{s/ B.*//; s/.*://p }'`
+  IP=`ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p'`
   if [ -n "${IP}" ]; then
     echo -e ": \033[1;32m\n${IP}\033[0m"
     break

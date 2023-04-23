@@ -18,7 +18,7 @@ NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
 #[ ${NETNUM} -gt 4 ] && NETNUM=4 && WARNON=3
 
 # Get actual IP
-IP=`ifconfig  |  sed -n '/inet.*B/{s/ B.*//; s/.*://p; q}'`
+IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
 
 # Check for Hypervisor
 if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
@@ -132,10 +132,13 @@ function arcMenu() {
             break
           fi
         done
-        if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
-          COMPATIBLE=0
-          FLGNEX=1
-        fi
+        for F in `readModelArray "${M}" "dt"`; do
+          if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
+            COMPATIBLE=0
+            FLGNEX=1
+            break
+          fi
+        done
       fi
       [ "${DT}" = "true" ] && DT="-DT" || DT=""
       [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
@@ -161,8 +164,8 @@ function arcMenu() {
     resp="${1}"
   fi
   # Read model config for buildconfig
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  DT="`readModelKey "${MODEL}" "dt"`"
+  MODEL=${resp}
+  DT="`readModelKey "${resp}" "dt"`"
   if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
   # There is no Raid/SCSI Support for DT Models
   WARNON=2
@@ -182,10 +185,9 @@ function arcMenu() {
       --infobox "WARN: You have more than 4 Ethernet Ports. There are only 4 supported." 0 0
     sleep 5
   fi
-  MODEL=${resp}
   writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
-  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
-  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
+  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
   writeConfigKey "remap" "" "${USER_CONFIG_FILE}"
   # Delete old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
@@ -396,7 +398,7 @@ function arcnetdisk() {
       /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
         --title "Restart DHCP" --progressbox "Renewing IP" 20 70
       sleep 5
-      IP=`ifconfig  |  sed -n '/inet.*B/{s/ B.*//; s/.*://p; q}'`
+      IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
       sleep 1
       break
     fi
@@ -702,7 +704,7 @@ function editUserConfig() {
     rm -f "${MOD_RDGZ_FILE}"
   fi
   DIRTY=1
-  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
 }
 
@@ -754,7 +756,7 @@ function addonMenu() {
         ADDONS["${ADDON}"]="`<"${TMP_PATH}/resp"`"
         writeConfigKey "addons.${ADDON}" "${VALUE}" "${USER_CONFIG_FILE}"
         DIRTY=1
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       2)
@@ -777,7 +779,7 @@ function addonMenu() {
           deleteConfigKey "addons.${I}" "${USER_CONFIG_FILE}"
         done
         DIRTY=1
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
@@ -851,7 +853,7 @@ function selectModules() {
           USERMODULES["${ID}"]=""
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done <<<${ALLMODULES}
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
@@ -860,7 +862,7 @@ function selectModules() {
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         unset USERMODULES
         declare -A USERMODULES
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       4)
@@ -884,7 +886,7 @@ function selectModules() {
           USERMODULES["${ID}"]=""
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       0)
@@ -929,7 +931,7 @@ function cmdlineMenu() {
         VALUE="`<"${TMP_PATH}/resp"`"
         CMDLINE["${NAME}"]="${VALUE}"
         writeConfigKey "cmdline.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       2)
@@ -951,7 +953,7 @@ function cmdlineMenu() {
           unset CMDLINE[${I}]
           deleteConfigKey "cmdline.${I}" "${USER_CONFIG_FILE}"
         done
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
@@ -981,9 +983,9 @@ function cmdlineMenu() {
               --title "User cmdline" --progressbox "Renewing IP" 20 70
           fi
         done
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
-        IP=`ifconfig  |  sed -n '/inet.*B/{s/ B.*//; s/.*://p; q}'`
+        IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
         ;;
       4)
         ITEMS=""
@@ -1043,7 +1045,7 @@ function synoinfoMenu() {
         SYNOINFO["${NAME}"]="${VALUE}"
         writeConfigKey "synoinfo.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
         DIRTY=1
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       2)
@@ -1066,7 +1068,7 @@ function synoinfoMenu() {
           deleteConfigKey "synoinfo.${I}" "${USER_CONFIG_FILE}"
         done
         DIRTY=1
-        writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
@@ -1156,7 +1158,8 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
               --msgbox "No Config Backup found" 0 0
           fi
-          writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+          CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+          deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
           BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
           ;;
         3)
@@ -1201,6 +1204,9 @@ function backupMenu() {
             rm -f ${BACKUPDIR}/user-config.yml
             rm -f ${BACKUPDIR}/zImage-dsm
             rm -f ${BACKUPDIR}/initrd-dsm
+            CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+            writeConfigKey "builddone" "1" "${USER_CONFIG_FILE}"
+            BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
             dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
               --msgbox "Restore complete" 0 0
           else
@@ -1237,7 +1243,8 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
               --msgbox "No Config Backup found" 0 0
           fi
-          writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+          CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+          deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
           BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
           ;;
         2)
@@ -1254,7 +1261,8 @@ function backupMenu() {
             rm -f ${BACKUPDIR}/user-config.yml
             rm -f ${BACKUPDIR}/zImage-dsm
             rm -f ${BACKUPDIR}/initrd-dsm
-            sleep 3
+            CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+            BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
             dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
               --msgbox "Restore complete" 0 0
           else
@@ -1466,7 +1474,7 @@ function storageMenu() {
   DT="`readModelKey "${MODEL}" "dt"`"
   # Get Diskmap for DSM
   getmap
-  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
 }
 
@@ -1619,8 +1627,8 @@ function reset() {
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "cmdline.netif_num" "1" "${USER_CONFIG_FILE}"
   writeConfigKey "cmdline.mac1" "${MACF}" "${USER_CONFIG_FILE}"
-  writeConfigKey "confdone" "0" "${USER_CONFIG_FILE}"
-  writeConfigKey "builddone" "0" "${USER_CONFIG_FILE}"
+  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
+  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
   CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
   BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
 }
