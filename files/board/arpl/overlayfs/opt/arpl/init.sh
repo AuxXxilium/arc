@@ -194,6 +194,7 @@ while true; do
     break
   fi
   COUNT=$((${COUNT}+3))
+  sleep 3
   IP=`ifconfig  |  sed -n '/inet.*B/{s/ B.*//; s/.*://p; q}'`
   if [ -n "${IP}" ]; then
     echo -en "OK\nAccess \033[1;34mhttp://${IP}:7681\033[0m to configure the loader via web terminal"
