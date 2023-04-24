@@ -1722,7 +1722,7 @@ fi
 # Main loop
 NEXT="1"
 while true; do
-  echo "= \"\Z4========== Main ========== \Zn\" "                                            > "${TMP_PATH}/menu"
+  echo "= \"\Z4========== Main ==========\Zn \" "                                            > "${TMP_PATH}/menu"
   echo "1 \"Choose Model for Arc Loader \" "                                                >> "${TMP_PATH}/menu"
   if [ -n "${CONFDONE}" ]; then
     echo "4 \"Build Arc Loader \" "                                                         >> "${TMP_PATH}/menu"
@@ -1730,19 +1730,31 @@ while true; do
   if [ -n "${BUILDDONE}" ]; then
     echo "5 \"Boot Arc Loader \" "                                                          >> "${TMP_PATH}/menu"
   fi
-  echo "= \"\Z4========== Info ========== \Zn\" "                                           >> "${TMP_PATH}/menu"
+  echo "= \"\Z4========== Info ==========\Zn \" "                                           >> "${TMP_PATH}/menu"
   echo "a \"Sysinfo \" "                                                                    >> "${TMP_PATH}/menu"
   if [ -n "${CONFDONE}" ]; then
-    echo "= \"\Z4========= System ========= \Zn\" "                                         >> "${TMP_PATH}/menu"
+    echo "= \"\Z4========= System =========\Zn \" "                                         >> "${TMP_PATH}/menu"
     echo "2 \"Addons \" "                                                                   >> "${TMP_PATH}/menu"
     echo "3 \"Modules \" "                                                                  >> "${TMP_PATH}/menu"
     if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
       echo "s \"Change Storage Map \" "                                                     >> "${TMP_PATH}/menu"
     fi
-    if [ -n "${ADVOPTS}" ]; then
-      echo "x \"\Z1Hide Advanced Options \Zn\" "                                            >> "${TMP_PATH}/menu"
+    if [ -n "${ARCOPTS}" ]; then
+      echo "v \"\Z1Hide Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
     else
-      echo "x \"\Z1Show Advanced Options \Zn\" "                                            >> "${TMP_PATH}/menu"
+      echo "v \"\Z1Show Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
+    fi
+    if [ -n "${ARCOPTS}" ]; then
+      echo "t \"Backup Menu \" "                                                            >> "${TMP_PATH}/menu"
+      if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
+        echo "r \"Boot from Backup: \Z4${BACKUPBOOT}\Zn \" "                                >> "${TMP_PATH}/menu"
+      fi
+      echo "p \"\Z1Format Disks\Zn \" "                                                     >> "${TMP_PATH}/menu"
+    fi
+    if [ -n "${ADVOPTS}" ]; then
+      echo "x \"\Z1Hide Advanced Options\Zn \" "                                            >> "${TMP_PATH}/menu"
+    else
+      echo "x \"\Z1Show Advanced Options\Zn \" "                                            >> "${TMP_PATH}/menu"
     fi
     if [ -n "${ADVOPTS}" ]; then
       echo "f \"Cmdline \" "                                                                >> "${TMP_PATH}/menu"
@@ -1750,29 +1762,17 @@ while true; do
       echo "h \"Edit User Config \" "                                                       >> "${TMP_PATH}/menu"
       echo "r \"Reset User Config \" "                                                      >> "${TMP_PATH}/menu"
       echo "i \"DSM Recovery \" "                                                           >> "${TMP_PATH}/menu"
-      echo "j \"Switch LKM version: \Z4${LKM}\Zn\" "                                        >> "${TMP_PATH}/menu"
+      echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >> "${TMP_PATH}/menu"
       echo "k \"Direct boot: \Z4${DIRECTBOOT}\Zn \" "                                       >> "${TMP_PATH}/menu"
     fi
-    if [ -n "${ARCOPTS}" ]; then
-      echo "v \"\Z1Hide Arc Options \Zn\" "                                                 >> "${TMP_PATH}/menu"
-    else
-      echo "v \"\Z1Show Arc Options \Zn\" "                                                 >> "${TMP_PATH}/menu"
-    fi
-    if [ -n "${ARCOPTS}" ]; then
-      echo "t \"Backup Menu \" "                                                            >> "${TMP_PATH}/menu"
-      if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
-        echo "r \"Boot from Backup: \Z4${BACKUPBOOT}\Zn \" "                                >> "${TMP_PATH}/menu"
-      fi
-      echo "p \"Format Disks \" "                                                           >> "${TMP_PATH}/menu"
-    fi
   fi
-  echo "= \"\Z4===== Loader Settings ==== \Zn\" "                                           >> "${TMP_PATH}/menu"
+  echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >> "${TMP_PATH}/menu"
   echo "c \"Choose a keymap \" "                                                            >> "${TMP_PATH}/menu"
   if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
     echo "d \"Clean disk cache \""                                                          >> "${TMP_PATH}/menu"
   fi
   echo "e \"Update Menu \" "                                                                >> "${TMP_PATH}/menu"
-  echo "0 \"\Z1Exit\Zn\" "                                                                  >> "${TMP_PATH}/menu"
+  echo "0 \"\Z1Exit\Zn \" "                                                                 >> "${TMP_PATH}/menu"
   dialog --clear --default-item ${NEXT} --backtitle "`backtitle`" --colors \
     --menu "Choose an Option" 0 0 0 --file "${TMP_PATH}/menu" \
     2>${TMP_PATH}/resp
