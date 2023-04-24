@@ -1735,15 +1735,15 @@ while true; do
     echo "= \"\Z4========= System =========\Zn \" "                                         >> "${TMP_PATH}/menu"
     echo "2 \"Addons \" "                                                                   >> "${TMP_PATH}/menu"
     echo "3 \"Modules \" "                                                                  >> "${TMP_PATH}/menu"
-    if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
-      echo "s \"Change Storage Map \" "                                                     >> "${TMP_PATH}/menu"
-    fi
     if [ -n "${ARCOPTS}" ]; then
       echo "v \"\Z1Hide Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
     else
       echo "v \"\Z1Show Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
     fi
     if [ -n "${ARCOPTS}" ]; then
+      if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
+        echo "s \"Change Storage Map \" "                                                   >> "${TMP_PATH}/menu"
+      fi
       echo "t \"Backup Menu \" "                                                            >> "${TMP_PATH}/menu"
       if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
         echo "r \"Boot from Backup: \Z4${BACKUPBOOT}\Zn \" "                                >> "${TMP_PATH}/menu"
