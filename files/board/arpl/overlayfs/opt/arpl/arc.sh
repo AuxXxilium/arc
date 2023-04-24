@@ -524,8 +524,8 @@ function extractDsmFiles() {
     fi
     mkdir -p "${CACHE_PATH}/dl"
 
-    speed_a="`curl -Lo /dev/null -m 1 -skw "%{speed_download}" "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"`"
-    speed_b="`curl -Lo /dev/null -m 1 -skw "%{speed_download}" "https://global.download.synology.com/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"`"
+    speed_a=`ping -c 1 -W 5 global.synologydownload.com | awk '/time=/ {print $7}' | cut -d '=' -f 2`
+    speed_b=`ping -c 1 -W 5 global.download.synology.com | awk '/time=/ {print $7}' | cut -d '=' -f 2
     fastest="`echo -e "global.synologydownload.com ${speed_a}\nglobal.download.synology.com ${speed_b}" | sort -k2rn | head -1 | awk '{print $1}'`"
 
     mirror="`echo ${PAT_URL} | sed 's|^http[s]*://\([^/]*\).*|\1|'`"
@@ -1671,6 +1671,33 @@ function tryRecoveryDSM() {
 }
 
 ###############################################################################
+# let user format disks from inside arc
+function formatdisks() {
+        ITEMS=""
+        while read POSITION NAME; do
+          [ -z "${POSITION}" -o -z "${NAME}" ] && continue
+          ITEMS+="`printf "%s %s off " "${POSITION}" "${NAME}"`"
+        done < <(ls -l /dev/disk/by-id/ | grep -v "${LOADER_DEVICE_NAME}" | sed 's|../..|/dev|g' | awk -F' ' '{print $11" "$9}' | sort -uk 1,1)
+        dialog --backtitle "`backtitle`" --title "Format disk" \
+          --checklist "Advanced" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && return
+        RESP=`<"${TMP_PATH}/resp"`
+        [ -z "${RESP}" ] && return
+        dialog --backtitle "`backtitle`" --title "Format disk" \
+            --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
+        [ $? -ne 0 ] && return
+        (
+          for I in ${RESP}; do
+            mkfs.ext4 -F -O ^metadata_csum ${I}
+          done
+        ) | dialog --backtitle "`backtitle`" --title "Format disk" \
+            --progressbox "Formatting ..." 20 70
+        MSG="Formatting is complete."
+        dialog --backtitle "`backtitle`" --colors --aspect 18 \
+          --msgbox "${MSG}" 0 0
+}
+
+###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
   [ ${DIRTY} -eq 1 ] && dialog --backtitle "`backtitle`" --title "Alert" \
@@ -1712,12 +1739,12 @@ while true; do
     if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
       echo "s \"Change Storage Map \" "                                                     >> "${TMP_PATH}/menu"
     fi
-    if [ -n "${ADV}" ]; then
+    if [ -n "${ADVOPTS}" ]; then
       echo "x \"\Z1Hide Advanced Options \Zn\" "                                            >> "${TMP_PATH}/menu"
     else
       echo "x \"\Z1Show Advanced Options \Zn\" "                                            >> "${TMP_PATH}/menu"
     fi
-    if [ -n "${ADV}" ]; then
+    if [ -n "${ADVOPTS}" ]; then
       echo "f \"Cmdline \" "                                                                >> "${TMP_PATH}/menu"
       echo "g \"Synoinfo \" "                                                               >> "${TMP_PATH}/menu"
       echo "h \"Edit User Config \" "                                                       >> "${TMP_PATH}/menu"
@@ -1726,16 +1753,24 @@ while true; do
       echo "j \"Switch LKM version: \Z4${LKM}\Zn\" "                                        >> "${TMP_PATH}/menu"
       echo "k \"Direct boot: \Z4${DIRECTBOOT}\Zn \" "                                       >> "${TMP_PATH}/menu"
     fi
+    if [ -n "${ARCOPTS}" ]; then
+      echo "v \"\Z1Hide Arc Options \Zn\" "                                                 >> "${TMP_PATH}/menu"
+    else
+      echo "v \"\Z1Show Arc Options \Zn\" "                                                 >> "${TMP_PATH}/menu"
+    fi
+    if [ -n "${ARCOPTS}" ]; then
+      echo "t \"Backup Menu \" "                                                            >> "${TMP_PATH}/menu"
+      if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
+        echo "r \"Boot from Backup: \Z4${BACKUPBOOT}\Zn \" "                                >> "${TMP_PATH}/menu"
+      fi
+      echo "p \"Format Disks \" "                                                           >> "${TMP_PATH}/menu"
+    fi
   fi
   echo "= \"\Z4===== Loader Settings ==== \Zn\" "                                           >> "${TMP_PATH}/menu"
   echo "c \"Choose a keymap \" "                                                            >> "${TMP_PATH}/menu"
   if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
     echo "d \"Clean disk cache \""                                                          >> "${TMP_PATH}/menu"
   fi
-  if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
-    echo "r \"Boot from Backup: \Z4${BACKUPBOOT}\Zn \" "                                    >> "${TMP_PATH}/menu"
-  fi
-  echo "t \"Backup Menu \" "                                                                >> "${TMP_PATH}/menu"
   echo "e \"Update Menu \" "                                                                >> "${TMP_PATH}/menu"
   echo "0 \"\Z1Exit\Zn\" "                                                                  >> "${TMP_PATH}/menu"
   dialog --clear --default-item ${NEXT} --backtitle "`backtitle`" --colors \
@@ -1751,14 +1786,19 @@ while true; do
     3) selectModules; NEXT="3" ;;
     s) storageMenu; NEXT="s" ;;
     n) reset; NEXT="1" ;;
-    x) [ "${ADV}" = "" ] && ADV='1' || ADV=''
-       ARV="${ADV}"
+    x) [ "${ADVOPTS}" = "" ] && ADVOPTS='1' || ADVOPTS=''
+       ADVOPTS="${ADVOPTS}"
        NEXT="x"
+       ;;
+    v) [ "${ARCOPTS}" = "" ] && ARCOPTS='1' || ARCOPTS=''
+       ARCOPTS="${ARCOPTS}"
+       NEXT="v"
        ;;
     f) cmdlineMenu; NEXT="f" ;;
     g) synoinfoMenu; NEXT="g" ;;
     h) editUserConfig; NEXT="h" ;;
     i) tryRecoveryDSM; NEXT="i" ;;
+    p) formatdisks; NEXT="p" ;;
     j) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
       writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
       DIRTY=1
