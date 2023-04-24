@@ -100,8 +100,8 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
       break
     fi
     MACO=`ip link show eth$COUNT | awk '/ether/{print$2}' | sed 's/://g'`
-    writeConfigKey "cmdline.mac${COUNT}" "${MACO}" "${USER_CONFIG_FILE}"
     COUNT=$((${COUNT}+1))
+    writeConfigKey "cmdline.mac${COUNT}" "${MACO}" "${USER_CONFIG_FILE}"
   done
 fi
 
@@ -112,8 +112,8 @@ while true; do
     break
   fi
   MACO=`ip link show eth$COUNT | awk '/ether/{print$2}' | sed 's/://g'`
-  writeConfigKey "device.mac${COUNT}" "${MACO}" "${USER_CONFIG_FILE}"
   COUNT=$((${COUNT}+1))
+  writeConfigKey "device.mac${COUNT}" "${MACO}" "${USER_CONFIG_FILE}"
 done
 
 # Set custom MAC if defined
