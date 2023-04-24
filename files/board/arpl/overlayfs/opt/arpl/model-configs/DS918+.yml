@@ -27,13 +27,14 @@ serial:
     - "1980"
   middle: "PDN"
   suffix: "numeric"
-arcserial: "1890PDN993218"
-mac1: "0011329A73BB"
-mac2: "0011329A73BC"
-mac3: "0011329A73BD"
-mac4: "0011329A73BE"
-mac5: "9009D019775A"
-mac6: "9009D01978A5"
+arc:
+  serial: "1890PDN993218"
+  mac1: "0011329A73BB"
+  mac2: "0011329A73BC"
+  mac3: "0011329A73BD"
+  mac4: "0011329A73BE"
+  mac5: "9009D019775A"
+  mac6: "9009D01978A5"
 disks: 4
 dt: false
 flags:

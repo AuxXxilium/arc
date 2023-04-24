@@ -24,13 +24,14 @@ serial:
     - "2160"
   middle: "T2R"
   suffix: "alpha"
-arcserial: "2160T2RMHS00P"
-mac1: "001132FE1AA1"
-mac2: "001132FE1AA2"
-mac3: "001132FE1AA3"
-mac4: "001132FE1AA4"
-mac5: "001132FE1AA5"
-mac6: "9009D019775A"
+arc:
+  serial: "2160T2RMHS00P"
+  mac1: "001132FE1AA1"
+  mac2: "001132FE1AA2"
+  mac3: "001132FE1AA3"
+  mac4: "001132FE1AA4"
+  mac5: "001132FE1AA5"
+  mac6: "9009D019775A"
 disks: 16
 dt: false
 builds:

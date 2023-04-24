@@ -25,13 +25,14 @@ serial:
     - "1940"
   middle: "RFR"
   suffix: "alpha"
-arcserial: "1930RFR8HJTK4"
-mac1: "001132A9E866"
-mac2: "001132A9E867"
-mac3: "001132A9E868"
-mac4: "001132A9E869"
-mac5: "9009D019775A"
-mac6: "9009D01978A5"
+arc:
+  serial: "1930RFR8HJTK4"
+  mac1: "001132A9E866"
+  mac2: "001132A9E867"
+  mac3: "001132A9E868"
+  mac4: "001132A9E869"
+  mac5: "9009D019775A"
+  mac6: "9009D01978A5"
 flags:
   - "movbe"
 disks: 4
