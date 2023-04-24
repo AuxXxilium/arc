@@ -88,8 +88,6 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.misc" "" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
@@ -208,18 +206,18 @@ fi
 COUNT=0
 echo -n "Waiting IP."
 while true; do
-  if [ ${COUNT} -eq 30 ]; then
-    echo "ERROR"
-    break
-  fi
-  COUNT=$((${COUNT}+3))
- IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
+  IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
   if [ -n "${IP}" ]; then
     echo -en "OK\nAccess \033[1;34mhttp://${IP}:7681\033[0m to configure the loader via web terminal"
     break
   fi
+  if [ ${COUNT} -eq 30 ]; then
+    echo "ERROR"
+    break
+  fi
   echo -n "."
   sleep 3
+  COUNT=$((${COUNT}+3))
 done
 
 # Inform user
