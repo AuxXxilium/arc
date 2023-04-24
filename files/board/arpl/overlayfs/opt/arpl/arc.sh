@@ -41,7 +41,6 @@ DIRECTBOOT="`readConfigKey "directboot" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
 BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-DT="`readModelKey "${MODEL}" "dt"`"
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -188,7 +187,7 @@ function arcMenu() {
   writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
   deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
   deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-  writeConfigKey "remap" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
   # Delete old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
@@ -525,7 +524,7 @@ function extractDsmFiles() {
     mkdir -p "${CACHE_PATH}/dl"
 
     speed_a=`ping -c 1 -W 5 global.synologydownload.com | awk '/time=/ {print $7}' | cut -d '=' -f 2`
-    speed_b=`ping -c 1 -W 5 global.download.synology.com | awk '/time=/ {print $7}' | cut -d '=' -f 2
+    speed_b=`ping -c 1 -W 5 global.download.synology.com | awk '/time=/ {print $7}' | cut -d '=' -f 2`
     fastest="`echo -e "global.synologydownload.com ${speed_a}\nglobal.download.synology.com ${speed_b}" | sort -k2rn | head -1 | awk '{print $1}'`"
 
     mirror="`echo ${PAT_URL} | sed 's|^http[s]*://\([^/]*\).*|\1|'`"
@@ -1483,7 +1482,7 @@ function sysinfo() {
   VENDOR=`dmidecode -s system-product-name`
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   IPLIST="`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`"
-  REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
+  REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
   PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
   elif [ "${REMAP}" == "3" ]; then
@@ -1676,7 +1675,7 @@ function formatdisks() {
         ITEMS=""
         while read POSITION NAME; do
           [ -z "${POSITION}" -o -z "${NAME}" ] && continue
-          ITEMS+="`printf "%s %s off " "${POSITION}" "${NAME}"`"
+          ITEMS+="`"${POSITION}" "${NAME}"`"
         done < <(ls -l /dev/disk/by-id/ | grep -v "${LOADER_DEVICE_NAME}" | sed 's|../..|/dev|g' | awk -F' ' '{print $11" "$9}' | sort -uk 1,1)
         dialog --backtitle "`backtitle`" --title "Format disk" \
           --checklist "Advanced" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
