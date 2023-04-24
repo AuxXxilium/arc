@@ -15,28 +15,28 @@ function getmap() {
     if [ "${resp}" = "1" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
         --infobox "Use SataPortMap (active Ports)!" 0 0
-      writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.remap" "1" "${USER_CONFIG_FILE}"
       break
     elif [ "${resp}" = "2" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
         --infobox "Use SataPortMap (max Ports)!" 0 0
-      writeConfigKey "remap" "2" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.remap" "2" "${USER_CONFIG_FILE}"
       break
     elif [ "${resp}" = "3" ]; then
       if [ "${SASCONTROLLER}" -gt 0 ]; then
         dialog --backtitle "`backtitle`" --title "Arc Disks" \
           --msgbox "SAS Controller detected. Switch to SataPortMap (active Ports)!" 0 0
-        writeConfigKey "remap" "1" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.remap" "1" "${USER_CONFIG_FILE}"
       else
         dialog --backtitle "`backtitle`" --title "Arc Disks" \
           --infobox "Use SataRemap! (remove blank Drives)" 0 0
-        writeConfigKey "remap" "3" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.remap" "3" "${USER_CONFIG_FILE}"
       fi
       break
     elif [ "${resp}" = "4" ]; then
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
         --infobox "Set my own PortMap!" 0 0
-      writeConfigKey "remap" "0" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.remap" "0" "${USER_CONFIG_FILE}"
       break
     fi
   done
@@ -106,7 +106,7 @@ function getmap() {
   done < <(cat "${TMP_PATH}/ports")
   SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
   # Check Remap for correct config
-  REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
+  REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
   # Write Map to config and show Map to User
   if [ "${REMAP}" == "1" ]; then
     writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
