@@ -25,13 +25,14 @@ serial:
     - "2270"
   middle: "UMR"
   suffix: "alpha"
-arcserial: "2270UMR8HWA07"
-mac1: "9009D02A95D0"
-mac2: "9009D02A95D1"
-mac3: "9009D02A95D2"
-mac4: "9009D02A95D3"
-mac5: "9009D02A95D4"
-mac6: "9009D02A95D5"
+arc:
+  serial: "2270UMR8HWA07"
+  mac1: "9009D02A95D0"
+  mac2: "9009D02A95D1"
+  mac3: "9009D02A95D2"
+  mac4: "9009D02A95D3"
+  mac5: "9009D02A95D4"
+  mac6: "9009D02A95D5"
 disks: 16
 dt: true
 beta: true

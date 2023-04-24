@@ -28,13 +28,14 @@ serial:
     - "2150"
   middle: "SBR"
   suffix: "alpha"
-arcserial: "2050SBR8RK93S"
-mac1: "001132CD9427"
-mac2: "001132CD9428"
-mac3: "001132CD9429"
-mac4: "001132CD9430"
-mac5: "9009D019775A"
-mac6: "9009D01978A5"
+arc:
+  serial: "2050SBR8RK93S"
+  mac1: "001132CD9427"
+  mac2: "001132CD9428"
+  mac3: "001132CD9429"
+  mac4: "001132CD9430"
+  mac5: "9009D019775A"
+  mac6: "9009D01978A5"
 flags:
   - "movbe"
 disks: 4

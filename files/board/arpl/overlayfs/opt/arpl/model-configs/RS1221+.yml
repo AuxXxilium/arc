@@ -27,13 +27,14 @@ serial:
     - "20B0"
   middle: "RWR"
   suffix: "alpha"
-arcserial: "20B0RWRQTT11P"
-mac1: "001132E2529A"
-mac2: "001132E2529B"
-mac3: "001132E2529C"
-mac4: "001132E2529D"
-mac5: "9009D019775A"
-mac6: "9009D01978A5"
+arc:
+  serial: "20B0RWRQTT11P"
+  mac1: "001132E2529A"
+  mac2: "001132E2529B"
+  mac3: "001132E2529C"
+  mac4: "001132E2529D"
+  mac5: "9009D019775A"
+  mac6: "9009D01978A5"
 disks: 8
 dt: true
 beta: true
