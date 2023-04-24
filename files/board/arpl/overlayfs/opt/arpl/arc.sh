@@ -39,9 +39,8 @@ KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
 DIRECTBOOT="`readConfigKey "directboot" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
-CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
-BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
-DT="`readModelKey "${MODEL}" "dt"`"
+CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -186,9 +185,9 @@ function arcMenu() {
     sleep 5
   fi
   writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
-  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
-  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-  writeConfigKey "remap" "" "${USER_CONFIG_FILE}"
+  deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
+  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
   # Delete old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
@@ -233,9 +232,11 @@ function arcbuild() {
     [ -z "${resp}" ] && return
     if [ "${resp}" = "1" ]; then
       ARCPATCH=1
-      SN="`readModelKey "${MODEL}" "arcserial"`"
+      SN="`readModelKey "${MODEL}" "arc.serial"`"
       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arcpatch" "yes" "${USER_CONFIG_FILE}"
+      writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.patch" "yes" "${USER_CONFIG_FILE}"
       dialog --backtitle "`backtitle`" --title "Arc Config" \
             --infobox "Installing with Arc Patch!" 0 0
       break
@@ -244,7 +245,7 @@ function arcbuild() {
       # Generate random serial
       SN="`generateSerial "${MODEL}"`"
       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arcpatch" "no" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.patch" "no" "${USER_CONFIG_FILE}"
       dialog --backtitle "`backtitle`" --title "Arc Config" \
       --infobox "Installing without Arc Patch!" 0 0
       break
@@ -286,17 +287,14 @@ function arcnetdisk() {
   DT="`readModelKey "${MODEL}" "dt"`"
   # Delete old Mac Address from Userconfig
   #deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.mac2" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.mac3" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.mac4" "${USER_CONFIG_FILE}"
-  MAC1="`readModelKey "${MODEL}" "mac1"`"
-  MAC2="`readModelKey "${MODEL}" "mac2"`"
-  MAC3="`readModelKey "${MODEL}" "mac3"`"
-  MAC4="`readModelKey "${MODEL}" "mac4"`"
   dialog --backtitle "`backtitle`" \
     --title "Arc Network" --infobox " ${NETNUM} Adapter dedected" 0 0
   if [ "${ARCPATCH}" = "1" ]; then 
     # Install with Arc Patch - Check for model config and set custom Mac Address
+    MAC1="`readModelKey "${MODEL}" "arc.mac1"`"
+    MAC2="`readModelKey "${MODEL}" "arc.mac2"`"
+    MAC3="`readModelKey "${MODEL}" "arc.mac3"`"
+    MAC4="`readModelKey "${MODEL}" "arc.mac4"`"
     while true; do
       dialog --clear --backtitle "`backtitle`" \
         --menu "Network: MAC for 1. NIC" 0 0 0 \
@@ -320,15 +318,15 @@ function arcnetdisk() {
             writeConfigKey "cmdline.mac1"           "${MAC4}" "${USER_CONFIG_FILE}"
         fi
         if [ "${NETNUM}" -gt 1 ]; then
-          MAC2=`ip link show eth1 | awk '/ether/{print$2}' | sed 's/://g'`
+          MAC2="`readConfigKey "device.mac2" "${USER_CONFIG_FILE}"`"
           writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
         fi
         if [ "${NETNUM}" -gt 2 ]; then
-          MAC3=`ip link show eth2 | awk '/ether/{print$2}' | sed 's/://g'`
+          MAC3="`readConfigKey "device.mac3" "${USER_CONFIG_FILE}"`"
           writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
         fi
         if [ "${NETNUM}" -gt 3 ]; then
-          MAC4=`ip link show eth3 | awk '/ether/{print$2}' | sed 's/://g'`
+          MAC4="`readConfigKey "device.mac4" "${USER_CONFIG_FILE}"`"
           writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
         fi
         break
@@ -352,28 +350,24 @@ function arcnetdisk() {
     sleep 1
   elif [ "${ARCPATCH}" = "0" ]; then
     # Install without Arc Patch - Set Hardware Mac Address
-      MAC1="`readConfigKey "original-mac" "${USER_CONFIG_FILE}"`"
-      #MACA1=`ip link show eth0 | awk '/ether/{print$2}'`
-      #MAC1=`echo ${MACA1} | sed 's/://g'`
+      MAC1="`readConfigKey "device.mac1" "${USER_CONFIG_FILE}"`"
       writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
     if [ "${NETNUM}" -gt 1 ]; then
-      MAC2=`ip link show eth1 | awk '/ether/{print$2}' | sed 's/://g'`
+      MAC2="`readConfigKey "device.mac2" "${USER_CONFIG_FILE}"`"
       writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
     fi
     if [ "${NETNUM}" -gt 2 ]; then
-      MAC3=`ip link show eth2 | awk '/ether/{print$2}' | sed 's/://g'`
+      MAC3="`readConfigKey "device.mac3" "${USER_CONFIG_FILE}"`"
       writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
     fi
     if [ "${NETNUM}" -gt 3 ]; then
-      MAC4=`ip link show eth3 | awk '/ether/{print$2}' | sed 's/://g'`
+      MAC4="`readConfigKey "device.mac4" "${USER_CONFIG_FILE}"`"
       writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
     fi
     dialog --backtitle "`backtitle`" \
       --title "Arc Network" --infobox "Set MAC for all NIC" 0 0
     sleep 2
   fi
-  # Write NETNUM to config
-  writeConfigKey "cmdline.netif_num" "${NETNUM}" "${USER_CONFIG_FILE}"
   # Ask for IP rebind
   while true; do
     dialog --clear --backtitle "`backtitle`" \
@@ -412,12 +406,12 @@ function arcnetdisk() {
     getmap
   fi
   # Config is done
-  writeConfigKey "confdone" "1" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Configuration successfull!" 0 0
   sleep 1
   DIRTY=1
-  CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+  CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
   # Ask for Build
   while true; do
     dialog --clear --backtitle "`backtitle`" \
@@ -480,8 +474,8 @@ function make() {
   echo "Ready!"
   DIRTY=0
   # Build is done
-  writeConfigKey "builddone" "1" "${USER_CONFIG_FILE}"
-  BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+  writeConfigKey "arc.builddone" "1" "${USER_CONFIG_FILE}"
+  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
   # Ask for Boot
   while true; do
     dialog --clear --backtitle "`backtitle`" \
@@ -529,8 +523,8 @@ function extractDsmFiles() {
     fi
     mkdir -p "${CACHE_PATH}/dl"
 
-    speed_a="`curl -Lo /dev/null -m 1 -skw "%{speed_download}" "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"`"
-    speed_b="`curl -Lo /dev/null -m 1 -skw "%{speed_download}" "https://global.download.synology.com/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"`"
+    speed_a=`ping -c 1 -W 5 global.synologydownload.com | awk '/time=/ {print $7}' | cut -d '=' -f 2`
+    speed_b=`ping -c 1 -W 5 global.download.synology.com | awk '/time=/ {print $7}' | cut -d '=' -f 2`
     fastest="`echo -e "global.synologydownload.com ${speed_a}\nglobal.download.synology.com ${speed_b}" | sort -k2rn | head -1 | awk '{print $1}'`"
 
     mirror="`echo ${PAT_URL} | sed 's|^http[s]*://\([^/]*\).*|\1|'`"
@@ -704,8 +698,8 @@ function editUserConfig() {
     rm -f "${MOD_RDGZ_FILE}"
   fi
   DIRTY=1
-  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-  BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
 }
 
 ###############################################################################
@@ -756,8 +750,8 @@ function addonMenu() {
         ADDONS["${ADDON}"]="`<"${TMP_PATH}/resp"`"
         writeConfigKey "addons.${ADDON}" "${VALUE}" "${USER_CONFIG_FILE}"
         DIRTY=1
-        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         ;;
       2)
         if [ ${#ADDONS[@]} -eq 0 ]; then
@@ -779,8 +773,8 @@ function addonMenu() {
           deleteConfigKey "addons.${I}" "${USER_CONFIG_FILE}"
         done
         DIRTY=1
-        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
         ITEMS=""
@@ -853,8 +847,8 @@ function selectModules() {
           USERMODULES["${ID}"]=""
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done <<<${ALLMODULES}
-        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
         dialog --backtitle "`backtitle`" --title "Modules" \
@@ -862,8 +856,8 @@ function selectModules() {
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         unset USERMODULES
         declare -A USERMODULES
-        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         ;;
       4)
         rm -f "${TMP_PATH}/opts"
@@ -886,8 +880,8 @@ function selectModules() {
           USERMODULES["${ID}"]=""
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done
-        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         ;;
       0)
         break
@@ -931,8 +925,8 @@ function cmdlineMenu() {
         VALUE="`<"${TMP_PATH}/resp"`"
         CMDLINE["${NAME}"]="${VALUE}"
         writeConfigKey "cmdline.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
-        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         ;;
       2)
         if [ ${#CMDLINE[@]} -eq 0 ]; then
@@ -953,8 +947,8 @@ function cmdlineMenu() {
           unset CMDLINE[${I}]
           deleteConfigKey "cmdline.${I}" "${USER_CONFIG_FILE}"
         done
-        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
         for i in $(seq 1 ${NETNUM}); do
@@ -983,8 +977,8 @@ function cmdlineMenu() {
               --title "User cmdline" --progressbox "Renewing IP" 20 70
           fi
         done
-        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
         ;;
       4)
@@ -1045,8 +1039,8 @@ function synoinfoMenu() {
         SYNOINFO["${NAME}"]="${VALUE}"
         writeConfigKey "synoinfo.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
         DIRTY=1
-        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         ;;
       2)
         if [ ${#SYNOINFO[@]} -eq 0 ]; then
@@ -1068,8 +1062,8 @@ function synoinfoMenu() {
           deleteConfigKey "synoinfo.${I}" "${USER_CONFIG_FILE}"
         done
         DIRTY=1
-        deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
         ITEMS=""
@@ -1113,7 +1107,7 @@ function keymapMenu() {
 # Shows backup menu to user
 function backupMenu() {
   NEXT="1"
-  BUILDDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
+  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
   if [ -n "${BUILDDONE}" ]; then
     while true; do
       dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
@@ -1158,9 +1152,9 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
               --msgbox "No Config Backup found" 0 0
           fi
-          CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
-          deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-          BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+          CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+          deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           ;;
         3)
           dialog --backtitle "`backtitle`" --title "Backup Loader" --aspect 18 \
@@ -1204,9 +1198,8 @@ function backupMenu() {
             rm -f ${BACKUPDIR}/user-config.yml
             rm -f ${BACKUPDIR}/zImage-dsm
             rm -f ${BACKUPDIR}/initrd-dsm
-            CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
-            writeConfigKey "builddone" "1" "${USER_CONFIG_FILE}"
-            BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+            CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+            BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
             dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
               --msgbox "Restore complete" 0 0
           else
@@ -1243,9 +1236,9 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
               --msgbox "No Config Backup found" 0 0
           fi
-          CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
-          deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-          BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+          CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+          deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           ;;
         2)
           dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
@@ -1261,8 +1254,8 @@ function backupMenu() {
             rm -f ${BACKUPDIR}/user-config.yml
             rm -f ${BACKUPDIR}/zImage-dsm
             rm -f ${BACKUPDIR}/initrd-dsm
-            CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
-            BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+            CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+            BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
             dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
               --msgbox "Restore complete" 0 0
           else
@@ -1474,8 +1467,8 @@ function storageMenu() {
   DT="`readModelKey "${MODEL}" "dt"`"
   # Get Diskmap for DSM
   getmap
-  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-  BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
 }
 
 ###############################################################################
@@ -1488,17 +1481,16 @@ function sysinfo() {
   MEMINFO=`free -g | awk 'NR==2' | awk '{print $2}'`
   VENDOR=`dmidecode -s system-product-name`
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  NETNUM=`lshw -class network -short | grep -ie "eth" | wc -l`
-  IPLIST="`ifconfig | sed -n '/inet.*B/{s/ B.*//; s/.*://p }'`"
-  REMAP="`readConfigKey "remap" "${USER_CONFIG_FILE}"`"
+  IPLIST="`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`"
+  REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
   PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
   elif [ "${REMAP}" == "3" ]; then
   PORTMAP="`readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"`"
   fi
-  CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
-  BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
-  ARCPATCH="`readConfigKey "arcpatch" "${USER_CONFIG_FILE}"`"
+  CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+  ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
   LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
   ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
   MODULESINFO="`kmod list | awk '{print$1}' | awk 'NR>1'`"
@@ -1627,10 +1619,11 @@ function reset() {
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "cmdline.netif_num" "1" "${USER_CONFIG_FILE}"
   writeConfigKey "cmdline.mac1" "${MACF}" "${USER_CONFIG_FILE}"
-  deleteConfigKey "confdone" "${USER_CONFIG_FILE}"
-  deleteConfigKey "builddone" "${USER_CONFIG_FILE}"
-  CONFDONE="`readConfigKey "confdone" "${USER_CONFIG_FILE}"`"
-  BUILDDONE="`readConfigKey "builddone" "${USER_CONFIG_FILE}"`"
+  writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
+  deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
+  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+  CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
 }
 
 ###############################################################################
@@ -1677,6 +1670,33 @@ function tryRecoveryDSM() {
 }
 
 ###############################################################################
+# let user format disks from inside arc
+function formatdisks() {
+        ITEMS=""
+        while read POSITION NAME; do
+          [ -z "${POSITION}" -o -z "${NAME}" ] && continue
+          ITEMS+="`"${POSITION}" "${NAME}"`"
+        done < <(ls -l /dev/disk/by-id/ | grep -v "${LOADER_DEVICE_NAME}" | sed 's|../..|/dev|g' | awk -F' ' '{print $11" "$9}' | sort -uk 1,1)
+        dialog --backtitle "`backtitle`" --title "Format disk" \
+          --checklist "Advanced" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && return
+        RESP=`<"${TMP_PATH}/resp"`
+        [ -z "${RESP}" ] && return
+        dialog --backtitle "`backtitle`" --title "Format disk" \
+            --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
+        [ $? -ne 0 ] && return
+        (
+          for I in ${RESP}; do
+            mkfs.ext4 -F -O ^metadata_csum ${I}
+          done
+        ) | dialog --backtitle "`backtitle`" --title "Format disk" \
+            --progressbox "Formatting ..." 20 70
+        MSG="Formatting is complete."
+        dialog --backtitle "`backtitle`" --colors --aspect 18 \
+          --msgbox "${MSG}" 0 0
+}
+
+###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
   [ ${DIRTY} -eq 1 ] && dialog --backtitle "`backtitle`" --title "Alert" \
@@ -1701,7 +1721,7 @@ fi
 # Main loop
 NEXT="1"
 while true; do
-  echo "= \"\Z4========== Main ========== \Zn\" "                                            > "${TMP_PATH}/menu"
+  echo "= \"\Z4========== Main ==========\Zn \" "                                            > "${TMP_PATH}/menu"
   echo "1 \"Choose Model for Arc Loader \" "                                                >> "${TMP_PATH}/menu"
   if [ -n "${CONFDONE}" ]; then
     echo "4 \"Build Arc Loader \" "                                                         >> "${TMP_PATH}/menu"
@@ -1709,41 +1729,49 @@ while true; do
   if [ -n "${BUILDDONE}" ]; then
     echo "5 \"Boot Arc Loader \" "                                                          >> "${TMP_PATH}/menu"
   fi
-  echo "= \"\Z4========== Info ========== \Zn\" "                                           >> "${TMP_PATH}/menu"
+  echo "= \"\Z4========== Info ==========\Zn \" "                                           >> "${TMP_PATH}/menu"
   echo "a \"Sysinfo \" "                                                                    >> "${TMP_PATH}/menu"
   if [ -n "${CONFDONE}" ]; then
-    echo "= \"\Z4========= System ========= \Zn\" "                                         >> "${TMP_PATH}/menu"
+    echo "= \"\Z4========= System =========\Zn \" "                                         >> "${TMP_PATH}/menu"
     echo "2 \"Addons \" "                                                                   >> "${TMP_PATH}/menu"
     echo "3 \"Modules \" "                                                                  >> "${TMP_PATH}/menu"
-    if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
-      echo "s \"Change Storage Map \" "                                                     >> "${TMP_PATH}/menu"
-    fi
-    if [ -n "${ADV}" ]; then
-      echo "x \"\Z1Hide Advanced Options \Zn\" "                                            >> "${TMP_PATH}/menu"
+    if [ -n "${ARCOPTS}" ]; then
+      echo "v \"\Z1Hide Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
     else
-      echo "x \"\Z1Show Advanced Options \Zn\" "                                            >> "${TMP_PATH}/menu"
+      echo "v \"\Z1Show Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
     fi
-    if [ -n "${ADV}" ]; then
+    if [ -n "${ARCOPTS}" ]; then
+      if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
+        echo "s \"Change Storage Map \" "                                                   >> "${TMP_PATH}/menu"
+      fi
+      echo "t \"Backup Menu \" "                                                            >> "${TMP_PATH}/menu"
+      if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
+        echo "r \"Boot from Backup: \Z4${BACKUPBOOT}\Zn \" "                                >> "${TMP_PATH}/menu"
+      fi
+      echo "p \"\Z1Format Disks\Zn \" "                                                     >> "${TMP_PATH}/menu"
+    fi
+    if [ -n "${ADVOPTS}" ]; then
+      echo "x \"\Z1Hide Advanced Options\Zn \" "                                            >> "${TMP_PATH}/menu"
+    else
+      echo "x \"\Z1Show Advanced Options\Zn \" "                                            >> "${TMP_PATH}/menu"
+    fi
+    if [ -n "${ADVOPTS}" ]; then
       echo "f \"Cmdline \" "                                                                >> "${TMP_PATH}/menu"
       echo "g \"Synoinfo \" "                                                               >> "${TMP_PATH}/menu"
       echo "h \"Edit User Config \" "                                                       >> "${TMP_PATH}/menu"
       echo "r \"Reset User Config \" "                                                      >> "${TMP_PATH}/menu"
       echo "i \"DSM Recovery \" "                                                           >> "${TMP_PATH}/menu"
-      echo "j \"Switch LKM version: \Z4${LKM}\Zn\" "                                        >> "${TMP_PATH}/menu"
+      echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >> "${TMP_PATH}/menu"
       echo "k \"Direct boot: \Z4${DIRECTBOOT}\Zn \" "                                       >> "${TMP_PATH}/menu"
     fi
   fi
-  echo "= \"\Z4===== Loader Settings ==== \Zn\" "                                           >> "${TMP_PATH}/menu"
+  echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >> "${TMP_PATH}/menu"
   echo "c \"Choose a keymap \" "                                                            >> "${TMP_PATH}/menu"
   if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
     echo "d \"Clean disk cache \""                                                          >> "${TMP_PATH}/menu"
   fi
-  if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
-    echo "r \"Boot from Backup: \Z4${BACKUPBOOT}\Zn \" "                                    >> "${TMP_PATH}/menu"
-  fi
-  echo "t \"Backup Menu \" "                                                                >> "${TMP_PATH}/menu"
   echo "e \"Update Menu \" "                                                                >> "${TMP_PATH}/menu"
-  echo "0 \"\Z1Exit\Zn\" "                                                                  >> "${TMP_PATH}/menu"
+  echo "0 \"\Z1Exit\Zn \" "                                                                 >> "${TMP_PATH}/menu"
   dialog --clear --default-item ${NEXT} --backtitle "`backtitle`" --colors \
     --menu "Choose an Option" 0 0 0 --file "${TMP_PATH}/menu" \
     2>${TMP_PATH}/resp
@@ -1757,14 +1785,19 @@ while true; do
     3) selectModules; NEXT="3" ;;
     s) storageMenu; NEXT="s" ;;
     n) reset; NEXT="1" ;;
-    x) [ "${ADV}" = "" ] && ADV='1' || ADV=''
-       ARV="${ADV}"
+    x) [ "${ADVOPTS}" = "" ] && ADVOPTS='1' || ADVOPTS=''
+       ADVOPTS="${ADVOPTS}"
        NEXT="x"
+       ;;
+    v) [ "${ARCOPTS}" = "" ] && ARCOPTS='1' || ARCOPTS=''
+       ARCOPTS="${ARCOPTS}"
+       NEXT="v"
        ;;
     f) cmdlineMenu; NEXT="f" ;;
     g) synoinfoMenu; NEXT="g" ;;
     h) editUserConfig; NEXT="h" ;;
     i) tryRecoveryDSM; NEXT="i" ;;
+    p) formatdisks; NEXT="p" ;;
     j) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
       writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
       DIRTY=1

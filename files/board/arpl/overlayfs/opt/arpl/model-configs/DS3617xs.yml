@@ -28,13 +28,13 @@ serial:
     - "1430"
   middle: "ODN"
   suffix: "numeric"
-arcserial: "1891ODN132500"
-#arcserial: "1691ODN132500"
-mac1: "00113297A516"
-mac2: "00113297A517"
-mac3: "00113297A518"
-mac4: "00113297A519"
-mac5: "9009D019775A"
+arc:
+  serial: "1891ODN132500"
+  mac1: "00113297A516"
+  mac2: "00113297A517"
+  mac3: "00113297A518"
+  mac4: "00113297A519"
+  mac5: "9009D019775A"
 disks: 12
 dt: false
 builds:

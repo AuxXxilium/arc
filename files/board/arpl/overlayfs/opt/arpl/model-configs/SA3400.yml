@@ -27,13 +27,14 @@ serial:
     - "1920"
   middle: "RJR"
   suffix: "alpha"
-arcserial: "1920RJR7K1S28"
-mac1: "001132A91B22"
-mac2: "001132A91B23"
-mac3: "001132A91B24"
-mac4: "001132A91B25"
-mac5: "001132A91B26"
-mac6: "001132A91B27"
+arc:
+  serial: "1920RJR7K1S28"
+  mac1: "001132A91B22"
+  mac2: "001132A91B23"
+  mac3: "001132A91B24"
+  mac4: "001132A91B25"
+  mac5: "001132A91B26"
+  mac6: "001132A91B27"
 disks: 12
 dt: false
 beta: true

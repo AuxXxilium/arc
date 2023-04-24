@@ -65,10 +65,6 @@ if [ -d "${CACHE_PATH}/patch" ]; then
   ln -s "${CACHE_PATH}/patch" "${PATCH_PATH}"
 fi
 
-# Get first MAC address
-MACS=`ip link show | awk '/ether/{print$2}'`
-MACFS=(`echo ${MACS} | sed 's/://g'`)
-
 # Get Number of Ethernet Ports
 NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
 #[ ${NETNUM} -gt 4 ] && NETNUM=4 && && echo -e "\033[1;33m*** WARNING: Only 4 Ethernet ports are supported ***\033[0m"
@@ -92,26 +88,47 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.misc" "" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-  # Initialize with real MAC
+  writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
+  writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
+  # Initialize with Ethernetportcount
   writeConfigKey "cmdline.netif_num" "${NETNUM}" "${USER_CONFIG_FILE}"
-  for i in $(seq 1 ${#MACFS[@]}); do
-    writeConfigKey "cmdline.mac${i}" "${MACFS[$(expr ${i} - 1)]}" "${USER_CONFIG_FILE}"
+  # Initialize with real MAC
+  COUNT=0
+  while true; do
+    if [ ${COUNT} -eq ${NETNUM} ]; then
+      break
+    fi
+    MACO=`ip link show eth$COUNT | awk '/ether/{print$2}' | sed 's/://g'`
+    COUNT=$((${COUNT}+1))
+    writeConfigKey "cmdline.mac${COUNT}" "${MACO}" "${USER_CONFIG_FILE}"
   done
 fi
-for i in $(seq 1 ${#MACFS[@]}); do
-  writeConfigKey "original-mac${i}" "${MACFS[$(expr ${i} - 1)]}" "${USER_CONFIG_FILE}"
+
+# Get real MAC and write to config
+COUNT=0
+while true; do
+  if [ ${COUNT} -eq ${NETNUM} ]; then
+    break
+  fi
+  MACO=`ip link show eth$COUNT | awk '/ether/{print$2}' | sed 's/://g'`
+  COUNT=$((${COUNT}+1))
+  writeConfigKey "device.mac${COUNT}" "${MACO}" "${USER_CONFIG_FILE}"
 done
 
 # Set custom MAC if defined
-for i in $(seq 1 ${#MACFS[@]}); do
-  MACF="`readConfigKey "cmdline.mac${i}" "${USER_CONFIG_FILE}"`"
-  if [ -n "${MACF}" -a "${MACF}" != "${MACFS[$(expr ${i} - 1)]}" ]; then
-    MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-    ip link set dev eth$(expr ${i} - 1) address ${MAC} >/dev/null 2>&1 && \
+COUNT=0
+while true; do
+  COUNT=$((${COUNT}+1))
+  MACF="`readConfigKey "cmdline.mac${COUNT}" "${USER_CONFIG_FILE}"`"
+  MACO="`readConfigKey "device.mac${COUNT}" "${USER_CONFIG_FILE}"`"
+  if [ -n "${MACF}" ] && [ "${MACF}" != "${MACO}" ]; then
+  MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
+    ip link set dev eth$(expr ${COUNT} - 1) address ${MAC} >/dev/null 2>&1 && \
       (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
+  fi
+  if [ ${COUNT} -eq ${NETNUM} ]; then
+    break
   fi
 done
 
@@ -162,11 +179,11 @@ fi
 # Enable Wake on Lan, ignore errors
 COUNT=0
 while true; do
-  ethtool -s eth${COUNT} wol g 2>/dev/null
   if [ ${COUNT} -eq ${NETNUM} ]; then
     echo "WOL active for ${COUNT} Adapter"
     break
   fi
+  ethtool -s eth${COUNT} wol g 2>/dev/null
   COUNT=$((${COUNT}+1))
 done
 
@@ -189,18 +206,18 @@ fi
 COUNT=0
 echo -n "Waiting IP."
 while true; do
-  if [ ${COUNT} -eq 30 ]; then
-    echo "ERROR"
-    break
-  fi
-  COUNT=$((${COUNT}+3))
- IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
+  IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
   if [ -n "${IP}" ]; then
     echo -en "OK\nAccess \033[1;34mhttp://${IP}:7681\033[0m to configure the loader via web terminal"
     break
   fi
+  if [ ${COUNT} -eq 30 ]; then
+    echo "ERROR"
+    break
+  fi
   echo -n "."
   sleep 3
+  COUNT=$((${COUNT}+3))
 done
 
 # Inform user

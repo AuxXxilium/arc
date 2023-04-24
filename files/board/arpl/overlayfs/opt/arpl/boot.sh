@@ -118,17 +118,17 @@ echo -e "Cmdline:\n\033[1;36m${CMDLINE_LINE}\033[0m"
 COUNT=0
 echo -n "IP"
 while true; do
-  IP=`ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p'`
-  if [ -n "${IP}" ]; then
-    echo -e ": \033[1;32m\n${IP}\033[0m"
+  IPLIST="`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`"
+  if [ -n "${IPLIST}" ]; then
+    echo -e ": \033[1;32m\n${IPLIST}\033[0m"
     break
-  elif [ ${COUNT} -eq 30 ]; then
+  fi
+  if [ ${COUNT} -eq 30 ]; then
     echo -e ": \033[1;31m\nERROR\033[0m"
     break
   fi
-  COUNT=$((${COUNT}+3))
   sleep 3
-  echo -n "."
+  COUNT=$((${COUNT}+3))
 done
 
 DIRECT="`readConfigKey "directboot" "${USER_CONFIG_FILE}"`"

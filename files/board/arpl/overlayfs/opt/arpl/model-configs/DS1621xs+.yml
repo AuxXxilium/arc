@@ -25,11 +25,12 @@ serial:
     - "2070"
   middle: "RVR"
   suffix: "alpha"
-arcserial: "2070RVR2JPQTF"
-mac1: "001132D64C73"
-mac2: "001132D64C74"
-mac3: "001132D64C75"
-mac4: "9009D019775A"
+arc:
+  serial: "2070RVR2JPQTF"
+  mac1: "001132D64C73"
+  mac2: "001132D64C74"
+  mac3: "001132D64C75"
+  mac4: "9009D019775A"
 disks: 6
 dt: false
 builds:

@@ -24,13 +24,14 @@ serial:
     - "20A0"
   middle: "SZR"
   suffix: "alpha"
-arcserial: "20A0SZR4KRP50"
-mac1: "001132DE6640"
-mac2: "001132DE6641"
-mac3: "001132DE6642"
-mac4: "001132DE6643"
-mac5: "001132DE6644"
-mac6: "9009D019775A"
+arc:
+  serial: "20A0SZR4KRP50"
+  mac1: "001132DE6640"
+  mac2: "001132DE6641"
+  mac3: "001132DE6642"
+  mac4: "001132DE6643"
+  mac5: "001132DE6644"
+  mac6: "9009D019775A"
 disks: 12
 dt: false
 beta: true
