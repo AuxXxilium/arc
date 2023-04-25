@@ -56,7 +56,7 @@ builds:
       - "ramdisk-42951-post-init-script.patch"
       - "ramdisk-42661-disable-disabled-ports.patch"
 
-  64216:
+  64551:
     ver: "7.2"
     kver: "4.4.302"
     rd-compressed: false
@@ -65,11 +65,11 @@ builds:
     synoinfo:
       <<: *synoinfo
     pat:
-      url: "https://global.download.synology.com/download/DSM/beta/7.2/64216/DSM_RS4021xs%2B_64216.pat"
-      hash: "9e51c8853d03497c7e61db98499397030c341e263fa814ccdd42b3680075a31d"
-      ramdisk-hash: "404ae3e41e100ceca328cf2d5827370d57b3be9631d22f78b8524f017d0116d2"
-      zimage-hash: "da68e9d495d11654ec8afeb28351d95ff9c5523b86abd2137e2465665df6f750"
-      md5-hash: "115fef63d034e07f9092445767c5ef07"
+      url: "https://global.download.synology.com/download/DSM/release/7.2/64551/DSM_RS4021xs%2B_64551.pat"
+      hash: "07035a5bf092e29d02cd6f5a882024b95e658adb93e045a43a67419d73da7a39"
+      ramdisk-hash: "d6bc686c08d52ffefc291e5e16bbf0163143a14f9a4e557cef722b313550f921"
+      zimage-hash: "4ec237df5850f9207edd7d0961ca07f0804b42cbafa002d0b6ed13cfd73acb41"
+      md5-hash: "5ba4b8177e863415b1f8b73fc6fd4940"
     patch:
       - "ramdisk-64216-disable-root-pwd.patch"
       - "ramdisk-64216-init-script.patch"

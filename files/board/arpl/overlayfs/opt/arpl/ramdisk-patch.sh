@@ -14,7 +14,7 @@ echo -n "Patching Ramdisk"
 rm -f "${MOD_RDGZ_FILE}"
 
 # Check disk space left
-LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
+LOADER_DISK=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`
 LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
 SPACELEFT=`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}'`
 [ ${SPACELEFT} -le 268435456 ] && rm -rf "${CACHE_PATH}/dl"
@@ -145,6 +145,7 @@ installAddon eudev
 echo "/addons/eudev.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon disks
 echo "/addons/disks.sh \${1} ${DT} ${UNIQUE}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+[ -f "/mnt/p1/model.dts" ] && cp "/mnt/p1/model.dts" "${RAMDISK_PATH}/addons/model.dts"
 installAddon wol
 echo "/addons/wol.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon bootwait
