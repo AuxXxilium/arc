@@ -54,7 +54,7 @@ function backtitle() {
     BACKTITLE+=" |"
   if [ -n "${BUILD}" ]; then
     [ "${BUILD}" = "42962" ] && VER="7.1.1"
-    [ "${BUILD}" = "64216" ] && VER="7.2 Beta"
+    [ "${BUILD}" = "64551" ] && VER="7.2 RC"
     BACKTITLE+=" ${VER}"
   else
     BACKTITLE+=" (no build)"
@@ -202,7 +202,7 @@ function arcbuild() {
     dialog --clear --backtitle "`backtitle`" \
       --menu "Choose a DSM Version" 0 0 0 \
       1 "DSM 7.1.1" \
-      2 "DSM 7.2 Beta (experimental)" \
+      2 "DSM 7.2 RC (experimental)" \
     2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     resp=$(<${TMP_PATH}/resp)
@@ -212,7 +212,7 @@ function arcbuild() {
       writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
       break
     elif [ "${resp}" = "2" ]; then
-      BUILD="64216"
+      BUILD="64551"
       writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
       break
     fi
