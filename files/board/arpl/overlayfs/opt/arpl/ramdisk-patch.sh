@@ -14,7 +14,7 @@ echo -n "Patching Ramdisk"
 rm -f "${MOD_RDGZ_FILE}"
 
 # Check disk space left
-LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
+LOADER_DISK=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`
 LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
 SPACELEFT=`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}'`
 [ ${SPACELEFT} -le 268435456 ] && rm -rf "${CACHE_PATH}/dl"
