@@ -78,7 +78,7 @@ done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
 
 LOADER_DISK=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`
-BUS=`udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2`
+BUS="`udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2`"
 if [ "${BUS}" = "ata" ]; then
   LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
   SIZE=$((`cat /sys/block/${LOADER_DEVICE_NAME}/size`/2048+10))
@@ -88,7 +88,7 @@ fi
 
 # Validate netif_num
 NETIF_NUM=${CMDLINE["netif_num"]}
-NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
+NETNUM="`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`"
 if [ ${NETIF_NUM} -ne ${NETNUM} ]; then
   #[ ${NETNUM} -gt 4 ] && NETNUM=4 && echo -e "\033[1;33m*** WARNING: Only 4 Ethernet ports are supported ***\033[0m"
   echo -e "\033[1;33m*** netif_num is not equal to macX amount, set netif_num to ${NETNUM} ***\033[0m"
@@ -101,7 +101,7 @@ grep -q "force_junior" /proc/cmdline && CMDLINE_LINE+="force_junior "
 [ ${EFI} -eq 1 ] && CMDLINE_LINE+="withefi " || CMDLINE_LINE+="noefi "
 [ "${BUS}" = "ata" ] && CMDLINE_LINE+="synoboot_satadom=${DOM} dom_szmax=${SIZE} "
 CMDLINE_DIRECT="${CMDLINE_LINE}"
-CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 loglevel=15 log_buf_len=16M"
+CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 loglevel=15 log_buf_len=32M"
 for KEY in ${!CMDLINE[@]}; do
   VALUE="${CMDLINE[${KEY}]}"
   CMDLINE_LINE+=" ${KEY}"
@@ -153,7 +153,7 @@ if [ "${BACKUPBOOT}" = "true" ]; then
   poweroff
   exit 0
 fi
-if [ "${BACKUPBOOT}" = "false" ]; then
+if [ "${BACKUPBOOT}" = "false" ] || [ "${BACKUPBOOT}" = "" ]; then
   # Executes DSM kernel via KEXEC
   kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37mBooting DSM...\033[0m"
