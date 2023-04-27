@@ -50,7 +50,7 @@ builds:
     synoinfo:
       <<: *synoinfo
     pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS920%2B_42962.pat"
+      url: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_DS920%2B_42962.pat"
       hash: "f58c15d4d83699884c30e4a4b04b1d2e0db19c477923d920327a897a73c741b6"
       ramdisk-hash: "043d784fd35ee57eb5279c94a65e66ff2c7c4229728818bc141927a6451e95ee"
       zimage-hash: "2de065851b8d3a222db1feea696aab12ded7b582876b22ff6e847cd6f2e62ecf"
@@ -70,7 +70,7 @@ builds:
     synoinfo:
       <<: *synoinfo
     pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.2/64551/DSM_DS920%2B_64551.pat"
+      url: "https://global.synologydownload.com/download/DSM/release/7.2/64551/DSM_DS920%2B_64551.pat"
       hash: "7b06b9217ba57cdb8e5e55ff541541f78be1f39c824ee797f554afcdb6fe1f97"
       ramdisk-hash: "5cbffbb16e90a4682de1250964da0a22e599542e1f9c233bf9bdb2fc029eb1a0"
       zimage-hash: "1ef8a3f94ab897926644c28c254a8cb051f9c435abe3186e2a13b1e2b0a4fed1"
