@@ -74,8 +74,8 @@ function getAddons() {
     local DEST_PATH="${1:-addons}"
     local CACHE_DIR="/tmp/addons"
     local CACHE_FILE="/tmp/addons.zip"
-    TAG=`curl -s https://api.github.com/repos/AuxXxilium/arpl-addons/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")'`
-    STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arpl-addons/releases/download/${TAG}/addons.zip" -o "${CACHE_FILE}"`
+    TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")'`
+    STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${CACHE_FILE}"`
     echo "Status=${STATUS}"
     [ ${STATUS} -ne 200 ] && exit 1
     # Install Addons
@@ -99,8 +99,8 @@ function getModules() {
     local DEST_PATH="${1:-addons}"
     local CACHE_FILE="/tmp/modules.zip"
     rm -f "${CACHE_FILE}"
-    TAG=`curl -s https://api.github.com/repos/AuxXxilium/arpl-modules/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")'`
-    STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arpl-modules/releases/download/${TAG}/modules.zip" -o "${CACHE_FILE}"`
+    TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")'`
+    STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${CACHE_FILE}"`
     echo "Status=${STATUS}"
     [ ${STATUS} -ne 200 ] && exit 1
     # Unzip Modules
