@@ -1412,38 +1412,26 @@ function updateMenu() {
           --msgbox "LKMs updated with success! ${TAG}" 0 0
         ;;
       4)
-        unset PLATFORMS
-        declare -A PLATFORMS
-        while read M; do
-          M="`basename ${M}`"
-          M="${M::-4}"
-          P=`readModelKey "${M}" "platform"`
-          ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${M}.yml"`"
-          for B in ${ITEMS}; do
-            KVER=`readModelKey "${M}" "builds.${B}.kver"`
-            PLATFORMS["${P}-${KVER}"]=""
-          done
-        done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-          --infobox "Checking latest version" 0 0
-        TAG=`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
+          --infobox "Checking last version" 0 0
+        TAG=`curl -k -s "https://api.github.com/repos/AuxXxilium/arpl-modules/releases/latest" | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           continue
         fi
-        for P in ${!PLATFORMS[@]}; do
+
+        dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
+          --infobox "Downloading last version" 0 0
+        STATUS=`curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arpl-modules/releases/download/${TAG}/modules.zip" -o "/tmp/modules.zip"`
+        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-            --infobox "Downloading ${P} modules: ${TAG}" 0 0
-          STATUS=`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/${P}.tgz" -o "/tmp/${P}.tgz"`
-          if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-            dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-              --msgbox "Error downloading ${P}.tgz" 0 0
-            continue
-          fi
-          rm "${MODULES_PATH}/${P}.tgz"
-          mv "/tmp/${P}.tgz" "${MODULES_PATH}/${P}.tgz"
-        done
+            --msgbox "Error downloading last version" 0 0
+          continue
+        fi
+        rm "${MODULES_PATH}/"*
+        unzip /tmp/modules.zip -d "${MODULES_PATH}" >/dev/null 2>&1
+
         # Rebuild modules if model/buildnumber is selected
         if [ -n "${PLATFORM}" -a -n "${KVER}" ]; then
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
@@ -1453,7 +1441,7 @@ function updateMenu() {
         fi
         DIRTY=1
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-          --msgbox "Modules updated with success! ${TAG}" 0 0
+          --msgbox "Modules updated to ${TAG} with success!" 0 0
         ;;
       0) return ;;
     esac
