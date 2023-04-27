@@ -12,44 +12,16 @@ rm -rf ".buildroot/board/arpl/overlayfs"
 rm -rf ".buildroot/board/arpl/p1"
 rm -rf ".buildroot/board/arpl/p3"
 
-# Get latest LKMs
-echo "Getting latest LKMs"
-echo "  Downloading from github"
-TAG=`curl -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
-echo "Version: ${TAG}"
-curl -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip
-rm -rf files/board/arpl/p3/lkms/*
-unzip /tmp/rp-lkms.zip -d files/board/arpl/p3/lkms
+# Get extractor, LKM, Addons and Modules
 
-# Get latest addons and install its
-echo "Getting latest Addons"
-rm -rf /tmp/addons
-mkdir -p /tmp/addons
-TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
-echo "Version: ${TAG}"
-curl -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip
-unzip /tmp/addons.zip -d /tmp/addons
-rm -rf files/board/arpl/p3/addons/*
-DEST_PATH="files/board/arpl/p3/addons"
-echo "Installing addons to ${DEST_PATH}"
-for PKG in `ls /tmp/addons/*.addon`; do
-  ADDON=`basename ${PKG} | sed 's|.addon||'`
-  mkdir -p "${DEST_PATH}/${ADDON}"
-  echo "Extracting ${PKG} to ${DEST_PATH}/${ADDON}"
-  tar xaf "${PKG}" -C "${DEST_PATH}/${ADDON}"
-done
+. scripts/func.sh
 
-# Get latest modules
-echo "Getting latest modules"
-rm -rf files/board/arpl/p3/modules/*
-MODULES_DIR="${PWD}/files/board/arpl/p3/modules"
-TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
-echo "Version: ${TAG}"
-while read PLATFORM KVER; do
-  FILE="${PLATFORM}-${KVER}"
-  curl -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/${FILE}.tgz" -o "${MODULES_DIR}/${FILE}.tgz"
-done < PLATFORMS
-curl -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/firmware.tgz" -o "${MODULES_DIR}/firmware.tgz"
+getExtractor "files/board/arpl/p3/extractor"
+getLKMs "files/board/arpl/p3/lkms"
+getAddons "files/board/arpl/p3/addons"
+getModules "files/board/arpl/p3/modules"
+
+echo "Extractor, LKM, Addons and Modules loaded"
 
 # Copy files
 echo "Copying files"
