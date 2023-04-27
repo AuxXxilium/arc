@@ -42,11 +42,11 @@ builds:
     synoinfo:
       <<: *synoinfo
     pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS723%2B_42962.pat"
-      hash: "f6fe369af9a8a43cad0a34df769afae8abf466551f7e7599a44646ca75486968"
-      ramdisk-hash: "a4c209f217e3cc18279903059d18e1809d08288c4f9692dda104dd1552f42d80"
-      zimage-hash: "df94509a47f4852abd326198dc916be76f31569d10d99c4199743c2e44cf8305"
-      md5-hash: "a6ee4c7cdba458636479f137b5a16d82"
+      url: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-5/DSM_DS723%2B_42962.pat"
+      hash: "633a626f3dc31338eb41ca929d8f9927a7a63f646067372d02ac045aa768560f"
+      ramdisk-hash: "3b5c813d61311fc2b65aab8aa7c5c0d19eee7ad99f24eaab254397c4c1c003af"
+      zimage-hash: "2bf64e284b4aa3965bdd284cd76ec441fd1ab7b136bee6613bcbae12ef9b770d"
+      md5-hash: "f572e96e8ed937c165467ed8ddddec0b"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"
@@ -62,7 +62,7 @@ builds:
     synoinfo:
       <<: *synoinfo
     pat:
-      url: "https://global.download.synology.com/download/DSM/release/7.2/64551/DSM_DS723%2B_64551.pat"
+      url: "https://global.synologydownload.com/download/DSM/release/7.2/64551/DSM_DS723%2B_64551.pat"
       hash: "c20956178679fddcf4a9afcacf5ff94573caba13cae09d31bf53c6055f4da48b"
       ramdisk-hash: "558c8db37f8eb69bc630024fe238ca05c1f7cd2ed67909dfc27330f8d29af77a"
       zimage-hash: "236ead598d1ce08fe704cee2a776db37f6e0353ffe096008a2042d4f8f6a315d"
