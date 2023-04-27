@@ -4,7 +4,7 @@ set -e
 
 if [ ! -d .buildroot ]; then
   echo "Downloading buildroot"
-  git clone --single-branch -b 2022.02.8 https://github.com/buildroot/buildroot.git .buildroot
+  git clone --single-branch -b 2022.02 https://github.com/buildroot/buildroot.git .buildroot
 fi
 # Remove old files
 rm -rf ".buildroot/output/target/opt/arpl"
