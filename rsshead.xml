@@ -44,31 +44,5 @@
       <ReqBuildNum>41890</ReqBuildNum>
       <ReqBuildDate>2021/06/25</ReqBuildDate>
     </item>
-    <item>
-      <title>DSM 7.0.1-42218</title>
-      <MajorVer>7</MajorVer>
-      <MinorVer>0</MinorVer>
-      <BuildPhase>1</BuildPhase>
-      <BuildNum>42218</BuildNum>
-      <BuildDate>2022/08/01</BuildDate>
-      <ReqMajorVer>7</ReqMajorVer>
-      <ReqMinorVer>0</ReqMinorVer>
-      <ReqBuildPhase>0</ReqBuildPhase>
-      <ReqBuildNum>41890</ReqBuildNum>
-      <ReqBuildDate>2021/06/25</ReqBuildDate>
-    </item>
-    <item>
-      <title>DSM 6.2.4-25556</title>
-      <MajorVer>6</MajorVer>
-      <MinorVer>2</MinorVer>
-      <BuildPhase>0</BuildPhase>
-      <BuildNum>25556</BuildNum>
-      <BuildDate>2021/03/18</BuildDate>
-      <ReqMajorVer>6</ReqMajorVer>
-      <ReqMinorVer>0</ReqMinorVer>
-      <ReqBuildPhase>0</ReqBuildPhase>
-      <ReqBuildNum>7321</ReqBuildNum>
-      <ReqBuildDate>2016/03/23</ReqBuildDate>
-    </item>
   </channel>
 </rss>
