@@ -1,0 +1,113 @@
+{
+  "version": "2.0",
+  "channel": {
+    "title": "RSS for DSM Auto Update",
+    "link": "https://update.synology.com/autoupdate/v2/getList",
+    "pubDate": "Sat Aug 6 0:18:39 CST 2022",
+    "copyright": "Copyright 2022 Synology Inc",
+    "item": [
+      {
+        "title": "DSM 7.1.1-42962",
+        "MajorVer": 7,
+        "MinorVer": 1,
+        "NanoVer": 1,
+        "BuildPhase": 0,
+        "BuildNum": 42962,
+        "BuildDate": "2023/04/08",
+        "ReqMajorVer": 7,
+        "ReqMinorVer": 1,
+        "ReqBuildPhase": 0,
+        "ReqBuildNum": 41890,
+        "ReqBuildDate": "2021/06/25",
+        "isSecurityVersion": false,
+        "model": [
+          {
+            "mUnique": "synology_apollolake_1019+",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS1019%2B_42962.pat",
+            "mCheckSum": "b590bc9f0df784be4d6bae13d551f76b"
+          },
+          {
+            "mUnique": "synology_geminilake_1520+",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS1520%2B_42962.pat",
+            "mCheckSum": "d28994a9dcdae9730b4d1370a39d3130"
+          },
+          {
+            "mUnique": "synology_v1000_1621+",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS1621%2B_42962.pat",
+            "mCheckSum": "93a5a2b9515b39e18d0b48df84d5c007"
+          },
+          {
+            "mUnique": "synology_broadwellnk_1621xs+",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS1621xs%2B_42962.pat",
+            "mCheckSum": "fffec3510c954fc718a1aecba2f98fc6"
+          },
+          {
+            "mUnique": "synology_v1000_2422+",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS2422%2B_42962.pat",
+            "mCheckSum": "b00d3d1ccf1b1a6982b2b594420e0f3c"
+          },
+          {
+            "mUnique": "synology_broadwell_3617xs",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS3617xs_42962.pat",
+            "mCheckSum": "b46e3d7933c7f77c78d536d33f9b5c4a"
+          },
+          {
+            "mUnique": "synology_broadwellnk_3622xs+",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS3622xs%2B_42962.pat",
+            "mCheckSum": "d3b223e1e973fcf5c67c64e72775a576"
+          },
+          {
+            "mUnique": "synology_r1000_723+",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS723%2B_42962.pat",
+            "mCheckSum": "a6ee4c7cdba458636479f137b5a16d82"
+          },
+          {
+            "mUnique": "synology_apollolake_918+",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS918%2B_42962.pat",
+            "mCheckSum": "d5b62813ebc2d78bdbdf08b2c42e1280"
+          },
+          {
+            "mUnique": "synology_geminilake_920+",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS920%2B_42962.pat",
+            "mCheckSum": "69792ae34d9b3c6e707d0e3e6b82816f"
+          },
+          {
+            "mUnique": "synology_r1000_923+",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DS923%2B_42962.pat",
+            "mCheckSum": "fbcb11a947a6d53d369e86679e1d0af4"
+          },
+          {
+            "mUnique": "synology_denverton_dva3219",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DVA3219_42962.pat",
+            "mCheckSum": "6aa37856c3bf2a390f99420b2e7dffa4"
+          },
+          {
+            "mUnique": "synology_denverton_dva3221",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_DVA3221_42962.pat",
+            "mCheckSum": "23a98723cacf1e1bd248cf8ab07bd788"
+          },
+          {
+            "mUnique": "synology_v1000_rs1221+",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_RS1221%2B_42962.pat",
+            "mCheckSum": "441e25883733556af6fb6cbab74090fd"
+          },
+          {
+            "mUnique": "synology_broadwellnk_rs1619xs+",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_RS1619xs%2B_42962.pat",
+            "mCheckSum": "7e0747b8808941d51c35de503473b62e"
+          },
+          {
+            "mUnique": "synology_broadwellnk_rs3621xs+",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_RS3621xs%2B_42962.pat",
+            "mCheckSum": "6007b81c39a9671d51cfae2ad1e37a24"
+          },
+          {
+            "mUnique": "synology_broadwellnk_rs4021xs+",
+            "mLink": "https://global.download.synology.com/download/DSM/release/7.1.1/42962-1/DSM_RS4021xs%2B_42962.pat",
+            "mCheckSum": "fc15f132649a8c8626190dc864bbdf8c"
+          }
+        ]
+      }
+    ]
+  }
+}
