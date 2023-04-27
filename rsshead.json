@@ -53,38 +53,6 @@
         "ReqBuildDate": "2021/06/25",
         "isSecurityVersion": false,
         "model": []
-      },
-      {
-        "title": "DSM 7.0.1-42218",
-        "MajorVer": 7,
-        "MinorVer": 0,
-        "NanoVer": 1,
-        "BuildPhase": 0,
-        "BuildNum": 42218,
-        "BuildDate": "2022/08/01",
-        "ReqMajorVer": 7,
-        "ReqMinorVer": 1,
-        "ReqBuildPhase": 0,
-        "ReqBuildNum": 41890,
-        "ReqBuildDate": "2021/06/25",
-        "isSecurityVersion": false,
-        "model": []
-      },
-      {
-        "title": "DSM 6.2.4-25556",
-        "MajorVer": 6,
-        "MinorVer": 2,
-        "NanoVer": 0,
-        "BuildPhase": 0,
-        "BuildNum": 25556,
-        "BuildDate": "2021\/03\/18",
-        "ReqMajorVer": 6,
-        "ReqMinorVer": 0,
-        "ReqBuildPhase": 0,
-        "ReqBuildNum": 7321,
-        "ReqBuildDate": "2016\/03\/23",
-        "isSecurityVersion": false,
-        "model":[]
       }
     ]
   }
