@@ -15,7 +15,7 @@ fi
 
 # Get Number of Ethernet Ports
 NETNUM="`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`"
-#[ ${NETNUM} -gt 4 ] && NETNUM=4 && WARNON=3
+[ ${NETNUM} -gt 4 ] && NETNUM=4 && WARNON=3
 
 # Get actual IP
 IP="`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`"
@@ -181,7 +181,7 @@ function arcMenu() {
   fi
   if [ "${WARNON}" = "3" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
-      --infobox "WARN: You have more than 4 Ethernet Ports. There are only 4 supported." 0 0
+      --infobox "WARN: You have more than 4 Ethernet Ports. There are only 4 supported by Redpill." 0 0
     sleep 5
   fi
   writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
