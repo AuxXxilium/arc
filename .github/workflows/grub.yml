@@ -5,7 +5,7 @@
 # See /LICENSE for more information.
 #
 
-name: Update
+name: Grub
 
 on:
   workflow_dispatch:
@@ -14,25 +14,12 @@ on:
         description: 'push'
         default: false
         type: boolean
-      config: 
-        description: 'update configs'
-        default: true
-        type: boolean
-      rss: 
-        description: 'update rss'
-        default: true
-        type: boolean
 jobs:
-  configs:
+  grub:
     runs-on: self-hosted
     steps:
       - name: Checkout
         uses: actions/checkout@main
-
-      - name: Set up Python 3
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
 
       - name: Initialization environment
         run : |
@@ -41,29 +28,34 @@ jobs:
           sudo timedatectl set-timezone "Europe/Berlin"
           
           sudo apt update
-          sudo apt install -y libxml2-utils
-          pip install requests BeautifulSoup4 pyyaml
+          sudo apt install -y build-essential bison flex dosfstools
 
-      - name: update pats
+      - name: Make Grub
         run: |
-          python rssupdate.py ${{ inputs.config }} ${{ inputs.rss }}
+          . scripts/grub.sh "grub-2.06" "i386-pc i386-efi x86_64-efi"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: configs
+          name: grub
           path: |
-            files/board/arpl/overlayfs/opt/arpl/model-configs
-            rss.json
-            rss.xml
+            grub.img.gz
 
       - name: Check and Push
         if: success() && inputs.push == true
         run: |
-          git pull
-          status=$(git status -s | grep -E 'model-configs|rss' | awk '{printf " %s", $2}')
-          if [ -n "${status}" ]; then
-            git add ${status}
-            git commit -m "update $(date +%Y-%m-%d" "%H:%M:%S)"
-            git push -f
+          if [ -f "grub.img.gz" ]; then
+            echo "Copy img ..."
+            mv -f grub.img.gz files/board/arpl/grub.img.gz 
+        
+            echo "Git push ..."
+            git pull
+            status=$(git status -s | grep -E 'grub.img.gz' | awk '{printf " %s", $2}')
+            if [ -n "${status}" ]; then
+              git add ${status}
+              git commit -m "arc: grub: update $(date +%Y-%m-%d" "%H:%M:%S)"
+              git push -f
+            fi
+          else
+            echo "No change ..."
           fi
