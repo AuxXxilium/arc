@@ -54,7 +54,7 @@ SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 echo -e "Model: \033[1;36m${MODEL}\033[0m"
 echo -e "Build: \033[1;36m${BUILD}\033[0m"
 
-if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
+if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "`readConfigKey "builds.${BUILD}" "${MODEL_CONFIG_PATH}/${MODEL}.yml"`" ]; then
   echo -e "\033[1;33m*** The current version does not support booting for ${MODEL} and ${BUILD}, please rebuild. ***\033[0m"
   exit 1
 fi
