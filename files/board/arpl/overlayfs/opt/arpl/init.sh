@@ -67,7 +67,7 @@ fi
 
 # Get Number of Ethernet Ports
 NETNUM="`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`"
-#[ ${NETNUM} -gt 4 ] && NETNUM=4 && && echo -e "\033[1;33m*** WARNING: Only 4 Ethernet ports are supported ***\033[0m"
+[ ${NETNUM} -gt 4 ] && NETNUM=4 && echo -e "\033[1;33m*** WARNING: Only 4 Ethernet ports are supported by Redpill***\033[0m"
 
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then

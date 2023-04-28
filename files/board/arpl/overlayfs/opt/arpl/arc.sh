@@ -15,7 +15,7 @@ fi
 
 # Get Number of Ethernet Ports
 NETNUM="`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`"
-#[ ${NETNUM} -gt 4 ] && NETNUM=4 && WARNON=3
+[ ${NETNUM} -gt 4 ] && NETNUM=4 && WARNON=3
 
 # Get actual IP
 IP="`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`"
@@ -181,7 +181,7 @@ function arcMenu() {
   fi
   if [ "${WARNON}" = "3" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
-      --infobox "WARN: You have more than 4 Ethernet Ports. There are only 4 supported." 0 0
+      --infobox "WARN: You have more than 4 Ethernet Ports. There are only 4 supported by Redpill." 0 0
     sleep 5
   fi
   writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
@@ -1350,7 +1350,6 @@ function updateMenu() {
          arpl-reboot.sh config
         exit
         ;;
-
       2)
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
           --infobox "Checking latest version" 0 0
@@ -1385,7 +1384,6 @@ function updateMenu() {
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
           --msgbox "Addons updated with success! ${TAG}" 0 0
         ;;
-
       3)
         dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
           --infobox "Checking latest version" 0 0
@@ -1414,16 +1412,15 @@ function updateMenu() {
       4)
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
           --infobox "Checking last version" 0 0
-        TAG="`curl -k -s "https://api.github.com/repos/AuxXxilium/arpl-modules/releases/latest" | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
+        TAG="`curl -k -s "https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest" | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           continue
         fi
-
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
           --infobox "Downloading last version" 0 0
-        STATUS="`curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arpl-modules/releases/download/${TAG}/modules.zip" -o "/tmp/modules.zip"`"
+        STATUS="`curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "/tmp/modules.zip"`"
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --msgbox "Error downloading last version" 0 0
@@ -1431,7 +1428,6 @@ function updateMenu() {
         fi
         rm "${MODULES_PATH}/"*
         unzip /tmp/modules.zip -d "${MODULES_PATH}" >/dev/null 2>&1
-
         # Rebuild modules if model/buildnumber is selected
         if [ -n "${PLATFORM}" -a -n "${KVER}" ]; then
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"

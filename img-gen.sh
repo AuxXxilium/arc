@@ -25,7 +25,7 @@ echo "Extractor, LKM, Addons and Modules loaded"
 
 # Copy files
 echo "Copying files"
-VERSION=$(date +'%y.%m.%d')
+VERSION=$(date +'%y.%-m.dev')
 rm -f files/board/arpl/p1/ARPL-VERSION
 rm -f VERSION
 echo "${VERSION}" > files/board/arpl/p1/ARPL-VERSION

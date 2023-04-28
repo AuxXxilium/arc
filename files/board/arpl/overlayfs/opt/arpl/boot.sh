@@ -54,6 +54,11 @@ SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 echo -e "Model: \033[1;36m${MODEL}\033[0m"
 echo -e "Build: \033[1;36m${BUILD}\033[0m"
 
+if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
+  echo -e "\033[1;33m*** The current version does not support booting for ${MODEL} and ${BUILD}, please rebuild. ***\033[0m"
+  exit 1
+fi
+
 declare -A CMDLINE
 
 # Fixed values
@@ -90,7 +95,7 @@ fi
 NETIF_NUM=${CMDLINE["netif_num"]}
 NETNUM="`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`"
 if [ ${NETIF_NUM} -ne ${NETNUM} ]; then
-  #[ ${NETNUM} -gt 4 ] && NETNUM=4 && echo -e "\033[1;33m*** WARNING: Only 4 Ethernet ports are supported ***\033[0m"
+  [ ${NETNUM} -gt 4 ] && NETNUM=4 && echo -e "\033[1;33m*** WARNING: Only 4 Ethernet ports are supported by Redpill***\033[0m"
   echo -e "\033[1;33m*** netif_num is not equal to macX amount, set netif_num to ${NETNUM} ***\033[0m"
   CMDLINE["netif_num"]=${NETNUM}
 fi
