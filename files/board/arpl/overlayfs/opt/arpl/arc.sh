@@ -1414,7 +1414,7 @@ function updateMenu() {
       4)
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
           --infobox "Checking last version" 0 0
-        TAG="`curl -k -s "https://api.github.com/repos/AuxXxilium/arpl-modules/releases/latest" | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
+        TAG="`curl -k -s "https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest" | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --msgbox "Error checking new version" 0 0
@@ -1423,7 +1423,7 @@ function updateMenu() {
 
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
           --infobox "Downloading last version" 0 0
-        STATUS="`curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arpl-modules/releases/download/${TAG}/modules.zip" -o "/tmp/modules.zip"`"
+        STATUS="`curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "/tmp/modules.zip"`"
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --msgbox "Error downloading last version" 0 0
