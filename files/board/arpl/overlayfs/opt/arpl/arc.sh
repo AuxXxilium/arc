@@ -1350,7 +1350,6 @@ function updateMenu() {
          arpl-reboot.sh config
         exit
         ;;
-
       2)
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
           --infobox "Checking latest version" 0 0
@@ -1385,7 +1384,6 @@ function updateMenu() {
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
           --msgbox "Addons updated with success! ${TAG}" 0 0
         ;;
-
       3)
         dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
           --infobox "Checking latest version" 0 0
@@ -1420,7 +1418,6 @@ function updateMenu() {
             --msgbox "Error checking new version" 0 0
           continue
         fi
-
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
           --infobox "Downloading last version" 0 0
         STATUS="`curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "/tmp/modules.zip"`"
@@ -1431,7 +1428,6 @@ function updateMenu() {
         fi
         rm "${MODULES_PATH}/"*
         unzip /tmp/modules.zip -d "${MODULES_PATH}" >/dev/null 2>&1
-
         # Rebuild modules if model/buildnumber is selected
         if [ -n "${PLATFORM}" -a -n "${KVER}" ]; then
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
