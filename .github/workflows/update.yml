@@ -64,6 +64,6 @@ jobs:
           status=$(git status -s | grep -E 'model-configs|rss' | awk '{printf " %s", $2}')
           if [ -n "${status}" ]; then
             git add ${status}
-            git commit -m "update $(date +%Y-%m-%d" "%H:%M:%S)"
+            git commit -m "arc: update $(date +%Y-%m-%d" "%H:%M:%S)"
             git push -f
           fi
