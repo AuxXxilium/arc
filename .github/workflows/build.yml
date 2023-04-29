@@ -143,9 +143,9 @@ jobs:
 
           cd .buildroot
           echo "Generating default config"
-          make BR2_EXTERNAL=../external arpl_defconfig
+          make -j4 BR2_EXTERNAL=../external arpl_defconfig
           echo "Building..."
-          make BR2_EXTERNAL=../external
+          make -j4 BR2_EXTERNAL=../external
           cd -
           rm -f arc.img
           mv -f arpl.img arc.img
