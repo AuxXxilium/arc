@@ -1362,6 +1362,8 @@ function updateMenu() {
         unzip /tmp/addons.zip -d /tmp/addons >/dev/null 2>&1
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
           --infobox "Installing new addons" 0 0
+        rm -Rf "${ADDONS_PATH}/"*
+        [ -f /tmp/addons/VERSION ] && cp -f /tmp/addons/VERSION ${ADDONS_PATH}/
         for PKG in `ls /tmp/addons/*.addon`; do
           ADDON=`basename ${PKG} | sed 's|.addon||'`
           rm -rf "${ADDONS_PATH}/${ADDON}"
@@ -1453,7 +1455,7 @@ function sysinfo() {
   MEMINFO=`free -g | awk 'NR==2' | awk '{print $2}'`
   VENDOR=`dmidecode -s system-product-name`
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  IPLIST="`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`"
+  IPLIST=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
   REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
   PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
@@ -1465,7 +1467,7 @@ function sysinfo() {
   ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
   LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
   ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
-  MODULESINFO="`kmod list | awk '{print$1}' | awk 'NR>1'`"
+  MODULESINFO=`kmod list | awk '{print$1}' | awk 'NR>1'`
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4System:\Zn"
