@@ -7,24 +7,24 @@
 
 # Check partition 3 space, if < 2GiB is necessary clean cache folder
 CLEARCACHE=0
-LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
-LOADER_DEVICE_NAME="`echo ${LOADER_DISK} | sed 's|/dev/||'`"
+LOADER_DISK=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`
+LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
 if [ `cat /sys/block/${LOADER_DEVICE_NAME}/${LOADER_DEVICE_NAME}3/size` -lt 4194304 ]; then
   CLEARCACHE=1
 fi
 
 # Get Number of Ethernet Ports
-NETNUM="`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`"
+NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
 [ ${NETNUM} -gt 4 ] && NETNUM=4 && WARNON=3
 
 # Get actual IP
-IP="`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`"
+IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
 
 # Check for Hypervisor
 if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
   MACHINE="VIRTUAL"
   # Check for Hypervisor
-  HYPERVISOR="`lscpu | grep Hypervisor | awk '{print $3}'`"
+  HYPERVISOR=`lscpu | grep Hypervisor | awk '{print $3}'`
 else
   MACHINE="NATIVE"
 fi
@@ -392,7 +392,7 @@ function arcnetdisk() {
       /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
         --title "Restart DHCP" --progressbox "Renewing IP" 20 70
       sleep 5
-      IP="`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`"
+      IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
       sleep 1
       break
     fi
@@ -504,7 +504,7 @@ function extractDsmFiles() {
   RAMDISK_HASH="`readModelKey "${MODEL}" "builds.${BUILD}.pat.ramdisk-hash"`"
   ZIMAGE_HASH="`readModelKey "${MODEL}" "builds.${BUILD}.pat.zimage-hash"`"
 
-  SPACELEFT="`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}'`"
+  SPACELEFT=`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}'`  # Check disk space left
 
   PAT_FILE="${MODEL}-${BUILD}.pat"
   PAT_PATH="${CACHE_PATH}/dl/${PAT_FILE}"
@@ -535,12 +535,12 @@ function extractDsmFiles() {
     fi
     echo "Downloading ${PAT_FILE}"
     # Discover remote file size
-    FILESIZE="`curl -k -sLI "${PAT_URL}" | grep -i Content-Length | awk '{print$2}'`"
+    FILESIZE=`curl -k -sLI "${PAT_URL}" | grep -i Content-Length | awk '{print$2}'`
     if [ 0${FILESIZE} -ge ${SPACELEFT} ]; then
       # No disk space to download, change it to RAMDISK
       PAT_PATH="${TMP_PATH}/${PAT_FILE}"
     fi
-    STATUS="`curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_PATH}" --progress-bar`"
+    STATUS=`curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_PATH}" --progress-bar`
     if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
       rm "${PAT_PATH}"
       dialog --backtitle "`backtitle`" --title "$(TEXT "Error downloading")" --aspect 18 \
@@ -584,7 +584,7 @@ function extractDsmFiles() {
       ;;
   esac
 
-  SPACELEFT="`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print $4}'`"
+  SPACELEFT=`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print $4}'`  # Check disk space left
 
   if [ "${isencrypted}" = "yes" ]; then
     # Check existance of extractor
@@ -598,7 +598,7 @@ function extractDsmFiles() {
       if [ ! -f "${OLDPAT_PATH}" ]; then
         echo "Downloading old pat to extract synology .pat extractor..."
         # Discover remote file size
-        FILESIZE="`curl --insecure -sLI "${OLDPAT_URL}" | grep -i Content-Length | awk '{print$2}'`"
+        FILESIZE=`curl --insecure -sLI "${OLDPAT_URL}" | grep -i Content-Length | awk '{print$2}'`
         if [ 0${FILESIZE} -ge ${SPACELEFT} ]; then
           # No disk space to download, change it to RAMDISK
           OLDPAT_PATH="${TMP_PATH}/DS3622xs+-42218.pat"
@@ -979,7 +979,7 @@ function cmdlineMenu() {
         done
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-        IP="`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`"
+        IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
         ;;
       4)
         ITEMS=""
@@ -1353,7 +1353,7 @@ function updateMenu() {
       2)
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
           --infobox "Checking latest version" 0 0
-        TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
+        TAG=`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
             --msgbox "Error checking new version" 0 0
@@ -1361,7 +1361,7 @@ function updateMenu() {
         fi
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
           --infobox "Downloading latest version: ${TAG}" 0 0
-        STATUS="`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip`"
+        STATUS=`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip`
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
             --msgbox "Error downloading new version" 0 0
@@ -1387,7 +1387,7 @@ function updateMenu() {
       3)
         dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
           --infobox "Checking latest version" 0 0
-        TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
+        TAG=`curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
             --msgbox "Error checking new version" 0 0
@@ -1395,7 +1395,7 @@ function updateMenu() {
         fi
         dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
           --infobox "Downloading latest version: ${TAG}" 0 0
-        STATUS="`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip`"
+        STATUS=`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip`
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
             --msgbox "Error downloading latest version" 0 0
@@ -1461,9 +1461,9 @@ function sysinfo() {
   # Delete old Sysinfo
   rm -f ${SYSINFO_PATH}
   # Checks for Systeminfo Menu
-  CPUINFO="`awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//'`"
-  MEMINFO="`free -g | awk 'NR==2' | awk '{print $2}'`"
-  VENDOR="`dmidecode -s system-product-name`"
+  CPUINFO=`awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//'`
+  MEMINFO=`free -g | awk 'NR==2' | awk '{print $2}'`
+  VENDOR=`dmidecode -s system-product-name`
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   IPLIST="`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`"
   REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
@@ -1530,7 +1530,7 @@ function sysinfo() {
     # Get Name of Controller
     NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
     # Get Amount of Drives connected
-    SATADRIVES="`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`"
+    SATADRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
     TEXT+="\n\Z1SATA Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
     TEXT+="\Z1Drives\Zn detected:\n\Zb"${SATADRIVES}"\Zn\n"
   done
@@ -1541,7 +1541,7 @@ function sysinfo() {
     # Get Name of Controller
     NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
     # Get Amount of Drives connected
-    SASDRIVES="`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`"
+    SASDRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
     TEXT+="\n\Z1SAS Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
     TEXT+="\Z1Drives\Zn detected:\n\Zb"${SASDRIVES}"\Zn\n"
   done
@@ -1550,18 +1550,18 @@ function sysinfo() {
     TEXT+="\n\Z4Controller Ports:\Zn\n"
     NUMPORTS=0
     for PCI in `lspci -d ::106 | awk '{print$1}'`; do
-      NAME="`lspci -s "${PCI}" | sed "s/\ .*://"`"
+      NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
       TEXT+="\Zb${NAME}\Zn\nPorts: "
       unset HOSTPORTS
       declare -A HOSTPORTS
       while read LINE; do
         ATAPORT="`echo ${LINE} | grep -o 'ata[0-9]*'`"
-        PORT="`echo ${ATAPORT} | sed 's/ata//'`"
-        HOSTPORTS[${PORT}]="`echo ${LINE} | grep -o 'host[0-9]*$'`"
+        PORT=`echo ${ATAPORT} | sed 's/ata//'`
+        HOSTPORTS[${PORT}]=`echo ${LINE} | grep -o 'host[0-9]*$'`
       done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
       while read PORT; do
         ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
-        PCMD="`cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd`"
+        PCMD=`cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd`
         [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
         [ ${ATTACH} -eq 1 ] && TEXT+="\Z2\Zb"
         [ ${DUMMY} -eq 1 ] && TEXT+="\Z1"
