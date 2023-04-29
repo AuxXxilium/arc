@@ -397,6 +397,8 @@ function arcnetdisk() {
       break
     fi
   done
+  # Add NVMe Cache to nonDT Models
+  [ "${DT}" != "true" ] && writeConfigKey "addons.nvmecache" "" "${USER_CONFIG_FILE}"
   # Only load getmap when Sata Controller are dedected and no DT Model is selected
   if [ "${SATACONTROLLER}" -gt 0 ] && [ "${DT}" != "true" ]; then
     # Config for Sata Controller with PortMap to get all drives
