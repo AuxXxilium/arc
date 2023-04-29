@@ -84,8 +84,8 @@ function getmap() {
     DISKIDXMAPMAX=$DISKIDXMAPMAX$(printf "%02x" $DISKIDXMAPIDXMAX)
     let DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS
   done
-  SATAPORTMAPMAX=$(awk '{print$1}' ${TMP_PATH}/drivesmax)
-  SATAPORTMAP=$(awk '{print$1}' ${TMP_PATH}/drivescon)
+  SATAPORTMAPMAX=`awk '{print$1}' ${TMP_PATH}/drivesmax`
+  SATAPORTMAP=`awk '{print$1}' ${TMP_PATH}/drivescon`
   LASTDRIVE=0
   # Check for VMware
   if [ "$HYPERVISOR" = "VMware" ]; then
@@ -104,7 +104,7 @@ function getmap() {
         LASTDRIVE=$((${line}+1))
     fi
   done < <(cat "${TMP_PATH}/ports")
-  SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
+  SATAREMAP=`awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//'`
   # Check Remap for correct config
   REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
   # Write Map to config and show Map to User
@@ -136,5 +136,5 @@ function getmap() {
 }
 
 # Check for Controller
-SATACONTROLLER=$(lspci -nnk | grep -ie "\[0106\]" | wc -l)
-SASCONTROLLER=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l)
+SATACONTROLLER=`lspci -nnk | grep -ie "\[0106\]" | wc -l`
+SASCONTROLLER=`lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l`
