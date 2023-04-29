@@ -8,7 +8,7 @@ set -e
 CNT=3
 while true; do
   [ ${CNT} -eq 0 ] && break
-  LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
+  LOADER_DISK=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`
   [ -n "${LOADER_DISK}" ] && break
   CNT=$((${CNT}-1))
   sleep 1
@@ -16,7 +16,7 @@ done
 if [ -z "${LOADER_DISK}" ]; then
   die "Loader disk not found!"
 fi
-NUM_PARTITIONS="`blkid | grep "${LOADER_DISK}" | cut -d: -f1 | wc -l`"
+NUM_PARTITIONS=`blkid | grep "${LOADER_DISK}" | cut -d: -f1 | wc -l`
 if [ $NUM_PARTITIONS -ne 3 ]; then
   die "Loader disk not found!"
 fi
@@ -66,7 +66,7 @@ if [ -d "${CACHE_PATH}/patch" ]; then
 fi
 
 # Get Number of Ethernet Ports
-NETNUM="`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`"
+NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
 [ ${NETNUM} -gt 4 ] && NETNUM=4 && echo -e "\033[1;33m*** WARNING: Only 4 Ethernet ports are supported by Redpill***\033[0m"
 
 # If user config file not exists, initialize it
@@ -99,7 +99,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
     if [ ${COUNT} -eq ${NETNUM} ]; then
       break
     fi
-    MACO="`ip link show eth$COUNT | awk '/ether/{print$2}' | sed 's/://g'`"
+    MACO=`ip link show eth$COUNT | awk '/ether/{print$2}' | sed 's/://g'`
     COUNT=$((${COUNT}+1))
     writeConfigKey "cmdline.mac${COUNT}" "${MACO}" "${USER_CONFIG_FILE}"
   done
@@ -111,7 +111,7 @@ while true; do
   if [ ${COUNT} -eq ${NETNUM} ]; then
     break
   fi
-  MACO="`ip link show eth$COUNT | awk '/ether/{print$2}' | sed 's/://g'`"
+  MACO=`ip link show eth$COUNT | awk '/ether/{print$2}' | sed 's/://g'`
   COUNT=$((${COUNT}+1))
   writeConfigKey "device.mac${COUNT}" "${MACO}" "${USER_CONFIG_FILE}"
 done
@@ -135,7 +135,7 @@ done
 # Get the VID/PID if we are in USB
 VID="0x0000"
 PID="0x0000"
-BUS="`udevadm info --query property --name ${LOADER_DISK} | grep BUS | cut -d= -f2`"
+BUS=`udevadm info --query property --name ${LOADER_DISK} | grep BUS | cut -d= -f2`
 if [ "${BUS}" = "usb" ]; then
   VID="0x`udevadm info --query property --name ${LOADER_DISK} | grep ID_VENDOR_ID | cut -d= -f2`"
   PID="0x`udevadm info --query property --name ${LOADER_DISK} | grep ID_MODEL_ID | cut -d= -f2`"
@@ -157,8 +157,8 @@ fi
 echo ")"
 
 # Check if partition 3 occupies all free space, resize if needed
-LOADER_DEVICE_NAME="`echo ${LOADER_DISK} | sed 's|/dev/||'`"
-SIZEOFDISK="`cat /sys/block/${LOADER_DEVICE_NAME}/size`"
+LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
+SIZEOFDISK=`cat /sys/block/${LOADER_DEVICE_NAME}/size`
 ENDSECTOR=$((`fdisk -l ${LOADER_DISK} | awk '/'${LOADER_DEVICE_NAME}3'/{print$3}'`+1))
 if [ ${SIZEOFDISK} -ne ${ENDSECTOR} ]; then
   echo -e "\033[1;36mResizing ${LOADER_DISK}3\033[0m"
@@ -206,7 +206,7 @@ fi
 COUNT=0
 echo -n "Waiting IP."
 while true; do
-  IP="`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`"
+  IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
   if [ -n "${IP}" ]; then
     echo -en "OK\nAccess \033[1;34mhttp://${IP}:7681\033[0m to configure the loader via web terminal"
     break
