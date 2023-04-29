@@ -111,7 +111,7 @@ jobs:
             status=$(git status -s | awk '{printf " %s", $2}')
             if [ -n "${status}" ]; then
               git add ${status}
-              git commit -m "arc: build: $(date +%Y-%m-%d" "%H:%M:%S)"
+              git commit -m "arc: build: ${VERSION}"
               git push -f
             fi
           fi
