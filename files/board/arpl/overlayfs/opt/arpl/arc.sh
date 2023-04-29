@@ -946,7 +946,7 @@ function cmdlineMenu() {
               --inputbox "`Type a custom MAC address of %s" "eth$(expr ${i} - 1)`" 0 0 "${CMDLINE["mac${i}"]}" \
               2>${TMP_PATH}/resp
             RET=$?
-            [ ${RET} -ne 0 ] && break
+            [ ${RET} -ne 0 ] && break 2
             MAC="`<"${TMP_PATH}/resp"`"
             [ -z "${MAC}" ] && MAC="`readConfigKey "original-mac${i}" "${USER_CONFIG_FILE}"`"
             MACF="`echo "${MAC}" | sed 's/://g'`"
