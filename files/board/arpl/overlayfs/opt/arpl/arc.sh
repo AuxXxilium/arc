@@ -325,6 +325,7 @@ function arcnetdisk() {
       --title "Arc Network" --infobox "Set MAC for all NIC" 0 0
     sleep 2
   fi
+  # Set original mac for higher adapter numbers
   if [ "${NETNUM}" -gt 1 ]; then
     MAC2="`readConfigKey "device.mac2" "${USER_CONFIG_FILE}"`"
     writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
