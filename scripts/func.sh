@@ -63,7 +63,7 @@ function getLKMs() {
     rm -rf "${DEST_PATH}"; mkdir -p "${DEST_PATH}"
     unzip "${CACHE_FILE}" -d "${DEST_PATH}"
     rm -f "${CACHE_FILE}"
-    echo "Getting LKMs end"
+    echo "Getting LKMs end - ${TAG}"
 }
 
 
@@ -88,7 +88,7 @@ function getAddons() {
       echo "Extracting ${PKG} to ${DEST_PATH}/${ADDON}"
       tar xaf "${PKG}" -C "${DEST_PATH}/${ADDON}"
     done
-    echo "Getting Addons end"
+    echo "Getting Addons end - ${TAG}"
 }
 
 
@@ -107,7 +107,7 @@ function getModules() {
     rm -rf "${DEST_PATH}"; mkdir -p "${DEST_PATH}"
     unzip "${CACHE_FILE}" -d "${DEST_PATH}"
     rm -f "${CACHE_FILE}"
-    echo "Getting Modules end"
+    echo "Getting Modules end - ${TAG}"
 }
 
 
