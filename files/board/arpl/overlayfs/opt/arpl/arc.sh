@@ -15,7 +15,7 @@ fi
 
 # Get Number of Ethernet Ports
 NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
-[ ${NETNUM} -gt 4 ] && NETNUM=4 && WARNON=3
+[ ${NETNUM} -gt 8 ] && NETNUM=8 && WARNON=3
 
 # Get actual IP
 IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
@@ -171,18 +171,15 @@ function arcMenu() {
   fi
   if [ "${WARNON}" = "1" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
-      --infobox "WARN: Your Controller has more than 8 Disks connected. Max Disks per Controller: 8" 0 0
-    sleep 5
+      --msgbox "WARN: Your Controller has more than 8 Disks connected. Max Disks per Controller: 8" 0 0
   fi
   if [ "${WARNON}" = "2" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
-      --infobox "WARN: You have selected a DT Model. There is no support for Raid/SCSI Controller." 0 0
-    sleep 5
+      --msgbox "WARN: You have selected a DT Model. There is no support for Raid/SCSI Controller." 0 0
   fi
   if [ "${WARNON}" = "3" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
-      --infobox "WARN: You have more than 4 Ethernet Ports. There are only 4 supported by Redpill." 0 0
-    sleep 5
+      --msgbox "WARN: You have more than 8 Ethernet Ports. There are only 8 supported by Redpill." 0 0
   fi
   writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
   deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
@@ -298,75 +295,63 @@ function arcnetdisk() {
     while true; do
       dialog --clear --backtitle "`backtitle`" \
         --menu "Network: MAC for 1. NIC" 0 0 0 \
-        1 "Set MAC for all NIC" \
-        2 "Use MAC1: ${MAC1}" \
-        3 "Use MAC2: ${MAC2}" \
-        4 "Use MAC3: ${MAC3}" \
-        5 "Use MAC4: ${MAC4}" \
+        1 "Use MAC1: ${MAC1}" \
+        2 "Use MAC2: ${MAC2}" \
+        3 "Use MAC3: ${MAC3}" \
+        4 "Use MAC4: ${MAC4}" \
       2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
       resp=$(<${TMP_PATH}/resp)
       [ -z "${resp}" ] && return
-      if [ "${resp}" != "1" ]; then
-        if [ "${resp}" = "2" ]; then
-            writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-        elif [ "${resp}" = "3" ]; then
-            writeConfigKey "cmdline.mac1"           "${MAC2}" "${USER_CONFIG_FILE}"
-        elif [ "${resp}" = "4" ]; then
-            writeConfigKey "cmdline.mac1"           "${MAC3}" "${USER_CONFIG_FILE}"
-        elif [ "${resp}" = "5" ]; then
-            writeConfigKey "cmdline.mac1"           "${MAC4}" "${USER_CONFIG_FILE}"
-        fi
-        if [ "${NETNUM}" -gt 1 ]; then
-          MAC2="`readConfigKey "device.mac2" "${USER_CONFIG_FILE}"`"
-          writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
-        fi
-        if [ "${NETNUM}" -gt 2 ]; then
-          MAC3="`readConfigKey "device.mac3" "${USER_CONFIG_FILE}"`"
-          writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
-        fi
-        if [ "${NETNUM}" -gt 3 ]; then
-          MAC4="`readConfigKey "device.mac4" "${USER_CONFIG_FILE}"`"
-          writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
-        fi
-        break
-      fi
       if [ "${resp}" = "1" ]; then
           writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-        if [ "${NETNUM}" -gt 1 ]; then
-          writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
-        fi
-        if [ "${NETNUM}" -gt 2 ]; then
-          writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
-        fi
-        if [ "${NETNUM}" -gt 3 ]; then
-          writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
-        fi
-        break
+      elif [ "${resp}" = "2" ]; then
+          writeConfigKey "cmdline.mac1"           "${MAC2}" "${USER_CONFIG_FILE}"
+      elif [ "${resp}" = "3" ]; then
+          writeConfigKey "cmdline.mac1"           "${MAC3}" "${USER_CONFIG_FILE}"
+      elif [ "${resp}" = "4" ]; then
+          writeConfigKey "cmdline.mac1"           "${MAC4}" "${USER_CONFIG_FILE}"
       fi
+      break
     done
     dialog --backtitle "`backtitle`" \
       --title "Arc Network" --infobox "Set MAC for first NIC" 0 0
-    sleep 1
+    sleep 2
   elif [ "${ARCPATCH}" = "0" ]; then
     # Install without Arc Patch - Set Hardware Mac Address
-      MAC1="`readConfigKey "device.mac1" "${USER_CONFIG_FILE}"`"
-      writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-    if [ "${NETNUM}" -gt 1 ]; then
-      MAC2="`readConfigKey "device.mac2" "${USER_CONFIG_FILE}"`"
-      writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
-    fi
-    if [ "${NETNUM}" -gt 2 ]; then
-      MAC3="`readConfigKey "device.mac3" "${USER_CONFIG_FILE}"`"
-      writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
-    fi
-    if [ "${NETNUM}" -gt 3 ]; then
-      MAC4="`readConfigKey "device.mac4" "${USER_CONFIG_FILE}"`"
-      writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
-    fi
+    MAC1="`readConfigKey "device.mac1" "${USER_CONFIG_FILE}"`"
+    writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
     dialog --backtitle "`backtitle`" \
       --title "Arc Network" --infobox "Set MAC for all NIC" 0 0
     sleep 2
+  fi
+  if [ "${NETNUM}" -gt 1 ]; then
+    MAC2="`readConfigKey "device.mac2" "${USER_CONFIG_FILE}"`"
+    writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
+  fi
+  if [ "${NETNUM}" -gt 2 ]; then
+    MAC3="`readConfigKey "device.mac3" "${USER_CONFIG_FILE}"`"
+    writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
+  fi
+  if [ "${NETNUM}" -gt 3 ]; then
+    MAC4="`readConfigKey "device.mac4" "${USER_CONFIG_FILE}"`"
+    writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
+  fi
+  if [ "${NETNUM}" -gt 4 ]; then
+    MAC5="`readConfigKey "device.mac5" "${USER_CONFIG_FILE}"`"
+    writeConfigKey "cmdline.mac5"           "${MAC5}" "${USER_CONFIG_FILE}"
+  fi
+  if [ "${NETNUM}" -gt 5 ]; then
+    MAC6="`readConfigKey "device.mac6" "${USER_CONFIG_FILE}"`"
+    writeConfigKey "cmdline.mac6"           "${MAC6}" "${USER_CONFIG_FILE}"
+  fi
+  if [ "${NETNUM}" -gt 6 ]; then
+    MAC7="`readConfigKey "device.mac7" "${USER_CONFIG_FILE}"`"
+    writeConfigKey "cmdline.mac7"           "${MAC7}" "${USER_CONFIG_FILE}"
+  fi
+  if [ "${NETNUM}" -gt 7 ]; then
+    MAC8="`readConfigKey "device.mac8" "${USER_CONFIG_FILE}"`"
+    writeConfigKey "cmdline.mac8"           "${MAC8}" "${USER_CONFIG_FILE}"
   fi
   # Ask for IP rebind
   while true; do
