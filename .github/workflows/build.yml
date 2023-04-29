@@ -58,14 +58,14 @@ jobs:
           cp -Ru files/* .buildroot
           cd .buildroot
           echo "Generating default config"
-          make -j4 BR2_EXTERNAL=../external arpl_defconfig
+          make -j6 BR2_EXTERNAL=../external arpl_defconfig
 
       # Download sources if not cached
       - name: Download buildroot packages source
         if: steps.dl-cache.outputs.cache-hit != 'true'
         run: |
           cd .buildroot
-          make -j4 BR2_EXTERNAL=../external source
+          make -j6 BR2_EXTERNAL=../external source
 
       # Prepare buildroot for first make
       - name: Prepare buildroot
@@ -73,7 +73,7 @@ jobs:
         run: |
           echo "First make"
           cd .buildroot
-          make -j4 BR2_EXTERNAL=../external
+          make -j6 BR2_EXTERNAL=../external
 
       # calculates the version number and push
       - name: Calculate version
@@ -143,9 +143,9 @@ jobs:
 
           cd .buildroot
           echo "Generating default config"
-          make -j4 BR2_EXTERNAL=../external arpl_defconfig
+          make -j6 BR2_EXTERNAL=../external arpl_defconfig
           echo "Building..."
-          make -j4 BR2_EXTERNAL=../external
+          make -j6 BR2_EXTERNAL=../external
           cd -
           rm -f arc.img
           mv -f arpl.img arc.img
