@@ -37,22 +37,6 @@
         "ReqBuildDate": "2021/06/25",
         "isSecurityVersion": false,
         "model": []
-      },
-      {
-        "title": "DSM 7.1-42661",
-        "MajorVer": 7,
-        "MinorVer": 1,
-        "NanoVer": 0,
-        "BuildPhase": 0,
-        "BuildNum": 42661,
-        "BuildDate": "2022/04/01",
-        "ReqMajorVer": 7,
-        "ReqMinorVer": 0,
-        "ReqBuildPhase": 0,
-        "ReqBuildNum": 41890,
-        "ReqBuildDate": "2021/06/25",
-        "isSecurityVersion": false,
-        "model": []
       }
     ]
   }
