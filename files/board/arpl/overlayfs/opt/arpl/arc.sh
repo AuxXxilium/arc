@@ -4,6 +4,7 @@
 . /opt/arpl/include/addons.sh
 . /opt/arpl/include/modules.sh
 . /opt/arpl/include/storage.sh
+. /opt/arpl/include/network.sh
 
 # Check partition 3 space, if < 2GiB is necessary clean cache folder
 CLEARCACHE=0
@@ -282,113 +283,14 @@ function arcbuild() {
 function arcnetdisk() {
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   DT="`readModelKey "${MODEL}" "dt"`"
-  # Delete old Mac Address from Userconfig
-  #deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
-  dialog --backtitle "`backtitle`" \
-    --title "Arc Network" --infobox " ${NETNUM} Adapter dedected" 0 0
-  if [ "${ARCPATCH}" = "1" ]; then 
-    # Install with Arc Patch - Check for model config and set custom Mac Address
-    MAC1="`readModelKey "${MODEL}" "arc.mac1"`"
-    MAC2="`readModelKey "${MODEL}" "arc.mac2"`"
-    MAC3="`readModelKey "${MODEL}" "arc.mac3"`"
-    MAC4="`readModelKey "${MODEL}" "arc.mac4"`"
-    while true; do
-      dialog --clear --backtitle "`backtitle`" \
-        --menu "Network: MAC for 1. NIC" 0 0 0 \
-        1 "Use MAC1: ${MAC1}" \
-        2 "Use MAC2: ${MAC2}" \
-        3 "Use MAC3: ${MAC3}" \
-        4 "Use MAC4: ${MAC4}" \
-      2>${TMP_PATH}/resp
-      [ $? -ne 0 ] && return
-      resp=$(<${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return
-      if [ "${resp}" = "1" ]; then
-          writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-      elif [ "${resp}" = "2" ]; then
-          writeConfigKey "cmdline.mac1"           "${MAC2}" "${USER_CONFIG_FILE}"
-      elif [ "${resp}" = "3" ]; then
-          writeConfigKey "cmdline.mac1"           "${MAC3}" "${USER_CONFIG_FILE}"
-      elif [ "${resp}" = "4" ]; then
-          writeConfigKey "cmdline.mac1"           "${MAC4}" "${USER_CONFIG_FILE}"
-      fi
-      break
-    done
-    dialog --backtitle "`backtitle`" \
-      --title "Arc Network" --infobox "Set MAC for first NIC" 0 0
-    sleep 2
-  elif [ "${ARCPATCH}" = "0" ]; then
-    # Install without Arc Patch - Set Hardware Mac Address
-    MAC1="`readConfigKey "device.mac1" "${USER_CONFIG_FILE}"`"
-    writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-    dialog --backtitle "`backtitle`" \
-      --title "Arc Network" --infobox "Set MAC for all NIC" 0 0
-    sleep 2
-  fi
-  # Set original mac for higher adapter numbers
-  if [ "${NETNUM}" -gt 1 ]; then
-    MAC2="`readConfigKey "device.mac2" "${USER_CONFIG_FILE}"`"
-    writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
-  fi
-  if [ "${NETNUM}" -gt 2 ]; then
-    MAC3="`readConfigKey "device.mac3" "${USER_CONFIG_FILE}"`"
-    writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
-  fi
-  if [ "${NETNUM}" -gt 3 ]; then
-    MAC4="`readConfigKey "device.mac4" "${USER_CONFIG_FILE}"`"
-    writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
-  fi
-  if [ "${NETNUM}" -gt 4 ]; then
-    MAC5="`readConfigKey "device.mac5" "${USER_CONFIG_FILE}"`"
-    writeConfigKey "cmdline.mac5"           "${MAC5}" "${USER_CONFIG_FILE}"
-  fi
-  if [ "${NETNUM}" -gt 5 ]; then
-    MAC6="`readConfigKey "device.mac6" "${USER_CONFIG_FILE}"`"
-    writeConfigKey "cmdline.mac6"           "${MAC6}" "${USER_CONFIG_FILE}"
-  fi
-  if [ "${NETNUM}" -gt 6 ]; then
-    MAC7="`readConfigKey "device.mac7" "${USER_CONFIG_FILE}"`"
-    writeConfigKey "cmdline.mac7"           "${MAC7}" "${USER_CONFIG_FILE}"
-  fi
-  if [ "${NETNUM}" -gt 7 ]; then
-    MAC8="`readConfigKey "device.mac8" "${USER_CONFIG_FILE}"`"
-    writeConfigKey "cmdline.mac8"           "${MAC8}" "${USER_CONFIG_FILE}"
-  fi
-  # Ask for IP rebind
-  while true; do
-    dialog --clear --backtitle "`backtitle`" \
-      --menu "Restart DHCP?" 0 0 0 \
-      1 "No - Get new IP on Boot" \
-      2 "Yes - Get new IP now" \
-    2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
-    resp=$(<${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return
-    if [ "${resp}" = "1" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Network" \
-        --infobox "IP/MAC will be changed on first boot!" 0 0
-      sleep 1
-      break
-    elif [ "${resp}" = "2" ]; then
-      dialog --backtitle "`backtitle`" --title "Arc Network" \
-        --infobox "IP/MAC will be changed now!" 0 0
-      MAC1="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
-      MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
-      ip link set dev eth0 address ${MACN1} 2>&1
-      /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
-        --title "Restart DHCP" --progressbox "Renewing IP" 20 70
-      sleep 5
-      IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
-      sleep 1
-      break
-    fi
-  done
+  # Get Network Config for Loader
+  getnet
   # Only load getmap when Sata Controller are dedected and no DT Model is selected
   if [ "${SATACONTROLLER}" -gt 0 ] && [ "${DT}" != "true" ]; then
     # Config for Sata Controller with PortMap to get all drives
       dialog --backtitle "`backtitle`" --title "Arc Disks" \
         --infobox "SATA Controller found. Need PortMap for Controller!" 0 0
-    # Get Diskmap for DSM
+    # Get Portmap for Loader
     getmap
   fi
   # Write Sasidxmap if SAS Controller are dedected
@@ -1440,8 +1342,19 @@ function updateMenu() {
 function storageMenu() {
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   DT="`readModelKey "${MODEL}" "dt"`"
-  # Get Diskmap for DSM
+  # Get Portmap for Loader
   getmap
+  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+}
+
+###############################################################################
+# Show Storagemenu to user
+function networkMenu() {
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  DT="`readModelKey "${MODEL}" "dt"`"
+  # Get Network Config for Loader
+  getnet
   deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
 }
@@ -1469,6 +1382,9 @@ function sysinfo() {
   LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
   ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
   MODULESINFO=`kmod list | awk '{print$1}' | awk 'NR>1'`
+  MODULESVERSION=`cat "${MODULES_PATH}/VERSION"`
+  ADDONSVERSION=`cat "${ADDONS_PATH}/VERSION"`
+  LKMVERSION=`cat "${LKM_PATH}/VERSION"`
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4System:\Zn"
@@ -1481,7 +1397,8 @@ function sysinfo() {
   TEXT+="\nRAM: \Zb"${MEMINFO}"GB\Zn\n"
   # Print Config Informations
   TEXT+="\n\Z4Config:\Zn"
-  TEXT+="\nArc: \Zb"${ARPL_VERSION}"\Zn"
+  TEXT+="\nArc Version: \Zb"${ARPL_VERSION}"\Zn"
+  TEXT+="\nSubversion: \ZbModules "${MODULESVERSION}"\Zn | \ZbAddons "${ADDONSVERSION}"\Zn | \ZbLKM "${LKMVERSION}"\Zn"
   TEXT+="\nModel: \Zb"${MODEL}"\Zn"
   if [ -n "${CONFDONE}" ]; then
     TEXT+="\nConfig: \ZbComplete\Zn"
@@ -1719,11 +1636,12 @@ while true; do
       if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
         echo "s \"Change Storage Map \" "                                                   >> "${TMP_PATH}/menu"
       fi
+      echo "n \"Change Network Config \" "                                                  >> "${TMP_PATH}/menu"
       echo "t \"Backup Menu \" "                                                            >> "${TMP_PATH}/menu"
       if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
         echo "r \"Boot from Backup: \Z4${BACKUPBOOT}\Zn \" "                                >> "${TMP_PATH}/menu"
       fi
-      echo "p \"\Z1Format Disks\Zn \" "                                                     >> "${TMP_PATH}/menu"
+      echo "z \"\Z1Format Disks\Zn \" "                                                     >> "${TMP_PATH}/menu"
     fi
     if [ -n "${ADVOPTS}" ]; then
       echo "x \"\Z1Hide Advanced Options\Zn \" "                                            >> "${TMP_PATH}/menu"
@@ -1759,6 +1677,7 @@ while true; do
     2) addonMenu; NEXT="2" ;;
     3) selectModules; NEXT="3" ;;
     s) storageMenu; NEXT="s" ;;
+    n) networkMenu; NEXT="n" ;;
     n) reset; NEXT="1" ;;
     x) [ "${ADVOPTS}" = "" ] && ADVOPTS='1' || ADVOPTS=''
        ADVOPTS="${ADVOPTS}"
@@ -1772,7 +1691,7 @@ while true; do
     g) synoinfoMenu; NEXT="g" ;;
     h) editUserConfig; NEXT="h" ;;
     i) tryRecoveryDSM; NEXT="i" ;;
-    p) formatdisks; NEXT="p" ;;
+    z) formatdisks; NEXT="p" ;;
     j) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
       writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
       DIRTY=1
