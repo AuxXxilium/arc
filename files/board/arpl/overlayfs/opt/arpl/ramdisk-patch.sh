@@ -140,7 +140,7 @@ echo "export LAYOUT=${LAYOUT}"                  >> "${RAMDISK_PATH}/addons/addon
 echo "export KEYMAP=${KEYMAP}"                  >> "${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
-# Required addons: eudev, disks, wol
+# Required addons: eudev, disks, wol, bootwait
 installAddon eudev
 echo "/addons/eudev.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon disks
