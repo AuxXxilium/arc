@@ -96,30 +96,29 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   # Initialize with real MAC
   COUNT=0
   while true; do
-    if [ ${COUNT} -eq ${NETNUM} ]; then
-      break
-    fi
     MACO=`ip link show eth$COUNT | awk '/ether/{print$2}' | sed 's/://g'`
     COUNT=$((${COUNT}+1))
     writeConfigKey "cmdline.mac${COUNT}" "${MACO}" "${USER_CONFIG_FILE}"
+    if [ ${COUNT} -eq ${NETNUM} ]; then
+      break
+    fi
   done
 fi
 
 # Get real MAC and write to config
 COUNT=0
 while true; do
-  if [ ${COUNT} -eq ${NETNUM} ]; then
-    break
-  fi
   MACO=`ip link show eth$COUNT | awk '/ether/{print$2}' | sed 's/://g'`
   COUNT=$((${COUNT}+1))
   writeConfigKey "device.mac${COUNT}" "${MACO}" "${USER_CONFIG_FILE}"
+  if [ ${COUNT} -eq ${NETNUM} ]; then
+    break
+  fi
 done
 
 # Set custom MAC if defined
-COUNT=0
+COUNT=1
 while true; do
-  COUNT=$((${COUNT}+1))
   MACF="`readConfigKey "cmdline.mac${COUNT}" "${USER_CONFIG_FILE}"`"
   MACO="`readConfigKey "device.mac${COUNT}" "${USER_CONFIG_FILE}"`"
   if [ -n "${MACF}" ] && [ "${MACF}" != "${MACO}" ]; then
@@ -130,6 +129,7 @@ while true; do
   if [ ${COUNT} -eq ${NETNUM} ]; then
     break
   fi
+  COUNT=$((${COUNT}+1))
 done
 
 # Get the VID/PID if we are in USB
