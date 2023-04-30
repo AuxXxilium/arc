@@ -1351,8 +1351,7 @@ function storageMenu() {
 ###############################################################################
 # Show Storagemenu to user
 function networkMenu() {
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  DT="`readModelKey "${MODEL}" "dt"`"
+  ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
   # Get Network Config for Loader
   getnet
   deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
