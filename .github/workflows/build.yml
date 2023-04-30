@@ -52,20 +52,20 @@ jobs:
       - name: Clone buildroot
         if: steps.br-cache.outputs.cache-hit != 'true'
         run: |
-          git clone --single-branch -b 2022.02 https://github.com/buildroot/buildroot.git .buildroot
+          git clone --single-branch -b 2023.02.x https://github.com/buildroot/buildroot.git .buildroot
           # Copy files
           echo "Copying files"
           cp -Ru files/* .buildroot
           cd .buildroot
           echo "Generating default config"
-          make -j6 BR2_EXTERNAL=../external arpl_defconfig
+          make BR2_EXTERNAL=../external -j`nproc` arpl_defconfig
 
       # Download sources if not cached
       - name: Download buildroot packages source
         if: steps.dl-cache.outputs.cache-hit != 'true'
         run: |
           cd .buildroot
-          make -j6 BR2_EXTERNAL=../external source
+          make BR2_EXTERNAL=../external -j`nproc` source
 
       # Prepare buildroot for first make
       - name: Prepare buildroot
@@ -73,7 +73,7 @@ jobs:
         run: |
           echo "First make"
           cd .buildroot
-          make -j6 BR2_EXTERNAL=../external
+          make BR2_EXTERNAL=../external -j`nproc`
 
       # calculates the version number and push
       - name: Calculate version
@@ -143,9 +143,9 @@ jobs:
 
           cd .buildroot
           echo "Generating default config"
-          make -j6 BR2_EXTERNAL=../external arpl_defconfig
+          make BR2_EXTERNAL=../external -j`nproc` arpl_defconfig
           echo "Building..."
-          make -j6 BR2_EXTERNAL=../external
+          make BR2_EXTERNAL=../external -j`nproc`
           cd -
           rm -f arc.img
           mv -f arpl.img arc.img
