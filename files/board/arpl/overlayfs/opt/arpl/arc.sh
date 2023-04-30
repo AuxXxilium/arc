@@ -1382,6 +1382,9 @@ function sysinfo() {
   LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
   ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
   MODULESINFO=`kmod list | awk '{print$1}' | awk 'NR>1'`
+  MODULESVERSION=`cat "${MODULES_PATH}/VERSION"`
+  ADDONSVERSION=`cat "${ADDONS_PATH}/VERSION"`
+  LKMVERSION=`cat "${LKM_PATH}/VERSION"`
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4System:\Zn"
@@ -1394,7 +1397,8 @@ function sysinfo() {
   TEXT+="\nRAM: \Zb"${MEMINFO}"GB\Zn\n"
   # Print Config Informations
   TEXT+="\n\Z4Config:\Zn"
-  TEXT+="\nArc: \Zb"${ARPL_VERSION}"\Zn"
+  TEXT+="\nArc Version: \Zb"${ARPL_VERSION}"\Zn"
+  TEXT+="\nSubversion: \ZbModules "${MODULESVERSION}"\Zn | \ZbAddons "${ADDONSVERSION}"\Zn | \ZbLKM "${LKMVERSION}"\Zn"
   TEXT+="\nModel: \Zb"${MODEL}"\Zn"
   if [ -n "${CONFDONE}" ]; then
     TEXT+="\nConfig: \ZbComplete\Zn"
