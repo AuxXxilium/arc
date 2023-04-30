@@ -177,15 +177,7 @@ if [ -f /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz ]; then
 fi
 
 # Enable Wake on Lan, ignore errors
-COUNT=0
-while true; do
-  if [ ${COUNT} -eq ${NETNUM} ]; then
-    echo "WOL active for ${COUNT} Adapter"
-    break
-  fi
-  ethtool -s eth${COUNT} wol g 2>/dev/null
-  COUNT=$((${COUNT}+1))
-done
+ethtool -s eth0 wol g 2>/dev/null
 
 # Decide if boot automatically
 BOOT=1
