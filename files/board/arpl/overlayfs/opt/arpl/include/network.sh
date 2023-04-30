@@ -49,32 +49,15 @@ function getnet() {
   fi
   # Set original mac for higher adapter numbers
   if [ "${NETNUM}" -gt 1 ]; then
-    MAC2="`readConfigKey "device.mac2" "${USER_CONFIG_FILE}"`"
-    writeConfigKey "cmdline.mac2"           "${MAC2}" "${USER_CONFIG_FILE}"
-  fi
-  if [ "${NETNUM}" -gt 2 ]; then
-    MAC3="`readConfigKey "device.mac3" "${USER_CONFIG_FILE}"`"
-    writeConfigKey "cmdline.mac3"           "${MAC3}" "${USER_CONFIG_FILE}"
-  fi
-  if [ "${NETNUM}" -gt 3 ]; then
-    MAC4="`readConfigKey "device.mac4" "${USER_CONFIG_FILE}"`"
-    writeConfigKey "cmdline.mac4"           "${MAC4}" "${USER_CONFIG_FILE}"
-  fi
-  if [ "${NETNUM}" -gt 4 ]; then
-    MAC5="`readConfigKey "device.mac5" "${USER_CONFIG_FILE}"`"
-    writeConfigKey "cmdline.mac5"           "${MAC5}" "${USER_CONFIG_FILE}"
-  fi
-  if [ "${NETNUM}" -gt 5 ]; then
-    MAC6="`readConfigKey "device.mac6" "${USER_CONFIG_FILE}"`"
-    writeConfigKey "cmdline.mac6"           "${MAC6}" "${USER_CONFIG_FILE}"
-  fi
-  if [ "${NETNUM}" -gt 6 ]; then
-    MAC7="`readConfigKey "device.mac7" "${USER_CONFIG_FILE}"`"
-    writeConfigKey "cmdline.mac7"           "${MAC7}" "${USER_CONFIG_FILE}"
-  fi
-  if [ "${NETNUM}" -gt 7 ]; then
-    MAC8="`readConfigKey "device.mac8" "${USER_CONFIG_FILE}"`"
-    writeConfigKey "cmdline.mac8"           "${MAC8}" "${USER_CONFIG_FILE}"
+    COUNT=2
+    while true; do
+      MACO="`readConfigKey "device.mac${COUNT}" "${USER_CONFIG_FILE}"`"
+      writeConfigKey "cmdline.mac${COUNT}" "${MACO}" "${USER_CONFIG_FILE}"
+      if [ ${COUNT} -eq ${NETNUM} ]; then
+        break
+      fi
+      COUNT=$((${COUNT}+1))
+    done
   fi
   # Ask for IP rebind
   while true; do
