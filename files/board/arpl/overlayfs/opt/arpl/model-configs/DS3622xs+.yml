@@ -19,7 +19,6 @@ cmdline: &cmdline
   elevator: elevator
 platform: "broadwellnk"
 unique: "synology_broadwellnk_3622xs+"
-dom: 1
 serial:
   prefix:
     - "2150"
@@ -33,8 +32,10 @@ arc:
   mac4: "001132FA6CD7"
   mac5: "001132FA6CD3"
   mac6: "9009D019775A"
+dom: 1
 disks: 12
 dt: false
+beta: false
 builds:
   42962:
     ver: "7.1.1"

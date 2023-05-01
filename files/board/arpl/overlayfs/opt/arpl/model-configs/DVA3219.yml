@@ -18,7 +18,6 @@ cmdline: &cmdline
   elevator: elevator
 platform: "denverton"
 unique: "synology_denverton_dva3219"
-dom: 2
 serial:
   prefix:
     - "1930"
@@ -33,10 +32,12 @@ arc:
   mac4: "001132A9E869"
   mac5: "9009D019775A"
   mac6: "9009D01978A5"
-flags:
-  - "movbe"
+dom: 2
 disks: 4
 dt: false
+beta: false
+flags:
+  - "movbe"
 builds:
   42962:
     ver: "7.1.1"
