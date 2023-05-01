@@ -5,7 +5,7 @@ synoinfo: &synoinfo
   rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
-  support_bde_internal_10g: "no"
+  #support_bde_internal_10g: "no"
   esataportcfg: "0x00"
   support_led_brightness_adjustment: "no"
   support_leds_lp3943: ""
@@ -18,7 +18,6 @@ cmdline: &cmdline
   elevator: elevator
 platform: "apollolake"
 unique: "synology_apollolake_1019+"
-dom: 2
 serial:
   prefix:
     - "1850"
@@ -32,6 +31,7 @@ arc:
   mac4: "00113295B39C"
   mac5: "9009D019775A"
   mac6: "9009D01978A5"
+dom: 2
 disks: 5
 dt: false
 beta: true

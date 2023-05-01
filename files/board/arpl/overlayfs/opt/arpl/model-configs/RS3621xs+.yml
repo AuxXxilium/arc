@@ -5,7 +5,7 @@ synoinfo: &synoinfo
   rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
-  support_bde_internal_10g: "no"
+  #support_bde_internal_10g: "no"
   esataportcfg: "0x0"
   support_led_brightness_adjustment: "no"
   support_syno_hybrid_raid:
@@ -18,7 +18,6 @@ cmdline: &cmdline
   elevator: elevator
 platform: "broadwellnk"
 unique: "synology_broadwellnk_rs3621xs+"
-dom: 2
 serial:
   prefix:
     - "20A0"
@@ -32,6 +31,7 @@ arc:
   mac4: "001132DE6643"
   mac5: "001132DE6644"
   mac6: "9009D019775A"
+dom: 2
 disks: 12
 dt: false
 beta: true

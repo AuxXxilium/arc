@@ -8,7 +8,7 @@ synoinfo: &synoinfo
   esataportcfg: "0x00"
   usbportcfg: "0x8700"
   support_led_brightness_adjustment: "no"
-  support_bde_internal_10g: "no"
+  #support_bde_internal_10g: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
 cmdline: &cmdline
@@ -19,7 +19,6 @@ cmdline: &cmdline
   elevator: elevator
 platform: "broadwell"
 unique: "synology_broadwell_3617xs"
-dom: 1
 serial:
   prefix:
     - "1130"
@@ -35,8 +34,10 @@ arc:
   mac3: "00113297A518"
   mac4: "00113297A519"
   mac5: "9009D019775A"
+dom: 1
 disks: 12
 dt: false
+beta: false
 builds:
   42962:
     ver: "7.1.1"
