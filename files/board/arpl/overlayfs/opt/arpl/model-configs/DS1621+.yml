@@ -6,7 +6,7 @@ synoinfo: &synoinfo
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_led_brightness_adjustment: "no"
-  support_bde_internal_10g: "no"
+  #support_bde_internal_10g: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
 cmdline: &cmdline
@@ -21,7 +21,6 @@ cmdline: &cmdline
   elevator: elevator
 platform: "v1000"
 unique: "synology_v1000_1621+"
-dom: 2
 serial:
   prefix:
     - "2080"
@@ -35,8 +34,10 @@ arc:
   mac4: "001132D84A83"
   mac5: "9009D019775A"
   mac6: "9009D01978A5"
+dom: 2
 disks: 6
 dt: true
+beta: false
 builds:
   42962:
     ver: "7.1.1"

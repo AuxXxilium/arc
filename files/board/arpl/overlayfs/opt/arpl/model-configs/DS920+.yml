@@ -6,20 +6,19 @@ synoinfo: &synoinfo
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_led_brightness_adjustment: "no"
-  support_bde_internal_10g: "no"
+  #support_bde_internal_10g: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
 cmdline: &cmdline
   intel_iommu: "igfx_off"
   HddEnableDynamicPower: 1
+  vender_format_version: 2
   synoboot2:
   syno_ttyS0: "serial,0x3f8"
   syno_ttyS1: "serial,0x2f8"
-  vender_format_version: 2
   elevator: elevator
 platform: "geminilake"
 unique: "synology_geminilake_920+"
-dom: 2
 serial:
   prefix:
     - "2030"
@@ -36,10 +35,10 @@ arc:
   mac4: "001132CD9430"
   mac5: "9009D019775A"
   mac6: "9009D01978A5"
-flags:
-  - "movbe"
+dom: 2
 disks: 4
 dt: true
+beta:  false
 builds:
   42962:
     ver: "7.1.1"

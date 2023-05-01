@@ -5,7 +5,7 @@ synoinfo: &synoinfo
   rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
-  support_bde_internal_10g: "no"
+  #support_bde_internal_10g: "no"
   esataportcfg: "0x00"
   usbportcfg: "0x00"
   support_led_brightness_adjustment: "no"
@@ -19,7 +19,6 @@ cmdline: &cmdline
   elevator: elevator
 platform: "broadwellnk"
 unique: "synology_broadwellnk_1621xs+"
-dom: 1
 serial:
   prefix:
     - "2070"
@@ -31,8 +30,10 @@ arc:
   mac2: "001132D64C74"
   mac3: "001132D64C75"
   mac4: "9009D019775A"
+dom: 1
 disks: 6
 dt: false
+beta: false
 builds:
   42962:
     ver: "7.1.1"

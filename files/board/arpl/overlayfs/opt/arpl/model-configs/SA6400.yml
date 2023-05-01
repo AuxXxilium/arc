@@ -5,21 +5,18 @@ synoinfo: &synoinfo
   rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
-  support_bde_internal_10g: "no"
+  #support_bde_internal_10g: "no"
   support_led_brightness_adjustment: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
 cmdline: &cmdline
   SMBusHddDynamicPower: 1
+  vender_format_version: 2
   synoboot2:
   syno_ttyS0: "serial,0x3f8"
   syno_ttyS1: "serial,0x2f8"
-  vender_format_version: 2
-  scsi_mod.use_blk_mq: 1
 platform: "epyc7002"
 unique: "synology_epyc7002_sa6400"
-beta: true
-dom: 2
 serial:
   prefix:
     - "2270"
@@ -33,6 +30,7 @@ arc:
   mac4: "9009D02A95D3"
   mac5: "9009D02A95D4"
   mac6: "9009D02A95D5"
+dom: 2
 disks: 16
 dt: true
 beta: true

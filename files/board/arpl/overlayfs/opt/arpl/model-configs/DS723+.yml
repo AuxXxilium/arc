@@ -6,18 +6,18 @@ synoinfo: &synoinfo
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_led_brightness_adjustment: "no"
+  buzzeroffen: "0xffff"
   support_syno_hybrid_raid:
   supportraidgroup:
 cmdline: &cmdline
   SMBusHddDynamicPower: 1
+  vender_format_version: 2
   synoboot2:
   syno_ttyS0: "serial,0x3f8"
   syno_ttyS1: "serial,0x2f8"
-  vender_format_version: 2
   elevator: elevator
 platform: "r1000"
 unique: "synology_r1000_723+"
-dom: 2
 serial:
   prefix:
     - "2270"
@@ -29,6 +29,7 @@ arc:
   mac2: "9009D01D104C"
   mac3: "9009D019775A"
   mac4: "9009D01978A5"
+dom: 2
 disks: 2
 beta: true
 dt: true
