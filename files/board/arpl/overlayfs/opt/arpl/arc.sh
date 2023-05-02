@@ -1698,9 +1698,9 @@ while true; do
       NEXT="4"
       ;;
     k) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
-    writeConfigKey "directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-    NEXT="4"
-    ;;
+      writeConfigKey "directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
+      NEXT="4"
+      ;;
     c) keymapMenu; NEXT="c" ;;
     d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
       --prgbox "rm -rfv \"${CACHE_PATH}/dl\"" 0 0 ;;
