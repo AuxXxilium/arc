@@ -344,6 +344,7 @@ function make() {
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
   [ ! -f "${ORI_ZIMAGE_FILE}" -o ! -f "${ORI_RDGZ_FILE}" ] && extractDsmFiles
+  [ $? -ne 0 ] && return 1
 
   /opt/arpl/zimage-patch.sh
   if [ $? -ne 0 ]; then
@@ -1607,7 +1608,7 @@ function boot() {
 if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${BUILD}" -a loaderIsConfigured ]; then
   install-addons.sh
   make
-  boot && exit 0
+  boot && exit 0 || sleep 3
 fi
 # Main loop
 NEXT="1"
