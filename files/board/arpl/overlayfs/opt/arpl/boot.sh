@@ -139,10 +139,16 @@ done
 DIRECT="`readConfigKey "directboot" "${USER_CONFIG_FILE}"`"
 if [ "${DIRECT}" = "true" ]; then
   grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
+  grub-editenv ${GRUB_PATH}/grubenv set default="direct"
   echo -e "\033[1;33mReboot to boot directly in DSM\033[0m"
-  grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
   reboot
   exit 0
+elif [ "${DIRECT}" = "false" ]; then
+  grubconf=`grub-editenv ${GRUB_PATH}/grubenv list | wc -l`
+  if [ ${grubconf} -gt 0 ]; then
+    grub-editenv ${GRUB_PATH}/grubenv create
+    echo "Done"
+  fi
 fi
 
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
