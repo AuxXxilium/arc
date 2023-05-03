@@ -161,13 +161,13 @@ if [ "${BACKUPBOOT}" = "true" ]; then
   tar -xvf ${BACKUPDIR}/arc-backup.tar -C /
   sleep 1
   # Executes DSM kernel via KEXEC
-  kexec -l "${BB_MOD_ZIMAGE_FILE}" --initrd "${BB_MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
+  kexec -l "${BB_MOD_ZIMAGE_FILE}" --initrd "${BB_MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" --real-mode >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37mBooting Backup DSM...\033[0m"
   kexec -e
   exit 0
 elif [ "${BACKUPBOOT}" = "false" ] || [ "${BACKUPBOOT}" = "" ]; then
   # Executes DSM kernel via KEXEC
-  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
+  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" --real-mode >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37mBooting DSM...\033[0m"
   kexec -e
   exit 0
