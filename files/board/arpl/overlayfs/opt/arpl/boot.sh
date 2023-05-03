@@ -18,6 +18,10 @@ printf "\033[1;44m%*s\033[0m\n" ${COLUMNS} ""
 TITLE="BOOTING..."
 printf "\033[1;33m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
 
+# Arc Functions
+DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
+GRUBCONF=`grub-editenv ${GRUB_PATH}/grubenv list | wc -l`
+BACKUPBOOT="`readConfigKey "arc.backupboot" "${USER_CONFIG_FILE}"`"
 [ "${BACKUPBOOT}" = "true" ] && USER_CONFIG_FILE=${BB_USER_CONFIG_FILE}
 
 # Check if DSM zImage changed, patch it if necessary
@@ -136,9 +140,7 @@ while true; do
   COUNT=$((${COUNT}+3))
 done
 
-DIRECT="`readConfigKey "directboot" "${USER_CONFIG_FILE}"`"
-GRUBCONF=`grub-editenv ${GRUB_PATH}/grubenv list | wc -l`
-if [ "${DIRECT}" = "true" ]; then
+if [ "${DIRECTBOOT}" = "true" ]; then
   if [ ${GRUBCONF} -eq 0 ]; then
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
     grub-editenv ${GRUB_PATH}/grubenv set default="direct"
@@ -147,14 +149,13 @@ if [ "${DIRECT}" = "true" ]; then
   echo -e "\033[1;33mReboot with Directboot\033[0m"
   reboot
   exit 0
-elif [ "${DIRECT}" = "false" ] && [ ${GRUBCONF} -gt 0 ]; then
+elif [ "${DIRECTBOOT}" = "false" ] && [ ${GRUBCONF} -gt 0 ]; then
     grub-editenv ${GRUB_PATH}/grubenv create
     echo -e "\033[1;33mDisable Directboot\033[0m"
 fi
 
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
-BACKUPBOOT="`readConfigKey "backupboot" "${USER_CONFIG_FILE}"`"
 if [ "${BACKUPBOOT}" = "true" ]; then
   # Uncompress backup
   tar -xvf ${BACKUPDIR}/arc-backup.tar -C /
@@ -162,13 +163,12 @@ if [ "${BACKUPBOOT}" = "true" ]; then
   # Executes DSM kernel via KEXEC
   kexec -l "${BB_MOD_ZIMAGE_FILE}" --initrd "${BB_MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37mBooting Backup DSM...\033[0m"
-  poweroff
+  kexec -e
   exit 0
-fi
-if [ "${BACKUPBOOT}" = "false" ]; then
+elif [ "${BACKUPBOOT}" = "false" ] || [ "${BACKUPBOOT}" = "" ]; then
   # Executes DSM kernel via KEXEC
   kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37mBooting DSM...\033[0m"
-  poweroff
+  kexec -e
   exit 0
 fi
