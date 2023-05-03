@@ -73,8 +73,6 @@ NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
   writeConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
-  writeConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "backupboot" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "model" "" "${USER_CONFIG_FILE}"
   writeConfigKey "build" "" "${USER_CONFIG_FILE}"
   writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
@@ -88,9 +86,11 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.misc" "" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.backupboot" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
+  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   # Initialize with Ethernetportcount
   writeConfigKey "cmdline.netif_num" "${NETNUM}" "${USER_CONFIG_FILE}"
   # Initialize with real MAC

@@ -38,7 +38,8 @@ BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
 LAYOUT="`readConfigKey "layout" "${USER_CONFIG_FILE}"`"
 KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
-DIRECTBOOT="`readConfigKey "directboot" "${USER_CONFIG_FILE}"`"
+DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
+BACKUPBOOT="`readConfigKey "arc.backupboot" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
 BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -1705,7 +1706,7 @@ while true; do
       NEXT="4"
       ;;
     k) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
-      writeConfigKey "directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
       NEXT="4"
       ;;
     c) keymapMenu; NEXT="c" ;;
