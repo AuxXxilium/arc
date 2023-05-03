@@ -5,7 +5,7 @@ synoinfo: &synoinfo
   rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
-  #support_bde_internal_10g: "no"
+  support_bde_internal_10g: "no"
   esataportcfg: "0x0"
   support_led_brightness_adjustment: "no"
   support_syno_hybrid_raid:
