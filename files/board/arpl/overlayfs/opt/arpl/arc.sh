@@ -1488,38 +1488,6 @@ function sysinfo() {
 }
 
 ###############################################################################
-# let user reset config
-function reset() {
-  # Reset full userconfig
-  MACF="`readConfigKey "original-mac1" "${USER_CONFIG_FILE}"`"
-  writeConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
-  writeConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "model" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "build" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
-  #writeConfigKey "maxdisks" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "layout" "qwertz" "${USER_CONFIG_FILE}"
-  writeConfigKey "keymap" "de" "${USER_CONFIG_FILE}"
-  writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
-  writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
-  writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
-  writeConfigKey "addons.misc" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-  writeConfigKey "cmdline.netif_num" "1" "${USER_CONFIG_FILE}"
-  writeConfigKey "cmdline.mac1" "${MACF}" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
-  deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
-  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-  CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
-  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-}
-
-###############################################################################
 # Try to recovery a DSM already installed
 function tryRecoveryDSM() {
   dialog --backtitle "`backtitle`" --title "Try to recover DSM" --aspect 18 \
@@ -1660,7 +1628,6 @@ while true; do
       echo "f \"Cmdline \" "                                                                >> "${TMP_PATH}/menu"
       echo "g \"Synoinfo \" "                                                               >> "${TMP_PATH}/menu"
       echo "h \"Edit User Config \" "                                                       >> "${TMP_PATH}/menu"
-      echo "r \"Reset User Config \" "                                                      >> "${TMP_PATH}/menu"
       echo "i \"DSM Recovery \" "                                                           >> "${TMP_PATH}/menu"
       echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >> "${TMP_PATH}/menu"
       echo "k \"Direct boot: \Z4${DIRECTBOOT}\Zn \" "                                       >> "${TMP_PATH}/menu"
@@ -1686,7 +1653,6 @@ while true; do
     3) selectModules; NEXT="3" ;;
     s) storageMenu; NEXT="s" ;;
     n) networkMenu; NEXT="n" ;;
-    n) reset; NEXT="1" ;;
     x) [ "${ADVOPTS}" = "" ] && ADVOPTS='1' || ADVOPTS=''
        ADVOPTS="${ADVOPTS}"
        NEXT="x"
