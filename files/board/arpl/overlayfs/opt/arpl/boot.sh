@@ -23,6 +23,7 @@ DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
 GRUBCONF=`grub-editenv ${GRUB_PATH}/grubenv list | wc -l`
 BACKUPBOOT="`readConfigKey "arc.backupboot" "${USER_CONFIG_FILE}"`"
 [ "${BACKUPBOOT}" = "true" ] && USER_CONFIG_FILE=${BB_USER_CONFIG_FILE}
+CONSOLE="`readConfigKey "addons.console" "${USER_CONFIG_FILE}" | wc -l`"
 
 # Check if DSM zImage changed, patch it if necessary
 ZIMAGE_HASH="`readConfigKey "zimage-hash" "${USER_CONFIG_FILE}"`"
@@ -163,12 +164,20 @@ if [ "${BACKUPBOOT}" = "true" ]; then
   # Executes DSM kernel via KEXEC
   kexec -l "${BB_MOD_ZIMAGE_FILE}" --initrd "${BB_MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37mBooting Backup DSM...\033[0m"
-  kexec -e
+  if [ ${CONSOLE} -gt 0 ]; then
+    poweroff
+  else
+    kexec -e
+  fi
   exit 0
 elif [ "${BACKUPBOOT}" = "false" ] || [ "${BACKUPBOOT}" = "" ]; then
   # Executes DSM kernel via KEXEC
   kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37mBooting DSM...\033[0m"
-  kexec -e
+  if [ ${CONSOLE} -gt 0 ]; then
+    poweroff
+  else
+    kexec -e
+  fi
   exit 0
 fi
