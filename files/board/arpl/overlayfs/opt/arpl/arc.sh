@@ -113,6 +113,7 @@ function arcMenu() {
     while read M; do
       M="`basename ${M}`"
       M="${M::-4}"
+      MID=`readModelKey "${M}" "id"`
       PLATFORM=`readModelKey "${M}" "platform"`
       DT="`readModelKey "${M}" "dt"`"
       BETA="`readModelKey "${M}" "beta"`"
@@ -142,7 +143,7 @@ function arcMenu() {
         done
       fi
       [ "${DT}" = "true" ] && DT="-DT" || DT=""
-      [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
+      [ ${COMPATIBLE} -eq 1 ] && echo -e "${MID} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
     done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
     [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models\Zn\"" >> "${TMP_PATH}/menu"
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >> "${TMP_PATH}/menu"
@@ -170,18 +171,6 @@ function arcMenu() {
   if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
   # There is no Raid/SCSI Support for DT Models
   WARNON=2
-  fi
-  if [ "${WARNON}" = "1" ]; then
-    dialog --backtitle "`backtitle`" --title "Arc Warning" \
-      --msgbox "WARN: Your Controller has more than 8 Disks connected. Max Disks per Controller: 8" 0 0
-  fi
-  if [ "${WARNON}" = "2" ]; then
-    dialog --backtitle "`backtitle`" --title "Arc Warning" \
-      --msgbox "WARN: You have selected a DT Model. There is no support for Raid/SCSI Controller." 0 0
-  fi
-  if [ "${WARNON}" = "3" ]; then
-    dialog --backtitle "`backtitle`" --title "Arc Warning" \
-      --msgbox "WARN: You have more than 8 Ethernet Ports. There are only 8 supported by Redpill." 0 0
   fi
   writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
   deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
@@ -295,8 +284,8 @@ function arcnetdisk() {
     getmap
   fi
   # Write Sasidxmap if SAS Controller are dedected
-  [ "${SASCONTROLLER}" -gt 0 ] && writeConfigKey "cmdline.SasIdxMap" "0" "${USER_CONFIG_FILE}"
-  [ "${SASCONTROLLER}" -eq 0 ] && deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
+  #[ "${SASCONTROLLER}" -gt 0 ] && writeConfigKey "cmdline.SasIdxMap" "0" "${USER_CONFIG_FILE}"
+  #[ "${SASCONTROLLER}" -eq 0 ] && deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
   # Config is done
   writeConfigKey "arc.confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
@@ -304,6 +293,18 @@ function arcnetdisk() {
   sleep 1
   DIRTY=1
   CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+  if [ "${WARNON}" = "1" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Warning" \
+      --msgbox "WARN: Your Controller has more than 8 Disks connected. Max Disks per Controller: 8" 0 0
+  fi
+  if [ "${WARNON}" = "2" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Warning" \
+      --msgbox "WARN: You have selected a DT Model. There is no support for Raid/SCSI Controller." 0 0
+  fi
+  if [ "${WARNON}" = "3" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Warning" \
+      --msgbox "WARN: You have more than 8 Ethernet Ports. There are only 8 supported by Redpill." 0 0
+  fi
   # Ask for Build
   while true; do
     dialog --clear --backtitle "`backtitle`" \
