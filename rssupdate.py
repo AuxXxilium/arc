@@ -13,6 +13,12 @@ from bs4 import BeautifulSoup
 
 FILE_PATH = os.path.dirname(os.path.abspath(__file__))
 
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+    'Referer': 'https://archive.synology.com/download/Os/DSM/',
+    'Accept-Language': 'en-US,en;q=0.5'
+}
+
 def fullversion(ver):
     out = ver
     arr = ver.split('-')
@@ -101,6 +107,8 @@ def synoextractor(url):
     commands = ['sudo', 'rm', '-rf', filename, filepath]
     result = subprocess.check_output(commands)
 
+    print(data)
+
     return data
 
 
@@ -117,7 +125,7 @@ def main(isUpdateConfigs = True, isUpdateRss = True):
     print(models)
     
     pats = {}
-    req = requests.get('https://prerelease.synology.com/webapi/models?event=dsm72_beta')
+    req = requests.get('https://prerelease.synology.com/webapi/models?event=dsm72_beta, headers=headers')
     rels = json.loads(req.text)
     if "models" in rels and len(rels["models"]) > 0:
         for i in rels["models"]:
@@ -126,7 +134,7 @@ def main(isUpdateConfigs = True, isUpdateRss = True):
             if i["name"] not in pats.keys(): pats[i["name"]]={}
             pats[i["name"]][fullversion(i["dsm"]["version"]).replace('64216','64551')] = i["dsm"]["url"].split('?')[0].replace('beta','release').replace('64216','64551')
 
-    req = requests.get('https://archive.synology.com/download/Os/DSM')
+    req = requests.get('https://archive.synology.com/download/Os/DSM, headers=headers')
     req.encoding = 'utf-8'
     bs=BeautifulSoup(req.text, 'html.parser')
     p = re.compile(r"(.*?)-(.*?)", re.MULTILINE | re.DOTALL)
@@ -134,7 +142,7 @@ def main(isUpdateConfigs = True, isUpdateRss = True):
     for i in l:
         ver = i.attrs['href'].split('/')[-1]
         if not any([ver.startswith('6.2.4'), ver.startswith('7')]): continue
-        req = requests.get('https://archive.synology.com{}'.format(i.attrs['href']))
+        req = requests.get('https://archive.synology.com{}'.format(i.attrs['href']), headers=headers)
         req.encoding = 'utf-8'
         bs=BeautifulSoup(req.text, 'html.parser')
         p = re.compile(r"^(.*?)_(.*?)_(.*?).pat$", re.MULTILINE | re.DOTALL)
@@ -184,6 +192,9 @@ def main(isUpdateConfigs = True, isUpdateRss = True):
                     if isUpdateConfigs is True:
                         isChange = True
                         pat = data["builds"][ver]["pat"]
+                        if not all(bool(key) for key in pat.keys()):
+                            print("[E] {}  builds.{} key error".format(filename, ver))
+                            return 
                         commands = ['sed', '-i', 's|{}|{}|; s|{}|{}|; s|{}|{}|; s|{}|{}|; s|{}|{}|'.format(pat["url"], hashdata["url"], pat["hash"], hashdata["hash"], pat["ramdisk-hash"], hashdata["ramdisk-hash"], pat["zimage-hash"], hashdata["zimage-hash"], pat["md5-hash"], hashdata["md5-hash"]), os.path.join(FILE_PATH, configs, filename)]
                         result = subprocess.check_output(commands)
 
