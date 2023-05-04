@@ -6,7 +6,6 @@
 - If you have to report an issue or bug:
     - Hardware you use (Networkchip, Sata/HBA/Raid Controller)
     - Screenshot the Systeminfo (Arc - Sysinfo) !!! <- IMPORTANT
-    - optional: boot arc loader, don't start arc or exit it, type "lspci -nn" and "lspci -nnk" - attach the outputs
 
 ### Links
 
