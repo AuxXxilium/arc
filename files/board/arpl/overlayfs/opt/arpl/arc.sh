@@ -1062,8 +1062,8 @@ function backupMenu() {
           fi
           # Copy files to backup
           cp -f ${USER_CONFIG_FILE} ${BACKUPDIR}/user-config.yml
-          cp -f ${MOUNTP3}/zImage-dsm ${BACKUPDIR}/zImage-dsm
-          cp -f ${MOUNTP3}/initrd-dsm ${BACKUPDIR}/initrd-dsm
+          cp -f ${CACHE_PATH}/zImage-dsm ${BACKUPDIR}/zImage-dsm
+          cp -f ${CACHE_PATH}/initrd-dsm ${BACKUPDIR}/initrd-dsm
           # Compress backup
           tar -cvf ${BACKUPDIR}/arc-backup.tar ${BACKUPDIR}/
           # Clean temp files from backup dir
@@ -1086,8 +1086,8 @@ function backupMenu() {
             tar -xvf ${BACKUPDIR}/arc-backup.tar -C /
             # Copy files to locations
             cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
-            cp -f ${BACKUPDIR}/zImage-dsm ${MOUNTP3}/zImage-dsm
-            cp -f ${BACKUPDIR}/initrd-dsm ${MOUNTP3}/initrd-dsm
+            cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}/zImage-dsm
+            cp -f ${BACKUPDIR}/initrd-dsm ${CACHE_PATH}/initrd-dsm
             # Clean temp files from backup dir
             rm -f ${BACKUPDIR}/user-config.yml
             rm -f ${BACKUPDIR}/zImage-dsm
@@ -1142,8 +1142,8 @@ function backupMenu() {
             tar -xvf ${BACKUPDIR}/arc-backup.tar -C /
             # Copy files to locations
             cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
-            cp -f ${BACKUPDIR}/zImage-dsm ${MOUNTP3}/zImage-dsm
-            cp -f ${BACKUPDIR}/initrd-dsm ${MOUNTP3}/initrd-dsm
+            cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}/zImage-dsm
+            cp -f ${BACKUPDIR}/initrd-dsm ${CACHE_PATH}/initrd-dsm
             # Clean temp files from backup dir
             rm -f ${BACKUPDIR}/user-config.yml
             rm -f ${BACKUPDIR}/zImage-dsm
