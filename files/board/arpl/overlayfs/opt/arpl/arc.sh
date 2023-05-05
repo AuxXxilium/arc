@@ -427,10 +427,11 @@ function extractDsmFiles() {
       PAT_URL="`echo ${PAT_URL} | sed "s/${mirror}/${fastest}/"`"
       OLDPAT_URL="https://${fastest}/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"
     fi
+    echo ${PAT_URL} > "${TMP_PATH}/patdownloadurl"
     echo "Downloading ${PAT_FILE}"
     # Discover remote file size
     FILESIZE=`curl -k -sLI "${PAT_URL}" | grep -i Content-Length | awk '{print$2}'`
-    if [ 0${FILESIZE} -ge ${SPACELEFT} ]; then
+    if [ 0${FILESIZE} -ge 0${SPACELEFT} ]; then
       # No disk space to download, change it to RAMDISK
       PAT_PATH="${TMP_PATH}/${PAT_FILE}"
     fi
@@ -493,7 +494,7 @@ function extractDsmFiles() {
         echo "Downloading old pat to extract synology .pat extractor..."
         # Discover remote file size
         FILESIZE=`curl --insecure -sLI "${OLDPAT_URL}" | grep -i Content-Length | awk '{print$2}'`
-        if [ 0${FILESIZE} -ge ${SPACELEFT} ]; then
+        if [ 0${FILESIZE} -ge 0${SPACELEFT} ]; then
           # No disk space to download, change it to RAMDISK
           OLDPAT_PATH="${TMP_PATH}/DS3622xs+-42218.pat"
         fi
@@ -1531,6 +1532,17 @@ function tryRecoveryDSM() {
   fi
 }
 
+ ###############################################################################
+# show .pat download url to user
+function paturl() {
+        # output pat download link
+        if [ ! -f "${TMP_PATH}/patdownloadurl" ]; then
+          echo "`readModelKey "${MODEL}" "builds.${BUILD}.pat.url"`" > "${TMP_PATH}/patdownloadurl"
+        fi
+        dialog --backtitle "`backtitle`" --title "*.pat download link" \
+          --editbox "${TMP_PATH}/patdownloadurl" 0 0
+}
+
 ###############################################################################
 # let user format disks from inside arc
 function formatdisks() {
@@ -1618,6 +1630,9 @@ while true; do
       if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
         echo "r \"Boot from Backup: \Z4${BACKUPBOOT}\Zn \" "                                >> "${TMP_PATH}/menu"
       fi
+      if [ -n "${BUILDDONE}" ]; then
+        echo "p \"Show .pat download link \" "                                              >> "${TMP_PATH}/menu"
+      fi
       echo "z \"\Z1Format Disks\Zn \" "                                                     >> "${TMP_PATH}/menu"
     fi
     if [ -n "${ADVOPTS}" ]; then
@@ -1646,27 +1661,38 @@ while true; do
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && break
   case `<"${TMP_PATH}/resp"` in
+    # Main
     1) arcMenu; NEXT="4" ;;
     4) make; NEXT="5" ;;
     5) boot && exit 0 ;;
+    # Info
     a) sysinfo; NEXT="a" ;;
+    # System
     2) addonMenu; NEXT="2" ;;
     3) selectModules; NEXT="3" ;;
-    s) storageMenu; NEXT="s" ;;
-    n) networkMenu; NEXT="n" ;;
-    x) [ "${ADVOPTS}" = "" ] && ADVOPTS='1' || ADVOPTS=''
-       ADVOPTS="${ADVOPTS}"
-       NEXT="x"
-       ;;
+    # Arc Section
     v) [ "${ARCOPTS}" = "" ] && ARCOPTS='1' || ARCOPTS=''
        ARCOPTS="${ARCOPTS}"
        NEXT="v"
+       ;;
+    s) storageMenu; NEXT="s" ;;
+    n) networkMenu; NEXT="n" ;;
+    t) backupMenu; NEXT="t" ;;
+    r) [ "${BACKUPBOOT}" = "false" ] && BACKUPBOOT='true' || BACKUPBOOT='false'
+      writeConfigKey "backupboot" "${BACKUPBOOT}" "${USER_CONFIG_FILE}"
+      NEXT="5"
+      ;;
+    p) paturl; NEXT="p" ;;
+    z) formatdisks; NEXT="p" ;;
+    # Advanced Section
+    x) [ "${ADVOPTS}" = "" ] && ADVOPTS='1' || ADVOPTS=''
+       ADVOPTS="${ADVOPTS}"
+       NEXT="x"
        ;;
     f) cmdlineMenu; NEXT="f" ;;
     g) synoinfoMenu; NEXT="g" ;;
     h) editUserConfig; NEXT="h" ;;
     i) tryRecoveryDSM; NEXT="i" ;;
-    z) formatdisks; NEXT="p" ;;
     j) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
       writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
       DIRTY=1
@@ -1676,14 +1702,10 @@ while true; do
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
       NEXT="4"
       ;;
+    # Loader Settings
     c) keymapMenu; NEXT="c" ;;
     d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
       --prgbox "rm -rfv \"${CACHE_PATH}/dl\"" 0 0 ;;
-    r) [ "${BACKUPBOOT}" = "false" ] && BACKUPBOOT='true' || BACKUPBOOT='false'
-    writeConfigKey "backupboot" "${BACKUPBOOT}" "${USER_CONFIG_FILE}"
-    NEXT="5"
-    ;;
-    t) backupMenu; NEXT="t" ;;
     e) updateMenu; NEXT="e" ;;
     0) break ;;
   esac
