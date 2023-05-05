@@ -153,26 +153,18 @@ jobs:
           qemu-img convert -O vmdk arc.img arc-dyn.vmdk
           qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
 
-          zip -9 "arc.zip" arc.img
-
-      # Upload artifact
-      - name: Upload
-        uses: actions/upload-artifact@v3
-        with:
-          name: Images
-          path: |
-            arc.zip
-          retention-days: 5
-
       # Zip image and generate checksum
       - name: Pack
-        if: env.VERSION != ''
         run: |
-          zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
-          zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
-          zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-          sha256sum update-list.yml > sha256sum
-          zip -9j update.zip update-list.yml
+            if [ -n "${{ env.VERSION }}" ]; then
+              zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
+              zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
+              zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            else
+              zip -9 "arc.img.zip" arc.img
+            fi
+          sha256sum update-list.yml update-check.sh > sha256sum
+          zip -9j update.zip update-list.yml update-check.sh
           while read F; do
             if [ -d "${F}" ]; then
               FTGZ="`basename "${F}"`.tgz"
@@ -186,6 +178,16 @@ jobs:
             fi
           done < <(yq '.replace | explode(.) | to_entries | map([.key])[] | .[]' update-list.yml)
           zip -9j update.zip sha256sum 
+
+      # Upload artifact
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: Images
+          path: |
+            arc.zip
+            update.zip
+          retention-days: 5
 
       # Publish a release if is a tag
       - name: Release
