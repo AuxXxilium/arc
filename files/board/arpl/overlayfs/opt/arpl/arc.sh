@@ -39,6 +39,7 @@ LAYOUT="`readConfigKey "layout" "${USER_CONFIG_FILE}"`"
 KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
 DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
+DIRECTDSM="`readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}"`"
 BACKUPBOOT="`readConfigKey "arc.backupboot" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
@@ -367,6 +368,9 @@ function make() {
 
   echo "Ready!"
   DIRTY=0
+  # Set DirectDSM to false
+  writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
+  grub-editenv ${GRUB_PATH}/grubenv create
   # Build is done
   writeConfigKey "arc.builddone" "1" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -1647,6 +1651,9 @@ while true; do
       echo "i \"DSM Recovery \" "                                                           >> "${TMP_PATH}/menu"
       echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >> "${TMP_PATH}/menu"
       echo "k \"Direct boot: \Z4${DIRECTBOOT}\Zn \" "                                       >> "${TMP_PATH}/menu"
+      if [ "${DIRECTBOOT}" = "true" ]; then
+        echo "l \"Reset Direct DSM \" "                                                     >> "${TMP_PATH}/menu"
+      fi
     fi
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >> "${TMP_PATH}/menu"
@@ -1700,7 +1707,11 @@ while true; do
       ;;
     k) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-      NEXT="4"
+      NEXT="5"
+      ;;
+    l) writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
+      grub-editenv ${GRUB_PATH}/grubenv create
+      NEXT="5"
       ;;
     # Loader Settings
     c) keymapMenu; NEXT="c" ;;

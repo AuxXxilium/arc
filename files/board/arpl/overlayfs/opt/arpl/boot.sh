@@ -20,9 +20,15 @@ printf "\033[1;33m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
 
 # Arc Functions
 DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
+DIRECTDSM="`readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}"`"
 GRUBCONF=`grub-editenv ${GRUB_PATH}/grubenv list | wc -l`
 BACKUPBOOT="`readConfigKey "arc.backupboot" "${USER_CONFIG_FILE}"`"
-[ "${BACKUPBOOT}" = "true" ] && USER_CONFIG_FILE=${BB_USER_CONFIG_FILE}
+if [ "${BACKUPBOOT}" = "true" ]; then
+  # Uncompress backup
+  tar -xvf ${BACKUPDIR}/arc-backup.tar -C /
+  sleep 1
+  USER_CONFIG_FILE=${BB_USER_CONFIG_FILE}
+fi
 CONSOLE="`readConfigKey "addons.console" "${USER_CONFIG_FILE}" | wc -l`"
 
 # Check if DSM zImage changed, patch it if necessary
@@ -141,26 +147,34 @@ while true; do
   COUNT=$((${COUNT}+3))
 done
 
+# Make Directboot persistent if DSM is installed
 if [ "${DIRECTBOOT}" = "true" ]; then
-  if [ ${GRUBCONF} -eq 0 ]; then
+  if [ "${DIRECTDSM}" = "true" ]; then
+    #if [ ${GRUBCONF} -eq 0 ]; then
+      grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
+      grub-editenv ${GRUB_PATH}/grubenv set default="direct"
+      echo -e "\033[1;33mEnable Directboot - DirectDSM\033[0m"
+    #fi
+    echo -e "\033[1;33mDSM installed - Reboot with Directboot\033[0m"
+    reboot
+    exit 0
+  elif [ "${DIRECTDSM}" = "false" ]; then
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
-    grub-editenv ${GRUB_PATH}/grubenv set default="direct"
-    echo -e "\033[1;33mEnable Directboot\033[0m"
+    echo -e "\033[1;33mDSM not installed - Reboot with Directboot\033[0m"
+    grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
+    writeConfigKey "arc.directdsm" "true" "${USER_CONFIG_FILE}"
+    reboot
+    exit 0
   fi
-  echo -e "\033[1;33mReboot with Directboot\033[0m"
-  reboot
-  exit 0
 elif [ "${DIRECTBOOT}" = "false" ] && [ ${GRUBCONF} -gt 0 ]; then
     grub-editenv ${GRUB_PATH}/grubenv create
-    echo -e "\033[1;33mDisable Directboot\033[0m"
+    echo -e "\033[1;33mDisable Directboot - DirectDSM\033[0m"
+    writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
 fi
 
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
 if [ "${BACKUPBOOT}" = "true" ]; then
-  # Uncompress backup
-  tar -xvf ${BACKUPDIR}/arc-backup.tar -C /
-  sleep 1
   # Executes DSM kernel via KEXEC
   kexec -l "${BB_MOD_ZIMAGE_FILE}" --initrd "${BB_MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37mBooting Backup DSM...\033[0m"
