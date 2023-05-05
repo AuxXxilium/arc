@@ -89,6 +89,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.backupboot" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   # Initialize with Ethernetportcount
