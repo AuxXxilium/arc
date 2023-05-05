@@ -44,4 +44,3 @@ rm -f arc.img
 cp -f arpl.img arc.img
 qemu-img convert -O vmdk arc.img arc-dyn.vmdk
 qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
-[ -x test.sh ] && ./test.sh
