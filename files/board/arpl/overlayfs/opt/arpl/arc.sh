@@ -1707,11 +1707,11 @@ while true; do
       ;;
     k) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-      NEXT="5"
+      NEXT="4"
       ;;
     l) writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
       grub-editenv ${GRUB_PATH}/grubenv create
-      NEXT="5"
+      NEXT="4"
       ;;
     # Loader Settings
     c) keymapMenu; NEXT="c" ;;
