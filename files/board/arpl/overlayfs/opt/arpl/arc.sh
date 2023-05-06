@@ -1069,8 +1069,8 @@ function backupMenu() {
           fi
           # Copy files to backup
           cp -f ${USER_CONFIG_FILE} ${BACKUPDIR}/user-config.yml
-          cp -f ${CACHE_PATH}/zImage-dsm ${BACKUPDIR}/zImage-dsm
-          cp -f ${CACHE_PATH}/initrd-dsm ${BACKUPDIR}/initrd-dsm
+          cp -f ${CACHE_PATH}/zImage-dsm ${BACKUPDIR}
+          cp -f ${CACHE_PATH}/initrd-dsm ${BACKUPDIR}
           # Compress backup
           tar -cvf ${BACKUPDIR}/dsm-backup.tar ${BACKUPDIR}/
           # Clean temp files from backup dir
@@ -1093,8 +1093,8 @@ function backupMenu() {
             tar -xvf ${BACKUPDIR}/dsm-backup.tar -C /
             # Copy files to locations
             cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
-            cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}/zImage-dsm
-            cp -f ${BACKUPDIR}/initrd-dsm ${CACHE_PATH}/initrd-dsm
+            cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}
+            cp -f ${BACKUPDIR}/initrd-dsm ${CACHE_PATH}
             # Clean temp files from backup dir
             rm -f ${BACKUPDIR}/user-config.yml
             rm -f ${BACKUPDIR}/zImage-dsm
@@ -1135,7 +1135,7 @@ function backupMenu() {
             --infobox "Restore full Loader from ${BACKUPDIR}" 0 0
           if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
             # Move files to root
-            mv -f ${BACKUPDIR}/arc-backup.tar /arc-backup.tar
+            mv -f ${BACKUPDIR}/arc-backup.tar ${TMP_PATH}
             tar -xvf ${TMP_PATH}/arc-backup.tar -C /
             rm -f ${TMP_PATH}/arc-backup.tar
             dialog --backtitle "`backtitle`" --title "Restore full Loader" --aspect 18 \
@@ -1188,8 +1188,8 @@ function backupMenu() {
             tar -xvf ${BACKUPDIR}/arc-backup.tar -C /
             # Copy files to locations
             cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
-            cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}/zImage-dsm
-            cp -f ${BACKUPDIR}/initrd-dsm ${CACHE_PATH}/initrd-dsm
+            cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}
+            cp -f ${BACKUPDIR}/initrd-dsm ${CACHE_PATH}
             # Clean temp files from backup dir
             rm -f ${BACKUPDIR}/user-config.yml
             rm -f ${BACKUPDIR}/zImage-dsm
@@ -1207,8 +1207,8 @@ function backupMenu() {
           dialog --backtitle "`backtitle`" --title "Restore full Loader" --aspect 18 \
             --infobox "Restore full Loader from ${BACKUPDIR}" 0 0
           if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
-            # Move files to root
-            mv -f ${BACKUPDIR}/arc-backup.tar /arc-backup.tar
+            # Move files to tmp
+            mv -f ${BACKUPDIR}/arc-backup.tar ${TMP_PATH}
             tar -xvf ${TMP_PATH}/arc-backup.tar -C /
             rm -f ${TMP_PATH}/arc-backup.tar
             dialog --backtitle "`backtitle`" --title "Restore full Loader" --aspect 18 \
@@ -1439,15 +1439,15 @@ function updateMenu() {
           fi
           # Copy files to backup
           cp -f ${USER_CONFIG_FILE} ${BACKUPDIR}/user-config.yml
-          cp -f ${CACHE_PATH}/zImage-dsm ${BACKUPDIR}/zImage-dsm
-          cp -f ${CACHE_PATH}/initrd-dsm ${BACKUPDIR}/initrd-dsm
+          cp -f ${CACHE_PATH}/zImage-dsm ${BACKUPDIR}
+          cp -f ${CACHE_PATH}/initrd-dsm ${BACKUPDIR}
           # Compress backup
           tar -cvf ${BACKUPDIR}/dsm-backup.tar ${BACKUPDIR}/
           # Clean temp files from backup dir
           rm -f ${BACKUPDIR}/user-config.yml
           rm -f ${BACKUPDIR}/zImage-dsm
           rm -f ${BACKUPDIR}/initrd-dsm
-          mv -f ${BACKUPDIR}/dsm-backup.tar ${TMP_PATH}/dsm-backup.tar
+          mv -f ${BACKUPDIR}/dsm-backup.tar ${TMP_PATH}
         fi
         dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
           --infobox "Installing new Image" 0 0
@@ -1467,8 +1467,8 @@ function updateMenu() {
           tar -xvf ${TMP_PATH}/dsm-backup.tar -C /
           # Copy files to locations
           cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
-          cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}/zImage-dsm
-          cp -f ${BACKUPDIR}/initrd-dsm ${CACHE_PATH}/initrd-dsm
+          cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}
+          cp -f ${BACKUPDIR}/initrd-dsm ${CACHE_PATH}
           # Clean temp files from backup dir
           rm -f ${BACKUPDIR}/user-config.yml
           rm -f ${BACKUPDIR}/zImage-dsm
