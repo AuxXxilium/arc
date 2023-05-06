@@ -1012,9 +1012,11 @@ function backupMenu() {
       dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
         1 "Backup Config" \
         2 "Restore Config" \
-        3 "Backup Loader" \
-        4 "Restore Loader" \
-        5 "Show Backup Path" \
+        3 "Backup DSM Bootimage" \
+        4 "Restore DSM Bootimage" \
+        5 "Backup full Loader" \
+        6 "Restore full Loader" \
+        7 "Show Backup Path" \
         0 "Exit" \
         2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
@@ -1056,39 +1058,39 @@ function backupMenu() {
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           ;;
         3)
-          dialog --backtitle "`backtitle`" --title "Backup Loader" --aspect 18 \
-            --infobox "Backup Loader to ${BACKUPDIR}" 0 0
+          dialog --backtitle "`backtitle`" --title "Backup DSM Bootimage" --aspect 18 \
+            --infobox "Backup DSM Bootimage to ${BACKUPDIR}" 0 0
           if [ ! -d "${BACKUPDIR}" ]; then
             # Make backup dir
             mkdir ${BACKUPDIR}
           else
             # Clean old backup
-            rm -f ${BACKUPDIR}/arc-backup.tar
+            rm -f ${BACKUPDIR}/dsm-backup.tar
           fi
           # Copy files to backup
           cp -f ${USER_CONFIG_FILE} ${BACKUPDIR}/user-config.yml
           cp -f ${CACHE_PATH}/zImage-dsm ${BACKUPDIR}/zImage-dsm
           cp -f ${CACHE_PATH}/initrd-dsm ${BACKUPDIR}/initrd-dsm
           # Compress backup
-          tar -cvf ${BACKUPDIR}/arc-backup.tar ${BACKUPDIR}/
+          tar -cvf ${BACKUPDIR}/dsm-backup.tar ${BACKUPDIR}/
           # Clean temp files from backup dir
           rm -f ${BACKUPDIR}/user-config.yml
           rm -f ${BACKUPDIR}/zImage-dsm
           rm -f ${BACKUPDIR}/initrd-dsm
-          if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
-            dialog --backtitle "`backtitle`" --title "Backup Loader" --aspect 18 \
+          if [ -f "${BACKUPDIR}/dsm-backup.tar" ]; then
+            dialog --backtitle "`backtitle`" --title "Backup DSM Bootimage" --aspect 18 \
               --msgbox "Backup complete" 0 0
           else
-            dialog --backtitle "`backtitle`" --title "Backup Loader" --aspect 18 \
+            dialog --backtitle "`backtitle`" --title "Backup DSM Bootimage" --aspect 18 \
               --msgbox "Backup error" 0 0
           fi
           ;;
         4)
-          dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
-            --infobox "Restore Loader from ${BACKUPDIR}" 0 0
-          if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
+          dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
+            --infobox "Restore DSM Bootimage from ${BACKUPDIR}" 0 0
+          if [ -f "${BACKUPDIR}/dsm-backup.tar" ]; then
             # Uncompress backup
-            tar -xvf ${BACKUPDIR}/arc-backup.tar -C /
+            tar -xvf ${BACKUPDIR}/dsm-backup.tar -C /
             # Copy files to locations
             cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
             cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}/zImage-dsm
@@ -1099,14 +1101,52 @@ function backupMenu() {
             rm -f ${BACKUPDIR}/initrd-dsm
             CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
             BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-            dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
+            dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
               --msgbox "Restore complete" 0 0
           else
-            dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
-              --msgbox "No Loader Backup found" 0 0
+            dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
+              --msgbox "No DSM Bootimage Backup found" 0 0
           fi
           ;;
         5)
+          dialog --backtitle "`backtitle`" --title "Backup full Loader" --aspect 18 \
+            --infobox "Backup full Loader to ${BACKUPDIR}" 0 0
+          rm -rf /mnt/p3/dl
+          tar -cvf ${TMP_PATH}/arc-backup.tar /mnt/p1 /mnt/p2 /mnt/p3
+          if [ ! -d "${BACKUPDIR}" ]; then
+            # Make backup dir
+            mkdir ${BACKUPDIR}
+          else
+            # Clean old backup
+            rm -f ${BACKUPDIR}/arc-backup.tar
+          fi
+          # Move files to backup
+          mv -f ${TMP_PATH}/arc-backup.tar ${BACKUPDIR}
+          if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
+            dialog --backtitle "`backtitle`" --title "Backup full Loader" --aspect 18 \
+              --msgbox "Backup complete" 0 0
+          else
+            dialog --backtitle "`backtitle`" --title "Backup full Loader" --aspect 18 \
+              --msgbox "Backup error" 0 0
+          fi
+          ;;
+        6)
+          dialog --backtitle "`backtitle`" --title "Restore full Loader" --aspect 18 \
+            --infobox "Restore full Loader from ${BACKUPDIR}" 0 0
+          if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
+            # Move files to root
+            mv -f ${BACKUPDIR}/arc-backup.tar /arc-backup.tar
+            tar -xvf ${TMP_PATH}/arc-backup.tar -C /
+            rm -f ${TMP_PATH}/arc-backup.tar
+            dialog --backtitle "`backtitle`" --title "Restore full Loader" --aspect 18 \
+              --msgbox "Restore complete you need to Reboot" 0 0
+            exec reboot
+          else
+            dialog --backtitle "`backtitle`" --title "Restore full Loader" --aspect 18 \
+              --msgbox "No Loader Backup found" 0 0
+          fi
+          ;;
+        7)
           dialog --backtitle "`backtitle`" --title "Backup Path" --aspect 18 \
             --msgbox "Open in Explorer: \\\\${IP}\arpl\p3\backup" 0 0
           ;;
@@ -1117,8 +1157,9 @@ function backupMenu() {
     while true; do
       dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
         1 "Restore Config" \
-        2 "Restore Loader" \
-        3 "Show Backup Path" \
+        2 "Restore DSM Bootimage" \
+        3 "Restore full Loader" \
+        4 "Show Backup Path" \
         0 "Exit" \
         2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
@@ -1140,8 +1181,8 @@ function backupMenu() {
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           ;;
         2)
-          dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
-            --infobox "Restore Loader from ${BACKUPDIR}" 0 0
+          dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
+            --infobox "Restore DSM Bootimage from ${BACKUPDIR}" 0 0
           if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
             # Uncompress backup
             tar -xvf ${BACKUPDIR}/arc-backup.tar -C /
@@ -1155,14 +1196,30 @@ function backupMenu() {
             rm -f ${BACKUPDIR}/initrd-dsm
             CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
             BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-            dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
+            dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
               --msgbox "Restore complete" 0 0
           else
-            dialog --backtitle "`backtitle`" --title "Restore Loader" --aspect 18 \
+            dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
               --msgbox "No Loader Backup found" 0 0
           fi
           ;;
         3)
+          dialog --backtitle "`backtitle`" --title "Restore full Loader" --aspect 18 \
+            --infobox "Restore full Loader from ${BACKUPDIR}" 0 0
+          if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
+            # Move files to root
+            mv -f ${BACKUPDIR}/arc-backup.tar /arc-backup.tar
+            tar -xvf ${TMP_PATH}/arc-backup.tar -C /
+            rm -f ${TMP_PATH}/arc-backup.tar
+            dialog --backtitle "`backtitle`" --title "Restore full Loader" --aspect 18 \
+              --msgbox "Restore complete you need to Reboot" 0 0
+            exec reboot
+          else
+            dialog --backtitle "`backtitle`" --title "Restore full Loader" --aspect 18 \
+              --msgbox "No Loader Backup found" 0 0
+          fi
+          ;;
+        4)
           dialog --backtitle "`backtitle`" --title "Backup Path" --aspect 18 \
             --msgbox "Open in Explorer: \\\\${IP}\arpl\p3\backup" 0 0
           ;;
@@ -1418,7 +1475,9 @@ function sysinfo() {
     TEXT+="\nBuild: \ZbIncomplete\Zn"
   fi
   if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
-    TEXT+="\nBackup: \ZbComplete\Zn"
+    TEXT+="\nBackup: \ZbFull Loader\Zn"
+  elif [ -f "${BACKUPDIR}/dsm-backup.tar" ]; then
+    TEXT+="\nBackup: \ZbDSM Bootimage\Zn"
   elif [ -f "${BACKUPDIR}/user-config.yml" ]; then
     TEXT+="\nBackup: \ZbOnly Config\Zn"
   else
