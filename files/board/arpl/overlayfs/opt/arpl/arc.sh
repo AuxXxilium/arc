@@ -1429,58 +1429,25 @@ function updateMenu() {
             --msgbox "Error extracting update file" 0 0
           continue
         fi
-        if [ -f "${USER_CONFIG_FILE}" ] && [ -f "${CACHE_PATH}/zImage-dsm" ] && [ -f "${CACHE_PATH}/initrd-dsm" ]; then
-          if [ ! -d "${BACKUPDIR}" ]; then
-            # Make backup dir
-            mkdir ${BACKUPDIR}
-          else
-            # Clean old backup
-            rm -f ${BACKUPDIR}/update-backup.tar
-          fi
-          # Copy files to backup
-          cp -f ${USER_CONFIG_FILE} ${BACKUPDIR}/user-config.yml
-          cp -f ${CACHE_PATH}/zImage-dsm ${BACKUPDIR}
-          cp -f ${CACHE_PATH}/initrd-dsm ${BACKUPDIR}
-          # Compress backup
-          tar -cvf ${BACKUPDIR}/update-backup.tar ${BACKUPDIR}/ ${SLPART_PATH}/
-          # Clean temp files from backup dir
-          rm -f ${BACKUPDIR}/user-config.yml
-          rm -f ${BACKUPDIR}/zImage-dsm
-          rm -f ${BACKUPDIR}/initrd-dsm
-          mv -f ${BACKUPDIR}/update-backup.tar ${TMP_PATH}
+        if [ -f "${USER_CONFIG_FILE}" ]; then
+          cp -f ${USER_CONFIG_FILE} ${TMP_PATH}/user-config.yml
+          dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+          --infobox "Backup config" 0 0
+        else
+          dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+          --infobox "No config for Backup found!" 0 0
         fi
         dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
           --infobox "Installing new Image" 0 0
         # Process complete update
         umount /mnt/p1 /mnt/p2 /mnt/p3
         dd if="/tmp/arc.img" of=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1` bs=1M conv=fsync
-        # Remount FS
-        fsck.vfat -aw ${LOADER_DISK}1 >/dev/null 2>&1 || true
-        fsck.ext2 -p ${LOADER_DISK}2 >/dev/null 2>&1 || true
+        # Remount Cache
         fsck.ext2 -p ${LOADER_DISK}3 >/dev/null 2>&1 || true
-        mkdir -p ${BOOTLOADER_PATH}
-        mkdir -p ${SLPART_PATH}
         mkdir -p ${CACHE_PATH}
-        mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "Can't mount ${BOOTLOADER_PATH}"
-        mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "Can't mount ${SLPART_PATH}"
         mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "Can't mount ${CACHE_PATH}"
-        # Restore Backup
-        if [ -f "${TMP_PATH}/update-backup.tar" ]; then
-          # Uncompress backup
-          tar -xvf ${TMP_PATH}/update-backup.tar -C /
-          # Copy files to locations
-          cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
-          cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}
-          cp -f ${BACKUPDIR}/initrd-dsm ${CACHE_PATH}
-          # Clean temp files from backup dir
-          rm -f ${BACKUPDIR}/user-config.yml
-          rm -f ${BACKUPDIR}/zImage-dsm
-          rm -f ${BACKUPDIR}/initrd-dsm
-          CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
-          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-          dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
-            --msgbox "Restore complete" 0 0
-        fi
+        cp -f ${TMP_PATH}/user-config.yml ${BACKUPDIR}/bak-config.yml
+        # Ask for Boot
         dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
           --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
         [ $? -ne 0 ] && continue
@@ -1751,6 +1718,12 @@ if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${BUILD}" -a loaderIsConfigured ]; the
   install-addons.sh
   make
   boot && exit 0 || sleep 3
+fi
+if [ -f "${BACKUPDIR}/bak-config.yml" ]; then
+  dialog --backtitle "`backtitle`" --title "Arc Update" \
+    --infobox "Config Backup found - Restoring now" 0 0
+  mv -f ${BACKUPDIR}/bak-config.yml ${USER_CONFIG_FILE}
+  make
 fi
 # Main loop
 NEXT="1"
