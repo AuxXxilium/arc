@@ -1015,7 +1015,9 @@ function backupMenu() {
         4 "Restore DSM Bootimage" \
         5 "Backup full Loader" \
         6 "Restore full Loader" \
-        7 "Show Backup Path" \
+        7 "Backup Config with Code" \
+        8 "Restore Config with Code" \
+        9 "Show Backup Path" \
         0 "Exit" \
         2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
@@ -1146,6 +1148,30 @@ function backupMenu() {
           fi
           ;;
         7)
+          dialog --backtitle "`backtitle`" --title "Backup Config with Code" \
+              --infobox "Write down your Code for Restore!" 0 0
+          if [ -f "${USER_CONFIG_FILE}" ]; then
+            GENHASH=`cat /mnt/p1/user-config.yml | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-`
+            dialog --backtitle "`backtitle`" --title "Backup Config with Code" --msgbox "Your Code: ${GENHASH}" 0 0
+          else
+            dialog --backtitle "`backtitle`" --title "Backup Config with Code" --msgbox "No Config for Backup found!" 0 0
+          fi
+          ;;
+        8)
+          while true; do
+            dialog --backtitle "`backtitle`" --title "Restore Config with Code" \
+              --inputbox "Type your Code here!" 0 0 \
+              2>${TMP_PATH}/resp
+            RET=$?
+            [ ${RET} -ne 0 ] && break 2
+            GENHASH="`<"${TMP_PATH}/resp"`"
+            [ ${#GENHASH} -eq 9 ] && break
+            dialog --backtitle "`backtitle`" --title "Restore with Code" --msgbox "Invalid Code" 0 0
+          done
+          curl -k https://dpaste.com/${GENHASH}.txt > /tmp/user-config.yml
+          mv -f /tmp/user-config.yml /mnt/p1/user-config.yml
+          ;;
+        9)
           dialog --backtitle "`backtitle`" --title "Backup Path" --aspect 18 \
             --msgbox "Open in Explorer: \\\\${IP}\arpl\p3\backup" 0 0
           ;;
@@ -1158,7 +1184,8 @@ function backupMenu() {
         1 "Restore Config" \
         2 "Restore DSM Bootimage" \
         3 "Restore full Loader" \
-        4 "Show Backup Path" \
+        4 "Restore Config with Code" \
+        5 "Show Backup Path" \
         0 "Exit" \
         2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
@@ -1219,6 +1246,24 @@ function backupMenu() {
           fi
           ;;
         4)
+          while true; do
+            dialog --backtitle "`backtitle`" --title "Restore with Code" \
+              --inputbox "Type your Code here!" 0 0 \
+              2>${TMP_PATH}/resp
+            RET=$?
+            [ ${RET} -ne 0 ] && break 2
+            GENHASH="`<"${TMP_PATH}/resp"`"
+            [ ${#GENHASH} -eq 9 ] && break
+            dialog --backtitle "`backtitle`" --title "Restore with Code" --msgbox "Invalid Code" 0 0
+          done
+          curl -k https://dpaste.com/${GENHASH}.txt > /tmp/user-config.yml
+          mv -f /tmp/user-config.yml /mnt/p1/user-config.yml
+          CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+          dialog --backtitle "`backtitle`" --title "Restore with Code" --aspect 18 \
+              --msgbox "Restore complete" 0 0
+          ;;
+        5)
           dialog --backtitle "`backtitle`" --title "Backup Path" --aspect 18 \
             --msgbox "Open in Explorer: \\\\${IP}\arpl\p3\backup" 0 0
           ;;
@@ -1369,7 +1414,7 @@ function updateMenu() {
         ;;
       4)
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-          --infobox "Checking last version" 0 0
+          --infobox "Checking latest version" 0 0
         TAG="`curl -k -s "https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest" | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
@@ -1377,11 +1422,11 @@ function updateMenu() {
           continue
         fi
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-          --infobox "Downloading last version" 0 0
+          --infobox "Downloading latest version" 0 0
         STATUS="`curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "/tmp/modules.zip"`"
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-            --msgbox "Error downloading last version" 0 0
+            --msgbox "Error downloading latest version" 0 0
           continue
         fi
         rm "${MODULES_PATH}/"*
@@ -1429,9 +1474,9 @@ function updateMenu() {
           continue
         fi
         if [ -f "${USER_CONFIG_FILE}" ]; then
-          cp -f ${USER_CONFIG_FILE} ${TMP_PATH}/user-config.yml
+          GENHASH=`cat /mnt/p1/user-config.yml | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-`
           dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
-          --infobox "Backup config" 0 0
+          --msgbox "Backup config successfull!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
         else
           dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
           --infobox "No config for Backup found!" 0 0
@@ -1441,11 +1486,6 @@ function updateMenu() {
         # Process complete update
         umount /mnt/p1 /mnt/p2 /mnt/p3
         dd if="/tmp/arc.img" of=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1` bs=1M conv=fsync
-        # Remount Cache
-        fsck.ext2 -p ${LOADER_DISK}3 >/dev/null 2>&1 || true
-        mkdir -p ${CACHE_PATH}
-        mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "Can't mount ${CACHE_PATH}"
-        cp -f ${TMP_PATH}/user-config.yml ${BACKUPDIR}/bak-config.yml
         # Ask for Boot
         dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
           --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
@@ -1718,12 +1758,6 @@ if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${BUILD}" -a loaderIsConfigured ]; the
   make
   boot && exit 0 || sleep 3
 fi
-if [ -f "${BACKUPDIR}/bak-config.yml" ]; then
-  dialog --backtitle "`backtitle`" --title "Arc Update" \
-    --infobox "Config Backup found - Restoring now" 0 0
-  mv -f ${BACKUPDIR}/bak-config.yml ${USER_CONFIG_FILE}
-  make
-fi
 # Main loop
 NEXT="1"
 while true; do
@@ -1751,8 +1785,7 @@ while true; do
         echo "s \"Change Storage Map \" "                                                   >> "${TMP_PATH}/menu"
       fi
       echo "n \"Change Network Config \" "                                                  >> "${TMP_PATH}/menu"
-      echo "t \"Backup Menu \" "                                                            >> "${TMP_PATH}/menu"
-      if [ -f "${BACKUPDIR}/arc-backup.tar" ]; then
+      if [ -f "${BACKUPDIR}/dsm-backup.tar" ]; then
         echo "r \"Boot from Backup: \Z4${BACKUPBOOT}\Zn \" "                                >> "${TMP_PATH}/menu"
       fi
       if [ -n "${BUILDDONE}" ]; then
@@ -1782,7 +1815,8 @@ while true; do
   if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
     echo "d \"Clean disk cache \""                                                          >> "${TMP_PATH}/menu"
   fi
-  echo "e \"Update Menu \" "                                                                >> "${TMP_PATH}/menu"
+  echo "t \"Backup \" "                                                                     >> "${TMP_PATH}/menu"
+  echo "e \"Update \" "                                                                     >> "${TMP_PATH}/menu"
   echo "0 \"\Z1Exit\Zn \" "                                                                 >> "${TMP_PATH}/menu"
   dialog --clear --default-item ${NEXT} --backtitle "`backtitle`" --colors \
     --menu "Choose an Option" 0 0 0 --file "${TMP_PATH}/menu" \
