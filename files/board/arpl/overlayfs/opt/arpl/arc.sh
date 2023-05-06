@@ -1435,19 +1435,19 @@ function updateMenu() {
             mkdir ${BACKUPDIR}
           else
             # Clean old backup
-            rm -f ${BACKUPDIR}/dsm-backup.tar
+            rm -f ${BACKUPDIR}/update-backup.tar
           fi
           # Copy files to backup
           cp -f ${USER_CONFIG_FILE} ${BACKUPDIR}/user-config.yml
           cp -f ${CACHE_PATH}/zImage-dsm ${BACKUPDIR}
           cp -f ${CACHE_PATH}/initrd-dsm ${BACKUPDIR}
           # Compress backup
-          tar -cvf ${BACKUPDIR}/dsm-backup.tar ${BACKUPDIR}/
+          tar -cvf ${BACKUPDIR}/update-backup.tar ${BACKUPDIR}/ ${SLPART_PATH}/
           # Clean temp files from backup dir
           rm -f ${BACKUPDIR}/user-config.yml
           rm -f ${BACKUPDIR}/zImage-dsm
           rm -f ${BACKUPDIR}/initrd-dsm
-          mv -f ${BACKUPDIR}/dsm-backup.tar ${TMP_PATH}
+          mv -f ${BACKUPDIR}/update-backup.tar ${TMP_PATH}
         fi
         dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
           --infobox "Installing new Image" 0 0
@@ -1456,15 +1456,18 @@ function updateMenu() {
         dd if="/tmp/arc.img" of=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1` bs=1M conv=fsync
         # Remount FS
         fsck.vfat -aw ${LOADER_DISK}1 >/dev/null 2>&1 || true
+        fsck.ext2 -p ${LOADER_DISK}2 >/dev/null 2>&1 || true
         fsck.ext2 -p ${LOADER_DISK}3 >/dev/null 2>&1 || true
         mkdir -p ${BOOTLOADER_PATH}
+        mkdir -p ${SLPART_PATH}
         mkdir -p ${CACHE_PATH}
         mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "Can't mount ${BOOTLOADER_PATH}"
+        mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "Can't mount ${SLPART_PATH}"
         mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "Can't mount ${CACHE_PATH}"
         # Restore Backup
-        if [ -f "${TMP_PATH}/dsm-backup.tar" ]; then
+        if [ -f "${TMP_PATH}/update-backup.tar" ]; then
           # Uncompress backup
-          tar -xvf ${TMP_PATH}/dsm-backup.tar -C /
+          tar -xvf ${TMP_PATH}/update-backup.tar -C /
           # Copy files to locations
           cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
           cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}
