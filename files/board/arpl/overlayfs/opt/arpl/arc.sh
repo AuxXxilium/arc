@@ -1241,6 +1241,7 @@ function updateMenu() {
       2 "Update Addons" \
       3 "Update LKMs" \
       4 "Update Modules" \
+      5 "Complete Arc" \
       0 "Exit" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
@@ -1396,6 +1397,88 @@ function updateMenu() {
         DIRTY=1
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
           --msgbox "Modules updated to ${TAG} with success!" 0 0
+        ;;
+      5)
+        dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+          --infobox "Checking latest version" 0 0
+        ACTUALVERSION="v${ARPL_VERSION}"
+        TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
+        if [ $? -ne 0 -o -z "${TAG}" ]; then
+          dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+            --msgbox "Error checking new version" 0 0
+          continue
+        fi
+        if [ "${ACTUALVERSION}" = "${TAG}" ]; then
+          dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+            --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
+          [ $? -ne 0 ] && continue
+        fi
+        dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+          --infobox "Downloading latest version ${TAG}" 0 0
+        # Download update file
+        STATUS=`curl --insecure -w "%{http_code}" -L \
+          "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o /tmp/arc-${TAG}.img.zip`
+        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+          dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+            --msgbox "Error downloading update file" 0 0
+          continue
+        fi
+        unzip -o /tmp/arc-${TAG}.img.zip -d /tmp
+        if [ $? -ne 0 ]; then
+          dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+            --msgbox "Error extracting update file" 0 0
+          continue
+        fi
+        if [ -f "${USER_CONFIG_FILE}" ] && [ -f "${CACHE_PATH}/zImage-dsm" ] && [ -f "${CACHE_PATH}/initrd-dsm" ]; then
+          if [ ! -d "${BACKUPDIR}" ]; then
+            # Make backup dir
+            mkdir ${BACKUPDIR}
+          else
+            # Clean old backup
+            rm -f ${BACKUPDIR}/dsm-backup.tar
+          fi
+          # Copy files to backup
+          cp -f ${USER_CONFIG_FILE} ${BACKUPDIR}/user-config.yml
+          cp -f ${CACHE_PATH}/zImage-dsm ${BACKUPDIR}/zImage-dsm
+          cp -f ${CACHE_PATH}/initrd-dsm ${BACKUPDIR}/initrd-dsm
+          # Compress backup
+          tar -cvf ${BACKUPDIR}/dsm-backup.tar ${BACKUPDIR}/
+          # Clean temp files from backup dir
+          rm -f ${BACKUPDIR}/user-config.yml
+          rm -f ${BACKUPDIR}/zImage-dsm
+          rm -f ${BACKUPDIR}/initrd-dsm
+          mv -f ${BACKUPDIR}/dsm-backup.tar ${TMP_PATH}/dsm-backup.tar
+        fi
+        dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
+          --infobox "Installing new Image" 0 0
+        # Process complete update
+        umount /mnt/p1 /mnt/p2 /mnt/p3
+        dd if="/tmp/arc.img" of=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1` bs=1M conv=fsync
+        # Remount FS
+        fsck.vfat -aw ${LOADER_DISK}1 >/dev/null 2>&1 || true
+        fsck.ext2 -p ${LOADER_DISK}3 >/dev/null 2>&1 || true
+        mkdir -p ${BOOTLOADER_PATH}
+        mkdir -p ${CACHE_PATH}
+        mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "Can't mount ${BOOTLOADER_PATH}"
+        mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "Can't mount ${CACHE_PATH}"
+        # Restore Backup
+        if [ -f "${TMP_PATH}/dsm-backup.tar" ]; then
+          # Uncompress backup
+          tar -xvf ${TMP_PATH}/dsm-backup.tar -C /
+          # Copy files to locations
+          cp -f ${TMP_PATH}/user-config.yml ${USER_CONFIG_FILE}
+          cp -f ${TMP_PATH}/zImage-dsm ${CACHE_PATH}/zImage-dsm
+          cp -f ${TMP_PATH}/initrd-dsm ${CACHE_PATH}/initrd-dsm
+          CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+          dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
+            --msgbox "Restore complete" 0 0
+        fi
+        dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
+          --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
+        [ $? -ne 0 ] && continue
+         arpl-reboot.sh config
+        exit
         ;;
       0) return ;;
     esac
