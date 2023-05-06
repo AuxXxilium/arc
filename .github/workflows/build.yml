@@ -148,9 +148,7 @@ jobs:
           echo "Building..."
           make BR2_EXTERNAL=../external
           cd -
-          rm -f arc.img
           mv -f arpl.img arc.img
-          rm -f arpl.img
           qemu-img convert -O vmdk arc.img arc-dyn.vmdk
           qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
 

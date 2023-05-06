@@ -41,6 +41,6 @@ echo "Building... Drink a coffee and wait!"
 make BR2_EXTERNAL=../external -j`nproc`
 cd -
 rm -f arc.img
-cp -f arpl.img arc.img
+mv -f arpl.img arc.img
 qemu-img convert -O vmdk arc.img arc-dyn.vmdk
 qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
