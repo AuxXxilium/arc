@@ -1466,9 +1466,13 @@ function updateMenu() {
           # Uncompress backup
           tar -xvf ${TMP_PATH}/dsm-backup.tar -C /
           # Copy files to locations
-          cp -f ${TMP_PATH}/user-config.yml ${USER_CONFIG_FILE}
-          cp -f ${TMP_PATH}/zImage-dsm ${CACHE_PATH}/zImage-dsm
-          cp -f ${TMP_PATH}/initrd-dsm ${CACHE_PATH}/initrd-dsm
+          cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
+          cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}/zImage-dsm
+          cp -f ${BACKUPDIR}/initrd-dsm ${CACHE_PATH}/initrd-dsm
+          # Clean temp files from backup dir
+          rm -f ${BACKUPDIR}/user-config.yml
+          rm -f ${BACKUPDIR}/zImage-dsm
+          rm -f ${BACKUPDIR}/initrd-dsm
           CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
