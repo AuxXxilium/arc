@@ -1695,6 +1695,33 @@ function tryRecoveryDSM() {
 }
 
  ###############################################################################
+# allow downgrade dsm version
+function downgradeMenu() {
+        MSG=""
+        MSG+="This feature will allow you to downgrade the installation by removing the VERSION file from the first partition of all disks.\n"
+        MSG+="Therefore, please insert all disks before continuing.\n"
+        MSG+="Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?"
+        dialog --backtitle "`backtitle`" --title "Allow downgrade installation" \
+            --yesno "${MSG}" 0 0
+        [ $? -ne 0 ] && return
+        (
+          mkdir -p /tmp/sdX1
+          for I in `ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1`; do
+            mount ${I} /tmp/sdX1
+            [ -f "/tmp/sdX1/etc/VERSION" ] && rm -f "/tmp/sdX1/etc/VERSION"
+            [ -f "/tmp/sdX1/etc.defaults/VERSION" ] && rm -f "/tmp/sdX1/etc.defaults/VERSION"
+            sync
+            umount ${I}
+          done
+          rm -rf /tmp/sdX1
+        ) | dialog --backtitle "`backtitle`" --title "Allow downgrade installation" \
+            --progressbox "Removing ..." 20 70
+        MSG="$(TEXT "Remove VERSION file for all disks completed.")"
+        dialog --backtitle "`backtitle`" --colors --aspect 18 \
+          --msgbox "${MSG}" 0 0
+}
+
+ ###############################################################################
 # show .pat download url to user
 function paturl() {
         # output pat download link
@@ -1794,6 +1821,7 @@ while true; do
       if [ -n "${BUILDDONE}" ]; then
         echo "p \"Show .pat download link \" "                                              >> "${TMP_PATH}/menu"
       fi
+      echo "w \"Allow DSM downgrade \" "                                                    >> "${TMP_PATH}/menu"
       echo "z \"\Z1Format Disks\Zn \" "                                                     >> "${TMP_PATH}/menu"
     fi
     if [ -n "${ADVOPTS}" ]; then
@@ -1848,7 +1876,8 @@ while true; do
       NEXT="5"
       ;;
     p) paturl; NEXT="p" ;;
-    z) formatdisks; NEXT="p" ;;
+    w) downgradeMenu; NEXT="w" ;;
+    z) formatdisks; NEXT="z" ;;
     # Advanced Section
     x) [ "${ADVOPTS}" = "" ] && ADVOPTS='1' || ADVOPTS=''
        ADVOPTS="${ADVOPTS}"
