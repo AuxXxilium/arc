@@ -179,6 +179,7 @@ if [ "${BACKUPBOOT}" = "true" ]; then
   kexec -l "${BB_MOD_ZIMAGE_FILE}" --initrd "${BB_MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37mBooting Backup DSM...\033[0m"
   if [ ${CONSOLE} -gt 0 ]; then
+    echo -e "\033[1;37mWaiting for DSM Console...\033[0m"
     poweroff
   else
     kexec -e
@@ -189,6 +190,7 @@ elif [ "${BACKUPBOOT}" = "false" ] || [ "${BACKUPBOOT}" = "" ]; then
   kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37mBooting DSM...\033[0m"
   if [ ${CONSOLE} -gt 0 ]; then
+    echo -e "\033[1;37mWaiting for DSM Console...\033[0m"
     poweroff
   else
     kexec -e
