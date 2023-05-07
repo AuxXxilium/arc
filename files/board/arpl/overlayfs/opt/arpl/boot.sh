@@ -150,22 +150,19 @@ done
 # Make Directboot persistent if DSM is installed
 if [ "${DIRECTBOOT}" = "true" ]; then
   if [ "${DIRECTDSM}" = "true" ]; then
-    #if [ ${GRUBCONF} -eq 0 ]; then
-      grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
-      grub-editenv ${GRUB_PATH}/grubenv set default="direct"
-      echo -e "\033[1;33mEnable Directboot - DirectDSM\033[0m"
-    #fi
+    grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
+    grub-editenv ${GRUB_PATH}/grubenv set default="direct"
+    echo -e "\033[1;33mEnable Directboot - DirectDSM\033[0m"
     echo -e "\033[1;33mDSM installed - Reboot with Directboot\033[0m"
     reboot
-    exit 0
   elif [ "${DIRECTDSM}" = "false" ]; then
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
-    echo -e "\033[1;33mDSM not installed - Reboot with Directboot\033[0m"
     grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
     writeConfigKey "arc.directdsm" "true" "${USER_CONFIG_FILE}"
+    echo -e "\033[1;33mDSM not installed - Reboot with Directboot\033[0m"
     reboot
-    exit 0
   fi
+  exit 0
 elif [ "${DIRECTBOOT}" = "false" ] && [ ${GRUBCONF} -gt 0 ]; then
     grub-editenv ${GRUB_PATH}/grubenv create
     echo -e "\033[1;33mDisable Directboot - DirectDSM\033[0m"
@@ -184,7 +181,6 @@ if [ "${BACKUPBOOT}" = "true" ]; then
   else
     kexec -e
   fi
-  exit 0
 elif [ "${BACKUPBOOT}" = "false" ] || [ "${BACKUPBOOT}" = "" ]; then
   # Executes DSM kernel via KEXEC
   kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
@@ -195,5 +191,5 @@ elif [ "${BACKUPBOOT}" = "false" ] || [ "${BACKUPBOOT}" = "" ]; then
   else
     kexec -e
   fi
-  exit 0
 fi
+exit 0
