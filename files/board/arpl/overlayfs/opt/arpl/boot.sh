@@ -29,7 +29,7 @@ if [ "${BACKUPBOOT}" = "true" ]; then
   sleep 1
   USER_CONFIG_FILE=${BB_USER_CONFIG_FILE}
 fi
-CONSOLE="`readConfigKey "addons.console" "${USER_CONFIG_FILE}" | wc -l`"
+CONSOLE=`cat ${USER_CONFIG_FILE} | grep "console:" | wc -w`
 
 # Check if DSM zImage changed, patch it if necessary
 ZIMAGE_HASH="`readConfigKey "zimage-hash" "${USER_CONFIG_FILE}"`"
