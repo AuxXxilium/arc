@@ -25,7 +25,7 @@ GRUBCONF=`grub-editenv ${GRUB_PATH}/grubenv list | wc -l`
 BACKUPBOOT="`readConfigKey "arc.backupboot" "${USER_CONFIG_FILE}"`"
 if [ "${BACKUPBOOT}" = "true" ]; then
   # Uncompress backup
-  tar -xvf ${BACKUPDIR}/arc-backup.tar -C /
+  tar -xvf ${BACKUPDIR}/dsm-backup.tar -C /
   sleep 1
   USER_CONFIG_FILE=${BB_USER_CONFIG_FILE}
 fi
