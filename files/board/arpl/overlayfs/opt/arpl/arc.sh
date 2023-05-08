@@ -1232,7 +1232,7 @@ function updateMenu() {
       2 "Update Addons" \
       3 "Update LKMs" \
       4 "Update Modules" \
-      5 "Complete Arc" \
+      5 "Complete Arc Update" \
       0 "Exit" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
