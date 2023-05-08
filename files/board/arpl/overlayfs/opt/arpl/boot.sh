@@ -29,7 +29,6 @@ if [ "${BACKUPBOOT}" = "true" ]; then
   sleep 1
   USER_CONFIG_FILE=${BB_USER_CONFIG_FILE}
 fi
-CONSOLE=`cat ${USER_CONFIG_FILE} | grep "console:" | wc -w`
 
 # Check if DSM zImage changed, patch it if necessary
 ZIMAGE_HASH="`readConfigKey "zimage-hash" "${USER_CONFIG_FILE}"`"
@@ -175,21 +174,11 @@ if [ "${BACKUPBOOT}" = "true" ]; then
   # Executes DSM kernel via KEXEC
   kexec -l "${BB_MOD_ZIMAGE_FILE}" --initrd "${BB_MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37mBooting Backup DSM...\033[0m"
-  if [ ${CONSOLE} -gt 0 ]; then
-    echo -e "\033[1;37mWaiting for DSM Console...\033[0m"
-    poweroff
-  else
-    kexec -e
-  fi
+  poweroff
 elif [ "${BACKUPBOOT}" = "false" ] || [ "${BACKUPBOOT}" = "" ]; then
   # Executes DSM kernel via KEXEC
   kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37mBooting DSM...\033[0m"
-  if [ ${CONSOLE} -gt 0 ]; then
-    echo -e "\033[1;37mWaiting for DSM Console...\033[0m"
-    poweroff
-  else
-    kexec -e
-  fi
+  poweroff
 fi
 exit 0
