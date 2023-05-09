@@ -726,6 +726,7 @@ function selectModules() {
       2 "Select all Modules" \
       3 "Deselect all Modules" \
       4 "Choose Modules to include" \
+      5 "Add external module" \
       0 "Exit" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break
@@ -783,6 +784,40 @@ function selectModules() {
         done
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+        ;;
+      5)
+        MSG=""
+        MSG+="This function is experimental and dangerous. If you don't know much, please exit.\n"
+        MSG+="The imported .ko of this function will be implanted into the corresponding arch's modules package, which will affect all models of the arch.\n"
+        MSG+="This program will not determine the availability of imported modules or even make type judgments, as please double check if it is correct.\n"
+        MSG+="If you want to remove it, please go to the \"Update Menu\" -> \"Update modules\" to forcibly update the modules. All imports will be reset.\n"
+        MSG+="Do you want to continue?"
+        dialog --backtitle "`backtitle`" --title "Add external module" \
+            --yesno "${MSG}" 0 0
+        [ $? -ne 0 ] && return
+        dialog --backtitle "`backtitle`" --aspect 18 --colors --inputbox "Please enter the complete URL to download.\n" 0 0 \
+          2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && continue
+        URL="`<"${TMP_PATH}/resp"`"
+        [ -z "${URL}" ] && continue
+        clear
+        echo "Downloading ${URL}"
+        STATUS=`curl -kLJO -w "%{http_code}" "${URL}" --progress-bar`
+        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+          dialog --backtitle "`backtitle`" --title "Add external module" --aspect 18 \
+            --msgbox "ERROR: Check internet, URL or cache disk space" 0 0
+          return 1
+        fi
+        KONAME=$(basename "$URL")
+        if [ -n "${KONAME}" -a "${KONAME##*.}" = "ko" ]; then
+          addToModules ${PLATFORM} ${KVER} ${KONAME}
+          dialog --backtitle "`backtitle`" --title "Add external module" --aspect 18 \
+            --msgbox "Module ${KONAME} added to ${PLATFORM}-${KVER}" 0 0
+          rm -f ${KONAME}
+        else
+          dialog --backtitle "`backtitle`" --title "Add external module" --aspect 18 \
+            --msgbox "File format not recognized!" 0 0
+        fi
         ;;
       0)
         break
