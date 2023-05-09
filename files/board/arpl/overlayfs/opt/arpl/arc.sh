@@ -705,7 +705,7 @@ function addonMenu() {
 
 ###############################################################################
 # Permit user select the modules to include
-function selectModules() {
+function modulesMenu() {
   NEXT="1"
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
@@ -1860,7 +1860,7 @@ while true; do
     a) sysinfo; NEXT="a" ;;
     # System
     2) addonMenu; NEXT="2" ;;
-    3) selectModules; NEXT="3" ;;
+    3) modulesMenu; NEXT="3" ;;
     # Arc Section
     v) [ "${ARCOPTS}" = "" ] && ARCOPTS='1' || ARCOPTS=''
        ARCOPTS="${ARCOPTS}"
