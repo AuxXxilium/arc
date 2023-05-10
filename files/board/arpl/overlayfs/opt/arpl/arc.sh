@@ -247,6 +247,14 @@ function arcbuild() {
   while IFS=': ' read KEY VALUE; do
     writeConfigKey "synoinfo.${KEY}" "${VALUE}" "${USER_CONFIG_FILE}"
   done < <(readModelMap "${MODEL}" "builds.${BUILD}.synoinfo")
+  # Memory: Check Memory installed
+  while IFS= read -r line; do
+    RAMSIZE=$line
+    RAMTOTAL=$((RAMTOTAL +RAMSIZE))
+  done <<< $(dmidecode -t memory | grep -i 'Size' | grep -i 'GB' | cut -d" " -f2)
+  RAMTOTAL=$((RAMTOTAL *1024))
+  # Memory: Set mem_max_mb to the amount of installed memory
+  writeConfigKey "synoinfo.mem_max_mb" "${RAMTOTAL}" "${USER_CONFIG_FILE}"
   # Check addons
   while IFS=': ' read ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
@@ -1509,7 +1517,12 @@ function sysinfo() {
   rm -f ${SYSINFO_PATH}
   # Checks for Systeminfo Menu
   CPUINFO=`awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//'`
-  MEMINFO=`free -g | awk 'NR==2' | awk '{print $2}'`
+  # Memory: Check Memory installed
+  while IFS= read -r line; do
+    RAMSIZE=$line
+    RAMTOTAL=$((RAMTOTAL +RAMSIZE))
+  done <<< $(dmidecode -t memory | grep -i 'Size' | grep -i 'GB' | cut -d" " -f2)
+  RAMTOTAL=$((RAMTOTAL *1024))
   VENDOR=`dmidecode -s system-product-name`
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   IPLIST=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
@@ -1537,7 +1550,7 @@ function sysinfo() {
   fi
   TEXT+="\nVendor: \Zb"${VENDOR}"\Zn"
   TEXT+="\nCPU: \Zb"${CPUINFO}"\Zn"
-  TEXT+="\nRAM: \Zb"${MEMINFO}"GB\Zn\n"
+  TEXT+="\nRAM: \Zb"${RAMTOTAL}"MB\Zn\n"
   # Print Config Informations
   TEXT+="\n\Z4Config:\Zn"
   TEXT+="\nArc Version: \Zb"${ARPL_VERSION}"\Zn"
