@@ -1268,7 +1268,7 @@ function updateMenu() {
       2 "Update Addons" \
       3 "Update LKMs" \
       4 "Update Modules" \
-      5 "Complete Arc Update" \
+      5 "Full upgrade Loader" \
       0 "Exit" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
@@ -1426,51 +1426,51 @@ function updateMenu() {
           --msgbox "Modules updated to ${TAG} with success!" 0 0
         ;;
       5)
-        dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+        dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
           --infobox "Checking latest version" 0 0
         ACTUALVERSION="v${ARPL_VERSION}"
         TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
         if [ $? -ne 0 -o -z "${TAG}" ]; then
-          dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           continue
         fi
         if [ "${ACTUALVERSION}" = "${TAG}" ]; then
-          dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
           [ $? -ne 0 ] && continue
         fi
-        dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+        dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
           --infobox "Downloading latest version ${TAG}" 0 0
         # Download update file
         STATUS=`curl --insecure -w "%{http_code}" -L \
           "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o /tmp/arc-${TAG}.img.zip`
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-          dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --msgbox "Error downloading update file" 0 0
           continue
         fi
         unzip -o /tmp/arc-${TAG}.img.zip -d /tmp
         if [ $? -ne 0 ]; then
-          dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --msgbox "Error extracting update file" 0 0
           continue
         fi
         if [ -f "${USER_CONFIG_FILE}" ]; then
           GENHASH=`cat /mnt/p1/user-config.yml | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-`
-          dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
           --msgbox "Backup config successfull!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
         else
-          dialog --backtitle "`backtitle`" --title "Complete Arc Update" --aspect 18 \
+          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
           --infobox "No config for Backup found!" 0 0
         fi
-        dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
+        dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
           --infobox "Installing new Image" 0 0
         # Process complete update
         umount /mnt/p1 /mnt/p2 /mnt/p3
         dd if="/tmp/arc.img" of=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1` bs=1M conv=fsync
         # Ask for Boot
-        dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
+        dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
           --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
         [ $? -ne 0 ] && continue
          arpl-reboot.sh config
