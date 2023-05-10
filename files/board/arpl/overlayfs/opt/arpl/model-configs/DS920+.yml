@@ -1,8 +1,5 @@
 id: "DS920+"
 synoinfo: &synoinfo
-  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.xml"
-  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss.json"
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_led_brightness_adjustment: "no"
@@ -47,6 +44,9 @@ builds:
     cmdline:
       <<: *cmdline
     synoinfo:
+      rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.xml"
+      rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.xml"
+      rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.json"
       <<: *synoinfo
     pat:
       url: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_DS920%2B_42962.pat"
@@ -67,6 +67,9 @@ builds:
     cmdline:
       <<: *cmdline
     synoinfo:
+      rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.xml"
+      rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.xml"
+      rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.json"
       <<: *synoinfo
     pat:
       url: "https://global.synologydownload.com/download/DSM/release/7.2/64551/DSM_DS920%2B_64551.pat"
