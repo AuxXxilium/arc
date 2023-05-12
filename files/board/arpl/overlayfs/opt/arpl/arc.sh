@@ -1501,10 +1501,10 @@ function sysinfo() {
   IPLIST=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
   REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
-  PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
-  DISKMAP="`readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"`"
+    PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
+    DISKMAP="`readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"`"
   elif [ "${REMAP}" == "3" ]; then
-  PORTMAP="`readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"`"
+    PORTMAP="`readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"`"
   fi
   CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
   BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -1593,21 +1593,21 @@ function sysinfo() {
       done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
     done
     if [ "${NUMPORTS}" -lt 9 ]; then
-    TEXT+="\n\ZbTotal Ports: \Z2\Zb${NUMPORTS}\Zn\n"
+      TEXT+="\n\ZbTotal Ports: \Z2\Zb${NUMPORTS}\Zn\n"
     elif [ "${NUMPORTS}" -gt 8 ]; then
-    TEXT+="\n\ZbTotal Ports:\Zn \Z1${NUMPORTS}\Zn (DSM can only use up to 8 Ports per Controller)\n"
+      TEXT+="\n\ZbTotal Ports:\Zn \Z1${NUMPORTS}\Zn (DSM can only use up to 8 Ports per Controller)\n"
     fi
   fi
   # Get Information for SAS Controller
   if [ "$SASCONTROLLER" -gt "0" ]; then
-  for PCI in `lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
-    # Get Name of Controller
-    NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
-    # Get Amount of Drives connected
-    SASDRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
-    TEXT+="\n\Z1SAS Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
-    TEXT+="\Z1Drives\Zn detected:\n\Zb"${SASDRIVES}"\Zn\n"
-  done
+    for PCI in `lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
+      # Get Name of Controller
+      NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+      # Get Amount of Drives connected
+      SASDRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
+      TEXT+="\n\Z1SAS Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
+      TEXT+="\Z1Drives\Zn detected:\n\Zb"${SASDRIVES}"\Zn\n"
+    done
   fi
   echo -e ${TEXT} > "${SYSINFO_PATH}"
   TEXT+="\nSysinfo File: \Zb"\\\\${IP}\\arpl\\p1\\sysinfo.yml"\Zn"
