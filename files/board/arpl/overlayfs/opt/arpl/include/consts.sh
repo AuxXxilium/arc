@@ -1,5 +1,5 @@
 
-ARPL_VERSION="23.5.22"
+ARPL_VERSION="23.5.23"
 
 # Define paths
 TMP_PATH="/tmp"
