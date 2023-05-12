@@ -1757,7 +1757,11 @@ function formatdisks() {
     --checklist "Advanced" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
   RESP=`<"${TMP_PATH}/resp"`s
-  [ -z "${RESP}" ] && return
+  if [ -z "${RESP}" ]; then
+    dialog --backtitle "`backtitle`" --title "Format disk" \
+      --msgbox "No Sata or NVMe Disks found." 0 0
+    return
+  fi
   dialog --backtitle "`backtitle`" --title "Format disk" \
       --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return
