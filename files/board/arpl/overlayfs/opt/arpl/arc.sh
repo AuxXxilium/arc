@@ -3,6 +3,7 @@
 . /opt/arpl/include/functions.sh
 . /opt/arpl/include/addons.sh
 . /opt/arpl/include/modules.sh
+. /opt/arpl/include/misc.sh
 . /opt/arpl/include/storage.sh
 . /opt/arpl/include/network.sh
 
@@ -12,22 +13,6 @@ LOADER_DISK=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`
 LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
 if [ `cat /sys/block/${LOADER_DEVICE_NAME}/${LOADER_DEVICE_NAME}3/size` -lt 4194304 ]; then
   CLEARCACHE=1
-fi
-
-# Get Number of Ethernet Ports
-NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
-[ ${NETNUM} -gt 8 ] && NETNUM=8 && WARNON=3
-
-# Get actual IP
-IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
-
-# Check for Hypervisor
-if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
-  MACHINE="VIRTUAL"
-  # Check for Hypervisor
-  HYPERVISOR=`lscpu | grep Hypervisor | awk '{print $3}'`
-else
-  MACHINE="NATIVE"
 fi
 
 # Dirty flag
@@ -247,12 +232,6 @@ function arcbuild() {
   while IFS=': ' read KEY VALUE; do
     writeConfigKey "synoinfo.${KEY}" "${VALUE}" "${USER_CONFIG_FILE}"
   done < <(readModelMap "${MODEL}" "builds.${BUILD}.synoinfo")
-  # Memory: Check Memory installed
-  while IFS= read -r line; do
-    RAMSIZE=$line
-    RAMTOTAL=$((RAMTOTAL +RAMSIZE))
-  done <<< $(dmidecode -t memory | grep -i 'Size' | grep -i 'GB' | cut -d" " -f2)
-  RAMTOTAL=$((RAMTOTAL *1024))
   # Memory: Set mem_max_mb to the amount of installed memory
   writeConfigKey "synoinfo.mem_max_mb" "${RAMTOTAL}" "${USER_CONFIG_FILE}"
   # Check addons
