@@ -6,6 +6,7 @@ NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
 [ ${NETNUM} -gt 8 ] && NETNUM=8 && WARNON=3
 
 # Memory: Check Memory installed
+RAMTOTAL=0
 while read -r line; do
   RAMSIZE=$line
   RAMTOTAL=$((RAMTOTAL +RAMSIZE))
