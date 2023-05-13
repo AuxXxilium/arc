@@ -201,7 +201,7 @@ echo -n "Waiting IP."
 while true; do
   IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
   if [ -n "${IP}" ]; then
-    echo -en "OK\nAccess \033[1;34mhttp://${IP}:7681\033[0m to configure the loader via web terminal"
+    echo -en "IP: ${IP}"
     break
   fi
   if [ ${COUNT} -eq 30 ]; then
@@ -213,18 +213,11 @@ while true; do
   COUNT=$((${COUNT}+3))
 done
 
-# Inform user
-echo
-echo -e "Call \033[1;32marc.sh\033[0m to configure loader"
-echo
-echo -e "User config is on \033[1;32m${USER_CONFIG_FILE}\033[0m"
-echo -e "Default SSH Root password is \033[1;31mRedp1lL-1s-4weSomE\033[0m"
-echo
-
 # Check memory
 RAM=`free -m | awk '/Mem:/{print$2}'`
 if [ ${RAM} -le 3500 ]; then
   echo -e "\033[1;33mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of memory.\033[0m\n"
+  sleep 5
 fi
 
 mkdir -p "${ADDONS_PATH}"
