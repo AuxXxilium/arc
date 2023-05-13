@@ -23,7 +23,7 @@ serial:
   middle: "SQR"
   suffix: "alpha"
 arc:
-  serial: "2150SQRNKZBR"
+  serial: "2150SQRQNKZBR"
   mac1: "001132FA6E7C"
   mac2: "001132FA6E7D"
   mac3: "001132FA6E7E"
