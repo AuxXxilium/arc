@@ -1782,6 +1782,11 @@ if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${BUILD}" -a loaderIsConfigured ]; the
   make
   boot && exit 0 || sleep 3
 fi
+if ! tty | grep -q "/dev/pts"; then
+  dialog --backtitle "`backtitle`" --colors --aspect 18 \
+    --msgbox "\Z1Notice:\Zn You can also use \Z1http://${IP}:7681\Zn to access via web." 5 70
+  return
+fi 
 # Main loop
 NEXT="1"
 while true; do
@@ -1909,7 +1914,10 @@ clear
 echo
 echo -e "Call \033[1;32marc.sh\033[0m to configure loader"
 echo
-echo -e "User config is on \033[1;32m${USER_CONFIG_FILE}\033[0m"
-echo -e "Default SSH Root password is \033[1;31mRedp1lL-1s-4weSomE\033[0m"
-echo
+echo -e "\033[1;31mSSH Access:\033[0m"
 echo -e "IP: \033[1;31m${IP}\033[0m"
+echo -e "User: \033[1;31mroot\033[0m"
+echo -e "Password: \033[1;31mRedp1lL-1s-4weSomE\033[0m"
+echo
+echo -e "\033[1;31mWeb Terminal Access:\033[0m"
+echo -e "Address: \033[1;31mhttp://${IP}:7681\033[0m"
