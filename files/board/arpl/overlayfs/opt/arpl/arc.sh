@@ -1591,12 +1591,9 @@ function sysinfo() {
         TEXT+="${PORT}\Zn "
         NUMPORTS=$((${NUMPORTS}+1))
       done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
+      TEXT+="\n "
     done
-    if [ "${NUMPORTS}" -lt 9 ]; then
-      TEXT+="\n\ZbTotal Ports: \Z2\Zb${NUMPORTS}\Zn\n"
-    elif [ "${NUMPORTS}" -gt 8 ]; then
-      TEXT+="\n\ZbTotal Ports:\Zn \Z1${NUMPORTS}\Zn (DSM can only use up to 8 Ports per Controller)\n"
-    fi
+    TEXT+="\n\ZbTotal Ports: \Z2\Zb${NUMPORTS}\Zn\n"
   fi
   # Get Information for SAS Controller
   if [ "$SASCONTROLLER" -gt "0" ]; then
