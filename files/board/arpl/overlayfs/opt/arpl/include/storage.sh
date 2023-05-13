@@ -47,20 +47,15 @@ function getmap() {
   SATAPORTMAP=`awk '{print$1}' ${TMP_PATH}/drivescon`
   LASTDRIVE=0
   # Check for VMware
-  if [ "$HYPERVISOR" = "VMware" ]; then
-    MAXDISKS="`readModelKey "${MODEL}" "disks"`"
-    MAXDISKSN=`expr $MAXDISKS + 1`
-    echo -n "0>$MAXDISKSN:" >> "${TMP_PATH}/remap"
-  fi
   while read line; do
-    if [ $line = 1 ] && [ "$HYPERVISOR" = "VMware" ]; then
-      LASTDRIVE=$((${LASTDRIVE}-1))
-    fi
-    if [ $line != $LASTDRIVE ]; then
+    if [ "$HYPERVISOR" = "VMware" ] && [ $line = 0 ]; then
+      MAXDISKS="`readModelKey "${MODEL}" "disks"`"
+      echo -n "$line>$MAXDISKS:" >> "${TMP_PATH}/remap"
+    elif [ $line != $LASTDRIVE ]; then
       echo -n "$line>$LASTDRIVE:" >> "${TMP_PATH}/remap"
-      LASTDRIVE=$((${LASTDRIVE}+1))
-    elif [ $line == $LASTDRIVE ]; then
-        LASTDRIVE=$((${line}+1))
+      LASTDRIVE=`expr $LASTDRIVE + 1`
+    elif [ $line = $LASTDRIVE ]; then
+        LASTDRIVE=`expr $line + 1`
     fi
   done < <(cat "${TMP_PATH}/ports")
   SATAREMAP=`awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//'`
