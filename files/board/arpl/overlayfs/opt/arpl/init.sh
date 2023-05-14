@@ -16,7 +16,7 @@ done
 if [ -z "${LOADER_DISK}" ]; then
   die "Loader disk not found!"
 fi
-NUM_PARTITIONS=`blkid | grep "${LOADER_DISK}" | cut -d: -f1 | wc -l`
+NUM_PARTITIONS=`blkid | grep "${LOADER_DISK}[0-9]\+" | cut -d: -f1 | wc -l`
 if [ $NUM_PARTITIONS -ne 3 ]; then
   die "Loader disk not found!"
 fi
