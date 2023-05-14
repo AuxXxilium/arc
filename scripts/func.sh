@@ -85,7 +85,7 @@ function getAddons() {
       ADDON=`basename "${PKG}" .addon`
       mkdir -p "${DEST_PATH}/${ADDON}"
       echo "Extracting ${PKG} to ${DEST_PATH}/${ADDON}"
-      tar xaf "${PKG}" -C "${DEST_PATH}/${ADDON}"
+      tar -xaf "${PKG}" -C "${DEST_PATH}/${ADDON}"
     done
     echo "Getting Addons end - ${TAG}"
 }
