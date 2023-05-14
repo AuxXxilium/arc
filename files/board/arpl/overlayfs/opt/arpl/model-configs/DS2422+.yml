@@ -22,7 +22,7 @@ serial:
     - "2140"
     - "2180"
   middle: "SLR"
-  suffix: "numeric"
+  suffix: "alpha"
 arc:
   serial: "2180SLRG3YZZE"
   mac1: "001132FEA9EE"

@@ -1309,7 +1309,7 @@ function updateMenu() {
           if [ "${KEY: -1}" = "/" ]; then
             rm -Rf "${VALUE}"
             mkdir -p "${VALUE}"
-            gzip -dc "/tmp/`basename "${KEY}"`.tgz" | tar xf - -C "${VALUE}"
+            tar -zxf "/tmp/`basename "${KEY}"`.tgz" -C "${VALUE}"
           else
             mkdir -p "`dirname "${VALUE}"`"
             mv "/tmp/`basename "${KEY}"`" "${VALUE}"
@@ -1351,7 +1351,7 @@ function updateMenu() {
           ADDON=`basename ${PKG} | sed 's|.addon||'`
           rm -rf "${ADDONS_PATH}/${ADDON}"
           mkdir -p "${ADDONS_PATH}/${ADDON}"
-          tar xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
+          tar -xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
         done
         DIRTY=1
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \

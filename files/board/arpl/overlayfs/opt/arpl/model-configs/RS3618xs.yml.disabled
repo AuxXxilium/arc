@@ -1,0 +1,137 @@
+id: "RS3618xs"
+synoinfo: &synoinfo
+  support_disk_compatibility: "no"
+  support_memory_compatibility: "no"
+  support_led_brightness_adjustment: "no"
+  supportssdcache: "no"
+  esataportcfg: "0x00"
+  usbportcfg: "0x8700"
+  #rss_server: "https://raw.githubusercontent.com/wjz304/arpl-i18n/main/rss.xml"
+  #rss_server_ssl: "https://raw.githubusercontent.com/wjz304/arpl-i18n/main/rss.xml"
+  support_syno_hybrid_raid:
+  supportraidgroup:
+cmdline: &cmdline
+  syno_hdd_powerup_seq: 0
+  HddHotplug: 0
+  vender_format_version: 2
+  syno_hdd_detect: 0
+  elevator: elevator
+platform: "broadwell"
+unique: "synology_broadwell_rs3618xs"
+serial:
+  prefix:
+    - "1130"
+    - "1230"
+    - "1330"
+    - "1430"
+  middle: "ODN"
+  suffix: "alpha"
+dom: 2
+dt: false
+disks: 12
+beta: false
+builds:
+  25556:
+    ver: "6.2.4"
+    kver: "3.10.105"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.synologydownload.com/download/DSM/release/6.2.4/25556/DSM_RS3618xs_25556.pat"
+      hash: "3929f05022ad28d595803758d4198b9e9d9e08878a0c40db9f5512c66e0374de"
+      ramdisk-hash: "0f3733f51c4761937304097549aa19bb15d4e58e4bcce28f8b8d5c5922aa58d6"
+      zimage-hash: "8aa82e525635cd1e6898d7115408ddc595549ef847f203c0c9c0a48697211723"
+      md5-hash: "d71c24813b6f1032a5f55e6dc206985f"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-25556-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-25556-post-init-script.patch"
+      - "ramdisk-common-disable-disabled-ports.patch"
+
+  42218:
+    ver: "7.0.1"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_RS3618xs_42218.pat"
+      hash: "941886bee9a0929c6bd078c5f2c465d9599721fc885a1e3835d6b60631f419af"
+      ramdisk-hash: "cd7c7ed0fba15b2d3eae70b9d6f680a8dfbe1138164e6312d98482177746f544"
+      zimage-hash: "41993de949af53def17ca6190bfff503044b9ebc0beccf7a3d54ab050998e9db"
+      md5-hash: "e91236e37fdbbb3a4f368dffa5a63013"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-common-post-init-script.patch"
+      - "ramdisk-common-disable-disabled-ports.patch"
+
+  42661:
+    ver: "7.1.0"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.synologydownload.com/download/DSM/release/7.1/42661-1/DSM_RS3618xs_42661.pat"
+      hash: "1aaa9b78d0287b2acc3d4f38757b4aef72ce98f20e3a44b71a44dddea1b842ea"
+      ramdisk-hash: "b383ca0fcc18fa29f939e858739a70784e16f683640790b59e84f8734e03975e"
+      zimage-hash: "9598f66b75e5b303e571241696e02fe7c0add80f13564f8c6b8c0daaf3cb3018"
+      md5-hash: "f36f1f22a48b184358823b6168a904fd"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42661-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"
+
+  42962:
+    ver: "7.1.1"
+    kver: "4.4.180"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-5/DSM_RS3618xs_42962.pat"
+      hash: "e699c21d4f905cb9234deb1f4a80a1b2265e19526089d01025b2291f180bc8e6"
+      ramdisk-hash: "97ce794bf36f67c3e95372241d74b1affe34122807aa5bbacb4317376cf0ba08"
+      zimage-hash: "7b766c5cc9608363619ed686ba26e5279fcd60cbb766c073af11b3e6e461afa9"
+      md5-hash: "07cc65cf8466a2dc6207c485a623e8fa"
+    patch:
+      - "ramdisk-common-disable-root-pwd.patch"
+      - "ramdisk-common-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"
+
+  64551:
+    ver: "7.2.0"
+    kver: "4.4.302"
+    rd-compressed: false
+    cmdline:
+      <<: *cmdline
+    synoinfo:
+      <<: *synoinfo
+    pat:
+      url: "https://global.synologydownload.com/download/DSM/release/7.2/64551/DSM_RS3618xs_64551.pat"
+      hash: "63b41dd4940e81c933b3493dd648fcaa750a165b6dbd9fcee96ee87acad4bbab"
+      ramdisk-hash: "ec96ba5de69194af22678f44435cddf99ba63739591cbca64210fee3d421f1a3"
+      zimage-hash: "16176d29125ee784ab8bfb1201f0269127ca70464f86022ad96e0023b2c95308"
+      md5-hash: "54697059690de4e0931f0b9da8e1a0d6"
+    patch:
+      - "ramdisk-64216-disable-root-pwd.patch"
+      - "ramdisk-64216-init-script.patch"
+      - "ramdisk-common-etc-rc.patch"
+      - "ramdisk-42951-post-init-script.patch"
+      - "ramdisk-42661-disable-disabled-ports.patch"
