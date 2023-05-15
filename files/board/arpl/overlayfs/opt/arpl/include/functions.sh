@@ -191,3 +191,24 @@ function findAndMountDSMRoot() {
   fi
   return 0
 }
+
+###############################################################################
+# Show Storagemenu to user
+function storageMenu() {
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  DT="`readModelKey "${MODEL}" "dt"`"
+  # Get Portmap for Loader
+  getmap
+  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+}
+
+###############################################################################
+# Show Storagemenu to user
+function networkMenu() {
+  ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
+  # Get Network Config for Loader
+  getnet
+  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+}
