@@ -417,7 +417,7 @@ function extractDsmFiles() {
 
     mirror="`echo ${PAT_URL} | sed 's|^http[s]*://\([^/]*\).*|\1|'`"
     if [ "${mirror}" != "${fastest}" ]; then
-      echo "`printf "Based on the current network situation, switch to %s mirror to downloading." "${fastest}"`"
+      echo "`printf "Based on the current network situation, switch to %s mirror for download." "${fastest}"`"
       PAT_URL="`echo ${PAT_URL} | sed "s/${mirror}/${fastest}/"`"
       OLDPAT_URL="https://${fastest}/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"
     fi
