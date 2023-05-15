@@ -148,21 +148,6 @@ function getmap() {
   fi
 }
 
-###############################################################################
-# allow user to save modifications to disk
-function saveMenu() {
-  dialog --backtitle "`backtitle`" --title "Save to Disk" \
-      --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the arc. Do you want to continue?" 0 0
-  [ $? -ne 0 ] && return
-  dialog --backtitle "`backtitle`" --title "Save to Disk" \
-      --infobox "Saving ..." 0 0 
-  RDXZ_PATH=/tmp/rdxz_tmp
-  mkdir -p "${RDXZ_PATH}"
-  (cd "${RDXZ_PATH}"; xz -dc < "/mnt/p3/initrd-arpl" | cpio -idm) >/dev/null 2>&1 || true
-  rm -rf "${RDXZ_PATH}/opt/arpl"
-  cp -rf "/opt/arpl" "${RDXZ_PATH}/opt"
-  (cd "${RDXZ_PATH}"; find . 2>/dev/null | cpio -o -H newc -R root:root | xz --check=crc32 > "/mnt/p3/initrd-arpl") || true
-  rm -rf "${RDXZ_PATH}"
-  dialog --backtitle "`backtitle`" --colors --aspect 18 \
-    --msgbox "Save to Disk is complete." 0 0
-}
+# Check for Controller
+SATACONTROLLER=`lspci -nnk | grep -ie "\[0106\]" | wc -l`
+SASCONTROLLER=`lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l`
