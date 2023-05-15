@@ -10,7 +10,7 @@ RAMTOTAL=0
 while read -r line; do
   RAMSIZE=$line
   RAMTOTAL=$((RAMTOTAL +RAMSIZE))
-done <<< "`dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i [1-9]`"
+done <<< `dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i [1-9]`
 RAMTOTAL=$((RAMTOTAL *1024))
 
 # Check for Hypervisor
@@ -21,7 +21,3 @@ if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
 else
   MACHINE="NATIVE"
 fi
-
-# Check for Controller
-SATACONTROLLER=`lspci -nnk | grep -ie "\[0106\]" | wc -l`
-SASCONTROLLER=`lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l`
