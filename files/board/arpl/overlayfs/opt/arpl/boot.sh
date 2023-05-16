@@ -142,8 +142,8 @@ while true; do
     echo -e ": \033[1;31m\nERROR\033[0m"
     break
   fi
-  sleep 3
-  COUNT=$((${COUNT}+3))
+  sleep 5
+  COUNT=$((${COUNT}+5))
 done
 
 # Make Directboot persistent if DSM is installed
