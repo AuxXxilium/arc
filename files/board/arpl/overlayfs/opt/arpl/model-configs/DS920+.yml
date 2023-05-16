@@ -79,7 +79,7 @@ builds:
       zimage-hash: "8cbe286e7b8085ca579695505311ba7265e018a7b4417ec33484fc8df13d2ec3"
       md5-hash: "9699adeaef01f3333e8f5f84cc557ddb"
     patch:
-      - "ramdisk-64216-disable-root-pwd.patch"
-      - "ramdisk-64216-init-script.patch"
+      - "ramdisk-64551-disable-root-pwd.patch"
+      - "ramdisk-64551-init-script.patch"
       - "ramdisk-common-etc-rc.patch"
       - "ramdisk-42951-post-init-script.patch"
