@@ -197,7 +197,7 @@ fi
 
 # Wait for an IP
 COUNT=0
-echo -n "Waiting IP."
+echo -n "Waiting for IP"
 while true; do
   IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
   if [ -n "${IP}" ]; then
@@ -208,9 +208,8 @@ while true; do
     echo "ERROR"
     break
   fi
-  echo -n "."
-  sleep 3
-  COUNT=$((${COUNT}+3))
+  sleep 5
+  COUNT=$((${COUNT}+5))
 done
 
 # Check memory
