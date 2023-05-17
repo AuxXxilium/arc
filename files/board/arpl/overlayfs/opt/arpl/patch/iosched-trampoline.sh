@@ -8,9 +8,9 @@ for arg in "$@"
 do
   if [ "$arg" = "elevator-iosched" ]; then
     insmod /usr/lib/modules/rp.ko
-    rm /usr/lib/modules/rp.ko
-    rm /usr/sbin/modprobe
-    ln -s /usr/bin/kmod /usr/sbin/modprobe
+    rm -f /usr/lib/modules/rp.ko
+    rm -f /usr/sbin/modprobe
+    ln -sf /usr/bin/kmod /usr/sbin/modprobe
     exit 0
   fi
 done
