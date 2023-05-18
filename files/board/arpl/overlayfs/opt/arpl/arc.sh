@@ -99,8 +99,8 @@ function arcMenu() {
     while read M; do
       M="`basename ${M}`"
       M="${M::-4}"
-      MID=`readModelKey "${M}" "id"`
-      PLATFORM=`readModelKey "${M}" "platform"`
+      MID="`readModelKey "${M}" "id"`"
+      PLATFORM="`readModelKey "${M}" "platform"`"
       DT="`readModelKey "${M}" "dt"`"
       BETA="`readModelKey "${M}" "beta"`"
       [ "${BETA}" = "true" -a ${FLGBETA} -eq 0 ] && continue
@@ -113,14 +113,14 @@ function arcMenu() {
       # Check id model is compatible with CPU
       COMPATIBLE=1
       if [ ${RESTRICT} -eq 1 ]; then
-        for F in `readModelArray "${M}" "flags"`; do
+        for F in "`readModelArray "${M}" "flags"`"; do
           if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
             COMPATIBLE=0
             FLGNEX=1
             break
           fi
         done
-        for F in `readModelArray "${M}" "dt"`; do
+        for F in "`readModelArray "${M}" "dt"`"; do
           if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
             COMPATIBLE=0
             FLGNEX=1
