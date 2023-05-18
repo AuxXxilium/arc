@@ -940,6 +940,7 @@ function synoinfoMenu() {
   echo "1 \"Add/edit Synoinfo item\""     > "${TMP_PATH}/menu"
   echo "2 \"Delete Synoinfo item(s)\""    >> "${TMP_PATH}/menu"
   echo "3 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
+  echo "4 \"Mount USB as Internal\""      >> "${TMP_PATH}/menu"
   echo "0 \"Exit\""                       >> "${TMP_PATH}/menu"
 
   # menu loop
@@ -996,6 +997,20 @@ function synoinfoMenu() {
         done
         dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
+        ;;
+      4)
+        MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+        PLATFORM=`readModelKey "${MODEL}" "platform"`
+        if [ "${PLATFORM}" = "broadwellnk" ]; then
+          writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.usbportcfg" "0xff0000" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.internalportcfg" "0xffffff" "${USER_CONFIG_FILE}"
+          dialog --backtitle "`backtitle`" --title "Mount USB as Internal" \
+          --aspect 18 --msgbox "Mount USB as Internal - successfull!" 0 0
+        else
+          dialog --backtitle "`backtitle`" --title "Mount USB as Internal" \
+          --aspect 18 --msgbox "You need to select a broadwellnk model!" 0 0
+        fi
         ;;
       0) return ;;
     esac
