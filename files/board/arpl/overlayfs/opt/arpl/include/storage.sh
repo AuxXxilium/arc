@@ -146,6 +146,37 @@ function getmap() {
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "We don't need this." 0 0
   fi
+  # Ask for USB Storage
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  PLATFORM="`readModelKey "${MODEL}" "platform"`"
+  USBSTORAGE=`lsblk -do name,tran | awk '$2=="usb"{print $1}' | wc -w`
+  if [ "${PLATFORM}" = "broadwellnk" ] && [ "${USBSTORAGE}" -gt 0 ]; then
+    while true; do
+      dialog --clear --backtitle "`backtitle`" \
+        --menu "USB Disk found.\nMount USB Disk as Internal?" 0 0 0 \
+        1 "Yes - Mound as Internal" \
+        2 "No - Use as USB Device" \
+      2>${TMP_PATH}/resp
+      [ $? -ne 0 ] && return
+      resp=$(<${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return
+      if [ "${resp}" = "1" ]; then
+        writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.usbportcfg" "0xff0000" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.internalportcfg" "0xffffff" "${USER_CONFIG_FILE}"
+        dialog --backtitle "`backtitle`" --title "Mount USB as Internal" \
+        --aspect 18 --msgbox "Mount USB as Internal - successfull!" 0 0
+        break
+      elif [ "${resp}" = "2" ]; then
+        deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
+        dialog --backtitle "`backtitle`" --title "Mount USB as Internal" \
+        --aspect 18 --msgbox "Mount USB as Internal - skipped!" 0 0
+        break
+      fi
+    done
+  fi
 }
 
 # Check for Controller
