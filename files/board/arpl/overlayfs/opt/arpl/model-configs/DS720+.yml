@@ -1,4 +1,4 @@
-id: "FS6400"
+id: "DS720+"
 synoinfo: &synoinfo
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
@@ -9,23 +9,32 @@ synoinfo: &synoinfo
   netif_seq: "0 1 2 3 4 5 6 7"
   buzzeroffen: "0xffff"
 cmdline: &cmdline
+  intel_iommu: "igfx_off"
   synoboot2:
-  SMBusHddDynamicPower: 1
+  HddEnableDynamicPower: 1
   vender_format_version: 2
   syno_ttyS0: "serial,0x3f8"
   syno_ttyS1: "serial,0x2f8"
   elevator: elevator
-platform: "purley"
-unique: "synology_purley_fs6400"
+platform: "geminilake"
+unique: "synology_geminilake_720+"
 serial:
   prefix:
-    - "1960"
-  middle: "PSN"
-  suffix: "numeric"
+    - "2110"
+  middle: "QWR"
+  suffix: "alpha"
+arc:
+  serial: "2010QWRV05AEE"
+  mac1: "001132C4BD0E"
+  mac2: "001132C4BD0F"
+  mac3: "001132C4BD10"
+  mac4: "001132C4BD11"
+  mac5: "9009D019775A"
+  mac6: "9009D01978A5"
 dom: 2
 dt: true
-disks: 24
-beta: true
+disks: 4
+beta: false
 builds:
   42962:
     ver: "7.1.1"
@@ -39,11 +48,11 @@ builds:
       rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.json"
       <<: *synoinfo
     pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_FS6400_42962.pat"
-      hash: "5bf4334781dc21270f2f7bde9e781d4fda53656222240db36187089ff018e7a5"
-      ramdisk-hash: "7743e4d2c3634616a2dc2ae74b81bacbe9439bea9bebc3309b469a842bd7367f"
-      zimage-hash: "3aaa1c27607f295f1fa8778f3e1a020c3a3db6629ea3b6f821286a8da90f6800"
-      md5-hash: "651be491d10a47ecc534295d84341c03"
+      url: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_DS720%2B_42962.pat"
+      hash: "914641e4885d0a465a46c35e3c271ca5e8cf7f1564591110c762c3ab11d0f202"
+      ramdisk-hash: "16a7dc468ff45fa7ee52a48684484ba5b8f1b3607fa3e922b226cc162c33c74d"
+      zimage-hash: "2de065851b8d3a222db1feea696aab12ded7b582876b22ff6e847cd6f2e62ecf"
+      md5-hash: "9ecc37490cb6e4de3af666db5766cb21"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"
@@ -62,13 +71,13 @@ builds:
       rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.json"
       <<: *synoinfo
     pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.2/64551/DSM_FS6400_64551.pat"
-      hash: "359c43ddfd567cbb7df07481386d69a62e8361ad64f10e9fe45e87c2efb5de26"
-      ramdisk-hash: "6a94cded324fda9f13a3cf2093ec34656651de77d1c963f6858545a3cb49643e"
-      zimage-hash: "6619a11c3d5e0ea7d494616814e7ef1b73253245fb72cec21ee71fbc801275e4"
-      md5-hash: "aee2aefb77fce45cc3f6611aa9aaf506"
+      url: "https://global.synologydownload.com/download/DSM/release/7.2/64551/DSM_DS720%2B_64551.pat"
+      hash: "65750f46ebb3e829e1d9f27cfcc7f3508ae7efb9c35f8f123533d907bbaa5f8f"
+      ramdisk-hash: "a2bfd04d1dec465c83eaf239c3469ab7ea1b9d490d10a7ae8269045dd9b2508a"
+      zimage-hash: "8cbe286e7b8085ca579695505311ba7265e018a7b4417ec33484fc8df13d2ec3"
+      md5-hash: "31a916cffeca37785671aaeac58389af"
     patch:
-      - "ramdisk-64551-disable-root-pwd.patch"
-      - "ramdisk-64551-init-script.patch"
+      - "ramdisk-64216-disable-root-pwd.patch"
+      - "ramdisk-64216-init-script.patch"
       - "ramdisk-common-etc-rc.patch"
       - "ramdisk-42951-post-init-script.patch"
