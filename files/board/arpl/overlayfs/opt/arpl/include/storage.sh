@@ -79,7 +79,7 @@ function getmap() {
   fi
   # Ask for Portmap
   while true; do
-    dialog --clear --backtitle "`backtitle`" \
+    dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --menu "SataPortMap or SataRemap?\n* recommended Option" 0 0 0 \
       1 "Use SataPortMap (active Ports) ${REMAP1}" \
       2 "Use SataPortMap (max Ports) ${REMAP2}" \
@@ -102,8 +102,8 @@ function getmap() {
     elif [ "${resp}" = "3" ]; then
       if [ "${SASCONTROLLER}" -gt 0 ]; then
         dialog --backtitle "`backtitle`" --title "Arc Disks" \
-          --msgbox "SAS Controller detected. Switch to SataPortMap (active Ports)!" 0 0
-        writeConfigKey "arc.remap" "1" "${USER_CONFIG_FILE}"
+          --msgbox "SAS Controller detected. Switch to SataPortMap (max Ports)!" 0 0
+        writeConfigKey "arc.remap" "2" "${USER_CONFIG_FILE}"
       else
         dialog --backtitle "`backtitle`" --title "Arc Disks" \
           --infobox "Use SataRemap! (remove blank Drives)" 0 0
@@ -147,14 +147,13 @@ function getmap() {
       --msgbox "We don't need this." 0 0
   fi
   # Ask for USB Storage
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   USBSTORAGE=`lsblk -do name,tran | awk '$2=="usb"{print $1}' | wc -w`
   if [ "${PLATFORM}" = "broadwellnk" ] && [ "${USBSTORAGE}" -gt 0 ]; then
     while true; do
-      dialog --clear --backtitle "`backtitle`" \
+      dialog --backtitle "`backtitle`" --title "Arc Disks" \
         --menu "USB Disk found.\nMount USB Disk as Internal?" 0 0 0 \
-        1 "Yes - Mound as Internal" \
+        1 "Yes - Mount as Internal" \
         2 "No - Use as USB Device" \
       2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
