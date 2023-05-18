@@ -6,7 +6,6 @@ synoinfo: &synoinfo
   buzzeroffen: "0xffff"
   support_syno_hybrid_raid:
   supportraidgroup:
-  support_m2_pool: "yes"
 cmdline: &cmdline
   SMBusHddDynamicPower: 1
   vender_format_version: 2

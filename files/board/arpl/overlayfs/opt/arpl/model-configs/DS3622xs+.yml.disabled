@@ -8,7 +8,6 @@ synoinfo: &synoinfo
   support_led_brightness_adjustment: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
-  support_m2_pool: "yes"
 cmdline: &cmdline
   syno_hdd_powerup_seq: 0
   HddHotplug: 0

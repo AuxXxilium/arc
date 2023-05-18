@@ -6,8 +6,6 @@ synoinfo: &synoinfo
   supportssdcache: "no"
   esataportcfg: "0x00"
   usbportcfg: "0x8700"
-  #rss_server: "https://raw.githubusercontent.com/wjz304/arpl-i18n/main/rss.xml"
-  #rss_server_ssl: "https://raw.githubusercontent.com/wjz304/arpl-i18n/main/rss.xml"
   support_syno_hybrid_raid:
   supportraidgroup:
 cmdline: &cmdline
@@ -38,6 +36,9 @@ builds:
     cmdline:
       <<: *cmdline
     synoinfo:
+      rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.xml"
+      rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.xml"
+      rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.json"
       <<: *synoinfo
     pat:
       url: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-5/DSM_RS3618xs_42962.pat"
@@ -59,6 +60,9 @@ builds:
     cmdline:
       <<: *cmdline
     synoinfo:
+      rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.xml"
+      rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.xml"
+      rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.json"
       <<: *synoinfo
     pat:
       url: "https://global.synologydownload.com/download/DSM/release/7.2/64551/DSM_RS3618xs_64551.pat"
