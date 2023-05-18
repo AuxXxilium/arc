@@ -1858,11 +1858,6 @@ if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${BUILD}" -a loaderIsConfigured ]; the
   make
   boot && exit 0 || sleep 3
 fi
-if ! tty | grep -q "/dev/pts"; then
-  dialog --backtitle "`backtitle`" --colors --aspect 18 \
-    --msgbox "\Z1Notice:\Zn You can also use \Z1http://${IP}:7681\Zn to access via web." 5 70
-  return
-fi 
 # Main loop
 NEXT="1"
 while true; do
