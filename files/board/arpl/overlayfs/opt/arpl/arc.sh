@@ -3,6 +3,7 @@
 . /opt/arpl/include/functions.sh
 . /opt/arpl/include/addons.sh
 . /opt/arpl/include/modules.sh
+. /opt/arpl/include/checkmodules.sh
 . /opt/arpl/include/misc.sh
 . /opt/arpl/include/storage.sh
 . /opt/arpl/include/network.sh
@@ -413,7 +414,7 @@ function extractDsmFiles() {
 
     speed_a=`ping -c 1 -W 5 global.synologydownload.com | awk '/time=/ {print $7}' | cut -d '=' -f 2`
     speed_b=`ping -c 1 -W 5 global.download.synology.com | awk '/time=/ {print $7}' | cut -d '=' -f 2`
-    fastest="`echo -e "global.synologydownload.com ${speed_a}\nglobal.download.synology.com ${speed_b}" | sort -k2rn | head -1 | awk '{print $1}'`"
+    fastest="`echo -e "global.synologydownload.com ${speed_a:-999}\nglobal.download.synology.com ${speed_b:-999}" | sort -k2rn | head -1 | awk '{print $1}'`"
 
     mirror="`echo ${PAT_URL} | sed 's|^http[s]*://\([^/]*\).*|\1|'`"
     if [ "${mirror}" != "${fastest}" ]; then
@@ -714,7 +715,8 @@ function modulesMenu() {
       2 "Select all Modules" \
       3 "Deselect all Modules" \
       4 "Choose Modules to include" \
-      5 "Add external module" \
+      5 "Automated Module selection" \
+      6 "Add external module" \
       0 "Exit" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break
@@ -774,6 +776,11 @@ function modulesMenu() {
         BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         ;;
       5)
+        dialog --backtitle "`backtitle`" --title "Modules" \
+           --infobox "Selecting loaded modules" 0 0
+        getModules
+        ;;
+      6)
         MSG=""
         MSG+="This function is experimental and dangerous. If you don't know much, please exit.\n"
         MSG+="The imported .ko of this function will be implanted into the corresponding arch's modules package, which will affect all models of the arch.\n"
@@ -1783,7 +1790,7 @@ function saveMenu() {
   mkdir -p "${RDXZ_PATH}"
   (cd "${RDXZ_PATH}"; xz -dc < "/mnt/p3/initrd-arpl" | cpio -idm) >/dev/null 2>&1 || true
   rm -rf "${RDXZ_PATH}/opt/arpl"
-  cp -rf "/opt/arpl" "${RDXZ_PATH}/opt"
+  cp -rf "/opt" "${RDXZ_PATH}"
   (cd "${RDXZ_PATH}"; find . 2>/dev/null | cpio -o -H newc -R root:root | xz --check=crc32 > "/mnt/p3/initrd-arpl") || true
   rm -rf "${RDXZ_PATH}"
   dialog --backtitle "`backtitle`" --colors --aspect 18 \

@@ -30,3 +30,5 @@ MODULES_PATH="${CACHE_PATH}/modules"
 MODEL_CONFIG_PATH="/opt/arpl/model-configs"
 INCLUDE_PATH="/opt/arpl/include"
 PATCH_PATH="/opt/arpl/patch"
+
+MODULE_ALIAS_FILE="/tmp/modules.alias.json"
