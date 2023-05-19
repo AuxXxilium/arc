@@ -65,7 +65,8 @@ echo -e "Model: \033[1;36m${MODEL}\033[0m"
 echo -e "Build: \033[1;36m${BUILD}\033[0m"
 
 if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "`readConfigKey "builds.${BUILD}" "${MODEL_CONFIG_PATH}/${MODEL}.yml"`" ]; then
-  echo -e "\033[1;33m*** The current version does not support booting for ${MODEL} and ${BUILD}, please rebuild. ***\033[0m"
+  echo -e "\033[1;33m*** The current version does not support booting for ${MODEL} and ${BUILD}, please rebuild loader. ***\033[0m"
+  sleep 5
   exit 1
 fi
 
@@ -106,8 +107,11 @@ NETIF_NUM=${CMDLINE["netif_num"]}
 NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
 [ ${NETNUM} -gt 8 ] && NETNUM=8 && echo -e "\033[1;33m*** WARNING: Only 8 Ethernet ports are supported by Redpill***\033[0m"
 if [ ${NETIF_NUM} -ne ${NETNUM} ]; then
-  echo -e "\033[1;33m*** netif_num is not equal to macX amount, set netif_num to ${NETNUM} ***\033[0m"
-  CMDLINE["netif_num"]=${NETNUM}
+  echo -e "\033[1;33m*** netif_num is not equal to macX amount, please rebuild loader. ***\033[0m"
+  deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
+  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+  sleep 5
+  exit 1
 fi
 
 # Prepare command line
