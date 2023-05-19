@@ -1598,6 +1598,7 @@ function sysinfo() {
   CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
   BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
   ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
+  USBMOUNT="`readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}"`"
   LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
   ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
   MODULESINFO=`kmod list | awk '{print$1}' | awk 'NR>1'`
@@ -1649,6 +1650,7 @@ function sysinfo() {
   elif [ "${REMAP}" == "0" ]; then
     TEXT+="\nPortMap: \Zb"Set by User"\Zn"
   fi
+  TEXT+="\nUSB Mount: \Zb"${USBMOUNT}"\Zn"
   TEXT+="\nAddons loaded: \Zb"${ADDONSINFO}"\Zn"
   TEXT+="\nModules loaded: \Zb"${MODULESINFO}"\Zn\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS

@@ -169,6 +169,7 @@ function getmap() {
         writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.usbportcfg" "0xff0000" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.internalportcfg" "0xffffff" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.usbmount" "yes" "${USER_CONFIG_FILE}"
         dialog --backtitle "`backtitle`" --title "Mount USB as Internal" \
         --aspect 18 --msgbox "Mount USB as Internal - successfull!" 0 0
         break
@@ -176,6 +177,7 @@ function getmap() {
         deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
         deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
         deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.usbmount" "no" "${USER_CONFIG_FILE}"
         dialog --backtitle "`backtitle`" --title "Mount USB as Internal" \
         --aspect 18 --msgbox "Mount USB as Internal - skipped!" 0 0
         break
@@ -186,4 +188,6 @@ function getmap() {
 
 # Check for Controller
 SATACONTROLLER=`lspci -nnk | grep -ie "\[0106\]" | wc -l`
+writeConfigKey "arc.satacontroller" "${SATACONTROLLER}" "${USER_CONFIG_FILE}"
 SASCONTROLLER=`lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l`
+writeConfigKey "arc.sascontroller" "${SASCONTROLLER}" "${USER_CONFIG_FILE}
