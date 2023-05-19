@@ -777,8 +777,11 @@ function modulesMenu() {
         ;;
       5)
         dialog --backtitle "`backtitle`" --title "Modules" \
-           --infobox "Selecting loaded modules" 0 0
+           --infobox "Automated selection" 0 0
         getModules
+        LOADED="`readConfigMap "modules" "${USER_CONFIG_FILE}" | tr -d ':'`"
+        dialog --backtitle "`backtitle`" --title "Modules" \
+           --msgbox "Modules:\n${LOADED}" 0 0
         ;;
       6)
         MSG=""
