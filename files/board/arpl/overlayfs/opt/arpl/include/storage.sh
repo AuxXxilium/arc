@@ -190,4 +190,4 @@ function getmap() {
 SATACONTROLLER=`lspci -nnk | grep -ie "\[0106\]" | wc -l`
 writeConfigKey "arc.satacontroller" "${SATACONTROLLER}" "${USER_CONFIG_FILE}"
 SASCONTROLLER=`lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l`
-writeConfigKey "arc.sascontroller" "${SASCONTROLLER}" "${USER_CONFIG_FILE}
+writeConfigKey "arc.sascontroller" "${SASCONTROLLER}" "${USER_CONFIG_FILE}"
