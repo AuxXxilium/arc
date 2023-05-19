@@ -5,7 +5,7 @@ function getnet() {
   dialog --backtitle "`backtitle`" \
     --title "Arc Network" --msgbox " ${NETNUM} Adapter dedected" 0 0
   writeConfigKey "cmdline.netif_num"    "${NETNUM}"  "${USER_CONFIG_FILE}"
-  if [ "${ARCPATCH}" = "1" ]; then 
+  if [ "${ARCPATCH}" = "true" ]; then 
     # Install with Arc Patch - Check for model config and set custom Mac Address
     MAC1="`readModelKey "${MODEL}" "arc.mac1"`"
     MAC2="`readModelKey "${MODEL}" "arc.mac2"`"
@@ -39,7 +39,7 @@ function getnet() {
     dialog --backtitle "`backtitle`" \
       --title "Arc Network" --infobox "Set MAC for first NIC" 0 0
     sleep 2
-  elif [ "${ARCPATCH}" = "0" ]; then
+  elif [ "${ARCPATCH}" = "false" ]; then
     # Install without Arc Patch - Set Hardware Mac Address
     MAC1="`readConfigKey "device.mac1" "${USER_CONFIG_FILE}"`"
     writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"

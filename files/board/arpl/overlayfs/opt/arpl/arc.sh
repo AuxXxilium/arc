@@ -206,21 +206,19 @@ function arcbuild() {
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
     if [ "${resp}" = "1" ]; then
-      ARCPATCH=1
       SN="`readModelKey "${MODEL}" "arc.serial"`"
       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
       writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
       writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.patch" "yes" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
       dialog --backtitle "`backtitle`" --title "Arc Config" \
             --infobox "Installing with Arc Patch!" 0 0
       break
     elif [ "${resp}" = "2" ]; then
-      ARCPATCH=0
       # Generate random serial
       SN="`generateSerial "${MODEL}"`"
       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.patch" "no" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       dialog --backtitle "`backtitle`" --title "Arc Config" \
       --infobox "Installing without Arc Patch!" 0 0
       break
