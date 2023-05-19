@@ -5,6 +5,7 @@ function getnet() {
   dialog --backtitle "`backtitle`" \
     --title "Arc Network" --msgbox " ${NETNUM} Adapter dedected" 0 0
   writeConfigKey "cmdline.netif_num"    "${NETNUM}"  "${USER_CONFIG_FILE}"
+  ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
   if [ "${ARCPATCH}" = "true" ]; then 
     # Install with Arc Patch - Check for model config and set custom Mac Address
     MAC1="`readModelKey "${MODEL}" "arc.mac1"`"

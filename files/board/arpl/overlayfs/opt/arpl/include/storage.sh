@@ -79,7 +79,7 @@ function getmap() {
   fi
   if [ "$SASCONTROLLER" -gt 0 ]; then
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
-      --infobox "SAS Controller dedected!\nUse SataPortMap (active Ports)!" 0 0
+      --msgbox "SAS Controller dedected!\nUse SataPortMap (active Ports)!" 0 0
     writeConfigKey "arc.remap" "1" "${USER_CONFIG_FILE}"
   else
     # Ask for Portmap

@@ -30,6 +30,7 @@ BACKUPBOOT="`readConfigKey "arc.backupboot" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
 BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -40,7 +41,7 @@ function backtitle() {
   else
     BACKTITLE+=" (no model)"
   fi
-    BACKTITLE+=" |"
+  BACKTITLE+=" |"
   if [ -n "${BUILD}" ]; then
     [ "${BUILD}" = "42962" ] && VER="7.1.1"
     [ "${BUILD}" = "64551" ] && VER="7.2 RC"
@@ -48,32 +49,38 @@ function backtitle() {
   else
     BACKTITLE+=" (no build)"
   fi
-    BACKTITLE+=" |"
+  BACKTITLE+=" |"
   if [ -n "${SN}" ]; then
     BACKTITLE+=" ${SN}"
   else
     BACKTITLE+=" (no SN)"
   fi
-    BACKTITLE+=" |"
+  BACKTITLE+=" |"
   if [ -n "${IP}" ]; then
     BACKTITLE+=" ${IP}"
   else
     BACKTITLE+=" (no IP)"
   fi
-    BACKTITLE+=" |"
+  BACKTITLE+=" |"
+  if [ "${ARCPATCH}" == "true" ]; then
+    BACKTITLE+=" Patch: Y"
+  else
+    BACKTITLE+=" Patch: N"
+  fi
+  BACKTITLE+=" |"
   if [ -n "${CONFDONE}" ]; then
     BACKTITLE+=" Config: Y"
   else
     BACKTITLE+=" Config: N"
   fi
-    BACKTITLE+=" |"
+  BACKTITLE+=" |"
   if [ -n "${BUILDDONE}" ]; then
     BACKTITLE+=" Build: Y"
   else
     BACKTITLE+=" Build: N"
   fi
-    BACKTITLE+=" |"
-    BACKTITLE+=" ${MACHINE}"
+  BACKTITLE+=" |"
+  BACKTITLE+=" ${MACHINE}"
   echo ${BACKTITLE}
 }
 
@@ -224,6 +231,7 @@ function arcbuild() {
       break
     fi
   done
+  ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
   # Delete synoinfo and reload synoinfo from model and build
@@ -1569,7 +1577,6 @@ function storageMenu() {
 ###############################################################################
 # Show Storagemenu to user
 function networkMenu() {
-  ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
   # Get Network Config for Loader
   getnet
   deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
