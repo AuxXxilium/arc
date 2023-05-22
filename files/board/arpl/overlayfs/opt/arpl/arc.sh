@@ -44,7 +44,7 @@ function backtitle() {
   BACKTITLE+=" |"
   if [ -n "${BUILD}" ]; then
     [ "${BUILD}" = "42962" ] && VER="7.1.1"
-    [ "${BUILD}" = "64551" ] && VER="7.2 RC"
+    [ "${BUILD}" = "64561" ] && VER="7.2.0"
     BACKTITLE+=" ${VER}"
   else
     BACKTITLE+=" (no build)"
