@@ -6,12 +6,12 @@
     <pubDate>Sat Aug 6 0:11:41 CST 2022</pubDate>
     <copyright>Copyright 2022 Synology Inc</copyright>
     <item>
-      <title>DSM 7.2-64551</title>
+      <title>DSM 7.2-64561</title>
       <MajorVer>7</MajorVer>
       <MinorVer>2</MinorVer>
       <BuildPhase>0</BuildPhase>
-      <BuildNum>64551</BuildNum>
-      <BuildDate>2023/03/08</BuildDate>
+      <BuildNum>64561</BuildNum>
+      <BuildDate>2023/05/19</BuildDate>
       <ReqMajorVer>7</ReqMajorVer>
       <ReqMinorVer>0</ReqMinorVer>
       <ReqBuildPhase>0</ReqBuildPhase>
@@ -22,9 +22,9 @@
       <title>DSM 7.1.1-42962</title>
       <MajorVer>7</MajorVer>
       <MinorVer>1</MinorVer>
-      <BuildPhase>1</BuildPhase>
+      <BuildPhase>0</BuildPhase>
       <BuildNum>42962</BuildNum>
-      <BuildDate>2022/08/01</BuildDate>
+      <BuildDate>2023/04/08</BuildDate>
       <ReqMajorVer>7</ReqMajorVer>
       <ReqMinorVer>0</ReqMinorVer>
       <ReqBuildPhase>0</ReqBuildPhase>

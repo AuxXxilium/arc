@@ -183,18 +183,18 @@ function arcbuild() {
   while true; do
     dialog --clear --backtitle "`backtitle`" \
       --menu "Choose a DSM Version" 0 0 0 \
-      1 "DSM 7.1.1" \
-      2 "DSM 7.2 RC" \
+      1 "DSM 7.2.0" \
+      2 "DSM 7.1.1" \
     2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
     if [ "${resp}" = "1" ]; then
-      BUILD="42962"
+      BUILD="64561"
       writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
       break
     elif [ "${resp}" = "2" ]; then
-      BUILD="64551"
+      BUILD="42962"
       writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
       break
     fi

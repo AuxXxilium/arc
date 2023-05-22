@@ -58,8 +58,8 @@ builds:
       - "ramdisk-42951-post-init-script.patch"
       - "ramdisk-42661-disable-disabled-ports.patch"
 
-  64551:
-    ver: "7.2"
+  64561:
+    ver: "7.2.0"
     kver: "4.4.302"
     rd-compressed: false
     cmdline:
@@ -70,11 +70,11 @@ builds:
       rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.json"
       <<: *synoinfo
     pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.2/64551/DSM_DS3622xs%2B_64551.pat"
-      hash: "c20985c298af3906f8199cdb4d8b66a38f80c335496262956a774f81de50fb0a"
-      ramdisk-hash: "1f5af5cd6768b3bb0c0d75df9b6feb672bf5247e81af7b440551d2f9323f241b"
-      zimage-hash: "359d23626a6d976851085d810b642549fc621cf869a8882590c04a24aca9b9fd"
-      md5-hash: "403a3020614752615c62f251cf23f94e"
+      url: "https://global.synologydownload.com/download/DSM/release/7.2/64561/DSM_DS3622xs%2B_64561.pat"
+      hash: "b96f85f058a8f5144f73cbfabf89982868cbfc625d05e65e65d230e2b7f09c47"
+      ramdisk-hash: "049df1a2497b67433c885cf1dd329339367f4d6cc59ee6ae640f2d51460b5168"
+      zimage-hash: "6f83d644969cb8716baeadd4b1ad351aa93e61d0e5df03637863ad541c2d1442"
+      md5-hash: "78a0f066e47066c6e7ac18d3aded40b2"
     patch:
       - "ramdisk-64551-disable-root-pwd.patch"
       - "ramdisk-64551-init-script.patch"
