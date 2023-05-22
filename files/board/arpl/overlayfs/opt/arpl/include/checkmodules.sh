@@ -18,6 +18,21 @@ function getModules() {
     rm -rf "${TMP_PATH}/modules"
 }
 
+function getModulesInfo() {
+    unset USERMODULES
+    declare -A USERMODULES
+    writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+    # Unzip modules for temporary folder
+    rm -rf "${TMP_PATH}/modules"
+    mkdir -p "${TMP_PATH}/modules"
+    tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
+    # Get list of all modules
+    rm -f "$MODULE_ALIAS_FILE"
+    exportPCIModules >"$MODULE_ALIAS_FILE"
+    listPCIModulesInfo
+    rm -rf "${TMP_PATH}/modules"
+}
+
 function exportPCIModules() {
   echo "{"
   echo "\"modules\" : ["
@@ -70,6 +85,25 @@ function listPCIModules() {
     usbid="${vendor}d0000${device}"
     ID=$(jq -e -r ".modules[] | select(.alias | contains(\"${usbid}\")?) | .name " "$MODULE_ALIAS_FILE")
     [ -n "${ID}" ] && writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+  done
+}
+
+function listPCIModulesInfo() {
+  rm -f "${TMP_PATH}/modulesinfo"
+  touch "${TMP_PATH}/modulesinfo"
+  lspci -n | while read line; do
+    vendor="$(echo $line | awk '{print substr($3,1,4)}' | tr [:lower:] [:upper:])"
+    device="$(echo $line | awk '{print substr($3,6,8)}' | tr [:lower:] [:upper:])"
+    pciid="${vendor}d0000${device}"
+    ID=$(jq -e -r ".modules[] | select(.alias | contains(\"${pciid}\")?) | .name " "$MODULE_ALIAS_FILE")
+    [ -n "${ID}" ] && echo -e "${ID}" >> "${TMP_PATH}/modulesinfo"
+  done
+  lsusb | while read line; do
+    vendor="$(echo $line | awk '{print substr($6,1,4)}' | tr [:lower:] [:upper:])"
+    device="$(echo $line | awk '{print substr($6,6,8)}' | tr [:lower:] [:upper:])"
+    usbid="${vendor}d0000${device}"
+    ID=$(jq -e -r ".modules[] | select(.alias | contains(\"${usbid}\")?) | .name " "$MODULE_ALIAS_FILE")
+    [ -n "${ID}" ] && echo -e "${ID}" >> "${TMP_PATH}/modulesinfo"
   done
 }
 

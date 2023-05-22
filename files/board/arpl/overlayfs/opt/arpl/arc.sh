@@ -1619,11 +1619,15 @@ function sysinfo() {
   ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
   USBMOUNT="`readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}"`"
   LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
-  ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
-  MODULESINFO=`kmod list | awk '{print$1}' | awk 'NR>1'`
+  if [ -n "${CONFDONE}" ]; then
+    ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
+    getModulesInfo
+    MODULESINFO=`cat "${TMP_PATH}/modulesinfo"`
+  fi
   MODULESVERSION=`cat "${MODULES_PATH}/VERSION"`
   ADDONSVERSION=`cat "${ADDONS_PATH}/VERSION"`
   LKMVERSION=`cat "${LKM_PATH}/VERSION"`
+  MODULESINFO="`readConfigMap "modules" "${USER_CONFIG_FILE}" | tr -d ':'`"
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4System:\Zn"
