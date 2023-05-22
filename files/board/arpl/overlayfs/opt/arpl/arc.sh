@@ -1606,6 +1606,9 @@ function sysinfo() {
   CPUINFO=`awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//'`
   VENDOR=`dmidecode -s system-product-name`
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  PLATFORM="`readModelKey "${MODEL}" "platform"`"
+  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   IPLIST=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
   REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
@@ -1627,7 +1630,6 @@ function sysinfo() {
   MODULESVERSION=`cat "${MODULES_PATH}/VERSION"`
   ADDONSVERSION=`cat "${ADDONS_PATH}/VERSION"`
   LKMVERSION=`cat "${LKM_PATH}/VERSION"`
-  MODULESINFO="`readConfigMap "modules" "${USER_CONFIG_FILE}" | tr -d ':'`"
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4System:\Zn"
@@ -1642,7 +1644,7 @@ function sysinfo() {
   TEXT+="\n\Z4Config:\Zn"
   TEXT+="\nArc Version: \Zb"${ARPL_VERSION}"\Zn"
   TEXT+="\nSubversion: \ZbModules "${MODULESVERSION}"\Zn | \ZbAddons "${ADDONSVERSION}"\Zn | \ZbLKM "${LKMVERSION}"\Zn"
-  TEXT+="\nModel: \Zb"${MODEL}"\Zn"
+  TEXT+="\nModel\Build: \Zb"${MODEL}/${BUILD}"\Zn"
   if [ -n "${CONFDONE}" ]; then
     TEXT+="\nConfig: \ZbComplete\Zn"
   else
