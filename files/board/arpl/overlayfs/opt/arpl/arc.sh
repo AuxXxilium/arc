@@ -81,6 +81,12 @@ function backtitle() {
   fi
   BACKTITLE+=" |"
   BACKTITLE+=" ${MACHINE}"
+  BACKTITLE+=" |"
+  if [ -n "${EFI}" ]; then
+    BACKTITLE+=" EFI: Y"
+  else
+    BACKTITLE+=" EFI: N"
+  fi
   echo ${BACKTITLE}
 }
 
@@ -213,13 +219,19 @@ function arcbuild() {
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
     if [ "${resp}" = "1" ]; then
-      SN="`readModelKey "${MODEL}" "arc.serial"`"
-      writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-      writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-      dialog --backtitle "`backtitle`" --title "Arc Config" \
-            --infobox "Installing with Arc Patch!" 0 0
+      if [ "${EFI}" -eq 1 ]; then
+        SN="`readModelKey "${MODEL}" "arc.serial"`"
+        writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+        writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
+        dialog --backtitle "`backtitle`" --title "Arc Config" \
+              --msgbox "Installing with Arc Patch\nSuccessfull!" 0 0
+      else
+        dialog --backtitle "`backtitle`" --title "Arc Config" \
+              --msgbox "Installing with Arc Patch\nFailed! Please select EFI as Bootmode.\nOtherwise Arc Patch will not work!" 0 0
+        return 1
+      fi
       break
     elif [ "${resp}" = "2" ]; then
       # Generate random serial
@@ -227,7 +239,7 @@ function arcbuild() {
       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       dialog --backtitle "`backtitle`" --title "Arc Config" \
-      --infobox "Installing without Arc Patch!" 0 0
+      --msgbox "Installing without Arc Patch!" 0 0
       break
     fi
   done
@@ -1604,6 +1616,11 @@ function sysinfo() {
   rm -f ${SYSINFO_PATH}
   # Checks for Systeminfo Menu
   CPUINFO=`awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//'`
+  if [ -n "${EFI}" ]; then
+    BOOTSYS="EFI"
+  else
+    BOOTSYS="Legacy"
+  fi
   VENDOR=`dmidecode -s system-product-name`
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
@@ -1633,7 +1650,7 @@ function sysinfo() {
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4System:\Zn"
-  TEXT+="\nTyp: \Zb"${MACHINE}"\Zn"
+  TEXT+="\nTyp | Boot: \Zb"${MACHINE}" | "${BOOTSYS}"\Zn"
   if [ "$MACHINE" = "VIRTUAL" ]; then
   TEXT+="\nHypervisor: \Zb"${HYPERVISOR}"\Zn"
   fi
@@ -1644,7 +1661,7 @@ function sysinfo() {
   TEXT+="\n\Z4Config:\Zn"
   TEXT+="\nArc Version: \Zb"${ARPL_VERSION}"\Zn"
   TEXT+="\nSubversion: \ZbModules "${MODULESVERSION}"\Zn | \ZbAddons "${ADDONSVERSION}"\Zn | \ZbLKM "${LKMVERSION}"\Zn"
-  TEXT+="\nModel\Build: \Zb"${MODEL}/${BUILD}"\Zn"
+  TEXT+="\nModel | Build: \Zb"${MODEL}" | "${BUILD}"\Zn"
   if [ -n "${CONFDONE}" ]; then
     TEXT+="\nConfig: \ZbComplete\Zn"
   else

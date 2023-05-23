@@ -21,3 +21,6 @@ if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
 else
   MACHINE="NATIVE"
 fi
+
+# Check if machine has EFI
+[ -d /sys/firmware/efi ] && EFI=1
