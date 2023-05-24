@@ -59,15 +59,15 @@ declare -A USERMODULES
 
 # Read synoinfo and addons from config
 while IFS=': ' read KEY VALUE; do
-  [ -n "${KEY}" ] && SYNOINFO[${KEY}]="${VALUE}"
+  [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
 done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 while IFS=': ' read KEY VALUE; do
-  [ -n "${KEY}" ] && ADDONS[${KEY}]="${VALUE}"
+  [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
 done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
 # Read modules from user config
 while IFS=': ' read KEY VALUE; do
-  [ -n "${KEY}" ] && USERMODULES[${KEY}]="${VALUE}"
+  [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
 done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 # Patches
