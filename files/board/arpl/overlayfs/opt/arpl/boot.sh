@@ -93,7 +93,7 @@ done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 # Check if machine has EFI
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
 
-LOADER_DISK=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`
+LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
 BUS=`udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2`
 if [ "${BUS}" = "ata" ]; then
   LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
@@ -103,15 +103,27 @@ if [ "${BUS}" = "ata" ]; then
 fi
 
 # Validate netif_num
-NETIF_NUM=${CMDLINE["netif_num"]}
-NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
-[ ${NETNUM} -gt 8 ] && NETNUM=8 && echo -e "\033[1;33m*** WARNING: Only 8 Ethernet ports are supported by Redpill***\033[0m"
-if [ ${NETIF_NUM} -ne ${NETNUM} ]; then
-  echo -e "\033[1;33m*** netif_num is not equal to macX amount, please rebuild loader. ***\033[0m"
-  deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
-  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-  sleep 5
-  exit 1
+MACS=()
+for N in `seq 1 8`; do  # Currently, only up to 8 are supported.  (<==> menu.sh L396, <==> lkm: MAX_NET_IFACES)
+  [ -n "${CMDLINE["mac${N}"]}" ] && MACS+=(${CMDLINE["mac${N}"]})
+done
+NETIF_NUM=${#MACS[*]}
+# set netif_num to custom mac amount, netif_num must be equal to the MACX amount, otherwise the kernel will panic.
+CMDLINE["netif_num"]=${NETIF_NUM}  # The current original CMDLINE['netif_num'] is no longer in use, Consider deleting.
+# real network cards amount
+NETRL_NUM=`ls /sys/class/net/ | grep eth | wc -l`
+if [ ${NETIF_NUM} -le ${NETRL_NUM} ]; then
+  echo -e "\033[1;33m*** `printf "Detected %s network cards, but only %s MACs were customized, the rest will use the original MACs." "${NETRL_NUM}" "${CMDLINE["netif_num"]}"` ***\033[0m"
+  ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
+  for N in `seq $(expr ${NETIF_NUM} + 1) ${NETRL_NUM}`; do 
+    MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
+    # no duplicates
+    while [[ "${MACS[*]}" =~ "$MACR" ]]; do # no duplicates
+      MACR="${MACR:0:10}`printf "%02x" $((0x${MACR:10:2} + 1))`" 
+    done
+    CMDLINE["mac${N}"]="${MACR}"
+  done
+  CMDLINE["netif_num"]=${NETRL_NUM}
 fi
 
 # Prepare command line
@@ -120,7 +132,7 @@ grep -q "force_junior" /proc/cmdline && CMDLINE_LINE+="force_junior "
 [ ${EFI} -eq 1 ] && CMDLINE_LINE+="withefi " || CMDLINE_LINE+="noefi "
 [ "${BUS}" = "ata" ] && CMDLINE_LINE+="synoboot_satadom=${DOM} dom_szmax=${SIZE} "
 CMDLINE_DIRECT="${CMDLINE_LINE}"
-CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 loglevel=15 log_buf_len=8M"
+CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 loglevel=15 log_buf_len=32M"
 for KEY in ${!CMDLINE[@]}; do
   VALUE="${CMDLINE[${KEY}]}"
   CMDLINE_LINE+=" ${KEY}"
@@ -132,23 +144,6 @@ done
 #CMDLINE_LINE=`echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g'`
 CMDLINE_DIRECT=`echo ${CMDLINE_DIRECT} | sed 's/>/\\\\>/g'`
 echo -e "Cmdline:\n\033[1;36m${CMDLINE_LINE}\033[0m"
-
-# Wait for an IP
-COUNT=0
-echo -n "IP"
-while true; do
-  IPLIST="`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`"
-  if [ -n "${IPLIST}" ]; then
-    echo -e ": \033[1;32m\n${IPLIST}\033[0m"
-    break
-  fi
-  if [ ${COUNT} -eq 30 ]; then
-    echo -e ": \033[1;31m\nERROR\033[0m"
-    break
-  fi
-  sleep 5
-  COUNT=$((${COUNT}+5))
-done
 
 # Make Directboot persistent if DSM is installed
 if [ "${DIRECTBOOT}" = "true" ]; then
@@ -172,17 +167,42 @@ elif [ "${DIRECTBOOT}" = "false" ] && [ ${GRUBCONF} -gt 0 ]; then
     writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
 fi
 
+# Wait for an IP
+ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
+echo "`printf "Detected %s network cards, Waiting IP." "${#ETHX[@]}"`"
+for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
+  COUNT=0
+  echo -en "${ETHX[${N}]}: "
+  while true; do
+    if [ -z "`ip link show ${ETHX[${N}]} | grep 'UP'`" ]; then
+      echo -en "\r${ETHX[${N}]}: "DOWN"\n"
+      break
+    fi
+    if [ ${COUNT} -eq 8 ]; then # Under normal circumstances, no errors should occur here.
+      echo -en "\r${ETHX[${N}]}: "ERROR"\n"
+      break
+    fi
+    COUNT=$((${COUNT}+1))
+    IP=`ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
+    if [ -n "${IP}" ]; then
+      echo -en "\r${ETHX[${N}]}: `printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}"`\n"
+      break
+    fi
+    echo -n "."
+    sleep 1
+  done
+done
+
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
 if [ "${BACKUPBOOT}" = "true" ]; then
   # Executes DSM kernel via KEXEC
   kexec -l "${BB_MOD_ZIMAGE_FILE}" --initrd "${BB_MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37mBooting Backup DSM...\033[0m"
-  poweroff
 elif [ "${BACKUPBOOT}" = "false" ] || [ "${BACKUPBOOT}" = "" ]; then
   # Executes DSM kernel via KEXEC
   kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37mBooting DSM...\033[0m"
-  poweroff
 fi
+poweroff
 exit 0

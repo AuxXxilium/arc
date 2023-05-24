@@ -14,7 +14,7 @@ echo -n "Patching Ramdisk"
 rm -f "${MOD_RDGZ_FILE}"
 
 # Check disk space left
-LOADER_DISK=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`
+LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
 LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
 SPACELEFT=`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}'`
 [ ${SPACELEFT} -le 268435456 ] && rm -rf "${CACHE_PATH}/dl"
@@ -59,15 +59,15 @@ declare -A USERMODULES
 
 # Read synoinfo and addons from config
 while IFS=': ' read KEY VALUE; do
-  [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
+  [ -n "${KEY}" ] && SYNOINFO[${KEY}]="${VALUE}"
 done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 while IFS=': ' read KEY VALUE; do
-  [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
+  [ -n "${KEY}" ] && ADDONS[${KEY}]="${VALUE}"
 done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
 # Read modules from user config
 while IFS=': ' read KEY VALUE; do
-  [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
+  [ -n "${KEY}" ] && USERMODULES[${KEY}]="${VALUE}"
 done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 # Patches
@@ -158,8 +158,6 @@ for ADDON in ${!ADDONS[@]}; do
   fi
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 done
-
-[ "2" = "${BUILD:0:1}" ] && sed -i 's/function //g' `find "${RAMDISK_PATH}/addons/" -type f -name "*.sh"`
 
 # Build modules dependencies
 /opt/arpl/depmod -a -b ${RAMDISK_PATH} 2>/dev/null

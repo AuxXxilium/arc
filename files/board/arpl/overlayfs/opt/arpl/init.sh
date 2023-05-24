@@ -1,33 +1,25 @@
 #!/usr/bin/env bash
 
-. /opt/arpl/include/functions.sh
-
 set -e
+
+. /opt/arpl/include/functions.sh
 
 # Wait kernel enumerate the disks
 CNT=3
 while true; do
   [ ${CNT} -eq 0 ] && break
-  LOADER_DISK=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`
+  LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
   [ -n "${LOADER_DISK}" ] && break
   CNT=$((${CNT}-1))
   sleep 1
 done
 if [ -z "${LOADER_DISK}" ]; then
-  die "Loader disk not found!"
+  die "$(TEXT "Loader disk not found!")"
 fi
-NUM_PARTITIONS=`blkid | grep "${LOADER_DISK}[0-9]\+" | cut -d: -f1 | wc -l`
+NUM_PARTITIONS=$(blkid | grep "${LOADER_DISK}[0-9]\+" | cut -d: -f1 | wc -l)
 if [ $NUM_PARTITIONS -ne 3 ]; then
-  die "Loader disk not found!"
+  die "$(TEXT "Loader disk not found!")"
 fi
-
-# Shows title
-clear
-TITLE="Arc v${ARPL_VERSION}"
-printf "\033[1;44m%*s\n" $COLUMNS ""
-printf "\033[1;44m%*s\033[A\n" $COLUMNS ""
-printf "\033[1;32m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
-printf "\033[1;44m%*s\033[0m\n" $COLUMNS ""
 
 # Check partitions and ignore errors
 fsck.vfat -aw ${LOADER_DISK}1 >/dev/null 2>&1 || true
@@ -39,9 +31,17 @@ mkdir -p ${SLPART_PATH}
 mkdir -p ${CACHE_PATH}
 mkdir -p ${DSMROOT_PATH}
 # Mount the partitions
-mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "Can't mount ${BOOTLOADER_PATH}"
-mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "Can't mount ${SLPART_PATH}"
-mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "Can't mount ${CACHE_PATH}"
+mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "`printf "$(TEXT "Can't mount %s")" "${BOOTLOADER_PATH}"`"
+mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "`printf "$(TEXT "Can't mount %s")" "${SLPART_PATH}"`"
+mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "`printf "$(TEXT "Can't mount %s")" "${CACHE_PATH}"`"
+
+# Shows title
+clear
+TITLE="Arc v${ARPL_VERSION}"
+printf "\033[1;44m%*s\n" $COLUMNS ""
+printf "\033[1;44m%*s\033[A\n" $COLUMNS ""
+printf "\033[1;32m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
+printf "\033[1;44m%*s\033[0m\n" $COLUMNS ""
 
 # Move/link SSH machine keys to/from cache volume
 [ ! -d "${CACHE_PATH}/ssh" ] && cp -R "/etc/ssh" "${CACHE_PATH}/ssh"
@@ -65,9 +65,8 @@ if [ -d "${CACHE_PATH}/patch" ]; then
   ln -s "${CACHE_PATH}/patch" "${PATCH_PATH}"
 fi
 
-# Get Number of Ethernet Ports
-NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
-[ ${NETNUM} -gt 8 ] && NETNUM=8 && echo -e "\033[1;33m*** WARNING: Only 8 Ethernet ports are supported by Redpill***\033[0m"
+# Get first MAC address
+ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
 
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
@@ -119,20 +118,20 @@ while true; do
   fi
 done
 
-# Set custom MAC if defined
-COUNT=1
-while true; do
-  MACF="`readConfigKey "cmdline.mac${COUNT}" "${USER_CONFIG_FILE}"`"
-  MACO="`readConfigKey "device.mac${COUNT}" "${USER_CONFIG_FILE}"`"
-  if [ -n "${MACF}" ] && [ "${MACF}" != "${MACO}" ]; then
-  MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-    ip link set dev eth$(expr ${COUNT} - 1) address ${MAC} >/dev/null 2>&1 && \
+for N in $(seq 1 ${#ETHX[@]}); do
+  MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
+  # Set custom MAC if defined
+  MACF="`readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}"`"
+  if [ -n "${MACF}" -a "${MACF}" != "${MACR}" ]; then
+    MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
+    echo "`printf "Setting %s MAC to %s" "${ETHX[$(expr ${N} - 1)]}" "${MAC}"`"
+    ip link set dev ${ETHX[$(expr ${N} - 1)]} address ${MAC} >/dev/null 2>&1 && \
       (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
   fi
-  if [ ${COUNT} -eq ${NETNUM} ]; then
-    break
-  fi
-  COUNT=$((${COUNT}+1))
+  # Initialize with real MAC
+  writeConfigKey "original-mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+  # Enable Wake on Lan, ignore errors
+  ethtool -s ${ETHX[$(expr ${N} - 1)]} wol g 2>/dev/null
 done
 
 # Get the VID/PID if we are in USB
@@ -179,9 +178,6 @@ if [ -f /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz ]; then
   zcat /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz | loadkeys
 fi
 
-# Enable Wake on Lan, ignore errors
-ethtool -s eth0 wol g 2>/dev/null
-
 # Decide if boot automatically
 BOOT=1
 if ! loaderIsConfigured; then
@@ -198,20 +194,28 @@ if [ ${BOOT} -eq 1 ]; then
 fi
 
 # Wait for an IP
-COUNT=0
-echo -n "Waiting for IP"
-while true; do
-  IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
-  if [ -n "${IP}" ]; then
-    echo -en "IP: ${IP}"
-    break
-  fi
-  if [ ${COUNT} -eq 30 ]; then
-    echo "ERROR"
-    break
-  fi
-  sleep 5
-  COUNT=$((${COUNT}+5))
+echo "`printf "Detected %s network cards, Waiting IP." "${#ETHX[@]}"`"
+for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
+  COUNT=0
+  echo -en "${ETHX[${N}]}: "
+  while true; do
+    if [ -z "`ip link show ${ETHX[${N}]} | grep 'UP'`" ]; then
+      echo -en "\r${ETHX[${N}]}: $(TEXT "DOWN")\n"
+      break
+    fi
+    if [ ${COUNT} -eq 30 ]; then
+      echo -en "\r${ETHX[${N}]}: $(TEXT "ERROR")\n"
+      break
+    fi
+    COUNT=$((${COUNT}+1))
+    IP=`ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
+    if [ -n "${IP}" ]; then
+      echo -en "\r${ETHX[${N}]}: `printf "Access \033[1;34mhttp://%s:7681\033[0m to configure the loader via web terminal." "${IP}"`\n"
+      break
+    fi
+    echo -n "."
+    sleep 1
+  done
 done
 
 # Check memory

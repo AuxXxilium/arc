@@ -1,4 +1,3 @@
-
 . /opt/arpl/include/consts.sh
 . /opt/arpl/include/configFile.sh
 
