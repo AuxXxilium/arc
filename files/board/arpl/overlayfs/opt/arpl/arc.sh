@@ -4,17 +4,43 @@
 . /opt/arpl/include/addons.sh
 . /opt/arpl/include/modules.sh
 . /opt/arpl/include/checkmodules.sh
-. /opt/arpl/include/misc.sh
 . /opt/arpl/include/storage.sh
 . /opt/arpl/include/network.sh
 
 # Check partition 3 space, if < 2GiB is necessary clean cache folder
 CLEARCACHE=0
-LOADER_DISK=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`
+LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
 LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
 if [ `cat /sys/block/${LOADER_DEVICE_NAME}/${LOADER_DEVICE_NAME}3/size` -lt 4194304 ]; then
   CLEARCACHE=1
 fi
+
+# Get actual IP
+IP=`ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p' | head -1`
+
+# Get Number of Ethernet Ports
+NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
+[ ${NETNUM} -gt 8 ] && NETNUM=8 && WARNON=3
+
+# Memory: Check Memory installed
+RAMTOTAL=0
+while read -r line; do
+  RAMSIZE=$line
+  RAMTOTAL=$((RAMTOTAL +RAMSIZE))
+done <<< "`dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i [1-9]`"
+RAMTOTAL=$((RAMTOTAL *1024))
+
+# Check for Hypervisor
+if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
+  MACHINE="VIRTUAL"
+  # Check for Hypervisor
+  HYPERVISOR="`lscpu | grep Hypervisor | awk '{print $3}'`"
+else
+  MACHINE="NATIVE"
+fi
+
+# Check if machine has EFI
+[ -d /sys/firmware/efi ] && EFI=1
 
 # Dirty flag
 DIRTY=0
@@ -166,19 +192,22 @@ function arcMenu() {
     resp="${1}"
   fi
   # Read model config for buildconfig
-  MODEL=${resp}
-  DT="`readModelKey "${resp}" "dt"`"
-  if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
-  # There is no Raid/SCSI Support for DT Models
-  WARNON=2
+  if [ "${MODEL}" != "${resp}" ]; then
+    MODEL=${resp}
+    DT="`readModelKey "${resp}" "dt"`"
+    if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
+      # There is no Raid/SCSI Support for DT Models
+      WARNON=2
+    fi
+    writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
+    deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
+    # Delete old files
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+    rm -f "${TMP_PATH}/patdownloadurl"
+    DIRTY=1
   fi
-  writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
-  deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
-  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
-  # Delete old files
-  rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-  DIRTY=1
   arcbuild
 }
 
@@ -246,7 +275,7 @@ function arcbuild() {
   ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
-  # Delete synoinfo and reload synoinfo from model and build
+  # Delete synoinfo and reload model/build synoinfo
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS=': ' read KEY VALUE; do
     writeConfigKey "synoinfo.${KEY}" "${VALUE}" "${USER_CONFIG_FILE}"
@@ -260,13 +289,14 @@ function arcbuild() {
       deleteConfigKey "addons.${ADDON}" "${USER_CONFIG_FILE}"
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  # Delete modules and reload all modules for platform
+  # Rebuild modules
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read ID DESC; do
     writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
   done < <(getAllModules "${PLATFORM}" "${KVER}")
   # Remove old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+  rm -f "${TMP_PATH}/patdownloadurl"
   DIRTY=1
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Model Configuration successfull!" 0 0
@@ -337,9 +367,6 @@ function arcnetdisk() {
 # Building Loader
 function make() {
   clear
-  # Read modelconfig for build
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
 
@@ -348,7 +375,7 @@ function make() {
     [ -z "${ADDON}" ] && continue
     if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
       dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-        --msgbox "Addon ${ADDON} not found!" 0 0
+        --msgbox "`printf "Addon %s not found!" "${ADDON}"`" 0 0
       return 1
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
@@ -376,6 +403,7 @@ function make() {
   rm -rf "${UNTAR_PAT_PATH}"
 
   echo "Ready!"
+  sleep 3
   DIRTY=0
   # Set DirectDSM to false
   writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
@@ -451,7 +479,7 @@ function extractDsmFiles() {
     STATUS=`curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_PATH}" --progress-bar`
     if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
       rm "${PAT_PATH}"
-      dialog --backtitle "`backtitle`" --title "$(TEXT "Error downloading")" --aspect 18 \
+      dialog --backtitle "`backtitle`" --title "Error downloading" --aspect 18 \
         --msgbox "Check internet or cache disk space" 0 0
       return 1
     fi
