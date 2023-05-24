@@ -89,21 +89,21 @@ function backtitle() {
   fi
   BACKTITLE+=" |"
   if [ "${ARCPATCH}" == "true" ]; then
-    BACKTITLE+=" Patch: Y"
+    BACKTITLE+=" P: Y"
   else
-    BACKTITLE+=" Patch: N"
+    BACKTITLE+=" P: N"
   fi
   BACKTITLE+=" |"
   if [ -n "${CONFDONE}" ]; then
-    BACKTITLE+=" Config: Y"
+    BACKTITLE+=" C: Y"
   else
-    BACKTITLE+=" Config: N"
+    BACKTITLE+=" C: N"
   fi
   BACKTITLE+=" |"
   if [ -n "${BUILDDONE}" ]; then
-    BACKTITLE+=" Build: Y"
+    BACKTITLE+=" B: Y"
   else
-    BACKTITLE+=" Build: N"
+    BACKTITLE+=" B: N"
   fi
   BACKTITLE+=" |"
   BACKTITLE+=" ${MACHINE}"
