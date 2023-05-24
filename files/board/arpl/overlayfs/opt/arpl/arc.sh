@@ -875,7 +875,7 @@ function cmdlineMenu() {
           2>${TMP_PATH}/resp
         [ $? -ne 0 ] && continue
         VALUE="`<"${TMP_PATH}/resp"`"
-        CMDLINE["${NAME}"]="${VALUE}"
+        CMDLINE[${NAME}]="${VALUE}"
         writeConfigKey "cmdline.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -919,7 +919,7 @@ function cmdlineMenu() {
           done
           if [ ${RET} -eq 0 ]; then
             CMDLINE["mac${i}"]="${MACF}"
-            CMDLINE["netif_num"]=${NETNUM}
+            CMDLINE["netif_num"]="${NETNUM}"
             writeConfigKey "cmdline.mac${i}"      "${MACF}" "${USER_CONFIG_FILE}"
             writeConfigKey "cmdline.netif_num"    "${NETNUM}"  "${USER_CONFIG_FILE}"
             MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
@@ -955,7 +955,7 @@ function cmdlineMenu() {
 }
 
 ###############################################################################
-# let user edit synoinfo
+# let user configure synoinfo entries
 function synoinfoMenu() {
   NEXT="1"
   # Read synoinfo from user config
@@ -988,7 +988,7 @@ function synoinfoMenu() {
           2>${TMP_PATH}/resp
         [ $? -ne 0 ] && continue
         VALUE="`<"${TMP_PATH}/resp"`"
-        SYNOINFO["${NAME}"]="${VALUE}"
+        SYNOINFO[${NAME}]="${VALUE}"
         writeConfigKey "synoinfo.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
         DIRTY=1
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
