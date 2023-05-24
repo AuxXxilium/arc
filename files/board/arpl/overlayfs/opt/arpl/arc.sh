@@ -968,8 +968,6 @@ function synoinfoMenu() {
   echo "1 \"Add/edit Synoinfo item\""     > "${TMP_PATH}/menu"
   echo "2 \"Delete Synoinfo item(s)\""    >> "${TMP_PATH}/menu"
   echo "3 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
-  echo "4 \"Mount USB as Internal\""      >> "${TMP_PATH}/menu"
-  echo "5 \"Mount USB as Normal\""        >> "${TMP_PATH}/menu"
   echo "0 \"Exit\""                       >> "${TMP_PATH}/menu"
 
   # menu loop
@@ -1027,33 +1025,6 @@ function synoinfoMenu() {
         dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      4)
-        MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-        PLATFORM=`readModelKey "${MODEL}" "platform"`
-        if [ "${PLATFORM}" = "broadwellnk" ]; then
-          writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
-          writeConfigKey "synoinfo.usbportcfg" "0xff0000" "${USER_CONFIG_FILE}"
-          writeConfigKey "synoinfo.internalportcfg" "0xffffff" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
-          dialog --backtitle "`backtitle`" --title "Mount USB as Internal" \
-          --aspect 18 --msgbox "Mount USB as Internal - successfull!" 0 0
-        else
-          dialog --backtitle "`backtitle`" --title "Mount USB as Internal" \
-          --aspect 18 --msgbox "You need to select a broadwellnk model!" 0 0
-        fi
-        ;;
-      5)
-        MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-        PLATFORM=`readModelKey "${MODEL}" "platform"`
-        if [ "${PLATFORM}" = "broadwellnk" ]; then
-          deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
-          deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
-          deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
-          dialog --backtitle "`backtitle`" --title "Mount USB as Normal" \
-          --aspect 18 --msgbox "Mount USB as Normal - successfull!" 0 0
-        fi
-        ;;
       0) return ;;
     esac
   done
@@ -1082,6 +1053,53 @@ function keymapMenu() {
   writeConfigKey "layout" "${LAYOUT}" "${USER_CONFIG_FILE}"
   writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
   loadkeys /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz
+}
+
+###############################################################################
+# Shows usb menu to user
+function usbMenu() {
+  NEXT="1"
+  BUILDDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+  if [ -n "${CONFDONE}" ]; then
+    while true; do
+      dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
+        1 "Mount USB as Internal" \
+        2 "Mount USB as Normal" \
+        0 "Exit" \
+        2>${TMP_PATH}/resp
+      [ $? -ne 0 ] && return
+      case "`<${TMP_PATH}/resp`" in
+        1)
+          MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+          PLATFORM=`readModelKey "${MODEL}" "platform"`
+          if [ "${PLATFORM}" = "broadwellnk" ]; then
+            writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
+            writeConfigKey "synoinfo.usbportcfg" "0xff0000" "${USER_CONFIG_FILE}"
+            writeConfigKey "synoinfo.internalportcfg" "0xffffff" "${USER_CONFIG_FILE}"
+            writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
+            dialog --backtitle "`backtitle`" --title "Mount USB as Internal" \
+            --aspect 18 --msgbox "Mount USB as Internal - successfull!" 0 0
+          else
+            dialog --backtitle "`backtitle`" --title "Mount USB as Internal" \
+            --aspect 18 --msgbox "You need to select a broadwellnk model!" 0 0
+          fi
+          ;;
+        2)
+          MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+          PLATFORM=`readModelKey "${MODEL}" "platform"`
+          if [ "${PLATFORM}" = "broadwellnk" ]; then
+            deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
+            deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
+            deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
+            writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
+            dialog --backtitle "`backtitle`" --title "Mount USB as Normal" \
+            --aspect 18 --msgbox "Mount USB as Normal - successfull!" 0 0
+          fi
+          ;;
+        0) return ;;
+      esac
+    done
+  fi
 }
 
 ###############################################################################
@@ -1939,6 +1957,7 @@ while true; do
         echo "s \"Change Storage Map \" "                                                   >> "${TMP_PATH}/menu"
       fi
       echo "n \"Change Network Config \" "                                                  >> "${TMP_PATH}/menu"
+      echo "u \"Change USB Port Config \" "                                                 >> "${TMP_PATH}/menu"
       if [ -f "${BACKUPDIR}/dsm-backup.tar" ]; then
         echo "r \"Boot from Backup: \Z4${BACKUPBOOT}\Zn \" "                                >> "${TMP_PATH}/menu"
       fi
@@ -1995,6 +2014,7 @@ while true; do
        ;;
     s) storageMenu; NEXT="s" ;;
     n) networkMenu; NEXT="n" ;;
+    u) usbMenu; NEXT="u" ;;
     t) backupMenu; NEXT="t" ;;
     r) [ "${BACKUPBOOT}" = "false" ] && BACKUPBOOT='true' || BACKUPBOOT='false'
       writeConfigKey "backupboot" "${BACKUPBOOT}" "${USER_CONFIG_FILE}"
