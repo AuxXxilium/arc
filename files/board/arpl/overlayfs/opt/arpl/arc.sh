@@ -219,7 +219,7 @@ function arcbuild() {
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
     if [ "${resp}" = "1" ]; then
-      if [ "${EFI}" -eq 1 ]; then
+      #if [ "${EFI}" -eq 1 ]; then
         SN="`readModelKey "${MODEL}" "arc.serial"`"
         writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
         writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
@@ -227,11 +227,11 @@ function arcbuild() {
         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
         dialog --backtitle "`backtitle`" --title "Arc Config" \
               --msgbox "Installing with Arc Patch\nSuccessfull!" 0 0
-      else
-        dialog --backtitle "`backtitle`" --title "Arc Config" \
-              --msgbox "Installing with Arc Patch\nFailed! Please select EFI as Bootmode.\nOtherwise Arc Patch will not work!" 0 0
-        return 1
-      fi
+      #else
+      #  dialog --backtitle "`backtitle`" --title "Arc Config" \
+      #        --msgbox "Installing with Arc Patch\nFailed! Please select EFI as Bootmode.\nOtherwise Arc Patch will not work!" 0 0
+      #  return 1
+      #fi
       break
     elif [ "${resp}" = "2" ]; then
       # Generate random serial
