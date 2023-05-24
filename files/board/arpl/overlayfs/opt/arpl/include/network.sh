@@ -70,7 +70,7 @@ function getnet() {
         /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
           --title "Restart DHCP" --progressbox "Renewing IP" 20 70
         sleep 5
-        IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
+        IP=`ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p' | head -1`
         sleep 1
         break
       fi

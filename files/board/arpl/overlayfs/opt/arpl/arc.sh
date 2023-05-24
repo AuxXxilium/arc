@@ -944,7 +944,7 @@ function cmdlineMenu() {
             RET=$?
             [ ${RET} -ne 0 ] && break 2
             MAC="`<"${TMP_PATH}/resp"`"
-            [ -z "${MAC}" ] && MAC="`readConfigKey "original-mac${i}" "${USER_CONFIG_FILE}"`"
+            [ -z "${MAC}" ] && MAC="`readConfigKey "device.mac${i}" "${USER_CONFIG_FILE}"`"
             [ -z "${MAC}" ] && MAC="${MACFS[$(expr ${i} - 1)]}"
             MACF="`echo "${MAC}" | sed 's/://g'`"
             [ ${#MACF} -eq 12 ] && break
@@ -957,10 +957,10 @@ function cmdlineMenu() {
             writeConfigKey "cmdline.netif_num"    "${N}"    "${USER_CONFIG_FILE}"
             MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
             ip link set dev ${ETHX[$(expr ${N} - 1)]} address ${MAC} 2>&1 | dialog --backtitle "`backtitle`" \
-              --title "$(TEXT "User cmdline")" --progressbox "Changing MAC" 20 70
+              --title "User cmdline" --progressbox "Changing MAC" 20 70
             /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
-              --title "$(TEXT "User cmdline")" --progressbox "Renewing IP" 20 70
-            # IP=`ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p' | head -1`
+              --title "User cmdline" --progressbox "Renewing IP" 20 70
+            IP=`ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p' | head -1`
             dialog --backtitle "`backtitle`" --title "Alert" \
               --yesno "Continue to custom MAC?" 0 0
             [ $? -ne 0 ] && break
@@ -968,7 +968,6 @@ function cmdlineMenu() {
         done
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-        IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
         ;;
       4)
         ITEMS=""
@@ -1794,8 +1793,6 @@ function sysinfo() {
       TEXT+="\Z1Drives\Zn detected:\n\Zb"${SASDRIVES}"\Zn\n"
     done
   fi
-  echo -e ${TEXT} > "${SYSINFO_PATH}"
-  TEXT+="\nSysinfo File: \Zb"\\\\${IP}\\arpl\\p1\\sysinfo.yml"\Zn"
   dialog --backtitle "`backtitle`" --title "Arc Sysinfo" --aspect 18 --colors --msgbox "${TEXT}" 0 0
 }
 
@@ -2093,13 +2090,4 @@ while true; do
 done
 clear
 # Inform user
-echo
 echo -e "Call \033[1;32marc.sh\033[0m to configure loader"
-echo
-echo -e "\033[1;31mSSH Access:\033[0m"
-echo -e "IP: \033[1;31m${IP}\033[0m"
-echo -e "User: \033[1;31mroot\033[0m"
-echo -e "Password: \033[1;31mRedp1lL-1s-4weSomE\033[0m"
-echo
-echo -e "\033[1;31mWeb Terminal Access:\033[0m"
-echo -e "Address: \033[1;31mhttp://${IP}:7681\033[0m"
