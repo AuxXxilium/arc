@@ -94,29 +94,9 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   # Initialize with Ethernetportcount
-  writeConfigKey "cmdline.netif_num" "${NETNUM}" "${USER_CONFIG_FILE}"
-  # Initialize with real MAC
-  COUNT=0
-  while true; do
-    MACO=`ip link show eth$COUNT | awk '/ether/{print$2}' | sed 's/://g'`
-    COUNT=$((${COUNT}+1))
-    writeConfigKey "cmdline.mac${COUNT}" "${MACO}" "${USER_CONFIG_FILE}"
-    if [ ${COUNT} -eq ${NETNUM} ]; then
-      break
-    fi
-  done
+  #writeConfigKey "cmdline.netif_num" "${NETNUM}" "${USER_CONFIG_FILE}"
 fi
 
-# Get real MAC and write to config
-COUNT=0
-while true; do
-  MACO=`ip link show eth$COUNT | awk '/ether/{print$2}' | sed 's/://g'`
-  COUNT=$((${COUNT}+1))
-  writeConfigKey "device.mac${COUNT}" "${MACO}" "${USER_CONFIG_FILE}"
-  if [ ${COUNT} -eq ${NETNUM} ]; then
-    break
-  fi
-done
 
 for N in $(seq 1 ${#ETHX[@]}); do
   MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
@@ -129,7 +109,7 @@ for N in $(seq 1 ${#ETHX[@]}); do
       (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
   fi
   # Initialize with real MAC
-  writeConfigKey "original-mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+  writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   # Enable Wake on Lan, ignore errors
   ethtool -s ${ETHX[$(expr ${N} - 1)]} wol g 2>/dev/null
 done

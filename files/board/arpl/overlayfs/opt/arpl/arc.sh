@@ -19,7 +19,7 @@ fi
 IP=`ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p' | head -1`
 
 # Get Number of Ethernet Ports
-NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
+NETNUM=`ls /sys/class/net/ | grep eth | wc -l`
 [ ${NETNUM} -gt 8 ] && NETNUM=8 && WARNON=3
 
 # Memory: Check Memory installed
@@ -931,30 +931,39 @@ function cmdlineMenu() {
         BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
-        for i in $(seq 1 ${NETNUM}); do
+        ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
+        for N in `seq 1 8`; do # Currently, only up to 8 are supported.  (<==> boot.sh L96, <==> lkm: MAX_NET_IFACES)
+          MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
+          MACF=${CMDLINE["mac${N}"]}
+          [ -n "${MACF}" ] && MAC=${MACF} || MAC=${MACR}
           RET=1
           while true; do
             dialog --backtitle "`backtitle`" --title "User cmdline" \
-              --inputbox "`Type a custom MAC address of %s" "eth$(expr ${i} - 1)`" 0 0 "${CMDLINE["mac${i}"]}" \
+              --inputbox "`printf "Type a custom MAC address of %s" "mac${N}"`" 0 0 "${MAC}"\
               2>${TMP_PATH}/resp
             RET=$?
             [ ${RET} -ne 0 ] && break 2
             MAC="`<"${TMP_PATH}/resp"`"
             [ -z "${MAC}" ] && MAC="`readConfigKey "original-mac${i}" "${USER_CONFIG_FILE}"`"
+            [ -z "${MAC}" ] && MAC="${MACFS[$(expr ${i} - 1)]}"
             MACF="`echo "${MAC}" | sed 's/://g'`"
             [ ${#MACF} -eq 12 ] && break
             dialog --backtitle "`backtitle`" --title "User cmdline" --msgbox "Invalid MAC" 0 0
           done
           if [ ${RET} -eq 0 ]; then
-            CMDLINE["mac${i}"]="${MACF}"
-            CMDLINE["netif_num"]="${NETNUM}"
-            writeConfigKey "cmdline.mac${i}"      "${MACF}" "${USER_CONFIG_FILE}"
-            writeConfigKey "cmdline.netif_num"    "${NETNUM}"  "${USER_CONFIG_FILE}"
+            CMDLINE["mac${N}"]="${MACF}"
+            CMDLINE["netif_num"]=${N}
+            writeConfigKey "cmdline.mac${N}"      "${MACF}" "${USER_CONFIG_FILE}"
+            writeConfigKey "cmdline.netif_num"    "${N}"    "${USER_CONFIG_FILE}"
             MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-            ip link set dev eth$(expr ${i} - 1) address ${MAC} 2>&1 | dialog --backtitle "`backtitle`" \
-              --title "User cmdline" --progressbox "Changing MAC" 20 70
+            ip link set dev ${ETHX[$(expr ${N} - 1)]} address ${MAC} 2>&1 | dialog --backtitle "`backtitle`" \
+              --title "$(TEXT "User cmdline")" --progressbox "Changing MAC" 20 70
             /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
-              --title "User cmdline" --progressbox "Renewing IP" 20 70
+              --title "$(TEXT "User cmdline")" --progressbox "Renewing IP" 20 70
+            # IP=`ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p' | head -1`
+            dialog --backtitle "`backtitle`" --title "Alert" \
+              --yesno "Continue to custom MAC?" 0 0
+            [ $? -ne 0 ] && break
           fi
         done
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
