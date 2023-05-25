@@ -65,6 +65,10 @@ if [ -d "${CACHE_PATH}/patch" ]; then
   ln -s "${CACHE_PATH}/patch" "${PATCH_PATH}"
 fi
 
+# Get Number of Ethernet Ports
+NETNUM=`ls /sys/class/net/ | grep eth | wc -l`
+[ ${NETNUM} -gt 8 ] && NETNUM=8 && echo -e "\033[1;33m*** WARNING: Only 8 Ethernet ports are supported by Redpill***\033[0m"
+
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
@@ -91,29 +95,44 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   # Initialize with Ethernetportcount
-  #writeConfigKey "cmdline.netif_num" "${NETNUM}" "${USER_CONFIG_FILE}"
+  writeConfigKey "cmdline.netif_num" "${NETNUM}" "${USER_CONFIG_FILE}"
+  # Initialize with real MAC
+  COUNT=0
+  while true; do
+    MACF=`ip link show eth${COUNT} | awk '/ether/{print$2}' | sed 's/://g'`
+    COUNT=$(( COUNT + 1 ))
+    writeConfigKey "cmdline.mac${COUNT}" "${MACF}" "${USER_CONFIG_FILE}"
+    if [ "${COUNT}" = "${NETNUM}" ]; then
+      break
+    fi
+  done
 fi
 
-# Get first MAC address
-ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
-for N in $(seq 1 ${#ETHX[@]}); do
-  MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
-  # Set custom MAC if defined
-  MACF="`readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}"`"
-  # Initialize with custom MAC
-  if [ -n "${MACF}" ]; then
-    writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+# Get real MAC and write to config
+COUNT=0
+while true; do
+  MACF=`ip link show eth${COUNT} | awk '/ether/{print$2}' | sed 's/://g'`
+  COUNT=$(( COUNT + 1 ))
+  writeConfigKey "device.mac${COUNT}" "${MACF}" "${USER_CONFIG_FILE}"
+  if [ "${COUNT}" = "${NETNUM}" ]; then
+    break
   fi
-  if [ -n "${MACF}" -a "${MACF}" != "${MACR}" ]; then
-    MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-    echo "`printf "$(TEXT "Setting %s MAC to %s")" "${ETHX[$(expr ${N} - 1)]}" "${MAC}"`"
-    ip link set dev ${ETHX[$(expr ${N} - 1)]} address ${MAC} >/dev/null 2>&1 && \
+done
+
+# Set custom MAC if defined
+COUNT=1
+while true; do
+  MACF="`readConfigKey "cmdline.mac${COUNT}" "${USER_CONFIG_FILE}"`"
+  MACO="`readConfigKey "device.mac${COUNT}" "${USER_CONFIG_FILE}"`"
+  if [ -n "${MACF}" ] && [ "${MACF}" != "${MACO}" ]; then
+  MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
+    ip link set dev eth$(expr ${COUNT} - 1) address ${MAC} >/dev/null 2>&1 && \
       (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
   fi
-  # Initialize with real MAC
-  writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
-  # Enable Wake on Lan, ignore errors
-  ethtool -s ${ETHX[$(expr ${N} - 1)]} wol g 2>/dev/null
+  if [ "${COUNT}" = "${NETNUM}" ]; then
+    break
+  fi
+  COUNT=$(( COUNT + 1 ))
 done
 
 # Get the VID/PID if we are in USB

@@ -103,27 +103,14 @@ if [ "${BUS}" = "ata" ]; then
 fi
 
 # Validate netif_num
-MACS=()
-for N in `seq 1 8`; do  # Currently, only up to 8 are supported.  (<==> menu.sh L396, <==> lkm: MAX_NET_IFACES)
-  [ -n "${CMDLINE["mac${N}"]}" ] && MACS+=(${CMDLINE["mac${N}"]})
-done
-NETIF_NUM=${#MACS[*]}
-# set netif_num to custom mac amount, netif_num must be equal to the MACX amount, otherwise the kernel will panic.
-CMDLINE["netif_num"]=${NETIF_NUM}  # The current original CMDLINE['netif_num'] is no longer in use, Consider deleting.
-# real network cards amount
-NETRL_NUM=`ls /sys/class/net/ | grep eth | wc -l`
-if [ ${NETIF_NUM} -le ${NETRL_NUM} ]; then
-  ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
-  for N in `seq $(expr ${NETIF_NUM} + 1) ${NETRL_NUM}`; do 
-    MACR="`readConfigKey "device.mac${N}" "${USER_CONFIG_FILE}"`"
-    MACF="`readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}"`"
-    if [ -n "${MACF}" -a "${MACF}" != "${MACR}" ]; then
-      CMDLINE["mac${N}"]="${MACF}"
-    else
-      CMDLINE["mac${N}"]="${MACR}"
-    fi
-  done
-  CMDLINE["netif_num"]=${NETRL_NUM}
+NETIF_NUM=${CMDLINE["netif_num"]}
+[ ${NETNUM} -gt 8 ] && NETNUM=8 && echo -e "\033[1;33m*** WARNING: Only 8 Ethernet ports are supported by Redpill***\033[0m"
+if [ ${NETIF_NUM} -ne ${NETNUM} ]; then
+  echo -e "\033[1;33m*** netif_num is not equal to macX amount, please rebuild loader. ***\033[0m"
+  deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
+  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+  sleep 5
+  exit 1
 fi
 
 # Prepare command line
