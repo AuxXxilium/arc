@@ -65,9 +65,6 @@ if [ -d "${CACHE_PATH}/patch" ]; then
   ln -s "${CACHE_PATH}/patch" "${PATCH_PATH}"
 fi
 
-# Get first MAC address
-ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
-
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
@@ -97,7 +94,8 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   #writeConfigKey "cmdline.netif_num" "${NETNUM}" "${USER_CONFIG_FILE}"
 fi
 
-
+# Get first MAC address
+ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
 for N in $(seq 1 ${#ETHX[@]}); do
   MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
   # Set custom MAC if defined
@@ -109,6 +107,7 @@ for N in $(seq 1 ${#ETHX[@]}); do
       (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
   fi
   # Initialize with real MAC
+  writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   # Enable Wake on Lan, ignore errors
   ethtool -s ${ETHX[$(expr ${N} - 1)]} wol g 2>/dev/null
