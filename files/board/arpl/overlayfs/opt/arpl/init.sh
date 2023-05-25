@@ -31,9 +31,9 @@ mkdir -p ${SLPART_PATH}
 mkdir -p ${CACHE_PATH}
 mkdir -p ${DSMROOT_PATH}
 # Mount the partitions
-mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "`printf "$(TEXT "Can't mount %s")" "${BOOTLOADER_PATH}"`"
-mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "`printf "$(TEXT "Can't mount %s")" "${SLPART_PATH}"`"
-mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "`printf "$(TEXT "Can't mount %s")" "${CACHE_PATH}"`"
+mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "Can't mount ${BOOTLOADER_PATH}"
+mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "Can't mount ${SLPART_PATH}"
+mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "Can't mount ${CACHE_PATH}"
 
 # Shows title
 clear
@@ -100,14 +100,17 @@ for N in $(seq 1 ${#ETHX[@]}); do
   MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
   # Set custom MAC if defined
   MACF="`readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}"`"
+  # Initialize with custom MAC
+  if [ -n "${MACF}" ]; then
+    writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+  fi
   if [ -n "${MACF}" -a "${MACF}" != "${MACR}" ]; then
     MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-    echo "`printf "Setting %s MAC to %s" "${ETHX[$(expr ${N} - 1)]}" "${MAC}"`"
+    echo "`printf "$(TEXT "Setting %s MAC to %s")" "${ETHX[$(expr ${N} - 1)]}" "${MAC}"`"
     ip link set dev ${ETHX[$(expr ${N} - 1)]} address ${MAC} >/dev/null 2>&1 && \
       (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
   fi
   # Initialize with real MAC
-  writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   # Enable Wake on Lan, ignore errors
   ethtool -s ${ETHX[$(expr ${N} - 1)]} wol g 2>/dev/null

@@ -4,7 +4,6 @@ function getnet() {
   #deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" \
     --title "Arc Network" --msgbox " ${NETNUM} Adapter dedected" 0 0
-  writeConfigKey "cmdline.netif_num"    "${NETNUM}"  "${USER_CONFIG_FILE}"
   ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
   if [ "${ARCPATCH}" = "true" ]; then 
     # Install with Arc Patch - Check for model config and set custom Mac Address
@@ -24,17 +23,21 @@ function getnet() {
       resp=$(<${TMP_PATH}/resp)
       [ -z "${resp}" ] && return
       if [ "${resp}" = "1" ]; then
-          writeConfigKey "cmdline.mac1"           "${MAC1}" "${USER_CONFIG_FILE}"
-          break
+        deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.mac1" "${MAC1}" "${USER_CONFIG_FILE}"
+        break
       elif [ "${resp}" = "2" ]; then
-          writeConfigKey "cmdline.mac1"           "${MAC2}" "${USER_CONFIG_FILE}"
-          break
+        deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.mac1" "${MAC2}" "${USER_CONFIG_FILE}"
+        break
       elif [ "${resp}" = "3" ]; then
-          writeConfigKey "cmdline.mac1"           "${MAC3}" "${USER_CONFIG_FILE}"
-          break
+        deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.mac1" "${MAC3}" "${USER_CONFIG_FILE}"
+        break
       elif [ "${resp}" = "4" ]; then
-          writeConfigKey "cmdline.mac1"           "${MAC4}" "${USER_CONFIG_FILE}"
-          break
+        deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.mac1" "${MAC4}" "${USER_CONFIG_FILE}"
+        break
       fi
     done
     dialog --backtitle "`backtitle`" \
