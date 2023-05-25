@@ -1543,7 +1543,7 @@ function updateMenu() {
         5)
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --infobox "Checking latest version" 0 0
-          TAG="`curl -k -s "https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest" | jq -r 'map(select(.prerelease)) | .[0].tag_name'`"
+          TAG="`curl -k -s "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r 'map(select(.tag_name)) | .[0].tag_name'`"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
               --msgbox "Error checking new version" 0 0
