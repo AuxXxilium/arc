@@ -5,6 +5,8 @@ synoinfo: &synoinfo
   support_led_brightness_adjustment: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
+  maxlanport: "8"
+  netif_seq: "0 1 2 3 4 5 6 7"
 cmdline: &cmdline
   intel_iommu: "igfx_off"
   synoboot2:
@@ -66,7 +68,7 @@ builds:
       zimage-hash: "db781b0be23801a15b1b7b06852db203a08995fcde30b5f13f8c4c9f20a13dfe"
       md5-hash: "733dfc6b5789e557aa60a0809fe392e5"
     patch:
-      - "ramdisk-64551-disable-root-pwd.patch"
-      - "ramdisk-64551-init-script.patch"
+      - "ramdisk-64216-disable-root-pwd.patch"
+      - "ramdisk-64216-init-script.patch"
       - "ramdisk-common-etc-rc.patch"
       - "ramdisk-42951-post-init-script.patch"

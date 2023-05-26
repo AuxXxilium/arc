@@ -14,11 +14,11 @@ while true; do
   sleep 1
 done
 if [ -z "${LOADER_DISK}" ]; then
-  die "$(TEXT "Loader disk not found!")"
+  die "Loader disk not found!"
 fi
 NUM_PARTITIONS=$(blkid | grep "${LOADER_DISK}[0-9]\+" | cut -d: -f1 | wc -l)
 if [ $NUM_PARTITIONS -ne 3 ]; then
-  die "$(TEXT "Loader disk not found!")"
+  die "Loader disk not found!"
 fi
 
 # Check partitions and ignore errors
@@ -31,13 +31,13 @@ mkdir -p ${SLPART_PATH}
 mkdir -p ${CACHE_PATH}
 mkdir -p ${DSMROOT_PATH}
 # Mount the partitions
-mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "Can't mount ${BOOTLOADER_PATH}"
-mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "Can't mount ${SLPART_PATH}"
-mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "Can't mount ${CACHE_PATH}"
+mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "`printf "$(TEXT "Can't mount %s")" "${BOOTLOADER_PATH}"`"
+mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "`printf "$(TEXT "Can't mount %s")" "${SLPART_PATH}"`"
+mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "`printf "$(TEXT "Can't mount %s")" "${CACHE_PATH}"`"
 
 # Shows title
 clear
-TITLE="Arc v${ARPL_VERSION}"
+TITLE="${ARPL_TITLE}"
 printf "\033[1;44m%*s\n" $COLUMNS ""
 printf "\033[1;44m%*s\033[A\n" $COLUMNS ""
 printf "\033[1;32m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
@@ -65,20 +65,20 @@ if [ -d "${CACHE_PATH}/patch" ]; then
   ln -s "${CACHE_PATH}/patch" "${PATCH_PATH}"
 fi
 
-# Get Number of Ethernet Ports
-NETNUM=`ls /sys/class/net/ | grep eth | wc -l`
-[ ${NETNUM} -gt 8 ] && NETNUM=8 && echo -e "\033[1;33m*** WARNING: Only 8 Ethernet ports are supported by Redpill***\033[0m"
+# Get first MAC address
+ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
 
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
   writeConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
+  writeConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "model" "" "${USER_CONFIG_FILE}"
   writeConfigKey "build" "" "${USER_CONFIG_FILE}"
   writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
-  #writeConfigKey "maxdisks" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "layout" "qwertz" "${USER_CONFIG_FILE}"
-  writeConfigKey "keymap" "de" "${USER_CONFIG_FILE}"
+  # writeConfigKey "maxdisks" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "layout" "qwerty" "${USER_CONFIG_FILE}"
+  writeConfigKey "keymap" "" "${USER_CONFIG_FILE}"
   writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
   writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
   writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
@@ -86,54 +86,33 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.misc" "" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.backupboot" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
-  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-  # Initialize with Ethernetportcount
-  writeConfigKey "cmdline.netif_num" "${NETNUM}" "${USER_CONFIG_FILE}"
-  # Initialize with real MAC
-  COUNT=0
-  while true; do
-    MACF=`ip link show eth${COUNT} | awk '/ether/{print$2}' | sed 's/://g'`
-    COUNT=$(( COUNT + 1 ))
-    writeConfigKey "cmdline.mac${COUNT}" "${MACF}" "${USER_CONFIG_FILE}"
-    if [ "${COUNT}" = "${NETNUM}" ]; then
-      break
-    fi
-  done
+  # When the user has not customized, Use 1 to maintain normal startup parameters.
+  # writeConfigKey "cmdline.netif_num" "1" "${USER_CONFIG_FILE}"
+  # writeConfigKey "cmdline.mac1" "`cat /sys/class/net/${ETHX[0]}/address | sed 's/://g'`" "${USER_CONFIG_FILE}"
 fi
 
-# Get real MAC and write to config
-COUNT=0
-while true; do
-  MACF=`ip link show eth${COUNT} | awk '/ether/{print$2}' | sed 's/://g'`
-  COUNT=$(( COUNT + 1 ))
-  writeConfigKey "device.mac${COUNT}" "${MACF}" "${USER_CONFIG_FILE}"
-  if [ "${COUNT}" = "${NETNUM}" ]; then
-    break
-  fi
-done
-
-# Set custom MAC if defined
-COUNT=1
-while true; do
-  MACF="`readConfigKey "cmdline.mac${COUNT}" "${USER_CONFIG_FILE}"`"
-  MACO="`readConfigKey "device.mac${COUNT}" "${USER_CONFIG_FILE}"`"
-  if [ -n "${MACF}" ] && [ "${MACF}" != "${MACO}" ]; then
-  MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-    ip link set dev eth$(expr ${COUNT} - 1) address ${MAC} >/dev/null 2>&1 && \
+for N in $(seq 1 ${#ETHX[@]}); do
+  MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
+  # Set custom MAC if defined
+  MACF="`readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}"`"
+  if [ -n "${MACF}" -a "${MACF}" != "${MACR}" ]; then
+    MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
+    echo "`printf "Setting %s MAC to %s" "${ETHX[$(expr ${N} - 1)]}" "${MAC}"`"
+    ifconfig ${ETHX[$(expr ${N} - 1)]} hw ether ${MAC} >/dev/null 2>&1 && \
       (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
   fi
-  if [ "${COUNT}" = "${NETNUM}" ]; then
-    break
-  fi
-  COUNT=$(( COUNT + 1 ))
+  # Initialize with real MAC
+  writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+  # Enable Wake on Lan, ignore errors
+  ethtool -s ${ETHX[$(expr ${N} - 1)]} wol g 2>/dev/null
 done
+
 
 # Get the VID/PID if we are in USB
 VID="0x0000"
@@ -164,7 +143,7 @@ LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
 SIZEOFDISK=`cat /sys/block/${LOADER_DEVICE_NAME}/size`
 ENDSECTOR=$((`fdisk -l ${LOADER_DISK} | awk '/'${LOADER_DEVICE_NAME}3'/{print$3}'`+1))
 if [ ${SIZEOFDISK} -ne ${ENDSECTOR} ]; then
-  echo -e "\033[1;36mResizing ${LOADER_DISK}3\033[0m"
+  echo -e "\033[1;36m`printf "Resizing %s" "${LOADER_DISK}3"`\033[0m"
   echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${LOADER_DISK}" >"${LOG_FILE}" 2>&1 || dieLog
   resize2fs ${LOADER_DISK}3 >"${LOG_FILE}" 2>&1 || dieLog
 fi
@@ -195,7 +174,7 @@ if [ ${BOOT} -eq 1 ]; then
 fi
 
 # Wait for an IP
-echo "`printf "Detected %s network cards, Waiting IP." "${#ETHX[@]}"`"
+echo "`printf "$(TEXT "Detected %s network cards, Waiting IP.")" "${#ETHX[@]}"`"
 for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
   COUNT=0
   echo -en "${ETHX[${N}]}: "
@@ -219,11 +198,18 @@ for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
   done
 done
 
+# Inform user
+echo
+echo -e "Call \033[1;32mmenu.sh\033[0m to configure loader"
+echo
+echo -e "User config is on \033[1;32m${USER_CONFIG_FILE}\033[0m"
+echo -e "Default SSH Root password is \033[1;31mRedp1lL-1s-4weSomE\033[0m"
+echo
+
 # Check memory
 RAM=`free -m | awk '/Mem:/{print$2}'`
 if [ ${RAM} -le 3500 ]; then
   echo -e "\033[1;33mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of memory.\033[0m\n"
-  sleep 5
 fi
 
 mkdir -p "${ADDONS_PATH}"

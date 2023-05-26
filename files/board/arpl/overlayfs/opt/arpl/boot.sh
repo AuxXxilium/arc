@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-. /opt/arpl/include/functions.sh
-
 set -e
+
+. /opt/arpl/include/functions.sh
 
 # Sanity check
 loaderIsConfigured || die "Loader is not configured!"
@@ -10,25 +10,13 @@ loaderIsConfigured || die "Loader is not configured!"
 # Print text centralized
 clear
 [ -z "${COLUMNS}" ] && COLUMNS=50
-TITLE="Arc v${ARPL_VERSION}"
+TITLE="${ARPL_TITLE}"
 printf "\033[1;44m%*s\n" ${COLUMNS} ""
 printf "\033[1;44m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;32m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
 printf "\033[1;44m%*s\033[0m\n" ${COLUMNS} ""
 TITLE="BOOTING..."
 printf "\033[1;33m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
-
-# Arc Functions
-DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
-DIRECTDSM="`readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}"`"
-GRUBCONF=`grub-editenv ${GRUB_PATH}/grubenv list | wc -l`
-BACKUPBOOT="`readConfigKey "arc.backupboot" "${USER_CONFIG_FILE}"`"
-if [ "${BACKUPBOOT}" = "true" ]; then
-  # Uncompress backup
-  tar -xvf ${BACKUPDIR}/dsm-backup.tar -C /
-  sleep 1
-  USER_CONFIG_FILE=${BB_USER_CONFIG_FILE}
-fi
 
 # Check if DSM zImage changed, patch it if necessary
 ZIMAGE_HASH="`readConfigKey "zimage-hash" "${USER_CONFIG_FILE}"`"
@@ -65,8 +53,7 @@ echo -e "Model: \033[1;36m${MODEL}\033[0m"
 echo -e "Build: \033[1;36m${BUILD}\033[0m"
 
 if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "`readConfigKey "builds.${BUILD}" "${MODEL_CONFIG_PATH}/${MODEL}.yml"`" ]; then
-  echo -e "\033[1;33m*** The current version does not support booting for ${MODEL} and ${BUILD}, please rebuild loader. ***\033[0m"
-  sleep 5
+  echo -e "\033[1;33m*** `printf "The current version of arpl does not support booting %s-%s, please rebuild." "${MODEL}" "${BUILD}"` ***\033[0m"
   exit 1
 fi
 
@@ -92,6 +79,8 @@ done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 
 # Check if machine has EFI
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
+# 
+KVER=`readModelKey "${MODEL}" "builds.${BUILD}.kver"`
 
 LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
 BUS=`udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2`
@@ -103,14 +92,27 @@ if [ "${BUS}" = "ata" ]; then
 fi
 
 # Validate netif_num
-NETIF_NUM=${CMDLINE["netif_num"]}
-[ ${NETNUM} -gt 8 ] && NETNUM=8 && echo -e "\033[1;33m*** WARNING: Only 8 Ethernet ports are supported by Redpill***\033[0m"
-if [ ${NETIF_NUM} -ne ${NETNUM} ]; then
-  echo -e "\033[1;33m*** netif_num is not equal to macX amount, please rebuild loader. ***\033[0m"
-  deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
-  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-  sleep 5
-  exit 1
+MACS=()
+for N in `seq 1 8`; do  # Currently, only up to 8 are supported.  (<==> menu.sh L396, <==> lkm: MAX_NET_IFACES)
+  [ -n "${CMDLINE["mac${N}"]}" ] && MACS+=(${CMDLINE["mac${N}"]})
+done
+NETIF_NUM=${#MACS[*]}
+# set netif_num to custom mac amount, netif_num must be equal to the MACX amount, otherwise the kernel will panic.
+CMDLINE["netif_num"]=${NETIF_NUM}  # The current original CMDLINE['netif_num'] is no longer in use, Consider deleting.
+# real network cards amount
+NETRL_NUM=`ls /sys/class/net/ | grep eth | wc -l`
+if [ ${NETIF_NUM} -le ${NETRL_NUM} ]; then
+  echo -e "\033[1;33m*** `printf "Detected %s network cards, but only %s MACs were customized, the rest will use the original MACs." "${NETRL_NUM}" "${CMDLINE["netif_num"]}"` ***\033[0m"
+  ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
+  for N in `seq $(expr ${NETIF_NUM} + 1) ${NETRL_NUM}`; do 
+    MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
+    # no duplicates
+    while [[ "${MACS[*]}" =~ "$MACR" ]]; do # no duplicates
+      MACR="${MACR:0:10}`printf "%02x" $((0x${MACR:10:2} + 1))`" 
+    done
+    CMDLINE["mac${N}"]="${MACR}"
+  done
+  CMDLINE["netif_num"]=${NETRL_NUM}
 fi
 
 # Prepare command line
@@ -118,8 +120,8 @@ CMDLINE_LINE=""
 grep -q "force_junior" /proc/cmdline && CMDLINE_LINE+="force_junior "
 [ ${EFI} -eq 1 ] && CMDLINE_LINE+="withefi " || CMDLINE_LINE+="noefi "
 [ "${BUS}" = "ata" ] && CMDLINE_LINE+="synoboot_satadom=${DOM} dom_szmax=${SIZE} "
-CMDLINE_DIRECT="${CMDLINE_LINE}"
 CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 loglevel=15 log_buf_len=32M"
+CMDLINE_DIRECT="${CMDLINE_LINE}"
 for KEY in ${!CMDLINE[@]}; do
   VALUE="${CMDLINE[${KEY}]}"
   CMDLINE_LINE+=" ${KEY}"
@@ -132,64 +134,53 @@ done
 CMDLINE_DIRECT=`echo ${CMDLINE_DIRECT} | sed 's/>/\\\\>/g'`
 echo -e "Cmdline:\n\033[1;36m${CMDLINE_LINE}\033[0m"
 
-# Make Directboot persistent if DSM is installed
-if [ "${DIRECTBOOT}" = "true" ]; then
-  if [ "${DIRECTDSM}" = "true" ]; then
-    grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
-    grub-editenv ${GRUB_PATH}/grubenv set default="direct"
-    echo -e "\033[1;33mEnable Directboot - DirectDSM\033[0m"
-    echo -e "\033[1;33mDSM installed - Reboot with Directboot\033[0m"
-    reboot
-  elif [ "${DIRECTDSM}" = "false" ]; then
-    grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
-    grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
-    writeConfigKey "arc.directdsm" "true" "${USER_CONFIG_FILE}"
-    echo -e "\033[1;33mDSM not installed - Reboot with Directboot\033[0m"
-    reboot
-  fi
+DIRECT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
+if [ "${DIRECT}" = "true" ]; then
+  grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
+  echo -e "\033[1;33mReboot to boot directly in DSM\033[0m"
+  grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
+  reboot
   exit 0
-elif [ "${DIRECTBOOT}" = "false" ] && [ ${GRUBCONF} -gt 0 ]; then
-    grub-editenv ${GRUB_PATH}/grubenv create
-    echo -e "\033[1;33mDisable Directboot - DirectDSM\033[0m"
-    writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
-fi
-
-# Wait for an IP
-ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
-echo "`printf "Detected %s network cards, Waiting IP." "${#ETHX[@]}"`"
-for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
-  COUNT=0
-  echo -en "${ETHX[${N}]}: "
-  while true; do
-    if [ -z "`ip link show ${ETHX[${N}]} | grep 'UP'`" ]; then
-      echo -en "\r${ETHX[${N}]}: "DOWN"\n"
-      break
-    fi
-    if [ ${COUNT} -eq 8 ]; then # Under normal circumstances, no errors should occur here.
-      echo -en "\r${ETHX[${N}]}: "ERROR"\n"
-      break
-    fi
-    COUNT=$((${COUNT}+1))
-    IP=`ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
-    if [ -n "${IP}" ]; then
-      echo -en "\r${ETHX[${N}]}: `printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}"`\n"
-      break
-    fi
-    echo -n "."
-    sleep 1
+else
+  ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
+  echo "`printf "Detected %s network cards, Waiting IP." "${#ETHX[@]}"`"
+  for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
+    COUNT=0
+    echo -en "${ETHX[${N}]}: "
+    while true; do
+      if [ -z "`ip link show ${ETHX[${N}]} | grep 'UP'`" ]; then
+        echo -en "\r${ETHX[${N}]}: DOWN\n"
+        break
+      fi
+      if [ ${COUNT} -eq 8 ]; then # Under normal circumstances, no errors should occur here.
+        echo -en "\r${ETHX[${N}]}: ERROR\n"
+        break
+      fi
+      COUNT=$((${COUNT}+1))
+      IP=`ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
+      if [ -n "${IP}" ]; then
+        echo -en "\r${ETHX[${N}]}: `printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}"`\n"
+        break
+      fi
+      echo -n "."
+      sleep 1
+    done
   done
-done
+fi
 
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
-if [ "${BACKUPBOOT}" = "true" ]; then
-  # Executes DSM kernel via KEXEC
-  kexec -l "${BB_MOD_ZIMAGE_FILE}" --initrd "${BB_MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
-  echo -e "\033[1;37mBooting Backup DSM...\033[0m"
-elif [ "${BACKUPBOOT}" = "false" ] || [ "${BACKUPBOOT}" = "" ]; then
-  # Executes DSM kernel via KEXEC
+# Executes DSM kernel via KEXEC
+if [ "${KVER:0:1}" = "3" -a ${EFI} -eq 1 ]; then
+  echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
+  kexec --noefi -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
+else
   kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
-  echo -e "\033[1;37mBooting DSM...\033[0m"
 fi
+echo -e "\033[1;37m"Booting..."\033[0m"
+for T in `w | grep -v "TTY" | awk -F' ' '{print $2}'`
+do
+  echo -e "\n\033[1;43m[This interface will not be operational. Please use the http://find.synology.com/ find DSM and connect.]\033[0m\n" > "/dev/${T}" 2>/dev/null || true
+done 
 poweroff
 exit 0

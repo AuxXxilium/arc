@@ -34,7 +34,7 @@ LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 LAYOUT="`readConfigKey "layout" "${USER_CONFIG_FILE}"`"
 KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
-UNIQUE=`readModelKey "${MODEL}" "unique"`
+
 
 if [ ${BUILD} -ne ${buildnumber} ]; then
   echo -e "\033[A\n\033[1;32mBuild number changed from \033[1;31m${BUILD}\033[1;32m to \033[1;31m${buildnumber}\033[0m"
@@ -46,8 +46,11 @@ fi
 
 echo -n "."
 # Read model data
+UNIQUE=`readModelKey "${MODEL}" "unique"`
 PLATFORM="`readModelKey "${MODEL}" "platform"`"
 KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+PAT_URL="`readModelKey "${MODEL}" "builds.${BUILD}.pat.url"`"
+PAT_MD5_HASH="`readModelKey "${MODEL}" "builds.${BUILD}.pat.md5-hash"`"
 RD_COMPRESSED="`readModelKey "${MODEL}" "builds.${BUILD}.rd-compressed"`"
 
 # Sanity check
@@ -89,7 +92,7 @@ _set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc/synoinfo.conf" >"${LOG_FILE}" 2>&
 echo -n "."
 grep -v -e '^[\t ]*#' -e '^$' "${PATCH_PATH}/config-manipulators.sh" > "${TMP_PATH}/rp.txt"
 sed -e "/@@@CONFIG-MANIPULATORS-TOOLS@@@/ {" -e "r ${TMP_PATH}/rp.txt" -e 'd' -e '}' -i "${RAMDISK_PATH}/sbin/init.post"
-rm -f "${TMP_PATH}/rp.txt"
+rm "${TMP_PATH}/rp.txt"
 touch "${TMP_PATH}/rp.txt"
 for KEY in ${!SYNOINFO[@]}; do
   echo "_set_conf_kv '${KEY}' '${SYNOINFO[${KEY}]}' '/tmpRoot/etc/synoinfo.conf'"          >> "${TMP_PATH}/rp.txt"
@@ -98,7 +101,7 @@ done
 echo "_set_conf_kv 'SN' '${SN}' '/tmpRoot/etc/synoinfo.conf'"                              >> "${TMP_PATH}/rp.txt"
 echo "_set_conf_kv 'SN' '${SN}' '/tmpRoot/etc.defaults/synoinfo.conf'"                     >> "${TMP_PATH}/rp.txt"
 sed -e "/@@@CONFIG-GENERATED@@@/ {" -e "r ${TMP_PATH}/rp.txt" -e 'd' -e '}' -i "${RAMDISK_PATH}/sbin/init.post"
-rm -f "${TMP_PATH}/rp.txt"
+rm "${TMP_PATH}/rp.txt"
 
 echo -n "."
 # Extract modules to ramdisk
@@ -120,7 +123,7 @@ rm -rf "${TMP_PATH}/modules"
 
 echo -n "."
 # Copying fake modprobe
-cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
+cp "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
 # Copying LKM to /usr/lib/modules
 gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" > "${RAMDISK_PATH}/usr/lib/modules/rp.ko"
 
@@ -136,15 +139,18 @@ echo 'echo "addons.sh called with params ${@}"' >> "${RAMDISK_PATH}/addons/addon
 echo "export PLATFORM=${PLATFORM}"              >> "${RAMDISK_PATH}/addons/addons.sh"
 echo "export MODEL=${MODEL}"                    >> "${RAMDISK_PATH}/addons/addons.sh"
 echo "export BUILD=${BUILD}"                    >> "${RAMDISK_PATH}/addons/addons.sh"
+echo "export MLINK=${PAT_URL}"                  >> "${RAMDISK_PATH}/addons/addons.sh"
+echo "export MCHECKSUM=${PAT_MD5_HASH}"         >> "${RAMDISK_PATH}/addons/addons.sh"
 echo "export LAYOUT=${LAYOUT}"                  >> "${RAMDISK_PATH}/addons/addons.sh"
 echo "export KEYMAP=${KEYMAP}"                  >> "${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
-# Required addons: eudev, disks, wol, bootwait
+# Required addons: eudev, disks, wol
 installAddon eudev
 echo "/addons/eudev.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon disks
 echo "/addons/disks.sh \${1} ${DT} ${UNIQUE}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+[ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
 installAddon wol
 echo "/addons/wol.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon bootwait
@@ -158,6 +164,11 @@ for ADDON in ${!ADDONS[@]}; do
   fi
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 done
+
+[ "2" = "${BUILD:0:1}" ] && sed -i 's/function //g' `find "${RAMDISK_PATH}/addons/" -type f -name "*.sh"`
+
+# Enable Telnet
+echo "inetd" >> "${RAMDISK_PATH}/addons/addons.sh"
 
 # Build modules dependencies
 /opt/arpl/depmod -a -b ${RAMDISK_PATH} 2>/dev/null

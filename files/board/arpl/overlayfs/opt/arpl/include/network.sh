@@ -1,11 +1,9 @@
 # Get Network Config for Loader
 function getnet() {
-  # Delete old Mac Address from Userconfig
-  #deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
-  dialog --backtitle "`backtitle`" \
-    --title "Arc Network" --msgbox " ${NETNUM} Adapter dedected" 0 0
   ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
   if [ "${ARCPATCH}" = "true" ]; then 
+    # Delete old Mac Address from Userconfig
+    deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
     # Install with Arc Patch - Check for model config and set custom Mac Address
     MAC1="`readModelKey "${MODEL}" "arc.mac1"`"
     MAC2="`readModelKey "${MODEL}" "arc.mac2"`"
@@ -23,32 +21,22 @@ function getnet() {
       resp=$(<${TMP_PATH}/resp)
       [ -z "${resp}" ] && return
       if [ "${resp}" = "1" ]; then
-        deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
         writeConfigKey "cmdline.mac1" "${MAC1}" "${USER_CONFIG_FILE}"
         break
       elif [ "${resp}" = "2" ]; then
-        deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
         writeConfigKey "cmdline.mac1" "${MAC2}" "${USER_CONFIG_FILE}"
         break
       elif [ "${resp}" = "3" ]; then
-        deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
         writeConfigKey "cmdline.mac1" "${MAC3}" "${USER_CONFIG_FILE}"
         break
       elif [ "${resp}" = "4" ]; then
-        deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
         writeConfigKey "cmdline.mac1" "${MAC4}" "${USER_CONFIG_FILE}"
         break
       fi
     done
     dialog --backtitle "`backtitle`" \
-      --title "Arc Network" --infobox "Set MAC for first NIC" 0 0
+      --title "Arc Network" --infobox "Set new MAC for first NIC" 0 0
     sleep 2
-  elif [ "${ARCPATCH}" = "false" ]; then
-    dialog --backtitle "`backtitle`" \
-      --title "Arc Network" --infobox "Set MAC for all NIC" 0 0
-    sleep 2
-  fi
-  if [ "${ARCPATCH}" = "true" ]; then 
     # Ask for IP rebind
     while true; do
       dialog --clear --backtitle "`backtitle`" \
@@ -69,7 +57,9 @@ function getnet() {
           --infobox "IP/MAC will be changed now!" 0 0
         MAC1="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
         MACN1="${MAC1:0:2}:${MAC1:2:2}:${MAC1:4:2}:${MAC1:6:2}:${MAC1:8:2}:${MAC1:10:2}"
-        ip link set dev eth0 address ${MACN1} 2>&1
+        ifconfig eth0 down
+        ifconfig eth0 hw ether ${MACN1} 2>&1
+        ifconfig eth0 up
         /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
           --title "Restart DHCP" --progressbox "Renewing IP" 20 70
         sleep 5

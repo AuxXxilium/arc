@@ -46,6 +46,7 @@ function getExtractor(){
     echo "Getting syno extractor end"
 }
 
+
 # Get latest LKMs
 # $1 path
 function getLKMs() {
@@ -55,7 +56,7 @@ function getLKMs() {
     rm -f "${CACHE_FILE}"
     TAG=`curl -s "https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest" | grep -oP '"tag_name": "\K(.*)(?=")'`
     STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${CACHE_FILE}"`
-    echo "Status=${STATUS}"
+    echo "TAG=${TAG}; Status=${STATUS}"
     [ ${STATUS} -ne 200 ] && exit 1
     # Unzip LKMs
     rm -rf "${DEST_PATH}"; mkdir -p "${DEST_PATH}"
@@ -63,6 +64,7 @@ function getLKMs() {
     rm -f "${CACHE_FILE}"
     echo "Getting LKMs end - ${TAG}"
 }
+
 
 # Get latest addons and install its
 # $1 path
@@ -73,7 +75,7 @@ function getAddons() {
     local CACHE_FILE="/tmp/addons.zip"
     TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")'`
     STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${CACHE_FILE}"`
-    echo "Status=${STATUS}"
+    echo "TAG=${TAG}; Status=${STATUS}"
     [ ${STATUS} -ne 200 ] && exit 1
     rm -rf "${DEST_PATH}"; mkdir -p "${DEST_PATH}"
     # Install Addons
@@ -100,7 +102,7 @@ function getModules() {
     rm -f "${CACHE_FILE}"
     TAG=`curl -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")'`
     STATUS=`curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${CACHE_FILE}"`
-    echo "Status=${STATUS}"
+    echo "TAG=${TAG}; Status=${STATUS}"
     [ ${STATUS} -ne 200 ] && exit 1
     # Unzip Modules
     rm -rf "${DEST_PATH}"; mkdir -p "${DEST_PATH}"

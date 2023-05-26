@@ -6,6 +6,8 @@ synoinfo: &synoinfo
   support_led_brightness_adjustment: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
+  maxlanport: "8"
+  netif_seq: "0 1 2 3 4 5 6 7"
   esataportcfg: "0x00"
 cmdline: &cmdline
   HddHotplug: 0
@@ -75,8 +77,8 @@ builds:
       zimage-hash: "6f83d644969cb8716baeadd4b1ad351aa93e61d0e5df03637863ad541c2d1442"
       md5-hash: "78a0f066e47066c6e7ac18d3aded40b2"
     patch:
-      - "ramdisk-64551-disable-root-pwd.patch"
-      - "ramdisk-64551-init-script.patch"
+      - "ramdisk-64216-disable-root-pwd.patch"
+      - "ramdisk-64216-init-script.patch"
       - "ramdisk-common-etc-rc.patch"
       - "ramdisk-42951-post-init-script.patch"
       - "ramdisk-42661-disable-disabled-ports.patch"

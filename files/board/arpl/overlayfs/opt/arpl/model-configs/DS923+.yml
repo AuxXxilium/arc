@@ -6,6 +6,8 @@ synoinfo: &synoinfo
   support_led_brightness_adjustment: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
+  maxlanport: "8"
+  netif_seq: "0 1 2 3 4 5 6 7"
   buzzeroffen: "0xffff"
 cmdline: &cmdline
   synoboot2:
@@ -75,7 +77,7 @@ builds:
       zimage-hash: "51ff33a35412db91d2921b2adfb91dfa025318ad047dad8a0e9a6c0df5f8719e"
       md5-hash: "a78678648ed963f07d6459261f696a1d"
     patch:
-      - "ramdisk-64551-disable-root-pwd.patch"
-      - "ramdisk-64551-init-script.patch"
+      - "ramdisk-64216-disable-root-pwd.patch"
+      - "ramdisk-64216-init-script.patch"
       - "ramdisk-common-etc-rc.patch"
       - "ramdisk-42951-post-init-script.patch"

@@ -18,10 +18,6 @@ fi
 # Get actual IP
 IP=`ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p' | head -1`
 
-# Get Number of Ethernet Ports
-NETNUM=`ls /sys/class/net/ | grep eth | wc -l`
-[ ${NETNUM} -gt 8 ] && NETNUM=8 && WARNON=3
-
 # Memory: Check Memory installed
 RAMTOTAL=0
 while read -r line; do
@@ -51,8 +47,6 @@ LAYOUT="`readConfigKey "layout" "${USER_CONFIG_FILE}"`"
 KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
 DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
-DIRECTDSM="`readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}"`"
-BACKUPBOOT="`readConfigKey "arc.backupboot" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
 BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -242,19 +236,14 @@ function arcbuild() {
     resp=$(<${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
     if [ "${resp}" = "1" ]; then
-      #if [ "${EFI}" -eq 1 ]; then
-        SN="`readModelKey "${MODEL}" "arc.serial"`"
-        writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-        writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
-        writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-        dialog --backtitle "`backtitle`" --title "Arc Config" \
-              --msgbox "Installing with Arc Patch\nSuccessfull!" 0 0
-      #else
-      #  dialog --backtitle "`backtitle`" --title "Arc Config" \
-      #        --msgbox "Installing with Arc Patch\nFailed! Please select EFI as Bootmode.\nOtherwise Arc Patch will not work!" 0 0
-      #  return 1
-      #fi
+      # Read valid serial from file
+      SN="`readModelKey "${MODEL}" "arc.serial"`"
+      writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+      writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
+      dialog --backtitle "`backtitle`" --title "Arc Config" \
+            --msgbox "Installing with Arc Patch\nSuccessfull!" 0 0
       break
     elif [ "${resp}" = "2" ]; then
       # Generate random serial
@@ -399,9 +388,6 @@ function make() {
   echo "Ready!"
   sleep 3
   DIRTY=0
-  # Set DirectDSM to false
-  writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
-  grub-editenv ${GRUB_PATH}/grubenv create
   # Build is done
   writeConfigKey "arc.builddone" "1" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -1729,18 +1715,18 @@ function sysinfo() {
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4System:\Zn"
-  TEXT+="\nTyp | Boot: \Zb"${MACHINE}" | "${BOOTSYS}"\Zn"
+  TEXT+="\nTyp | Boot: \Zb${MACHINE} | ${BOOTSYS}\Zn"
   if [ "$MACHINE" = "VIRTUAL" ]; then
-  TEXT+="\nHypervisor: \Zb"${HYPERVISOR}"\Zn"
+  TEXT+="\nHypervisor: \Zb${HYPERVISOR}\Zn"
   fi
-  TEXT+="\nVendor: \Zb"${VENDOR}"\Zn"
-  TEXT+="\nCPU: \Zb"${CPUINFO}"\Zn"
-  TEXT+="\nRAM: \Zb"$((RAMTOTAL /1024))"GB\Zn\n"
+  TEXT+="\nVendor: \Zb${VENDOR}\Zn"
+  TEXT+="\nCPU: \Zb${CPUINFO}\Zn"
+  TEXT+="\nRAM: \Zb$((RAMTOTAL /1024))GB\Zn\n"
   # Print Config Informations
   TEXT+="\n\Z4Config:\Zn"
-  TEXT+="\nArc Version: \Zb"${ARPL_VERSION}"\Zn"
-  TEXT+="\nSubversion: \ZbModules "${MODULESVERSION}"\Zn | \ZbAddons "${ADDONSVERSION}"\Zn | \ZbLKM "${LKMVERSION}"\Zn"
-  TEXT+="\nModel | Build: \Zb"${MODEL}" | "${BUILD}"\Zn"
+  TEXT+="\nArc Version: \Zb${ARPL_VERSION}\Zn"
+  TEXT+="\nSubversion: \ZbModules ${MODULESVERSION}\Zn | \ZbAddons ${ADDONSVERSION}\Zn | \ZbLKM ${LKMVERSION}\Zn"
+  TEXT+="\nModel | Build: \Zb${MODEL} | ${BUILD}\Zn"
   if [ -n "${CONFDONE}" ]; then
     TEXT+="\nConfig: \ZbComplete\Zn"
   else
@@ -1760,20 +1746,20 @@ function sysinfo() {
   else
     TEXT+="\nBackup: \ZbNo Backup found\Zn"
   fi
-  TEXT+="\nArcpatch: \Zb"${ARCPATCH}"\Zn"
-  TEXT+="\nLKM: \Zb"${LKM}"\Zn"
-  TEXT+="\nNetwork: \Zb"${NETNUM}" Adapter\Zn"
-  TEXT+="\nIP(s): \Zb"${IPLIST}"\Zn"
+  TEXT+="\nArcpatch: \Zb${ARCPATCH}\Zn"
+  TEXT+="\nLKM: \Zb${LKM}\Zn"
+  TEXT+="\nNetwork: \Zb${NETRL_NUM} Adapter\Zn"
+  TEXT+="\nIP(s): \Zb${IPLIST}\Zn"
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
-    TEXT+="\nSataPortMap: \Zb"${PORTMAP}"\Zn | DiskIdxMap: \Zb"${DISKMAP}"\Zn"
+    TEXT+="\nSataPortMap: \Zb${PORTMAP}\Zn | DiskIdxMap: \Zb${DISKMAP}\Zn"
   elif [ "${REMAP}" == "3" ]; then
-    TEXT+="\nSataRemap: \Zb"${PORTMAP}"\Zn"
+    TEXT+="\nSataRemap: \Zb${PORTMAP}\Zn"
   elif [ "${REMAP}" == "0" ]; then
     TEXT+="\nPortMap: \Zb"Set by User"\Zn"
   fi
-  TEXT+="\nUSB Mount: \Zb"${USBMOUNT}"\Zn"
-  TEXT+="\nAddons loaded: \Zb"${ADDONSINFO}"\Zn"
-  TEXT+="\nModules loaded: \Zb"${MODULESINFO}"\Zn\n"
+  TEXT+="\nUSB Mount: \Zb${USBMOUNT}\Zn"
+  TEXT+="\nAddons loaded: \Zb${ADDONSINFO}\Zn"
+  TEXT+="\nModules loaded: \Zb${MODULESINFO}\Zn\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
   TEXT+="\n\Z4Storage:\Zn"
   # Get Information for Sata Controller
@@ -1814,8 +1800,8 @@ function sysinfo() {
       NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
       # Get Amount of Drives connected
       SASDRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
-      TEXT+="\n\Z1SAS Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
-      TEXT+="\Z1Drives\Zn detected:\n\Zb"${SASDRIVES}"\Zn\n"
+      TEXT+="\n\Z1SAS Controller\Zn detected:\n\Zb${NAME}\Zn\n"
+      TEXT+="\Z1Drives\Zn detected:\n\Zb${SASDRIVES}\Zn\n"
     done
   fi
   dialog --backtitle "`backtitle`" --title "Arc Sysinfo" --aspect 18 --colors --msgbox "${TEXT}" 0 0
@@ -1963,13 +1949,6 @@ function formatdisks() {
 ###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
-  DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
-  GRUBCONF=`grub-editenv ${GRUB_PATH}/grubenv list | wc -l`
-  if [ ${DIRECTBOOT} = "false" ] && [ ${GRUBCONF} -gt 0 ]; then
-  grub-editenv ${GRUB_PATH}/grubenv create
-  dialog --backtitle "`backtitle`" --title "Arc Directboot" \
-    --msgbox "Disable Directboot!" 0 0
-  fi
   [ ${DIRTY} -eq 1 ] && dialog --backtitle "`backtitle`" --title "Alert" \
     --yesno "Config changed, would you like to rebuild the loader?" 0 0
   if [ $? -eq 0 ]; then
@@ -2017,9 +1996,6 @@ while true; do
       fi
       echo "n \"Change Network Config \" "                                                  >> "${TMP_PATH}/menu"
       echo "u \"Change USB Port Config \" "                                                 >> "${TMP_PATH}/menu"
-      if [ -f "${BACKUPDIR}/dsm-backup.tar" ]; then
-        echo "r \"Boot from Backup: \Z4${BACKUPBOOT}\Zn \" "                                >> "${TMP_PATH}/menu"
-      fi
       if [ -n "${BUILDDONE}" ]; then
         echo "p \"Show .pat download link \" "                                              >> "${TMP_PATH}/menu"
       fi
@@ -2038,10 +2014,7 @@ while true; do
       echo "h \"Edit User Config \" "                                                       >> "${TMP_PATH}/menu"
       echo "i \"DSM Recovery \" "                                                           >> "${TMP_PATH}/menu"
       echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >> "${TMP_PATH}/menu"
-      echo "k \"Direct boot: \Z4${DIRECTBOOT}\Zn \" "                                       >> "${TMP_PATH}/menu"
-      if [ "${DIRECTBOOT}" = "true" ]; then
-        echo "l \"Reset Direct DSM \" "                                                     >> "${TMP_PATH}/menu"
-      fi
+      echo "k \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >> "${TMP_PATH}/menu"
     fi
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >> "${TMP_PATH}/menu"
@@ -2075,10 +2048,6 @@ while true; do
     n) networkMenu; NEXT="n" ;;
     u) usbMenu; NEXT="u" ;;
     t) backupMenu; NEXT="t" ;;
-    r) [ "${BACKUPBOOT}" = "false" ] && BACKUPBOOT='true' || BACKUPBOOT='false'
-      writeConfigKey "backupboot" "${BACKUPBOOT}" "${USER_CONFIG_FILE}"
-      NEXT="5"
-      ;;
     p) paturl; NEXT="p" ;;
     w) downgradeMenu; NEXT="w" ;;
     o) saveMenu; NEXT="o" ;;
@@ -2097,14 +2066,10 @@ while true; do
       DIRTY=1
       NEXT="4"
       ;;
-    k) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
-      writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-      NEXT="4"
-      ;;
-    l) writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
-      grub-editenv ${GRUB_PATH}/grubenv create
-      NEXT="4"
-      ;;
+    q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
+        writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
+        NEXT="e"
+        ;;
     # Loader Settings
     c) keymapMenu; NEXT="c" ;;
     d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
