@@ -174,7 +174,7 @@ if [ ${BOOT} -eq 1 ]; then
 fi
 
 # Wait for an IP
-echo "`printf "$(TEXT "Detected %s network cards, Waiting IP.")" "${#ETHX[@]}"`"
+echo "`printf "Detected %s network cards, Waiting IP." "${#ETHX[@]}"`"
 for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
   COUNT=0
   echo -en "${ETHX[${N}]}: "
