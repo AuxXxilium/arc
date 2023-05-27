@@ -166,6 +166,7 @@ fi
 
 ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
 echo "`printf "Detected %s network cards, Waiting IP." "${#ETHX[@]}"`"
+sleep 3 # wait 3 seconds to give router enough time for dhcp
 for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
   COUNT=0
   echo -en "${ETHX[${N}]}: "
