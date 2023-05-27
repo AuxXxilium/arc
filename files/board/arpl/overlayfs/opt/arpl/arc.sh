@@ -1691,6 +1691,7 @@ function sysinfo() {
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  NETRL_NUM=`ls /sys/class/net/ | grep eth | wc -l`
   IPLIST=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
   REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
@@ -1721,7 +1722,9 @@ function sysinfo() {
   fi
   TEXT+="\nVendor: \Zb${VENDOR}\Zn"
   TEXT+="\nCPU: \Zb${CPUINFO}\Zn"
-  TEXT+="\nRAM: \Zb$((RAMTOTAL /1024))GB\Zn\n"
+  TEXT+="\nRAM: \Zb$((RAMTOTAL /1024))GB\Zn"
+  TEXT+="\nNetwork: \Zb${NETRL_NUM} Adapter\Zn"
+  TEXT+="\nIP(s): \Zb${IPLIST}\Zn\n"
   # Print Config Informations
   TEXT+="\n\Z4Config:\Zn"
   TEXT+="\nArc Version: \Zb${ARPL_VERSION}\Zn"
@@ -1748,8 +1751,6 @@ function sysinfo() {
   fi
   TEXT+="\nArcpatch: \Zb${ARCPATCH}\Zn"
   TEXT+="\nLKM: \Zb${LKM}\Zn"
-  TEXT+="\nNetwork: \Zb${NETRL_NUM} Adapter\Zn"
-  TEXT+="\nIP(s): \Zb${IPLIST}\Zn"
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
     TEXT+="\nSataPortMap: \Zb${PORTMAP}\Zn | DiskIdxMap: \Zb${DISKMAP}\Zn"
   elif [ "${REMAP}" == "3" ]; then
@@ -1758,8 +1759,8 @@ function sysinfo() {
     TEXT+="\nPortMap: \Zb"Set by User"\Zn"
   fi
   TEXT+="\nUSB Mount: \Zb${USBMOUNT}\Zn"
-  TEXT+="\nAddons loaded: \Zb${ADDONSINFO}\Zn"
-  TEXT+="\nModules loaded: \Zb${MODULESINFO}\Zn\n"
+  TEXT+="\nAddons selected: \Zb${ADDONSINFO}\Zn"
+  TEXT+="\nModules needed: \Zb${MODULESINFO}\Zn\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
   TEXT+="\n\Z4Storage:\Zn"
   # Get Information for Sata Controller
