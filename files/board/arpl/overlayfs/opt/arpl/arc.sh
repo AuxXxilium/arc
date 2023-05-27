@@ -1889,6 +1889,56 @@ function paturl() {
 }
 
 ###############################################################################
+# Reset DSM password
+function resetPassword() {
+  SHADOW_FILE=""
+  mkdir -p /tmp/sdX1
+  for I in `ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1`; do
+    mount ${I} /tmp/sdX1
+    if [ -f "/tmp/sdX1/etc/shadow" ]; then
+      cp "/tmp/sdX1/etc/shadow" "/tmp/shadow_bak"
+      SHADOW_FILE="/tmp/shadow_bak"
+    fi
+    umount ${I}
+    [ -n "${SHADOW_FILE}" ] && break
+  done
+  rm -rf /tmp/sdX1
+  if [ -z "${SHADOW_FILE}" ]; then
+    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+      --msgbox "No DSM found in the currently inserted disks!" 0 0
+    return
+  fi
+  ITEMS="`cat ${SHADOW_FILE} | awk -F ':' '{if ($2 != "*" && $2 != "!!") {print $1;}}'`"
+  dialog --clear --no-items --backtitle "`backtitle`" --title "Reset DSM Password" \
+        --menu "Choose a user name" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
+  [ $? -ne 0 ] && return
+  USER=$(<${TMP_PATH}/resp)
+  [ -z "${USER}" ] && return
+  OLDPASSWD=`cat ${SHADOW_FILE} | grep "^${USER}:" | awk -F ':' '{print $2}'`
+
+  dialog --backtitle "`backtitle`" --title "Reset DSM Password" \
+    --inputbox "`printf "Type a new password for user '%s'" "${NAME}"`" 0 0 "${CMDLINE[${NAME}]}" \
+    2>${TMP_PATH}/resp
+  [ $? -ne 0 ] && return
+  VALUE="`<"${TMP_PATH}/resp"`"
+  NEWPASSWD=`python -c "import crypt,getpass;pw=\"${VALUE}\";print(crypt.crypt(pw))"`
+  (
+    mkdir -p /tmp/sdX1
+    for I in `ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1`; do
+      mount ${I} /tmp/sdX1
+      sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "/tmp/sdX1/etc/shadow"
+      sync
+      umount ${I}
+    done
+    rm -rf /tmp/sdX1
+  ) | dialog --backtitle "`backtitle`" --title "Reset DSM Password" \
+      --progressbox "Resetting ..." 20 70
+  [ -f "${SHADOW_FILE}" ] && rm -rf "${SHADOW_FILE}"
+  dialog --backtitle "`backtitle`" --colors --aspect 18 \
+    --msgbox "Password reset completed." 0 0
+}
+
+###############################################################################
 # allow user to save modifications to disk
 function saveMenu() {
   dialog --backtitle "`backtitle`" --title "Save to Disk" \
@@ -1986,9 +2036,9 @@ while true; do
     echo "2 \"Addons \" "                                                                   >> "${TMP_PATH}/menu"
     echo "3 \"Modules \" "                                                                  >> "${TMP_PATH}/menu"
     if [ -n "${ARCOPTS}" ]; then
-      echo "v \"\Z1Hide Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
+      echo "7 \"\Z1Hide Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
     else
-      echo "v \"\Z1Show Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
+      echo "7 \"\Z1Show Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
     fi
     if [ -n "${ARCOPTS}" ]; then
       if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
@@ -2000,21 +2050,28 @@ while true; do
         echo "p \"Show .pat download link \" "                                              >> "${TMP_PATH}/menu"
       fi
       echo "w \"Allow DSM downgrade \" "                                                    >> "${TMP_PATH}/menu"
-      echo "o \"Save Modifications to Disk \" "                                             >> "${TMP_PATH}/menu"
-      echo "z \"\Z1Format Disk(s)\Zn \" "                                                   >> "${TMP_PATH}/menu"
+      echo "x \"Reset DSM Password \" "                                                     >> "${TMP_PATH}/menu"
+      echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >> "${TMP_PATH}/menu"
     fi
     if [ -n "${ADVOPTS}" ]; then
-      echo "x \"\Z1Hide Advanced Options\Zn \" "                                            >> "${TMP_PATH}/menu"
+      echo "8 \"\Z1Hide Advanced Options\Zn \" "                                            >> "${TMP_PATH}/menu"
     else
-      echo "x \"\Z1Show Advanced Options\Zn \" "                                            >> "${TMP_PATH}/menu"
+      echo "8 \"\Z1Show Advanced Options\Zn \" "                                            >> "${TMP_PATH}/menu"
     fi
     if [ -n "${ADVOPTS}" ]; then
       echo "f \"Cmdline \" "                                                                >> "${TMP_PATH}/menu"
       echo "g \"Synoinfo \" "                                                               >> "${TMP_PATH}/menu"
       echo "h \"Edit User Config \" "                                                       >> "${TMP_PATH}/menu"
       echo "i \"DSM Recovery \" "                                                           >> "${TMP_PATH}/menu"
-      echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >> "${TMP_PATH}/menu"
       echo "k \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >> "${TMP_PATH}/menu"
+    fi
+    echo "9 \"\Z1Hide Dev Options\Zn \" "                                                   >> "${TMP_PATH}/menu"
+    else
+      echo "9 \"\Z1Show Dev Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
+    fi
+    if [ -n "${DEVOPTS}" ]; then
+      echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >> "${TMP_PATH}/menu"
+      echo "o \"Save Modifications to Disk \" "                                             >> "${TMP_PATH}/menu"
     fi
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >> "${TMP_PATH}/menu"
@@ -2040,9 +2097,9 @@ while true; do
     2) addonMenu; NEXT="2" ;;
     3) modulesMenu; NEXT="3" ;;
     # Arc Section
-    v) [ "${ARCOPTS}" = "" ] && ARCOPTS='1' || ARCOPTS=''
+    7) [ "${ARCOPTS}" = "" ] && ARCOPTS='1' || ARCOPTS=''
        ARCOPTS="${ARCOPTS}"
-       NEXT="v"
+       NEXT="7"
        ;;
     s) storageMenu; NEXT="s" ;;
     n) networkMenu; NEXT="n" ;;
@@ -2050,26 +2107,32 @@ while true; do
     t) backupMenu; NEXT="t" ;;
     p) paturl; NEXT="p" ;;
     w) downgradeMenu; NEXT="w" ;;
-    o) saveMenu; NEXT="o" ;;
-    z) formatdisks; NEXT="z" ;;
+    x) resetPassword; NEXT="x" ;;
+    +) formatdisks; NEXT="+" ;;
     # Advanced Section
-    x) [ "${ADVOPTS}" = "" ] && ADVOPTS='1' || ADVOPTS=''
+    8) [ "${ADVOPTS}" = "" ] && ADVOPTS='1' || ADVOPTS=''
        ADVOPTS="${ADVOPTS}"
-       NEXT="x"
+       NEXT="8"
        ;;
     f) cmdlineMenu; NEXT="f" ;;
     g) synoinfoMenu; NEXT="g" ;;
     h) editUserConfig; NEXT="h" ;;
     i) tryRecoveryDSM; NEXT="i" ;;
-    j) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
-      writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
-      DIRTY=1
-      NEXT="j"
-      ;;
     k) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
         writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
         NEXT="k"
         ;;
+    # Arc Section
+    9) [ "${DEVOPTS}" = "" ] && DEVOPTS='1' || DEVOPTS=''
+       ARCOPTS="${DEVOPTS}"
+       NEXT="9"
+       ;;
+    j) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
+        writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
+        DIRTY=1
+        NEXT="j"
+        ;;
+    o) saveMenu; NEXT="o" ;;
     # Loader Settings
     c) keymapMenu; NEXT="c" ;;
     d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
