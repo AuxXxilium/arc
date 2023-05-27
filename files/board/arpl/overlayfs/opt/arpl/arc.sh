@@ -47,6 +47,7 @@ LAYOUT="`readConfigKey "layout" "${USER_CONFIG_FILE}"`"
 KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
 DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
+DIRECTDSM="`readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
 BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -388,6 +389,11 @@ function make() {
   echo "Ready!"
   sleep 3
   DIRTY=0
+  if [ ${DIRECTBOOT} = "true" ]; then
+    # Set DirectDSM to false
+    writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
+    grub-editenv ${GRUB_PATH}/grubenv create
+  fi
   # Build is done
   writeConfigKey "arc.builddone" "1" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -1691,6 +1697,7 @@ function sysinfo() {
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  NETRL_NUM=`ls /sys/class/net/ | grep eth | wc -l`
   IPLIST=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
   REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
@@ -1721,7 +1728,9 @@ function sysinfo() {
   fi
   TEXT+="\nVendor: \Zb${VENDOR}\Zn"
   TEXT+="\nCPU: \Zb${CPUINFO}\Zn"
-  TEXT+="\nRAM: \Zb$((RAMTOTAL /1024))GB\Zn\n"
+  TEXT+="\nRAM: \Zb$((RAMTOTAL /1024))GB\Zn"
+  TEXT+="\nNetwork: \Zb${NETRL_NUM} Adapter\Zn"
+  TEXT+="\nIP(s): \Zb${IPLIST}\Zn\n"
   # Print Config Informations
   TEXT+="\n\Z4Config:\Zn"
   TEXT+="\nArc Version: \Zb${ARPL_VERSION}\Zn"
@@ -1748,8 +1757,6 @@ function sysinfo() {
   fi
   TEXT+="\nArcpatch: \Zb${ARCPATCH}\Zn"
   TEXT+="\nLKM: \Zb${LKM}\Zn"
-  TEXT+="\nNetwork: \Zb${NETRL_NUM} Adapter\Zn"
-  TEXT+="\nIP(s): \Zb${IPLIST}\Zn"
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
     TEXT+="\nSataPortMap: \Zb${PORTMAP}\Zn | DiskIdxMap: \Zb${DISKMAP}\Zn"
   elif [ "${REMAP}" == "3" ]; then
@@ -1758,8 +1765,8 @@ function sysinfo() {
     TEXT+="\nPortMap: \Zb"Set by User"\Zn"
   fi
   TEXT+="\nUSB Mount: \Zb${USBMOUNT}\Zn"
-  TEXT+="\nAddons loaded: \Zb${ADDONSINFO}\Zn"
-  TEXT+="\nModules loaded: \Zb${MODULESINFO}\Zn\n"
+  TEXT+="\nAddons selected: \Zb${ADDONSINFO}\Zn"
+  TEXT+="\nModules needed: \Zb${MODULESINFO}\Zn\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
   TEXT+="\n\Z4Storage:\Zn"
   # Get Information for Sata Controller
@@ -1889,6 +1896,56 @@ function paturl() {
 }
 
 ###############################################################################
+# Reset DSM password
+function resetPassword() {
+  SHADOW_FILE=""
+  mkdir -p /tmp/sdX1
+  for I in `ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1`; do
+    mount ${I} /tmp/sdX1
+    if [ -f "/tmp/sdX1/etc/shadow" ]; then
+      cp "/tmp/sdX1/etc/shadow" "/tmp/shadow_bak"
+      SHADOW_FILE="/tmp/shadow_bak"
+    fi
+    umount ${I}
+    [ -n "${SHADOW_FILE}" ] && break
+  done
+  rm -rf /tmp/sdX1
+  if [ -z "${SHADOW_FILE}" ]; then
+    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+      --msgbox "No DSM found in the currently inserted disks!" 0 0
+    return
+  fi
+  ITEMS="`cat ${SHADOW_FILE} | awk -F ':' '{if ($2 != "*" && $2 != "!!") {print $1;}}'`"
+  dialog --clear --no-items --backtitle "`backtitle`" --title "Reset DSM Password" \
+        --menu "Choose a user name" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
+  [ $? -ne 0 ] && return
+  USER=$(<${TMP_PATH}/resp)
+  [ -z "${USER}" ] && return
+  OLDPASSWD=`cat ${SHADOW_FILE} | grep "^${USER}:" | awk -F ':' '{print $2}'`
+
+  dialog --backtitle "`backtitle`" --title "Reset DSM Password" \
+    --inputbox "`printf "Type a new password for user '%s'" "${NAME}"`" 0 0 "${CMDLINE[${NAME}]}" \
+    2>${TMP_PATH}/resp
+  [ $? -ne 0 ] && return
+  VALUE="`<"${TMP_PATH}/resp"`"
+  NEWPASSWD=`python -c "import crypt,getpass;pw=\"${VALUE}\";print(crypt.crypt(pw))"`
+  (
+    mkdir -p /tmp/sdX1
+    for I in `ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1`; do
+      mount ${I} /tmp/sdX1
+      sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "/tmp/sdX1/etc/shadow"
+      sync
+      umount ${I}
+    done
+    rm -rf /tmp/sdX1
+  ) | dialog --backtitle "`backtitle`" --title "Reset DSM Password" \
+      --progressbox "Resetting ..." 20 70
+  [ -f "${SHADOW_FILE}" ] && rm -rf "${SHADOW_FILE}"
+  dialog --backtitle "`backtitle`" --colors --aspect 18 \
+    --msgbox "Password reset completed." 0 0
+}
+
+###############################################################################
 # allow user to save modifications to disk
 function saveMenu() {
   dialog --backtitle "`backtitle`" --title "Save to Disk" \
@@ -1949,6 +2006,13 @@ function formatdisks() {
 ###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
+  DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
+  GRUBCONF=`grub-editenv ${GRUB_PATH}/grubenv list | wc -l`
+  if [ ${DIRECTBOOT} = "false" ] && [ ${GRUBCONF} -gt 0 ]; then
+  grub-editenv ${GRUB_PATH}/grubenv create
+  dialog --backtitle "`backtitle`" --title "Arc Directboot" \
+    --msgbox "Disable Directboot!" 0 0
+  fi
   [ ${DIRTY} -eq 1 ] && dialog --backtitle "`backtitle`" --title "Alert" \
     --yesno "Config changed, would you like to rebuild the loader?" 0 0
   if [ $? -eq 0 ]; then
@@ -1986,9 +2050,9 @@ while true; do
     echo "2 \"Addons \" "                                                                   >> "${TMP_PATH}/menu"
     echo "3 \"Modules \" "                                                                  >> "${TMP_PATH}/menu"
     if [ -n "${ARCOPTS}" ]; then
-      echo "v \"\Z1Hide Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
+      echo "7 \"\Z1Hide Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
     else
-      echo "v \"\Z1Show Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
+      echo "7 \"\Z1Show Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
     fi
     if [ -n "${ARCOPTS}" ]; then
       if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
@@ -2000,21 +2064,31 @@ while true; do
         echo "p \"Show .pat download link \" "                                              >> "${TMP_PATH}/menu"
       fi
       echo "w \"Allow DSM downgrade \" "                                                    >> "${TMP_PATH}/menu"
-      echo "o \"Save Modifications to Disk \" "                                             >> "${TMP_PATH}/menu"
-      echo "z \"\Z1Format Disk(s)\Zn \" "                                                   >> "${TMP_PATH}/menu"
+      echo "x \"Reset DSM Password \" "                                                     >> "${TMP_PATH}/menu"
+      echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >> "${TMP_PATH}/menu"
     fi
     if [ -n "${ADVOPTS}" ]; then
-      echo "x \"\Z1Hide Advanced Options\Zn \" "                                            >> "${TMP_PATH}/menu"
+      echo "8 \"\Z1Hide Advanced Options\Zn \" "                                            >> "${TMP_PATH}/menu"
     else
-      echo "x \"\Z1Show Advanced Options\Zn \" "                                            >> "${TMP_PATH}/menu"
+      echo "8 \"\Z1Show Advanced Options\Zn \" "                                            >> "${TMP_PATH}/menu"
     fi
     if [ -n "${ADVOPTS}" ]; then
       echo "f \"Cmdline \" "                                                                >> "${TMP_PATH}/menu"
       echo "g \"Synoinfo \" "                                                               >> "${TMP_PATH}/menu"
       echo "h \"Edit User Config \" "                                                       >> "${TMP_PATH}/menu"
       echo "i \"DSM Recovery \" "                                                           >> "${TMP_PATH}/menu"
-      echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >> "${TMP_PATH}/menu"
       echo "k \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >> "${TMP_PATH}/menu"
+      if [ "${DIRECTBOOT}" = "true" ]; then
+        echo "l \"Reset Direct DSM \" "                                                     >> "${TMP_PATH}/menu"
+      fi
+    fi
+    echo "9 \"\Z1Hide Dev Options\Zn \" "                                                   >> "${TMP_PATH}/menu"
+    else
+      echo "9 \"\Z1Show Dev Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
+    fi
+    if [ -n "${DEVOPTS}" ]; then
+      echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >> "${TMP_PATH}/menu"
+      echo "o \"Save Modifications to Disk \" "                                             >> "${TMP_PATH}/menu"
     fi
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >> "${TMP_PATH}/menu"
@@ -2040,9 +2114,9 @@ while true; do
     2) addonMenu; NEXT="2" ;;
     3) modulesMenu; NEXT="3" ;;
     # Arc Section
-    v) [ "${ARCOPTS}" = "" ] && ARCOPTS='1' || ARCOPTS=''
+    7) [ "${ARCOPTS}" = "" ] && ARCOPTS='1' || ARCOPTS=''
        ARCOPTS="${ARCOPTS}"
-       NEXT="v"
+       NEXT="7"
        ;;
     s) storageMenu; NEXT="s" ;;
     n) networkMenu; NEXT="n" ;;
@@ -2050,26 +2124,36 @@ while true; do
     t) backupMenu; NEXT="t" ;;
     p) paturl; NEXT="p" ;;
     w) downgradeMenu; NEXT="w" ;;
-    o) saveMenu; NEXT="o" ;;
-    z) formatdisks; NEXT="z" ;;
+    x) resetPassword; NEXT="x" ;;
+    +) formatdisks; NEXT="+" ;;
     # Advanced Section
-    x) [ "${ADVOPTS}" = "" ] && ADVOPTS='1' || ADVOPTS=''
+    8) [ "${ADVOPTS}" = "" ] && ADVOPTS='1' || ADVOPTS=''
        ADVOPTS="${ADVOPTS}"
-       NEXT="x"
+       NEXT="8"
        ;;
     f) cmdlineMenu; NEXT="f" ;;
     g) synoinfoMenu; NEXT="g" ;;
     h) editUserConfig; NEXT="h" ;;
     i) tryRecoveryDSM; NEXT="i" ;;
+    k) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
+      writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
+      NEXT="k"
+      ;;
+    l) writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
+      grub-editenv ${GRUB_PATH}/grubenv create
+      NEXT="4"
+      ;;
+    # Arc Section
+    9) [ "${DEVOPTS}" = "" ] && DEVOPTS='1' || DEVOPTS=''
+      ARCOPTS="${DEVOPTS}"
+      NEXT="9"
+      ;;
     j) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
       writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
       DIRTY=1
-      NEXT="4"
+      NEXT="j"
       ;;
-    q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
-        writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-        NEXT="e"
-        ;;
+    o) saveMenu; NEXT="o" ;;
     # Loader Settings
     c) keymapMenu; NEXT="c" ;;
     d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
