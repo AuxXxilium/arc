@@ -2107,7 +2107,8 @@ while true; do
         echo "l \"Reset Direct DSM \" "                                                     >> "${TMP_PATH}/menu"
       fi
     fi
-    echo "9 \"\Z1Hide Dev Options\Zn \" "                                                   >> "${TMP_PATH}/menu"
+    if [ -n "${DEVOPTS}" ]; then
+      echo "9 \"\Z1Hide Dev Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
     else
       echo "9 \"\Z1Show Dev Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
     fi
