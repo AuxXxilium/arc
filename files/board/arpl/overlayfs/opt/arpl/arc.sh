@@ -1242,7 +1242,7 @@ function backupMenu() {
           ;;
         6)
           while true; do
-            dialog --backtitle "`backtitle`" --title "Restore Config with Code" \
+            dialog --backtitle "`backtitle`" --title "Restore with Code" \
               --inputbox "Type your Code here!" 0 0 \
               2>${TMP_PATH}/resp
             RET=$?
@@ -1252,7 +1252,20 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore with Code" --msgbox "Invalid Code" 0 0
           done
           curl -k https://dpaste.com/${GENHASH}.txt > /tmp/user-config.yml
-          mv -f /tmp/user-config.yml /mnt/p1/user-config.yml
+          cp -f /tmp/user-config.yml /mnt/p1/user-config.yml
+          MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+          BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          PLATFORM="`readModelKey "${MODEL}" "platform"`"
+          KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+          # Rebuild modules
+          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+          while read ID DESC; do
+            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+          done < <(getAllModules "${PLATFORM}" "${KVER}")
+          CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+          dialog --backtitle "`backtitle`" --title "Restore with Code" --aspect 18 \
+              --msgbox "Restore complete" 0 0
           ;;
         7)
           dialog --backtitle "`backtitle`" --title "Backup Path" --aspect 18 \
@@ -1323,7 +1336,16 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore with Code" --msgbox "Invalid Code" 0 0
           done
           curl -k https://dpaste.com/${GENHASH}.txt > /tmp/user-config.yml
-          mv -f /tmp/user-config.yml /mnt/p1/user-config.yml
+          cp -f /tmp/user-config.yml /mnt/p1/user-config.yml
+          MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+          BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          PLATFORM="`readModelKey "${MODEL}" "platform"`"
+          KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+          # Rebuild modules
+          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+          while read ID DESC; do
+            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+          done < <(getAllModules "${PLATFORM}" "${KVER}")
           CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           dialog --backtitle "`backtitle`" --title "Restore with Code" --aspect 18 \
