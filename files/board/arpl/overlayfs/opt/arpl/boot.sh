@@ -42,6 +42,11 @@ if [ "`sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}'`" != "${RAMDISK_HASH}" ]; 
   fi
 fi
 
+# Arc Functions
+DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
+DIRECTDSM="`readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}"`"
+GRUBCONF=`grub-editenv ${GRUB_PATH}/grubenv list | wc -l`
+
 # Load necessary variables
 VID="`readConfigKey "vid" "${USER_CONFIG_FILE}"`"
 PID="`readConfigKey "pid" "${USER_CONFIG_FILE}"`"
@@ -137,50 +142,58 @@ done
 CMDLINE_DIRECT=`echo ${CMDLINE_DIRECT} | sed 's/>/\\\\>/g'`
 echo -e "Cmdline:\n\033[1;36m${CMDLINE_LINE}\033[0m"
 
-DIRECT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
-if [ "${DIRECT}" = "true" ]; then
-  grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
-  echo -e "\033[1;33mReboot to boot directly in DSM\033[0m"
-  grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
-  reboot
+# Make Directboot persistent if DSM is installed
+if [ "${DIRECTBOOT}" = "true" ]; then
+  if [ "${DIRECTDSM}" = "true" ]; then
+    grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
+    grub-editenv ${GRUB_PATH}/grubenv set default="direct"
+    echo -e "\033[1;33mEnable Directboot - DirectDSM\033[0m"
+    echo -e "\033[1;33mDSM installed - Reboot with Directboot\033[0m"
+    reboot
+  elif [ "${DIRECTDSM}" = "false" ]; then
+    grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
+    grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
+    writeConfigKey "arc.directdsm" "true" "${USER_CONFIG_FILE}"
+    echo -e "\033[1;33mDSM not installed - Reboot with Directboot\033[0m"
+    reboot
+  fi
   exit 0
-else
-  ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
-  echo "`printf "Detected %s network cards, Waiting IP." "${#ETHX[@]}"`"
-  for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
-    COUNT=0
-    echo -en "${ETHX[${N}]}: "
-    while true; do
-      if [ -z "`ip link show ${ETHX[${N}]} | grep 'UP'`" ]; then
-        echo -en "\r${ETHX[${N}]}: DOWN\n"
-        break
-      fi
-      if [ ${COUNT} -eq 8 ]; then # Under normal circumstances, no errors should occur here.
-        echo -en "\r${ETHX[${N}]}: ERROR\n"
-        break
-      fi
-      COUNT=$((${COUNT}+1))
-      IP=`ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
-      if [ -n "${IP}" ]; then
-        echo -en "\r${ETHX[${N}]}: `printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}"`\n"
-        break
-      fi
-      echo -n "."
-      sleep 1
-    done
-  done
+elif [ "${DIRECTBOOT}" = "false" ] && [ ${GRUBCONF} -gt 0 ]; then
+    grub-editenv ${GRUB_PATH}/grubenv create
+    echo -e "\033[1;33mDisable Directboot - DirectDSM\033[0m"
+    writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
 fi
+
+ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
+echo "`printf "Detected %s network cards, Waiting IP." "${#ETHX[@]}"`"
+for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
+  COUNT=0
+  echo -en "${ETHX[${N}]}: "
+  while true; do
+    if [ -z "`ip link show ${ETHX[${N}]} | grep 'UP'`" ]; then
+      echo -en "\r${ETHX[${N}]}: DOWN\n"
+      break
+    fi
+    if [ ${COUNT} -eq 8 ]; then # Under normal circumstances, no errors should occur here.
+      echo -en "\r${ETHX[${N}]}: ERROR\n"
+      break
+    fi
+    COUNT=$((${COUNT}+1))
+    IP=`ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
+    if [ -n "${IP}" ]; then
+      echo -en "\r${ETHX[${N}]}: `printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}"`\n"
+      break
+    fi
+    echo -n "."
+    sleep 1
+  done
+done
 
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
 # Executes DSM kernel via KEXEC
-if [ "${KVER:0:1}" = "3" -a ${EFI} -eq 1 ]; then
-  echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
-  kexec --noefi -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
-else
-  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
-fi
-echo -e "\033[1;37m"Booting..."\033[0m"
+kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
+echo -e "\033[1;37m"Booting DSM..."\033[0m"
 for T in `w | grep -v "TTY" | awk -F' ' '{print $2}'`
 do
   echo -e "\n\033[1;43m[This interface will not be operational. Please use the http://find.synology.com/ find DSM and connect.]\033[0m\n" > "/dev/${T}" 2>/dev/null || true

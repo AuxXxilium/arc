@@ -47,6 +47,7 @@ LAYOUT="`readConfigKey "layout" "${USER_CONFIG_FILE}"`"
 KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
 DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
+DIRECTDSM="`readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
 BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -388,6 +389,11 @@ function make() {
   echo "Ready!"
   sleep 3
   DIRTY=0
+  if [ ${DIRECTBOOT} = "true" ]; then
+    # Set DirectDSM to false
+    writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
+    grub-editenv ${GRUB_PATH}/grubenv create
+  fi
   # Build is done
   writeConfigKey "arc.builddone" "1" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -2000,6 +2006,13 @@ function formatdisks() {
 ###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
+  DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
+  GRUBCONF=`grub-editenv ${GRUB_PATH}/grubenv list | wc -l`
+  if [ ${DIRECTBOOT} = "false" ] && [ ${GRUBCONF} -gt 0 ]; then
+  grub-editenv ${GRUB_PATH}/grubenv create
+  dialog --backtitle "`backtitle`" --title "Arc Directboot" \
+    --msgbox "Disable Directboot!" 0 0
+  fi
   [ ${DIRTY} -eq 1 ] && dialog --backtitle "`backtitle`" --title "Alert" \
     --yesno "Config changed, would you like to rebuild the loader?" 0 0
   if [ $? -eq 0 ]; then
@@ -2065,6 +2078,9 @@ while true; do
       echo "h \"Edit User Config \" "                                                       >> "${TMP_PATH}/menu"
       echo "i \"DSM Recovery \" "                                                           >> "${TMP_PATH}/menu"
       echo "k \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >> "${TMP_PATH}/menu"
+      if [ "${DIRECTBOOT}" = "true" ]; then
+        echo "l \"Reset Direct DSM \" "                                                     >> "${TMP_PATH}/menu"
+      fi
     fi
     echo "9 \"\Z1Hide Dev Options\Zn \" "                                                   >> "${TMP_PATH}/menu"
     else
@@ -2120,19 +2136,23 @@ while true; do
     h) editUserConfig; NEXT="h" ;;
     i) tryRecoveryDSM; NEXT="i" ;;
     k) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
-        writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-        NEXT="k"
-        ;;
+      writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
+      NEXT="k"
+      ;;
+    l) writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
+      grub-editenv ${GRUB_PATH}/grubenv create
+      NEXT="4"
+      ;;
     # Arc Section
     9) [ "${DEVOPTS}" = "" ] && DEVOPTS='1' || DEVOPTS=''
-       ARCOPTS="${DEVOPTS}"
-       NEXT="9"
-       ;;
+      ARCOPTS="${DEVOPTS}"
+      NEXT="9"
+      ;;
     j) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
-        writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
-        DIRTY=1
-        NEXT="j"
-        ;;
+      writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
+      DIRTY=1
+      NEXT="j"
+      ;;
     o) saveMenu; NEXT="o" ;;
     # Loader Settings
     c) keymapMenu; NEXT="c" ;;
