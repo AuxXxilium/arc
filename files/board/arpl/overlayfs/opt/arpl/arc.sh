@@ -2064,11 +2064,11 @@ while true; do
     j) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
       writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
       DIRTY=1
-      NEXT="4"
+      NEXT="j"
       ;;
-    q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
+    k) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
         writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-        NEXT="e"
+        NEXT="k"
         ;;
     # Loader Settings
     c) keymapMenu; NEXT="c" ;;
