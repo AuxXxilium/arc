@@ -243,16 +243,12 @@ function arcbuild() {
       writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
       writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-      dialog --backtitle "`backtitle`" --title "Arc Config" \
-            --msgbox "Installing with Arc Patch\nSuccessfull!" 0 0
       break
     elif [ "${resp}" = "2" ]; then
       # Generate random serial
       SN="`generateSerial "${MODEL}"`"
       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-      dialog --backtitle "`backtitle`" --title "Arc Config" \
-      --msgbox "Installing without Arc Patch!" 0 0
       break
     fi
   done
@@ -1379,7 +1375,6 @@ function updateMenu() {
         3 "Update Addons" \
         4 "Update LKMs" \
         5 "Update Modules" \
-        6 "Switch to Beta Modules" \
         0 "Exit" \
         2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
@@ -1585,36 +1580,6 @@ function updateMenu() {
           fi
           DIRTY=1
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-            --msgbox "Modules updated to ${TAG} with success!" 0 0
-          ;;
-        6)
-          dialog --backtitle "`backtitle`" --title "Beta Modules" --aspect 18 \
-            --infobox "Checking latest version" 0 0
-          TAG="`curl -k -s "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r 'map(select(.prerelease)) | .[0].tag_name'`"
-          if [ $? -ne 0 -o -z "${TAG}" ]; then
-            dialog --backtitle "`backtitle`" --title "Beta Modules" --aspect 18 \
-              --msgbox "Error checking new version" 0 0
-            continue
-          fi
-          dialog --backtitle "`backtitle`" --title "Beta Modules" --aspect 18 \
-            --infobox "Downloading latest version" 0 0
-          STATUS="`curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "/tmp/modules.zip"`"
-          if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-            dialog --backtitle "`backtitle`" --title "Beta Modules" --aspect 18 \
-              --msgbox "Error downloading latest version" 0 0
-            continue
-          fi
-          rm "${MODULES_PATH}/"*
-          unzip /tmp/modules.zip -d "${MODULES_PATH}" >/dev/null 2>&1
-          # Rebuild modules if model/buildnumber is selected
-          if [ -n "${PLATFORM}" -a -n "${KVER}" ]; then
-            writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-            while read ID DESC; do
-              writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-            done < <(getAllModules "${PLATFORM}" "${KVER}")
-          fi
-          DIRTY=1
-          dialog --backtitle "`backtitle`" --title "Beta Modules" --aspect 18 \
             --msgbox "Modules updated to ${TAG} with success!" 0 0
           ;;
         0) return ;;
