@@ -243,16 +243,12 @@ function arcbuild() {
       writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
       writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-      dialog --backtitle "`backtitle`" --title "Arc Config" \
-            --msgbox "Installing with Arc Patch\nSuccessfull!" 0 0
       break
     elif [ "${resp}" = "2" ]; then
       # Generate random serial
       SN="`generateSerial "${MODEL}"`"
       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-      dialog --backtitle "`backtitle`" --title "Arc Config" \
-      --msgbox "Installing without Arc Patch!" 0 0
       break
     fi
   done
