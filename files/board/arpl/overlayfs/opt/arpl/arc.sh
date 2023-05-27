@@ -1138,7 +1138,6 @@ function backupMenu() {
         4 "Restore DSM Bootimage" \
         5 "Backup Config with Code" \
         6 "Restore Config with Code" \
-        7 "Show Backup Path" \
         0 "Exit" \
         2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
@@ -1175,6 +1174,10 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
               --msgbox "No Config Backup found" 0 0
           fi
+          MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+          BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          PLATFORM="`readModelKey "${MODEL}" "platform"`"
+          KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
           CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
           deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -1234,7 +1237,7 @@ function backupMenu() {
           dialog --backtitle "`backtitle`" --title "Backup Config with Code" \
               --infobox "Write down your Code for Restore!" 0 0
           if [ -f "${USER_CONFIG_FILE}" ]; then
-            GENHASH=`cat /mnt/p1/user-config.yml | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-`
+            GENHASH=`cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-`
             dialog --backtitle "`backtitle`" --title "Backup Config with Code" --msgbox "Your Code: ${GENHASH}" 0 0
           else
             dialog --backtitle "`backtitle`" --title "Backup Config with Code" --msgbox "No Config for Backup found!" 0 0
@@ -1252,7 +1255,7 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore with Code" --msgbox "Invalid Code" 0 0
           done
           curl -k https://dpaste.com/${GENHASH}.txt > /tmp/user-config.yml
-          cp -f /tmp/user-config.yml /mnt/p1/user-config.yml
+          cp -f /tmp/user-config.yml ${USER_CONFIG_FILE}
           MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
           BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
           PLATFORM="`readModelKey "${MODEL}" "platform"`"
@@ -1266,10 +1269,6 @@ function backupMenu() {
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           dialog --backtitle "`backtitle`" --title "Restore with Code" --aspect 18 \
               --msgbox "Restore complete" 0 0
-          ;;
-        7)
-          dialog --backtitle "`backtitle`" --title "Backup Path" --aspect 18 \
-            --msgbox "Open in Explorer: \\\\${IP}\arpl\p3\backup" 0 0
           ;;
         0) return ;;
       esac
@@ -1297,6 +1296,10 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
               --msgbox "No Config Backup found" 0 0
           fi
+          MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+          BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          PLATFORM="`readModelKey "${MODEL}" "platform"`"
+          KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
           CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
           deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -1336,7 +1339,7 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore with Code" --msgbox "Invalid Code" 0 0
           done
           curl -k https://dpaste.com/${GENHASH}.txt > /tmp/user-config.yml
-          cp -f /tmp/user-config.yml /mnt/p1/user-config.yml
+          cp -f /tmp/user-config.yml ${USER_CONFIG_FILE}
           MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
           BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
           PLATFORM="`readModelKey "${MODEL}" "platform"`"
