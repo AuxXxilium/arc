@@ -65,7 +65,7 @@ fi
 declare -A CMDLINE
 
 # Fixed values
-#CMDLINE['netif_num']=0
+CMDLINE['netif_num']=0
 # Automatic values
 CMDLINE['syno_hw_version']="${MODEL}"
 [ -z "${VID}" ] && VID="0x0000" # Sanity check
@@ -97,31 +97,18 @@ if [ "${BUS}" = "ata" ]; then
 fi
 
 # Validate netif_num
-MACS=()
-for N in `seq 1 8`; do  # Currently, only up to 8 are supported.  (<==> menu.sh L396, <==> lkm: MAX_NET_IFACES)
-  [ -n "${CMDLINE["mac${N}"]}" ] && MACS+=(${CMDLINE["mac${N}"]})
-done
-NETIF_NUM=${#MACS[*]}
-NETRL_NUM=`ls /sys/class/net/ | grep eth | wc -l` # real network cards amount
-if [ ${NETIF_NUM} -eq 0 ]; then
-  echo -e "\033[1;33m*** `printf "Detected %s network cards, but No MACs were customized, they will use the original MACs." "${NETRL_NUM}"` ***\033[0m"
-else
-  # set netif_num to custom mac amount, netif_num must be equal to the MACX amount, otherwise the kernel will panic.
-  CMDLINE["netif_num"]=${NETIF_NUM}  # The current original CMDLINE['netif_num'] is no longer in use, Consider deleting.
-  if [ ${NETIF_NUM} -le ${NETRL_NUM} ]; then
-    echo -e "\033[1;33m*** `printf "%s network cards dedected, %s MACs were customized, the rest will use the original MACs." "${NETRL_NUM}" "${CMDLINE["netif_num"]}"` ***\033[0m"
-    ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
-    for N in `seq $(expr ${NETIF_NUM} + 1) ${NETRL_NUM}`; do 
-      MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
-      # no duplicates
-      while [[ "${MACS[*]}" =~ "$MACR" ]]; do # no duplicates
-        MACR="${MACR:0:10}`printf "%02x" $((0x${MACR:10:2} + 1))`" 
-      done
-      CMDLINE["mac${N}"]="${MACR}"
-    done
-    CMDLINE["netif_num"]=${NETRL_NUM}
-  fi
+NETIF_NUM=${CMDLINE["netif_num"]}
+NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
+if [ ${NETIF_NUM} -ne ${NETNUM} ]; then
+  echo -e "\033[1;33m*** netif_num is not equal to NIC amount, boot with NIC amount. ***\033[0m"
+  ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
+  CMDLINE["netif_num"]=${NETNUM}
 fi
+if [ ${NETNUM} -gt 8 ]; then
+  NETNUM=8
+  echo -e "\033[1;33m*** WARNING: Only 8 NIC are supported by Redpill***\033[0m"
+fi
+
 
 # Prepare command line
 CMDLINE_LINE=""
@@ -166,7 +153,6 @@ fi
 
 ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
 echo "`printf "Detected %s network cards, Waiting IP." "${#ETHX[@]}"`"
-sleep 3 # wait 3 seconds to give router enough time for dhcp
 for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
   COUNT=0
   echo -en "${ETHX[${N}]}: "
@@ -175,14 +161,18 @@ for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
       echo -en "\r${ETHX[${N}]}: DOWN\n"
       break
     fi
-    if [ ${COUNT} -eq 8 ]; then # Under normal circumstances, no errors should occur here.
+    if [ ${COUNT} -eq 20 ]; then # Under normal circumstances, no errors should occur here.
       echo -en "\r${ETHX[${N}]}: ERROR\n"
       break
     fi
     COUNT=$((${COUNT}+1))
     IP=`ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
-    if [ -n "${IP}" ]; then
+    IPON=`ip route get 1.1.1.1 dev ${ETHX[${N}]} 2>/dev/null | awk '{print$7}'`
+    if [ -n "${IP}" ] && [ "${IP}" = "${IPON}" ]; then
       echo -en "\r${ETHX[${N}]}: `printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}"`\n"
+      break
+    elif [ -n "${IPON}" ]; then
+      echo -en "\r${ETHX[${N}]}: `printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IPON}"`\n"
       break
     fi
     echo -n "."
@@ -197,7 +187,7 @@ kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDL
 echo -e "\033[1;37m"Booting DSM..."\033[0m"
 for T in `w | grep -v "TTY" | awk -F' ' '{print $2}'`
 do
-  echo -e "\n\033[1;43m[This interface will not be operational. Please use the http://find.synology.com/ find DSM and connect.]\033[0m\n" > "/dev/${T}" 2>/dev/null || true
+  echo -e "\n\033[1;43mThis interface will not be operational. Please use the http://find.synology.com/ find DSM and connect.\033[0m\n" > "/dev/${T}" 2>/dev/null || true
 done 
 poweroff
 exit 0

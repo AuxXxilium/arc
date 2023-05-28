@@ -15,9 +15,6 @@ if [ `cat /sys/block/${LOADER_DEVICE_NAME}/${LOADER_DEVICE_NAME}3/size` -lt 4194
   CLEARCACHE=1
 fi
 
-# Get actual IP
-IP=`ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p' | head -1`
-
 # Memory: Check Memory installed
 RAMTOTAL=0
 while read -r line; do
