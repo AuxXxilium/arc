@@ -152,7 +152,7 @@ elif [ "${DIRECTBOOT}" = "false" ] && [ ${GRUBCONF} -gt 0 ]; then
 fi
 
 ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
-echo "`printf "Detected %s network cards, Waiting IP." "${#ETHX[@]}"`"
+echo "`printf "Detected %s NIC, Waiting IP." "${#ETHX[@]}"`"
 for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
   COUNT=0
   echo -en "${ETHX[${N}]}: "
@@ -187,7 +187,7 @@ kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDL
 echo -e "\033[1;37m"Booting DSM..."\033[0m"
 for T in `w | grep -v "TTY" | awk -F' ' '{print $2}'`
 do
-  echo -e "\n\033[1;43mThis interface will not be operational. Please use the http://find.synology.com/ find DSM and connect.\033[0m\n" > "/dev/${T}" 2>/dev/null || true
+  echo -e "\n\033[1;37mThis interface will not be operational. Please use \033[1;34mhttp://find.synology.com/ \033[1;37mto find DSM and connect.\033[0m\n" > "/dev/${T}" 2>/dev/null || true
 done 
 poweroff
 exit 0
