@@ -66,11 +66,8 @@ function getnet() {
           --infobox "IP/MAC will be changed now!" 0 0
         MACF="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
         MACFN="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-        ifconfig eth0 down >/dev/null 2>&1
         ifconfig eth0 hw ether ${MACFN} >/dev/null 2>&1
-        ifconfig eth0 up >/dev/null 2>&1
-        /etc/init.d/S41dhcpcd restart 2>&1
-        dialog --backtitle "`backtitle`" \
+        /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
           --title "Restart DHCP" --progressbox "Renewing IP" 20 70
         sleep 3
         IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
