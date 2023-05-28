@@ -161,7 +161,7 @@ for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
       echo -en "\r${ETHX[${N}]}: DOWN\n"
       break
     fi
-    if [ ${COUNT} -eq 20 ]; then # Under normal circumstances, no errors should occur here.
+    if [ ${COUNT} -eq 30 ]; then # Under normal circumstances, no errors should occur here.
       echo -en "\r${ETHX[${N}]}: ERROR\n"
       break
     fi
