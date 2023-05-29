@@ -65,6 +65,9 @@ if [ -d "${CACHE_PATH}/patch" ]; then
   ln -s "${CACHE_PATH}/patch" "${PATCH_PATH}"
 fi
 
+# Check if machine has EFI
+[ -d /sys/firmware/efi ] && EFI=1 || EFI=0
+
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
@@ -104,10 +107,12 @@ for N in $(seq 1 ${#ETHX[@]}); do
   # Set custom MAC if defined
   MACF="`readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}"`"
   if [ -n "${MACF}" -a "${MACF}" != "${MACR}" ]; then
-    MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-    echo "`printf "Setting %s MAC to %s" "${ETHX[$(expr ${N} - 1)]}" "${MAC}"`"
-    ifconfig ${ETHX[$(expr ${N} - 1)]} hw ether ${MAC} >/dev/null 2>&1 && \
-    (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
+    if [ ${EFI} -eq 1 ]; then
+      MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
+      echo "`printf "Setting %s MAC to %s" "${ETHX[$(expr ${N} - 1)]}" "${MAC}"`"
+      ifconfig ${ETHX[$(expr ${N} - 1)]} hw ether ${MAC} >/dev/null 2>&1 && \
+      (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
+    fi
   elif [ -z "${MACF}" ]; then
     # Write real Mac to cmdline config
     writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
