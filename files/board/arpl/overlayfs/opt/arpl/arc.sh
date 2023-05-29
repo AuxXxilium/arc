@@ -775,6 +775,8 @@ function modulesMenu() {
         LOADED="`readConfigMap "modules" "${USER_CONFIG_FILE}" | tr -d ':'`"
         dialog --backtitle "`backtitle`" --title "Modules" \
            --msgbox "Modules:\n${LOADED}" 0 0
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         ;;
       6)
         MSG=""
@@ -809,6 +811,8 @@ function modulesMenu() {
           dialog --backtitle "`backtitle`" --title "Add external module" --aspect 18 \
             --msgbox "File format not recognized!" 0 0
         fi
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         ;;
       0)
         break
