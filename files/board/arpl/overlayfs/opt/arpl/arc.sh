@@ -33,7 +33,7 @@ else
 fi
 
 # Check if machine has EFI
-[ -d /sys/firmware/efi ] && EFI=1
+[ -d /sys/firmware/efi ] && EFI=1 || EFI=0
 
 # Dirty flag
 DIRTY=0
@@ -1838,9 +1838,9 @@ function sysinfo() {
   rm -f ${SYSINFO_PATH}
   # Checks for Systeminfo Menu
   CPUINFO=`awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//'`
-  if [ -n "${EFI}" ]; then
+  if [ ${EFI} -eq 1 ]; then
     BOOTSYS="EFI"
-  else
+  elif [ ${EFI} -eq 0 ]; then
     BOOTSYS="Legacy"
   fi
   VENDOR=`dmidecode -s system-product-name`
