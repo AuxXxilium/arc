@@ -207,10 +207,10 @@ done
 
 # Inform user
 echo
-echo -e "Call \033[1;32marc.sh\033[0m to configure loader"
+echo -e "Call \033[1;34marc.sh\033[0m to configure loader"
 echo
-echo -e "User config is on \033[1;32m${USER_CONFIG_FILE}\033[0m"
-echo -e "Default SSH Root password is \033[1;31mRedp1lL-1s-4weSomE\033[0m"
+echo -e "User config is on \033[1;34m${USER_CONFIG_FILE}\033[0m"
+echo -e "Default SSH Root password is \033[1;34mRedp1ll\033[0m"
 echo
 
 # Check memory
@@ -224,4 +224,5 @@ mkdir -p "${LKM_PATH}"
 mkdir -p "${MODULES_PATH}"
 
 install-addons.sh
+sleep 3
 arc.sh

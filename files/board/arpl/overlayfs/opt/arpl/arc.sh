@@ -2318,4 +2318,12 @@ while true; do
 done
 clear
 # Inform user
-echo -e "Call \033[1;32marc.sh\033[0m to configure loader"
+echo -e "Call \033[1;34marc.sh\033[0m to configure loader"
+echo
+echo -e "Access:"
+echo -e "IP: \033[1;34m${IP}\033[0m"
+echo -e "User: \033[1;34mroot\033[0m"
+echo -e "Password: \033[1;34mRedp1ll\033[0m"
+echo
+echo -e "Web Terminal Access:"
+echo -e "Address: \033[1;34mhttp://${IP}:7681\033[0m"
