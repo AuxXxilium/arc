@@ -11,12 +11,12 @@ loaderIsConfigured || die "Loader is not configured!"
 clear
 [ -z "${COLUMNS}" ] && COLUMNS=50
 TITLE="${ARPL_TITLE}"
-printf "\033[1;44m%*s\n" ${COLUMNS} ""
-printf "\033[1;44m%*s\033[A\n" ${COLUMNS} ""
-printf "\033[1;32m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
-printf "\033[1;44m%*s\033[0m\n" ${COLUMNS} ""
+printf "\033[1;30m%*s\n" ${COLUMNS} ""
+printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
+printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
+printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
 TITLE="BOOTING..."
-printf "\033[1;33m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
+printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
 
 # Check if DSM zImage changed, patch it if necessary
 ZIMAGE_HASH="`readConfigKey "zimage-hash" "${USER_CONFIG_FILE}"`"
@@ -58,7 +58,7 @@ echo -e "Model: \033[1;36m${MODEL}\033[0m"
 echo -e "Build: \033[1;36m${BUILD}\033[0m"
 
 if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "`readConfigKey "builds.${BUILD}" "${MODEL_CONFIG_PATH}/${MODEL}.yml"`" ]; then
-  echo -e "\033[1;33m*** `printf "The current version of arpl does not support booting %s-%s, please rebuild." "${MODEL}" "${BUILD}"` ***\033[0m"
+  echo -e "\033[0;31m*** `printf "The current version of arpl does not support booting %s-%s, please rebuild." "${MODEL}" "${BUILD}"` ***\033[0m"
   exit 1
 fi
 
@@ -100,13 +100,13 @@ fi
 NETIF_NUM=${CMDLINE["netif_num"]}
 NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
 if [ ${NETIF_NUM} -ne ${NETNUM} ]; then
-  echo -e "\033[1;33m*** netif_num is not equal to NIC amount, boot with NIC amount. ***\033[0m"
+  echo -e "\033[0;31m*** netif_num is not equal to NIC amount, boot with NIC amount. ***\033[0m"
   ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
   CMDLINE["netif_num"]=${NETNUM}
 fi
 if [ ${NETNUM} -gt 8 ]; then
   NETNUM=8
-  echo -e "\033[1;33m*** WARNING: Only 8 NIC are supported by Redpill***\033[0m"
+  echo -e "\033[0;31m*** WARNING: Only 8 NIC are supported by Redpill***\033[0m"
 fi
 
 
@@ -134,20 +134,20 @@ if [ "${DIRECTBOOT}" = "true" ]; then
   if [ "${DIRECTDSM}" = "true" ]; then
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
     grub-editenv ${GRUB_PATH}/grubenv set default="direct"
-    echo -e "\033[1;33mEnable Directboot - DirectDSM\033[0m"
-    echo -e "\033[1;33mDSM installed - Reboot with Directboot\033[0m"
+    echo -e "\033[1;34mEnable Directboot - DirectDSM\033[0m"
+    echo -e "\033[1;34mDSM installed - Reboot with Directboot\033[0m"
     reboot
   elif [ "${DIRECTDSM}" = "false" ]; then
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
     grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
     writeConfigKey "arc.directdsm" "true" "${USER_CONFIG_FILE}"
-    echo -e "\033[1;33mDSM not installed - Reboot with Directboot\033[0m"
+    echo -e "\033[1;34mDSM not installed - Reboot with Directboot\033[0m"
     reboot
   fi
   exit 0
 elif [ "${DIRECTBOOT}" = "false" ] && [ ${GRUBCONF} -gt 0 ]; then
     grub-editenv ${GRUB_PATH}/grubenv create
-    echo -e "\033[1;33mDisable Directboot - DirectDSM\033[0m"
+    echo -e "\033[1;34mDisable Directboot - DirectDSM\033[0m"
     writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
 fi
 

@@ -38,10 +38,10 @@ mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "`printf "$(TEXT "Can't mount %s
 # Shows title
 clear
 TITLE="${ARPL_TITLE}"
-printf "\033[1;44m%*s\n" $COLUMNS ""
-printf "\033[1;44m%*s\033[A\n" $COLUMNS ""
-printf "\033[1;32m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
-printf "\033[1;44m%*s\033[0m\n" $COLUMNS ""
+printf "\033[1;30m%*s\n" $COLUMNS ""
+printf "\033[1;30m%*s\033[A\n" $COLUMNS ""
+printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
+printf "\033[1;30m%*s\033[0m\n" $COLUMNS ""
 
 # Move/link SSH machine keys to/from cache volume
 [ ! -d "${CACHE_PATH}/ssh" ] && cp -R "/etc/ssh" "${CACHE_PATH}/ssh"
@@ -64,6 +64,9 @@ if [ -d "${CACHE_PATH}/patch" ]; then
   rm -rf "${PATCH_PATH}"
   ln -s "${CACHE_PATH}/patch" "${PATCH_PATH}"
 fi
+
+# Check if machine has EFI
+[ -d /sys/firmware/efi ] && EFI=1 || EFI=0
 
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
@@ -104,10 +107,12 @@ for N in $(seq 1 ${#ETHX[@]}); do
   # Set custom MAC if defined
   MACF="`readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}"`"
   if [ -n "${MACF}" -a "${MACF}" != "${MACR}" ]; then
-    MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-    echo "`printf "Setting %s MAC to %s" "${ETHX[$(expr ${N} - 1)]}" "${MAC}"`"
-    ifconfig ${ETHX[$(expr ${N} - 1)]} hw ether ${MAC} >/dev/null 2>&1 && \
-    (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
+    if [ ${EFI} -eq 1 ]; then
+      MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
+      echo "`printf "Setting %s MAC to %s" "${ETHX[$(expr ${N} - 1)]}" "${MAC}"`"
+      ifconfig ${ETHX[$(expr ${N} - 1)]} hw ether ${MAC} >/dev/null 2>&1 && \
+      (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
+    fi
   elif [ -z "${MACF}" ]; then
     # Write real Mac to cmdline config
     writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
@@ -135,9 +140,9 @@ writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 # Inform user
 echo -en "Loader disk: \033[1;32m${LOADER_DISK}\033[0m ("
 if [ "${BUS}" = "usb" ]; then
-  echo -en "\033[1;32mUSB flashdisk\033[0m"
+  echo -en "\033[1;34mUSB flashdisk\033[0m"
 else
-  echo -en "\033[1;32mSATA DoM\033[0m"
+  echo -en "\033[1;34mSATA DoM\033[0m"
 fi
 echo ")"
 
@@ -146,7 +151,7 @@ LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
 SIZEOFDISK=`cat /sys/block/${LOADER_DEVICE_NAME}/size`
 ENDSECTOR=$((`fdisk -l ${LOADER_DISK} | awk '/'${LOADER_DEVICE_NAME}3'/{print$3}'`+1))
 if [ ${SIZEOFDISK} -ne ${ENDSECTOR} ]; then
-  echo -e "\033[1;36m`printf "Resizing %s" "${LOADER_DISK}3"`\033[0m"
+  echo -e "\033[1;34m`printf "Resizing %s" "${LOADER_DISK}3"`\033[0m"
   echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${LOADER_DISK}" >"${LOG_FILE}" 2>&1 || dieLog
   resize2fs ${LOADER_DISK}3 >"${LOG_FILE}" 2>&1 || dieLog
 fi
@@ -157,17 +162,17 @@ KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 
 # Loads a keymap if is valid
 if [ -f /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz ]; then
-  echo -e "Loading keymap \033[1;32m${LAYOUT}/${KEYMAP}\033[0m"
+  echo -e "Loading keymap \033[1;34m${LAYOUT}/${KEYMAP}\033[0m"
   zcat /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz | loadkeys
 fi
 
 # Decide if boot automatically
 BOOT=1
 if ! loaderIsConfigured; then
-  echo -e "\033[1;33mLoader is not configured!\033[0m"
+  echo -e "\033[1;31mLoader is not configured!\033[0m"
   BOOT=0
 elif grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
-  echo -e "\033[1;33mUser requested edit settings.\033[0m"
+  echo -e "\033[1;31mUser requested edit settings.\033[0m"
   BOOT=0
 fi
 
@@ -207,16 +212,16 @@ done
 
 # Inform user
 echo
-echo -e "Call \033[1;32marc.sh\033[0m to configure loader"
+echo -e "Call \033[1;34marc.sh\033[0m to configure loader"
 echo
-echo -e "User config is on \033[1;32m${USER_CONFIG_FILE}\033[0m"
-echo -e "Default SSH Root password is \033[1;31mRedp1lL-1s-4weSomE\033[0m"
+echo -e "User config is on \033[1;34m${USER_CONFIG_FILE}\033[0m"
+echo -e "Default SSH Root password is \033[1;34mRedp1ll\033[0m"
 echo
 
 # Check memory
 RAM=`free -m | awk '/Mem:/{print$2}'`
 if [ ${RAM} -le 3500 ]; then
-  echo -e "\033[1;33mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of memory.\033[0m\n"
+  echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of memory.\033[0m\n"
 fi
 
 mkdir -p "${ADDONS_PATH}"
@@ -224,4 +229,5 @@ mkdir -p "${LKM_PATH}"
 mkdir -p "${MODULES_PATH}"
 
 install-addons.sh
+sleep 3
 arc.sh
