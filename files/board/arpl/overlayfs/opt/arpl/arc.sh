@@ -624,6 +624,7 @@ function addonMenu() {
   # Read 'platform' and kernel version to check if addon exists
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  ALLADDONS="`availableAddons "${PLATFORM}" "${KVER}"`"
   # Read addons from user config
   unset ADDONS
   declare -A ADDONS
@@ -634,70 +635,37 @@ function addonMenu() {
   while true; do
     dialog --backtitle "`backtitle`" --default-item ${NEXT} \
       --menu "Choose an option" 0 0 0 \
-      1 "Add an Addon" \
-      2 "Delete Addon(s)" \
-      3 "Show user Addons" \
-      4 "Show all available Addons" \
+      1 "Select Addon(s)" \
+      2 "Show all available Addons" \
       0 "Exit" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     case "`<${TMP_PATH}/resp`" in
       1)
-        rm "${TMP_PATH}/menu"
+        rm "${TMP_PATH}/opts"
+        touch "${TMP_PATH}/opts"
         while read ADDON DESC; do
-          arrayExistItem "${ADDON}" "${!ADDONS[@]}" && continue          # Check if addon has already been added
-          echo "${ADDON} \"${DESC}\"" >> "${TMP_PATH}/menu"
-        done < <(availableAddons "${PLATFORM}" "${KVER}")
-        if [ ! -f "${TMP_PATH}/menu" ] ; then 
-          dialog --backtitle "`backtitle`" --msgbox "No available Addons to add" 0 0 
-          NEXT="0"
-          continue
-        fi
-        dialog --backtitle "`backtitle`" --menu "Select an addon" 0 0 0 \
-          --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
+          arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"         # Check if addon has already been added
+          echo "${ADDON} \"${DESC}\" ${ACT}" >> "${TMP_PATH}/opts"
+        done <<<${ALLADDONS}
+        dialog --backtitle "`backtitle`" --title "Addons" --aspect 18 \
+          --checklist "Select Addons to include" 0 0 0 \
+          --file "${TMP_PATH}/opts" 2>${TMP_PATH}/resp
         [ $? -ne 0 ] && continue
-        ADDON="`<"${TMP_PATH}/resp"`"
-        [ -z "${ADDON}" ] && continue
-        dialog --backtitle "`backtitle`" --title "params" \
-          --inputbox "Type a optional params to Addon" 0 0 \
-          2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && continue
-        ADDONS["${ADDON}"]="`<"${TMP_PATH}/resp"`"
-        writeConfigKey "addons.${ADDON}" "${VALUE}" "${USER_CONFIG_FILE}"
-        DIRTY=1
-        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-        ;;
-      2)
-        if [ ${#ADDONS[@]} -eq 0 ]; then
-          dialog --backtitle "`backtitle`" --msgbox "No user addons to remove" 0 0 
-          continue
-        fi
-        ITEMS=""
-        for I in "${!ADDONS[@]}"; do
-          ITEMS+="${I} ${I} off "
-        done
-        dialog --backtitle "`backtitle`" --no-tags \
-          --checklist "Select Addon to remove" 0 0 0 ${ITEMS} \
-          2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && continue
-        ADDON="`<"${TMP_PATH}/resp"`"
-        [ -z "${ADDON}" ] && continue
-        for I in ${ADDON}; do
-          unset ADDONS[${I}]
-          deleteConfigKey "addons.${I}" "${USER_CONFIG_FILE}"
+        resp=$(<${TMP_PATH}/resp)
+        [ -z "${resp}" ] && continue
+        dialog --backtitle "`backtitle`" --title "Addons" \
+           --infobox "Writing to user config" 0 0
+        unset ADDONS
+        declare -A ADDONS
+        writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
+        for ADDON in ${resp}; do
+          USERADDONS["${ADDON}"]=""
+          writeConfigKey "addons.${ADDON}" "" "${USER_CONFIG_FILE}"
         done
         DIRTY=1
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-        ;;
-      3)
-        ITEMS=""
-        for KEY in ${!ADDONS[@]}; do
-          ITEMS+="${KEY}: ${ADDONS[$KEY]}\n"
-        done
-        dialog --backtitle "`backtitle`" --title "User addons" \
-          --msgbox "${ITEMS}" 0 0
         ;;
       4)
         MSG=""
