@@ -1844,24 +1844,26 @@ function sysinfo() {
     BOOTSYS="Legacy"
   fi
   VENDOR=`dmidecode -s system-product-name`
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  PLATFORM="`readModelKey "${MODEL}" "platform"`"
-  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+  if [ -n "${CONFDONE}" ]; then
+    MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+    BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+    PLATFORM="`readModelKey "${MODEL}" "platform"`"
+    KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+    REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
+    ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
+    USBMOUNT="`readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}"`"
+    LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
+    BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+  fi
   NETRL_NUM=`ls /sys/class/net/ | grep eth | wc -l`
   IPLIST=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
-  REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
     PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
     DISKMAP="`readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"`"
   elif [ "${REMAP}" == "3" ]; then
     PORTMAP="`readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"`"
   fi
-  CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
-  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-  ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
-  USBMOUNT="`readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}"`"
-  LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
   if [ -n "${CONFDONE}" ]; then
     ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
     getModulesInfo
