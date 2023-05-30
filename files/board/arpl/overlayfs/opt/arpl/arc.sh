@@ -237,7 +237,6 @@ function arcbuild() {
       # Read valid serial from file
       SN="`readModelKey "${MODEL}" "arc.serial"`"
       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-      writeConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
       writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
       break
