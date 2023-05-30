@@ -54,8 +54,8 @@ MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
 BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
 SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 
-echo -e "Model: \033[1;36m${MODEL}\033[0m"
-echo -e "Build: \033[1;36m${BUILD}\033[0m"
+echo -e "Model: \033[1;37m${MODEL}\033[0m"
+echo -e "Build: \033[1;37m${BUILD}\033[0m"
 
 if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "`readConfigKey "builds.${BUILD}" "${MODEL_CONFIG_PATH}/${MODEL}.yml"`" ]; then
   echo -e "\033[0;31m*** `printf "The current version of arpl does not support booting %s-%s, please rebuild." "${MODEL}" "${BUILD}"` ***\033[0m"
@@ -127,7 +127,7 @@ done
 # Escape special chars
 #CMDLINE_LINE=`echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g'`
 CMDLINE_DIRECT=`echo ${CMDLINE_DIRECT} | sed 's/>/\\\\>/g'`
-echo -e "Cmdline:\n\033[1;36m${CMDLINE_LINE}\033[0m"
+echo -e "Cmdline:\n\033[1;37m${CMDLINE_LINE}\033[0m"
 
 # Make Directboot persistent if DSM is installed
 if [ "${DIRECTBOOT}" = "true" ]; then
