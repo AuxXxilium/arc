@@ -5,6 +5,7 @@ synoinfo: &synoinfo
   support_bde_internal_10g: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
+  support_m2_pool: "yes"
   maxlanport: "8"
   netif_seq: "0 1 2 3 4 5 6 7"
   esataportcfg: "0x00"
