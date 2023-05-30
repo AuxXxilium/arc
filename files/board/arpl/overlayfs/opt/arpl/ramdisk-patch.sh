@@ -166,9 +166,6 @@ done
 
 [ "2" = "${BUILD:0:1}" ] && sed -i 's/function //g' `find "${RAMDISK_PATH}/addons/" -type f -name "*.sh"`
 
-# Enable Telnet
-echo "inetd" >> "${RAMDISK_PATH}/addons/addons.sh"
-
 # Build modules dependencies
 /opt/arpl/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
 
