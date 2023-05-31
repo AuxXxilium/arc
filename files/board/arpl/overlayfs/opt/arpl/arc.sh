@@ -45,7 +45,6 @@ KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
 DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
 DIRECTDSM="`readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}"`"
-SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
 BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
 ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
@@ -66,12 +65,6 @@ function backtitle() {
     BACKTITLE+=" ${VER}"
   else
     BACKTITLE+=" (no build)"
-  fi
-  BACKTITLE+=" |"
-  if [ -n "${SN}" ]; then
-    BACKTITLE+=" ${SN}"
-  else
-    BACKTITLE+=" (no SN)"
   fi
   BACKTITLE+=" |"
   if [ -n "${IP}" ]; then
