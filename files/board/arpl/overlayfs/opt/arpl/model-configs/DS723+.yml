@@ -6,6 +6,7 @@ synoinfo: &synoinfo
   support_led_brightness_adjustment: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
+  supportnvme: "yes"
   support_m2_pool: "yes"
   maxlanport: "8"
   netif_seq: "0 1 2 3 4 5 6 7"

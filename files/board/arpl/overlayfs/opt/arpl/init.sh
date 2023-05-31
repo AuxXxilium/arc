@@ -13,13 +13,12 @@ while true; do
   CNT=$((${CNT}-1))
   sleep 1
 done
-if [ -z "${LOADER_DISK}" ]; then
-  die "Loader disk not found!"
-fi
+
+
+[ -z "${LOADER_DISK}" ] && die "Loader disk not found!"
 NUM_PARTITIONS=$(blkid | grep "${LOADER_DISK}[0-9]\+" | cut -d: -f1 | wc -l)
-if [ $NUM_PARTITIONS -ne 3 ]; then
-  die "Loader disk not found!"
-fi
+[ $NUM_PARTITIONS -lt 3 ] && die "Loader disk seems to be damaged!"
+[ $NUM_PARTITIONS -gt 3 ] && die "There are multiple loader disks, please insert only one loader disk!"
 
 # Check partitions and ignore errors
 fsck.vfat -aw ${LOADER_DISK}1 >/dev/null 2>&1 || true
@@ -31,9 +30,9 @@ mkdir -p ${SLPART_PATH}
 mkdir -p ${CACHE_PATH}
 mkdir -p ${DSMROOT_PATH}
 # Mount the partitions
-mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "`printf "$(TEXT "Can't mount %s")" "${BOOTLOADER_PATH}"`"
-mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "`printf "$(TEXT "Can't mount %s")" "${SLPART_PATH}"`"
-mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "`printf "$(TEXT "Can't mount %s")" "${CACHE_PATH}"`"
+mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "`printf "Can't mount %s" "${BOOTLOADER_PATH}"`"
+mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "`printf "Can't mount %s" "${SLPART_PATH}"`"
+mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "`printf "Can't mount %s" "${CACHE_PATH}"`"
 
 # Shows title
 clear
@@ -72,7 +71,6 @@ fi
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
   writeConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
-  writeConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "model" "" "${USER_CONFIG_FILE}"
   writeConfigKey "build" "" "${USER_CONFIG_FILE}"
   writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
@@ -138,7 +136,7 @@ writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
 writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 
 # Inform user
-echo -en "Loader disk: \033[1;32m${LOADER_DISK}\033[0m ("
+echo -en "Loader disk: \033[1;34m${LOADER_DISK}\033[0m ("
 if [ "${BUS}" = "usb" ]; then
   echo -en "\033[1;34mUSB flashdisk\033[0m"
 else
