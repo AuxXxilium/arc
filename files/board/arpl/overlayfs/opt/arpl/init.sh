@@ -138,7 +138,7 @@ writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
 writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 
 # Inform user
-echo -en "Loader disk: \033[1;32m${LOADER_DISK}\033[0m ("
+echo -en "Loader disk: \033[1;34m${LOADER_DISK}\033[0m ("
 if [ "${BUS}" = "usb" ]; then
   echo -en "\033[1;34mUSB flashdisk\033[0m"
 else
