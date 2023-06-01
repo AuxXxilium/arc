@@ -45,7 +45,6 @@ fi
 # Arc Functions
 DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
 DIRECTDSM="`readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}"`"
-GRUBCONF=`grub-editenv ${GRUB_PATH}/grubenv list | wc -l`
 
 # Load necessary variables
 VID="`readConfigKey "vid" "${USER_CONFIG_FILE}"`"
