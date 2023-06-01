@@ -612,8 +612,9 @@ function editUserConfig() {
 ###############################################################################
 # Shows option to manage addons
 function addonMenu() {
-  NEXT="1"
   # Read 'platform' and kernel version to check if addon exists
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   ALLADDONS="`availableAddons "${PLATFORM}" "${KVER}"`"
@@ -623,58 +624,30 @@ function addonMenu() {
   while IFS=': ' read KEY VALUE; do
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  # Loop menu
-  while true; do
-    dialog --backtitle "`backtitle`" --default-item ${NEXT} \
-      --menu "Choose an option" 0 0 0 \
-      1 "Select Addon(s)" \
-      2 "Show all available Addons" \
-      0 "Exit" \
-      2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
-    case "`<${TMP_PATH}/resp`" in
-      1)
-        rm "${TMP_PATH}/opts"
-        touch "${TMP_PATH}/opts"
-        while read ADDON DESC; do
-          arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"         # Check if addon has already been added
-          echo "${ADDON} \"${DESC}\" ${ACT}" >> "${TMP_PATH}/opts"
-        done <<<${ALLADDONS}
-        dialog --backtitle "`backtitle`" --title "Addons" --aspect 18 \
-          --checklist "Select Addons to include" 0 0 0 \
-          --file "${TMP_PATH}/opts" 2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && continue
-        resp=$(<${TMP_PATH}/resp)
-        [ -z "${resp}" ] && continue
-        dialog --backtitle "`backtitle`" --title "Addons" \
-           --infobox "Writing to user config" 0 0
-        unset ADDONS
-        declare -A ADDONS
-        writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
-        for ADDON in ${resp}; do
-          USERADDONS["${ADDON}"]=""
-          writeConfigKey "addons.${ADDON}" "" "${USER_CONFIG_FILE}"
-        done
-        DIRTY=1
-        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-        ;;
-      4)
-        MSG=""
-        while read MODULE DESC; do
-          if arrayExistItem "${MODULE}" "${!ADDONS[@]}"; then
-            MSG+="\Z4${MODULE}\Zn"
-          else
-            MSG+="${MODULE}"
-          fi
-          MSG+=": \Z5${DESC}\Zn\n"
-        done < <(availableAddons "${PLATFORM}" "${KVER}")
-        dialog --backtitle "`backtitle`" --title "Available addons" \
-          --colors --msgbox "${MSG}" 0 0
-        ;;
-      0) return ;;
-    esac
+  rm "${TMP_PATH}/opts"
+  touch "${TMP_PATH}/opts"
+  while read ADDON DESC; do
+    arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"         # Check if addon has already been added
+    echo "${ADDON} \"${DESC}\" ${ACT}" >> "${TMP_PATH}/opts"
+  done <<<${ALLADDONS}
+  dialog --backtitle "`backtitle`" --title "Addons" --aspect 18 \
+    --checklist "Select Addons to include or remove" 0 0 0 \
+    --file "${TMP_PATH}/opts" 2>${TMP_PATH}/resp
+  [ $? -ne 0 ] && continue
+  resp=$(<${TMP_PATH}/resp)
+  [ -z "${resp}" ] && continue
+  dialog --backtitle "`backtitle`" --title "Addons" \
+      --infobox "Writing to user config" 0 0
+  unset ADDONS
+  declare -A ADDONS
+  writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
+  for ADDON in ${resp}; do
+    USERADDONS["${ADDON}"]=""
+    writeConfigKey "addons.${ADDON}" "" "${USER_CONFIG_FILE}"
   done
+  DIRTY=1
+  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
 }
 
 ###############################################################################
