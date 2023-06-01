@@ -1317,7 +1317,7 @@ function updateMenu() {
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --infobox "Checking latest version" 0 0
           ACTUALVERSION="v${ARPL_VERSION}"
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases | jq -r 'map(select(.tag_name)) | .[0].tag_name'`"
+          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1368,7 +1368,7 @@ function updateMenu() {
           dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --infobox "Checking latest version" 0 0
           ACTUALVERSION="v${ARPL_VERSION}"
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases | jq -r 'map(select(.tag_name)) | .[0].tag_name'`"
+          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1428,7 +1428,7 @@ function updateMenu() {
         3)
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
             --infobox "Checking latest version" 0 0
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases | jq -r 'map(select(.tag_name)) | .[0].tag_name'`"
+          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1464,7 +1464,7 @@ function updateMenu() {
         4)
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
             --infobox "Checking latest version" 0 0
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases | jq -r 'map(select(.tag_name)) | .[0].tag_name'`"
+          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1489,7 +1489,7 @@ function updateMenu() {
         5)
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --infobox "Checking latest version" 0 0
-          TAG="`curl -k -s "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r 'map(select(.tag_name)) | .[0].tag_name'`"
+          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1531,7 +1531,7 @@ function updateMenu() {
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --infobox "Checking latest version" 0 0
           ACTUALVERSION="v${ARPL_VERSION}"
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases | jq -r 'map(select(.tag_name)) | .[0].tag_name'`"
+          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1582,170 +1582,6 @@ function updateMenu() {
       esac
     done
   fi
-}
-
-###############################################################################
-# Shows update menu to user
-function betaMenu() {
-  NEXT="1"
-  CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
-  PLATFORM="`readModelKey "${MODEL}" "platform"`"
-  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-  while true; do
-    dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
-      1 "Load Beta Loader" \
-      2 "Load Beta Addons" \
-      3 "Load Beta LKMs" \
-      4 "Load Beta Modules" \
-      0 "Exit" \
-      2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
-    case "`<${TMP_PATH}/resp`" in
-      1)
-        dialog --backtitle "`backtitle`" --title "Load Beta Loader" --aspect 18 \
-          --infobox "Checking Beta version" 0 0
-        ACTUALVERSION="v${ARPL_VERSION}"
-        TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name'`"
-        if [ $? -ne 0 -o -z "${TAG}" ]; then
-          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          continue
-        fi
-        if [ "${ACTUALVERSION}" = "${TAG}" ]; then
-          dialog --backtitle "`backtitle`" --title "Load Beta Loader" --aspect 18 \
-            --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
-          [ $? -ne 0 ] && continue
-        fi
-        dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-          --infobox "Downloading Beta version ${TAG}" 0 0
-        # Download update file
-        STATUS="`curl --insecure -w "%{http_code}" -L \
-          "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o /tmp/arc-${TAG}.img.zip`"
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-          dialog --backtitle "`backtitle`" --title "Load Beta Loader" --aspect 18 \
-            --msgbox "Error downloading update file" 0 0
-          continue
-        fi
-        unzip -o /tmp/arc-${TAG}.img.zip -d /tmp
-        if [ $? -ne 0 ]; then
-          dialog --backtitle "`backtitle`" --title "Load Beta Loader" --aspect 18 \
-            --msgbox "Error extracting update file" 0 0
-          continue
-        fi
-        if [ -f "${USER_CONFIG_FILE}" ]; then
-          GENHASH=`cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-`
-          dialog --backtitle "`backtitle`" --title "Load Beta Loader" --aspect 18 \
-          --msgbox "Backup config successfull!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
-        else
-          dialog --backtitle "`backtitle`" --title "Load Beta Loader" --aspect 18 \
-          --infobox "No config for Backup found!" 0 0
-        fi
-        dialog --backtitle "`backtitle`" --title "Load Beta Loader" --aspect 18 \
-          --infobox "Installing new Image" 0 0
-        # Process complete update
-        umount /mnt/p1 /mnt/p2 /mnt/p3
-        dd if="/tmp/arc.img" of=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1` bs=1M conv=fsync
-        # Ask for Boot
-        dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-          --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
-        [ $? -ne 0 ] && continue
-        arpl-reboot.sh config
-        exit
-        ;;
-      2)
-        dialog --backtitle "`backtitle`" --title "Beta addons" --aspect 18 \
-          --infobox "Checking Beta version" 0 0
-        TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name'`"
-        if [ $? -ne 0 -o -z "${TAG}" ]; then
-          dialog --backtitle "`backtitle`" --title "Beta addons" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          continue
-        fi
-        dialog --backtitle "`backtitle`" --title "Beta addons" --aspect 18 \
-          --infobox "Downloading Beta version: ${TAG}" 0 0
-        STATUS="`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip`"
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-          dialog --backtitle "`backtitle`" --title "Beta addons" --aspect 18 \
-            --msgbox "Error downloading new version" 0 0
-          continue
-        fi
-        dialog --backtitle "`backtitle`" --title "Beta addons" --aspect 18 \
-          --infobox "Extracting Beta version" 0 0
-        rm -rf /tmp/addons
-        mkdir -p /tmp/addons
-        unzip /tmp/addons.zip -d /tmp/addons >/dev/null 2>&1
-        dialog --backtitle "`backtitle`" --title "Beta addons" --aspect 18 \
-          --infobox "Installing new addons" 0 0
-        rm -Rf "${ADDONS_PATH}/"*
-        [ -f /tmp/addons/VERSION ] && cp -f /tmp/addons/VERSION ${ADDONS_PATH}/
-        for PKG in `ls /tmp/addons/*.addon`; do
-          ADDON=`basename ${PKG} | sed 's|.addon||'`
-          rm -rf "${ADDONS_PATH}/${ADDON}"
-          mkdir -p "${ADDONS_PATH}/${ADDON}"
-          tar -xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
-        done
-        DIRTY=1
-        dialog --backtitle "`backtitle`" --title "Beta addons" --aspect 18 \
-          --msgbox "Addons updated with success! ${TAG}" 0 0
-        ;;
-      3)
-        dialog --backtitle "`backtitle`" --title "Beta LKMs" --aspect 18 \
-          --infobox "Checking Beta version" 0 0
-        TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name'`"
-        if [ $? -ne 0 -o -z "${TAG}" ]; then
-          dialog --backtitle "`backtitle`" --title "Beta LKMs" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          continue
-        fi
-        dialog --backtitle "`backtitle`" --title "Beta LKMs" --aspect 18 \
-          --infobox "Downloading Beta version: ${TAG}" 0 0
-        STATUS="`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip`"
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-          dialog --backtitle "`backtitle`" --title "Beta LKMs" --aspect 18 \
-            --msgbox "Error downloading Beta version" 0 0
-          continue
-        fi
-        dialog --backtitle "`backtitle`" --title "Beta LKMs" --aspect 18 \
-          --infobox "Extracting Beta version" 0 0
-        rm -rf "${LKM_PATH}/"*
-        unzip /tmp/rp-lkms.zip -d "${LKM_PATH}" >/dev/null 2>&1
-        DIRTY=1
-        dialog --backtitle "`backtitle`" --title "Beta LKMs" --aspect 18 \
-          --msgbox "LKMs updated with success! ${TAG}" 0 0
-        ;;
-      4)
-        dialog --backtitle "`backtitle`" --title "Beta Modules" --aspect 18 \
-          --infobox "Checking Beta version" 0 0
-        TAG="`curl -k -s "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r 'map(select(.prerelease)) | .[0].tag_name'`"
-        if [ $? -ne 0 -o -z "${TAG}" ]; then
-          dialog --backtitle "`backtitle`" --title "Beta Modules" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          continue
-        fi
-        dialog --backtitle "`backtitle`" --title "Beta Modules" --aspect 18 \
-          --infobox "Downloading Beta version" 0 0
-        STATUS="`curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "/tmp/modules.zip"`"
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-          dialog --backtitle "`backtitle`" --title "Beta Modules" --aspect 18 \
-            --msgbox "Error downloading Beta version" 0 0
-          continue
-        fi
-        rm "${MODULES_PATH}/"*
-        unzip /tmp/modules.zip -d "${MODULES_PATH}" >/dev/null 2>&1
-        # Rebuild modules if model/buildnumber is selected
-        if [ -n "${PLATFORM}" -a -n "${KVER}" ]; then
-          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-          while read ID DESC; do
-            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-          done < <(getAllModules "${PLATFORM}" "${KVER}")
-        fi
-        DIRTY=1
-        dialog --backtitle "`backtitle`" --title "Beta Modules" --aspect 18 \
-          --msgbox "Modules updated to ${TAG} with success!" 0 0
-        ;;
-      0) return ;;
-    esac
-  done
 }
 
 ###############################################################################
@@ -2180,7 +2016,6 @@ while true; do
     if [ -n "${DEVOPTS}" ]; then
       echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >> "${TMP_PATH}/menu"
       echo "o \"Save Modifications to Disk \" "                                             >> "${TMP_PATH}/menu"
-      echo "z \"Beta Menu \" "                                                              >> "${TMP_PATH}/menu"
     fi
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >> "${TMP_PATH}/menu"
@@ -2246,7 +2081,6 @@ while true; do
       NEXT="j"
       ;;
     o) saveMenu; NEXT="o" ;;
-    z) betaMenu; NEXT="z" ;;
     # Loader Settings
     c) keymapMenu; NEXT="c" ;;
     d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
