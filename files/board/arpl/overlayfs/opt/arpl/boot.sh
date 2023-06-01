@@ -145,10 +145,6 @@ if [ "${DIRECTBOOT}" = "true" ]; then
     reboot
   fi
   exit 0
-elif [ "${DIRECTBOOT}" = "false" ] && [ ${GRUBCONF} -gt 0 ]; then
-    grub-editenv ${GRUB_PATH}/grubenv create
-    echo -e "\033[1;34mDisable Directboot - DirectDSM\033[0m"
-    writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
 fi
 
 ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
