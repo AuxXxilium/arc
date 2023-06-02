@@ -57,7 +57,7 @@ echo -e "Model: \033[1;37m${MODEL}\033[0m"
 echo -e "Build: \033[1;37m${BUILD}\033[0m"
 
 if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "`readConfigKey "builds.${BUILD}" "${MODEL_CONFIG_PATH}/${MODEL}.yml"`" ]; then
-  echo -e "\033[0;31m*** `printf "The current version of arpl does not support booting %s-%s, please rebuild." "${MODEL}" "${BUILD}"` ***\033[0m"
+  echo -e "\033[0;31m*** `printf "The current Arc version does not support %s-%s, please rebuild." "${MODEL}" "${BUILD}"` ***\033[0m"
   exit 1
 fi
 
