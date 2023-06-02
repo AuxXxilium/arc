@@ -1233,7 +1233,7 @@ function backupMenu() {
     while true; do
       dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
         1 "Restore Config" \
-        2 "Restore DSM Bootimage" \
+        2 "Restore Loader Disk" \
         3 "Restore Config with Code" \
         4 "Show Backup Path" \
         0 "Exit" \
@@ -1261,26 +1261,47 @@ function backupMenu() {
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           ;;
         2)
-          dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
-            --infobox "Restore DSM Bootimage from ${BACKUPDIR}" 0 0
-          if [ -f "${BACKUPDIR}/dsm-backup.tar" ]; then
-            # Uncompress backup
-            tar -xvf ${BACKUPDIR}/dsm-backup.tar -C /
-            # Copy files to locations
-            cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
-            cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}
-            cp -f ${BACKUPDIR}/initrd-dsm ${CACHE_PATH}
-            # Clean temp files from backup dir
-            rm -f ${BACKUPDIR}/user-config.yml
-            rm -f ${BACKUPDIR}/zImage-dsm
-            rm -f ${BACKUPDIR}/initrd-dsm
-            CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
-            BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-            dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
-              --msgbox "Restore complete" 0 0
+          if ! tty | grep -q "/dev/pts"; then
+            dialog --backtitle "`backtitle`" --colors --aspect 18 \
+              --msgbox "This feature is only available when accessed via web/ssh." 0 0
+            return
+          fi 
+          dialog --backtitle "`backtitle`" --title "Restore bootloader disk" --aspect 18 \
+              --yesno "Please upload the Backup file.\nCurrently, arc-x.zip(github) and arc-backup.img.gz(Backup) files are supported." 0 0
+          [ $? -ne 0 ] && return
+          IFTOOL=""
+          TMP_PATH=/tmp/users
+          rm -rf ${TMP_PATH}
+          mkdir -p ${TMP_PATH}
+          pushd ${TMP_PATH}
+          rz -be
+          for F in `ls -A`; do
+            USER_FILE="${F}"
+            [ "${F##*.}" = "zip" -a `unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$"` -eq 1 ] && IFTOOL="zip"
+            [ "${F##*.}" = "gz" -a "${F#*.}" = "img.gz" ] && IFTOOL="gzip"
+            break 
+          done
+          popd
+          if [ -z "${IFTOOL}" -o -z "${TMP_PATH}/${USER_FILE}" ]; then
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
+              --msgbox "`printf "Not a valid .zip/.img.gz file, please try again!" "${USER_FILE}"`" 0 0
           else
-            dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
-              --msgbox "No Loader Backup found" 0 0
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" \
+                --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
+            [ $? -ne 0 ] && ( rm -f ${LOADER_DISK}; return )
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
+              --infobox "Restore in progress..." 0 0
+            umount /mnt/p1 /mnt/p2 /mnt/p3
+            if [ "${IFTOOL}" = "zip" ]; then
+              unzip -p "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
+            elif [ "${IFTOOL}" = "gzip" ]; then
+              gzip -dc "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
+            fi
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
+              --yesno "`printf "Restore Loader Disk successfull!\n%s\nReboot?" "${USER_FILE}"`" 0 0
+            [ $? -ne 0 ] && continue
+            reboot
+            exit
           fi
           ;;
         3)
