@@ -52,7 +52,7 @@ ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
-  BACKTITLE="Arc v${ARPL_VERSION} |"
+  BACKTITLE="${ARPL_TITLE} |"
   if [ -n "${MODEL}" ]; then
     BACKTITLE+=" ${MODEL}"
   else
