@@ -143,7 +143,6 @@ if [ "${DIRECTBOOT}" = "true" ]; then
     echo -e "\033[1;34mDSM not installed - Reboot with Directboot\033[0m"
     reboot
   fi
-  exit 0
 fi
 
 ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
