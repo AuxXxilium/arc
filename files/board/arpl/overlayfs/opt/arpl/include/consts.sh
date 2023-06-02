@@ -1,6 +1,6 @@
 
 ARPL_VERSION="dev"
-ARPL_TITLE="Arc v${ARPL_VERSION}"
+ARPL_TITLE="Arc ${ARPL_VERSION}"
 
 # Define paths
 TMP_PATH="/tmp"
