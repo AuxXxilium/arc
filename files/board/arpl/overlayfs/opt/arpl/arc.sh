@@ -1064,8 +1064,8 @@ function backupMenu() {
       dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
         1 "Backup Config" \
         2 "Restore Config" \
-        3 "Backup DSM Bootimage" \
-        4 "Restore DSM Bootimage" \
+        3 "Backup Loader Disk" \
+        4 "Restore Loader Disk" \
         5 "Backup Config with Code" \
         6 "Restore Config with Code" \
         0 "Exit" \
@@ -1113,54 +1113,80 @@ function backupMenu() {
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           ;;
         3)
-          dialog --backtitle "`backtitle`" --title "Backup DSM Bootimage" --aspect 18 \
-            --infobox "Backup DSM Bootimage to ${BACKUPDIR}" 0 0
-          if [ ! -d "${BACKUPDIR}" ]; then
-            # Make backup dir
-            mkdir ${BACKUPDIR}
-          else
-            # Clean old backup
-            rm -f ${BACKUPDIR}/dsm-backup.tar
+          if ! tty | grep -q "/dev/pts"; then
+            dialog --backtitle "`backtitle`" --colors --aspect 18 \
+              --msgbox "This feature is only available when accessed via web/ssh." 0 0
+            return
+          fi 
+          dialog --backtitle "`backtitle`" --title "Backup Loader Disk" \
+              --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
+          [ $? -ne 0 ] && return
+          dialog --backtitle "`backtitle`" --title "Backup Loader Disk" \
+            --infobox "Backup in progress..." 0 0
+          rm -f /var/www/data/arc-backup.img.gz  # thttpd root path
+          dd if="${LOADER_DISK}" bs=1M conv=fsync | gzip > /var/www/data/arc-backup.img.gz
+          if [ $? -ne 0]; then
+            dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+              --msgbox "Failed to generate Backup. There may be insufficient memory. Please clear the cache and try again!" 0 0
+            return
           fi
-          # Copy files to backup
-          cp -f ${USER_CONFIG_FILE} ${BACKUPDIR}/user-config.yml
-          cp -f ${CACHE_PATH}/zImage-dsm ${BACKUPDIR}
-          cp -f ${CACHE_PATH}/initrd-dsm ${BACKUPDIR}
-          # Compress backup
-          tar -cvf ${BACKUPDIR}/dsm-backup.tar ${BACKUPDIR}/
-          # Clean temp files from backup dir
-          rm -f ${BACKUPDIR}/user-config.yml
-          rm -f ${BACKUPDIR}/zImage-dsm
-          rm -f ${BACKUPDIR}/initrd-dsm
-          if [ -f "${BACKUPDIR}/dsm-backup.tar" ]; then
-            dialog --backtitle "`backtitle`" --title "Backup DSM Bootimage" --aspect 18 \
-              --msgbox "Backup complete" 0 0
-          else
-            dialog --backtitle "`backtitle`" --title "Backup DSM Bootimage" --aspect 18 \
-              --msgbox "Backup error" 0 0
+          if [ -z "${SSH_TTY}" ]; then  # web
+            IP_HEAD="`ip route show 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`"
+            echo "http://${IP_HEAD}/arc-backup.img.gz"  > ${TMP_PATH}/resp
+            echo "            ↑                  " >> ${TMP_PATH}/resp
+            echo "Click on the address above to download." >> ${TMP_PATH}/resp
+            echo "Please confirm the completion of the download before closing this window." >> ${TMP_PATH}/resp
+            dialog --backtitle "`backtitle`" --title "Download link" --aspect 18 \
+            --editbox "${TMP_PATH}/resp" 10 100
+          else                          # ssh
+            sz -be /var/www/data/arc-backup.img.gz
           fi
+          dialog --backtitle "`backtitle`" --colors --aspect 18 \
+              --msgbox "Backup is complete." 0 0
+          rm -f /var/www/data/arc-backup.img.gz
           ;;
         4)
-          dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
-            --infobox "Restore DSM Bootimage from ${BACKUPDIR}" 0 0
-          if [ -f "${BACKUPDIR}/dsm-backup.tar" ]; then
-            # Uncompress backup
-            tar -xvf ${BACKUPDIR}/dsm-backup.tar -C /
-            # Copy files to locations
-            cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
-            cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}
-            cp -f ${BACKUPDIR}/initrd-dsm ${CACHE_PATH}
-            # Clean temp files from backup dir
-            rm -f ${BACKUPDIR}/user-config.yml
-            rm -f ${BACKUPDIR}/zImage-dsm
-            rm -f ${BACKUPDIR}/initrd-dsm
-            CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
-            BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-            dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
-              --msgbox "Restore complete" 0 0
+          if ! tty | grep -q "/dev/pts"; then
+            dialog --backtitle "`backtitle`" --colors --aspect 18 \
+              --msgbox "This feature is only available when accessed via web/ssh." 0 0
+            return
+          fi 
+          dialog --backtitle "`backtitle`" --title "Restore bootloader disk" --aspect 18 \
+              --yesno "Please upload the Backup file.\nCurrently, arc-x.zip(github) and arc-backup.img.gz(Backup) files are supported." 0 0
+          [ $? -ne 0 ] && return
+          IFTOOL=""
+          TMP_PATH=/tmp/users
+          rm -rf ${TMP_PATH}
+          mkdir -p ${TMP_PATH}
+          pushd ${TMP_PATH}
+          rz -be
+          for F in `ls -A`; do
+            USER_FILE="${F}"
+            [ "${F##*.}" = "zip" -a `unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$"` -eq 1 ] && IFTOOL="zip"
+            [ "${F##*.}" = "gz" -a "${F#*.}" = "img.gz" ] && IFTOOL="gzip"
+            break 
+          done
+          popd
+          if [ -z "${IFTOOL}" -o -z "${TMP_PATH}/${USER_FILE}" ]; then
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
+              --msgbox "`printf "Not a valid .zip/.img.gz file, please try again!" "${USER_FILE}"`" 0 0
           else
-            dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
-              --msgbox "No DSM Bootimage Backup found" 0 0
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" \
+                --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
+            [ $? -ne 0 ] && ( rm -f ${LOADER_DISK}; return )
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
+              --infobox "Restore in progress..." 0 0
+            umount /mnt/p1 /mnt/p2 /mnt/p3
+            if [ "${IFTOOL}" = "zip" ]; then
+              unzip -p "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
+            elif [ "${IFTOOL}" = "gzip" ]; then
+              gzip -dc "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
+            fi
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
+              --yesno "`printf "Restore Loader Disk successfull!\n%s\nReboot?" "${USER_FILE}"`" 0 0
+            [ $? -ne 0 ] && continue
+            reboot
+            exit
           fi
           ;;
         5)
@@ -1671,15 +1697,6 @@ function sysinfo() {
     TEXT+="\nBuild: \ZbComplete\Zn"
   else
     TEXT+="\nBuild: \ZbIncomplete\Zn"
-  fi
-  if [ -f "${BACKUPDIR}/arc-backup.img.gz" ]; then
-    TEXT+="\nBackup: \ZbFull Loader\Zn"
-  elif [ -f "${BACKUPDIR}/dsm-backup.tar" ]; then
-    TEXT+="\nBackup: \ZbDSM Bootimage\Zn"
-  elif [ -f "${BACKUPDIR}/user-config.yml" ]; then
-    TEXT+="\nBackup: \ZbOnly Config\Zn"
-  else
-    TEXT+="\nBackup: \ZbNo Backup found\Zn"
   fi
   TEXT+="\nArcpatch: \Zb${ARCPATCH}\Zn"
   TEXT+="\nLKM: \Zb${LKM}\Zn"
