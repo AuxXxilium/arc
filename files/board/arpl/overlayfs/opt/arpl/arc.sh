@@ -1185,7 +1185,7 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
               --yesno "`printf "Restore Loader Disk successfull!\n%s\nReboot?" "${USER_FILE}"`" 0 0
             [ $? -ne 0 ] && continue
-            reboot
+            exec reboot
             exit
           fi
           ;;
@@ -1235,7 +1235,6 @@ function backupMenu() {
         1 "Restore Config" \
         2 "Restore Loader Disk" \
         3 "Restore Config with Code" \
-        4 "Show Backup Path" \
         0 "Exit" \
         2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
@@ -1331,10 +1330,6 @@ function backupMenu() {
           dialog --backtitle "`backtitle`" --title "Restore with Code" --aspect 18 \
               --msgbox "Restore complete" 0 0
           ;;
-        4)
-          dialog --backtitle "`backtitle`" --title "Backup Path" --aspect 18 \
-            --msgbox "Open in Explorer: \\\\${IP}\arpl\p3\backup" 0 0
-          ;;
         0) return ;;
       esac
     done
@@ -1408,7 +1403,7 @@ function updateMenu() {
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
           [ $? -ne 0 ] && continue
-          arpl-reboot.sh config
+          exec reboot
           exit
           ;;
         2)
