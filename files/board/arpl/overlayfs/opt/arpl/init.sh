@@ -87,7 +87,6 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
@@ -108,7 +107,7 @@ for N in $(seq 1 ${#ETHX[@]}); do
     if [ ${EFI} -eq 1 ]; then
       MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
       echo "`printf "Setting %s MAC to %s" "${ETHX[$(expr ${N} - 1)]}" "${MAC}"`"
-      ifconfig ${ETHX[$(expr ${N} - 1)]} hw ether ${MAC} >/dev/null 2>&1 && \
+      ip link set dev ${ETHX[$(expr ${N} - 1)]} address ${MAC} >/dev/null 2>&1 && \
       (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
     fi
   elif [ -z "${MACF}" ]; then
@@ -149,7 +148,7 @@ LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
 SIZEOFDISK=`cat /sys/block/${LOADER_DEVICE_NAME}/size`
 ENDSECTOR=$((`fdisk -l ${LOADER_DISK} | awk '/'${LOADER_DEVICE_NAME}3'/{print$3}'`+1))
 if [ ${SIZEOFDISK} -ne ${ENDSECTOR} ]; then
-  echo -e "\033[1;34m`printf "Resizing %s" "${LOADER_DISK}3"`\033[0m"
+  echo -e "\033[1;36m`printf "Resizing %s" "${LOADER_DISK}3"`\033[0m"
   echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${LOADER_DISK}" >"${LOG_FILE}" 2>&1 || dieLog
   resize2fs ${LOADER_DISK}3 >"${LOG_FILE}" 2>&1 || dieLog
 fi
@@ -190,7 +189,7 @@ for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
       break
     fi
     if [ ${COUNT} -eq 20 ]; then
-      echo -en "\r${ETHX[${N}]}: ERROR\n"
+      echo -en "\r${ETHX[${N}]}: ERROR - Timeout\n"
       break
     fi
     COUNT=$((${COUNT}+1))

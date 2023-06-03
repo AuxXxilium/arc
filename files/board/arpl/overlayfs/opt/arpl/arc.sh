@@ -44,7 +44,6 @@ LAYOUT="`readConfigKey "layout" "${USER_CONFIG_FILE}"`"
 KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
 DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
-DIRECTDSM="`readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}"`"
 CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
 BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
 ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
@@ -374,11 +373,6 @@ function make() {
   echo "Ready!"
   sleep 3
   DIRTY=0
-  if [ ${DIRECTBOOT} = "true" ]; then
-    # Set DirectDSM to false
-    writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
-    grub-editenv ${GRUB_PATH}/grubenv create
-  fi
   # Build is done
   writeConfigKey "arc.builddone" "1" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -2034,9 +2028,6 @@ while true; do
       echo "h \"Edit User Config \" "                                                       >> "${TMP_PATH}/menu"
       echo "i \"DSM Recovery \" "                                                           >> "${TMP_PATH}/menu"
       echo "k \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >> "${TMP_PATH}/menu"
-      if [ "${DIRECTBOOT}" = "true" ]; then
-        echo "l \"Reset Direct DSM \" "                                                     >> "${TMP_PATH}/menu"
-      fi
     fi
     if [ -n "${DEVOPTS}" ]; then
       echo "9 \"\Z1Hide Dev Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
@@ -2095,10 +2086,6 @@ while true; do
     k) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
       NEXT="k"
-      ;;
-    l) writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
-      grub-editenv ${GRUB_PATH}/grubenv create
-      NEXT="4"
       ;;
     # Arc Section
     9) [ "${DEVOPTS}" = "" ] && DEVOPTS='1' || DEVOPTS=''

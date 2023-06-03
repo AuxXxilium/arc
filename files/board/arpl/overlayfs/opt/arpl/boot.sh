@@ -137,24 +137,25 @@ else
   echo "`printf "Detected %s NIC, Waiting IP." "${#ETHX[@]}"`"
   for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
     COUNT=0
-    echo -en "${ETHX[${N}]}: "
+    DRIVER=`ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}'`
+    echo -en "${ETHX[${N}]}(${DRIVER}): "
     while true; do
       if [ -z "`ip link show ${ETHX[${N}]} | grep 'UP'`" ]; then
-        echo -en "\r${ETHX[${N}]}: DOWN\n"
+        echo -en "\r${ETHX[${N}]}(${DRIVER}): DOWN\n"
         break
       fi
       if [ ${COUNT} -eq 20 ]; then # Under normal circumstances, no errors should occur here.
-        echo -en "\r${ETHX[${N}]}: ERROR\n"
+        echo -en "\r${ETHX[${N}]}(${DRIVER}): ERROR - Timeout\n"
         break
       fi
       COUNT=$((${COUNT}+1))
       IP=`ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
       IPON=`ip route get 1.1.1.1 dev ${ETHX[${N}]} 2>/dev/null | awk '{print$7}'`
       if [ -n "${IP}" ] && [ "${IP}" = "${IPON}" ]; then
-        echo -en "\r${ETHX[${N}]}: `printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}"`\n"
+        echo -en "\r${ETHX[${N}]}(${DRIVER}): `printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}"`\n"
         break
       elif [ -n "${IPON}" ]; then
-        echo -en "\r${ETHX[${N}]}: `printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IPON}"`\n"
+        echo -en "\r${ETHX[${N}]}(${DRIVER}): `printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IPON}"`\n"
         break
       fi
       echo -n "."
