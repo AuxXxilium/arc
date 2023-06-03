@@ -1494,6 +1494,8 @@ function updateMenu() {
             tar -xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
           done
           DIRTY=1
+          deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
             --msgbox "Addons updated with success! ${TAG}" 0 0
           ;;
@@ -1519,6 +1521,8 @@ function updateMenu() {
           rm -rf "${LKM_PATH}/"*
           unzip /tmp/rp-lkms.zip -d "${LKM_PATH}" >/dev/null 2>&1
           DIRTY=1
+          deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
             --msgbox "LKMs updated with success! ${TAG}" 0 0
           ;;
@@ -1549,6 +1553,8 @@ function updateMenu() {
             done < <(getAllModules "${PLATFORM}" "${KVER}")
           fi
           DIRTY=1
+          deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --msgbox "Modules updated to ${TAG} with success!" 0 0
           ;;
