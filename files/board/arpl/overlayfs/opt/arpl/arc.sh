@@ -639,6 +639,9 @@ function addonMenu() {
     USERADDONS["${ADDON}"]=""
     writeConfigKey "addons.${ADDON}" "" "${USER_CONFIG_FILE}"
   done
+  ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
+  dialog --backtitle "`backtitle`" --title "Addons" \
+    --msgbox "Addons selected:\n${ADDONSINFO}" 0 0
   DIRTY=1
   deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
