@@ -1969,13 +1969,6 @@ function formatdisks() {
 ###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
-  DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
-  GRUBCONF=`grub-editenv ${GRUB_PATH}/grubenv list | wc -l`
-  if [ ${DIRECTBOOT} = "false" ] && [ ${GRUBCONF} -gt 0 ]; then
-  grub-editenv ${GRUB_PATH}/grubenv create
-  dialog --backtitle "`backtitle`" --title "Arc Directboot" \
-    --msgbox "Disable Directboot!" 0 0
-  fi
   [ ${DIRTY} -eq 1 ] && dialog --backtitle "`backtitle`" --title "Alert" \
     --yesno "Config changed, would you like to rebuild the loader?" 0 0
   if [ $? -eq 0 ]; then
@@ -1983,7 +1976,7 @@ function boot() {
   fi
   dialog --backtitle "`backtitle`" --title "Arc Boot" \
     --infobox "Booting to DSM - Please stay patient!" 0 0
-  sleep 3
+  sleep 2
   exec reboot
 }
 
