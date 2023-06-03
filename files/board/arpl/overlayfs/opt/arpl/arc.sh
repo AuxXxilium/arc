@@ -52,7 +52,7 @@ ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
-  BACKTITLE="Arc v${ARPL_VERSION} |"
+  BACKTITLE="${ARPL_TITLE} |"
   if [ -n "${MODEL}" ]; then
     BACKTITLE+=" ${MODEL}"
   else
@@ -612,8 +612,9 @@ function editUserConfig() {
 ###############################################################################
 # Shows option to manage addons
 function addonMenu() {
-  NEXT="1"
   # Read 'platform' and kernel version to check if addon exists
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   ALLADDONS="`availableAddons "${PLATFORM}" "${KVER}"`"
@@ -623,58 +624,30 @@ function addonMenu() {
   while IFS=': ' read KEY VALUE; do
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  # Loop menu
-  while true; do
-    dialog --backtitle "`backtitle`" --default-item ${NEXT} \
-      --menu "Choose an option" 0 0 0 \
-      1 "Select Addon(s)" \
-      2 "Show all available Addons" \
-      0 "Exit" \
-      2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
-    case "`<${TMP_PATH}/resp`" in
-      1)
-        rm "${TMP_PATH}/opts"
-        touch "${TMP_PATH}/opts"
-        while read ADDON DESC; do
-          arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"         # Check if addon has already been added
-          echo "${ADDON} \"${DESC}\" ${ACT}" >> "${TMP_PATH}/opts"
-        done <<<${ALLADDONS}
-        dialog --backtitle "`backtitle`" --title "Addons" --aspect 18 \
-          --checklist "Select Addons to include" 0 0 0 \
-          --file "${TMP_PATH}/opts" 2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && continue
-        resp=$(<${TMP_PATH}/resp)
-        [ -z "${resp}" ] && continue
-        dialog --backtitle "`backtitle`" --title "Addons" \
-           --infobox "Writing to user config" 0 0
-        unset ADDONS
-        declare -A ADDONS
-        writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
-        for ADDON in ${resp}; do
-          USERADDONS["${ADDON}"]=""
-          writeConfigKey "addons.${ADDON}" "" "${USER_CONFIG_FILE}"
-        done
-        DIRTY=1
-        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-        ;;
-      4)
-        MSG=""
-        while read MODULE DESC; do
-          if arrayExistItem "${MODULE}" "${!ADDONS[@]}"; then
-            MSG+="\Z4${MODULE}\Zn"
-          else
-            MSG+="${MODULE}"
-          fi
-          MSG+=": \Z5${DESC}\Zn\n"
-        done < <(availableAddons "${PLATFORM}" "${KVER}")
-        dialog --backtitle "`backtitle`" --title "Available addons" \
-          --colors --msgbox "${MSG}" 0 0
-        ;;
-      0) return ;;
-    esac
+  rm "${TMP_PATH}/opts"
+  touch "${TMP_PATH}/opts"
+  while read ADDON DESC; do
+    arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"         # Check if addon has already been added
+    echo "${ADDON} \"${DESC}\" ${ACT}" >> "${TMP_PATH}/opts"
+  done <<<${ALLADDONS}
+  dialog --backtitle "`backtitle`" --title "Addons" --aspect 18 \
+    --checklist "Select Addons to include or remove" 0 0 0 \
+    --file "${TMP_PATH}/opts" 2>${TMP_PATH}/resp
+  [ $? -ne 0 ] && continue
+  resp=$(<${TMP_PATH}/resp)
+  [ -z "${resp}" ] && continue
+  dialog --backtitle "`backtitle`" --title "Addons" \
+      --infobox "Writing to user config" 0 0
+  unset ADDONS
+  declare -A ADDONS
+  writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
+  for ADDON in ${resp}; do
+    USERADDONS["${ADDON}"]=""
+    writeConfigKey "addons.${ADDON}" "" "${USER_CONFIG_FILE}"
   done
+  DIRTY=1
+  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
 }
 
 ###############################################################################
@@ -1091,8 +1064,8 @@ function backupMenu() {
       dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
         1 "Backup Config" \
         2 "Restore Config" \
-        3 "Backup DSM Bootimage" \
-        4 "Restore DSM Bootimage" \
+        3 "Backup Loader Disk" \
+        4 "Restore Loader Disk" \
         5 "Backup Config with Code" \
         6 "Restore Config with Code" \
         0 "Exit" \
@@ -1140,54 +1113,80 @@ function backupMenu() {
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           ;;
         3)
-          dialog --backtitle "`backtitle`" --title "Backup DSM Bootimage" --aspect 18 \
-            --infobox "Backup DSM Bootimage to ${BACKUPDIR}" 0 0
-          if [ ! -d "${BACKUPDIR}" ]; then
-            # Make backup dir
-            mkdir ${BACKUPDIR}
-          else
-            # Clean old backup
-            rm -f ${BACKUPDIR}/dsm-backup.tar
+          if ! tty | grep -q "/dev/pts"; then
+            dialog --backtitle "`backtitle`" --colors --aspect 18 \
+              --msgbox "This feature is only available when accessed via web/ssh." 0 0
+            return
+          fi 
+          dialog --backtitle "`backtitle`" --title "Backup Loader Disk" \
+              --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
+          [ $? -ne 0 ] && return
+          dialog --backtitle "`backtitle`" --title "Backup Loader Disk" \
+            --infobox "Backup in progress..." 0 0
+          rm -f /var/www/data/arc-backup.img.gz  # thttpd root path
+          dd if="${LOADER_DISK}" bs=1M conv=fsync | gzip > /var/www/data/arc-backup.img.gz
+          if [ $? -ne 0]; then
+            dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+              --msgbox "Failed to generate Backup. There may be insufficient memory. Please clear the cache and try again!" 0 0
+            return
           fi
-          # Copy files to backup
-          cp -f ${USER_CONFIG_FILE} ${BACKUPDIR}/user-config.yml
-          cp -f ${CACHE_PATH}/zImage-dsm ${BACKUPDIR}
-          cp -f ${CACHE_PATH}/initrd-dsm ${BACKUPDIR}
-          # Compress backup
-          tar -cvf ${BACKUPDIR}/dsm-backup.tar ${BACKUPDIR}/
-          # Clean temp files from backup dir
-          rm -f ${BACKUPDIR}/user-config.yml
-          rm -f ${BACKUPDIR}/zImage-dsm
-          rm -f ${BACKUPDIR}/initrd-dsm
-          if [ -f "${BACKUPDIR}/dsm-backup.tar" ]; then
-            dialog --backtitle "`backtitle`" --title "Backup DSM Bootimage" --aspect 18 \
-              --msgbox "Backup complete" 0 0
-          else
-            dialog --backtitle "`backtitle`" --title "Backup DSM Bootimage" --aspect 18 \
-              --msgbox "Backup error" 0 0
+          if [ -z "${SSH_TTY}" ]; then  # web
+            IP_HEAD="`ip route show 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`"
+            echo "http://${IP_HEAD}/arc-backup.img.gz"  > ${TMP_PATH}/resp
+            echo "            ↑                  " >> ${TMP_PATH}/resp
+            echo "Click on the address above to download." >> ${TMP_PATH}/resp
+            echo "Please confirm the completion of the download before closing this window." >> ${TMP_PATH}/resp
+            dialog --backtitle "`backtitle`" --title "Download link" --aspect 18 \
+            --editbox "${TMP_PATH}/resp" 10 100
+          else                          # ssh
+            sz -be /var/www/data/arc-backup.img.gz
           fi
+          dialog --backtitle "`backtitle`" --colors --aspect 18 \
+              --msgbox "Backup is complete." 0 0
+          rm -f /var/www/data/arc-backup.img.gz
           ;;
         4)
-          dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
-            --infobox "Restore DSM Bootimage from ${BACKUPDIR}" 0 0
-          if [ -f "${BACKUPDIR}/dsm-backup.tar" ]; then
-            # Uncompress backup
-            tar -xvf ${BACKUPDIR}/dsm-backup.tar -C /
-            # Copy files to locations
-            cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
-            cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}
-            cp -f ${BACKUPDIR}/initrd-dsm ${CACHE_PATH}
-            # Clean temp files from backup dir
-            rm -f ${BACKUPDIR}/user-config.yml
-            rm -f ${BACKUPDIR}/zImage-dsm
-            rm -f ${BACKUPDIR}/initrd-dsm
-            CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
-            BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-            dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
-              --msgbox "Restore complete" 0 0
+          if ! tty | grep -q "/dev/pts"; then
+            dialog --backtitle "`backtitle`" --colors --aspect 18 \
+              --msgbox "This feature is only available when accessed via web/ssh." 0 0
+            return
+          fi 
+          dialog --backtitle "`backtitle`" --title "Restore bootloader disk" --aspect 18 \
+              --yesno "Please upload the Backup file.\nCurrently, arc-x.zip(github) and arc-backup.img.gz(Backup) files are supported." 0 0
+          [ $? -ne 0 ] && return
+          IFTOOL=""
+          TMP_PATH=/tmp/users
+          rm -rf ${TMP_PATH}
+          mkdir -p ${TMP_PATH}
+          pushd ${TMP_PATH}
+          rz -be
+          for F in `ls -A`; do
+            USER_FILE="${F}"
+            [ "${F##*.}" = "zip" -a `unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$"` -eq 1 ] && IFTOOL="zip"
+            [ "${F##*.}" = "gz" -a "${F#*.}" = "img.gz" ] && IFTOOL="gzip"
+            break 
+          done
+          popd
+          if [ -z "${IFTOOL}" -o -z "${TMP_PATH}/${USER_FILE}" ]; then
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
+              --msgbox "`printf "Not a valid .zip/.img.gz file, please try again!" "${USER_FILE}"`" 0 0
           else
-            dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
-              --msgbox "No DSM Bootimage Backup found" 0 0
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" \
+                --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
+            [ $? -ne 0 ] && ( rm -f ${LOADER_DISK}; return )
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
+              --infobox "Restore in progress..." 0 0
+            umount /mnt/p1 /mnt/p2 /mnt/p3
+            if [ "${IFTOOL}" = "zip" ]; then
+              unzip -p "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
+            elif [ "${IFTOOL}" = "gzip" ]; then
+              gzip -dc "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
+            fi
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
+              --yesno "`printf "Restore Loader Disk successfull!\n%s\nReboot?" "${USER_FILE}"`" 0 0
+            [ $? -ne 0 ] && continue
+            reboot
+            exit
           fi
           ;;
         5)
@@ -1234,7 +1233,7 @@ function backupMenu() {
     while true; do
       dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
         1 "Restore Config" \
-        2 "Restore DSM Bootimage" \
+        2 "Restore Loader Disk" \
         3 "Restore Config with Code" \
         4 "Show Backup Path" \
         0 "Exit" \
@@ -1262,26 +1261,47 @@ function backupMenu() {
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           ;;
         2)
-          dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
-            --infobox "Restore DSM Bootimage from ${BACKUPDIR}" 0 0
-          if [ -f "${BACKUPDIR}/dsm-backup.tar" ]; then
-            # Uncompress backup
-            tar -xvf ${BACKUPDIR}/dsm-backup.tar -C /
-            # Copy files to locations
-            cp -f ${BACKUPDIR}/user-config.yml ${USER_CONFIG_FILE}
-            cp -f ${BACKUPDIR}/zImage-dsm ${CACHE_PATH}
-            cp -f ${BACKUPDIR}/initrd-dsm ${CACHE_PATH}
-            # Clean temp files from backup dir
-            rm -f ${BACKUPDIR}/user-config.yml
-            rm -f ${BACKUPDIR}/zImage-dsm
-            rm -f ${BACKUPDIR}/initrd-dsm
-            CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
-            BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-            dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
-              --msgbox "Restore complete" 0 0
+          if ! tty | grep -q "/dev/pts"; then
+            dialog --backtitle "`backtitle`" --colors --aspect 18 \
+              --msgbox "This feature is only available when accessed via web/ssh." 0 0
+            return
+          fi 
+          dialog --backtitle "`backtitle`" --title "Restore bootloader disk" --aspect 18 \
+              --yesno "Please upload the Backup file.\nCurrently, arc-x.zip(github) and arc-backup.img.gz(Backup) files are supported." 0 0
+          [ $? -ne 0 ] && return
+          IFTOOL=""
+          TMP_PATH=/tmp/users
+          rm -rf ${TMP_PATH}
+          mkdir -p ${TMP_PATH}
+          pushd ${TMP_PATH}
+          rz -be
+          for F in `ls -A`; do
+            USER_FILE="${F}"
+            [ "${F##*.}" = "zip" -a `unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$"` -eq 1 ] && IFTOOL="zip"
+            [ "${F##*.}" = "gz" -a "${F#*.}" = "img.gz" ] && IFTOOL="gzip"
+            break 
+          done
+          popd
+          if [ -z "${IFTOOL}" -o -z "${TMP_PATH}/${USER_FILE}" ]; then
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
+              --msgbox "`printf "Not a valid .zip/.img.gz file, please try again!" "${USER_FILE}"`" 0 0
           else
-            dialog --backtitle "`backtitle`" --title "Restore DSM Bootimage" --aspect 18 \
-              --msgbox "No Loader Backup found" 0 0
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" \
+                --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
+            [ $? -ne 0 ] && ( rm -f ${LOADER_DISK}; return )
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
+              --infobox "Restore in progress..." 0 0
+            umount /mnt/p1 /mnt/p2 /mnt/p3
+            if [ "${IFTOOL}" = "zip" ]; then
+              unzip -p "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
+            elif [ "${IFTOOL}" = "gzip" ]; then
+              gzip -dc "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
+            fi
+            dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
+              --yesno "`printf "Restore Loader Disk successfull!\n%s\nReboot?" "${USER_FILE}"`" 0 0
+            [ $? -ne 0 ] && continue
+            reboot
+            exit
           fi
           ;;
         3)
@@ -1344,7 +1364,7 @@ function updateMenu() {
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --infobox "Checking latest version" 0 0
           ACTUALVERSION="v${ARPL_VERSION}"
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases | jq -r 'map(select(.tag_name)) | .[0].tag_name'`"
+          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1395,7 +1415,7 @@ function updateMenu() {
           dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --infobox "Checking latest version" 0 0
           ACTUALVERSION="v${ARPL_VERSION}"
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases | jq -r 'map(select(.tag_name)) | .[0].tag_name'`"
+          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1455,7 +1475,7 @@ function updateMenu() {
         3)
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
             --infobox "Checking latest version" 0 0
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases | jq -r 'map(select(.tag_name)) | .[0].tag_name'`"
+          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1491,7 +1511,7 @@ function updateMenu() {
         4)
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
             --infobox "Checking latest version" 0 0
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases | jq -r 'map(select(.tag_name)) | .[0].tag_name'`"
+          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1516,7 +1536,7 @@ function updateMenu() {
         5)
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --infobox "Checking latest version" 0 0
-          TAG="`curl -k -s "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r 'map(select(.tag_name)) | .[0].tag_name'`"
+          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1558,7 +1578,7 @@ function updateMenu() {
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --infobox "Checking latest version" 0 0
           ACTUALVERSION="v${ARPL_VERSION}"
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases | jq -r 'map(select(.tag_name)) | .[0].tag_name'`"
+          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1609,170 +1629,6 @@ function updateMenu() {
       esac
     done
   fi
-}
-
-###############################################################################
-# Shows update menu to user
-function betaMenu() {
-  NEXT="1"
-  CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
-  PLATFORM="`readModelKey "${MODEL}" "platform"`"
-  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-  while true; do
-    dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
-      1 "Load Beta Loader" \
-      2 "Load Beta Addons" \
-      3 "Load Beta LKMs" \
-      4 "Load Beta Modules" \
-      0 "Exit" \
-      2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
-    case "`<${TMP_PATH}/resp`" in
-      1)
-        dialog --backtitle "`backtitle`" --title "Load Beta Loader" --aspect 18 \
-          --infobox "Checking Beta version" 0 0
-        ACTUALVERSION="v${ARPL_VERSION}"
-        TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name'`"
-        if [ $? -ne 0 -o -z "${TAG}" ]; then
-          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          continue
-        fi
-        if [ "${ACTUALVERSION}" = "${TAG}" ]; then
-          dialog --backtitle "`backtitle`" --title "Load Beta Loader" --aspect 18 \
-            --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
-          [ $? -ne 0 ] && continue
-        fi
-        dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-          --infobox "Downloading Beta version ${TAG}" 0 0
-        # Download update file
-        STATUS="`curl --insecure -w "%{http_code}" -L \
-          "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o /tmp/arc-${TAG}.img.zip`"
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-          dialog --backtitle "`backtitle`" --title "Load Beta Loader" --aspect 18 \
-            --msgbox "Error downloading update file" 0 0
-          continue
-        fi
-        unzip -o /tmp/arc-${TAG}.img.zip -d /tmp
-        if [ $? -ne 0 ]; then
-          dialog --backtitle "`backtitle`" --title "Load Beta Loader" --aspect 18 \
-            --msgbox "Error extracting update file" 0 0
-          continue
-        fi
-        if [ -f "${USER_CONFIG_FILE}" ]; then
-          GENHASH=`cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-`
-          dialog --backtitle "`backtitle`" --title "Load Beta Loader" --aspect 18 \
-          --msgbox "Backup config successfull!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
-        else
-          dialog --backtitle "`backtitle`" --title "Load Beta Loader" --aspect 18 \
-          --infobox "No config for Backup found!" 0 0
-        fi
-        dialog --backtitle "`backtitle`" --title "Load Beta Loader" --aspect 18 \
-          --infobox "Installing new Image" 0 0
-        # Process complete update
-        umount /mnt/p1 /mnt/p2 /mnt/p3
-        dd if="/tmp/arc.img" of=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1` bs=1M conv=fsync
-        # Ask for Boot
-        dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-          --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
-        [ $? -ne 0 ] && continue
-        arpl-reboot.sh config
-        exit
-        ;;
-      2)
-        dialog --backtitle "`backtitle`" --title "Beta addons" --aspect 18 \
-          --infobox "Checking Beta version" 0 0
-        TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name'`"
-        if [ $? -ne 0 -o -z "${TAG}" ]; then
-          dialog --backtitle "`backtitle`" --title "Beta addons" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          continue
-        fi
-        dialog --backtitle "`backtitle`" --title "Beta addons" --aspect 18 \
-          --infobox "Downloading Beta version: ${TAG}" 0 0
-        STATUS="`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip`"
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-          dialog --backtitle "`backtitle`" --title "Beta addons" --aspect 18 \
-            --msgbox "Error downloading new version" 0 0
-          continue
-        fi
-        dialog --backtitle "`backtitle`" --title "Beta addons" --aspect 18 \
-          --infobox "Extracting Beta version" 0 0
-        rm -rf /tmp/addons
-        mkdir -p /tmp/addons
-        unzip /tmp/addons.zip -d /tmp/addons >/dev/null 2>&1
-        dialog --backtitle "`backtitle`" --title "Beta addons" --aspect 18 \
-          --infobox "Installing new addons" 0 0
-        rm -Rf "${ADDONS_PATH}/"*
-        [ -f /tmp/addons/VERSION ] && cp -f /tmp/addons/VERSION ${ADDONS_PATH}/
-        for PKG in `ls /tmp/addons/*.addon`; do
-          ADDON=`basename ${PKG} | sed 's|.addon||'`
-          rm -rf "${ADDONS_PATH}/${ADDON}"
-          mkdir -p "${ADDONS_PATH}/${ADDON}"
-          tar -xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
-        done
-        DIRTY=1
-        dialog --backtitle "`backtitle`" --title "Beta addons" --aspect 18 \
-          --msgbox "Addons updated with success! ${TAG}" 0 0
-        ;;
-      3)
-        dialog --backtitle "`backtitle`" --title "Beta LKMs" --aspect 18 \
-          --infobox "Checking Beta version" 0 0
-        TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name'`"
-        if [ $? -ne 0 -o -z "${TAG}" ]; then
-          dialog --backtitle "`backtitle`" --title "Beta LKMs" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          continue
-        fi
-        dialog --backtitle "`backtitle`" --title "Beta LKMs" --aspect 18 \
-          --infobox "Downloading Beta version: ${TAG}" 0 0
-        STATUS="`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip`"
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-          dialog --backtitle "`backtitle`" --title "Beta LKMs" --aspect 18 \
-            --msgbox "Error downloading Beta version" 0 0
-          continue
-        fi
-        dialog --backtitle "`backtitle`" --title "Beta LKMs" --aspect 18 \
-          --infobox "Extracting Beta version" 0 0
-        rm -rf "${LKM_PATH}/"*
-        unzip /tmp/rp-lkms.zip -d "${LKM_PATH}" >/dev/null 2>&1
-        DIRTY=1
-        dialog --backtitle "`backtitle`" --title "Beta LKMs" --aspect 18 \
-          --msgbox "LKMs updated with success! ${TAG}" 0 0
-        ;;
-      4)
-        dialog --backtitle "`backtitle`" --title "Beta Modules" --aspect 18 \
-          --infobox "Checking Beta version" 0 0
-        TAG="`curl -k -s "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r 'map(select(.prerelease)) | .[0].tag_name'`"
-        if [ $? -ne 0 -o -z "${TAG}" ]; then
-          dialog --backtitle "`backtitle`" --title "Beta Modules" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          continue
-        fi
-        dialog --backtitle "`backtitle`" --title "Beta Modules" --aspect 18 \
-          --infobox "Downloading Beta version" 0 0
-        STATUS="`curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "/tmp/modules.zip"`"
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-          dialog --backtitle "`backtitle`" --title "Beta Modules" --aspect 18 \
-            --msgbox "Error downloading Beta version" 0 0
-          continue
-        fi
-        rm "${MODULES_PATH}/"*
-        unzip /tmp/modules.zip -d "${MODULES_PATH}" >/dev/null 2>&1
-        # Rebuild modules if model/buildnumber is selected
-        if [ -n "${PLATFORM}" -a -n "${KVER}" ]; then
-          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-          while read ID DESC; do
-            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-          done < <(getAllModules "${PLATFORM}" "${KVER}")
-        fi
-        DIRTY=1
-        dialog --backtitle "`backtitle`" --title "Beta Modules" --aspect 18 \
-          --msgbox "Modules updated to ${TAG} with success!" 0 0
-        ;;
-      0) return ;;
-    esac
-  done
 }
 
 ###############################################################################
@@ -1862,15 +1718,6 @@ function sysinfo() {
     TEXT+="\nBuild: \ZbComplete\Zn"
   else
     TEXT+="\nBuild: \ZbIncomplete\Zn"
-  fi
-  if [ -f "${BACKUPDIR}/arc-backup.img.gz" ]; then
-    TEXT+="\nBackup: \ZbFull Loader\Zn"
-  elif [ -f "${BACKUPDIR}/dsm-backup.tar" ]; then
-    TEXT+="\nBackup: \ZbDSM Bootimage\Zn"
-  elif [ -f "${BACKUPDIR}/user-config.yml" ]; then
-    TEXT+="\nBackup: \ZbOnly Config\Zn"
-  else
-    TEXT+="\nBackup: \ZbNo Backup found\Zn"
   fi
   TEXT+="\nArcpatch: \Zb${ARCPATCH}\Zn"
   TEXT+="\nLKM: \Zb${LKM}\Zn"
@@ -2040,11 +1887,15 @@ function resetPassword() {
   [ -z "${USER}" ] && return
   OLDPASSWD=`cat ${SHADOW_FILE} | grep "^${USER}:" | awk -F ':' '{print $2}'`
 
-  dialog --backtitle "`backtitle`" --title "Reset DSM Password" \
-    --inputbox "`printf "Type a new password for user '%s'" "${NAME}"`" 0 0 "${CMDLINE[${NAME}]}" \
-    2>${TMP_PATH}/resp
-  [ $? -ne 0 ] && return
-  VALUE="`<"${TMP_PATH}/resp"`"
+  while true; do
+    dialog --backtitle "`backtitle`" --title "Reset DSM Password" \
+      --inputbox "`printf "Type a new password for user '%s'" "${USER}"`" 0 0 "${CMDLINE[${NAME}]}" \
+      2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && break 2
+    VALUE="`<"${TMP_PATH}/resp"`"
+    [ -n "${VALUE}" ] && break
+    dialog --backtitle "`backtitle`" --title "Reset syno system password" --msgbox "Invalid password" 0 0
+  done
   NEWPASSWD=`python -c "import crypt,getpass;pw=\"${VALUE}\";print(crypt.crypt(pw))"`
   (
     mkdir -p /tmp/sdX1
@@ -2089,7 +1940,7 @@ function formatdisks() {
     [ -z "${POSITION}" -o -z "${NAME}" ] && continue
     echo "${POSITION}" | grep -q "${LOADER_DEVICE_NAME}" && continue
     ITEMS+="`printf "%s %s off " "${POSITION}" "${NAME}"`"
-  done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd[a-z]$" | awk -F' ' '{print $11" "$9}' | sort -uk 1,1)
+  done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd*" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
   dialog --backtitle "`backtitle`" --title "Format disk" \
     --checklist "Advanced" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
@@ -2207,7 +2058,6 @@ while true; do
     if [ -n "${DEVOPTS}" ]; then
       echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >> "${TMP_PATH}/menu"
       echo "o \"Save Modifications to Disk \" "                                             >> "${TMP_PATH}/menu"
-      echo "z \"Beta Menu \" "                                                              >> "${TMP_PATH}/menu"
     fi
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >> "${TMP_PATH}/menu"
@@ -2273,7 +2123,6 @@ while true; do
       NEXT="j"
       ;;
     o) saveMenu; NEXT="o" ;;
-    z) betaMenu; NEXT="z" ;;
     # Loader Settings
     c) keymapMenu; NEXT="c" ;;
     d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
