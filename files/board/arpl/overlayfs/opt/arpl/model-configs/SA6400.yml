@@ -6,8 +6,6 @@ synoinfo: &synoinfo
   support_led_brightness_adjustment: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
-  supportnvme: "yes"
-  support_m2_pool: "yes"
 cmdline: &cmdline
   synoboot2:
   SMBusHddDynamicPower: 1
@@ -29,7 +27,7 @@ arc:
   mac4: "9009D02A95D3"
   mac5: "9009D02A95D4"
   mac6: "9009D02A95D5"
-dom: 2
+dom: -1
 disks: 16
 dt: true
 beta: true

@@ -6,8 +6,6 @@ synoinfo: &synoinfo
   support_led_brightness_adjustment: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
-  supportnvme: "yes"
-  support_m2_pool: "yes"
   esataportcfg: "0x00"
 cmdline: &cmdline
   HddHotplug: 0
