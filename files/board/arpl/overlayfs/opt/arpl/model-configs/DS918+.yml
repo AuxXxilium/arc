@@ -7,8 +7,6 @@ synoinfo: &synoinfo
   support_leds_lp3943: ""
   support_syno_hybrid_raid:
   supportraidgroup:
-  supportnvme: "yes"
-  support_m2_pool: "yes"
   buzzeroffen: "0xffff"
   esataportcfg: "0x00"
 cmdline: &cmdline
