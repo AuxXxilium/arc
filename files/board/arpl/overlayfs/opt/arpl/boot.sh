@@ -173,5 +173,6 @@ for T in `w | grep -v "TTY" | awk -F' ' '{print $2}'`
 do
   echo -e "\n\033[1;37mThis interface will not be operational. Please use \033[1;34mhttp://find.synology.com/ \033[1;37mto find DSM and connect.\033[0m\n" > "/dev/${T}" 2>/dev/null || true
 done 
-poweroff
+#poweroff
+kexec -e
 exit 0
