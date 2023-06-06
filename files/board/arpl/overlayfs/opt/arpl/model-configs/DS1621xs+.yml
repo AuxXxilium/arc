@@ -27,10 +27,10 @@ arc:
   mac2: "001132D64C74"
   mac3: "001132D64C75"
   mac4: "9009D019775A"
-dom: 1
+dom: 2
 disks: 6
 dt: false
-beta: false
+beta: true
 builds:
   42962:
     ver: "7.1.1"
