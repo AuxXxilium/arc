@@ -1912,6 +1912,28 @@ function resetPassword() {
 }
 
 ###############################################################################
+# modify modules to fix mpt3sas module
+function mptFix() {
+  dialog --backtitle "`backtitle`" --title "LSI HBA Fix" \
+      --yesno "Warning:\nDo you want to modify your Modules to fix LSI HBA's. Continue?" 0 0
+  [ $? -ne 0 ] && return
+  PLATFORM="`readModelKey "${MODEL}" "platform"`"
+  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  delToModules ${PLATFORM} ${KVER} scsi_transport_sas
+  ALLMODULES=`getAllModules "${PLATFORM}" "${KVER}"`
+  unset USERMODULES
+  declare -A USERMODULES
+  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+  while read ID DESC; do
+    USERMODULES["${ID}"]=""
+    writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+  done <<<${ALLMODULES}
+  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+}
+
+###############################################################################
 # allow user to save modifications to disk
 function saveMenu() {
   dialog --backtitle "`backtitle`" --title "Save to Disk" \
@@ -2019,6 +2041,7 @@ while true; do
       fi
       echo "n \"Change Network Config \" "                                                  >> "${TMP_PATH}/menu"
       echo "u \"Change USB Port Config \" "                                                 >> "${TMP_PATH}/menu"
+      echo "v \"Fix LSI HBA Controller\" "                                                  >> "${TMP_PATH}/menu"
       if [ -n "${BUILDDONE}" ]; then
         echo "p \"Show .pat download link \" "                                              >> "${TMP_PATH}/menu"
       fi
@@ -2077,6 +2100,7 @@ while true; do
        ;;
     s) storageMenu; NEXT="s" ;;
     n) networkMenu; NEXT="n" ;;
+    v) mptFix; NEXT="v" ;;
     u) usbMenu; NEXT="u" ;;
     t) backupMenu; NEXT="t" ;;
     p) paturl; NEXT="p" ;;
