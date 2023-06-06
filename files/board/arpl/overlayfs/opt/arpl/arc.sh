@@ -1915,20 +1915,9 @@ function resetPassword() {
 # modify modules to fix mpt3sas module
 function mptFix() {
   dialog --backtitle "`backtitle`" --title "LSI HBA Fix" \
-      --yesno "Warning:\nDo you want to modify your Modules to fix LSI HBA's. Continue?" 0 0
+      --yesno "Warning:\nDo you want to modify your Config to fix LSI HBA's. Continue?" 0 0
   [ $? -ne 0 ] && return
-  PLATFORM="`readModelKey "${MODEL}" "platform"`"
-  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-  delToModules ${PLATFORM} ${KVER} scsi_transport_sas
-  ALLMODULES=`getAllModules "${PLATFORM}" "${KVER}"`
-  unset USERMODULES
-  declare -A USERMODULES
-  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-  while read ID DESC; do
-    USERMODULES["${ID}"]=""
-    writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-  done <<<${ALLMODULES}
+  deleteConfigKey "modules.scsi_transport_sas" "${USER_CONFIG_FILE}"
   deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
   BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
 }
