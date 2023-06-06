@@ -1912,6 +1912,17 @@ function resetPassword() {
 }
 
 ###############################################################################
+# modify modules to fix mpt3sas module
+function mptFix() {
+  dialog --backtitle "`backtitle`" --title "LSI HBA Fix" \
+      --yesno "Warning:\nDo you want to modify your Config to fix LSI HBA's. Continue?" 0 0
+  [ $? -ne 0 ] && return
+  deleteConfigKey "modules.scsi_transport_sas" "${USER_CONFIG_FILE}"
+  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+}
+
+###############################################################################
 # allow user to save modifications to disk
 function saveMenu() {
   dialog --backtitle "`backtitle`" --title "Save to Disk" \
@@ -2019,6 +2030,7 @@ while true; do
       fi
       echo "n \"Change Network Config \" "                                                  >> "${TMP_PATH}/menu"
       echo "u \"Change USB Port Config \" "                                                 >> "${TMP_PATH}/menu"
+      echo "v \"Fix LSI HBA Controller\" "                                                  >> "${TMP_PATH}/menu"
       if [ -n "${BUILDDONE}" ]; then
         echo "p \"Show .pat download link \" "                                              >> "${TMP_PATH}/menu"
       fi
@@ -2077,6 +2089,7 @@ while true; do
        ;;
     s) storageMenu; NEXT="s" ;;
     n) networkMenu; NEXT="n" ;;
+    v) mptFix; NEXT="v" ;;
     u) usbMenu; NEXT="u" ;;
     t) backupMenu; NEXT="t" ;;
     p) paturl; NEXT="p" ;;
