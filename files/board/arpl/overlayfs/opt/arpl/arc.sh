@@ -168,19 +168,20 @@ function arcMenu() {
     resp="${1}"
   fi
   # Read model config for buildconfig
-  OMODEL=`printf "$MODEL" | jq -sRr @uri`
+  NMODEL=${resp}
+  OMODEL=`printf "${NMODEL}" | jq -sRr @uri`
   OURL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/overlayfs/opt/arpl/model-configs/${OMODEL}.yml"
-  if [ -f "${TMP_PATH}/${MODEL}.yml" ]; then
-    rm -f "${TMP_PATH}/${MODEL}.yml"
+  if [ -f "${TMP_PATH}/${NMODEL}.yml" ]; then
+    rm -f "${TMP_PATH}/${NMODEL}.yml"
   fi
-  OSTATUS="`curl --insecure -w "%{http_code}" -L "${OURL}" -o ${TMP_PATH}/${MODEL}.yml`"
+  OSTATUS="`curl --insecure -w "%{http_code}" -L "${OURL}" -o ${TMP_PATH}/${NMODEL}.yml`"
   if [ $? -ne 0 -o ${OSTATUS} -ne 200 ]; then
     dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
       --infobox "No updated Modelconfig found" 0 0
   else
     dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
       --infobox "Update Modelconfig to latest" 0 0
-    cp -f "${TMP_PATH}/${MODEL}.yml" "${MODEL_CONFIG_PATH}/${MODEL}.yml"
+    cp -f "${TMP_PATH}/${NMODEL}.yml" "${MODEL_CONFIG_PATH}/${NMODEL}.yml"
   fi
   sleep 2
   if [ "${MODEL}" != "${resp}" ]; then
