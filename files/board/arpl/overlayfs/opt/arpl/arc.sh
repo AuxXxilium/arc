@@ -184,9 +184,9 @@ function arcMenu() {
     cp -f "${TMP_PATH}/${NMODEL}.yml" "${MODEL_CONFIG_PATH}/${NMODEL}.yml"
   fi
   sleep 2
-  if [ "${MODEL}" != "${resp}" ]; then
-    MODEL=${resp}
-    DT="`readModelKey "${resp}" "dt"`"
+  if [ "${MODEL}" != "${NMODEL}" ]; then
+    MODEL=${NMODEL}
+    DT="`readModelKey "${NMODEL}" "dt"`"
     if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
       # There is no Raid/SCSI Support for DT Models
       WARNON=2
