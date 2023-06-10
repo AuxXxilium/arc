@@ -158,7 +158,7 @@ echo "/addons/wol.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE
 for ADDON in ${!ADDONS[@]}; do
   PARAMS=${ADDONS[${ADDON}]}
   if ! installAddon ${ADDON}; then
-    echo "ADDON ${ADDON} not found!" | tee -a "${LOG_FILE}"
+    echo "${ADDON} is not available for this Platform!" | tee -a "${LOG_FILE}"
     exit 1
   fi
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
