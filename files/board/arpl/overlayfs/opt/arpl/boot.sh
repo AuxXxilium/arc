@@ -110,7 +110,7 @@ fi
 if [ ${NETIF_NUM} -le ${NETNUM} ]; then
   echo -e "\033[1;33m*** `printf "%s NIC detected, %s MACs customized, the others will use the original MACs." "${NETNUM}" "${CMDLINE["netif_num"]}"` ***\033[0m"
   ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
-  for N in `seq $(expr ${NETIF_NUM} + 1) ${NETRL_NUM}`; do 
+  for N in `seq $(expr ${NETIF_NUM} + 1) ${NETNUM}`; do 
     MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
     # no duplicates
     while [[ "${MACS[*]}" =~ "$MACR" ]]; do # no duplicates
