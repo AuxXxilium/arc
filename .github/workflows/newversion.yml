@@ -8,16 +8,15 @@
 name: New version
 on:
   workflow_dispatch:
-    workflow_dispatch:
-      inputs:
+    inputs:
         versionold:
-          description: '64551'
-          required: true
-          type: string
+            description: '64551'
+            required: true
+            type: string
         versionnew:
-          description: '64561'
-          required: true
-          type: string
+            description: '64561'
+            required: true
+            type: string
 jobs:
   build:
     runs-on: ubuntu-latest
