@@ -1,0 +1,41 @@
+#
+# Copyright (C) 2023 AuxXxilium <https://github.com/AuxXxilium> and Ing <https://github.com/wjz304>
+# 
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+
+name: New version
+on:
+    workflow_dispatch:
+        workflow_dispatch:
+            inputs:
+                versionold:
+                    description: ''
+                    required: true
+                    type: string
+                versionnew:
+                    description: ''
+                    required: true
+                    type: string
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Replace Version
+        uses: jacobtomlinson/gha-find-replace@v3
+        with:
+            find: "${{ inputs.versionold }}"
+            replace: "${{ inputs.versionnew }} "
+            include: "files/board/arpl/overlayfs/opt/arpl/model-configs/**"
+            regex: true
+      - name: Push
+        run:
+            git pull
+            status=$(git status -s | awk '{printf " %s", $2}')
+            if [ -n "${status}" ]; then
+                git add ${status}
+                git commit -m "arc: update from ${{ inputs.versionold }} to ${{ inputs.versionnew }}"
+                git push -f
+            fi
