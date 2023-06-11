@@ -86,6 +86,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
@@ -191,18 +192,14 @@ for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
       echo -en "\r${ETHX[${N}]}: ERROR - Timeout\n"
       break
     fi
-    COUNT=$((${COUNT}+1))
+    COUNT=$((${COUNT}+5))
     IP=`ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
-    IPON=`ip route get 1.1.1.1 dev ${ETHX[${N}]} 2>/dev/null | awk '{print$7}'`
-    if [ -n "${IP}" ] && [ "${IP}" = "${IPON}" ]; then
+    if [ -n "${IP}" ]; then
       echo -en "\r${ETHX[${N}]}: `printf "Access \033[1;34mhttp://%s:7681\033[0m to connect via web terminal." "${IP}"`\n"
-      break
-    elif [ -n "${IPON}" ]; then
-      echo -en "\r${ETHX[${N}]}: `printf "Access \033[1;34mhttp://%s:7681\033[0m to connect via web terminal." "${IPON}"`\n"
       break
     fi
     echo -n "."
-    sleep 1
+    sleep 5
   done
 done
 
