@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2023 AuxXxilium <https://github.com/AuxXxilium> and Ing <https://github.com/wjz304>
+# Copyright (C) 2023 AuxXxilium <https://github.com/AuxXxilium>
 # 
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
@@ -7,17 +7,17 @@
 
 name: New version
 on:
+  workflow_dispatch:
     workflow_dispatch:
-        workflow_dispatch:
-            inputs:
-                versionold:
-                    description: ''
-                    required: true
-                    type: string
-                versionnew:
-                    description: ''
-                    required: true
-                    type: string
+      inputs:
+        versionold:
+          description: '64551'
+          required: true
+          type: string
+        versionnew:
+          description: '64561'
+          required: true
+          type: string
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,8 +30,16 @@ jobs:
             replace: "${{ inputs.versionnew }} "
             include: "files/board/arpl/overlayfs/opt/arpl/model-configs/**"
             regex: true
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+            git config --global user.email "info@auxxxilium.tech"
+            git config --global user.name "AuxXxilium"
+            sudo timedatectl set-timezone "Europe/Berlin"
+      # Push to github
       - name: Push
-        run:
+        run: |
             git pull
             status=$(git status -s | awk '{printf " %s", $2}')
             if [ -n "${status}" ]; then
