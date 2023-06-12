@@ -82,6 +82,11 @@
                         "mCheckSum": "b590bc9f0df784be4d6bae13d551f76b"
                     },
                     {
+                        "mUnique": "synology_v1000_1823xs+",
+                        "mLink": "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-6/DSM_DS1823xs%2B_42962.pat",
+                        "mCheckSum": "1011932a1cfb8aa07e77beebede87a71"
+                    },
+                    {
                         "mUnique": "synology_broadwellnk_rs3621xs+",
                         "mLink": "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-6/DSM_RS3621xs%2B_42962.pat",
                         "mCheckSum": "02d56d400ac1c57593bc2faf9cc16a9b"
