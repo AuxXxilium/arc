@@ -24,7 +24,7 @@ serial:
   middle: "QXR"
   suffix: "numeric"
 arc:
-  serial: "1850QXRTXWRXT"
+  serial: "1880QXRTXWRXT"
   mac1: "00113295B399"
   mac2: "00113295B39A"
   mac3: "00113295B39B"
@@ -34,7 +34,7 @@ arc:
 dom: 2
 disks: 5
 dt: false
-beta: true
+beta: false
 flags:
   - "movbe"
 builds:
