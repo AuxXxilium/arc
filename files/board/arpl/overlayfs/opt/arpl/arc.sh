@@ -24,7 +24,7 @@ done <<< "`dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i [1-9]`
 RAMTOTAL=$((RAMTOTAL *1024))
 
 # Check for Hypervisor
-if grep -q ^flags.*\ hypervisor\  /proc/cpuinfo; then
+if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
   MACHINE="VIRTUAL"
   # Check for Hypervisor
   HYPERVISOR="`lscpu | grep Hypervisor | awk '{print $3}'`"
@@ -174,7 +174,7 @@ function arcMenu() {
     dialog --clear --backtitle "`backtitle`" \
       --menu "Online Config" 0 0 0 \
       1 "Update to latest Modelconfig" \
-      2 "Use local Modelconfig from Build" \
+      2 "Use Modelconfig from Build" \
     2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     resp=$(<${TMP_PATH}/resp)
@@ -204,10 +204,15 @@ function arcMenu() {
   sleep 2
   if [ "${MODEL}" != "${NMODEL}" ]; then
     MODEL=${NMODEL}
+    # Check for DT and SAS Controller
     DT="`readModelKey "${NMODEL}" "dt"`"
     if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
       # There is no Raid/SCSI Support for DT Models
       WARNON=2
+    fi
+    # Check for AES
+    if ! grep -q "^flags.*aes.*" /proc/cpuinfo; then
+      WARNON=4
     fi
     writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
     deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
@@ -349,6 +354,10 @@ function arcnetdisk() {
   if [ "${WARNON}" = "3" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --msgbox "WARN: You have more than 8 Ethernet Ports. There are only 8 supported by Redpill." 0 0
+  fi
+  if [ "${WARNON}" = "4" ]; then
+    dialog --backtitle "`backtitle`" --title "Arc Warning" \
+      --msgbox "WARN: Your CPU does not have AES Support for Hardwareencryption in DSM." 0 0
   fi
   # Ask for Build
   while true; do
