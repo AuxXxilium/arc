@@ -54,7 +54,7 @@ def synoextractor(url):
     commands = ['sudo', 'rm', '-rf', filename, filepath]
     result = subprocess.check_output(commands)
     
-    #req = requests.get(url.replace(urlparse(url).netloc, 'cndl.synology.cn'))
+    # req = requests.get(url.replace(urlparse(url).netloc, 'cndl.synology.cn'))
     req = requests.get(url)
     with open(filename, "wb") as f:
         f.write(req.content)
@@ -106,9 +106,8 @@ def synoextractor(url):
 
     commands = ['sudo', 'rm', '-rf', filename, filepath]
     result = subprocess.check_output(commands)
-
     print(data)
-
+    
     return data
 
 
@@ -125,16 +124,19 @@ def main(isUpdateConfigs = True, isUpdateRss = True):
     print(models)
     
     pats = {}
-    req = requests.get('https://prerelease.synology.com/webapi/models?event=dsm72_beta, headers=headers')
-    rels = json.loads(req.text)
-    if "models" in rels and len(rels["models"]) > 0:
-        for i in rels["models"]:
-            if "name" not in i or "dsm" not in i: continue
-            if i["name"] not in models: continue
-            if i["name"] not in pats.keys(): pats[i["name"]]={}
-            pats[i["name"]][fullversion(i["dsm"]["version"]).replace('64216','64551')] = i["dsm"]["url"].split('?')[0].replace('beta','release').replace('64216','64551')
 
-    req = requests.get('https://archive.synology.com/download/Os/DSM, headers=headers')
+    # # Get beta pats
+    # # 临时对策, RC 64551 目前并没有在 archive.synology.com 上线, beta 又为 64216, 临时用 64216 的地址进行替换.
+    # req = requests.get('https://prerelease.synology.com/webapi/models?event=dsm72_beta', headers=headers)
+    # rels = json.loads(req.text)
+    # if "models" in rels and len(rels["models"]) > 0:
+    #     for i in rels["models"]:
+    #         if "name" not in i or "dsm" not in i: continue
+    #         if i["name"] not in models: continue
+    #         if i["name"] not in pats.keys(): pats[i["name"]]={}
+    #         pats[i["name"]][fullversion(i["dsm"]["version"]).replace('64216','64551')] = i["dsm"]["url"].split('?')[0].replace('beta','release').replace('64216','64551')
+
+    req = requests.get('https://archive.synology.com/download/Os/DSM', headers=headers)
     req.encoding = 'utf-8'
     bs=BeautifulSoup(req.text, 'html.parser')
     p = re.compile(r"(.*?)-(.*?)", re.MULTILINE | re.DOTALL)
@@ -191,6 +193,9 @@ def main(isUpdateConfigs = True, isUpdateRss = True):
                     
                     if isUpdateConfigs is True:
                         isChange = True
+                        # config.yml
+                        # data["builds"][ver]["pat"] = hashdata  # pyyaml 会修改文件格式
+                        # yq -iy '.builds."25556".pat |= {url:"...", hash:"..."}' DS918+.yml  # yq 也会修改文件格式
                         pat = data["builds"][ver]["pat"]
                         if not all(bool(key) for key in pat.keys()):
                             print("[E] {}  builds.{} key error".format(filename, ver))
@@ -207,12 +212,19 @@ def main(isUpdateConfigs = True, isUpdateRss = True):
                         for idx in range(len(rssjson["channel"]["item"])):
                             if rssjson["channel"]["item"][idx]["BuildNum"] == int(ver):
                                 rssjson["channel"]["item"][idx]["model"].append({"mUnique": hashdata["unique"], "mLink": hashdata["url"], "mCheckSum": hashdata["md5-hash"]})
+            # if isUpdateConfigs is True:
+            #     # pyyaml 会修改文件格式
+            #     if isChange is True:
+            #         with open(os.path.join(FILE_PATH, configs, filename), "w", encoding='utf-8') as f:
+            #             yaml.dump(data, f, Dumper=yaml.SafeDumper, sort_keys=False)  # 双引号: default_style='"', 
         except:
             pass
 
     rssxml.write("rss.xml", xml_declaration=True)
+    # ET 处理 rss 的后与原有rss会多一个encode
     commands = ['sed', '-i', 's|^<?xml .*\?>$|<?xml version="1.0"?>|', os.path.join(FILE_PATH, 'rss.xml')]
     result = subprocess.check_output(commands)
+    # ET 处理 rss 的并不会格式化
     commands = ['xmllint', '--format', 'rss.xml', '-o', 'rss_new.xml']
     result = subprocess.check_output(commands)
     commands = ['mv', 'rss_new.xml', 'rss.xml']

@@ -4,11 +4,10 @@ synoinfo: &synoinfo
   support_memory_compatibility: "no"
   support_bde_internal_10g: "no"
   support_led_brightness_adjustment: "no"
+  support_oob_ctl: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
-  maxlanport: "8"
-  netif_seq: "0 1 2 3 4 5 6 7"
-  esataportcfg: "0x0"
+  esataportcfg: "0x00"
 cmdline: &cmdline
   HddHotplug: 0
   syno_hdd_detect: 0
@@ -58,8 +57,8 @@ builds:
       - "ramdisk-42951-post-init-script.patch"
       - "ramdisk-42661-disable-disabled-ports.patch"
 
-  64561:
-    ver: "7.2.0"
+  64570:
+    ver: "7.2"
     kver: "4.4.302"
     rd-compressed: false
     cmdline:
@@ -70,11 +69,11 @@ builds:
       rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.json"
       <<: *synoinfo
     pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.2/64561/DSM_RS1619xs%2B_64561.pat"
-      hash: "ed639e2bdd23bfa4ff6939215fcd33d851f14b5e5455078d92317c78a28f5e32"
-      ramdisk-hash: "9637556b15d2b02ba371a2b38590f057f52aae48a38d235924025357b3b9eec8"
-      zimage-hash: "6f83d644969cb8716baeadd4b1ad351aa93e61d0e5df03637863ad541c2d1442"
-      md5-hash: "59c540615429ba25af630a3579ec00d4"
+      url: "https://global.synologydownload.com/download/DSM/release/7.2/64570/DSM_RS1619xs%2B_64570.pat"
+      hash: "bda53361f96a904c671d2e0f053c979bd66ac0a319a129310b29638ceeb74bae"
+      ramdisk-hash: "b36c718e09daf8ccff439262a7336fcf9ca50af7ea91ca0e224627c118cbc817"
+      zimage-hash: "a4af69c2097b18a5a370768431cf5d84067eaf41833c45088834ae527e5d5da5"
+      md5-hash: "a505206f57479d2f41b4972d820aa8d8"
     patch:
       - "ramdisk-64216-disable-root-pwd.patch"
       - "ramdisk-64216-init-script.patch"

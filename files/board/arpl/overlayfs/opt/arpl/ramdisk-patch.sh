@@ -146,20 +146,19 @@ echo "export KEYMAP=${KEYMAP}"                  >> "${RAMDISK_PATH}/addons/addon
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # Required addons: eudev, disks, wol
+installAddon misc
+echo "/addons/misc.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon eudev
 echo "/addons/eudev.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon disks
 echo "/addons/disks.sh \${1} ${DT} ${UNIQUE}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-[ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
 installAddon wol
 echo "/addons/wol.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-installAddon bootwait
-echo "/addons/bootwait.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 # User addons
 for ADDON in ${!ADDONS[@]}; do
   PARAMS=${ADDONS[${ADDON}]}
   if ! installAddon ${ADDON}; then
-    echo "ADDON ${ADDON} not found!" | tee -a "${LOG_FILE}"
+    echo "${ADDON} is not available for this Platform!" | tee -a "${LOG_FILE}"
     exit 1
   fi
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
@@ -167,11 +166,13 @@ done
 
 [ "2" = "${BUILD:0:1}" ] && sed -i 's/function //g' `find "${RAMDISK_PATH}/addons/" -type f -name "*.sh"`
 
-# Enable Telnet
-echo "inetd" >> "${RAMDISK_PATH}/addons/addons.sh"
-
 # Build modules dependencies
 /opt/arpl/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
+
+# Network card configuration file
+for N in `seq 0 7`; do
+echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" > "${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
+done
 
 # Reassembly ramdisk
 echo -n "."

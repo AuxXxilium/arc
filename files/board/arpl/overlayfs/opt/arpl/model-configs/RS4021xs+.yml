@@ -3,10 +3,10 @@ synoinfo: &synoinfo
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_bde_internal_10g: "no"
+  support_led_brightness_adjustment: "no"
+  support_oob_ctl: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
-  maxlanport: "8"
-  netif_seq: "0 1 2 3 4 5 6 7"
   esataportcfg: "0x00"
 cmdline: &cmdline
   HddHotplug: 0
@@ -46,11 +46,11 @@ builds:
       rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.json"
       <<: *synoinfo
     pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-5/DSM_RS4021xs%2B_42962.pat"
-      hash: "e2ddf670e54fe6b2b52b19125430dc82394df2722afd4f62128b95a63459ee3d"
-      ramdisk-hash: "2cdb5bfb6017fc13493e6214f6455ec8e0b49e45f4c0442ec97502c8b21a66ca"
-      zimage-hash: "21b42a36e6542fbe1c12a3f3887b28b853c95b487cd9684cac361c0a67ccaedb"
-      md5-hash: "aecafe9c9022922cc376b412d97e9ecd"
+      url: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-6/DSM_RS4021xs%2B_42962.pat"
+      hash: "9b24656847eac5e94765f314e12f18b1dbec02b8f94c5366cc92211c4fba8c92"
+      ramdisk-hash: "8bbdadb82ca305b98f4f161c94aa08e409a59afef0b0bcc5dddd7bf7ab2765a0"
+      zimage-hash: "2547ff79d8bce71cfa28e5bad84b8022d4278ef111a7b0730c3d6971ff026b9c"
+      md5-hash: "cef9e139ddc27ddcc61f5423bac47659"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"
@@ -58,8 +58,8 @@ builds:
       - "ramdisk-42951-post-init-script.patch"
       - "ramdisk-42661-disable-disabled-ports.patch"
 
-  64561:
-    ver: "7.2.0"
+  64570:
+    ver: "7.2"
     kver: "4.4.302"
     rd-compressed: false
     cmdline:
@@ -70,11 +70,11 @@ builds:
       rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.json"
       <<: *synoinfo
     pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.2/64561/DSM_RS4021xs%2B_64561.pat"
-      hash: "95a9310ad8ad319dbd0462f7a1ae12d403d6fb2d1e64664857d337356ba10afd"
-      ramdisk-hash: "d59333206b81bbd2897168b9cc111d790d0fb65cfdc4cae11f7656aea166d18d"
-      zimage-hash: "6f83d644969cb8716baeadd4b1ad351aa93e61d0e5df03637863ad541c2d1442"
-      md5-hash: "547885a4e22765674271c2e0906870f3"
+      url: "https://global.synologydownload.com/download/DSM/release/7.2/64570/DSM_RS4021xs%2B_64570.pat"
+      hash: "7502ad1b8022381931c7633c75ebbdcf369388b6f42f63e81121e72745ad068f"
+      ramdisk-hash: "1eef565b10afff16783e1cffa79126457f3264244e50b0ed8569129f0fb15434"
+      zimage-hash: "a4af69c2097b18a5a370768431cf5d84067eaf41833c45088834ae527e5d5da5"
+      md5-hash: "b1f51414bfbd38d3b13b0180d8b39bf9"
     patch:
       - "ramdisk-64216-disable-root-pwd.patch"
       - "ramdisk-64216-init-script.patch"

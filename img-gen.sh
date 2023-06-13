@@ -4,7 +4,7 @@ set -e
 
 if [ ! -d .buildroot ]; then
   echo "Downloading buildroot"
-  git clone --single-branch -b 2023.02.1 https://github.com/buildroot/buildroot.git .buildroot
+  git clone --single-branch -b 2023.02.x https://github.com/buildroot/buildroot.git .buildroot
 fi
 # Remove old files
 rm -rf ".buildroot/output/target/opt/arpl"
@@ -14,7 +14,7 @@ rm -rf ".buildroot/board/arpl/p3"
 
 # Get extractor, LKM, Addons and Modules
 
-. scripts/func.sh
+. ./scripts/func.sh
 
 getExtractor "files/board/arpl/p3/extractor"
 getLKMs "files/board/arpl/p3/lkms"
@@ -41,6 +41,7 @@ echo "Building... Drink a coffee and wait!"
 make BR2_EXTERNAL=../external -j`nproc`
 cd -
 rm -f arc.img
-mv -f arpl.img arc.img
+cp -f arpl.img arc.img
+rm -f arpl.img
 qemu-img convert -O vmdk arc.img arc-dyn.vmdk
 qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk

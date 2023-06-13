@@ -13,13 +13,12 @@ while true; do
   CNT=$((${CNT}-1))
   sleep 1
 done
-if [ -z "${LOADER_DISK}" ]; then
-  die "Loader disk not found!"
-fi
+
+
+[ -z "${LOADER_DISK}" ] && die "Loader disk not found!"
 NUM_PARTITIONS=$(blkid | grep "${LOADER_DISK}[0-9]\+" | cut -d: -f1 | wc -l)
-if [ $NUM_PARTITIONS -ne 3 ]; then
-  die "Loader disk not found!"
-fi
+[ $NUM_PARTITIONS -lt 3 ] && die "Loader disk seems to be damaged!"
+[ $NUM_PARTITIONS -gt 3 ] && die "There are multiple loader disks, please insert only one loader disk!"
 
 # Check partitions and ignore errors
 fsck.vfat -aw ${LOADER_DISK}1 >/dev/null 2>&1 || true
@@ -31,17 +30,17 @@ mkdir -p ${SLPART_PATH}
 mkdir -p ${CACHE_PATH}
 mkdir -p ${DSMROOT_PATH}
 # Mount the partitions
-mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "`printf "$(TEXT "Can't mount %s")" "${BOOTLOADER_PATH}"`"
-mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "`printf "$(TEXT "Can't mount %s")" "${SLPART_PATH}"`"
-mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "`printf "$(TEXT "Can't mount %s")" "${CACHE_PATH}"`"
+mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "`printf "Can't mount %s" "${BOOTLOADER_PATH}"`"
+mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "`printf "Can't mount %s" "${SLPART_PATH}"`"
+mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "`printf "Can't mount %s" "${CACHE_PATH}"`"
 
 # Shows title
 clear
 TITLE="${ARPL_TITLE}"
-printf "\033[1;44m%*s\n" $COLUMNS ""
-printf "\033[1;44m%*s\033[A\n" $COLUMNS ""
-printf "\033[1;32m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
-printf "\033[1;44m%*s\033[0m\n" $COLUMNS ""
+printf "\033[1;30m%*s\n" $COLUMNS ""
+printf "\033[1;30m%*s\033[A\n" $COLUMNS ""
+printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
+printf "\033[1;30m%*s\033[0m\n" $COLUMNS ""
 
 # Move/link SSH machine keys to/from cache volume
 [ ! -d "${CACHE_PATH}/ssh" ] && cp -R "/etc/ssh" "${CACHE_PATH}/ssh"
@@ -65,30 +64,29 @@ if [ -d "${CACHE_PATH}/patch" ]; then
   ln -s "${CACHE_PATH}/patch" "${PATCH_PATH}"
 fi
 
-# Get first MAC address
-ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
+# Check if machine has EFI
+[ -d /sys/firmware/efi ] && EFI=1 || EFI=0
 
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
   writeConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
-  writeConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "model" "" "${USER_CONFIG_FILE}"
   writeConfigKey "build" "" "${USER_CONFIG_FILE}"
   writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
   # writeConfigKey "maxdisks" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "layout" "qwerty" "${USER_CONFIG_FILE}"
-  writeConfigKey "keymap" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "layout" "qwertz" "${USER_CONFIG_FILE}"
+  writeConfigKey "keymap" "de" "${USER_CONFIG_FILE}"
   writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
   writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
   writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
-  writeConfigKey "addons.misc" "" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
@@ -97,18 +95,25 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   # writeConfigKey "cmdline.mac1" "`cat /sys/class/net/${ETHX[0]}/address | sed 's/://g'`" "${USER_CONFIG_FILE}"
 fi
 
+# Get MAC address
+ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
 for N in $(seq 1 ${#ETHX[@]}); do
   MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
+  # Initialize with real MAC
+  writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   # Set custom MAC if defined
   MACF="`readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}"`"
   if [ -n "${MACF}" -a "${MACF}" != "${MACR}" ]; then
-    MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-    echo "`printf "Setting %s MAC to %s" "${ETHX[$(expr ${N} - 1)]}" "${MAC}"`"
-    ifconfig ${ETHX[$(expr ${N} - 1)]} hw ether ${MAC} >/dev/null 2>&1 && \
+    if [ ${EFI} -eq 1 ]; then
+      MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
+      echo "`printf "Setting %s MAC to %s" "${ETHX[$(expr ${N} - 1)]}" "${MAC}"`"
+      ip link set dev ${ETHX[$(expr ${N} - 1)]} address ${MAC} >/dev/null 2>&1 && \
       (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
+    fi
+  elif [ -z "${MACF}" ]; then
+    # Write real Mac to cmdline config
+    writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   fi
-  # Initialize with real MAC
-  writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   # Enable Wake on Lan, ignore errors
   ethtool -s ${ETHX[$(expr ${N} - 1)]} wol g 2>/dev/null
 done
@@ -130,11 +135,11 @@ writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
 writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 
 # Inform user
-echo -en "Loader disk: \033[1;32m${LOADER_DISK}\033[0m ("
+echo -en "Loader disk: \033[1;34m${LOADER_DISK}\033[0m ("
 if [ "${BUS}" = "usb" ]; then
-  echo -en "\033[1;32mUSB flashdisk\033[0m"
+  echo -en "\033[1;34mUSB flashdisk\033[0m"
 else
-  echo -en "\033[1;32mSATA DoM\033[0m"
+  echo -en "\033[1;34mSATA DoM\033[0m"
 fi
 echo ")"
 
@@ -154,17 +159,17 @@ KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 
 # Loads a keymap if is valid
 if [ -f /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz ]; then
-  echo -e "Loading keymap \033[1;32m${LAYOUT}/${KEYMAP}\033[0m"
+  echo -e "Loading keymap \033[1;34m${LAYOUT}/${KEYMAP}\033[0m"
   zcat /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz | loadkeys
 fi
 
 # Decide if boot automatically
 BOOT=1
 if ! loaderIsConfigured; then
-  echo -e "\033[1;33mLoader is not configured!\033[0m"
+  echo -e "\033[1;31mLoader is not configured!\033[0m"
   BOOT=0
 elif grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
-  echo -e "\033[1;33mUser requested edit settings.\033[0m"
+  echo -e "\033[1;31mUser requested edit settings.\033[0m"
   BOOT=0
 fi
 
@@ -180,36 +185,36 @@ for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
   echo -en "${ETHX[${N}]}: "
   while true; do
     if [ -z "`ip link show ${ETHX[${N}]} | grep 'UP'`" ]; then
-      echo -en "\r${ETHX[${N}]}: $(TEXT "DOWN")\n"
+      echo -en "\r${ETHX[${N}]}: DOWN\n"
       break
     fi
-    if [ ${COUNT} -eq 30 ]; then
-      echo -en "\r${ETHX[${N}]}: $(TEXT "ERROR")\n"
+    if [ ${COUNT} -eq 20 ]; then
+      echo -en "\r${ETHX[${N}]}: ERROR - Timeout\n"
       break
     fi
-    COUNT=$((${COUNT}+1))
+    COUNT=$((${COUNT}+5))
     IP=`ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
     if [ -n "${IP}" ]; then
-      echo -en "\r${ETHX[${N}]}: `printf "Access \033[1;34mhttp://%s:7681\033[0m to configure the loader via web terminal." "${IP}"`\n"
+      echo -en "\r${ETHX[${N}]}: `printf "Access \033[1;34mhttp://%s:7681\033[0m to connect via web terminal." "${IP}"`\n"
       break
     fi
     echo -n "."
-    sleep 1
+    sleep 5
   done
 done
 
 # Inform user
 echo
-echo -e "Call \033[1;32mmenu.sh\033[0m to configure loader"
+echo -e "Call \033[1;34marc.sh\033[0m to configure loader"
 echo
-echo -e "User config is on \033[1;32m${USER_CONFIG_FILE}\033[0m"
-echo -e "Default SSH Root password is \033[1;31mRedp1lL-1s-4weSomE\033[0m"
+echo -e "User config is on \033[1;34m${USER_CONFIG_FILE}\033[0m"
+echo -e "Default SSH Root password is \033[1;34mRedp1ll\033[0m"
 echo
 
 # Check memory
 RAM=`free -m | awk '/Mem:/{print$2}'`
 if [ ${RAM} -le 3500 ]; then
-  echo -e "\033[1;33mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of memory.\033[0m\n"
+  echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of memory.\033[0m\n"
 fi
 
 mkdir -p "${ADDONS_PATH}"
@@ -217,4 +222,5 @@ mkdir -p "${LKM_PATH}"
 mkdir -p "${MODULES_PATH}"
 
 install-addons.sh
+sleep 3
 arc.sh
