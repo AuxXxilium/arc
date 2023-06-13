@@ -145,7 +145,7 @@ echo "export LAYOUT=${LAYOUT}"                  >> "${RAMDISK_PATH}/addons/addon
 echo "export KEYMAP=${KEYMAP}"                  >> "${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
-# Required addons: eudev, disks, wol
+# Required addons: misc, eudev, disks, wol, acpid, bootwait
 installAddon misc
 echo "/addons/misc.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon eudev
@@ -154,6 +154,10 @@ installAddon disks
 echo "/addons/disks.sh \${1} ${DT} ${UNIQUE}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon wol
 echo "/addons/wol.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+installAddon acpid
+echo "/addons/acpid.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+installAddon bootwait
+echo "/addons/bootwait.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 # User addons
 for ADDON in ${!ADDONS[@]}; do
   PARAMS=${ADDONS[${ADDON}]}
