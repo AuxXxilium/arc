@@ -262,9 +262,9 @@ function arcbuild() {
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   while true; do
     dialog --clear --backtitle "`backtitle`" \
-      --menu "Choose an option" 0 0 0 \
-      1 "Install with Arc Patch" \
-      2 "Install without Arc Patch" \
+      --menu "Do you want to use Syno Services?" 0 0 0 \
+      1 "Yes - Install with Arc Patch" \
+      2 "No - Install without Arc Patch" \
     2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     resp=$(<${TMP_PATH}/resp)
