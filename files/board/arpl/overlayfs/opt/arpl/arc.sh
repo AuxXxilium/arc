@@ -269,7 +269,7 @@ function arcsettings() {
   if [ "${ARCRECOVERY}" != "true" ]; then
     while true; do
       dialog --clear --backtitle "`backtitle`" \
-        --menu "Do you want to use Syno Services?" 0 0 0 \
+        --menu "Arc Patch\nDo you want to use Syno Services?" 0 0 0 \
         1 "Yes - Install with Arc Patch" \
         2 "No - Install without Arc Patch" \
       2>${TMP_PATH}/resp
