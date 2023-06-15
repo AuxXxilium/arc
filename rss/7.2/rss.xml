@@ -3,8 +3,8 @@
   <channel>
     <title>RSS for DSM Auto Update</title>
     <link>http://update.synology.com/autoupdate/genRSS.php</link>
-    <pubDate>Sat Aug 6 0:11:41 CST 2022</pubDate>
-    <copyright>Copyright 2022 Synology Inc</copyright>
+    <pubDate>Wed Jun 14 9:31:17 CST 2023</pubDate>
+    <copyright>Copyright 2023 Synology Inc</copyright>
     <item>
       <title>DSM 7.2-64570</title>
       <MajorVer>7</MajorVer>

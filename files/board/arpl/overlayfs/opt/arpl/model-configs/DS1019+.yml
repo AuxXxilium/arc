@@ -63,7 +63,7 @@ builds:
       - "ramdisk-42661-disable-disabled-ports.patch"
 
   64570:
-    ver: "7.2"
+    ver: "7.2.0"
     kver: "4.4.302"
     rd-compressed: false
     cmdline:

@@ -3,8 +3,8 @@
     "channel": {
         "title": "RSS for DSM Auto Update",
         "link": "https://update.synology.com/autoupdate/v2/getList",
-        "pubDate": "Sat Aug 6 0:18:39 CST 2022",
-        "copyright": "Copyright 2022 Synology Inc",
+        "pubDate": "Fri Jun 16 1:19:58 CST 2023",
+        "copyright": "Copyright 2023 Synology Inc",
         "item": [
             {
                 "title": "DSM 7.1.1-42962",
