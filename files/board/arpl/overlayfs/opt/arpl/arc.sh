@@ -256,34 +256,42 @@ function arcbuild() {
     BUILD=${resp}
     writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
   fi
+  arcsettings
+}
+
+###############################################################################
+# Make Network and Disk Config
+function arcsettings() {
   # Read model values for buildconfig
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-  while true; do
-    dialog --clear --backtitle "`backtitle`" \
-      --menu "Do you want to use Syno Services?" 0 0 0 \
-      1 "Yes - Install with Arc Patch" \
-      2 "No - Install without Arc Patch" \
-    2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
-    resp=$(<${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return
-    if [ "${resp}" = "1" ]; then
-      # Read valid serial from file
-      SN="`readModelKey "${MODEL}" "arc.serial"`"
-      writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-      writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-      break
-    elif [ "${resp}" = "2" ]; then
-      # Generate random serial
-      SN="`generateSerial "${MODEL}"`"
-      writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-      break
-    fi
-  done
+  if [ "${ARCRECOVERY}" != "true" ]; then
+    while true; do
+      dialog --clear --backtitle "`backtitle`" \
+        --menu "Do you want to use Syno Services?" 0 0 0 \
+        1 "Yes - Install with Arc Patch" \
+        2 "No - Install without Arc Patch" \
+      2>${TMP_PATH}/resp
+      [ $? -ne 0 ] && return
+      resp=$(<${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return
+      if [ "${resp}" = "1" ]; then
+        # Read valid serial from file
+        SN="`readModelKey "${MODEL}" "arc.serial"`"
+        writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+        writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
+        break
+      elif [ "${resp}" = "2" ]; then
+        # Generate random serial
+        SN="`generateSerial "${MODEL}"`"
+        writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+        break
+      fi
+    done
+  fi
   ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
@@ -315,7 +323,6 @@ function arcbuild() {
   sleep 1
   arcnetdisk
 }
-
 
 ###############################################################################
 # Make Network and Disk Config
@@ -1842,21 +1849,32 @@ function tryRecoveryDSM() {
           UNIQUE=`readModelKey "${M}" "unique"`
           [ "${unique}" = "${UNIQUE}" ] || continue
           # Found
-          modelMenu "${M}"
+          writeConfigKey "model" "${M}" "${USER_CONFIG_FILE}"
         done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
+	      MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
         if [ -n "${MODEL}" ]; then
-          buildMenu ${base}
+          writeConfigKey "build" "${base}" "${USER_CONFIG_FILE}"
+          BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
           if [ -n "${BUILD}" ]; then
             cp "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
             cp "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
             MSG="Found a installation:\nModel: ${MODEL}\nBuildnumber: ${BUILD}"
             SN=`_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf"`
             if [ -n "${SN}" ]; then
+              SNARC="`readModelKey "${MODEL}" "arc.serial"`"
               writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
               MSG+="\nSerial: ${SN}"
+              if [ "${SN}" = "${SNARC}" ]; then
+                writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
+                writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+              fi
+              ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
+              MSG+="\nArc Patch: ${ARCPATCH}"
             fi
             dialog --backtitle "`backtitle`" --title "Try to recover DSM" \
               --aspect 18 --msgbox "${MSG}" 0 0
+            ARCRECOVERY="true"
+            arcsettings
           fi
         fi
       fi
@@ -1866,6 +1884,7 @@ function tryRecoveryDSM() {
       --msgbox "Unfortunately I couldn't mount the DSM partition!" 0 0
   fi
 }
+
 
  ###############################################################################
 # allow downgrade dsm version
