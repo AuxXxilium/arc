@@ -2095,7 +2095,6 @@ while true; do
       echo "f \"Cmdline \" "                                                                >> "${TMP_PATH}/menu"
       echo "g \"Synoinfo \" "                                                               >> "${TMP_PATH}/menu"
       echo "h \"Edit User Config \" "                                                       >> "${TMP_PATH}/menu"
-      echo "i \"DSM Recovery \" "                                                           >> "${TMP_PATH}/menu"
       echo "k \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >> "${TMP_PATH}/menu"
       if [ "${DIRECTBOOT}" = "true" ]; then
         echo "l \"Direct DSM \Z4${DIRECTDSM}\Zn \" "                                        >> "${TMP_PATH}/menu"
@@ -2116,6 +2115,7 @@ while true; do
   if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
     echo "d \"Clean disk cache \""                                                          >> "${TMP_PATH}/menu"
   fi
+  echo "i \"DSM Recovery \" "                                                               >> "${TMP_PATH}/menu"
   echo "t \"Backup \" "                                                                     >> "${TMP_PATH}/menu"
   echo "e \"Update \" "                                                                     >> "${TMP_PATH}/menu"
   echo "0 \"\Z1Exit\Zn \" "                                                                 >> "${TMP_PATH}/menu"
@@ -2155,7 +2155,6 @@ while true; do
     f) cmdlineMenu; NEXT="f" ;;
     g) synoinfoMenu; NEXT="g" ;;
     h) editUserConfig; NEXT="h" ;;
-    i) tryRecoveryDSM; NEXT="i" ;;
     k) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
       NEXT="k"
@@ -2164,7 +2163,7 @@ while true; do
       writeConfigKey "arc.directdsm" "${DIRECTDSM}" "${USER_CONFIG_FILE}"
       NEXT="l"
       ;;
-    # Arc Section
+    # Dev Section
     9) [ "${DEVOPTS}" = "" ] && DEVOPTS='1' || DEVOPTS=''
       ARCOPTS="${DEVOPTS}"
       NEXT="9"
@@ -2179,6 +2178,7 @@ while true; do
     c) keymapMenu; NEXT="c" ;;
     d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
       --prgbox "rm -rfv \"${CACHE_PATH}/dl\"" 0 0 ;;
+    i) tryRecoveryDSM; NEXT="i" ;;
     e) updateMenu; NEXT="e" ;;
     0) break ;;
   esac
