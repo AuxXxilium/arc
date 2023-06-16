@@ -14,7 +14,7 @@ function getnet() {
     # Delete first Mac from cmdline config
     deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
     # Install with Arc Patch - Check for model config and set custom Mac Address
-    rm "${TMP_PATH}/opts"
+    [ -f "${TMP_PATH}/opts" ] && rm -f "${TMP_PATH}/opts"
     touch "${TMP_PATH}/opts"
     ARCMACNUM=1
     while true; do
@@ -29,7 +29,8 @@ function getnet() {
     while true; do
       dialog --clear --backtitle "`backtitle`" \
         --menu "Network: MAC for 1. NIC" 0 0 0 \
-        --file "${TMP_PATH}/opts" 2>${TMP_PATH}/resp
+        --file "${TMP_PATH}/opts" \
+      2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
       resp=$(<${TMP_PATH}/resp)
       [ -z "${resp}" ] && return
@@ -62,9 +63,9 @@ function getnet() {
           MACF="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
           MACFN="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
           ip link set dev eth0 address ${MACFN} 2>&1 | dialog --backtitle "`backtitle`" \
-              --title "Arc Network" --progressbox "Changing MAC" 20 70
-            /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
-              --title "Arc Network" --progressbox "Renewing IP" 20 70
+            --title "Arc Network" --progressbox "Changing MAC" 20 70
+          /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
+            --title "Arc Network" --progressbox "Renewing IP" 20 70
           sleep 3
           IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
           sleep 2
