@@ -201,65 +201,67 @@ function arcbuild() {
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-  # Ask for Online Config
-  while true; do
-    dialog --clear --backtitle "`backtitle`" \
-      --menu "Online Config" 0 0 0 \
-      1 "Update to latest Modelconfig" \
-      2 "Use Modelconfig from Build" \
-    2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
-    resp=$(<${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return
-    if [ "${resp}" = "1" ]; then
-      OMODEL=`printf "${MODEL}" | jq -sRr @uri`
-      OURL="https://raw.githubusercontent.com/AuxXxilium/arc/dev/files/board/arpl/overlayfs/opt/arpl/model-configs/${OMODEL}.yml"
-      if [ -f "${TMP_PATH}/${MODEL}.yml" ]; then
-        rm -f "${TMP_PATH}/${MODEL}.yml"
-      fi
-      OSTATUS="`curl --insecure -w "%{http_code}" -L "${OURL}" -o ${TMP_PATH}/${MODEL}.yml`"
-      if [ $? -ne 0 -o ${OSTATUS} -ne 200 ]; then
+  if [ "${ARCRECOVERY}" != "true" ]; then
+    # Ask for Online Config
+    while true; do
+      dialog --clear --backtitle "`backtitle`" \
+        --menu "Online Config" 0 0 0 \
+        1 "Update to latest Modelconfig" \
+        2 "Use Modelconfig from Build" \
+      2>${TMP_PATH}/resp
+      [ $? -ne 0 ] && return
+      resp=$(<${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return
+      if [ "${resp}" = "1" ]; then
+        OMODEL=`printf "${MODEL}" | jq -sRr @uri`
+        OURL="https://raw.githubusercontent.com/AuxXxilium/arc/dev/files/board/arpl/overlayfs/opt/arpl/model-configs/${OMODEL}.yml"
+        if [ -f "${TMP_PATH}/${MODEL}.yml" ]; then
+          rm -f "${TMP_PATH}/${MODEL}.yml"
+        fi
+        OSTATUS="`curl --insecure -w "%{http_code}" -L "${OURL}" -o ${TMP_PATH}/${MODEL}.yml`"
+        if [ $? -ne 0 -o ${OSTATUS} -ne 200 ]; then
+          dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
+            --infobox "No updated Modelconfig found!" 0 0
+        else
+          cp -f "${TMP_PATH}/${MODEL}.yml" "${MODEL_CONFIG_PATH}/${MODEL}.yml"
+          dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
+            --infobox "Updated Modelconfig to latest" 0 0
+        fi
+        break
+      elif [ "${resp}" = "2" ]; then
         dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
-          --infobox "No updated Modelconfig found!" 0 0
-      else
-        cp -f "${TMP_PATH}/${MODEL}.yml" "${MODEL_CONFIG_PATH}/${MODEL}.yml"
-        dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
-          --infobox "Updated Modelconfig to latest" 0 0
+          --infobox "Use local Modelconfig from Build" 0 0
+        break
       fi
-      break
-    elif [ "${resp}" = "2" ]; then
-      dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
-        --infobox "Use local Modelconfig from Build" 0 0
-      break
+    done
+    sleep 1
+    # Select Build for DSM
+    ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r`"
+    if [ -z "${1}" ]; then
+      dialog --clear --no-items --backtitle "`backtitle`" \
+        --menu "Choose a Build" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
+      [ $? -ne 0 ] && return
+      resp=$(<${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return
+    else
+      if ! arrayExistItem "${1}" ${ITEMS}; then return; fi
+      resp="${1}"
     fi
-  done
-  sleep 1
-  # Select Build for DSM
-  ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r`"
-  if [ -z "${1}" ]; then
-    dialog --clear --no-items --backtitle "`backtitle`" \
-      --menu "Choose a Build" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
-    resp=$(<${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return
-  else
-    if ! arrayExistItem "${1}" ${ITEMS}; then return; fi
-    resp="${1}"
-  fi
-  if [ "${BUILD}" != "${resp}" ]; then
-    local KVER=`readModelKey "${MODEL}" "builds.${resp}.kver"`
-    if [ -d "/sys/firmware/efi" -a "${KVER:0:1}" = "3" ]; then
-      dialog --backtitle "`backtitle`" --title "Build" --aspect 18 \
-       --msgbox "This version does not support UEFI startup, Please select another version or switch the startup mode." 0 0
-      arcMenu
+    if [ "${BUILD}" != "${resp}" ]; then
+      local KVER=`readModelKey "${MODEL}" "builds.${resp}.kver"`
+      if [ -d "/sys/firmware/efi" -a "${KVER:0:1}" = "3" ]; then
+        dialog --backtitle "`backtitle`" --title "Build" --aspect 18 \
+        --msgbox "This version does not support UEFI startup, Please select another version or switch the startup mode." 0 0
+        arcMenu
+      fi
+      if [ ! "usb" = "`udevadm info --query property --name ${LOADER_DISK} | grep BUS | cut -d= -f2`" -a "${KVER:0:1}" = "5" ]; then
+        dialog --backtitle "`backtitle`" --title "Build Number" --aspect 18 \
+        --msgbox "This version only support usb startup, Please select another version or switch the startup mode." 0 0
+        arcMenu
+      fi
+      BUILD=${resp}
+      writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
     fi
-    if [ ! "usb" = "`udevadm info --query property --name ${LOADER_DISK} | grep BUS | cut -d= -f2`" -a "${KVER:0:1}" = "5" ]; then
-      dialog --backtitle "`backtitle`" --title "Build Number" --aspect 18 \
-       --msgbox "This version only support usb startup, Please select another version or switch the startup mode." 0 0
-      arcMenu
-    fi
-    BUILD=${resp}
-    writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
   fi
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
@@ -1883,7 +1885,7 @@ function tryRecoveryDSM() {
             dialog --backtitle "`backtitle`" --title "Try to recover DSM" \
               --aspect 18 --msgbox "${MSG}" 0 0
             ARCRECOVERY="true"
-            arcsettings
+            arcbuild
           fi
         fi
       fi
