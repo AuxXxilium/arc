@@ -26,10 +26,6 @@ arc:
   serial: "2270TQR7B6T1Z"
   mac1: "9009D02859E5"
   mac2: "9009D02859E6"
-  mac3: "9009D02859E7"
-  mac4: "9009D02859E8"
-  mac5: "9009D019775A"
-  mac6: "9009D01978A5"
 dom: 2
 disks: 4
 dt: true

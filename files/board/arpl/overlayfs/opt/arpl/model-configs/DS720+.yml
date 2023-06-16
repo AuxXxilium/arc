@@ -26,10 +26,6 @@ arc:
   serial: "2010QWRV05AEE"
   mac1: "001132C4BD0E"
   mac2: "001132C4BD0F"
-  mac3: "001132C4BD10"
-  mac4: "001132C4BD11"
-  mac5: "9009D019775A"
-  mac6: "9009D01978A5"
 dom: 2
 dt: true
 disks: 2

@@ -26,7 +26,6 @@ arc:
   mac1: "001132D64C73"
   mac2: "001132D64C74"
   mac3: "001132D64C75"
-  mac4: "9009D019775A"
 dom: 2
 disks: 6
 dt: false

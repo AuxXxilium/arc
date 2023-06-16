@@ -28,6 +28,7 @@ arc:
   mac4: "9009D02A95D3"
   mac5: "9009D02A95D4"
   mac6: "9009D02A95D5"
+  mac7: "9009D02A95D6"
 dom: -1
 disks: 16
 dt: true

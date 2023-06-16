@@ -26,8 +26,6 @@ arc:
   serial: "2230TPR0VX7T2"
   mac1: "9009D01D104B"
   mac2: "9009D01D104C"
-  mac3: "9009D019775A"
-  mac4: "9009D01978A5"
 dom: 2
 disks: 2
 beta: true
