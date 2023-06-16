@@ -168,44 +168,11 @@ function arcMenu() {
   else
     resp="${1}"
   fi
-  # Read model config for buildconfig
-  NMODEL=${resp}
-  while true; do
-    dialog --clear --backtitle "`backtitle`" \
-      --menu "Online Config" 0 0 0 \
-      1 "Update to latest Modelconfig" \
-      2 "Use Modelconfig from Build" \
-    2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
-    resp=$(<${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return
-    if [ "${resp}" = "1" ]; then
-      OMODEL=`printf "${NMODEL}" | jq -sRr @uri`
-      OURL="https://raw.githubusercontent.com/AuxXxilium/arc/dev/files/board/arpl/overlayfs/opt/arpl/model-configs/${OMODEL}.yml"
-      if [ -f "${TMP_PATH}/${NMODEL}.yml" ]; then
-        rm -f "${TMP_PATH}/${NMODEL}.yml"
-      fi
-      OSTATUS="`curl --insecure -w "%{http_code}" -L "${OURL}" -o ${TMP_PATH}/${NMODEL}.yml`"
-      if [ $? -ne 0 -o ${OSTATUS} -ne 200 ]; then
-        dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
-          --infobox "No updated Modelconfig found!" 0 0
-      else
-        cp -f "${TMP_PATH}/${NMODEL}.yml" "${MODEL_CONFIG_PATH}/${NMODEL}.yml"
-        dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
-          --infobox "Updated Modelconfig to latest" 0 0
-      fi
-      break
-    elif [ "${resp}" = "2" ]; then
-      dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
-        --infobox "Use local Modelconfig from Build" 0 0
-      break
-    fi
-  done
-  sleep 2
-  if [ "${MODEL}" != "${NMODEL}" ]; then
-    MODEL=${NMODEL}
+  # Read model config for dt and aes
+  if [ "${MODEL}" != "${resp}" ]; then
+    MODEL=${resp}
     # Check for DT and SAS Controller
-    DT="`readModelKey "${NMODEL}" "dt"`"
+    DT="`readModelKey "${resp}" "dt"`"
     if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
       # There is no Raid/SCSI Support for DT Models
       WARNON=2
@@ -229,6 +196,44 @@ function arcMenu() {
 ###############################################################################
 # Shows menu to user type one or generate randomly
 function arcbuild() {
+  # Read model values for arcbuild
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  PLATFORM="`readModelKey "${MODEL}" "platform"`"
+  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  # Ask for Online Config
+  while true; do
+    dialog --clear --backtitle "`backtitle`" \
+      --menu "Online Config" 0 0 0 \
+      1 "Update to latest Modelconfig" \
+      2 "Use Modelconfig from Build" \
+    2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    resp=$(<${TMP_PATH}/resp)
+    [ -z "${resp}" ] && return
+    if [ "${resp}" = "1" ]; then
+      OMODEL=`printf "${MODEL}" | jq -sRr @uri`
+      OURL="https://raw.githubusercontent.com/AuxXxilium/arc/dev/files/board/arpl/overlayfs/opt/arpl/model-configs/${OMODEL}.yml"
+      if [ -f "${TMP_PATH}/${MODEL}.yml" ]; then
+        rm -f "${TMP_PATH}/${MODEL}.yml"
+      fi
+      OSTATUS="`curl --insecure -w "%{http_code}" -L "${OURL}" -o ${TMP_PATH}/${MODEL}.yml`"
+      if [ $? -ne 0 -o ${OSTATUS} -ne 200 ]; then
+        dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
+          --infobox "No updated Modelconfig found!" 0 0
+      else
+        cp -f "${TMP_PATH}/${MODEL}.yml" "${MODEL_CONFIG_PATH}/${MODEL}.yml"
+        dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
+          --infobox "Updated Modelconfig to latest" 0 0
+      fi
+      break
+    elif [ "${resp}" = "2" ]; then
+      dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
+        --infobox "Use local Modelconfig from Build" 0 0
+      break
+    fi
+  done
+  sleep 1
   # Select Build for DSM
   ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r`"
   if [ -z "${1}" ]; then
@@ -256,16 +261,44 @@ function arcbuild() {
     BUILD=${resp}
     writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
   fi
-  arcsettings
+  dialog --backtitle "`backtitle`" --title "Arc Config" \
+    --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
+  # Delete synoinfo and reload model/build synoinfo
+  writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
+  while IFS=': ' read KEY VALUE; do
+    writeConfigKey "synoinfo.${KEY}" "${VALUE}" "${USER_CONFIG_FILE}"
+  done < <(readModelMap "${MODEL}" "builds.${BUILD}.synoinfo")
+  # Memory: Set mem_max_mb to the amount of installed memory
+  writeConfigKey "synoinfo.mem_max_mb" "${RAMTOTAL}" "${USER_CONFIG_FILE}"
+  # Check addons
+  while IFS=': ' read ADDON PARAM; do
+    [ -z "${ADDON}" ] && continue
+    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
+      deleteConfigKey "addons.${ADDON}" "${USER_CONFIG_FILE}"
+    fi
+  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+  # Rebuild modules
+  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+  while read ID DESC; do
+    writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+  done < <(getAllModules "${PLATFORM}" "${KVER}")
+  # Remove old files
+  rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+  rm -f "${TMP_PATH}/patdownloadurl"
+  DIRTY=1
+  if [ "${ONLYVERSION}" != "true" ]; then
+    arcsettings
+  else
+    deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+    BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+  fi
 }
 
 ###############################################################################
-# Make Network and Disk Config
+# Make Arc Settings
 function arcsettings() {
-  # Read model values for buildconfig
-  PLATFORM="`readModelKey "${MODEL}" "platform"`"
-  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  # Read model values for arcsettings
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   if [ "${ARCRECOVERY}" != "true" ]; then
     while true; do
       dialog --clear --backtitle "`backtitle`" \
@@ -293,30 +326,6 @@ function arcsettings() {
     done
   fi
   ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
-  dialog --backtitle "`backtitle`" --title "Arc Config" \
-    --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
-  # Delete synoinfo and reload model/build synoinfo
-  writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
-  while IFS=': ' read KEY VALUE; do
-    writeConfigKey "synoinfo.${KEY}" "${VALUE}" "${USER_CONFIG_FILE}"
-  done < <(readModelMap "${MODEL}" "builds.${BUILD}.synoinfo")
-  # Memory: Set mem_max_mb to the amount of installed memory
-  writeConfigKey "synoinfo.mem_max_mb" "${RAMTOTAL}" "${USER_CONFIG_FILE}"
-  # Check addons
-  while IFS=': ' read ADDON PARAM; do
-    [ -z "${ADDON}" ] && continue
-    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
-      deleteConfigKey "addons.${ADDON}" "${USER_CONFIG_FILE}"
-    fi
-  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  # Rebuild modules
-  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-  while read ID DESC; do
-    writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-  done < <(getAllModules "${PLATFORM}" "${KVER}")
-  # Remove old files
-  rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-  rm -f "${TMP_PATH}/patdownloadurl"
   DIRTY=1
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Model Configuration successfull!" 0 0
@@ -2092,6 +2101,7 @@ while true; do
       echo "7 \"\Z1Show Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
     fi
     if [ -n "${ARCOPTS}" ]; then
+      echo "m \"Change DSM Version \" "                                                     >> "${TMP_PATH}/menu"
       if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
         echo "s \"Change Storage Map \" "                                                   >> "${TMP_PATH}/menu"
       fi
@@ -2157,6 +2167,7 @@ while true; do
        ARCOPTS="${ARCOPTS}"
        NEXT="7"
        ;;
+    m) ONLYVERSION="true" && arcbuild; NEXT="m" ;;
     s) storageMenu; NEXT="s" ;;
     n) networkMenu; NEXT="n" ;;
     v) mptFix; NEXT="v" ;;
