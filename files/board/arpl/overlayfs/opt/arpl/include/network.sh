@@ -14,34 +14,28 @@ function getnet() {
     # Delete first Mac from cmdline config
     deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
     # Install with Arc Patch - Check for model config and set custom Mac Address
-    MAC1="`readModelKey "${MODEL}" "arc.mac1"`"
-    MAC2="`readModelKey "${MODEL}" "arc.mac2"`"
-    MAC3="`readModelKey "${MODEL}" "arc.mac3"`"
-    MAC4="`readModelKey "${MODEL}" "arc.mac4"`"
+    rm "${TMP_PATH}/opts"
+    touch "${TMP_PATH}/opts"
+    ARCMACNUM=1
+    while true; do
+      ARCMAC="`readModelKey "${MODEL}" "arc.mac${ARCMACNUM}"`"
+      if [ -n "${ARCMAC}" ]; then
+        echo "${ARCMAC} mac${ARCMACNUM}" >> "${TMP_PATH}/opts"
+        ARCMACNUM=$((${ARCMACNUM}+1))
+      else
+        break
+      fi
+    done
     while true; do
       dialog --clear --backtitle "`backtitle`" \
         --menu "Network: MAC for 1. NIC" 0 0 0 \
-        1 "Use MAC1: ${MAC1}" \
-        2 "Use MAC2: ${MAC2}" \
-        3 "Use MAC3: ${MAC3}" \
-        4 "Use MAC4: ${MAC4}" \
-      2>${TMP_PATH}/resp
+        --file "${TMP_PATH}/opts" 2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
       resp=$(<${TMP_PATH}/resp)
       [ -z "${resp}" ] && return
-      if [ "${resp}" = "1" ]; then
-        writeConfigKey "cmdline.mac1" "${MAC1}" "${USER_CONFIG_FILE}"
-        break
-      elif [ "${resp}" = "2" ]; then
-        writeConfigKey "cmdline.mac1" "${MAC2}" "${USER_CONFIG_FILE}"
-        break
-      elif [ "${resp}" = "3" ]; then
-        writeConfigKey "cmdline.mac1" "${MAC3}" "${USER_CONFIG_FILE}"
-        break
-      elif [ "${resp}" = "4" ]; then
-        writeConfigKey "cmdline.mac1" "${MAC4}" "${USER_CONFIG_FILE}"
-        break
-      fi
+      MAC="${resp}"
+      writeConfigKey "cmdline.mac1" "${MAC}" "${USER_CONFIG_FILE}"
+      break
     done
     dialog --backtitle "`backtitle`" \
       --title "Arc Network" --infobox "Set MAC for first NIC" 0 0
