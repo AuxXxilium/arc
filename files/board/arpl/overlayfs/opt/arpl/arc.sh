@@ -1179,8 +1179,9 @@ function backupMenu() {
               BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
             fi
           done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
-          PLATFORM="`readModelKey "${MODEL}" "platform"`"
-          KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+          ARCRECOVERY="true"
+          ONLYVERSION="true"
+          arcbuild
           CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
           deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -1297,13 +1298,9 @@ function backupMenu() {
               BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
             fi
           done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
-          PLATFORM="`readModelKey "${MODEL}" "platform"`"
-          KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-          # Rebuild modules
-          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-          while read ID DESC; do
-            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-          done < <(getAllModules "${PLATFORM}" "${KVER}")
+          ARCRECOVERY="true"
+          ONLYVERSION="true"
+          arcbuild
           CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           dialog --backtitle "`backtitle`" --title "Restore with Code" --aspect 18 \
@@ -1346,8 +1343,9 @@ function backupMenu() {
               BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
             fi
           done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
-          PLATFORM="`readModelKey "${MODEL}" "platform"`"
-          KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+          ARCRECOVERY="true"
+          ONLYVERSION="true"
+          arcbuild
           CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
           deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -1421,13 +1419,9 @@ function backupMenu() {
               BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
             fi
           done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
-          PLATFORM="`readModelKey "${MODEL}" "platform"`"
-          KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-          # Rebuild modules
-          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-          while read ID DESC; do
-            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-          done < <(getAllModules "${PLATFORM}" "${KVER}")
+          ARCRECOVERY="true"
+          ONLYVERSION="true"
+          arcbuild
           CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
           dialog --backtitle "`backtitle`" --title "Restore with Code" --aspect 18 \
