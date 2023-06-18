@@ -2188,7 +2188,7 @@ while true; do
   if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
     echo "d \"Clean disk cache \""                                                          >> "${TMP_PATH}/menu"
   fi
-  echo "i \"DSM Recovery \" "                                                               >> "${TMP_PATH}/menu"
+  echo "i \"Recover from DSM \" "                                                           >> "${TMP_PATH}/menu"
   echo "t \"Backup \" "                                                                     >> "${TMP_PATH}/menu"
   echo "e \"Update \" "                                                                     >> "${TMP_PATH}/menu"
   echo "0 \"\Z1Exit\Zn \" "                                                                 >> "${TMP_PATH}/menu"
