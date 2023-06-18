@@ -118,6 +118,9 @@ if [ ${NETIF_NUM} -le ${NETNUM} ]; then
   CMDLINE["netif_num"]=${NETNUM}
 fi
 
+# Check if machine has EFI
+[ -d /sys/firmware/efi ] && EFI=1 || EFI=0
+
 # Prepare command line
 CMDLINE_LINE=""
 grep -q "force_junior" /proc/cmdline && CMDLINE_LINE+="force_junior "
