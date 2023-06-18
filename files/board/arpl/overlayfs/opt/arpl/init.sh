@@ -89,9 +89,6 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
-  # When the user has not customized, Use 1 to maintain normal startup parameters.
-  # writeConfigKey "cmdline.netif_num" "1" "${USER_CONFIG_FILE}"
-  # writeConfigKey "cmdline.mac1" "`cat /sys/class/net/${ETHX[0]}/address | sed 's/://g'`" "${USER_CONFIG_FILE}"
 fi
 
 # Get MAC address
@@ -100,8 +97,11 @@ for N in $(seq 1 ${#ETHX[@]}); do
   MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
   # Initialize with real MAC
   writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
-  # Write real Mac to cmdline config
-  writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+  MACF="`readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}"`"
+  if [ -z "${MACF}" ]; then
+    # Write real Mac to cmdline config
+    writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+  fi
   # Enable Wake on Lan, ignore errors
   ethtool -s ${ETHX[$(expr ${N} - 1)]} wol g 2>/dev/null
 done
