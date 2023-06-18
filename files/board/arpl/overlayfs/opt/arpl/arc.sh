@@ -1168,7 +1168,17 @@ function backupMenu() {
               --msgbox "No Config Backup found" 0 0
           fi
           MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-          BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          OLDBUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          while read LINE; do
+            if [ "${LINE}" = "${OLDBUILD}" ]; then
+              writeConfigKey "build" "${OLDBUILD}" "${USER_CONFIG_FILE}"
+              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+              break
+            elif [ "${LINE}" != "${OLDBUILD}" ]; then
+              writeConfigKey "build" "${LINE}" "${USER_CONFIG_FILE}"
+              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+            fi
+          done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
           PLATFORM="`readModelKey "${MODEL}" "platform"`"
           KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
           CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
@@ -1276,7 +1286,17 @@ function backupMenu() {
           curl -k https://dpaste.com/${GENHASH}.txt > /tmp/user-config.yml
           cp -f /tmp/user-config.yml ${USER_CONFIG_FILE}
           MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-          BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          OLDBUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          while read LINE; do
+            if [ "${LINE}" = "${OLDBUILD}" ]; then
+              writeConfigKey "build" "${OLDBUILD}" "${USER_CONFIG_FILE}"
+              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+              break
+            elif [ "${LINE}" != "${OLDBUILD}" ]; then
+              writeConfigKey "build" "${LINE}" "${USER_CONFIG_FILE}"
+              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+            fi
+          done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
           PLATFORM="`readModelKey "${MODEL}" "platform"`"
           KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
           # Rebuild modules
@@ -1315,7 +1335,17 @@ function backupMenu() {
               --msgbox "No Config Backup found" 0 0
           fi
           MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-          BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          OLDBUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          while read LINE; do
+            if [ "${LINE}" = "${OLDBUILD}" ]; then
+              writeConfigKey "build" "${OLDBUILD}" "${USER_CONFIG_FILE}"
+              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+              break
+            elif [ "${LINE}" != "${OLDBUILD}" ]; then
+              writeConfigKey "build" "${LINE}" "${USER_CONFIG_FILE}"
+              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+            fi
+          done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
           PLATFORM="`readModelKey "${MODEL}" "platform"`"
           KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
           CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
@@ -1380,7 +1410,17 @@ function backupMenu() {
           curl -k https://dpaste.com/${GENHASH}.txt > /tmp/user-config.yml
           cp -f /tmp/user-config.yml ${USER_CONFIG_FILE}
           MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-          BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          OLDBUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          while read LINE; do
+            if [ "${LINE}" = "${OLDBUILD}" ]; then
+              writeConfigKey "build" "${OLDBUILD}" "${USER_CONFIG_FILE}"
+              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+              break
+            elif [ "${LINE}" != "${OLDBUILD}" ]; then
+              writeConfigKey "build" "${LINE}" "${USER_CONFIG_FILE}"
+              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+            fi
+          done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
           PLATFORM="`readModelKey "${MODEL}" "platform"`"
           KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
           # Rebuild modules
@@ -1864,8 +1904,17 @@ function tryRecoveryDSM() {
         done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
 	      MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
         if [ -n "${MODEL}" ]; then
-          writeConfigKey "build" "${base}" "${USER_CONFIG_FILE}"
-          BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          OLDBUILD="${base}"
+          while read LINE; do
+            if [ "${LINE}" = "${OLDBUILD}" ]; then
+              writeConfigKey "build" "${OLDBUILD}" "${USER_CONFIG_FILE}"
+              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+              break
+            elif [ "${LINE}" != "${OLDBUILD}" ]; then
+              writeConfigKey "build" "${LINE}" "${USER_CONFIG_FILE}"
+              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+            fi
+          done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
           if [ -n "${BUILD}" ]; then
             cp "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
             cp "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
