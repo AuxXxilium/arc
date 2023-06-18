@@ -98,7 +98,12 @@ for N in $(seq 1 ${#ETHX[@]}); do
   # Initialize with real MAC
   writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   MACF="`readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}"`"
-  if [ -z "${MACF}" ]; then
+  if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
+    MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
+    echo "`printf "Setting %s MAC to %s" "${ETHX[$(expr ${N} - 1)]}" "${MAC}"`"
+    ip link set dev ${ETHX[$(expr ${N} - 1)]} address ${MAC} >/dev/null 2>&1 && \
+      (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
+  elif [ -z "${MACF}" ]; then
     # Write real Mac to cmdline config
     writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   fi
