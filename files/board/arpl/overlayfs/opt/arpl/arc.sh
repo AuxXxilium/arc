@@ -2109,7 +2109,6 @@ while true; do
       fi
       echo "n \"Change Network Config \" "                                                  >> "${TMP_PATH}/menu"
       echo "u \"Change USB Port Config \" "                                                 >> "${TMP_PATH}/menu"
-      echo "v \"Fix LSI HBA Controller\" "                                                  >> "${TMP_PATH}/menu"
       if [ -n "${BUILDDONE}" ]; then
         echo "p \"Show .pat download link \" "                                              >> "${TMP_PATH}/menu"
       fi
@@ -2172,7 +2171,6 @@ while true; do
     m) ONLYVERSION="true" && arcbuild; NEXT="m" ;;
     s) storageMenu; NEXT="s" ;;
     n) networkMenu; NEXT="n" ;;
-    v) mptFix; NEXT="v" ;;
     u) usbMenu; NEXT="u" ;;
     t) backupMenu; NEXT="t" ;;
     p) paturl; NEXT="p" ;;
