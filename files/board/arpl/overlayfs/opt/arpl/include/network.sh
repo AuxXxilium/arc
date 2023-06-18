@@ -41,38 +41,6 @@ function getnet() {
     dialog --backtitle "`backtitle`" \
       --title "Arc Network" --infobox "Set MAC for first NIC" 0 0
     sleep 2
-    if [ ${EFI} -eq 1 ]; then
-      # Ask for IP rebind
-      while true; do
-        dialog --clear --backtitle "`backtitle`" \
-          --menu "Restart DHCP?" 0 0 0 \
-          1 "No - Get new IP on Boot" \
-          2 "Yes - Get new IP now" \
-        2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && return
-        resp=$(<${TMP_PATH}/resp)
-        [ -z "${resp}" ] && return
-        if [ "${resp}" = "1" ]; then
-          dialog --backtitle "`backtitle`" --title "Arc Network" \
-            --infobox "IP/MAC will be changed on first boot!" 0 0
-          sleep 2
-          break
-        elif [ "${resp}" = "2" ]; then
-          dialog --backtitle "`backtitle`" --title "Arc Network" \
-            --infobox "IP/MAC will be changed now!" 0 0
-          MACF="`readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"`"
-          MACFN="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-          ip link set dev eth0 address ${MACFN} 2>&1 | dialog --backtitle "`backtitle`" \
-            --title "Arc Network" --progressbox "Changing MAC" 20 70
-          /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
-            --title "Arc Network" --progressbox "Renewing IP" 20 70
-          sleep 3
-          IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
-          sleep 2
-          break
-        fi
-      done
-    fi
   fi
 }
 

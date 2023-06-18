@@ -14,7 +14,6 @@ while true; do
   sleep 1
 done
 
-
 [ -z "${LOADER_DISK}" ] && die "Loader disk not found!"
 NUM_PARTITIONS=$(blkid | grep "${LOADER_DISK}[0-9]\+" | cut -d: -f1 | wc -l)
 [ $NUM_PARTITIONS -lt 3 ] && die "Loader disk seems to be damaged!"
@@ -101,19 +100,8 @@ for N in $(seq 1 ${#ETHX[@]}); do
   MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
   # Initialize with real MAC
   writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
-  # Set custom MAC if defined
-  MACF="`readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}"`"
-  if [ -n "${MACF}" -a "${MACF}" != "${MACR}" ]; then
-    if [ ${EFI} -eq 1 ]; then
-      MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-      echo "`printf "Setting %s MAC to %s" "${ETHX[$(expr ${N} - 1)]}" "${MAC}"`"
-      ip link set dev ${ETHX[$(expr ${N} - 1)]} address ${MAC} >/dev/null 2>&1 && \
-      (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
-    fi
-  elif [ -z "${MACF}" ]; then
-    # Write real Mac to cmdline config
-    writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
-  fi
+  # Write real Mac to cmdline config
+  writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   # Enable Wake on Lan, ignore errors
   ethtool -s ${ETHX[$(expr ${N} - 1)]} wol g 2>/dev/null
 done
