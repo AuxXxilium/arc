@@ -62,7 +62,7 @@ builds:
       - "ramdisk-42951-post-init-script.patch"
       - "ramdisk-42661-disable-disabled-ports.patch"
 
-  64570:
+  64570-1:
     ver: "7.2"
     kver: "4.4.302"
     rd-compressed: false
@@ -74,7 +74,7 @@ builds:
       rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.json"
       <<: *synoinfo
     pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.2/64570/DSM_DVA3221_64570.pat"
+      url: "https://global.synologydownload.com/download/DSM/release/7.2/64570-1/DSM_DVA3221_64570-1.pat"
       hash: "6627c30284f7f3da10774ad308070a53a7bc0286c0c130a18f071a53c5fcda18"
       ramdisk-hash: "eb119166253e9c6f1ba067593f708f8be5e194b1edf09610ddc3b17c0aab66d3"
       zimage-hash: "672b174545a071699389470ab20f82b6ef3cc145780ec4b9beac9ad635e91ff2"

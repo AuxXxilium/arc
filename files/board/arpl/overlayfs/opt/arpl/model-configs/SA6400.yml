@@ -58,7 +58,7 @@ builds:
       - "ramdisk-common-etc-rc.patch"
       - "ramdisk-42951-post-init-script.patch"
 
-  64570:
+  64570-1:
     ver: "7.2.0"
     kver: "5.10.55"
     rd-compressed: false
@@ -70,7 +70,7 @@ builds:
       rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.json"
       <<: *synoinfo
     pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.2/64570/DSM_SA6400_64570.pat"
+      url: "https://global.synologydownload.com/download/DSM/release/7.2/64570-1/DSM_SA6400_64570-1.pat"
       hash: "8a66de2d7380ac5ff1e0cb01153461b2bbbe73785dac0bd37067ba2063e21df6"
       ramdisk-hash: "48227142edd6ea969ebec6c3160c9939aef5a853e1ba2556d3401a68c5953357"
       zimage-hash: "6fd6d57b5b856569b3c48e3a416c0a68fc8bcd45db1ebd09bdb5b79f4dfc3300"
