@@ -111,7 +111,7 @@ for N in $(seq 1 ${#ETHX[@]}); do
 done
 
 # Restart DHCP
-/etc/init.d/S41dhcpcd restart >/dev/null 2>&1
+/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
 
 # Get the VID/PID if we are in USB
 VID="0x0000"
