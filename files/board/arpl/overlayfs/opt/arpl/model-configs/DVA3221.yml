@@ -31,12 +31,12 @@ serial:
     - "2150"
   middle: "SJR"
   suffix: "alpha"
-arc:
-  serial: "2040SRJRFRP6H"
-  mac1: "001132CA2267"
-  mac2: "001132CA2268"
-  mac3: "001132CA2269"
-  mac4: "001132CA2270"
+#arc:
+#  serial: "2040SRJRFRP6H"
+#  mac1: "001132CA2267"
+#  mac2: "001132CA2268"
+#  mac3: "001132CA2269"
+#  mac4: "001132CA2270"
 dom: 2
 disks: 4
 dt: false
