@@ -420,7 +420,7 @@ function make() {
       DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
       DSM_BUILD="`readModelKey "${MODEL}" "builds.${BUILD}.dsm"`"
       DSM_LINK="${DSM_MODEL}/${DSM_BUILD}/dsm.tar"
-      DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/files/${DSM_LINK}"
+      DSM_URL="https://github.com/AuxXxilium/arc-dsm/raw/main/files/${DSM_LINK}"
       STATUS="`curl --insecure -w "%{http_code}" -L "${DSM_URL}" -o ${DSM_FILE}`"
       if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
         dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
@@ -435,6 +435,7 @@ function make() {
     fi
     # Unpack files
     if [ -f "${DSM_FILE}" ]; then
+      mkdir -p "${UNTAR_PAT_PATH}"
       tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
       # Check zImage Hash
       HASH="`sha256sum ${UNTAR_PAT_PATH}/zImage | awk '{print$1}'`"
@@ -473,6 +474,7 @@ function make() {
         --msgbox "DSM Files corrupted!" 0 0
     return 1
   fi
+
   /opt/arpl/zimage-patch.sh
   if [ $? -ne 0 ]; then
     dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
