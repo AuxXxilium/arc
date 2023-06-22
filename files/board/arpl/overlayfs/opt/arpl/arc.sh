@@ -152,7 +152,7 @@ function arcMenu() {
         done
       fi
       [ "${DT}" = "true" ] && DT="-DT" || DT=""
-      [ ${COMPATIBLE} -eq 1 ] && echo -e "${MID} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn\ \t\Zb${ARCAV}\Zn\" " >> "${TMP_PATH}/menu"
+      [ ${COMPATIBLE} -eq 1 ] && echo -e "${MID} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn \t\Zb${ARCAV}\Zn\" " >> "${TMP_PATH}/menu"
     done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
     [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models\Zn\"" >> "${TMP_PATH}/menu"
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >> "${TMP_PATH}/menu"
