@@ -122,7 +122,13 @@ function arcMenu() {
       BETA="`readModelKey "${M}" "beta"`"
       [ "${BETA}" = "true" -a ${FLGBETA} -eq 0 ] && continue
       DISKS="`readModelKey "${M}" "disks"`"
-      if [ "${PLATFORM}" = "r1000" ] || [ "${PLATFORM}" = "v1000" ]; then
+      ARCCONF="`readModelKey "${M}" "arc.serial"`"
+      if [ -n "${ARCCONF}" ]; then
+        ARCAV="Arc"
+      else
+        ARCAV="NonArc"
+      fi
+      if [ "${PLATFORM}" = "r1000" ] || [ "${PLATFORM}" = "v1000" ] || [ "${PLATFORM}" = "epyc7002" ]; then
         CPU="AMD"
       else
         CPU="Intel"
@@ -146,7 +152,7 @@ function arcMenu() {
         done
       fi
       [ "${DT}" = "true" ] && DT="-DT" || DT=""
-      [ ${COMPATIBLE} -eq 1 ] && echo -e "${MID} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
+      [ ${COMPATIBLE} -eq 1 ] && echo -e "${MID} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn\ \t\Zb${ARCAV}\Zn\" " >> "${TMP_PATH}/menu"
     done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
     [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models\Zn\"" >> "${TMP_PATH}/menu"
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >> "${TMP_PATH}/menu"
@@ -202,39 +208,6 @@ function arcbuild() {
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   if [ "${ARCRECOVERY}" != "true" ]; then
-    # Ask for Online Config
-    while true; do
-      dialog --clear --backtitle "`backtitle`" \
-        --menu "Online Config" 0 0 0 \
-        1 "Update to latest Modelconfig" \
-        2 "Use Modelconfig from Build" \
-      2>${TMP_PATH}/resp
-      [ $? -ne 0 ] && return
-      resp=$(<${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return
-      if [ "${resp}" = "1" ]; then
-        OMODEL=`printf "${MODEL}" | jq -sRr @uri`
-        OURL="https://raw.githubusercontent.com/AuxXxilium/arc/dev/files/board/arpl/overlayfs/opt/arpl/model-configs/${OMODEL}.yml"
-        if [ -f "${TMP_PATH}/${MODEL}.yml" ]; then
-          rm -f "${TMP_PATH}/${MODEL}.yml"
-        fi
-        OSTATUS="`curl --insecure -w "%{http_code}" -L "${OURL}" -o ${TMP_PATH}/${MODEL}.yml`"
-        if [ $? -ne 0 -o ${OSTATUS} -ne 200 ]; then
-          dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
-            --infobox "No updated Modelconfig found!" 0 0
-        else
-          cp -f "${TMP_PATH}/${MODEL}.yml" "${MODEL_CONFIG_PATH}/${MODEL}.yml"
-          dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
-            --infobox "Updated Modelconfig to latest" 0 0
-        fi
-        break
-      elif [ "${resp}" = "2" ]; then
-        dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
-          --infobox "Use local Modelconfig from Build" 0 0
-        break
-      fi
-    done
-    sleep 1
     # Select Build for DSM
     ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r`"
     if [ -z "${1}" ]; then
@@ -301,7 +274,7 @@ function arcbuild() {
 function arcsettings() {
   # Read model values for arcsettings
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  if [ "${ARCRECOVERY}" != "true" ]; then
+  if [ "${ARCRECOVERY}" != "true" ] || [ "${ARCAV}" = "Arc" ]; then
     while true; do
       dialog --clear --backtitle "`backtitle`" \
         --menu "Arc Patch\nDo you want to use Syno Services?" 0 0 0 \
@@ -326,6 +299,11 @@ function arcsettings() {
         break
       fi
     done
+  else
+    # Generate random serial
+    SN="`generateSerial "${MODEL}"`"
+    writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   fi
   ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
   DIRTY=1
@@ -350,10 +328,6 @@ function arcnetdisk() {
     # Get Portmap for Loader
     getmap
   fi
-  # Write Sasidxmap if SAS Controller are dedected
-  #[ "${SASCONTROLLER}" -gt 0 ] && writeConfigKey "cmdline.SasIdxMap" "0" "${USER_CONFIG_FILE}"
-  #[ "${SASCONTROLLER}" -eq 0 ] && deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
   # Config is done
   writeConfigKey "arc.confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
