@@ -8,6 +8,9 @@ synoinfo: &synoinfo
   supportraidgroup:
   maxlanport: "8"
   netif_seq: "0 1 2 3 4 5 6 7"
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.json"
 cmdline: &cmdline
   HddHotplug: 0
   synoboot2:
@@ -43,9 +46,6 @@ builds:
     cmdline:
       <<: *cmdline
     synoinfo:
-      rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.xml"
-      rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.xml"
-      rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.json"
       <<: *synoinfo
     dsm: "42962-1"
     patch:
@@ -61,9 +61,6 @@ builds:
     cmdline:
       <<: *cmdline
     synoinfo:
-      rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.xml"
-      rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.xml"
-      rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.json"
       <<: *synoinfo
     dsm: "64570-1"
     patch:
