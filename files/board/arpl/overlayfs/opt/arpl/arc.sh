@@ -414,11 +414,64 @@ function make() {
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
+  # Check for existing files
   if [ ! -f "${ORI_ZIMAGE_FILE}" -o ! -f "${ORI_RDGZ_FILE}" ]; then
-    extractDsmFiles
-    [ $? -ne 0 ] && return 1
+    if [ ! -f "${DSM_FILE}" ]; then
+      DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
+      DSM_LINK="${DSM_MODEL}/${BUILD}/dsm.tar"
+      DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/files/${DSM_LINK}"
+      STATUS="`curl --insecure -w "%{http_code}" -L "${DSM_URL}" -o ${DSM_FILE}`"
+      if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+        dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
+          --infobox "No DSM Image found!" 0 0
+      else
+        dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
+          --infobox "DSM Image Download successfull!" 0 0
+      fi
+    else
+        dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
+            --infobox "DSM Image cached!" 0 0
+    fi
+    # Unpack files
+    if [ -f "${DSM_FILE}" ]; then
+      tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+      # Check zImage Hash
+      HASH="`sha256sum ${UNTAR_PAT_PATH}/zImage | awk '{print$1}'`"
+      ZIMAGE_HASH=`cat "${UNTAR_PAT_PATH}/zImage_hash"`
+      if [ "${HASH}" != "${ZIMAGE_HASH}" ]; then
+        sleep 1
+        dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+          --msgbox "Hash of zImage not match, try again!" 0 0
+        return 1
+      fi
+      writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
+      # Check Ramdisk Hash
+      HASH="`sha256sum ${UNTAR_PAT_PATH}/rd.gz | awk '{print$1}'`"
+      RAMDISK_HASH=`cat "${UNTAR_PAT_PATH}/ramdisk_hash"`
+      if [ "${HASH}" != "${RAMDISK_HASH}" ]; then
+        sleep 1
+        dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+          --msgbox "Hash of Ramdisk not match, try again!" 0 0
+        return 1
+      fi
+      writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
+      # Copy DSM Files to locations
+      cp "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
+      cp "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
+      cp "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
+      cp "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
+      cp "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
+      cp "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
+    else
+      dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+        --msgbox "DSM Files extraction failed!" 0 0
+      return 1
+    fi
+  else
+    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+        --msgbox "DSM Files corrupted!" 0 0
+    return 1
   fi
-
   /opt/arpl/zimage-patch.sh
   if [ $? -ne 0 ]; then
     dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
@@ -460,186 +513,6 @@ function make() {
       break
     fi
   done
-}
-
-###############################################################################
-# Extracting DSM for building Loader
-function extractDsmFiles() {
-  PAT_URL="`readModelKey "${MODEL}" "builds.${BUILD}.pat.url"`"
-  PAT_HASH="`readModelKey "${MODEL}" "builds.${BUILD}.pat.hash"`"
-  RAMDISK_HASH="`readModelKey "${MODEL}" "builds.${BUILD}.pat.ramdisk-hash"`"
-  ZIMAGE_HASH="`readModelKey "${MODEL}" "builds.${BUILD}.pat.zimage-hash"`"
-
-  SPACELEFT=`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}'`  # Check disk space left
-
-  PAT_FILE="${MODEL}-${BUILD}.pat"
-  PAT_PATH="${CACHE_PATH}/dl/${PAT_FILE}"
-  EXTRACTOR_PATH="${CACHE_PATH}/extractor"
-  EXTRACTOR_BIN="syno_extract_system_patch"
-  OLDPAT_URL="https://global.download.synology.com/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"
-
-
-  if [ -f "${PAT_PATH}" ]; then
-    echo "${PAT_FILE} cached."
-  else
-    # If we have little disk space, clean cache folder
-    if [ ${CLEARCACHE} -eq 1 ]; then
-      echo "Cleaning cache"
-      rm -rf "${CACHE_PATH}/dl"
-    fi
-    mkdir -p "${CACHE_PATH}/dl"
-
-    speed_a=`ping -c 1 -W 5 global.synologydownload.com | awk '/time=/ {print $7}' | cut -d '=' -f 2`
-    speed_b=`ping -c 1 -W 5 global.download.synology.com | awk '/time=/ {print $7}' | cut -d '=' -f 2`
-    fastest="`echo -e "global.synologydownload.com ${speed_a:-999}\nglobal.download.synology.com ${speed_b:-999}" | sort -k2rn | head -1 | awk '{print $1}'`"
-
-    mirror="`echo ${PAT_URL} | sed 's|^http[s]*://\([^/]*\).*|\1|'`"
-    if [ "${mirror}" != "${fastest}" ]; then
-      echo "`printf "Based on the current network situation, switch to %s mirror for download." "${fastest}"`"
-      PAT_URL="`echo ${PAT_URL} | sed "s/${mirror}/${fastest}/"`"
-      OLDPAT_URL="https://${fastest}/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"
-    fi
-    echo ${PAT_URL} > "${TMP_PATH}/patdownloadurl"
-    echo "Downloading ${PAT_FILE}"
-    # Discover remote file size
-    FILESIZE=`curl -k -sLI "${PAT_URL}" | grep -i Content-Length | awk '{print$2}'`
-    if [ 0${FILESIZE} -ge 0${SPACELEFT} ]; then
-      # No disk space to download, change it to RAMDISK
-      PAT_PATH="${TMP_PATH}/${PAT_FILE}"
-    fi
-    STATUS=`curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_PATH}" --progress-bar`
-    if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-      rm "${PAT_PATH}"
-      dialog --backtitle "`backtitle`" --title "Error downloading" --aspect 18 \
-        --msgbox "Check internet or cache disk space" 0 0
-      return 1
-    fi
-  fi
-
-  echo -n "Checking hash of ${PAT_FILE}: "
-  if [ "`sha256sum ${PAT_PATH} | awk '{print$1}'`" != "${PAT_HASH}" ]; then
-    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-      --msgbox "Hash of pat not match, try again!" 0 0
-    rm -f ${PAT_PATH}
-    return 1
-  fi
-  echo "OK"
-
-  rm -rf "${UNTAR_PAT_PATH}"
-  mkdir "${UNTAR_PAT_PATH}"
-  echo -n "Disassembling ${PAT_FILE}: "
-
-  header="$(od -bcN2 ${PAT_PATH} | head -1 | awk '{print $3}')"
-  case ${header} in
-    105)
-      echo "Uncompressed tar"
-      isencrypted="no"
-      ;;
-    213)
-      echo "Compressed tar"
-      isencrypted="no"
-      ;;
-    255)
-      echo "Encrypted"
-      isencrypted="yes"
-      ;;
-    *)
-      dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-        --msgbox "Could not determine if pat file is encrypted or not, maybe corrupted, try again!" \
-        0 0
-      return 1
-      ;;
-  esac
-
-  SPACELEFT=`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print $4}'`  # Check disk space left
-
-  if [ "${isencrypted}" = "yes" ]; then
-    # Check existance of extractor
-    if [ -f "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" ]; then
-      echo "Extractor cached."
-    else
-      # Extractor not exists, get it.
-      mkdir -p "${EXTRACTOR_PATH}"
-      # Check if old pat already downloaded
-      OLDPAT_PATH="${CACHE_PATH}/dl/DS3622xs+-42218.pat"
-      if [ ! -f "${OLDPAT_PATH}" ]; then
-        echo "Downloading old pat to extract synology .pat extractor..."
-        # Discover remote file size
-        FILESIZE=`curl --insecure -sLI "${OLDPAT_URL}" | grep -i Content-Length | awk '{print$2}'`
-        if [ 0${FILESIZE} -ge 0${SPACELEFT} ]; then
-          # No disk space to download, change it to RAMDISK
-          OLDPAT_PATH="${TMP_PATH}/DS3622xs+-42218.pat"
-        fi
-        STATUS=`curl --insecure -w "%{http_code}" -L "${OLDPAT_URL}" -o "${OLDPAT_PATH}"  --progress-bar`
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-          rm "${OLDPAT_PATH}"
-          dialog --backtitle "`backtitle`" --title "Error downloading" --aspect 18 \
-            --msgbox "Check internet or cache disk space" 0 0
-          return 1
-        fi
-      fi
-      # Extract DSM ramdisk file from PAT
-      rm -rf "${RAMDISK_PATH}"
-      mkdir -p "${RAMDISK_PATH}"
-      tar -xf "${OLDPAT_PATH}" -C "${RAMDISK_PATH}" rd.gz >"${LOG_FILE}" 2>&1
-      if [ $? -ne 0 ]; then
-        rm -f "${OLDPAT_PATH}"
-        rm -rf "${RAMDISK_PATH}"
-        dialog --backtitle "`backtitle`" --title "Error extracting" --textbox "${LOG_FILE}" 0 0
-        return 1
-      fi
-      [ ${CLEARCACHE} -eq 1 ] && rm -f "${OLDPAT_PATH}"
-      # Extract all files from rd.gz
-      (cd "${RAMDISK_PATH}"; xz -dc < rd.gz | cpio -idm) >/dev/null 2>&1 || true
-      # Copy only necessary files
-      for f in libcurl.so.4 libmbedcrypto.so.5 libmbedtls.so.13 libmbedx509.so.1 libmsgpackc.so.2 libsodium.so libsynocodesign-ng-virtual-junior-wins.so.7; do
-        cp "${RAMDISK_PATH}/usr/lib/${f}" "${EXTRACTOR_PATH}"
-      done
-      cp "${RAMDISK_PATH}/usr/syno/bin/scemd" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}"
-      rm -rf "${RAMDISK_PATH}"
-    fi
-    # Uses the extractor to untar pat file
-    echo "Extracting..."
-    LD_LIBRARY_PATH=${EXTRACTOR_PATH} "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_PATH}" "${UNTAR_PAT_PATH}" || true
-  else
-    echo "Extracting..."
-    tar -xf "${PAT_PATH}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
-    if [ $? -ne 0 ]; then
-      dialog --backtitle "`backtitle`" --title "Error extracting" --textbox "${LOG_FILE}" 0 0
-    fi
-  fi
-
-  echo -n "Checking hash of zImage: "
-  HASH="`sha256sum ${UNTAR_PAT_PATH}/zImage | awk '{print$1}'`"
-  if [ "${HASH}" != "${ZIMAGE_HASH}" ]; then
-    sleep 1
-    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-      --msgbox "Hash of zImage not match, try again!" 0 0
-    return 1
-  fi
-  echo "OK"
-  writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
-
-  echo -n "Checking hash of ramdisk: "
-  HASH="`sha256sum ${UNTAR_PAT_PATH}/rd.gz | awk '{print$1}'`"
-  if [ "${HASH}" != "${RAMDISK_HASH}" ]; then
-    sleep 1
-    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-      --msgbox "Hash of ramdisk not match, try again!" 0 0
-    return 1
-  fi
-  echo "OK"
-  writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
-
-  echo -n "Copying files: "
-  cp "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
-  cp "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
-  cp "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
-  cp "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
-  cp "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
-  cp "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
-  rm -rf "${UNTAR_PAT_PATH}"
-  echo "DSM extract complete" 
 }
 
 ###############################################################################

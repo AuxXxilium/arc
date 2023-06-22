@@ -4,7 +4,7 @@ ARPL_TITLE="Arc ${ARPL_VERSION}"
 
 # Define paths
 TMP_PATH="/tmp"
-UNTAR_PAT_PATH="${TMP_PATH}/pat"
+UNTAR_PAT_PATH="${TMP_PATH}/dsm"
 RAMDISK_PATH="${TMP_PATH}/ramdisk"
 LOG_FILE="${TMP_PATH}/log.txt"
 
@@ -14,6 +14,8 @@ USER_CONFIG_FILE="${BOOTLOADER_PATH}/user-config.yml"
 BB_USER_CONFIG_FILE="${BACKUPDIR}/user-config.yml"
 GRUB_PATH="${BOOTLOADER_PATH}/boot/grub"
 SYSINFO_PATH="${BOOTLOADER_PATH}/sysinfo.yml"
+
+DSM_FILE="${TMP_PATH}/dsm.tar"
 
 ORI_ZIMAGE_FILE="${SLPART_PATH}/zImage"
 ORI_RDGZ_FILE="${SLPART_PATH}/rd.gz"
