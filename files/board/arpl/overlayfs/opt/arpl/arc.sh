@@ -418,7 +418,8 @@ function make() {
   if [ ! -f "${ORI_ZIMAGE_FILE}" -o ! -f "${ORI_RDGZ_FILE}" ]; then
     if [ ! -f "${DSM_FILE}" ]; then
       DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
-      DSM_LINK="${DSM_MODEL}/${BUILD}/dsm.tar"
+      DSM_BUILD="`readModelKey "${MODEL}" "builds.${BUILD}.dsm"`"
+      DSM_LINK="${DSM_MODEL}/${DSM_BUILD}/dsm.tar"
       DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/files/${DSM_LINK}"
       STATUS="`curl --insecure -w "%{http_code}" -L "${DSM_URL}" -o ${DSM_FILE}`"
       if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
