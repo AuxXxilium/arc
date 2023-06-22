@@ -46,12 +46,7 @@ builds:
       rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.xml"
       rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.json"
       <<: *synoinfo
-    pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_DS1520%2B_42962.pat"
-      hash: "edcacbab10b77e2a6862d31173f5369c6e3c1720b8f0ec4fd41786609017c39b"
-      ramdisk-hash: "93e0b67cce1c91c60dfbaf6cedadab5673dd0432b8e7a8fa5e48c1a8eb1ef64a"
-      zimage-hash: "2de065851b8d3a222db1feea696aab12ded7b582876b22ff6e847cd6f2e62ecf"
-      md5-hash: "d28994a9dcdae9730b4d1370a39d3130"
+    dsm: "42962-1"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"
@@ -69,12 +64,7 @@ builds:
       rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.xml"
       rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.json"
       <<: *synoinfo
-    pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.2/64570-1/DSM_DS1520%2B_64570.pat"
-      hash: "e3b62ac87f63017d762cc3e5d93175b13302c4ed3ca4747ec1f7610395980881"
-      ramdisk-hash: "13b770f64bdc100929bbc8de6990a2f1ca9578cc336dccefc2a2fe4f580191d6"
-      zimage-hash: "8c7c68a47772ab4ee9c8f2e29f00bbddca6f178e1473f4705569b78effe98417"
-      md5-hash: "5063db1ed248fb36074ce8d2aba645a9"
+    dsm: "64570-1"
     patch:
       - "ramdisk-64216-disable-root-pwd.patch"
       - "ramdisk-64216-init-script.patch"
