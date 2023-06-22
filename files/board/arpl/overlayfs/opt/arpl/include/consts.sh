@@ -15,8 +15,6 @@ BB_USER_CONFIG_FILE="${BACKUPDIR}/user-config.yml"
 GRUB_PATH="${BOOTLOADER_PATH}/boot/grub"
 SYSINFO_PATH="${BOOTLOADER_PATH}/sysinfo.yml"
 
-DSM_FILE="${TMP_PATH}/dsm.tar"
-
 ORI_ZIMAGE_FILE="${SLPART_PATH}/zImage"
 ORI_RDGZ_FILE="${SLPART_PATH}/rd.gz"
 

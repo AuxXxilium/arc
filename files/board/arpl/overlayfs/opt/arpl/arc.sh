@@ -401,6 +401,7 @@ function arcnetdisk() {
 # Building Loader
 function make() {
   clear
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
 
@@ -415,6 +416,7 @@ function make() {
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
   # Check for existing files
+  DSM_FILE="${TMP_PATH}/${MODEL}/dsm.tar"
   if [ ! -f "${ORI_ZIMAGE_FILE}" -o ! -f "${ORI_RDGZ_FILE}" ]; then
     if [ ! -f "${DSM_FILE}" ]; then
       DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
