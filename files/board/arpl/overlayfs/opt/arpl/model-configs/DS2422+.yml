@@ -4,10 +4,16 @@ synoinfo: &synoinfo
   support_memory_compatibility: "no"
   support_bde_internal_10g: "no"
   support_led_brightness_adjustment: "no"
+  support_oob_ctl: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
+  supportnvme: "yes"
+  support_m2_pool: "yes"
   maxlanport: "8"
   netif_seq: "0 1 2 3 4 5 6 7"
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.json"
 cmdline: &cmdline
   SMBusHddDynamicPower: 1
   vender_format_version: 2
@@ -42,16 +48,8 @@ builds:
     cmdline:
       <<: *cmdline
     synoinfo:
-      rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.xml"
-      rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.xml"
-      rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.json"
       <<: *synoinfo
-    pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_DS2422%2B_42962.pat"
-      hash: "69f02c4636ff2593e5feb393e13ed82791fa6457d61874368a0b6f93ee11f164"
-      ramdisk-hash: "df84a8fb2c2ed875d1710e814ee771237048b89fcc410761e8207a85d4f63ec3"
-      zimage-hash: "4f45500024580e03afca1911cf543c48d17cd42944c0c94a8fb686f1384881fe"
-      md5-hash: "b00d3d1ccf1b1a6982b2b594420e0f3c"
+    dsm: "42962-1"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"
@@ -65,16 +63,8 @@ builds:
     cmdline:
       <<: *cmdline
     synoinfo:
-      rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.xml"
-      rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.xml"
-      rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.json"
       <<: *synoinfo
-    pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.2/64570-1/DSM_DS2422%2B_64570.pat"
-      hash: "e2f88804988da7b9c9f180ec19984d4bfc1031a4ac3d7be1968561601938e0e9"
-      ramdisk-hash: "212a62b3833c4cb16deb3a50b5ab1557f3bdce196bbb9e5418e4956a6edf470a"
-      zimage-hash: "87d787143aadd08083956b171c0a7c6b67765635b5b609c1fe87ddf4ae7badd2"
-      md5-hash: "3e5e09f4d4b0f09ab03f28d12b76f03a"
+    dsm: "64570-1"
     patch:
       - "ramdisk-64216-disable-root-pwd.patch"
       - "ramdisk-64216-init-script.patch"

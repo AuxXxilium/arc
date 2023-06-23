@@ -122,7 +122,13 @@ function arcMenu() {
       BETA="`readModelKey "${M}" "beta"`"
       [ "${BETA}" = "true" -a ${FLGBETA} -eq 0 ] && continue
       DISKS="`readModelKey "${M}" "disks"`"
-      if [ "${PLATFORM}" = "r1000" ] || [ "${PLATFORM}" = "v1000" ]; then
+      ARCCONF="`readModelKey "${M}" "arc.serial"`"
+      if [ -n "${ARCCONF}" ]; then
+        ARCAV="Arc"
+      else
+        ARCAV="NonArc"
+      fi
+      if [ "${PLATFORM}" = "r1000" ] || [ "${PLATFORM}" = "v1000" ] || [ "${PLATFORM}" = "epyc7002" ]; then
         CPU="AMD"
       else
         CPU="Intel"
@@ -146,7 +152,7 @@ function arcMenu() {
         done
       fi
       [ "${DT}" = "true" ] && DT="-DT" || DT=""
-      [ ${COMPATIBLE} -eq 1 ] && echo -e "${MID} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn\" " >> "${TMP_PATH}/menu"
+      [ ${COMPATIBLE} -eq 1 ] && echo -e "${MID} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn \t\Zb${ARCAV}\Zn\" " >> "${TMP_PATH}/menu"
     done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
     [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models\Zn\"" >> "${TMP_PATH}/menu"
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >> "${TMP_PATH}/menu"
@@ -185,9 +191,11 @@ function arcMenu() {
     deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
     deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
-    # Delete old files
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-    rm -f "${TMP_PATH}/patdownloadurl"
+    if [ -f "${ORI_ZIMAGE_FILE}" ]; then
+      # Delete old files
+      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+      rm -f "${TMP_PATH}/patdownloadurl"
+    fi
     DIRTY=1
   fi
   arcbuild
@@ -202,39 +210,6 @@ function arcbuild() {
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   if [ "${ARCRECOVERY}" != "true" ]; then
-    # Ask for Online Config
-    while true; do
-      dialog --clear --backtitle "`backtitle`" \
-        --menu "Online Config" 0 0 0 \
-        1 "Update to latest Modelconfig" \
-        2 "Use Modelconfig from Build" \
-      2>${TMP_PATH}/resp
-      [ $? -ne 0 ] && return
-      resp=$(<${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return
-      if [ "${resp}" = "1" ]; then
-        OMODEL=`printf "${MODEL}" | jq -sRr @uri`
-        OURL="https://raw.githubusercontent.com/AuxXxilium/arc/dev/files/board/arpl/overlayfs/opt/arpl/model-configs/${OMODEL}.yml"
-        if [ -f "${TMP_PATH}/${MODEL}.yml" ]; then
-          rm -f "${TMP_PATH}/${MODEL}.yml"
-        fi
-        OSTATUS="`curl --insecure -w "%{http_code}" -L "${OURL}" -o ${TMP_PATH}/${MODEL}.yml`"
-        if [ $? -ne 0 -o ${OSTATUS} -ne 200 ]; then
-          dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
-            --infobox "No updated Modelconfig found!" 0 0
-        else
-          cp -f "${TMP_PATH}/${MODEL}.yml" "${MODEL_CONFIG_PATH}/${MODEL}.yml"
-          dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
-            --infobox "Updated Modelconfig to latest" 0 0
-        fi
-        break
-      elif [ "${resp}" = "2" ]; then
-        dialog --backtitle "`backtitle`" --title "Online Config" --aspect 18 \
-          --infobox "Use local Modelconfig from Build" 0 0
-        break
-      fi
-    done
-    sleep 1
     # Select Build for DSM
     ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r`"
     if [ -z "${1}" ]; then
@@ -301,7 +276,7 @@ function arcbuild() {
 function arcsettings() {
   # Read model values for arcsettings
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  if [ "${ARCRECOVERY}" != "true" ]; then
+  if [ "${ARCRECOVERY}" != "true" ] || [ "${ARCAV}" = "Arc" ]; then
     while true; do
       dialog --clear --backtitle "`backtitle`" \
         --menu "Arc Patch\nDo you want to use Syno Services?" 0 0 0 \
@@ -326,6 +301,11 @@ function arcsettings() {
         break
       fi
     done
+  else
+    # Generate random serial
+    SN="`generateSerial "${MODEL}"`"
+    writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   fi
   ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
   DIRTY=1
@@ -350,10 +330,6 @@ function arcnetdisk() {
     # Get Portmap for Loader
     getmap
   fi
-  # Write Sasidxmap if SAS Controller are dedected
-  #[ "${SASCONTROLLER}" -gt 0 ] && writeConfigKey "cmdline.SasIdxMap" "0" "${USER_CONFIG_FILE}"
-  #[ "${SASCONTROLLER}" -eq 0 ] && deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
-  deleteConfigKey "cmdline.SasIdxMap" "${USER_CONFIG_FILE}"
   # Config is done
   writeConfigKey "arc.confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
@@ -401,9 +377,13 @@ function arcnetdisk() {
 # Building Loader
 function make() {
   clear
+  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-
+  
+  # Clean old files
+  rm -rf "${UNTAR_PAT_PATH}"
+  
   # Check if all addon exists
   while IFS=': ' read ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
@@ -414,9 +394,74 @@ function make() {
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
+  # Check for existing files
+  mkdir -p "${TMP_PATH}/${MODEL}"
+  DSM_FILE="${TMP_PATH}/${MODEL}/dsm.tar"
   if [ ! -f "${ORI_ZIMAGE_FILE}" -o ! -f "${ORI_RDGZ_FILE}" ]; then
-    extractDsmFiles
-    [ $? -ne 0 ] && return 1
+    if [ ! -f "${DSM_FILE}" ]; then
+      DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
+      #DSM_BUILD="`readModelKey "${MODEL}" "builds.${BUILD}.dsm"`"
+      DSM_LINK="${DSM_MODEL}/${BUILD}/dsm.tar"
+      DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
+      STATUS="`curl --insecure -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}"`"
+      if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+        dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
+          --msgbox "No DSM Image found!" 0 0
+        return 1
+      else
+        dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
+          --infobox "DSM Image Download successfull!" 0 0
+      fi
+    else
+        dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
+            --infobox "DSM Image cached!" 0 0
+    fi
+    sleep 2
+    # Unpack files
+    if [ -e "${DSM_FILE}" ]; then
+      mkdir -p "${UNTAR_PAT_PATH}"
+      tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+      # Check zImage Hash
+      HASH="`sha256sum ${UNTAR_PAT_PATH}/zImage | awk '{print$1}'`"
+      ZIMAGE_HASH=`cat "${UNTAR_PAT_PATH}/zImage_hash"`
+      if [ "${HASH}" != "${ZIMAGE_HASH}" ]; then
+        sleep 1
+        dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+          --msgbox "Hash of zImage not match, try again!" 0 0
+        return 1
+      fi
+      writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
+      # Check Ramdisk Hash
+      HASH="`sha256sum ${UNTAR_PAT_PATH}/rd.gz | awk '{print$1}'`"
+      RAMDISK_HASH=`cat "${UNTAR_PAT_PATH}/ramdisk_hash"`
+      if [ "${HASH}" != "${RAMDISK_HASH}" ]; then
+        sleep 1
+        dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+          --msgbox "Hash of Ramdisk not match, try again!" 0 0
+        return 1
+      fi
+      writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
+      # Copy DSM Files to locations
+      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
+      cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
+      # Write out .pat variables
+      PAT_MD5_HASH="$(cat "${UNTAR_PAT_PATH}/pat_hash")"
+      PAT_URL="$(cat "${UNTAR_PAT_PATH}/pat_url")"
+      writeConfigKey "arc.pathash" "${PAT_MD5_HASH}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+    else
+      dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+        --msgbox "DSM Files extraction failed!" 0 0
+      return 1
+    fi
+  else
+    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+        --msgbox "DSM Files corrupted!" 0 0
+    return 1
   fi
 
   /opt/arpl/zimage-patch.sh
@@ -432,10 +477,7 @@ function make() {
       --msgbox "Ramdisk not patched:\n`<"${LOG_FILE}"`" 0 0
     return 1
   fi
-
-  echo "Cleaning"
-  rm -rf "${UNTAR_PAT_PATH}"
-
+  
   echo "Ready!"
   sleep 3
   DIRTY=0
@@ -460,186 +502,6 @@ function make() {
       break
     fi
   done
-}
-
-###############################################################################
-# Extracting DSM for building Loader
-function extractDsmFiles() {
-  PAT_URL="`readModelKey "${MODEL}" "builds.${BUILD}.pat.url"`"
-  PAT_HASH="`readModelKey "${MODEL}" "builds.${BUILD}.pat.hash"`"
-  RAMDISK_HASH="`readModelKey "${MODEL}" "builds.${BUILD}.pat.ramdisk-hash"`"
-  ZIMAGE_HASH="`readModelKey "${MODEL}" "builds.${BUILD}.pat.zimage-hash"`"
-
-  SPACELEFT=`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}'`  # Check disk space left
-
-  PAT_FILE="${MODEL}-${BUILD}.pat"
-  PAT_PATH="${CACHE_PATH}/dl/${PAT_FILE}"
-  EXTRACTOR_PATH="${CACHE_PATH}/extractor"
-  EXTRACTOR_BIN="syno_extract_system_patch"
-  OLDPAT_URL="https://global.download.synology.com/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"
-
-
-  if [ -f "${PAT_PATH}" ]; then
-    echo "${PAT_FILE} cached."
-  else
-    # If we have little disk space, clean cache folder
-    if [ ${CLEARCACHE} -eq 1 ]; then
-      echo "Cleaning cache"
-      rm -rf "${CACHE_PATH}/dl"
-    fi
-    mkdir -p "${CACHE_PATH}/dl"
-
-    speed_a=`ping -c 1 -W 5 global.synologydownload.com | awk '/time=/ {print $7}' | cut -d '=' -f 2`
-    speed_b=`ping -c 1 -W 5 global.download.synology.com | awk '/time=/ {print $7}' | cut -d '=' -f 2`
-    fastest="`echo -e "global.synologydownload.com ${speed_a:-999}\nglobal.download.synology.com ${speed_b:-999}" | sort -k2rn | head -1 | awk '{print $1}'`"
-
-    mirror="`echo ${PAT_URL} | sed 's|^http[s]*://\([^/]*\).*|\1|'`"
-    if [ "${mirror}" != "${fastest}" ]; then
-      echo "`printf "Based on the current network situation, switch to %s mirror for download." "${fastest}"`"
-      PAT_URL="`echo ${PAT_URL} | sed "s/${mirror}/${fastest}/"`"
-      OLDPAT_URL="https://${fastest}/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"
-    fi
-    echo ${PAT_URL} > "${TMP_PATH}/patdownloadurl"
-    echo "Downloading ${PAT_FILE}"
-    # Discover remote file size
-    FILESIZE=`curl -k -sLI "${PAT_URL}" | grep -i Content-Length | awk '{print$2}'`
-    if [ 0${FILESIZE} -ge 0${SPACELEFT} ]; then
-      # No disk space to download, change it to RAMDISK
-      PAT_PATH="${TMP_PATH}/${PAT_FILE}"
-    fi
-    STATUS=`curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_PATH}" --progress-bar`
-    if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-      rm "${PAT_PATH}"
-      dialog --backtitle "`backtitle`" --title "Error downloading" --aspect 18 \
-        --msgbox "Check internet or cache disk space" 0 0
-      return 1
-    fi
-  fi
-
-  echo -n "Checking hash of ${PAT_FILE}: "
-  if [ "`sha256sum ${PAT_PATH} | awk '{print$1}'`" != "${PAT_HASH}" ]; then
-    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-      --msgbox "Hash of pat not match, try again!" 0 0
-    rm -f ${PAT_PATH}
-    return 1
-  fi
-  echo "OK"
-
-  rm -rf "${UNTAR_PAT_PATH}"
-  mkdir "${UNTAR_PAT_PATH}"
-  echo -n "Disassembling ${PAT_FILE}: "
-
-  header="$(od -bcN2 ${PAT_PATH} | head -1 | awk '{print $3}')"
-  case ${header} in
-    105)
-      echo "Uncompressed tar"
-      isencrypted="no"
-      ;;
-    213)
-      echo "Compressed tar"
-      isencrypted="no"
-      ;;
-    255)
-      echo "Encrypted"
-      isencrypted="yes"
-      ;;
-    *)
-      dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-        --msgbox "Could not determine if pat file is encrypted or not, maybe corrupted, try again!" \
-        0 0
-      return 1
-      ;;
-  esac
-
-  SPACELEFT=`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print $4}'`  # Check disk space left
-
-  if [ "${isencrypted}" = "yes" ]; then
-    # Check existance of extractor
-    if [ -f "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" ]; then
-      echo "Extractor cached."
-    else
-      # Extractor not exists, get it.
-      mkdir -p "${EXTRACTOR_PATH}"
-      # Check if old pat already downloaded
-      OLDPAT_PATH="${CACHE_PATH}/dl/DS3622xs+-42218.pat"
-      if [ ! -f "${OLDPAT_PATH}" ]; then
-        echo "Downloading old pat to extract synology .pat extractor..."
-        # Discover remote file size
-        FILESIZE=`curl --insecure -sLI "${OLDPAT_URL}" | grep -i Content-Length | awk '{print$2}'`
-        if [ 0${FILESIZE} -ge 0${SPACELEFT} ]; then
-          # No disk space to download, change it to RAMDISK
-          OLDPAT_PATH="${TMP_PATH}/DS3622xs+-42218.pat"
-        fi
-        STATUS=`curl --insecure -w "%{http_code}" -L "${OLDPAT_URL}" -o "${OLDPAT_PATH}"  --progress-bar`
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-          rm "${OLDPAT_PATH}"
-          dialog --backtitle "`backtitle`" --title "Error downloading" --aspect 18 \
-            --msgbox "Check internet or cache disk space" 0 0
-          return 1
-        fi
-      fi
-      # Extract DSM ramdisk file from PAT
-      rm -rf "${RAMDISK_PATH}"
-      mkdir -p "${RAMDISK_PATH}"
-      tar -xf "${OLDPAT_PATH}" -C "${RAMDISK_PATH}" rd.gz >"${LOG_FILE}" 2>&1
-      if [ $? -ne 0 ]; then
-        rm -f "${OLDPAT_PATH}"
-        rm -rf "${RAMDISK_PATH}"
-        dialog --backtitle "`backtitle`" --title "Error extracting" --textbox "${LOG_FILE}" 0 0
-        return 1
-      fi
-      [ ${CLEARCACHE} -eq 1 ] && rm -f "${OLDPAT_PATH}"
-      # Extract all files from rd.gz
-      (cd "${RAMDISK_PATH}"; xz -dc < rd.gz | cpio -idm) >/dev/null 2>&1 || true
-      # Copy only necessary files
-      for f in libcurl.so.4 libmbedcrypto.so.5 libmbedtls.so.13 libmbedx509.so.1 libmsgpackc.so.2 libsodium.so libsynocodesign-ng-virtual-junior-wins.so.7; do
-        cp "${RAMDISK_PATH}/usr/lib/${f}" "${EXTRACTOR_PATH}"
-      done
-      cp "${RAMDISK_PATH}/usr/syno/bin/scemd" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}"
-      rm -rf "${RAMDISK_PATH}"
-    fi
-    # Uses the extractor to untar pat file
-    echo "Extracting..."
-    LD_LIBRARY_PATH=${EXTRACTOR_PATH} "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_PATH}" "${UNTAR_PAT_PATH}" || true
-  else
-    echo "Extracting..."
-    tar -xf "${PAT_PATH}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
-    if [ $? -ne 0 ]; then
-      dialog --backtitle "`backtitle`" --title "Error extracting" --textbox "${LOG_FILE}" 0 0
-    fi
-  fi
-
-  echo -n "Checking hash of zImage: "
-  HASH="`sha256sum ${UNTAR_PAT_PATH}/zImage | awk '{print$1}'`"
-  if [ "${HASH}" != "${ZIMAGE_HASH}" ]; then
-    sleep 1
-    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-      --msgbox "Hash of zImage not match, try again!" 0 0
-    return 1
-  fi
-  echo "OK"
-  writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
-
-  echo -n "Checking hash of ramdisk: "
-  HASH="`sha256sum ${UNTAR_PAT_PATH}/rd.gz | awk '{print$1}'`"
-  if [ "${HASH}" != "${RAMDISK_HASH}" ]; then
-    sleep 1
-    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-      --msgbox "Hash of ramdisk not match, try again!" 0 0
-    return 1
-  fi
-  echo "OK"
-  writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
-
-  echo -n "Copying files: "
-  cp "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
-  cp "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
-  cp "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
-  cp "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
-  cp "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
-  cp "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
-  rm -rf "${UNTAR_PAT_PATH}"
-  echo "DSM extract complete" 
 }
 
 ###############################################################################
@@ -1471,7 +1333,7 @@ function updateMenu() {
             --infobox "Downloading latest version ${TAG}" 0 0
           # Download update file
           STATUS="`curl --insecure -w "%{http_code}" -L \
-            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o /tmp/arc-${TAG}.img.zip`"
+            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "/tmp/arc-${TAG}.img.zip"`"
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
               --msgbox "Error downloading update file" 0 0
@@ -1522,7 +1384,7 @@ function updateMenu() {
             --infobox "Downloading latest version ${TAG}" 0 0
           # Download update file
           STATUS="`curl --insecure -w "%{http_code}" -L \
-            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o /tmp/update.zip`"
+            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "/tmp/update.zip"`"
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
               --msgbox "Error downloading update file" 0 0
@@ -2263,7 +2125,7 @@ echo
 echo -e "Access:"
 echo -e "IP: \033[1;34m${IP}\033[0m"
 echo -e "User: \033[1;34mroot\033[0m"
-echo -e "Password: \033[1;34mRedp1ll\033[0m"
+echo -e "Password: \033[1;34marc\033[0m"
 echo
 echo -e "Web Terminal Access:"
 echo -e "Address: \033[1;34mhttp://${IP}:7681\033[0m"

@@ -202,7 +202,7 @@ echo
 echo -e "Call \033[1;34marc.sh\033[0m to configure loader"
 echo
 echo -e "User config is on \033[1;34m${USER_CONFIG_FILE}\033[0m"
-echo -e "Default SSH Root password is \033[1;34mRedp1ll\033[0m"
+echo -e "Default SSH Root password is \033[1;34marc\033[0m"
 echo
 
 # Check memory

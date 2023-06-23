@@ -3,11 +3,17 @@ synoinfo: &synoinfo
   support_disk_compatibility: "no"
   support_memory_compatibility: "no"
   support_led_brightness_adjustment: "no"
+  support_oob_ctl: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
+  supportnvme: "yes"
+  support_m2_pool: "yes"
   maxlanport: "8"
   netif_seq: "0 1 2 3 4 5 6 7"
   buzzeroffen: "0xffff"
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.json"
 cmdline: &cmdline
   intel_iommu: "igfx_off"
   synoboot2:
@@ -39,16 +45,8 @@ builds:
     cmdline:
       <<: *cmdline
     synoinfo:
-      rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.xml"
-      rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.xml"
-      rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.json"
       <<: *synoinfo
-    pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_DS720%2B_42962.pat"
-      hash: "914641e4885d0a465a46c35e3c271ca5e8cf7f1564591110c762c3ab11d0f202"
-      ramdisk-hash: "16a7dc468ff45fa7ee52a48684484ba5b8f1b3607fa3e922b226cc162c33c74d"
-      zimage-hash: "2de065851b8d3a222db1feea696aab12ded7b582876b22ff6e847cd6f2e62ecf"
-      md5-hash: "9ecc37490cb6e4de3af666db5766cb21"
+    dsm: "42962-1"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"
@@ -62,16 +60,8 @@ builds:
     cmdline:
       <<: *cmdline
     synoinfo:
-      rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.xml"
-      rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.xml"
-      rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.json"
       <<: *synoinfo
-    pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.2/64570-1/DSM_DS720%2B_64570.pat"
-      hash: "c1d03806c288b3986d55d8b4c770e29541f7e5047e9ba6f24f25c77733c0921a"
-      ramdisk-hash: "4abf907cacf29efabaaa971d5884c8ec55008414da913a9662850cc3cd56fcd4"
-      zimage-hash: "8c7c68a47772ab4ee9c8f2e29f00bbddca6f178e1473f4705569b78effe98417"
-      md5-hash: "6ff89c899fa9ef0e546a45bc8a5d1b50"
+    dsm: "64570-1"
     patch:
       - "ramdisk-64216-disable-root-pwd.patch"
       - "ramdisk-64216-init-script.patch"

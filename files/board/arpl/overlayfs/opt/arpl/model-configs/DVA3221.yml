@@ -4,11 +4,17 @@ synoinfo: &synoinfo
   support_memory_compatibility: "no"
   support_led_brightness_adjustment: "no"
   support_bde_internal_10g: "no"
+  support_oob_ctl: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
+  supportnvme: "yes"
+  support_m2_pool: "yes"
   maxlanport: "8"
   netif_seq: "0 1 2 3 4 5 6 7"
   esataportcfg: "0x00"
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.json"
 cmdline: &cmdline
   HddHotplug: 0
   syno_hdd_detect: 0
@@ -25,12 +31,12 @@ serial:
     - "2150"
   middle: "SJR"
   suffix: "alpha"
-arc:
-  serial: "2040SRJRFRP6H"
-  mac1: "001132CA2267"
-  mac2: "001132CA2268"
-  mac3: "001132CA2269"
-  mac4: "001132CA2270"
+#arc:
+#  serial: "2040SRJRFRP6H"
+#  mac1: "001132CA2267"
+#  mac2: "001132CA2268"
+#  mac3: "001132CA2269"
+#  mac4: "001132CA2270"
 dom: 2
 disks: 4
 dt: false
@@ -45,16 +51,8 @@ builds:
     cmdline:
       <<: *cmdline
     synoinfo:
-      rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.xml"
-      rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.xml"
-      rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.json"
       <<: *synoinfo
-    pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_DVA3221_42962.pat"
-      hash: "7bd2fe270bc665cc859142b7c6462fe8137f047c4fbe2f87ed3d03c30c514766"
-      ramdisk-hash: "33dca3330b8bb62a25f9b9ff17dd1461809394be4c1c792cfca5975f79d8e8ef"
-      zimage-hash: "75fd897aa033e05cdba9490bcfbad9d2c35a5574331c43f732dbfc68957626b9"
-      md5-hash: "23a98723cacf1e1bd248cf8ab07bd788"
+    dsm: "42962-1"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"
@@ -69,16 +67,8 @@ builds:
     cmdline:
       <<: *cmdline
     synoinfo:
-      rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.xml"
-      rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.xml"
-      rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.json"
       <<: *synoinfo
-    pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.2/64570-1/DSM_DVA3221_64570.pat"
-      hash: "e696a59b2242e330666a35a57e2b33f7cc4c48a539e1471e59ebcc3c1f8ab39a"
-      ramdisk-hash: "eb119166253e9c6f1ba067593f708f8be5e194b1edf09610ddc3b17c0aab66d3"
-      zimage-hash: "672b174545a071699389470ab20f82b6ef3cc145780ec4b9beac9ad635e91ff2"
-      md5-hash: "2002e02d355c43e266222307e041302a"
+    dsm: "64570-1"
     patch:
       - "ramdisk-64216-disable-root-pwd.patch"
       - "ramdisk-64216-init-script.patch"

@@ -46,11 +46,11 @@ fi
 
 echo -n "."
 # Read model data
-UNIQUE=`readModelKey "${MODEL}" "unique"`
+UNIQUE="`readModelKey "${MODEL}" "unique"`"
 PLATFORM="`readModelKey "${MODEL}" "platform"`"
 KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-PAT_URL="`readModelKey "${MODEL}" "builds.${BUILD}.pat.url"`"
-PAT_MD5_HASH="`readModelKey "${MODEL}" "builds.${BUILD}.pat.md5-hash"`"
+PAT_MD5_HASH="$(cat "${UNTAR_PAT_PATH}/pat_hash")"
+PAT_URL="$(cat "${UNTAR_PAT_PATH}/pat_url")"
 RD_COMPRESSED="`readModelKey "${MODEL}" "builds.${BUILD}.rd-compressed"`"
 
 # Sanity check
@@ -134,7 +134,7 @@ DT="`readModelKey "${MODEL}" "dt"`"
 
 echo -n "."
 mkdir -p "${RAMDISK_PATH}/addons"
-echo "#!/bin/sh" > "${RAMDISK_PATH}/addons/addons.sh"
+echo "#!/bin/sh"                                 > "${RAMDISK_PATH}/addons/addons.sh"
 echo 'echo "addons.sh called with params ${@}"' >> "${RAMDISK_PATH}/addons/addons.sh"
 echo "export PLATFORM=${PLATFORM}"              >> "${RAMDISK_PATH}/addons/addons.sh"
 echo "export MODEL=${MODEL}"                    >> "${RAMDISK_PATH}/addons/addons.sh"

@@ -5,12 +5,18 @@ synoinfo: &synoinfo
   support_bde_internal_10g: "no"
   support_led_brightness_adjustment: "no"
   support_leds_lp3943: ""
+  support_oob_ctl: "no"
   support_syno_hybrid_raid:
   supportraidgroup:
+  supportnvme: "yes"
+  support_m2_pool: "yes"
   maxlanport: "8"
   netif_seq: "0 1 2 3 4 5 6 7"
   buzzeroffen: "0xffff"
   esataportcfg: "0x00"
+  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
+  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.json"
 cmdline: &cmdline
   HddHotplug: 0
   syno_hdd_detect: 0
@@ -42,16 +48,8 @@ builds:
     cmdline:
       <<: *cmdline
     synoinfo:
-      rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.xml"
-      rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.xml"
-      rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.1/rss.json"
       <<: *synoinfo
-    pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_DS1019%2B_42962.pat"
-      hash: "af2268388df9434679205ffd782ae5c17cd81d733cdcd94b13fc894748ffe321"
-      ramdisk-hash: "c2ef679f95b892d515148b9095f4808dfe2bc4bf1ed0e5f6049fe773a24a6999"
-      zimage-hash: "f372b5faaca87d852579df25fe1e9471fd346448ead932586ffd069e2dc4fb13"
-      md5-hash: "b590bc9f0df784be4d6bae13d551f76b"
+    dsm: "42962-1"
     patch:
       - "ramdisk-common-disable-root-pwd.patch"
       - "ramdisk-common-init-script.patch"
@@ -66,16 +64,8 @@ builds:
     cmdline:
       <<: *cmdline
     synoinfo:
-      rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.xml"
-      rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.xml"
-      rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc/main/rss/7.2/rss.json"
       <<: *synoinfo
-    pat:
-      url: "https://global.synologydownload.com/download/DSM/release/7.2/64570-1/DSM_DS1019%2B_64570.pat"
-      hash: "453aeda2bf814db39588f23802188775a1420b8fc057b0137e21bf60b5126950"
-      ramdisk-hash: "b85d4cf0dba8400c40fccda18b85d811e4b64b7a32b85f856b7ed62271c8edbc"
-      zimage-hash: "00713e465ddf347e1683a41f7ffa75afd670945c568502d754d4a24c7cb9e4ab"
-      md5-hash: "c1c9b295ca7f1434c0f1eeab4f989316"
+    dsm: "64570-1"
     patch:
       - "ramdisk-64216-disable-root-pwd.patch"
       - "ramdisk-64216-init-script.patch"
