@@ -9,17 +9,16 @@ PLATFORM="`readModelKey "${MODEL}" "platform"`"
 BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
 KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
 
+# Check for existing files
+mkdir -p "${CACHE_PATH}/${MODEL}/${BUILD}"
+DSM_FILE="${CACHE_PATH}/${MODEL}/${BUILD}/dsm.tar"
+DSM_MODEL="`printf "${MODEL}" | jq -sRr @uri`"
 # Clean old files
 rm -rf "${UNTAR_PAT_PATH}"
-
-# Check for existing files
-mkdir -p "${CACHE_PATH}/${MODEL}"
-DSM_FILE="${CACHE_PATH}/${MODEL}/dsm.tar"
-DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
-#DSM_BUILD="`readModelKey "${MODEL}" "builds.${BUILD}.dsm"`"
+rm -f "${DSM_FILE}"
+# Get new files
 DSM_LINK="${DSM_MODEL}/${BUILD}/dsm.tar"
 DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
-rm -f "${DSM_FILE}"
 STATUS="`curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}"`"
 if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
     echo -e "\033[1;37mNo DSM Image found!\033[0m"
@@ -28,7 +27,7 @@ else
     echo -e "\033[1;37mDSM Image Download successfull!\033[0m"
 fi
 # Unpack files
-if [ -e "${DSM_FILE}" ]; then
+if [ -f "${DSM_FILE}" ]; then
     mkdir -p "${UNTAR_PAT_PATH}"
     tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
     # Write out .pat variables
