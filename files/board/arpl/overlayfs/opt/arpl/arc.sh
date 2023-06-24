@@ -48,6 +48,7 @@ DIRECTDSM="`readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}"`"
 CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
 BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
 ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
+REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -191,6 +192,7 @@ function arcMenu() {
     deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
     deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
+		writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
     if [ -f "${ORI_ZIMAGE_FILE}" ]; then
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
