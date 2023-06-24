@@ -22,41 +22,30 @@ DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_L
 rm -f "${DSM_FILE}"
 STATUS="`curl --insecure -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}"`"
 if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-    echo -n "No DSM Image found!"
+    echo -e "\033[1;37mNo DSM Image found!\033[0m"
     return 1
 else
-    echo -n "DSM Image Download successfull!"
+    echo -e "\033[1;37mDSM Image Download successfull!\033[0m"
 fi
 # Unpack files
 if [ -e "${DSM_FILE}" ]; then
     mkdir -p "${UNTAR_PAT_PATH}"
     tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
-    # Copy DSM Files to locations
-    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
-    cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
     # Write out .pat variables
     PAT_MD5_HASH="`cat "${UNTAR_PAT_PATH}/pat_hash"`"
     PAT_URL="`cat "${UNTAR_PAT_PATH}/pat_url"`"
     writeConfigKey "arc.pathash" "${PAT_MD5_HASH}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
-    echo -n "Online Patch successful!"
+    echo -e "\033[1;37mOnline Patch successful!\033[0m"
 else
-    echo -n "Online Patch unsuccessful!"
+    echo -e "\033[1;37mOnline Patch failed!\033[0m"
     return 1
 fi
 
-# Unzipping ramdisk
-echo -n "."
+# Unzipping new ramdisk
 rm -rf "${RAMDISK_PATH}"  # Force clean
 mkdir -p "${RAMDISK_PATH}"
 (cd "${RAMDISK_PATH}"; xz -dc < "${ORI_RDGZ_FILE}" | cpio -idm) >/dev/null 2>&1
-
-# Check if DSM buildnumber changed
-. "${RAMDISK_PATH}/etc/VERSION"
 
 MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
 BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
