@@ -405,7 +405,7 @@ function make() {
       #DSM_BUILD="`readModelKey "${MODEL}" "builds.${BUILD}.dsm"`"
       DSM_LINK="${DSM_MODEL}/${BUILD}/dsm.tar"
       DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
-      STATUS="`curl --insecure -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}"`"
+      STATUS="`curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}"`"
       if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
         dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
           --msgbox "No DSM Image found!" 0 0

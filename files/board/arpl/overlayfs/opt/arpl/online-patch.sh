@@ -20,7 +20,7 @@ DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
 DSM_LINK="${DSM_MODEL}/${BUILD}/dsm.tar"
 DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
 rm -f "${DSM_FILE}"
-STATUS="`curl --insecure -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}"`"
+STATUS="`curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}"`"
 if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
     echo -e "\033[1;37mNo DSM Image found!\033[0m"
     return 1
