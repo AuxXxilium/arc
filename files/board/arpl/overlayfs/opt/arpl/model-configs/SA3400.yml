@@ -12,9 +12,6 @@ synoinfo: &synoinfo
   maxlanport: "8"
   netif_seq: "0 1 2 3 4 5 6 7"
   esataportcfg: "0x00"
-  rss_server: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
-  rss_server_ssl: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.xml"
-  rss_server_v2: "https://raw.githubusercontent.com/AuxXxilium/arc-rss/main/rss.json"
 cmdline: &cmdline
   HddHotplug: 0
   synoboot2:
