@@ -4,7 +4,7 @@ ARPL_TITLE="Arc ${ARPL_VERSION}"
 
 # Define paths
 TMP_PATH="/tmp"
-UNTAR_PAT_PATH="${TMP_PATH}/dsm"
+UNTAR_PAT_PATH="${CACHE_PATH}/dsm"
 RAMDISK_PATH="${TMP_PATH}/ramdisk"
 LOG_FILE="${TMP_PATH}/log.txt"
 

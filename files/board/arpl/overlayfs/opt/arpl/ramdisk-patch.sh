@@ -49,8 +49,8 @@ echo -n "."
 UNIQUE="`readModelKey "${MODEL}" "unique"`"
 PLATFORM="`readModelKey "${MODEL}" "platform"`"
 KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-PAT_MD5_HASH="$(cat "${UNTAR_PAT_PATH}/pat_hash")"
-PAT_URL="$(cat "${UNTAR_PAT_PATH}/pat_url")"
+PAT_MD5_HASH="`cat "${UNTAR_PAT_PATH}/pat_hash"`"
+PAT_URL="`cat "${UNTAR_PAT_PATH}/pat_url"`"
 RD_COMPRESSED="`readModelKey "${MODEL}" "builds.${BUILD}.rd-compressed"`"
 
 # Sanity check
@@ -168,11 +168,6 @@ done
 
 # Build modules dependencies
 /opt/arpl/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
-
-# Network card configuration file
-for N in `seq 0 7`; do
-echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" > "${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
-done
 
 # Reassembly ramdisk
 echo -n "."

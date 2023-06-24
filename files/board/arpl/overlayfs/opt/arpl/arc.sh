@@ -395,8 +395,8 @@ function make() {
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
   # Check for existing files
-  mkdir -p "${TMP_PATH}/${MODEL}"
-  DSM_FILE="${TMP_PATH}/${MODEL}/dsm.tar"
+  mkdir -p "${CACHE_PATH}/${MODEL}"
+  DSM_FILE="${CACHE_PATH}/${MODEL}/dsm.tar"
   if [ ! -f "${ORI_ZIMAGE_FILE}" -o ! -f "${ORI_RDGZ_FILE}" ]; then
     if [ ! -f "${DSM_FILE}" ]; then
       DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
@@ -423,7 +423,7 @@ function make() {
       tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
       # Check zImage Hash
       HASH="`sha256sum ${UNTAR_PAT_PATH}/zImage | awk '{print$1}'`"
-      ZIMAGE_HASH=`cat "${UNTAR_PAT_PATH}/zImage_hash"`
+      ZIMAGE_HASH="`cat "${UNTAR_PAT_PATH}/zImage_hash"`"
       if [ "${HASH}" != "${ZIMAGE_HASH}" ]; then
         sleep 1
         dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
@@ -433,7 +433,7 @@ function make() {
       writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
       # Check Ramdisk Hash
       HASH="`sha256sum ${UNTAR_PAT_PATH}/rd.gz | awk '{print$1}'`"
-      RAMDISK_HASH=`cat "${UNTAR_PAT_PATH}/ramdisk_hash"`
+      RAMDISK_HASH="`cat "${UNTAR_PAT_PATH}/ramdisk_hash"`"
       if [ "${HASH}" != "${RAMDISK_HASH}" ]; then
         sleep 1
         dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
@@ -449,8 +449,8 @@ function make() {
       cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
       cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
       # Write out .pat variables
-      PAT_MD5_HASH="$(cat "${UNTAR_PAT_PATH}/pat_hash")"
-      PAT_URL="$(cat "${UNTAR_PAT_PATH}/pat_url")"
+      PAT_MD5_HASH="`cat "${UNTAR_PAT_PATH}/pat_hash"`"
+      PAT_URL="`cat "${UNTAR_PAT_PATH}/pat_url"`"
       writeConfigKey "arc.pathash" "${PAT_MD5_HASH}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
     else
