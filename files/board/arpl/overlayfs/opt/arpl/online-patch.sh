@@ -36,6 +36,9 @@ if [ -f "${DSM_FILE}" ]; then
     writeConfigKey "arc.pathash" "${PAT_MD5_HASH}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
     echo -e "\033[1;37mOnline Patch successful!\033[0m"
+elif [ ! -f "${DSM_FILE}" ]; then
+    echo -e "\033[1;37mOnline Patch failed!\nDSM File corrupted!\033[0m"
+    return 1
 else
     echo -e "\033[1;37mOnline Patch failed!\033[0m"
     return 1
