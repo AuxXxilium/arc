@@ -38,10 +38,15 @@ KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 
 if [ ${BUILD} -ne ${buildnumber} ]; then
   echo -e "\033[A\n\033[1;32mBuild number changed from \033[1;31m${BUILD}\033[1;32m to \033[1;31m${buildnumber}\033[0m"
-  echo -n "Patching Ramdisk."
   # Update new buildnumber
   BUILD=${buildnumber}
   writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
+  echo -n "Looking for Online Patch."
+  /opt/arpl/online-patch.sh
+  if [ $? -ne 0 ]; then
+    echo -n "Online Patch has no Data for your Build: ${BUILD}"
+    exit 1
+  fi
 fi
 
 echo -n "."

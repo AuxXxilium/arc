@@ -310,7 +310,7 @@ function arcsettings() {
   ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
   DIRTY=1
   dialog --backtitle "`backtitle`" --title "Arc Config" \
-    --infobox "Model Configuration successfull!" 0 0
+    --infobox "Model Configuration successful!" 0 0
   sleep 1
   arcnetdisk
 }
@@ -333,7 +333,7 @@ function arcnetdisk() {
   # Config is done
   writeConfigKey "arc.confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
-    --infobox "Configuration successfull!" 0 0
+    --infobox "Configuration successful!" 0 0
   sleep 1
   DIRTY=1
   CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
@@ -379,6 +379,7 @@ function make() {
   clear
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
+  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   
   # Clean old files
@@ -397,6 +398,7 @@ function make() {
   # Check for existing files
   mkdir -p "${CACHE_PATH}/${MODEL}"
   DSM_FILE="${CACHE_PATH}/${MODEL}/dsm.tar"
+  rm -f "${DSM_FILE}"
   if [ ! -f "${ORI_ZIMAGE_FILE}" -o ! -f "${ORI_RDGZ_FILE}" ]; then
     if [ ! -f "${DSM_FILE}" ]; then
       DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
@@ -410,7 +412,7 @@ function make() {
         return 1
       else
         dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
-          --infobox "DSM Image Download successfull!" 0 0
+          --infobox "DSM Image Download successful!" 0 0
       fi
     else
         dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
@@ -955,7 +957,7 @@ function usbMenu() {
             writeConfigKey "synoinfo.internalportcfg" "0xffffff" "${USER_CONFIG_FILE}"
             writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
             dialog --backtitle "`backtitle`" --title "Mount USB as Internal" \
-            --aspect 18 --msgbox "Mount USB as Internal - successfull!" 0 0
+            --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
           else
             dialog --backtitle "`backtitle`" --title "Mount USB as Internal" \
             --aspect 18 --msgbox "You need to select a broadwellnk model!" 0 0
@@ -970,7 +972,7 @@ function usbMenu() {
             deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
             writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
             dialog --backtitle "`backtitle`" --title "Mount USB as Normal" \
-            --aspect 18 --msgbox "Mount USB as Normal - successfull!" 0 0
+            --aspect 18 --msgbox "Mount USB as Normal - successful!" 0 0
           fi
           ;;
         0) return ;;
@@ -1119,7 +1121,7 @@ function backupMenu() {
               gzip -dc "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
             fi
             dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
-              --yesno "`printf "Restore Loader Disk successfull!\n%s\nReboot?" "${USER_FILE}"`" 0 0
+              --yesno "`printf "Restore Loader Disk successful!\n%s\nReboot?" "${USER_FILE}"`" 0 0
             [ $? -ne 0 ] && continue
             exec reboot
             exit
@@ -1250,7 +1252,7 @@ function backupMenu() {
               gzip -dc "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
             fi
             dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
-              --yesno "`printf "Restore Loader Disk successfull!\n%s\nReboot?" "${USER_FILE}"`" 0 0
+              --yesno "`printf "Restore Loader Disk successful!\n%s\nReboot?" "${USER_FILE}"`" 0 0
             [ $? -ne 0 ] && continue
             reboot
             exit
@@ -1348,7 +1350,7 @@ function updateMenu() {
           if [ -f "${USER_CONFIG_FILE}" ]; then
             GENHASH=`cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-`
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --msgbox "Backup config successfull!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
+            --msgbox "Backup config successful!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
           else
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --infobox "No config for Backup found!" 0 0
@@ -1568,7 +1570,7 @@ function updateMenu() {
           if [ -f "${USER_CONFIG_FILE}" ]; then
             GENHASH=`cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-`
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --msgbox "Backup config successfull!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
+            --msgbox "Backup config successful!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
           else
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --infobox "No config for Backup found!" 0 0
