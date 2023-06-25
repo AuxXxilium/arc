@@ -20,7 +20,6 @@ SPACELEFT=`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}'`
 [ ${SPACELEFT} -le 268435456 ] && rm -rf "${CACHE_PATH}/dl"
 
 # Unzipping ramdisk
-echo -n "."
 rm -rf "${RAMDISK_PATH}"  # Force clean
 mkdir -p "${RAMDISK_PATH}"
 (cd "${RAMDISK_PATH}"; xz -dc < "${ORI_RDGZ_FILE}" | cpio -idm) >/dev/null 2>&1
@@ -49,7 +48,6 @@ if [ ${BUILD} -ne ${buildnumber} ]; then
   fi
 fi
 
-echo -n "."
 # Read model data
 UNIQUE="`readModelKey "${MODEL}" "unique"`"
 PLATFORM="`readModelKey "${MODEL}" "platform"`"
@@ -80,13 +78,11 @@ done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 # Patches
 while read f; do
-  echo -n "."
   echo "Patching with ${f}" >"${LOG_FILE}" 2>&1
   (cd "${RAMDISK_PATH}" && patch -p1 < "${PATCH_PATH}/${f}") >>"${LOG_FILE}" 2>&1 || dieLog
 done < <(readModelArray "${MODEL}" "builds.${BUILD}.patch")
 
 # Patch /etc/synoinfo.conf
-echo -n "."
 for KEY in ${!SYNOINFO[@]}; do
   _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc/synoinfo.conf" >"${LOG_FILE}" 2>&1 || dieLog
 done
@@ -94,7 +90,6 @@ done
 _set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc/synoinfo.conf" >"${LOG_FILE}" 2>&1 || dieLog
 
 # Patch /sbin/init.post
-echo -n "."
 grep -v -e '^[\t ]*#' -e '^$' "${PATCH_PATH}/config-manipulators.sh" > "${TMP_PATH}/rp.txt"
 sed -e "/@@@CONFIG-MANIPULATORS-TOOLS@@@/ {" -e "r ${TMP_PATH}/rp.txt" -e 'd' -e '}' -i "${RAMDISK_PATH}/sbin/init.post"
 rm "${TMP_PATH}/rp.txt"
@@ -108,7 +103,6 @@ echo "_set_conf_kv 'SN' '${SN}' '/tmpRoot/etc.defaults/synoinfo.conf'"          
 sed -e "/@@@CONFIG-GENERATED@@@/ {" -e "r ${TMP_PATH}/rp.txt" -e 'd' -e '}' -i "${RAMDISK_PATH}/sbin/init.post"
 rm "${TMP_PATH}/rp.txt"
 
-echo -n "."
 # Extract modules to ramdisk
 rm -rf "${TMP_PATH}/modules"
 mkdir -p "${TMP_PATH}/modules"
@@ -126,7 +120,6 @@ tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
 # Clean
 rm -rf "${TMP_PATH}/modules"
 
-echo -n "."
 # Copying fake modprobe
 cp "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
 # Copying LKM to /usr/lib/modules
@@ -137,7 +130,6 @@ gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" > "${RAMDISK_PATH}/us
 # Check if model needs Device-tree dynamic patch
 DT="`readModelKey "${MODEL}" "dt"`"
 
-echo -n "."
 mkdir -p "${RAMDISK_PATH}/addons"
 echo "#!/bin/sh"                                 > "${RAMDISK_PATH}/addons/addons.sh"
 echo 'echo "addons.sh called with params ${@}"' >> "${RAMDISK_PATH}/addons/addons.sh"
@@ -177,7 +169,6 @@ done
 /opt/arpl/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
 
 # Reassembly ramdisk
-echo -n "."
 if [ "${RD_COMPRESSED}" == "true" ]; then
   (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root | xz -9 --format=lzma > "${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || dieLog
 else
