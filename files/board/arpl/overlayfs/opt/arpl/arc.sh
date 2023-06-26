@@ -51,6 +51,11 @@ ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
 ONLINEMODE="`readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}"`"
 REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
 
+# Add Onlinemode to old configs
+if [ -n "${ONLINEMODE}" ]; then
+  writeConfigKey "arc.onlinemode" "true" "${USER_CONFIG_FILE}"
+fi
+
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
@@ -73,7 +78,7 @@ function backtitle() {
     BACKTITLE+=" (no IP)"
   fi
   BACKTITLE+=" |"
-  if [ "${ARCPATCH}" == "true" ]; then
+  if [ "${ARCPATCH}" = "true" ]; then
     BACKTITLE+=" Patch: Y"
   else
     BACKTITLE+=" Patch: N"
@@ -89,6 +94,12 @@ function backtitle() {
     BACKTITLE+=" Build: Y"
   else
     BACKTITLE+=" Build: N"
+  fi
+  BACKTITLE+=" |"
+  if [ "${ONLINEMODE}" = "true" ]; then
+    BACKTITLE+=" On-Mode: Y"
+  else
+    BACKTITLE+=" On-Mode: N"
   fi
   BACKTITLE+=" |"
   BACKTITLE+=" ${MACHINE}"
@@ -206,12 +217,16 @@ function arcMenu() {
 ###############################################################################
 # Shows menu to user type one or generate randomly
 function arcbuild() {
+  # Use Onlinemode
+  ONLINEMODE="`readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}"`"
+  # Add Onlinemode to old configs
+  if [ -z "${ONLINEMODE}" ]; then
+    writeConfigKey "arc.onlinemode" "true" "${USER_CONFIG_FILE}"
+  fi
   # Read model values for arcbuild
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   if [ "${ARCRECOVERY}" != "true" ]; then
-    # Use Onlinemode
-    ONLINEMODE="`readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}"`"
     if [ "${ONLINEMODE}" = "true" ]; then
       OMODEL="`printf "${MODEL}" | jq -sRr @uri`"
       OURL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/overlayfs/opt/arpl/model-configs/${OMODEL}.yml"
@@ -246,6 +261,12 @@ function arcbuild() {
   fi
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  if [ -z "{KVER}" ]; then
+    BUILD=ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r | awk 'NR==1'`"
+    writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
+    BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+    KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  fi
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
   # Delete synoinfo and reload model/build synoinfo
