@@ -5,9 +5,6 @@
 set -o pipefail # Get exit code from process piped
 
 MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-PLATFORM="`readModelKey "${MODEL}" "platform"`"
-BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
 
 # Check for existing files
 mkdir -p "${CACHE_PATH}/${MODEL}/${BUILD}"
@@ -48,11 +45,4 @@ fi
 rm -rf "${RAMDISK_PATH}"  # Force clean
 mkdir -p "${RAMDISK_PATH}"
 (cd "${RAMDISK_PATH}"; xz -dc < "${ORI_RDGZ_FILE}" | cpio -idm) >/dev/null 2>&1
-
-MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
-SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
-LAYOUT="`readConfigKey "layout" "${USER_CONFIG_FILE}"`"
-KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 echo

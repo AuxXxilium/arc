@@ -48,6 +48,7 @@ DIRECTDSM="`readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}"`"
 CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
 BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
 ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
+ONLINEMODE="`readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}"`"
 REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
 
 ###############################################################################
@@ -208,9 +209,24 @@ function arcbuild() {
   # Read model values for arcbuild
   MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
-  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   if [ "${ARCRECOVERY}" != "true" ]; then
+    # Use Onlinemode
+    ONLINEMODE="`readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}"`"
+    if [ "${ONLINEMODE}" = "true" ]; then
+      OMODEL="`printf "${MODEL}" | jq -sRr @uri`"
+      OURL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/overlayfs/opt/arpl/model-configs/${OMODEL}.yml"
+      if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
+        rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
+      fi
+      OSTATUS="`curl --insecure -s -w "%{http_code}" -L "${OURL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml`"
+      if [ $? -ne 0 -o ${OSTATUS} -ne 200 ]; then
+        dialog --backtitle "`backtitle`" --title "Onlinemode" --aspect 18 \
+          --msgbox "No updated Modelconfig found!" 0 0
+      else
+        dialog --backtitle "`backtitle`" --title "Onlinemode" --aspect 18 \
+          --msgbox "Updated Modelconfig found!" 0 0
+      fi
+    fi
     # Select Build for DSM
     ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r`"
     if [ -z "${1}" ]; then
@@ -224,21 +240,12 @@ function arcbuild() {
       resp="${1}"
     fi
     if [ "${BUILD}" != "${resp}" ]; then
-      local KVER=`readModelKey "${MODEL}" "builds.${resp}.kver"`
-      if [ -d "/sys/firmware/efi" -a "${KVER:0:1}" = "3" ]; then
-        dialog --backtitle "`backtitle`" --title "Build" --aspect 18 \
-        --msgbox "This version does not support UEFI startup, Please select another version or switch the startup mode." 0 0
-        arcMenu
-      fi
-      if [ ! "usb" = "`udevadm info --query property --name ${LOADER_DISK} | grep BUS | cut -d= -f2`" -a "${KVER:0:1}" = "5" ]; then
-        dialog --backtitle "`backtitle`" --title "Build Number" --aspect 18 \
-        --msgbox "This version only support usb startup, Please select another version or switch the startup mode." 0 0
-        arcMenu
-      fi
       BUILD=${resp}
       writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
     fi
   fi
+  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
   # Delete synoinfo and reload model/build synoinfo
@@ -2013,12 +2020,13 @@ while true; do
       echo "7 \"\Z1Show Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
     fi
     if [ -n "${ARCOPTS}" ]; then
-      echo "m \"Change DSM Version \" "                                                     >> "${TMP_PATH}/menu"
+      echo "m \"Change DSM Build \" "                                                       >> "${TMP_PATH}/menu"
       if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
         echo "s \"Change Storage Map \" "                                                   >> "${TMP_PATH}/menu"
       fi
       echo "n \"Change Network Config \" "                                                  >> "${TMP_PATH}/menu"
       echo "u \"Change USB Port Config \" "                                                 >> "${TMP_PATH}/menu"
+      echo "o \"Onlinemode: \Z4${ONLINEMODE}\Zn \" "                                        >> "${TMP_PATH}/menu"
       if [ -n "${BUILDDONE}" ]; then
         echo "p \"Show .pat download link \" "                                              >> "${TMP_PATH}/menu"
       fi
@@ -2047,7 +2055,7 @@ while true; do
     fi
     if [ -n "${DEVOPTS}" ]; then
       echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >> "${TMP_PATH}/menu"
-      echo "o \"Save Modifications to Disk \" "                                             >> "${TMP_PATH}/menu"
+      echo "v \"Save Modifications to Disk \" "                                             >> "${TMP_PATH}/menu"
     fi
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >> "${TMP_PATH}/menu"
@@ -2082,7 +2090,10 @@ while true; do
     s) storageMenu; NEXT="s" ;;
     n) networkMenu; NEXT="n" ;;
     u) usbMenu; NEXT="u" ;;
-    t) backupMenu; NEXT="t" ;;
+    o) [ "${ONLINEMODE}" = "true" ] && DIRECTBOOT='false' || DIRECTBOOT='true'
+      writeConfigKey "arc.onlinemode" "${ONLINEMODE}" "${USER_CONFIG_FILE}"
+      NEXT="o"
+      ;;
     p) paturl; NEXT="p" ;;
     w) downgradeMenu; NEXT="w" ;;
     x) resetPassword; NEXT="x" ;;
@@ -2113,12 +2124,13 @@ while true; do
       DIRTY=1
       NEXT="j"
       ;;
-    o) saveMenu; NEXT="o" ;;
+    v) saveMenu; NEXT="o" ;;
     # Loader Settings
     c) keymapMenu; NEXT="c" ;;
     d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
       --prgbox "rm -rfv \"${CACHE_PATH}/dl\"" 0 0 ;;
     i) tryRecoveryDSM; NEXT="i" ;;
+    t) backupMenu; NEXT="t" ;;
     e) updateMenu; NEXT="e" ;;
     0) break ;;
   esac
