@@ -38,13 +38,13 @@ if [ ${BUILD} -ne ${buildnumber} ]; then
   # Use Onlinemode
   ONLINEMODE="`readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}"`"
   if [ "${ONLINEMODE}" = "true" ]; then
-    OMODEL="`printf "${MODEL}" | jq -sRr @uri`"
-    OURL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/overlayfs/opt/arpl/model-configs/${OMODEL}.yml"
+    DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
+    CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/overlayfs/opt/arpl/model-configs/${OMODEL}.yml"
     if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
       rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
     fi
-    OSTATUS=`curl --insecure -s -w "%{http_code}" -L "${OURL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml`
-    if [ $? -ne 0 -o ${OSTATUS} -ne 200 ]; then
+    STATUS=`curl --insecure -s -w "%{http_code}" -L "${CONFIG_URL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml`
+    if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
       echo -e "\033[1;37mOnlinemode: No Updated Modelconfig found!\033[0m"
     else
       echo -e "\033[1;37mOnlinemode: Updated Modelconfig found!\033[0m"
@@ -69,8 +69,8 @@ SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
 LAYOUT="`readConfigKey "layout" "${USER_CONFIG_FILE}"`"
 KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
 UNIQUE="`readModelKey "${MODEL}" "unique"`"
-PAT_MD5_HASH="`cat "${UNTAR_PAT_PATH}/pat_hash"`"
-PAT_URL="`cat "${UNTAR_PAT_PATH}/pat_url"`"
+PAT_MD5_HASH=`cat "${UNTAR_PAT_PATH}/pat_hash"`
+PAT_URL=`cat "${UNTAR_PAT_PATH}/pat_url"`
 RD_COMPRESSED="`readModelKey "${MODEL}" "builds.${BUILD}.rd-compressed"`"
 
 # Sanity check

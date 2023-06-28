@@ -228,13 +228,13 @@ function arcbuild() {
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   if [ "${ARCRECOVERY}" != "true" ]; then
     if [ "${ONLINEMODE}" = "true" ]; then
-      OMODEL="`printf "${MODEL}" | jq -sRr @uri`"
-      OURL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/overlayfs/opt/arpl/model-configs/${OMODEL}.yml"
+      DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
+      CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/overlayfs/opt/arpl/model-configs/${OMODEL}.yml"
       if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
         rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
       fi
-      OSTATUS=`curl --insecure -s -w "%{http_code}" -L "${OURL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml`
-      if [ $? -ne 0 -o ${OSTATUS} -ne 200 ]; then
+      STATUS=`curl --insecure -s -w "%{http_code}" -L "${CONFIG_URL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml`
+      if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
         dialog --backtitle "`backtitle`" --title "Onlinemode" --aspect 18 \
           --msgbox "No updated Modelconfig found!" 0 0
       else
@@ -262,7 +262,7 @@ function arcbuild() {
   BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
   KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
   if [ -z "{KVER}" ]; then
-    BUILD=ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r | awk 'NR==1'`"
+    BUILD="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r | awk 'NR==1'`"
     writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
     BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
     KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
@@ -424,7 +424,7 @@ function make() {
   # Check for existing files
   mkdir -p "${CACHE_PATH}/${MODEL}/${BUILD}"
   DSM_FILE="${CACHE_PATH}/${MODEL}/${BUILD}/dsm.tar"
-  DSM_MODEL="`printf "${MODEL}" | jq -sRr @uri`"
+  DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
   # Clean old files
   rm -rf "${UNTAR_PAT_PATH}"
   rm -f "${DSM_FILE}"
@@ -436,17 +436,12 @@ function make() {
     dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
       --msgbox "No DSM Image found!" 0 0
     return 1
-  else
-    dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
-      --infobox "DSM Image Download successful!" 0 0
-  fi
-  # Unpack files
-  if [ -f "${DSM_FILE}" ]; then
+  elif [ -f "${DSM_FILE}" ]; then
     mkdir -p "${UNTAR_PAT_PATH}"
     tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
     # Check zImage Hash
-    HASH="`sha256sum ${UNTAR_PAT_PATH}/zImage | awk '{print$1}'`"
-    ZIMAGE_HASH="`cat "${UNTAR_PAT_PATH}/zImage_hash"`"
+    HASH=`sha256sum "${UNTAR_PAT_PATH}/zImage" | awk '{print$1}'`
+    ZIMAGE_HASH=`cat "${UNTAR_PAT_PATH}/zImage_hash"`
     if [ "${HASH}" != "${ZIMAGE_HASH}" ]; then
       sleep 1
       dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
@@ -459,8 +454,8 @@ function make() {
       writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
     fi
     # Check Ramdisk Hash
-    HASH="`sha256sum ${UNTAR_PAT_PATH}/rd.gz | awk '{print$1}'`"
-    RAMDISK_HASH="`cat "${UNTAR_PAT_PATH}/ramdisk_hash"`"
+    HASH=`sha256sum "${UNTAR_PAT_PATH}/rd.gz" | awk '{print$1}'`
+    RAMDISK_HASH=`cat "${UNTAR_PAT_PATH}/ramdisk_hash"`
     if [ "${HASH}" != "${RAMDISK_HASH}" ]; then
       sleep 1
       dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
@@ -482,13 +477,13 @@ function make() {
       cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
     fi
     # Write out .pat variables
-    PAT_MD5_HASH="`cat "${UNTAR_PAT_PATH}/pat_hash"`"
-    PAT_URL="`cat "${UNTAR_PAT_PATH}/pat_url"`"
+    PAT_MD5_HASH=`cat "${UNTAR_PAT_PATH}/pat_hash"`
+    PAT_URL=`cat "${UNTAR_PAT_PATH}/pat_url"`
     writeConfigKey "arc.pathash" "${PAT_MD5_HASH}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
   elif [ ! -f "${DSM_FILE}" ]; then
     dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-        --msgbox "DSM Files corrupted!" 0 0
+        --msgbox "DSM Files missing!" 0 0
     return 1
   else
     dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
