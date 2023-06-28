@@ -9,12 +9,12 @@ MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
 # Check for existing files
 mkdir -p "${CACHE_PATH}/${MODEL}/${BUILD}"
 DSM_FILE="${CACHE_PATH}/${MODEL}/${BUILD}/dsm.tar"
-DSM_MODEL=`echo "${MODEL}" | jq -sRr @uri`
+DSM_MODEL="`echo "${MODEL}" | jq -sRr @uri`"
 # Clean old files
 rm -rf "${UNTAR_PAT_PATH}"
 rm -f "${DSM_FILE}"
 # Get new files
-DSM_LINK="${DSM_MODEL}/${BUILD}/dsm.tar"
+DSM_LINK="${MODEL}/${BUILD}/dsm.tar"
 DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
 STATUS=`curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}"`
 if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then

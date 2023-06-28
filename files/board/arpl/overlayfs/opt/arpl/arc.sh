@@ -228,8 +228,8 @@ function arcbuild() {
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   if [ "${ARCRECOVERY}" != "true" ]; then
     if [ "${ONLINEMODE}" = "true" ]; then
-      DSM_MODEL=`echo "${MODEL}" | jq -sRr @uri`
-      CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/overlayfs/opt/arpl/model-configs/${DSM_MODEL}.yml"
+      DSM_MODEL="`echo "${MODEL}" | jq -sRr @uri`"
+      CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/overlayfs/opt/arpl/model-configs/${MODEL}.yml"
       if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
         rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
       fi
@@ -424,12 +424,12 @@ function make() {
   # Check for existing files
   mkdir -p "${CACHE_PATH}/${MODEL}/${BUILD}"
   DSM_FILE="${CACHE_PATH}/${MODEL}/${BUILD}/dsm.tar"
-  DSM_MODEL=`echo "${MODEL}" | jq -sRr @uri`
+  DSM_MODEL="`echo "${MODEL}" | jq -sRr @uri`"
   # Clean old files
   rm -rf "${UNTAR_PAT_PATH}"
   rm -f "${DSM_FILE}"
   # Get new files
-  DSM_LINK="${DSM_MODEL}/${BUILD}/dsm.tar"
+  DSM_LINK="${MODEL}/${BUILD}/dsm.tar"
   DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
   STATUS=`curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}"`
   if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
