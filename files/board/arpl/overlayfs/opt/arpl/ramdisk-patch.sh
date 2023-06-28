@@ -38,7 +38,7 @@ if [ ${BUILD} -ne ${buildnumber} ]; then
   # Use Onlinemode
   ONLINEMODE="`readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}"`"
   if [ "${ONLINEMODE}" = "true" ]; then
-    DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
+    DSM_MODEL=`echo "${MODEL}" | jq -sRr @uri`
     CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/overlayfs/opt/arpl/model-configs/${OMODEL}.yml"
     if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
       rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"

@@ -228,7 +228,7 @@ function arcbuild() {
   PLATFORM="`readModelKey "${MODEL}" "platform"`"
   if [ "${ARCRECOVERY}" != "true" ]; then
     if [ "${ONLINEMODE}" = "true" ]; then
-      DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
+      DSM_MODEL=`echo "${MODEL}" | jq -sRr @uri`
       CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/overlayfs/opt/arpl/model-configs/${OMODEL}.yml"
       if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
         rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
@@ -424,7 +424,7 @@ function make() {
   # Check for existing files
   mkdir -p "${CACHE_PATH}/${MODEL}/${BUILD}"
   DSM_FILE="${CACHE_PATH}/${MODEL}/${BUILD}/dsm.tar"
-  DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
+  DSM_MODEL=`echo "${MODEL}" | jq -sRr @uri`
   # Clean old files
   rm -rf "${UNTAR_PAT_PATH}"
   rm -f "${DSM_FILE}"

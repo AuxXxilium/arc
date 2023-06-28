@@ -9,7 +9,7 @@ MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
 # Check for existing files
 mkdir -p "${CACHE_PATH}/${MODEL}/${BUILD}"
 DSM_FILE="${CACHE_PATH}/${MODEL}/${BUILD}/dsm.tar"
-DSM_MODEL=`printf "${MODEL}" | jq -sRr @uri`
+DSM_MODEL=`echo "${MODEL}" | jq -sRr @uri`
 # Clean old files
 rm -rf "${UNTAR_PAT_PATH}"
 rm -f "${DSM_FILE}"
