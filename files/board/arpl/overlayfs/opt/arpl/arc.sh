@@ -440,30 +440,16 @@ function make() {
     mkdir -p "${UNTAR_PAT_PATH}"
     tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
     # Check zImage Hash
-    HASH=`sha256sum "${UNTAR_PAT_PATH}/zImage" | awk '{print$1}'`
-    ZIMAGE_HASH=`cat "${UNTAR_PAT_PATH}/zImage_hash"`
-    if [ "${HASH}" != "${ZIMAGE_HASH}" ]; then
-      sleep 1
-      dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-        --msgbox "Hash of zImage not match, try again!" 0 0
-      return 1
-    fi
+    HASH="`sha256sum "${UNTAR_PAT_PATH}/zImage" | awk '{print$1}'`"
     OLDHASH="`readConfigKey "zimage-hash" "${USER_CONFIG_FILE}"`"
-    if [ "${ZIMAGE_HASH}" != "${OLDHASH}" ]; then
+    if [ "${HASH}" != "${OLDHASH}" ]; then
       NEWIMAGE="true"
       writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
     fi
     # Check Ramdisk Hash
-    HASH=`sha256sum "${UNTAR_PAT_PATH}/rd.gz" | awk '{print$1}'`
-    RAMDISK_HASH=`cat "${UNTAR_PAT_PATH}/ramdisk_hash"`
-    if [ "${HASH}" != "${RAMDISK_HASH}" ]; then
-      sleep 1
-      dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-        --msgbox "Hash of Ramdisk not match, try again!" 0 0
-      return 1
-    fi
+    HASH="`sha256sum "${UNTAR_PAT_PATH}/rd.gz" | awk '{print$1}'`"
     OLDHASH="`readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}"`"
-    if [ "${RAMDISK_HASH}" != "${OLDHASH}" ]; then
+    if [ "${HASH}" != "${OLDHASH}" ]; then
       NEWIMAGE="true"
       writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
     fi
@@ -1687,6 +1673,8 @@ function sysinfo() {
     USBMOUNT="`readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}"`"
     LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
     BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+    PAT_URL="`readConfigKey "arc.paturl" "${USER_CONFIG_FILE}"`"
+    PAT_MD5_HASH="`readConfigKey "arc.pathash" "${USER_CONFIG_FILE}"`"
   fi
   NETRL_NUM=`ls /sys/class/net/ | grep eth | wc -l`
   IPLIST=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
@@ -1732,6 +1720,8 @@ function sysinfo() {
     TEXT+="\nBuild: \ZbIncomplete\Zn"
   fi
   TEXT+="\nArcpatch: \Zb${ARCPATCH}\Zn"
+  TEXT+="\nPAT Url: \Zb${PAT_URL}\Zn"
+  TEXT+="\nPAT Hash: \Zb${PAT_MD5_HASH}\Zn"
   TEXT+="\nLKM: \Zb${LKM}\Zn"
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
     TEXT+="\nSataPortMap: \Zb${PORTMAP}\Zn | DiskIdxMap: \Zb${DISKMAP}\Zn"
