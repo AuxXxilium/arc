@@ -2066,7 +2066,6 @@ while true; do
       fi
       echo "n \"Change Network Config \" "                                                  >>"${TMP_PATH}/menu"
       echo "u \"Change USB Port Config \" "                                                 >>"${TMP_PATH}/menu"
-      echo "o \"Onlinemode: \Z4${ONLINEMODE}\Zn \" "                                        >>"${TMP_PATH}/menu"
       if [ -n "${BUILDDONE}" ]; then
         echo "p \"Show .pat download link \" "                                              >>"${TMP_PATH}/menu"
       fi
@@ -2100,6 +2099,7 @@ while true; do
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "c \"Choose a keymap \" "                                                            >>"${TMP_PATH}/menu"
+  echo "o \"Onlinemode: \Z4${ONLINEMODE}\Zn \" "                                            >>"${TMP_PATH}/menu"
   if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
     echo "d \"Clean disk cache \""                                                          >>"${TMP_PATH}/menu"
   fi
@@ -2130,10 +2130,6 @@ while true; do
     s) storageMenu; NEXT="s" ;;
     n) networkMenu; NEXT="n" ;;
     u) usbMenu; NEXT="u" ;;
-    o) [ "${ONLINEMODE}" = "true" ] && DIRECTBOOT='false' || DIRECTBOOT='true'
-      writeConfigKey "arc.onlinemode" "${ONLINEMODE}" "${USER_CONFIG_FILE}"
-      NEXT="o"
-      ;;
     p) paturl; NEXT="p" ;;
     w) downgradeMenu; NEXT="w" ;;
     x) resetPassword; NEXT="x" ;;
@@ -2167,6 +2163,10 @@ while true; do
     v) saveMenu; NEXT="o" ;;
     # Loader Settings
     c) keymapMenu; NEXT="c" ;;
+    o) [ "${ONLINEMODE}" = "true" ] && DIRECTBOOT='false' || DIRECTBOOT='true'
+      writeConfigKey "arc.onlinemode" "${ONLINEMODE}" "${USER_CONFIG_FILE}"
+      NEXT="o"
+      ;;
     d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
       --prgbox "rm -rfv \"${CACHE_PATH}/dl\"" 0 0 ;;
     i) tryRecoveryDSM; NEXT="i" ;;
