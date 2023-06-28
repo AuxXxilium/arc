@@ -467,7 +467,7 @@ function make() {
       NEWIMAGE="true"
       writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
     fi
-    if [ "${NEWIMAGE}" = "true" ]; then
+    if [ "${NEWIMAGE}" = "true" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
       # Copy DSM Files to locations
       cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
       cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
