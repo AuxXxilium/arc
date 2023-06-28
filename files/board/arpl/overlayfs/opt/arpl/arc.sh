@@ -2037,6 +2037,7 @@ if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${BUILD}" -a loaderIsConfigured ]; the
   make
   boot && exit 0 || sleep 3
 fi
+
 # Main loop
 NEXT="1"
 while true; do
@@ -2107,6 +2108,7 @@ while true; do
   echo "t \"Backup \" "                                                                     >>"${TMP_PATH}/menu"
   echo "e \"Update \" "                                                                     >>"${TMP_PATH}/menu"
   echo "0 \"\Z1Exit\Zn \" "                                                                 >>"${TMP_PATH}/menu"
+
   dialog --clear --default-item ${NEXT} --backtitle "`backtitle`" --colors \
     --menu "Choose an Option" 0 0 0 --file "${TMP_PATH}/menu" \
     2>${TMP_PATH}/resp
@@ -2176,6 +2178,7 @@ while true; do
   esac
 done
 clear
+
 # Inform user
 echo -e "Call \033[1;34marc.sh\033[0m to configure loader"
 echo
