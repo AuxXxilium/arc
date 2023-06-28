@@ -43,7 +43,7 @@ if [ ${BUILD} -ne ${buildnumber} ]; then
     if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
       rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
     fi
-    OSTATUS="`curl --insecure -s -w "%{http_code}" -L "${OURL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml`"
+    OSTATUS=`curl --insecure -s -w "%{http_code}" -L "${OURL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml`
     if [ $? -ne 0 -o ${OSTATUS} -ne 200 ]; then
       echo -e "\033[1;37mOnlinemode: No Updated Modelconfig found!\033[0m"
     else

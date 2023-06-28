@@ -124,7 +124,7 @@ function arcMenu() {
   dialog --backtitle "`backtitle`" --title "Model" --aspect 18 \
     --infobox "Reading models" 0 0
   while true; do
-    echo "" > "${TMP_PATH}/menu"
+    echo "" >"${TMP_PATH}/menu"
     FLGNEX=0
     while read M; do
       M="`basename ${M}`"
@@ -165,10 +165,10 @@ function arcMenu() {
         done
       fi
       [ "${DT}" = "true" ] && DT="-DT" || DT=""
-      [ ${COMPATIBLE} -eq 1 ] && echo -e "${MID} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn \t\Zb${ARCAV}\Zn\" " >> "${TMP_PATH}/menu"
+      [ ${COMPATIBLE} -eq 1 ] && echo -e "${MID} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn \t\Zb${ARCAV}\Zn\" " >>"${TMP_PATH}/menu"
     done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
-    [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models\Zn\"" >> "${TMP_PATH}/menu"
-    [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >> "${TMP_PATH}/menu"
+    [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models\Zn\"" >>"${TMP_PATH}/menu"
+    [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >>"${TMP_PATH}/menu"
     dialog --backtitle "`backtitle`" --colors --menu "Choose Model for Arc" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
@@ -233,7 +233,7 @@ function arcbuild() {
       if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
         rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
       fi
-      OSTATUS="`curl --insecure -s -w "%{http_code}" -L "${OURL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml`"
+      OSTATUS=`curl --insecure -s -w "%{http_code}" -L "${OURL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml`
       if [ $? -ne 0 -o ${OSTATUS} -ne 200 ]; then
         dialog --backtitle "`backtitle`" --title "Onlinemode" --aspect 18 \
           --msgbox "No updated Modelconfig found!" 0 0
@@ -431,7 +431,7 @@ function make() {
   # Get new files
   DSM_LINK="${DSM_MODEL}/${BUILD}/dsm.tar"
   DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
-  STATUS="`curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}"`"
+  STATUS=`curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}"`
   if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
     dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
       --msgbox "No DSM Image found!" 0 0
@@ -583,7 +583,7 @@ function addonMenu() {
   touch "${TMP_PATH}/opts"
   while read ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"         # Check if addon has already been added
-    echo "${ADDON} \"${DESC}\" ${ACT}" >> "${TMP_PATH}/opts"
+    echo "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
   done <<<${ALLADDONS}
   dialog --backtitle "`backtitle`" --title "Addons" --aspect 18 \
     --checklist "Select Addons to include or remove" 0 0 0 \
@@ -671,7 +671,7 @@ function modulesMenu() {
         rm -f "${TMP_PATH}/opts"
         while read ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
-          echo "${ID} ${DESC} ${ACT}" >> "${TMP_PATH}/opts"
+          echo "${ID} ${DESC} ${ACT}" >>"${TMP_PATH}/opts"
         done <<<${ALLMODULES}
         dialog --backtitle "`backtitle`" --title "Modules" --aspect 18 \
           --checklist "Select modules to include" 0 0 0 \
@@ -753,12 +753,13 @@ function cmdlineMenu() {
   while IFS=': ' read KEY VALUE; do
     [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
   done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
-  echo "1 \"Add/edit a Cmdline item\""                          > "${TMP_PATH}/menu"
-  echo "2 \"Delete Cmdline item(s)\""                           >> "${TMP_PATH}/menu"
-  echo "3 \"Define a custom MAC\""                              >> "${TMP_PATH}/menu"
-  echo "4 \"Show user Cmdline\""                                >> "${TMP_PATH}/menu"
-  echo "5 \"Show Model/Build Cmdline\""                         >> "${TMP_PATH}/menu"
-  echo "0 \"Exit\""                                             >> "${TMP_PATH}/menu"
+  echo "1 \"Add/edit a Cmdline item\""                          >"${TMP_PATH}/menu"
+  echo "2 \"Delete Cmdline item(s)\""                           >>"${TMP_PATH}/menu"
+  echo "3 \"Define a serial number\""                           >>"${TMP_PATH}/menu"
+  echo "4 \"Define a custom MAC\""                              >>"${TMP_PATH}/menu"
+  echo "5 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
+  echo "6 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
+  echo "0 \"Exit\""                                             >>"${TMP_PATH}/menu"
   # Loop menu
   while true; do
     dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
@@ -795,7 +796,7 @@ function cmdlineMenu() {
           --checklist "Select cmdline to remove" 0 0 0 ${ITEMS} \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
-        RESP=`<"${TMP_PATH}/resp"`
+        resp=$(<${TMP_PATH}/resp)
         [ -z "${RESP}" ] && continue
         for I in ${RESP}; do
           unset CMDLINE[${I}]
@@ -805,6 +806,27 @@ function cmdlineMenu() {
         BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         ;;
       3)
+        while true; do
+          dialog --backtitle "$(backtitle)" --colors --title "$(TEXT "Cmdline")" \
+            --inputbox "$(TEXT "Please enter a serial number ")" 0 0 "" \
+            2>${TMP_PATH}/resp
+          [ $? -ne 0 ] && break 2
+          SERIAL=$(cat ${TMP_PATH}/resp)
+          if [ -z "${SERIAL}" ]; then
+            return
+          elif [ $(validateSerial ${MODEL} ${SERIAL}) -eq 1 ]; then
+            break
+          fi
+          # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
+          break
+          dialog --backtitle "$(backtitle)" --colors --title "$(TEXT "Cmdline")" \
+            --yesno "$(TEXT "Invalid serial, continue?")" 0 0
+          [ $? -eq 0 ] && break
+        done
+        SN="${SERIAL}"
+        writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+        ;;
+      4)
         ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
         for N in `seq 1 8`; do # Currently, only up to 8 are supported.  (<==> boot.sh L96, <==> lkm: MAX_NET_IFACES)
           MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
@@ -843,7 +865,7 @@ function cmdlineMenu() {
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
         ;;
-      4)
+      5)
         ITEMS=""
         for KEY in ${!CMDLINE[@]}; do
           ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
@@ -851,7 +873,7 @@ function cmdlineMenu() {
         dialog --backtitle "`backtitle`" --title "User cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      5)
+      6)
         ITEMS=""
         while IFS=': ' read KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
@@ -875,10 +897,10 @@ function synoinfoMenu() {
     [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
   done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 
-  echo "1 \"Add/edit Synoinfo item\""     > "${TMP_PATH}/menu"
-  echo "2 \"Delete Synoinfo item(s)\""    >> "${TMP_PATH}/menu"
-  echo "3 \"Show Synoinfo entries\""      >> "${TMP_PATH}/menu"
-  echo "0 \"Exit\""                       >> "${TMP_PATH}/menu"
+  echo "1 \"Add/edit Synoinfo item\""     >"${TMP_PATH}/menu"
+  echo "2 \"Delete Synoinfo item(s)\""    >>"${TMP_PATH}/menu"
+  echo "3 \"Show Synoinfo entries\""      >>"${TMP_PATH}/menu"
+  echo "0 \"Exit\""                       >>"${TMP_PATH}/menu"
 
   # menu loop
   while true; do
@@ -917,9 +939,9 @@ function synoinfoMenu() {
           --checklist "Select synoinfo entry to remove" 0 0 0 ${ITEMS} \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
-        RESP=`<"${TMP_PATH}/resp"`
-        [ -z "${RESP}" ] && continue
-        for I in ${RESP}; do
+        resp=$(<${TMP_PATH}/resp)
+        [ -z "${resp}" ] && continue
+        for I in ${resp}; do
           unset SYNOINFO[${I}]
           deleteConfigKey "synoinfo.${I}" "${USER_CONFIG_FILE}"
         done
@@ -955,9 +977,9 @@ function keymapMenu() {
   done < <(cd /usr/share/keymaps/i386/${LAYOUT}; ls *.map.gz)
   dialog --backtitle "`backtitle`" --no-items --default-item "${KEYMAP}" \
     --menu "Choice a keymap" 0 0 0 ${OPTIONS} \
-    2>/tmp/resp
+    2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
-  resp=`cat /tmp/resp 2>/dev/null`
+  resp=$(<${TMP_PATH}/resp)
   [ -z "${resp}" ] && return
   KEYMAP=${resp}
   writeConfigKey "layout" "${LAYOUT}" "${USER_CONFIG_FILE}"
@@ -1124,7 +1146,7 @@ function backupMenu() {
               --yesno "Please upload the Backup file.\nCurrently, arc-x.zip(github) and arc-backup.img.gz(Backup) files are supported." 0 0
           [ $? -ne 0 ] && return
           IFTOOL=""
-          TMP_PATH=/tmp/users
+          TMP_PATH=${TMP_PATH}/users
           rm -rf ${TMP_PATH}
           mkdir -p ${TMP_PATH}
           pushd ${TMP_PATH}
@@ -1179,8 +1201,9 @@ function backupMenu() {
             [ ${#GENHASH} -eq 9 ] && break
             dialog --backtitle "`backtitle`" --title "Restore with Code" --msgbox "Invalid Code" 0 0
           done
-          curl -k https://dpaste.com/${GENHASH}.txt > /tmp/user-config.yml
-          cp -f /tmp/user-config.yml ${USER_CONFIG_FILE}
+          rm -f ${TMP_PATH}/user-config.yml
+          curl -k https://dpaste.com/${GENHASH}.txt >${TMP_PATH}/user-config.yml
+          cp -f ${TMP_PATH}/user-config.yml "${USER_CONFIG_FILE}"
           MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
           OLDBUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
           while read LINE; do
@@ -1255,7 +1278,7 @@ function backupMenu() {
               --yesno "Please upload the Backup file.\nCurrently, arc-x.zip(github) and arc-backup.img.gz(Backup) files are supported." 0 0
           [ $? -ne 0 ] && return
           IFTOOL=""
-          TMP_PATH=/tmp/users
+          TMP_PATH=${TMP_PATH}/users
           rm -rf ${TMP_PATH}
           mkdir -p ${TMP_PATH}
           pushd ${TMP_PATH}
@@ -1300,8 +1323,9 @@ function backupMenu() {
             [ ${#GENHASH} -eq 9 ] && break
             dialog --backtitle "`backtitle`" --title "Restore with Code" --msgbox "Invalid Code" 0 0
           done
-          curl -k https://dpaste.com/${GENHASH}.txt > /tmp/user-config.yml
-          cp -f /tmp/user-config.yml ${USER_CONFIG_FILE}
+          rm -f ${TMP_PATH}/user-config.yml
+          curl -k https://dpaste.com/${GENHASH}.txt >${TMP_PATH}/user-config.yml
+          cp -f ${TMP_PATH}/user-config.yml "${USER_CONFIG_FILE}"
           MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
           OLDBUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
           while read LINE; do
@@ -1365,14 +1389,14 @@ function updateMenu() {
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --infobox "Downloading latest version ${TAG}" 0 0
           # Download update file
-          STATUS="`curl --insecure -w "%{http_code}" -L \
-            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "/tmp/arc-${TAG}.img.zip"`"
+          STATUS=`curl --insecure -w "%{http_code}" -L \
+            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip"`
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
               --msgbox "Error downloading update file" 0 0
             continue
           fi
-          unzip -o /tmp/arc-${TAG}.img.zip -d /tmp
+          unzip -o ${TMP_PATH}/arc-${TAG}.img.zip -d ${TMP_PATH}
           if [ $? -ne 0 ]; then
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
               --msgbox "Error extracting update file" 0 0
@@ -1390,7 +1414,7 @@ function updateMenu() {
             --infobox "Installing new Image" 0 0
           # Process complete update
           umount /mnt/p1 /mnt/p2 /mnt/p3
-          dd if="/tmp/arc.img" of=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1` bs=1M conv=fsync
+          dd if="${TMP_PATH}/arc.img" of=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1` bs=1M conv=fsync
           # Ask for Boot
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
@@ -1416,21 +1440,21 @@ function updateMenu() {
           dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --infobox "Downloading latest version ${TAG}" 0 0
           # Download update file
-          STATUS="`curl --insecure -w "%{http_code}" -L \
-            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "/tmp/update.zip"`"
+          STATUS=`curl --insecure -w "%{http_code}" -L \
+            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip"`
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
               --msgbox "Error downloading update file" 0 0
             continue
           fi
-          unzip -oq /tmp/update.zip -d /tmp
+          unzip -oq ${TMP_PATH}/update.zip -d ${TMP_PATH}
           if [ $? -ne 0 ]; then
             dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
               --msgbox "Error extracting update file" 0 0
             continue
           fi
           # Check checksums
-          (cd /tmp && sha256sum --status -c sha256sum)
+          (cd ${TMP_PATH} && sha256sum --status -c sha256sum)
           if [ $? -ne 0 ]; then
             dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
               --msgbox "Checksum do not match!" 0 0
@@ -1442,17 +1466,17 @@ function updateMenu() {
           while read F; do
             [ -f "${F}" ] && rm -f "${F}"
             [ -d "${F}" ] && rm -Rf "${F}"
-          done < <(readConfigArray "remove" "/tmp/update-list.yml")
+          done < <(readConfigArray "remove" "${TMP_PATH}/update-list.yml")
           while IFS=': ' read KEY VALUE; do
             if [ "${KEY: -1}" = "/" ]; then
               rm -Rf "${VALUE}"
               mkdir -p "${VALUE}"
-              tar -zxf "/tmp/`basename "${KEY}"`.tgz" -C "${VALUE}"
+              tar -zxf "${TMP_PATH}/`basename "${KEY}"`.tgz" -C "${VALUE}"
             else
               mkdir -p "`dirname "${VALUE}"`"
-              mv "/tmp/`basename "${KEY}"`" "${VALUE}"
+              mv "${TMP_PATH}/`basename "${KEY}"`" "${VALUE}"
             fi
-          done < <(readConfigMap "replace" "/tmp/update-list.yml")
+          done < <(readConfigMap "replace" "${TMP_PATH}/update-list.yml")
           dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
           [ $? -ne 0 ] && continue
@@ -1470,7 +1494,7 @@ function updateMenu() {
           fi
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
             --infobox "Downloading latest version: ${TAG}" 0 0
-          STATUS="`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o /tmp/addons.zip`"
+          STATUS=`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o ${TMP_PATH}/addons.zip`
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
               --msgbox "Error downloading new version" 0 0
@@ -1478,14 +1502,14 @@ function updateMenu() {
           fi
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
             --infobox "Extracting latest version" 0 0
-          rm -rf /tmp/addons
-          mkdir -p /tmp/addons
-          unzip /tmp/addons.zip -d /tmp/addons >/dev/null 2>&1
+          rm -rf ${TMP_PATH}/addons
+          mkdir -p ${TMP_PATH}/addons
+          unzip ${TMP_PATH}/addons.zip -d ${TMP_PATH}/addons >/dev/null 2>&1
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
             --infobox "Installing new addons" 0 0
           rm -Rf "${ADDONS_PATH}/"*
-          [ -f /tmp/addons/VERSION ] && cp -f /tmp/addons/VERSION ${ADDONS_PATH}/
-          for PKG in `ls /tmp/addons/*.addon`; do
+          [ -f ${TMP_PATH}/addons/VERSION ] && cp -f ${TMP_PATH}/addons/VERSION ${ADDONS_PATH}/
+          for PKG in `ls ${TMP_PATH}/addons/*.addon`; do
             ADDON=`basename ${PKG} | sed 's|.addon||'`
             rm -rf "${ADDONS_PATH}/${ADDON}"
             mkdir -p "${ADDONS_PATH}/${ADDON}"
@@ -1508,7 +1532,7 @@ function updateMenu() {
           fi
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
             --infobox "Downloading latest version: ${TAG}" 0 0
-          STATUS="`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o /tmp/rp-lkms.zip`"
+          STATUS=`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o ${TMP_PATH}/rp-lkms.zip`
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
               --msgbox "Error downloading latest version" 0 0
@@ -1517,7 +1541,7 @@ function updateMenu() {
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
             --infobox "Extracting latest version" 0 0
           rm -rf "${LKM_PATH}/"*
-          unzip /tmp/rp-lkms.zip -d "${LKM_PATH}" >/dev/null 2>&1
+          unzip ${TMP_PATH}/rp-lkms.zip -d "${LKM_PATH}" >/dev/null 2>&1
           DIRTY=1
           deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
           BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
@@ -1535,14 +1559,14 @@ function updateMenu() {
           fi
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --infobox "Downloading latest version" 0 0
-          STATUS="`curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "/tmp/modules.zip"`"
+          STATUS=`curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip"`
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
               --msgbox "Error downloading latest version" 0 0
             continue
           fi
           rm "${MODULES_PATH}/"*
-          unzip /tmp/modules.zip -d "${MODULES_PATH}" >/dev/null 2>&1
+          unzip ${TMP_PATH}/modules.zip -d "${MODULES_PATH}" >/dev/null 2>&1
           # Rebuild modules if model/buildnumber is selected
           if [ -n "${PLATFORM}" -a -n "${KVER}" ]; then
             writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
@@ -1586,13 +1610,13 @@ function updateMenu() {
             --infobox "Downloading latest version ${TAG}" 0 0
           # Download update file
           STATUS=`curl --insecure -w "%{http_code}" -L \
-            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o /tmp/arc-${TAG}.img.zip`
+            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o ${TMP_PATH}/arc-${TAG}.img.zip`
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
               --msgbox "Error downloading update file" 0 0
             continue
           fi
-          unzip -o /tmp/arc-${TAG}.img.zip -d /tmp
+          unzip -o ${TMP_PATH}/arc-${TAG}.img.zip -d ${TMP_PATH}
           if [ $? -ne 0 ]; then
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
               --msgbox "Error extracting update file" 0 0
@@ -1610,7 +1634,7 @@ function updateMenu() {
             --infobox "Installing new Image" 0 0
           # Process complete update
           umount /mnt/p1 /mnt/p2 /mnt/p3
-          dd if="/tmp/arc.img" of=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1` bs=1M conv=fsync
+          dd if="${TMP_PATH}/arc.img" of=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1` bs=1M conv=fsync
           # Ask for Boot
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
@@ -1846,15 +1870,15 @@ function downgradeMenu() {
       --yesno "${MSG}" 0 0
   [ $? -ne 0 ] && return
   (
-    mkdir -p /tmp/sdX1
+    mkdir -p ${TMP_PATH}/sdX1
     for I in `ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1`; do
-      mount ${I} /tmp/sdX1
-      [ -f "/tmp/sdX1/etc/VERSION" ] && rm -f "/tmp/sdX1/etc/VERSION"
-      [ -f "/tmp/sdX1/etc.defaults/VERSION" ] && rm -f "/tmp/sdX1/etc.defaults/VERSION"
+      mount ${I} ${TMP_PATH}/sdX1
+      [ -f "${TMP_PATH}/sdX1/etc/VERSION" ] && rm -f "${TMP_PATH}/sdX1/etc/VERSION"
+      [ -f "${TMP_PATH}/sdX1/etc.defaults/VERSION" ] && rm -f "${TMP_PATH}/sdX1/etc.defaults/VERSION"
       sync
       umount ${I}
     done
-    rm -rf /tmp/sdX1
+    rm -rf ${TMP_PATH}/sdX1
   ) | dialog --backtitle "`backtitle`" --title "Allow downgrade installation" \
       --progressbox "Removing ..." 20 70
   MSG="$(TEXT "Remove VERSION file for all disks completed.")"
@@ -1867,7 +1891,7 @@ function downgradeMenu() {
 function paturl() {
   # output pat download link
   if [ ! -f "${TMP_PATH}/patdownloadurl" ]; then
-    echo "`readModelKey "${MODEL}" "builds.${BUILD}.pat.url"`" > "${TMP_PATH}/patdownloadurl"
+    echo "`readModelKey "${MODEL}" "builds.${BUILD}.pat.url"`" >"${TMP_PATH}/patdownloadurl"
   fi
   dialog --backtitle "`backtitle`" --title "*.pat download link" \
     --editbox "${TMP_PATH}/patdownloadurl" 0 0
@@ -1877,17 +1901,17 @@ function paturl() {
 # Reset DSM password
 function resetPassword() {
   SHADOW_FILE=""
-  mkdir -p /tmp/sdX1
+  mkdir -p ${TMP_PATH}/sdX1
   for I in `ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1`; do
-    mount ${I} /tmp/sdX1
-    if [ -f "/tmp/sdX1/etc/shadow" ]; then
-      cp "/tmp/sdX1/etc/shadow" "/tmp/shadow_bak"
-      SHADOW_FILE="/tmp/shadow_bak"
+    mount ${I} ${TMP_PATH}/sdX1
+    if [ -f "${TMP_PATH}/sdX1/etc/shadow" ]; then
+      cp "${TMP_PATH}/sdX1/etc/shadow" "${TMP_PATH}/shadow_bak"
+      SHADOW_FILE="${TMP_PATH}/shadow_bak"
     fi
     umount ${I}
     [ -n "${SHADOW_FILE}" ] && break
   done
-  rm -rf /tmp/sdX1
+  rm -rf ${TMP_PATH}/sdX1
   if [ -z "${SHADOW_FILE}" ]; then
     dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
       --msgbox "No DSM found in the currently inserted disks!" 0 0
@@ -1912,14 +1936,14 @@ function resetPassword() {
   done
   NEWPASSWD=`python -c "import crypt,getpass;pw=\"${VALUE}\";print(crypt.crypt(pw))"`
   (
-    mkdir -p /tmp/sdX1
+    mkdir -p ${TMP_PATH}/sdX1
     for I in `ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1`; do
-      mount ${I} /tmp/sdX1
-      sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "/tmp/sdX1/etc/shadow"
+      mount ${I} ${TMP_PATH}/sdX1
+      sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "${TMP_PATH}/sdX1/etc/shadow"
       sync
       umount ${I}
     done
-    rm -rf /tmp/sdX1
+    rm -rf ${TMP_PATH}/sdX1
   ) | dialog --backtitle "`backtitle`" --title "Reset DSM Password" \
       --progressbox "Resetting ..." 20 70
   [ -f "${SHADOW_FILE}" ] && rm -rf "${SHADOW_FILE}"
@@ -1946,12 +1970,12 @@ function saveMenu() {
   [ $? -ne 0 ] && return
   dialog --backtitle "`backtitle`" --title "Save to Disk" \
       --infobox "Saving ..." 0 0 
-  RDXZ_PATH=/tmp/rdxz_tmp
+  RDXZ_PATH=${TMP_PATH}/rdxz_tmp
   mkdir -p "${RDXZ_PATH}"
   (cd "${RDXZ_PATH}"; xz -dc < "/mnt/p3/initrd-arpl" | cpio -idm) >/dev/null 2>&1 || true
   rm -rf "${RDXZ_PATH}/opt/arpl"
   cp -rf "/opt" "${RDXZ_PATH}"
-  (cd "${RDXZ_PATH}"; find . 2>/dev/null | cpio -o -H newc -R root:root | xz --check=crc32 > "/mnt/p3/initrd-arpl") || true
+  (cd "${RDXZ_PATH}"; find . 2>/dev/null | cpio -o -H newc -R root:root | xz --check=crc32 >"/mnt/p3/initrd-arpl") || true
   rm -rf "${RDXZ_PATH}"
   dialog --backtitle "`backtitle`" --colors --aspect 18 \
     --msgbox "Save to Disk is complete." 0 0
@@ -1969,8 +1993,8 @@ function formatdisks() {
   dialog --backtitle "`backtitle`" --title "Format disk" \
     --checklist "Advanced" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
-  RESP=`<"${TMP_PATH}/resp"`s
-  if [ -z "${RESP}" ]; then
+  resp=$(<${TMP_PATH}/resp)
+  if [ -z "${resp}" ]; then
     dialog --backtitle "`backtitle`" --title "Format disk" \
       --msgbox "No Sata or NVMe Disks found." 0 0
     return
@@ -1987,7 +2011,7 @@ function formatdisks() {
     done
   fi
   (
-    for I in ${RESP}; do
+    for I in ${resp}; do
       mkfs.ext4 -F -O ^metadata_csum ${I}
     done
   ) | dialog --backtitle "`backtitle`" --title "Format disk" \
@@ -2021,73 +2045,73 @@ fi
 # Main loop
 NEXT="1"
 while true; do
-  echo "= \"\Z4========== Main ==========\Zn \" "                                            > "${TMP_PATH}/menu"
-  echo "1 \"Choose Model for Loader \" "                                                    >> "${TMP_PATH}/menu"
+  echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
+  echo "1 \"Choose Model for Loader \" "                                                    >>"${TMP_PATH}/menu"
   if [ -n "${CONFDONE}" ]; then
-    echo "4 \"Build Loader \" "                                                             >> "${TMP_PATH}/menu"
+    echo "4 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
   fi
   if [ -n "${BUILDDONE}" ]; then
-    echo "5 \"Boot Loader \" "                                                              >> "${TMP_PATH}/menu"
+    echo "5 \"Boot Loader \" "                                                              >>"${TMP_PATH}/menu"
   fi
-  echo "= \"\Z4========== Info ==========\Zn \" "                                           >> "${TMP_PATH}/menu"
-  echo "a \"Sysinfo \" "                                                                    >> "${TMP_PATH}/menu"
+  echo "= \"\Z4========== Info ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
+  echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
   if [ -n "${CONFDONE}" ]; then
-    echo "= \"\Z4========= System =========\Zn \" "                                         >> "${TMP_PATH}/menu"
-    echo "2 \"Addons \" "                                                                   >> "${TMP_PATH}/menu"
-    echo "3 \"Modules \" "                                                                  >> "${TMP_PATH}/menu"
+    echo "= \"\Z4========= System =========\Zn \" "                                         >>"${TMP_PATH}/menu"
+    echo "2 \"Addons \" "                                                                   >>"${TMP_PATH}/menu"
+    echo "3 \"Modules \" "                                                                  >>"${TMP_PATH}/menu"
     if [ -n "${ARCOPTS}" ]; then
-      echo "7 \"\Z1Hide Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
+      echo "7 \"\Z1Hide Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     else
-      echo "7 \"\Z1Show Arc Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
+      echo "7 \"\Z1Show Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     fi
     if [ -n "${ARCOPTS}" ]; then
-      echo "m \"Change DSM Build \" "                                                       >> "${TMP_PATH}/menu"
+      echo "m \"Change DSM Build \" "                                                       >>"${TMP_PATH}/menu"
       if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
-        echo "s \"Change Storage Map \" "                                                   >> "${TMP_PATH}/menu"
+        echo "s \"Change Storage Map \" "                                                   >>"${TMP_PATH}/menu"
       fi
-      echo "n \"Change Network Config \" "                                                  >> "${TMP_PATH}/menu"
-      echo "u \"Change USB Port Config \" "                                                 >> "${TMP_PATH}/menu"
-      echo "o \"Onlinemode: \Z4${ONLINEMODE}\Zn \" "                                        >> "${TMP_PATH}/menu"
+      echo "n \"Change Network Config \" "                                                  >>"${TMP_PATH}/menu"
+      echo "u \"Change USB Port Config \" "                                                 >>"${TMP_PATH}/menu"
+      echo "o \"Onlinemode: \Z4${ONLINEMODE}\Zn \" "                                        >>"${TMP_PATH}/menu"
       if [ -n "${BUILDDONE}" ]; then
-        echo "p \"Show .pat download link \" "                                              >> "${TMP_PATH}/menu"
+        echo "p \"Show .pat download link \" "                                              >>"${TMP_PATH}/menu"
       fi
-      echo "w \"Allow DSM downgrade \" "                                                    >> "${TMP_PATH}/menu"
-      echo "x \"Reset DSM Password \" "                                                     >> "${TMP_PATH}/menu"
-      echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >> "${TMP_PATH}/menu"
+      echo "w \"Allow DSM downgrade \" "                                                    >>"${TMP_PATH}/menu"
+      echo "x \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
+      echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >>"${TMP_PATH}/menu"
     fi
     if [ -n "${ADVOPTS}" ]; then
-      echo "8 \"\Z1Hide Advanced Options\Zn \" "                                            >> "${TMP_PATH}/menu"
+      echo "8 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
     else
-      echo "8 \"\Z1Show Advanced Options\Zn \" "                                            >> "${TMP_PATH}/menu"
+      echo "8 \"\Z1Show Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
     fi
     if [ -n "${ADVOPTS}" ]; then
-      echo "f \"Cmdline \" "                                                                >> "${TMP_PATH}/menu"
-      echo "g \"Synoinfo \" "                                                               >> "${TMP_PATH}/menu"
-      echo "h \"Edit User Config \" "                                                       >> "${TMP_PATH}/menu"
-      echo "k \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >> "${TMP_PATH}/menu"
+      echo "f \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
+      echo "g \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
+      echo "h \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
+      echo "k \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
       if [ "${DIRECTBOOT}" = "true" ]; then
-        echo "l \"Direct DSM \Z4${DIRECTDSM}\Zn \" "                                        >> "${TMP_PATH}/menu"
+        echo "l \"Direct DSM \Z4${DIRECTDSM}\Zn \" "                                        >>"${TMP_PATH}/menu"
       fi
     fi
     if [ -n "${DEVOPTS}" ]; then
-      echo "9 \"\Z1Hide Dev Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
+      echo "9 \"\Z1Hide Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     else
-      echo "9 \"\Z1Show Dev Options\Zn \" "                                                 >> "${TMP_PATH}/menu"
+      echo "9 \"\Z1Show Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     fi
     if [ -n "${DEVOPTS}" ]; then
-      echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >> "${TMP_PATH}/menu"
-      echo "v \"Save Modifications to Disk \" "                                             >> "${TMP_PATH}/menu"
+      echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
+      echo "v \"Save Modifications to Disk \" "                                             >>"${TMP_PATH}/menu"
     fi
   fi
-  echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >> "${TMP_PATH}/menu"
-  echo "c \"Choose a keymap \" "                                                            >> "${TMP_PATH}/menu"
+  echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >>"${TMP_PATH}/menu"
+  echo "c \"Choose a keymap \" "                                                            >>"${TMP_PATH}/menu"
   if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
-    echo "d \"Clean disk cache \""                                                          >> "${TMP_PATH}/menu"
+    echo "d \"Clean disk cache \""                                                          >>"${TMP_PATH}/menu"
   fi
-  echo "i \"Recover from DSM \" "                                                           >> "${TMP_PATH}/menu"
-  echo "t \"Backup \" "                                                                     >> "${TMP_PATH}/menu"
-  echo "e \"Update \" "                                                                     >> "${TMP_PATH}/menu"
-  echo "0 \"\Z1Exit\Zn \" "                                                                 >> "${TMP_PATH}/menu"
+  echo "i \"Recover from DSM \" "                                                           >>"${TMP_PATH}/menu"
+  echo "t \"Backup \" "                                                                     >>"${TMP_PATH}/menu"
+  echo "e \"Update \" "                                                                     >>"${TMP_PATH}/menu"
+  echo "0 \"\Z1Exit\Zn \" "                                                                 >>"${TMP_PATH}/menu"
   dialog --clear --default-item ${NEXT} --backtitle "`backtitle`" --colors \
     --menu "Choose an Option" 0 0 0 --file "${TMP_PATH}/menu" \
     2>${TMP_PATH}/resp
