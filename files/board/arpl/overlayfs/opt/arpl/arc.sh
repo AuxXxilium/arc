@@ -1655,43 +1655,46 @@ function sysinfo() {
   # Delete old Sysinfo
   rm -f ${SYSINFO_PATH}
   # Checks for Systeminfo Menu
-  CPUINFO=`awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//'`
+  CPUINFO=$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')
+  CPUCORES=$(awk -F: '/model name/ {core++} END {print core}' /proc/cpuinfo)
+	CPUFREQ=$(awk -F: ' /cpu MHz/ {freq=$2} END {print freq " MHz"}' /proc/cpuinfo | sed 's/^[ \t]*//;s/[ \t]*$//')
   if [ ${EFI} -eq 1 ]; then
     BOOTSYS="EFI"
   elif [ ${EFI} -eq 0 ]; then
     BOOTSYS="Legacy"
   fi
-  VENDOR=`dmidecode -s system-product-name`
-  CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+  VENDOR=$(dmidecode -s system-product-name)
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ -n "${CONFDONE}" ]; then
-    MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-    BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-    PLATFORM="`readModelKey "${MODEL}" "platform"`"
-    KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-    REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
-    ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
-    USBMOUNT="`readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}"`"
-    LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
-    BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-    PAT_URL="`readConfigKey "arc.paturl" "${USER_CONFIG_FILE}"`"
-    PAT_MD5_HASH="`readConfigKey "arc.pathash" "${USER_CONFIG_FILE}"`"
+    MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+    BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+    PLATFORM="$(readModelKey "${MODEL}" "platform")"
+    KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
+    REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
+    ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+    ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
+    USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
+    LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    PAT_URL="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
+    PAT_MD5_HASH="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
   fi
-  NETRL_NUM=`ls /sys/class/net/ | grep eth | wc -l`
-  IPLIST=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
+  NETRL_NUM=$(ls /sys/class/net/ | grep eth | wc -l)
+  IPLIST=$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
-    PORTMAP="`readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"`"
-    DISKMAP="`readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"`"
+    PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
+    DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
   elif [ "${REMAP}" == "3" ]; then
-    PORTMAP="`readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"`"
+    PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
   fi
   if [ -n "${CONFDONE}" ]; then
-    ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
+    ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
     getModulesInfo
-    MODULESINFO=`cat "${TMP_PATH}/modulesinfo"`
+    MODULESINFO=$(cat "${TMP_PATH}/modulesinfo")
   fi
-  MODULESVERSION=`cat "${MODULES_PATH}/VERSION"`
-  ADDONSVERSION=`cat "${ADDONS_PATH}/VERSION"`
-  LKMVERSION=`cat "${LKM_PATH}/VERSION"`
+  MODULESVERSION=$(cat "${MODULES_PATH}/VERSION")
+  ADDONSVERSION=$(cat "${ADDONS_PATH}/VERSION")
+  LKMVERSION=$(cat "${LKM_PATH}/VERSION")
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4System:\Zn"
@@ -1700,7 +1703,7 @@ function sysinfo() {
   TEXT+="\nHypervisor: \Zb${HYPERVISOR}\Zn"
   fi
   TEXT+="\nVendor: \Zb${VENDOR}\Zn"
-  TEXT+="\nCPU: \Zb${CPUINFO}\Zn"
+  TEXT+="\nCPU | Cores @ Clock: \Zb${CPUINFO}\Zn | \Zb${CPUCORES}\Zn @ \Zb${CPUFREQ}\Zn"
   TEXT+="\nRAM: \Zb$((RAMTOTAL /1024))GB\Zn"
   TEXT+="\nNetwork: \Zb${NETRL_NUM} Adapter\Zn"
   TEXT+="\nIP(s): \Zb${IPLIST}\Zn\n"
@@ -1709,6 +1712,7 @@ function sysinfo() {
   TEXT+="\nArc Version: \Zb${ARPL_VERSION}\Zn"
   TEXT+="\nSubversion: \ZbModules ${MODULESVERSION}\Zn | \ZbAddons ${ADDONSVERSION}\Zn | \ZbLKM ${LKMVERSION}\Zn"
   TEXT+="\nModel | Build: \Zb${MODEL} | ${BUILD}\Zn"
+  TEXT+="\nPlatform | Kernel: \Zb${PLATFORM} | ${KVER}\Zn"
   if [ -n "${CONFDONE}" ]; then
     TEXT+="\nConfig: \ZbComplete\Zn"
   else
@@ -1719,7 +1723,7 @@ function sysinfo() {
   else
     TEXT+="\nBuild: \ZbIncomplete\Zn"
   fi
-  TEXT+="\nArcpatch: \Zb${ARCPATCH}\Zn"
+  TEXT+="\nArcpatch | Onlinemode: \Zb${ARCPATCH}\Zn | \Zb${ONLINEMODE}\Zn"
   TEXT+="\nPAT Url: \Zb${PAT_URL}\Zn"
   TEXT+="\nPAT Hash: \Zb${PAT_MD5_HASH}\Zn"
   TEXT+="\nLKM: \Zb${LKM}\Zn"
@@ -1728,7 +1732,7 @@ function sysinfo() {
   elif [ "${REMAP}" == "3" ]; then
     TEXT+="\nSataRemap: \Zb${PORTMAP}\Zn"
   elif [ "${REMAP}" == "0" ]; then
-    TEXT+="\nPortMap: \Zb"Set by User"\Zn"
+    TEXT+="\nPortMap: \Zb"User"\Zn"
   fi
   TEXT+="\nUSB Mount: \Zb${USBMOUNT}\Zn"
   TEXT+="\nAddons selected: \Zb${ADDONSINFO}\Zn"
@@ -1738,23 +1742,23 @@ function sysinfo() {
   # Get Information for Sata Controller
   if [ "$SATACONTROLLER" -gt "0" ]; then
     NUMPORTS=0
-    for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print$1}'`; do
-      NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+    for PCI in $(lspci -nnk | grep -ie "\[0106\]" | awk '{print$1}'); do
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       # Get Amount of Drives connected
-      SATADRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
+      SATADRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
       TEXT+="\n\Z1SATA Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
       TEXT+="\Z1Drives\Zn detected:\n\Zb"${SATADRIVES}"\Zn\n"
       TEXT+="\n\ZbPorts: "
       unset HOSTPORTS
       declare -A HOSTPORTS
       while read LINE; do
-        ATAPORT="`echo ${LINE} | grep -o 'ata[0-9]*'`"
-        PORT=`echo ${ATAPORT} | sed 's/ata//'`
-        HOSTPORTS[${PORT}]=`echo ${LINE} | grep -o 'host[0-9]*$'`
+        ATAPORT="$(echo ${LINE} | grep -o 'ata[0-9]*')"
+        PORT=$(echo ${ATAPORT} | sed 's/ata//')
+        HOSTPORTS[${PORT}]=$(echo ${LINE} | grep -o 'host[0-9]*$')
       done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
       while read PORT; do
         ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
-        PCMD=`cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd`
+        PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
         [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
         [ ${ATTACH} -eq 1 ] && TEXT+="\Z2\Zb"
         [ ${DUMMY} -eq 1 ] && TEXT+="\Z1"
@@ -1768,11 +1772,11 @@ function sysinfo() {
   fi
   # Get Information for SAS Controller
   if [ "$SASCONTROLLER" -gt "0" ]; then
-    for PCI in `lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'`; do
+    for PCI in $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'); do
       # Get Name of Controller
-      NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       # Get Amount of Drives connected
-      SASDRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
+      SASDRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
       TEXT+="\n\Z1SAS Controller\Zn detected:\n\Zb${NAME}\Zn\n"
       TEXT+="\Z1Drives\Zn detected:\n\Zb${SASDRIVES}\Zn\n"
     done
