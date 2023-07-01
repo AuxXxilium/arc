@@ -20,14 +20,14 @@ RAMTOTAL=0
 while read -r line; do
   RAMSIZE=$line
   RAMTOTAL=$((RAMTOTAL +RAMSIZE))
-done <<< "`dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i [1-9]`"
+done <<< "$(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i [1-9])"
 RAMTOTAL=$((RAMTOTAL *1024))
 
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
   MACHINE="VIRTUAL"
   # Check for Hypervisor
-  HYPERVISOR="`lscpu | grep Hypervisor | awk '{print $3}'`"
+  HYPERVISOR="$(lscpu | grep Hypervisor | awk '{print $3}')"
 else
   MACHINE="NATIVE"
 fi
@@ -38,18 +38,18 @@ fi
 # Dirty flag
 DIRTY=0
 
-MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-LAYOUT="`readConfigKey "layout" "${USER_CONFIG_FILE}"`"
-KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
-LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
-DIRECTBOOT="`readConfigKey "arc.directboot" "${USER_CONFIG_FILE}"`"
-DIRECTDSM="`readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}"`"
-CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
-BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
-ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
-ONLINEMODE="`readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}"`"
-REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
+MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
+KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
+DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
+DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
+CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
+REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 
 # Add Onlinemode to old configs
 if [ -n "${ONLINEMODE}" ]; then
@@ -127,15 +127,15 @@ function arcMenu() {
     echo "" >"${TMP_PATH}/menu"
     FLGNEX=0
     while read M; do
-      M="`basename ${M}`"
+      M="$(basename ${M})"
       M="${M::-4}"
-      MID="`readModelKey "${M}" "id"`"
-      PLATFORM="`readModelKey "${M}" "platform"`"
-      DT="`readModelKey "${M}" "dt"`"
-      BETA="`readModelKey "${M}" "beta"`"
+      MID="$(readModelKey "${M}" "id")"
+      PLATFORM="$(readModelKey "${M}" "platform")"
+      DT="$(readModelKey "${M}" "dt")"
+      BETA="$(readModelKey "${M}" "beta")"
       [ "${BETA}" = "true" -a ${FLGBETA} -eq 0 ] && continue
-      DISKS="`readModelKey "${M}" "disks"`"
-      ARCCONF="`readModelKey "${M}" "arc.serial"`"
+      DISKS="$(readModelKey "${M}" "disks")"
+      ARCCONF="$(readModelKey "${M}" "arc.serial")"
       if [ -n "${ARCCONF}" ]; then
         ARCAV="Arc"
       else
@@ -149,14 +149,14 @@ function arcMenu() {
       # Check id model is compatible with CPU
       COMPATIBLE=1
       if [ ${RESTRICT} -eq 1 ]; then
-        for F in "`readModelArray "${M}" "flags"`"; do
+        for F in "$(readModelArray "${M}" "flags")"; do
           if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
             COMPATIBLE=0
             FLGNEX=1
             break
           fi
         done
-        for F in "`readModelArray "${M}" "dt"`"; do
+        for F in "$(readModelArray "${M}" "dt")"; do
           if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
             COMPATIBLE=0
             FLGNEX=1
@@ -191,7 +191,7 @@ function arcMenu() {
   if [ "${MODEL}" != "${resp}" ]; then
     MODEL=${resp}
     # Check for DT and SAS Controller
-    DT="`readModelKey "${resp}" "dt"`"
+    DT="$(readModelKey "${resp}" "dt")"
     if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
       # There is no Raid/SCSI Support for DT Models
       WARNON=2
@@ -218,22 +218,22 @@ function arcMenu() {
 # Shows menu to user type one or generate randomly
 function arcbuild() {
   # Use Onlinemode
-  ONLINEMODE="`readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}"`"
+  ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
   # Add Onlinemode to old configs
   if [ -z "${ONLINEMODE}" ]; then
     writeConfigKey "arc.onlinemode" "true" "${USER_CONFIG_FILE}"
   fi
   # Read model values for arcbuild
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  PLATFORM="`readModelKey "${MODEL}" "platform"`"
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  PLATFORM="$(readModelKey "${MODEL}" "platform")"
   if [ "${ARCRECOVERY}" != "true" ]; then
     if [ "${ONLINEMODE}" = "true" ]; then
-      DSM_MODEL="`echo "${MODEL}" | jq -sRr @uri`"
+      DSM_MODEL="$(echo "${MODEL}" | jq -sRr @uri)"
       CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/overlayfs/opt/arpl/model-configs/${MODEL}.yml"
       if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
         rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
       fi
-      STATUS=`curl --insecure -s -w "%{http_code}" -L "${CONFIG_URL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml`
+      STATUS=$(curl --insecure -s -w "%{http_code}" -L "${CONFIG_URL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml)
       if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
         dialog --backtitle "`backtitle`" --title "Onlinemode" --aspect 18 \
           --msgbox "No updated Modelconfig found!" 0 0
@@ -243,7 +243,7 @@ function arcbuild() {
       fi
     fi
     # Select Build for DSM
-    ITEMS="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r`"
+    ITEMS="$(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r)"
     if [ -z "${1}" ]; then
       dialog --clear --no-items --backtitle "`backtitle`" \
         --menu "Choose a Build" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
@@ -259,13 +259,13 @@ function arcbuild() {
       writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
     fi
   fi
-  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+  KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
   if [ -z "{KVER}" ]; then
-    BUILD="`readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r | awk 'NR==1'`"
+    BUILD="$(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r | awk 'NR==1')"
     writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
-    BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-    KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+    BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+    KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
   fi
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
@@ -296,7 +296,7 @@ function arcbuild() {
     arcsettings
   else
     deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-    BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   fi
 }
 
@@ -304,7 +304,7 @@ function arcbuild() {
 # Make Arc Settings
 function arcsettings() {
   # Read model values for arcsettings
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   if [ "${ARCRECOVERY}" != "true" ] || [ "${ARCAV}" = "Arc" ]; then
     while true; do
       dialog --clear --backtitle "`backtitle`" \
@@ -317,14 +317,14 @@ function arcsettings() {
       [ -z "${resp}" ] && return
       if [ "${resp}" = "1" ]; then
         # Read valid serial from file
-        SN="`readModelKey "${MODEL}" "arc.serial"`"
+        SN="$(readModelKey "${MODEL}" "arc.serial")"
         writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
         writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
         break
       elif [ "${resp}" = "2" ]; then
         # Generate random serial
-        SN="`generateSerial "${MODEL}"`"
+        SN="$(generateSerial "${MODEL}")"
         writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
         break
@@ -332,11 +332,11 @@ function arcsettings() {
     done
   else
     # Generate random serial
-    SN="`generateSerial "${MODEL}"`"
+    SN="$(generateSerial "${MODEL}")"
     writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   fi
-  ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
+  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   DIRTY=1
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Model Configuration successful!" 0 0
@@ -347,8 +347,8 @@ function arcsettings() {
 ###############################################################################
 # Make Network and Disk Config
 function arcnetdisk() {
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  DT="`readModelKey "${MODEL}" "dt"`"
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  DT="$(readModelKey "${MODEL}" "dt")"
   # Get Network Config for Loader
   getnet
   # Only load getmap when Sata Controller are dedected and no DT Model is selected
@@ -365,7 +365,7 @@ function arcnetdisk() {
     --infobox "Configuration successful!" 0 0
   sleep 1
   DIRTY=1
-  CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${WARNON}" = "1" ]; then
     dialog --backtitle "`backtitle`" --title "Arc Warning" \
       --msgbox "WARN: Your Controller has more than 8 Disks connected. Max Disks per Controller: 8" 0 0
@@ -406,17 +406,17 @@ function arcnetdisk() {
 # Building Loader
 function make() {
   clear
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  PLATFORM="`readModelKey "${MODEL}" "platform"`"
-  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+  KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
   
   # Check if all addon exists
   while IFS=': ' read ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
     if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
       dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-        --msgbox "`printf "Addon %s not found!" "${ADDON}"`" 0 0
+        --msgbox "$(printf "Addon %s not found!" "${ADDON}")" 0 0
       return 1
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
@@ -424,14 +424,14 @@ function make() {
   # Check for existing files
   mkdir -p "${CACHE_PATH}/${MODEL}/${BUILD}"
   DSM_FILE="${CACHE_PATH}/${MODEL}/${BUILD}/dsm.tar"
-  DSM_MODEL="`echo "${MODEL}" | jq -sRr @uri`"
+  DSM_MODEL="$(echo "${MODEL}" | jq -sRr @uri)"
   # Clean old files
   rm -rf "${UNTAR_PAT_PATH}"
   rm -f "${DSM_FILE}"
   # Get new files
   DSM_LINK="${MODEL}/${BUILD}/dsm.tar"
   DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
-  STATUS=`curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}"`
+  STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
   if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
     dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
       --msgbox "No DSM Image found!" 0 0
@@ -440,15 +440,15 @@ function make() {
     mkdir -p "${UNTAR_PAT_PATH}"
     tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
     # Check zImage Hash
-    HASH="`sha256sum "${UNTAR_PAT_PATH}/zImage" | awk '{print$1}'`"
-    OLDHASH="`readConfigKey "zimage-hash" "${USER_CONFIG_FILE}"`"
+    HASH="$(sha256sum "${UNTAR_PAT_PATH}/zImage" | awk '{print$1}')"
+    OLDHASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
     if [ "${HASH}" != "${OLDHASH}" ]; then
       NEWIMAGE="true"
       writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
     fi
     # Check Ramdisk Hash
-    HASH="`sha256sum "${UNTAR_PAT_PATH}/rd.gz" | awk '{print$1}'`"
-    OLDHASH="`readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}"`"
+    HASH="$(sha256sum "${UNTAR_PAT_PATH}/rd.gz" | awk '{print$1}')"
+    OLDHASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
     if [ "${HASH}" != "${OLDHASH}" ]; then
       NEWIMAGE="true"
       writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
@@ -463,8 +463,8 @@ function make() {
       cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
     fi
     # Write out .pat variables
-    PAT_MD5_HASH=`cat "${UNTAR_PAT_PATH}/pat_hash"`
-    PAT_URL=`cat "${UNTAR_PAT_PATH}/pat_url"`
+    PAT_MD5_HASH=$(cat "${UNTAR_PAT_PATH}/pat_hash")
+    PAT_URL=$(cat "${UNTAR_PAT_PATH}/pat_url")
     writeConfigKey "arc.pathash" "${PAT_MD5_HASH}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
   elif [ ! -f "${DSM_FILE}" ]; then
@@ -497,7 +497,7 @@ function make() {
   # Build is done
   writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "1" "${USER_CONFIG_FILE}"
-  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   # Ask for Boot
   while true; do
     dialog --clear --backtitle "`backtitle`" \
@@ -526,15 +526,15 @@ function editUserConfig() {
       --editbox "${USER_CONFIG_FILE}" 0 0 2>"${TMP_PATH}/userconfig"
     [ $? -ne 0 ] && return
     mv "${TMP_PATH}/userconfig" "${USER_CONFIG_FILE}"
-    ERRORS=`yq eval "${USER_CONFIG_FILE}" 2>&1`
+    ERRORS=$(yq eval "${USER_CONFIG_FILE}" 2>&1)
     [ $? -eq 0 ] && break
     dialog --backtitle "`backtitle`" --title "Invalid YAML format" --msgbox "${ERRORS}" 0 0
   done
   OLDMODEL=${MODEL}
   OLDBUILD=${BUILD}
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-  SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+  SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
   if [ "${MODEL}" != "${OLDMODEL}" -o "${BUILD}" != "${OLDBUILD}" ]; then
     # Remove old files
     rm -f "${MOD_ZIMAGE_FILE}"
@@ -542,18 +542,18 @@ function editUserConfig() {
   fi
   DIRTY=1
   deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
 
 ###############################################################################
 # Shows option to manage addons
 function addonMenu() {
   # Read 'platform' and kernel version to check if addon exists
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-  PLATFORM="`readModelKey "${MODEL}" "platform"`"
-  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-  ALLADDONS="`availableAddons "${PLATFORM}" "${KVER}"`"
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
+  ALLADDONS="$(availableAddons "${PLATFORM}" "${KVER}")"
   # Read addons from user config
   unset ADDONS
   declare -A ADDONS
@@ -581,25 +581,25 @@ function addonMenu() {
     USERADDONS["${ADDON}"]=""
     writeConfigKey "addons.${ADDON}" "" "${USER_CONFIG_FILE}"
   done
-  ADDONSINFO="`readConfigEntriesArray "addons" "${USER_CONFIG_FILE}"`"
+  ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
   dialog --backtitle "`backtitle`" --title "Addons" \
     --msgbox "Addons selected:\n${ADDONSINFO}" 0 0
   DIRTY=1
   deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
 
 ###############################################################################
 # Permit user select the modules to include
 function modulesMenu() {
   NEXT="1"
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-  PLATFORM="`readModelKey "${MODEL}" "platform"`"
-  KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
   dialog --backtitle "`backtitle`" --title "Modules" --aspect 18 \
     --infobox "Reading modules" 0 0
-  ALLMODULES=`getAllModules "${PLATFORM}" "${KVER}"`
+  ALLMODULES=$(getAllModules "${PLATFORM}" "${KVER}")
   unset USERMODULES
   declare -A USERMODULES
   while IFS=': ' read KEY VALUE; do
@@ -637,7 +637,7 @@ function modulesMenu() {
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done <<<${ALLMODULES}
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       3)
         dialog --backtitle "`backtitle`" --title "Modules" \
@@ -646,7 +646,7 @@ function modulesMenu() {
         unset USERMODULES
         declare -A USERMODULES
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       4)
         rm -f "${TMP_PATH}/opts"
@@ -670,7 +670,7 @@ function modulesMenu() {
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       5)
         dialog --backtitle "`backtitle`" --title "Modules" \
@@ -680,7 +680,7 @@ function modulesMenu() {
         dialog --backtitle "`backtitle`" --title "Modules" \
            --msgbox "Modules:\n${LOADED}" 0 0
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       6)
         MSG=""
@@ -716,7 +716,7 @@ function modulesMenu() {
             --msgbox "File format not recognized!" 0 0
         fi
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       0)
         break
@@ -752,17 +752,17 @@ function cmdlineMenu() {
           --inputbox "Type a name of cmdline" 0 0 \
           2>${TMP_PATH}/resp
         [ $? -ne 0 ] && continue
-        NAME="`sed 's/://g' <"${TMP_PATH}/resp"`"
+        NAME="$(sed 's/://g' <"${TMP_PATH}/resp")"
         [ -z "${NAME}" ] && continue
         dialog --backtitle "`backtitle`" --title "User cmdline" \
           --inputbox "Type a value of '${NAME}' cmdline" 0 0 "${CMDLINE[${NAME}]}" \
           2>${TMP_PATH}/resp
         [ $? -ne 0 ] && continue
-        VALUE="`<"${TMP_PATH}/resp"`"
+        VALUE="$(<"${TMP_PATH}/resp")"
         CMDLINE[${NAME}]="${VALUE}"
         writeConfigKey "cmdline.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       2)
         if [ ${#CMDLINE[@]} -eq 0 ]; then
@@ -784,11 +784,11 @@ function cmdlineMenu() {
           deleteConfigKey "cmdline.${I}" "${USER_CONFIG_FILE}"
         done
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       3)
         while true; do
-          dialog --backtitle "$(backtitle)" --colors --title "$(TEXT "Cmdline")" \
+          dialog --backtitle "$(backtitle)" --colors --title "Cmdline" \
             --inputbox "$(TEXT "Please enter a serial number ")" 0 0 "" \
             2>${TMP_PATH}/resp
           [ $? -ne 0 ] && break 2
@@ -800,17 +800,17 @@ function cmdlineMenu() {
           fi
           # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
           break
-          dialog --backtitle "$(backtitle)" --colors --title "$(TEXT "Cmdline")" \
-            --yesno "$(TEXT "Invalid serial, continue?")" 0 0
+          dialog --backtitle "$(backtitle)" --colors --title "Cmdline" \
+            --yesno "Invalid serial, continue?" 0 0
           [ $? -eq 0 ] && break
         done
         SN="${SERIAL}"
         writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
         ;;
       4)
-        ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
-        for N in `seq 1 8`; do # Currently, only up to 8 are supported.  (<==> boot.sh L96, <==> lkm: MAX_NET_IFACES)
-          MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
+        ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
+        for N in $(seq 1 8); do # Currently, only up to 8 are supported.  (<==> boot.sh L96, <==> lkm: MAX_NET_IFACES)
+          MACR="$(cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g')"
           MACF=${CMDLINE["mac${N}"]}
           [ -n "${MACF}" ] && MAC=${MACF} || MAC=${MACR}
           RET=1
@@ -823,7 +823,7 @@ function cmdlineMenu() {
             MAC="`<"${TMP_PATH}/resp"`"
             [ -z "${MAC}" ] && MAC="`readConfigKey "device.mac${i}" "${USER_CONFIG_FILE}"`"
             [ -z "${MAC}" ] && MAC="${MACFS[$(expr ${i} - 1)]}"
-            MACF="`echo "${MAC}" | sed 's/://g'`"
+            MACF="$(echo "${MAC}" | sed 's/://g')"
             [ ${#MACF} -eq 12 ] && break
             dialog --backtitle "`backtitle`" --title "User cmdline" --msgbox "Invalid MAC" 0 0
           done
@@ -837,14 +837,14 @@ function cmdlineMenu() {
               --title "User cmdline" --progressbox "Changing MAC" 20 70
             /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "`backtitle`" \
               --title "User cmdline" --progressbox "Renewing IP" 20 70
-            IP=`ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p' | head -1`
+            IP=$(ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p' | head -1)
             dialog --backtitle "`backtitle`" --title "Alert" \
               --yesno "Continue to custom MAC?" 0 0
             [ $? -ne 0 ] && break
           fi
         done
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       5)
         ITEMS=""
@@ -905,7 +905,7 @@ function synoinfoMenu() {
         writeConfigKey "synoinfo.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
         DIRTY=1
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       2)
         if [ ${#SYNOINFO[@]} -eq 0 ]; then
@@ -928,7 +928,7 @@ function synoinfoMenu() {
         done
         DIRTY=1
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       3)
         ITEMS=""
@@ -951,7 +951,7 @@ function keymapMenu() {
     "dvorak" "fgGIod" "neo" "olpc" "qwerty" "qwertz" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
-  LAYOUT="`<${TMP_PATH}/resp`"
+  LAYOUT="$(<${TMP_PATH}/resp)"
   OPTIONS=""
   while read KM; do
     OPTIONS+="${KM::-7} "
@@ -972,7 +972,7 @@ function keymapMenu() {
 # Shows usb menu to user
 function usbMenu() {
   NEXT="1"
-  BUILDDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ -n "${CONFDONE}" ]; then
     while true; do
       dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
@@ -981,10 +981,10 @@ function usbMenu() {
         0 "Exit" \
         2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
-      case "`<${TMP_PATH}/resp`" in
+      case "$(<${TMP_PATH}/resp)" in
         1)
-          MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-          PLATFORM=`readModelKey "${MODEL}" "platform"`
+          MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+          PLATFORM=$(readModelKey "${MODEL}" "platform")
           if [ "${PLATFORM}" = "broadwellnk" ]; then
             writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
             writeConfigKey "synoinfo.usbportcfg" "0xff0000" "${USER_CONFIG_FILE}"
@@ -998,8 +998,8 @@ function usbMenu() {
           fi
           ;;
         2)
-          MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-          PLATFORM=`readModelKey "${MODEL}" "platform"`
+          MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+          PLATFORM=$(readModelKey "${MODEL}" "platform")
           if [ "${PLATFORM}" = "broadwellnk" ]; then
             deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
             deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
@@ -1019,7 +1019,7 @@ function usbMenu() {
 # Shows backup menu to user
 function backupMenu() {
   NEXT="1"
-  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ -n "${BUILDDONE}" ]; then
     while true; do
       dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
@@ -1032,7 +1032,7 @@ function backupMenu() {
         0 "Exit" \
         2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
-      case "`<${TMP_PATH}/resp`" in
+      case "$(<${TMP_PATH}/resp)" in
         1)
           dialog --backtitle "`backtitle`" --title "Backup Config" --aspect 18 \
             --infobox "Backup Config to ${BACKUPDIR}" 0 0
@@ -1065,24 +1065,24 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
               --msgbox "No Config Backup found" 0 0
           fi
-          MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-          OLDBUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+          OLDBUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
           while read LINE; do
             if [ "${LINE}" = "${OLDBUILD}" ]; then
               writeConfigKey "build" "${OLDBUILD}" "${USER_CONFIG_FILE}"
-              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
               break
             elif [ "${LINE}" != "${OLDBUILD}" ]; then
               writeConfigKey "build" "${LINE}" "${USER_CONFIG_FILE}"
-              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
             fi
           done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
           ARCRECOVERY="true"
           ONLYVERSION="true"
           arcbuild
-          CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+          CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
           deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           ;;
         3)
           if ! tty | grep -q "/dev/pts"; then
@@ -1103,7 +1103,7 @@ function backupMenu() {
             return
           fi
           if [ -z "${SSH_TTY}" ]; then  # web
-            IP_HEAD="`ip route show 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`"
+            IP_HEAD="$(ip route show 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)"
             echo "http://${IP_HEAD}/arc-backup.img.gz"  > ${TMP_PATH}/resp
             echo "            ↑                  " >> ${TMP_PATH}/resp
             echo "Click on the address above to download." >> ${TMP_PATH}/resp
@@ -1132,7 +1132,7 @@ function backupMenu() {
           mkdir -p ${TMP_PATH}
           pushd ${TMP_PATH}
           rz -be
-          for F in `ls -A`; do
+          for F in $(ls -A); do
             USER_FILE="${F}"
             [ "${F##*.}" = "zip" -a `unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$"` -eq 1 ] && IFTOOL="zip"
             [ "${F##*.}" = "gz" -a "${F#*.}" = "img.gz" ] && IFTOOL="gzip"
@@ -1155,7 +1155,7 @@ function backupMenu() {
               gzip -dc "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
             fi
             dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
-              --yesno "`printf "Restore Loader Disk successful!\n%s\nReboot?" "${USER_FILE}"`" 0 0
+              --yesno "$(printf "Restore Loader Disk successful!\n%s\nReboot?" "${USER_FILE}")" 0 0
             [ $? -ne 0 ] && continue
             exec reboot
             exit
@@ -1165,7 +1165,7 @@ function backupMenu() {
           dialog --backtitle "`backtitle`" --title "Backup Config with Code" \
               --infobox "Write down your Code for Restore!" 0 0
           if [ -f "${USER_CONFIG_FILE}" ]; then
-            GENHASH=`cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-`
+            GENHASH=$(cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)
             dialog --backtitle "`backtitle`" --title "Backup Config with Code" --msgbox "Your Code: ${GENHASH}" 0 0
           else
             dialog --backtitle "`backtitle`" --title "Backup Config with Code" --msgbox "No Config for Backup found!" 0 0
@@ -1178,30 +1178,30 @@ function backupMenu() {
               2>${TMP_PATH}/resp
             RET=$?
             [ ${RET} -ne 0 ] && break 2
-            GENHASH="`<"${TMP_PATH}/resp"`"
+            GENHASH="$(<"${TMP_PATH}/resp")"
             [ ${#GENHASH} -eq 9 ] && break
             dialog --backtitle "`backtitle`" --title "Restore with Code" --msgbox "Invalid Code" 0 0
           done
           rm -f ${TMP_PATH}/user-config.yml
           curl -k https://dpaste.com/${GENHASH}.txt >${TMP_PATH}/user-config.yml
           cp -f ${TMP_PATH}/user-config.yml "${USER_CONFIG_FILE}"
-          MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-          OLDBUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+          OLDBUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
           while read LINE; do
             if [ "${LINE}" = "${OLDBUILD}" ]; then
               writeConfigKey "build" "${OLDBUILD}" "${USER_CONFIG_FILE}"
-              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
               break
             elif [ "${LINE}" != "${OLDBUILD}" ]; then
               writeConfigKey "build" "${LINE}" "${USER_CONFIG_FILE}"
-              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
             fi
           done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
           ARCRECOVERY="true"
           ONLYVERSION="true"
           arcbuild
-          CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
-          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+          CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           dialog --backtitle "`backtitle`" --title "Restore with Code" --aspect 18 \
               --msgbox "Restore complete" 0 0
           ;;
@@ -1230,24 +1230,24 @@ function backupMenu() {
             dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
               --msgbox "No Config Backup found" 0 0
           fi
-          MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-          OLDBUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+          OLDBUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
           while read LINE; do
             if [ "${LINE}" = "${OLDBUILD}" ]; then
               writeConfigKey "build" "${OLDBUILD}" "${USER_CONFIG_FILE}"
-              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
               break
             elif [ "${LINE}" != "${OLDBUILD}" ]; then
               writeConfigKey "build" "${LINE}" "${USER_CONFIG_FILE}"
-              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
             fi
           done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
           ARCRECOVERY="true"
           ONLYVERSION="true"
           arcbuild
-          CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+          CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
           deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           ;;
         2)
           if ! tty | grep -q "/dev/pts"; then
@@ -1264,7 +1264,7 @@ function backupMenu() {
           mkdir -p ${TMP_PATH}
           pushd ${TMP_PATH}
           rz -be
-          for F in `ls -A`; do
+          for F in $(ls -A); do
             USER_FILE="${F}"
             [ "${F##*.}" = "zip" -a `unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$"` -eq 1 ] && IFTOOL="zip"
             [ "${F##*.}" = "gz" -a "${F#*.}" = "img.gz" ] && IFTOOL="gzip"
@@ -1273,7 +1273,7 @@ function backupMenu() {
           popd
           if [ -z "${IFTOOL}" -o -z "${TMP_PATH}/${USER_FILE}" ]; then
             dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
-              --msgbox "`printf "Not a valid .zip/.img.gz file, please try again!" "${USER_FILE}"`" 0 0
+              --msgbox "$(printf "Not a valid .zip/.img.gz file, please try again!" "${USER_FILE}")" 0 0
           else
             dialog --backtitle "`backtitle`" --title "Restore Loader disk" \
                 --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
@@ -1287,7 +1287,7 @@ function backupMenu() {
               gzip -dc "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
             fi
             dialog --backtitle "`backtitle`" --title "Restore Loader disk" --aspect 18 \
-              --yesno "`printf "Restore Loader Disk successful!\n%s\nReboot?" "${USER_FILE}"`" 0 0
+              --yesno "$(printf "Restore Loader Disk successful!\n%s\nReboot?" "${USER_FILE}")" 0 0
             [ $? -ne 0 ] && continue
             reboot
             exit
@@ -1307,23 +1307,23 @@ function backupMenu() {
           rm -f ${TMP_PATH}/user-config.yml
           curl -k https://dpaste.com/${GENHASH}.txt >${TMP_PATH}/user-config.yml
           cp -f ${TMP_PATH}/user-config.yml "${USER_CONFIG_FILE}"
-          MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-          OLDBUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+          MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+          OLDBUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
           while read LINE; do
             if [ "${LINE}" = "${OLDBUILD}" ]; then
               writeConfigKey "build" "${OLDBUILD}" "${USER_CONFIG_FILE}"
-              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
               break
             elif [ "${LINE}" != "${OLDBUILD}" ]; then
               writeConfigKey "build" "${LINE}" "${USER_CONFIG_FILE}"
-              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
             fi
           done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
           ARCRECOVERY="true"
           ONLYVERSION="true"
           arcbuild
-          CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
-          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+          CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           dialog --backtitle "`backtitle`" --title "Restore with Code" --aspect 18 \
               --msgbox "Restore complete" 0 0
           ;;
@@ -1337,10 +1337,10 @@ function backupMenu() {
 # Shows update menu to user
 function updateMenu() {
   NEXT="1"
-  CONFDONE="`readConfigKey "arc.confdone" "${USER_CONFIG_FILE}"`"
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ -n "${CONFDONE}" ]; then
-    PLATFORM="`readModelKey "${MODEL}" "platform"`"
-    KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
+    PLATFORM="$(readModelKey "${MODEL}" "platform")"
+    KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
     while true; do
       dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
         1 "Full upgrade Loader" \
@@ -1351,12 +1351,12 @@ function updateMenu() {
         0 "Exit" \
         2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
-      case "`<${TMP_PATH}/resp`" in
+      case "$(<${TMP_PATH}/resp)" in
         1)
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --infobox "Checking latest version" 0 0
           ACTUALVERSION="v${ARPL_VERSION}"
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
+          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1370,8 +1370,8 @@ function updateMenu() {
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --infobox "Downloading latest version ${TAG}" 0 0
           # Download update file
-          STATUS=`curl --insecure -w "%{http_code}" -L \
-            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip"`
+          STATUS=$(curl --insecure -w "%{http_code}" -L \
+            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
               --msgbox "Error downloading update file" 0 0
@@ -1384,7 +1384,7 @@ function updateMenu() {
             continue
           fi
           if [ -f "${USER_CONFIG_FILE}" ]; then
-            GENHASH=`cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-`
+            GENHASH=$(cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --msgbox "Backup config successful!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
           else
@@ -1395,7 +1395,7 @@ function updateMenu() {
             --infobox "Installing new Image" 0 0
           # Process complete update
           umount /mnt/p1 /mnt/p2 /mnt/p3
-          dd if="${TMP_PATH}/arc.img" of=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1` bs=1M conv=fsync
+          dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1) bs=1M conv=fsync
           # Ask for Boot
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
@@ -1407,7 +1407,7 @@ function updateMenu() {
           dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --infobox "Checking latest version" 0 0
           ACTUALVERSION="v${ARPL_VERSION}"
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
+          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1421,8 +1421,8 @@ function updateMenu() {
           dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --infobox "Downloading latest version ${TAG}" 0 0
           # Download update file
-          STATUS=`curl --insecure -w "%{http_code}" -L \
-            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip"`
+          STATUS=$(curl --insecure -w "%{http_code}" -L \
+            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip")
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
               --msgbox "Error downloading update file" 0 0
@@ -1454,8 +1454,8 @@ function updateMenu() {
               mkdir -p "${VALUE}"
               tar -zxf "${TMP_PATH}/`basename "${KEY}"`.tgz" -C "${VALUE}"
             else
-              mkdir -p "`dirname "${VALUE}"`"
-              mv "${TMP_PATH}/`basename "${KEY}"`" "${VALUE}"
+              mkdir -p "$(dirname "${VALUE}")"
+              mv "${TMP_PATH}/$(basename "${KEY}")" "${VALUE}"
             fi
           done < <(readConfigMap "replace" "${TMP_PATH}/update-list.yml")
           dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
@@ -1467,7 +1467,7 @@ function updateMenu() {
         3)
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
             --infobox "Checking latest version" 0 0
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
+          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1475,7 +1475,7 @@ function updateMenu() {
           fi
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
             --infobox "Downloading latest version: ${TAG}" 0 0
-          STATUS=`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o ${TMP_PATH}/addons.zip`
+          STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o ${TMP_PATH}/addons.zip)
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
               --msgbox "Error downloading new version" 0 0
@@ -1490,22 +1490,22 @@ function updateMenu() {
             --infobox "Installing new addons" 0 0
           rm -Rf "${ADDONS_PATH}/"*
           [ -f ${TMP_PATH}/addons/VERSION ] && cp -f ${TMP_PATH}/addons/VERSION ${ADDONS_PATH}/
-          for PKG in `ls ${TMP_PATH}/addons/*.addon`; do
-            ADDON=`basename ${PKG} | sed 's|.addon||'`
+          for PKG in $(ls ${TMP_PATH}/addons/*.addon); do
+            ADDON=$(basename ${PKG} | sed 's|.addon||')
             rm -rf "${ADDONS_PATH}/${ADDON}"
             mkdir -p "${ADDONS_PATH}/${ADDON}"
             tar -xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
           done
           DIRTY=1
           deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
             --msgbox "Addons updated with success! ${TAG}" 0 0
           ;;
         4)
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
             --infobox "Checking latest version" 0 0
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
+          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1513,7 +1513,7 @@ function updateMenu() {
           fi
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
             --infobox "Downloading latest version: ${TAG}" 0 0
-          STATUS=`curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o ${TMP_PATH}/rp-lkms.zip`
+          STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o ${TMP_PATH}/rp-lkms.zip)
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
               --msgbox "Error downloading latest version" 0 0
@@ -1525,14 +1525,14 @@ function updateMenu() {
           unzip ${TMP_PATH}/rp-lkms.zip -d "${LKM_PATH}" >/dev/null 2>&1
           DIRTY=1
           deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
             --msgbox "LKMs updated with success! ${TAG}" 0 0
           ;;
         5)
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --infobox "Checking latest version" 0 0
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
+          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1540,7 +1540,7 @@ function updateMenu() {
           fi
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --infobox "Downloading latest version" 0 0
-          STATUS=`curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip"`
+          STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
               --msgbox "Error downloading latest version" 0 0
@@ -1557,7 +1557,7 @@ function updateMenu() {
           fi
           DIRTY=1
           deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-          BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --msgbox "Modules updated to ${TAG} with success!" 0 0
           ;;
@@ -1571,12 +1571,12 @@ function updateMenu() {
         0 "Exit" \
         2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
-      case "`<${TMP_PATH}/resp`" in
+      case "$(<${TMP_PATH}/resp)" in
         1)
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --infobox "Checking latest version" 0 0
           ACTUALVERSION="v${ARPL_VERSION}"
-          TAG="`curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}'`"
+          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
           if [ $? -ne 0 -o -z "${TAG}" ]; then
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
               --msgbox "Error checking new version" 0 0
@@ -1590,8 +1590,8 @@ function updateMenu() {
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --infobox "Downloading latest version ${TAG}" 0 0
           # Download update file
-          STATUS=`curl --insecure -w "%{http_code}" -L \
-            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o ${TMP_PATH}/arc-${TAG}.img.zip`
+          STATUS=$(curl --insecure -w "%{http_code}" -L \
+            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o ${TMP_PATH}/arc-${TAG}.img.zip)
           if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
               --msgbox "Error downloading update file" 0 0
@@ -1604,7 +1604,7 @@ function updateMenu() {
             continue
           fi
           if [ -f "${USER_CONFIG_FILE}" ]; then
-            GENHASH=`cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-`
+            GENHASH=$(cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)
             dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --msgbox "Backup config successful!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
           else
@@ -1615,7 +1615,7 @@ function updateMenu() {
             --infobox "Installing new Image" 0 0
           # Process complete update
           umount /mnt/p1 /mnt/p2 /mnt/p3
-          dd if="${TMP_PATH}/arc.img" of=`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1` bs=1M conv=fsync
+          dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1) bs=1M conv=fsync
           # Ask for Boot
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
@@ -1632,12 +1632,12 @@ function updateMenu() {
 ###############################################################################
 # Show Storagemenu to user
 function storageMenu() {
-  MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-  DT="`readModelKey "${MODEL}" "dt"`"
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  DT="$(readModelKey "${MODEL}" "dt")"
   # Get Portmap for Loader
   getmap
   deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
 
 ###############################################################################
@@ -1646,7 +1646,7 @@ function networkMenu() {
   # Get Network Config for Loader
   getnet
   deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
 
 ###############################################################################
@@ -1793,44 +1793,44 @@ function tryRecoveryDSM() {
     MODEL=""
     BUILD=""
     if [ -f "${DSMROOT_PATH}/.syno/patch/VERSION" ]; then
-      eval `cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep unique`
-      eval `cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep base`
+      eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep unique)
+      eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep base)
       if [ -n "${unique}" ] ; then
         while read F; do
-          M="`basename ${F}`"
+          M="$(basename ${F})"
           M="${M::-4}"
-          UNIQUE=`readModelKey "${M}" "unique"`
+          UNIQUE=$(readModelKey "${M}" "unique")
           [ "${unique}" = "${UNIQUE}" ] || continue
           # Found
           writeConfigKey "model" "${M}" "${USER_CONFIG_FILE}"
         done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
-	      MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
+	      MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
         if [ -n "${MODEL}" ]; then
           OLDBUILD="${base}"
           while read LINE; do
             if [ "${LINE}" = "${OLDBUILD}" ]; then
               writeConfigKey "build" "${OLDBUILD}" "${USER_CONFIG_FILE}"
-              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
               break
             elif [ "${LINE}" != "${OLDBUILD}" ]; then
               writeConfigKey "build" "${LINE}" "${USER_CONFIG_FILE}"
-              BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
             fi
           done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
           if [ -n "${BUILD}" ]; then
             cp "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
             cp "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
             MSG="Found a installation:\nModel: ${MODEL}\nBuildnumber: ${BUILD}"
-            SN=`_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf"`
+            SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
             if [ -n "${SN}" ]; then
-              SNARC="`readModelKey "${MODEL}" "arc.serial"`"
+              SNARC="$(readModelKey "${MODEL}" "arc.serial")"
               writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
               MSG+="\nSerial: ${SN}"
               if [ "${SN}" = "${SNARC}" ]; then
                 writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
                 writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
               fi
-              ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
+              ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
               MSG+="\nArc Patch: ${ARCPATCH}"
             fi
             dialog --backtitle "`backtitle`" --title "Try to recover DSM" \
@@ -1860,7 +1860,7 @@ function downgradeMenu() {
   [ $? -ne 0 ] && return
   (
     mkdir -p ${TMP_PATH}/sdX1
-    for I in `ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1`; do
+    for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
       mount ${I} ${TMP_PATH}/sdX1
       [ -f "${TMP_PATH}/sdX1/etc/VERSION" ] && rm -f "${TMP_PATH}/sdX1/etc/VERSION"
       [ -f "${TMP_PATH}/sdX1/etc.defaults/VERSION" ] && rm -f "${TMP_PATH}/sdX1/etc.defaults/VERSION"
@@ -1870,7 +1870,7 @@ function downgradeMenu() {
     rm -rf ${TMP_PATH}/sdX1
   ) | dialog --backtitle "`backtitle`" --title "Allow downgrade installation" \
       --progressbox "Removing ..." 20 70
-  MSG="$(TEXT "Remove VERSION file for all disks completed.")"
+  MSG="Remove VERSION file for all disks completed."
   dialog --backtitle "`backtitle`" --colors --aspect 18 \
     --msgbox "${MSG}" 0 0
 }
@@ -1880,7 +1880,7 @@ function downgradeMenu() {
 function paturl() {
   # output pat download link
   if [ ! -f "${TMP_PATH}/patdownloadurl" ]; then
-    echo "`readModelKey "${MODEL}" "builds.${BUILD}.pat.url"`" >"${TMP_PATH}/patdownloadurl"
+    echo "$(readModelKey "${MODEL}" "builds.${BUILD}.pat.url")" >"${TMP_PATH}/patdownloadurl"
   fi
   dialog --backtitle "`backtitle`" --title "*.pat download link" \
     --editbox "${TMP_PATH}/patdownloadurl" 0 0
@@ -1891,7 +1891,7 @@ function paturl() {
 function resetPassword() {
   SHADOW_FILE=""
   mkdir -p ${TMP_PATH}/sdX1
-  for I in `ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1`; do
+  for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
     mount ${I} ${TMP_PATH}/sdX1
     if [ -f "${TMP_PATH}/sdX1/etc/shadow" ]; then
       cp "${TMP_PATH}/sdX1/etc/shadow" "${TMP_PATH}/shadow_bak"
@@ -1906,27 +1906,27 @@ function resetPassword() {
       --msgbox "No DSM found in the currently inserted disks!" 0 0
     return
   fi
-  ITEMS="`cat ${SHADOW_FILE} | awk -F ':' '{if ($2 != "*" && $2 != "!!") {print $1;}}'`"
+  ITEMS="$(cat ${SHADOW_FILE} | awk -F ':' '{if ($2 != "*" && $2 != "!!") {print $1;}}')"
   dialog --clear --no-items --backtitle "`backtitle`" --title "Reset DSM Password" \
         --menu "Choose a user name" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
   USER=$(<${TMP_PATH}/resp)
   [ -z "${USER}" ] && return
-  OLDPASSWD=`cat ${SHADOW_FILE} | grep "^${USER}:" | awk -F ':' '{print $2}'`
+  OLDPASSWD=$(cat ${SHADOW_FILE} | grep "^${USER}:" | awk -F ':' '{print $2}')
 
   while true; do
     dialog --backtitle "`backtitle`" --title "Reset DSM Password" \
       --inputbox "`printf "Type a new password for user '%s'" "${USER}"`" 0 0 "${CMDLINE[${NAME}]}" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break 2
-    VALUE="`<"${TMP_PATH}/resp"`"
+    VALUE="$(<"${TMP_PATH}/resp")"
     [ -n "${VALUE}" ] && break
     dialog --backtitle "`backtitle`" --title "Reset syno system password" --msgbox "Invalid password" 0 0
   done
-  NEWPASSWD=`python -c "import crypt,getpass;pw=\"${VALUE}\";print(crypt.crypt(pw))"`
+  NEWPASSWD=$(python -c "import crypt,getpass;pw=\"${VALUE}\";print(crypt.crypt(pw))")
   (
     mkdir -p ${TMP_PATH}/sdX1
-    for I in `ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1`; do
+    for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
       mount ${I} ${TMP_PATH}/sdX1
       sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "${TMP_PATH}/sdX1/etc/shadow"
       sync
@@ -1948,7 +1948,7 @@ function mptFix() {
   [ $? -ne 0 ] && return
   deleteConfigKey "modules.scsi_transport_sas" "${USER_CONFIG_FILE}"
   deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-  BUILDDONE="`readConfigKey "arc.builddone" "${USER_CONFIG_FILE}"`"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
 
 ###############################################################################
@@ -1977,7 +1977,7 @@ function formatdisks() {
   while read POSITION NAME; do
     [ -z "${POSITION}" -o -z "${NAME}" ] && continue
     echo "${POSITION}" | grep -q "${LOADER_DEVICE_NAME}" && continue
-    ITEMS+="`printf "%s %s off " "${POSITION}" "${NAME}"`"
+    ITEMS+="$(printf "%s %s off " "${POSITION}" "${NAME}")"
   done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd*" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
   dialog --backtitle "`backtitle`" --title "Format disk" \
     --checklist "Advanced" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
@@ -1991,11 +1991,11 @@ function formatdisks() {
   dialog --backtitle "`backtitle`" --title "Format disk" \
       --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return
-  if [ `ls /dev/md* | wc -l` -gt 0 ]; then
+  if [ $(ls /dev/md* | wc -l) -gt 0 ]; then
     dialog --backtitle "`backtitle`" --title "Format disk" \
         --yesno "Warning:\nThe current hds is in raid, do you still want to format them?" 0 0
     [ $? -ne 0 ] && return
-    for I in `ls /dev/md*`; do
+    for I in $(ls /dev/md*); do
       mdadm -S ${I}
     done
   fi
