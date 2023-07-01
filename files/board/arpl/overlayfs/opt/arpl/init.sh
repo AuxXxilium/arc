@@ -8,7 +8,7 @@ set -e
 CNT=3
 while true; do
   [ ${CNT} -eq 0 ] && break
-  LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
+  LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
   [ -n "${LOADER_DISK}" ] && break
   CNT=$((${CNT}-1))
   sleep 1
@@ -50,7 +50,7 @@ rm -rf ~/.bash_history
 ln -s ${CACHE_PATH}/.bash_history ~/.bash_history
 touch ~/.bash_history
 if ! grep -q "arc.sh" ~/.bash_history; then
-  echo "arc.sh " >> ~/.bash_history
+  echo "arc.sh " >>~/.bash_history
 fi
 # Check if exists directories into P3 partition, if yes remove and link it
 if [ -d "${CACHE_PATH}/model-configs" ]; then
@@ -93,15 +93,15 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
 fi
 
 # Get MAC address
-ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
+ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
 for N in $(seq 1 ${#ETHX[@]}); do
-  MACR="`cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g'`"
-  MACF="`readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}"`"
+  MACR="$(cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g')"
+  MACF="$(readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}")"
   # Initialize with real MAC
   writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
     MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-    echo "`printf "Setting %s MAC to %s" "${ETHX[$(expr ${N} - 1)]}" "${MAC}"`"
+    echo "$(printf "Setting %s MAC to %s" "${ETHX[$(expr ${N} - 1)]}" "${MAC}")"
     ip link set dev ${ETHX[$(expr ${N} - 1)]} address ${MAC} >/dev/null 2>&1
   elif [ -z "${MACF}" ]; then
     # Write real Mac to cmdline config
@@ -117,10 +117,10 @@ done
 # Get the VID/PID if we are in USB
 VID="0x0000"
 PID="0x0000"
-BUS=`udevadm info --query property --name ${LOADER_DISK} | grep BUS | cut -d= -f2`
+BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep BUS | cut -d= -f2)
 if [ "${BUS}" = "usb" ]; then
-  VID="0x`udevadm info --query property --name ${LOADER_DISK} | grep ID_VENDOR_ID | cut -d= -f2`"
-  PID="0x`udevadm info --query property --name ${LOADER_DISK} | grep ID_MODEL_ID | cut -d= -f2`"
+  VID="0x$(udevadm info --query property --name ${LOADER_DISK} | grep ID_VENDOR_ID | cut -d= -f2)"
+  PID="0x$(udevadm info --query property --name ${LOADER_DISK} | grep ID_MODEL_ID | cut -d= -f2)"
 elif [ "${BUS}" != "ata" ]; then
   die "Loader disk neither USB or DoM"
 fi
@@ -139,18 +139,18 @@ fi
 echo ")"
 
 # Check if partition 3 occupies all free space, resize if needed
-LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
-SIZEOFDISK=`cat /sys/block/${LOADER_DEVICE_NAME}/size`
-ENDSECTOR=$((`fdisk -l ${LOADER_DISK} | awk '/'${LOADER_DEVICE_NAME}3'/{print$3}'`+1))
+LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
+SIZEOFDISK=$(cat /sys/block/${LOADER_DEVICE_NAME}/size)
+ENDSECTOR=$(($(fdisk -l ${LOADER_DISK} | awk '/'${LOADER_DEVICE_NAME}3'/{print$3}')+1))
 if [ ${SIZEOFDISK} -ne ${ENDSECTOR} ]; then
-  echo -e "\033[1;36m`printf "Resizing %s" "${LOADER_DISK}3"`\033[0m"
+  echo -e "\033[1;36m$(printf "Resizing %s" "${LOADER_DISK}3")\033[0m"
   echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${LOADER_DISK}" >"${LOG_FILE}" 2>&1 || dieLog
   resize2fs ${LOADER_DISK}3 >"${LOG_FILE}" 2>&1 || dieLog
 fi
 
 # Load keymap name
-LAYOUT="`readConfigKey "layout" "${USER_CONFIG_FILE}"`"
-KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
+LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
+KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 
 # Loads a keymap if is valid
 if [ -f /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz ]; then
@@ -174,12 +174,12 @@ if [ ${BOOT} -eq 1 ]; then
 fi
 
 # Wait for an IP
-echo "`printf "Detected %s NIC, Waiting IP." "${#ETHX[@]}"`"
+echo "$(printf "Detected %s NIC, Waiting IP." "${#ETHX[@]}")"
 for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
   COUNT=0
   echo -en "${ETHX[${N}]}: "
   while true; do
-    if [ -z "`ip link show ${ETHX[${N}]} | grep 'UP'`" ]; then
+    if [ -z "$(ip link show ${ETHX[${N}]} | grep 'UP')" ]; then
       echo -en "\r${ETHX[${N}]}: DOWN\n"
       break
     fi
@@ -188,9 +188,9 @@ for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
       break
     fi
     COUNT=$((${COUNT}+5))
-    IP=`ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p'`
+    IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
     if [ -n "${IP}" ]; then
-      echo -en "\r${ETHX[${N}]}: `printf "Access \033[1;34mhttp://%s:7681\033[0m to connect via web terminal." "${IP}"`\n"
+      echo -en "\r${ETHX[${N}]}: $(printf "Access \033[1;34mhttp://%s:7681\033[0m to connect via web terminal." "${IP}")\n"
       break
     fi
     echo -n "."
@@ -207,7 +207,7 @@ echo -e "Default SSH Root password is \033[1;34marc\033[0m"
 echo
 
 # Check memory
-RAM=`free -m | awk '/Mem:/{print$2}'`
+RAM=$(free -m | awk '/Mem:/{print$2}')
 if [ ${RAM} -le 3500 ]; then
   echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of memory.\033[0m\n"
 fi
