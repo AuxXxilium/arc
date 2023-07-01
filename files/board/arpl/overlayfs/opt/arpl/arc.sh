@@ -1703,7 +1703,7 @@ function sysinfo() {
   TEXT+="\nHypervisor: \Zb${HYPERVISOR}\Zn"
   fi
   TEXT+="\nVendor: \Zb${VENDOR}\Zn"
-  TEXT+="\nCPU | Cores @ Clock: \Zb${CPUINFO}\Zn | \Zb${CPUCORES}\Zn @ \Zb${CPUFREQ}\Zn"
+  TEXT+="\nCPU | Cores: \Zb${CPUINFO}\Zn | \Zb${CPUCORES} @ ${CPUFREQ}\Zn"
   TEXT+="\nRAM: \Zb$((RAMTOTAL /1024))GB\Zn"
   TEXT+="\nNetwork: \Zb${NETRL_NUM} Adapter\Zn"
   TEXT+="\nIP(s): \Zb${IPLIST}\Zn\n"
