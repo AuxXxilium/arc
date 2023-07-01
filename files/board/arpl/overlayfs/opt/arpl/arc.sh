@@ -609,10 +609,11 @@ function modulesMenu() {
   while true; do
     dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
       1 "Show selected Modules" \
-      2 "Select all Modules" \
-      3 "Deselect all Modules" \
-      4 "Choose Modules to include" \
-      5 "Add external module" \
+      2 "Select loaded Modules" \
+      3 "Select all Modules" \
+      4 "Deselect all Modules" \
+      5 "Choose Modules to include" \
+      6 "Add external module" \
       0 "Exit" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break
@@ -626,6 +627,23 @@ function modulesMenu() {
           --msgbox "${ITEMS}" 0 0
         ;;
       2)
+        dialog --backtitle "$(backtitle)" --colors --title "$(TEXT "Modules")" \
+          --infobox "$(TEXT "Selecting loaded modules")" 0 0
+        KOLIST=""
+        for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
+          KOLIST+="$(getdepends ${PLATFORM} ${KVER} ${I}) ${I} "
+        done
+        KOLIST=($(echo ${KOLIST} | tr ' ' '\n' | sort -u))
+        unset USERMODULES
+        declare -A USERMODULES
+        writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+        for ID in ${KOLIST[@]}; do
+          USERMODULES["${ID}"]=""
+          writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+        done
+        DIRTY=1
+        ;;
+      3)
         dialog --backtitle "`backtitle`" --title "Modules" \
            --infobox "Selecting all modules" 0 0
         unset USERMODULES
@@ -638,7 +656,7 @@ function modulesMenu() {
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      3)
+      4)
         dialog --backtitle "`backtitle`" --title "Modules" \
            --infobox "Deselecting all modules" 0 0
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
@@ -647,7 +665,7 @@ function modulesMenu() {
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      4)
+      5)
         rm -f "${TMP_PATH}/opts"
         while read ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
@@ -671,7 +689,7 @@ function modulesMenu() {
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      5)
+      6)
         MSG=""
         MSG+="This function is experimental and dangerous. If you don't know much, please exit.\n"
         MSG+="The imported .ko of this function will be implanted into the corresponding arch's modules package, which will affect all models of the arch.\n"
