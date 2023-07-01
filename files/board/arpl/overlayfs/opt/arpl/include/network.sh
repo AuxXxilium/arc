@@ -1,12 +1,12 @@
 # Get Network Config for Loader
 function getnet() {
-  ARCPATCH="`readConfigKey "arc.patch" "${USER_CONFIG_FILE}"`"
+  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   writeConfigKey "cmdline.netif_num" "${NETNUM}" "${USER_CONFIG_FILE}"
   # Get MAC address
-  ETHX=(`ls /sys/class/net/ | grep eth`)  # real network cards list
+  ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
   for N in $(seq 1 ${#ETHX[@]}); do
     # Get real Mac that is written to config while Init
-    MACR="`readConfigKey "device.mac${N}" "${USER_CONFIG_FILE}"`"
+    MACR="$(readConfigKey "device.mac${N}" "${USER_CONFIG_FILE}")"
     # Write real MAC to cmdline config
     writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   done
@@ -18,9 +18,9 @@ function getnet() {
     touch "${TMP_PATH}/opts"
     ARCMACNUM=1
     while true; do
-      ARCMAC="`readModelKey "${MODEL}" "arc.mac${ARCMACNUM}"`"
+      ARCMAC="$(readModelKey "${MODEL}" "arc.mac${ARCMACNUM}")"
       if [ -n "${ARCMAC}" ]; then
-        echo "${ARCMAC} mac${ARCMACNUM}" >> "${TMP_PATH}/opts"
+        echo "${ARCMAC} mac${ARCMACNUM}" >>"${TMP_PATH}/opts"
         ARCMACNUM=$((${ARCMACNUM}+1))
       else
         break
@@ -45,5 +45,5 @@ function getnet() {
 }
 
 # Get actual IP and NETIF_NUM
-IP=`ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1`
-NETNUM=`lshw -class network -short | grep -ie "eth[0-9]" | wc -l`
+IP=$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)
+NETNUM=$(lshw -class network -short | grep -ie "eth[0-9]" | wc -l)
