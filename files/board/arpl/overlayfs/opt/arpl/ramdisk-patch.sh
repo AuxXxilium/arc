@@ -14,9 +14,9 @@ echo -n "Patching Ramdisk"
 rm -f "${MOD_RDGZ_FILE}"
 
 # Check disk space left
-LOADER_DISK="`blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1`"
-LOADER_DEVICE_NAME=`echo ${LOADER_DISK} | sed 's|/dev/||'`
-SPACELEFT=`df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}'`
+LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
+LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
+SPACELEFT=$(df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}')
 [ ${SPACELEFT} -le 268435456 ] && rm -rf "${CACHE_PATH}/dl"
 
 # Unzipping ramdisk
@@ -27,8 +27,8 @@ mkdir -p "${RAMDISK_PATH}"
 # Check if DSM buildnumber changed
 . "${RAMDISK_PATH}/etc/VERSION"
 
-MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
+MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
 
 if [ ${BUILD} -ne ${buildnumber} ]; then
   echo -e "\033[A\n\033[1;34mBuild number changed from \033[1;31m${BUILD}\033[1;34m to \033[1;31m${buildnumber}\033[0m"
@@ -36,14 +36,14 @@ if [ ${BUILD} -ne ${buildnumber} ]; then
   BUILD=${buildnumber}
   echo -e "\033[1;37mLooking for Online Patch.\033[0m"
   # Use Onlinemode
-  ONLINEMODE="`readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}"`"
+  ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
   if [ "${ONLINEMODE}" = "true" ]; then
-    DSM_MODEL="`echo "${MODEL}" | jq -sRr @uri`"
+    DSM_MODEL="$(echo "${MODEL}" | jq -sRr @uri)"
     CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/overlayfs/opt/arpl/model-configs/${MODEL}.yml"
     if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
       rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
     fi
-    STATUS=`curl --insecure -s -w "%{http_code}" -L "${CONFIG_URL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml`
+    STATUS=$(curl --insecure -s -w "%{http_code}" -L "${CONFIG_URL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml)
     if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
       echo -e "\033[1;37mOnlinemode: No Updated Modelconfig found!\033[0m"
     else
@@ -60,18 +60,18 @@ if [ ${BUILD} -ne ${buildnumber} ]; then
 fi
 
 # Read model data
-MODEL="`readConfigKey "model" "${USER_CONFIG_FILE}"`"
-BUILD="`readConfigKey "build" "${USER_CONFIG_FILE}"`"
-PLATFORM="`readModelKey "${MODEL}" "platform"`"
-KVER="`readModelKey "${MODEL}" "builds.${BUILD}.kver"`"
-LKM="`readConfigKey "lkm" "${USER_CONFIG_FILE}"`"
-SN="`readConfigKey "sn" "${USER_CONFIG_FILE}"`"
-LAYOUT="`readConfigKey "layout" "${USER_CONFIG_FILE}"`"
-KEYMAP="`readConfigKey "keymap" "${USER_CONFIG_FILE}"`"
-UNIQUE="`readModelKey "${MODEL}" "unique"`"
-PAT_MD5_HASH=`cat "${UNTAR_PAT_PATH}/pat_hash"`
-PAT_URL=`cat "${UNTAR_PAT_PATH}/pat_url"`
-RD_COMPRESSED="`readModelKey "${MODEL}" "builds.${BUILD}.rd-compressed"`"
+MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+PLATFORM="$(readModelKey "${MODEL}" "platform")"
+KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
+LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
+SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
+LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
+KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+UNIQUE="$(readModelKey "${MODEL}" "unique")"
+PAT_MD5_HASH=$(cat "${UNTAR_PAT_PATH}/pat_hash")
+PAT_URL=$(cat "${UNTAR_PAT_PATH}/pat_url")
+RD_COMPRESSED="$(readModelKey "${MODEL}" "builds.${BUILD}.rd-compressed")"
 
 # Sanity check
 [ -z "${PLATFORM}" -o -z "${KVER}" ] && (die "ERROR: Configuration for model ${MODEL} and buildnumber ${BUILD} not found." | tee -a "${LOG_FILE}")
@@ -124,7 +124,7 @@ rm "${TMP_PATH}/rp.txt"
 rm -rf "${TMP_PATH}/modules"
 mkdir -p "${TMP_PATH}/modules"
 tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
-for F in `ls "${TMP_PATH}/modules/"*.ko`; do
+for F in $(ls "${TMP_PATH}/modules/"*.ko); do
   M=`basename ${F}`
   if arrayExistItem "${M:0:-3}" "${!USERMODULES[@]}"; then
     cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}"
@@ -145,7 +145,7 @@ gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" > "${RAMDISK_PATH}/us
 # Addons
 #MAXDISKS=`readConfigKey "maxdisks" "${USER_CONFIG_FILE}"`
 # Check if model needs Device-tree dynamic patch
-DT="`readModelKey "${MODEL}" "dt"`"
+DT="$(readModelKey "${MODEL}" "dt")"
 
 mkdir -p "${RAMDISK_PATH}/addons"
 echo "#!/bin/sh"                                 > "${RAMDISK_PATH}/addons/addons.sh"
@@ -196,6 +196,6 @@ fi
 rm -rf "${RAMDISK_PATH}"
 
 # Update SHA256 hash
-RAMDISK_HASH="`sha256sum ${ORI_RDGZ_FILE} | awk '{print$1}'`"
+RAMDISK_HASH="$(sha256sum ${ORI_RDGZ_FILE} | awk '{print$1}')"
 writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
 echo
