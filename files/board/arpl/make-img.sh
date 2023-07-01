@@ -19,7 +19,7 @@ gzip -dc "${BOARD_PATH}/grub.img.gz" > "${IMAGE_FILE}"
 # fdisk
 fdisk -l "${IMAGE_FILE}"
 # Find idle of loop device
-LOOPX=`sudo losetup -f`
+LOOPX=$(sudo losetup -f)
 # Setup the ${LOOPX} loop device
 sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
 
