@@ -14,23 +14,23 @@ function getmap() {
   DISKIDXMAP=""
   let DISKIDXMAPIDXMAX=0
   DISKIDXMAPMAX=""
-  for PCI in `lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}'`; do
+  for PCI in $(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}'); do
     NUMPORTS=0
     CONPORTS=0
-    NAME=`lspci -s "${PCI}" | sed "s/\ .*://"`
-    DRIVES=`ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l`
+    NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+    DRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
     unset HOSTPORTS
     declare -A HOSTPORTS
     while read LINE; do
-      ATAPORT="`echo ${LINE} | grep -o 'ata[0-9]*'`"
-      PORT=`echo ${ATAPORT} | sed 's/ata//'`
-      HOSTPORTS[${PORT}]=`echo ${LINE} | grep -o 'host[0-9]*$'`
+      ATAPORT="$(echo ${LINE} | grep -o 'ata[0-9]*')"
+      PORT=$(echo ${ATAPORT} | sed 's/ata//')
+      HOSTPORTS[${PORT}]=$(echo ${LINE} | grep -o 'host[0-9]*$')
     done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
     while read PORT; do
       ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
-      PCMD=`cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd`
+      PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
       [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
-      [ ${ATTACH} -eq 1 ] && CONPORTS=$((${CONPORTS}+1)) && echo "`expr ${PORT} - 1`" >> "${TMP_PATH}/ports"
+      [ ${ATTACH} -eq 1 ] && CONPORTS=$((${CONPORTS}+1)) && echo "$(expr ${PORT} - 1)" >> "${TMP_PATH}/ports"
       [ ${DUMMY} -eq 1 ]
       NUMPORTS=$((${NUMPORTS}+1))
     done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
@@ -43,19 +43,19 @@ function getmap() {
     DISKIDXMAPMAX=$DISKIDXMAPMAX$(printf "%02x" $DISKIDXMAPIDXMAX)
     let DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS
   done
-  SATAPORTMAPMAX=`awk '{print$1}' ${TMP_PATH}/drivesmax`
-  SATAPORTMAP=`awk '{print$1}' ${TMP_PATH}/drivescon`
+  SATAPORTMAPMAX=$(awk '{print$1}' ${TMP_PATH}/drivesmax)
+  SATAPORTMAP=$(awk '{print$1}' ${TMP_PATH}/drivescon)
   LASTDRIVE=0
   # Check for VMware
   while read line; do
     if [ "$HYPERVISOR" = "VMware" ] && [ $line = 0 ]; then
       MAXDISKS="`readModelKey "${MODEL}" "disks"`"
-      echo -n "$line>$MAXDISKS:" >> "${TMP_PATH}/remap"
+      echo -n "$line>$MAXDISKS:" >>"${TMP_PATH}/remap"
     elif [ $line != $LASTDRIVE ]; then
-      echo -n "$line>$LASTDRIVE:" >> "${TMP_PATH}/remap"
-      LASTDRIVE=`expr $LASTDRIVE + 1`
+      echo -n "$line>$LASTDRIVE:" >>"${TMP_PATH}/remap"
+      LASTDRIVE=$(expr $LASTDRIVE + 1)
     elif [ $line = $LASTDRIVE ]; then
-        LASTDRIVE=`expr $line + 1`
+        LASTDRIVE=$(expr $line + 1)
     fi
   done < <(cat "${TMP_PATH}/ports")
   SATAREMAP=`awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//'`
@@ -125,7 +125,7 @@ function getmap() {
   fi
   sleep 1
   # Check Remap for correct config
-  REMAP="`readConfigKey "arc.remap" "${USER_CONFIG_FILE}"`"
+  REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
   # Write Map to config and show Map to User
   if [ "${REMAP}" == "1" ]; then
     writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
@@ -155,7 +155,7 @@ function getmap() {
 }
 
 # Check for Controller
-SATACONTROLLER=`lspci -nnk | grep -ie "\[0106\]" | wc -l`
+SATACONTROLLER=$(lspci -nnk | grep -ie "\[0106\]" | wc -l)
 writeConfigKey "arc.satacontroller" "${SATACONTROLLER}" "${USER_CONFIG_FILE}"
-SASCONTROLLER=`lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l`
+SASCONTROLLER=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l)
 writeConfigKey "arc.sascontroller" "${SASCONTROLLER}" "${USER_CONFIG_FILE}"
