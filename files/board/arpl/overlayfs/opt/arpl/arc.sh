@@ -612,8 +612,7 @@ function modulesMenu() {
       2 "Select all Modules" \
       3 "Deselect all Modules" \
       4 "Choose Modules to include" \
-      5 "Automated Module selection" \
-      6 "Add external module" \
+      5 "Add external module" \
       0 "Exit" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break
@@ -673,16 +672,6 @@ function modulesMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       5)
-        dialog --backtitle "`backtitle`" --title "Modules" \
-           --infobox "Automated selection" 0 0
-        getModules
-        LOADED="`readConfigMap "modules" "${USER_CONFIG_FILE}" | tr -d ':'`"
-        dialog --backtitle "`backtitle`" --title "Modules" \
-           --msgbox "Modules:\n${LOADED}" 0 0
-        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      6)
         MSG=""
         MSG+="This function is experimental and dangerous. If you don't know much, please exit.\n"
         MSG+="The imported .ko of this function will be implanted into the corresponding arch's modules package, which will affect all models of the arch.\n"
@@ -695,11 +684,11 @@ function modulesMenu() {
         dialog --backtitle "`backtitle`" --aspect 18 --colors --inputbox "Please enter the complete URL to download.\n" 0 0 \
           2>${TMP_PATH}/resp
         [ $? -ne 0 ] && continue
-        URL="`<"${TMP_PATH}/resp"`"
+        URL="$(<"${TMP_PATH}/resp")"
         [ -z "${URL}" ] && continue
         clear
         echo "Downloading ${URL}"
-        STATUS=`curl -kLJO -w "%{http_code}" "${URL}" --progress-bar`
+        STATUS=$(curl -kLJO -w "%{http_code}" "${URL}" --progress-bar)
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Add external module" --aspect 18 \
             --msgbox "ERROR: Check internet, URL or cache disk space" 0 0
@@ -1689,8 +1678,6 @@ function sysinfo() {
   fi
   if [ -n "${CONFDONE}" ]; then
     ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
-    getModulesInfo
-    MODULESINFO=$(cat "${TMP_PATH}/modulesinfo")
   fi
   MODULESVERSION=$(cat "${MODULES_PATH}/VERSION")
   ADDONSVERSION=$(cat "${ADDONS_PATH}/VERSION")
@@ -1736,7 +1723,6 @@ function sysinfo() {
   fi
   TEXT+="\nUSB Mount: \Zb${USBMOUNT}\Zn"
   TEXT+="\nAddons selected: \Zb${ADDONSINFO}\Zn"
-  TEXT+="\nModules needed: \Zb${MODULESINFO}\Zn\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
   TEXT+="\n\Z4Storage:\Zn"
   # Get Information for Sata Controller
