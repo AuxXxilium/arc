@@ -1714,8 +1714,6 @@ function sysinfo() {
     USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
     LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    PAT_URL="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
-    PAT_MD5_HASH="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
   fi
   NETRL_NUM=$(ls /sys/class/net/ | grep eth | wc -l)
   IPLIST=$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
@@ -1761,8 +1759,7 @@ function sysinfo() {
     TEXT+="\nBuild: \ZbIncomplete\Zn"
   fi
   TEXT+="\nArcpatch | Onlinemode: \Zb${ARCPATCH}\Zn | \Zb${ONLINEMODE}\Zn"
-  TEXT+="\nPAT Url: \Zb${PAT_URL}\Zn"
-  TEXT+="\nPAT Hash: \Zb${PAT_MD5_HASH}\Zn"
+  TEXT+="\nAddons selected: \Zb${ADDONSINFO}\Zn"
   TEXT+="\nLKM: \Zb${LKM}\Zn"
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
     TEXT+="\nSataPortMap: \Zb${PORTMAP}\Zn | DiskIdxMap: \Zb${DISKMAP}\Zn"
@@ -1772,7 +1769,6 @@ function sysinfo() {
     TEXT+="\nPortMap: \Zb"User"\Zn"
   fi
   TEXT+="\nUSB Mount: \Zb${USBMOUNT}\Zn"
-  TEXT+="\nAddons selected: \Zb${ADDONSINFO}\Zn"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
   TEXT+="\n\Z4Storage:\Zn"
   # Get Information for Sata Controller
@@ -1813,7 +1809,7 @@ function sysinfo() {
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       # Get Amount of Drives connected
       SASDRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
-      TEXT+="\n\Z1SAS Controller\Zn detected:\n\Zb${NAME}\Zn\n"
+      TEXT+="\n\Z1SAS/SCSI Controller\Zn detected:\n\Zb${NAME}\Zn\n"
       TEXT+="\Z1Drives\Zn detected:\n\Zb${SASDRIVES}\Zn\n"
     done
   fi
