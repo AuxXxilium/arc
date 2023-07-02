@@ -121,8 +121,8 @@ jobs:
             fi
           fi
 
-      # Convert po2mo, Get extractor, LKM, addons and Modules
-      - name: Get extractor, LKM, addons and Modules
+      # Get extractor, LKM, Addons, Modules and Configs
+      - name: Get extractor, LKM, Addons, Modules and Configs
         run: |
           . scripts/func.sh
 
@@ -130,6 +130,7 @@ jobs:
           getLKMs "files/board/arpl/p3/lkms"
           getAddons "files/board/arpl/p3/addons"
           getModules "files/board/arpl/p3/modules"
+          getConfigs "files/board/arpl/p3/configs"
 
           echo "OK"
 

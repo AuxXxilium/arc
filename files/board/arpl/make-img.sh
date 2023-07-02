@@ -15,7 +15,7 @@ BOARD_PATH="${CONFIG_DIR}/board/arpl"
 
 echo "Creating image file"
 # unzip base image
-gzip -dc "${BOARD_PATH}/grub.img.gz" > "${IMAGE_FILE}"
+gzip -dc "${BOARD_PATH}/grub.img.gz" >"${IMAGE_FILE}"
 # fdisk
 fdisk -l "${IMAGE_FILE}"
 # Find idle of loop device

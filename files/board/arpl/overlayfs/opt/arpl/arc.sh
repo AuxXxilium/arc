@@ -228,7 +228,7 @@ function arcbuild() {
   if [ "${ARCRECOVERY}" != "true" ]; then
     if [ "${ONLINEMODE}" = "true" ]; then
       DSM_MODEL="$(echo "${MODEL}" | jq -sRr @uri)"
-      CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/mnt/p3/configs/${MODEL}.yml"
+      CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${MODEL}.yml"
       if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
         rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
       fi

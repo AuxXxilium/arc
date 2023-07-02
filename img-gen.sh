@@ -20,6 +20,7 @@ getExtractor "files/board/arpl/p3/extractor"
 getLKMs "files/board/arpl/p3/lkms"
 getAddons "files/board/arpl/p3/addons"
 getModules "files/board/arpl/p3/modules"
+getConfigs "files/board/arpl/p3/configs"
 
 echo "Extractor, LKM, Addons and Modules loaded"
 
@@ -28,8 +29,8 @@ echo "Copying files"
 VERSION=$(date +'%y.%-m.dev')
 rm -f files/board/arpl/p1/ARPL-VERSION
 rm -f VERSION
-echo "${VERSION}" > files/board/arpl/p1/ARPL-VERSION
-echo "${VERSION}" > VERSION
+echo "${VERSION}" >files/board/arpl/p1/ARPL-VERSION
+echo "${VERSION}" >VERSION
 sed 's/^ARPL_VERSION=.*/ARPL_VERSION="'${VERSION}'"/' -i files/board/arpl/overlayfs/opt/arpl/include/consts.sh
 cp -rf files/* .buildroot/
 
