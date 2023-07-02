@@ -84,7 +84,7 @@ function getAddons() {
     echo "Installing addons to ${DEST_PATH}"
     [ -f /tmp/addons/VERSION ] && cp -f /tmp/addons/VERSION ${DEST_PATH}/
     for PKG in $(ls ${CACHE_DIR}/*.addon); do
-      ADDON=`basename "${PKG}" .addon`
+      ADDON=$(basename "${PKG}" .addon)
       mkdir -p "${DEST_PATH}/${ADDON}"
       echo "Extracting ${PKG} to ${DEST_PATH}/${ADDON}"
       tar -xaf "${PKG}" -C "${DEST_PATH}/${ADDON}"
@@ -97,7 +97,7 @@ function getAddons() {
 # $1 path
 function getModules() {
     echo "Getting Modules begin"
-    local DEST_PATH="${1:-addons}"
+    local DEST_PATH="${1:-modules}"
     local CACHE_FILE="/tmp/modules.zip"
     rm -f "${CACHE_FILE}"
     TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
