@@ -2135,9 +2135,6 @@ while true; do
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "o \"Onlinemode: \Z4${ONLINEMODE}\Zn \" "                                            >>"${TMP_PATH}/menu"
   echo "c \"Choose a keymap \" "                                                            >>"${TMP_PATH}/menu"
-  if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
-    echo "d \"Clean disk cache \""                                                          >>"${TMP_PATH}/menu"
-  fi
   echo "e \"Update \" "                                                                     >>"${TMP_PATH}/menu"
   echo "0 \"\Z1Exit\Zn \" "                                                                 >>"${TMP_PATH}/menu"
 
@@ -2204,8 +2201,6 @@ while true; do
       writeConfigKey "arc.onlinemode" "${ONLINEMODE}" "${USER_CONFIG_FILE}"
       NEXT="o"
       ;;
-    d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
-      --prgbox "rm -rfv \"${CACHE_PATH}/dl\"" 0 0 ;;
     e) updateMenu; NEXT="e" ;;
     0) break ;;
   esac
