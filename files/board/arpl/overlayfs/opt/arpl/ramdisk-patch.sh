@@ -73,8 +73,8 @@ SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 UNIQUE="$(readModelKey "${MODEL}" "unique")"
-PAT_MD5_HASH=$(cat "${UNTAR_PAT_PATH}/pat_hash")
-PAT_URL=$(cat "${UNTAR_PAT_PATH}/pat_url")
+PAT_MD5_HASH="$(cat "${UNTAR_PAT_PATH}/pat_hash")"
+PAT_URL="$(cat "${UNTAR_PAT_PATH}/pat_url")"
 RD_COMPRESSED="$(readModelKey "${MODEL}" "builds.${BUILD}.rd-compressed")"
 
 # Sanity check
