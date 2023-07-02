@@ -229,7 +229,7 @@ function arcbuild() {
   if [ "${ARCRECOVERY}" != "true" ]; then
     if [ "${ONLINEMODE}" = "true" ]; then
       DSM_MODEL="$(echo "${MODEL}" | jq -sRr @uri)"
-      CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/overlayfs/opt/arpl/model-configs/${MODEL}.yml"
+      CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc/main/files/board/arpl/mnt/p3/configs/${MODEL}.yml"
       if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
         rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
       fi
@@ -1459,7 +1459,7 @@ function updateMenu() {
             if [ "${KEY: -1}" = "/" ]; then
               rm -Rf "${VALUE}"
               mkdir -p "${VALUE}"
-              tar -zxf "${TMP_PATH}/`basename "${KEY}"`.tgz" -C "${VALUE}"
+              tar -zxf "${TMP_PATH}/$(basename "${KEY}").tgz" -C "${VALUE}"
             else
               mkdir -p "$(dirname "${VALUE}")"
               mv "${TMP_PATH}/$(basename "${KEY}")" "${VALUE}"

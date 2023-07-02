@@ -53,7 +53,7 @@ jobs:
         with:
           name: configs
           path: |
-            files/board/arpl/overlayfs/opt/arpl/model-configs
+            files/board/arpl/mnt/p3/configs
             rss.json
             rss.xml
 

@@ -27,8 +27,6 @@ LKM_PATH="${CACHE_PATH}/lkms"
 MODULES_PATH="${CACHE_PATH}/modules"
 USER_UP_PATH="${CACHE_PATH}/users"
 
-MODEL_CONFIG_PATH="/opt/arpl/model-configs"
+MODEL_CONFIG_PATH="/mnt/p3/configs"
 INCLUDE_PATH="/opt/arpl/include"
 PATCH_PATH="/opt/arpl/patch"
-
-MODULE_ALIAS_FILE="${TMP_PATH}/modules.alias.json"

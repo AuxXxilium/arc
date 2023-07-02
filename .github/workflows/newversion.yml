@@ -43,7 +43,7 @@ jobs:
         with:
             find: "${{ inputs.buildold }}"
             replace: "${{ inputs.buildnew }}"
-            include: "files/board/arpl/overlayfs/opt/arpl/model-configs/**"
+            include: "files/board/arpl/mnt/p3/configs/**"
             regex: true
       
       - name: Replace Version
@@ -52,7 +52,7 @@ jobs:
         with:
             find: "${{ inputs.versionold }}"
             replace: "${{ inputs.versionnew }}"
-            include: "files/board/arpl/overlayfs/opt/arpl/model-configs/**"
+            include: "files/board/arpl/mnt/p3/configs/**"
             regex: true
 
       # Install dependencies

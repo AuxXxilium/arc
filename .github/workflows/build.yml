@@ -88,14 +88,14 @@ jobs:
           if [[ "${{ github.event_name }}" =~ ^(push|release)$ && "${{ github.ref_type }}" == 'tag' ]]; then
             VERSION="${{ github.ref_name }}"
           elif [ -n "${{ inputs.version }}" ]; then
-            if [ "`echo ${{ inputs.version }} | cut -d '.' -f 1,2`" = "`date +'%y.%-m'`" ]; then
+            if [ "$(echo ${{ inputs.version }} | cut -d '.' -f 1,2)" = "$(date +'%y.%-m')" ]; then
               VERSION="${{ inputs.version }}"
             else
-              LATEST_TAG="`curl -skL "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r ".tag_name" 2>/dev/null`"
+              LATEST_TAG="$(curl -skL "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r ".tag_name" 2>/dev/null)"
               if [ -n "${LATEST_TAG}" -a "`echo ${LATEST_TAG} | cut -d '.' -f 1,2`" = "`date +'%y.%-m'`" ]; then  # format %y.%-m.$i
-                VERSION="`echo ${LATEST_TAG} | awk -F '.' '{$3=$3+1}1' OFS='.'`"
+                VERSION="$(echo ${LATEST_TAG} | awk -F '.' '{$3=$3+1}1' OFS='.')"
               else
-                VERSION="`date +'%y.%-m'`.0"
+                VERSION="$(date +'%y.%-m').0"
               fi
             fi
           else
@@ -107,8 +107,8 @@ jobs:
 
           if [ -n "${VERSION}" ]; then
             # Modify Source File
-            echo "${VERSION}" > VERSION
-            echo "${VERSION}" > files/board/arpl/p1/ARPL-VERSION
+            echo "${VERSION}" >VERSION
+            echo "${VERSION}" >files/board/arpl/p1/ARPL-VERSION
             sed 's/^ARPL_VERSION=.*/ARPL_VERSION="'${VERSION}'"/' -i files/board/arpl/overlayfs/opt/arpl/include/consts.sh
 
             git checkout main
@@ -171,13 +171,13 @@ jobs:
           zip -9j update.zip update-list.yml update-check.sh
           while read F; do
             if [ -d "${F}" ]; then
-              FTGZ="`basename "${F}"`.tgz"
+              FTGZ="$(basename "${F}").tgz"
               tar -czf "${FTGZ}" -C "${F}" .
               sha256sum "${FTGZ}" >> sha256sum
               zip -9j update.zip "${FTGZ}"
               rm "${FTGZ}"
             else
-              (cd `dirname ${F}` && sha256sum `basename ${F}`) >> sha256sum
+              (cd $(dirname ${F}) && sha256sum $(basename ${F})) >> sha256sum
               zip -9j update.zip "${F}"
             fi
           done < <(yq '.replace | explode(.) | to_entries | map([.key])[] | .[]' update-list.yml)
