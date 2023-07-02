@@ -1768,7 +1768,7 @@ function sysinfo() {
   elif [ "${REMAP}" == "0" ]; then
     TEXT+="\nPortMap: \Zb"User"\Zn"
   fi
-  TEXT+="\nUSB Mount: \Zb${USBMOUNT}\Zn"
+  TEXT+="\nUSB Mount: \Zb${USBMOUNT}\Zn\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
   TEXT+="\n\Z4Storage:\Zn"
   # Get Information for Sata Controller
