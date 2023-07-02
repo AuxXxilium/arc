@@ -3,7 +3,6 @@
 . /opt/arpl/include/functions.sh
 . /opt/arpl/include/addons.sh
 . /opt/arpl/include/modules.sh
-. /opt/arpl/include/checkmodules.sh
 . /opt/arpl/include/storage.sh
 . /opt/arpl/include/network.sh
 
