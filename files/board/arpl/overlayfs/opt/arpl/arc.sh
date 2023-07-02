@@ -2114,7 +2114,7 @@ while true; do
       echo "h \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
       echo "k \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
       if [ "${DIRECTBOOT}" = "true" ]; then
-        echo "l \"Direct DSM \Z4${DIRECTDSM}\Zn \" "                                        >>"${TMP_PATH}/menu"
+        echo "l \"Direct DSM: \Z4${DIRECTDSM}\Zn \" "                                       >>"${TMP_PATH}/menu"
       fi
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
@@ -2200,7 +2200,7 @@ while true; do
     i) tryRecoveryDSM; NEXT="i" ;;
     # Loader Settings
     c) keymapMenu; NEXT="c" ;;
-    o) [ "${ONLINEMODE}" = "true" ] && DIRECTBOOT='false' || DIRECTBOOT='true'
+    o) [ "${ONLINEMODE}" = "true" ] && ONLINEMODE='false' || ONLINEMODE='true'
       writeConfigKey "arc.onlinemode" "${ONLINEMODE}" "${USER_CONFIG_FILE}"
       NEXT="o"
       ;;
