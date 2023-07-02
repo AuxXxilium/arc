@@ -2081,8 +2081,8 @@ while true; do
   fi
   echo "= \"\Z4========== Info ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
+  echo "= \"\Z4========= System =========\Zn \" "                                           >>"${TMP_PATH}/menu"
   if [ -n "${CONFDONE}" ]; then
-    echo "= \"\Z4========= System =========\Zn \" "                                         >>"${TMP_PATH}/menu"
     echo "2 \"Addons \" "                                                                   >>"${TMP_PATH}/menu"
     echo "3 \"Modules \" "                                                                  >>"${TMP_PATH}/menu"
     if [ -n "${ARCOPTS}" ]; then
@@ -2091,6 +2091,7 @@ while true; do
       echo "7 \"\Z1Show Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     fi
     if [ -n "${ARCOPTS}" ]; then
+      echo "= \"\Z4========== Arc ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "m \"Change DSM Build \" "                                                       >>"${TMP_PATH}/menu"
       if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
         echo "s \"Change Storage Map \" "                                                   >>"${TMP_PATH}/menu"
@@ -2103,6 +2104,7 @@ while true; do
       echo "w \"Allow DSM downgrade \" "                                                    >>"${TMP_PATH}/menu"
       echo "x \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
       echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >>"${TMP_PATH}/menu"
+      echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
     if [ -n "${ADVOPTS}" ]; then
       echo "8 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
@@ -2110,6 +2112,7 @@ while true; do
       echo "8 \"\Z1Show Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
     fi
     if [ -n "${ADVOPTS}" ]; then
+      echo "= \"\Z4======== Advanced =======\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "f \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
       echo "g \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
       echo "h \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
@@ -2117,6 +2120,7 @@ while true; do
       if [ "${DIRECTBOOT}" = "true" ]; then
         echo "l \"Direct DSM \Z4${DIRECTDSM}\Zn \" "                                        >>"${TMP_PATH}/menu"
       fi
+      echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
     if [ -n "${DEVOPTS}" ]; then
       echo "9 \"\Z1Hide Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
@@ -2124,18 +2128,20 @@ while true; do
       echo "9 \"\Z1Show Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     fi
     if [ -n "${DEVOPTS}" ]; then
+      echo "= \"\Z4========== Dev ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "v \"Save Modifications to Disk \" "                                             >>"${TMP_PATH}/menu"
+      echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
   fi
+  echo "t \"Backup/Restore \" "                                                             >>"${TMP_PATH}/menu"
+  echo "i \"Recover from DSM \" "                                                           >>"${TMP_PATH}/menu"
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >>"${TMP_PATH}/menu"
-  echo "c \"Choose a keymap \" "                                                            >>"${TMP_PATH}/menu"
   echo "o \"Onlinemode: \Z4${ONLINEMODE}\Zn \" "                                            >>"${TMP_PATH}/menu"
+  echo "c \"Choose a keymap \" "                                                            >>"${TMP_PATH}/menu"
   if [ ${CLEARCACHE} -eq 1 -a -d "${CACHE_PATH}/dl" ]; then
     echo "d \"Clean disk cache \""                                                          >>"${TMP_PATH}/menu"
   fi
-  echo "i \"Recover from DSM \" "                                                           >>"${TMP_PATH}/menu"
-  echo "t \"Backup \" "                                                                     >>"${TMP_PATH}/menu"
   echo "e \"Update \" "                                                                     >>"${TMP_PATH}/menu"
   echo "0 \"\Z1Exit\Zn \" "                                                                 >>"${TMP_PATH}/menu"
 
@@ -2143,14 +2149,14 @@ while true; do
     --menu "Choose an Option" 0 0 0 --file "${TMP_PATH}/menu" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && break
-  case `<"${TMP_PATH}/resp"` in
-    # Main
+  case $(<"${TMP_PATH}/resp") in
+    # Main Section
     1) arcMenu; NEXT="4" ;;
     4) make; NEXT="5" ;;
     5) boot && exit 0 ;;
-    # Info
+    # Info Section
     a) sysinfo; NEXT="a" ;;
-    # System
+    # System Section
     2) addonMenu; NEXT="2" ;;
     3) modulesMenu; NEXT="3" ;;
     # Arc Section
@@ -2184,7 +2190,7 @@ while true; do
       ;;
     # Dev Section
     9) [ "${DEVOPTS}" = "" ] && DEVOPTS='1' || DEVOPTS=''
-      ARCOPTS="${DEVOPTS}"
+      DEVOPTS="${DEVOPTS}"
       NEXT="9"
       ;;
     j) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
@@ -2193,6 +2199,9 @@ while true; do
       NEXT="j"
       ;;
     v) saveMenu; NEXT="o" ;;
+    # System Section 2
+    t) backupMenu; NEXT="t" ;;
+    i) tryRecoveryDSM; NEXT="i" ;;
     # Loader Settings
     c) keymapMenu; NEXT="c" ;;
     o) [ "${ONLINEMODE}" = "true" ] && DIRECTBOOT='false' || DIRECTBOOT='true'
@@ -2201,8 +2210,6 @@ while true; do
       ;;
     d) dialog --backtitle "`backtitle`" --title "Cleaning" --aspect 18 \
       --prgbox "rm -rfv \"${CACHE_PATH}/dl\"" 0 0 ;;
-    i) tryRecoveryDSM; NEXT="i" ;;
-    t) backupMenu; NEXT="t" ;;
     e) updateMenu; NEXT="e" ;;
     0) break ;;
   esac
