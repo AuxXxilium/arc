@@ -227,18 +227,22 @@ function arcbuild() {
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   if [ "${ARCRECOVERY}" != "true" ]; then
     if [ "${ONLINEMODE}" = "true" ]; then
-      DSM_MODEL="$(echo "${MODEL}" | jq -sRr @uri)"
-      CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${MODEL}.yml"
-      if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
-        rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
-      fi
-      STATUS=$(curl --insecure -s -w "%{http_code}" -L "${CONFIG_URL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml)
-      if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-        dialog --backtitle "`backtitle`" --title "Onlinemode" --aspect 18 \
-          --msgbox "No updated Modelconfig found!" 0 0
-      else
-        dialog --backtitle "`backtitle`" --title "Onlinemode" --aspect 18 \
-          --msgbox "Updated Modelconfig found!" 0 0
+      CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
+      CONFIGSONLINE="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+      if [ "${CONFIGSVERSION}" != "${CONFIGSONLINE}" ]; then
+        DSM_MODEL="$(echo "${MODEL}" | jq -sRr @uri)"
+        CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${MODEL}.yml"
+        if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
+          rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
+        fi
+        STATUS=$(curl --insecure -s -w "%{http_code}" -L "${CONFIG_URL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml)
+        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+          dialog --backtitle "`backtitle`" --title "Onlinemode" --aspect 18 \
+            --msgbox "Config Update failed!\nUse local Configs!" 0 0
+        else
+          dialog --backtitle "`backtitle`" --title "Onlinemode" --aspect 18 \
+            --msgbox "Config Update successful!" 0 0
+        fi
       fi
     fi
     # Select Build for DSM
@@ -1354,6 +1358,7 @@ function updateMenu() {
         3 "Update Addons" \
         4 "Update LKMs" \
         5 "Update Modules" \
+        6 "Update Configs" \
         0 "Exit" \
         2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
@@ -1567,6 +1572,33 @@ function updateMenu() {
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --msgbox "Modules updated to ${TAG} with success!" 0 0
           ;;
+        6)
+          dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
+            --infobox "Checking latest version" 0 0
+          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+          if [ $? -ne 0 -o -z "${TAG}" ]; then
+            dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
+              --msgbox "Error checking new version" 0 0
+            continue
+          fi
+          dialog --backtitle "`backtitle`" --title "Update Configss" --aspect 18 \
+            --infobox "Downloading latest version: ${TAG}" 0 0
+          STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o ${TMP_PATH}/configs.zip)
+          if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+            dialog --backtitle "`backtitle`" --title "Update Configss" --aspect 18 \
+              --msgbox "Error downloading latest version" 0 0
+            continue
+          fi
+          dialog --backtitle "`backtitle`" --title "Update Configss" --aspect 18 \
+            --infobox "Extracting latest version" 0 0
+          rm -rf "${LKM_PATH}/"*
+          unzip ${TMP_PATH}/configs.zip -d "${MODEL_CONFIG_PATH}" >/dev/null 2>&1
+          DIRTY=1
+          deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
+            --msgbox "Configs updated with success! ${TAG}" 0 0
+          ;;
         0) return ;;
       esac
     done
@@ -1699,6 +1731,7 @@ function sysinfo() {
   MODULESVERSION=$(cat "${MODULES_PATH}/VERSION")
   ADDONSVERSION=$(cat "${ADDONS_PATH}/VERSION")
   LKMVERSION=$(cat "${LKM_PATH}/VERSION")
+  CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4System:\Zn"
@@ -1714,7 +1747,7 @@ function sysinfo() {
   # Print Config Informations
   TEXT+="\n\Z4Config:\Zn"
   TEXT+="\nArc Version: \Zb${ARPL_VERSION}\Zn"
-  TEXT+="\nSubversion: \ZbModules ${MODULESVERSION}\Zn | \ZbAddons ${ADDONSVERSION}\Zn | \ZbLKM ${LKMVERSION}\Zn"
+  TEXT+="\nSubversion: \ZbModules ${MODULESVERSION}\Zn | \ZbAddons ${ADDONSVERSION}\Zn | \ZbLKM ${LKMVERSION}\Zn | \ZbConfigs ${CONFIGSVERSION}\Zn"
   TEXT+="\nModel | Build: \Zb${MODEL} | ${BUILD}\Zn"
   TEXT+="\nPlatform | Kernel: \Zb${PLATFORM} | ${KVER}\Zn"
   if [ -n "${CONFDONE}" ]; then

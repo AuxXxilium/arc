@@ -38,16 +38,20 @@ if [ ${BUILD} -ne ${buildnumber} ]; then
   # Use Onlinemode
   ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
   if [ "${ONLINEMODE}" = "true" ]; then
-    DSM_MODEL="$(echo "${MODEL}" | jq -sRr @uri)"
-    CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${MODEL}.yml"
-    if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
-      rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
-    fi
-    STATUS=$(curl --insecure -s -w "%{http_code}" -L "${CONFIG_URL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml)
-    if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-      echo -e "\033[1;37mOnlinemode: No Updated Modelconfig found!\033[0m"
-    else
-      echo -e "\033[1;37mOnlinemode: Updated Modelconfig found!\033[0m"
+    CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
+    CONFIGSONLINE="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+    if [ "${CONFIGSVERSION}" != "${CONFIGSONLINE}" ]; then
+      DSM_MODEL="$(echo "${MODEL}" | jq -sRr @uri)"
+      CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${MODEL}.yml"
+      if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
+        rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
+      fi
+      STATUS=$(curl --insecure -s -w "%{http_code}" -L "${CONFIG_URL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml)
+      if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+        echo -e "\033[1;37mOnlinemode: Config update failed!\033[0m"
+      else
+        echo -e "\033[1;37mOnlinemode: Config update successful!\033[0m"
+      fi
     fi
   fi
   # Use Onlinepatch
