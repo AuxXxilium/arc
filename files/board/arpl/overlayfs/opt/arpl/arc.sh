@@ -748,8 +748,9 @@ function cmdlineMenu() {
   echo "2 \"Delete Cmdline item(s)\""                           >>"${TMP_PATH}/menu"
   echo "3 \"Define a serial number\""                           >>"${TMP_PATH}/menu"
   echo "4 \"Define a custom MAC\""                              >>"${TMP_PATH}/menu"
-  echo "5 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
-  echo "6 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
+  echo "5 \"Add experimental RAM Fix\""                         >>"${TMP_PATH}/menu"
+  echo "6 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
+  echo "7 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
   echo "0 \"Exit\""                                             >>"${TMP_PATH}/menu"
   # Loop menu
   while true; do
@@ -818,6 +819,12 @@ function cmdlineMenu() {
         writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
         ;;
       4)
+        writeConfigKey "cmdline.disable_mttr_trim" "0" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.tsc" "reliable" "${USER_CONFIG_FILE}"
+        dialog --backtitle "`backtitle`" --title "RAM Fix" \
+          --aspect 18 --msgbox "Fix added to Cmdline" 0 0
+        ;;
+      5)
         ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
         for N in $(seq 1 8); do # Currently, only up to 8 are supported.  (<==> boot.sh L96, <==> lkm: MAX_NET_IFACES)
           MACR="$(cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g')"
@@ -856,7 +863,7 @@ function cmdlineMenu() {
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      5)
+      6)
         ITEMS=""
         for KEY in ${!CMDLINE[@]}; do
           ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
@@ -864,7 +871,7 @@ function cmdlineMenu() {
         dialog --backtitle "`backtitle`" --title "User cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      6)
+      7)
         ITEMS=""
         while IFS=': ' read KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
