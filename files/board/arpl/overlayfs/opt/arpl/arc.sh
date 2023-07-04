@@ -24,9 +24,8 @@ RAMTOTAL=$((RAMTOTAL *1024))
 
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
-  MACHINE="VIRTUAL"
   # Check for Hypervisor
-  HYPERVISOR="$(lscpu | grep Hypervisor | awk '{print $3}')"
+  MACHINE="$(lscpu | grep Hypervisor | awk '{print $3}')"
 else
   MACHINE="NATIVE"
 fi
@@ -53,6 +52,11 @@ REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 # Add Onlinemode to old configs
 if [ -n "${ONLINEMODE}" ]; then
   writeConfigKey "arc.onlinemode" "true" "${USER_CONFIG_FILE}"
+fi
+
+# Reset DirectDSM if User boot to Config
+if [ "${DIRECTDSM}" = "true" ]; then
+  writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
 fi
 
 ###############################################################################
