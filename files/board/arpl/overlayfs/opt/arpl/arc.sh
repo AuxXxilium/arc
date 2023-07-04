@@ -864,11 +864,11 @@ function cmdlineMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       5)
-        writeConfigKey "cmdline.disable_mttr_trim" "0" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.disable_mtrr_trim" "" "${USER_CONFIG_FILE}"
         writeConfigKey "cmdline.nmi_watchdog" "0" "${USER_CONFIG_FILE}"
         writeConfigKey "cmdline.tsc" "reliable" "${USER_CONFIG_FILE}"
         writeConfigKey "cmdline.crashkernel" "192M" "${USER_CONFIG_FILE}"
-        dialog --backtitle "`backtitle`" --title "RAM Fix" \
+        dialog --backtitle "`backtitle`" --title "CPU/RAM Fix" \
           --aspect 18 --msgbox "Fix added to Cmdline" 0 0
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
