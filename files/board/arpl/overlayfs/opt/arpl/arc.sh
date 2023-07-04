@@ -825,15 +825,6 @@ function cmdlineMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       4)
-        writeConfigKey "cmdline.disable_mttr_trim" "0" "${USER_CONFIG_FILE}"
-        writeConfigKey "cmdline.tsc" "reliable" "${USER_CONFIG_FILE}"
-        writeConfigKey "cmdline.crashkernel" "192M" "${USER_CONFIG_FILE}"
-        dialog --backtitle "`backtitle`" --title "RAM Fix" \
-          --aspect 18 --msgbox "Fix added to Cmdline" 0 0
-        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      5)
         ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
         for N in $(seq 1 8); do # Currently, only up to 8 are supported.  (<==> boot.sh L96, <==> lkm: MAX_NET_IFACES)
           MACR="$(cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g')"
@@ -869,6 +860,16 @@ function cmdlineMenu() {
             [ $? -ne 0 ] && break
           fi
         done
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
+      5)
+        writeConfigKey "cmdline.disable_mttr_trim" "0" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.nmi_watchdog" "0" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.tsc" "reliable" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.crashkernel" "192M" "${USER_CONFIG_FILE}"
+        dialog --backtitle "`backtitle`" --title "RAM Fix" \
+          --aspect 18 --msgbox "Fix added to Cmdline" 0 0
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
