@@ -817,6 +817,8 @@ function cmdlineMenu() {
         done
         SN="${SERIAL}"
         writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       4)
         writeConfigKey "cmdline.disable_mttr_trim" "0" "${USER_CONFIG_FILE}"
@@ -824,6 +826,8 @@ function cmdlineMenu() {
         writeConfigKey "cmdline.crashkernel" "192M" "${USER_CONFIG_FILE}"
         dialog --backtitle "`backtitle`" --title "RAM Fix" \
           --aspect 18 --msgbox "Fix added to Cmdline" 0 0
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       5)
         ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
