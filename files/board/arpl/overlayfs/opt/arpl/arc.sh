@@ -752,9 +752,10 @@ function cmdlineMenu() {
   echo "2 \"Delete Cmdline item(s)\""                           >>"${TMP_PATH}/menu"
   echo "3 \"Define a serial number\""                           >>"${TMP_PATH}/menu"
   echo "4 \"Define a custom MAC\""                              >>"${TMP_PATH}/menu"
-  echo "5 \"Add experimental CPU/RAM Fix\""                     >>"${TMP_PATH}/menu"
-  echo "6 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
-  echo "7 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
+  echo "5 \"Add experimental CPU Fix\""                         >>"${TMP_PATH}/menu"
+  echo "6 \"Add experimental RAM Fix\""                         >>"${TMP_PATH}/menu"
+  echo "7 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
+  echo "8 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
   echo "0 \"Exit\""                                             >>"${TMP_PATH}/menu"
   # Loop menu
   while true; do
@@ -864,16 +865,22 @@ function cmdlineMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       5)
-        writeConfigKey "cmdline.disable_mtrr_trim" "" "${USER_CONFIG_FILE}"
         writeConfigKey "cmdline.nmi_watchdog" "0" "${USER_CONFIG_FILE}"
         writeConfigKey "cmdline.tsc" "reliable" "${USER_CONFIG_FILE}"
-        writeConfigKey "cmdline.crashkernel" "192M" "${USER_CONFIG_FILE}"
-        dialog --backtitle "`backtitle`" --title "CPU/RAM Fix" \
+        dialog --backtitle "`backtitle`" --title "CPU Fix" \
           --aspect 18 --msgbox "Fix added to Cmdline" 0 0
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       6)
+        writeConfigKey "cmdline.disable_mtrr_trim" "0" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.crashkernel" "192M" "${USER_CONFIG_FILE}"
+        dialog --backtitle "`backtitle`" --title "RAM Fix" \
+          --aspect 18 --msgbox "Fix added to Cmdline" 0 0
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
+      7)
         ITEMS=""
         for KEY in ${!CMDLINE[@]}; do
           ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
@@ -881,7 +888,7 @@ function cmdlineMenu() {
         dialog --backtitle "`backtitle`" --title "User cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      7)
+      8)
         ITEMS=""
         while IFS=': ' read KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
