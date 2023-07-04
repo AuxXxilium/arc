@@ -748,7 +748,7 @@ function cmdlineMenu() {
   echo "2 \"Delete Cmdline item(s)\""                           >>"${TMP_PATH}/menu"
   echo "3 \"Define a serial number\""                           >>"${TMP_PATH}/menu"
   echo "4 \"Define a custom MAC\""                              >>"${TMP_PATH}/menu"
-  echo "5 \"Add experimental RAM Fix\""                         >>"${TMP_PATH}/menu"
+  echo "5 \"Add experimental CPU/RAM Fix\""                     >>"${TMP_PATH}/menu"
   echo "6 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
   echo "7 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
   echo "0 \"Exit\""                                             >>"${TMP_PATH}/menu"
@@ -821,6 +821,7 @@ function cmdlineMenu() {
       4)
         writeConfigKey "cmdline.disable_mttr_trim" "0" "${USER_CONFIG_FILE}"
         writeConfigKey "cmdline.tsc" "reliable" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.crashkernel" "192M" "${USER_CONFIG_FILE}"
         dialog --backtitle "`backtitle`" --title "RAM Fix" \
           --aspect 18 --msgbox "Fix added to Cmdline" 0 0
         ;;
