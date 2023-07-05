@@ -1892,7 +1892,6 @@ function tryRecoveryDSM() {
               MSG+="\nSerial: ${SN}"
               if [ "${SN}" = "${SNARC}" ]; then
                 writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-                writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
                 ARCAV="Arc"
               else
                 writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
