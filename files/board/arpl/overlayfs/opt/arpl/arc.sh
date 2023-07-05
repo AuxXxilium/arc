@@ -243,7 +243,7 @@ function arcbuild() {
       CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
       CONFIGSONLINE="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
       if [ "${CONFIGSVERSION}" != "${CONFIGSONLINE}" ]; then
-        DSM_MODEL="$(echo "${MODEL}" | -e 's/+/%2B/g')"
+        DSM_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
         CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${DSM_MODEL}.yml"
         if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
           rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
@@ -1886,12 +1886,17 @@ function tryRecoveryDSM() {
             MSG="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
             SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
             if [ -n "${SN}" ]; then
+              deleteConfigKey "arc.patch" "${USER_CONFIG_FILE}"
               SNARC="$(readModelKey "${MODEL}" "arc.serial")"
               writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
               MSG+="\nSerial: ${SN}"
               if [ "${SN}" = "${SNARC}" ]; then
                 writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
                 writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+                ARCAV="Arc"
+              else
+                writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+                ARCAV="nonArc"
               fi
               BUILDNUM=${buildnumber}
               SMALLNUM=${smallfixnumber}

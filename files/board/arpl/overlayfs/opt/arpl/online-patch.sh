@@ -10,7 +10,7 @@ PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 # Check for existing files
 mkdir -p "${CACHE_PATH}/${MODEL}/${PRODUCTVER}"
 DSM_FILE="${CACHE_PATH}/${MODEL}/${PRODUCTVER}/dsm.tar"
-DSM_MODEL="$(echo "${MODEL}" | -e 's/+/%2B/g')"
+DSM_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
 # Clean old files
 rm -rf "${UNTAR_PAT_PATH}"
 rm -f "${DSM_FILE}"
@@ -20,7 +20,7 @@ DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_L
 STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
 if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
     echo -e "\033[1;37mNo DSM Image found!\033[0m"
-    return 1
+    exit 1
 elif [ -f "${DSM_FILE}" ]; then
     mkdir -p "${UNTAR_PAT_PATH}"
     tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
@@ -36,10 +36,10 @@ elif [ -f "${DSM_FILE}" ]; then
     echo -e "\033[1;37mOnline Patch successful!\033[0m"
 elif [ ! -f "${DSM_FILE}" ]; then
     echo -e "\033[1;37mOnline Patch failed!\nDSM File missing!\033[0m"
-    return 1
+    exit 1
 else
     echo -e "\033[1;37mOnline Patch failed!\033[0m"
-    return 1
+    exit 1
 fi
 
 # Unzipping new ramdisk

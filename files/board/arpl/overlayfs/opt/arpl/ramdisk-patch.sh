@@ -51,7 +51,7 @@ if [ -n "${PRODUCTVER}" -a -n "${BUILDNUM}" -a -n "${SMALLNUM}" ] && \
     CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
     CONFIGSONLINE="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
     if [ "${CONFIGSVERSION}" != "${CONFIGSONLINE}" ]; then
-      DSM_MODEL="$(echo "${MODEL}" | -e 's/+/%2B/g')"
+      DSM_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
       CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${DSM_MODEL}.yml"
       if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
         rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
