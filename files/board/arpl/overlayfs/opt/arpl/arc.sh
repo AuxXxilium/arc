@@ -449,16 +449,16 @@ function make() {
     mkdir -p "${UNTAR_PAT_PATH}"
     tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
     # Check zImage Hash
-    HASH=$(sha256sum "${UNTAR_PAT_PATH}/zImage" | awk '{print$1}')
-    OLDHASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
-    if [ "${HASH}" != "${OLDHASH}" ]; then
+    ZIMAGE_HASH=$(sha256sum "${UNTAR_PAT_PATH}/zImage" | awk '{print$1}')
+    OLD_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
+    if [ "${ZIMAGE_HASH}" != "${OLD_HASH}" ]; then
       NEWIMAGE="true"
       writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
     fi
     # Check Ramdisk Hash
-    HASH=$(sha256sum "${UNTAR_PAT_PATH}/rd.gz" | awk '{print$1}')
-    OLDHASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
-    if [ "${HASH}" != "${OLDHASH}" ]; then
+    RAMDISK_HASH=$(sha256sum "${UNTAR_PAT_PATH}/rd.gz" | awk '{print$1}')
+    OLD_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
+    if [ "${RAMDISK_HASH}" != "${OLD_HASH}" ]; then
       NEWIMAGE="true"
       writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
     fi
