@@ -48,14 +48,16 @@ fi
 VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
 PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
+SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 
 echo -e "Model: \033[1;37m${MODEL}\033[0m"
-echo -e "Build: \033[1;37m${BUILD}\033[0m"
+echo -e "Build: \033[1;37m${PRODUCTVER}(${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))\033[0m"
 
-if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "$(readConfigKey "builds.${BUILD}" "${MODEL_CONFIG_PATH}/${MODEL}.yml")" ]; then
-  echo -e "\033[0;31m*** `printf "The current Arc version does not support %s-%s, please rebuild." "${MODEL}" "${BUILD}"` ***\033[0m"
+if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "$(readConfigKey "productvers.[${PRODUCTVER}]" "${MODEL_CONFIG_PATH}/${MODEL}.yml")" ]; then
+  echo -e "\033[1;33m*** $(printf "The current version of Arc does not support booting %s-%s, please rebuild." "${MODEL}" "${PRODUCTVER}") ***\033[0m"
   exit 1
 fi
 
@@ -74,13 +76,13 @@ CMDLINE['sn']="${SN}"
 # Read cmdline
 while IFS=': ' read KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-done < <(readModelMap "${MODEL}" "builds.${BUILD}.cmdline")
+done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].cmdline")
 while IFS=': ' read KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
 done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 
 # Read KVER from Model Config
-KVER=$(readModelKey "${MODEL}" "builds.${BUILD}.kver")
+KVER=$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")
 
 LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
 BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
