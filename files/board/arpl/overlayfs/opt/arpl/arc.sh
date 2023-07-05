@@ -243,8 +243,8 @@ function arcbuild() {
       CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
       CONFIGSONLINE="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
       if [ "${CONFIGSVERSION}" != "${CONFIGSONLINE}" ]; then
-        DSM_MODEL="$(echo "${MODEL}" | jq -sRr @uri)"
-        CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${MODEL}.yml"
+        DSM_MODEL="$(echo "${MODEL}" | -e 's/+/%2B/g')"
+        CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${DSM_MODEL}.yml"
         if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
           rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
         fi
@@ -276,7 +276,7 @@ function arcbuild() {
     fi
   fi
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  KVER=$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")
+  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
   # Delete synoinfo and reload model/build synoinfo
@@ -433,13 +433,13 @@ function make() {
   # Check for existing files
   mkdir -p "${CACHE_PATH}/${MODEL}/${PRODUCTVER}"
   DSM_FILE="${CACHE_PATH}/${MODEL}/${PRODUCTVER}/dsm.tar"
-  DSM_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
+  DSM_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
   # Clean old files
   rm -rf "${UNTAR_PAT_PATH}"
   rm -f "${DSM_FILE}"
   # Get new files
   DSM_LINK="${DSM_MODEL}/${PRODUCTVER}/dsm.tar"
-  DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/dev/files/${DSM_LINK}"
+  DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
   STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
   if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
     dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
@@ -472,7 +472,7 @@ function make() {
       cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
     fi
     # Write out .pat variables
-    PAT_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
+    PAT_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
     PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
     PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
     PAT_URL=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')

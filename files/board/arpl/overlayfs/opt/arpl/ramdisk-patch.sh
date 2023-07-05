@@ -17,12 +17,14 @@ rm -f "${MOD_RDGZ_FILE}"
 LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
 LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
 SPACELEFT=$(df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}')
-[ ${SPACELEFT} -le 268435456 ] && rm -rf "${CACHE_PATH}/dl"
 
 # Unzipping ramdisk
 rm -rf "${RAMDISK_PATH}"  # Force clean
 mkdir -p "${RAMDISK_PATH}"
 (cd "${RAMDISK_PATH}"; xz -dc < "${ORI_RDGZ_FILE}" | cpio -idm) >/dev/null 2>&1
+
+# Check if DSM buildnumber changed
+. "${RAMDISK_PATH}/etc/VERSION"
 
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -34,9 +36,6 @@ LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 PAT_URL="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
 PAT_HASH="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
-
-# Check if DSM buildnumber changed
-. "${RAMDISK_PATH}/etc/VERSION"
 
 if [ -n "${PRODUCTVER}" -a -n "${BUILDNUM}" -a -n "${SMALLNUM}" ] && \
   ([ ! "${PRODUCTVER}" = "${majorversion}.${minorversion}" ] || [ ! "${BUILDNUM}" = "${buildnumber}" ] || [ ! "${SMALLNUM}" = "${smallfixnumber}" ]); then
@@ -52,8 +51,8 @@ if [ -n "${PRODUCTVER}" -a -n "${BUILDNUM}" -a -n "${SMALLNUM}" ] && \
     CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
     CONFIGSONLINE="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
     if [ "${CONFIGSVERSION}" != "${CONFIGSONLINE}" ]; then
-      DSM_MODEL="$(echo "${MODEL}" | jq -sRr @uri)"
-      CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${MODEL}.yml"
+      DSM_MODEL="$(echo "${MODEL}" | -e 's/+/%2B/g')"
+      CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${DSM_MODEL}.yml"
       if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
         rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
       fi
@@ -68,10 +67,10 @@ if [ -n "${PRODUCTVER}" -a -n "${BUILDNUM}" -a -n "${SMALLNUM}" ] && \
   # Use Onlinepatch
   /opt/arpl/online-patch.sh
   if [ $? -ne 0 ]; then
-    echo -e "\033[1;37mOnline Patch has no Data for your DSM: ${PRODUCTVER}\033[0m"
+    echo -e "\033[1;37mOnline Patch has no Data for your DSM: ${majorversion}.${minorversion}\033[0m"
     exit 1
   fi
-  writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+  writeConfigKey "productver" "${majorversion}.${minorversion}" "${USER_CONFIG_FILE}"
 fi
 
 # Update new buildnumber
@@ -153,7 +152,7 @@ tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
 rm -rf "${TMP_PATH}/modules"
 
 # Copying fake modprobe
-cp "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
+cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
 # Copying LKM to /usr/lib/modules
 gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" > "${RAMDISK_PATH}/usr/lib/modules/rp.ko"
 
@@ -212,4 +211,3 @@ rm -rf "${RAMDISK_PATH}"
 # Update SHA256 hash
 RAMDISK_HASH="$(sha256sum ${ORI_RDGZ_FILE} | awk '{print$1}')"
 writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
-echo
