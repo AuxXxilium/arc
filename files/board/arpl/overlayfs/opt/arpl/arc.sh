@@ -490,17 +490,17 @@ function make() {
     return 1
   fi
 
-  /opt/arpl/zimage-patch.sh
-  if [ $? -ne 0 ]; then
-    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-      --msgbox "zImage not patched:\n`<"${LOG_FILE}"`" 0 0
-    return 1
-  fi
-
   /opt/arpl/ramdisk-patch.sh
   if [ $? -ne 0 ]; then
     dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
       --msgbox "Ramdisk not patched:\n`<"${LOG_FILE}"`" 0 0
+    return 1
+  fi
+
+  /opt/arpl/zimage-patch.sh
+  if [ $? -ne 0 ]; then
+    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+      --msgbox "zImage not patched:\n`<"${LOG_FILE}"`" 0 0
     return 1
   fi
   
