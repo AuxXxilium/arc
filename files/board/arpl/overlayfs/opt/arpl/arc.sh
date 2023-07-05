@@ -208,19 +208,18 @@ function arcMenu() {
     PRODUCTVER=""
     BUILDNUM=""
     SMALLNUM=""
+    writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
     writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
     writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
     writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "paturl" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "patsum" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
     deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
     deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
     if [ -f "${ORI_ZIMAGE_FILE}" ]; then
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-      rm -f "${TMP_PATH}/patdownloadurl"
     fi
     DIRTY=1
   fi
@@ -301,7 +300,6 @@ function arcbuild() {
   done < <(getAllModules "${PLATFORM}" "${KVER}")
   # Remove old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-  rm -f "${TMP_PATH}/patdownloadurl"
   DIRTY=1
   if [ "${ONLYVERSION}" != "true" ]; then
     arcsettings
@@ -441,7 +439,7 @@ function make() {
   rm -f "${DSM_FILE}"
   # Get new files
   DSM_LINK="${MODEL}/${PRODUCTVER}/dsm.tar"
-  DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
+  DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/dev/files/${DSM_LINK}"
   STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
   if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
     dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
@@ -474,9 +472,13 @@ function make() {
       cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
     fi
     # Write out .pat variables
-    PAT_MD5_HASH=$(cat "${UNTAR_PAT_PATH}/pat_hash")
-    PAT_URL=$(cat "${UNTAR_PAT_PATH}/pat_url")
-    writeConfigKey "arc.pathash" "${PAT_MD5_HASH}" "${USER_CONFIG_FILE}"
+    PAT_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
+    PAT_MAJOR="$(echo "${PRODUCTVERS}" | cut -b 1)"
+    PAT_MINOR="$(echo "${PRODUCTVER}"  | cut -b 3)"
+    PAT_URL=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')
+    HASH=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')
+    PAT_URL="${PAT_URL%%\?*}"
+    writeConfigKey "arc.pathash" "${HASH}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
   elif [ ! -f "${DSM_FILE}" ]; then
     dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
@@ -543,17 +545,17 @@ function editUserConfig() {
   done
   OLDMODEL=${MODEL}
   OLDPRODUCTVER=${PRODUCTVER}
+  OLDBUILDNUM=${BUILDNUM}
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-  if [ "${MODEL}" != "${OLDMODEL}" -o "${PRODUCTVER}" != "${OLDPRODUCTVER}" ]; then
+  if [ "${MODEL}" != "${OLDMODEL}" -o "${PRODUCTVER}" != "${OLDPRODUCTVER}" -o "${BUILDNUM}" != "${OLDBUILDNUM}" ]; then
     # Remove old files
     rm -f "${MOD_ZIMAGE_FILE}"
     rm -f "${MOD_RDGZ_FILE}"
   fi
   DIRTY=1
-  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
 
 ###############################################################################
@@ -1115,6 +1117,7 @@ function backupMenu() {
               PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
             fi
           done < <(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
           arcbuild
@@ -1235,6 +1238,7 @@ function backupMenu() {
               PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
             fi
           done < <(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
           arcbuild
@@ -1280,6 +1284,7 @@ function backupMenu() {
               PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
             fi
           done < <(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
           arcbuild
@@ -1357,6 +1362,7 @@ function backupMenu() {
               PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
             fi
           done < <(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
           arcbuild
@@ -1877,7 +1883,7 @@ function tryRecoveryDSM() {
           if [ -n "${PRODUCTVER}" ]; then
             cp "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
             cp "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
-            MSG="Found a installation:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
+            MSG="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
             SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
             if [ -n "${SN}" ]; then
               SNARC="$(readModelKey "${MODEL}" "arc.serial")"
