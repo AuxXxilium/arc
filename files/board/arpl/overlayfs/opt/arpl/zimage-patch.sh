@@ -20,3 +20,4 @@ rm -f "${MOD_ZIMAGE_FILE}"
 ZIMAGE_HASH="$(sha256sum ${ORI_ZIMAGE_FILE} | awk '{print$1}')"
 writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
 echo
+echo
