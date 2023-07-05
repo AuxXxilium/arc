@@ -18,6 +18,10 @@ on:
         description: 'format %y.%-m.$i or auto'
         required: false
         type: string
+      prerelease:
+        description: 'pre release'
+        default: false
+        type: boolean
 
 jobs:
   build:
@@ -200,6 +204,7 @@ jobs:
         if: env.VERSION != ''
         with:
           tag_name: ${{ env.VERSION }}
+          prerelease: ${{ inputs.prerelease }}
           files: |
             arc-${{ env.VERSION }}.img.zip
             arc-${{ env.VERSION }}.vmdk-dyn.zip

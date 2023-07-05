@@ -37,7 +37,9 @@ fi
 DIRTY=0
 
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
+SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
@@ -69,10 +71,10 @@ function backtitle() {
     BACKTITLE+=" (no model)"
   fi
   BACKTITLE+=" |"
-  if [ -n "${BUILD}" ]; then
-    BACKTITLE+=" ${BUILD}"
+  if [ -n "${PRODUCTVER}" ]; then
+    BACKTITLE+=" ${PRODUCTVER}"
   else
-    BACKTITLE+=" (no build)"
+    BACKTITLE+=" (no version)"
   fi
   BACKTITLE+=" |"
   if [ -n "${IP}" ]; then
@@ -203,14 +205,21 @@ function arcMenu() {
     if ! grep -q "^flags.*aes.*" /proc/cpuinfo; then
       WARNON=4
     fi
+    PRODUCTVER=""
+    BUILDNUM=""
+    SMALLNUM=""
     writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
+    writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
     deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
     deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
     if [ -f "${ORI_ZIMAGE_FILE}" ]; then
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-      rm -f "${TMP_PATH}/patdownloadurl"
     fi
     DIRTY=1
   fi
@@ -250,10 +259,10 @@ function arcbuild() {
       fi
     fi
     # Select Build for DSM
-    ITEMS="$(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r)"
+    ITEMS="$(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r)"
     if [ -z "${1}" ]; then
       dialog --clear --no-items --backtitle "`backtitle`" \
-        --menu "Choose a Build" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
+        --menu "Choose a Version" 0 0 0 ${ITEMS} 2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
       resp=$(<${TMP_PATH}/resp)
       [ -z "${resp}" ] && return
@@ -261,26 +270,20 @@ function arcbuild() {
       if ! arrayExistItem "${1}" ${ITEMS}; then return; fi
       resp="${1}"
     fi
-    if [ "${BUILD}" != "${resp}" ]; then
-      BUILD=${resp}
-      writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
+    if [ "${PRODUCTVER}" != "${resp}" ]; then
+      PRODUCTVER=${resp}
+      writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
     fi
   fi
-  BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
-  KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
-  if [ -z "{KVER}" ]; then
-    BUILD="$(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r | awk 'NR==1')"
-    writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
-    BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
-    KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
-  fi
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  KVER=$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
   # Delete synoinfo and reload model/build synoinfo
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS=': ' read KEY VALUE; do
     writeConfigKey "synoinfo.${KEY}" "${VALUE}" "${USER_CONFIG_FILE}"
-  done < <(readModelMap "${MODEL}" "builds.${BUILD}.synoinfo")
+  done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].synoinfo")
   # Memory: Set mem_max_mb to the amount of installed memory
   writeConfigKey "synoinfo.mem_max_mb" "${RAMTOTAL}" "${USER_CONFIG_FILE}"
   # Check addons
@@ -297,7 +300,6 @@ function arcbuild() {
   done < <(getAllModules "${PLATFORM}" "${KVER}")
   # Remove old files
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-  rm -f "${TMP_PATH}/patdownloadurl"
   DIRTY=1
   if [ "${ONLYVERSION}" != "true" ]; then
     arcsettings
@@ -415,8 +417,8 @@ function make() {
   clear
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
-  BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
-  KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   
   # Check if all addon exists
   while IFS=': ' read ADDON PARAM; do
@@ -429,15 +431,15 @@ function make() {
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
   # Check for existing files
-  mkdir -p "${CACHE_PATH}/${MODEL}/${BUILD}"
-  DSM_FILE="${CACHE_PATH}/${MODEL}/${BUILD}/dsm.tar"
-  DSM_MODEL="$(echo "${MODEL}" | jq -sRr @uri)"
+  mkdir -p "${CACHE_PATH}/${MODEL}/${PRODUCTVER}"
+  DSM_FILE="${CACHE_PATH}/${MODEL}/${PRODUCTVER}/dsm.tar"
+  DSM_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
   # Clean old files
   rm -rf "${UNTAR_PAT_PATH}"
   rm -f "${DSM_FILE}"
   # Get new files
-  DSM_LINK="${MODEL}/${BUILD}/dsm.tar"
-  DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
+  DSM_LINK="${DSM_MODEL}/${PRODUCTVER}/dsm.tar"
+  DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/dev/files/${DSM_LINK}"
   STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
   if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
     dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
@@ -447,14 +449,14 @@ function make() {
     mkdir -p "${UNTAR_PAT_PATH}"
     tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
     # Check zImage Hash
-    HASH="$(sha256sum "${UNTAR_PAT_PATH}/zImage" | awk '{print$1}')"
+    HASH=$(sha256sum "${UNTAR_PAT_PATH}/zImage" | awk '{print$1}')
     OLDHASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
     if [ "${HASH}" != "${OLDHASH}" ]; then
       NEWIMAGE="true"
       writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
     fi
     # Check Ramdisk Hash
-    HASH="$(sha256sum "${UNTAR_PAT_PATH}/rd.gz" | awk '{print$1}')"
+    HASH=$(sha256sum "${UNTAR_PAT_PATH}/rd.gz" | awk '{print$1}')
     OLDHASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
     if [ "${HASH}" != "${OLDHASH}" ]; then
       NEWIMAGE="true"
@@ -470,9 +472,13 @@ function make() {
       cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
     fi
     # Write out .pat variables
-    PAT_MD5_HASH=$(cat "${UNTAR_PAT_PATH}/pat_hash")
-    PAT_URL=$(cat "${UNTAR_PAT_PATH}/pat_url")
-    writeConfigKey "arc.pathash" "${PAT_MD5_HASH}" "${USER_CONFIG_FILE}"
+    PAT_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
+    PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
+    PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
+    PAT_URL=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')
+    HASH=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')
+    PAT_URL="${PAT_URL%%\?*}"
+    writeConfigKey "arc.pathash" "${HASH}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
   elif [ ! -f "${DSM_FILE}" ]; then
     dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
@@ -538,18 +544,18 @@ function editUserConfig() {
     dialog --backtitle "`backtitle`" --title "Invalid YAML format" --msgbox "${ERRORS}" 0 0
   done
   OLDMODEL=${MODEL}
-  OLDBUILD=${BUILD}
+  OLDPRODUCTVER=${PRODUCTVER}
+  OLDBUILDNUM=${BUILDNUM}
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-  if [ "${MODEL}" != "${OLDMODEL}" -o "${BUILD}" != "${OLDBUILD}" ]; then
+  if [ "${MODEL}" != "${OLDMODEL}" -o "${PRODUCTVER}" != "${OLDPRODUCTVER}" -o "${BUILDNUM}" != "${OLDBUILDNUM}" ]; then
     # Remove old files
     rm -f "${MOD_ZIMAGE_FILE}"
     rm -f "${MOD_RDGZ_FILE}"
   fi
   DIRTY=1
-  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
 
 ###############################################################################
@@ -557,9 +563,9 @@ function editUserConfig() {
 function addonMenu() {
   # Read 'platform' and kernel version to check if addon exists
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
-  KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
+  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   ALLADDONS="$(availableAddons "${PLATFORM}" "${KVER}")"
   # Read addons from user config
   unset ADDONS
@@ -601,9 +607,9 @@ function addonMenu() {
 function modulesMenu() {
   NEXT="1"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
-  KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
+  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   dialog --backtitle "`backtitle`" --title "Modules" --aspect 18 \
     --infobox "Reading modules" 0 0
   ALLMODULES=$(getAllModules "${PLATFORM}" "${KVER}")
@@ -892,8 +898,8 @@ function cmdlineMenu() {
         ITEMS=""
         while IFS=': ' read KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
-        done < <(readModelMap "${MODEL}" "builds.${BUILD}.cmdline")
-        dialog --backtitle "`backtitle`" --title "Model/build cmdline" \
+        done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].cmdline")
+        dialog --backtitle "`backtitle`" --title "Model/Version cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
       0) return ;;
@@ -1100,17 +1106,18 @@ function backupMenu() {
               --msgbox "No Config Backup found" 0 0
           fi
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          OLDBUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+          OLDPRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
           while read LINE; do
-            if [ "${LINE}" = "${OLDBUILD}" ]; then
-              writeConfigKey "build" "${OLDBUILD}" "${USER_CONFIG_FILE}"
-              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+            if [ "${LINE}" = "${OLDPRODUCTVER}" ]; then
+              writeConfigKey "productver" "${OLDPRODUCTVER}" "${USER_CONFIG_FILE}"
+              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
               break
-            elif [ "${LINE}" != "${OLDBUILD}" ]; then
-              writeConfigKey "build" "${LINE}" "${USER_CONFIG_FILE}"
-              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+            elif [ "${LINE}" != "${OLDPRODUCTVER}" ]; then
+              writeConfigKey "productver" "${LINE}" "${USER_CONFIG_FILE}"
+              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
             fi
-          done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          done < <(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
           arcbuild
@@ -1220,17 +1227,18 @@ function backupMenu() {
           curl -k https://dpaste.com/${GENHASH}.txt >${TMP_PATH}/user-config.yml
           cp -f ${TMP_PATH}/user-config.yml "${USER_CONFIG_FILE}"
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          OLDBUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+          OLDPRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
           while read LINE; do
-            if [ "${LINE}" = "${OLDBUILD}" ]; then
-              writeConfigKey "build" "${OLDBUILD}" "${USER_CONFIG_FILE}"
-              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+            if [ "${LINE}" = "${OLDPRODUCTVER}" ]; then
+              writeConfigKey "productver" "${OLDPRODUCTVER}" "${USER_CONFIG_FILE}"
+              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
               break
-            elif [ "${LINE}" != "${OLDBUILD}" ]; then
-              writeConfigKey "build" "${LINE}" "${USER_CONFIG_FILE}"
-              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+            elif [ "${LINE}" != "${OLDPRODUCTVER}" ]; then
+              writeConfigKey "productver" "${LINE}" "${USER_CONFIG_FILE}"
+              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
             fi
-          done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          done < <(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
           arcbuild
@@ -1265,17 +1273,18 @@ function backupMenu() {
               --msgbox "No Config Backup found" 0 0
           fi
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          OLDBUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+          OLDPRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
           while read LINE; do
-            if [ "${LINE}" = "${OLDBUILD}" ]; then
-              writeConfigKey "build" "${OLDBUILD}" "${USER_CONFIG_FILE}"
-              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+            if [ "${LINE}" = "${OLDPRODUCTVER}" ]; then
+              writeConfigKey "productver" "${OLDPRODUCTVER}" "${USER_CONFIG_FILE}"
+              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
               break
-            elif [ "${LINE}" != "${OLDBUILD}" ]; then
-              writeConfigKey "build" "${LINE}" "${USER_CONFIG_FILE}"
-              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+            elif [ "${LINE}" != "${OLDPRODUCTVER}" ]; then
+              writeConfigKey "productver" "${LINE}" "${USER_CONFIG_FILE}"
+              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
             fi
-          done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          done < <(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
           arcbuild
@@ -1334,7 +1343,7 @@ function backupMenu() {
               2>${TMP_PATH}/resp
             RET=$?
             [ ${RET} -ne 0 ] && break 2
-            GENHASH="`<"${TMP_PATH}/resp"`"
+            GENHASH="$(<"${TMP_PATH}/resp")"
             [ ${#GENHASH} -eq 9 ] && break
             dialog --backtitle "`backtitle`" --title "Restore with Code" --msgbox "Invalid Code" 0 0
           done
@@ -1342,17 +1351,18 @@ function backupMenu() {
           curl -k https://dpaste.com/${GENHASH}.txt >${TMP_PATH}/user-config.yml
           cp -f ${TMP_PATH}/user-config.yml "${USER_CONFIG_FILE}"
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          OLDBUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+          OLDPRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
           while read LINE; do
-            if [ "${LINE}" = "${OLDBUILD}" ]; then
-              writeConfigKey "build" "${OLDBUILD}" "${USER_CONFIG_FILE}"
-              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+            if [ "${LINE}" = "${OLDPRODUCTVER}" ]; then
+              writeConfigKey "productver" "${OLDPRODUCTVER}" "${USER_CONFIG_FILE}"
+              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
               break
-            elif [ "${LINE}" != "${OLDBUILD}" ]; then
-              writeConfigKey "build" "${LINE}" "${USER_CONFIG_FILE}"
-              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+            elif [ "${LINE}" != "${OLDPRODUCTVER}" ]; then
+              writeConfigKey "productver" "${LINE}" "${USER_CONFIG_FILE}"
+              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
             fi
-          done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          done < <(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
           arcbuild
@@ -1373,8 +1383,9 @@ function updateMenu() {
   NEXT="1"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ -n "${CONFDONE}" ]; then
+    PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
     PLATFORM="$(readModelKey "${MODEL}" "platform")"
-    KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
+    KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
     while true; do
       dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
         1 "Full upgrade Loader" \
@@ -1729,9 +1740,9 @@ function sysinfo() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ -n "${CONFDONE}" ]; then
     MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-    BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+    PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
     PLATFORM="$(readModelKey "${MODEL}" "platform")"
-    KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
+    KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
     REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
@@ -1770,7 +1781,7 @@ function sysinfo() {
   TEXT+="\n\Z4Config:\Zn"
   TEXT+="\nArc Version: \Zb${ARPL_VERSION}\Zn"
   TEXT+="\nSubversion: \ZbModules ${MODULESVERSION}\Zn | \ZbAddons ${ADDONSVERSION}\Zn | \ZbLKM ${LKMVERSION}\Zn | \ZbConfigs ${CONFIGSVERSION}\Zn"
-  TEXT+="\nModel | Build: \Zb${MODEL} | ${BUILD}\Zn"
+  TEXT+="\nModel | Version: \Zb${MODEL} | ${PRODUCTVER}\Zn"
   TEXT+="\nPlatform | Kernel: \Zb${PLATFORM} | ${KVER}\Zn"
   if [ -n "${CONFDONE}" ]; then
     TEXT+="\nConfig: \ZbComplete\Zn"
@@ -1847,10 +1858,15 @@ function tryRecoveryDSM() {
     --infobox "Trying to recover a DSM installed system" 0 0
   if findAndMountDSMRoot; then
     MODEL=""
-    BUILD=""
+    PRODUCTVER=""
+    BUILDNUM=""
+    SMALLNUM=""
     if [ -f "${DSMROOT_PATH}/.syno/patch/VERSION" ]; then
       eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep unique)
-      eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep base)
+      eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep majorversion)
+      eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep minorversion)
+      eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep buildnumber)
+      eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep smallfixnumber)
       if [ -n "${unique}" ] ; then
         while read F; do
           M="$(basename ${F})"
@@ -1862,21 +1878,12 @@ function tryRecoveryDSM() {
         done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
 	      MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
         if [ -n "${MODEL}" ]; then
-          OLDBUILD="${base}"
-          while read LINE; do
-            if [ "${LINE}" = "${OLDBUILD}" ]; then
-              writeConfigKey "build" "${OLDBUILD}" "${USER_CONFIG_FILE}"
-              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
-              break
-            elif [ "${LINE}" != "${OLDBUILD}" ]; then
-              writeConfigKey "build" "${LINE}" "${USER_CONFIG_FILE}"
-              BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
-            fi
-          done < <(readConfigEntriesArray "builds" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
-          if [ -n "${BUILD}" ]; then
+          writeConfigKey "productver" "${majorversion}.${minorversion}" "${USER_CONFIG_FILE}"
+          PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+          if [ -n "${PRODUCTVER}" ]; then
             cp "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
             cp "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
-            MSG="Found a installation:\nModel: ${MODEL}\nBuildnumber: ${BUILD}"
+            MSG="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
             SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
             if [ -n "${SN}" ]; then
               SNARC="$(readModelKey "${MODEL}" "arc.serial")"
@@ -1886,6 +1893,10 @@ function tryRecoveryDSM() {
                 writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
                 writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
               fi
+              BUILDNUM=${buildnumber}
+              SMALLNUM=${smallfixnumber}
+              writeConfigKey "buildnum" "${BUILDNUM}" "${USER_CONFIG_FILE}"
+              writeConfigKey "smallnum" "${SMALLNUM}" "${USER_CONFIG_FILE}"
               ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
               MSG+="\nArc Patch: ${ARCPATCH}"
             fi
@@ -1929,17 +1940,6 @@ function downgradeMenu() {
   MSG="Remove VERSION file for all disks completed."
   dialog --backtitle "`backtitle`" --colors --aspect 18 \
     --msgbox "${MSG}" 0 0
-}
-
-###############################################################################
-# show .pat download url to user
-function paturl() {
-  # output pat download link
-  if [ ! -f "${TMP_PATH}/patdownloadurl" ]; then
-    echo "$(readModelKey "${MODEL}" "builds.${BUILD}.pat.url")" >"${TMP_PATH}/patdownloadurl"
-  fi
-  dialog --backtitle "`backtitle`" --title "*.pat download link" \
-    --editbox "${TMP_PATH}/patdownloadurl" 0 0
 }
 
 ###############################################################################
@@ -2082,7 +2082,7 @@ function boot() {
 ###############################################################################
 ###############################################################################
 
-if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${BUILD}" -a loaderIsConfigured ]; then
+if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${PRODUCTVER}" -a loaderIsConfigured ]; then
   install-addons.sh
   make
   boot && exit 0 || sleep 3
@@ -2112,15 +2112,12 @@ while true; do
     fi
     if [ -n "${ARCOPTS}" ]; then
       echo "= \"\Z4========== Arc ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
-      echo "m \"Change DSM Build \" "                                                       >>"${TMP_PATH}/menu"
+      echo "m \"Change DSM Version \" "                                                     >>"${TMP_PATH}/menu"
       if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
         echo "s \"Change Storage Map \" "                                                   >>"${TMP_PATH}/menu"
       fi
       echo "n \"Change Network Config \" "                                                  >>"${TMP_PATH}/menu"
       echo "u \"Change USB Port Config \" "                                                 >>"${TMP_PATH}/menu"
-      if [ -n "${BUILDDONE}" ]; then
-        echo "p \"Show .pat download link \" "                                              >>"${TMP_PATH}/menu"
-      fi
       echo "w \"Allow DSM downgrade \" "                                                    >>"${TMP_PATH}/menu"
       echo "x \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
       echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >>"${TMP_PATH}/menu"

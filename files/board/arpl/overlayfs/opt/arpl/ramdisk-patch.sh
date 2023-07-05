@@ -24,17 +24,20 @@ rm -rf "${RAMDISK_PATH}"  # Force clean
 mkdir -p "${RAMDISK_PATH}"
 (cd "${RAMDISK_PATH}"; xz -dc < "${ORI_RDGZ_FILE}" | cpio -idm) >/dev/null 2>&1
 
+MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+
 # Check if DSM buildnumber changed
 . "${RAMDISK_PATH}/etc/VERSION"
 
-MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
-
-if [ ${BUILD} -ne ${buildnumber} ]; then
-  echo -e "\033[A\n\033[1;34mBuild number changed from \033[1;31m${BUILD}\033[1;34m to \033[1;31m${buildnumber}\033[0m"
-  # Update new buildnumber
-  BUILD=${buildnumber}
+if [ -n "${PRODUCTVER}" -a -n "${BUILDNUM}" -a -n "${SMALLNUM}" ] && \
+  ([ ! "${PRODUCTVER}" = "${majorversion}.${minorversion}" ] || [ ! "${BUILDNUM}" = "${buildnumber}" ] || [ ! "${SMALLNUM}" = "${smallfixnumber}" ]); then
+  OLDVER="${PRODUCTVER}(${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))"
+  NEWVER="${majorversion}.${minorversion}(${buildnumber}$([ ${smallfixnumber:-0} -ne 0 ] && echo "u${smallfixnumber}"))"
+  echo -e "\033[A\n\033[1;34mVersion changed from \033[1;31m${OLDVER}\033[1;34m to \033[1;31m${NEWVER}\033[0m"
   echo -e "\033[1;37mLooking for Online Patch.\033[0m"
+  PATURL=""
+  PATSUM=""
   # Use Onlinemode
   ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
   if [ "${ONLINEMODE}" = "true" ]; then
@@ -57,28 +60,28 @@ if [ ${BUILD} -ne ${buildnumber} ]; then
   # Use Onlinepatch
   /opt/arpl/online-patch.sh
   if [ $? -ne 0 ]; then
-    echo -e "\033[1;37mOnline Patch has no Data for your Build: ${BUILD}\033[0m"
+    echo -e "\033[1;37mOnline Patch has no Data for your DSM: ${PRODUCTVER}\033[0m"
     exit 1
   fi
-  writeConfigKey "build" "${BUILD}" "${USER_CONFIG_FILE}"
+  writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
 fi
 
 # Read model data
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-BUILD="$(readConfigKey "build" "${USER_CONFIG_FILE}")"
+PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 PLATFORM="$(readModelKey "${MODEL}" "platform")"
-KVER="$(readModelKey "${MODEL}" "builds.${BUILD}.kver")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 UNIQUE="$(readModelKey "${MODEL}" "unique")"
-PAT_MD5_HASH="$(cat "${UNTAR_PAT_PATH}/pat_hash")"
-PAT_URL="$(cat "${UNTAR_PAT_PATH}/pat_url")"
-RD_COMPRESSED="$(readModelKey "${MODEL}" "builds.${BUILD}.rd-compressed")"
+PAT_MD5_HASH="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
+PAT_URL="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
+KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compressed")"
 
 # Sanity check
-[ -z "${PLATFORM}" -o -z "${KVER}" ] && (die "ERROR: Configuration for model ${MODEL} and buildnumber ${BUILD} not found." | tee -a "${LOG_FILE}")
+[ -z "${PLATFORM}" -o -z "${KVER}" ] && (die "ERROR: Configuration for Model ${MODEL} and Version ${PRODUCTVER} not found." | tee -a "${LOG_FILE}")
 
 declare -A SYNOINFO
 declare -A ADDONS
@@ -101,7 +104,7 @@ done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 while read f; do
   echo "Patching with ${f}" >"${LOG_FILE}" 2>&1
   (cd "${RAMDISK_PATH}" && patch -p1 < "${PATCH_PATH}/${f}") >>"${LOG_FILE}" 2>&1 || dieLog
-done < <(readModelArray "${MODEL}" "builds.${BUILD}.patch")
+done < <(readModelArray "${MODEL}" "productvers.[${PRODUCTVER}].patch")
 
 # Patch /etc/synoinfo.conf
 for KEY in ${!SYNOINFO[@]}; do
@@ -129,7 +132,7 @@ rm -rf "${TMP_PATH}/modules"
 mkdir -p "${TMP_PATH}/modules"
 tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
 for F in $(ls "${TMP_PATH}/modules/"*.ko); do
-  M=`basename ${F}`
+  M=$(basename ${F})
   if arrayExistItem "${M:0:-3}" "${!USERMODULES[@]}"; then
     cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}"
   else
@@ -156,7 +159,6 @@ echo "#!/bin/sh"                                 > "${RAMDISK_PATH}/addons/addon
 echo 'echo "addons.sh called with params ${@}"' >> "${RAMDISK_PATH}/addons/addons.sh"
 echo "export PLATFORM=${PLATFORM}"              >> "${RAMDISK_PATH}/addons/addons.sh"
 echo "export MODEL=${MODEL}"                    >> "${RAMDISK_PATH}/addons/addons.sh"
-echo "export BUILD=${BUILD}"                    >> "${RAMDISK_PATH}/addons/addons.sh"
 echo "export MLINK=${PAT_URL}"                  >> "${RAMDISK_PATH}/addons/addons.sh"
 echo "export MCHECKSUM=${PAT_MD5_HASH}"         >> "${RAMDISK_PATH}/addons/addons.sh"
 echo "export LAYOUT=${LAYOUT}"                  >> "${RAMDISK_PATH}/addons/addons.sh"
