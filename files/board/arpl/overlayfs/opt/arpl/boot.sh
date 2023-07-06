@@ -176,7 +176,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         echo -en "\r${ETHX[${N}]}(${DRIVER}): DOWN\n"
         break
       fi
-      if [ ${COUNT} -eq 20 ]; then # Under normal circumstances, no errors should occur here.
+      if [ ${COUNT} -eq 30 ]; then # Under normal circumstances, no errors should occur here.
         echo -en "\r${ETHX[${N}]}(${DRIVER}): ERROR - Timeout\n"
         break
       fi
