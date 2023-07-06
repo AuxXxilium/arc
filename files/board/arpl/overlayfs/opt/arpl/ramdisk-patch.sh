@@ -32,9 +32,6 @@ LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-# Read PAT Info
-PAT_URL="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
-PAT_HASH="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
 
 # Check if Ramdisk changed
 RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
@@ -71,6 +68,16 @@ RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compres
 
 # Sanity check
 [ -z "${PLATFORM}" -o -z "${KVER}" ] && (die "ERROR: Configuration for Model ${MODEL} and Version ${PRODUCTVER} not found." | tee -a "${LOG_FILE}")
+
+# Update PAT Info for Update
+PAT_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
+PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
+PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
+PAT_URL=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')
+PAT_HASH=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')
+PAT_URL="${PAT_URL%%\?*}"
+writeConfigKey "arc.pathash" "${HASH}" "${USER_CONFIG_FILE}"
+writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
 
 declare -A SYNOINFO
 declare -A ADDONS
