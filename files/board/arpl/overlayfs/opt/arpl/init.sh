@@ -189,14 +189,14 @@ for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
       echo -en "\r${ETHX[${N}]}: ERROR - Timeout\n"
       break
     fi
-    COUNT=$((${COUNT}+5))
+    sleep 5
     IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
     if [ -n "${IP}" ]; then
       echo -en "\r${ETHX[${N}]}: $(printf "Access \033[1;34mhttp://%s:7681\033[0m to connect via web terminal." "${IP}")\n"
       break
     fi
     echo -n "."
-    sleep 5
+    COUNT=$((${COUNT}+5))
   done
 done
 
