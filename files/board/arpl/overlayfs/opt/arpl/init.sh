@@ -72,8 +72,6 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "lkm" "dev" "${USER_CONFIG_FILE}"
   writeConfigKey "model" "" "${USER_CONFIG_FILE}"
   writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
   writeConfigKey "sn" "" "${USER_CONFIG_FILE}"

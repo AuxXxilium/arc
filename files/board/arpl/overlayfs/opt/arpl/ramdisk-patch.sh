@@ -17,66 +17,53 @@ rm -f "${MOD_RDGZ_FILE}"
 LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
 LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
 SPACELEFT=$(df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}')
-[ ${SPACELEFT} -le 268435456 ] && rm -rf "${CACHE_PATH}/dl"
 
 # Unzipping ramdisk
 rm -rf "${RAMDISK_PATH}"  # Force clean
 mkdir -p "${RAMDISK_PATH}"
 (cd "${RAMDISK_PATH}"; xz -dc < "${ORI_RDGZ_FILE}" | cpio -idm) >/dev/null 2>&1
 
-MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-
 # Check if DSM buildnumber changed
 . "${RAMDISK_PATH}/etc/VERSION"
 
-if [ -n "${PRODUCTVER}" -a -n "${BUILDNUM}" -a -n "${SMALLNUM}" ] && \
-  ([ ! "${PRODUCTVER}" = "${majorversion}.${minorversion}" ] || [ ! "${BUILDNUM}" = "${buildnumber}" ] || [ ! "${SMALLNUM}" = "${smallfixnumber}" ]); then
-  OLDVER="${PRODUCTVER}(${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))"
-  NEWVER="${majorversion}.${minorversion}(${buildnumber}$([ ${smallfixnumber:-0} -ne 0 ] && echo "u${smallfixnumber}"))"
-  echo -e "\033[A\n\033[1;34mVersion changed from \033[1;31m${OLDVER}\033[1;34m to \033[1;31m${NEWVER}\033[0m"
-  echo -e "\033[1;37mLooking for Online Patch.\033[0m"
-  PATURL=""
-  PATSUM=""
-  # Use Onlinemode
-  ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
-  if [ "${ONLINEMODE}" = "true" ]; then
-    CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
-    CONFIGSONLINE="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-    if [ "${CONFIGSVERSION}" != "${CONFIGSONLINE}" ]; then
-      DSM_MODEL="$(echo "${MODEL}" | jq -sRr @uri)"
-      CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${MODEL}.yml"
-      if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
-        rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
-      fi
-      STATUS=$(curl --insecure -s -w "%{http_code}" -L "${CONFIG_URL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml)
-      if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-        echo -e "\033[1;37mOnlinemode: Config update failed!\033[0m"
-      else
-        echo -e "\033[1;37mOnlinemode: Config update successful!\033[0m"
-      fi
-    fi
-  fi
-  # Use Onlinepatch
-  /opt/arpl/online-patch.sh
-  if [ $? -ne 0 ]; then
-    echo -e "\033[1;37mOnline Patch has no Data for your DSM: ${PRODUCTVER}\033[0m"
-    exit 1
-  fi
-  writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-fi
-
-# Read model data
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-PLATFORM="$(readModelKey "${MODEL}" "platform")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-UNIQUE="$(readModelKey "${MODEL}" "unique")"
-PAT_MD5_HASH="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
 PAT_URL="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
+PAT_HASH="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
+
+RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
+if [ "$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')" != "${RAMDISK_HASH}" ]; then
+  # Use Onlinemode
+  ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
+  if [ "${ONLINEMODE}" = "true" ]; then
+    echo -ne "\033[1;37mLooking for Online Config.\033[0m"
+    CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
+    CONFIGSONLINE="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+    if [ "${CONFIGSVERSION}" != "${CONFIGSONLINE}" ] || [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
+      DSM_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
+      CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${DSM_MODEL}.yml"
+      STATUS=$(curl --insecure -s -w "%{http_code}" -L "${CONFIG_URL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml)
+      if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+        echo -ne "\033[1;37mOnlinemode: Config update failed!\033[0m"
+      else
+        echo -ne "\033[1;37mOnlinemode: Config update successful!\033[0m"
+      fi
+    else
+      echo -ne "\033[1;37mOnlinemode: No Config update needed!\033[0m"
+    fi
+  fi
+  # Update new buildnumber
+  PRODUCTVER="${majorversion}.${minorversion}"
+  writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+fi
+
+# Read Model Data
+UNIQUE=$(readModelKey "${MODEL}" "unique")
+PLATFORM="$(readModelKey "${MODEL}" "platform")"
 KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
 RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compressed")"
 
@@ -145,7 +132,7 @@ tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
 rm -rf "${TMP_PATH}/modules"
 
 # Copying fake modprobe
-cp "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
+cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
 # Copying LKM to /usr/lib/modules
 gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" > "${RAMDISK_PATH}/usr/lib/modules/rp.ko"
 
@@ -160,7 +147,7 @@ echo 'echo "addons.sh called with params ${@}"' >> "${RAMDISK_PATH}/addons/addon
 echo "export PLATFORM=${PLATFORM}"              >> "${RAMDISK_PATH}/addons/addons.sh"
 echo "export MODEL=${MODEL}"                    >> "${RAMDISK_PATH}/addons/addons.sh"
 echo "export MLINK=${PAT_URL}"                  >> "${RAMDISK_PATH}/addons/addons.sh"
-echo "export MCHECKSUM=${PAT_MD5_HASH}"         >> "${RAMDISK_PATH}/addons/addons.sh"
+echo "export MCHECKSUM=${PAT_HASH}"             >> "${RAMDISK_PATH}/addons/addons.sh"
 echo "export LAYOUT=${LAYOUT}"                  >> "${RAMDISK_PATH}/addons/addons.sh"
 echo "export KEYMAP=${KEYMAP}"                  >> "${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
@@ -180,7 +167,7 @@ echo "/addons/localrss.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_
 for ADDON in ${!ADDONS[@]}; do
   PARAMS=${ADDONS[${ADDON}]}
   if ! installAddon ${ADDON}; then
-    echo "${ADDON} is not available for this Platform!" | tee -a "${LOG_FILE}"
+    echo -n "${ADDON} is not available for this Platform!" | tee -a "${LOG_FILE}"
     exit 1
   fi
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog

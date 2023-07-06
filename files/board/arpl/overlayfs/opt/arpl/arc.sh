@@ -38,8 +38,6 @@ DIRTY=0
 
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
-SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
@@ -206,12 +204,8 @@ function arcMenu() {
       WARNON=4
     fi
     PRODUCTVER=""
-    BUILDNUM=""
-    SMALLNUM=""
     writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
     writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
     deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
@@ -240,14 +234,11 @@ function arcbuild() {
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   if [ "${ARCRECOVERY}" != "true" ]; then
     if [ "${ONLINEMODE}" = "true" ]; then
-      CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
+      CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
       CONFIGSONLINE="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
       if [ "${CONFIGSVERSION}" != "${CONFIGSONLINE}" ]; then
-        DSM_MODEL="$(echo "${MODEL}" | jq -sRr @uri)"
-        CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${MODEL}.yml"
-        if [ -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ]; then
-          rm -f "${MODEL_CONFIG_PATH}/${MODEL}.yml"
-        fi
+        DSM_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
+        CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${DSM_MODEL}.yml"
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "${CONFIG_URL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml)
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Onlinemode" --aspect 18 \
@@ -276,7 +267,7 @@ function arcbuild() {
     fi
   fi
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  KVER=$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")
+  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   dialog --backtitle "`backtitle`" --title "Arc Config" \
     --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
   # Delete synoinfo and reload model/build synoinfo
@@ -430,39 +421,43 @@ function make() {
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
-  # Check for existing files
-  mkdir -p "${CACHE_PATH}/${MODEL}/${PRODUCTVER}"
-  DSM_FILE="${CACHE_PATH}/${MODEL}/${PRODUCTVER}/dsm.tar"
-  DSM_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
-  # Clean old files
-  rm -rf "${UNTAR_PAT_PATH}"
-  rm -f "${DSM_FILE}"
-  # Get new files
-  DSM_LINK="${DSM_MODEL}/${PRODUCTVER}/dsm.tar"
-  DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/dev/files/${DSM_LINK}"
-  STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
-  if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-    dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
-      --msgbox "No DSM Image found!" 0 0
-    return 1
-  elif [ -f "${DSM_FILE}" ]; then
-    mkdir -p "${UNTAR_PAT_PATH}"
-    tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+  if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     # Check zImage Hash
-    HASH=$(sha256sum "${UNTAR_PAT_PATH}/zImage" | awk '{print$1}')
-    OLDHASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
-    if [ "${HASH}" != "${OLDHASH}" ]; then
+    ZIMAGE_HASH="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}')"
+    OLD_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
+    if [ "${ZIMAGE_HASH}" != "${OLD_HASH}" ]; then
       NEWIMAGE="true"
-      writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
     fi
     # Check Ramdisk Hash
-    HASH=$(sha256sum "${UNTAR_PAT_PATH}/rd.gz" | awk '{print$1}')
-    OLDHASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
-    if [ "${HASH}" != "${OLDHASH}" ]; then
+    RAMDISK_HASH="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')"
+    OLD_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
+    if [ "${RAMDISK_HASH}" != "${OLD_HASH}" ]; then
       NEWIMAGE="true"
-      writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
     fi
-    if [ "${NEWIMAGE}" = "true" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+  else
+    NEWIMAGE="true"
+  fi
+
+  # Build if NEWIMAGE is true
+  if [ "${NEWIMAGE}" = "true" ]; then
+    # Check for existing files
+    mkdir -p "${CACHE_PATH}/${MODEL}/${PRODUCTVER}"
+    DSM_FILE="${CACHE_PATH}/${MODEL}/${PRODUCTVER}/dsm.tar"
+    DSM_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
+    # Clean old files
+    rm -rf "${UNTAR_PAT_PATH}"
+    rm -f "${DSM_FILE}"
+    # Get new files
+    DSM_LINK="${DSM_MODEL}/${PRODUCTVER}/dsm.tar"
+    DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
+    STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
+    if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+      dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
+        --msgbox "No DSM Image found!" 0 0
+      return 1
+    elif [ -f "${DSM_FILE}" ]; then
+      mkdir -p "${UNTAR_PAT_PATH}"
+      tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
       # Copy DSM Files to locations
       cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
       cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
@@ -470,23 +465,29 @@ function make() {
       cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
       cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
       cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
+      # Write out .pat variables
+      PAT_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
+      PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
+      PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
+      PAT_URL=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')
+      PAT_HASH=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')
+      PAT_URL="${PAT_URL%%\?*}"
+      writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+    elif [ ! -f "${DSM_FILE}" ]; then
+      dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+          --msgbox "DSM Files missing!" 0 0
+      return 1
+    else
+      dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+        --msgbox "DSM Files extraction failed!" 0 0
+      return 1
     fi
-    # Write out .pat variables
-    PAT_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
-    PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
-    PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
-    PAT_URL=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')
-    HASH=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')
-    PAT_URL="${PAT_URL%%\?*}"
-    writeConfigKey "arc.pathash" "${HASH}" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
-  elif [ ! -f "${DSM_FILE}" ]; then
+  fi
+  /opt/arpl/ramdisk-patch.sh
+  if [ $? -ne 0 ]; then
     dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-        --msgbox "DSM Files missing!" 0 0
-    return 1
-  else
-    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-      --msgbox "DSM Files extraction failed!" 0 0
+      --msgbox "Ramdisk not patched:\n`<"${LOG_FILE}"`" 0 0
     return 1
   fi
 
@@ -494,13 +495,6 @@ function make() {
   if [ $? -ne 0 ]; then
     dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
       --msgbox "zImage not patched:\n`<"${LOG_FILE}"`" 0 0
-    return 1
-  fi
-
-  /opt/arpl/ramdisk-patch.sh
-  if [ $? -ne 0 ]; then
-    dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-      --msgbox "Ramdisk not patched:\n`<"${LOG_FILE}"`" 0 0
     return 1
   fi
   
@@ -545,12 +539,10 @@ function editUserConfig() {
   done
   OLDMODEL=${MODEL}
   OLDPRODUCTVER=${PRODUCTVER}
-  OLDBUILDNUM=${BUILDNUM}
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-  if [ "${MODEL}" != "${OLDMODEL}" -o "${PRODUCTVER}" != "${OLDPRODUCTVER}" -o "${BUILDNUM}" != "${OLDBUILDNUM}" ]; then
+  if [ "${MODEL}" != "${OLDMODEL}" -o "${PRODUCTVER}" != "${OLDPRODUCTVER}" ]; then
     # Remove old files
     rm -f "${MOD_ZIMAGE_FILE}"
     rm -f "${MOD_RDGZ_FILE}"
@@ -1381,325 +1373,260 @@ function backupMenu() {
 # Shows update menu to user
 function updateMenu() {
   NEXT="1"
-  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-  if [ -n "${CONFDONE}" ]; then
-    PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-    PLATFORM="$(readModelKey "${MODEL}" "platform")"
-    KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-    while true; do
-      dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
-        1 "Full upgrade Loader" \
-        2 "Update Arc Loader" \
-        3 "Update Addons" \
-        4 "Update LKMs" \
-        5 "Update Modules" \
-        6 "Update Configs" \
-        0 "Exit" \
-        2>${TMP_PATH}/resp
-      [ $? -ne 0 ] && return
-      case "$(<${TMP_PATH}/resp)" in
-        1)
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  while true; do
+    dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
+      1 "Full upgrade Loader" \
+      2 "Update Arc Loader" \
+      3 "Update Addons" \
+      4 "Update LKMs" \
+      5 "Update Modules" \
+      6 "Update Configs" \
+      0 "Exit" \
+      2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    case "$(<${TMP_PATH}/resp)" in
+      1)
+        dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
+          --infobox "Checking latest version" 0 0
+        ACTUALVERSION="v${ARPL_VERSION}"
+        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --infobox "Checking latest version" 0 0
-          ACTUALVERSION="v${ARPL_VERSION}"
-          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 -o -z "${TAG}" ]; then
-            dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-              --msgbox "Error checking new version" 0 0
-            continue
-          fi
-          if [ "${ACTUALVERSION}" = "${TAG}" ]; then
-            dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-              --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
-            [ $? -ne 0 ] && continue
-          fi
+            --msgbox "Error checking new version" 0 0
+          continue
+        fi
+        if [ "${ACTUALVERSION}" = "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --infobox "Downloading latest version ${TAG}" 0 0
-          # Download update file
-          STATUS=$(curl --insecure -w "%{http_code}" -L \
-            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
-          if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-            dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-              --msgbox "Error downloading update file" 0 0
-            continue
-          fi
-          unzip -o ${TMP_PATH}/arc-${TAG}.img.zip -d ${TMP_PATH}
-          if [ $? -ne 0 ]; then
-            dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-              --msgbox "Error extracting update file" 0 0
-            continue
-          fi
-          if [ -f "${USER_CONFIG_FILE}" ]; then
-            GENHASH=$(cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)
-            dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --msgbox "Backup config successful!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
+            --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
+          [ $? -ne 0 ] && continue
+        fi
+        dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
+          --infobox "Downloading latest version ${TAG}" 0 0
+        # Download update file
+        STATUS=$(curl --insecure -w "%{http_code}" -L \
+          "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
+        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
+            --msgbox "Error downloading update file" 0 0
+          continue
+        fi
+        unzip -o ${TMP_PATH}/arc-${TAG}.img.zip -d ${TMP_PATH}
+        if [ $? -ne 0 ]; then
+          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
+            --msgbox "Error extracting update file" 0 0
+          continue
+        fi
+        if [ -f "${USER_CONFIG_FILE}" ]; then
+          GENHASH=$(cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)
+          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
+          --msgbox "Backup config successful!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
+        else
+          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
+          --infobox "No config for Backup found!" 0 0
+        fi
+        dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
+          --infobox "Installing new Image" 0 0
+        # Process complete update
+        umount /mnt/p1 /mnt/p2 /mnt/p3
+        dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1) bs=1M conv=fsync
+        # Ask for Boot
+        dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
+          --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
+        [ $? -ne 0 ] && continue
+        exec reboot
+        exit
+        ;;
+      2)
+        dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
+          --infobox "Checking latest version" 0 0
+        ACTUALVERSION="v${ARPL_VERSION}"
+        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        if [ $? -ne 0 -o -z "${TAG}" ]; then
+          dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
+            --msgbox "Error checking new version" 0 0
+          continue
+        fi
+        if [ "${ACTUALVERSION}" = "${TAG}" ]; then
+          dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
+            --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
+          [ $? -ne 0 ] && continue
+        fi
+        dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
+          --infobox "Downloading latest version ${TAG}" 0 0
+        # Download update file
+        STATUS=$(curl --insecure -w "%{http_code}" -L \
+          "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip")
+        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+          dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
+            --msgbox "Error downloading update file" 0 0
+          continue
+        fi
+        unzip -oq ${TMP_PATH}/update.zip -d ${TMP_PATH}
+        if [ $? -ne 0 ]; then
+          dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
+            --msgbox "Error extracting update file" 0 0
+          continue
+        fi
+        # Check checksums
+        (cd ${TMP_PATH} && sha256sum --status -c sha256sum)
+        if [ $? -ne 0 ]; then
+          dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
+            --msgbox "Checksum do not match!" 0 0
+          continue
+        fi
+        dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
+          --infobox "Installing new files" 0 0
+        # Process update-list.yml
+        while read F; do
+          [ -f "${F}" ] && rm -f "${F}"
+          [ -d "${F}" ] && rm -Rf "${F}"
+        done < <(readConfigArray "remove" "${TMP_PATH}/update-list.yml")
+        while IFS=': ' read KEY VALUE; do
+          if [ "${KEY: -1}" = "/" ]; then
+            rm -Rf "${VALUE}"
+            mkdir -p "${VALUE}"
+            tar -zxf "${TMP_PATH}/$(basename "${KEY}").tgz" -C "${VALUE}"
           else
-            dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --infobox "No config for Backup found!" 0 0
+            mkdir -p "$(dirname "${VALUE}")"
+            mv "${TMP_PATH}/$(basename "${KEY}")" "${VALUE}"
           fi
-          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --infobox "Installing new Image" 0 0
-          # Process complete update
-          umount /mnt/p1 /mnt/p2 /mnt/p3
-          dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1) bs=1M conv=fsync
-          # Ask for Boot
-          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
-          [ $? -ne 0 ] && continue
-          exec reboot
-          exit
-          ;;
-        2)
-          dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
-            --infobox "Checking latest version" 0 0
-          ACTUALVERSION="v${ARPL_VERSION}"
-          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 -o -z "${TAG}" ]; then
-            dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
-              --msgbox "Error checking new version" 0 0
-            continue
-          fi
-          if [ "${ACTUALVERSION}" = "${TAG}" ]; then
-            dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
-              --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
-            [ $? -ne 0 ] && continue
-          fi
-          dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
-            --infobox "Downloading latest version ${TAG}" 0 0
-          # Download update file
-          STATUS=$(curl --insecure -w "%{http_code}" -L \
-            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip")
-          if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-            dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
-              --msgbox "Error downloading update file" 0 0
-            continue
-          fi
-          unzip -oq ${TMP_PATH}/update.zip -d ${TMP_PATH}
-          if [ $? -ne 0 ]; then
-            dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
-              --msgbox "Error extracting update file" 0 0
-            continue
-          fi
-          # Check checksums
-          (cd ${TMP_PATH} && sha256sum --status -c sha256sum)
-          if [ $? -ne 0 ]; then
-            dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
-              --msgbox "Checksum do not match!" 0 0
-            continue
-          fi
-          dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
-            --infobox "Installing new files" 0 0
-          # Process update-list.yml
-          while read F; do
-            [ -f "${F}" ] && rm -f "${F}"
-            [ -d "${F}" ] && rm -Rf "${F}"
-          done < <(readConfigArray "remove" "${TMP_PATH}/update-list.yml")
-          while IFS=': ' read KEY VALUE; do
-            if [ "${KEY: -1}" = "/" ]; then
-              rm -Rf "${VALUE}"
-              mkdir -p "${VALUE}"
-              tar -zxf "${TMP_PATH}/$(basename "${KEY}").tgz" -C "${VALUE}"
-            else
-              mkdir -p "$(dirname "${VALUE}")"
-              mv "${TMP_PATH}/$(basename "${KEY}")" "${VALUE}"
-            fi
-          done < <(readConfigMap "replace" "${TMP_PATH}/update-list.yml")
-          dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
-            --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
-          [ $? -ne 0 ] && continue
-          arpl-reboot.sh config
-          exit
-          ;;
-        3)
+        done < <(readConfigMap "replace" "${TMP_PATH}/update-list.yml")
+        dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
+          --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
+        [ $? -ne 0 ] && continue
+        arpl-reboot.sh config
+        exit
+        ;;
+      3)
+        dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
+          --infobox "Checking latest version" 0 0
+        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
-            --infobox "Checking latest version" 0 0
-          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 -o -z "${TAG}" ]; then
-            dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
-              --msgbox "Error checking new version" 0 0
-            continue
-          fi
+            --msgbox "Error checking new version" 0 0
+          continue
+        fi
+        dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
+          --infobox "Downloading latest version: ${TAG}" 0 0
+        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o ${TMP_PATH}/addons.zip)
+        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
-            --infobox "Downloading latest version: ${TAG}" 0 0
-          STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o ${TMP_PATH}/addons.zip)
-          if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-            dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
-              --msgbox "Error downloading new version" 0 0
-            continue
-          fi
-          dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
-            --infobox "Extracting latest version" 0 0
-          rm -rf ${TMP_PATH}/addons
-          mkdir -p ${TMP_PATH}/addons
-          unzip ${TMP_PATH}/addons.zip -d ${TMP_PATH}/addons >/dev/null 2>&1
-          dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
-            --infobox "Installing new addons" 0 0
-          rm -Rf "${ADDONS_PATH}/"*
-          [ -f ${TMP_PATH}/addons/VERSION ] && cp -f ${TMP_PATH}/addons/VERSION ${ADDONS_PATH}/
-          for PKG in $(ls ${TMP_PATH}/addons/*.addon); do
-            ADDON=$(basename ${PKG} | sed 's|.addon||')
-            rm -rf "${ADDONS_PATH}/${ADDON}"
-            mkdir -p "${ADDONS_PATH}/${ADDON}"
-            tar -xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
-          done
-          DIRTY=1
-          deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-          dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
-            --msgbox "Addons updated with success! ${TAG}" 0 0
-          ;;
-        4)
+            --msgbox "Error downloading new version" 0 0
+          continue
+        fi
+        dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
+          --infobox "Extracting latest version" 0 0
+        rm -rf ${TMP_PATH}/addons
+        mkdir -p ${TMP_PATH}/addons
+        unzip -o ${TMP_PATH}/addons.zip -d ${TMP_PATH}/addons >/dev/null 2>&1
+        dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
+          --infobox "Installing new addons" 0 0
+        rm -Rf "${ADDONS_PATH}/"*
+        [ -f ${TMP_PATH}/addons/VERSION ] && cp -f ${TMP_PATH}/addons/VERSION ${ADDONS_PATH}/
+        for PKG in $(ls ${TMP_PATH}/addons/*.addon); do
+          ADDON=$(basename ${PKG} | sed 's|.addon||')
+          rm -rf "${ADDONS_PATH}/${ADDON}"
+          mkdir -p "${ADDONS_PATH}/${ADDON}"
+          tar -xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
+        done
+        DIRTY=1
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
+          --msgbox "Addons updated with success! ${TAG}" 0 0
+        ;;
+      4)
+        dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
+          --infobox "Checking latest version" 0 0
+        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-            --infobox "Checking latest version" 0 0
-          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 -o -z "${TAG}" ]; then
-            dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-              --msgbox "Error checking new version" 0 0
-            continue
-          fi
+            --msgbox "Error checking new version" 0 0
+          continue
+        fi
+        dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
+          --infobox "Downloading latest version: ${TAG}" 0 0
+        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o ${TMP_PATH}/rp-lkms.zip)
+        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-            --infobox "Downloading latest version: ${TAG}" 0 0
-          STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o ${TMP_PATH}/rp-lkms.zip)
-          if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-            dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-              --msgbox "Error downloading latest version" 0 0
-            continue
-          fi
-          dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-            --infobox "Extracting latest version" 0 0
-          rm -rf "${LKM_PATH}/"*
-          unzip ${TMP_PATH}/rp-lkms.zip -d "${LKM_PATH}" >/dev/null 2>&1
-          DIRTY=1
-          deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-          dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-            --msgbox "LKMs updated with success! ${TAG}" 0 0
-          ;;
-        5)
+            --msgbox "Error downloading latest version" 0 0
+          continue
+        fi
+        dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
+          --infobox "Extracting latest version" 0 0
+        rm -rf "${LKM_PATH}/"*
+        unzip -o ${TMP_PATH}/rp-lkms.zip -d "${LKM_PATH}" >/dev/null 2>&1
+        DIRTY=1
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
+          --msgbox "LKMs updated with success! ${TAG}" 0 0
+        ;;
+      5)
+        dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
+          --infobox "Checking latest version" 0 0
+        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-            --infobox "Checking latest version" 0 0
-          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 -o -z "${TAG}" ]; then
-            dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-              --msgbox "Error checking new version" 0 0
-            continue
-          fi
+            --msgbox "Error checking new version" 0 0
+          continue
+        fi
+        dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
+          --infobox "Downloading latest version" 0 0
+        STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
+        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-            --infobox "Downloading latest version" 0 0
-          STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
-          if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-            dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-              --msgbox "Error downloading latest version" 0 0
-            continue
-          fi
-          rm "${MODULES_PATH}/"*
-          unzip ${TMP_PATH}/modules.zip -d "${MODULES_PATH}" >/dev/null 2>&1
-          # Rebuild modules if model/buildnumber is selected
-          if [ -n "${PLATFORM}" -a -n "${KVER}" ]; then
-            writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-            while read ID DESC; do
-              writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-            done < <(getAllModules "${PLATFORM}" "${KVER}")
-          fi
-          DIRTY=1
-          deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-          dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
-            --msgbox "Modules updated to ${TAG} with success!" 0 0
-          ;;
-        6)
+            --msgbox "Error downloading latest version" 0 0
+          continue
+        fi
+        rm "${MODULES_PATH}/"*
+        unzip -f ${TMP_PATH}/modules.zip -d "${MODULES_PATH}" >/dev/null 2>&1
+        # Rebuild modules if model/build is selected
+        if [ -n "${PLATFORM}" -a -n "${KVER}" ]; then
+          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+          while read ID DESC; do
+            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+          done < <(getAllModules "${PLATFORM}" "${KVER}")
+        fi
+        DIRTY=1
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
+          --msgbox "Modules updated to ${TAG} with success!" 0 0
+        ;;
+      6)
+        dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
+          --infobox "Checking latest version" 0 0
+        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
-            --infobox "Checking latest version" 0 0
-          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 -o -z "${TAG}" ]; then
-            dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
-              --msgbox "Error checking new version" 0 0
-            continue
-          fi
-          dialog --backtitle "`backtitle`" --title "Update Configss" --aspect 18 \
-            --infobox "Downloading latest version: ${TAG}" 0 0
-          STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o ${TMP_PATH}/configs.zip)
-          if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-            dialog --backtitle "`backtitle`" --title "Update Configss" --aspect 18 \
-              --msgbox "Error downloading latest version" 0 0
-            continue
-          fi
-          dialog --backtitle "`backtitle`" --title "Update Configss" --aspect 18 \
-            --infobox "Extracting latest version" 0 0
-          rm -rf "${LKM_PATH}/"*
-          unzip ${TMP_PATH}/configs.zip -d "${MODEL_CONFIG_PATH}" >/dev/null 2>&1
-          DIRTY=1
-          deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+            --msgbox "Error checking new version" 0 0
+          continue
+        fi
+        dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
+          --infobox "Downloading latest version: ${TAG}" 0 0
+        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o ${TMP_PATH}/configs.zip)
+        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
-            --msgbox "Configs updated with success! ${TAG}" 0 0
-          ;;
-        0) return ;;
-      esac
-    done
-  else
-    while true; do
-      dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
-        1 "Full upgrade Loader" \
-        0 "Exit" \
-        2>${TMP_PATH}/resp
-      [ $? -ne 0 ] && return
-      case "$(<${TMP_PATH}/resp)" in
-        1)
-          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --infobox "Checking latest version" 0 0
-          ACTUALVERSION="v${ARPL_VERSION}"
-          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 -o -z "${TAG}" ]; then
-            dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-              --msgbox "Error checking new version" 0 0
-            continue
-          fi
-          if [ "${ACTUALVERSION}" = "${TAG}" ]; then
-            dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-              --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
-            [ $? -ne 0 ] && continue
-          fi
-          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --infobox "Downloading latest version ${TAG}" 0 0
-          # Download update file
-          STATUS=$(curl --insecure -w "%{http_code}" -L \
-            "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o ${TMP_PATH}/arc-${TAG}.img.zip)
-          if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-            dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-              --msgbox "Error downloading update file" 0 0
-            continue
-          fi
-          unzip -o ${TMP_PATH}/arc-${TAG}.img.zip -d ${TMP_PATH}
-          if [ $? -ne 0 ]; then
-            dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-              --msgbox "Error extracting update file" 0 0
-            continue
-          fi
-          if [ -f "${USER_CONFIG_FILE}" ]; then
-            GENHASH=$(cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)
-            dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --msgbox "Backup config successful!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
-          else
-            dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --infobox "No config for Backup found!" 0 0
-          fi
-          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --infobox "Installing new Image" 0 0
-          # Process complete update
-          umount /mnt/p1 /mnt/p2 /mnt/p3
-          dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1) bs=1M conv=fsync
-          # Ask for Boot
-          dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
-            --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
-          [ $? -ne 0 ] && continue
-          arpl-reboot.sh config
-          exit
-          ;;
-        0) return ;;
-      esac
-    done
-  fi
+            --msgbox "Error downloading latest version" 0 0
+          continue
+        fi
+        dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
+          --infobox "Extracting latest version" 0 0
+        rm -rf "${LKM_PATH}/"*
+        unzip -o ${TMP_PATH}/configs.zip -d "${MODEL_CONFIG_PATH}" >/dev/null 2>&1
+        DIRTY=1
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
+          --msgbox "Configs updated with success! ${TAG}" 0 0
+        ;;
+      0) return ;;
+    esac
+  done
 }
 
 ###############################################################################
@@ -1859,14 +1786,10 @@ function tryRecoveryDSM() {
   if findAndMountDSMRoot; then
     MODEL=""
     PRODUCTVER=""
-    BUILDNUM=""
-    SMALLNUM=""
     if [ -f "${DSMROOT_PATH}/.syno/patch/VERSION" ]; then
       eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep unique)
       eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep majorversion)
       eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep minorversion)
-      eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep buildnumber)
-      eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep smallfixnumber)
       if [ -n "${unique}" ] ; then
         while read F; do
           M="$(basename ${F})"
@@ -1886,17 +1809,17 @@ function tryRecoveryDSM() {
             MSG="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
             SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
             if [ -n "${SN}" ]; then
+              deleteConfigKey "arc.patch" "${USER_CONFIG_FILE}"
               SNARC="$(readModelKey "${MODEL}" "arc.serial")"
               writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
               MSG+="\nSerial: ${SN}"
               if [ "${SN}" = "${SNARC}" ]; then
                 writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-                writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+                ARCAV="Arc"
+              else
+                writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+                ARCAV="nonArc"
               fi
-              BUILDNUM=${buildnumber}
-              SMALLNUM=${smallfixnumber}
-              writeConfigKey "buildnum" "${BUILDNUM}" "${USER_CONFIG_FILE}"
-              writeConfigKey "smallnum" "${SMALLNUM}" "${USER_CONFIG_FILE}"
               ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
               MSG+="\nArc Patch: ${ARCPATCH}"
             fi
