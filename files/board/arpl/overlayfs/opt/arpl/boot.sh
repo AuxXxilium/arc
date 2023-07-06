@@ -7,6 +7,10 @@ set -e
 # Sanity check
 loaderIsConfigured || die "Loader is not configured!"
 
+# Recheck BUS early
+LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
+BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
+
 # Print text centralized
 clear
 [ -z "${COLUMNS}" ] && COLUMNS=50
@@ -17,7 +21,11 @@ printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
 TITLE="BOOTING..."
 [ -d "/sys/firmware/efi" ] && TITLE+=" [EFI]" || TITLE+=" [Legacy]"
-[ "${BUS}" = "usb" ] && TITLE+=" [USB flashdisk]" || TITLE+=" [SATA DoM]"
+if [ "${BUS}" = "usb" ]; then
+  TITLE+=" [USB flashdisk]"
+elif [ "${BUS}" = "ata" ]; then
+  TITLE+=" [SATA DoM]"
+fi
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
 
 # Check if DSM ramdisk changed, patch it if necessary
@@ -82,8 +90,6 @@ done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 # Read KVER from Model Config
 KVER=$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")
 
-LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
-BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
 if [ "${BUS}" = "ata" ]; then
   LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
   SIZE=$(($(cat /sys/block/${LOADER_DEVICE_NAME}/size)/2048+10))
