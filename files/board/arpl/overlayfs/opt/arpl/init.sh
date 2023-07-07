@@ -91,6 +91,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.onlinemode" "true" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 fi
 
@@ -176,27 +177,54 @@ if [ ${BOOT} -eq 1 ]; then
 fi
 
 # Wait for an IP
-echo "$(printf "Detected %s NIC, Waiting IP." "${#ETHX[@]}")"
+BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
+[ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
+ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
+echo "$(printf "Detected %s NIC." "${#ETHX[@]}")"
+echo "Checking Connection."
+COUNT=0
+while [ ${COUNT} -lt ${BOOTIPWAIT} ]; do
+  hasConnect="false"
+  for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
+    if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'yes'; then
+      echo -en "${ETHX[${N}]} "
+      hasConnect="true"
+    fi
+  done
+  if [ ${hasConnect} = "true" ]; then
+    echo -en "connected.\n"
+    break
+  fi
+  COUNT=$((${COUNT} + 5))
+  echo -n "."
+  sleep 5
+done
+echo "Waiting IP."
 for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
   COUNT=0
-  echo -en "${ETHX[${N}]}: "
+  DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+  echo -en "${ETHX[${N}]}(${DRIVER}): "
   while true; do
-    if [ -z "$(ip link show ${ETHX[${N}]} | grep 'UP')" ]; then
-      echo -en "\r${ETHX[${N}]}: DOWN\n"
+    if ! ip link show ${ETHX[${N}]} | grep -q 'UP'; then
+      echo -en "\r${ETHX[${N}]}(${DRIVER}): DOWN\n"
       break
     fi
-    if [ ${COUNT} -eq 30 ]; then
-      echo -en "\r${ETHX[${N}]}: ERROR - Timeout\n"
+    if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
+      echo -en "\r${ETHX[${N}]}(${DRIVER}): NOT CONNECTED\n"
       break
     fi
-    sleep 5
+    if [ ${COUNT} -eq 8 ]; then # Under normal circumstances, no errors should occur here.
+      echo -en "\r${ETHX[${N}]}(${DRIVER}): ERROR\n"
+      break
+    fi
+    COUNT=$((${COUNT} + 5))
     IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
     if [ -n "${IP}" ]; then
-      echo -en "\r${ETHX[${N}]}: $(printf "Access \033[1;34mhttp://%s:7681\033[0m to connect via web terminal." "${IP}")\n"
+      echo -en "\r${ETHX[${N}]}(${DRIVER}): $(printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}")\n"
       break
     fi
     echo -n "."
-    COUNT=$((${COUNT}+5))
+    sleep 5
   done
 done
 

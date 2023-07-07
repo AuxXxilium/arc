@@ -47,6 +47,7 @@ CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
+BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 
 # Add Onlinemode to old configs
@@ -2041,8 +2042,11 @@ while true; do
       fi
       echo "n \"Change Network Config \" "                                                  >>"${TMP_PATH}/menu"
       echo "u \"Change USB Port Config \" "                                                 >>"${TMP_PATH}/menu"
-      echo "w \"Allow DSM downgrade \" "                                                    >>"${TMP_PATH}/menu"
+      echo "w \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
       echo "x \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
+      if [ "${DIRECTBOOT}" = "false" ]; then
+        echo "b \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
+      fi
       echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >>"${TMP_PATH}/menu"
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
@@ -2108,6 +2112,18 @@ while true; do
     p) paturl; NEXT="p" ;;
     w) downgradeMenu; NEXT="w" ;;
     x) resetPassword; NEXT="x" ;;
+    b)
+      ITEMS="$(echo -e "1 \n5 \n10 \n30 \n60 \n")"
+      dialog --backtitle "$(backtitle)" --colors --title "Boot IP Waittime" \
+        --default-item "${BOOTIPWAIT}" --no-items --menu "Choose a Waitingtime(seconds)" 0 0 0 ${ITEMS} \
+        2>${TMP_PATH}/resp
+      [ $? -ne 0 ] && return
+      resp=$(cat ${TMP_PATH}/resp 2>/dev/null)
+      [ -z "${resp}" ] && return
+      BOOTIPWAIT=${resp}
+      writeConfigKey "bootipwait" "${BOOTIPWAIT}" "${USER_CONFIG_FILE}"
+      NEXT="b"
+      ;;
     +) formatdisks; NEXT="+" ;;
     # Advanced Section
     8) [ "${ADVOPTS}" = "" ] && ADVOPTS='1' || ADVOPTS=''
@@ -2160,4 +2176,4 @@ echo -e "User: \033[1;34mroot\033[0m"
 echo -e "Password: \033[1;34marc\033[0m"
 echo
 echo -e "Web Terminal Access:"
-echo -e "Address: \033[1;34mhttp://${IP}:7681\033[0m"
+echo -e "Address: \033[1;34mhttp://${IP}:5000\033[0m"
