@@ -628,8 +628,8 @@ function modulesMenu() {
           --msgbox "${ITEMS}" 0 0
         ;;
       2)
-        dialog --backtitle "$(backtitle)" --colors --title "$(TEXT "Modules")" \
-          --infobox "$(TEXT "Selecting loaded modules")" 0 0
+        dialog --backtitle "$(backtitle)" --colors --title "Modules" \
+          --infobox "Selecting loaded modules" 0 0
         KOLIST=""
         for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
           KOLIST+="$(getdepends ${PLATFORM} ${KVER} ${I}) ${I} "
@@ -799,7 +799,7 @@ function cmdlineMenu() {
       3)
         while true; do
           dialog --backtitle "$(backtitle)" --colors --title "Cmdline" \
-            --inputbox "$(TEXT "Please enter a serial number ")" 0 0 "" \
+            --inputbox "Please enter a serial number " 0 0 "" \
             2>${TMP_PATH}/resp
           [ $? -ne 0 ] && break 2
           SERIAL=$(cat ${TMP_PATH}/resp)
