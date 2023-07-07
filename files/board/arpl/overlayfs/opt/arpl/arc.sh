@@ -430,6 +430,8 @@ function make() {
     if [ "${RAMDISK_HASH}" != "${OLD_HASH}" ]; then
       NEWIMAGE="true"
     fi
+  elif [ ! -f "${MOD_ZIMAGE_FILE}" ] && [ ! -f "${MOD_RDGZ_FILE}" ]; then
+    NEWIMAGE="true"
   fi
 
   # Build if NEWIMAGE is true
@@ -500,9 +502,9 @@ function make() {
             tar -xf "${PAT_PATH}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
         fi
       fi
+      dialog --backtitle "`backtitle`" --title "DSM Extraction" --aspect 18 \
+        --msgbox "DSM Extraction successful!" 0 0
     fi
-    dialog --backtitle "`backtitle`" --title "DSM Extraction" --aspect 18 \
-      --msgbox "DSM Extraction successful!" 0 0
     # Cleanup PAT Download
     rm -rf "${CACHE_PATH}/dl"
     # Copy DSM Files to locations
@@ -522,7 +524,6 @@ function make() {
     writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
   fi
-fi
 
   # Patch Ramdisk
   /opt/arpl/ramdisk-patch.sh
