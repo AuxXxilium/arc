@@ -16,13 +16,12 @@ rm -rf ".buildroot/board/arpl/p3"
 
 . ./scripts/func.sh
 
-getExtractor "files/board/arpl/p3/extractor"
 getLKMs "files/board/arpl/p3/lkms"
 getAddons "files/board/arpl/p3/addons"
 getModules "files/board/arpl/p3/modules"
 getConfigs "files/board/arpl/p3/configs"
 
-echo "Extractor, LKM, Addons and Modules loaded"
+echo "LKM, Addons, Modules and Configs loaded"
 
 # Copy files
 echo "Copying files"
