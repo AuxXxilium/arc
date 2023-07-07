@@ -430,8 +430,6 @@ function make() {
     if [ "${RAMDISK_HASH}" != "${OLD_HASH}" ]; then
       NEWIMAGE="true"
     fi
-  else
-    NEWIMAGE="true"
   fi
 
   # Build if NEWIMAGE is true
@@ -449,37 +447,84 @@ function make() {
     STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
     if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
       dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
-        --msgbox "No DSM Image found!" 0 0
-      return 1
-    elif [ -f "${DSM_FILE}" ]; then
-      mkdir -p "${UNTAR_PAT_PATH}"
-      tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
-      # Copy DSM Files to locations
-      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
-      cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
-      # Write out .pat variables
-      PAT_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
-      PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
-      PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
-      PAT_URL=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')
-      PAT_HASH=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')
-      PAT_URL="${PAT_URL%%\?*}"
-      writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
-    elif [ ! -f "${DSM_FILE}" ]; then
-      dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-          --msgbox "DSM Files missing!" 0 0
-      return 1
-    else
-      dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-        --msgbox "DSM Files extraction failed!" 0 0
-      return 1
+        --msgbox "No DSM Image found!\nTry alternate Link." 0 0
+      DSM_LINK="${MODEL}/${PRODUCTVER}/dsm.tar"
+      DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
+      STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
+      if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+        dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
+        --msgbox "No DSM Image found!\nTry Syno Link." 0 0
+        # Grep Values
+        PAT_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
+        PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
+        PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
+        # Grep PAT_URL
+        PAT_URL=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')
+        PAT_URL="${PAT_URL%%\?*}"
+        PAT_FILE="${MODEL}_${PRODUCTVER}.pat"
+        PAT_PATH="${CACHE_PATH}/dl/${PAT_FILE}"
+        mkdir -p "${CACHE_PATH}/dl"
+        STATUS=$(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_PATH}" --progress-bar)
+        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+          dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
+            --msgbox "No DSM Image found!\ Exit." 0 0
+          rm -f "${PAT_PATH}"
+          return 1
+        fi
+        # Extract Files
+        rm -rf "${UNTAR_PAT_PATH}"
+        mkdir -p "${UNTAR_PAT_PATH}"
+        header=$(od -bcN2 ${PAT_PATH} | head -1 | awk '{print $3}')
+        case ${header} in
+            105)
+            echo "Uncompressed tar"
+            isencrypted="no"
+            ;;
+            213)
+            echo "Compressed tar"
+            isencrypted="no"
+            ;;
+            255)
+            echo "Encrypted"
+            isencrypted="yes"
+            ;;
+            *)
+            echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
+            ;;
+        esac
+        if [ "${isencrypted}" = "yes" ]; then
+            # Uses the extractor to untar PAT file
+            LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_PATH}" "${UNTAR_PAT_PATH}"
+        else
+            # Untar PAT file
+            tar -xf "${PAT_PATH}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+        fi
+      fi
     fi
+    dialog --backtitle "`backtitle`" --title "DSM Extraction" --aspect 18 \
+      --msgbox "DSM Extraction successful!" 0 0
+    # Cleanup PAT Download
+    rm -rf "${CACHE_PATH}/dl"
+    # Copy DSM Files to locations
+    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
+    cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
+    # Write out .pat variables
+    PAT_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
+    PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
+    PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
+    PAT_URL=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')
+    PAT_HASH=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')
+    PAT_URL="${PAT_URL%%\?*}"
+    writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
   fi
+fi
+
+  # Patch Ramdisk
   /opt/arpl/ramdisk-patch.sh
   if [ $? -ne 0 ]; then
     dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
@@ -487,6 +532,7 @@ function make() {
     return 1
   fi
 
+  # Patch zImage
   /opt/arpl/zimage-patch.sh
   if [ $? -ne 0 ]; then
     dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \

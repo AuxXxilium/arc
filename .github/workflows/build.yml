@@ -96,7 +96,7 @@ jobs:
               VERSION="${{ inputs.version }}"
             else
               LATEST_TAG="$(curl -skL "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r ".tag_name" 2>/dev/null)"
-              if [ -n "${LATEST_TAG}" -a "$(echo ${LATEST_TAG} | cut -d '.' -f 1,2)" = "$(date +'%y.%-m')" ]; then  # format %y.%-m.$i
+              if [ -n "${LATEST_TAG}" -a "`echo ${LATEST_TAG} | cut -d '.' -f 1,2`" = "`date +'%y.%-m'`" ]; then  # format %y.%-m.$i
                 VERSION="$(echo ${LATEST_TAG} | awk -F '.' '{$3=$3+1}1' OFS='.')"
               else
                 VERSION="$(date +'%y.%-m').0"
@@ -125,11 +125,12 @@ jobs:
             fi
           fi
 
-      # Get LKM, Addons, Modules and Configs
-      - name: Get LKM, Addons, Modules and Configs
+      # Get extractor, LKM, Addons, Modules and Configs
+      - name: Get extractor, LKM, Addons, Modules and Configs
         run: |
           . scripts/func.sh
 
+          getExtractor "files/board/arpl/p3/extractor"
           getLKMs "files/board/arpl/p3/lkms"
           getAddons "files/board/arpl/p3/addons"
           getModules "files/board/arpl/p3/modules"

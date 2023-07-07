@@ -30,3 +30,6 @@ USER_UP_PATH="${CACHE_PATH}/users"
 MODEL_CONFIG_PATH="/mnt/p3/configs"
 INCLUDE_PATH="/opt/arpl/include"
 PATCH_PATH="/opt/arpl/patch"
+
+EXTRACTOR_PATH="${CACHE_PATH}/extractor"
+EXTRACTOR_BIN="syno_extract_system_patch"
