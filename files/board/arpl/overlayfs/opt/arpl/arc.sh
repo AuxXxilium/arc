@@ -501,12 +501,16 @@ function make() {
             # Untar PAT file
             tar -xf "${PAT_PATH}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
         fi
+        # Cleanup PAT Download
+        rm -rf "${CACHE_PATH}/dl"
       fi
       dialog --backtitle "`backtitle`" --title "DSM Extraction" --aspect 18 \
         --msgbox "DSM Extraction successful!" 0 0
     fi
-    # Cleanup PAT Download
-    rm -rf "${CACHE_PATH}/dl"
+    if [ -f "${DSM_FILE}" ]; then
+      mkdir -p "${UNTAR_PAT_PATH}"
+      tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+    fi
     # Copy DSM Files to locations
     cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
     cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
