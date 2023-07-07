@@ -35,7 +35,7 @@ if [ "$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')" != "${RAMDISK_HASH}" ];
   /opt/arpl/ramdisk-patch.sh
   if [ $? -ne 0 ]; then
     dialog --backtitle "`backtitle`" --title "Error" \
-      --msgbox "Ramdisk not patched:\n`<"${LOG_FILE}"`" 12 70
+      --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1
   fi
 fi
@@ -47,7 +47,7 @@ if [ "$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}')" != "${ZIMAGE_HASH}" ]
   /opt/arpl/zimage-patch.sh
   if [ $? -ne 0 ]; then
     dialog --backtitle "`backtitle`" --title "Error" \
-      --msgbox "zImage not patched:\n`<"${LOG_FILE}"`" 12 70
+      --msgbox "zImage not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1
   fi
 fi
