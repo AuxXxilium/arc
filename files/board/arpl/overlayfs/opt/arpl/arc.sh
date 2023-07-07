@@ -457,7 +457,7 @@ function make() {
         dialog --backtitle "`backtitle`" --title "DSM Download" --aspect 18 \
         --msgbox "No DSM Image found!\nTry Syno Link." 0 0
         # Grep Values
-        PAT_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
+        PAT_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
         PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
         PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
         # Grep PAT_URL
