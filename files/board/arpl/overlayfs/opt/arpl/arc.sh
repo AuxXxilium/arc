@@ -16,6 +16,7 @@ while read -r line; do
   RAMTOTAL=$((RAMTOTAL +RAMSIZE))
 done <<< "$(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i [1-9])"
 RAMTOTAL=$((RAMTOTAL *1024))
+RAMMIN=$((RAMTOTAL *512))
 
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
@@ -273,6 +274,7 @@ function arcbuild() {
   done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].synoinfo")
   # Memory: Set mem_max_mb to the amount of installed memory
   writeConfigKey "synoinfo.mem_max_mb" "${RAMTOTAL}" "${USER_CONFIG_FILE}"
+  writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
   # Check addons
   while IFS=': ' read ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
