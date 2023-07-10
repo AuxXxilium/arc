@@ -7,10 +7,6 @@ set -e
 # Sanity check
 loaderIsConfigured || die "Loader is not configured!"
 
-# Recheck BUS early
-LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
-BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
-
 # Print text centralized
 clear
 [ -z "${COLUMNS}" ] && COLUMNS=50
@@ -155,15 +151,14 @@ if [ "${DIRECTBOOT}" = "true" ]; then
     grub-editenv ${GRUB_PATH}/grubenv set default="direct"
     echo -e "\033[1;34mEnable Directboot - DirectDSM\033[0m"
     echo -e "\033[1;34mDSM installed - Reboot with Directboot\033[0m"
-    reboot
+    exec reboot
   elif [ "${DIRECTDSM}" = "false" ]; then
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
     grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
     writeConfigKey "arc.directdsm" "true" "${USER_CONFIG_FILE}"
     echo -e "\033[1;34mDSM not installed - Reboot with Directboot\033[0m"
-    reboot
+    exec reboot
   fi
-  exit 0
 elif [ "${DIRECTBOOT}" = "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
@@ -183,9 +178,9 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       echo -en "connected.\n"
       break
     fi
-    COUNT=$((${COUNT} + 5))
+    COUNT=$((${COUNT} + 1))
     echo -n "."
-    sleep 5
+    sleep 1
   done
   echo "Waiting IP."
   for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
@@ -205,14 +200,14 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         echo -en "\r${ETHX[${N}]}(${DRIVER}): ERROR\n"
         break
       fi
-      COUNT=$((${COUNT} + 5))
+      COUNT=$((${COUNT} + 1))
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
       if [ -n "${IP}" ]; then
         echo -en "\r${ETHX[${N}]}(${DRIVER}): $(printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}")\n"
         break
       fi
       echo -n "."
-      sleep 5
+      sleep 1
     done
   done
 fi

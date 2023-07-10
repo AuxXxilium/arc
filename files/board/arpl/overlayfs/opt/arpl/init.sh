@@ -195,9 +195,9 @@ while [ ${COUNT} -lt ${BOOTIPWAIT} ]; do
     echo -en "connected.\n"
     break
   fi
-  COUNT=$((${COUNT} + 5))
+  COUNT=$((${COUNT} + 1))
   echo -n "."
-  sleep 5
+  sleep 1
 done
 echo "Waiting IP."
 for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
@@ -217,14 +217,14 @@ for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
       echo -en "\r${ETHX[${N}]}(${DRIVER}): ERROR\n"
       break
     fi
-    COUNT=$((${COUNT} + 5))
+    COUNT=$((${COUNT} + 1))
     IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
     if [ -n "${IP}" ]; then
       echo -en "\r${ETHX[${N}]}(${DRIVER}): $(printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}")\n"
       break
     fi
     echo -n "."
-    sleep 5
+    sleep 1
   done
 done
 

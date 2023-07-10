@@ -1721,6 +1721,8 @@ function sysinfo() {
     KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
     REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+    DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
+    DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
     ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
     USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
     LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
@@ -1770,6 +1772,7 @@ function sysinfo() {
     TEXT+="\nBuild: \ZbIncomplete\Zn"
   fi
   TEXT+="\nArcpatch | Onlinemode: \Zb${ARCPATCH}\Zn | \Zb${ONLINEMODE}\Zn"
+  TEXT+="\nDirectboot | DirectDSM: \Zb${DIRECTBOOT}\Zn | \Zb${DIRECTDSM}\Zn"
   TEXT+="\nAddons selected: \Zb${ADDONSINFO}\Zn"
   TEXT+="\nLKM: \Zb${LKM}\Zn"
   if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
@@ -1980,6 +1983,20 @@ function mptFix() {
 }
 
 ###############################################################################
+# modify bootipwaittime
+function bootipwaittime() {
+      ITEMS="$(echo -e "5 \n10 \n20 \n30 \n60 \n")"
+      dialog --backtitle "$(backtitle)" --colors --title "Boot IP Waittime" \
+        --default-item "${BOOTIPWAIT}" --no-items --menu "Choose a Waitingtime(seconds)" 0 0 0 ${ITEMS} \
+        2>${TMP_PATH}/resp
+      [ $? -ne 0 ] && return
+      resp=$(cat ${TMP_PATH}/resp 2>/dev/null)
+      [ -z "${resp}" ] && return
+      BOOTIPWAIT=${resp}
+      writeConfigKey "bootipwait" "${BOOTIPWAIT}" "${USER_CONFIG_FILE}"
+}
+
+###############################################################################
 # allow user to save modifications to disk
 function saveMenu() {
   dialog --backtitle "`backtitle`" --title "Save to Disk" \
@@ -2110,7 +2127,7 @@ while true; do
       echo "h \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
       echo "k \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
       if [ "${DIRECTBOOT}" = "true" ]; then
-        echo "l \"Direct DSM: \Z4${DIRECTDSM}\Zn \" "                                       >>"${TMP_PATH}/menu"
+        echo "l \"Reset DirectDSM: \Z4${DIRECTDSM}\Zn \" "                                  >>"${TMP_PATH}/menu"
       fi
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
@@ -2160,18 +2177,7 @@ while true; do
     p) paturl; NEXT="p" ;;
     w) downgradeMenu; NEXT="w" ;;
     x) resetPassword; NEXT="x" ;;
-    b)
-      ITEMS="$(echo -e "1 \n5 \n10 \n30 \n60 \n")"
-      dialog --backtitle "$(backtitle)" --colors --title "Boot IP Waittime" \
-        --default-item "${BOOTIPWAIT}" --no-items --menu "Choose a Waitingtime(seconds)" 0 0 0 ${ITEMS} \
-        2>${TMP_PATH}/resp
-      [ $? -ne 0 ] && return
-      resp=$(cat ${TMP_PATH}/resp 2>/dev/null)
-      [ -z "${resp}" ] && return
-      BOOTIPWAIT=${resp}
-      writeConfigKey "bootipwait" "${BOOTIPWAIT}" "${USER_CONFIG_FILE}"
-      NEXT="b"
-      ;;
+    b) bootipwaittime; NEXT="b" ;;
     +) formatdisks; NEXT="+" ;;
     # Advanced Section
     8) [ "${ADVOPTS}" = "" ] && ADVOPTS='1' || ADVOPTS=''
@@ -2185,8 +2191,9 @@ while true; do
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
       NEXT="k"
       ;;
-    l) [ "${DIRECTDSM}" = "false" ] && DIRECTDSM='true' || DIRECTDSM='false'
+    l)
       writeConfigKey "arc.directdsm" "${DIRECTDSM}" "${USER_CONFIG_FILE}"
+      DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
       NEXT="l"
       ;;
     # Dev Section
