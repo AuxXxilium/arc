@@ -4,6 +4,12 @@ set -e
 
 . /opt/arpl/include/functions.sh
 
+# Check if machine has EFI
+[ -d /sys/firmware/efi ] && EFI=1 || EFI=0
+
+LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
+BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
+
 # Sanity check
 loaderIsConfigured || die "Loader is not configured!"
 
@@ -54,9 +60,16 @@ PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
+LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
+CPU="$(echo $(cat /proc/cpuinfo | grep 'model name' | uniq | awk -F':' '{print $2}'))"
+MEM="$(free -m | grep -i mem | awk '{print$2}') MB"
 
 echo -e "Model: \033[1;37m${MODEL}\033[0m"
 echo -e "Version: \033[1;37m${PRODUCTVER}\033[0m"
+echo -e "LKM: \033[1;36m${LKM}\033[0m"
+echo -e "CPU: \033[1;36m${CPU}\033[0m"
+echo -e "MEM: \033[1;36m${MEM}\033[0m"
+echo
 
 if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "$(readConfigKey "productvers.[${PRODUCTVER}]" "${MODEL_CONFIG_PATH}/${MODEL}.yml")" ]; then
   echo -e "\033[1;33m*** $(printf "The current version of Arc does not support booting %s-%s, please rebuild." "${MODEL}" "${PRODUCTVER}") ***\033[0m"
@@ -120,9 +133,6 @@ if [ ${NETIF_NUM} -le ${NETNUM} ]; then
   CMDLINE["netif_num"]=${NETNUM}
 fi
 
-# Check if machine has EFI
-[ -d /sys/firmware/efi ] && EFI=1 || EFI=0
-
 # Prepare command line
 CMDLINE_LINE=""
 grep -q "force_junior" /proc/cmdline && CMDLINE_LINE+="force_junior "
@@ -141,6 +151,7 @@ done
 #CMDLINE_LINE=`echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g'`
 CMDLINE_DIRECT=$(echo ${CMDLINE_DIRECT} | sed 's/>/\\\\>/g')
 echo -e "Cmdline:\n\033[1;37m${CMDLINE_LINE}\033[0m"
+echo
 
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
@@ -182,6 +193,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     echo -n "."
     sleep 1
   done
+  echo
   echo "Waiting IP."
   for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
     COUNT=0
@@ -212,6 +224,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   done
 fi
 
+echo
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
 # Executes DSM kernel via KEXEC

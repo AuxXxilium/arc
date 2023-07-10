@@ -120,7 +120,7 @@ done
 # Get the VID/PID if we are in USB
 VID="0x0000"
 PID="0x0000"
-BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep BUS | cut -d= -f2)
+BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
 if [ "${BUS}" = "usb" ]; then
   VID="0x$(udevadm info --query property --name ${LOADER_DISK} | grep ID_VENDOR_ID | cut -d= -f2)"
   PID="0x$(udevadm info --query property --name ${LOADER_DISK} | grep ID_MODEL_ID | cut -d= -f2)"
@@ -136,7 +136,7 @@ writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 echo -en "Loader disk: \033[1;34m${LOADER_DISK}\033[0m ("
 if [ "${BUS}" = "usb" ]; then
   echo -en "\033[1;34mUSB flashdisk\033[0m"
-else
+elif [ "${BUS}" = "ata" ]; then
   echo -en "\033[1;34mSATA DoM\033[0m"
 fi
 echo ")"
