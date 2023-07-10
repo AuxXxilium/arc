@@ -205,14 +205,14 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         echo -en "\r${ETHX[${N}]}(${DRIVER}): ERROR\n"
         break
       fi
-      COUNT=$((${COUNT} + 5))
+      COUNT=$((${COUNT} + 1))
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
       if [ -n "${IP}" ]; then
         echo -en "\r${ETHX[${N}]}(${DRIVER}): $(printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}")\n"
         break
       fi
       echo -n "."
-      sleep 5
+      sleep 1
     done
   done
 fi
