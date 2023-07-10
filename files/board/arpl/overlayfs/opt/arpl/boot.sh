@@ -40,6 +40,7 @@ if [ "$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')" != "${RAMDISK_HASH}" ];
       --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1
   fi
+  echo
 fi
 
 # Check if DSM zImage changed, patch it if necessary
@@ -52,6 +53,7 @@ if [ "$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}')" != "${ZIMAGE_HASH}" ]
       --msgbox "zImage not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1
   fi
+  echo
 fi
 
 # Load necessary variables
@@ -65,7 +67,7 @@ CPU="$(echo $(cat /proc/cpuinfo | grep 'model name' | uniq | awk -F':' '{print $
 MEM="$(free -m | grep -i mem | awk '{print$2}') MB"
 
 echo -e "Model: \033[1;37m${MODEL}\033[0m"
-echo -e "Version: \033[1;37m${PRODUCTVER}\033[0m"
+echo -e "DSM: \033[1;37m${PRODUCTVER}\033[0m"
 echo -e "LKM: \033[1;36m${LKM}\033[0m"
 echo -e "CPU: \033[1;36m${CPU}\033[0m"
 echo -e "MEM: \033[1;36m${MEM}\033[0m"

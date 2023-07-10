@@ -1759,7 +1759,7 @@ function sysinfo() {
   TEXT+="\n\Z4Config:\Zn"
   TEXT+="\nArc Version: \Zb${ARPL_VERSION}\Zn"
   TEXT+="\nSubversion: \ZbModules ${MODULESVERSION}\Zn | \ZbAddons ${ADDONSVERSION}\Zn | \ZbLKM ${LKMVERSION}\Zn | \ZbConfigs ${CONFIGSVERSION}\Zn"
-  TEXT+="\nModel | Version: \Zb${MODEL} | ${PRODUCTVER}\Zn"
+  TEXT+="\nModel | DSM: \Zb${MODEL} | ${PRODUCTVER}\Zn"
   TEXT+="\nPlatform | Kernel: \Zb${PLATFORM} | ${KVER}\Zn"
   if [ -n "${CONFDONE}" ]; then
     TEXT+="\nConfig: \ZbComplete\Zn"
