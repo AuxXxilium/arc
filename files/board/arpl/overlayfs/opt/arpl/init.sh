@@ -213,7 +213,11 @@ for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
       echo -en "\r${ETHX[${N}]}(${DRIVER}): NOT CONNECTED\n"
       break
     fi
-    if [ ${COUNT} -eq 8 ]; then # Under normal circumstances, no errors should occur here.
+    if [ ${COUNT} -eq ${BOOTIPWAIT} ]; then
+      echo -en "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT\n"
+      break
+    fi
+    if [ ${N} -eq 8 ]; then # Under normal circumstances, no errors should occur here.
       echo -en "\r${ETHX[${N}]}(${DRIVER}): ERROR\n"
       break
     fi
