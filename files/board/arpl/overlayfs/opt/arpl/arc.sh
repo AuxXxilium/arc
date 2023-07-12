@@ -526,6 +526,11 @@ function make() {
     PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
     PAT_URL=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')
     PAT_HASH=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')
+    if [ -z "${PAT_URL}" -o -z "${PAT_HASH}" ]; then
+      dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
+      --msgbox "Can't compute URL and Hash for .pat." 0 0
+      return
+    fi
     PAT_URL="${PAT_URL%%\?*}"
     writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
@@ -671,7 +676,7 @@ function modulesMenu() {
       0 "Exit" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break
-    case "`<${TMP_PATH}/resp`" in
+    case "$(<${TMP_PATH}/resp)" in
       1)
         ITEMS=""
         for KEY in ${!USERMODULES[@]}; do
@@ -809,7 +814,7 @@ function cmdlineMenu() {
     dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
-    case "`<${TMP_PATH}/resp`" in
+    case "$(<${TMP_PATH}/resp)" in
       1)
         dialog --backtitle "`backtitle`" --title "User cmdline" \
           --inputbox "Type a name of cmdline" 0 0 \
@@ -885,7 +890,7 @@ function cmdlineMenu() {
               2>${TMP_PATH}/resp
             RET=$?
             [ ${RET} -ne 0 ] && break 2
-            MAC="`<"${TMP_PATH}/resp"`"
+            MAC="$(<"${TMP_PATH}/resp")"
             [ -z "${MAC}" ] && MAC="`readConfigKey "device.mac${i}" "${USER_CONFIG_FILE}"`"
             [ -z "${MAC}" ] && MAC="${MACFS[$(expr ${i} - 1)]}"
             MACF="$(echo "${MAC}" | sed 's/://g')"
@@ -969,19 +974,19 @@ function synoinfoMenu() {
     dialog --backtitle "`backtitle`" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
-    case "`<${TMP_PATH}/resp`" in
+    case "$(<${TMP_PATH}/resp)" in
       1)
         dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
           --inputbox "Type a name of synoinfo entry" 0 0 \
           2>${TMP_PATH}/resp
         [ $? -ne 0 ] && continue
-        NAME="`<"${TMP_PATH}/resp"`"
+        NAME="$(<"${TMP_PATH}/resp")"
         [ -z "${NAME}" ] && continue
         dialog --backtitle "`backtitle`" --title "Synoinfo entries" \
           --inputbox "Type a value of '${NAME}' entry" 0 0 "${SYNOINFO[${NAME}]}" \
           2>${TMP_PATH}/resp
         [ $? -ne 0 ] && continue
-        VALUE="`<"${TMP_PATH}/resp"`"
+        VALUE="$(<"${TMP_PATH}/resp")"
         SYNOINFO[${NAME}]="${VALUE}"
         writeConfigKey "synoinfo.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
         DIRTY=1
@@ -1300,7 +1305,7 @@ function backupMenu() {
         0 "Exit" \
         2>${TMP_PATH}/resp
       [ $? -ne 0 ] && return
-      case "`<${TMP_PATH}/resp`" in
+      case "$(<${TMP_PATH}/resp)" in
         1)
           dialog --backtitle "`backtitle`" --title "Restore Config" --aspect 18 \
             --infobox "Restore Config from ${BACKUPDIR}" 0 0
@@ -1430,9 +1435,9 @@ function updateMenu() {
       1 "Full upgrade Loader" \
       2 "Update Arc Loader" \
       3 "Update Addons" \
-      4 "Update LKMs" \
-      5 "Update Modules" \
-      6 "Update Configs" \
+      4 "Update Modules" \
+      5 "Update Configs" \
+      6 "Update LKMs" \
       0 "Exit" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
@@ -1445,7 +1450,7 @@ function updateMenu() {
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --msgbox "Error checking new version" 0 0
-          continue
+          return 1
         fi
         if [ "${ACTUALVERSION}" = "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
@@ -1460,13 +1465,13 @@ function updateMenu() {
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --msgbox "Error downloading update file" 0 0
-          continue
+          return 1
         fi
         unzip -o ${TMP_PATH}/arc-${TAG}.img.zip -d ${TMP_PATH}
         if [ $? -ne 0 ]; then
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --msgbox "Error extracting update file" 0 0
-          continue
+          return 1
         fi
         if [ -f "${USER_CONFIG_FILE}" ]; then
           GENHASH=$(cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)
@@ -1496,7 +1501,7 @@ function updateMenu() {
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --msgbox "Error checking new version" 0 0
-          continue
+          return 1
         fi
         if [ "${ACTUALVERSION}" = "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
@@ -1511,20 +1516,20 @@ function updateMenu() {
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --msgbox "Error downloading update file" 0 0
-          continue
+          return 1
         fi
         unzip -oq ${TMP_PATH}/update.zip -d ${TMP_PATH}
         if [ $? -ne 0 ]; then
           dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --msgbox "Error extracting update file" 0 0
-          continue
+          return 1
         fi
         # Check checksums
         (cd ${TMP_PATH} && sha256sum --status -c sha256sum)
         if [ $? -ne 0 ]; then
           dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --msgbox "Checksum do not match!" 0 0
-          continue
+          return 1
         fi
         dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
           --infobox "Installing new files" 0 0
@@ -1556,7 +1561,7 @@ function updateMenu() {
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
             --msgbox "Error checking new version" 0 0
-          continue
+          return 1
         fi
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
           --infobox "Downloading latest version: ${TAG}" 0 0
@@ -1564,7 +1569,7 @@ function updateMenu() {
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
             --msgbox "Error downloading new version" 0 0
-          continue
+          return 1
         fi
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
           --infobox "Extracting latest version" 0 0
@@ -1588,40 +1593,13 @@ function updateMenu() {
           --msgbox "Addons updated with success! ${TAG}" 0 0
         ;;
       4)
-        dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-          --infobox "Checking latest version" 0 0
-        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-        if [ $? -ne 0 -o -z "${TAG}" ]; then
-          dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          continue
-        fi
-        dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-          --infobox "Downloading latest version: ${TAG}" 0 0
-        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o ${TMP_PATH}/rp-lkms.zip)
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
-          dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-            --msgbox "Error downloading latest version" 0 0
-          continue
-        fi
-        dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-          --infobox "Extracting latest version" 0 0
-        rm -rf "${LKM_PATH}/"*
-        unzip -o ${TMP_PATH}/rp-lkms.zip -d "${LKM_PATH}" >/dev/null 2>&1
-        DIRTY=1
-        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
-          --msgbox "LKMs updated with success! ${TAG}" 0 0
-        ;;
-      5)
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
           --infobox "Checking latest version" 0 0
         TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --msgbox "Error checking new version" 0 0
-          continue
+          return 1
         fi
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
           --infobox "Downloading latest version" 0 0
@@ -1629,7 +1607,7 @@ function updateMenu() {
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
             --msgbox "Error downloading latest version" 0 0
-          continue
+          return 1
         fi
         rm "${MODULES_PATH}/"*
         unzip -f ${TMP_PATH}/modules.zip -d "${MODULES_PATH}" >/dev/null 2>&1
@@ -1646,14 +1624,14 @@ function updateMenu() {
         dialog --backtitle "`backtitle`" --title "Update Modules" --aspect 18 \
           --msgbox "Modules updated to ${TAG} with success!" 0 0
         ;;
-      6)
+      5)
         dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
           --infobox "Checking latest version" 0 0
         TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
         if [ $? -ne 0 -o -z "${TAG}" ]; then
           dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
             --msgbox "Error checking new version" 0 0
-          continue
+          return 1
         fi
         dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
           --infobox "Downloading latest version: ${TAG}" 0 0
@@ -1661,7 +1639,7 @@ function updateMenu() {
         if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
           dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
             --msgbox "Error downloading latest version" 0 0
-          continue
+          return 1
         fi
         dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
           --infobox "Extracting latest version" 0 0
@@ -1672,6 +1650,33 @@ function updateMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
           --msgbox "Configs updated with success! ${TAG}" 0 0
+        ;;
+      6)
+        dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
+          --infobox "Checking latest version" 0 0
+        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        if [ $? -ne 0 -o -z "${TAG}" ]; then
+          dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
+            --msgbox "Error checking new version" 0 0
+          return 1
+        fi
+        dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
+          --infobox "Downloading latest version: ${TAG}" 0 0
+        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o ${TMP_PATH}/rp-lkms.zip)
+        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+          dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
+            --msgbox "Error downloading latest version" 0 0
+          return 1
+        fi
+        dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
+          --infobox "Extracting latest version" 0 0
+        rm -rf "${LKM_PATH}/"*
+        unzip -o ${TMP_PATH}/rp-lkms.zip -d "${LKM_PATH}" >/dev/null 2>&1
+        DIRTY=1
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
+          --msgbox "LKMs updated with success! ${TAG}" 0 0
         ;;
       0) return ;;
     esac
@@ -2078,7 +2083,7 @@ if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${PRODUCTVER}" -a loaderIsConfigured ]
 fi
 
 # Main loop
-NEXT="1"
+[ -n "${MODEL}" ] && NEXT="4" || NEXT="1"
 while true; do
   echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
   echo "1 \"Choose Model for Loader \" "                                                    >>"${TMP_PATH}/menu"
