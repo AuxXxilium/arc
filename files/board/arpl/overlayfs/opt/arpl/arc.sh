@@ -17,7 +17,6 @@ while read -r line; do
 done <<< "$(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i [1-9])"
 RAMTOTAL=$((RAMTOTAL *1024))
 RAMMIN=$((RAMTOTAL *512))
-
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
   # Check for Hypervisor
@@ -25,13 +24,11 @@ if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
 else
   MACHINE="NATIVE"
 fi
-
 # Check if machine has EFI
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
-
 # Dirty flag
 DIRTY=0
-
+# Get Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
@@ -45,12 +42,10 @@ ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
-
 # Add Onlinemode to old configs
 if [ -n "${ONLINEMODE}" ]; then
   writeConfigKey "arc.onlinemode" "true" "${USER_CONFIG_FILE}"
 fi
-
 # Reset DirectDSM if User boot to Config
 if [ "${DIRECTDSM}" = "true" ]; then
   writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
@@ -287,8 +282,6 @@ function arcbuild() {
   while read ID DESC; do
     writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
   done < <(getAllModules "${PLATFORM}" "${KVER}")
-  # Remove old files
-  rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   DIRTY=1
   if [ "${ONLYVERSION}" != "true" ]; then
     arcsettings
@@ -408,7 +401,6 @@ function make() {
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-
   # Check if all addon exists
   while IFS=': ' read ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
@@ -418,7 +410,7 @@ function make() {
       return 1
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-
+  # Check for old DSM Kernel
   if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     # Check zImage Hash
     ZIMAGE_HASH="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}')"
@@ -435,7 +427,6 @@ function make() {
   elif [ ! -f "${MOD_ZIMAGE_FILE}" ] && [ ! -f "${MOD_RDGZ_FILE}" ]; then
     NEWIMAGE="true"
   fi
-
   # Build if NEWIMAGE is true
   if [ "${NEWIMAGE}" = "true" ]; then
     # Check for existing files
@@ -518,8 +509,10 @@ function make() {
     cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
     cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
     cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
-    cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
+    if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+      cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
+      cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
+    fi
     # Write out .pat variables
     PAT_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
     PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
@@ -535,7 +528,6 @@ function make() {
     writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
   fi
-
   # Patch Ramdisk
   /opt/arpl/ramdisk-patch.sh
   if [ $? -ne 0 ]; then
@@ -543,7 +535,6 @@ function make() {
       --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 0 0
     return 1
   fi
-
   # Patch zImage
   /opt/arpl/zimage-patch.sh
   if [ $? -ne 0 ]; then
@@ -551,7 +542,6 @@ function make() {
       --msgbox "zImage not patched:\n$(<"${LOG_FILE}")" 0 0
     return 1
   fi
-  
   echo "Ready!"
   sleep 3
   DIRTY=0
@@ -1735,10 +1725,10 @@ function sysinfo() {
   fi
   NETRL_NUM=$(ls /sys/class/net/ | grep eth | wc -l)
   IPLIST=$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
-  if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
+  if [ "${REMAP}" = "1" ] || [ "${REMAP}" = "2" ]; then
     PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
     DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
-  elif [ "${REMAP}" == "3" ]; then
+  elif [ "${REMAP}" = "3" ]; then
     PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
   fi
   if [ -n "${CONFDONE}" ]; then
@@ -1753,7 +1743,7 @@ function sysinfo() {
   TEXT+="\n\Z4System:\Zn"
   TEXT+="\nTyp | Boot: \Zb${MACHINE} | ${BOOTSYS}\Zn"
   if [ "$MACHINE" = "VIRTUAL" ]; then
-  TEXT+="\nHypervisor: \Zb${HYPERVISOR}\Zn"
+    TEXT+="\nHypervisor: \Zb${HYPERVISOR}\Zn"
   fi
   TEXT+="\nVendor: \Zb${VENDOR}\Zn"
   TEXT+="\nCPU | Cores: \Zb${CPUINFO}\Zn | \Zb${CPUCORES} @ ${CPUFREQ}\Zn"
@@ -1780,18 +1770,18 @@ function sysinfo() {
   TEXT+="\nDirectboot | DirectDSM: \Zb${DIRECTBOOT}\Zn | \Zb${DIRECTDSM}\Zn"
   TEXT+="\nAddons selected: \Zb${ADDONSINFO}\Zn"
   TEXT+="\nLKM: \Zb${LKM}\Zn"
-  if [ "${REMAP}" == "1" ] || [ "${REMAP}" == "2" ]; then
+  if [ "${REMAP}" = "1" ] || [ "${REMAP}" == "2" ]; then
     TEXT+="\nSataPortMap: \Zb${PORTMAP}\Zn | DiskIdxMap: \Zb${DISKMAP}\Zn"
-  elif [ "${REMAP}" == "3" ]; then
+  elif [ "${REMAP}" = "3" ]; then
     TEXT+="\nSataRemap: \Zb${PORTMAP}\Zn"
-  elif [ "${REMAP}" == "0" ]; then
+  elif [ "${REMAP}" = "0" ]; then
     TEXT+="\nPortMap: \Zb"User"\Zn"
   fi
   TEXT+="\nUSB Mount: \Zb${USBMOUNT}\Zn\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
   TEXT+="\n\Z4Storage:\Zn"
   # Get Information for Sata Controller
-  if [ "$SATACONTROLLER" -gt "0" ]; then
+  if [ "${SATACONTROLLER}" -gt 0 ]; then
     NUMPORTS=0
     for PCI in $(lspci -nnk | grep -ie "\[0106\]" | awk '{print$1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
@@ -1822,7 +1812,7 @@ function sysinfo() {
     TEXT+="\n\ZbTotal Ports: \Z2\Zb${NUMPORTS}\Zn\n"
   fi
   # Get Information for SAS Controller
-  if [ "$SASCONTROLLER" -gt "0" ]; then
+  if [ "${SASCONTROLLER}" -gt 0 ]; then
     for PCI in $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'); do
       # Get Name of Controller
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")

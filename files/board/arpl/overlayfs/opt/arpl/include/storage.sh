@@ -30,14 +30,14 @@ function getmap() {
       ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
       PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
       [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
-      [ ${ATTACH} -eq 1 ] && CONPORTS=$((${CONPORTS}+1)) && echo "$(expr ${PORT} - 1)" >> "${TMP_PATH}/ports"
+      [ ${ATTACH} -eq 1 ] && CONPORTS=$((${CONPORTS}+1)) && echo "$((${PORT}-1))" >>"${TMP_PATH}/ports"
       [ ${DUMMY} -eq 1 ]
       NUMPORTS=$((${NUMPORTS}+1))
     done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
     [ ${NUMPORTS} -gt 8 ] && NUMPORTS=8
     [ ${CONPORTS} -gt 8 ] && CONPORTS=8
-    echo -n "${NUMPORTS}" >> ${TMP_PATH}/drivesmax
-    echo -n "${CONPORTS}" >> ${TMP_PATH}/drivescon
+    echo -n "${NUMPORTS}" >>"${TMP_PATH}/drivesmax"
+    echo -n "${CONPORTS}" >>"${TMP_PATH}/drivescon"
     DISKIDXMAP=$DISKIDXMAP$(printf "%02x" $DISKIDXMAPIDX)
     let DISKIDXMAPIDX=$DISKIDXMAPIDX+$CONPORTS
     DISKIDXMAPMAX=$DISKIDXMAPMAX$(printf "%02x" $DISKIDXMAPIDXMAX)
@@ -48,19 +48,19 @@ function getmap() {
   LASTDRIVE=0
   # Check for VMware
   while read line; do
-    if [ "$HYPERVISOR" = "VMware" ] && [ $line = 0 ]; then
-      MAXDISKS="`readModelKey "${MODEL}" "disks"`"
+    if [ "${HYPERVISOR}" = "VMware" ] && [ $line = 0 ]; then
+      MAXDISKS="$(readModelKey "${MODEL}" "disks")"
       echo -n "$line>$MAXDISKS:" >>"${TMP_PATH}/remap"
     elif [ $line != $LASTDRIVE ]; then
       echo -n "$line>$LASTDRIVE:" >>"${TMP_PATH}/remap"
-      LASTDRIVE=$(expr $LASTDRIVE + 1)
+      LASTDRIVE=$((${LASTDRIVE}+1))
     elif [ $line = $LASTDRIVE ]; then
-        LASTDRIVE=$(expr $line + 1)
+        LASTDRIVE=$((${line}+1))
     fi
   done < <(cat "${TMP_PATH}/ports")
-  SATAREMAP=`awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//'`
+  SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
   # Show recommended Option to user
-  if [ "$MACHINE" != "VIRTUAL" ]; then
+  if [ "${MACHINE}" != "VIRTUAL" ]; then
     if [ -n "${SATAREMAP}" ] && [ "${SASCONTROLLER}" -eq 0 ]; then
       REMAP3="*"
     elif [ -n "${SATAREMAP}" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
@@ -68,7 +68,7 @@ function getmap() {
     elif [ -z "${SATAREMAP}" ]; then
       REMAP1="*"
     fi
-  elif [ "$MACHINE" = "VIRTUAL" ]; then
+  elif [ "${MACHINE}" = "VIRTUAL" ]; then
     if [ -n "${SATAREMAP}" ] && [ "${SASCONTROLLER}" -eq 0 ]; then
       REMAP3="*"
     elif [ -n "${SATAREMAP}" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
@@ -77,7 +77,7 @@ function getmap() {
       REMAP1="*"
     fi
   fi
-  if [ "$SASCONTROLLER" -gt 0 ]; then
+  if [ "${SASCONTROLLER}" -gt 0 ]; then
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --infobox "SAS Controller dedected!\nUse SataPortMap (active Ports)!" 0 0
     writeConfigKey "arc.remap" "1" "${USER_CONFIG_FILE}"
@@ -127,25 +127,25 @@ function getmap() {
   # Check Remap for correct config
   REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
   # Write Map to config and show Map to User
-  if [ "${REMAP}" == "1" ]; then
+  if [ "${REMAP}" = "1" ]; then
     writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
-  elif [ "${REMAP}" == "2" ]; then
+  elif [ "${REMAP}" = "2" ]; then
     writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAPMAX}" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAPMAX}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "SataPortMap: ${SATAPORTMAPMAX} DiskIdxMap: ${DISKIDXMAPMAX}" 0 0
-  elif [ "${REMAP}" == "3" ]; then
+  elif [ "${REMAP}" = "3" ]; then
     writeConfigKey "cmdline.sata_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     dialog --backtitle "`backtitle`" --title "Arc Disks" \
       --msgbox "SataRemap: ${SATAREMAP}" 0 0
-  elif [ "${REMAP}" == "0" ]; then
+  elif [ "${REMAP}" = "0" ]; then
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
