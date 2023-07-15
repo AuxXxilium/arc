@@ -13,10 +13,10 @@ LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
 RAMTOTAL=0
 while read -r line; do
   RAMSIZE=$line
-  RAMTOTAL=$((RAMTOTAL +RAMSIZE))
-done <<< "$(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i [1-9])"
-RAMTOTAL=$((RAMTOTAL *1024))
-RAMMIN=$((RAMTOTAL *512))
+  RAMTOTAL=$((${RAMTOTAL}+${RAMSIZE}))
+done < <(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i [1-9])
+RAMTOTAL=$((${RAMTOTAL}*1024))
+RAMMIN=$((${RAMTOTAL}*512))
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
   # Check for Hypervisor
@@ -1747,7 +1747,7 @@ function sysinfo() {
   fi
   TEXT+="\nVendor: \Zb${VENDOR}\Zn"
   TEXT+="\nCPU | Cores: \Zb${CPUINFO}\Zn | \Zb${CPUCORES} @ ${CPUFREQ}\Zn"
-  TEXT+="\nRAM: \Zb$((RAMTOTAL /1024))GB\Zn"
+  TEXT+="\nRAM: \Zb$((${RAMTOTAL}/1024))GB\Zn"
   TEXT+="\nNetwork: \Zb${NETRL_NUM} Adapter\Zn"
   TEXT+="\nIP(s): \Zb${IPLIST}\Zn\n"
   # Print Config Informations

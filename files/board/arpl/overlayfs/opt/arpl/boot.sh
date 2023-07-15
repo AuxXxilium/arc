@@ -191,13 +191,13 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       echo -en "connected.\n"
       break
     fi
-    COUNT=$((${COUNT} + 1))
+    COUNT=$((${COUNT}+1))
     echo -n "."
     sleep 1
   done
   echo
   echo "Waiting IP."
-  for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
+  for N in $(seq 0 $((${#ETHX[@]}-1))); do
     COUNT=0
     DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     echo -en "${ETHX[${N}]}(${DRIVER}): "
@@ -218,7 +218,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         echo -en "\r${ETHX[${N}]}(${DRIVER}): ERROR\n"
         break
       fi
-      COUNT=$((${COUNT} + 1))
+      COUNT=$((${COUNT}+1))
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
       if [ -n "${IP}" ]; then
         echo -en "\r${ETHX[${N}]}(${DRIVER}): $(printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}")\n"
