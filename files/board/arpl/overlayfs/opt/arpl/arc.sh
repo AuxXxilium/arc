@@ -1742,9 +1742,6 @@ function sysinfo() {
   # Print System Informations
   TEXT+="\n\Z4System:\Zn"
   TEXT+="\nTyp | Boot: \Zb${MACHINE} | ${BOOTSYS}\Zn"
-  if [ "$MACHINE" = "VIRTUAL" ]; then
-    TEXT+="\nHypervisor: \Zb${HYPERVISOR}\Zn"
-  fi
   TEXT+="\nVendor: \Zb${VENDOR}\Zn"
   TEXT+="\nCPU | Cores: \Zb${CPUINFO}\Zn | \Zb${CPUCORES} @ ${CPUFREQ}\Zn"
   TEXT+="\nRAM: \Zb$((${RAMTOTAL}/1024))GB\Zn"
@@ -1754,8 +1751,8 @@ function sysinfo() {
   TEXT+="\n\Z4Config:\Zn"
   TEXT+="\nArc Version: \Zb${ARPL_VERSION}\Zn"
   TEXT+="\nSubversion: \ZbModules ${MODULESVERSION}\Zn | \ZbAddons ${ADDONSVERSION}\Zn | \ZbLKM ${LKMVERSION}\Zn | \ZbConfigs ${CONFIGSVERSION}\Zn"
-  TEXT+="\nModel | DSM: \Zb${MODEL} | ${PRODUCTVER}\Zn"
-  TEXT+="\nPlatform | Kernel: \Zb${PLATFORM} | ${KVER}\Zn"
+  TEXT+="\nModel | Platform: \Zb${MODEL} | ${PLATFORM}\Zn"
+  TEXT+="\nVersion | Kernel: \Zb${PRODUCTVER} | ${KVER}\Zn"
   if [ -n "${CONFDONE}" ]; then
     TEXT+="\nConfig: \ZbComplete\Zn"
   else

@@ -112,7 +112,7 @@ for N in $(seq 1 ${#ETHX[@]}); do
   fi
   # Enable Wake on Lan, ignore errors
   ethtool -s ${ETHX[$((${N}-1))]} wol g 2>/dev/null
-  echo -en "WOL enabled: ${ETHX[$((${N}-1))]}"
+  echo -e "WOL enabled: ${ETHX[$((${N}-1))]}"
 done
 
 # Restart DHCP

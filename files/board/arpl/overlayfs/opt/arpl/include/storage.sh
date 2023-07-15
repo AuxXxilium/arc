@@ -48,7 +48,7 @@ function getmap() {
   LASTDRIVE=0
   # Check for VMware
   while read line; do
-    if [ "${HYPERVISOR}" = "VMware" ] && [ $line = 0 ]; then
+    if [ "${MACHINE}" = "VMware" ] && [ $line = 0 ]; then
       MAXDISKS="$(readModelKey "${MODEL}" "disks")"
       echo -n "$line>$MAXDISKS:" >>"${TMP_PATH}/remap"
     elif [ $line != $LASTDRIVE ]; then
@@ -60,7 +60,7 @@ function getmap() {
   done < <(cat "${TMP_PATH}/ports")
   SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
   # Show recommended Option to user
-  if [ "${MACHINE}" != "VIRTUAL" ]; then
+  if [ "${MACHINE}" = "NATIVE" ]; then
     if [ -n "${SATAREMAP}" ] && [ "${SASCONTROLLER}" -eq 0 ]; then
       REMAP3="*"
     elif [ -n "${SATAREMAP}" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
@@ -68,7 +68,7 @@ function getmap() {
     elif [ -z "${SATAREMAP}" ]; then
       REMAP1="*"
     fi
-  elif [ "${MACHINE}" = "VIRTUAL" ]; then
+  elif [ "${MACHINE}" != "NATIVE" ]; then
     if [ -n "${SATAREMAP}" ] && [ "${SASCONTROLLER}" -eq 0 ]; then
       REMAP3="*"
     elif [ -n "${SATAREMAP}" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
