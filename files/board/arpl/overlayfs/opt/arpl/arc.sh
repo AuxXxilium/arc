@@ -1722,6 +1722,15 @@ function sysinfo() {
     USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
     LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    MODULESINFO=""
+    KOLIST=""
+    for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
+      KOLIST+="$(getdepends ${PLATFORM} ${KVER} ${I}) ${I} "
+    done
+    KOLIST=($(echo ${KOLIST} | tr ' ' '\n' | sort -u))
+    for ID in ${KOLIST[@]}; do
+      MODULESINFO+="${ID} "
+    done
   fi
   NETRL_NUM=$(ls /sys/class/net/ | grep eth | wc -l)
   IPLIST=$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
@@ -1740,35 +1749,39 @@ function sysinfo() {
   CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
   TEXT=""
   # Print System Informations
-  TEXT+="\n\Z4System:\Zn"
+  TEXT+="\n\Z4> System:\Zn"
   TEXT+="\nTyp | Boot: \Zb${MACHINE} | ${BOOTSYS}\Zn"
   TEXT+="\nVendor: \Zb${VENDOR}\Zn"
-  TEXT+="\nCPU | Cores: \Zb${CPUINFO}\Zn | \Zb${CPUCORES} @ ${CPUFREQ}\Zn"
+  TEXT+="\nCPU | Cores: \Zb${CPUINFO} | ${CPUCORES} @ ${CPUFREQ}\Zn"
   TEXT+="\nRAM: \Zb$((${RAMTOTAL}/1024))GB\Zn"
   TEXT+="\nNetwork: \Zb${NETRL_NUM} Adapter\Zn"
   TEXT+="\nIP(s): \Zb${IPLIST}\Zn\n"
   # Print Config Informations
-  TEXT+="\n\Z4Config:\Zn"
+  TEXT+="\n\Z4> Arc:\Zn"
   TEXT+="\nArc Version: \Zb${ARPL_VERSION}\Zn"
-  TEXT+="\nSubversion: \ZbModules ${MODULESVERSION}\Zn | \ZbAddons ${ADDONSVERSION}\Zn | \ZbLKM ${LKMVERSION}\Zn | \ZbConfigs ${CONFIGSVERSION}\Zn"
+  TEXT+="\nSubversion: \ZbModules ${MODULESVERSION} | Addons ${ADDONSVERSION} | LKM ${LKMVERSION} | Configs ${CONFIGSVERSION}\Zn"
+  TEXT+="\n\Z4>> DSM:\Zn"
   TEXT+="\nModel | Platform: \Zb${MODEL} | ${PLATFORM}\Zn"
-  TEXT+="\nVersion | Kernel: \Zb${PRODUCTVER} | ${KVER}\Zn"
+  TEXT+="\nDSM | Kernel | LKM: \Zb${PRODUCTVER} | ${KVER} | ${LKM}\Zn"
+  TEXT+="\n\Z4>> Loader:\Zn"
   if [ -n "${CONFDONE}" ]; then
-    TEXT+="\nConfig: \ZbComplete\Zn"
+    TEXT+="\nConfig | Build: \ZbComplete | "
   else
-    TEXT+="\nConfig: \ZbIncomplete\Zn"
+    TEXT+="\nConfig | Build: \ZbIncomplete | "
   fi
   if [ -n "${BUILDDONE}" ]; then
-    TEXT+="\nBuild: \ZbComplete\Zn"
+    TEXT+="Complete\Zn"
   else
-    TEXT+="\nBuild: \ZbIncomplete\Zn"
+    TEXT+="Incomplete\Zn"
   fi
-  TEXT+="\nArcpatch | Onlinemode: \Zb${ARCPATCH}\Zn | \Zb${ONLINEMODE}\Zn"
-  TEXT+="\nDirectboot | DirectDSM: \Zb${DIRECTBOOT}\Zn | \Zb${DIRECTDSM}\Zn"
-  TEXT+="\nAddons selected: \Zb${ADDONSINFO}\Zn"
-  TEXT+="\nLKM: \Zb${LKM}\Zn"
+  TEXT+="\nArcpatch | Onlinemode: \Zb${ARCPATCH} | ${ONLINEMODE}\Zn"
+  TEXT+="\nDirectboot | DirectDSM: \Zb${DIRECTBOOT} | ${DIRECTDSM}\Zn"
+  TEXT+="\n\Z4>> Extensions:\Zn"
+  TEXT+="\nAddons loaded: \Zb${ADDONSINFO}\Zn"
+  TEXT+="\nModules loaded: \Zb${MODULESINFO}\Zn"
+  TEXT+="\n\Z4>> Settings:\Zn"
   if [ "${REMAP}" = "1" ] || [ "${REMAP}" == "2" ]; then
-    TEXT+="\nSataPortMap: \Zb${PORTMAP}\Zn | DiskIdxMap: \Zb${DISKMAP}\Zn"
+    TEXT+="\nSataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
   elif [ "${REMAP}" = "3" ]; then
     TEXT+="\nSataRemap: \Zb${PORTMAP}\Zn"
   elif [ "${REMAP}" = "0" ]; then
@@ -1776,7 +1789,7 @@ function sysinfo() {
   fi
   TEXT+="\nUSB Mount: \Zb${USBMOUNT}\Zn\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
-  TEXT+="\n\Z4Storage:\Zn"
+  TEXT+="\n\Z4> Storage:\Zn"
   # Get Information for Sata Controller
   if [ "${SATACONTROLLER}" -gt 0 ]; then
     NUMPORTS=0
