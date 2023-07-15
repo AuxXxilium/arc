@@ -1749,21 +1749,21 @@ function sysinfo() {
   CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
   TEXT=""
   # Print System Informations
-  TEXT+="\n\Z4> System:\Zn"
+  TEXT+="\n\Z4> System\Zn"
   TEXT+="\nTyp | Boot: \Zb${MACHINE} | ${BOOTSYS}\Zn"
   TEXT+="\nVendor: \Zb${VENDOR}\Zn"
   TEXT+="\nCPU | Cores: \Zb${CPUINFO} | ${CPUCORES} @ ${CPUFREQ}\Zn"
-  TEXT+="\nRAM: \Zb$((${RAMTOTAL}/1024))GB\Zn"
+  TEXT+="\nMemory: \Zb$((${RAMTOTAL}/1024))GB\Zn"
   TEXT+="\nNetwork: \Zb${NETRL_NUM} Adapter\Zn"
   TEXT+="\nIP(s): \Zb${IPLIST}\Zn\n"
   # Print Config Informations
-  TEXT+="\n\Z4> Arc:\Zn"
+  TEXT+="\n\Z4> Arc\Zn"
   TEXT+="\nArc Version: \Zb${ARPL_VERSION}\Zn"
   TEXT+="\nSubversion: \ZbModules ${MODULESVERSION} | Addons ${ADDONSVERSION} | LKM ${LKMVERSION} | Configs ${CONFIGSVERSION}\Zn"
-  TEXT+="\n\Z4>> DSM:\Zn"
+  TEXT+="\n\Z4>> DSM\Zn"
   TEXT+="\nModel | Platform: \Zb${MODEL} | ${PLATFORM}\Zn"
   TEXT+="\nDSM | Kernel | LKM: \Zb${PRODUCTVER} | ${KVER} | ${LKM}\Zn"
-  TEXT+="\n\Z4>> Loader:\Zn"
+  TEXT+="\n\Z4>> Loader\Zn"
   if [ -n "${CONFDONE}" ]; then
     TEXT+="\nConfig | Build: \ZbComplete | "
   else
@@ -1776,10 +1776,10 @@ function sysinfo() {
   fi
   TEXT+="\nArcpatch | Onlinemode: \Zb${ARCPATCH} | ${ONLINEMODE}\Zn"
   TEXT+="\nDirectboot | DirectDSM: \Zb${DIRECTBOOT} | ${DIRECTDSM}\Zn"
-  TEXT+="\n\Z4>> Extensions:\Zn"
+  TEXT+="\n\Z4>> Extensions\Zn"
   TEXT+="\nAddons loaded: \Zb${ADDONSINFO}\Zn"
   TEXT+="\nModules loaded: \Zb${MODULESINFO}\Zn"
-  TEXT+="\n\Z4>> Settings:\Zn"
+  TEXT+="\n\Z4>> Settings\Zn"
   if [ "${REMAP}" = "1" ] || [ "${REMAP}" == "2" ]; then
     TEXT+="\nSataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
   elif [ "${REMAP}" = "3" ]; then
@@ -1789,7 +1789,7 @@ function sysinfo() {
   fi
   TEXT+="\nUSB Mount: \Zb${USBMOUNT}\Zn\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
-  TEXT+="\n\Z4> Storage:\Zn"
+  TEXT+="\n\Z4> Storage\Zn"
   # Get Information for Sata Controller
   if [ "${SATACONTROLLER}" -gt 0 ]; then
     NUMPORTS=0
