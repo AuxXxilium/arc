@@ -128,7 +128,7 @@ if [ ${NETIF_NUM} -le ${NETNUM} ]; then
     MACR="$(cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g')"
     # no duplicates
     while [[ "${MACS[*]}" =~ "$MACR" ]]; do # no duplicates
-      MACR="${MACR:0:10}`printf "%02x" $((0x${MACR:10:2} + 1))`" 
+      MACR="${MACR:0:10}$(printf "%02x" $((0x${MACR:10:2}+1)))" 
     done
     CMDLINE["mac${N}"]="${MACR}"
   done
@@ -157,6 +157,7 @@ echo
 
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
+NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 # Make Directboot persistent if DSM is installed
 if [ "${DIRECTBOOT}" = "true" ]; then
   if [ "${DIRECTDSM}" = "true" ]; then
@@ -216,6 +217,10 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       fi
       if [ ${N} -eq 8 ]; then # Under normal circumstances, no errors should occur here.
         echo -en "\r${ETHX[${N}]}(${DRIVER}): ERROR\n"
+        break
+      fi
+      if [ "${NETSETMAC}" = "true" ]; then
+        echo -en "\r${ETHX[${N}]}(${DRIVER}): MAC will be not set while Boot.\n"
         break
       fi
       COUNT=$((${COUNT}+1))

@@ -92,31 +92,35 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.onlinemode" "true" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.notsetmac" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 fi
 
-# Get MAC address
-ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
-for N in $(seq 1 ${#ETHX[@]}); do
-  MACR="$(cat /sys/class/net/${ETHX[$((${N}-1))]}/address | sed 's/://g')"
-  MACF="$(readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}")"
-  # Initialize with real MAC
-  writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
-  if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
-    MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-    echo "$(printf "Setting %s MAC to %s" "${ETHX[$(expr ${N} - 1)]}" "${MAC}")"
-    ip link set dev ${ETHX[$(expr ${N} - 1)]} address ${MAC} >/dev/null 2>&1
-  elif [ -z "${MACF}" ]; then
-    # Write real Mac to cmdline config
-    writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
-  fi
-  # Enable Wake on Lan, ignore errors
-  ethtool -s ${ETHX[$((${N}-1))]} wol g 2>/dev/null
-  echo -e "WOL enabled: ${ETHX[$((${N}-1))]}"
-done
+NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
+if [ "${NETSETMAC}" = "false" ]; then
+  # Get MAC address
+  ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
+  for N in $(seq 1 ${#ETHX[@]}); do
+    MACR="$(cat /sys/class/net/${ETHX[$((${N}-1))]}/address | sed 's/://g')"
+    MACF="$(readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}")"
+    # Initialize with real MAC
+    writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+    if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
+      MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
+      echo "$(printf "Setting %s MAC to %s" "${ETHX[$((${N}-1))]}" "${MAC}")"
+      ip link set dev ${ETHX[$((${N}-1))]} address ${MAC} >/dev/null 2>&1
+    elif [ -z "${MACF}" ]; then
+      # Write real Mac to cmdline config
+      writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+    fi
+    # Enable Wake on Lan, ignore errors
+    ethtool -s ${ETHX[$((${N}-1))]} wol g 2>/dev/null
+    echo -e "WOL enabled: ${ETHX[$((${N}-1))]}"
+  done
 
-# Restart DHCP
-/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
+  # Restart DHCP
+  /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
+fi
 
 # Get the VID/PID if we are in USB
 VID="0x0000"
