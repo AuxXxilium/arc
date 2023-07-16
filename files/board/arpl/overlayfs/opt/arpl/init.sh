@@ -123,6 +123,7 @@ if [ "${NOTSETMAC}" = "false" ]; then
   # Restart DHCP
   /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
 fi
+echo
 
 # Get the VID/PID if we are in USB
 VID="0x0000"
