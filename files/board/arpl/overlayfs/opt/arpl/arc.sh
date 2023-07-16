@@ -16,7 +16,7 @@ while read -r line; do
   RAMTOTAL=$((${RAMTOTAL}+${RAMSIZE}))
 done < <(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i [1-9])
 RAMTOTAL=$((${RAMTOTAL}*1024))
-RAMMIN=$((${RAMTOTAL}*512))
+RAMMIN=$((${RAMTOTAL}/2))
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
   # Check for Hypervisor
@@ -44,8 +44,12 @@ BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
+# Add Kernelload to old configs
+if [ -z "${KERNELLOAD}" ]; then
+  writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
+fi
 # Add Onlinemode to old configs
-if [ -n "${ONLINEMODE}" ]; then
+if [ -z "${ONLINEMODE}" ]; then
   writeConfigKey "arc.onlinemode" "true" "${USER_CONFIG_FILE}"
 fi
 # Reset DirectDSM if User boot to Config
@@ -515,20 +519,6 @@ function make() {
       cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
       cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
     fi
-    # Write out .pat variables
-    PAT_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
-    PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
-    PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
-    PAT_URL=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')
-    PAT_HASH=$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')
-    if [ -z "${PAT_URL}" -o -z "${PAT_HASH}" ]; then
-      dialog --backtitle "`backtitle`" --title "Error" --aspect 18 \
-      --msgbox "Can't compute URL and Hash for .pat." 0 0
-      return
-    fi
-    PAT_URL="${PAT_URL%%\?*}"
-    writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
   fi
   # Patch Ramdisk
   /opt/arpl/ramdisk-patch.sh
