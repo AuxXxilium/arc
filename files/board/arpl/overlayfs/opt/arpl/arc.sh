@@ -2131,7 +2131,7 @@ while true; do
       echo "f \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
       echo "g \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
       echo "h \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
-      echo "k \"Not set Boot MAC: \Z4${NOTSETMAC}\Zn \" "                                   >>"${TMP_PATH}/menu"
+      echo "i \"Not set Boot MAC: \Z4${NOTSETMAC}\Zn \" "                                   >>"${TMP_PATH}/menu"
       echo "k \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
       if [ "${DIRECTBOOT}" = "true" ]; then
         echo "l \"Reset DirectDSM: \Z4${DIRECTDSM}\Zn \" "                                  >>"${TMP_PATH}/menu"

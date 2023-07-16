@@ -23,11 +23,13 @@ NUM_PARTITIONS=$(blkid | grep "${LOADER_DISK}[0-9]\+" | cut -d: -f1 | wc -l)
 fsck.vfat -aw ${LOADER_DISK}1 >/dev/null 2>&1 || true
 fsck.ext2 -p ${LOADER_DISK}2 >/dev/null 2>&1 || true
 fsck.ext4 -p ${LOADER_DISK}3 >/dev/null 2>&1 || true
+
 # Make folders to mount partitions
 mkdir -p ${BOOTLOADER_PATH}
 mkdir -p ${SLPART_PATH}
 mkdir -p ${CACHE_PATH}
 mkdir -p ${DSMROOT_PATH}
+
 # Mount the partitions
 mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "`printf "Can't mount %s" "${BOOTLOADER_PATH}"`"
 mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "`printf "Can't mount %s" "${SLPART_PATH}"`"
@@ -45,6 +47,7 @@ printf "\033[1;30m%*s\033[0m\n" $COLUMNS ""
 [ ! -d "${CACHE_PATH}/ssh" ] && cp -R "/etc/ssh" "${CACHE_PATH}/ssh"
 rm -rf "/etc/ssh"
 ln -s "${CACHE_PATH}/ssh" "/etc/ssh"
+
 # Link bash history to cache volume
 rm -rf ~/.bash_history
 ln -s ${CACHE_PATH}/.bash_history ~/.bash_history
@@ -52,12 +55,12 @@ touch ~/.bash_history
 if ! grep -q "arc.sh" ~/.bash_history; then
   echo "arc.sh " >>~/.bash_history
 fi
+
 # Check if exists directories into P3 partition, if yes remove and link it
 if [ -d "${CACHE_PATH}/model-configs" ]; then
   rm -rf "${MODEL_CONFIG_PATH}"
   ln -s "${CACHE_PATH}/model-configs" "${MODEL_CONFIG_PATH}"
 fi
-
 if [ -d "${CACHE_PATH}/patch" ]; then
   rm -rf "${PATCH_PATH}"
   ln -s "${CACHE_PATH}/patch" "${PATCH_PATH}"
@@ -97,7 +100,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
 fi
 
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
-if [ "${NETSETMAC}" = "false" ]; then
+if [ "${NOTSETMAC}" = "false" ]; then
   # Get MAC address
   ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
   for N in $(seq 1 ${#ETHX[@]}); do
@@ -255,6 +258,7 @@ mkdir -p "${ADDONS_PATH}"
 mkdir -p "${LKM_PATH}"
 mkdir -p "${MODULES_PATH}"
 
+# Load arc
 install-addons.sh
 sleep 3
 arc.sh
