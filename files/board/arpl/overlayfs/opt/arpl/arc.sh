@@ -1458,7 +1458,8 @@ function updateMenu() {
             --msgbox "Error downloading update file" 0 0
           return 1
         fi
-        unzip -o ${TMP_PATH}/arc-${TAG}.img.zip -d ${TMP_PATH}
+        unzip -o "${TMP_PATH}/arc-${TAG}.img.zip" -d "${TMP_PATH}"
+        rm -f "${TMP_PATH}/arc-${TAG}.img.zip"
         if [ $? -ne 0 ]; then
           dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
             --msgbox "Error extracting update file" 0 0
@@ -1478,6 +1479,7 @@ function updateMenu() {
         umount /mnt/p1 /mnt/p2 /mnt/p3
         dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1) bs=1M conv=fsync
         # Ask for Boot
+        rm -f "${TMP_PATH}/arc.img"
         dialog --backtitle "`backtitle`" --title "Full upgrade Loader" --aspect 18 \
           --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
         [ $? -ne 0 ] && continue
@@ -1509,7 +1511,8 @@ function updateMenu() {
             --msgbox "Error downloading update file" 0 0
           return 1
         fi
-        unzip -oq ${TMP_PATH}/update.zip -d ${TMP_PATH}
+        unzip -o "${TMP_PATH}/update.zip" -d "${TMP_PATH}"
+        rm -f "${TMP_PATH}/update.zip"
         if [ $? -ne 0 ]; then
           dialog --backtitle "`backtitle`" --title "Update Arc" --aspect 18 \
             --msgbox "Error extracting update file" 0 0
@@ -1531,7 +1534,7 @@ function updateMenu() {
         done < <(readConfigArray "remove" "${TMP_PATH}/update-list.yml")
         while IFS=': ' read KEY VALUE; do
           if [ "${KEY: -1}" = "/" ]; then
-            rm -Rf "${VALUE}"
+            rm -rf "${VALUE}"
             mkdir -p "${VALUE}"
             tar -zxf "${TMP_PATH}/$(basename "${KEY}").tgz" -C "${VALUE}"
           else
@@ -1564,19 +1567,19 @@ function updateMenu() {
         fi
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
           --infobox "Extracting latest version" 0 0
-        rm -rf ${TMP_PATH}/addons
-        mkdir -p ${TMP_PATH}/addons
-        unzip -o ${TMP_PATH}/addons.zip -d ${TMP_PATH}/addons >/dev/null 2>&1
+        rm -rf "${ADDONS_PATH}"
+        mkdir -p "${ADDONS_PATH}"
+        unzip -o "${TMP_PATH}/addons.zip" -d "${ADDONS_PATH}" >/dev/null 2>&1
         dialog --backtitle "`backtitle`" --title "Update addons" --aspect 18 \
           --infobox "Installing new addons" 0 0
-        rm -Rf "${ADDONS_PATH}/"*
-        [ -f ${TMP_PATH}/addons/VERSION ] && cp -f ${TMP_PATH}/addons/VERSION ${ADDONS_PATH}/
-        for PKG in $(ls ${TMP_PATH}/addons/*.addon); do
+        for PKG in $(ls ${ADDONS_PATH}/*.addon); do
           ADDON=$(basename ${PKG} | sed 's|.addon||')
           rm -rf "${ADDONS_PATH}/${ADDON}"
           mkdir -p "${ADDONS_PATH}/${ADDON}"
           tar -xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
+          rm -f "${ADDONS_PATH}/${ADDON}.addon"
         done
+        rm -f "${TMP_PATH}/addons.zip"
         DIRTY=1
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1600,8 +1603,9 @@ function updateMenu() {
             --msgbox "Error downloading latest version" 0 0
           return 1
         fi
-        rm "${MODULES_PATH}/"*
-        unzip -f ${TMP_PATH}/modules.zip -d "${MODULES_PATH}" >/dev/null 2>&1
+        rm -rf "${MODULES_PATH}"
+        mkdir -p "${MODULES_PATH}"
+        unzip -o "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}" >/dev/null 2>&1
         # Rebuild modules if model/build is selected
         if [ -n "${PLATFORM}" -a -n "${KVER}" ]; then
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
@@ -1609,6 +1613,7 @@ function updateMenu() {
             writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
           done < <(getAllModules "${PLATFORM}" "${KVER}")
         fi
+        rm -f "${TMP_PATH}/modules.zip"
         DIRTY=1
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1634,8 +1639,10 @@ function updateMenu() {
         fi
         dialog --backtitle "`backtitle`" --title "Update Configs" --aspect 18 \
           --infobox "Extracting latest version" 0 0
-        rm -rf "${LKM_PATH}/"*
-        unzip -o ${TMP_PATH}/configs.zip -d "${MODEL_CONFIG_PATH}" >/dev/null 2>&1
+        rm -rf "${MODEL_CONFIG_PATH}"
+        mkdir -p "${MODEL_CONFIG_PATH}"
+        unzip -o "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}" >/dev/null 2>&1
+        rm -f "${TMP_PATH}/configs.zip"
         DIRTY=1
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1661,8 +1668,10 @@ function updateMenu() {
         fi
         dialog --backtitle "`backtitle`" --title "Update LKMs" --aspect 18 \
           --infobox "Extracting latest version" 0 0
-        rm -rf "${LKM_PATH}/"*
-        unzip -o ${TMP_PATH}/rp-lkms.zip -d "${LKM_PATH}" >/dev/null 2>&1
+        rm -rf "${LKM_PATH}"
+        mkdir -p "${LKM_PATH}"
+        unzip -o "${TMP_PATH}/rp-lkms.zip" -d "${LKM_PATH}" >/dev/null 2>&1
+        rm -f "${TMP_PATH}/rp-lkms.zip"
         DIRTY=1
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
