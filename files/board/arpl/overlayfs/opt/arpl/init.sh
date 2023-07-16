@@ -120,7 +120,6 @@ if [ "${NOTSETMAC}" = "false" ]; then
     ethtool -s ${ETHX[$((${N}-1))]} wol g 2>/dev/null
     echo -e "WOL enabled: ${ETHX[$((${N}-1))]}"
   done
-
   # Restart DHCP
   /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
 fi
@@ -249,7 +248,7 @@ echo -e "Default SSH Root password is \033[1;34marc\033[0m"
 echo
 
 # Check memory
-RAM=$(free -m | awk '/Mem:/{print$2}')
+RAM=$(free -m | grep -i mem | awk '{print$2}')
 if [ ${RAM} -le 3500 ]; then
   echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of memory.\033[0m\n"
 fi
