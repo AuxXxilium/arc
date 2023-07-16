@@ -68,9 +68,9 @@ MEM="$(free -m | grep -i mem | awk '{print$2}') MB"
 
 echo -e "Model: \033[1;37m${MODEL}\033[0m"
 echo -e "DSM: \033[1;37m${PRODUCTVER}\033[0m"
-echo -e "LKM: \033[1;36m${LKM}\033[0m"
-echo -e "CPU: \033[1;36m${CPU}\033[0m"
-echo -e "MEM: \033[1;36m${MEM}\033[0m"
+echo -e "LKM: \033[1;37m${LKM}\033[0m"
+echo -e "CPU: \033[1;37m${CPU}\033[0m"
+echo -e "MEM: \033[1;37m${MEM}\033[0m"
 echo
 
 if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "$(readConfigKey "productvers.[${PRODUCTVER}]" "${MODEL_CONFIG_PATH}/${MODEL}.yml")" ]; then
