@@ -43,6 +43,7 @@ ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
+KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 # Add Onlinemode to old configs
 if [ -n "${ONLINEMODE}" ]; then
   writeConfigKey "arc.onlinemode" "true" "${USER_CONFIG_FILE}"
@@ -1732,6 +1733,7 @@ function sysinfo() {
     USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
     LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
     MODULESINFO=""
     KOLIST=""
     for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
@@ -1786,6 +1788,7 @@ function sysinfo() {
   fi
   TEXT+="\nArcpatch | Onlinemode: \Zb${ARCPATCH} | ${ONLINEMODE}\Zn"
   TEXT+="\nDirectboot | DirectDSM: \Zb${DIRECTBOOT} | ${DIRECTDSM}\Zn"
+  TEXT+="\nLoad Kernel: \Zb${KERNELLOAD}\Zn"
   TEXT+="\n\Z4>> Extensions\Zn"
   TEXT+="\nAddons loaded: \Zb${ADDONSINFO}\Zn"
   TEXT+="\nModules loaded: \Zb${MODULESINFO}\Zn"
@@ -2124,6 +2127,7 @@ while true; do
       echo "u \"Change USB Port Config \" "                                                 >>"${TMP_PATH}/menu"
       echo "w \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
       echo "x \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
+      echo "k \"Load Kernel: \Z4${KERNELLOAD}\Zn \" "                                       >>"${TMP_PATH}/menu"
       if [ "${DIRECTBOOT}" = "false" ]; then
         echo "b \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
       fi
@@ -2141,7 +2145,7 @@ while true; do
       echo "g \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
       echo "h \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
       echo "i \"Not set Boot MAC: \Z4${NOTSETMAC}\Zn \" "                                   >>"${TMP_PATH}/menu"
-      echo "k \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
+      echo "d \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
       if [ "${DIRECTBOOT}" = "true" ]; then
         echo "l \"Reset DirectDSM: \Z4${DIRECTDSM}\Zn \" "                                  >>"${TMP_PATH}/menu"
       fi
@@ -2193,6 +2197,11 @@ while true; do
     p) paturl; NEXT="p" ;;
     w) downgradeMenu; NEXT="w" ;;
     x) resetPassword; NEXT="x" ;;
+    k)
+      [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
+      writeConfigKey "arc.kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
+      NEXT="k"
+      ;;
     b) bootipwaittime; NEXT="b" ;;
     +) formatdisks; NEXT="+" ;;
     # Advanced Section
@@ -2207,7 +2216,7 @@ while true; do
       writeConfigKey "arc.notsetmac" "${NOTSETMAC}" "${USER_CONFIG_FILE}"
       NEXT="i"
       ;;
-    k) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
+    d) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
       NEXT="k"
       ;;
