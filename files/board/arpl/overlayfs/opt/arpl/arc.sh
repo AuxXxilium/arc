@@ -190,7 +190,7 @@ function arcMenu() {
   fi
   # Read model config for dt and aes
   if [ "${MODEL}" != "${resp}" ]; then
-    MODEL=${resp}
+    MODEL="${resp}"
     # Check for DT and SAS Controller
     DT="$(readModelKey "${resp}" "dt")"
     if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
@@ -209,10 +209,8 @@ function arcMenu() {
     deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
     deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
-    if [ -f "${ORI_ZIMAGE_FILE}" ]; then
-      # Delete old files
-      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-    fi
+    # Delete old files
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
     DIRTY=1
   fi
   arcbuild
@@ -260,8 +258,10 @@ function arcbuild() {
       resp="${1}"
     fi
     if [ "${PRODUCTVER}" != "${resp}" ]; then
-      PRODUCTVER=${resp}
+      PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+      # Delete old files
+      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
     fi
   fi
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -421,27 +421,26 @@ function make() {
     # Check zImage Hash
     ZIMAGE_HASH="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}')"
     OLD_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
-    if [ "${ZIMAGE_HASH}" != "${OLD_HASH}" ]; then
-      NEWIMAGE="true"
+    if [ "${ZIMAGE_HASH}" = "${OLD_HASH}" ]; then
+      NEWIMAGE="false"
     fi
     # Check Ramdisk Hash
     RAMDISK_HASH="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')"
     OLD_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
-    if [ "${RAMDISK_HASH}" != "${OLD_HASH}" ]; then
-      NEWIMAGE="true"
+    if [ "${RAMDISK_HASH}" = "${OLD_HASH}" ]; then
+      NEWIMAGE="false"
     fi
-  elif [ ! -f "${MOD_ZIMAGE_FILE}" ] && [ ! -f "${MOD_RDGZ_FILE}" ]; then
-    NEWIMAGE="true"
   fi
   # Build if NEWIMAGE is true
-  if [ "${NEWIMAGE}" = "true" ]; then
-    # Check for existing files
+  if [ "${NEWIMAGE}" != "false" ]; then
+    # Clean old files
+    rm -rf "${UNTAR_PAT_PATH}"
+    rm -rf "${CACHE_PATH}/${MODEL}/${PRODUCTVER}"
+    # Add new Paths files
+    mkdir -p "${UNTAR_PAT_PATH}"
     mkdir -p "${CACHE_PATH}/${MODEL}/${PRODUCTVER}"
     DSM_FILE="${CACHE_PATH}/${MODEL}/${PRODUCTVER}/dsm.tar"
     DSM_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
-    # Clean old files
-    rm -rf "${UNTAR_PAT_PATH}"
-    rm -f "${DSM_FILE}"
     # Get new files
     DSM_LINK="${DSM_MODEL}/${PRODUCTVER}/dsm.tar"
     DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
@@ -507,7 +506,6 @@ function make() {
         --msgbox "DSM Extraction successful!" 0 0
     fi
     if [ -f "${DSM_FILE}" ]; then
-      mkdir -p "${UNTAR_PAT_PATH}"
       tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
     fi
     # Copy DSM Files to locations
@@ -515,7 +513,7 @@ function make() {
     cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
     cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
     cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
-    if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+    if [ ! -f "${ORI_ZIMAGE_FILE}" ] && [ ! -f "${ORI_RDGZ_FILE}" ]; then
       cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
       cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
     fi
