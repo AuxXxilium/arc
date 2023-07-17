@@ -72,7 +72,7 @@ fi
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
-  writeConfigKey "lkm" "dev" "${USER_CONFIG_FILE}"
+  writeConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
   writeConfigKey "model" "" "${USER_CONFIG_FILE}"
   writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
