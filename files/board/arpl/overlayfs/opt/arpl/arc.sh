@@ -46,7 +46,7 @@ NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 # Add Kernelload to old configs
 if [ -z "${KERNELLOAD}" ]; then
-  writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.kernelload" "kexec" "${USER_CONFIG_FILE}"
 fi
 # Add Onlinemode to old configs
 if [ -z "${ONLINEMODE}" ]; then
@@ -2202,10 +2202,12 @@ while true; do
     h) editUserConfig; NEXT="h" ;;
     i) [ "${NOTSETMAC}" = "false" ] && NOTSETMAC='true' || NOTSETMAC='false'
       writeConfigKey "arc.notsetmac" "${NOTSETMAC}" "${USER_CONFIG_FILE}"
+      DIRTY=1
       NEXT="i"
       ;;
     d) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
+      DIRTY=1
       NEXT="k"
       ;;
     l)
@@ -2218,7 +2220,7 @@ while true; do
       DEVOPTS="${DEVOPTS}"
       NEXT="9"
       ;;
-    j) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
+    j) [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
       writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
       DIRTY=1
       NEXT="j"

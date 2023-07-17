@@ -31,9 +31,9 @@ mkdir -p ${CACHE_PATH}
 mkdir -p ${DSMROOT_PATH}
 
 # Mount the partitions
-mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "`printf "Can't mount %s" "${BOOTLOADER_PATH}"`"
-mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "`printf "Can't mount %s" "${SLPART_PATH}"`"
-mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "`printf "Can't mount %s" "${CACHE_PATH}"`"
+mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "$(printf "Can't mount %s" "${BOOTLOADER_PATH}")"
+mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "$(printf "Can't mount %s" "${SLPART_PATH}")"
+mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "$(printf "Can't mount %s" "${CACHE_PATH}")"
 
 # Shows title
 clear
@@ -96,7 +96,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.onlinemode" "true" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.notsetmac" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.kernelload" "kexec" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 fi
 
