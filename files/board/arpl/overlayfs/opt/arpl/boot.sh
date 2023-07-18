@@ -36,7 +36,7 @@ if [ "$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')" != "${RAMDISK_HASH}" ];
   echo -e "\033[1;43mDSM Ramdisk changed\033[0m"
   /opt/arpl/ramdisk-patch.sh
   if [ $? -ne 0 ]; then
-    dialog --backtitle "`backtitle`" --title "Error" \
+    dialog --backtitle "$(backtitle)" --title "Error" \
       --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1
   fi
@@ -49,7 +49,7 @@ if [ "$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}')" != "${ZIMAGE_HASH}" ]
   echo -e "\033[1;43mDSM zImage changed\033[0m"
   /opt/arpl/zimage-patch.sh
   if [ $? -ne 0 ]; then
-    dialog --backtitle "`backtitle`" --title "Error" \
+    dialog --backtitle "$(backtitle)" --title "Error" \
       --msgbox "zImage not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1
   fi
@@ -74,7 +74,7 @@ echo -e "MEM: \033[1;37m${MEM}\033[0m"
 echo
 
 if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "$(readConfigKey "productvers.[${PRODUCTVER}]" "${MODEL_CONFIG_PATH}/${MODEL}.yml")" ]; then
-  echo -e "\033[1;33m*** $(printf "The current version of Arc does not support booting %s-%s, please rebuild." "${MODEL}" "${PRODUCTVER}") ***\033[0m"
+  echo -e "\033[1;33m*** The current version of Arc does not support booting ${MODEL}-${PRODUCTVER}, please rebuild. ***\033[0m"
   exit 1
 fi
 
@@ -91,10 +91,10 @@ CMDLINE['pid']="${PID}"
 CMDLINE['sn']="${SN}"
 
 # Read cmdline
-while IFS=': ' read KEY VALUE; do
+while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
 done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].cmdline")
-while IFS=': ' read KEY VALUE; do
+while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
 done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 
@@ -124,8 +124,8 @@ fi
 # set missing mac to cmdline if needed
 if [ ${NETIF_NUM} -le ${NETNUM} ]; then
   ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
-  for N in $(seq $(expr ${NETIF_NUM} + 1) ${NETNUM}); do 
-    MACR="$(cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g')"
+  for N in $(seq $((${NETIF_NUM}+1)) ${NETNUM}); do 
+    MACR="$(cat /sys/class/net/${ETHX[$((${N}-1))]}/address | sed 's/://g')"
     # no duplicates
     while [[ "${MACS[*]}" =~ "$MACR" ]]; do # no duplicates
       MACR="${MACR:0:10}$(printf "%02x" $((0x${MACR:10:2}+1)))" 
@@ -177,12 +177,12 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
   ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
-  echo "$(printf "Detected %s NIC." "${#ETHX[@]}")"
+  echo "Detected ${#ETHX[@]} NIC."
   echo "Checking Connection."
   COUNT=0
   while [ ${COUNT} -lt ${BOOTIPWAIT} ]; do
     hasConnect="false"
-    for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
+    for N in $(seq 0 $((${#ETHX[@]}-1))); do
       if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'yes'; then
         echo -en "${ETHX[${N}]} "
         hasConnect="true"
@@ -226,7 +226,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       COUNT=$((${COUNT}+1))
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
       if [ -n "${IP}" ]; then
-        echo -en "\r${ETHX[${N}]}(${DRIVER}): $(printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}")\n"
+        echo -en "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web.\n"
         break
       fi
       echo -n "."

@@ -35,7 +35,7 @@ dd if=/dev/zero of=grub.img bs=1M seek=1024 count=0
 echo -e "n\np\n1\n\n+50M\nn\np\n2\n\n+50M\nn\np\n3\n\n\na\n1\nw\nq\n" | fdisk grub.img
 fdisk -l grub.img
 
-LOOPX=`sudo losetup -f`
+LOOPX=$(sudo losetup -f)
 sudo losetup -P ${LOOPX} grub.img
 sudo mkdosfs -F32 -n ARPL1 ${LOOPX}p1
 sudo mkfs.ext2 -F -L ARPL2 ${LOOPX}p2
@@ -64,7 +64,7 @@ do
   sudo ${GRUB}/${B}/grub-install ${args}
 done
 
-if [ -d ARPL1/boot/grub/fonts -a -f /usr/share/grub/unicode.pf2 ]; then
+if [ -d ARPL1/boot/grub/fonts ] && [ -f /usr/share/grub/unicode.pf2 ]; then
   sudo cp /usr/share/grub/unicode.pf2 ARPL1/boot/grub/fonts
 fi
 

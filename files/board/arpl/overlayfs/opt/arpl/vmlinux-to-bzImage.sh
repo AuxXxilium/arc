@@ -15,11 +15,11 @@ file_size_le () {
     dec_size=0;
     for F in "${@}"; do
       fsize=$(stat -c "%s" ${F});
-      dec_size=$(expr ${dec_size} + ${fsize});
+      dec_size=$(( ${dec_size} + ${fsize}));
     done;
     printf "%08x\n" ${dec_size} |
       sed 's/\(..\)/\1 /g' | {
-        read ch0 ch1 ch2 ch3;
+        read -r ch0 ch1 ch2 ch3;
         for ch in ${ch3} ${ch2} ${ch1} ${ch0}; do
           printf '%s%03o' '\' $((0x${ch}));
         done;
@@ -31,7 +31,7 @@ size_le () {
   printf $(
     printf "%08x\n" "${@}" |
       sed 's/\(..\)/\1 /g' | {
-        read ch0 ch1 ch2 ch3;
+        read -r ch0 ch1 ch2 ch3;
         for ch in ${ch3} ${ch2} ${ch1} ${ch0}; do
           printf '%s%03o' '\' $((0x${ch}));
         done;

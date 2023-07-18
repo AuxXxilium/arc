@@ -42,7 +42,7 @@ function loaderIsConfigured() {
 ###############################################################################
 # Just show error message and dies
 function die() {
-  echo -e "\033[1;41m$@\033[0m"
+  echo -e "\033[1;41m$*\033[0m"
   exit 1
 }
 
@@ -181,12 +181,12 @@ function _set_conf_kv() {
 # (based on pocopico's TCRP code)
 function findAndMountDSMRoot() {
   [ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) -gt 0 ] && return 0
-  dsmrootdisk="$(blkid /dev/sd* | grep -i raid | awk '{print $1 " " $4}' | grep UUID | grep sd[a-z]1 | head -1 | awk -F ":" '{print $1}')"
+  dsmrootdisk="$(blkid /dev/sd* | grep -i raid | awk '{print $1 " " $4}' | grep UUID | grep "sd[a-z]1" | head -1 | awk -F ":" '{print $1}')"
   [ -z "${dsmrootdisk}" ] && return -1
   [ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) -eq 0 ] && mount -t ext4 $dsmrootdisk "${DSMROOT_PATH}"
   if [ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) -eq 0 ]; then
     echo "Failed to mount"
-    return -1
+    return 1
   fi
   return 0
 }

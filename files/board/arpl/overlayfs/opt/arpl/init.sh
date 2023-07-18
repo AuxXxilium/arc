@@ -111,7 +111,7 @@ if [ "${NOTSETMAC}" = "false" ]; then
     writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
     if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
       MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-      echo "$(printf "Setting %s MAC to %s" "${ETHX[$((${N}-1))]}" "${MAC}")"
+      echo "Setting ${ETHX[$((${N}-1))]} MAC to ${MAC}"
       ip link set dev ${ETHX[$((${N}-1))]} address ${MAC} >/dev/null 2>&1
     elif [ -z "${MACF}" ]; then
       # Write real Mac to cmdline config
@@ -155,7 +155,7 @@ LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
 SIZEOFDISK=$(cat /sys/block/${LOADER_DEVICE_NAME}/size)
 ENDSECTOR=$(($(fdisk -l ${LOADER_DISK} | awk '/'${LOADER_DEVICE_NAME}3'/{print$3}')+1))
 if [ ${SIZEOFDISK} -ne ${ENDSECTOR} ]; then
-  echo -e "\033[1;36m$(printf "Resizing %s" "${LOADER_DISK}3")\033[0m"
+  echo -e "\033[1;36mResizing ${LOADER_DISK}3\033[0m"
   echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${LOADER_DISK}" >"${LOG_FILE}" 2>&1 || dieLog
   resize2fs ${LOADER_DISK}3 >"${LOG_FILE}" 2>&1 || dieLog
 fi
@@ -189,12 +189,12 @@ fi
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
 ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
-echo "$(printf "Detected %s NIC." "${#ETHX[@]}")"
+echo "Detected ${#ETHX[@]} NIC."
 echo "Checking Connection."
 COUNT=0
 while [ ${COUNT} -lt ${BOOTIPWAIT} ]; do
   hasConnect="false"
-  for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
+  for N in $(seq 0 $((${#ETHX[@]}-1))); do
     if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'yes'; then
       echo -en "${ETHX[${N}]} "
       hasConnect="true"
@@ -233,7 +233,7 @@ for N in $(seq 0 $((${#ETHX[@]}-1))); do
     COUNT=$((${COUNT}+1))
     IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
     if [ -n "${IP}" ]; then
-      echo -en "\r${ETHX[${N}]}(${DRIVER}): $(printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}")\n"
+      echo -en "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web.\n"
       break
     fi
     echo -n "."

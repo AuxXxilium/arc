@@ -27,7 +27,7 @@ function getnet() {
       fi
     done
     while true; do
-      dialog --clear --backtitle "`backtitle`" \
+      dialog --clear --backtitle "$(backtitle)" \
         --menu "Network: MAC for 1. NIC" 0 0 0 \
         --file "${TMP_PATH}/opts" \
       2>${TMP_PATH}/resp
@@ -38,7 +38,7 @@ function getnet() {
       writeConfigKey "cmdline.mac1" "${MAC}" "${USER_CONFIG_FILE}"
       break
     done
-    dialog --backtitle "`backtitle`" \
+    dialog --backtitle "$(backtitle)" \
       --title "Arc Network" --infobox "Set MAC for first NIC" 0 0
     sleep 2
   fi

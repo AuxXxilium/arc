@@ -4,13 +4,13 @@
 # 1 - Platform
 # 2 - Kernel Version
 function availableAddons() {
-  while read D; do
+  while read -r D; do
     [ ! -f "${D}/manifest.yml" ] && continue
     ADDON=$(basename ${D})
     checkAddonExist "${ADDON}" "${1}" "${2}" || continue
     SYSTEM=$(readConfigKey "system" "${D}/manifest.yml")
     [ "${SYSTEM}" = "true" ] && continue
-    while IFS=': ' read AVAILABLE; do
+    while IFS=': ' read -r AVAILABLE; do
     [ "${AVAILABLE}" = "${1}-${2}" ] && ACTIVATE="true" && break || ACTIVATE="false"
     done < <(readConfigEntriesArray "available-for" "${D}/manifest.yml")
     [ "${ACTIVATE}" = "false" ] && continue
@@ -55,7 +55,7 @@ function installAddon() {
     HAS_FILES=1
   fi
   # Check if addon is available for this platform
-  while IFS=': ' read AVAILABLE; do
+  while IFS=': ' read -r AVAILABLE; do
     [ "${AVAILABLE}" = "${PLATFORM}-${KVER}" ] && ACTIVATE="true" && break || ACTIVATE="false"
   done < <(readConfigEntriesArray "available-for" "${ADDONS_PATH}/${ADDON}/manifest.yml")
   # If has files to copy, copy it, else return error

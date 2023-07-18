@@ -10,24 +10,24 @@ function getmap() {
   rm -f "${TMP_PATH}/remap"
   touch "${TMP_PATH}remap"
   # Do the work
-  let DISKIDXMAPIDX=0
+  (( DISKIDXMAPIDX=0 ))
   DISKIDXMAP=""
-  let DISKIDXMAPIDXMAX=0
+  (( DISKIDXMAPIDXMAX=0 ))
   DISKIDXMAPMAX=""
   for PCI in $(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}'); do
     NUMPORTS=0
     CONPORTS=0
     NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-    DRIVES=$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)
+    DRIVES=$(ls -la /sys/block | grep -F "${PCI}" | grep -v "sr.$" | wc -l)
     unset HOSTPORTS
     declare -A HOSTPORTS
-    while read LINE; do
+    while read -r LINE; do
       ATAPORT="$(echo ${LINE} | grep -o 'ata[0-9]*')"
       PORT=$(echo ${ATAPORT} | sed 's/ata//')
       HOSTPORTS[${PORT}]=$(echo ${LINE} | grep -o 'host[0-9]*$')
-    done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
-    while read PORT; do
-      ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
+    done < <(ls -l /sys/class/scsi_host | grep -F "${PCI}")
+    while read -r PORT; do
+      ls -l /sys/block | grep -F -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
       PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
       [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
       [ ${ATTACH} -eq 1 ] && CONPORTS=$((${CONPORTS}+1)) && echo "$((${PORT}-1))" >>"${TMP_PATH}/ports"
@@ -39,15 +39,15 @@ function getmap() {
     echo -n "${NUMPORTS}" >>"${TMP_PATH}/drivesmax"
     echo -n "${CONPORTS}" >>"${TMP_PATH}/drivescon"
     DISKIDXMAP=$DISKIDXMAP$(printf "%02x" $DISKIDXMAPIDX)
-    let DISKIDXMAPIDX=$DISKIDXMAPIDX+$CONPORTS
+    (( DISKIDXMAPIDX=$DISKIDXMAPIDX+$CONPORTS ))
     DISKIDXMAPMAX=$DISKIDXMAPMAX$(printf "%02x" $DISKIDXMAPIDXMAX)
-    let DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS
+    (( DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS ))
   done
   SATAPORTMAPMAX=$(awk '{print$1}' ${TMP_PATH}/drivesmax)
   SATAPORTMAP=$(awk '{print$1}' ${TMP_PATH}/drivescon)
   LASTDRIVE=0
   # Check for VMware
-  while read line; do
+  while read -r line; do
     if [ "${MACHINE}" = "VMware" ] && [ $line = 0 ]; then
       MAXDISKS="$(readModelKey "${MODEL}" "disks")"
       echo -n "$line>$MAXDISKS:" >>"${TMP_PATH}/remap"
@@ -78,13 +78,13 @@ function getmap() {
     fi
   fi
   if [ "${SASCONTROLLER}" -gt 0 ]; then
-    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
       --infobox "SAS Controller dedected!\nUse SataPortMap (active Ports)!" 0 0
     writeConfigKey "arc.remap" "1" "${USER_CONFIG_FILE}"
   else
     # Ask for Portmap
     while true; do
-      dialog --backtitle "`backtitle`" --title "Arc Disks" \
+      dialog --backtitle "$(backtitle)" --title "Arc Disks" \
         --menu "SataPortMap or SataRemap?\n* recommended Option" 0 0 0 \
         1 "Use SataPortMap (active Ports) ${REMAP1}" \
         2 "Use SataPortMap (max Ports) ${REMAP2}" \
@@ -95,28 +95,28 @@ function getmap() {
       resp=$(<${TMP_PATH}/resp)
       [ -z "${resp}" ] && return
       if [ "${resp}" = "1" ]; then
-        dialog --backtitle "`backtitle`" --title "Arc Disks" \
+        dialog --backtitle "$(backtitle)" --title "Arc Disks" \
           --infobox "Use SataPortMap (active Ports)!" 0 0
         writeConfigKey "arc.remap" "1" "${USER_CONFIG_FILE}"
         break
       elif [ "${resp}" = "2" ]; then
-        dialog --backtitle "`backtitle`" --title "Arc Disks" \
+        dialog --backtitle "$(backtitle)" --title "Arc Disks" \
           --infobox "Use SataPortMap (max Ports)!" 0 0
         writeConfigKey "arc.remap" "2" "${USER_CONFIG_FILE}"
         break
       elif [ "${resp}" = "3" ]; then
         if [ "${SASCONTROLLER}" -gt 0 ]; then
-          dialog --backtitle "`backtitle`" --title "Arc Disks" \
+          dialog --backtitle "$(backtitle)" --title "Arc Disks" \
             --infobox "SAS Controller detected. Switch to SataPortMap (max Ports)!" 0 0
           writeConfigKey "arc.remap" "2" "${USER_CONFIG_FILE}"
         else
-          dialog --backtitle "`backtitle`" --title "Arc Disks" \
+          dialog --backtitle "$(backtitle)" --title "Arc Disks" \
             --infobox "Use SataRemap! (remove blank Drives)" 0 0
           writeConfigKey "arc.remap" "3" "${USER_CONFIG_FILE}"
         fi
         break
       elif [ "${resp}" = "4" ]; then
-        dialog --backtitle "`backtitle`" --title "Arc Disks" \
+        dialog --backtitle "$(backtitle)" --title "Arc Disks" \
           --infobox "Set my own PortMap!" 0 0
         writeConfigKey "arc.remap" "0" "${USER_CONFIG_FILE}"
         break
@@ -131,25 +131,25 @@ function getmap() {
     writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
       --msgbox "SataPortMap: ${SATAPORTMAP} DiskIdxMap: ${DISKIDXMAP}" 0 0
   elif [ "${REMAP}" = "2" ]; then
     writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAPMAX}" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAPMAX}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
       --msgbox "SataPortMap: ${SATAPORTMAPMAX} DiskIdxMap: ${DISKIDXMAPMAX}" 0 0
   elif [ "${REMAP}" = "3" ]; then
     writeConfigKey "cmdline.sata_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
       --msgbox "SataRemap: ${SATAREMAP}" 0 0
   elif [ "${REMAP}" = "0" ]; then
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-    dialog --backtitle "`backtitle`" --title "Arc Disks" \
+    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
       --msgbox "We don't need this." 0 0
   fi
 }

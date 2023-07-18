@@ -46,7 +46,7 @@ if [ "$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')" != "${RAMDISK_HASH}" ] 
       DSM_MODEL="$(echo "${MODEL}" | sed -e 's/+/%2B/g')"
       CONFIG_URL="https://raw.githubusercontent.com/AuxXxilium/arc-configs/main/${DSM_MODEL}.yml"
       STATUS=$(curl --insecure -s -w "%{http_code}" -L "${CONFIG_URL}" -o ${MODEL_CONFIG_PATH}/${MODEL}.yml)
-      if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+      if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
         echo -ne "\033[1;37mOnlinemode: Config update failed!\033[0m"
       else
         echo -ne "\033[1;37mOnlinemode: Config update successful!\033[0m"
@@ -67,7 +67,7 @@ KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
 RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compressed")"
 
 # Sanity check
-[ -z "${PLATFORM}" -o -z "${KVER}" ] && (die "ERROR: Configuration for Model ${MODEL} and Version ${PRODUCTVER} not found." | tee -a "${LOG_FILE}")
+[ -z "${PLATFORM}" ] || [ -z "${KVER}" ] && (die "ERROR: Configuration for Model ${MODEL} and Version ${PRODUCTVER} not found." | tee -a "${LOG_FILE}")
 
 # Update PAT Info for Update
 PAT_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
@@ -84,20 +84,20 @@ declare -A ADDONS
 declare -A USERMODULES
 
 # Read synoinfo and addons from config
-while IFS=': ' read KEY VALUE; do
+while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
 done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
-while IFS=': ' read KEY VALUE; do
+while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
 done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
 # Read modules from user config
-while IFS=': ' read KEY VALUE; do
+while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
 done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 # Patches
-while read f; do
+while read -r f; do
   echo "Patching with ${f}" >"${LOG_FILE}" 2>&1
   (cd "${RAMDISK_PATH}" && patch -p1 < "${PATCH_PATH}/${f}") >>"${LOG_FILE}" 2>&1 || dieLog
 done < <(readModelArray "${MODEL}" "productvers.[${PRODUCTVER}].patch")
@@ -182,7 +182,7 @@ for ADDON in ${!ADDONS[@]}; do
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 done
 
-[ "2" = "${BUILD:0:1}" ] && sed -i 's/function //g' `find "${RAMDISK_PATH}/addons/" -type f -name "*.sh"`
+[ "2" = "${BUILD:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
 
 # Build modules dependencies
 /opt/arpl/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
