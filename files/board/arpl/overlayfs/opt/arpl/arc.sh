@@ -134,7 +134,7 @@ function arcMenu() {
       PLATFORM="$(readModelKey "${M}" "platform")"
       DT="$(readModelKey "${M}" "dt")"
       BETA="$(readModelKey "${M}" "beta")"
-      [ "${BETA}" = "true" ] && [ ${FLGBETA} -eq 0 ] && return
+      [ "${BETA}" = "true" ] && [ ${FLGBETA} -eq 0 ] && continue
       DISKS="$(readModelKey "${M}" "disks")"
       ARCCONF="$(readModelKey "${M}" "arc.serial")"
       if [ -n "${ARCCONF}" ]; then
@@ -177,11 +177,11 @@ function arcMenu() {
     [ -z "${resp}" ] && return
     if [ "${resp}" = "b" ]; then
         FLGBETA=1
-        return
+        continue
       fi
     if [ "${resp}" = "f" ]; then
       RESTRICT=0
-      return
+      continue
     fi
       break
     done
@@ -278,7 +278,7 @@ function arcbuild() {
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
   # Check addons
   while IFS=': ' read -r ADDON PARAM; do
-    [ -z "${ADDON}" ] && return
+    [ -z "${ADDON}" ] && continue
     if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
       deleteConfigKey "addons.${ADDON}" "${USER_CONFIG_FILE}"
     fi
@@ -409,7 +409,7 @@ function make() {
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   # Check if all addon exists
   while IFS=': ' read -r ADDON PARAM; do
-    [ -z "${ADDON}" ] && return
+    [ -z "${ADDON}" ] && continue
     if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
       dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
         --msgbox "$(printf "Addon %s not found!" "${ADDON}")" 0 0
@@ -608,9 +608,9 @@ function addonMenu() {
   dialog --backtitle "$(backtitle)" --title "Addons" --aspect 18 \
     --checklist "Select Addons to include or remove\nSelect with SPACE\nDo not select unneeded Addons!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>${TMP_PATH}/resp
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && continue
   resp=$(<${TMP_PATH}/resp)
-  [ -z "${resp}" ] && return
+  [ -z "${resp}" ] && continue
   dialog --backtitle "$(backtitle)" --title "Addons" \
       --infobox "Writing to user config" 0 0
   unset ADDONS
@@ -713,9 +713,9 @@ function modulesMenu() {
         dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
           --checklist "Select modules to include" 0 0 0 \
           --file "${TMP_PATH}/opts" 2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && return
+        [ $? -ne 0 ] && continue
         resp=$(<${TMP_PATH}/resp)
-        [ -z "${resp}" ] && return
+        [ -z "${resp}" ] && continue
         dialog --backtitle "$(backtitle)" --title "Modules" \
            --infobox "Writing to user config" 0 0
         unset USERMODULES
@@ -734,15 +734,15 @@ function modulesMenu() {
         MSG+="The imported .ko of this function will be implanted into the corresponding arch's modules package, which will affect all models of the arch.\n"
         MSG+="This program will not determine the availability of imported modules or even make type judgments, as please double check if it is correct.\n"
         MSG+="If you want to remove it, please go to the \"Update Menu\" -> \"Update modules\" to forcibly update the modules. All imports will be reset.\n"
-        MSG+="Do you want to return?"
+        MSG+="Do you want to continue?"
         dialog --backtitle "$(backtitle)" --title "Add external module" \
             --yesno "${MSG}" 0 0
         [ $? -ne 0 ] && return
         dialog --backtitle "$(backtitle)" --aspect 18 --colors --inputbox "Please enter the complete URL to download.\n" 0 0 \
           2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && return
+        [ $? -ne 0 ] && continue
         URL="$(<"${TMP_PATH}/resp")"
-        [ -z "${URL}" ] && return
+        [ -z "${URL}" ] && continue
         clear
         echo "Downloading ${URL}"
         STATUS=$(curl -kLJO -w "%{http_code}" "${URL}" --progress-bar)
@@ -799,13 +799,13 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" --title "User cmdline" \
           --inputbox "Type a name of cmdline" 0 0 \
           2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && return
+        [ $? -ne 0 ] && continue
         NAME="$(sed 's/://g' <"${TMP_PATH}/resp")"
-        [ -z "${NAME}" ] && return
+        [ -z "${NAME}" ] && continue
         dialog --backtitle "$(backtitle)" --title "User cmdline" \
           --inputbox "Type a value of '${NAME}' cmdline" 0 0 "${CMDLINE[${NAME}]}" \
           2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && return
+        [ $? -ne 0 ] && continue
         VALUE="$(<"${TMP_PATH}/resp")"
         CMDLINE[${NAME}]="${VALUE}"
         writeConfigKey "cmdline.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
@@ -815,7 +815,7 @@ function cmdlineMenu() {
       2)
         if [ ${#CMDLINE[@]} -eq 0 ]; then
           dialog --backtitle "$(backtitle)" --msgbox "No user cmdline to remove" 0 0 
-          return
+          continue
         fi
         ITEMS=""
         for I in "${!CMDLINE[@]}"; do
@@ -824,9 +824,9 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" \
           --checklist "Select cmdline to remove" 0 0 0 ${ITEMS} \
           2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && return
+        [ $? -ne 0 ] && continue
         resp=$(<${TMP_PATH}/resp)
-        [ -z "${RESP}" ] && return
+        [ -z "${RESP}" ] && continue
         for I in ${RESP}; do
           unset 'CMDLINE[${I}]'
           deleteConfigKey "cmdline.${I}" "${USER_CONFIG_FILE}"
@@ -849,7 +849,7 @@ function cmdlineMenu() {
           # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
           break
           dialog --backtitle "$(backtitle)" --colors --title "Cmdline" \
-            --yesno "Invalid serial, return?" 0 0
+            --yesno "Invalid serial, continue?" 0 0
           [ $? -eq 0 ] && break
         done
         SN="${SERIAL}"
@@ -889,7 +889,7 @@ function cmdlineMenu() {
               --title "User cmdline" --progressbox "Renewing IP" 20 70
             IP=$(ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p' | head -1)
             dialog --backtitle "$(backtitle)" --title "Alert" \
-              --yesno "Return to custom MAC?" 0 0
+              --yesno "Continue to custom MAC?" 0 0
             [ $? -ne 0 ] && break
           fi
         done
@@ -959,13 +959,13 @@ function synoinfoMenu() {
         dialog --backtitle "$(backtitle)" --title "Synoinfo entries" \
           --inputbox "Type a name of synoinfo entry" 0 0 \
           2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && return
+        [ $? -ne 0 ] && continue
         NAME="$(<"${TMP_PATH}/resp")"
-        [ -z "${NAME}" ] && return
+        [ -z "${NAME}" ] && continue
         dialog --backtitle "$(backtitle)" --title "Synoinfo entries" \
           --inputbox "Type a value of '${NAME}' entry" 0 0 "${SYNOINFO[${NAME}]}" \
           2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && return
+        [ $? -ne 0 ] && continue
         VALUE="$(<"${TMP_PATH}/resp")"
         SYNOINFO[${NAME}]="${VALUE}"
         writeConfigKey "synoinfo.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
@@ -976,7 +976,7 @@ function synoinfoMenu() {
       2)
         if [ ${#SYNOINFO[@]} -eq 0 ]; then
           dialog --backtitle "$(backtitle)" --msgbox "No synoinfo entries to remove" 0 0 
-          return
+          continue
         fi
         ITEMS=""
         for I in "${!SYNOINFO[@]}"; do
@@ -985,9 +985,9 @@ function synoinfoMenu() {
         dialog --backtitle "$(backtitle)" \
           --checklist "Select synoinfo entry to remove" 0 0 0 ${ITEMS} \
           2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && return
+        [ $? -ne 0 ] && continue
         resp=$(<${TMP_PATH}/resp)
-        [ -z "${resp}" ] && return
+        [ -z "${resp}" ] && continue
         for I in ${resp}; do
           unset 'SYNOINFO[${I}]'
           deleteConfigKey "synoinfo.${I}" "${USER_CONFIG_FILE}"
@@ -1158,7 +1158,7 @@ function backupMenu() {
             return
           fi 
           dialog --backtitle "$(backtitle)" --title "Backup Loader Disk" \
-              --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to return?" 0 0
+              --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
           [ $? -ne 0 ] && return
           dialog --backtitle "$(backtitle)" --title "Backup Loader Disk" \
             --infobox "Backup in progress..." 0 0
@@ -1211,7 +1211,7 @@ function backupMenu() {
               --msgbox "Not a valid .zip/.img.gz file: ${USER_FILE}, please try again!" 0 0
           else
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" \
-                --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to return?" 0 0
+                --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
             [ $? -ne 0 ] && ( rm -f ${LOADER_DISK}; return )
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --infobox "Restore in progress..." 0 0
@@ -1223,7 +1223,7 @@ function backupMenu() {
             fi
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --yesno "Restore Loader Disk successful!\n${USER_FILE}\nReboot?" 0 0
-            [ $? -ne 0 ] && return
+            [ $? -ne 0 ] && continue
             exec reboot
             exit
           fi
@@ -1345,7 +1345,7 @@ function backupMenu() {
               --msgbox "Not a valid .zip/.img.gz file: ${USER_FILE}, please try again!" 0 0
           else
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" \
-                --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to return?" 0 0
+                --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
             [ $? -ne 0 ] && ( rm -f ${LOADER_DISK}; return )
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --infobox "Restore in progress..." 0 0
@@ -1357,7 +1357,7 @@ function backupMenu() {
             fi
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --yesno "Restore Loader Disk successful!\n${USER_FILE}\nReboot?" 0 0
-            [ $? -ne 0 ] && return
+            [ $? -ne 0 ] && continue
             reboot
             exit
           fi
@@ -1435,7 +1435,7 @@ function updateMenu() {
         if [ "${ACTUALVERSION}" = "${TAG}" ]; then
           dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
             --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
-          [ $? -ne 0 ] && return
+          [ $? -ne 0 ] && continue
         fi
         dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
           --infobox "Downloading latest version ${TAG}" 0 0
@@ -1471,7 +1471,7 @@ function updateMenu() {
         rm -f "${TMP_PATH}/arc.img"
         dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
           --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
-        [ $? -ne 0 ] && return
+        [ $? -ne 0 ] && continue
         exec reboot
         exit
         ;;
@@ -1488,7 +1488,7 @@ function updateMenu() {
         if [ "${ACTUALVERSION}" = "${TAG}" ]; then
           dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
             --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
-          [ $? -ne 0 ] && return
+          [ $? -ne 0 ] && continue
         fi
         dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
           --infobox "Downloading latest version ${TAG}" 0 0
@@ -1533,7 +1533,7 @@ function updateMenu() {
         done < <(readConfigMap "replace" "${TMP_PATH}/update-list.yml")
         dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
           --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
-        [ $? -ne 0 ] && return
+        [ $? -ne 0 ] && continue
         arpl-reboot.sh config
         exit
         ;;
@@ -1853,7 +1853,7 @@ function tryRecoveryDSM() {
           M="$(basename ${F})"
           M="${M::-4}"
           UNIQUE=$(readModelKey "${M}" "unique")
-          [ "${unique}" = "${UNIQUE}" ] || return
+          [ "${unique}" = "${UNIQUE}" ] || continue
           # Found
           writeConfigKey "model" "${M}" "${USER_CONFIG_FILE}"
         done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
@@ -1902,7 +1902,7 @@ function downgradeMenu() {
   MSG=""
   MSG+="This feature will allow you to downgrade the installation by removing the VERSION file from the first partition of all disks.\n"
   MSG+="Therefore, please insert all disks before continuing.\n"
-  MSG+="Warning:\nThis operation is irreversible. Please backup important data. Do you want to return?"
+  MSG+="Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?"
   dialog --backtitle "$(backtitle)" --title "Allow downgrade installation" \
       --yesno "${MSG}" 0 0
   [ $? -ne 0 ] && return
@@ -1981,7 +1981,7 @@ function resetPassword() {
 # modify modules to fix mpt3sas module
 function mptFix() {
   dialog --backtitle "$(backtitle)" --title "LSI HBA Fix" \
-      --yesno "Warning:\nDo you want to modify your Config to fix LSI HBA's. return?" 0 0
+      --yesno "Warning:\nDo you want to modify your Config to fix LSI HBA's. Continue?" 0 0
   [ $? -ne 0 ] && return
   deleteConfigKey "modules.scsi_transport_sas" "${USER_CONFIG_FILE}"
   deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
@@ -2040,7 +2040,7 @@ function formatdisks() {
     return
   fi
   dialog --backtitle "$(backtitle)" --title "Format disk" \
-      --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to return?" 0 0
+      --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return
   if [ $(ls /dev/md* | wc -l) -gt 0 ]; then
     dialog --backtitle "$(backtitle)" --title "Format disk" \
