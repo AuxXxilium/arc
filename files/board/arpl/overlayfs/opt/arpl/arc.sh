@@ -606,7 +606,7 @@ function addonMenu() {
     echo "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
   done <<<${ALLADDONS}
   dialog --backtitle "$(backtitle)" --title "Addons" --aspect 18 \
-    --checklist "Select Addons to include or remove\nSelect with SPACE" 0 0 0 \
+    --checklist "Select Addons to include or remove\nSelect with SPACE\nDo not select unneeded Addons!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
   resp=$(<${TMP_PATH}/resp)
