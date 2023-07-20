@@ -63,7 +63,7 @@ function installAddon() {
   cp "${TMP_PATH}/${ADDON}/install.sh" "${RAMDISK_PATH}/addons/${ADDON}.sh" 2>"${LOG_FILE}" || dieLog
   chmod +x "${RAMDISK_PATH}/addons/${ADDON}.sh"
   [ -d ${TMP_PATH}/${ADDON}/root ] && (cp -R "${TMP_PATH}/${ADDON}/root/"* "${RAMDISK_PATH}/" 2>"${LOG_FILE}" || dieLog)
-  rm -rf "${TMP_PATH}/${ADDON}"
+  rm -rf "${TMP_PATH}/${ADDON:?}"
   return 0
 }
 
@@ -77,7 +77,7 @@ function untarAddon() {
   tar -xaf "${1}" -C "${TMP_PATH}/addon" || return
   ADDON=$(readConfigKey "name" "${TMP_PATH}/addon/manifest.yml")
   [ -z "${ADDON}" ] && return
-  rm -rf "${ADDONS_PATH}/${ADDON}"
+  rm -rf "${ADDONS_PATH}/${ADDON:?}"
   mv "${TMP_PATH}/addon" "${ADDONS_PATH}/${ADDON}"
   echo "${ADDON}"
 }

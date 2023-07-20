@@ -63,7 +63,7 @@ MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
-CPU="$(echo $(cat /proc/cpuinfo | grep 'model name' | uniq | awk -F':' '{print $2}'))"
+CPU="$(cat /proc/cpuinfo | grep 'model name' | uniq | awk -F':' '{print $2}')"
 MEM="$(free -m | grep -i mem | awk '{print$2}') MB"
 
 echo -e "Model: \033[1;37m${MODEL}\033[0m"
