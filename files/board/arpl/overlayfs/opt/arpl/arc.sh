@@ -1206,7 +1206,7 @@ function backupMenu() {
             break 
           done
           popd
-          if [ -z "${IFTOOL}" ] || [ -z "${TMP_PATH}/${USER_FILE}" ]; then
+          if [ -z "${IFTOOL}" ] || [ -z ${TMP_PATH}/${USER_FILE} ]; then
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --msgbox "Not a valid .zip/.img.gz file: ${USER_FILE}, please try again!" 0 0
           else
@@ -2077,7 +2077,7 @@ function boot() {
 ###############################################################################
 ###############################################################################
 
-if [ "x$1" = "xb" -a -n "${MODEL}" ] && [ -n "${PRODUCTVER}" ]; then
+if [ "x$1" = "xb" ] && [ -n "${MODEL}" ] && [ -n "${PRODUCTVER}" ]; then
   install-addons.sh
   make
   boot && exit 0 || sleep 3
