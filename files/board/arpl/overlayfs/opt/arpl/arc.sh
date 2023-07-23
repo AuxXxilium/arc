@@ -869,7 +869,7 @@ function cmdlineMenu() {
               --title "User cmdline" --progressbox "Renewing IP" 20 70
             IP=$(ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p' | head -1)
             dialog --backtitle "$(backtitle)" --title "Alert" \
-              --yesno "Continue to custom MAC?" 0 0
+              --yesno "Continue with custom MAC?" 0 0
             [[ $? != 0 ]] && break
           fi
         done
@@ -1984,17 +1984,17 @@ function bootipwaittime() {
 # allow user to save modifications to disk
 function saveMenu() {
   dialog --backtitle "$(backtitle)" --title "Save to Disk" \
-      --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the arc. Do you want to return?" 0 0
+      --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the arc. Do you want to continue?" 0 0
   [[ $? != 0 ]] && return
   dialog --backtitle "$(backtitle)" --title "Save to Disk" \
       --infobox "Saving ..." 0 0 
   RDXZ_PATH=${TMP_PATH}/rdxz_tmp
-  mkdir -p "${RDXZ_PATH}"
-  (cd "${RDXZ_PATH}"; xz -dc < "/mnt/p3/initrd-arpl" | cpio -idm) >/dev/null 2>&1 || true
-  rm -rf "${RDXZ_PATH}/opt/arpl"
-  cp -rf "/opt" "${RDXZ_PATH}"
-  (cd "${RDXZ_PATH}"; find . 2>/dev/null | cpio -o -H newc -R root:root | xz --check=crc32 >"/mnt/p3/initrd-arpl") || true
-  rm -rf "${RDXZ_PATH:?}"
+  mkdir -p ${RDXZ_PATH}
+  (cd ${RDXZ_PATH}; xz -dc < /mnt/p3/initrd-arpl | cpio -idm) >/dev/null 2>&1 || true
+  rm -rf ${RDXZ_PATH}/opt/arpl
+  cp -rf /opt ${RDXZ_PATH}
+  (cd ${RDXZ_PATH}; find . 2>/dev/null | cpio -o -H newc -R root:root | xz --check=crc32 >/mnt/p3/initrd-arpl) || true
+  rm -rf ${RDXZ_PATH:?}
   dialog --backtitle "$(backtitle)" --colors --aspect 18 \
     --msgbox "Save to Disk is complete." 0 0
 }
@@ -2004,8 +2004,8 @@ function saveMenu() {
 function formatdisks() {
   ITEMS=""
   while read -r POSITION NAME; do
-    [[ -z ${POSITION} || -z ${NAME} ]] && return
-    echo "${POSITION}" | grep -q "${LOADER_DEVICE_NAME}" && return
+    [[ -z ${POSITION} || -z ${NAME} ]] && continue
+    echo "${POSITION}" | grep -q "${LOADER_DEVICE_NAME}" && continue
     ITEMS+="${POSITION} ${NAME} off "
   done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd*" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
   dialog --backtitle "$(backtitle)" --title "Format disk" \
