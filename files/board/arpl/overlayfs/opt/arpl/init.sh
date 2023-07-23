@@ -184,11 +184,7 @@ for N in $(seq 0 $((${#ETHX[@]}-1))); do
     break
   fi
   COUNT=0
-  while [[ ${COUNT} < ${BOOTIPWAIT} ]]; do
-    if ! ip link show ${ETHX[${N}]} | grep -q 'UP'; then
-      echo -e "\r${ETHX[${N}]}(${DRIVER}): DOWN"
-      break
-    fi
+  while true; do
     if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
       echo -e "\r${ETHX[${N}]}(${DRIVER}): NOT CONNECTED"
       break
