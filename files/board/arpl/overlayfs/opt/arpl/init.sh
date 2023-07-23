@@ -82,7 +82,7 @@ if [[ ! -f ${USER_CONFIG_FILE} ]]; then
   writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.notsetmac" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.kernelload" "kexec" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 fi
 
