@@ -556,7 +556,7 @@ function editUserConfig() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-  if [ "${MODEL}" != "${OLDMODEL}" -o "${PRODUCTVER}" != "${OLDPRODUCTVER}" ]; then
+  if [[ ${MODEL} != ${OLDMODEL} || ${PRODUCTVER} != ${OLDPRODUCTVER} ]]; then
     # Remove old files
     rm -f ${MOD_ZIMAGE_FILE}
     rm -f ${MOD_RDGZ_FILE}
@@ -757,7 +757,7 @@ function cmdlineMenu() {
   NEXT="1"
   unset CMDLINE
   declare -A CMDLINE
-  while IFS=': ' read KEY VALUE; do
+  while IFS=': ' read -r KEY VALUE; do
     [[ -n ${KEY} ]] && CMDLINE["${KEY}"]="${VALUE}"
   done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
   echo "1 \"Add/edit a Cmdline item\""                          >"${TMP_PATH}/menu"
