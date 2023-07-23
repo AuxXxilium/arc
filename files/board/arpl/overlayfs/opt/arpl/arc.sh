@@ -2042,6 +2042,9 @@ function formatdisks() {
 ###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
+  if [[ ${DIRECTBOOT} = false ]]; then
+    grub-editenv ${GRUB_PATH}/grubenv create
+  fi
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting to DSM - Please stay patient!" 0 0
   sleep 2
