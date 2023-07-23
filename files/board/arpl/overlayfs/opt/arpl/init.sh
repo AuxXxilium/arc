@@ -176,7 +176,7 @@ echo
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [[ -z ${BOOTIPWAIT} ]] && BOOTIPWAIT=20
 ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
-echo "Detected ${#ETHX[@]} NIC."
+echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
 for N in $(seq 0 $((${#ETHX[@]}-1))); do
   DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
   if [[ ${N} = 8 ]]; then
@@ -203,7 +203,6 @@ for N in $(seq 0 $((${#ETHX[@]}-1))); do
       echo -e "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT.\n"
       break
     fi
-    echo -n "."
     sleep 1
   done
 done

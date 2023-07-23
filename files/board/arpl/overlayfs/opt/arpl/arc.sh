@@ -93,12 +93,6 @@ function backtitle() {
     BACKTITLE+=" Build: N"
   fi
   BACKTITLE+=" |"
-  if [[ ${ONLINEMODE} = true ]]; then
-    BACKTITLE+=" Online: Y"
-  else
-    BACKTITLE+=" Online: N"
-  fi
-  BACKTITLE+=" |"
   BACKTITLE+=" ${MACHINE}"
   echo ${BACKTITLE}
 }

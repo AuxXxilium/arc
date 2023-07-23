@@ -61,6 +61,7 @@ LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 CPU="$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')"
 MEM="$(free -m | grep -i mem | awk '{print$2}') MB"
 
+echo
 echo -e "Model: \033[1;37m${MODEL}\033[0m"
 echo -e "DSM: \033[1;37m${PRODUCTVER}\033[0m"
 echo -e "LKM: \033[1;37m${LKM}\033[0m"
@@ -172,7 +173,7 @@ elif [[ ${DIRECTBOOT} = false ]]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   [[ -z ${BOOTIPWAIT} ]] && BOOTIPWAIT=20
   ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
-  echo "Detected ${#ETHX[@]} NIC."
+  echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
   for N in $(seq 0 $((${#ETHX[@]}-1))); do
     DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     if [[ ${N} = 8 ]]; then
@@ -199,7 +200,6 @@ elif [[ ${DIRECTBOOT} = false ]]; then
         echo -e "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT.\n"
         break
       fi
-      echo -n "."
       sleep 1
     done
   done
