@@ -29,20 +29,9 @@ function readModelArray() {
 }
 
 ###############################################################################
-# Check if loader is fully configured
-# Returns 1 if not
-function loaderIsConfigured() {
-  SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-  [ -z "${SN}" ] && return 1
-  [ ! -f "${MOD_ZIMAGE_FILE}" ] && return 1
-  [ ! -f "${MOD_RDGZ_FILE}" ] && return 1
-  return 0 # OK
-}
-
-###############################################################################
 # Just show error message and dies
 function die() {
-  echo -e "\033[1;41m$@\033[0m"
+  echo -e "\033[1;41m$*\033[0m"
   exit 1
 }
 
@@ -118,11 +107,11 @@ function validateSerial() {
     return
   fi
   echo ${PREFIX} | grep -q ${S}
-  if [ $? -eq 1 ]; then
+  if [[ $? = 1 ]]; then
     echo 0
     return
   fi
-  if [ "${MIDDLE}" != "${P}" ]; then
+  if [[ ${MIDDLE} != ${P} ]]; then
     echo 0
     return
   fi
@@ -139,7 +128,7 @@ function arrayExistItem() {
   ITEM="${1}"
   shift
   for i in "$@"; do
-    [ "${i}" = "${ITEM}" ] || continue
+    [[ ${i} = ${ITEM} ]] || continue
     EXISTS=0
     break
   done
@@ -161,7 +150,7 @@ function _get_conf_kv() {
 # 3 - path
 function _set_conf_kv() {
   # Delete
-  if [ -z "$2" ]; then
+  if [[ -z $2 ]]; then
     sed -i "$3" -e "s/^$1=.*$//"
     return $?;
   fi
@@ -180,13 +169,13 @@ function _set_conf_kv() {
 # Find and mount the DSM root filesystem
 # (based on pocopico's TCRP code)
 function findAndMountDSMRoot() {
-  [ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) -gt 0 ] && return 0
-  dsmrootdisk="$(blkid /dev/sd* | grep -i raid | awk '{print $1 " " $4}' | grep UUID | grep sd[a-z]1 | head -1 | awk -F ":" '{print $1}')"
-  [ -z "${dsmrootdisk}" ] && return -1
-  [ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) -eq 0 ] && mount -t ext4 $dsmrootdisk "${DSMROOT_PATH}"
-  if [ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) -eq 0 ]; then
+  [[ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) > 0 ]] && return 0
+  dsmrootdisk="$(blkid /dev/sd* | grep -i raid | awk '{print $1 " " $4}' | grep UUID | grep "sd[a-z]1" | head -1 | awk -F ":" '{print $1}')"
+  [[ -z ${dsmrootdisk} ]] && return -1
+  [[ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) = 0 ]] && mount -t ext4 $dsmrootdisk ${DSMROOT_PATH}
+  if [[ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) = 0 ]]; then
     echo "Failed to mount"
-    return -1
+    return 1
   fi
   return 0
 }

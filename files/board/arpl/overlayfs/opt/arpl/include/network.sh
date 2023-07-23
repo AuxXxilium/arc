@@ -10,35 +10,35 @@ function getnet() {
     # Write real MAC to cmdline config
     writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   done
-  if [ "${ARCPATCH}" = "true" ]; then 
+  if [[ ${ARCPATCH} = true ]]; then 
     # Delete first Mac from cmdline config
     deleteConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}"
     # Install with Arc Patch - Check for model config and set custom Mac Address
-    [ -f "${TMP_PATH}/opts" ] && rm -f "${TMP_PATH}/opts"
-    touch "${TMP_PATH}/opts"
+    [[ -f ${TMP_PATH}/opts ]] && rm -f ${TMP_PATH}/opts
+    touch ${TMP_PATH}/opts
     ARCMACNUM=1
     while true; do
       ARCMAC="$(readModelKey "${MODEL}" "arc.mac${ARCMACNUM}")"
-      if [ -n "${ARCMAC}" ]; then
-        echo "${ARCMAC} mac${ARCMACNUM}" >>"${TMP_PATH}/opts"
+      if [[ -n ${ARCMAC} ]]; then
+        echo "${ARCMAC} mac${ARCMACNUM}" >>${TMP_PATH}/opts
         ARCMACNUM=$((${ARCMACNUM}+1))
       else
         break
       fi
     done
     while true; do
-      dialog --clear --backtitle "`backtitle`" \
+      dialog --clear --backtitle "$(backtitle)" \
         --menu "Network: MAC for 1. NIC" 0 0 0 \
         --file "${TMP_PATH}/opts" \
       2>${TMP_PATH}/resp
-      [ $? -ne 0 ] && return
+      [[ $? != 0 ]] && return
       resp=$(<${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return
+      [[ -z ${resp} ]] && return
       MAC="${resp}"
       writeConfigKey "cmdline.mac1" "${MAC}" "${USER_CONFIG_FILE}"
       break
     done
-    dialog --backtitle "`backtitle`" \
+    dialog --backtitle "$(backtitle)" \
       --title "Arc Network" --infobox "Set MAC for first NIC" 0 0
     sleep 2
   fi
