@@ -2184,7 +2184,7 @@ while true; do
       NEXT="d"
       ;;
     l)
-      writeConfigKey "arc.directdsm" "${DIRECTDSM}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
       DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
       NEXT="l"
       ;;
