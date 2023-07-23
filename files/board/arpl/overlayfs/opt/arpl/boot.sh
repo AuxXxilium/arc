@@ -173,57 +173,34 @@ elif [[ ${DIRECTBOOT} = false ]]; then
   [[ -z ${BOOTIPWAIT} ]] && BOOTIPWAIT=20
   ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
   echo "Detected ${#ETHX[@]} NIC."
-  echo "Checking Connection."
-  COUNT=0
-  while [[ ${COUNT} < ${BOOTIPWAIT} ]]; do
-    hasConnect="false"
-    for N in $(seq 0 $((${#ETHX[@]}-1))); do
-      if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'yes'; then
-        echo -en "${ETHX[${N}]} "
-        hasConnect="true"
-      fi
-    done
-    if [[ ${hasConnect} = true ]]; then
-      echo -en "connected.\n"
+  for N in $(seq 0 $((${#ETHX[@]}-1))); do
+    DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    if [[ ${N} = 8 ]]; then
+      echo -e "\r${ETHX[${N}]}(${DRIVER}): More than 8 NIC are not supported.\n"
       break
     fi
-    COUNT=$((${COUNT}+1))
-    echo -n "."
-    sleep 1
-  done
-  echo
-  echo "Waiting IP."
-  for N in $(seq 0 $((${#ETHX[@]}-1))); do
     COUNT=0
-    DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-    echo -en "${ETHX[${N}]}(${DRIVER}): "
-    while true; do
+    while [[ ${COUNT} < ${BOOTIPWAIT} ]]; do
       if ! ip link show ${ETHX[${N}]} | grep -q 'UP'; then
-        echo -en "\r${ETHX[${N}]}(${DRIVER}): DOWN\n"
+        echo -e "\r${ETHX[${N}]}(${DRIVER}): DOWN\n"
         break
       fi
       if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
-        echo -en "\r${ETHX[${N}]}(${DRIVER}): NOT CONNECTED\n"
+        echo -e "\r${ETHX[${N}]}(${DRIVER}): NOT CONNECTED\n"
         break
       fi
-      if [[ ${N} = 8 ]]; then # Under normal circumstances, no errors should occur here.
-        echo -en "\r${ETHX[${N}]}(${DRIVER}): ERROR\n"
-        break
-      fi
-      if [[ ${NETSETMAC} = true ]]; then
-        echo -en "\r${ETHX[${N}]}(${DRIVER}): MAC will be not set while Boot.\n"
-        break
-      fi
-      if [[ ${COUNT} = ${BOOTIPWAIT} ]]; then
-        echo -en "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT.\n"
+      IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+      if [[ -n ${IP} ]]; then
+        echo -e "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web.\n"
         break
       fi
       COUNT=$((${COUNT}+1))
-      IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
-      if [[ -n ${IP} ]]; then
-        echo -en "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web.\n"
+      if [[ ${COUNT} = ${BOOTIPWAIT} ]]; then
+        echo -e "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT.\n"
         break
       fi
+      echo -n "."
+      sleep 1
     done
   done
 fi
