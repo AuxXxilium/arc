@@ -155,20 +155,18 @@ DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 # Make Directboot persistent if DSM is installed
-if [[ ${DIRECTBOOT} = true ]]; then
-  if [[ ${DIRECTDSM} = true ]]; then
-    grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
-    grub-editenv ${GRUB_PATH}/grubenv set default="direct"
-    echo -e "\033[1;34mEnable Directboot - DirectDSM\033[0m"
-    echo -e "\033[1;34mDSM installed - Reboot with Directboot\033[0m"
-    exec reboot
-  elif [[ ${DIRECTDSM} = false ]]; then
-    grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
-    grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
-    writeConfigKey "arc.directdsm" "true" "${USER_CONFIG_FILE}"
-    echo -e "\033[1;34mDSM not installed - Reboot with Directboot\033[0m"
-    exec reboot
-  fi
+if [[ ${DIRECTBOOT} = true && ${DIRECTDSM} = true ]]; then
+  grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
+  grub-editenv ${GRUB_PATH}/grubenv set default="direct"
+  echo -e "\033[1;34mEnable Directboot - DirectDSM\033[0m"
+  echo -e "\033[1;34mDSM installed - Reboot with Directboot\033[0m"
+  exec reboot
+elif [[ ${DIRECTBOOT} = true && ${DIRECTDSM} = false ]]; then
+  grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
+  grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
+  writeConfigKey "arc.directdsm" "true" "${USER_CONFIG_FILE}"
+  echo -e "\033[1;34mDSM not installed - Reboot with Directboot\033[0m"
+  exec reboot
 elif [[ ${DIRECTBOOT} = false ]]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   [[ -z ${BOOTIPWAIT} ]] && BOOTIPWAIT=20
@@ -181,6 +179,7 @@ elif [[ ${DIRECTBOOT} = false ]]; then
       break
     fi
     COUNT=0
+    sleep 3
     while true; do
       if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
         echo -e "\r${ETHX[${N}]}(${DRIVER}): NOT CONNECTED"

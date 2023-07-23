@@ -184,6 +184,7 @@ for N in $(seq 0 $((${#ETHX[@]}-1))); do
     break
   fi
   COUNT=0
+  sleep 3
   while true; do
     if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
       echo -e "\r${ETHX[${N}]}(${DRIVER}): NOT CONNECTED"
