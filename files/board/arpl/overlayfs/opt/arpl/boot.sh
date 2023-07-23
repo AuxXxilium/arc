@@ -177,27 +177,27 @@ elif [[ ${DIRECTBOOT} = false ]]; then
   for N in $(seq 0 $((${#ETHX[@]}-1))); do
     DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     if [[ ${N} = 8 ]]; then
-      echo -e "\r${ETHX[${N}]}(${DRIVER}): More than 8 NIC are not supported.\n"
+      echo -e "\r${ETHX[${N}]}(${DRIVER}): More than 8 NIC are not supported."
       break
     fi
     COUNT=0
     while [[ ${COUNT} < ${BOOTIPWAIT} ]]; do
       if ! ip link show ${ETHX[${N}]} | grep -q 'UP'; then
-        echo -e "\r${ETHX[${N}]}(${DRIVER}): DOWN\n"
+        echo -e "\r${ETHX[${N}]}(${DRIVER}): DOWN"
         break
       fi
       if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
-        echo -e "\r${ETHX[${N}]}(${DRIVER}): NOT CONNECTED\n"
+        echo -e "\r${ETHX[${N}]}(${DRIVER}): NOT CONNECTED"
         break
       fi
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
       if [[ -n ${IP} ]]; then
-        echo -e "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web.\n"
+        echo -e "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web."
         break
       fi
       COUNT=$((${COUNT}+1))
       if [[ ${COUNT} = ${BOOTIPWAIT} ]]; then
-        echo -e "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT.\n"
+        echo -e "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT."
         break
       fi
       sleep 1
