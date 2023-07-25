@@ -567,6 +567,8 @@ function editUserConfig() {
     rm -f "${MOD_RDGZ_FILE}"
   fi
   DIRTY=1
+  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
 
 ###############################################################################
