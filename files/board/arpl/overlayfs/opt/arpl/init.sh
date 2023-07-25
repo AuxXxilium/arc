@@ -171,19 +171,16 @@ if [ -f /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz ]; then
 fi
 
 # Decide if boot automatically
-BOOT=1
-if ! loaderIsConfigured; then
-  echo -e "\033[1;31mLoader is not configured!\033[0m"
-  BOOT=0
-elif grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
+BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+if grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
   echo -e "\033[1;31mUser requested edit settings.\033[0m"
-  BOOT=0
-fi
-
-# If is to boot automatically, do it
-if [ "${BOOT}" -eq "1" ]; then 
+elif [ "${BUILDDONE}" = "1" ]; then
+  echo -e "\033[1;31mLoader is configured!\033[0m"
   boot.sh && exit 0
+elif [ -n "${BUILDDONE}" ]; then
+  echo -e "\033[1;31mLoader is not configured!\033[0m"
 fi
+echo
 
 # Wait for an IP
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
@@ -228,7 +225,7 @@ echo
 # Check memory
 RAM=$(free -m | grep -i mem | awk '{print$2}')
 if [ ${RAM} -le 3500 ]; then
-  echo -e "\033[1;34mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of memory.\033[0m\n"
+  echo -e "\033[1;341You have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of memory.\033[0m\n"
 fi
 
 mkdir -p "${ADDONS_PATH}"
