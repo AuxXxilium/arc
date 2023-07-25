@@ -45,5 +45,5 @@ function getnet() {
 }
 
 # Get actual IP and NETIF_NUM
-IP=$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)
-NETNUM=$(lshw -class network -short | grep -ie "eth[0-9]" | wc -l)
+IP="$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)"
+NETNUM="$(lshw -class network -short | grep -ie "eth[0-9]" | wc -l)"

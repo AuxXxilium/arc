@@ -275,7 +275,7 @@ function arcbuild() {
 function arcsettings() {
   # read model values for arcsettings
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  if [ "${ARCRECOVERY}" != "true" ] || [ "${ARCAV}" = "Arc" ]; then
+  if [ "${ARCRECOVERY}" != "true" ] && [ "${ARCAV}" = "Arc" ]; then
     while true; do
       dialog --clear --backtitle "$(backtitle)" \
         --menu "Arc Patch\nDo you want to use Syno Services?" 0 0 0 \
@@ -300,6 +300,8 @@ function arcsettings() {
         break
       fi
     done
+  elif [ "${ARCRECOVERY}" = "true" ] && [ "${ARCAV}" = "Arc" ]; then
+    writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
   else
     # Generate random serial
     SN="$(generateSerial "${MODEL}")"
