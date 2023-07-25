@@ -10,16 +10,13 @@ set -e
 LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
 BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
 
-# Sanity check
-loaderIsConfigured || die "Loader is not configured!"
-
 # Print text centralized
 clear
 [ -z "${COLUMNS}" ] && COLUMNS=50
 TITLE="${ARPL_TITLE}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
-printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
+printf "\033[1;31m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
 TITLE="BOOTING..."
 [ -d "/sys/firmware/efi" ] && TITLE+=" [EFI]" || TITLE+=" [Legacy]"
@@ -28,7 +25,7 @@ if [ "${BUS}" = "usb" ]; then
 elif [ "${BUS}" = "ata" ]; then
   TITLE+=" [SATA DoM]"
 fi
-printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
+printf "\033[1;31m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
 
 # Check if DSM ramdisk changed, patch it if necessary
 RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
@@ -36,7 +33,7 @@ if [ "$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')" != "${RAMDISK_HASH}" ];
   echo -e "\033[1;43mDSM Ramdisk changed\033[0m"
   /opt/arpl/ramdisk-patch.sh
   if [ $? -ne 0 ]; then
-    dialog --backtitle "`backtitle`" --title "Error" \
+    dialog --backtitle "$(backtitle)" --title "Error" \
       --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1
   fi
@@ -49,7 +46,7 @@ if [ "$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}')" != "${ZIMAGE_HASH}" ]
   echo -e "\033[1;43mDSM zImage changed\033[0m"
   /opt/arpl/zimage-patch.sh
   if [ $? -ne 0 ]; then
-    dialog --backtitle "`backtitle`" --title "Error" \
+    dialog --backtitle "$(backtitle)" --title "Error" \
       --msgbox "zImage not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1
   fi
@@ -63,7 +60,7 @@ MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
-CPU="$(echo $(cat /proc/cpuinfo | grep 'model name' | uniq | awk -F':' '{print $2}'))"
+CPU="$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')"
 MEM="$(free -m | grep -i mem | awk '{print$2}') MB"
 
 echo -e "Model: \033[1;37m${MODEL}\033[0m"
@@ -74,7 +71,7 @@ echo -e "MEM: \033[1;37m${MEM}\033[0m"
 echo
 
 if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "$(readConfigKey "productvers.[${PRODUCTVER}]" "${MODEL_CONFIG_PATH}/${MODEL}.yml")" ]; then
-  echo -e "\033[1;33m*** $(printf "The current version of Arc does not support booting %s-%s, please rebuild." "${MODEL}" "${PRODUCTVER}") ***\033[0m"
+  echo -e "\033[1;33m*** The current version of Arc does not support booting ${MODEL}-${PRODUCTVER}, please rebuild. ***\033[0m"
   exit 1
 fi
 
@@ -117,12 +114,12 @@ NETIF_NUM=${#MACS[*]}
 CMDLINE["netif_num"]=${NETIF_NUM}
 # Get real amount of NIC
 NETNUM=$(lshw -class network -short | grep -ie "eth[0-9]" | wc -l)
-if [ ${NETNUM} -gt 8 ]; then
+if [ "${NETNUM}" -gt "8" ]; then
   NETNUM=8
-  echo -e "\033[0;31m*** WARNING: Only 8 NIC are supported by Redpill***\033[0m"
+  echo -e "\033[0;31m*** WARNING: More than 8 NIC are not supported.***\033[0m"
 fi
 # set missing mac to cmdline if needed
-if [ ${NETIF_NUM} -le ${NETNUM} ]; then
+if [ "${NETIF_NUM}" -ne "${NETNUM}" ]; then
   ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
   for N in $(seq $(expr ${NETIF_NUM} + 1) ${NETNUM}); do 
     MACR="$(cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g')"
@@ -138,7 +135,7 @@ fi
 # Prepare command line
 CMDLINE_LINE=""
 grep -q "force_junior" /proc/cmdline && CMDLINE_LINE+="force_junior "
-[ ${EFI} -eq 1 ] && CMDLINE_LINE+="withefi " || CMDLINE_LINE+="noefi "
+[ "${EFI}" -eq "1" ] && CMDLINE_LINE+="withefi " || CMDLINE_LINE+="noefi "
 [ "${BUS}" = "ata" ] && CMDLINE_LINE+="synoboot_satadom=${DOM} dom_szmax=${SIZE} "
 CMDLINE_DIRECT="${CMDLINE_LINE}"
 CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 loglevel=15 log_buf_len=32M"
@@ -159,77 +156,46 @@ DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 # Make Directboot persistent if DSM is installed
-if [ "${DIRECTBOOT}" = "true" ]; then
-  if [ "${DIRECTDSM}" = "true" ]; then
+if [ "${DIRECTBOOT}" = "true" ] && [ "${DIRECTDSM}" = "true" ]; then
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
     grub-editenv ${GRUB_PATH}/grubenv set default="direct"
-    echo -e "\033[1;34mEnable Directboot - DirectDSM\033[0m"
-    echo -e "\033[1;34mDSM installed - Reboot with Directboot\033[0m"
+    echo -e "\033[1;31mEnable Directboot - DirectDSM\033[0m"
+    echo -e "\033[1;31mDSM installed - Reboot with Directboot\033[0m"
     exec reboot
-  elif [ "${DIRECTDSM}" = "false" ]; then
+elif [ "${DIRECTBOOT}" = "true" ] && [ "${DIRECTDSM}" = "false" ]; then
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
     grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
     writeConfigKey "arc.directdsm" "true" "${USER_CONFIG_FILE}"
-    echo -e "\033[1;34mDSM not installed - Reboot with Directboot\033[0m"
+    echo -e "\033[1;31mDSM not installed - Reboot with Directboot\033[0m"
     exec reboot
-  fi
 elif [ "${DIRECTBOOT}" = "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
   ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
-  echo "$(printf "Detected %s NIC." "${#ETHX[@]}")"
-  echo "Checking Connection."
-  COUNT=0
-  while [ ${COUNT} -lt ${BOOTIPWAIT} ]; do
-    hasConnect="false"
-    for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
-      if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'yes'; then
-        echo -en "${ETHX[${N}]} "
-        hasConnect="true"
-      fi
-    done
-    if [ ${hasConnect} = "true" ]; then
-      echo -en "connected.\n"
+  echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
+  for N in $(seq 0 $((${#ETHX[@]}-1))); do
+    DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    if [ "${N}" -eq "8" ]; then
+      echo -e "\r${ETHX[${N}]}(${DRIVER}): More than 8 NIC are not supported."
       break
     fi
-    COUNT=$((${COUNT}+1))
-    echo -n "."
-    sleep 1
-  done
-  echo
-  echo "Waiting IP."
-  for N in $(seq 0 $((${#ETHX[@]}-1))); do
     COUNT=0
-    DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-    echo -en "${ETHX[${N}]}(${DRIVER}): "
+    sleep 3
     while true; do
-      if ! ip link show ${ETHX[${N}]} | grep -q 'UP'; then
-        echo -en "\r${ETHX[${N}]}(${DRIVER}): DOWN\n"
-        break
-      fi
       if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
-        echo -en "\r${ETHX[${N}]}(${DRIVER}): NOT CONNECTED\n"
+        echo -e "\r${ETHX[${N}]}(${DRIVER}): NOT CONNECTED"
         break
       fi
-      if [ ${COUNT} -eq ${BOOTIPWAIT} ]; then
-        echo -en "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT\n"
-        break
-      fi
-      if [ ${N} -eq 8 ]; then # Under normal circumstances, no errors should occur here.
-        echo -en "\r${ETHX[${N}]}(${DRIVER}): ERROR\n"
-        break
-      fi
-      if [ "${NETSETMAC}" = "true" ]; then
-        echo -en "\r${ETHX[${N}]}(${DRIVER}): MAC will be not set while Boot.\n"
+      IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+      if [ -n "${IP}" ]; then
+        echo -e "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;31mhttp://${IP}:5000\033[0m to connect the DSM via web."
         break
       fi
       COUNT=$((${COUNT}+1))
-      IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
-      if [ -n "${IP}" ]; then
-        echo -en "\r${ETHX[${N}]}(${DRIVER}): $(printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}")\n"
+      if [ "${COUNT}" -eq "${BOOTIPWAIT}" ]; then
+        echo -e "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT."
         break
       fi
-      echo -n "."
       sleep 1
     done
   done
@@ -243,7 +209,7 @@ kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDL
 echo -e "\033[1;37m"Booting DSM..."\033[0m"
 for T in $(w | grep -v "TTY" | awk -F' ' '{print $2}')
 do
-  echo -e "\n\033[1;37mThis interface will not be operational. Please use \033[1;34mhttp://find.synology.com/ \033[1;37mto find DSM and connect.\033[0m\n" >"/dev/${T}" 2>/dev/null || true
+  echo -e "\n\033[1;37mThis interface will not be operational. Please use \033[1;31mhttp://find.synology.com/ \033[1;37mto find DSM and connect.\033[0m\n" >"/dev/${T}" 2>/dev/null || true
 done 
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 [ "${KERNELLOAD}" = "kexec" ] && kexec -f -e || poweroff

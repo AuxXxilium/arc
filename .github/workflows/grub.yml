@@ -10,7 +10,7 @@ name: Grub
 on:
   workflow_dispatch:
     inputs:
-      push: 
+      push:
         description: 'push'
         default: false
         type: boolean
@@ -26,7 +26,7 @@ jobs:
           git config --global user.email "info@auxxxilium.tech"
           git config --global user.name "AuxXxilium"
           sudo timedatectl set-timezone "Europe/Berlin"
-          
+
           sudo apt update
           sudo apt install -y build-essential bison flex dosfstools
 
@@ -47,7 +47,7 @@ jobs:
           if [ -f "grub.img.gz" ]; then
             echo "Copy img ..."
             mv -f grub.img.gz files/board/arpl/grub.img.gz 
-        
+
             echo "Git push ..."
             git pull
             status=$(git status -s | grep -E 'grub.img.gz' | awk '{printf " %s", $2}')

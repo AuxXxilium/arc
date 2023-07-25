@@ -2,7 +2,7 @@
 . /opt/arpl/include/configFile.sh
 
 ###############################################################################
-# Read key value from model config file
+# read key value from model config file
 # 1 - Model
 # 2 - Key
 # Return Value
@@ -11,7 +11,7 @@ function readModelKey() {
 }
 
 ###############################################################################
-# Read Entries as map(key=value) from model config
+# read Entries as map(key=value) from model config
 # 1 - Model
 # 2 - Path of key
 # Returns map of values
@@ -20,23 +20,12 @@ function readModelMap() {
 }
 
 ###############################################################################
-# Read an array from model config
+# read an array from model config
 # 1 - Model
 # 2 - Path of key
 # Returns array/map of values
 function readModelArray() {
   readConfigArray "${2}" "${MODEL_CONFIG_PATH}/${1}.yml"
-}
-
-###############################################################################
-# Check if loader is fully configured
-# Returns 1 if not
-function loaderIsConfigured() {
-  SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-  [ -z "${SN}" ] && return 1
-  [ ! -f "${MOD_ZIMAGE_FILE}" ] && return 1
-  [ ! -f "${MOD_RDGZ_FILE}" ] && return 1
-  return 0 # OK
 }
 
 ###############################################################################

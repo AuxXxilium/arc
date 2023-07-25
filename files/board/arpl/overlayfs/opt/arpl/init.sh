@@ -7,7 +7,7 @@ set -e
 # Wait kernel enumerate the disks
 CNT=3
 while true; do
-  [ ${CNT} -eq 0 ] && break
+  [ "${CNT}" -eq "0" ] && break
   LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
   [ -n "${LOADER_DISK}" ] && break
   CNT=$((${CNT}-1))
@@ -16,41 +16,41 @@ done
 
 [ -z "${LOADER_DISK}" ] && die "Loader disk not found!"
 NUM_PARTITIONS=$(blkid | grep "${LOADER_DISK}[0-9]\+" | cut -d: -f1 | wc -l)
-[ $NUM_PARTITIONS -lt 3 ] && die "Loader disk seems to be damaged!"
-[ $NUM_PARTITIONS -gt 3 ] && die "There are multiple loader disks, please insert only one loader disk!"
+[ "${NUM_PARTITIONS}" -lt "3" ] && die "Loader disk seems to be damaged!"
+[ "${NUM_PARTITIONS}" -gt "3" ] && die "There are multiple loader disks, please insert only one loader disk!"
 
 # Check partitions and ignore errors
-fsck.vfat -aw ${LOADER_DISK}1 >/dev/null 2>&1 || true
-fsck.ext2 -p ${LOADER_DISK}2 >/dev/null 2>&1 || true
-fsck.ext4 -p ${LOADER_DISK}3 >/dev/null 2>&1 || true
+fsck.vfat -aw "${LOADER_DISK}1" >/dev/null 2>&1 || true
+fsck.ext2 -p "${LOADER_DISK}2" >/dev/null 2>&1 || true
+fsck.ext4 -p "${LOADER_DISK}3" >/dev/null 2>&1 || true
 
 # Make folders to mount partitions
-mkdir -p ${BOOTLOADER_PATH}
-mkdir -p ${SLPART_PATH}
-mkdir -p ${CACHE_PATH}
-mkdir -p ${DSMROOT_PATH}
+mkdir -p "${BOOTLOADER_PATH}"
+mkdir -p "${SLPART_PATH}"
+mkdir -p "${CACHE_PATH}"
+mkdir -p "${DSMROOT_PATH}"
 
 # Mount the partitions
-mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "`printf "Can't mount %s" "${BOOTLOADER_PATH}"`"
-mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "`printf "Can't mount %s" "${SLPART_PATH}"`"
-mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "`printf "Can't mount %s" "${CACHE_PATH}"`"
+mount "${LOADER_DISK}1" "${BOOTLOADER_PATH}" || die "Can't mount ${BOOTLOADER_PATH}"
+mount "${LOADER_DISK}2" "${SLPART_PATH}"     || die "Can't mount ${SLPART_PATH}"
+mount "${LOADER_DISK}3" "${CACHE_PATH}"      || die "Can't mount ${CACHE_PATH}"
 
 # Shows title
 clear
 TITLE="${ARPL_TITLE}"
 printf "\033[1;30m%*s\n" $COLUMNS ""
 printf "\033[1;30m%*s\033[A\n" $COLUMNS ""
-printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
+printf "\033[1;31m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" $COLUMNS ""
 
 # Move/link SSH machine keys to/from cache volume
-[ ! -d "${CACHE_PATH}/ssh" ] && cp -R "/etc/ssh" "${CACHE_PATH}/ssh"
-rm -rf "/etc/ssh"
-ln -s "${CACHE_PATH}/ssh" "/etc/ssh"
+[ ! -d "${CACHE_PATH}/ssh" ] && cp -R /etc/ssh "${CACHE_PATH}/ssh"
+rm -rf /etc/ssh
+ln -s "${CACHE_PATH}/ssh" /etc/ssh
 
 # Link bash history to cache volume
 rm -rf ~/.bash_history
-ln -s ${CACHE_PATH}/.bash_history ~/.bash_history
+ln -s "${CACHE_PATH}/.bash_history" ~/.bash_history
 touch ~/.bash_history
 if ! grep -q "arc.sh" ~/.bash_history; then
   echo "arc.sh " >>~/.bash_history
@@ -111,7 +111,7 @@ if [ "${NOTSETMAC}" = "false" ]; then
     writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
     if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
       MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-      echo "$(printf "Setting %s MAC to %s" "${ETHX[$((${N}-1))]}" "${MAC}")"
+      echo "Setting ${ETHX[$((${N}-1))]} MAC to ${MAC}"
       ip link set dev ${ETHX[$((${N}-1))]} address ${MAC} >/dev/null 2>&1
     elif [ -z "${MACF}" ]; then
       # Write real Mac to cmdline config
@@ -142,11 +142,11 @@ writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
 writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 
 # Inform user
-echo -en "Loader disk: \033[1;34m${LOADER_DISK}\033[0m ("
+echo -en "Loader disk: \033[1;31m${LOADER_DISK}\033[0m ("
 if [ "${BUS}" = "usb" ]; then
-  echo -en "\033[1;34mUSB flashdisk\033[0m"
+  echo -en "\033[1;31mUSB flashdisk\033[0m"
 elif [ "${BUS}" = "ata" ]; then
-  echo -en "\033[1;34mSATA DoM\033[0m"
+  echo -en "\033[1;31mSATA DoM\033[0m"
 fi
 echo ")"
 
@@ -154,10 +154,10 @@ echo ")"
 LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
 SIZEOFDISK=$(cat /sys/block/${LOADER_DEVICE_NAME}/size)
 ENDSECTOR=$(($(fdisk -l ${LOADER_DISK} | awk '/'${LOADER_DEVICE_NAME}3'/{print$3}')+1))
-if [ ${SIZEOFDISK} -ne ${ENDSECTOR} ]; then
-  echo -e "\033[1;36m$(printf "Resizing %s" "${LOADER_DISK}3")\033[0m"
+if [ "${SIZEOFDISK}" -ne "${ENDSECTOR}" ]; then
+  echo -e "\033[1;36mResizing ${LOADER_DISK}3\033[0m"
   echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${LOADER_DISK}" >"${LOG_FILE}" 2>&1 || dieLog
-  resize2fs ${LOADER_DISK}3 >"${LOG_FILE}" 2>&1 || dieLog
+  resize2fs "${LOADER_DISK}3" >"${LOG_FILE}" 2>&1 || dieLog
 fi
 
 # Load keymap name
@@ -166,7 +166,7 @@ KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 
 # Loads a keymap if is valid
 if [ -f /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz ]; then
-  echo -e "Loading keymap \033[1;34m${LAYOUT}/${KEYMAP}\033[0m"
+  echo -e "Loading keymap \033[1;31m${LAYOUT}/${KEYMAP}\033[0m"
   zcat /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz | loadkeys
 fi
 
@@ -181,7 +181,7 @@ elif grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
 fi
 
 # If is to boot automatically, do it
-if [ ${BOOT} -eq 1 ]; then 
+if [ "${BOOT}" -eq "1" ]; then 
   boot.sh && exit 0
 fi
 
@@ -189,64 +189,40 @@ fi
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
 ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
-echo "$(printf "Detected %s NIC." "${#ETHX[@]}")"
-echo "Checking Connection."
-COUNT=0
-while [ ${COUNT} -lt ${BOOTIPWAIT} ]; do
-  hasConnect="false"
-  for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
-    if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'yes'; then
-      echo -en "${ETHX[${N}]} "
-      hasConnect="true"
-    fi
-  done
-  if [ ${hasConnect} = "true" ]; then
-    echo -en "connected.\n"
+echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
+for N in $(seq 0 $((${#ETHX[@]}-1))); do
+  DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+  if [ "${N}" -eq "8" ]; then
+    echo -e "\r${ETHX[${N}]}(${DRIVER}): More than 8 NIC are not supported."
     break
   fi
-  COUNT=$((${COUNT}+1))
-  echo -n "."
-  sleep 1
-done
-echo "Waiting IP."
-for N in $(seq 0 $((${#ETHX[@]}-1))); do
   COUNT=0
-  DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-  echo -en "${ETHX[${N}]}(${DRIVER}): "
+  sleep 3
   while true; do
-    if ! ip link show ${ETHX[${N}]} | grep -q 'UP'; then
-      echo -en "\r${ETHX[${N}]}(${DRIVER}): DOWN\n"
-      break
-    fi
     if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
-      echo -en "\r${ETHX[${N}]}(${DRIVER}): NOT CONNECTED\n"
+      echo -e "\r${ETHX[${N}]}(${DRIVER}): NOT CONNECTED"
       break
     fi
-    if [ ${COUNT} -eq ${BOOTIPWAIT} ]; then
-      echo -en "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT\n"
-      break
-    fi
-    if [ ${N} -eq 8 ]; then # Under normal circumstances, no errors should occur here.
-      echo -en "\r${ETHX[${N}]}(${DRIVER}): ERROR\n"
+    IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+    if [ -n "${IP}" ]; then
+      echo -e "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;31mhttp://${IP}:5000\033[0m to connect the DSM via web."
       break
     fi
     COUNT=$((${COUNT}+1))
-    IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
-    if [ -n "${IP}" ]; then
-      echo -en "\r${ETHX[${N}]}(${DRIVER}): $(printf "Access \033[1;34mhttp://%s:5000\033[0m to connect the DSM via web." "${IP}")\n"
+    if [ "${COUNT}" -eq "${BOOTIPWAIT}" ]; then
+      echo -e "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT."
       break
     fi
-    echo -n "."
     sleep 1
   done
 done
 
 # Inform user
 echo
-echo -e "Call \033[1;34marc.sh\033[0m to configure loader"
+echo -e "Call \033[1;31marc.sh\033[0m to configure loader"
 echo
-echo -e "User config is on \033[1;34m${USER_CONFIG_FILE}\033[0m"
-echo -e "Default SSH Root password is \033[1;34marc\033[0m"
+echo -e "User config is on \033[1;31m${USER_CONFIG_FILE}\033[0m"
+echo -e "Default SSH Root password is \033[1;31marc\033[0m"
 echo
 
 # Check memory

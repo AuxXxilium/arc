@@ -30,7 +30,7 @@ use_shadow = OFF
 use_colors = ON
 
 # Screen color
-screen_color = (BLUE,BLACK,ON)
+screen_color = (RED,BLACK,ON)
 
 # Shadow color
 shadow_color = (BLACK,BLACK,ON)
@@ -39,13 +39,13 @@ shadow_color = (BLACK,BLACK,ON)
 dialog_color = (BLACK,WHITE,OFF)
 
 # Dialog box title color
-title_color = (BLUE,WHITE,ON)
+title_color = (RED,WHITE,ON)
 
 # Dialog box border color
 border_color = (WHITE,WHITE,ON)
 
 # Active button color
-button_active_color = (WHITE,BLUE,ON)
+button_active_color = (WHITE,RED,ON)
 
 # Inactive button color
 button_inactive_color = dialog_color
@@ -57,7 +57,7 @@ button_key_active_color = button_active_color
 button_key_inactive_color = (RED,WHITE,OFF)
 
 # Active button label color
-button_label_active_color = (WHITE,BLUE,ON)
+button_label_active_color = (WHITE,RED,ON)
 
 # Inactive button label color
 button_label_inactive_color = (BLACK,WHITE,ON)
@@ -102,7 +102,7 @@ tag_selected_color = button_label_active_color
 tag_key_color = (BLACK,WHITE,OFF)
 
 # Selected tag key color
-tag_key_selected_color = (WHITE,BLUE,ON)
+tag_key_selected_color = (WHITE,RED,ON)
 
 # Check box color
 check_color = dialog_color
