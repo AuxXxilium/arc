@@ -169,13 +169,14 @@ if [ -f /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz ]; then
   echo -e "Loading keymap \033[1;34m${LAYOUT}/${KEYMAP}\033[0m"
   zcat /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz | loadkeys
 fi
+echo
 
 # Decide if boot automatically
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 if grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
   echo -e "\033[1;31mUser requested edit settings.\033[0m"
 elif [ "${BUILDDONE}" = "1" ]; then
-  echo -e "\033[1;31mLoader is configured!\033[0m"
+  echo -e "\033[1;34mLoader is configured!\033[0m"
   boot.sh && exit 0
 elif [ -n "${BUILDDONE}" ]; then
   echo -e "\033[1;31mLoader is not configured!\033[0m"
