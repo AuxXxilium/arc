@@ -181,10 +181,10 @@ function arcMenu() {
   fi
   # read model config for dt and aes
   if [ "${MODEL}" != "${resp}" ]; then
-    MODEL=${resp}
+    MODEL="${resp}"
     # Check for DT and SAS Controller
     DT="$(readModelKey "${resp}" "dt")"
-    if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt 0 ]; then
+    if [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -gt "0" ]; then
       # There is no Raid/SCSI Support for DT Models
       WARNON=2
     fi
@@ -200,7 +200,7 @@ function arcMenu() {
     deleteConfigKey "arc.confdone" "${USER_CONFIG_FILE}"
     deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
-    if [ -f "${ORI_ZIMAGE_FILE}" ]; then
+    if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
     fi
@@ -212,12 +212,6 @@ function arcMenu() {
 ###############################################################################
 # Shows menu to user type one or generate randomly
 function arcbuild() {
-  # Use Onlinemode
-  ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
-  # Add Onlinemode to old configs
-  if [ -z "${ONLINEMODE}" ]; then
-    writeConfigKey "arc.onlinemode" "true" "${USER_CONFIG_FILE}"
-  fi
   # read model values for arcbuild
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
@@ -237,6 +231,10 @@ function arcbuild() {
     if [ "${PRODUCTVER}" != "${resp}" ]; then
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+      if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]
+        # Delete old files
+        rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+      fi
     fi
   fi
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
