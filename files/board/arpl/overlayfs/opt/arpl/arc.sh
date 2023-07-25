@@ -14,7 +14,7 @@ RAMTOTAL=0
 while read -r -r LINE; do
   RAMSIZE=${LINE}
   RAMTOTAL=$((${RAMTOTAL}+${RAMSIZE}))
-done < <(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i [1-9])
+done < <(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i "[1-9]")
 RAMTOTAL=$((${RAMTOTAL}*1024))
 RAMMIN=$((${RAMTOTAL}/2))
 # Check for Hypervisor
