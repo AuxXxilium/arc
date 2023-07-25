@@ -429,13 +429,13 @@ function make() {
     DSM_LINK="${DSM_MODEL}/${PRODUCTVER}/dsm.tar"
     DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
     STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
-    if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+    if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
       dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
         --msgbox "No DSM Image found!\nTry alternate Link." 0 0
       DSM_LINK="${MODEL}/${PRODUCTVER}/dsm.tar"
       DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${DSM_LINK}"
       STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
-      if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+      if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
         dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
         --msgbox "No DSM Image found!\nTry Syno Link." 0 0
         # Grep Values
@@ -449,7 +449,7 @@ function make() {
         PAT_PATH="${CACHE_PATH}/dl/${PAT_FILE}"
         mkdir -p "${CACHE_PATH}/dl"
         STATUS=$(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_PATH}" --progress-bar)
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
             --msgbox "No DSM Image found!\ Exit." 0 0
           rm -f "${PAT_PATH}"
@@ -561,7 +561,7 @@ function editUserConfig() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-  if [ "${MODEL}" != "${OLDMODEL}" -o "${PRODUCTVER}" != "${OLDPRODUCTVER}" ]; then
+  if [ "${MODEL}" != "${OLDMODEL}" ] || [ "${PRODUCTVER}" != "${OLDPRODUCTVER}" ]; then
     # Remove old files
     rm -f "${MOD_ZIMAGE_FILE}"
     rm -f "${MOD_RDGZ_FILE}"
@@ -735,7 +735,7 @@ function modulesMenu() {
         clear
         echo "Downloading ${URL}"
         STATUS=$(curl -kLJO -w "%{http_code}" "${URL}" --progress-bar)
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Add external module" --aspect 18 \
             --msgbox "ERROR: Check internet, URL or cache disk space" 0 0
           return 1
@@ -817,7 +817,7 @@ function cmdlineMenu() {
         resp=$(<"${TMP_PATH}/resp")
         [ -z "${RESP}" ] && continue
         for I in ${RESP}; do
-          unset CMDLINE[${I}]
+          unset 'CMDLINE[${I}]'
           deleteConfigKey "cmdline.${I}" "${USER_CONFIG_FILE}"
         done
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
@@ -978,7 +978,7 @@ function synoinfoMenu() {
         resp=$(<"${TMP_PATH}/resp")
         [ -z "${resp}" ] && continue
         for I in ${resp}; do
-          unset SYNOINFO[${I}]
+          unset 'SYNOINFO[${I}]'
           deleteConfigKey "synoinfo.${I}" "${USER_CONFIG_FILE}"
         done
         DIRTY=1
@@ -1190,12 +1190,12 @@ function backupMenu() {
           rz -be
           for F in $(ls -A); do
             USER_FILE="${F}"
-            [ "${F##*.}" = "zip" -a `unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$"` -eq 1 ] && IFTOOL="zip"
+            [ "${F##*.}" = "zip" -a $(unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$") -eq 1 ] && IFTOOL="zip"
             [ "${F##*.}" = "gz" -a "${F#*.}" = "img.gz" ] && IFTOOL="gzip"
             break 
           done
           popd
-          if [ -z "${IFTOOL}" -o -z "${TMP_PATH}/${USER_FILE}" ]; then
+          if [ -z "${IFTOOL}" ] || [ -z "${TMP_PATH}/${USER_FILE}" ]; then
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --msgbox "Not a valid .zip/.img.gz file, please try again!\n${USER_FILE}" 0 0
           else
@@ -1329,7 +1329,7 @@ function backupMenu() {
             break 
           done
           popd
-          if [ -z "${IFTOOL}" -o -z "${TMP_PATH}/${USER_FILE}" ]; then
+          if [ -z "${IFTOOL}" ] || [ -z "${TMP_PATH}/${USER_FILE}" ]; then
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --msgbox "Not a valid .zip/.img.gz file, please try again!\n${USER_FILE}" 0 0
           else
@@ -1362,9 +1362,9 @@ function backupMenu() {
             [ ${#GENHASH} -eq 9 ] && break
             dialog --backtitle "$(backtitle)" --title "Restore with Code" --msgbox "Invalid Code" 0 0
           done
-          rm -f ${TMP_PATH}/user-config.yml
+          rm -f "${TMP_PATH}/user-config.yml"
           curl -k https://dpaste.com/${GENHASH}.txt >${TMP_PATH}/user-config.yml
-          cp -f ${TMP_PATH}/user-config.yml "${USER_CONFIG_FILE}"
+          cp -f "${TMP_PATH}/user-config.yml" "${USER_CONFIG_FILE}"
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
           OLDPRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
           while read -r LINE; do
@@ -1416,7 +1416,7 @@ function updateMenu() {
           --infobox "Checking latest version" 0 0
         ACTUALVERSION="${ARPL_VERSION}"
         TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-        if [ $? -ne 0 -o -z "${TAG}" ]; then
+        if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
           dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           return 1
@@ -1431,7 +1431,7 @@ function updateMenu() {
         # Download update file
         STATUS=$(curl --insecure -w "%{http_code}" -L \
           "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
             --msgbox "Error downloading update file" 0 0
           return 1
@@ -1469,7 +1469,7 @@ function updateMenu() {
           --infobox "Checking latest version" 0 0
         ACTUALVERSION="${ARPL_VERSION}"
         TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-        if [ $? -ne 0 -o -z "${TAG}" ]; then
+        if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
           dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           return 1
@@ -1484,7 +1484,7 @@ function updateMenu() {
         # Download update file
         STATUS=$(curl --insecure -w "%{http_code}" -L \
           "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip")
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
             --msgbox "Error downloading update file" 0 0
           return 1
@@ -1530,7 +1530,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update addons" --aspect 18 \
           --infobox "Checking latest version" 0 0
         TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-        if [ $? -ne 0 -o -z "${TAG}" ]; then
+        if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
           dialog --backtitle "$(backtitle)" --title "Update addons" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           return 1
@@ -1538,7 +1538,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update addons" --aspect 18 \
           --infobox "Downloading latest version: ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip")
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Update addons" --aspect 18 \
             --msgbox "Error downloading new version" 0 0
           return 1
@@ -1568,7 +1568,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
           --infobox "Checking latest version" 0 0
         TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-        if [ $? -ne 0 -o -z "${TAG}" ]; then
+        if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
           dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           return 1
@@ -1576,7 +1576,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
           --infobox "Downloading latest version" 0 0
         STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
             --msgbox "Error downloading latest version" 0 0
           return 1
@@ -1602,7 +1602,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
           --infobox "Checking latest version" 0 0
         TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-        if [ $? -ne 0 -o -z "${TAG}" ]; then
+        if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
           dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           return 1
@@ -1610,7 +1610,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
           --infobox "Downloading latest version: ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+        if [ $? -ne 0 ] || [] ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
             --msgbox "Error downloading latest version" 0 0
           return 1
@@ -1631,7 +1631,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
           --infobox "Checking latest version" 0 0
         TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-        if [ $? -ne 0 -o -z "${TAG}" ]; then
+        if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
           dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           return 1
@@ -1639,7 +1639,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
           --infobox "Downloading latest version: ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip")
-        if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
             --msgbox "Error downloading latest version" 0 0
           return 1
@@ -2012,7 +2012,7 @@ function saveMenu() {
 function formatdisks() {
   ITEMS=""
   while read -r POSITION NAME; do
-    [ -z "${POSITION}" -o -z "${NAME}" ] && continue
+    [ -z "${POSITION}" ] || [ -z "${NAME}" ] && continue
     echo "${POSITION}" | grep -q "${LOADER_DEVICE_NAME}" && continue
     ITEMS+="$(printf "%s %s off " "${POSITION}" "${NAME}")"
   done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd*" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
