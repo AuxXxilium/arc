@@ -849,7 +849,7 @@ function cmdlineMenu() {
       4)
         ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
         for N in $(seq 1 8); do # Currently, only up to 8 are supported.  (<==> boot.sh L96, <==> lkm: MAX_NET_IFACES)
-          MACR="$(cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g')"
+          MACR="$(cat /sys/class/net/${ETHX[$((${N}-1))]}/address | sed 's/://g')"
           MACF=${CMDLINE["mac${N}"]}
           [ -n "${MACF}" ] && MAC=${MACF} || MAC=${MACR}
           RET=1
@@ -861,7 +861,7 @@ function cmdlineMenu() {
             [ ${RET} -ne 0 ] && break 2
             MAC="$(<"${TMP_PATH}/resp")"
             [ -z "${MAC}" ] && MAC="`readConfigKey "device.mac${i}" "${USER_CONFIG_FILE}"`"
-            [ -z "${MAC}" ] && MAC="${MACFS[$(expr ${i} - 1)]}"
+            [ -z "${MAC}" ] && MAC="${MACFS[$((${i}-1))]}"
             MACF="$(echo "${MAC}" | sed 's/://g')"
             [ ${#MACF} -eq 12 ] && break
             dialog --backtitle "$(backtitle)" --title "User cmdline" --msgbox "Invalid MAC" 0 0
@@ -872,7 +872,7 @@ function cmdlineMenu() {
             writeConfigKey "cmdline.mac${N}"      "${MACF}" "${USER_CONFIG_FILE}"
             writeConfigKey "cmdline.netif_num"    "${N}"    "${USER_CONFIG_FILE}"
             MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-            ip link set dev ${ETHX[$(expr ${N} - 1)]} address ${MAC} 2>&1 | dialog --backtitle "$(backtitle)" \
+            ip link set dev ${ETHX[$((${N}-1))]} address ${MAC} 2>&1 | dialog --backtitle "$(backtitle)" \
               --title "User cmdline" --progressbox "Changing MAC" 20 70
             /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "$(backtitle)" \
               --title "User cmdline" --progressbox "Renewing IP" 20 70
@@ -1153,7 +1153,7 @@ function backupMenu() {
             --infobox "Backup in progress..." 0 0
           rm -f /var/www/data/arc-backup.img.gz  # thttpd root path
           dd if="${LOADER_DISK}" bs=1M conv=fsync | gzip > /var/www/data/arc-backup.img.gz
-          if [ $? -ne 0]; then
+          if [ $? -ne 0 ]; then
             dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
               --msgbox "Failed to generate Backup. There may be insufficient memory. Please clear the cache and try again!" 0 0
             return

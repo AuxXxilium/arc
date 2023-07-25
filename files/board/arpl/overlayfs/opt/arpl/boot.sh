@@ -88,10 +88,10 @@ CMDLINE['pid']="${PID}"
 CMDLINE['sn']="${SN}"
 
 # Read cmdline
-while IFS=': ' read KEY VALUE; do
+while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
 done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].cmdline")
-while IFS=': ' read KEY VALUE; do
+while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
 done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 
@@ -121,8 +121,8 @@ fi
 # set missing mac to cmdline if needed
 if [ "${NETIF_NUM}" -ne "${NETNUM}" ]; then
   ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
-  for N in $(seq $(expr ${NETIF_NUM} + 1) ${NETNUM}); do 
-    MACR="$(cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g')"
+  for N in $(seq $((${NETIF_NUM}+1)) ${NETNUM}); do 
+    MACR="$(cat /sys/class/net/${ETHX[$((${N}-1))]}/address | sed 's/://g')"
     # no duplicates
     while [[ "${MACS[*]}" =~ "$MACR" ]]; do # no duplicates
       MACR="${MACR:0:10}$(printf "%02x" $((0x${MACR:10:2}+1)))" 

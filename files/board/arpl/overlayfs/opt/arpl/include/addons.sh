@@ -4,7 +4,7 @@
 # 1 - Platform
 # 2 - Kernel Version
 function availableAddons() {
-  while read D; do
+  while read -r D; do
     [ ! -f "${D}/manifest.yml" ] && continue
     ADDON=$(basename ${D})
     checkAddonExist "${ADDON}" "${1}" "${2}" || continue

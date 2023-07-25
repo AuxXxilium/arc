@@ -23,9 +23,9 @@ function getmap() {
       ATAPORT="$(echo ${LINE} | grep -o 'ata[0-9]*')"
       PORT=$(echo ${ATAPORT} | sed 's/ata//')
       HOSTPORTS[${PORT}]=$(echo ${LINE} | grep -o 'host[0-9]*$')
-    done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
+    done < <(ls -l /sys/class/scsi_host | grep -F "${PCI}")
     while read -r PORT; do
-      ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
+      ls -l /sys/block | grep -F -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
       PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
       [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
       [ "${ATTACH}" = "1" ] && CONPORTS=$((${CONPORTS}+1)) && echo "$((${PORT}-1))" >>"${TMP_PATH}/ports"
