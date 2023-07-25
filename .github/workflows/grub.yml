@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2023 AuxXxilium <https://github.com/AuxXxilium> and Ing <https://github.com/wjz304>
-# 
+#
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
 #
@@ -46,7 +46,7 @@ jobs:
         run: |
           if [ -f "grub.img.gz" ]; then
             echo "Copy img ..."
-            mv -f grub.img.gz files/board/arpl/grub.img.gz 
+            mv -f grub.img.gz files/board/arpl/grub.img.gz
 
             echo "Git push ..."
             git pull
