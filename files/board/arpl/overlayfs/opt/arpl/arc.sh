@@ -668,6 +668,8 @@ function modulesMenu() {
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done
         DIRTY=1
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       3)
         dialog --backtitle "$(backtitle)" --title "Modules" \
