@@ -40,7 +40,7 @@ clear
 TITLE="${ARPL_TITLE}"
 printf "\033[1;30m%*s\n" $COLUMNS ""
 printf "\033[1;30m%*s\033[A\n" $COLUMNS ""
-printf "\033[1;31m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
+printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" $COLUMNS ""
 
 # Move/link SSH machine keys to/from cache volume
@@ -142,11 +142,11 @@ writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
 writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 
 # Inform user
-echo -en "Loader disk: \033[1;31m${LOADER_DISK}\033[0m ("
+echo -en "Loader disk: \033[1;34m${LOADER_DISK}\033[0m ("
 if [ "${BUS}" = "usb" ]; then
-  echo -en "\033[1;31mUSB flashdisk\033[0m"
+  echo -en "\033[1;34mUSB flashdisk\033[0m"
 elif [ "${BUS}" = "ata" ]; then
-  echo -en "\033[1;31mSATA DoM\033[0m"
+  echo -en "\033[1;34mSATA DoM\033[0m"
 fi
 echo ")"
 
@@ -166,7 +166,7 @@ KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 
 # Loads a keymap if is valid
 if [ -f /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz ]; then
-  echo -e "Loading keymap \033[1;31m${LAYOUT}/${KEYMAP}\033[0m"
+  echo -e "Loading keymap \033[1;34m${LAYOUT}/${KEYMAP}\033[0m"
   zcat /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz | loadkeys
 fi
 
@@ -205,7 +205,7 @@ for N in $(seq 0 $((${#ETHX[@]}-1))); do
     fi
     IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
     if [ -n "${IP}" ]; then
-      echo -e "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;31mhttp://${IP}:5000\033[0m to connect the DSM via web."
+      echo -e "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web."
       break
     fi
     COUNT=$((${COUNT}+1))
@@ -219,16 +219,16 @@ done
 
 # Inform user
 echo
-echo -e "Call \033[1;31marc.sh\033[0m to configure loader"
+echo -e "Call \033[1;34marc.sh\033[0m to configure loader"
 echo
-echo -e "User config is on \033[1;31m${USER_CONFIG_FILE}\033[0m"
-echo -e "Default SSH Root password is \033[1;31marc\033[0m"
+echo -e "User config is on \033[1;34m${USER_CONFIG_FILE}\033[0m"
+echo -e "Default SSH Root password is \033[1;34marc\033[0m"
 echo
 
 # Check memory
 RAM=$(free -m | grep -i mem | awk '{print$2}')
 if [ ${RAM} -le 3500 ]; then
-  echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of memory.\033[0m\n"
+  echo -e "\033[1;34mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of memory.\033[0m\n"
 fi
 
 mkdir -p "${ADDONS_PATH}"

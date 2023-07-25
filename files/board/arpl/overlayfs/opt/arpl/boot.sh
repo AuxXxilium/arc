@@ -16,7 +16,7 @@ clear
 TITLE="${ARPL_TITLE}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
-printf "\033[1;31m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
+printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
 TITLE="BOOTING..."
 [ -d "/sys/firmware/efi" ] && TITLE+=" [EFI]" || TITLE+=" [Legacy]"
@@ -25,12 +25,12 @@ if [ "${BUS}" = "usb" ]; then
 elif [ "${BUS}" = "ata" ]; then
   TITLE+=" [SATA DoM]"
 fi
-printf "\033[1;31m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
+printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
 
 # Check if DSM ramdisk changed, patch it if necessary
 RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
 if [ "$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')" != "${RAMDISK_HASH}" ]; then
-  echo -e "\033[1;43mDSM Ramdisk changed\033[0m"
+  echo -e "\033[1;31mDSM Ramdisk changed\033[0m"
   /opt/arpl/ramdisk-patch.sh
   if [ $? -ne 0 ]; then
     dialog --backtitle "$(backtitle)" --title "Error" \
@@ -43,7 +43,7 @@ fi
 # Check if DSM zImage changed, patch it if necessary
 ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
 if [ "$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}')" != "${ZIMAGE_HASH}" ]; then
-  echo -e "\033[1;43mDSM zImage changed\033[0m"
+  echo -e "\033[1;31mDSM zImage changed\033[0m"
   /opt/arpl/zimage-patch.sh
   if [ $? -ne 0 ]; then
     dialog --backtitle "$(backtitle)" --title "Error" \
@@ -159,14 +159,14 @@ NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 if [ "${DIRECTBOOT}" = "true" ] && [ "${DIRECTDSM}" = "true" ]; then
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
     grub-editenv ${GRUB_PATH}/grubenv set default="direct"
-    echo -e "\033[1;31mEnable Directboot - DirectDSM\033[0m"
-    echo -e "\033[1;31mDSM installed - Reboot with Directboot\033[0m"
+    echo -e "\033[1;34mEnable Directboot - DirectDSM\033[0m"
+    echo -e "\033[1;34mDSM installed - Reboot with Directboot\033[0m"
     exec reboot
 elif [ "${DIRECTBOOT}" = "true" ] && [ "${DIRECTDSM}" = "false" ]; then
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
     grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
     writeConfigKey "arc.directdsm" "true" "${USER_CONFIG_FILE}"
-    echo -e "\033[1;31mDSM not installed - Reboot with Directboot\033[0m"
+    echo -e "\033[1;34mDSM not installed - Reboot with Directboot\033[0m"
     exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
@@ -188,7 +188,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       fi
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
       if [ -n "${IP}" ]; then
-        echo -e "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;31mhttp://${IP}:5000\033[0m to connect the DSM via web."
+        echo -e "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web."
         break
       fi
       COUNT=$((${COUNT}+1))
@@ -209,7 +209,7 @@ kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDL
 echo -e "\033[1;37m"Booting DSM..."\033[0m"
 for T in $(w | grep -v "TTY" | awk -F' ' '{print $2}')
 do
-  echo -e "\n\033[1;37mThis interface will not be operational. Please use \033[1;31mhttp://find.synology.com/ \033[1;37mto find DSM and connect.\033[0m\n" >"/dev/${T}" 2>/dev/null || true
+  echo -e "\n\033[1;37mThis interface will not be operational. Please use \033[1;34mhttp://find.synology.com/ \033[1;37mto find DSM and connect.\033[0m\n" >"/dev/${T}" 2>/dev/null || true
 done 
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 [ "${KERNELLOAD}" = "kexec" ] && kexec -f -e || poweroff
