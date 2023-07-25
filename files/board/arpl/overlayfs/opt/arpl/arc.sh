@@ -17,6 +17,7 @@ while read -r -r LINE; do
 done < <(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i "[1-9]")
 RAMTOTAL=$((${RAMTOTAL}*1024))
 RAMMIN=$((${RAMTOTAL}/2))
+
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
   # Check for Hypervisor
@@ -24,17 +25,24 @@ if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
 else
   MACHINE="NATIVE"
 fi
+
 # Check if machine has EFI
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
+
 # Dirty flag
 DIRTY=0
-# Get Data from Config
+
+# Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
-DT="$(readModelKey "${MODEL}" "dt")"
+if [ -n "${MODEL}" ]; then
+  DT="$(readModelKey "${MODEL}" "dt")"
+fi
+
+# Get Arc Data from Config
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -45,10 +53,12 @@ BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
+
 # Add Kernelload to old configs
 if [ -z "${KERNELLOAD}" ]; then
   writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
 fi
+
 # Reset DirectDSM if User boot to Config
 if [ "${DIRECTDSM}" = "true" ]; then
   writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
