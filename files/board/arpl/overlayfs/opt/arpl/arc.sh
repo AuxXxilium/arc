@@ -124,19 +124,18 @@ function arcMenu() {
   RESTRICT=1
   FLGBETA=0
   dialog --backtitle "$(backtitle)" --title "Model" --aspect 18 \
-    --infobox "Reading models" 0 0
+    --infobox "Reading models" 3 20
   while true; do
     echo "" >"${TMP_PATH}/menu"
     FLGNEX=0
     while read -r M; do
       M="$(basename ${M})"
       M="${M::-4}"
-      MID="$(readModelKey "${M}" "id")"
       PLATFORM="$(readModelKey "${M}" "platform")"
       DT="$(readModelKey "${M}" "dt")"
       BETA="$(readModelKey "${M}" "beta")"
-      [ "${BETA}" = "true" -a "${FLGBETA}" -eq "0" ] && continue
-      DISKS="$(readModelKey "${M}" "disks")"
+      [ "${BETA}" = "true" ] && [ "${FLGBETA}" -eq "0" ] && continue
+      DISKS="$(readModelKey "${M}" "disks")-Bay"
       ARCCONF="$(readModelKey "${M}" "arc.serial")"
       if [ -n "${ARCCONF}" ]; then
         ARCAV="Arc"
@@ -166,12 +165,13 @@ function arcMenu() {
           fi
         done
       fi
-      [ "${DT}" = "true" ] && DT="-DT" || DT=""
-      [ "${COMPATIBLE}" -eq "1" ] && echo -e "${MID} \"\Zb${DISKS}-Bay\Zn \t\Zb${CPU}\Zn \t\Zb${PLATFORM}${DT}\Zn \t\Zb${ARCAV}\Zn\" " >>"${TMP_PATH}/menu"
+      [ "${DT}" = "true" ] && DT="DT" || DT=""
+      [ "${BETA}" = "true" ] && BETA="Beta" || BETA=""
+      [ "${COMPATIBLE}" -eq "1" ] && echo "${M} \"$(printf "\Zb%-7s\Zn \Zb%-6s\Zn \Zb%-13s\Zn \Zb%-3s\Zn \Zb%-7s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DT}" "${ARCAV}" "${BETA}")\" ">>"${TMP_PATH}/menu"
     done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
     [ "${FLGBETA}" -eq "0" ] && echo "b \"\Z1Show beta Models\Zn\"" >>"${TMP_PATH}/menu"
     [ "${FLGNEX}" -eq "1" ] && echo "f \"\Z1Show incompatible Models \Zn\"" >>"${TMP_PATH}/menu"
-    dialog --backtitle "$(backtitle)" --colors --menu "Choose Model for Arc" 0 0 0 \
+    dialog --backtitle "$(backtitle)" --colors --menu "Choose Model for Loader" 0 62 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return
     resp=$(<"${TMP_PATH}/resp")
@@ -855,12 +855,12 @@ function cmdlineMenu() {
           RET=1
           while true; do
             dialog --backtitle "$(backtitle)" --title "User cmdline" \
-              --inputbox "`printf "Type a custom MAC address of %s" "mac${N}"`" 0 0 "${MAC}"\
+              --inputbox "Type a custom MAC address of mac${N}" 0 0 "${MAC}"\
               2>"${TMP_PATH}/resp"
             RET=$?
             [ ${RET} -ne 0 ] && break 2
             MAC="$(<"${TMP_PATH}/resp")"
-            [ -z "${MAC}" ] && MAC="`readConfigKey "device.mac${i}" "${USER_CONFIG_FILE}"`"
+            [ -z "${MAC}" ] && MAC="$(readConfigKey "device.mac${i}" "${USER_CONFIG_FILE}")"
             [ -z "${MAC}" ] && MAC="${MACFS[$((${i}-1))]}"
             MACF="$(echo "${MAC}" | sed 's/://g')"
             [ ${#MACF} -eq 12 ] && break
@@ -2038,7 +2038,7 @@ function formatdisks() {
   fi
   (
     for I in ${resp}; do
-      mkfs.ext4 -F -O ^metadata_csum ${I}
+      mkfs.ext4 -T largefile4 ${I}
     done
   ) | dialog --backtitle "$(backtitle)" --title "Format disk" \
       --progressbox "Formatting ..." 20 70
