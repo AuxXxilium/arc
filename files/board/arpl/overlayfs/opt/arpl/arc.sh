@@ -590,12 +590,12 @@ function addonMenu() {
   touch "${TMP_PATH}/opts"
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"         # Check if addon has already been added
-    echo "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
+    echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
   done <<<${ALLADDONS}
   dialog --backtitle "$(backtitle)" --title "Addons" --aspect 18 \
     --checklist "Select Addons to include or remove\nSelect with SPACE" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && continue
+  [ $? -ne 0 ] && return 1
   resp=$(<"${TMP_PATH}/resp")
   [ -z "${resp}" ] && continue
   dialog --backtitle "$(backtitle)" --title "Addons" \

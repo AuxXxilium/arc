@@ -15,7 +15,9 @@ function availableAddons() {
     done < <(readConfigEntriesArray "available-for" "${D}/manifest.yml")
     [ "${ACTIVATE}" = "false" ] && continue
     DESC="$(readConfigKey "description" "${D}/manifest.yml")"
-    echo -e "${ADDON}\t${DESC}"
+    BETA="$(readConfigKey "beta" "${D}/manifest.yml")"
+    [ "${BETA}" = "true" ] && BETA="(Beta) " || BETA=""
+    echo -e "${ADDON}\t${BETA}${DESC}"
   done < <(find "${ADDONS_PATH}" -maxdepth 1 -type d | sort)
 }
 
