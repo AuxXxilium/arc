@@ -2096,7 +2096,7 @@ while true; do
     fi
     if [ -n "${ARCOPTS}" ]; then
       echo "= \"\Z4========== Arc ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
-      echo "m \"Change DSM Version \" "                                                     >>"${TMP_PATH}/menu"
+      echo "v \"Change DSM Version \" "                                                     >>"${TMP_PATH}/menu"
       if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
         echo "s \"Change Storage Map \" "                                                   >>"${TMP_PATH}/menu"
       fi
@@ -2136,7 +2136,7 @@ while true; do
     if [ -n "${DEVOPTS}" ]; then
       echo "= \"\Z4========== Dev ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
-      echo "v \"Save Modifications to Disk \" "                                             >>"${TMP_PATH}/menu"
+      echo "z \"Save Modifications to Disk \" "                                             >>"${TMP_PATH}/menu"
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
   fi
@@ -2166,7 +2166,7 @@ while true; do
        ARCOPTS="${ARCOPTS}"
        NEXT="7"
        ;;
-    m) ONLYVERSION="true" && arcbuild; NEXT="m" ;;
+    v) ONLYVERSION="true" && arcbuild; NEXT="v" ;;
     s) storageMenu; NEXT="s" ;;
     n) networkMenu; NEXT="n" ;;
     u) usbMenu; NEXT="u" ;;
@@ -2190,11 +2190,11 @@ while true; do
     h) editUserConfig; NEXT="h" ;;
     m) [ "${NOTSETMAC}" = "false" ] && NOTSETMAC='true' || NOTSETMAC='false'
       writeConfigKey "arc.notsetmac" "${NOTSETMAC}" "${USER_CONFIG_FILE}"
-      NEXT="i"
+      NEXT="m"
       ;;
     d) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-      NEXT="k"
+      NEXT="d"
       ;;
     l)
       writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
@@ -2211,7 +2211,7 @@ while true; do
       DIRTY=1
       NEXT="j"
       ;;
-    v) saveMenu; NEXT="o" ;;
+    z) saveMenu; NEXT="z" ;;
     # System Section 2
     t) backupMenu; NEXT="t" ;;
     i) tryRecoveryDSM; NEXT="i" ;;
