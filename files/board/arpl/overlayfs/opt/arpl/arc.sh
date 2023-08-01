@@ -29,9 +29,6 @@ fi
 # Check if machine has EFI
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
 
-# Dirty flag
-DIRTY=0
-
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -214,7 +211,6 @@ function arcMenu() {
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
     fi
-    DIRTY=1
   fi
   arcbuild
 }
@@ -271,7 +267,6 @@ function arcbuild() {
   while read -r ID DESC; do
     writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
   done < <(getAllModules "${PLATFORM}" "${KVER}")
-  DIRTY=1
   if [ "${ONLYVERSION}" != "true" ]; then
     arcsettings
   else
@@ -319,7 +314,6 @@ function arcsettings() {
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   fi
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  DIRTY=1
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
     --infobox "Model Configuration successful!" 0 0
   sleep 1
@@ -346,7 +340,6 @@ function arcnetdisk() {
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
     --infobox "Configuration successful!" 0 0
   sleep 1
-  DIRTY=1
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${WARNON}" = "1" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
@@ -519,7 +512,6 @@ function make() {
   fi
   echo "Ready!"
   sleep 3
-  DIRTY=0
   # Build is done
   writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "1" "${USER_CONFIG_FILE}"
@@ -566,7 +558,6 @@ function editUserConfig() {
     rm -f "${MOD_ZIMAGE_FILE}"
     rm -f "${MOD_RDGZ_FILE}"
   fi
-  DIRTY=1
   deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
@@ -610,7 +601,6 @@ function addonMenu() {
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --title "Addons" \
     --msgbox "Addons selected:\n${ADDONSINFO}" 0 0
-  DIRTY=1
   deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
@@ -667,7 +657,6 @@ function modulesMenu() {
           USERMODULES["${ID}"]=""
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
         done
-        DIRTY=1
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -958,7 +947,6 @@ function synoinfoMenu() {
         VALUE="$(<"${TMP_PATH}/resp")"
         SYNOINFO[${NAME}]="${VALUE}"
         writeConfigKey "synoinfo.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
-        DIRTY=1
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -981,7 +969,6 @@ function synoinfoMenu() {
           unset 'SYNOINFO[${I}]'
           deleteConfigKey "synoinfo.${I}" "${USER_CONFIG_FILE}"
         done
-        DIRTY=1
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -1558,7 +1545,6 @@ function updateMenu() {
           rm -f "${ADDONS_PATH}/${ADDON}.addon"
         done
         rm -f "${TMP_PATH}/addons.zip"
-        DIRTY=1
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         dialog --backtitle "$(backtitle)" --title "Update addons" --aspect 18 \
@@ -1592,7 +1578,6 @@ function updateMenu() {
           done < <(getAllModules "${PLATFORM}" "${KVER}")
         fi
         rm -f "${TMP_PATH}/modules.zip"
-        DIRTY=1
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
@@ -1621,7 +1606,6 @@ function updateMenu() {
         mkdir -p "${MODEL_CONFIG_PATH}"
         unzip -o "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}" >/dev/null 2>&1
         rm -f "${TMP_PATH}/configs.zip"
-        DIRTY=1
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
@@ -1650,7 +1634,6 @@ function updateMenu() {
         mkdir -p "${LKM_PATH}"
         unzip -o "${TMP_PATH}/rp-lkms.zip" -d "${LKM_PATH}" >/dev/null 2>&1
         rm -f "${TMP_PATH}/rp-lkms.zip"
-        DIRTY=1
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
@@ -2049,7 +2032,8 @@ function formatdisks() {
 ###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
-  [ "${DIRTY}" -eq "1" ] && dialog --backtitle "$(backtitle)" --title "Alert" \
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  [ "${BUILDDONE}" -ne "1" ] && dialog --backtitle "$(backtitle)" --title "Alert" \
     --yesno "Config changed, would you like to rebuild the loader?" 0 0
   if [ $? -eq 0 ]; then
     make || return
@@ -2206,9 +2190,8 @@ while true; do
       DEVOPTS="${DEVOPTS}"
       NEXT="9"
       ;;
-    j) [ "${LKM}" = "dev" ] && LKM='prod' || LKM='dev'
+    j) [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
       writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
-      DIRTY=1
       NEXT="j"
       ;;
     z) saveMenu; NEXT="z" ;;
