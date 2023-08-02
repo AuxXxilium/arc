@@ -1993,27 +1993,29 @@ function saveMenu() {
 ###############################################################################
 # let user format disks from inside arc
 function formatdisks() {
-  ITEMS=""
-  while read -r POSITION NAME; do
+  rm -f "${TMP_PATH}/opts"
+  while read POSITION NAME; do
     [ -z "${POSITION}" ] || [ -z "${NAME}" ] && continue
     echo "${POSITION}" | grep -q "${LOADER_DEVICE_NAME}" && continue
-    ITEMS+="$(printf "%s %s off " "${POSITION}" "${NAME}")"
-  done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd*" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
-  dialog --backtitle "$(backtitle)" --title "Format disk" \
-    --checklist "Advanced" 0 0 0 ${ITEMS} 2>"${TMP_PATH}/resp"
+    echo "\"${POSITION}\" \"${NAME}\" \"off\"" >>"${TMP_PATH}/opts"
+  done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd|/dev/nvme" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
+  while read POSITION NAME; do
+    [ -z "${POSITION}" ] || [ -z "${NAME}" ] && continue
+    echo "${POSITION}" | grep -q "${LOADER_DEVICE_NAME}" && continue
+    echo "\"${POSITION}\" \"${NAME}\" \"off\"" >>"${TMP_PATH}/opts"
+  done < <(ls -l /dev/disk/by-path/ | sed 's|../..|/dev|g' | grep -E "/dev/sd|/dev/nvme" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
+  dialog --backtitle "$(backtitle)" --colors --title "Format disk" \
+    --checklist "Format disk" 0 0 0 --file "${TMP_PATH}/opts" \
+    2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
-  resp=$(<"${TMP_PATH}/resp")
-  if [ -z "${resp}" ]; then
-    dialog --backtitle "$(backtitle)" --title "Format disk" \
-      --msgbox "No Sata or NVMe Disks found." 0 0
-    return
-  fi
-  dialog --backtitle "$(backtitle)" --title "Format disk" \
-      --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
+  RESP=$(<"${TMP_PATH}/resp")
+  [ -z "${RESP}" ] && return
+  dialog --backtitle "$(backtitle)" --colors --title "Format disk" \
+    --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return
   if [ $(ls /dev/md* | wc -l) -gt 0 ]; then
-    dialog --backtitle "$(backtitle)" --title "Format disk" \
-        --yesno "Warning:\nThe current hds is in raid, do you still want to format them?" 0 0
+    dialog --backtitle "$(backtitle)" --colors --title "Format disk" \
+      --yesno "Warning:\nThe current hds is in raid, do you still want to format them?" 0 0
     [ $? -ne 0 ] && return
     for I in $(ls /dev/md*); do
       mdadm -S ${I}
@@ -2025,7 +2027,7 @@ function formatdisks() {
     done
   ) | dialog --backtitle "$(backtitle)" --title "Format disk" \
       --progressbox "Formatting ..." 20 70
-  dialog --backtitle "$(backtitle)" --colors --aspect 18 \
+  dialog --backtitle "$(backtitle)" --colors --title "Format disk" --aspect 18 \
     --msgbox "Formatting is complete." 0 0
 }
 
@@ -2215,4 +2217,4 @@ echo -e "User: \033[1;31mroot\033[0m"
 echo -e "Password: \033[1;31marc\033[0m"
 echo
 echo -e "Web Terminal Access:"
-echo -e "Address: \033[1;31mhttp://${IP}:5000\033[0m"
+echo -e "Address: \033[1;31mhttp://${IP}:7681\033[0m"

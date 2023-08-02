@@ -203,7 +203,7 @@ for N in $(seq 0 $((${#ETHX[@]}-1))); do
     fi
     IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
     if [ -n "${IP}" ]; then
-      echo -e "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web."
+      echo -e "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;34mhttp://${IP}:7681\033[0m to connect Arc via web."
       break
     fi
     COUNT=$((${COUNT}+1))
