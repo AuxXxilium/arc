@@ -93,7 +93,6 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.onlinemode" "true" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.notsetmac" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"

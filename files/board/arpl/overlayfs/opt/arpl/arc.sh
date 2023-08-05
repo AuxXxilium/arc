@@ -45,7 +45,6 @@ DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
@@ -1033,17 +1032,18 @@ function usbMenu() {
           deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
           BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           dialog --backtitle "$(backtitle)" --title "Mount USB as Internal" \
-          --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
+            --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
           ;;
         2)
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
           deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
-          writeConfigKey "synoinfo.usbportcfg" "0x0" "${USER_CONFIG_FILE}"
+          deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
           deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
           writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
           deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
           BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           dialog --backtitle "$(backtitle)" --title "Mount USB as Normal" \
+            --aspect 18 --msgbox "Mount USB as Normal - successful!" 0 0
           ;;
         0) return ;;
       esac
@@ -1680,7 +1680,6 @@ function sysinfo() {
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
     DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
-    ONLINEMODE="$(readConfigKey "arc.onlinemode" "${USER_CONFIG_FILE}")"
     USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
     LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1737,7 +1736,7 @@ function sysinfo() {
   else
     TEXT+="Incomplete\Zn"
   fi
-  TEXT+="\nArcpatch | Onlinemode: \Zb${ARCPATCH} | ${ONLINEMODE}\Zn"
+  TEXT+="\nArcpatch: \Zb${ARCPATCH}\Zn"
   TEXT+="\nDirectboot | DirectDSM: \Zb${DIRECTBOOT} | ${DIRECTDSM}\Zn"
   TEXT+="\nLoad Kernel: \Zb${KERNELLOAD}\Zn"
   TEXT+="\n\Z4>> Extensions\Zn"
@@ -2081,7 +2080,9 @@ while true; do
         echo "s \"Change Storage Map \" "                                                   >>"${TMP_PATH}/menu"
       fi
       echo "n \"Change Network Config \" "                                                  >>"${TMP_PATH}/menu"
-      echo "u \"Change USB Port Config \" "                                                 >>"${TMP_PATH}/menu"
+      if [ "${PLATFORM}" = "broadwellnk" ]; then
+        echo "u \"Change USB Port Config \" "                                               >>"${TMP_PATH}/menu"
+      fi
       echo "w \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
       echo "x \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
       echo "k \"Load Kernel: \Z4${KERNELLOAD}\Zn \" "                                       >>"${TMP_PATH}/menu"
