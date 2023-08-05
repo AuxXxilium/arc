@@ -1030,6 +1030,8 @@ function usbMenu() {
           writeConfigKey "synoinfo.usbportcfg" "0xff0000" "${USER_CONFIG_FILE}"
           writeConfigKey "synoinfo.internalportcfg" "0xffffff" "${USER_CONFIG_FILE}"
           writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
+          deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           dialog --backtitle "$(backtitle)" --title "Mount USB as Internal" \
           --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
           ;;
@@ -1039,6 +1041,8 @@ function usbMenu() {
           writeConfigKey "synoinfo.usbportcfg" "0x0" "${USER_CONFIG_FILE}"
           deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
           writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
+          deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           dialog --backtitle "$(backtitle)" --title "Mount USB as Normal" \
           ;;
         0) return ;;
