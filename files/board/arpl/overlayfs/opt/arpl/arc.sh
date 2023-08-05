@@ -1026,30 +1026,20 @@ function usbMenu() {
       case "$(<"${TMP_PATH}/resp")" in
         1)
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          PLATFORM=$(readModelKey "${MODEL}" "platform")
-          if [ "${PLATFORM}" = "broadwellnk" ]; then
-            writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
-            writeConfigKey "synoinfo.usbportcfg" "0xff0000" "${USER_CONFIG_FILE}"
-            writeConfigKey "synoinfo.internalportcfg" "0xffffff" "${USER_CONFIG_FILE}"
-            writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
-            dialog --backtitle "$(backtitle)" --title "Mount USB as Internal" \
-            --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
-          else
-            dialog --backtitle "$(backtitle)" --title "Mount USB as Internal" \
-            --aspect 18 --msgbox "You need to select a broadwellnk model!" 0 0
-          fi
+          writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.usbportcfg" "0xff0000" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.internalportcfg" "0xffffff" "${USER_CONFIG_FILE}"
+          writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
+          dialog --backtitle "$(backtitle)" --title "Mount USB as Internal" \
+          --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
           ;;
         2)
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          PLATFORM=$(readModelKey "${MODEL}" "platform")
-          if [ "${PLATFORM}" = "broadwellnk" ]; then
-            deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
-            deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
-            deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
-            writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
-            dialog --backtitle "$(backtitle)" --title "Mount USB as Normal" \
-            --aspect 18 --msgbox "Mount USB as Normal - successful!" 0 0
-          fi
+          deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.usbportcfg" "0x0" "${USER_CONFIG_FILE}"
+          deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
+          writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
+          dialog --backtitle "$(backtitle)" --title "Mount USB as Normal" \
           ;;
         0) return ;;
       esac
