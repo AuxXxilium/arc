@@ -1988,26 +1988,26 @@ function saveMenu() {
 function formatdisks() {
   rm -f "${TMP_PATH}/opts"
   while read POSITION NAME; do
-    [ -z "${POSITION}" ] || [ -z "${NAME}" ] && continue
+    [ -z "${POSITION}" -o -z "${NAME}" ] && continue
     echo "${POSITION}" | grep -q "${LOADER_DEVICE_NAME}" && continue
     echo "\"${POSITION}\" \"${NAME}\" \"off\"" >>"${TMP_PATH}/opts"
   done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd|/dev/nvme" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
   while read POSITION NAME; do
-    [ -z "${POSITION}" ] || [ -z "${NAME}" ] && continue
+    [ -z "${POSITION}" -o -z "${NAME}" ] && continue
     echo "${POSITION}" | grep -q "${LOADER_DEVICE_NAME}" && continue
     echo "\"${POSITION}\" \"${NAME}\" \"off\"" >>"${TMP_PATH}/opts"
   done < <(ls -l /dev/disk/by-path/ | sed 's|../..|/dev|g' | grep -E "/dev/sd|/dev/nvme" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
-  dialog --backtitle "$(backtitle)" --colors --title "Format disk" \
-    --checklist "Format disk" 0 0 0 --file "${TMP_PATH}/opts" \
+  dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
+    --checklist "Advanced" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
   RESP=$(<"${TMP_PATH}/resp")
   [ -z "${RESP}" ] && return
-  dialog --backtitle "$(backtitle)" --colors --title "Format disk" \
+  dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
     --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return
   if [ $(ls /dev/md* | wc -l) -gt 0 ]; then
-    dialog --backtitle "$(backtitle)" --colors --title "Format disk" \
+    dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
       --yesno "Warning:\nThe current hds is in raid, do you still want to format them?" 0 0
     [ $? -ne 0 ] && return
     for I in $(ls /dev/md*); do
@@ -2015,12 +2015,12 @@ function formatdisks() {
     done
   fi
   (
-    for I in ${resp}; do
+    for I in ${RESP}; do
       mkfs.ext4 -T largefile4 ${I}
     done
-  ) | dialog --backtitle "$(backtitle)" --title "Format disk" \
-      --progressbox "Formatting ..." 20 70
-  dialog --backtitle "$(backtitle)" --colors --title "Format disk" --aspect 18 \
+  ) | dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
+    --progressbox "Formatting ..." 20 70
+  dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
     --msgbox "Formatting is complete." 0 0
 }
 
