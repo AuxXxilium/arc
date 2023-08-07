@@ -4,9 +4,6 @@ set -e
 
 . /opt/arpl/include/functions.sh
 
-# Check if machine has EFI
-[ -d /sys/firmware/efi ] && EFI=1 || EFI=0
-
 LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
 BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
 
@@ -131,6 +128,9 @@ if [ "${NETIF_NUM}" -ne "${NETNUM}" ]; then
   done
   CMDLINE["netif_num"]=${NETNUM}
 fi
+
+# Check if machine has EFI
+[ -d /sys/firmware/efi ] && EFI=1 || EFI=0
 
 # Prepare command line
 CMDLINE_LINE=""
