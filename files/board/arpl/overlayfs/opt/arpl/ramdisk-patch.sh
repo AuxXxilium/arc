@@ -28,30 +28,27 @@ mkdir -p "${RAMDISK_PATH}"
 
 # Read Model Data
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 UNIQUE=$(readModelKey "${MODEL}" "unique")
 PLATFORM="$(readModelKey "${MODEL}" "platform")"
-KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compressed")"
 
 # Check if DSM Version changed
 . "${RAMDISK_PATH}/etc/VERSION"
 
-if [ -n "${PRODUCTVER}" -a -n "${BUILDNUM}" -a -n "${SMALLNUM}" ] &&
-  ([ ! "${PRODUCTVER}" = "${majorversion}.${minorversion}" ] || [ ! "${BUILDNUM}" = "${buildnumber}" ] || [ ! "${SMALLNUM}" = "${smallfixnumber}" ]); then
-  OLDVER="${PRODUCTVER}(${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))"
-  NEWVER="${majorversion}.${minorversion}(${buildnumber}$([ ${smallfixnumber:-0} -ne 0 ] && echo "u${smallfixnumber}"))"
-  echo -e "\033[A\n\033[1;32mBuild number changed from \033[1;31m${OLDVER}\033[1;32m to \033[1;31m${NEWVER}\033[0m"
-  PATURL=""
-  PATSUM=""
+PRODUCTVERDSM=${majorversion}.${minorversion}
+
+if [ -z "${PRODUCTVERDSM}" ]; then
+  # Update new buildnumber
+  writeConfigKey "productver" "${PRODUCTVERDSM}" "${USER_CONFIG_FILE}"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+else
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 fi
-# Update new buildnumber
-PRODUCTVER=${majorversion}.${minorversion}
-writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compressed")"
 
 # Sanity check
 [ -z "${PLATFORM}" ] || [ -z "${KVER}" ] && (die "ERROR: Configuration for Model ${MODEL} and Version ${PRODUCTVER} not found." | tee -a "${LOG_FILE}")
