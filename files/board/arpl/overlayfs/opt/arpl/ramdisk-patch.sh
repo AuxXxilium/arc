@@ -19,14 +19,14 @@ LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
 SPACELEFT=$(df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}')
 
 # Unzipping ramdisk
-rm -rf "${RAMDISK_PATH}"  # Force clean
+rm -rf "${RAMDISK_PATH}" # Force clean
 mkdir -p "${RAMDISK_PATH}"
-(cd "${RAMDISK_PATH}"; xz -dc < "${ORI_RDGZ_FILE}" | cpio -idm) >/dev/null 2>&1
+(
+  cd "${RAMDISK_PATH}"
+  xz -dc <"${ORI_RDGZ_FILE}" | cpio -idm
+) >/dev/null 2>&1
 
-# Check if DSM Version changed
-. "${RAMDISK_PATH}/etc/VERSION"
-
-# read -r Model Data
+# Read Model Data
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
@@ -37,6 +37,21 @@ UNIQUE=$(readModelKey "${MODEL}" "unique")
 PLATFORM="$(readModelKey "${MODEL}" "platform")"
 KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
 RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compressed")"
+
+# Check if DSM Version changed
+. "${RAMDISK_PATH}/etc/VERSION"
+
+if [ -n "${PRODUCTVER}" -a -n "${BUILDNUM}" -a -n "${SMALLNUM}" ] &&
+  ([ ! "${PRODUCTVER}" = "${majorversion}.${minorversion}" ] || [ ! "${BUILDNUM}" = "${buildnumber}" ] || [ ! "${SMALLNUM}" = "${smallfixnumber}" ]); then
+  OLDVER="${PRODUCTVER}(${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))"
+  NEWVER="${majorversion}.${minorversion}(${buildnumber}$([ ${smallfixnumber:-0} -ne 0 ] && echo "u${smallfixnumber}"))"
+  echo -e "\033[A\n\033[1;32mBuild number changed from \033[1;31m${OLDVER}\033[1;32m to \033[1;31m${NEWVER}\033[0m"
+  PATURL=""
+  PATSUM=""
+fi
+# Update new buildnumber
+PRODUCTVER=${majorversion}.${minorversion}
+writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
 
 # Sanity check
 [ -z "${PLATFORM}" ] || [ -z "${KVER}" ] && (die "ERROR: Configuration for Model ${MODEL} and Version ${PRODUCTVER} not found." | tee -a "${LOG_FILE}")
@@ -55,23 +70,23 @@ declare -A SYNOINFO
 declare -A ADDONS
 declare -A USERMODULES
 
-# read synoinfo and addons from config
-while IFS=': ' read -r KEY VALUE; do
+# Read synoinfo and addons from config
+while IFS=': ' read KEY VALUE; do
   [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
 done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
-while IFS=': ' read -r KEY VALUE; do
+while IFS=': ' read KEY VALUE; do
   [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
 done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
-# read modules from user config
-while IFS=': ' read -r KEY VALUE; do
+# Read modules from user config
+while IFS=': ' read KEY VALUE; do
   [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
 done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 # Patches
-while read -r f; do
+while read f; do
   echo "Patching with ${f}" >"${LOG_FILE}" 2>&1
-  (cd "${RAMDISK_PATH}" && patch -p1 < "${PATCH_PATH}/${f}") >>"${LOG_FILE}" 2>&1 || dieLog
+  (cd "${RAMDISK_PATH}" && patch -p1 <"${PATCH_PATH}/${f}") >>"${LOG_FILE}" 2>&1 || dieLog
 done < <(readModelArray "${MODEL}" "productvers.[${PRODUCTVER}].patch")
 
 # Patch /etc/synoinfo.conf
@@ -82,16 +97,16 @@ done
 _set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc/synoinfo.conf" >"${LOG_FILE}" 2>&1 || dieLog
 
 # Patch /sbin/init.post
-grep -v -e '^[\t ]*#' -e '^$' "${PATCH_PATH}/config-manipulators.sh" > "${TMP_PATH}/rp.txt"
+grep -v -e '^[\t ]*#' -e '^$' "${PATCH_PATH}/config-manipulators.sh" >"${TMP_PATH}/rp.txt"
 sed -e "/@@@CONFIG-MANIPULATORS-TOOLS@@@/ {" -e "r ${TMP_PATH}/rp.txt" -e 'd' -e '}' -i "${RAMDISK_PATH}/sbin/init.post"
 rm "${TMP_PATH}/rp.txt"
 touch "${TMP_PATH}/rp.txt"
 for KEY in ${!SYNOINFO[@]}; do
-  echo "_set_conf_kv '${KEY}' '${SYNOINFO[${KEY}]}' '/tmpRoot/etc/synoinfo.conf'"          >> "${TMP_PATH}/rp.txt"
-  echo "_set_conf_kv '${KEY}' '${SYNOINFO[${KEY}]}' '/tmpRoot/etc.defaults/synoinfo.conf'" >> "${TMP_PATH}/rp.txt"
+  echo "_set_conf_kv '${KEY}' '${SYNOINFO[${KEY}]}' '/tmpRoot/etc/synoinfo.conf'" >>"${TMP_PATH}/rp.txt"
+  echo "_set_conf_kv '${KEY}' '${SYNOINFO[${KEY}]}' '/tmpRoot/etc.defaults/synoinfo.conf'" >>"${TMP_PATH}/rp.txt"
 done
-echo "_set_conf_kv 'SN' '${SN}' '/tmpRoot/etc/synoinfo.conf'"                              >> "${TMP_PATH}/rp.txt"
-echo "_set_conf_kv 'SN' '${SN}' '/tmpRoot/etc.defaults/synoinfo.conf'"                     >> "${TMP_PATH}/rp.txt"
+echo "_set_conf_kv 'SN' '${SN}' '/tmpRoot/etc/synoinfo.conf'" >>"${TMP_PATH}/rp.txt"
+echo "_set_conf_kv 'SN' '${SN}' '/tmpRoot/etc.defaults/synoinfo.conf'" >>"${TMP_PATH}/rp.txt"
 sed -e "/@@@CONFIG-GENERATED@@@/ {" -e "r ${TMP_PATH}/rp.txt" -e 'd' -e '}' -i "${RAMDISK_PATH}/sbin/init.post"
 rm "${TMP_PATH}/rp.txt"
 
@@ -115,7 +130,7 @@ rm -rf "${TMP_PATH}/modules"
 # Copying fake modprobe
 cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
 # Copying LKM to /usr/lib/modules
-gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" > "${RAMDISK_PATH}/usr/lib/modules/rp.ko"
+gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko"
 
 # Addons
 #MAXDISKS=`readConfigKey "maxdisks" "${USER_CONFIG_FILE}"`
@@ -123,14 +138,15 @@ gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" > "${RAMDISK_PATH}/us
 DT="$(readModelKey "${MODEL}" "dt")"
 
 mkdir -p "${RAMDISK_PATH}/addons"
-echo "#!/bin/sh"                                 > "${RAMDISK_PATH}/addons/addons.sh"
-echo 'echo "addons.sh called with params ${@}"' >> "${RAMDISK_PATH}/addons/addons.sh"
-echo "export PLATFORM=${PLATFORM}"              >> "${RAMDISK_PATH}/addons/addons.sh"
-echo "export MODEL=${MODEL}"                    >> "${RAMDISK_PATH}/addons/addons.sh"
-echo "export MLINK=${PAT_URL}"                  >> "${RAMDISK_PATH}/addons/addons.sh"
-echo "export MCHECKSUM=${PAT_HASH}"             >> "${RAMDISK_PATH}/addons/addons.sh"
-echo "export LAYOUT=${LAYOUT}"                  >> "${RAMDISK_PATH}/addons/addons.sh"
-echo "export KEYMAP=${KEYMAP}"                  >> "${RAMDISK_PATH}/addons/addons.sh"
+mkdir -p "${RAMDISK_PATH}/addons"
+echo "#!/bin/sh" >"${RAMDISK_PATH}/addons/addons.sh"
+echo 'echo "addons.sh called with params ${@}"' >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export PLATFORM=${PLATFORM}" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export MODEL=${MODEL}" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export MLINK=${PAT_URL}" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export MCHECKSUM=${PAT_HASH}" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export LAYOUT=${LAYOUT}" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export KEYMAP=${KEYMAP}" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # Required addons: misc, eudev, disks, wol, acpid, bootwait
@@ -156,8 +172,16 @@ done
 
 [ "2" = "${BUILD:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
 
+# Enable Telnet
+echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
+
 # Build modules dependencies
 /opt/arpl/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
+
+# Network card configuration file
+for N in $(seq 0 7); do
+  echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
+done
 
 # Reassembly ramdisk
 if [ "${RD_COMPRESSED}" == "true" ]; then
