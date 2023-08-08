@@ -1185,7 +1185,7 @@ function backupMenu() {
             [ $? -ne 0 ] && ( rm -f ${LOADER_DISK}; return )
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --infobox "Restore in progress..." 0 0
-            umount /mnt/p1 /mnt/p2 /mnt/p3
+            umount ${BOOTLOADER_PATH} ${SLPART_PATH} ${CACHE_PATH}
             if [ "${IFTOOL}" = "zip" ]; then
               unzip -p "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
             elif [ "${IFTOOL}" = "gzip" ]; then
@@ -1319,7 +1319,7 @@ function backupMenu() {
             [ $? -ne 0 ] && ( rm -f ${LOADER_DISK}; return )
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --infobox "Restore in progress..." 0 0
-            umount /mnt/p1 /mnt/p2 /mnt/p3
+            umount ${BOOTLOADER_PATH} ${SLPART_PATH} ${CACHE_PATH}
             if [ "${IFTOOL}" = "zip" ]; then
               unzip -p "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
             elif [ "${IFTOOL}" = "gzip" ]; then
@@ -1435,7 +1435,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
           --infobox "Installing new Image" 0 0
         # Process complete update
-        umount /mnt/p1 /mnt/p2 /mnt/p3
+        umount ${BOOTLOADER_PATH} ${SLPART_PATH} ${CACHE_PATH}
         dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1) bs=1M conv=fsync
         # Ask for Boot
         rm -f "${TMP_PATH}/arc.img"
@@ -1896,7 +1896,7 @@ function resetPassword() {
       cp "${TMP_PATH}/sdX1/etc/shadow" "${TMP_PATH}/shadow_bak"
       SHADOW_FILE="${TMP_PATH}/shadow_bak"
     fi
-    umount ${I}
+    umount "${I}"
     [ -n "${SHADOW_FILE}" ] && break
   done
   rm -rf "${TMP_PATH}/sdX1"
@@ -1929,7 +1929,7 @@ function resetPassword() {
       mount "${I}" "${TMP_PATH}/sdX1"
       sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "${TMP_PATH}/sdX1/etc/shadow"
       sync
-      umount ${I}
+      umount "${I}"
     done
     rm -rf "${TMP_PATH}/sdX1"
   ) | dialog --backtitle "$(backtitle)" --title "Reset DSM Password" \
@@ -1974,10 +1974,10 @@ function saveMenu() {
       --infobox "Saving ..." 0 0 
   RDXZ_PATH=${TMP_PATH}/rdxz_tmp
   mkdir -p "${RDXZ_PATH}"
-  (cd "${RDXZ_PATH}"; xz -dc < "/mnt/p3/initrd-arpl" | cpio -idm) >/dev/null 2>&1 || true
+  (cd "${RDXZ_PATH}"; xz -dc <"${CACHE_PATH}/initrd-arpl" | cpio -idm) >/dev/null 2>&1 || true
   rm -rf "${RDXZ_PATH}/opt/arpl"
   cp -rf "/opt" "${RDXZ_PATH}"
-  (cd "${RDXZ_PATH}"; find . 2>/dev/null | cpio -o -H newc -R root:root | xz --check=crc32 >"/mnt/p3/initrd-arpl") || true
+  (cd "${RDXZ_PATH}"; find . 2>/dev/null | cpio -o -H newc -R root:root | xz --check=crc32 >"${CACHE_PATH}/initrd-arpl") || true
   rm -rf "${RDXZ_PATH}"
   dialog --backtitle "$(backtitle)" --colors --aspect 18 \
     --msgbox "Save to Disk is complete." 0 0
