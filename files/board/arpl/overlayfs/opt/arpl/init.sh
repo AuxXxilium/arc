@@ -66,9 +66,6 @@ if [ -d "${CACHE_PATH}/patch" ]; then
   ln -s "${CACHE_PATH}/patch" "${PATCH_PATH}"
 fi
 
-# Check if machine has EFI
-[ -d /sys/firmware/efi ] && EFI=1 || EFI=0
-
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
@@ -122,6 +119,16 @@ if [ "${NOTSETMAC}" = "false" ]; then
   done
   # Restart DHCP
   /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
+elif [ "${NOTSETMAC}" = "true" ]; then
+  # Get MAC address
+  ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
+  for N in $(seq 1 ${#ETHX[@]}); do
+    MACR="$(cat /sys/class/net/${ETHX[$((${N}-1))]}/address | sed 's/://g')"
+    # Initialize with real MAC
+    writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+    # Write real Mac to cmdline config
+    writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+  done
 fi
 echo
 
@@ -132,13 +139,14 @@ BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d
 if [ "${BUS}" = "usb" ]; then
   VID="0x$(udevadm info --query property --name ${LOADER_DISK} | grep ID_VENDOR_ID | cut -d= -f2)"
   PID="0x$(udevadm info --query property --name ${LOADER_DISK} | grep ID_MODEL_ID | cut -d= -f2)"
-elif [ "${BUS}" != "ata" ]; then
+  writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
+  writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
+elif [ "${BUS}" = "ata" ]; then
+  deleteConfigKey "vid" "${USER_CONFIG_FILE}"
+  deleteConfigKey "pid" "${USER_CONFIG_FILE}"
+else
   die "Loader disk neither USB or DoM"
 fi
-
-# Save variables to user config file
-writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
-writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 
 # Inform user
 echo -en "Loader disk: \033[1;34m${LOADER_DISK}\033[0m ("
