@@ -142,8 +142,8 @@ if [ "${BUS}" = "usb" ]; then
   writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
   writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 elif [ "${BUS}" = "ata" ]; then
-  deleteConfigKey "vid" "${USER_CONFIG_FILE}"
-  deleteConfigKey "pid" "${USER_CONFIG_FILE}"
+  writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
+  writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 else
   die "Loader disk neither USB or DoM"
 fi
