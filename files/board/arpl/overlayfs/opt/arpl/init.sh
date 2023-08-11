@@ -136,24 +136,20 @@ echo
 VID="0x0000"
 PID="0x0000"
 BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
+[ "${BUS}" = "ata" ] && BUS="sata"
 if [ "${BUS}" = "usb" ]; then
   VID="0x$(udevadm info --query property --name ${LOADER_DISK} | grep ID_VENDOR_ID | cut -d= -f2)"
   PID="0x$(udevadm info --query property --name ${LOADER_DISK} | grep ID_MODEL_ID | cut -d= -f2)"
-  writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
-  writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
-elif [ "${BUS}" = "ata" ]; then
-  writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
-  writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
-else
-  die "Loader disk neither USB or DoM"
+elif [ "${BUS}" != "sata" ] && [ "${BUS}" != "scsi" ]; then
+  die "$(TEXT "Loader disk neither USB or DoM")"
 fi
 
 # Inform user
 echo -en "Loader disk: \033[1;34m${LOADER_DISK}\033[0m ("
 if [ "${BUS}" = "usb" ]; then
-  echo -en "\033[1;34mUSB flashdisk\033[0m"
+  echo -en "\033[1;34m${BUS^^} flashdisk\033[0m"
 elif [ "${BUS}" = "ata" ]; then
-  echo -en "\033[1;34mSATA DoM\033[0m"
+  echo -en "\033[1;34m${BUS^^} DoM\033[0m"
 fi
 echo ")"
 
