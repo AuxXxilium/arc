@@ -26,9 +26,6 @@ else
   MACHINE="NATIVE"
 fi
 
-# Check if machine has EFI
-[ -d /sys/firmware/efi ] && EFI=1 || EFI=0
-
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -251,9 +248,6 @@ function arcbuild() {
   while IFS=': ' read -r KEY VALUE; do
     writeConfigKey "synoinfo.${KEY}" "${VALUE}" "${USER_CONFIG_FILE}"
   done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].synoinfo")
-  # Memory: Set mem_max_mb to the amount of installed memory
-  writeConfigKey "synoinfo.mem_max_mb" "${RAMTOTAL}" "${USER_CONFIG_FILE}"
-  writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
   # Check addons
   while IFS=': ' read -r ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
@@ -384,6 +378,9 @@ function make() {
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  # Memory: Set mem_max_mb to the amount of installed memory
+  writeConfigKey "synoinfo.mem_max_mb" "${RAMTOTAL}" "${USER_CONFIG_FILE}"
+  writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
   # Check if all addon exists
   while IFS=': ' read -r ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
@@ -1377,9 +1374,6 @@ function backupMenu() {
 # Shows update menu to user
 function updateMenu() {
   NEXT="1"
-  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  PLATFORM="$(readModelKey "${MODEL}" "platform")"
-  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
       1 "Full upgrade Loader" \
@@ -1424,13 +1418,13 @@ function updateMenu() {
             --msgbox "Error extracting update file" 0 0
           return 1
         fi
-        if [ -f "${USER_CONFIG_FILE}" ]; then
+        if [ -f "${USER_CONFIG_FILE}" ] && [ -n "${MODEL}" ]; then
           GENHASH=$(cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)
           dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
           --msgbox "Backup config successful!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
         else
           dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
-          --infobox "No config for Backup found!" 0 0
+          --msgbox "No config for Backup found!" 0 0
         fi
         dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
           --infobox "Installing new Image" 0 0
@@ -1561,11 +1555,14 @@ function updateMenu() {
             --msgbox "Error downloading latest version" 0 0
           return 1
         fi
+        PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+        PLATFORM="$(readModelKey "${MODEL}" "platform")"
+        KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
         rm -rf "${MODULES_PATH}"
         mkdir -p "${MODULES_PATH}"
         unzip -o "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}" >/dev/null 2>&1
         # Rebuild modules if model/build is selected
-        if [ -n "${PLATFORM}" -a -n "${KVER}" ]; then
+        if [ -n "${PLATFORM}" ] && [ -n "${KVER}" ]; then
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           while read -r ID DESC; do
             writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
@@ -1664,11 +1661,8 @@ function sysinfo() {
   # Checks for Systeminfo Menu
   CPUINFO="$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')"
   CPUCORES="$(awk -F: '/model name/ {core++} END {print core}' /proc/cpuinfo)"
-  if [ "${EFI}" -eq "1" ]; then
-    BOOTSYS="EFI"
-  elif [ "${EFI}" -eq "0" ]; then
-    BOOTSYS="Legacy"
-  fi
+  # Check if machine has EFI
+  [ -d /sys/firmware/efi ] && BOOTSYS="EFI" || BOOTSYS="Legacy"
   VENDOR=$(dmidecode -s system-product-name)
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ -n "${CONFDONE}" ]; then
