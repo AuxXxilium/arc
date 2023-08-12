@@ -168,7 +168,7 @@ for EXTENSION in ${!EXTENSIONS[@]}; do
     echo -n "${EXTENSION} is not available for this Platform!" | tee -a "${LOG_FILE}"
     exit 1
   fi
-  echo "/extensions/${EXTENSION}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+  echo "/addons/${EXTENSION}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 done
 
 # Required addons: misc, eudev, disks, wol, acpid, bootwait

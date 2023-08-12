@@ -60,7 +60,7 @@ function installExtension() {
   cp "${TMP_PATH}/${EXTENSION}/install.sh" "${RAMDISK_PATH}/addons/${EXTENSION}.sh" 2>"${LOG_FILE}" || dieLog
   chmod +x "${RAMDISK_PATH}/addons/${EXTENSION}.sh"
   [ -d ${TMP_PATH}/${EXTENSION}/root ] && (cp -R "${TMP_PATH}/${EXTENSION}/root/"* "${RAMDISK_PATH}/" 2>"${LOG_FILE}" || dieLog)
-  rm -rf "${TMP_PATH}/${EXTENSION}"
+  #rm -rf "${TMP_PATH}/${EXTENSION}"
   return 0
 }
 
