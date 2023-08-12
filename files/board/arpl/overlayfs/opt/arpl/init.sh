@@ -130,7 +130,7 @@ elif [ "${NOTSETMAC}" = "true" ]; then
     # Write real Mac to cmdline config
     writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   done
-  echo -e "NET: Not set Boot MAC enabled"
+  echo -e "Not set Boot MAC enabled"
 fi
 echo
 

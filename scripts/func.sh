@@ -18,7 +18,7 @@ function getExtractor(){
     local PAT_URL="https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"
     local PAT_FILE="DSM_DS3622xs+_42218.pat"
     local STATUS=$(curl -# -w "%{http_code}" -L "${PAT_URL}" -o "${CACHE_DIR}/${PAT_FILE}")
-    if [ $? -ne 0 -o ${STATUS} -ne 200 ]; then
+    if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
       echo "[E] DSM_DS3622xs%2B_42218.pat download error!"
       rm -rf ${CACHE_DIR}
       exit 1
