@@ -2,6 +2,7 @@
 
 . /opt/arpl/include/functions.sh
 . /opt/arpl/include/addons.sh
+. /opt/arpl/include/extensions.sh
 . /opt/arpl/include/modules.sh
 . /opt/arpl/include/storage.sh
 . /opt/arpl/include/network.sh
@@ -287,7 +288,9 @@ function arcsettings() {
         # read valid serial from file
         SN="$(readModelKey "${MODEL}" "arc.serial")"
         writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-        writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "extensions.shr" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "extensions.oobctl" "" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
         break
       elif [ "${resp}" = "2" ]; then
@@ -295,16 +298,24 @@ function arcsettings() {
         SN="$(generateSerial "${MODEL}")"
         writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+        writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "extensions.shr" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "extensions.oobctl" "" "${USER_CONFIG_FILE}"
         break
       fi
     done
   elif [ "${ARCRECOVERY}" = "true" ] && [ "${ARCAV}" = "Arc" ]; then
-    writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "extensions.shr" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "extensions.oobctl" "" "${USER_CONFIG_FILE}"
   else
     # Generate random serial
     SN="$(generateSerial "${MODEL}")"
     writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "extensions.shr" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "extensions.oobctl" "" "${USER_CONFIG_FILE}"
   fi
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
@@ -353,8 +364,8 @@ function arcnetdisk() {
   unset EXTENSIONS
   declare -A EXTENSIONS
   writeConfigKey "extensions" "{}" "${USER_CONFIG_FILE}"
-  for ADDON in ${resp}; do
-    USERADDONS["${EXTENSION}"]=""
+  for EXTENSION in ${resp}; do
+    USEREXTENSIONS["${EXTENSION}"]=""
     writeConfigKey "extensions.${EXTENSION}" "" "${USER_CONFIG_FILE}"
   done
   EXTENSIONSINFO="$(readConfigEntriesArray "extensions" "${USER_CONFIG_FILE}")"
@@ -665,8 +676,8 @@ function extensionMenu() {
   unset EXTENSIONS
   declare -A EXTENSIONS
   writeConfigKey "extensions" "{}" "${USER_CONFIG_FILE}"
-  for ADDON in ${resp}; do
-    USERADDONS["${EXTENSION}"]=""
+  for EXTENSION in ${resp}; do
+    USEREXTENSIONS["${EXTENSION}"]=""
     writeConfigKey "extensions.${EXTENSION}" "" "${USER_CONFIG_FILE}"
   done
   EXTENSIONSINFO="$(readConfigEntriesArray "extensions" "${USER_CONFIG_FILE}")"
@@ -1457,7 +1468,7 @@ function updateMenu() {
       4 "Update DSM Extensions" \
       5 "Update DSM Modules" \
       6 "Update DSM Configs" \
-      7 "Update DSM LKMs" \
+      7 "Update Loader LKMs" \
       0 "Exit" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return
@@ -1639,7 +1650,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
           --infobox "Installing new Extensions" 0 0
         for PKG in $(ls ${EXTENSIONS_PATH}/*.extension); do
-          ADDON=$(basename ${PKG} | sed 's|.extension||')
+          EXTENSION=$(basename ${PKG} | sed 's|.extension||')
           rm -rf "${EXTENSIONS_PATH}/${EXTENSION}"
           mkdir -p "${EXTENSIONS_PATH}/${EXTENSION}"
           tar -xaf "${PKG}" -C "${EXTENSIONS_PATH}/${EXTENSION}" >/dev/null 2>&1
@@ -1716,23 +1727,23 @@ function updateMenu() {
           --msgbox "Configs updated with success! ${TAG}" 0 0
         ;;
       7)
-        dialog --backtitle "$(backtitle)" --title "Update DSM LKMs" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
           --infobox "Checking latest version" 0 0
         TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
         if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update DSM LKMs" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Update DSM LKMs" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
           --infobox "Downloading latest version: ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip")
         if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update DSM LKMs" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
             --msgbox "Error downloading latest version" 0 0
           return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Update DSM LKMs" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
           --infobox "Extracting latest version" 0 0
         rm -rf "${LKM_PATH}"
         mkdir -p "${LKM_PATH}"
@@ -1740,7 +1751,7 @@ function updateMenu() {
         rm -f "${TMP_PATH}/rp-lkms.zip"
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Update DSM LKMs" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
           --msgbox "LKMs updated with success! ${TAG}" 0 0
         ;;
       0) return ;;
@@ -1830,7 +1841,8 @@ function sysinfo() {
   # Print Config Informations
   TEXT+="\n\Z4> Arc\Zn"
   TEXT+="\nArc Version: \Zb${ARPL_VERSION}\Zn"
-  TEXT+="\nSubversion: \ZbModules ${MODULESVERSION} | Addons ${ADDONSVERSION} | Extensions ${EXTENSIONSVERSION} | LKM ${LKMVERSION} | Configs ${CONFIGSVERSION}\Zn"
+  TEXT+="\nSubversion Loader: \ZbAddons ${ADDONSVERSION} | LKM ${LKMVERSION}\Zn"
+  TEXT+="\nSubversion DSM: \ZbModules ${MODULESVERSION} | Extensions ${EXTENSIONSVERSION} | Configs ${CONFIGSVERSION}\Zn"
   TEXT+="\n\Z4>> DSM\Zn"
   TEXT+="\nModel | Platform: \Zb${MODEL} | ${PLATFORM}\Zn"
   TEXT+="\nDSM | Kernel | LKM: \Zb${PRODUCTVER} | ${KVER} | ${LKM}\Zn"
@@ -2162,7 +2174,7 @@ if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${PRODUCTVER}" ]; then
 fi
 
 # Main loop
-[ -n "${MODEL}" ] && NEXT="4" || NEXT="1"
+[ -n "${MODEL}" ] && NEXT="5" || NEXT="1"
 while true; do
   echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
   echo "1 \"Choose Model for Loader \" "                                                    >>"${TMP_PATH}/menu"

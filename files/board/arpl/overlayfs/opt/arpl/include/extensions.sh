@@ -37,9 +37,9 @@ function checkExtensionExist() {
 ###############################################################################
 # Install Extension into ramdisk image
 # 1 - Extension id
-function installExtensions() {
+function installExtension() {
   EXTENSION="${1}"
-  mkdir -p "${TMP_PATH}/${EXTENSIONS}"
+  mkdir -p "${TMP_PATH}/${EXTENSION}"
   HAS_FILES=0
   # First check generic files
   if [ -f "${EXTENSIONS_PATH}/${EXTENSION}/all.tgz" ]; then
@@ -57,8 +57,8 @@ function installExtensions() {
   done < <(readConfigEntriesArray "available-for" "${EXTENSIONS_PATH}/${EXTENSION}/manifest.yml")
   # If has files to copy, copy it, else return error
   [ ${HAS_FILES} -ne 1 ] || [ ${ACTIVATE} = "false" ] && return 1
-  cp "${TMP_PATH}/${EXTENSION}/install.sh" "${RAMDISK_PATH}/extensions/${EXTENSION}.sh" 2>"${LOG_FILE}" || dieLog
-  chmod +x "${RAMDISK_PATH}/extensions/${EXTENSION}.sh"
+  cp "${TMP_PATH}/${EXTENSION}/install.sh" "${RAMDISK_PATH}/addons/${EXTENSION}.sh" 2>"${LOG_FILE}" || dieLog
+  chmod +x "${RAMDISK_PATH}/addons/${EXTENSION}.sh"
   [ -d ${TMP_PATH}/${EXTENSION}/root ] && (cp -R "${TMP_PATH}/${EXTENSION}/root/"* "${RAMDISK_PATH}/" 2>"${LOG_FILE}" || dieLog)
   rm -rf "${TMP_PATH}/${EXTENSION}"
   return 0
