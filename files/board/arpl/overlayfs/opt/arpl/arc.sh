@@ -328,6 +328,38 @@ function arcnetdisk() {
     # Get Portmap for Loader
     getmap
   fi
+  # Ask for Extensions
+  ALLEXTENSIONS="$(availableExtensions "${PLATFORM}" "${KVER}")"
+  # read Extensions from user config
+  unset EXTENSIONS
+  declare -A EXTENSIONS
+  while IFS=': ' read -r KEY VALUE; do
+    [ -n "${KEY}" ] && EXTENSIONS["${KEY}"]="${VALUE}"
+  done < <(readConfigMap "extensions" "${USER_CONFIG_FILE}")
+  rm "${TMP_PATH}/opts"
+  touch "${TMP_PATH}/opts"
+  while read -r EXTENSION DESC; do
+    arrayExistItem "${EXTENSION}" "${!EXTENSIONS[@]}" && ACT="on" || ACT="off"         # Check if addon has already been added
+    echo -e "${EXTENSION} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
+  done <<<${ALLEXTENSIONS}
+  dialog --backtitle "$(backtitle)" --title "DSM Extensions" --aspect 18 \
+    --checklist "Select DSM Extensions to include\nSelect with SPACE" 0 0 0 \
+    --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
+  [ $? -ne 0 ] && return 1
+  resp=$(<"${TMP_PATH}/resp")
+  [ -z "${resp}" ] && continue
+  dialog --backtitle "$(backtitle)" --title "DSM Extensions" \
+      --infobox "Writing to user config" 0 0
+  unset EXTENSIONS
+  declare -A EXTENSIONS
+  writeConfigKey "extensions" "{}" "${USER_CONFIG_FILE}"
+  for ADDON in ${resp}; do
+    USERADDONS["${EXTENSION}"]=""
+    writeConfigKey "extensions.${EXTENSION}" "" "${USER_CONFIG_FILE}"
+  done
+  EXTENSIONSINFO="$(readConfigEntriesArray "extensions" "${USER_CONFIG_FILE}")"
+  dialog --backtitle "$(backtitle)" --title "DSM Extensions" \
+    --msgbox "DSM Extensions selected:\n${EXTENSIONSINFO}" 0 0
   # Config is done
   writeConfigKey "arc.confdone" "1" "${USER_CONFIG_FILE}"
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
@@ -559,7 +591,7 @@ function editUserConfig() {
 }
 
 ###############################################################################
-# Shows option to manage addons
+# Shows option to manage Addons
 function addonMenu() {
   # read platform and kernel version to check if addon exists
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -579,8 +611,8 @@ function addonMenu() {
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"         # Check if addon has already been added
     echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
   done <<<${ALLADDONS}
-  dialog --backtitle "$(backtitle)" --title "Addons" --aspect 18 \
-    --checklist "Select Addons to include or remove\nSelect with SPACE" 0 0 0 \
+  dialog --backtitle "$(backtitle)" --title "Loader Addons" --aspect 18 \
+    --checklist "Select Loader Addons to include\nSelect with SPACE" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
   resp=$(<"${TMP_PATH}/resp")
@@ -596,7 +628,50 @@ function addonMenu() {
   done
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --title "Addons" \
-    --msgbox "Addons selected:\n${ADDONSINFO}" 0 0
+    --msgbox "Loader Addons selected:\n${ADDONSINFO}" 0 0
+  deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+}
+
+###############################################################################
+# Shows option to manage Extension
+function extensionMenu() {
+  # read platform and kernel version to check if addon exists
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  ALLEXTENSIONS="$(availableExtensions "${PLATFORM}" "${KVER}")"
+  # read addons from user config
+  unset EXTENSIONS
+  declare -A EXTENSIONS
+  while IFS=': ' read -r KEY VALUE; do
+    [ -n "${KEY}" ] && EXTENSIONS["${KEY}"]="${VALUE}"
+  done < <(readConfigMap "extensions" "${USER_CONFIG_FILE}")
+  rm "${TMP_PATH}/opts"
+  touch "${TMP_PATH}/opts"
+  while read -r EXTENSION DESC; do
+    arrayExistItem "${EXTENSION}" "${!EXTENSIONS[@]}" && ACT="on" || ACT="off"         # Check if addon has already been added
+    echo -e "${EXTENSION} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
+  done <<<${ALLEXTENSIONS}
+  dialog --backtitle "$(backtitle)" --title "DSM Extensions" --aspect 18 \
+    --checklist "Select DSM Extensions to include\nSelect with SPACE" 0 0 0 \
+    --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
+  [ $? -ne 0 ] && return 1
+  resp=$(<"${TMP_PATH}/resp")
+  [ -z "${resp}" ] && continue
+  dialog --backtitle "$(backtitle)" --title "DSM Extensions" \
+      --infobox "Writing to user config" 0 0
+  unset EXTENSIONS
+  declare -A EXTENSIONS
+  writeConfigKey "extensions" "{}" "${USER_CONFIG_FILE}"
+  for ADDON in ${resp}; do
+    USERADDONS["${EXTENSION}"]=""
+    writeConfigKey "extensions.${EXTENSION}" "" "${USER_CONFIG_FILE}"
+  done
+  EXTENSIONSINFO="$(readConfigEntriesArray "extensions" "${USER_CONFIG_FILE}")"
+  dialog --backtitle "$(backtitle)" --title "DSM Extensions" \
+    --msgbox "DSM Extensions selected:\n${EXTENSIONSINFO}" 0 0
   deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
@@ -1376,64 +1451,65 @@ function updateMenu() {
   NEXT="1"
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
-      1 "Full upgrade Loader" \
+      1 "Full Upgrade Loader" \
       2 "Update Arc Loader" \
-      3 "Update Addons" \
-      4 "Update Modules" \
-      5 "Update Configs" \
-      6 "Update LKMs" \
+      3 "Update Loader Addons" \
+      4 "Update DSM Extensions" \
+      5 "Update DSM Modules" \
+      6 "Update DSM Configs" \
+      7 "Update DSM LKMs" \
       0 "Exit" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return
     case "$(<"${TMP_PATH}/resp")" in
       1)
-        dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
           --infobox "Checking latest version" 0 0
         ACTUALVERSION="${ARPL_VERSION}"
         TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
         if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           return 1
         fi
         if [ "${ACTUALVERSION}" = "${TAG}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
             --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
           [ $? -ne 0 ] && continue
         fi
-        dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
           --infobox "Downloading latest version ${TAG}" 0 0
         # Download update file
         STATUS=$(curl --insecure -w "%{http_code}" -L \
           "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
         if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-          dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
             --msgbox "Error downloading update file" 0 0
           return 1
         fi
         unzip -o "${TMP_PATH}/arc-${TAG}.img.zip" -d "${TMP_PATH}"
         rm -f "${TMP_PATH}/arc-${TAG}.img.zip"
         if [ $? -ne 0 ]; then
-          dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
             --msgbox "Error extracting update file" 0 0
           return 1
         fi
         if [ -f "${USER_CONFIG_FILE}" ] && [ -n "${MODEL}" ]; then
           GENHASH=$(cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)
-          dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
           --msgbox "Backup config successful!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
         else
-          dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
           --msgbox "No config for Backup found!" 0 0
         fi
-        dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
           --infobox "Installing new Image" 0 0
         # Process complete update
         umount ${BOOTLOADER_PATH} ${SLPART_PATH} ${CACHE_PATH}
         dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1) bs=1M conv=fsync
         # Ask for Boot
         rm -f "${TMP_PATH}/arc.img"
-        dialog --backtitle "$(backtitle)" --title "Full upgrade Loader" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
           --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
         [ $? -ne 0 ] && continue
         exec reboot
@@ -1502,29 +1578,29 @@ function updateMenu() {
         exit
         ;;
       3)
-        dialog --backtitle "$(backtitle)" --title "Update addons" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
           --infobox "Checking latest version" 0 0
         TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
         if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update addons" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Update addons" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
           --infobox "Downloading latest version: ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip")
         if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update addons" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
             --msgbox "Error downloading new version" 0 0
           return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Update addons" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
           --infobox "Extracting latest version" 0 0
         rm -rf "${ADDONS_PATH}"
         mkdir -p "${ADDONS_PATH}"
         unzip -o "${TMP_PATH}/addons.zip" -d "${ADDONS_PATH}" >/dev/null 2>&1
-        dialog --backtitle "$(backtitle)" --title "Update addons" --aspect 18 \
-          --infobox "Installing new addons" 0 0
+        dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
+          --infobox "Installing new Addons" 0 0
         for PKG in $(ls ${ADDONS_PATH}/*.addon); do
           ADDON=$(basename ${PKG} | sed 's|.addon||')
           rm -rf "${ADDONS_PATH}/${ADDON}"
@@ -1535,23 +1611,60 @@ function updateMenu() {
         rm -f "${TMP_PATH}/addons.zip"
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Update addons" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
           --msgbox "Addons updated with success! ${TAG}" 0 0
         ;;
       4)
-        dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
           --infobox "Checking latest version" 0 0
-        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-extensions/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
         if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
+          --infobox "Downloading latest version: ${TAG}" 0 0
+        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-extensions/releases/download/${TAG}/extensions.zip" -o "${TMP_PATH}/extensions.zip")
+        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
+          dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
+            --msgbox "Error downloading new version" 0 0
+          return 1
+        fi
+        dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
+          --infobox "Extracting latest version" 0 0
+        rm -rf "${EXTENSIONS_PATH}"
+        mkdir -p "${EXTENSIONS_PATH}"
+        unzip -o "${TMP_PATH}/extensions.zip" -d "${EXTENSIONS_PATH}" >/dev/null 2>&1
+        dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
+          --infobox "Installing new Extensions" 0 0
+        for PKG in $(ls ${EXTENSIONS_PATH}/*.extension); do
+          ADDON=$(basename ${PKG} | sed 's|.extension||')
+          rm -rf "${EXTENSIONS_PATH}/${EXTENSION}"
+          mkdir -p "${EXTENSIONS_PATH}/${EXTENSION}"
+          tar -xaf "${PKG}" -C "${EXTENSIONS_PATH}/${EXTENSION}" >/dev/null 2>&1
+          rm -f "${EXTENSIONS_PATH}/${EXTENSION}.extension"
+        done
+        rm -f "${TMP_PATH}/extensions.zip"
+        deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
+          --msgbox "Extensions updated with success! ${TAG}" 0 0
+        ;;
+      5)
+        dialog --backtitle "$(backtitle)" --title "Update DSM Modules" --aspect 18 \
+          --infobox "Checking latest version" 0 0
+        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+          dialog --backtitle "$(backtitle)" --title "Update DSM Modules" --aspect 18 \
+            --msgbox "Error checking new version" 0 0
+          return 1
+        fi
+        dialog --backtitle "$(backtitle)" --title "Update DSM Modules" --aspect 18 \
           --infobox "Downloading latest version" 0 0
         STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
         if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Update DSM Modules" --aspect 18 \
             --msgbox "Error downloading latest version" 0 0
           return 1
         fi
@@ -1571,27 +1684,27 @@ function updateMenu() {
         rm -f "${TMP_PATH}/modules.zip"
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update DSM Modules" --aspect 18 \
           --msgbox "Modules updated to ${TAG} with success!" 0 0
         ;;
-      5)
-        dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
+      6)
+        dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
           --infobox "Checking latest version" 0 0
         TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
         if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
           --infobox "Downloading latest version: ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")
         if [ $? -ne 0 ] || [] ${STATUS} -ne 200 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
             --msgbox "Error downloading latest version" 0 0
           return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
           --infobox "Extracting latest version" 0 0
         rm -rf "${MODEL_CONFIG_PATH}"
         mkdir -p "${MODEL_CONFIG_PATH}"
@@ -1599,27 +1712,27 @@ function updateMenu() {
         rm -f "${TMP_PATH}/configs.zip"
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
           --msgbox "Configs updated with success! ${TAG}" 0 0
         ;;
-      6)
-        dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
+      7)
+        dialog --backtitle "$(backtitle)" --title "Update DSM LKMs" --aspect 18 \
           --infobox "Checking latest version" 0 0
         TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
         if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Update DSM LKMs" --aspect 18 \
             --msgbox "Error checking new version" 0 0
           return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update DSM LKMs" --aspect 18 \
           --infobox "Downloading latest version: ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip")
         if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Update DSM LKMs" --aspect 18 \
             --msgbox "Error downloading latest version" 0 0
           return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update DSM LKMs" --aspect 18 \
           --infobox "Extracting latest version" 0 0
         rm -rf "${LKM_PATH}"
         mkdir -p "${LKM_PATH}"
@@ -1627,7 +1740,7 @@ function updateMenu() {
         rm -f "${TMP_PATH}/rp-lkms.zip"
         deleteConfigKey "arc.builddone" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update DSM LKMs" --aspect 18 \
           --msgbox "LKMs updated with success! ${TAG}" 0 0
         ;;
       0) return ;;
@@ -1698,9 +1811,11 @@ function sysinfo() {
   fi
   if [ -n "${CONFDONE}" ]; then
     ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
+    EXTENSIONSINFO="$(readConfigEntriesArray "extensions" "${USER_CONFIG_FILE}")"
   fi
   MODULESVERSION=$(cat "${MODULES_PATH}/VERSION")
   ADDONSVERSION=$(cat "${ADDONS_PATH}/VERSION")
+  EXTENSIONSVERSION=$(cat "${EXTENSIONS_PATH}/VERSION")
   LKMVERSION=$(cat "${LKM_PATH}/VERSION")
   CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
   TEXT=""
@@ -1715,7 +1830,7 @@ function sysinfo() {
   # Print Config Informations
   TEXT+="\n\Z4> Arc\Zn"
   TEXT+="\nArc Version: \Zb${ARPL_VERSION}\Zn"
-  TEXT+="\nSubversion: \ZbModules ${MODULESVERSION} | Addons ${ADDONSVERSION} | LKM ${LKMVERSION} | Configs ${CONFIGSVERSION}\Zn"
+  TEXT+="\nSubversion: \ZbModules ${MODULESVERSION} | Addons ${ADDONSVERSION} | Extensions ${EXTENSIONSVERSION} | LKM ${LKMVERSION} | Configs ${CONFIGSVERSION}\Zn"
   TEXT+="\n\Z4>> DSM\Zn"
   TEXT+="\nModel | Platform: \Zb${MODEL} | ${PLATFORM}\Zn"
   TEXT+="\nDSM | Kernel | LKM: \Zb${PRODUCTVER} | ${KVER} | ${LKM}\Zn"
@@ -1734,8 +1849,9 @@ function sysinfo() {
   TEXT+="\nDirectboot | DirectDSM: \Zb${DIRECTBOOT} | ${DIRECTDSM}\Zn"
   TEXT+="\nLoad Kernel: \Zb${KERNELLOAD}\Zn"
   TEXT+="\n\Z4>> Extensions\Zn"
-  TEXT+="\nAddons loaded: \Zb${ADDONSINFO}\Zn"
-  TEXT+="\nModules loaded: \Zb${MODULESINFO}\Zn"
+  TEXT+="\nLoader Addons selected: \Zb${ADDONSINFO}\Zn"
+  TEXT+="\nDSM Extensions selected: \Zb${EXTENSIONSINFO}\Zn"
+  TEXT+="\nArc Modules loaded: \Zb${MODULESINFO}\Zn"
   TEXT+="\n\Z4>> Settings\Zn"
   if [ "${REMAP}" = "1" ] || [ "${REMAP}" == "2" ]; then
     TEXT+="\nSataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
@@ -2051,17 +2167,18 @@ while true; do
   echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
   echo "1 \"Choose Model for Loader \" "                                                    >>"${TMP_PATH}/menu"
   if [ -n "${CONFDONE}" ]; then
-    echo "4 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
+    echo "5 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
   fi
   if [ -n "${BUILDDONE}" ]; then
-    echo "5 \"Boot Loader \" "                                                              >>"${TMP_PATH}/menu"
+    echo "6 \"Boot Loader \" "                                                              >>"${TMP_PATH}/menu"
   fi
   echo "= \"\Z4========== Info ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
   echo "= \"\Z4========= System =========\Zn \" "                                           >>"${TMP_PATH}/menu"
   if [ -n "${CONFDONE}" ]; then
-    echo "2 \"Addons \" "                                                                   >>"${TMP_PATH}/menu"
-    echo "3 \"Modules \" "                                                                  >>"${TMP_PATH}/menu"
+    echo "2 \"Loader Addons \" "                                                            >>"${TMP_PATH}/menu"
+    echo "3 \"DSM Extensions \" "                                                           >>"${TMP_PATH}/menu"
+    echo "4 \"DSM Modules \" "                                                              >>"${TMP_PATH}/menu"
     if [ -n "${ARCOPTS}" ]; then
       echo "7 \"\Z1Hide Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     else
@@ -2128,14 +2245,15 @@ while true; do
   [ $? -ne 0 ] && break
   case $(<"${TMP_PATH}/resp") in
     # Main Section
-    1) arcMenu; NEXT="4" ;;
-    4) make; NEXT="5" ;;
-    5) boot && exit 0 ;;
+    1) arcMenu; NEXT="5" ;;
+    5) make; NEXT="6" ;;
+    6) boot && exit 0 ;;
     # Info Section
     a) sysinfo; NEXT="a" ;;
     # System Section
     2) addonMenu; NEXT="2" ;;
-    3) modulesMenu; NEXT="3" ;;
+    3) extensionMenu; NEXT="3" ;;
+    4) modulesMenu; NEXT="4" ;;
     # Arc Section
     7) [ "${ARCOPTS}" = "" ] && ARCOPTS='1' || ARCOPTS=''
        ARCOPTS="${ARCOPTS}"

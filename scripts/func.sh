@@ -6,7 +6,7 @@
 # See /LICENSE for more information.
 #
 
-# Get extractor
+# Get Extractor
 # $1 path
 function getExtractor(){
     echo "Getting syno extractor begin"
@@ -46,7 +46,6 @@ function getExtractor(){
     echo "Getting syno extractor end"
 }
 
-
 # Get latest LKMs
 # $1 path
 function getLKMs() {
@@ -65,8 +64,7 @@ function getLKMs() {
     echo "Getting LKMs end - ${TAG}"
 }
 
-
-# Get latest addons and install its
+# Get latest Addons
 # $1 path
 function getAddons() {
     echo "Getting Addons begin"
@@ -92,8 +90,33 @@ function getAddons() {
     echo "Getting Addons end - ${TAG}"
 }
 
+# Get latest Extensions
+# $1 path
+function getAddons() {
+    echo "Getting Extensions begin"
+    local DEST_PATH="${1:-extensions}"
+    local CACHE_DIR="/tmp/extensions"
+    local CACHE_FILE="/tmp/extensions.zip"
+    TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-extensions/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+    STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-extensions/releases/download/${TAG}/extensions.zip" -o "${CACHE_FILE}")
+    echo "TAG=${TAG}; Status=${STATUS}"
+    [ ${STATUS} -ne 200 ] && exit 1
+    rm -rf "${DEST_PATH}"; mkdir -p "${DEST_PATH}"
+    # Install Extensions
+    rm -rf "${CACHE_DIR}"; mkdir -p "${CACHE_DIR}"
+    unzip "${CACHE_FILE}" -d "${CACHE_DIR}"
+    echo "Installing Extensions to ${DEST_PATH}"
+    [ -f /tmp/extensions/VERSION ] && cp -f /tmp/extensions/VERSION ${DEST_PATH}/
+    for PKG in $(ls ${CACHE_DIR}/*.extension); do
+      ADDON=$(basename "${PKG}" .extension)
+      mkdir -p "${DEST_PATH}/${EXTENSION}"
+      echo "Extracting ${PKG} to ${DEST_PATH}/${EXTENSION}"
+      tar -xaf "${PKG}" -C "${DEST_PATH}/${EXTENSION}"
+    done
+    echo "Getting Extensions end - ${TAG}"
+}
 
-# Get latest modules
+# Get latest Modules
 # $1 path
 function getModules() {
     echo "Getting Modules begin"
@@ -111,7 +134,7 @@ function getModules() {
     echo "Getting Modules end - ${TAG}"
 }
 
-# Get latest configs
+# Get latest Configs
 # $1 path
 function getConfigs() {
     echo "Getting Configs begin"

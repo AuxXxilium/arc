@@ -84,6 +84,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "extensions" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
@@ -107,7 +108,7 @@ if [ "${NOTSETMAC}" = "false" ]; then
     writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
     if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
       MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-      echo "Setting ${ETHX[$((${N}-1))]} MAC to ${MAC}"
+      echo "NET: Setting ${ETHX[$((${N}-1))]} MAC to ${MAC}"
       ip link set dev ${ETHX[$((${N}-1))]} address ${MAC} >/dev/null 2>&1
     elif [ -z "${MACF}" ]; then
       # Write real Mac to cmdline config
@@ -115,7 +116,7 @@ if [ "${NOTSETMAC}" = "false" ]; then
     fi
     # Enable Wake on Lan, ignore errors
     ethtool -s ${ETHX[$((${N}-1))]} wol g 2>/dev/null
-    echo -e "WOL enabled: ${ETHX[$((${N}-1))]}"
+    echo -e "NET: WOL enabled: ${ETHX[$((${N}-1))]}"
   done
   # Restart DHCP
   /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
@@ -129,6 +130,7 @@ elif [ "${NOTSETMAC}" = "true" ]; then
     # Write real Mac to cmdline config
     writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   done
+  echo -e "NET: Not set Boot MAC enabled"
 fi
 echo
 
@@ -242,5 +244,6 @@ mkdir -p "${MODULES_PATH}"
 
 # Load arc
 install-addons.sh
+install-extensions.sh
 sleep 3
 arc.sh

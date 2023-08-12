@@ -19,6 +19,7 @@ rm -rf ".buildroot/board/arpl/p3"
 getExtractor "files/board/arpl/p3/extractor"
 getLKMs "files/board/arpl/p3/lkms"
 getAddons "files/board/arpl/p3/addons"
+getExtensions "files/board/arpl/p3/extensions"
 getModules "files/board/arpl/p3/modules"
 getConfigs "files/board/arpl/p3/configs"
 

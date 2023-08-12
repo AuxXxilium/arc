@@ -2,6 +2,7 @@
 
 . /opt/arpl/include/functions.sh
 . /opt/arpl/include/addons.sh
+. /opt/arpl/include/extensions.sh
 
 set -o pipefail # Get exit code from process piped
 
@@ -65,15 +66,19 @@ writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
 
 declare -A SYNOINFO
 declare -A ADDONS
+declare -A EXTENSIONS
 declare -A USERMODULES
 
-# Read synoinfo and addons from config
+# Read synoinfo, addons and extensions from config
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
 done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
 done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+while IFS=': ' read -r KEY VALUE; do
+  [ -n "${KEY}" ] && EXTENSIONS["${KEY}"]="${VALUE}"
+done < <(readConfigMap "extensions" "${USER_CONFIG_FILE}")
 
 # Read modules from user config
 while IFS=': ' read -r KEY VALUE; do
@@ -146,7 +151,7 @@ echo "export LAYOUT=${LAYOUT}" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export KEYMAP=${KEYMAP}" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
-# User addons
+# User Addons
 for ADDON in ${!ADDONS[@]}; do
   PARAMS=${ADDONS[${ADDON}]}
   if ! installAddon ${ADDON}; then
@@ -154,6 +159,16 @@ for ADDON in ${!ADDONS[@]}; do
     exit 1
   fi
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+done
+
+# User Extensions
+for EXTENSION in ${!EXTENSIONS[@]}; do
+  PARAMS=${EXTENSIONS[${EXTENSION}]}
+  if ! installExtension ${EXTENSION}; then
+    echo -n "${EXTENSION} is not available for this Platform!" | tee -a "${LOG_FILE}"
+    exit 1
+  fi
+  echo "/extensions/${EXTENSION}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 done
 
 # Required addons: misc, eudev, disks, wol, acpid, bootwait
