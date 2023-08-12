@@ -92,7 +92,7 @@ function getAddons() {
 
 # Get latest Extensions
 # $1 path
-function getAddons() {
+function getExtensions() {
     echo "Getting Extensions begin"
     local DEST_PATH="${1:-extensions}"
     local CACHE_DIR="/tmp/extensions"
