@@ -108,7 +108,7 @@ if [ "${NOTSETMAC}" = "false" ]; then
     writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
     if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
       MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-      echo "NET: Setting ${ETHX[$((${N}-1))]} MAC to ${MAC}"
+      echo "Setting ${ETHX[$((${N}-1))]} MAC to ${MAC}"
       ip link set dev ${ETHX[$((${N}-1))]} address ${MAC} >/dev/null 2>&1
     elif [ -z "${MACF}" ]; then
       # Write real Mac to cmdline config
@@ -116,7 +116,7 @@ if [ "${NOTSETMAC}" = "false" ]; then
     fi
     # Enable Wake on Lan, ignore errors
     ethtool -s ${ETHX[$((${N}-1))]} wol g 2>/dev/null
-    echo -e "NET: WOL enabled: ${ETHX[$((${N}-1))]}"
+    echo -e "WOL enabled: ${ETHX[$((${N}-1))]}"
   done
   # Restart DHCP
   /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
