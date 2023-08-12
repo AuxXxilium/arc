@@ -37,10 +37,10 @@ cp -rf files/* .buildroot/
 
 cd .buildroot
 echo "Generating default config"
-make BR2_EXTERNAL=../external -j`nproc` arpl_defconfig
+make BR2_EXTERNAL=../external -j$(nproc) arpl_defconfig
 echo "Version: ${VERSION}"
 echo "Building... Drink a coffee and wait!"
-make BR2_EXTERNAL=../external -j`nproc`
+make BR2_EXTERNAL=../external -j$(nproc)
 cd -
 rm -f arc.img
 cp -f arpl.img arc.img
