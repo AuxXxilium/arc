@@ -6,7 +6,6 @@ set -e
 
 LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
 BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
-[ "${BUS}" = "ata" ] && BUS="sata"
 
 # Print text centralized
 clear
@@ -18,7 +17,11 @@ printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
 TITLE="BOOTING..."
 [ -d "/sys/firmware/efi" ] && TITLE+=" [EFI]" || TITLE+=" [Legacy]"
-[ "${BUS}" = "usb" ] && TITLE+=" [${BUS^^} flashdisk]" || TITLE+=" [${BUS^^} DoM]"
+if [ "${BUS}" = "usb" ]; then
+  TITLE+=" [USB flashdisk]"
+elif [ "${BUS}" = "ata" ]; then
+  TITLE+=" [SATA DoM]"
+fi
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
 
 # Check if DSM ramdisk changed, patch it if necessary
@@ -92,7 +95,7 @@ done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 # Read KVER from Model Config
 KVER=$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")
 
-if [ ! "${BUS}" = "usb" ]; then
+if [ "${BUS}" = "ata" ]; then
   LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
   SIZE=$(($(cat /sys/block/${LOADER_DEVICE_NAME}/size)/2048+10))
   # Read SATADoM type
@@ -133,7 +136,7 @@ fi
 CMDLINE_LINE=""
 grep -q "force_junior" /proc/cmdline && CMDLINE_LINE+="force_junior "
 [ "${EFI}" -eq "1" ] && CMDLINE_LINE+="withefi " || CMDLINE_LINE+="noefi "
-[ ! "${BUS}" = "usb" ] && CMDLINE_LINE+="synoboot_satadom=${DOM} dom_szmax=${SIZE} "
+[ "${BUS}" = "ata" ] && CMDLINE_LINE+="synoboot_satadom=${DOM} dom_szmax=${SIZE} "
 CMDLINE_DIRECT="${CMDLINE_LINE}"
 CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 loglevel=15 log_buf_len=32M"
 for KEY in ${!CMDLINE[@]}; do
