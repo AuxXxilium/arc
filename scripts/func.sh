@@ -108,7 +108,7 @@ function getExtensions() {
     echo "Installing Extensions to ${DEST_PATH}"
     [ -f /tmp/extensions/VERSION ] && cp -f /tmp/extensions/VERSION ${DEST_PATH}/
     for PKG in $(ls ${CACHE_DIR}/*.extension); do
-      ADDON=$(basename "${PKG}" .extension)
+      EXTENSION=$(basename "${PKG}" .extension)
       mkdir -p "${DEST_PATH}/${EXTENSION}"
       echo "Extracting ${PKG} to ${DEST_PATH}/${EXTENSION}"
       tar -xaf "${PKG}" -C "${DEST_PATH}/${EXTENSION}"
