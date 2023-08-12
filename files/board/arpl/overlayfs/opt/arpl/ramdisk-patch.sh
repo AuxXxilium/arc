@@ -146,6 +146,16 @@ echo "export LAYOUT=${LAYOUT}" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export KEYMAP=${KEYMAP}" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
+# User addons
+for ADDON in ${!ADDONS[@]}; do
+  PARAMS=${ADDONS[${ADDON}]}
+  if ! installAddon ${ADDON}; then
+    echo -n "${ADDON} is not available for this Platform!" | tee -a "${LOG_FILE}"
+    exit 1
+  fi
+  echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+done
+
 # Required addons: misc, eudev, disks, wol, acpid, bootwait
 installAddon misc
 echo "/addons/misc.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
@@ -157,20 +167,10 @@ installAddon wol
 echo "/addons/wol.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon localrss
 echo "/addons/localrss.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-# User addons
-for ADDON in ${!ADDONS[@]}; do
-  PARAMS=${ADDONS[${ADDON}]}
-  if ! installAddon ${ADDON}; then
-    echo -n "${ADDON} is not available for this Platform!" | tee -a "${LOG_FILE}"
-    exit 1
-  fi
-  echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-done
-
-[ "2" = "${BUILD:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
-
 # Enable Telnet
 echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
+
+[ "2" = "${BUILD:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
 
 # Build modules dependencies
 /opt/arpl/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
