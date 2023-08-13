@@ -97,8 +97,9 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 fi
 
+ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
-if [ "${NOTSETMAC}" = "false" ]; then
+if [ "${ARCPATCH}" = "true" ] && [ "${NOTSETMAC}" = "false" ]; then
   # Get MAC address
   ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
   for N in $(seq 1 ${#ETHX[@]}); do
@@ -109,18 +110,14 @@ if [ "${NOTSETMAC}" = "false" ]; then
     if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
       MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
       echo "Setting ${ETHX[$((${N}-1))]} MAC to ${MAC}"
-      ip link set dev ${ETHX[$((${N}-1))]} address ${MAC} >/dev/null 2>&1
+      ip link set dev ${ETHX[$((${N}-1))]} address ${MAC} >/dev/null 2>&1 && \
+        (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
     elif [ -z "${MACF}" ]; then
       # Write real Mac to cmdline config
       writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
     fi
-    # Enable Wake on Lan, ignore errors
-    ethtool -s ${ETHX[$((${N}-1))]} wol g 2>/dev/null
-    echo -e "WOL enabled: ${ETHX[$((${N}-1))]}"
   done
-  # Restart DHCP
-  /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
-elif [ "${NOTSETMAC}" = "true" ]; then
+else
   # Get MAC address
   ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
   for N in $(seq 1 ${#ETHX[@]}); do
@@ -130,8 +127,10 @@ elif [ "${NOTSETMAC}" = "true" ]; then
     # Write real Mac to cmdline config
     writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   done
-  echo -e "Not set Boot MAC enabled"
 fi
+# Enable Wake on Lan, ignore errors
+ethtool -s ${ETHX[$((${N}-1))]} wol g 2>/dev/null
+echo -e "WOL enabled: ${ETHX[$((${N}-1))]}"
 echo
 
 # Get the VID/PID if we are in USB
@@ -196,6 +195,8 @@ echo
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
 ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
+# No network devices
+[ ${#ETHX[@]} -le 0 ] && die "NIC not found!"
 echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
 for N in $(seq 0 $((${#ETHX[@]}-1))); do
   DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
