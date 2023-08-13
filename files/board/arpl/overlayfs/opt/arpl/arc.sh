@@ -2239,8 +2239,8 @@ while true; do
   fi
   echo "= \"\Z4========== Info ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
-  echo "= \"\Z4========= System =========\Zn \" "                                           >>"${TMP_PATH}/menu"
   if [ -n "${CONFDONE}" ]; then
+    echo "= \"\Z4========= System =========\Zn \" "                                         >>"${TMP_PATH}/menu"
     echo "2 \"Loader Addons \" "                                                            >>"${TMP_PATH}/menu"
     echo "3 \"DSM Extensions \" "                                                           >>"${TMP_PATH}/menu"
     echo "4 \"DSM Modules \" "                                                              >>"${TMP_PATH}/menu"
