@@ -2367,7 +2367,7 @@ while true; do
     h) editUserConfig; NEXT="h" ;;
     # DSM Section
     9) [ "${DSMOPTS}" = "" ] && DSMOPTS='1' || DSMOPTS=''
-      DEVOPTS="${DSMOPTS}"
+      DSMOPTS="${DSMOPTS}"
       NEXT="9"
       ;;
     w) downgradeMenu; NEXT="w" ;;
