@@ -1149,6 +1149,7 @@ function backupMenu() {
         4 "Restore Loader Disk" \
         5 "Backup Config with Code" \
         6 "Restore Config with Code" \
+        7 "Recover from DSM" \
         0 "Exit" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return
@@ -1392,6 +1393,7 @@ function backupMenu() {
         1 "Restore Config" \
         2 "Restore Loader Disk" \
         3 "Restore Config with Code" \
+        4 "Recover from DSM" \
         0 "Exit" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return
