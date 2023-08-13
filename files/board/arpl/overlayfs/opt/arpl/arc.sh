@@ -30,6 +30,7 @@ fi
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+PLATFORM="$(readModelKey "${MODEL}" "platform")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
@@ -1326,6 +1327,62 @@ function backupMenu() {
           dialog --backtitle "$(backtitle)" --title "Restore with Code" --aspect 18 \
               --msgbox "Restore complete" 0 0
           ;;
+        7)
+          dialog --backtitle "$(backtitle)" --title "Try to recover DSM" --aspect 18 \
+            --infobox "Trying to recover a DSM installed system" 0 0
+          if findAndMountDSMRoot; then
+            MODEL=""
+            PRODUCTVER=""
+            if [ -f "${DSMROOT_PATH}/.syno/patch/VERSION" ]; then
+              eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep unique)
+              eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep majorversion)
+              eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep minorversion)
+              if [ -n "${unique}" ] ; then
+                while read -r F; do
+                  M="$(basename ${F})"
+                  M="${M::-4}"
+                  UNIQUE="$(readModelKey "${M}" "unique")"
+                  [ "${unique}" = "${UNIQUE}" ] || continue
+                  # Found
+                  writeConfigKey "model" "${M}" "${USER_CONFIG_FILE}"
+                done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
+                MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+                if [ -n "${MODEL}" ]; then
+                  writeConfigKey "productver" "${majorversion}.${minorversion}" "${USER_CONFIG_FILE}"
+                  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+                  if [ -n "${PRODUCTVER}" ]; then
+                    cp "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
+                    cp "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
+                    MSG="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
+                    SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
+                    if [ -n "${SN}" ]; then
+                      deleteConfigKey "arc.patch" "${USER_CONFIG_FILE}"
+                      SNARC="$(readModelKey "${MODEL}" "arc.serial")"
+                      writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+                      MSG+="\nSerial: ${SN}"
+                      if [ "${SN}" = "${SNARC}" ]; then
+                        writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
+                        ARCAV="Arc"
+                      else
+                        writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+                        ARCAV="nonArc"
+                      fi
+                      ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+                      MSG+="\nArc Patch: ${ARCPATCH}"
+                    fi
+                    dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
+                      --aspect 18 --msgbox "${MSG}" 0 0
+                    ARCRECOVERY="true"
+                    arcbuild
+                  fi
+                fi
+              fi
+            fi
+          else
+            dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
+              --msgbox "Unfortunately I couldn't mount the DSM partition!" 0 0
+          fi
+          ;;
         0) return ;;
       esac
     done
@@ -1449,6 +1506,62 @@ function backupMenu() {
           BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           dialog --backtitle "$(backtitle)" --title "Restore with Code" --aspect 18 \
               --msgbox "Restore complete" 0 0
+          ;;
+        4)
+          dialog --backtitle "$(backtitle)" --title "Try to recover DSM" --aspect 18 \
+            --infobox "Trying to recover a DSM installed system" 0 0
+          if findAndMountDSMRoot; then
+            MODEL=""
+            PRODUCTVER=""
+            if [ -f "${DSMROOT_PATH}/.syno/patch/VERSION" ]; then
+              eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep unique)
+              eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep majorversion)
+              eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep minorversion)
+              if [ -n "${unique}" ] ; then
+                while read -r F; do
+                  M="$(basename ${F})"
+                  M="${M::-4}"
+                  UNIQUE="$(readModelKey "${M}" "unique")"
+                  [ "${unique}" = "${UNIQUE}" ] || continue
+                  # Found
+                  writeConfigKey "model" "${M}" "${USER_CONFIG_FILE}"
+                done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
+                MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+                if [ -n "${MODEL}" ]; then
+                  writeConfigKey "productver" "${majorversion}.${minorversion}" "${USER_CONFIG_FILE}"
+                  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+                  if [ -n "${PRODUCTVER}" ]; then
+                    cp "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
+                    cp "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
+                    MSG="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
+                    SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
+                    if [ -n "${SN}" ]; then
+                      deleteConfigKey "arc.patch" "${USER_CONFIG_FILE}"
+                      SNARC="$(readModelKey "${MODEL}" "arc.serial")"
+                      writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+                      MSG+="\nSerial: ${SN}"
+                      if [ "${SN}" = "${SNARC}" ]; then
+                        writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
+                        ARCAV="Arc"
+                      else
+                        writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+                        ARCAV="nonArc"
+                      fi
+                      ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+                      MSG+="\nArc Patch: ${ARCPATCH}"
+                    fi
+                    dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
+                      --aspect 18 --msgbox "${MSG}" 0 0
+                    ARCRECOVERY="true"
+                    arcbuild
+                  fi
+                fi
+              fi
+            fi
+          else
+            dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
+              --msgbox "Unfortunately I couldn't mount the DSM partition!" 0 0
+          fi
           ;;
         0) return ;;
       esac
@@ -1921,66 +2034,6 @@ function sysinfo() {
 }
 
 ###############################################################################
-# Try to recovery a DSM already installed
-function tryRecoveryDSM() {
-  dialog --backtitle "$(backtitle)" --title "Try to recover DSM" --aspect 18 \
-    --infobox "Trying to recover a DSM installed system" 0 0
-  if findAndMountDSMRoot; then
-    MODEL=""
-    PRODUCTVER=""
-    if [ -f "${DSMROOT_PATH}/.syno/patch/VERSION" ]; then
-      eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep unique)
-      eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep majorversion)
-      eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep minorversion)
-      if [ -n "${unique}" ] ; then
-        while read -r F; do
-          M="$(basename ${F})"
-          M="${M::-4}"
-          UNIQUE="$(readModelKey "${M}" "unique")"
-          [ "${unique}" = "${UNIQUE}" ] || continue
-          # Found
-          writeConfigKey "model" "${M}" "${USER_CONFIG_FILE}"
-        done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
-	      MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-        if [ -n "${MODEL}" ]; then
-          writeConfigKey "productver" "${majorversion}.${minorversion}" "${USER_CONFIG_FILE}"
-          PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-          if [ -n "${PRODUCTVER}" ]; then
-            cp "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
-            cp "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
-            MSG="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
-            SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
-            if [ -n "${SN}" ]; then
-              deleteConfigKey "arc.patch" "${USER_CONFIG_FILE}"
-              SNARC="$(readModelKey "${MODEL}" "arc.serial")"
-              writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-              MSG+="\nSerial: ${SN}"
-              if [ "${SN}" = "${SNARC}" ]; then
-                writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-                ARCAV="Arc"
-              else
-                writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-                ARCAV="nonArc"
-              fi
-              ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-              MSG+="\nArc Patch: ${ARCPATCH}"
-            fi
-            dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
-              --aspect 18 --msgbox "${MSG}" 0 0
-            ARCRECOVERY="true"
-            arcbuild
-          fi
-        fi
-      fi
-    fi
-  else
-    dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
-      --msgbox "Unfortunately I couldn't mount the DSM partition!" 0 0
-  fi
-}
-
-
- ###############################################################################
 # allow downgrade dsm version
 function downgradeMenu() {
   MSG=""
@@ -2160,7 +2213,6 @@ function boot() {
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting to DSM - Please stay patient!" 0 0
-  sleep 2
   exec reboot
 }
 
@@ -2169,6 +2221,7 @@ function boot() {
 
 if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${PRODUCTVER}" ]; then
   install-addons.sh
+  install-extensions.sh
   make
   boot && exit 0 || sleep 3
 fi
@@ -2206,13 +2259,15 @@ while true; do
       if [ "${PLATFORM}" = "broadwellnk" ]; then
         echo "u \"Change USB Port Config \" "                                               >>"${TMP_PATH}/menu"
       fi
-      echo "w \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
-      echo "x \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
       echo "k \"Load Kernel: \Z4${KERNELLOAD}\Zn \" "                                       >>"${TMP_PATH}/menu"
+      echo "m \"Not set Boot MAC: \Z4${NOTSETMAC}\Zn \" "                                   >>"${TMP_PATH}/menu"
       if [ "${DIRECTBOOT}" = "false" ]; then
         echo "b \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
       fi
-      echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >>"${TMP_PATH}/menu"
+      echo "d \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
+      if [ "${DIRECTBOOT}" = "true" ]; then
+        echo "l \"Reset DirectDSM: \Z4${DIRECTDSM}\Zn \" "                                  >>"${TMP_PATH}/menu"
+      fi
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
     if [ -n "${ADVOPTS}" ]; then
@@ -2225,28 +2280,34 @@ while true; do
       echo "f \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
       echo "g \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
       echo "h \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
-      echo "m \"Not set Boot MAC: \Z4${NOTSETMAC}\Zn \" "                                   >>"${TMP_PATH}/menu"
-      echo "d \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
-      if [ "${DIRECTBOOT}" = "true" ]; then
-        echo "l \"Reset DirectDSM: \Z4${DIRECTDSM}\Zn \" "                                  >>"${TMP_PATH}/menu"
-      fi
+      echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
+    fi
+    if [ -n "${DSMOPTS}" ]; then
+      echo "9 \"\Z1Hide DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+    else
+      echo "9 \"\Z1Show DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+    fi
+    if [ -n "${DSMOPTS}" ]; then
+      echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
+      echo "w \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
+      echo "x \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
     if [ -n "${DEVOPTS}" ]; then
-      echo "9 \"\Z1Hide Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      echo "- \"\Z1Hide Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     else
-      echo "9 \"\Z1Show Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      echo "- \"\Z1Show Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     fi
     if [ -n "${DEVOPTS}" ]; then
       echo "= \"\Z4========== Dev ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "z \"Save Modifications to Disk \" "                                             >>"${TMP_PATH}/menu"
+      echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >>"${TMP_PATH}/menu"
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
   fi
-  echo "t \"Backup/Restore \" "                                                             >>"${TMP_PATH}/menu"
-  echo "i \"Recover from DSM \" "                                                           >>"${TMP_PATH}/menu"
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >>"${TMP_PATH}/menu"
+  echo "t \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
   echo "c \"Choose a keymap \" "                                                            >>"${TMP_PATH}/menu"
   echo "e \"Update \" "                                                                     >>"${TMP_PATH}/menu"
   echo "0 \"\Z1Exit\Zn \" "                                                                 >>"${TMP_PATH}/menu"
@@ -2259,7 +2320,7 @@ while true; do
     # Main Section
     1) arcMenu; NEXT="5" ;;
     5) make; NEXT="6" ;;
-    6) boot && exit 0 ;;
+    6) boot && exit 0 || sleep 3 ;;
     # Info Section
     a) sysinfo; NEXT="a" ;;
     # System Section
@@ -2275,28 +2336,16 @@ while true; do
     s) storageMenu; NEXT="s" ;;
     n) networkMenu; NEXT="n" ;;
     u) usbMenu; NEXT="u" ;;
-    p) paturl; NEXT="p" ;;
-    w) downgradeMenu; NEXT="w" ;;
-    x) resetPassword; NEXT="x" ;;
     k)
       [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
       writeConfigKey "arc.kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
       NEXT="k"
       ;;
-    b) bootipwaittime; NEXT="b" ;;
-    +) formatdisks; NEXT="+" ;;
-    # Advanced Section
-    8) [ "${ADVOPTS}" = "" ] && ADVOPTS='1' || ADVOPTS=''
-       ADVOPTS="${ADVOPTS}"
-       NEXT="8"
-       ;;
-    f) cmdlineMenu; NEXT="f" ;;
-    g) synoinfoMenu; NEXT="g" ;;
-    h) editUserConfig; NEXT="h" ;;
     m) [ "${NOTSETMAC}" = "false" ] && NOTSETMAC='true' || NOTSETMAC='false'
       writeConfigKey "arc.notsetmac" "${NOTSETMAC}" "${USER_CONFIG_FILE}"
       NEXT="m"
       ;;
+    b) bootipwaittime; NEXT="b" ;;
     d) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
       NEXT="d"
@@ -2306,20 +2355,34 @@ while true; do
       DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
       NEXT="l"
       ;;
-    # Dev Section
-    9) [ "${DEVOPTS}" = "" ] && DEVOPTS='1' || DEVOPTS=''
-      DEVOPTS="${DEVOPTS}"
+    # Advanced Section
+    8) [ "${ADVOPTS}" = "" ] && ADVOPTS='1' || ADVOPTS=''
+       ADVOPTS="${ADVOPTS}"
+       NEXT="8"
+       ;;
+    f) cmdlineMenu; NEXT="f" ;;
+    g) synoinfoMenu; NEXT="g" ;;
+    h) editUserConfig; NEXT="h" ;;
+    # DSM Section
+    9) [ "${DSMOPTS}" = "" ] && DSMOPTS='1' || DSMOPTS=''
+      DEVOPTS="${DSMOPTS}"
       NEXT="9"
+      ;;
+    w) downgradeMenu; NEXT="w" ;;
+    x) resetPassword; NEXT="x" ;;
+    # Dev Section
+    -) [ "${DEVOPTS}" = "" ] && DEVOPTS='1' || DEVOPTS=''
+      DEVOPTS="${DEVOPTS}"
+      NEXT="-"
       ;;
     j) [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
       writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
       NEXT="j"
       ;;
     z) saveMenu; NEXT="z" ;;
-    # System Section 2
-    t) backupMenu; NEXT="t" ;;
-    i) tryRecoveryDSM; NEXT="i" ;;
+    +) formatdisks; NEXT="+" ;;
     # Loader Settings
+    t) backupMenu; NEXT="t" ;;
     c) keymapMenu; NEXT="c" ;;
     e) updateMenu; NEXT="e" ;;
     0) break ;;
