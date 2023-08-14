@@ -28,8 +28,7 @@ printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
 RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
 if [ "$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')" != "${RAMDISK_HASH}" ]; then
   echo -e "\033[1;31mDSM Ramdisk changed\033[0m"
-  /opt/arpl/ramdisk-patch.sh
-  if [ $? -ne 0 ]; then
+  if ! /opt/arpl/ramdisk-patch.sh; then
     dialog --backtitle "$(backtitle)" --title "Error" \
       --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1
@@ -41,8 +40,7 @@ fi
 ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
 if [ "$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}')" != "${ZIMAGE_HASH}" ]; then
   echo -e "\033[1;31mDSM zImage changed\033[0m"
-  /opt/arpl/zimage-patch.sh
-  if [ $? -ne 0 ]; then
+  if ! /opt/arpl/zimage-patch.sh; then
     dialog --backtitle "$(backtitle)" --title "Error" \
       --msgbox "zImage not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1

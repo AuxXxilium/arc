@@ -524,15 +524,13 @@ function make() {
     fi
   fi
   # Patch Ramdisk
-  /opt/arpl/ramdisk-patch.sh
-  if [ $? -ne 0 ]; then
+  if ! /opt/arpl/ramdisk-patch.sh; then
     dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
       --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 0 0
     return 1
   fi
   # Patch zImage
-  /opt/arpl/zimage-patch.sh
-  if [ $? -ne 0 ]; then
+  if ! /opt/arpl/zimage-patch.sh; then
     dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
       --msgbox "zImage not patched:\n$(<"${LOG_FILE}")" 0 0
     return 1
