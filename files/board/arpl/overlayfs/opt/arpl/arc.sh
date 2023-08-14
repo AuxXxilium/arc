@@ -1954,7 +1954,7 @@ function sysinfo() {
   TEXT+="\nModel | Platform: \Zb${MODEL} | ${PLATFORM}\Zn"
   TEXT+="\nDSM | Kernel | LKM: \Zb${PRODUCTVER} | ${KVER} | ${LKM}\Zn"
   TEXT+="\n\Z4>> Loader\Zn"
-  TEXT+="\nConfig | Build: \Zb${CONFDONE} | {BUILDDONE}"
+  TEXT+="\nConfig | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\nArcpatch: \Zb${ARCPATCH}\Zn"
   TEXT+="\nDirectboot | DirectDSM: \Zb${DIRECTBOOT} | ${DIRECTDSM}\Zn"
   TEXT+="\nKernelload: \Zb${KERNELLOAD}\Zn"
@@ -2315,7 +2315,7 @@ while true; do
     3) extensionMenu; NEXT="3" ;;
     4) modulesMenu; NEXT="4" ;;
     # Arc Section
-    7) [ "${ARCOPTS}" = "false" ] && ARCOPTS='true' || ARCOPTS='false'
+    7) [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
        ARCOPTS="${ARCOPTS}"
        NEXT="7"
        ;;
@@ -2335,6 +2335,7 @@ while true; do
     b) bootipwaittime; NEXT="b" ;;
     d) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
       NEXT="d"
       ;;
     l)
@@ -2343,7 +2344,7 @@ while true; do
       NEXT="l"
       ;;
     # Advanced Section
-    8) [ "${ADVOPTS}" = "false" ] && ADVOPTS='true' || ADVOPTS='false'
+    8) [ "${ADVOPTS}" = "true" ] && ADVOPTS='false' || ADVOPTS='true'
        ADVOPTS="${ADVOPTS}"
        NEXT="8"
        ;;
@@ -2351,14 +2352,14 @@ while true; do
     g) synoinfoMenu; NEXT="g" ;;
     h) editUserConfig; NEXT="h" ;;
     # DSM Section
-    9) [ "${DSMOPTS}" = "false" ] && DSMOPTS='true' || DSMOPTS='false'
+    9) [ "${DSMOPTS}" = "true" ] && DSMOPTS='false' || DSMOPTS='true'
       DSMOPTS="${DSMOPTS}"
       NEXT="9"
       ;;
     w) downgradeMenu; NEXT="w" ;;
     x) resetPassword; NEXT="x" ;;
     # Dev Section
-    -) [ "${DEVOPTS}" = "false" ] && DEVOPTS='true' || DEVOPTS='false'
+    -) [ "${DEVOPTS}" = "true" ] && DEVOPTS='false' || DEVOPTS='true'
       DEVOPTS="${DEVOPTS}"
       NEXT="-"
       ;;
