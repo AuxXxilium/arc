@@ -30,11 +30,11 @@ fi
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-PLATFORM="$(readModelKey "${MODEL}" "platform")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 if [ -n "${MODEL}" ]; then
+  PLATFORM="$(readModelKey "${MODEL}" "platform")"
   DT="$(readModelKey "${MODEL}" "dt")"
 fi
 
@@ -48,11 +48,6 @@ BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
-
-# Add Kernelload to old configs
-if [ -z "${KERNELLOAD}" ]; then
-  writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
-fi
 
 # Reset DirectDSM if User boot to Config
 if [ "${DIRECTDSM}" = "true" ]; then
@@ -290,8 +285,6 @@ function arcsettings() {
         SN="$(readModelKey "${MODEL}" "arc.serial")"
         writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
         writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
-        writeConfigKey "extensions.shr" "" "${USER_CONFIG_FILE}"
-        writeConfigKey "extensions.oobctl" "" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
         break
       elif [ "${resp}" = "2" ]; then
@@ -300,23 +293,17 @@ function arcsettings() {
         writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
         writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
-        writeConfigKey "extensions.shr" "" "${USER_CONFIG_FILE}"
-        writeConfigKey "extensions.oobctl" "" "${USER_CONFIG_FILE}"
         break
       fi
     done
   elif [ "${ARCRECOVERY}" = "true" ] && [ "${ARCAV}" = "Arc" ]; then
     writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "extensions.shr" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "extensions.oobctl" "" "${USER_CONFIG_FILE}"
   else
     # Generate random serial
     SN="$(generateSerial "${MODEL}")"
     writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "extensions.shr" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "extensions.oobctl" "" "${USER_CONFIG_FILE}"
   fi
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
@@ -2221,7 +2208,7 @@ function boot() {
 ###############################################################################
 ###############################################################################
 
-if [ "x$1" = "xb" -a -n "${MODEL}" -a -n "${PRODUCTVER}" ]; then
+if [ "x$1" = "xb" ] && [ -n "${MODEL}" ] && [ -n "${PRODUCTVER}" ]; then
   install-addons.sh
   install-extensions.sh
   make
