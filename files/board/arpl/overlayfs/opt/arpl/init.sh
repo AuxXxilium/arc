@@ -186,7 +186,7 @@ if grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
 elif [ "${BUILDDONE}" = "1" ]; then
   echo -e "\033[1;34mLoader is configured!\033[0m"
   boot.sh && exit 0
-elif [ -n "${BUILDDONE}" ]; then
+elif [ ! -n "${BUILDDONE}" ]; then
   echo -e "\033[1;31mLoader is not configured!\033[0m"
 fi
 echo
