@@ -31,7 +31,7 @@ function readModelArray() {
 ###############################################################################
 # Just show error message and dies
 function die() {
-  echo -e "\033[1;41m$@\033[0m"
+  echo -e "\033[1;41m$*\033[0m"
   exit 1
 }
 

@@ -18,7 +18,7 @@ for B in ${BIOS}
 do
   b=${B}
   b=(${b//-/ })
-  echo "Make ${b[@]} ..."
+  echo "Make ${b[*]} ..."
 
   mkdir -p ${B}
   pushd ${B}
