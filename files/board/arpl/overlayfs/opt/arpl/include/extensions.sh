@@ -60,7 +60,7 @@ function installExtension() {
   cp "${TMP_PATH}/${EXTENSION}/install.sh" "${RAMDISK_PATH}/addons/${EXTENSION}.sh" 2>"${LOG_FILE}" || dieLog
   chmod +x "${RAMDISK_PATH}/addons/${EXTENSION}.sh"
   [ -d ${TMP_PATH}/${EXTENSION}/root ] && (cp -R "${TMP_PATH}/${EXTENSION}/root/"* "${RAMDISK_PATH}/" 2>"${LOG_FILE}" || dieLog)
-  #rm -rf "${TMP_PATH}/${EXTENSION}"
+  rm -rf "${TMP_PATH}/${EXTENSION:?}"
   return 0
 }
 
@@ -69,12 +69,12 @@ function installExtension() {
 # 1 - Extension file path
 # Return name of extension on sucess or empty on error
 function untarExtension() {
-  rm -rf "${TMP_PATH}/extension"
-  mkdir -p "${TMP_PATH}/extension"
-  tar -xaf "${1}" -C "${TMP_PATH}/extension" || return
-  EXTENSION=$(readConfigKey "name" "${TMP_PATH}/extension/manifest.yml")
+  rm -rf "${TMP_PATH}/${EXTENSION:?}"
+  mkdir -p "${TMP_PATH}/${EXTENSION}"
+  tar -xaf "${1}" -C "${TMP_PATH}/${EXTENSION}" || return
+  EXTENSION=$(readConfigKey "name" "${TMP_PATH}/${EXTENSION}/manifest.yml")
   [ -z "${EXTENSION}" ] && return
-  rm -rf "${EXTENSIONS_PATH}/${EXTENSION}"
-  mv "${TMP_PATH}/extension" "${EXTENSIONS_PATH}/${EXTENSION}"
+  rm -rf "${EXTENSIONS_PATH}/${EXTENSION:?}"
+  mv "${TMP_PATH}/${EXTENSION}" "${EXTENSIONS_PATH}/${EXTENSION}"
   echo "${EXTENSION}"
 }
