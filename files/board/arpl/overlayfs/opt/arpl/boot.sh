@@ -204,7 +204,8 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     echo -e "\r\033[1;34mNot set Boot MAC is enabled, the DSM IP can be different!\033[0m"
   fi
 fi
-echo -e "\r\033[1;34mDSM IP can be different - Please check your DHCP Server or Router!\033[0m"
+echo
+echo -e "\r\033[1;34mDSM IP can be different\033[0m -> \033[1;37mPlease check your DHCP Server or Router!\033[0m"
 
 echo
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
