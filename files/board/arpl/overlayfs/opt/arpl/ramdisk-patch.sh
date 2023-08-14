@@ -41,13 +41,11 @@ PLATFORM="$(readModelKey "${MODEL}" "platform")"
 
 PRODUCTVERDSM=${majorversion}.${minorversion}
 
-if [ -z "${PRODUCTVERDSM}" ]; then
+if [ -n "${PRODUCTVERDSM}" ]; then
   # Update new buildnumber
   writeConfigKey "productver" "${PRODUCTVERDSM}" "${USER_CONFIG_FILE}"
-  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-else
-  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 fi
+PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
 RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compressed")"
 
@@ -135,7 +133,7 @@ cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
 gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko"
 
 # Addons
-#MAXDISKS=`readConfigKey "maxdisks" "${USER_CONFIG_FILE}"`
+#MAXDISKS=$(readConfigKey "maxdisks" "${USER_CONFIG_FILE}")
 # Check if model needs Device-tree dynamic patch
 DT="$(readModelKey "${MODEL}" "dt")"
 
@@ -190,16 +188,11 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 # Build modules dependencies
 /opt/arpl/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
 
-# Network card configuration file
-for N in $(seq 0 7); do
-  echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
-done
-
 # Reassembly ramdisk
 if [ "${RD_COMPRESSED}" == "true" ]; then
-  (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root | xz -9 --format=lzma > "${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || dieLog
+  (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root | xz -9 --format=lzma >"${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || dieLog
 else
-  (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root > "${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || dieLog
+  (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root >"${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || dieLog
 fi
 
 # Clean
