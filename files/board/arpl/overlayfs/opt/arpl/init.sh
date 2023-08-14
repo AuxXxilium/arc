@@ -56,16 +56,6 @@ if ! grep -q "arc.sh" ~/.bash_history; then
   echo "arc.sh " >>~/.bash_history
 fi
 
-# Check if exists directories into P3 partition, if yes remove and link it
-if [ -d "${CACHE_PATH}/model-configs" ]; then
-  rm -rf "${MODEL_CONFIG_PATH}"
-  ln -s "${CACHE_PATH}/model-configs" "${MODEL_CONFIG_PATH}"
-fi
-if [ -d "${CACHE_PATH}/patch" ]; then
-  rm -rf "${PATCH_PATH}"
-  ln -s "${CACHE_PATH}/patch" "${PATCH_PATH}"
-fi
-
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
@@ -85,10 +75,14 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
   writeConfigKey "extensions" "{}" "${USER_CONFIG_FILE}"
+  writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
@@ -183,10 +177,10 @@ echo
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 if grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
   echo -e "\033[1;31mUser requested edit settings.\033[0m"
-elif [ "${BUILDDONE}" = "1" ]; then
+elif [ "${BUILDDONE}" = "true" ]; then
   echo -e "\033[1;34mLoader is configured!\033[0m"
   boot.sh && exit 0
-elif [ ! -n "${BUILDDONE}" ]; then
+elif [ "${BUILDDONE}" = "false" ]; then
   echo -e "\033[1;31mLoader is not configured!\033[0m"
 fi
 echo
