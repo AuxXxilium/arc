@@ -10,9 +10,9 @@ function getmap() {
   rm -f "${TMP_PATH}/remap"
   touch "${TMP_PATH}remap"
   # Do the work
-  let DISKIDXMAPIDX=0
+  (( DISKIDXMAPIDX=0 ))
   DISKIDXMAP=""
-  let DISKIDXMAPIDXMAX=0
+  (( DISKIDXMAPIDXMAX=0 ))
   DISKIDXMAPMAX=""
   for PCI in $(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}'); do
     NUMPORTS=0
@@ -37,9 +37,9 @@ function getmap() {
     echo -n "${NUMPORTS}" >>"${TMP_PATH}/drivesmax"
     echo -n "${CONPORTS}" >>"${TMP_PATH}/drivescon"
     DISKIDXMAP=$DISKIDXMAP$(printf "%02x" $DISKIDXMAPIDX)
-    let DISKIDXMAPIDX=$DISKIDXMAPIDX+$CONPORTS
+    (( DISKIDXMAPIDX=$DISKIDXMAPIDX+$CONPORTS ))
     DISKIDXMAPMAX=$DISKIDXMAPMAX$(printf "%02x" $DISKIDXMAPIDXMAX)
-    let DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS
+    (( DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS ))
   done
   SATAPORTMAPMAX="$(awk '{print$1}' ${TMP_PATH}/drivesmax)"
   SATAPORTMAP="$(awk '{print$1}' ${TMP_PATH}/drivescon)"
@@ -53,7 +53,7 @@ function getmap() {
       echo -n "${LINE}>${LASTDRIVE}:" >>"${TMP_PATH}/remap"
       LASTDRIVE=$((${LASTDRIVE} + 1))
     elif [ "${LINE}" = "${LASTDRIVE}" ]; then
-        LASTDRIVE=$((${line} + 1))
+      LASTDRIVE=$((${line} + 1))
     fi
   done < <(cat "${TMP_PATH}/ports")
   SATAREMAP="$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')"
