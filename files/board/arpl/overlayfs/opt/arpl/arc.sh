@@ -424,7 +424,7 @@ function make() {
   # Check if all extensions exists
   while IFS=': ' read -r EXTENSION PARAM; do
     [ -z "${EXTENSION}" ] && continue
-    if ! checkAddonExist "${EXTENSION}" "${PLATFORM}" "${KVER}"; then
+    if ! checkExtensionExist "${EXTENSION}" "${PLATFORM}" "${KVER}"; then
       dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
         --msgbox "$(printf "Extension %s not found!" "${EXTENSION}")" 0 0
       return 1
