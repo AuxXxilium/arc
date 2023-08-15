@@ -97,14 +97,14 @@ if [ "${ARCPATCH}" = "true" ] && [ "${NOTSETMAC}" = "false" ]; then
   # Get MAC address
   ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
   for N in $(seq 1 ${#ETHX[@]}); do
-    MACR="$(cat /sys/class/net/${ETHX[$((${N}-1))]}/address | sed 's/://g')"
+    MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
     MACF="$(readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}")"
     # Initialize with real MAC
     writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
     if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
       MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-      echo "Setting ${ETHX[$((${N}-1))]} MAC to ${MAC}"
-      ip link set dev ${ETHX[$((${N}-1))]} address ${MAC} >/dev/null 2>&1 && \
+      echo "Setting ${ETHX[$((${N} - 1))]} MAC to ${MAC}"
+      ip link set dev ${ETHX[$((${N} - 1))]} address ${MAC} >/dev/null 2>&1 && \
         (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
     elif [ -z "${MACF}" ]; then
       # Write real Mac to cmdline config
@@ -115,7 +115,7 @@ else
   # Get MAC address
   ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
   for N in $(seq 1 ${#ETHX[@]}); do
-    MACR="$(cat /sys/class/net/${ETHX[$((${N}-1))]}/address | sed 's/://g')"
+    MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
     # Initialize with real MAC
     writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
     # Write real Mac to cmdline config
@@ -123,7 +123,7 @@ else
   done
 fi
 # Enable Wake on Lan, ignore errors
-ethtool -s ${ETHX[$((${N}-1))]} wol g 2>/dev/null
+ethtool -s ${ETHX[$((${N} - 1))]} wol g 2>/dev/null
 echo -e "WOL enabled: ${ETHX[$((${N}-1))]}"
 echo
 
@@ -136,12 +136,11 @@ if [ "${BUS}" = "usb" ]; then
   PID="0x$(udevadm info --query property --name ${LOADER_DISK} | grep ID_MODEL_ID | cut -d= -f2)"
   writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
   writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
-elif [ "${BUS}" = "ata" ]; then
-  writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
-  writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
-else
+elif [ "${BUS}" != "ata" ] && [ "${BUS}" != "usb" ]; then
   die "Loader disk neither USB or DoM"
 fi
+writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
+writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 
 # Inform user
 echo -en "Loader disk: \033[1;34m${LOADER_DISK}\033[0m ("
@@ -192,7 +191,7 @@ ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
 # No network devices
 [ ${#ETHX[@]} -le 0 ] && die "NIC not found!"
 echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
-for N in $(seq 0 $((${#ETHX[@]}-1))); do
+for N in $(seq 0 $((${#ETHX[@]} - 1))); do
   DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
   if [ "${N}" -eq "8" ]; then
     echo -e "\r${ETHX[${N}]}(${DRIVER}): More than 8 NIC are not supported."
@@ -210,7 +209,7 @@ for N in $(seq 0 $((${#ETHX[@]}-1))); do
       echo -e "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;34mhttp://${IP}:7681\033[0m to connect Arc via web."
       break
     fi
-    COUNT=$((${COUNT}+1))
+    COUNT=$((${COUNT} + 1))
     if [ "${COUNT}" -eq "${BOOTIPWAIT}" ]; then
       echo -e "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT."
       break

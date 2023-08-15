@@ -13,7 +13,7 @@ clear
 TITLE="${ARPL_TITLE}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
-printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
+printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS}) / 2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
 TITLE="BOOTING..."
 [ -d "/sys/firmware/efi" ] && TITLE+=" [EFI]" || TITLE+=" [Legacy]"
@@ -22,27 +22,29 @@ if [ "${BUS}" = "usb" ]; then
 elif [ "${BUS}" = "ata" ]; then
   TITLE+=" [SATA DoM]"
 fi
-printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS})/2)) "${TITLE}"
+printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
-# Check if DSM ramdisk changed, patch it if necessary
-RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
-if [ "$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')" != "${RAMDISK_HASH}" ]; then
-  echo -e "\033[1;31mDSM Ramdisk changed\033[0m"
-  if ! /opt/arpl/ramdisk-patch.sh; then
+# Check if DSM zImage changed, patch it if necessary
+ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
+ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
+if [ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" ]; then
+  echo -e "\033[1;31mDSM zImage changed\033[0m"
+  if ! /opt/arpl/zimage-patch.sh; then
     dialog --backtitle "$(backtitle)" --title "Error" \
-      --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 12 70
+      --msgbox "zImage not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1
   fi
   echo
 fi
 
-# Check if DSM zImage changed, patch it if necessary
-ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
-if [ "$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}')" != "${ZIMAGE_HASH}" ]; then
-  echo -e "\033[1;31mDSM zImage changed\033[0m"
-  if ! /opt/arpl/zimage-patch.sh; then
+# Check if DSM ramdisk changed, patch it if necessary
+RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
+RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
+if [ "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]; then
+  echo -e "\033[1;31mDSM Ramdisk changed\033[0m"
+  if ! /opt/arpl/ramdisk-patch.sh; then
     dialog --backtitle "$(backtitle)" --title "Error" \
-      --msgbox "zImage not patched:\n$(<"${LOG_FILE}")" 12 70
+      --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1
   fi
   echo
@@ -90,12 +92,9 @@ while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
 done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 
-# Read KVER from Model Config
-KVER=$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")
-
 if [ "${BUS}" = "ata" ]; then
   LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
-  SIZE=$(($(cat /sys/block/${LOADER_DEVICE_NAME}/size)/2048+10))
+  SIZE=$(($(cat /sys/block/${LOADER_DEVICE_NAME}/size) / 2048 + 10))
   # Read SATADoM type
   DOM="$(readModelKey "${MODEL}" "dom")"
 fi
@@ -116,11 +115,11 @@ fi
 # set missing mac to cmdline if needed
 if [ "${NETIF_NUM}" -ne "${NETNUM}" ]; then
   ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
-  for N in $(seq $((${NETIF_NUM}+1)) ${NETNUM}); do 
-    MACR="$(cat /sys/class/net/${ETHX[$((${N}-1))]}/address | sed 's/://g')"
+  for N in $(seq $((${NETIF_NUM} + 1)) ${NETNUM}); do 
+    MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
     # no duplicates
     while [[ "${MACS[*]}" =~ "$MACR" ]]; do # no duplicates
-      MACR="${MACR:0:10}$(printf "%02x" $((0x${MACR:10:2}+1)))" 
+      MACR="${MACR:0:10}$(printf "%02x" $((0x${MACR:10:2} + 1)))" 
     done
     CMDLINE["mac${N}"]="${MACR}"
   done
@@ -171,7 +170,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
   ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
   echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
-  for N in $(seq 0 $((${#ETHX[@]}-1))); do
+  for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     if [ "${N}" -eq "8" ]; then
       echo -e "\r${ETHX[${N}]}(${DRIVER}): More than 8 NIC are not supported."
@@ -189,7 +188,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         echo -e "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web."
         break
       fi
-      COUNT=$((${COUNT}+1))
+      COUNT=$((${COUNT} + 1))
       if [ "${COUNT}" -eq "${BOOTIPWAIT}" ]; then
         echo -e "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT."
         break
