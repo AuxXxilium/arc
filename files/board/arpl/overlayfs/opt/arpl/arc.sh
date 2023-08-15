@@ -381,6 +381,7 @@ function arcnetdisk() {
   fi
   # Config is done
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   # Ask for Build
   while true; do
     dialog --clear --backtitle "$(backtitle)" \
