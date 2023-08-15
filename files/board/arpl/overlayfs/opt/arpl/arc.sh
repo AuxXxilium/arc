@@ -421,18 +421,27 @@ function make() {
       return 1
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+  # Check if all extensions exists
+  while IFS=': ' read -r EXTENSION PARAM; do
+    [ -z "${EXTENSION}" ] && continue
+    if ! checkAddonExist "${EXTENSION}" "${PLATFORM}" "${KVER}"; then
+      dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
+        --msgbox "$(printf "Extension %s not found!" "${EXTENSION}")" 0 0
+      return 1
+    fi
+  done < <(readConfigMap "extensions" "${USER_CONFIG_FILE}")
   # Check for old DSM Kernel
   if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     # Check zImage Hash
-    ZIMAGE_HASH="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}')"
-    OLD_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
-    if [ "${ZIMAGE_HASH}" = "${OLD_HASH}" ]; then
+    ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}')"
+    ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
+    if [ "${ZIMAGE_HASH}" = "${ZIMAGE_HASH_CUR}" ]; then
       NEWIMAGE="false"
     fi
     # Check Ramdisk Hash
-    RAMDISK_HASH="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')"
-    OLD_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
-    if [ "${RAMDISK_HASH}" = "${OLD_HASH}" ]; then
+    RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')"
+    RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
+    if [ "${RAMDISK_HASH}" = "${RAMDISK_HASH_CUR}" ]; then
       NEWIMAGE="false"
     fi
   fi
@@ -523,18 +532,22 @@ function make() {
       cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
     fi
   fi
-  # Patch Ramdisk
-  if ! /opt/arpl/ramdisk-patch.sh; then
-    dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-      --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 0 0
-    return 1
-  fi
   # Patch zImage
   if ! /opt/arpl/zimage-patch.sh; then
     dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
       --msgbox "zImage not patched:\n$(<"${LOG_FILE}")" 0 0
     return 1
   fi
+  # Update HASH of new DSM zImage
+  writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
+  # Patch Ramdisk
+  if ! /opt/arpl/ramdisk-patch.sh; then
+    dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
+      --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 0 0
+    return 1
+  fi
+  # Update HASH of new DSM Ramdisk
+  writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
   echo "Ready!"
   sleep 3
   # Build is done
