@@ -7,17 +7,17 @@ set -e
 # Wait kernel enumerate the disks
 CNT=3
 while true; do
-  [ "${CNT}" -eq "0" ] && break
+  [ ${CNT} -eq 0 ] && break
   LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
   [ -n "${LOADER_DISK}" ] && break
-  CNT=$((${CNT}-1))
+  CNT=$((${CNT} - 1))
   sleep 1
 done
 
 [ -z "${LOADER_DISK}" ] && die "Loader disk not found!"
 NUM_PARTITIONS=$(blkid | grep "${LOADER_DISK}[0-9]\+" | cut -d: -f1 | wc -l)
-[ "${NUM_PARTITIONS}" -lt "3" ] && die "Loader disk seems to be damaged!"
-[ "${NUM_PARTITIONS}" -gt "3" ] && die "There are multiple loader disks, please insert only one loader disk!"
+[ ${NUM_PARTITIONS} -lt 3 ] && die "Loader disk seems to be damaged!"
+[ ${NUM_PARTITIONS} -gt 3 ] && die "There are multiple loader disks, please insert only one loader disk!"
 
 # Check partitions and ignore errors
 fsck.vfat -aw "${LOADER_DISK}1" >/dev/null 2>&1 || true
@@ -210,7 +210,7 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
       break
     fi
     COUNT=$((${COUNT} + 1))
-    if [ "${COUNT}" -eq "${BOOTIPWAIT}" ]; then
+    if [ ${COUNT} -eq ${BOOTIPWAIT} ]; then
       echo -e "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT."
       break
     fi

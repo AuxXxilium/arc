@@ -21,7 +21,7 @@ function getnet() {
       ARCMAC="$(readModelKey "${MODEL}" "arc.mac${ARCMACNUM}")"
       if [ -n "${ARCMAC}" ]; then
         echo "${ARCMAC} mac${ARCMACNUM}" >>"${TMP_PATH}/opts"
-        ARCMACNUM=$((${ARCMACNUM}+1))
+        ARCMACNUM=$((${ARCMACNUM} + 1))
       else
         break
       fi

@@ -27,13 +27,13 @@ function getmap() {
     while read -r PORT; do
       ls -l /sys/block | grep -F -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
       PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
-      [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
-      [ "${ATTACH}" = "1" ] && CONPORTS=$((${CONPORTS}+1)) && echo "$((${PORT}-1))" >>"${TMP_PATH}/ports"
-      [ "${DUMMY}" = "1" ]
+      [ ${PCMD} = 0 ] && DUMMY=1 || DUMMY=0
+      [ ${ATTACH} = 1 ] && CONPORTS=$((${CONPORTS} + 1)) && echo "$((${PORT} - 1))" >>"${TMP_PATH}/ports"
+      [ ${DUMMY} = 1 ]
       NUMPORTS=$((${NUMPORTS}+1))
     done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
-    [ "${NUMPORTS}" -gt "8" ] && NUMPORTS=8
-    [ "${CONPORTS}" -gt "8" ] && CONPORTS=8
+    [ ${NUMPORTS} -gt 8 ] && NUMPORTS=8
+    [ ${CONPORTS} -gt 8 ] && CONPORTS=8
     echo -n "${NUMPORTS}" >>"${TMP_PATH}/drivesmax"
     echo -n "${CONPORTS}" >>"${TMP_PATH}/drivescon"
     DISKIDXMAP=$DISKIDXMAP$(printf "%02x" $DISKIDXMAPIDX)
@@ -46,21 +46,21 @@ function getmap() {
   LASTDRIVE=0
   # Check for VMware
   while read -r LINE; do
-    if [ "${MACHINE}" = "VMware" ] && [ "${LINE}" = "0" ]; then
+    if [ "${MACHINE}" = "VMware" ] && [ ${LINE} -eq 0 ]; then
       MAXDISKS="$(readModelKey "${MODEL}" "disks")"
       echo -n "${LINE}>${MAXDISKS}:" >>"${TMP_PATH}/remap"
-    elif [ "${LINE}" != "${LASTDRIVE}" ]; then
+    elif [ ${LINE} != ${LASTDRIVE} ]; then
       echo -n "${LINE}>${LASTDRIVE}:" >>"${TMP_PATH}/remap"
       LASTDRIVE=$((${LASTDRIVE} + 1))
-    elif [ "${LINE}" = "${LASTDRIVE}" ]; then
+    elif [ ${LINE} = ${LASTDRIVE} ]; then
       LASTDRIVE=$((${line} + 1))
     fi
   done < <(cat "${TMP_PATH}/ports")
   SATAREMAP="$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')"
   # Show recommended Option to user
-  if [ -n "${SATAREMAP}" ] && [ "${SASCONTROLLER}" -eq "0" ]; then
+  if [ -n "${SATAREMAP}" ] && [ ${SASCONTROLLER} -eq 0 ]; then
     REMAP3="*"
-  elif [ -n "${SATAREMAP}" ] && [ "${SASCONTROLLER}" -gt "0" ] && [ "${MACHINE}" = "NATIVE" ]; then
+  elif [ -n "${SATAREMAP}" ] && [ ${SASCONTROLLER} -gt 0 ] && [ "${MACHINE}" = "NATIVE" ]; then
     REMAP2="*"
   else
     REMAP1="*"

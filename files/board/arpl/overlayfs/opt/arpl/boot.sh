@@ -114,12 +114,12 @@ NETIF_NUM=${#MACS[*]}
 CMDLINE["netif_num"]=${NETIF_NUM}
 # Get real amount of NIC
 NETNUM=$(lshw -class network -short | grep -ie "eth[0-9]" | wc -l)
-if [ "${NETNUM}" -gt "8" ]; then
+if [ ${NETNUM} -gt 8 ]; then
   NETNUM=8
   echo -e "\033[0;31m*** WARNING: More than 8 NIC are not supported.***\033[0m"
 fi
 # set missing mac to cmdline if needed
-if [ "${NETIF_NUM}" -ne "${NETNUM}" ]; then
+if [ ${NETIF_NUM} -ne ${NETNUM} ]; then
   ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
   for N in $(seq $((${NETIF_NUM} + 1)) ${NETNUM}); do 
     MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
@@ -138,7 +138,7 @@ fi
 # Prepare command line
 CMDLINE_LINE=""
 grep -q "force_junior" /proc/cmdline && CMDLINE_LINE+="force_junior "
-[ "${EFI}" -eq "1" ] && CMDLINE_LINE+="withefi " || CMDLINE_LINE+="noefi "
+[ ${EFI} -eq 1 ] && CMDLINE_LINE+="withefi " || CMDLINE_LINE+="noefi "
 [ "${BUS}" = "ata" ] && CMDLINE_LINE+="synoboot_satadom=${DOM} dom_szmax=${SIZE} "
 CMDLINE_DIRECT="${CMDLINE_LINE}"
 CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 loglevel=15 log_buf_len=32M"
@@ -195,7 +195,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         break
       fi
       COUNT=$((${COUNT} + 1))
-      if [ "${COUNT}" -eq "${BOOTIPWAIT}" ]; then
+      if [ ${COUNT} -eq ${BOOTIPWAIT} ]; then
         echo -e "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT."
         break
       fi
