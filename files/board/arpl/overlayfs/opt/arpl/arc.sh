@@ -27,6 +27,9 @@ else
   MACHINE="NATIVE"
 fi
 
+# Set Warning to 0
+WARNON=0
+
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
