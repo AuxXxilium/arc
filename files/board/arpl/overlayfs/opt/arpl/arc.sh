@@ -327,38 +327,7 @@ function arcnetdisk() {
     # Get Portmap for Loader
     getmap
   fi
-  # Ask for Extensions
-  ALLEXTENSIONS="$(availableExtensions "${PLATFORM}" "${KVER}")"
-  # read Extensions from user config
-  unset EXTENSIONS
-  declare -A EXTENSIONS
-  while IFS=': ' read -r KEY VALUE; do
-    [ -n "${KEY}" ] && EXTENSIONS["${KEY}"]="${VALUE}"
-  done < <(readConfigMap "extensions" "${USER_CONFIG_FILE}")
-  rm "${TMP_PATH}/opts"
-  touch "${TMP_PATH}/opts"
-  while read -r EXTENSION DESC; do
-    arrayExistItem "${EXTENSION}" "${!EXTENSIONS[@]}" && ACT="on" || ACT="off"         # Check if addon has already been added
-    echo -e "${EXTENSION} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
-  done <<<${ALLEXTENSIONS}
-  dialog --backtitle "$(backtitle)" --title "DSM Extensions" --aspect 18 \
-    --checklist "Select DSM Extensions to include\nSelect with SPACE" 0 0 0 \
-    --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return 1
-  resp=$(<"${TMP_PATH}/resp")
-  [ -z "${resp}" ] && continue
-  dialog --backtitle "$(backtitle)" --title "DSM Extensions" \
-      --infobox "Writing to user config" 0 0
-  unset EXTENSIONS
-  declare -A EXTENSIONS
-  writeConfigKey "extensions" "{}" "${USER_CONFIG_FILE}"
-  for EXTENSION in ${resp}; do
-    USEREXTENSIONS["${EXTENSION}"]=""
-    writeConfigKey "extensions.${EXTENSION}" "" "${USER_CONFIG_FILE}"
-  done
-  EXTENSIONSINFO="$(readConfigEntriesArray "extensions" "${USER_CONFIG_FILE}")"
-  dialog --backtitle "$(backtitle)" --title "DSM Extensions" \
-    --msgbox "DSM Extensions selected:\n${EXTENSIONSINFO}" 0 0
+  extensionSelection
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
     --infobox "Configuration successful!" 0 0
   sleep 1
@@ -606,6 +575,12 @@ function editUserConfig() {
 ###############################################################################
 # Shows option to manage Addons
 function addonMenu() {
+  addonSelection
+  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+}
+
+function addonSelection() {
   # read platform and kernel version to check if addon exists
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -642,20 +617,25 @@ function addonMenu() {
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --title "Addons" \
     --msgbox "Loader Addons selected:\n${ADDONSINFO}" 0 0
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
 
 ###############################################################################
 # Shows option to manage Extension
 function extensionMenu() {
+  extensionSelection
+  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+}
+
+function extensionSelection() {
   # read platform and kernel version to check if addon exists
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  # Ask for Extensions
   ALLEXTENSIONS="$(availableExtensions "${PLATFORM}" "${KVER}")"
-  # read addons from user config
+  # read Extensions from user config
   unset EXTENSIONS
   declare -A EXTENSIONS
   while IFS=': ' read -r KEY VALUE; do
@@ -685,8 +665,6 @@ function extensionMenu() {
   EXTENSIONSINFO="$(readConfigEntriesArray "extensions" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --title "DSM Extensions" \
     --msgbox "DSM Extensions selected:\n${EXTENSIONSINFO}" 0 0
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
 
 ###############################################################################
