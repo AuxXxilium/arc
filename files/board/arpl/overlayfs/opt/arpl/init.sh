@@ -20,20 +20,20 @@ NUM_PARTITIONS=$(blkid | grep "${LOADER_DISK}[0-9]\+" | cut -d: -f1 | wc -l)
 [ ${NUM_PARTITIONS} -gt 3 ] && die "There are multiple loader disks, please insert only one loader disk!"
 
 # Check partitions and ignore errors
-fsck.vfat -aw "${LOADER_DISK}1" >/dev/null 2>&1 || true
-fsck.ext2 -p "${LOADER_DISK}2" >/dev/null 2>&1 || true
-fsck.ext4 -p "${LOADER_DISK}3" >/dev/null 2>&1 || true
+fsck.vfat -aw ${LOADER_DISK}1 >/dev/null 2>&1 || true
+fsck.ext2 -p ${LOADER_DISK}2 >/dev/null 2>&1 || true
+fsck.ext4 -p ${LOADER_DISK}3 >/dev/null 2>&1 || true
 
 # Make folders to mount partitions
-mkdir -p "${BOOTLOADER_PATH}"
-mkdir -p "${SLPART_PATH}"
-mkdir -p "${CACHE_PATH}"
-mkdir -p "${DSMROOT_PATH}"
+mkdir -p ${BOOTLOADER_PATH}
+mkdir -p ${SLPART_PATH}
+mkdir -p ${CACHE_PATH}
+mkdir -p ${DSMROOT_PATH}
 
 # Mount the partitions
-mount "${LOADER_DISK}1" "${BOOTLOADER_PATH}" || die "Can't mount ${BOOTLOADER_PATH}"
-mount "${LOADER_DISK}2" "${SLPART_PATH}"     || die "Can't mount ${SLPART_PATH}"
-mount "${LOADER_DISK}3" "${CACHE_PATH}"      || die "Can't mount ${CACHE_PATH}"
+mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "Can't mount ${BOOTLOADER_PATH}"
+mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "Can't mount ${SLPART_PATH}"
+mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "Can't mount ${CACHE_PATH}"
 
 # Shows title
 clear
@@ -46,7 +46,7 @@ printf "\033[1;30m%*s\033[0m\n" $COLUMNS ""
 # Move/link SSH machine keys to/from cache volume
 [ ! -d "${CACHE_PATH}/ssh" ] && cp -R /etc/ssh "${CACHE_PATH}/ssh"
 rm -rf /etc/ssh
-ln -s "${CACHE_PATH}/ssh" /etc/ssh
+ln -s "${CACHE_PATH}/ssh" "/etc/ssh"
 
 # Link bash history to cache volume
 rm -rf ~/.bash_history
@@ -155,7 +155,7 @@ echo ")"
 LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
 SIZEOFDISK=$(cat /sys/block/${LOADER_DEVICE_NAME}/size)
 ENDSECTOR=$(($(fdisk -l ${LOADER_DISK} | awk '/'${LOADER_DEVICE_NAME}3'/{print$3}')+1))
-if [ "${SIZEOFDISK}" -ne "${ENDSECTOR}" ]; then
+if [ ${SIZEOFDISK} -ne ${ENDSECTOR} ]; then
   echo -e "\033[1;36mResizing ${LOADER_DISK}3\033[0m"
   echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${LOADER_DISK}" >"${LOG_FILE}" 2>&1 || dieLog
   resize2fs "${LOADER_DISK}3" >"${LOG_FILE}" 2>&1 || dieLog
