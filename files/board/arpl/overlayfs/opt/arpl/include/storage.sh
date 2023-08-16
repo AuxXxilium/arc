@@ -10,9 +10,9 @@ function getmap() {
   rm -f "${TMP_PATH}/remap"
   touch "${TMP_PATH}remap"
   # Do the work
-  (( DISKIDXMAPIDX=0 ))
+  let DISKIDXMAPIDX=0
   DISKIDXMAP=""
-  (( DISKIDXMAPIDXMAX=0 ))
+  let DISKIDXMAPIDXMAX=0
   DISKIDXMAPMAX=""
   for PCI in $(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}'); do
     NUMPORTS=0
@@ -37,9 +37,9 @@ function getmap() {
     echo -n "${NUMPORTS}" >>"${TMP_PATH}/drivesmax"
     echo -n "${CONPORTS}" >>"${TMP_PATH}/drivescon"
     DISKIDXMAP=$DISKIDXMAP$(printf "%02x" $DISKIDXMAPIDX)
-    (( DISKIDXMAPIDX=$DISKIDXMAPIDX+$CONPORTS ))
+    let DISKIDXMAPIDX=$DISKIDXMAPIDX+$CONPORTS
     DISKIDXMAPMAX=$DISKIDXMAPMAX$(printf "%02x" $DISKIDXMAPIDXMAX)
-    (( DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS ))
+    let DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS
   done
   SATAPORTMAPMAX="$(awk '{print$1}' ${TMP_PATH}/drivesmax)"
   SATAPORTMAP="$(awk '{print$1}' ${TMP_PATH}/drivescon)"
