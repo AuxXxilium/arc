@@ -104,15 +104,6 @@ function backtitle() {
 ###############################################################################
 # Make Model Config
 function arcMenu() {
-  if [ -z "${1}" ]; then
-    # Start ARC build process
-    resp=$(<"${TMP_PATH}/resp")
-    [ -z "${resp}" ] && return
-  else
-    if ! arrayExistItem "${1}" ${ITEMS}; then return; fi
-    resp="${1}"
-  fi
-  if [ -z "${1}" ]; then
   # Loop menu
   RESTRICT=1
   FLGBETA=0
@@ -127,9 +118,9 @@ function arcMenu() {
       PLATFORM="$(readModelKey "${M}" "platform")"
       DT="$(readModelKey "${M}" "dt")"
       BETA="$(readModelKey "${M}" "beta")"
-      [ "${BETA}" = "true" ] && [ "${FLGBETA}" -eq "0" ] && continue
+      [ "${BETA}" = "true" ] && [ ${FLGBETA} -eq 0 ] && continue
       DISKS="$(readModelKey "${M}" "disks")-Bay"
-      ARCCONF="$(readModelKey "${M}" "arc.serial")"
+      ARCCONF="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${M}.yml")"
       if [ -n "${ARCCONF}" ]; then
         ARCAV="Arc"
       else
@@ -166,9 +157,9 @@ function arcMenu() {
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >>"${TMP_PATH}/menu"
     dialog --backtitle "$(backtitle)" --colors --menu "Choose Model for Loader" 0 62 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return
+    [ $? -ne 0 ] && return 1
     resp=$(<"${TMP_PATH}/resp")
-    [ -z "${resp}" ] && return
+    [ -z "${resp}" ] && return 1
     if [ "${resp}" = "b" ]; then
         FLGBETA=1
         continue
@@ -177,11 +168,8 @@ function arcMenu() {
       RESTRICT=0
       continue
     fi
-      break
-    done
-  else
-    resp="${1}"
-  fi
+    break
+  done
   # read model config for dt and aes
   if [ "${MODEL}" != "${resp}" ]; then
     MODEL="${resp}"
@@ -223,9 +211,9 @@ function arcbuild() {
     if [ -z "${1}" ]; then
       dialog --clear --no-items --backtitle "$(backtitle)" \
         --menu "Choose a Version" 0 0 0 ${ITEMS} 2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return
+      [ $? -ne 0 ] && return 1
       resp=$(<"${TMP_PATH}/resp")
-      [ -z "${resp}" ] && return
+      [ -z "${resp}" ] && return 1
     else
       if ! arrayExistItem "${1}" ${ITEMS}; then return; fi
       resp="${1}"
@@ -248,13 +236,6 @@ function arcbuild() {
   while IFS=': ' read -r KEY VALUE; do
     writeConfigKey "synoinfo.${KEY}" "${VALUE}" "${USER_CONFIG_FILE}"
   done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].synoinfo")
-  # Check addons
-  while IFS=': ' read -r ADDON PARAM; do
-    [ -z "${ADDON}" ] && continue
-    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
-      deleteConfigKey "addons.${ADDON}" "${USER_CONFIG_FILE}"
-    fi
-  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
   # Rebuild modules
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read -r ID DESC; do
@@ -273,34 +254,37 @@ function arcbuild() {
 function arcsettings() {
   # read model values for arcsettings
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  if [ "${ARCRECOVERY}" != "true" ] && [ "${ARCAV}" = "Arc" ]; then
-    while true; do
-      dialog --clear --backtitle "$(backtitle)" \
-        --menu "Arc Patch\nDo you want to use Syno Services?" 0 0 0 \
-        1 "Yes - Install with Arc Patch" \
-        2 "No - Install without Arc Patch" \
-      2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return
-      resp=$(<"${TMP_PATH}/resp")
-      [ -z "${resp}" ] && return
-      if [ ${resp} -eq 1 ]; then
-        # read valid serial from file
-        SN="$(readModelKey "${MODEL}" "arc.serial")"
-        writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-        writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-        break
-      elif [ ${resp} -eq 2 ]; then
-        # Generate random serial
-        SN="$(generateSerial "${MODEL}")"
-        writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-        writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
-        break
-      fi
-    done
-  elif [ "${ARCRECOVERY}" = "true" ] && [ "${ARCAV}" = "Arc" ]; then
-    writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+  ARCCONF="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${MODEL}.yml")"
+  if [ -n "${ARCCONF}" ]; then
+    if [ "${ARCRECOVERY}" != "true" ]; then
+      while true; do
+        dialog --clear --backtitle "$(backtitle)" \
+          --menu "Arc Patch\nDo you want to use Syno Services?" 0 0 0 \
+          1 "Yes - Install with Arc Patch" \
+          2 "No - Install without Arc Patch" \
+        2>"${TMP_PATH}/resp"
+        [ $? -ne 0 ] && return 1
+        resp=$(<"${TMP_PATH}/resp")
+        [ -z "${resp}" ] && return 1
+        if [ ${resp} -eq 1 ]; then
+          # read valid serial from file
+          SN="$(readModelKey "${MODEL}" "arc.serial")"
+          writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+          writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+          writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
+          break
+        elif [ ${resp} -eq 2 ]; then
+          # Generate random serial
+          SN="$(generateSerial "${MODEL}")"
+          writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+          writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+          writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+          break
+        fi
+      done
+    elif [ "${ARCRECOVERY}" = "true" ]; then
+      writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+    fi
   else
     # Generate random serial
     SN="$(generateSerial "${MODEL}")"
@@ -334,7 +318,6 @@ function arcnetdisk() {
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
     --infobox "Configuration successful!" 0 0
   sleep 1
-  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ ${WARNON} -eq 1 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
       --msgbox "WARN: Your Controller has more than 8 Disks connected. Max Disks per Controller: 8" 0 0
@@ -361,9 +344,9 @@ function arcnetdisk() {
       1 "Yes - Build Arc Loader now" \
       2 "No - I want to make changes" \
     2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return
+    [ $? -ne 0 ] && return 1
     resp=$(<"${TMP_PATH}/resp")
-    [ -z "${resp}" ] && return
+    [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
       make
       break
@@ -390,7 +373,7 @@ function make() {
     [ -z "${ADDON}" ] && continue
     if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
       dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-        --msgbox "$(printf "Addon %s not found!" "${ADDON}")" 0 0
+        --msgbox "Addon ${ADDON} not found!" 0 0
       return 1
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
@@ -399,7 +382,7 @@ function make() {
     [ -z "${EXTENSION}" ] && continue
     if ! checkExtensionExist "${EXTENSION}" "${PLATFORM}" "${KVER}"; then
       dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-        --msgbox "$(printf "Extension %s not found!" "${EXTENSION}")" 0 0
+        --msgbox "Extension ${EXTENSION} not found!" 0 0
       return 1
     fi
   done < <(readConfigMap "extensions" "${USER_CONFIG_FILE}")
@@ -536,14 +519,14 @@ function make() {
       1 "Yes - Boot Arc Loader now" \
       2 "No - I want to make changes" \
     2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return
+    [ $? -ne 0 ] && return 1
     resp=$(<"${TMP_PATH}/resp")
-    [ -z "${resp}" ] && return
+    [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
       boot && exit 0
       break
     elif [ ${resp} -eq 2 ]; then
-      return 0
+      dialog --clear --no-items --backtitle "$(backtitle)"
       break
     fi
   done
@@ -1134,7 +1117,7 @@ function backupMenu() {
         7 "Recover from DSM" \
         0 "Exit" \
         2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return
+      [ $? -ne 0 ] && return 1
       case "$(<"${TMP_PATH}/resp")" in
         1)
           dialog --backtitle "$(backtitle)" --title "Backup Config" --aspect 18 \
@@ -1183,10 +1166,10 @@ function backupMenu() {
           ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
-          arcbuild
           CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
           writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
           BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          arcbuild
           ;;
         3)
           if ! tty | grep -q "/dev/pts"; then
@@ -1204,7 +1187,7 @@ function backupMenu() {
           if [ $? -ne 0 ]; then
             dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
               --msgbox "Failed to generate Backup. There may be insufficient memory. Please clear the cache and try again!" 0 0
-            return
+            return 1
           fi
           if [ -z "${SSH_TTY}" ]; then  # web
             IP_HEAD="$(ip route show 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)"
@@ -1225,11 +1208,11 @@ function backupMenu() {
           if ! tty | grep -q "/dev/pts"; then
             dialog --backtitle "$(backtitle)" --colors --aspect 18 \
               --msgbox "This feature is only available when accessed via web/ssh." 0 0
-            return
+            return 1
           fi 
           dialog --backtitle "$(backtitle)" --title "Restore bootloader disk" --aspect 18 \
               --yesno "Please upload the Backup file.\nCurrently, arc-x.zip(github) and arc-backup.img.gz(Backup) files are supported." 0 0
-          [ $? -ne 0 ] && return
+          [ $? -ne 0 ] && return 1
           IFTOOL=""
           TMP_PATH="${TMP_PATH}/users"
           rm -rf "${TMP_PATH}"
@@ -1249,7 +1232,7 @@ function backupMenu() {
           else
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" \
                 --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
-            [ $? -ne 0 ] && ( rm -f ${LOADER_DISK}; return )
+            [ $? -ne 0 ] && ( rm -f ${LOADER_DISK}; return 1 )
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --infobox "Restore in progress..." 0 0
             umount ${BOOTLOADER_PATH} ${SLPART_PATH} ${CACHE_PATH}
@@ -1304,11 +1287,12 @@ function backupMenu() {
           ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
-          arcbuild
           CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
           BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           dialog --backtitle "$(backtitle)" --title "Restore with Code" --aspect 18 \
               --msgbox "Restore complete" 0 0
+          arcbuild
           ;;
         7)
           dialog --backtitle "$(backtitle)" --title "Try to recover DSM" --aspect 18 \
@@ -1340,15 +1324,13 @@ function backupMenu() {
                     SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
                     if [ -n "${SN}" ]; then
                       deleteConfigKey "arc.patch" "${USER_CONFIG_FILE}"
-                      SNARC="$(readModelKey "${MODEL}" "arc.serial")"
+                      SNARC="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${MODEL}.yml")"
                       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
                       MSG+="\nSerial: ${SN}"
                       if [ "${SN}" = "${SNARC}" ]; then
                         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-                        ARCAV="Arc"
                       else
                         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-                        ARCAV="nonArc"
                       fi
                       ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
                       MSG+="\nArc Patch: ${ARCPATCH}"
@@ -1356,6 +1338,10 @@ function backupMenu() {
                     dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
                       --aspect 18 --msgbox "${MSG}" 0 0
                     ARCRECOVERY="true"
+                    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+                    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+                    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+                    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
                     arcbuild
                   fi
                 fi
@@ -1407,10 +1393,10 @@ function backupMenu() {
           ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
-          arcbuild
           CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
           writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
           BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          arcbuild
           ;;
         2)
           if ! tty | grep -q "/dev/pts"; then
@@ -1485,11 +1471,12 @@ function backupMenu() {
           ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
-          arcbuild
           CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
           BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           dialog --backtitle "$(backtitle)" --title "Restore with Code" --aspect 18 \
               --msgbox "Restore complete" 0 0
+          arcbuild
           ;;
         4)
           dialog --backtitle "$(backtitle)" --title "Try to recover DSM" --aspect 18 \
@@ -1521,15 +1508,13 @@ function backupMenu() {
                     SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
                     if [ -n "${SN}" ]; then
                       deleteConfigKey "arc.patch" "${USER_CONFIG_FILE}"
-                      SNARC="$(readModelKey "${MODEL}" "arc.serial")"
+                      SNARC="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${MODEL}.yml")"
                       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
                       MSG+="\nSerial: ${SN}"
                       if [ "${SN}" = "${SNARC}" ]; then
                         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-                        ARCAV="Arc"
                       else
                         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-                        ARCAV="nonArc"
                       fi
                       ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
                       MSG+="\nArc Patch: ${ARCPATCH}"
@@ -1537,9 +1522,11 @@ function backupMenu() {
                     dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
                       --aspect 18 --msgbox "${MSG}" 0 0
                     ARCRECOVERY="true"
-                    arcbuild
+                    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
                     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+                    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
                     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+                    arcbuild
                   fi
                 fi
               fi
@@ -2024,7 +2011,7 @@ function downgradeMenu() {
   MSG+="Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?"
   dialog --backtitle "$(backtitle)" --title "Allow downgrade installation" \
       --yesno "${MSG}" 0 0
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   (
     mkdir -p "${TMP_PATH}/sdX1"
     for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
@@ -2060,14 +2047,14 @@ function resetPassword() {
   if [ -z "${SHADOW_FILE}" ]; then
     dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
       --msgbox "No DSM found in the currently inserted disks!" 0 0
-    return
+    return 1
   fi
   ITEMS="$(cat ${SHADOW_FILE} | awk -F ':' '{if ($2 != "*" && $2 != "!!") {print $1;}}')"
   dialog --clear --no-items --backtitle "$(backtitle)" --title "Reset DSM Password" \
         --menu "Choose a user name" 0 0 0 ${ITEMS} 2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   USER=$(<"${TMP_PATH}/resp")
-  [ -z "${USER}" ] && return
+  [ -z "${USER}" ] && return 1
   OLDPASSWD=$(cat ${SHADOW_FILE} | grep "^${USER}:" | awk -F ':' '{print $2}')
 
   while true; do
@@ -2101,7 +2088,7 @@ function resetPassword() {
 function mptFix() {
   dialog --backtitle "$(backtitle)" --title "LSI HBA Fix" \
       --yesno "Warning:\nDo you want to modify your Config to fix LSI HBA's. Continue?" 0 0
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   deleteConfigKey "modules.scsi_transport_sas" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -2114,7 +2101,7 @@ function bootipwaittime() {
       dialog --backtitle "$(backtitle)" --colors --title "Boot IP Waittime" \
         --default-item "${BOOTIPWAIT}" --no-items --menu "Choose a Waitingtime(seconds)" 0 0 0 ${ITEMS} \
         2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return
+      [ $? -ne 0 ] && return 1
       resp=$(cat ${TMP_PATH}/resp 2>/dev/null)
       [ -z "${resp}" ] && return
       BOOTIPWAIT=${resp}
@@ -2157,16 +2144,16 @@ function formatdisks() {
   dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
     --checklist "Advanced" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   RESP=$(<"${TMP_PATH}/resp")
-  [ -z "${RESP}" ] && return
+  [ -z "${RESP}" ] && return 1
   dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
     --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   if [ $(ls /dev/md* | wc -l) -gt 0 ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
       --yesno "Warning:\nThe current hds is in raid, do you still want to format them?" 0 0
-    [ $? -ne 0 ] && return
+    [ $? -ne 0 ] && return 1
     for I in $(ls /dev/md*); do
       mdadm -S ${I}
     done
@@ -2188,7 +2175,7 @@ function boot() {
   [ "${BUILDDONE}" = "false" ] && dialog --backtitle "$(backtitle)" --title "Alert" \
     --yesno "Config changed, you need to rebuild the loader?" 0 0
   if [ $? -eq 0 ]; then
-    make || return
+    make
   fi
   if [ "${DIRECTBOOT}" = "false" ]; then
     grub-editenv "${GRUB_PATH}/grubenv" create
@@ -2201,15 +2188,8 @@ function boot() {
 ###############################################################################
 ###############################################################################
 
-if [ "x$1" = "xb" ] && [ -n "${MODEL}" ] && [ -n "${PRODUCTVER}" ] && [ "${CONFDONE}" = "true" ]; then
-  install-addons.sh
-  install-extensions.sh
-  make
-  boot && exit 0 || sleep 3
-fi
-
 # Main loop
-[ -n "${MODEL}" ] && NEXT="5" || NEXT="1"
+[ "${CONFDONE}" = "true" ] && NEXT="5" || NEXT="1"
 while true; do
   echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
   echo "1 \"Choose Model for Loader \" "                                                    >>"${TMP_PATH}/menu"

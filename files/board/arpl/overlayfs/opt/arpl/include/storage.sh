@@ -74,9 +74,9 @@ function getmap() {
       3 "SataRemap: Remove blank Ports ${REMAP3}" \
       4 "I want to set my own Portmap" \
     2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return
+    [ $? -ne 0 ] && return 1
     resp=$(<"${TMP_PATH}/resp")
-    [ -z "${resp}" ] && return
+    [ -z "${resp}" ] && return 1
     if [ "${resp}" = "1" ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Disks" \
         --infobox "Use SataPortMap:\nActive Ports!" 4 40

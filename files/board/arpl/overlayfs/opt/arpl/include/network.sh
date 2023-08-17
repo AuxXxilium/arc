@@ -31,9 +31,9 @@ function getnet() {
         --menu "Network: MAC for 1. NIC" 0 0 0 \
         --file "${TMP_PATH}/opts" \
       2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return
+      [ $? -ne 0 ] && return 1
       resp=$(<"${TMP_PATH}/resp")
-      [ -z "${resp}" ] && return
+      [ -z "${resp}" ] && return 1
       MAC="${resp}"
       writeConfigKey "cmdline.mac1" "${MAC}" "${USER_CONFIG_FILE}"
       break
