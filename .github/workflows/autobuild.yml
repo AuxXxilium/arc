@@ -12,13 +12,6 @@ on:
     branches:
       - dev
 
-  workflow_dispatch:
-    inputs:
-      prerelease:
-        description: 'pre release'
-        default: true
-        type: boolean
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -179,7 +172,7 @@ jobs:
         if: env.VERSION != ''
         with:
           tag_name: ${{ env.VERSION }}
-          prerelease: ${{ inputs.prerelease }}
+          prerelease: true
           files: |
             arc-${{ env.VERSION }}.img.zip
             arc-${{ env.VERSION }}.vmdk-dyn.zip
