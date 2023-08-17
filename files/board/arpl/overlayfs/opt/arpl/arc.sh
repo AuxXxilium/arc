@@ -886,7 +886,7 @@ function cmdlineMenu() {
       4)
         ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
         for N in $(seq 1 8); do # Currently, only up to 8 are supported.  (<==> boot.sh L96, <==> lkm: MAX_NET_IFACES)
-          MACR="$(cat /sys/class/net/${ETHX[$((${N}-1))]}/address | sed 's/://g')"
+          MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
           MACF=${CMDLINE["mac${N}"]}
           [ -n "${MACF}" ] && MAC=${MACF} || MAC=${MACR}
           RET=1
@@ -898,7 +898,7 @@ function cmdlineMenu() {
             [ ${RET} -ne 0 ] && break 2
             MAC="$(<"${TMP_PATH}/resp")"
             [ -z "${MAC}" ] && MAC="$(readConfigKey "device.mac${i}" "${USER_CONFIG_FILE}")"
-            [ -z "${MAC}" ] && MAC="${MACFS[$((${i}-1))]}"
+            [ -z "${MAC}" ] && MAC="${MACFS[$((${i} - 1))]}"
             MACF="$(echo "${MAC}" | sed 's/://g')"
             [ ${#MACF} -eq 12 ] && break
             dialog --backtitle "$(backtitle)" --title "User cmdline" --msgbox "Invalid MAC" 0 0
@@ -909,11 +909,11 @@ function cmdlineMenu() {
             writeConfigKey "cmdline.mac${N}"      "${MACF}" "${USER_CONFIG_FILE}"
             writeConfigKey "cmdline.netif_num"    "${N}"    "${USER_CONFIG_FILE}"
             MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-            ip link set dev ${ETHX[$((${N}-1))]} address ${MAC} 2>&1 | dialog --backtitle "$(backtitle)" \
+            ip link set dev ${ETHX[$((${N} - 1))]} address ${MAC} 2>&1 | dialog --backtitle "$(backtitle)" \
               --title "User cmdline" --progressbox "Changing MAC" 20 70
             /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "$(backtitle)" \
               --title "User cmdline" --progressbox "Renewing IP" 20 70
-            IP=$(ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p' | head -1)
+            IP="$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)"
             dialog --backtitle "$(backtitle)" --title "Alert" \
               --yesno "Continue to custom MAC?" 0 0
             [ $? -ne 0 ] && break
