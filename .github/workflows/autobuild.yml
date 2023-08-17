@@ -14,10 +14,6 @@ on:
 
   workflow_dispatch:
     inputs:
-      version:
-        description: 'format %y.%-m.$i or auto'
-        required: false
-        type: string
       prerelease:
         description: 'pre release'
         default: true
@@ -88,26 +84,9 @@ jobs:
       - name: Calculate version
         run: |
           # Calculate version
-          VERSION=""
-          if [[ "${{ github.event_name }}" =~ ^(push|release)$ && "${{ github.ref_type }}" == 'tag' ]]; then
-            VERSION="${{ github.ref_name }}"
-          elif [ -n "${{ inputs.version }}" ]; then
-            if [ "$(echo ${{ inputs.version }} | cut -d '.' -f 1,2)" = "$(date +'%y.%-m')" ]; then
-              VERSION="${{ inputs.version }}"
-            else
-              LATEST_TAG="$(curl -skL "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r ".tag_name" 2>/dev/null)"
-              if [ -n "${LATEST_TAG}" -a "$(echo ${LATEST_TAG} | cut -d '.' -f 1,2)" = "$(date +'%y.%-m')" ]; then  # format %y.%-m.$i
-                VERSION="$(echo ${LATEST_TAG} | awk -F '.' '{$3=$3+1}1' OFS='.')"
-              else
-                VERSION="$(date +'%y.%-m').0"
-              fi
-            fi
-          else
-            VERSION=""
-          fi
+          VERSION="$(date +'%y.%-m').dev"
 
           echo "VERSION: ${VERSION}"
-          VERSION=${VERSION}.dev
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
           if [ -n "${VERSION}" ]; then
@@ -115,15 +94,6 @@ jobs:
             echo "${VERSION}" >VERSION
             echo "${VERSION}" >files/board/arpl/p1/ARPL-VERSION
             sed 's/^ARPL_VERSION=.*/ARPL_VERSION="'${VERSION}'"/' -i files/board/arpl/overlayfs/opt/arpl/include/consts.sh
-
-            git checkout dev
-            git pull
-            status=$(git status -s | awk '{printf " %s", $2}')
-            if [ -n "${status}" ]; then
-              git add ${status}
-              git commit -m "arc: autobuild ${VERSION}"
-              git push -f
-            fi
           fi
 
       # Get extractor, LKM, Addons, Modules and Configs
@@ -193,10 +163,13 @@ jobs:
       # Upload artifact
       - name: Upload
         uses: actions/upload-artifact@v3
+        if: env.VERSION != ''
         with:
           name: Images
           path: |
-            arc.img.zip
+            arc-${{ env.VERSION }}.img.zip
+            arc-${{ env.VERSION }}.vmdk-dyn.zip
+            arc-${{ env.VERSION }}.vmdk-flat.zip
             update.zip
           retention-days: 5
 
