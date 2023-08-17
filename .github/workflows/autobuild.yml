@@ -107,7 +107,7 @@ jobs:
           fi
 
           echo "VERSION: ${VERSION}"
-          VERSION="${VERSION}.dev"
+          VERSION=${VERSION}.dev
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
           if [ -n "${VERSION}" ]; then
