@@ -19,7 +19,7 @@ printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS}) / 2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
 TITLE="BOOTING..."
-[ ${EFI} -eq 1 ] && && TITLE+=" [EFI]" || TITLE+=" [Legacy]"
+[ ${EFI} -eq 1 ] && TITLE+=" [EFI]" || TITLE+=" [Legacy]"
 if [ "${BUS}" = "usb" ]; then
   TITLE+=" [USB flashdisk]"
 elif [ "${BUS}" = "ata" ]; then
