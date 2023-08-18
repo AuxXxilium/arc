@@ -111,16 +111,14 @@ jobs:
             fi
           fi
 
-      # Generate Changelog
-      - name: Create required package.json
-        run: test -f package.json || echo '{}' >package.json
-
-      - name: Changelog
-        uses: scottbrenner/generate-changelog-action@master
-        id: Changelog
+      - name: Update Changlog
+        id: changelog
+        uses: requarks/changelog-action@v1
         with:
-          from-tag: "${{ env.PREVERSION }}"
-          to-tag: HEAD
+          token: ${{ github.token }}
+          fromTag: ${{ env.PREVERSION }}
+          toTag: HEAD
+          writeToFile: false
 
       # Get extractor, LKM, Addons, Modules and Configs
       - name: Get extractor, LKM, Addons, Modules and Configs
@@ -204,7 +202,7 @@ jobs:
           tag_name: ${{ env.VERSION }}
           prerelease: ${{ inputs.prerelease }}
           body: |
-            ${{ steps.Changelog.outputs.changelog }}
+            ${{ steps.changelog.outputs.changes }}
           files: |
             arc-${{ env.VERSION }}.img.zip
             arc-${{ env.VERSION }}.vmdk-dyn.zip
