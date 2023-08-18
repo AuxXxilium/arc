@@ -27,6 +27,7 @@ jobs:
         run: |
           git config --global user.email "info@auxxxilium.tech"
           git config --global user.name "AuxXxilium"
+          git config --global --add safe.directory /github/workspace
           sudo timedatectl set-timezone "Europe/Berlin"
 
           sudo apt update
@@ -81,6 +82,7 @@ jobs:
         run: |
           # Calculate version
           VERSION=""
+          PREVERSION=""
           LATEST_TAG="$(curl -skL "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r ".tag_name" 2>/dev/null)"
           if [ -n "${LATEST_TAG}" -a "$(echo ${LATEST_TAG} | cut -d '.' -f 1,2)" = "$(date +'%y.%-m')" ]; then  # format %y.%-m.$i
             VERSION="$(echo ${LATEST_TAG} | awk -F '.' '{$3=$3+1}1' OFS='.')"
@@ -90,8 +92,8 @@ jobs:
 
           echo "VERSION: ${VERSION}"
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          echo "PREVERSION: ${PREVERSION}"
-          echo "PREVERSION=${PREVERSION}" >> $GITHUB_ENV
+          echo "PREVERSION: ${LATEST_TAG}"
+          echo "PREVERSION=${LATEST_TAG}" >> $GITHUB_ENV
 
           if [ -n "${VERSION}" ]; then
             # Modify Source File
