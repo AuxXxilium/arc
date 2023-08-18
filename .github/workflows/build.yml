@@ -120,6 +120,7 @@ jobs:
           toTag: ${{ env.PREVERSION }}
           writeToFile: false
           reverseOrder: true
+          excludeTypes: ''
 
       # Get extractor, LKM, Addons, Modules and Configs
       - name: Get extractor, LKM, Addons, Modules and Configs
