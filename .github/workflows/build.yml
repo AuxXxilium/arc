@@ -116,9 +116,10 @@ jobs:
         uses: requarks/changelog-action@v1
         with:
           token: ${{ github.token }}
-          fromTag: ${{ env.PREVERSION }}
-          toTag: HEAD
+          fromTag: ${{ env.VERSION }}
+          toTag: ${{ env.PREVERSION }}
           writeToFile: false
+          reverseOrder: true
 
       # Get extractor, LKM, Addons, Modules and Configs
       - name: Get extractor, LKM, Addons, Modules and Configs
