@@ -10,10 +10,6 @@ name: Build Arc
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'format %y.%-m.$i or auto'
-        required: true
-        type: string
       prerelease:
         description: 'pre release'
         default: false
@@ -94,6 +90,8 @@ jobs:
 
           echo "VERSION: ${VERSION}"
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "PREVERSION: ${PREVERSION}"
+          echo "PREVERSION=${PREVERSION}" >> $GITHUB_ENV
 
           if [ -n "${VERSION}" ]; then
             # Modify Source File
@@ -119,7 +117,7 @@ jobs:
         uses: scottbrenner/generate-changelog-action@master
         id: Changelog
         with:
-          from-tag: "${{ env.VERSION }}"
+          from-tag: "${{ env.PREVERSION }}"
           to-tag: HEAD
 
       # Get extractor, LKM, Addons, Modules and Configs
