@@ -111,12 +111,12 @@ jobs:
             fi
           fi
 
-      - name: Update Changlog
+      - name: Update Changelog
         id: changelog
         uses: requarks/changelog-action@v1
         with:
           token: ${{ github.token }}
-          fromTag: ${{ env.VERSION }}
+          fromTag: HEAD
           toTag: ${{ env.PREVERSION }}
           writeToFile: false
           reverseOrder: true
