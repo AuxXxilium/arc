@@ -112,11 +112,14 @@ jobs:
           fi
 
       # Generate Changelog
+      - name: Create required package.json
+        run: test -f package.json || echo '{}' >package.json
+
       - name: Changelog
         uses: scottbrenner/generate-changelog-action@master
         id: Changelog
         with:
-          from-tag: ${{ env.VERSION }}
+          from-tag: "${{ env.VERSION }}"
           to-tag: HEAD
 
       # Get extractor, LKM, Addons, Modules and Configs
