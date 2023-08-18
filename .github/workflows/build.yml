@@ -8,15 +8,11 @@
 name: Build Arc
 
 on:
-  push:
-    branches:
-      - main
-
   workflow_dispatch:
     inputs:
       version:
         description: 'format %y.%-m.$i or auto'
-        required: false
+        required: true
         type: string
       prerelease:
         description: 'pre release'
@@ -38,7 +34,7 @@ jobs:
           sudo timedatectl set-timezone "Europe/Berlin"
 
           sudo apt update
-          sudo apt install -y jq gettext libelf-dev qemu-utils
+          sudo apt install -y jq gettext libelf-dev qemu-utils build-essential
           sudo snap install yq
 
       # Check dl cache
@@ -89,21 +85,11 @@ jobs:
         run: |
           # Calculate version
           VERSION=""
-          if [[ "${{ github.event_name }}" =~ ^(push|release)$ && "${{ github.ref_type }}" == 'tag' ]]; then
-            VERSION="${{ github.ref_name }}"
-          elif [ -n "${{ inputs.version }}" ]; then
-            if [ "$(echo ${{ inputs.version }} | cut -d '.' -f 1,2)" = "$(date +'%y.%-m')" ]; then
-              VERSION="${{ inputs.version }}"
-            else
-              LATEST_TAG="$(curl -skL "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r ".tag_name" 2>/dev/null)"
-              if [ -n "${LATEST_TAG}" -a "$(echo ${LATEST_TAG} | cut -d '.' -f 1,2)" = "$(date +'%y.%-m')" ]; then  # format %y.%-m.$i
-                VERSION="$(echo ${LATEST_TAG} | awk -F '.' '{$3=$3+1}1' OFS='.')"
-              else
-                VERSION="$(date +'%y.%-m').0"
-              fi
-            fi
+          LATEST_TAG="$(curl -skL "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r ".tag_name" 2>/dev/null)"
+          if [ -n "${LATEST_TAG}" -a "$(echo ${LATEST_TAG} | cut -d '.' -f 1,2)" = "$(date +'%y.%-m')" ]; then  # format %y.%-m.$i
+            VERSION="$(echo ${LATEST_TAG} | awk -F '.' '{$3=$3+1}1' OFS='.')"
           else
-            VERSION=""
+            VERSION="$(date +'%y.%-m').0"
           fi
 
           echo "VERSION: ${VERSION}"
@@ -124,6 +110,14 @@ jobs:
               git push -f
             fi
           fi
+
+      # Generate Changelog
+      - name: Changelog
+        uses: scottbrenner/generate-changelog-action@master
+        id: Changelog
+        with:
+          from-tag: ${{ env.VERSION }}
+          to-tag: HEAD
 
       # Get extractor, LKM, Addons, Modules and Configs
       - name: Get extractor, LKM, Addons, Modules and Configs
@@ -206,6 +200,8 @@ jobs:
         with:
           tag_name: ${{ env.VERSION }}
           prerelease: ${{ inputs.prerelease }}
+          body: |
+            ${{ steps.Changelog.outputs.changelog }}
           files: |
             arc-${{ env.VERSION }}.img.zip
             arc-${{ env.VERSION }}.vmdk-dyn.zip
