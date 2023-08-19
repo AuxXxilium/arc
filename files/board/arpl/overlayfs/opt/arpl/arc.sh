@@ -1983,6 +1983,7 @@ function sysinfo() {
       NUMPORTS=$((${NUMPORTS} + 1))
     done
   done
+  TEXT+="\n"
   [ $(lspci -d ::107 | wc -l) -gt 0 ] && TEXT+="\nSAS/SCSI:\n"
   for PCI in $(lspci -d ::107 | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
@@ -2008,7 +2009,6 @@ function sysinfo() {
     TEXT+="\Zb${NAME}\Zn\nDrives: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  TEXT+="\n"
   TEXT+="\nTotal of ports: ${NUMPORTS}\n"
   TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected."
   dialog --backtitle "$(backtitle)" --colors --title "$(TEXT "Advanced")" \
