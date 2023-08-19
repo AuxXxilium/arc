@@ -112,7 +112,7 @@ if [ "${NOTSETMAC}" = "false" ] && [ "${BUILDDONE}" = "true" ]; then
     fi
     # Enable Wake on Lan, ignore errors
     ethtool -s ${ETHX[$((${N} - 1))]} wol g 2>/dev/null
-    echo -e "WOL enabled: ${ETHX[$((${N}-1))]}"
+    echo -e "WOL enabled: ${ETHX[$((${N} - 1))]}"
   done
 else
   # Get MAC address
@@ -125,7 +125,7 @@ else
     writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
     # Enable Wake on Lan, ignore errors
     ethtool -s ${ETHX[$((${N} - 1))]} wol g 2>/dev/null
-    echo -e "WOL enabled: ${ETHX[$((${N}-1))]}"
+    echo -e "WOL enabled: ${ETHX[$((${N} - 1))]}"
   done
 fi
 echo
