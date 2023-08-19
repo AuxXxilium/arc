@@ -110,49 +110,55 @@ function arcMenu() {
   dialog --backtitle "$(backtitle)" --title "Model" --aspect 18 \
     --infobox "Reading models" 3 20
   while true; do
-    echo "" >"${TMP_PATH}/menu"
-    FLGNEX=0
+    echo -n "" >"${TMP_PATH}/modellist"
     while read -r M; do
-      M="$(basename ${M})"
-      M="${M::-4}"
-      PLATFORM="$(readModelKey "${M}" "platform")"
-      DT="$(readModelKey "${M}" "dt")"
-      BETA="$(readModelKey "${M}" "beta")"
-      [ "${BETA}" = "true" ] && [ ${FLGBETA} -eq 0 ] && continue
-      DISKS="$(readModelKey "${M}" "disks")-Bay"
-      ARCCONF="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${M}.yml")"
-      if [ -n "${ARCCONF}" ]; then
-        ARCAV="Arc"
-      else
-        ARCAV="NonArc"
-      fi
-      if [ "${PLATFORM}" = "r1000" ] || [ "${PLATFORM}" = "v1000" ] || [ "${PLATFORM}" = "epyc7002" ]; then
-        CPU="AMD"
-      else
-        CPU="Intel"
-      fi
-      # Check id model is compatible with CPU
-      COMPATIBLE=1
-      if [ ${RESTRICT} -eq 1 ]; then
-        for F in "$(readModelArray "${M}" "flags")"; do
-          if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
-            COMPATIBLE=0
-            FLGNEX=1
-            break
-          fi
-        done
-        for F in "$(readModelArray "${M}" "dt")"; do
-          if [ "${DT}" = "true" ] && [ ${SASCONTROLLER} -gt 0 ]; then
-            COMPATIBLE=0
-            FLGNEX=1
-            break
-          fi
-        done
-      fi
+      Y=$(echo ${M} | tr -cd "[0-9]")
+      Y=${Y:0-2}
+      echo "${M} ${Y}" >>"${TMP_PATH}/modellist"
+    done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sed 's/.*\///; s/\.yml//')
+
+    while true; do
+      echo -n "" >"${TMP_PATH}/menu"
+      FLGNEX=0
+      while read M Y; do
+        PLATFORM=$(readModelKey "${M}" "platform")
+        DT="$(readModelKey "${M}" "dt")"
+        BETA="$(readModelKey "${M}" "beta")"
+        [ "${BETA}" = "true" -a ${FLGBETA} -eq 0 ] && continue
+        DISKS="$(readModelKey "${M}" "disks")-Bay"
+        ARCCONF="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${M}.yml")"
+        if [ -n "${ARCCONF}" ]; then
+          ARCAV="Arc"
+        else
+          ARCAV="NonArc"
+        fi
+        if [ "${PLATFORM}" = "r1000" ] || [ "${PLATFORM}" = "v1000" ] || [ "${PLATFORM}" = "epyc7002" ]; then
+          CPU="AMD"
+        else
+          CPU="Intel"
+        fi
+        # Check id model is compatible with CPU
+        COMPATIBLE=1
+        if [ ${RESTRICT} -eq 1 ]; then
+          for F in "$(readModelArray "${M}" "flags")"; do
+            if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
+              COMPATIBLE=0
+              FLGNEX=1
+              break
+            fi
+          done
+          for F in "$(readModelArray "${M}" "dt")"; do
+            if [ "${DT}" = "true" ] && [ ${SASCONTROLLER} -gt 0 ]; then
+              COMPATIBLE=0
+              FLGNEX=1
+              break
+            fi
+        fi
+      done
       [ "${DT}" = "true" ] && DT="DT" || DT=""
       [ "${BETA}" = "true" ] && BETA="Beta" || BETA=""
       [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"$(printf "\Zb%-7s\Zn \Zb%-6s\Zn \Zb%-13s\Zn \Zb%-3s\Zn \Zb%-7s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DT}" "${ARCAV}" "${BETA}")\" ">>"${TMP_PATH}/menu"
-    done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
+    done < <(cat "${TMP_PATH}/modellist" | sort -r -n -k 2)
     [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models\Zn\"" >>"${TMP_PATH}/menu"
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >>"${TMP_PATH}/menu"
     dialog --backtitle "$(backtitle)" --colors --menu "Choose Model for Loader" 0 62 0 \
@@ -161,9 +167,9 @@ function arcMenu() {
     resp=$(<"${TMP_PATH}/resp")
     [ -z "${resp}" ] && return 1
     if [ "${resp}" = "b" ]; then
-        FLGBETA=1
-        continue
-      fi
+      FLGBETA=1
+      continue
+    fi
     if [ "${resp}" = "f" ]; then
       RESTRICT=0
       continue
@@ -186,8 +192,6 @@ function arcMenu() {
     PRODUCTVER=""
     writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
     writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
@@ -754,14 +758,14 @@ function modulesMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       6)
-        MSG=""
-        MSG+="This function is experimental and dangerous. If you don't know much, please exit.\n"
-        MSG+="The imported .ko of this function will be implanted into the corresponding arch's modules package, which will affect all models of the arch.\n"
-        MSG+="This program will not determine the availability of imported modules or even make type judgments, as please double check if it is correct.\n"
-        MSG+="If you want to remove it, please go to the \"Update Menu\" -> \"Update modules\" to forcibly update the modules. All imports will be reset.\n"
-        MSG+="Do you want to continue?"
+        TEXT=""
+        TEXT+="This function is experimental and dangerous. If you don't know much, please exit.\n"
+        TEXT+="The imported .ko of this function will be implanted into the corresponding arch's modules package, which will affect all models of the arch.\n"
+        TEXT+="This program will not determine the availability of imported modules or even make type judgments, as please double check if it is correct.\n"
+        TEXT+="If you want to remove it, please go to the \"Update Menu\" -> \"Update modules\" to forcibly update the modules. All imports will be reset.\n"
+        TEXT+="Do you want to continue?"
         dialog --backtitle "$(backtitle)" --title "Add external module" \
-            --yesno "${MSG}" 0 0
+            --yesno "${TEXT}" 0 0
         [ $? -ne 0 ] && return
         dialog --backtitle "$(backtitle)" --aspect 18 --colors --inputbox "Please enter the complete URL to download.\n" 0 0 \
           2>"${TMP_PATH}/resp"
@@ -1318,23 +1322,23 @@ function backupMenu() {
                   if [ -n "${PRODUCTVER}" ]; then
                     cp -f "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
                     cp -f "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
-                    MSG="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
+                    TEXT="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
                     SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
                     if [ -n "${SN}" ]; then
                       deleteConfigKey "arc.patch" "${USER_CONFIG_FILE}"
                       SNARC="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${MODEL}.yml")"
                       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-                      MSG+="\nSerial: ${SN}"
+                      TEXT+="\nSerial: ${SN}"
                       if [ "${SN}" = "${SNARC}" ]; then
                         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
                       else
                         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
                       fi
                       ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-                      MSG+="\nArc Patch: ${ARCPATCH}"
+                      TEXT+="\nArc Patch: ${ARCPATCH}"
                     fi
                     dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
-                      --aspect 18 --msgbox "${MSG}" 0 0
+                      --aspect 18 --msgbox "${TEXT}" 0 0
                     ARCRECOVERY="true"
                     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
                     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -1502,23 +1506,23 @@ function backupMenu() {
                   if [ -n "${PRODUCTVER}" ]; then
                     cp "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
                     cp "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
-                    MSG="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
+                    TEXT="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
                     SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
                     if [ -n "${SN}" ]; then
                       deleteConfigKey "arc.patch" "${USER_CONFIG_FILE}"
                       SNARC="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${MODEL}.yml")"
                       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-                      MSG+="\nSerial: ${SN}"
+                      TEXT+="\nSerial: ${SN}"
                       if [ "${SN}" = "${SNARC}" ]; then
                         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
                       else
                         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
                       fi
                       ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-                      MSG+="\nArc Patch: ${ARCPATCH}"
+                      TEXT+="\nArc Patch: ${ARCPATCH}"
                     fi
                     dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
-                      --aspect 18 --msgbox "${MSG}" 0 0
+                      --aspect 18 --msgbox "${TEXT}" 0 0
                     ARCRECOVERY="true"
                     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
                     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -1956,59 +1960,72 @@ function sysinfo() {
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
   TEXT+="\n\Z4> Storage\Zn"
   # Get Information for Sata Controller
-  if [ ${SATACONTROLLER} -gt 0 ]; then
-    NUMPORTS=0
-    for PCI in $(lspci -nnk | grep -ie "\[0106\]" | awk '{print$1}'); do
-      NAME="$(lspci -s "${PCI}" | sed "s/\ .*://")"
-      # Get Amount of Drives connected
-      SATADRIVES="$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)"
-      TEXT+="\n\Z1SATA Controller\Zn detected:\n\Zb"${NAME}"\Zn\n"
-      TEXT+="\Z1Drives\Zn detected:\n\Zb"${SATADRIVES}"\Zn\n"
-      TEXT+="\n\ZbPorts: "
-      unset HOSTPORTS
-      declare -A HOSTPORTS
-      while read -r LINE; do
-        ATAPORT="$(echo ${LINE} | grep -o 'ata[0-9]*')"
-        PORT=$(echo ${ATAPORT} | sed 's/ata//')
-        HOSTPORTS[${PORT}]=$(echo ${LINE} | grep -o 'host[0-9]*$')
-      done < <(ls -l /sys/class/scsi_host | fgrep "${PCI}")
-      while read -r PORT; do
-        ls -l /sys/block | fgrep -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
-        PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
-        [ ${PCMD} -eq 0 ] && DUMMY=1 || DUMMY=0
-        [ ${ATTACH} -eq 1 ] && TEXT+="\Z2\Zb"
-        [ ${DUMMY} -eq 1 ] && TEXT+="\Z1"
-        [ ${DUMMY} -eq 0 ] && [ ${ATTACH} -eq 0 ] && TEXT+="\Zb"
-        TEXT+="${PORT}\Zn "
-        NUMPORTS=$((${NUMPORTS}+1))
-      done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
-      TEXT+="\n "
+  TEXT=""
+  NUMPORTS=0
+  [ $(lspci -d ::106 | wc -l) -gt 0 ] && TEXT+="\nSATA:\n"
+  for PCI in $(lspci -d ::106 | awk '{print $1}'); do
+    NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+    TEXT+="\Zb${NAME}\Zn\nPorts: "
+    PORTS=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+    for P in ${PORTS}; do
+      if lsscsi -b | grep -v - | grep -q "\[${P}:"; then
+        DUMMY="$([ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ] && echo 1 || echo 2)" 
+        if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ]; then
+          TEXT+="\Z1$(printf "%02d" ${P})\Zn "
+        else
+          TEXT+="\Z2$(printf "%02d" ${P})\Zn "
+        fi
+      else
+        TEXT+="$(printf "%02d" ${P}) "
+      fi
+      NUMPORTS=$((${NUMPORTS} + 1))
     done
-    TEXT+="\n\ZbTotal Ports: \Z2\Zb${NUMPORTS}\Zn\n"
-  fi
-  # Get Information for SAS Controller
-  if [ ${SASCONTROLLER} -gt 0 ]; then
-    for PCI in $(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | awk '{print$1}'); do
-      # Get Name of Controller
-      NAME="$(lspci -s "${PCI}" | sed "s/\ .*://")"
-      # Get Amount of Drives connected
-      SASDRIVES="$(ls -la /sys/block | fgrep "${PCI}" | grep -v "sr.$" | wc -l)"
-      TEXT+="\n\Z1SAS/SCSI Controller\Zn detected:\n\Zb${NAME}\Zn\n"
-      TEXT+="\Z1Drives\Zn detected:\n\Zb${SASDRIVES}\Zn\n"
-    done
-  fi
+    TEXT+="\n"
+    TEXT+="\nTotal of ports: ${NUMPORTS}\n"
+    TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected."
+    dialog --backtitle "$(backtitle)" --colors --title "$(TEXT "Advanced")" \
+      --msgbox "${TEXT}" 0 0
+  done
+  [ $(lspci -d ::107 | wc -l) -gt 0 ] && TEXT+="\nHBA:\n"
+  for PCI in $(lspci -d ::107 | awk '{print $1}'); do
+    NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+    PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+    PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+    TEXT+="\Zb${NAME}\Zn\nNumber: ${PORTNUM}\n"
+    NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+  done
+  [ $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ] && TEXT+="\nUSB:\n"
+  for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
+    NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+    PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+    PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+    [ ${PORTNUM} -eq 0 ] && continue
+    TEXT+="\Zb${NAME}\Zn\nNumber: ${PORTNUM}\n"
+    NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+  done
+  [ $(lspci -d ::108 | wc -l) -gt 0 ] && TEXT+="\nNVME:\n"
+  for PCI in $(lspci -d ::108 | awk '{print $1}'); do
+    NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+    PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
+    PORTNUM=$(lsscsi -b | grep -v - | grep "\[N:${PORT}:" | wc -l)
+    TEXT+="\Zb${NAME}\Zn\nNumber: ${PORTNUM}\n"
+    NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+  done
+  TEXT+="\n"
+  TEXT+="\nTotal of ports: ${NUMPORTS}\n"
+  TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected."
   dialog --backtitle "$(backtitle)" --title "Arc Sysinfo" --aspect 18 --colors --msgbox "${TEXT}" 0 0
 }
 
 ###############################################################################
 # allow downgrade dsm version
 function downgradeMenu() {
-  MSG=""
-  MSG+="This feature will allow you to downgrade the installation by removing the VERSION file from the first partition of all disks.\n"
-  MSG+="Therefore, please insert all disks before continuing.\n"
-  MSG+="Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?"
+  TEXT=""
+  TEXT+="This feature will allow you to downgrade the installation by removing the VERSION file from the first partition of all disks.\n"
+  TEXT+="Therefore, please insert all disks before continuing.\n"
+  TEXT+="Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?"
   dialog --backtitle "$(backtitle)" --title "Allow downgrade installation" \
-      --yesno "${MSG}" 0 0
+      --yesno "${TEXT}" 0 0
   [ $? -ne 0 ] && return 1
   (
     mkdir -p "${TMP_PATH}/sdX1"
@@ -2022,9 +2039,9 @@ function downgradeMenu() {
     rm -rf "${TMP_PATH}/sdX1"
   ) | dialog --backtitle "$(backtitle)" --title "Allow downgrade installation" \
       --progressbox "Removing ..." 20 70
-  MSG="Remove VERSION file for all disks completed."
+  TEXT="Remove VERSION file for all disks completed."
   dialog --backtitle "$(backtitle)" --colors --aspect 18 \
-    --msgbox "${MSG}" 0 0
+    --msgbox "${TEXT}" 0 0
 }
 
 ###############################################################################
