@@ -92,7 +92,8 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
 fi
 
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
-if [ "${NOTSETMAC}" = "false" ]; then
+BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+if [ "${NOTSETMAC}" = "false" ] && [ "${BUILDDONE}" = "true" ]; then
   # Get MAC address
   ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
   for N in $(seq 1 ${#ETHX[@]}); do
@@ -172,7 +173,6 @@ fi
 echo
 
 # Decide if boot automatically
-BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 if grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
   echo -e "\033[1;31mUser requested edit settings.\033[0m"
 elif [ "${BUILDDONE}" = "true" ]; then
