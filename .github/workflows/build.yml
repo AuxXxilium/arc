@@ -96,12 +96,10 @@ jobs:
           CHANGELOG=$(git log --pretty=format:"%s" ${LATEST_TAG}..HEAD | sort)
           if [ -n "${CHANGELOG}" ]; then
             echo "Changelog: ${CHANGELOG}"
-            echo "CHANGELOG='${CHANGELOG}'" >> $GITHUB_ENV
             echo "${CHANGELOG}" >CHANGELOG
           else
             CHANGELOG='New Build Tree'
             echo "Changelog: ${CHANGELOG}"
-            echo "CHANGELOG='${CHANGELOG}'" >> $GITHUB_ENV
             echo "${CHANGELOG}" >CHANGELOG
           fi
 
@@ -202,9 +200,9 @@ jobs:
         with:
           tag_name: ${{ env.VERSION }}
           prerelease: ${{ inputs.prerelease }}
-          body: ${{ env.CHANGELOG }}
           files: |
             arc-${{ env.VERSION }}.img.zip
             arc-${{ env.VERSION }}.vmdk-dyn.zip
             arc-${{ env.VERSION }}.vmdk-flat.zip
             update.zip
+            CHANGELOG
