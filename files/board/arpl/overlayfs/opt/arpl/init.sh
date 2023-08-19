@@ -32,8 +32,8 @@ mkdir -p ${DSMROOT_PATH}
 
 # Mount the partitions
 mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "Can't mount ${BOOTLOADER_PATH}"
-mount ${LOADER_DISK}2 ${SLPART_PATH}     || die "Can't mount ${SLPART_PATH}"
-mount ${LOADER_DISK}3 ${CACHE_PATH}      || die "Can't mount ${CACHE_PATH}"
+mount ${LOADER_DISK}2 ${SLPART_PATH} || die "Can't mount ${SLPART_PATH}"
+mount ${LOADER_DISK}3 ${CACHE_PATH} || die "Can't mount ${CACHE_PATH}"
 
 # Shows title
 clear
@@ -44,8 +44,8 @@ printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" $COLUMNS ""
 
 # Move/link SSH machine keys to/from cache volume
-[ ! -d "${CACHE_PATH}/ssh" ] && cp -R /etc/ssh "${CACHE_PATH}/ssh"
-rm -rf /etc/ssh
+[ ! -d "${CACHE_PATH}/ssh" ] && cp -R "/etc/ssh" "${CACHE_PATH}/ssh"
+rm -rf "/etc/ssh"
 ln -s "${CACHE_PATH}/ssh" "/etc/ssh"
 
 # Link bash history to cache volume
@@ -54,6 +54,17 @@ ln -s "${CACHE_PATH}/.bash_history" ~/.bash_history
 touch ~/.bash_history
 if ! grep -q "arc.sh" ~/.bash_history; then
   echo "arc.sh " >>~/.bash_history
+fi
+
+# Check if exists directories into P3 partition, if yes remove and link it
+if [ -d "${CACHE_PATH}/model-configs" ]; then
+  rm -rf "${MODEL_CONFIG_PATH}"
+  ln -s "${CACHE_PATH}/model-configs" "${MODEL_CONFIG_PATH}"
+fi
+
+if [ -d "${CACHE_PATH}/patch" ]; then
+  rm -rf "${PATCH_PATH}"
+  ln -s "${CACHE_PATH}/patch" "${PATCH_PATH}"
 fi
 
 # If user config file not exists, initialize it
@@ -93,14 +104,16 @@ fi
 
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-if [ "${NOTSETMAC}" = "false" ] && [ "${BUILDDONE}" = "true" ]; then
-  # Get MAC address
-  ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
-  for N in $(seq 1 ${#ETHX[@]}); do
-    MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
-    MACF="$(readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}")"
-    # Initialize with real MAC
-    writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
+# No network devices
+[ ${#ETHX[@]} -eq 0 ] && die "NIC not found!"
+# Get MAC address
+for N in $(seq 1 ${#ETHX[@]}); do
+  MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
+  MACF="$(readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}")"
+  # Initialize with real MAC
+  writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+  if [ "${NOTSETMAC}" = "false" ] && [ "${BUILDDONE}" = "true" ]; then
     if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
       MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
       echo "Setting ${ETHX[$((${N} - 1))]} MAC to ${MAC}"
@@ -110,58 +123,44 @@ if [ "${NOTSETMAC}" = "false" ] && [ "${BUILDDONE}" = "true" ]; then
       # Write real Mac to cmdline config
       writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
     fi
-    # Enable Wake on Lan, ignore errors
-    ethtool -s ${ETHX[$((${N} - 1))]} wol g 2>/dev/null
-    echo -e "WOL enabled: ${ETHX[$((${N} - 1))]}"
-  done
-else
-  # Get MAC address
-  ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
-  for N in $(seq 1 ${#ETHX[@]}); do
-    MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
-    # Initialize with real MAC
-    writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+  else
     # Write real Mac to cmdline config
     writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
-    # Enable Wake on Lan, ignore errors
-    ethtool -s ${ETHX[$((${N} - 1))]} wol g 2>/dev/null
-    echo -e "WOL enabled: ${ETHX[$((${N} - 1))]}"
-  done
-fi
+  fi
+  # Enable Wake on Lan, ignore errors
+  ethtool -s ${ETHX[$((${N} - 1))]} wol g 2>/dev/null
+  echo -e "WOL enabled: ${ETHX[$((${N} - 1))]}"
+done
 echo
 
 # Get the VID/PID if we are in USB
 VID="0x0000"
 PID="0x0000"
 BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
+[ "${BUS}" = "ata" ] && BUS="sata"
+
 if [ "${BUS}" = "usb" ]; then
   VID="0x$(udevadm info --query property --name ${LOADER_DISK} | grep ID_VENDOR_ID | cut -d= -f2)"
   PID="0x$(udevadm info --query property --name ${LOADER_DISK} | grep ID_MODEL_ID | cut -d= -f2)"
-  writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
-  writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
-elif [ "${BUS}" != "ata" ] && [ "${BUS}" != "usb" ]; then
+elif [ "${BUS}" != "sata" ] && [ "${BUS}" != "scsi" ]; then
   die "Loader disk neither USB or DoM"
 fi
+
+# Save variables to user config file
 writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
 writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 
 # Inform user
-echo -en "Loader disk: \033[1;34m${LOADER_DISK}\033[0m ("
-if [ "${BUS}" = "usb" ]; then
-  echo -en "\033[1;34mUSB flashdisk\033[0m"
-elif [ "${BUS}" = "ata" ]; then
-  echo -en "\033[1;34mSATA DoM\033[0m"
-fi
-echo ")"
+echo "Loader disk: \033[1;32m${LOADER_DISK}\033[0m (\033[1;32m${BUS^^} flashdisk\033[0m)"
 
 # Check if partition 3 occupies all free space, resize if needed
 LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
 SIZEOFDISK=$(cat /sys/block/${LOADER_DEVICE_NAME}/size)
-ENDSECTOR=$(($(fdisk -l ${LOADER_DISK} | awk '/'${LOADER_DEVICE_NAME}3'/{print$3}')+1))
+ENDSECTOR=$(($(fdisk -l ${LOADER_DISK} | awk '/'${LOADER_DEVICE_NAME}3'/{print$3}') + 1))
 if [ ${SIZEOFDISK} -ne ${ENDSECTOR} ]; then
-  echo -e "\033[1;36mResizing ${LOADER_DISK}3\033[0m"
+  echo -e "\033[1;36m$(printf "Resizing ${LOADER_DISK}3")\033[0m"
   echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${LOADER_DISK}" >"${LOG_FILE}" 2>&1 || dieLog
-  resize2fs "${LOADER_DISK}3" >"${LOG_FILE}" 2>&1 || dieLog
+  resize2fs ${LOADER_DISK}3 >"${LOG_FILE}" 2>&1 || dieLog
 fi
 
 # Load keymap name
@@ -176,13 +175,11 @@ fi
 echo
 
 # Decide if boot automatically
-if grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
-  echo -e "\033[1;31mUser requested edit settings.\033[0m"
-elif [ "${BUILDDONE}" = "true" ]; then
+if [ "${BUILDDONE}" = "true" ]; then
   echo -e "\033[1;34mLoader is configured!\033[0m"
   boot.sh && exit 0
-elif [ "${BUILDDONE}" = "false" ]; then
-  echo -e "\033[1;31mLoader is not configured!\033[0m"
+elif grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
+  echo -e "\033[1;31mUser requested edit settings.\033[0m"
 fi
 echo
 
@@ -190,8 +187,6 @@ echo
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
 ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
-# No network devices
-[ ${#ETHX[@]} -le 0 ] && die "NIC not found!"
 echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
 for N in $(seq 0 $((${#ETHX[@]} - 1))); do
   DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
