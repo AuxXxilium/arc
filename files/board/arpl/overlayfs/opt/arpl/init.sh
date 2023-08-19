@@ -110,6 +110,9 @@ if [ "${NOTSETMAC}" = "false" ] && [ "${BUILDDONE}" = "true" ]; then
       # Write real Mac to cmdline config
       writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
     fi
+    # Enable Wake on Lan, ignore errors
+    ethtool -s ${ETHX[$((${N} - 1))]} wol g 2>/dev/null
+    echo -e "WOL enabled: ${ETHX[$((${N}-1))]}"
   done
 else
   # Get MAC address
@@ -120,11 +123,11 @@ else
     writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
     # Write real Mac to cmdline config
     writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+    # Enable Wake on Lan, ignore errors
+    ethtool -s ${ETHX[$((${N} - 1))]} wol g 2>/dev/null
+    echo -e "WOL enabled: ${ETHX[$((${N}-1))]}"
   done
 fi
-# Enable Wake on Lan, ignore errors
-ethtool -s ${ETHX[$((${N} - 1))]} wol g 2>/dev/null
-echo -e "WOL enabled: ${ETHX[$((${N}-1))]}"
 echo
 
 # Get the VID/PID if we are in USB
