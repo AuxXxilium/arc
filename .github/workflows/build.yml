@@ -96,11 +96,11 @@ jobs:
           CHANGELOG=$(git log --pretty=format:"%s" ${LATEST_TAG}..HEAD | sort)
           if [ -n "${CHANGELOG}" ]; then
             echo "Changelog: ${CHANGELOG}"
-            echo "${CHANGELOG}" >CHANGELOG
+            echo "${CHANGELOG}" >changelog.txt
           else
             CHANGELOG='New Build Tree'
             echo "Changelog: ${CHANGELOG}"
-            echo "${CHANGELOG}" >CHANGELOG
+            echo "${CHANGELOG}" >changelog.txt
           fi
 
           if [ -n "${VERSION}" ]; then
@@ -204,4 +204,4 @@ jobs:
             arc-${{ env.VERSION }}.vmdk-dyn.zip
             arc-${{ env.VERSION }}.vmdk-flat.zip
             update.zip
-            CHANGELOG
+            changelog.txt
