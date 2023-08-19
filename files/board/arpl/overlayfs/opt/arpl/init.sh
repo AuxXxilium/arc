@@ -56,17 +56,6 @@ if ! grep -q "arc.sh" ~/.bash_history; then
   echo "arc.sh " >>~/.bash_history
 fi
 
-# Check if exists directories into P3 partition, if yes remove and link it
-if [ -d "${CACHE_PATH}/model-configs" ]; then
-  rm -rf "${MODEL_CONFIG_PATH}"
-  ln -s "${CACHE_PATH}/model-configs" "${MODEL_CONFIG_PATH}"
-fi
-
-if [ -d "${CACHE_PATH}/patch" ]; then
-  rm -rf "${PATCH_PATH}"
-  ln -s "${CACHE_PATH}/patch" "${PATCH_PATH}"
-fi
-
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
