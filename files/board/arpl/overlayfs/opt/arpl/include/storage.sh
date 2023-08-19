@@ -14,7 +14,7 @@ function getmap() {
   DISKIDXMAP=""
   let DISKIDXMAPIDXMAX=0
   DISKIDXMAPMAX=""
-  for PCI in $(lspci -nnk | grep -ie "\[0106\]" | awk '{print $1}'); do
+  for PCI in $(lspci -d ::106 | awk '{print $1}'); do
     NUMPORTS=0
     CONPORTS=0
     unset HOSTPORTS
@@ -30,7 +30,7 @@ function getmap() {
       [ ${PCMD} = 0 ] && DUMMY=1 || DUMMY=0
       [ ${ATTACH} = 1 ] && CONPORTS=$((${CONPORTS} + 1)) && echo "$((${PORT} - 1))" >>"${TMP_PATH}/ports"
       [ ${DUMMY} = 1 ]
-      NUMPORTS=$((${NUMPORTS}+1))
+      NUMPORTS=$((${NUMPORTS} + 1))
     done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
     [ ${NUMPORTS} -gt 8 ] && NUMPORTS=8
     [ ${CONPORTS} -gt 8 ] && CONPORTS=8
@@ -131,7 +131,7 @@ function getmap() {
 }
 
 # Check for Controller
-SATACONTROLLER=$(lspci -nnk | grep -ie "\[0106\]" | wc -l)
+SATACONTROLLER=$(lspci -d ::106 | wc -l)
 writeConfigKey "device.satacontroller" "${SATACONTROLLER}" "${USER_CONFIG_FILE}"
-SASCONTROLLER=$(lspci -nnk | grep -ie "\[0104\]" -ie "\[0107\]" | wc -l)
+SASCONTROLLER=$(lspci -d ::107 | wc -l)
 writeConfigKey "device.sascontroller" "${SASCONTROLLER}" "${USER_CONFIG_FILE}"
