@@ -91,9 +91,8 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 fi
 
-ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
-if [ "${ARCPATCH}" = "true" ] && [ "${NOTSETMAC}" = "false" ]; then
+if [ "${NOTSETMAC}" = "false" ]; then
   # Get MAC address
   ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
   for N in $(seq 1 ${#ETHX[@]}); do
