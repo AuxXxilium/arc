@@ -656,7 +656,6 @@ function extensionSelection() {
 ###############################################################################
 # Permit user select the modules to include
 function modulesMenu() {
-  NEXT="1"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
@@ -800,7 +799,6 @@ function modulesMenu() {
 ###############################################################################
 # Let user edit cmdline
 function cmdlineMenu() {
-  NEXT="1"
   unset CMDLINE
   declare -A CMDLINE
   while IFS=': ' read -r KEY VALUE; do
@@ -886,7 +884,7 @@ function cmdlineMenu() {
       4)
         ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
         for N in $(seq 1 8); do # Currently, only up to 8 are supported.  (<==> boot.sh L96, <==> lkm: MAX_NET_IFACES)
-          MACR="$(cat /sys/class/net/${ETHX[$((${N}-1))]}/address | sed 's/://g')"
+          MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
           MACF=${CMDLINE["mac${N}"]}
           [ -n "${MACF}" ] && MAC=${MACF} || MAC=${MACR}
           RET=1
@@ -898,7 +896,7 @@ function cmdlineMenu() {
             [ ${RET} -ne 0 ] && break 2
             MAC="$(<"${TMP_PATH}/resp")"
             [ -z "${MAC}" ] && MAC="$(readConfigKey "device.mac${i}" "${USER_CONFIG_FILE}")"
-            [ -z "${MAC}" ] && MAC="${MACFS[$((${i}-1))]}"
+            [ -z "${MAC}" ] && MAC="${MACFS[$((${i} - 1))]}"
             MACF="$(echo "${MAC}" | sed 's/://g')"
             [ ${#MACF} -eq 12 ] && break
             dialog --backtitle "$(backtitle)" --title "User cmdline" --msgbox "Invalid MAC" 0 0
@@ -909,13 +907,13 @@ function cmdlineMenu() {
             writeConfigKey "cmdline.mac${N}"      "${MACF}" "${USER_CONFIG_FILE}"
             writeConfigKey "cmdline.netif_num"    "${N}"    "${USER_CONFIG_FILE}"
             MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-            ip link set dev ${ETHX[$((${N}-1))]} address ${MAC} 2>&1 | dialog --backtitle "$(backtitle)" \
+            ip link set dev ${ETHX[$((${N} - 1))]} address ${MAC} 2>&1 | dialog --backtitle "$(backtitle)" \
               --title "User cmdline" --progressbox "Changing MAC" 20 70
             /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "$(backtitle)" \
               --title "User cmdline" --progressbox "Renewing IP" 20 70
-            IP=$(ip route 2>/dev/null | sed -n 's/.* via .* dev \(.*\)  src \(.*\)  metric .*/\1: \2 /p' | head -1)
+            IP="$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)"
             dialog --backtitle "$(backtitle)" --title "Alert" \
-              --yesno "Continue to custom MAC?" 0 0
+              --yesno "Continue with next MAC?" 0 0
             [ $? -ne 0 ] && break
           fi
         done
@@ -962,7 +960,6 @@ function cmdlineMenu() {
 ###############################################################################
 # let user configure synoinfo entries
 function synoinfoMenu() {
-  NEXT="1"
   # read synoinfo from user config
   unset SYNOINFO
   declare -A SYNOINFO
@@ -1049,9 +1046,9 @@ function keymapMenu() {
   dialog --backtitle "$(backtitle)" --no-items --default-item "${KEYMAP}" \
     --menu "Choice a keymap" 0 0 0 ${OPTIONS} \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   resp=$(<"${TMP_PATH}/resp")
-  [ -z "${resp}" ] && return
+  [ -z "${resp}" ] && return 1
   KEYMAP=${resp}
   writeConfigKey "layout" "${LAYOUT}" "${USER_CONFIG_FILE}"
   writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
@@ -1061,7 +1058,6 @@ function keymapMenu() {
 ###############################################################################
 # Shows usb menu to user
 function usbMenu() {
-  NEXT="1"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
     while true; do
@@ -1097,6 +1093,8 @@ function usbMenu() {
         0) return ;;
       esac
     done
+  else
+    return 1
   fi
 }
 
@@ -1349,7 +1347,7 @@ function backupMenu() {
             fi
           else
             dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
-              --msgbox "Unfortunately I couldn't mount the DSM partition!" 0 0
+              --msgbox "Unfortunately Arc couldn't mount the DSM partition!" 0 0
           fi
           ;;
         0) return ;;
@@ -1533,7 +1531,7 @@ function backupMenu() {
             fi
           else
             dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
-              --msgbox "Unfortunately I couldn't mount the DSM partition!" 0 0
+              --msgbox "Unfortunately Arc couldn't mount the DSM partition!" 0 0
           fi
           ;;
         0) return ;;
