@@ -120,10 +120,13 @@ jobs:
           toTag: ${{ env.PREVERSION }}
           writeToFile: false
           reverseOrder: true
-          excludeTypes: nothing
+          excludeTypes: 'docs,style'
+          includeRefIssues: false
+          useGitmojis: false
+          includeInvalidCommits: false
 
       # Get extractor, LKM, Addons, Modules and Configs
-      - name: Get extractor, LKM, Addons, Modules and Configs
+      - name: Get extractor, LKM, Addons, Extensions, Modules and Configs
         run: |
           . scripts/func.sh
 
@@ -172,7 +175,7 @@ jobs:
           fi
           sha256sum update-list.yml update-check.sh > sha256sum
           zip -9j update.zip update-list.yml update-check.sh
-          while read F; do
+          while read -r F; do
             if [ -d "${F}" ]; then
               FTGZ="$(basename "${F}").tgz"
               tar -czf "${FTGZ}" -C "${F}" .
@@ -203,8 +206,7 @@ jobs:
         with:
           tag_name: ${{ env.VERSION }}
           prerelease: ${{ inputs.prerelease }}
-          body: |
-            ${{ steps.changelog.outputs.changes }}
+          body: ${{ steps.changelog.outputs.changes }}
           files: |
             arc-${{ env.VERSION }}.img.zip
             arc-${{ env.VERSION }}.vmdk-dyn.zip
