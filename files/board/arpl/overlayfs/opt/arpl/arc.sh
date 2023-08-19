@@ -2149,17 +2149,17 @@ function formatdisks() {
     echo "${POSITION}" | grep -q "${LOADER_DEVICE_NAME}" && continue
     echo "\"${POSITION}\" \"${NAME}\" \"off\"" >>"${TMP_PATH}/opts"
   done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd|/dev/nvme" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
-  dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
-    --checklist "Advanced" 0 0 0 --file "${TMP_PATH}/opts" \
+  dialog --backtitle "$(backtitle)" --colors --title "Format" \
+    --checklist "Format" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return 1
   RESP=$(<"${TMP_PATH}/resp")
   [ -z "${RESP}" ] && return 1
-  dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
+  dialog --backtitle "$(backtitle)" --colors --title "Format" \
     --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return 1
   if [ $(ls /dev/md* | wc -l) -gt 0 ]; then
-    dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
+    dialog --backtitle "$(backtitle)" --colors --title "Format" \
       --yesno "Warning:\nThe current hds is in raid, do you still want to format them?" 0 0
     [ $? -ne 0 ] && return 1
     for I in $(ls /dev/md*); do
@@ -2170,10 +2170,21 @@ function formatdisks() {
     for I in ${RESP}; do
       mkfs.ext4 -T largefile4 ${I}
     done
-  ) | dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
+  ) | dialog --backtitle "$(backtitle)" --colors --title "Format" \
     --progressbox "Formatting ..." 20 70
-  dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
+  dialog --backtitle "$(backtitle)" --colors --title "Format" \
     --msgbox "Formatting is complete." 0 0
+}
+
+###############################################################################
+# let user delete Loader Boot Files
+function cleanOld() {
+  if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
+    # Delete old files
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+  fi
+  dialog --backtitle "$(backtitle)" --colors --title "Clean Old" \
+    --msgbox "Clean is complete." 0 0
 }
 
 ###############################################################################
@@ -2272,6 +2283,7 @@ while true; do
       echo "= \"\Z4========== Dev ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "z \"Save Modifications to Disk \" "                                             >>"${TMP_PATH}/menu"
+      echo "u \"Clean old Loader Boot Files \" "                                            >>"${TMP_PATH}/menu"
       echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >>"${TMP_PATH}/menu"
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
@@ -2351,6 +2363,7 @@ while true; do
       NEXT="j"
       ;;
     z) saveMenu; NEXT="z" ;;
+    u) cleanOld; NEXT="u" ;;
     +) formatdisks; NEXT="+" ;;
     # Loader Settings
     t) backupMenu; NEXT="t" ;;
