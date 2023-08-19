@@ -113,17 +113,14 @@ jobs:
 
       - name: Update Changelog
         id: changelog
-        uses: requarks/changelog-action@v1
+        uses: gandarez/changelog-action@v{latest}
         with:
-          token: ${{ github.token }}
-          fromTag: HEAD
-          toTag: ${{ env.PREVERSION }}
-          writeToFile: false
-          reverseOrder: true
-          excludeTypes: 'docs,style'
-          includeRefIssues: false
-          useGitmojis: false
-          includeInvalidCommits: false
+          current_tag: "HEAD"
+          previous_tag: "{{ env.PREVERSION }}"
+          main_branch_name: "main"
+          exclude: |
+              ^Merge pull request .*
+          debug: true
 
       # Get extractor, LKM, Addons, Modules and Configs
       - name: Get extractor, LKM, Addons, Extensions, Modules and Configs
@@ -206,7 +203,7 @@ jobs:
         with:
           tag_name: ${{ env.VERSION }}
           prerelease: ${{ inputs.prerelease }}
-          body: ${{ steps.changelog.outputs.changes }}
+          body: ${{ steps.changelog.outputs.changelog }}
           files: |
             arc-${{ env.VERSION }}.img.zip
             arc-${{ env.VERSION }}.vmdk-dyn.zip
