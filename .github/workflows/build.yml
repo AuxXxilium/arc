@@ -109,7 +109,6 @@ jobs:
             echo "${VERSION}" >files/board/arpl/p1/ARPL-VERSION
             sed 's/^ARPL_VERSION=.*/ARPL_VERSION="'${VERSION}'"/' -i files/board/arpl/overlayfs/opt/arpl/include/consts.sh
 
-            git checkout main
             git pull
             status=$(git status -s | awk '{printf " %s", $2}')
             if [ -n "${status}" ]; then
