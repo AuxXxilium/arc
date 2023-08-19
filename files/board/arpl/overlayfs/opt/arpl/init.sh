@@ -151,7 +151,7 @@ writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
 writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 
 # Inform user
-echo "Loader disk: \033[1;32m${LOADER_DISK}\033[0m (\033[1;32m${BUS^^} flashdisk\033[0m)"
+echo "Loader disk: \033[1;34m${LOADER_DISK}\033[0m (\033[1;34m${BUS^^} flashdisk\033[0m)"
 
 # Check if partition 3 occupies all free space, resize if needed
 LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
@@ -179,7 +179,7 @@ if [ "${BUILDDONE}" = "true" ]; then
   echo -e "\033[1;34mLoader is configured!\033[0m"
   boot.sh && exit 0
 elif grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
-  echo -e "\033[1;31mUser requested edit settings.\033[0m"
+  echo -e "\033[1;34mUser requested edit settings.\033[0m"
 fi
 echo
 
