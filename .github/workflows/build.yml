@@ -115,7 +115,7 @@ jobs:
         uses: gandarez/changelog-action@v1.2.0
         with:
           current_tag: "HEAD"
-          previous_tag: "{{ env.PREVERSION }}"
+          previous_tag: "${{ env.PREVERSION }}"
           main_branch_name: "main"
           exclude: |
               ^Merge pull request .*
