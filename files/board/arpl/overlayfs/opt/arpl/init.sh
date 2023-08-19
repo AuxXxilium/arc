@@ -104,7 +104,7 @@ if [ "${NOTSETMAC}" = "false" ] && [ "${BUILDDONE}" = "true" ]; then
     if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
       MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
       echo "Setting ${ETHX[$((${N} - 1))]} MAC to ${MAC}"
-      ip link set dev ${ETHX[$((${N} - 1))]} address ${MAC} >/dev/null 2>&1 && \
+      ip link set dev ${ETHX[$((${N} - 1))]} address ${MAC} >/dev/null 2>&1 &&
         (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
     elif [ -z "${MACF}" ]; then
       # Write real Mac to cmdline config
