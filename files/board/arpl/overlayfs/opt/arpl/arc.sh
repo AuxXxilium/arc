@@ -109,11 +109,9 @@ function arcMenu() {
   FLGBETA=0
   dialog --backtitle "$(backtitle)" --title "Model" --aspect 18 \
     --infobox "Reading models" 3 20
-  while true; do
     echo -n "" >"${TMP_PATH}/modellist"
-    while read -r M; do
-      Y=$(echo ${M} | tr -cd "[0-9]")
-      Y=${Y:0-2}
+    while read M; do
+      Y="$(readModelKey "${M}" "disks")"
       echo "${M} ${Y}" >>"${TMP_PATH}/modellist"
     done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sed 's/.*\///; s/\.yml//')
 
@@ -124,9 +122,9 @@ function arcMenu() {
         PLATFORM=$(readModelKey "${M}" "platform")
         DT="$(readModelKey "${M}" "dt")"
         BETA="$(readModelKey "${M}" "beta")"
-        [ "${BETA}" = "true" -a ${FLGBETA} -eq 0 ] && continue
+        [ "${BETA}" = "true" ] && [ ${FLGBETA} -eq 0 ] && continue
         DISKS="$(readModelKey "${M}" "disks")-Bay"
-        ARCCONF="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${M}.yml")"
+        ARCCONF="$(readModelKey "${M}" "arc.serial")"
         if [ -n "${ARCCONF}" ]; then
           ARCAV="Arc"
         else
@@ -153,12 +151,12 @@ function arcMenu() {
               FLGNEX=1
               break
             fi
+          done
         fi
-      done
-      [ "${DT}" = "true" ] && DT="DT" || DT=""
-      [ "${BETA}" = "true" ] && BETA="Beta" || BETA=""
-      [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"$(printf "\Zb%-7s\Zn \Zb%-6s\Zn \Zb%-13s\Zn \Zb%-3s\Zn \Zb%-7s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DT}" "${ARCAV}" "${BETA}")\" ">>"${TMP_PATH}/menu"
-    done < <(cat "${TMP_PATH}/modellist" | sort -r -n -k 2)
+        [ "${DT}" = "true" ] && DT="DT" || DT=""
+        [ "${BETA}" = "true" ] && BETA="Beta" || BETA=""
+        [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"$(printf "\Zb%-7s\Zn \Zb%-6s\Zn \Zb%-13s\Zn \Zb%-3s\Zn \Zb%-7s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DT}" "${ARCAV}" "${BETA}")\" ">>"${TMP_PATH}/menu"
+      done < <(cat "${TMP_PATH}/modellist" | sort -n -k 2)
     [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models\Zn\"" >>"${TMP_PATH}/menu"
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >>"${TMP_PATH}/menu"
     dialog --backtitle "$(backtitle)" --colors --menu "Choose Model for Loader" 0 62 0 \
@@ -167,9 +165,9 @@ function arcMenu() {
     resp=$(<"${TMP_PATH}/resp")
     [ -z "${resp}" ] && return 1
     if [ "${resp}" = "b" ]; then
-      FLGBETA=1
-      continue
-    fi
+        FLGBETA=1
+        continue
+      fi
     if [ "${resp}" = "f" ]; then
       RESTRICT=0
       continue
