@@ -107,7 +107,7 @@ jobs:
             fi
           fi
 
-          export CHANGELOG=$(git log --pretty=format:"%s" "${LATEST_TAG}..HEAD" | sort)
+          export CHANGELOG=$(git log --pretty=format:"%s" ${LATEST_TAG}..HEAD | sort)
           echo "Changelog: ${CHANGELOG}"
           echo "CHANGELOG=${CHANGELOG}" >> $GITHUB_ENV
 
