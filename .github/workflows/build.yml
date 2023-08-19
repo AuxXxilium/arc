@@ -20,7 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@main
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       # Install dependencies
       - name: Install dependencies
@@ -91,6 +93,10 @@ jobs:
           echo "Version: ${VERSION}"
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
+          CHANGELOG=$(git log --pretty=format:"%s" ${LATEST_TAG}..HEAD | sort)
+          echo "Changelog: ${CHANGELOG}"
+          echo "CHANGELOG=${CHANGELOG}" >> $GITHUB_ENV
+
           if [ -n "${VERSION}" ]; then
             # Modify Source File
             echo "${VERSION}" >VERSION
@@ -106,10 +112,6 @@ jobs:
               git push -f
             fi
           fi
-
-          export CHANGELOG=$(git log --pretty=format:"%s" ${LATEST_TAG}..HEAD | sort)
-          echo "Changelog: ${CHANGELOG}"
-          echo "CHANGELOG=${CHANGELOG}" >> $GITHUB_ENV
 
       # Get extractor, LKM, Addons, Modules and Configs
       - name: Get extractor, LKM, Addons, Extensions, Modules and Configs
