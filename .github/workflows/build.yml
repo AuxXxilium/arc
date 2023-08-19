@@ -94,8 +94,13 @@ jobs:
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
           CHANGELOG=$(git log --pretty=format:"%s" ${LATEST_TAG}..HEAD | sort)
-          echo "Changelog: ${CHANGELOG}"
-          echo "CHANGELOG=${CHANGELOG}" >> $GITHUB_ENV
+          if [ -n "${CHANGELOG}" ]; then
+            echo "Changelog: ${CHANGELOG}"
+            echo "CHANGELOG=${CHANGELOG}" >> $GITHUB_ENV
+          else
+            echo "Changelog: New Build Tree"
+            echo "CHANGELOG=New Build Tree" >> $GITHUB_ENV
+          fi
 
           if [ -n "${VERSION}" ]; then
             # Modify Source File
