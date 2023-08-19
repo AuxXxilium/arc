@@ -1926,6 +1926,11 @@ function sysinfo() {
   TEXT+="\nCPU | Cores: \Zb${CPUINFO} | ${CPUCORES}\Zn"
   TEXT+="\nMemory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
   TEXT+="\nNetwork: \Zb${NETRL_NUM} Adapter\Zn"
+  [ $(lspci -d ::200 | wc -l) -gt 0 ] && TEXT+="\nNIC:\n"
+  for PCI in $(lspci -d ::200 | awk '{print $1}'); do
+    NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+    TEXT+="\Zb${NAME}\Zn\n"
+  done
   TEXT+="\nIP(s): \Zb${IPLIST}\Zn\n"
   # Print Config Informations
   TEXT+="\n\Z4> Arc\Zn"
@@ -1958,9 +1963,8 @@ function sysinfo() {
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
   TEXT+="\n\Z4> Storage\Zn"
   # Get Information for Sata Controller
-  TEXT=""
   NUMPORTS=0
-  [ $(lspci -d ::106 | wc -l) -gt 0 ] && TEXT+="\nSATA:\n"
+  [ $(lspci -d ::106 | wc -l) -gt 0 ] && TEXT+="\nATA:\n"
   for PCI in $(lspci -d ::106 | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
     TEXT+="\Zb${NAME}\Zn\nPorts: "
@@ -1978,13 +1982,8 @@ function sysinfo() {
       fi
       NUMPORTS=$((${NUMPORTS} + 1))
     done
-    TEXT+="\n"
-    TEXT+="\nTotal of ports: ${NUMPORTS}\n"
-    TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected."
-    dialog --backtitle "$(backtitle)" --colors --title "$(TEXT "Advanced")" \
-      --msgbox "${TEXT}" 0 0
   done
-  [ $(lspci -d ::107 | wc -l) -gt 0 ] && TEXT+="\nHBA:\n"
+  [ $(lspci -d ::107 | wc -l) -gt 0 ] && TEXT+="\nSAS/SCSI:\n"
   for PCI in $(lspci -d ::107 | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
     PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
@@ -1998,7 +1997,7 @@ function sysinfo() {
     PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
     [ ${PORTNUM} -eq 0 ] && continue
-    TEXT+="\Zb${NAME}\Zn\nNumber: ${PORTNUM}\n"
+    TEXT+="\Zb${NAME}\Zn\nDrives: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
   [ $(lspci -d ::108 | wc -l) -gt 0 ] && TEXT+="\nNVME:\n"
@@ -2006,13 +2005,14 @@ function sysinfo() {
     NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
     PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
     PORTNUM=$(lsscsi -b | grep -v - | grep "\[N:${PORT}:" | wc -l)
-    TEXT+="\Zb${NAME}\Zn\nNumber: ${PORTNUM}\n"
+    TEXT+="\Zb${NAME}\Zn\nDrives: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
   TEXT+="\n"
   TEXT+="\nTotal of ports: ${NUMPORTS}\n"
   TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected."
-  dialog --backtitle "$(backtitle)" --title "Arc Sysinfo" --aspect 18 --colors --msgbox "${TEXT}" 0 0
+  dialog --backtitle "$(backtitle)" --colors --title "$(TEXT "Advanced")" \
+    --msgbox "${TEXT}" 0 0
 }
 
 ###############################################################################
