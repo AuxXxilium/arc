@@ -6,6 +6,7 @@ set -e
 
 LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
 BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
+[ "${BUS}" = "ata" ] && BUS="sata"
 
 # Check if machine has EFI
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
@@ -20,11 +21,7 @@ printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS}) / 2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
 TITLE="BOOTING..."
 [ ${EFI} -eq 1 ] && TITLE+=" [EFI]" || TITLE+=" [Legacy]"
-if [ "${BUS}" = "usb" ]; then
-  TITLE+=" [USB flashdisk]"
-elif [ "${BUS}" = "ata" ]; then
-  TITLE+=" [SATA DoM]"
-fi
+[ "${BUS}" = "usb" ] && TITLE+=" [${BUS^^} flashdisk]" || TITLE+=" [${BUS^^} DoM]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
 # Check if DSM zImage changed, patch it if necessary
@@ -101,7 +98,7 @@ while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
 done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 
-if [ "${BUS}" = "ata" ]; then
+if [ ! "${BUS}" = "usb" ]; then
   LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
   SIZE=$(($(cat /sys/block/${LOADER_DEVICE_NAME}/size) / 2048 + 10))
   # Read SATADoM type
@@ -207,9 +204,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     echo -e "\r\033[1;34mNot set Boot MAC is enabled, the DSM IP can be different!\033[0m"
   fi
 fi
-echo
-echo -e "\r\033[1;34mDSM IP can be different\033[0m -> \033[1;37mPlease check your DHCP Server or Router!\033[0m"
-
 echo
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
