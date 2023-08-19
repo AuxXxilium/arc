@@ -14,4 +14,6 @@ cache
 /files/board/arpl/p3/addons
 /files/board/arpl/p3/lkms
 /files/board/arpl/p3/modules
+/files/board/arpl/p3/configs
+/files/board/arpl/p3/extensions
 /tests
