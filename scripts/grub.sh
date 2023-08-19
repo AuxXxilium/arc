@@ -60,7 +60,7 @@ for B in ${BIOS}; do
   sudo ${GRUB}/${B}/grub-install ${args}
 done
 
-if [ -d ARPL1/boot/grub/fonts -a -f /usr/share/grub/unicode.pf2 ]; then
+if [ -d ARPL1/boot/grub/fonts ] && [ -f /usr/share/grub/unicode.pf2 ]; then
   sudo cp /usr/share/grub/unicode.pf2 ARPL1/boot/grub/fonts
 fi
 
