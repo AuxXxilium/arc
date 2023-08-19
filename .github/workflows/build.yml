@@ -27,7 +27,6 @@ jobs:
         run: |
           git config --global user.email "info@auxxxilium.tech"
           git config --global user.name "AuxXxilium"
-          git config --global --add safe.directory /github/workspace
           sudo timedatectl set-timezone "Europe/Berlin"
 
           sudo apt update
@@ -113,14 +112,14 @@ jobs:
 
       - name: Update Changelog
         id: changelog
-        uses: gandarez/changelog-action@v{latest}
+        uses: gandarez/changelog-action@v1.2.0
         with:
           current_tag: "HEAD"
           previous_tag: "{{ env.PREVERSION }}"
           main_branch_name: "main"
           exclude: |
               ^Merge pull request .*
-          debug: true
+          debug: false
 
       # Get extractor, LKM, Addons, Modules and Configs
       - name: Get extractor, LKM, Addons, Extensions, Modules and Configs
