@@ -38,10 +38,10 @@ mount ${LOADER_DISK}3 ${CACHE_PATH} || die "Can't mount ${CACHE_PATH}"
 # Shows title
 clear
 TITLE="${ARPL_TITLE}"
-printf "\033[1;30m%*s\n" $COLUMNS ""
-printf "\033[1;30m%*s\033[A\n" $COLUMNS ""
-printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+$COLUMNS)/2)) "${TITLE}"
-printf "\033[1;30m%*s\033[0m\n" $COLUMNS ""
+printf "\033[1;30m%*s\n" ${COLUMNS} ""
+printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
+printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
+printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
 
 # Move/link SSH machine keys to/from cache volume
 [ ! -d "${CACHE_PATH}/ssh" ] && cp -R "/etc/ssh" "${CACHE_PATH}/ssh"
@@ -106,8 +106,8 @@ for N in $(seq 1 ${#ETHX[@]}); do
     if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
       MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
       echo "Setting ${ETHX[$((${N} - 1))]} MAC to ${MAC}"
-      ip link set dev ${ETHX[$((${N} - 1))]} address ${MAC} >/dev/null 2>&1 &&
-        (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
+      ip link set dev ${ETHX[$(expr ${N} - 1)]} address ${MAC} >/dev/null 2>&1 &&
+      (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
     elif [ -z "${MACF}" ]; then
       # Write real Mac to cmdline config
       writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
@@ -150,7 +150,7 @@ ENDSECTOR=$(($(fdisk -l ${LOADER_DISK} | awk '/'${LOADER_DEVICE_NAME}3'/{print$3
 if [ ${SIZEOFDISK} -ne ${ENDSECTOR} ]; then
   echo -e "\033[1;36m$(printf "Resizing ${LOADER_DISK}3")\033[0m"
   echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${LOADER_DISK}" >"${LOG_FILE}" 2>&1 || dieLog
-  resize2fs ${LOADER_DISK}3 >"${LOG_FILE}" 2>&1 || dieLog
+  resize2fs "${LOADER_DISK}3" >"${LOG_FILE}" 2>&1 || dieLog
 fi
 
 # Load keymap name
@@ -158,9 +158,9 @@ LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 
 # Loads a keymap if is valid
-if [ -f /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz ]; then
+if [ -f "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" ]; then
   echo -e "Loading keymap \033[1;34m${LAYOUT}/${KEYMAP}\033[0m"
-  zcat /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz | loadkeys
+  zcat "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" | loadkeys
 fi
 echo
 
@@ -178,9 +178,8 @@ echo
 # Wait for an IP
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
 echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
-for N in $(seq 0 $((${#ETHX[@]} - 1))); do
+for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
   DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
   if [ "${N}" -eq "8" ]; then
     echo -e "\r${ETHX[${N}]}(${DRIVER}): More than 8 NIC are not supported."

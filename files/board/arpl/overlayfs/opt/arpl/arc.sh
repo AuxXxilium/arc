@@ -8,11 +8,11 @@
 . /opt/arpl/include/network.sh
 
 LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
-LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
+LOADER_DEVICE_NAME=$(echo "${LOADER_DISK}" | sed 's|/dev/||')
 
 # Memory: Check Memory installed
 RAMTOTAL=0
-while read -r -r LINE; do
+while read -r LINE; do
   RAMSIZE=${LINE}
   RAMTOTAL=$((${RAMTOTAL} + ${RAMSIZE}))
 done < <(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i "[1-9]")
@@ -162,7 +162,7 @@ function arcMenu() {
     dialog --backtitle "$(backtitle)" --colors --menu "Choose Model for Loader" 0 62 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
-    resp=$(<"${TMP_PATH}/resp")
+    resp="$(<"${TMP_PATH}/resp")"
     [ -z "${resp}" ] && return 1
     if [ "${resp}" = "b" ]; then
         FLGBETA=1
@@ -214,7 +214,7 @@ function arcbuild() {
       dialog --clear --no-items --backtitle "$(backtitle)" \
         --menu "Choose a Version" 0 0 0 ${ITEMS} 2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
-      resp=$(<"${TMP_PATH}/resp")
+      resp="$(<"${TMP_PATH}/resp")"
       [ -z "${resp}" ] && return 1
     else
       if ! arrayExistItem "${1}" ${ITEMS}; then return; fi
@@ -266,7 +266,7 @@ function arcsettings() {
           2 "No - Install without Arc Patch" \
         2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && return 1
-        resp=$(<"${TMP_PATH}/resp")
+        resp="$(<"${TMP_PATH}/resp")"
         [ -z "${resp}" ] && return 1
         if [ ${resp} -eq 1 ]; then
           # read valid serial from file
@@ -347,7 +347,7 @@ function arcnetdisk() {
       2 "No - I want to make changes" \
     2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
-    resp=$(<"${TMP_PATH}/resp")
+    resp="$(<"${TMP_PATH}/resp")"
     [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
       make
@@ -522,7 +522,7 @@ function make() {
       2 "No - I want to make changes" \
     2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
-    resp=$(<"${TMP_PATH}/resp")
+    resp="$(<"${TMP_PATH}/resp")"
     [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
       boot && exit 0
@@ -591,7 +591,7 @@ function addonSelection() {
     --checklist "Select Loader Addons to include\nSelect with SPACE" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
-  resp=$(<"${TMP_PATH}/resp")
+  resp="$(<"${TMP_PATH}/resp")"
   [ -z "${resp}" ] && continue
   dialog --backtitle "$(backtitle)" --title "Addons" \
       --infobox "Writing to user config" 0 0
@@ -639,7 +639,7 @@ function extensionSelection() {
     --checklist "Select DSM Extensions to include\nSelect with SPACE" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
-  resp=$(<"${TMP_PATH}/resp")
+  resp="$(<"${TMP_PATH}/resp")"
   [ -z "${resp}" ] && continue
   dialog --backtitle "$(backtitle)" --title "DSM Extensions" \
       --infobox "Writing to user config" 0 0
@@ -741,7 +741,7 @@ function modulesMenu() {
           --checklist "Select modules to include" 0 0 0 \
           --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
-        resp=$(<"${TMP_PATH}/resp")
+        resp="$(<"${TMP_PATH}/resp")"
         [ -z "${resp}" ] && continue
         dialog --backtitle "$(backtitle)" --title "Modules" \
            --infobox "Writing to user config" 0 0
@@ -851,7 +851,7 @@ function cmdlineMenu() {
           --checklist "Select cmdline to remove" 0 0 0 ${ITEMS} \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
-        resp=$(<"${TMP_PATH}/resp")
+        resp="$(<"${TMP_PATH}/resp")"
         [ -z "${RESP}" ] && continue
         for I in ${RESP}; do
           unset 'CMDLINE[${I}]'
@@ -866,7 +866,7 @@ function cmdlineMenu() {
             --inputbox "Please enter a serial number " 0 0 "" \
             2>"${TMP_PATH}/resp"
           [ $? -ne 0 ] && break 2
-          SERIAL=$(cat ${TMP_PATH}/resp)
+          SERIAL="$(cat ${TMP_PATH}/resp)"
           if [ -z "${SERIAL}" ]; then
             return
           elif [ $(validateSerial ${MODEL} ${SERIAL}) -eq 1 ]; then
@@ -1010,7 +1010,7 @@ function synoinfoMenu() {
           --checklist "Select synoinfo entry to remove" 0 0 0 ${ITEMS} \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
-        resp=$(<"${TMP_PATH}/resp")
+        resp="$(<"${TMP_PATH}/resp")"
         [ -z "${resp}" ] && continue
         for I in ${resp}; do
           unset 'SYNOINFO[${I}]'
@@ -1049,7 +1049,7 @@ function keymapMenu() {
     --menu "Choice a keymap" 0 0 0 ${OPTIONS} \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
-  resp=$(<"${TMP_PATH}/resp")
+  resp="$(<"${TMP_PATH}/resp")"
   [ -z "${resp}" ] && return 1
   KEYMAP=${resp}
   writeConfigKey "layout" "${LAYOUT}" "${USER_CONFIG_FILE}"
@@ -1232,10 +1232,13 @@ function backupMenu() {
           else
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" \
                 --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
-            [ $? -ne 0 ] && ( rm -f ${LOADER_DISK}; return 1 )
+            [ $? -ne 0 ] && (
+              rm -f "${LOADER_DISK}"
+              return 1 
+            )
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --infobox "Restore in progress..." 0 0
-            umount ${BOOTLOADER_PATH} ${SLPART_PATH} ${CACHE_PATH}
+            umount "${BOOTLOADER_PATH}" "${SLPART_PATH}" "${CACHE_PATH}"
             if [ "${IFTOOL}" = "zip" ]; then
               unzip -p "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
             elif [ "${IFTOOL}" = "gzip" ]; then
@@ -1252,7 +1255,7 @@ function backupMenu() {
           dialog --backtitle "$(backtitle)" --title "Backup Config with Code" \
               --infobox "Write down your Code for Restore!" 0 0
           if [ -f "${USER_CONFIG_FILE}" ]; then
-            GENHASH=$(cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)
+            GENHASH="$(cat "${USER_CONFIG_FILE}" | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)"
             dialog --backtitle "$(backtitle)" --title "Backup Config with Code" --msgbox "Your Code: ${GENHASH}" 0 0
           else
             dialog --backtitle "$(backtitle)" --title "Backup Config with Code" --msgbox "No Config for Backup found!" 0 0
@@ -1415,8 +1418,8 @@ function backupMenu() {
           rz -be
           for F in $(ls -A); do
             USER_FILE="${F}"
-            [ "${F##*.}" = "zip" -a $(unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$") -eq 1 ] && IFTOOL="zip"
-            [ "${F##*.}" = "gz" -a "${F#*.}" = "img.gz" ] && IFTOOL="gzip"
+            [ "${F##*.}" = "zip" ] && [ $(unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$") -eq 1 ] && IFTOOL="zip"
+            [ "${F##*.}" = "gz" ] && [ "${F#*.}" = "img.gz" ] && IFTOOL="gzip"
             break 
           done
           popd
@@ -1426,10 +1429,13 @@ function backupMenu() {
           else
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" \
                 --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
-            [ $? -ne 0 ] && ( rm -f ${LOADER_DISK}; return )
+            [ $? -ne 0 ] && (
+              rm -f "${LOADER_DISK}"
+              return 1
+            )
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --infobox "Restore in progress..." 0 0
-            umount ${BOOTLOADER_PATH} ${SLPART_PATH} ${CACHE_PATH}
+            umount "${BOOTLOADER_PATH}" "${SLPART_PATH}" "${CACHE_PATH}"
             if [ "${IFTOOL}" = "zip" ]; then
               unzip -p "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
             elif [ "${IFTOOL}" = "gzip" ]; then
@@ -1557,7 +1563,7 @@ function updateMenu() {
       7 "Update Loader LKMs" \
       0 "Exit" \
       2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return
+    [ $? -ne 0 ] && return 1
     case "$(<"${TMP_PATH}/resp")" in
       1)
         dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
@@ -1577,14 +1583,13 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
           --infobox "Downloading latest version ${TAG}" 0 0
         # Download update file
-        STATUS=$(curl --insecure -w "%{http_code}" -L \
-          "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
+        STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
         if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
             --msgbox "Error downloading update file" 0 0
           return 1
         fi
-        unzip -o "${TMP_PATH}/arc-${TAG}.img.zip" -d "${TMP_PATH}"
+        unzip -oq "${TMP_PATH}/arc-${TAG}.img.zip" -d "${TMP_PATH}"
         rm -f "${TMP_PATH}/arc-${TAG}.img.zip"
         if [ $? -ne 0 ]; then
           dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
@@ -1592,7 +1597,7 @@ function updateMenu() {
           return 1
         fi
         if [ -f "${USER_CONFIG_FILE}" ] && [ "${CONFDONE}" = "true" ]; then
-          GENHASH=$(cat ${USER_CONFIG_FILE} | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)
+          GENHASH="$(cat "${USER_CONFIG_FILE}" | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)"
           dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
           --msgbox "Backup config successful!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
         else
@@ -1602,7 +1607,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
           --infobox "Installing new Image" 0 0
         # Process complete update
-        umount ${BOOTLOADER_PATH} ${SLPART_PATH} ${CACHE_PATH}
+        umount "${BOOTLOADER_PATH}" "${SLPART_PATH}" "${CACHE_PATH}"
         dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1) bs=1M conv=fsync
         # Ask for Boot
         rm -f "${TMP_PATH}/arc.img"
@@ -1630,14 +1635,13 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
           --infobox "Downloading latest version ${TAG}" 0 0
         # Download update file
-        STATUS=$(curl --insecure -w "%{http_code}" -L \
-          "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip")
+        STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip")
         if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
             --msgbox "Error downloading update file" 0 0
           return 1
         fi
-        unzip -o "${TMP_PATH}/update.zip" -d "${TMP_PATH}"
+        unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}"
         rm -f "${TMP_PATH}/update.zip"
         if [ $? -ne 0 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
@@ -1695,7 +1699,7 @@ function updateMenu() {
           --infobox "Extracting latest version" 0 0
         rm -rf "${ADDONS_PATH}"
         mkdir -p "${ADDONS_PATH}"
-        unzip -o "${TMP_PATH}/addons.zip" -d "${ADDONS_PATH}" >/dev/null 2>&1
+        unzip -oq "${TMP_PATH}/addons.zip" -d "${ADDONS_PATH}" >/dev/null 2>&1
         dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
           --infobox "Installing new Addons" 0 0
         for PKG in $(ls ${ADDONS_PATH}/*.addon); do
@@ -1732,7 +1736,7 @@ function updateMenu() {
           --infobox "Extracting latest version" 0 0
         rm -rf "${EXTENSIONS_PATH}"
         mkdir -p "${EXTENSIONS_PATH}"
-        unzip -o "${TMP_PATH}/extensions.zip" -d "${EXTENSIONS_PATH}" >/dev/null 2>&1
+        unzip -oq "${TMP_PATH}/extensions.zip" -d "${EXTENSIONS_PATH}" >/dev/null 2>&1
         dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
           --infobox "Installing new Extensions" 0 0
         for PKG in $(ls ${EXTENSIONS_PATH}/*.extension); do
@@ -1773,7 +1777,7 @@ function updateMenu() {
         fi
         rm -rf "${MODULES_PATH}"
         mkdir -p "${MODULES_PATH}"
-        unzip -o "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}" >/dev/null 2>&1
+        unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}" >/dev/null 2>&1
         # Rebuild modules if model/build is selected
         if [ -n "${PLATFORM}" ] && [ -n "${KVER}" ]; then
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
@@ -1808,7 +1812,7 @@ function updateMenu() {
           --infobox "Extracting latest version" 0 0
         rm -rf "${MODEL_CONFIG_PATH}"
         mkdir -p "${MODEL_CONFIG_PATH}"
-        unzip -o "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}" >/dev/null 2>&1
+        unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}" >/dev/null 2>&1
         rm -f "${TMP_PATH}/configs.zip"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1836,7 +1840,7 @@ function updateMenu() {
           --infobox "Extracting latest version" 0 0
         rm -rf "${LKM_PATH}"
         mkdir -p "${LKM_PATH}"
-        unzip -o "${TMP_PATH}/rp-lkms.zip" -d "${LKM_PATH}" >/dev/null 2>&1
+        unzip -oq "${TMP_PATH}/rp-lkms.zip" -d "${LKM_PATH}" >/dev/null 2>&1
         rm -f "${TMP_PATH}/rp-lkms.zip"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1876,7 +1880,7 @@ function sysinfo() {
   CPUCORES="$(awk -F: '/model name/ {core++} END {print core}' /proc/cpuinfo)"
   # Check if machine has EFI
   [ -d /sys/firmware/efi ] && BOOTSYS="EFI" || BOOTSYS="Legacy"
-  VENDOR=$(dmidecode -s system-product-name)
+  VENDOR="$(dmidecode -s system-product-name)"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
     MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -1901,7 +1905,6 @@ function sysinfo() {
       MODULESINFO+="${ID} "
     done
   fi
-  NETRL_NUM="$(ls /sys/class/net/ | grep eth | wc -l)"
   IPLIST="$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')"
   if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
     PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
@@ -1913,11 +1916,11 @@ function sysinfo() {
     ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
     EXTENSIONSINFO="$(readConfigEntriesArray "extensions" "${USER_CONFIG_FILE}")"
   fi
-  MODULESVERSION=$(cat "${MODULES_PATH}/VERSION")
-  ADDONSVERSION=$(cat "${ADDONS_PATH}/VERSION")
-  EXTENSIONSVERSION=$(cat "${EXTENSIONS_PATH}/VERSION")
-  LKMVERSION=$(cat "${LKM_PATH}/VERSION")
-  CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
+  MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")"
+  ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")"
+  EXTENSIONSVERSION="$(cat "${EXTENSIONS_PATH}/VERSION")"
+  LKMVERSION="$(cat "${LKM_PATH}/VERSION")"
+  CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4> System\Zn"
@@ -1925,7 +1928,7 @@ function sysinfo() {
   TEXT+="\nVendor: \Zb${VENDOR}\Zn"
   TEXT+="\nCPU | Cores: \Zb${CPUINFO} | ${CPUCORES}\Zn"
   TEXT+="\nMemory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
-  TEXT+="\nNetwork: \Zb${NETRL_NUM} Adapter\Zn"
+  TEXT+="\nNetwork: \Zb${ETHXNUM} Adapter\Zn"
   [ $(lspci -d ::200 | wc -l) -gt 0 ] && TEXT+="\nNIC:\n"
   for PCI in $(lspci -d ::200 | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
@@ -2047,7 +2050,7 @@ function downgradeMenu() {
 function resetPassword() {
   SHADOW_FILE=""
   mkdir -p "${TMP_PATH}/sdX1"
-  for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
+  for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK}1"); do
     mount "${I}" "${TMP_PATH}/sdX1"
     if [ -f "${TMP_PATH}/sdX1/etc/shadow" ]; then
       cp "${TMP_PATH}/sdX1/etc/shadow" "${TMP_PATH}/shadow_bak"
@@ -2062,13 +2065,13 @@ function resetPassword() {
       --msgbox "No DSM found in the currently inserted disks!" 0 0
     return 1
   fi
-  ITEMS="$(cat ${SHADOW_FILE} | awk -F ':' '{if ($2 != "*" && $2 != "!!") {print $1;}}')"
+  ITEMS="$(cat "${SHADOW_FILE}" | awk -F ':' '{if ($2 != "*" && $2 != "!!") {print $1;}}')"
   dialog --clear --no-items --backtitle "$(backtitle)" --title "Reset DSM Password" \
         --menu "Choose a user name" 0 0 0 ${ITEMS} 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
-  USER=$(<"${TMP_PATH}/resp")
+  USER="$(<"${TMP_PATH}/resp")"
   [ -z "${USER}" ] && return 1
-  OLDPASSWD=$(cat ${SHADOW_FILE} | grep "^${USER}:" | awk -F ':' '{print $2}')
+  OLDPASSWD="$(cat "${SHADOW_FILE}" | grep "^${USER}:" | awk -F ':' '{print $2}')"
 
   while true; do
     dialog --backtitle "$(backtitle)" --title "Reset DSM Password" \
@@ -2079,7 +2082,7 @@ function resetPassword() {
     [ -n "${VALUE}" ] && break
     dialog --backtitle "$(backtitle)" --title "Reset syno system password" --msgbox "Invalid password" 0 0
   done
-  NEWPASSWD=$(python -c "import crypt,getpass;pw=\"${VALUE}\";print(crypt.crypt(pw))")
+  NEWPASSWD="$(python -c "import crypt,getpass;pw=\"${VALUE}\";print(crypt.crypt(pw))")"
   (
     mkdir -p "${TMP_PATH}/sdX1"
     for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
@@ -2115,7 +2118,7 @@ function bootipwaittime() {
         --default-item "${BOOTIPWAIT}" --no-items --menu "Choose a Waitingtime(seconds)" 0 0 0 ${ITEMS} \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
-      resp=$(cat ${TMP_PATH}/resp 2>/dev/null)
+      resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
       [ -z "${resp}" ] && return
       BOOTIPWAIT=${resp}
       writeConfigKey "bootipwait" "${BOOTIPWAIT}" "${USER_CONFIG_FILE}"
@@ -2129,7 +2132,7 @@ function saveMenu() {
   [ $? -ne 0 ] && return
   dialog --backtitle "$(backtitle)" --title "Save to Disk" \
       --infobox "Saving ..." 0 0 
-  RDXZ_PATH=${TMP_PATH}/rdxz_tmp
+  RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
   mkdir -p "${RDXZ_PATH}"
   (cd "${RDXZ_PATH}"; xz -dc <"${CACHE_PATH}/initrd-arpl" | cpio -idm) >/dev/null 2>&1 || true
   rm -rf "${RDXZ_PATH}/opt/arpl"
@@ -2153,8 +2156,8 @@ function formatdisks() {
     --checklist "Format" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return 1
-  RESP=$(<"${TMP_PATH}/resp")
-  [ -z "${RESP}" ] && return 1
+  resp=$(<"${TMP_PATH}/resp")
+  [ -z "${resp}" ] && return 1
   dialog --backtitle "$(backtitle)" --colors --title "Format" \
     --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return 1
@@ -2163,12 +2166,12 @@ function formatdisks() {
       --yesno "Warning:\nThe current hds is in raid, do you still want to format them?" 0 0
     [ $? -ne 0 ] && return 1
     for I in $(ls /dev/md*); do
-      mdadm -S ${I}
+      mdadm -S "${I}"
     done
   fi
   (
-    for I in ${RESP}; do
-      mkfs.ext4 -T largefile4 ${I}
+    for I in ${resp}; do
+      mkfs.ext4 -T largefile4 "${I}"
     done
   ) | dialog --backtitle "$(backtitle)" --colors --title "Format" \
     --progressbox "Formatting ..." 20 70

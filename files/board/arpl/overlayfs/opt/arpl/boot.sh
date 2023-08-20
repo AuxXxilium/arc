@@ -17,7 +17,7 @@ clear
 TITLE="${ARPL_TITLE}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
-printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE}+${COLUMNS}) / 2)) "${TITLE}"
+printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
 TITLE="BOOTING..."
 [ ${EFI} -eq 1 ] && TITLE+=" [EFI]" || TITLE+=" [Legacy]"
@@ -73,7 +73,7 @@ echo -e "CPU: \033[1;37m${CPU}\033[0m"
 echo -e "MEM: \033[1;37m${MEM}\033[0m"
 echo
 
-if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "$(readConfigKey "productvers.[${PRODUCTVER}]" "${MODEL_CONFIG_PATH}/${MODEL}.yml")" ]; then
+if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}]")" ]; then
   echo -e "\033[1;33m*** The current version of Arc does not support booting ${MODEL}-${PRODUCTVER}, please rebuild. ***\033[0m"
   exit 1
 fi
@@ -112,24 +112,24 @@ for N in $(seq 1 8); do  # Currently, only up to 8 are supported.
 done
 NETIF_NUM=${#MACS[*]}
 CMDLINE["netif_num"]=${NETIF_NUM}
-# Get real amount of NIC
-NETNUM=$(lshw -class network -short | grep -ie "eth[0-9]" | wc -l)
-if [ ${NETNUM} -gt 8 ]; then
-  NETNUM=8
+ETHXNUM=$(ls /sys/class/net/ | grep eth | wc -l) # Amount of NIC
+ETHX=($(ls /sys/class/net/ | grep eth))  # Real NIC List
+if [ ${ETHXNUM} -gt 8 ]; then
+  ETHX=8
   echo -e "\033[0;31m*** WARNING: More than 8 NIC are not supported.***\033[0m"
+  break
 fi
 # set missing mac to cmdline if needed
-if [ ${NETIF_NUM} -ne ${NETNUM} ]; then
-  ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
-  for N in $(seq $((${NETIF_NUM} + 1)) ${NETNUM}); do 
-    MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
+if [ ${NETIF_NUM} -ne ${ETHXNUM} ]; then
+  for N in $(seq $((${NETIF_NUM} + 1)) ${ETHXNUM}); do 
+    MACR="$(cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g')"
     # no duplicates
-    while [[ "${MACS[*]}" =~ "$MACR" ]]; do # no duplicates
+    while [[ "${MACS[*]}" =~ "${MACR}" ]]; do # no duplicates
       MACR="${MACR:0:10}$(printf "%02x" $((0x${MACR:10:2} + 1)))" 
     done
     CMDLINE["mac${N}"]="${MACR}"
   done
-  CMDLINE["netif_num"]=${NETNUM}
+  CMDLINE["netif_num"]=${ETHXNUM}
 fi
 
 # Prepare command line
@@ -171,14 +171,9 @@ elif [ "${DIRECTBOOT}" = "true" ] && [ "${DIRECTDSM}" = "false" ]; then
 elif [ "${DIRECTBOOT}" = "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-  ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
   echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
-  for N in $(seq 0 $((${#ETHX[@]} - 1))); do
+  for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
     DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-    if [ "${N}" -eq "8" ]; then
-      echo -e "\r${ETHX[${N}]}(${DRIVER}): More than 8 NIC are not supported."
-      break
-    fi
     COUNT=0
     sleep 3
     while true; do

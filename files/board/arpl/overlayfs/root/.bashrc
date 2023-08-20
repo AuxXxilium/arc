@@ -7,8 +7,8 @@ PS1='\u@\h:\w# '
 
 # You may uncomment the following lines if you want `ls' to be colorized:
 export LS_OPTIONS='--color=auto'
-alias ls='ls $LS_OPTIONS'
-alias ll='ls $LS_OPTIONS -l'
+alias ls='ls ${LS_OPTIONS}'
+alias ll='ls ${LS_OPTIONS} -l'
 
 # Save history in realtime
 shopt -s histappend
@@ -22,10 +22,10 @@ export DSMROOT_PATH="/mnt/dsmroot"
 export PATH="${PATH}:/opt/arpl"
 
 if [ ! -f ${HOME}/.initialized ]; then
-  touch ${HOME}/.initialized
+  touch "${HOME}/.initialized"
   /opt/arpl/init.sh
 fi
-cd /opt/arpl
+cd "/opt/arpl"
 if tty | grep -q "/dev/pts" && [ -z "${SSH_TTY}" ]; then
   /opt/arpl/arc.sh
   #exit  # Allow web access back to shell
