@@ -2013,7 +2013,7 @@ function sysinfo() {
   done
   TEXT+="\nTotal of ports: ${NUMPORTS}\n"
   TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected."
-  dialog --backtitle "$(backtitle)" --colors --title "$(TEXT "Advanced")" \
+  dialog --backtitle "$(backtitle)" --colors --title "Sysinfo" \
     --msgbox "${TEXT}" 0 0
 }
 
