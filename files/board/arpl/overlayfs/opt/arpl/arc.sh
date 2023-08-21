@@ -884,7 +884,6 @@ function cmdlineMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       4)
-        ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
         for N in $(seq 1 8); do # Currently, only up to 8 are supported.  (<==> boot.sh L96, <==> lkm: MAX_NET_IFACES)
           MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
           MACF=${CMDLINE["mac${N}"]}
@@ -899,7 +898,7 @@ function cmdlineMenu() {
             MAC="$(<"${TMP_PATH}/resp")"
             [ -z "${MAC}" ] && MAC="$(readConfigKey "device.mac${i}" "${USER_CONFIG_FILE}")"
             [ -z "${MAC}" ] && MAC="${MACFS[$((${i} - 1))]}"
-            MACF="$(echo "${MAC}" | sed 's/://g')"
+            MACF="$(echo "${MAC}" | sed "s/:\|-\| //g")"
             [ ${#MACF} -eq 12 ] && break
             dialog --backtitle "$(backtitle)" --title "User cmdline" --msgbox "Invalid MAC" 0 0
           done
