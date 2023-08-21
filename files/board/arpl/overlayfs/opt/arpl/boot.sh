@@ -111,6 +111,7 @@ for N in $(seq 1 8); do  # Currently, only up to 8 are supported.
   [ -n "${CMDLINE["mac${N}"]}" ] && MACS+=(${CMDLINE["mac${N}"]})
 done
 NETIF_NUM=${#MACS[*]}
+CMDLINE["netif_num"]=${NETIF_NUM}
 ETHXNUM=$(ls /sys/class/net/ | grep eth | wc -l) # Amount of NIC
 ETHX=($(ls /sys/class/net/ | grep eth))  # Real NIC List
 if [ ${ETHXNUM} -gt 8 ]; then
