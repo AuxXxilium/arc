@@ -141,7 +141,7 @@ writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 
 # Inform user
 echo -e "Loader Disk: \033[1;34m${LOADER_DISK}\033[0m"
-echo -e "Loader Disk Type: \033[1;34m${BUS^^} flashdisk\033[0m"
+echo -e "Loader Disk Type: \033[1;34m${BUS^^}\033[0m"
 
 # Check if partition 3 occupies all free space, resize if needed
 LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
