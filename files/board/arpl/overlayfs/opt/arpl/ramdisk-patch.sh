@@ -40,14 +40,15 @@ PLATFORM="$(readModelKey "${MODEL}" "platform")"
 . "${RAMDISK_PATH}/etc/VERSION"
 
 PRODUCTVERDSM=${majorversion}.${minorversion}
-
-if [ -n "${PRODUCTVERDSM}" ]; then
-  # Update new buildnumber
-  writeConfigKey "productver" "${PRODUCTVERDSM}" "${USER_CONFIG_FILE}"
-fi
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
 RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compressed")"
+
+if [ "${PRODUCTVERDSM}" != "${PRODUCTVER}" ]; then
+  # Update new buildnumber
+  echo -e "Error: Ramdisk Version does not match DSM Version"
+  exit 1
+fi
 
 # Sanity check
 [ -z "${PLATFORM}" ] || [ -z "${KVER}" ] && (die "ERROR: Configuration for Model ${MODEL} and Version ${PRODUCTVER} not found." | tee -a "${LOG_FILE}")
@@ -170,23 +171,23 @@ for EXTENSION in ${!EXTENSIONS[@]}; do
 done
 
 # Required addons: misc, eudev, disks, wol, acpid, bootwait
-installAddon misc
-echo "/addons/misc.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon eudev
 echo "/addons/eudev.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon disks
 echo "/addons/disks.sh \${1} ${DT} ${UNIQUE}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-installAddon wol
-echo "/addons/wol.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+installAddon misc
+echo "/addons/misc.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon localrss
 echo "/addons/localrss.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+installAddon wol
+echo "/addons/wol.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 # Enable Telnet
 echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 
 [ "2" = "${BUILD:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
 
 # Build modules dependencies
-/opt/arpl/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
+/opt/arpl/depmod -a -b "${RAMDISK_PATH}" 2>/dev/null
 
 # Reassembly ramdisk
 if [ "${RD_COMPRESSED}" == "true" ]; then

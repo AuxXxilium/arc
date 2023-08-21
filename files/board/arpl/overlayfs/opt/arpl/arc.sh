@@ -1960,8 +1960,9 @@ function sysinfo() {
     TEXT+="\nPortMap: \Zb"User"\Zn"
   fi
   if [ "${PLATFORM}" = "broadwellnk" ]; then
-    TEXT+="\nUSB Mount: \Zb${USBMOUNT}\Zn\n"
+    TEXT+="\nUSB Mount: \Zb${USBMOUNT}\Zn"
   fi
+  TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
   TEXT+="\n\Z4> Storage\Zn"
   # Get Information for Sata Controller
