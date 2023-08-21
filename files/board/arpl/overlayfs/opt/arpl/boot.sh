@@ -111,18 +111,16 @@ for N in $(seq 1 8); do  # Currently, only up to 8 are supported.
   [ -n "${CMDLINE["mac${N}"]}" ] && MACS+=(${CMDLINE["mac${N}"]})
 done
 NETIF_NUM=${#MACS[*]}
-CMDLINE["netif_num"]=${NETIF_NUM}
 ETHXNUM=$(ls /sys/class/net/ | grep eth | wc -l) # Amount of NIC
 ETHX=($(ls /sys/class/net/ | grep eth))  # Real NIC List
 if [ ${ETHXNUM} -gt 8 ]; then
   ETHX=8
   echo -e "\033[0;31m*** WARNING: More than 8 NIC are not supported.***\033[0m"
-  break
 fi
 # set missing mac to cmdline if needed
 if [ ${NETIF_NUM} -ne ${ETHXNUM} ]; then
   for N in $(seq $((${NETIF_NUM} + 1)) ${ETHXNUM}); do 
-    MACR="$(cat /sys/class/net/${ETHX[$(expr ${N} - 1)]}/address | sed 's/://g')"
+    MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
     # no duplicates
     while [[ "${MACS[*]}" =~ "${MACR}" ]]; do # no duplicates
       MACR="${MACR:0:10}$(printf "%02x" $((0x${MACR:10:2} + 1)))" 
@@ -172,7 +170,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
   echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
-  for N in $(seq 0 $(expr ${#ETHX[@]} - 1)); do
+  for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     COUNT=0
     sleep 3
