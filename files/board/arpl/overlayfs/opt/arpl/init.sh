@@ -85,6 +85,8 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.notsetmac" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
@@ -95,7 +97,7 @@ NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
 # No network devices
-[ ${#ETHX[@]} -eq 0 ] && die "NIC not found!"
+[ ${#ETHX[@]} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
 # Get MAC address
 for N in $(seq 1 ${#ETHX[@]}); do
   MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
@@ -132,7 +134,7 @@ if [ "${BUS}" = "usb" ]; then
   VID="0x$(udevadm info --query property --name ${LOADER_DISK} | grep ID_VENDOR_ID | cut -d= -f2)"
   PID="0x$(udevadm info --query property --name ${LOADER_DISK} | grep ID_MODEL_ID | cut -d= -f2)"
 elif [ "${BUS}" != "sata" ] && [ "${BUS}" != "scsi" ]; then
-  die "Loader Disk neither USB or DoM"
+  die "Loader Disk neither USB, SATA or SCSI"
 fi
 
 # Save variables to user config file
@@ -217,7 +219,7 @@ echo
 # Check memory
 RAM=$(free -m | grep -i mem | awk '{print$2}')
 if [ ${RAM} -le 3500 ]; then
-  echo -e "\033[1;341You have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of memory.\033[0m\n"
+  echo -e "\033[1;341You have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n"
 fi
 
 mkdir -p "${ADDONS_PATH}"

@@ -44,6 +44,23 @@ PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
 RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compressed")"
 
+# Update PAT Info for Update
+PAT_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
+PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
+PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
+PAT_URL="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
+PAT_HASH="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
+PAT_URL="${PAT_URL%%\?*}"
+if [ -n "${PAT_URL}" ]; then
+  writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+fi
+if [ -n "${PAT_HASH}" ]; then
+  writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+fi
+# Read new PAT Info from Config
+PAT_URL="${readConfigKey "arc.paturl" "${USER_CONFIG_FILE}"}"
+PAT_HASH="${readConfigKey "arc.pathash" "${USER_CONFIG_FILE}"}"
+
 if [ "${PRODUCTVERDSM}" != "${PRODUCTVER}" ]; then
   # Update new buildnumber
   echo -e "Error: Ramdisk Version does not match DSM Version"
@@ -52,16 +69,6 @@ fi
 
 # Sanity check
 [ -z "${PLATFORM}" ] || [ -z "${KVER}" ] && (die "ERROR: Configuration for Model ${MODEL} and Version ${PRODUCTVER} not found." | tee -a "${LOG_FILE}")
-
-# Update PAT Info for Update
-PAT_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
-PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
-PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
-PAT_URL="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
-PAT_HASH="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
-PAT_URL="${PAT_URL%%\?*}"
-writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
-writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
 
 declare -A SYNOINFO
 declare -A ADDONS
