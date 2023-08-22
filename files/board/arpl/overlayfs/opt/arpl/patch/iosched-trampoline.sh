@@ -4,13 +4,13 @@
 # possible (which turns out to be via init/main.c => load_default_modules => load_default_elevator_module
 # When the kernel is booted with "elevator=elevator" it will attempt to load a module "elevator-iosched"... and the rest
 # should be obvious from the code below. DO NOT print anything here (kernel doesn't attach STDOUT)
-for arg in "$@"
-do
-  if [ "${arg}" = "elevator-iosched" ]; then
-    insmod "/usr/lib/modules/rp.ko"
-    rm -f "/usr/lib/modules/rp.ko"
-    rm -f "/usr/sbin/modprobe"
-    ln -sf "/usr/bin/kmod" "/usr/sbin/modprobe"
+for arg in "$@"; do
+  if [ "${arg}" = "elevator-iosched" ] || [ "${arg}" = "elevator=elevator" ]; then
+    insmod /usr/lib/modules/rp.ko
+    rm /usr/lib/modules/rp.ko
+    rm /usr/sbin/modprobe
+    ln -s /usr/bin/kmod /usr/sbin/modprobe
     exit 0
   fi
 done
+exit 1
