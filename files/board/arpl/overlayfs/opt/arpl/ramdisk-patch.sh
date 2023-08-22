@@ -58,8 +58,8 @@ if [ -n "${PAT_HASH}" ]; then
   writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
 fi
 # Read new PAT Info from Config
-PAT_URL="${readConfigKey "arc.paturl" "${USER_CONFIG_FILE}"}"
-PAT_HASH="${readConfigKey "arc.pathash" "${USER_CONFIG_FILE}"}"
+PAT_URL="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
+PAT_HASH="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
 
 if [ "${PRODUCTVERDSM}" != "${PRODUCTVER}" ]; then
   # Update new buildnumber
