@@ -157,6 +157,18 @@ echo "export LAYOUT=${LAYOUT}" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export KEYMAP=${KEYMAP}" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
+# Required addons: misc, eudev, disks, wol, acpid, bootwait
+installAddon eudev
+echo "/addons/eudev.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+installAddon disks
+echo "/addons/disks.sh \${1} ${DT} ${UNIQUE}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+installAddon misc
+echo "/addons/misc.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+installAddon localrss
+echo "/addons/localrss.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+installAddon wol
+echo "/addons/wol.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+
 # User Addons
 for ADDON in ${!ADDONS[@]}; do
   PARAMS=${ADDONS[${ADDON}]}
@@ -177,17 +189,6 @@ for EXTENSION in ${!EXTENSIONS[@]}; do
   echo "/addons/${EXTENSION}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 done
 
-# Required addons: misc, eudev, disks, wol, acpid, bootwait
-installAddon eudev
-echo "/addons/eudev.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-installAddon disks
-echo "/addons/disks.sh \${1} ${DT} ${UNIQUE}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-installAddon misc
-echo "/addons/misc.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-installAddon localrss
-echo "/addons/localrss.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-installAddon wol
-echo "/addons/wol.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 # Enable Telnet
 echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 
@@ -195,6 +196,11 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 
 # Build modules dependencies
 /opt/arpl/depmod -a -b "${RAMDISK_PATH}" 2>/dev/null
+
+# Network card configuration file
+for N in $(seq 0 7); do
+  echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
+done
 
 # Reassembly ramdisk
 if [ "${RD_COMPRESSED}" == "true" ]; then
