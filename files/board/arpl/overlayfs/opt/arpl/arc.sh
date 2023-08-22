@@ -505,18 +505,12 @@ function make() {
       --msgbox "zImage not patched:\n$(<"${LOG_FILE}")" 0 0
     return 1
   fi
-  # Update HASH of new DSM zImage
-  ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}')"
-  writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
   # Patch Ramdisk
   if ! /opt/arpl/ramdisk-patch.sh; then
     dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
       --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 0 0
     return 1
   fi
-  # Update HASH of new DSM Ramdisk
-  RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')"
-  writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
   echo "Ready!"
   sleep 3
   # Build is done

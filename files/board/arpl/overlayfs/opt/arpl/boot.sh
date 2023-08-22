@@ -21,7 +21,7 @@ printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
 TITLE="BOOTING..."
 [ ${EFI} -eq 1 ] && TITLE+=" [EFI]" || TITLE+=" [Legacy]"
-[ "${BUS}" = "usb" ] && TITLE+=" [${BUS^^} flashdisk]" || TITLE+=" [${BUS^^} DoM]"
+TITLE+=" [${BUS^^}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
 # Check if DSM zImage changed, patch it if necessary
@@ -34,9 +34,6 @@ if [ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" ]; then
       --msgbox "zImage not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1
   fi
-  # Update HASH of new DSM zImage
-  ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
-  writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
   echo
 fi
 
@@ -50,9 +47,6 @@ if [ "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]; then
       --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1
   fi
-  # Update HASH of new DSM Ramdisk
-  RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
-  writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
   echo
 fi
 

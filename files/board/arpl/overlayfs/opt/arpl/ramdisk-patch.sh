@@ -203,5 +203,9 @@ else
   (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root >"${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || dieLog
 fi
 
+# Update HASH of new DSM Ramdisk
+RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')"
+writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
+
 # Clean
 rm -rf "${RAMDISK_PATH}"
