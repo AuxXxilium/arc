@@ -27,8 +27,8 @@ EXTENSIONS_PATH="${CACHE_PATH}/extensions"
 LKM_PATH="${CACHE_PATH}/lkms"
 MODULES_PATH="${CACHE_PATH}/modules"
 USER_UP_PATH="${CACHE_PATH}/users"
+MODEL_CONFIG_PATH="${CACHE_PATH}/configs"
 
-MODEL_CONFIG_PATH="/mnt/p3/configs"
 INCLUDE_PATH="/opt/arpl/include"
 PATCH_PATH="/opt/arpl/patch"
 

@@ -56,6 +56,11 @@ if ! grep -q "arc.sh" ~/.bash_history; then
   echo "arc.sh " >>~/.bash_history
 fi
 
+if [ -d "${CACHE_PATH}/patch" ]; then
+  rm -rf "${PATCH_PATH}"
+  ln -s "${CACHE_PATH}/patch" "${PATCH_PATH}"
+fi
+
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
