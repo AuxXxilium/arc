@@ -47,7 +47,7 @@ function getmap() {
   # Check for VMware
   while read -r LINE; do
     if [ "${MACHINE}" = "VMware" ] && [ ${LINE} -eq 0 ]; then
-      MAXDISKS="$(readModelKey "${MODEL}" "disks")"
+      MAXDISKS=24
       echo -n "${LINE}>${MAXDISKS}:" >>"${TMP_PATH}/remap"
     elif [ ${LINE} != ${LASTDRIVE} ]; then
       echo -n "${LINE}>${LASTDRIVE}:" >>"${TMP_PATH}/remap"
