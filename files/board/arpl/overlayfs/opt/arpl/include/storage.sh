@@ -14,6 +14,7 @@ function getmap() {
   DISKIDXMAP=""
   let DISKIDXMAPIDXMAX=0
   DISKIDXMAPMAX=""
+  CONPORTSMAX=0
   for PCI in $(lspci -d ::106 | awk '{print $1}'); do
     NUMPORTS=0
     CONPORTS=0
@@ -29,7 +30,7 @@ function getmap() {
       PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
       [ ${PCMD} = 0 ] && DUMMY=1 || DUMMY=0
       [ ${ATTACH} = 1 ] && CONPORTS=$((${CONPORTS} + 1)) && echo "$((${PORT} - 1))" >>"${TMP_PATH}/ports"
-      [ ${DUMMY} = 1 ]
+      [ ${DUMMY} = 1 ] # Do nothing for now
       NUMPORTS=$((${NUMPORTS} + 1))
     done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
     [ ${NUMPORTS} -gt 8 ] && NUMPORTS=8
@@ -40,6 +41,7 @@ function getmap() {
     let DISKIDXMAPIDX=$DISKIDXMAPIDX+$CONPORTS
     DISKIDXMAPMAX=$DISKIDXMAPMAX$(printf "%02x" $DISKIDXMAPIDXMAX)
     let DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS
+    CONPORTSMAX=$((${CONPORTSMAX} + ${CONPORTS}))
   done
   SATAPORTMAPMAX="$(awk '{print$1}' ${TMP_PATH}/drivesmax)"
   SATAPORTMAP="$(awk '{print$1}' ${TMP_PATH}/drivescon)"
@@ -47,13 +49,24 @@ function getmap() {
   # Check for VMware
   while read -r LINE; do
     if [ "${MACHINE}" = "VMware" ] && [ ${LINE} -eq 0 ]; then
-      MAXDISKS=26
+      MAXDISKS="$(readModelKey "${MODEL}" "disks")"
+      if [ ${MAXDISKS} -lt ${CONPORTSMAX} ];
+        if [ ${CONPORTSMAX} -le 26 ];
+        dialog --backtitle "$(backtitle)" --title "Arc Disks" \
+          --msgbox "More than ${MAXDISKS} Drives connected.\nWe use ${CONPORTSMAX} as Drivecount!" 5 40
+        MAXDISKS="${CONPORTSMAX}"
+        elif [ ${CONPORTSMAX} -gt 26 ];
+          MAXDISKS="26"
+          dialog --backtitle "$(backtitle)" --title "Arc Disks" \
+            --msgbox "More than ${MAXDISKS} Drives connected.\nWe use ${MAXDISKS} as Drivecount!" 5 40
+        fi
+      fi
       echo -n "${LINE}>${MAXDISKS}:" >>"${TMP_PATH}/remap"
     elif [ ${LINE} != ${LASTDRIVE} ]; then
       echo -n "${LINE}>${LASTDRIVE}:" >>"${TMP_PATH}/remap"
       LASTDRIVE=$((${LASTDRIVE} + 1))
     elif [ ${LINE} = ${LASTDRIVE} ]; then
-      LASTDRIVE=$((${line} + 1))
+      LASTDRIVE=$((${LINE} + 1))
     fi
   done < <(cat "${TMP_PATH}/ports")
   SATAREMAP="$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')"
@@ -77,22 +90,22 @@ function getmap() {
     [ $? -ne 0 ] && return 1
     resp=$(<"${TMP_PATH}/resp")
     [ -z "${resp}" ] && return 1
-    if [ "${resp}" = "1" ]; then
+    if [ ${resp} -eq 1 ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Disks" \
         --infobox "Use SataPortMap:\nActive Ports!" 4 40
       writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}"
       break
-    elif [ "${resp}" = "2" ]; then
+    elif [ ${resp} -eq 2 ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Disks" \
         --infobox "Use SataPortMap:\nMax Ports!" 4 40
       writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}"
       break
-    elif [ "${resp}" = "3" ]; then
+    elif [ ${resp} -eq 3 ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Disks" \
         --infobox "Use SataRemap:\nRemove blank Drives" 4 40
       writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}"
       break
-    elif [ "${resp}" = "4" ]; then
+    elif [ ${resp} -eq 4 ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Disks" \
         --infobox "I want to set my own PortMap!" 4 40
       writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}"
