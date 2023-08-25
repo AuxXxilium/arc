@@ -50,12 +50,12 @@ function getmap() {
   while read -r LINE; do
     if [ "${MACHINE}" = "VMware" ] && [ ${LINE} -eq 0 ]; then
       MAXDISKS="$(readModelKey "${MODEL}" "disks")"
-      if [ ${MAXDISKS} -lt ${CONPORTSMAX} ];
-        if [ ${CONPORTSMAX} -le 26 ];
+      if [ ${MAXDISKS} -lt ${CONPORTSMAX} ]; then
+        if [ ${CONPORTSMAX} -le 26 ]; then
         dialog --backtitle "$(backtitle)" --title "Arc Disks" \
           --msgbox "More than ${MAXDISKS} Drives connected.\nWe use ${CONPORTSMAX} as Drivecount!" 5 40
         MAXDISKS="${CONPORTSMAX}"
-        elif [ ${CONPORTSMAX} -gt 26 ];
+        elif [ ${CONPORTSMAX} -gt 26 ]; then
           MAXDISKS="26"
           dialog --backtitle "$(backtitle)" --title "Arc Disks" \
             --msgbox "More than ${MAXDISKS} Drives connected.\nWe use ${MAXDISKS} as Drivecount!" 5 40
