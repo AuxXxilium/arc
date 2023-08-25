@@ -69,6 +69,35 @@ function getmap() {
       LASTDRIVE=$((${LINE} + 1))
     fi
   done < <(cat "${TMP_PATH}/ports")
+  # Check MaxDisks
+  NUMPORTS=${CONPORTSMAX} # Get SataPort Count
+  [ $(lspci -d ::107 | wc -l) -gt 0 ]
+  for PCI in $(lspci -d ::107 | awk '{print $1}'); do
+    NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+    PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+    PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+    NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+  done
+  [ $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]
+  for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
+    NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+    PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+    PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+    [ ${PORTNUM} -eq 0 ] && continue
+    NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+  done
+  [ $(lspci -d ::108 | wc -l) -gt 0 ]
+  for PCI in $(lspci -d ::108 | awk '{print $1}'); do
+    NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+    PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
+    PORTNUM=$(lsscsi -b | grep -v - | grep "\[N:${PORT}:" | wc -l)
+    NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+  done
+  if [ ${NUMPORTS} -gt 26 ]; then
+    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
+      --msgbox "You have ${NUMPORTS} Drives connected.\nMax Drivecount is 26!" 5 40
+    return 1
+  fi
   SATAREMAP="$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')"
   # Show recommended Option to user
   if [ -n "${SATAREMAP}" ] && [ ${SASCONTROLLER} -eq 0 ]; then

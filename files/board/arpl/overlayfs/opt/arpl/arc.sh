@@ -1995,7 +1995,7 @@ function sysinfo() {
     NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
     PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
-    TEXT+="\Zb${NAME}\Zn\nNumber: ${PORTNUM}\n"
+    TEXT+="\Zb${NAME}\Zn\nDrives: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
   [ $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ] && TEXT+="\nUSB:\n"
