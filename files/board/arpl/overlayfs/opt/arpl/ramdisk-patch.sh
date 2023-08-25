@@ -146,7 +146,6 @@ gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr
 DT="$(readModelKey "${MODEL}" "dt")"
 
 mkdir -p "${RAMDISK_PATH}/addons"
-mkdir -p "${RAMDISK_PATH}/addons"
 echo "#!/bin/sh" >"${RAMDISK_PATH}/addons/addons.sh"
 echo 'echo "addons.sh called with params ${@}"' >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export PLATFORM=${PLATFORM}" >>"${RAMDISK_PATH}/addons/addons.sh"
@@ -176,7 +175,7 @@ for ADDON in ${!ADDONS[@]}; do
     echo -n "${ADDON} is not available for this Platform!" | tee -a "${LOG_FILE}"
     exit 1
   fi
-  echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+  echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 done
 
 # User Extensions
@@ -186,7 +185,7 @@ for EXTENSION in ${!EXTENSIONS[@]}; do
     echo -n "${EXTENSION} is not available for this Platform!" | tee -a "${LOG_FILE}"
     exit 1
   fi
-  echo "/addons/${EXTENSION}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+  echo "/addons/${EXTENSION}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 done
 
 # Enable Telnet
