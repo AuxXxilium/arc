@@ -2285,14 +2285,14 @@ while true; do
     else
       echo "- \"\Z1Show Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     fi
-    if [ "${DEVOPTS}" = "true" ]; then
-      echo "= \"\Z4========== Dev ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
-      echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
-      echo "z \"Save Modifications to Disk \" "                                             >>"${TMP_PATH}/menu"
-      echo "u \"Clean old Loader Boot Files \" "                                            >>"${TMP_PATH}/menu"
-      echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >>"${TMP_PATH}/menu"
-      echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
-    fi
+  fi
+  if [ "${DEVOPTS}" = "true" ]; then
+    echo "= \"\Z4========== Dev ==========\Zn \" "                                          >>"${TMP_PATH}/menu"
+    echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                         >>"${TMP_PATH}/menu"
+    echo "z \"Save Modifications to Disk \" "                                               >>"${TMP_PATH}/menu"
+    echo "u \"Clean old Loader Boot Files \" "                                              >>"${TMP_PATH}/menu"
+    echo "+ \"\Z1Format Disk(s)\Zn \" "                                                     >>"${TMP_PATH}/menu"
+    echo "= \"\Z4=========================\Zn \" "                                          >>"${TMP_PATH}/menu"
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "t \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
