@@ -1930,13 +1930,23 @@ function sysinfo() {
   TEXT+="\nVendor: \Zb${VENDOR}\Zn"
   TEXT+="\nCPU | Cores: \Zb${CPUINFO} | ${CPUCORES}\Zn"
   TEXT+="\nMemory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
-  TEXT+="\nNetwork: \Zb${ETHXNUM} Adapter\Zn"
-  [ $(lspci -d ::200 | wc -l) -gt 0 ] && TEXT+="\nNIC:\n"
-  for PCI in $(lspci -d ::200 | awk '{print $1}'); do
-    NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-    TEXT+="\Zb${NAME}\Zn\n"
+  TEXT+="\n\Z4> Network: ${ETHXNUM} Adapter\Zn"
+  for N in $(seq 0 $((${#ETHX[@]} - 1))); do
+    DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    MAC="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
+    while true; do
+      if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
+        TEXT+="\n${DRIVER}: \ZbIP: NOT CONNECTED | Mac: ${MAC}\Zn"
+        break
+      fi
+      IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+      if [ -n "${IP}" ]; then
+        SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
+        TEXT+="\n${DRIVER} (${SPEED}): \ZbIP: ${IP} | Mac: ${MAC}\Zn"
+        break
+      fi
+    done
   done
-  TEXT+="\nIP(s): \Zb${IPLIST}\Zn\n"
   # Print Config Informations
   TEXT+="\n\Z4> Arc\Zn"
   TEXT+="\nArc Version: \Zb${ARPL_VERSION}\Zn"
@@ -1970,7 +1980,7 @@ function sysinfo() {
   TEXT+="\n\Z4> Storage\Zn"
   # Get Information for Sata Controller
   NUMPORTS=0
-  [ $(lspci -d ::106 | wc -l) -gt 0 ] && TEXT+="\nATA:\n"
+  [ $(lspci -d ::106 | wc -l) -gt 0 ] && TEXT+="\nSATA:\n"
   for PCI in $(lspci -d ::106 | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
     TEXT+="\Zb${NAME}\Zn\nPorts: "
@@ -1981,12 +1991,12 @@ function sysinfo() {
         if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ]; then
           TEXT+="\Z1$(printf "%02d" ${P})\Zn "
         else
-          TEXT+="\Z2$(printf "%02d" ${P})\Zn "
+          TEXT+="\Z2\Zb$(printf "%02d" ${P})\Zn "
+          NUMPORTS=$((${NUMPORTS} + 1))
         fi
       else
         TEXT+="$(printf "%02d" ${P}) "
       fi
-      NUMPORTS=$((${NUMPORTS} + 1))
     done
   done
   TEXT+="\n"
@@ -2015,7 +2025,7 @@ function sysinfo() {
     TEXT+="\Zb${NAME}\Zn\nDrives: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  TEXT+="\nTotal of ports: ${NUMPORTS}\n"
+  TEXT+="\nDrives total: ${NUMPORTS}\n"
   TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected."
   dialog --backtitle "$(backtitle)" --colors --title "Sysinfo" \
     --msgbox "${TEXT}" 0 0
