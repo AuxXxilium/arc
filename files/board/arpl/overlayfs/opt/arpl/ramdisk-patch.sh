@@ -196,6 +196,11 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 # Build modules dependencies
 /opt/arpl/depmod -a -b "${RAMDISK_PATH}" 2>/dev/null
 
+# Network card configuration file
+for N in $(seq 0 7); do
+  echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
+done
+
 # Reassembly ramdisk
 if [ "${RD_COMPRESSED}" == "true" ]; then
   (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root | xz -9 --format=lzma >"${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || dieLog
