@@ -1570,19 +1570,37 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
           --infobox "Checking latest version" 0 0
         ACTUALVERSION="${ARPL_VERSION}"
-        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-        if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          return 1
-        fi
+        # Ask for Tag
+        while true; do
+          dialog --clear --backtitle "$(backtitle)" --title "Full Upgrade Loader" \
+            --menu "Which Version?" 0 0 0 \
+            1 "Latest" \
+            2 "Select Version" \
+          2>"${TMP_PATH}/opts"
+          [ $? -ne 0 ] && return 1
+          opts="$(<"${TMP_PATH}/opts")"
+          [ -z "${opts}" ] && return 1
+          if [ ${opts} -eq 1 ]; then
+            TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+            if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+              dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
+                --msgbox "Error checking new version" 0 0
+              return 1
+            fi
+          elif [ ${opts} -eq 2 ]; then
+            dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" \
+            --inputbox "Type the Version!" 0 0 \
+            2>"${TMP_PATH}/input"
+            TAG="$(<"${TMP_PATH}/input")"
+          fi
+        done
+        dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
+          --infobox "Downloading ${TAG}" 0 0
         if [ "${ACTUALVERSION}" = "${TAG}" ]; then
           dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
             --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
           [ $? -ne 0 ] && continue
         fi
-        dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
-          --infobox "Downloading latest version ${TAG}" 0 0
         # Download update file
         STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
         if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
@@ -1619,22 +1637,39 @@ function updateMenu() {
         exit
         ;;
       2)
-        dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
-          --infobox "Checking latest version" 0 0
         ACTUALVERSION="${ARPL_VERSION}"
-        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-        if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          return 1
-        fi
+        # Ask for Tag
+        while true; do
+          dialog --clear --backtitle "$(backtitle)" --title "Update Arc" \
+            --menu "Which Version?" 0 0 0 \
+            1 "Latest" \
+            2 "Select Version" \
+          2>"${TMP_PATH}/opts"
+          [ $? -ne 0 ] && return 1
+          opts="$(<"${TMP_PATH}/opts")"
+          [ -z "${opts}" ] && return 1
+          if [ ${opts} -eq 1 ]; then
+            TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+            if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+              dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
+                --msgbox "Error checking new version" 0 0
+              return 1
+            fi
+          elif [ ${opts} -eq 2 ]; then
+            dialog --backtitle "$(backtitle)" --title "Update Arc" \
+            --inputbox "Type the Version!" 0 0 \
+            2>"${TMP_PATH}/input"
+            TAG="$(<"${TMP_PATH}/input")"
+            [ $? -ne 0 ] && continue
+          fi
+        done
         if [ "${ACTUALVERSION}" = "${TAG}" ]; then
           dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
             --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
           [ $? -ne 0 ] && continue
         fi
         dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
-          --infobox "Downloading latest version ${TAG}" 0 0
+          --infobox "Downloading ${TAG}" 0 0
         # Download update file
         STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip")
         if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
@@ -1680,24 +1715,41 @@ function updateMenu() {
         exit
         ;;
       3)
+        # Ask for Tag
+        while true; do
+          dialog --clear --backtitle "$(backtitle)" --title "Update Loader Addons" \
+            --menu "Which Version?" 0 0 0 \
+            1 "Latest" \
+            2 "Select Version" \
+          2>"${TMP_PATH}/opts"
+          [ $? -ne 0 ] && return 1
+          opts="$(<"${TMP_PATH}/opts")"
+          [ -z "${opts}" ] && return 1
+          if [ ${opts} -eq 1 ]; then
+            TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+            if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+              dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
+                --msgbox "Error checking new version" 0 0
+              return 1
+            fi
+          elif [ ${opts} -eq 2 ]; then
+            dialog --backtitle "$(backtitle)" --title "Update Loader Addons" \
+            --inputbox "Type the Version!" 0 0 \
+            2>"${TMP_PATH}/input"
+            TAG="$(<"${TMP_PATH}/input")"
+            [ $? -ne 0 ] && continue
+          fi
+        done
         dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
-          --infobox "Checking latest version" 0 0
-        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-        if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
-          --infobox "Downloading latest version: ${TAG}" 0 0
+          --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip")
         if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
-            --msgbox "Error downloading new version" 0 0
+            --msgbox "Error downloading" 0 0
           return 1
         fi
         dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
-          --infobox "Extracting latest version" 0 0
+          --infobox "Extracting" 0 0
         rm -rf "${ADDONS_PATH}"
         mkdir -p "${ADDONS_PATH}"
         unzip -oq "${TMP_PATH}/addons.zip" -d "${ADDONS_PATH}" >/dev/null 2>&1
@@ -1717,24 +1769,41 @@ function updateMenu() {
           --msgbox "Addons updated with success! ${TAG}" 0 0
         ;;
       4)
+        # Ask for Tag
+        while true; do
+          dialog --clear --backtitle "$(backtitle)" --title "Update DSM Extensions" \
+            --menu "Which Version?" 0 0 0 \
+            1 "Latest" \
+            2 "Select Version" \
+          2>"${TMP_PATH}/opts"
+          [ $? -ne 0 ] && return 1
+          opts="$(<"${TMP_PATH}/opts")"
+          [ -z "${opts}" ] && return 1
+          if [ ${opts} -eq 1 ]; then
+            TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-extensions/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+            if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+              dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
+                --msgbox "Error checking new version" 0 0
+              return 1
+            fi
+          elif [ ${opts} -eq 2 ]; then
+            dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" \
+            --inputbox "Type the Version!" 0 0 \
+            2>"${TMP_PATH}/input"
+            TAG="$(<"${TMP_PATH}/input")"
+            [ $? -ne 0 ] && continue
+          fi
+        done
         dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
-          --infobox "Checking latest version" 0 0
-        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-extensions/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-        if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
-          --infobox "Downloading latest version: ${TAG}" 0 0
+          --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-extensions/releases/download/${TAG}/extensions.zip" -o "${TMP_PATH}/extensions.zip")
         if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
-            --msgbox "Error downloading new version" 0 0
+            --msgbox "Error downloading" 0 0
           return 1
         fi
         dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
-          --infobox "Extracting latest version" 0 0
+          --infobox "Extracting" 0 0
         rm -rf "${EXTENSIONS_PATH}"
         mkdir -p "${EXTENSIONS_PATH}"
         unzip -oq "${TMP_PATH}/extensions.zip" -d "${EXTENSIONS_PATH}" >/dev/null 2>&1
@@ -1754,20 +1823,38 @@ function updateMenu() {
           --msgbox "Extensions updated with success! ${TAG}" 0 0
         ;;
       5)
+        # Ask for Tag
+        while true; do
+          dialog --clear --backtitle "$(backtitle)" --title "Update DSM Modules" \
+            --menu "Which Version?" 0 0 0 \
+            1 "Latest" \
+            2 "Select Version" \
+          2>"${TMP_PATH}/opts"
+          [ $? -ne 0 ] && return 1
+          opts="$(<"${TMP_PATH}/opts")"
+          [ -z "${opts}" ] && return 1
+          if [ ${opts} -eq 1 ]; then
+            TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+            if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+              dialog --backtitle "$(backtitle)" --title "Update DSM Modules" --aspect 18 \
+                --msgbox "Error checking new version" 0 0
+              return 1
+            fi
+          elif [ ${opts} -eq 2 ]; then
+            dialog --backtitle "$(backtitle)" --title "Update DSM Modules" \
+            --inputbox "Type the Version!" 0 0 \
+            2>"${TMP_PATH}/input"
+            TAG="$(<"${TMP_PATH}/input")"
+            [ $? -ne 0 ] && continue
+          fi
+          break
+        done
         dialog --backtitle "$(backtitle)" --title "Update DSM Modules" --aspect 18 \
-          --infobox "Checking latest version" 0 0
-        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-        if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update DSM Modules" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update DSM Modules" --aspect 18 \
-          --infobox "Downloading latest version" 0 0
+          --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
         if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Update DSM Modules" --aspect 18 \
-            --msgbox "Error downloading latest version" 0 0
+            --msgbox "Error downloading" 0 0
           return 1
         fi
         MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -1793,24 +1880,41 @@ function updateMenu() {
           --msgbox "Modules updated to ${TAG} with success!" 0 0
         ;;
       6)
+        # Ask for Tag
+        while true; do
+          dialog --clear --backtitle "$(backtitle)" --title "Update DSM Configs" \
+            --menu "Which Version?" 0 0 0 \
+            1 "Latest" \
+            2 "Select Version" \
+          2>"${TMP_PATH}/opts"
+          [ $? -ne 0 ] && return 1
+          opts="$(<"${TMP_PATH}/opts")"
+          [ -z "${opts}" ] && return 1
+          if [ ${opts} -eq 1 ]; then
+            TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+            if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+              dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
+                --msgbox "Error checking new version" 0 0
+              return 1
+            fi
+          elif [ ${opts} -eq 2 ]; then
+            dialog --backtitle "$(backtitle)" --title "Update DSM Configs" \
+            --inputbox "Type the Version!" 0 0 \
+            2>"${TMP_PATH}/input"
+            TAG="$(<"${TMP_PATH}/input")"
+            [ $? -ne 0 ] && continue
+          fi
+        done
         dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
-          --infobox "Checking latest version" 0 0
-        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-        if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
-          --infobox "Downloading latest version: ${TAG}" 0 0
+          --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")
         if [ $? -ne 0 ] || [] ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
-            --msgbox "Error downloading latest version" 0 0
+            --msgbox "Error downloading" 0 0
           return 1
         fi
         dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
-          --infobox "Extracting latest version" 0 0
+          --infobox "Extracting" 0 0
         rm -rf "${MODEL_CONFIG_PATH}"
         mkdir -p "${MODEL_CONFIG_PATH}"
         unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}" >/dev/null 2>&1
@@ -1821,24 +1925,41 @@ function updateMenu() {
           --msgbox "Configs updated with success! ${TAG}" 0 0
         ;;
       7)
+        # Ask for Tag
+        while true; do
+          dialog --clear --backtitle "$(backtitle)" --title "Update Loader LKMs" \
+            --menu "Which Version?" 0 0 0 \
+            1 "Latest" \
+            2 "Select Version" \
+          2>"${TMP_PATH}/opts"
+          [ $? -ne 0 ] && return 1
+          opts="$(<"${TMP_PATH}/opts")"
+          [ -z "${opts}" ] && return 1
+          if [ ${opts} -eq 1 ]; then
+            TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+            if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+              dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
+                --msgbox "Error checking new version" 0 0
+              return 1
+            fi
+          elif [ ${opts} -eq 2 ]; then
+            dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" \
+            --inputbox "Type the Version!" 0 0 \
+            2>"${TMP_PATH}/input"
+            TAG="$(<"${TMP_PATH}/input")"
+            [ $? -ne 0 ] && continue
+          fi
+        done
         dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
-          --infobox "Checking latest version" 0 0
-        TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-        if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
-            --msgbox "Error checking new version" 0 0
-          return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
-          --infobox "Downloading latest version: ${TAG}" 0 0
+          --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip")
         if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
-            --msgbox "Error downloading latest version" 0 0
+            --msgbox "Error downloading" 0 0
           return 1
         fi
         dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
-          --infobox "Extracting latest version" 0 0
+          --infobox "Extracting" 0 0
         rm -rf "${LKM_PATH}"
         mkdir -p "${LKM_PATH}"
         unzip -oq "${TMP_PATH}/rp-lkms.zip" -d "${LKM_PATH}" >/dev/null 2>&1
