@@ -1593,6 +1593,7 @@ function updateMenu() {
             2>"${TMP_PATH}/input"
             TAG="$(<"${TMP_PATH}/input")"
           fi
+          break
         done
         dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
@@ -1662,6 +1663,7 @@ function updateMenu() {
             TAG="$(<"${TMP_PATH}/input")"
             [ $? -ne 0 ] && continue
           fi
+          break
         done
         if [ "${ACTUALVERSION}" = "${TAG}" ]; then
           dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
@@ -1739,6 +1741,7 @@ function updateMenu() {
             TAG="$(<"${TMP_PATH}/input")"
             [ $? -ne 0 ] && continue
           fi
+          break
         done
         dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
@@ -1793,6 +1796,7 @@ function updateMenu() {
             TAG="$(<"${TMP_PATH}/input")"
             [ $? -ne 0 ] && continue
           fi
+          break
         done
         dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
@@ -1904,6 +1908,7 @@ function updateMenu() {
             TAG="$(<"${TMP_PATH}/input")"
             [ $? -ne 0 ] && continue
           fi
+          break
         done
         dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
@@ -1949,6 +1954,7 @@ function updateMenu() {
             TAG="$(<"${TMP_PATH}/input")"
             [ $? -ne 0 ] && continue
           fi
+          break
         done
         dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0

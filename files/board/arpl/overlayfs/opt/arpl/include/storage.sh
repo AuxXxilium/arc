@@ -138,23 +138,20 @@ function getmap() {
         dialog --backtitle "$(backtitle)" --title "Arc Disks" \
           --infobox "Use SataPortMap:\nActive Ports!" 4 40
         writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}"
-        break
       elif [ ${resp} -eq 2 ]; then
         dialog --backtitle "$(backtitle)" --title "Arc Disks" \
           --infobox "Use SataPortMap:\nMax Ports!" 4 40
         writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}"
-        break
       elif [ ${resp} -eq 3 ]; then
         dialog --backtitle "$(backtitle)" --title "Arc Disks" \
           --infobox "Use SataRemap:\nRemove blank Drives" 4 40
         writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}"
-        break
       elif [ ${resp} -eq 4 ]; then
         dialog --backtitle "$(backtitle)" --title "Arc Disks" \
           --infobox "I want to set my own PortMap!" 4 40
         writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}"
-        break
       fi
+      break
     done
     sleep 1
     # Check Remap for correct config
