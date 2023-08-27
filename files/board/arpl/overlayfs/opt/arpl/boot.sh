@@ -171,17 +171,18 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     sleep 3
     while true; do
       if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
-        echo -e "\r${ETHX[${N}]}(${DRIVER}): NOT CONNECTED"
+        echo -e "\r${DRIVER}: NOT CONNECTED"
         break
       fi
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
       if [ -n "${IP}" ]; then
-        echo -e "\r${ETHX[${N}]}(${DRIVER}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web."
+        SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
+        echo -e "\r${DRIVER} (${SPEED}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web."
         break
       fi
       COUNT=$((${COUNT} + 1))
       if [ ${COUNT} -eq ${BOOTIPWAIT} ]; then
-        echo -e "\r${ETHX[${N}]}(${DRIVER}): TIMEOUT."
+        echo -e "\r${DRIVER}: TIMEOUT."
         break
       fi
       sleep 1

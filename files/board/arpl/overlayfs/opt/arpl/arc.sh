@@ -244,7 +244,7 @@ function arcbuild() {
     writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
   done < <(getAllModules "${PLATFORM}" "${KVER}")
   if [ "${ONLYVERSION}" != "true" ]; then
-    arcsettings
+    arcselection
   else
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -253,8 +253,8 @@ function arcbuild() {
 
 ###############################################################################
 # Make Arc Settings
-function arcsettings() {
-  # read model values for arcsettings
+function arcselection() {
+  # read model values for arcselection
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   ARCCONF="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${MODEL}.yml")"
   if [ -n "${ARCCONF}" ]; then
@@ -298,24 +298,19 @@ function arcsettings() {
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
     --infobox "Model Configuration successful!" 0 0
   sleep 1
-  arcnetdisk
+  arcconfig
 }
 
 ###############################################################################
 # Make Network and Disk Config
-function arcnetdisk() {
+function arcconfig() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
   # Get Network Config for Loader
   getnet
-  # Only load getmap when Sata Controller are dedected and no DT Model is selected
-  if [ ${SATACONTROLLER} -gt 0 ] && [ "${DT}" != "true" ]; then
-    # Config for Sata Controller with PortMap to get all drives
-      dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-        --infobox "SATA Controller found. Need PortMap for Controller!" 0 0
-    # Get Portmap for Loader
-    getmap
-  fi
+  # Get Portmap for Loader
+  getmap
+  # Select Extensions
   extensionSelection
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
     --infobox "Configuration successful!" 0 0
@@ -335,6 +330,10 @@ function arcnetdisk() {
   if [ ${WARNON} -eq 4 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
       --msgbox "WARN: Your CPU does not have AES Support for Hardwareencryption in DSM." 0 0
+  fi
+  if [ ${WARNON} -eq 5 ]; then
+    dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+      --msgbox "You have ${NUMPORTS} Drives connected.\nMax Drivecount is 26!" 5 40
   fi
   # Config is done
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
@@ -1930,13 +1929,23 @@ function sysinfo() {
   TEXT+="\nVendor: \Zb${VENDOR}\Zn"
   TEXT+="\nCPU | Cores: \Zb${CPUINFO} | ${CPUCORES}\Zn"
   TEXT+="\nMemory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
-  TEXT+="\nNetwork: \Zb${ETHXNUM} Adapter\Zn"
-  [ $(lspci -d ::200 | wc -l) -gt 0 ] && TEXT+="\nNIC:\n"
-  for PCI in $(lspci -d ::200 | awk '{print $1}'); do
-    NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-    TEXT+="\Zb${NAME}\Zn\n"
+  TEXT+="\n\Z4> Network: ${ETHXNUM} Adapter\Zn"
+  for N in $(seq 0 $((${#ETHX[@]} - 1))); do
+    DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    MAC="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
+    while true; do
+      if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
+        TEXT+="\n${DRIVER}: \ZbIP: NOT CONNECTED | Mac: ${MAC}\Zn"
+        break
+      fi
+      IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+      if [ -n "${IP}" ]; then
+        SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
+        TEXT+="\n${DRIVER} (${SPEED}): \ZbIP: ${IP} | Mac: ${MAC}\Zn"
+        break
+      fi
+    done
   done
-  TEXT+="\nIP(s): \Zb${IPLIST}\Zn\n"
   # Print Config Informations
   TEXT+="\n\Z4> Arc\Zn"
   TEXT+="\nArc Version: \Zb${ARPL_VERSION}\Zn"
@@ -1970,7 +1979,8 @@ function sysinfo() {
   TEXT+="\n\Z4> Storage\Zn"
   # Get Information for Sata Controller
   NUMPORTS=0
-  [ $(lspci -d ::106 | wc -l) -gt 0 ] && TEXT+="\nATA:\n"
+  if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
+  TEXT+="\nSATA:\n"
   for PCI in $(lspci -d ::106 | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
     TEXT+="\Zb${NAME}\Zn\nPorts: "
@@ -1981,41 +1991,48 @@ function sysinfo() {
         if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ]; then
           TEXT+="\Z1$(printf "%02d" ${P})\Zn "
         else
-          TEXT+="\Z2$(printf "%02d" ${P})\Zn "
+          TEXT+="\Z2\Zb$(printf "%02d" ${P})\Zn "
+          NUMPORTS=$((${NUMPORTS} + 1))
         fi
       else
         TEXT+="$(printf "%02d" ${P}) "
       fi
-      NUMPORTS=$((${NUMPORTS} + 1))
     done
   done
   TEXT+="\n"
-  [ $(lspci -d ::107 | wc -l) -gt 0 ] && TEXT+="\nSAS/SCSI:\n"
-  for PCI in $(lspci -d ::107 | awk '{print $1}'); do
-    NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-    PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
-    PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
-    TEXT+="\Zb${NAME}\Zn\nNumber: ${PORTNUM}\n"
-    NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
-  done
-  [ $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ] && TEXT+="\nUSB:\n"
-  for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
-    NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-    PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
-    PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
-    [ ${PORTNUM} -eq 0 ] && continue
-    TEXT+="\Zb${NAME}\Zn\nDrives: ${PORTNUM}\n"
-    NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
-  done
-  [ $(lspci -d ::108 | wc -l) -gt 0 ] && TEXT+="\nNVME:\n"
-  for PCI in $(lspci -d ::108 | awk '{print $1}'); do
-    NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-    PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
-    PORTNUM=$(lsscsi -b | grep -v - | grep "\[N:${PORT}:" | wc -l)
-    TEXT+="\Zb${NAME}\Zn\nDrives: ${PORTNUM}\n"
-    NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
-  done
-  TEXT+="\nTotal of ports: ${NUMPORTS}\n"
+  fi
+  if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
+    TEXT+="\nSAS/SCSI:\n"
+    for PCI in $(lspci -d ::107 | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+      TEXT+="\Zb${NAME}\Zn\nDrives: ${PORTNUM}\n"
+      NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+    done
+  fi
+  if [ $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]; then
+    TEXT+="\nUSB:\n"
+    for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+      [ ${PORTNUM} -eq 0 ] && continue
+      TEXT+="\Zb${NAME}\Zn\nDrives: ${PORTNUM}\n"
+      NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+    done
+  fi
+  if [ $(lspci -d ::108 | wc -l) -gt 0 ]; then
+    TEXT+="\nNVME:\n"
+    for PCI in $(lspci -d ::108 | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
+      PORTNUM=$(lsscsi -b | grep -v - | grep "\[N:${PORT}:" | wc -l)
+      TEXT+="\Zb${NAME}\Zn\nDrives: ${PORTNUM}\n"
+      NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+    done
+  fi
+  TEXT+="\nDrives total: ${NUMPORTS}\n"
   TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected."
   dialog --backtitle "$(backtitle)" --colors --title "Sysinfo" \
     --msgbox "${TEXT}" 0 0
@@ -2239,11 +2256,9 @@ while true; do
     if [ "${ARCOPTS}" = "true" ]; then
       echo "= \"\Z4========== Arc ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "v \"Change DSM Version \" "                                                     >>"${TMP_PATH}/menu"
-      if [ "${DT}" != "true" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
-        echo "s \"Change Storage Map \" "                                                   >>"${TMP_PATH}/menu"
-      fi
       echo "n \"Change Network Config \" "                                                  >>"${TMP_PATH}/menu"
-      if [ "${PLATFORM}" = "broadwellnk" ]; then
+      echo "s \"Show/Change Storage Map \" "                                                >>"${TMP_PATH}/menu"
+      if [ "${DT}" = "false" ]; then
         echo "u \"Change USB Port Config \" "                                               >>"${TMP_PATH}/menu"
       fi
       echo "k \"Load Kernel: \Z4${KERNELLOAD}\Zn \" "                                       >>"${TMP_PATH}/menu"
@@ -2285,14 +2300,14 @@ while true; do
     else
       echo "- \"\Z1Show Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     fi
-    if [ "${DEVOPTS}" = "true" ]; then
-      echo "= \"\Z4========== Dev ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
-      echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
-      echo "z \"Save Modifications to Disk \" "                                             >>"${TMP_PATH}/menu"
-      echo "u \"Clean old Loader Boot Files \" "                                            >>"${TMP_PATH}/menu"
-      echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >>"${TMP_PATH}/menu"
-      echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
-    fi
+  fi
+  if [ "${DEVOPTS}" = "true" ]; then
+    echo "= \"\Z4========== Dev ==========\Zn \" "                                          >>"${TMP_PATH}/menu"
+    echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                         >>"${TMP_PATH}/menu"
+    echo "z \"Save Modifications to Disk \" "                                               >>"${TMP_PATH}/menu"
+    echo "o \"Clean old Loader Boot Files \" "                                              >>"${TMP_PATH}/menu"
+    echo "+ \"\Z1Format Disk(s)\Zn \" "                                                     >>"${TMP_PATH}/menu"
+    echo "= \"\Z4=========================\Zn \" "                                          >>"${TMP_PATH}/menu"
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "t \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
@@ -2321,8 +2336,8 @@ while true; do
        NEXT="7"
        ;;
     v) ONLYVERSION="true" && arcbuild; NEXT="v" ;;
-    s) storageMenu; NEXT="s" ;;
     n) networkMenu; NEXT="n" ;;
+    s) storageMenu; NEXT="s" ;;
     u) usbMenu; NEXT="u" ;;
     k)
       [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
@@ -2369,7 +2384,7 @@ while true; do
       NEXT="j"
       ;;
     z) saveMenu; NEXT="z" ;;
-    u) cleanOld; NEXT="u" ;;
+    o) cleanOld; NEXT="o" ;;
     +) formatdisks; NEXT="+" ;;
     # Loader Settings
     t) backupMenu; NEXT="t" ;;
@@ -2381,12 +2396,12 @@ done
 clear
 
 # Inform user
-echo -e "Call \033[1;31marc.sh\033[0m to configure loader"
+echo -e "Call \033[1;34marc.sh\033[0m to configure loader"
 echo
 echo -e "Access:"
-echo -e "IP: \033[1;31m${IP}\033[0m"
-echo -e "User: \033[1;31mroot\033[0m"
-echo -e "Password: \033[1;31marc\033[0m"
+echo -e "IP: \033[1;34m${IP}\033[0m"
+echo -e "User: \033[1;34mroot\033[0m"
+echo -e "Password: \033[1;34marc\033[0m"
 echo
 echo -e "Web Terminal Access:"
-echo -e "Address: \033[1;31mhttp://${IP}:7681\033[0m"
+echo -e "Address: \033[1;34mhttp://${IP}:7681\033[0m"
