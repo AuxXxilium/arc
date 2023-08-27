@@ -10,6 +10,10 @@ name: Build Arc
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: 'format %y.%-m.$i or auto'
+        required: false
+        type: string
       prerelease:
         description: 'pre release'
         default: false
@@ -83,11 +87,15 @@ jobs:
         run: |
           # Calculate Version
           VERSION=""
-          LATEST_TAG="$(curl -skL "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r ".tag_name" 2>/dev/null)"
-          if [ -n "${LATEST_TAG}" -a "$(echo ${LATEST_TAG} | cut -d '.' -f 1,2)" = "$(date +'%y.%-m')" ]; then  # format %y.%-m.$i
-            VERSION="$(echo ${LATEST_TAG} | awk -F '.' '{$3=$3+1}1' OFS='.')"
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
           else
-            VERSION="$(date +'%y.%-m').0"
+            LATEST_TAG="`curl -skL "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r ".tag_name" 2>/dev/null`"
+            if [ -n "${LATEST_TAG}" -a "`echo ${LATEST_TAG} | cut -d '.' -f 1,2`" = "`date +'%y.%-m'`" ]; then  # format %y.%-m.$i
+              VERSION="`echo ${LATEST_TAG} | awk -F '.' '{$3=$3+1}1' OFS='.'`"
+            else
+              VERSION="`date +'%y.%-m'`.0"
+            fi
           fi
 
           echo "Version: ${VERSION}"
