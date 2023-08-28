@@ -37,7 +37,7 @@ function getnet() {
   fi
 }
 
-# Get actual IP and NETIF_NUM
+# Get actual IP and ETHXNUM
 IP="$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)"
 ETHXNUM=$(ls /sys/class/net/ | grep eth | wc -l) # Amount of NIC
 ETHX=($(ls /sys/class/net/ | grep eth))  # Real NIC List

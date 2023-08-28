@@ -2287,6 +2287,7 @@ while true; do
       fi
       echo "k \"Load Kernel: \Z4${KERNELLOAD}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "m \"Not set Boot MAC: \Z4${NOTSETMAC}\Zn \" "                                   >>"${TMP_PATH}/menu"
+      echo "p \"Not set Boot WOL: \Z4${NOTSETWOL}\Zn \" "                                   >>"${TMP_PATH}/menu"
       if [ "${DIRECTBOOT}" = "false" ]; then
         echo "b \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
       fi
@@ -2371,6 +2372,10 @@ while true; do
     m) [ "${NOTSETMAC}" = "false" ] && NOTSETMAC='true' || NOTSETMAC='false'
       writeConfigKey "arc.notsetmac" "${NOTSETMAC}" "${USER_CONFIG_FILE}"
       NEXT="m"
+      ;;
+    p) [ "${NOTSETWOL}" = "false" ] && NOTSETWOL='true' || NOTSETWOL='false'
+      writeConfigKey "arc.notsetwol" "${NOTSETWOL}" "${USER_CONFIG_FILE}"
+      NEXT="p"
       ;;
     b) bootipwaittime; NEXT="b" ;;
     d) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'

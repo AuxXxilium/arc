@@ -94,11 +94,13 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.notsetmac" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.notsetwol" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 fi
 
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
+NOTSETWOL="$(readConfigKey "arc.notsetwol" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
 # No network devices
@@ -123,9 +125,11 @@ for N in $(seq 1 ${#ETHX[@]}); do
     # Write real Mac to cmdline config
     writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   fi
-  # Enable Wake on Lan, ignore errors
-  ethtool -s ${ETHX[$((${N} - 1))]} wol g 2>/dev/null
-  echo -e "WOL enabled: ${ETHX[$((${N} - 1))]}"
+  if [ "${NOTSETWOL}" = "false" ]; then
+    # Enable Wake on Lan, ignore errors
+    ethtool -s ${ETHX[$((${N} - 1))]} wol g 2>/dev/null
+    echo -e "WOL enabled: ${ETHX[$((${N} - 1))]}"
+  fi
 done
 echo
 
