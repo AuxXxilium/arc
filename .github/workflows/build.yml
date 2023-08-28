@@ -18,6 +18,10 @@ on:
         description: 'pre release'
         default: false
         type: boolean
+      clean:
+        description: 'clean'
+        default: false
+        type: boolean
 
 jobs:
   build:
@@ -29,6 +33,7 @@ jobs:
           fetch-depth: 0
 
       - name: Clean Old
+      if: inputs.clean == true
         uses: Nats-ji/delete-old-releases@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
