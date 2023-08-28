@@ -9,6 +9,8 @@
 
 LOADER_DISK="$(blkid | grep 'LABEL="ARPL3"' | cut -d3 -f1)"
 LOADER_DEVICE_NAME=$(echo "${LOADER_DISK}" | sed 's|/dev/||')
+BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
+[ "${BUS}" = "ata" ] && BUS="sata"
 
 # Memory: Check Memory installed
 RAMTOTAL=0
@@ -18,6 +20,12 @@ while read -r LINE; do
 done < <(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i "[1-9]")
 RAMTOTAL=$((${RAMTOTAL} * 1024))
 RAMMIN=$((${RAMTOTAL} / 2))
+
+# Check for Controller
+SATACONTROLLER=$(lspci -d ::106 | wc -l)
+writeConfigKey "device.satacontroller" "${SATACONTROLLER}" "${USER_CONFIG_FILE}"
+SASCONTROLLER=$(lspci -d ::107 | wc -l)
+writeConfigKey "device.sascontroller" "${SASCONTROLLER}" "${USER_CONFIG_FILE}"
 
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
@@ -97,7 +105,7 @@ function backtitle() {
     BACKTITLE+=" Build: N"
   fi
   BACKTITLE+=" |"
-  BACKTITLE+=" ${MACHINE}"
+  BACKTITLE+=" ${MACHINE}(${BUS})"
   echo "${BACKTITLE}"
 }
 
@@ -165,9 +173,9 @@ function arcMenu() {
     resp="$(<"${TMP_PATH}/resp")"
     [ -z "${resp}" ] && return 1
     if [ "${resp}" = "b" ]; then
-        FLGBETA=1
-        continue
-      fi
+      FLGBETA=1
+      continue
+    fi
     if [ "${resp}" = "f" ]; then
       RESTRICT=0
       continue
@@ -193,6 +201,8 @@ function arcMenu() {
     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
+    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
@@ -207,13 +217,13 @@ function arcbuild() {
   # read model values for arcbuild
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   if [ "${ARCRECOVERY}" != "true" ]; then
     # Select Build for DSM
     ITEMS="$(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r)"
     if [ -z "${1}" ]; then
       dialog --clear --no-items --backtitle "$(backtitle)" \
         --menu "Choose a Version" 0 0 0 ${ITEMS} 2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return 1
       resp="$(<"${TMP_PATH}/resp")"
       [ -z "${resp}" ] && return 1
     else
@@ -244,7 +254,7 @@ function arcbuild() {
     writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
   done < <(getAllModules "${PLATFORM}" "${KVER}")
   if [ "${ONLYVERSION}" != "true" ]; then
-    arcselection
+    arcsettings
   else
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -253,37 +263,33 @@ function arcbuild() {
 
 ###############################################################################
 # Make Arc Settings
-function arcselection() {
-  # read model values for arcselection
+function arcsettings() {
+  # Read Model Values
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  DT="$(readModelKey "${MODEL}" "dt")"
   ARCCONF="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${MODEL}.yml")"
   if [ -n "${ARCCONF}" ]; then
     if [ "${ARCRECOVERY}" != "true" ]; then
-      while true; do
-        dialog --clear --backtitle "$(backtitle)" \
-          --menu "Arc Patch\nDo you want to use Syno Services?" 0 0 0 \
-          1 "Yes - Install with Arc Patch" \
-          2 "No - Install without Arc Patch" \
-        2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && return 1
-        resp="$(<"${TMP_PATH}/resp")"
-        [ -z "${resp}" ] && return 1
-        if [ ${resp} -eq 1 ]; then
-          # read valid serial from file
-          SN="$(readModelKey "${MODEL}" "arc.serial")"
-          writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-          writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-          break
-        elif [ ${resp} -eq 2 ]; then
-          # Generate random serial
-          SN="$(generateSerial "${MODEL}")"
-          writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-          writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
-          break
-        fi
-      done
+      dialog --clear --backtitle "$(backtitle)" \
+        --menu "Arc Patch\nDo you want to use Syno Services?" 0 0 0 \
+        1 "Yes - Install with Arc Patch" \
+        2 "No - Install without Arc Patch" \
+      2>"${TMP_PATH}/resp"
+      resp="$(<"${TMP_PATH}/resp")"
+      [ -z "${resp}" ] && return 1
+      if [ ${resp} -eq 1 ]; then
+        # read valid serial from file
+        SN="$(readModelKey "${MODEL}" "arc.serial")"
+        writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+        writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
+      elif [ ${resp} -eq 2 ]; then
+        # Generate random serial
+        SN="$(generateSerial "${MODEL}")"
+        writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+        writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+      fi
     elif [ "${ARCRECOVERY}" = "true" ]; then
       writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
     fi
@@ -295,23 +301,13 @@ function arcselection() {
     writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
   fi
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  dialog --backtitle "$(backtitle)" --title "Arc Config" \
-    --infobox "Model Configuration successful!" 0 0
-  sleep 1
-  arcconfig
-}
-
-###############################################################################
-# Make Network and Disk Config
-function arcconfig() {
-  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  DT="$(readModelKey "${MODEL}" "dt")"
   # Get Network Config for Loader
   getnet
   # Get Portmap for Loader
   getmap
   # Select Extensions
   extensionSelection
+  # All Settings done
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
     --infobox "Configuration successful!" 0 0
   sleep 1
@@ -339,23 +335,18 @@ function arcconfig() {
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   # Ask for Build
-  while true; do
-    dialog --clear --backtitle "$(backtitle)" \
-      --menu "Build now?" 0 0 0 \
-      1 "Yes - Build Arc Loader now" \
-      2 "No - I want to make changes" \
-    2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
-    resp="$(<"${TMP_PATH}/resp")"
-    [ -z "${resp}" ] && return 1
-    if [ ${resp} -eq 1 ]; then
-      make
-      break
-    elif [ ${resp} -eq 2 ]; then
-      dialog --clear --no-items --backtitle "$(backtitle)"
-      break
-    fi
-  done
+  dialog --clear --backtitle "$(backtitle)" \
+    --menu "Build now?" 0 0 0 \
+    1 "Yes - Build Arc Loader now" \
+    2 "No - I want to make changes" \
+  2>"${TMP_PATH}/resp"
+  resp="$(<"${TMP_PATH}/resp")"
+  [ -z "${resp}" ] && return 1
+  if [ ${resp} -eq 1 ]; then
+    make
+  elif [ ${resp} -eq 2 ]; then
+    dialog --clear --no-items --backtitle "$(backtitle)"
+  fi
 }
 
 ###############################################################################
@@ -517,23 +508,18 @@ function make() {
   writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   # Ask for Boot
-  while true; do
-    dialog --clear --backtitle "$(backtitle)" \
-      --menu "Build done. Boot now?" 0 0 0 \
-      1 "Yes - Boot Arc Loader now" \
-      2 "No - I want to make changes" \
-    2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
-    resp="$(<"${TMP_PATH}/resp")"
-    [ -z "${resp}" ] && return 1
-    if [ ${resp} -eq 1 ]; then
-      boot && exit 0
-      break
-    elif [ ${resp} -eq 2 ]; then
-      dialog --clear --no-items --backtitle "$(backtitle)"
-      break
-    fi
-  done
+  dialog --clear --backtitle "$(backtitle)" \
+    --menu "Build done. Boot now?" 0 0 0 \
+    1 "Yes - Boot Arc Loader now" \
+    2 "No - I want to make changes" \
+  2>"${TMP_PATH}/resp"
+  resp="$(<"${TMP_PATH}/resp")"
+  [ -z "${resp}" ] && return 1
+  if [ ${resp} -eq 1 ]; then
+    boot && exit 0
+  elif [ ${resp} -eq 2 ]; then
+    dialog --clear --no-items --backtitle "$(backtitle)"
+  fi
 }
 
 ###############################################################################
@@ -542,7 +528,7 @@ function editUserConfig() {
   while true; do
     dialog --backtitle "$(backtitle)" --title "Edit with caution" \
       --editbox "${USER_CONFIG_FILE}" 0 0 2>"${TMP_PATH}/userconfig"
-    [ $? -ne 0 ] && return
+    [ $? -ne 0 ] && return 1
     mv "${TMP_PATH}/userconfig" "${USER_CONFIG_FILE}"
     ERRORS=$(yq eval "${USER_CONFIG_FILE}" 2>&1)
     [ $? -eq 0 ] && break
@@ -594,7 +580,6 @@ function addonSelection() {
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
   resp="$(<"${TMP_PATH}/resp")"
-  [ -z "${resp}" ] && continue
   dialog --backtitle "$(backtitle)" --title "Addons" \
       --infobox "Writing to user config" 0 0
   unset ADDONS
@@ -642,7 +627,6 @@ function extensionSelection() {
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
   resp="$(<"${TMP_PATH}/resp")"
-  [ -z "${resp}" ] && continue
   dialog --backtitle "$(backtitle)" --title "DSM Extensions" \
       --infobox "Writing to user config" 0 0
   unset EXTENSIONS
@@ -681,7 +665,6 @@ function modulesMenu() {
       4 "Deselect all Modules" \
       5 "Choose Modules to include" \
       6 "Add external module" \
-      0 "Exit" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(<"${TMP_PATH}/resp")" in
@@ -744,7 +727,6 @@ function modulesMenu() {
           --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
         resp="$(<"${TMP_PATH}/resp")"
-        [ -z "${resp}" ] && continue
         dialog --backtitle "$(backtitle)" --title "Modules" \
            --infobox "Writing to user config" 0 0
         unset USERMODULES
@@ -764,37 +746,33 @@ function modulesMenu() {
         TEXT+="This program will not determine the availability of imported modules or even make type judgments, as please double check if it is correct.\n"
         TEXT+="If you want to remove it, please go to the \"Update Menu\" -> \"Update modules\" to forcibly update the modules. All imports will be reset.\n"
         TEXT+="Do you want to continue?"
-        dialog --backtitle "$(backtitle)" --title "Add external module" \
+        dialog --backtitle "$(backtitle)" --title "Add external Module" \
             --yesno "${TEXT}" 0 0
-        [ $? -ne 0 ] && return
+        [ $? -ne 0 ] && continue
         dialog --backtitle "$(backtitle)" --aspect 18 --colors --inputbox "Please enter the complete URL to download.\n" 0 0 \
           2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && continue
         URL="$(<"${TMP_PATH}/resp")"
         [ -z "${URL}" ] && continue
         clear
         echo "Downloading ${URL}"
         STATUS=$(curl -kLJO -w "%{http_code}" "${URL}" --progress-bar)
         if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-          dialog --backtitle "$(backtitle)" --title "Add external module" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Add external Module" --aspect 18 \
             --msgbox "ERROR: Check internet, URL or cache disk space" 0 0
-          return 1
+          continue
         fi
         KONAME=$(basename "$URL")
         if [ -n "${KONAME}" -a "${KONAME##*.}" = "ko" ]; then
           addToModules "${PLATFORM}" "${KVER}" "${KONAME}"
-          dialog --backtitle "$(backtitle)" --title "Add external module" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Add external Module" --aspect 18 \
             --msgbox "Module ${KONAME} added to ${PLATFORM}-${KVER}" 0 0
           rm -f "${KONAME}"
         else
-          dialog --backtitle "$(backtitle)" --title "Add external module" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Add external Module" --aspect 18 \
             --msgbox "File format not recognized!" 0 0
         fi
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      0)
-        break
         ;;
     esac
   done
@@ -816,12 +794,11 @@ function cmdlineMenu() {
   echo "6 \"Add experimental RAM Fix\""                         >>"${TMP_PATH}/menu"
   echo "7 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
   echo "8 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
-  echo "0 \"Exit\""                                             >>"${TMP_PATH}/menu"
   # Loop menu
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return
+    [ $? -ne 0 ] && return 1
     case "$(<"${TMP_PATH}/resp")" in
       1)
         dialog --backtitle "$(backtitle)" --title "User cmdline" \
@@ -854,8 +831,8 @@ function cmdlineMenu() {
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
         resp="$(<"${TMP_PATH}/resp")"
-        [ -z "${RESP}" ] && continue
-        for I in ${RESP}; do
+        [ -z "${resp}" ] && continue
+        for I in ${resp}; do
           unset 'CMDLINE[${I}]'
           deleteConfigKey "cmdline.${I}" "${USER_CONFIG_FILE}"
         done
@@ -955,7 +932,6 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" --title "Model/Version cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      0) return ;;
     esac
   done
 }
@@ -973,13 +949,12 @@ function synoinfoMenu() {
   echo "1 \"Add/edit Synoinfo item\""     >"${TMP_PATH}/menu"
   echo "2 \"Delete Synoinfo item(s)\""    >>"${TMP_PATH}/menu"
   echo "3 \"Show Synoinfo entries\""      >>"${TMP_PATH}/menu"
-  echo "0 \"Exit\""                       >>"${TMP_PATH}/menu"
 
   # menu loop
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return
+    [ $? -ne 0 ] && return 1
     case "$(<"${TMP_PATH}/resp")" in
       1)
         dialog --backtitle "$(backtitle)" --title "Synoinfo entries" \
@@ -1028,7 +1003,6 @@ function synoinfoMenu() {
         dialog --backtitle "$(backtitle)" --title "Synoinfo entries" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      0) return ;;
     esac
   done
 }
@@ -1040,7 +1014,7 @@ function keymapMenu() {
     --menu "Choose a Layout" 0 0 0 "azerty" "bepo" "carpalx" "colemak" \
     "dvorak" "fgGIod" "neo" "olpc" "qwerty" "qwertz" \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   LAYOUT="$(<"${TMP_PATH}/resp")"
   OPTIONS=""
   while read -r KM; do
@@ -1049,9 +1023,9 @@ function keymapMenu() {
   dialog --backtitle "$(backtitle)" --no-items --default-item "${KEYMAP}" \
     --menu "Choice a keymap" 0 0 0 ${OPTIONS} \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return 1
+  [ $? -ne 0 ] && continue
   resp="$(<"${TMP_PATH}/resp")"
-  [ -z "${resp}" ] && return 1
+  [ -z "${resp}" ] && continue
   KEYMAP=${resp}
   writeConfigKey "layout" "${LAYOUT}" "${USER_CONFIG_FILE}"
   writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
@@ -1063,39 +1037,35 @@ function keymapMenu() {
 function usbMenu() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
-    while true; do
-      dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
-        1 "Mount USB as Internal" \
-        2 "Mount USB as Normal" \
-        0 "Exit" \
-        2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return
-      case "$(<"${TMP_PATH}/resp")" in
-        1)
-          MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
-          writeConfigKey "synoinfo.usbportcfg" "0xff0000" "${USER_CONFIG_FILE}"
-          writeConfigKey "synoinfo.internalportcfg" "0xffffff" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-          dialog --backtitle "$(backtitle)" --title "Mount USB as Internal" \
-            --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
-          ;;
-        2)
-          MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
-          deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
-          deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-          dialog --backtitle "$(backtitle)" --title "Mount USB as Normal" \
-            --aspect 18 --msgbox "Mount USB as Normal - successful!" 0 0
-          ;;
-        0) return ;;
-      esac
-    done
+    dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
+      1 "Mount USB as Internal" \
+      2 "Mount USB as Normal" \
+      2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && return 1
+    case "$(<"${TMP_PATH}/resp")" in
+      1)
+        MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+        writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.usbportcfg" "0xff0000" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.internalportcfg" "0xffffff" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "$(backtitle)" --title "Mount USB as Internal" \
+          --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
+        ;;
+      2)
+        MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+        deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "$(backtitle)" --title "Mount USB as Normal" \
+          --aspect 18 --msgbox "Mount USB as Normal - successful!" 0 0
+        ;;
+    esac
   else
     return 1
   fi
@@ -1116,7 +1086,6 @@ function backupMenu() {
         5 "Backup Config with Code" \
         6 "Restore Config with Code" \
         7 "Recover from DSM" \
-        0 "Exit" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
       case "$(<"${TMP_PATH}/resp")" in
@@ -1153,17 +1122,7 @@ function backupMenu() {
               --msgbox "No Config Backup found" 0 0
           fi
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          OLDPRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-          while read -r LINE; do
-            if [ "${LINE}" = "${OLDPRODUCTVER}" ]; then
-              writeConfigKey "productver" "${OLDPRODUCTVER}" "${USER_CONFIG_FILE}"
-              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-              break
-            elif [ "${LINE}" != "${OLDPRODUCTVER}" ]; then
-              writeConfigKey "productver" "${LINE}" "${USER_CONFIG_FILE}"
-              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-            fi
-          done < <(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
           ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
@@ -1213,7 +1172,7 @@ function backupMenu() {
           fi 
           dialog --backtitle "$(backtitle)" --title "Restore bootloader disk" --aspect 18 \
               --yesno "Please upload the Backup file.\nCurrently, arc-x.zip(github) and arc-backup.img.gz(Backup) files are supported." 0 0
-          [ $? -ne 0 ] && return 1
+          [ $? -ne 0 ] && continue
           IFTOOL=""
           TMP_PATH="${TMP_PATH}/users"
           rm -rf "${TMP_PATH}"
@@ -1249,7 +1208,7 @@ function backupMenu() {
               --yesno "Restore Loader Disk successful!\nReboot?" 0 0
             [ $? -ne 0 ] && continue
             exec reboot
-            exit
+            exit 0
           fi
           ;;
         5)
@@ -1277,17 +1236,7 @@ function backupMenu() {
           curl -k https://dpaste.com/${GENHASH}.txt >"${TMP_PATH}/user-config.yml"
           cp -f "${TMP_PATH}/user-config.yml" "${USER_CONFIG_FILE}"
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          OLDPRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-          while read -r LINE; do
-            if [ "${LINE}" = "${OLDPRODUCTVER}" ]; then
-              writeConfigKey "productver" "${OLDPRODUCTVER}" "${USER_CONFIG_FILE}"
-              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-              break
-            elif [ "${LINE}" != "${OLDPRODUCTVER}" ]; then
-              writeConfigKey "productver" "${LINE}" "${USER_CONFIG_FILE}"
-              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-            fi
-          done < <(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
           ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
@@ -1356,7 +1305,6 @@ function backupMenu() {
               --msgbox "Unfortunately Arc couldn't mount the DSM partition!" 0 0
           fi
           ;;
-        0) return ;;
       esac
     done
   else
@@ -1366,9 +1314,8 @@ function backupMenu() {
         2 "Restore Loader Disk" \
         3 "Restore Config with Code" \
         4 "Recover from DSM" \
-        0 "Exit" \
         2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return
+      [ $? -ne 0 ] && return 1
       case "$(<"${TMP_PATH}/resp")" in
         1)
           dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
@@ -1383,17 +1330,7 @@ function backupMenu() {
               --msgbox "No Config Backup found" 0 0
           fi
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          OLDPRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-          while read -r LINE; do
-            if [ "${LINE}" = "${OLDPRODUCTVER}" ]; then
-              writeConfigKey "productver" "${OLDPRODUCTVER}" "${USER_CONFIG_FILE}"
-              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-              break
-            elif [ "${LINE}" != "${OLDPRODUCTVER}" ]; then
-              writeConfigKey "productver" "${LINE}" "${USER_CONFIG_FILE}"
-              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-            fi
-          done < <(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
           ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
@@ -1445,8 +1382,8 @@ function backupMenu() {
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --yesno "Restore Loader Disk successful!\nReboot?" 0 0
             [ $? -ne 0 ] && continue
-            reboot
-            exit
+            exec reboot
+            exit 0
           fi
           ;;
         3)
@@ -1464,17 +1401,7 @@ function backupMenu() {
           curl -k https://dpaste.com/${GENHASH}.txt >${TMP_PATH}/user-config.yml
           cp -f "${TMP_PATH}/user-config.yml" "${USER_CONFIG_FILE}"
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          OLDPRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-          while read -r LINE; do
-            if [ "${LINE}" = "${OLDPRODUCTVER}" ]; then
-              writeConfigKey "productver" "${OLDPRODUCTVER}" "${USER_CONFIG_FILE}"
-              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-              break
-            elif [ "${LINE}" != "${OLDPRODUCTVER}" ]; then
-              writeConfigKey "productver" "${LINE}" "${USER_CONFIG_FILE}"
-              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-            fi
-          done < <(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml")
+          PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
           ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
           ARCRECOVERY="true"
           ONLYVERSION="true"
@@ -1543,7 +1470,6 @@ function backupMenu() {
               --msgbox "Unfortunately Arc couldn't mount the DSM partition!" 0 0
           fi
           ;;
-        0) return ;;
       esac
     done
   fi
@@ -1562,7 +1488,6 @@ function updateMenu() {
       5 "Update DSM Modules" \
       6 "Update DSM Configs" \
       7 "Update Loader LKMs" \
-      0 "Exit" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     case "$(<"${TMP_PATH}/resp")" in
@@ -1571,30 +1496,27 @@ function updateMenu() {
           --infobox "Checking latest version" 0 0
         ACTUALVERSION="${ARPL_VERSION}"
         # Ask for Tag
-        while true; do
-          dialog --clear --backtitle "$(backtitle)" --title "Full Upgrade Loader" \
-            --menu "Which Version?" 0 0 0 \
-            1 "Latest" \
-            2 "Select Version" \
-          2>"${TMP_PATH}/opts"
-          [ $? -ne 0 ] && return 1
-          opts="$(<"${TMP_PATH}/opts")"
-          [ -z "${opts}" ] && return 1
-          if [ ${opts} -eq 1 ]; then
-            TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-            if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-              dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
-                --msgbox "Error checking new version" 0 0
-              return 1
-            fi
-          elif [ ${opts} -eq 2 ]; then
-            dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" \
-            --inputbox "Type the Version!" 0 0 \
-            2>"${TMP_PATH}/input"
-            TAG="$(<"${TMP_PATH}/input")"
+        dialog --clear --backtitle "$(backtitle)" --title "Full Upgrade Loader" \
+          --menu "Which Version?" 0 0 0 \
+          1 "Latest" \
+          2 "Select Version" \
+        2>"${TMP_PATH}/opts"
+        opts="$(<"${TMP_PATH}/opts")"
+        [ -z "${opts}" ] && return 1
+        if [ ${opts} -eq 1 ]; then
+          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+            dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
+              --msgbox "Error checking new version" 0 0
+            return 1
           fi
-          break
-        done
+        elif [ ${opts} -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" \
+          --inputbox "Type the Version!" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG="$(<"${TMP_PATH}/input")"
+          [ -z "${TAG}" ] && continue
+        fi
         dialog --backtitle "$(backtitle)" --title "Full Upgrade Loader" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         if [ "${ACTUALVERSION}" = "${TAG}" ]; then
@@ -1635,36 +1557,32 @@ function updateMenu() {
           --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
         [ $? -ne 0 ] && continue
         exec reboot
-        exit
+        exit 0
         ;;
       2)
         ACTUALVERSION="${ARPL_VERSION}"
         # Ask for Tag
-        while true; do
-          dialog --clear --backtitle "$(backtitle)" --title "Update Arc" \
-            --menu "Which Version?" 0 0 0 \
-            1 "Latest" \
-            2 "Select Version" \
-          2>"${TMP_PATH}/opts"
-          [ $? -ne 0 ] && return 1
-          opts="$(<"${TMP_PATH}/opts")"
-          [ -z "${opts}" ] && return 1
-          if [ ${opts} -eq 1 ]; then
-            TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-            if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-              dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
-                --msgbox "Error checking new version" 0 0
-              return 1
-            fi
-          elif [ ${opts} -eq 2 ]; then
-            dialog --backtitle "$(backtitle)" --title "Update Arc" \
-            --inputbox "Type the Version!" 0 0 \
-            2>"${TMP_PATH}/input"
-            TAG="$(<"${TMP_PATH}/input")"
-            [ $? -ne 0 ] && continue
+        dialog --clear --backtitle "$(backtitle)" --title "Update Arc" \
+          --menu "Which Version?" 0 0 0 \
+          1 "Latest" \
+          2 "Select Version" \
+        2>"${TMP_PATH}/opts"
+        opts="$(<"${TMP_PATH}/opts")"
+        [ -z "${opts}" ] && return 1
+        if [ ${opts} -eq 1 ]; then
+          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+            dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
+              --msgbox "Error checking new version" 0 0
+            return 1
           fi
-          break
-        done
+        elif [ ${opts} -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Update Arc" \
+          --inputbox "Type the Version!" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG="$(<"${TMP_PATH}/input")"
+          [ -z "${TAG}" ] && continue
+        fi
         if [ "${ACTUALVERSION}" = "${TAG}" ]; then
           dialog --backtitle "$(backtitle)" --title "Update Arc" --aspect 18 \
             --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
@@ -1714,35 +1632,32 @@ function updateMenu() {
           --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
         [ $? -ne 0 ] && continue
         arpl-reboot.sh config
-        exit
+        exit 0
         ;;
       3)
         # Ask for Tag
-        while true; do
-          dialog --clear --backtitle "$(backtitle)" --title "Update Loader Addons" \
-            --menu "Which Version?" 0 0 0 \
-            1 "Latest" \
-            2 "Select Version" \
-          2>"${TMP_PATH}/opts"
-          [ $? -ne 0 ] && return 1
-          opts="$(<"${TMP_PATH}/opts")"
-          [ -z "${opts}" ] && return 1
-          if [ ${opts} -eq 1 ]; then
-            TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-            if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-              dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
-                --msgbox "Error checking new version" 0 0
-              return 1
-            fi
-          elif [ ${opts} -eq 2 ]; then
-            dialog --backtitle "$(backtitle)" --title "Update Loader Addons" \
-            --inputbox "Type the Version!" 0 0 \
-            2>"${TMP_PATH}/input"
-            TAG="$(<"${TMP_PATH}/input")"
-            [ $? -ne 0 ] && continue
+        dialog --clear --backtitle "$(backtitle)" --title "Update Loader Addons" \
+          --menu "Which Version?" 0 0 0 \
+          1 "Latest" \
+          2 "Select Version" \
+        2>"${TMP_PATH}/opts"
+        [ $? -ne 0 ] && continue
+        opts="$(<"${TMP_PATH}/opts")"
+        [ -z "${opts}" ] && return 1
+        if [ ${opts} -eq 1 ]; then
+          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+            dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
+              --msgbox "Error checking new version" 0 0
+            return 1
           fi
-          break
-        done
+        elif [ ${opts} -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Update Loader Addons" \
+          --inputbox "Type the Version!" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG="$(<"${TMP_PATH}/input")"
+          [ -z "${TAG}" ] && continue
+        fi
         dialog --backtitle "$(backtitle)" --title "Update Loader Addons" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip")
@@ -1773,31 +1688,27 @@ function updateMenu() {
         ;;
       4)
         # Ask for Tag
-        while true; do
-          dialog --clear --backtitle "$(backtitle)" --title "Update DSM Extensions" \
-            --menu "Which Version?" 0 0 0 \
-            1 "Latest" \
-            2 "Select Version" \
-          2>"${TMP_PATH}/opts"
-          [ $? -ne 0 ] && return 1
-          opts="$(<"${TMP_PATH}/opts")"
-          [ -z "${opts}" ] && return 1
-          if [ ${opts} -eq 1 ]; then
-            TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-extensions/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-            if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-              dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
-                --msgbox "Error checking new version" 0 0
-              return 1
-            fi
-          elif [ ${opts} -eq 2 ]; then
-            dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" \
-            --inputbox "Type the Version!" 0 0 \
-            2>"${TMP_PATH}/input"
-            TAG="$(<"${TMP_PATH}/input")"
-            [ $? -ne 0 ] && continue
+        dialog --clear --backtitle "$(backtitle)" --title "Update DSM Extensions" \
+          --menu "Which Version?" 0 0 0 \
+          1 "Latest" \
+          2 "Select Version" \
+        2>"${TMP_PATH}/opts"
+        opts="$(<"${TMP_PATH}/opts")"
+        [ -z "${opts}" ] && return 1
+        if [ ${opts} -eq 1 ]; then
+          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-extensions/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+            dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
+              --msgbox "Error checking new version" 0 0
+            return 1
           fi
-          break
-        done
+        elif [ ${opts} -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" \
+          --inputbox "Type the Version!" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG="$(<"${TMP_PATH}/input")"
+          [ -z "${TAG}" ] && continue
+        fi
         dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-extensions/releases/download/${TAG}/extensions.zip" -o "${TMP_PATH}/extensions.zip")
@@ -1828,31 +1739,27 @@ function updateMenu() {
         ;;
       5)
         # Ask for Tag
-        while true; do
-          dialog --clear --backtitle "$(backtitle)" --title "Update DSM Modules" \
-            --menu "Which Version?" 0 0 0 \
-            1 "Latest" \
-            2 "Select Version" \
-          2>"${TMP_PATH}/opts"
-          [ $? -ne 0 ] && return 1
-          opts="$(<"${TMP_PATH}/opts")"
-          [ -z "${opts}" ] && return 1
-          if [ ${opts} -eq 1 ]; then
-            TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-            if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-              dialog --backtitle "$(backtitle)" --title "Update DSM Modules" --aspect 18 \
-                --msgbox "Error checking new version" 0 0
-              return 1
-            fi
-          elif [ ${opts} -eq 2 ]; then
-            dialog --backtitle "$(backtitle)" --title "Update DSM Modules" \
-            --inputbox "Type the Version!" 0 0 \
-            2>"${TMP_PATH}/input"
-            TAG="$(<"${TMP_PATH}/input")"
-            [ $? -ne 0 ] && continue
+        dialog --clear --backtitle "$(backtitle)" --title "Update DSM Modules" \
+          --menu "Which Version?" 0 0 0 \
+          1 "Latest" \
+          2 "Select Version" \
+        2>"${TMP_PATH}/opts"
+        opts="$(<"${TMP_PATH}/opts")"
+        [ -z "${opts}" ] && return 1
+        if [ ${opts} -eq 1 ]; then
+          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+            dialog --backtitle "$(backtitle)" --title "Update DSM Modules" --aspect 18 \
+              --msgbox "Error checking new version" 0 0
+            return 1
           fi
-          break
-        done
+        elif [ ${opts} -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Update DSM Modules" \
+          --inputbox "Type the Version!" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG="$(<"${TMP_PATH}/input")"
+          [ -z "${TAG}" ] && continue
+        fi
         dialog --backtitle "$(backtitle)" --title "Update DSM Modules" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
@@ -1885,31 +1792,27 @@ function updateMenu() {
         ;;
       6)
         # Ask for Tag
-        while true; do
-          dialog --clear --backtitle "$(backtitle)" --title "Update DSM Configs" \
-            --menu "Which Version?" 0 0 0 \
-            1 "Latest" \
-            2 "Select Version" \
-          2>"${TMP_PATH}/opts"
-          [ $? -ne 0 ] && return 1
-          opts="$(<"${TMP_PATH}/opts")"
-          [ -z "${opts}" ] && return 1
-          if [ ${opts} -eq 1 ]; then
-            TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-            if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-              dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
-                --msgbox "Error checking new version" 0 0
-              return 1
-            fi
-          elif [ ${opts} -eq 2 ]; then
-            dialog --backtitle "$(backtitle)" --title "Update DSM Configs" \
-            --inputbox "Type the Version!" 0 0 \
-            2>"${TMP_PATH}/input"
-            TAG="$(<"${TMP_PATH}/input")"
-            [ $? -ne 0 ] && continue
+        dialog --clear --backtitle "$(backtitle)" --title "Update DSM Configs" \
+          --menu "Which Version?" 0 0 0 \
+          1 "Latest" \
+          2 "Select Version" \
+        2>"${TMP_PATH}/opts"
+        opts="$(<"${TMP_PATH}/opts")"
+        [ -z "${opts}" ] && return 1
+        if [ ${opts} -eq 1 ]; then
+          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+            dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
+              --msgbox "Error checking new version" 0 0
+            return 1
           fi
-          break
-        done
+        elif [ ${opts} -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Update DSM Configs" \
+          --inputbox "Type the Version!" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG="$(<"${TMP_PATH}/input")"
+          [ -z "${TAG}" ] && continue
+        fi
         dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")
@@ -1931,31 +1834,27 @@ function updateMenu() {
         ;;
       7)
         # Ask for Tag
-        while true; do
-          dialog --clear --backtitle "$(backtitle)" --title "Update Loader LKMs" \
-            --menu "Which Version?" 0 0 0 \
-            1 "Latest" \
-            2 "Select Version" \
-          2>"${TMP_PATH}/opts"
-          [ $? -ne 0 ] && return 1
-          opts="$(<"${TMP_PATH}/opts")"
-          [ -z "${opts}" ] && return 1
-          if [ ${opts} -eq 1 ]; then
-            TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-            if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-              dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
-                --msgbox "Error checking new version" 0 0
-              return 1
-            fi
-          elif [ ${opts} -eq 2 ]; then
-            dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" \
-            --inputbox "Type the Version!" 0 0 \
-            2>"${TMP_PATH}/input"
-            TAG="$(<"${TMP_PATH}/input")"
-            [ $? -ne 0 ] && continue
+        dialog --clear --backtitle "$(backtitle)" --title "Update Loader LKMs" \
+          --menu "Which Version?" 0 0 0 \
+          1 "Latest" \
+          2 "Select Version" \
+        2>"${TMP_PATH}/opts"
+        opts="$(<"${TMP_PATH}/opts")"
+        [ -z "${opts}" ] && return 1
+        if [ ${opts} -eq 1 ]; then
+          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+            dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
+              --msgbox "Error checking new version" 0 0
+            return 1
           fi
-          break
-        done
+        elif [ ${opts} -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" \
+          --inputbox "Type the Version!" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG="$(<"${TMP_PATH}/input")"
+          [ -z "${TAG}" ] && continue
+        fi
         dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip")
@@ -1975,7 +1874,6 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Loader LKMs" --aspect 18 \
           --msgbox "LKMs updated with success! ${TAG}" 0 0
         ;;
-      0) return ;;
     esac
   done
 }
@@ -2125,8 +2023,8 @@ function sysinfo() {
         TEXT+="$(printf "%02d" ${P}) "
       fi
     done
+    TEXT+="\n"
   done
-  TEXT+="\n"
   fi
   if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
     TEXT+="\nSAS/SCSI:\n"
@@ -2264,9 +2162,8 @@ function bootipwaittime() {
       dialog --backtitle "$(backtitle)" --colors --title "Boot IP Waittime" \
         --default-item "${BOOTIPWAIT}" --no-items --menu "Choose a Waitingtime(seconds)" 0 0 0 ${ITEMS} \
         2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return 1
       resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
-      [ -z "${resp}" ] && return
+      [ -z "${resp}" ] && return 1
       BOOTIPWAIT=${resp}
       writeConfigKey "bootipwait" "${BOOTIPWAIT}" "${USER_CONFIG_FILE}"
 }
