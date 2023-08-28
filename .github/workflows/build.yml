@@ -33,7 +33,7 @@ jobs:
           fetch-depth: 0
 
       - name: Clean Old
-      if: inputs.clean == true
+        if: inputs.clean == true
         uses: Nats-ji/delete-old-releases@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
