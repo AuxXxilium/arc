@@ -5,7 +5,7 @@
 ################################################################################
 
 R8169_VERSION = ffebd251be5440e0013a2435014a2f3ab49371ee
-R8169_SITE = $(call github,wjz304,r8169,$(R8169_VERSION))
+R8169_SITE = $(call github,AuxXxilium,r8169,$(R8169_VERSION))
 R8169_LICENSE = GPL-2.0
 
 $(eval $(kernel-module))
