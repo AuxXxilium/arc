@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-R8168_VERSION = 4aebcf6519a4aaccbb19afd5c2f7e36a50a9fa34
+R8168_VERSION = 95ad3c33e67e4c95b1cf2b53fb0c1d7a6222ee02
 R8168_SITE = $(call github,AuxXxilium,r8168,$(R8168_VERSION))
 R8168_LICENSE = GPL-2.0
 
