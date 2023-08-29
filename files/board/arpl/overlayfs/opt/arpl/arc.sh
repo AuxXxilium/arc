@@ -2158,14 +2158,14 @@ function mptFix() {
 ###############################################################################
 # modify bootipwaittime
 function bootipwaittime() {
-      ITEMS="$(echo -e "5 \n10 \n20 \n30 \n60 \n")"
-      dialog --backtitle "$(backtitle)" --colors --title "Boot IP Waittime" \
-        --default-item "${BOOTIPWAIT}" --no-items --menu "Choose a Waitingtime(seconds)" 0 0 0 ${ITEMS} \
-        2>"${TMP_PATH}/resp"
-      resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
-      [ -z "${resp}" ] && return 1
-      BOOTIPWAIT=${resp}
-      writeConfigKey "bootipwait" "${BOOTIPWAIT}" "${USER_CONFIG_FILE}"
+  ITEMS="$(echo -e "5 \n10 \n20 \n30 \n60 \n")"
+  dialog --backtitle "$(backtitle)" --colors --title "Boot IP Waittime" \
+    --default-item "${BOOTIPWAIT}" --no-items --menu "Choose a Waitingtime(seconds)" 0 0 0 ${ITEMS} \
+    2>"${TMP_PATH}/resp"
+  resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
+  [ -z "${resp}" ] && return 1
+  BOOTIPWAIT=${resp}
+  writeConfigKey "bootipwait" "${BOOTIPWAIT}" "${USER_CONFIG_FILE}"
 }
 
 ###############################################################################
