@@ -2173,7 +2173,7 @@ function bootipwaittime() {
 function saveMenu() {
   dialog --backtitle "$(backtitle)" --title "Save to Disk" \
       --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the arc. Do you want to continue?" 0 0
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   dialog --backtitle "$(backtitle)" --title "Save to Disk" \
       --infobox "Saving ..." 0 0 
   RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
@@ -2285,6 +2285,7 @@ while true; do
       if [ "${DT}" = "false" ]; then
         echo "u \"Change USB Port Config \" "                                               >>"${TMP_PATH}/menu"
       fi
+      echo "j \"Fix LSI HBA Controller \" "                                                 >>"${TMP_PATH}/menu"
       echo "k \"Load Kernel: \Z4${KERNELLOAD}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "m \"Disable Boot MAC: \Z4${NOTSETMAC}\Zn \" "                                   >>"${TMP_PATH}/menu"
       echo "p \"Disable Boot WOL: \Z4${NOTSETWOL}\Zn \" "                                   >>"${TMP_PATH}/menu"
@@ -2364,6 +2365,7 @@ while true; do
     n) networkMenu; NEXT="n" ;;
     s) storageMenu; NEXT="s" ;;
     u) usbMenu; NEXT="u" ;;
+    j) mptFix; NEXT="j" ;;
     k)
       [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
       writeConfigKey "arc.kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
