@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@main
 
       - name: Clean Old
         if: inputs.clean == true
@@ -38,7 +38,7 @@ jobs:
           keep-count: 10
           keep-old-minor-releases: false
 
-      # Install dependencies
+      # Install Dependencies
       - name: Install Dependencies
         run: |
           git config --global user.email "info@auxxxilium.tech"
@@ -46,7 +46,7 @@ jobs:
           sudo timedatectl set-timezone "Europe/Berlin"
 
           sudo apt update
-          sudo apt install -y jq gettext libelf-dev qemu-utils build-essential
+          sudo apt install -y jq gettext libelf-dev qemu-utils
           sudo snap install yq
 
       # Check dl cache
@@ -110,16 +110,6 @@ jobs:
 
           echo "Version: ${VERSION}"
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
-
-          CHANGELOG=$(git log --pretty=format:"%s" ${LATEST_TAG}..HEAD | sort)
-          if [ -n "${CHANGELOG}" ]; then
-            echo "Changelog: ${CHANGELOG}"
-            echo "${CHANGELOG}" >changelog.txt
-          else
-            CHANGELOG='New Build Tree'
-            echo "Changelog: ${CHANGELOG}"
-            echo "${CHANGELOG}" >changelog.txt
-          fi
 
           if [ -n "${VERSION}" ]; then
             # Modify Source File
@@ -203,10 +193,13 @@ jobs:
       # Upload artifact
       - name: Upload
         uses: actions/upload-artifact@v3
+        if: env.VERSION != ''
         with:
           name: Images
           path: |
-            arc.img.zip
+            arc-${{ env.VERSION }}.img.zip
+            arc-${{ env.VERSION }}.vmdk-dyn.zip
+            arc-${{ env.VERSION }}.vmdk-flat.zip
             update.zip
           retention-days: 5
 
@@ -222,4 +215,3 @@ jobs:
             arc-${{ env.VERSION }}.vmdk-dyn.zip
             arc-${{ env.VERSION }}.vmdk-flat.zip
             update.zip
-            changelog.txt

@@ -19,8 +19,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@main
 
-      # Install dependencies
-      - name: Install dependencies
+      # Install Dependencies
+      - name: Install Dependencies
         run: |
           git config --global user.email "info@auxxxilium.tech"
           git config --global user.name "AuxXxilium"
@@ -31,7 +31,7 @@ jobs:
           sudo snap install yq
 
       # Check dl cache
-      - name: Cache downloads
+      - name: Cache Downloads
         id: dl-cache
         uses: actions/cache@v3
         with:
@@ -39,7 +39,7 @@ jobs:
           key: ${{ runner.os }}-dl
 
       # Check buildroot cache
-      - name: Cache buildroot
+      - name: Cache Buildroot
         id: br-cache
         uses: actions/cache@v3
         with:
@@ -47,7 +47,7 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('files/configs/arpl_defconfig') }}
 
       # Clone buildroot repository (if not cached)
-      - name: Clone buildroot
+      - name: Clone Buildroot
         if: steps.br-cache.outputs.cache-hit != 'true'
         run: |
           git clone --single-branch -b 2023.02.x https://github.com/buildroot/buildroot.git .buildroot
@@ -59,14 +59,14 @@ jobs:
           make BR2_EXTERNAL=../external arpl_defconfig
 
       # Download sources if not cached
-      - name: Download buildroot packages source
+      - name: Download Buildroot Packages Source
         if: steps.dl-cache.outputs.cache-hit != 'true'
         run: |
           cd .buildroot
           make BR2_EXTERNAL=../external source
 
       # Prepare buildroot for first make
-      - name: Prepare buildroot
+      - name: Prepare Buildroot
         if: steps.br-cache.outputs.cache-hit != 'true'
         run: |
           echo "First make"
