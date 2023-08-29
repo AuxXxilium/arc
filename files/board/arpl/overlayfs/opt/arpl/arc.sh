@@ -2286,8 +2286,8 @@ while true; do
         echo "u \"Change USB Port Config \" "                                               >>"${TMP_PATH}/menu"
       fi
       echo "k \"Load Kernel: \Z4${KERNELLOAD}\Zn \" "                                       >>"${TMP_PATH}/menu"
-      echo "m \"Not set Boot MAC: \Z4${NOTSETMAC}\Zn \" "                                   >>"${TMP_PATH}/menu"
-      echo "p \"Not set Boot WOL: \Z4${NOTSETWOL}\Zn \" "                                   >>"${TMP_PATH}/menu"
+      echo "m \"Disable Boot MAC: \Z4${NOTSETMAC}\Zn \" "                                   >>"${TMP_PATH}/menu"
+      echo "p \"Disable Boot WOL: \Z4${NOTSETWOL}\Zn \" "                                   >>"${TMP_PATH}/menu"
       if [ "${DIRECTBOOT}" = "false" ]; then
         echo "b \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
       fi

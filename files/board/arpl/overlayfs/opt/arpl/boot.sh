@@ -190,7 +190,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   done
   NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
   if [ "${NOTSETMAC}" = "true" ]; then
-    echo -e "\r\033[1;34mNot set Boot MAC is enabled, the DSM IP can be different!\033[0m"
+    echo -e "\r\033[1;34mDisable Boot MAC is true, the DSM IP can be different!\033[0m"
   fi
 fi
 echo
