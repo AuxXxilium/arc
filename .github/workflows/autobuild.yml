@@ -160,9 +160,6 @@ jobs:
         with:
           name: Images
           path: |
-            arc-${{ env.VERSION }}.img.zip
-            arc-${{ env.VERSION }}.vmdk-dyn.zip
-            arc-${{ env.VERSION }}.vmdk-flat.zip
             update.zip
           retention-days: 5
 
