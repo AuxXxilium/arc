@@ -26,6 +26,14 @@ SATACONTROLLER=$(lspci -d ::106 | wc -l)
 writeConfigKey "device.satacontroller" "${SATACONTROLLER}" "${USER_CONFIG_FILE}"
 SASCONTROLLER=$(lspci -d ::107 | wc -l)
 writeConfigKey "device.sascontroller" "${SASCONTROLLER}" "${USER_CONFIG_FILE}"
+if [ ${SASCONTROLLER} -gt 0 ]; then 
+  # LSI Controller check
+  if [ $(lspci | grep LSI | wc -l) -gt 0 ]; then
+    if [ -z "${LSIMODE}" ]; then
+      LSIMODE="RAID"
+    fi
+  fi
+fi
 
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
@@ -61,7 +69,7 @@ NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 
 # Reset DirectDSM if User boot to Config
-if [ "${DIRECTDSM}" = "true" ]; then
+if [ "${DIRECTBOOT}" = "true" ] && [ "${DIRECTDSM}" = "true" ]; then
   writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
 fi
 
@@ -2145,17 +2153,6 @@ function resetPassword() {
 }
 
 ###############################################################################
-# modify modules to fix mpt3sas module
-function mptFix() {
-  dialog --backtitle "$(backtitle)" --title "LSI HBA Fix" \
-      --yesno "Warning:\nDo you want to modify your Config to fix LSI HBA's. Continue?" 0 0
-  [ $? -ne 0 ] && return 1
-  deleteConfigKey "modules.scsi_transport_sas" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-}
-
-###############################################################################
 # modify bootipwaittime
 function bootipwaittime() {
   ITEMS="$(echo -e "5 \n10 \n20 \n30 \n60 \n")"
@@ -2284,8 +2281,10 @@ while true; do
       echo "s \"Show/Change Storage Map \" "                                                >>"${TMP_PATH}/menu"
       if [ "${DT}" = "false" ]; then
         echo "u \"Change USB Port Config \" "                                               >>"${TMP_PATH}/menu"
+        if [ $(lspci | grep LSI | wc -l) -gt 0 ]; then
+          echo "j \"LSI Controller: \Z4${LSIMODE}\Zn \" "                                   >>"${TMP_PATH}/menu"
+        fi
       fi
-      echo "j \"Fix LSI HBA Controller \" "                                                 >>"${TMP_PATH}/menu"
       echo "k \"Load Kernel: \Z4${KERNELLOAD}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "m \"Disable Boot MAC: \Z4${NOTSETMAC}\Zn \" "                                   >>"${TMP_PATH}/menu"
       echo "p \"Disable Boot WOL: \Z4${NOTSETWOL}\Zn \" "                                   >>"${TMP_PATH}/menu"
@@ -2293,7 +2292,7 @@ while true; do
         echo "b \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
       fi
       echo "d \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
-      if [ "${DIRECTBOOT}" = "true" ]; then
+      if [ "${DIRECTBOOT}" = "true" ] && [ "${DIRECTDSM}" = "true" ]; then
         echo "l \"Reset DirectDSM: \Z4${DIRECTDSM}\Zn \" "                                  >>"${TMP_PATH}/menu"
       fi
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
@@ -2365,7 +2364,19 @@ while true; do
     n) networkMenu; NEXT="n" ;;
     s) storageMenu; NEXT="s" ;;
     u) usbMenu; NEXT="u" ;;
-    j) mptFix; NEXT="j" ;;
+    j)
+      [ "${LSIMODE}" = "RAID" ] && LSIMODE='HBA' || LSIMODE='RAID'
+      if [ "${LSIMODE}" = "HBA" ]; then
+        deleteConfigKey "modules.scsi_transport_sas" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      elif [ "${LSIMODE}" = "RAID" ]; then
+        writeConfigKey "modules.scsi_transport_sas" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      fi
+      NEXT="j"
+      ;;
     k)
       [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
       writeConfigKey "arc.kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
