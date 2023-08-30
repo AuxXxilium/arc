@@ -188,9 +188,11 @@ function getmap() {
       resp="$(<"${TMP_PATH}/resp")"
       [ -z "${resp}" ] && return 1
       if [ ${resp} -eq 1 ]; then
-        deleteConfigKey "modules.scsi_transport_sas" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.lsimode" "HBA" "${USER_CONFIG_FILE}"
+        LSIMODE="$(readConfigKey "arc.lsimode" "${USER_CONFIG_FILE}")"
       elif [ ${resp} -eq 2 ]; then
-        writeConfigKey "modules.scsi_transport_sas" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.lsimode" "RAID" "${USER_CONFIG_FILE}"
+        LSIMODE="$(readConfigKey "arc.lsimode" "${USER_CONFIG_FILE}")"
       fi
     fi
   fi
