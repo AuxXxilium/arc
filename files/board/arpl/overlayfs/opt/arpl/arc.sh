@@ -68,6 +68,7 @@ ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
+NOTSETWOL="$(readConfigKey "arc.notsetwol" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 
 # Reset DirectDSM if User boot to Config
@@ -1968,10 +1969,9 @@ function sysinfo() {
   CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
   TEXT=""
   # Print System Informations
-  TEXT+="\n\Z4> System\Zn"
-  TEXT+="\nTyp | Boot: \Zb${MACHINE} | ${BOOTSYS}\Zn"
-  TEXT+="\nVendor: \Zb${VENDOR}\Zn"
-  TEXT+="\nCPU | Cores: \Zb${CPUINFO} | ${CPUCORES}\Zn"
+  TEXT+="\n\Z4> System: ${MACHINE}\Zn"
+  TEXT+="\nVendor | Boot: \Zb${VENDOR} | ${BOOTSYS}\Zn"
+  TEXT+="\nCPU | Threads: \Zb${CPUINFO} | ${CPUCORES}\Zn"
   TEXT+="\nMemory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
   TEXT+="\n\Z4> Network: ${ETHXNUM} Adapter\Zn"
   for N in $(seq 0 $((${#ETHX[@]} - 1))); do
@@ -1979,7 +1979,7 @@ function sysinfo() {
     MAC="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
     while true; do
       if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n${DRIVER}: \ZbIP: NOT CONNECTED | Mac: ${MAC}\Zn"
+        TEXT+="\n${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
         break
       fi
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
@@ -1991,18 +1991,15 @@ function sysinfo() {
     done
   done
   # Print Config Informations
-  TEXT+="\n\Z4> Arc\Zn"
-  TEXT+="\nArc Version: \Zb${ARPL_VERSION}\Zn"
+  TEXT+="\n\Z4> Arc: ${ARPL_VERSION}\Zn"
   TEXT+="\nSubversion Loader: \ZbAddons ${ADDONSVERSION} | LKM ${LKMVERSION}\Zn"
   TEXT+="\nSubversion DSM: \ZbModules ${MODULESVERSION} | Extensions ${EXTENSIONSVERSION} | Configs ${CONFIGSVERSION}\Zn"
-  TEXT+="\n\Z4>> DSM\Zn"
-  TEXT+="\nModel | Platform: \Zb${MODEL} | ${PLATFORM}\Zn"
-  TEXT+="\nDSM | Kernel | LKM: \Zb${PRODUCTVER} | ${KVER} | ${LKM}\Zn"
+  TEXT+="\n\Z4>> DSM ${PRODUCTVER}: ${MODEL}\Zn"
+  TEXT+="\nKernel | Platform | LKM: \Zb${KVER} | ${PLATFORM} | ${LKM}\Zn"
   TEXT+="\n\Z4>> Loader\Zn"
-  TEXT+="\nConfig | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
-  TEXT+="\nArcpatch: \Zb${ARCPATCH}\Zn"
+  TEXT+="\nArcpatch | Kernelload: \Zb${ARCPATCH} | ${KERNELLOAD}\Zn"
   TEXT+="\nDirectboot | DirectDSM: \Zb${DIRECTBOOT} | ${DIRECTDSM}\Zn"
-  TEXT+="\nKernelload: \Zb${KERNELLOAD}\Zn"
+  TEXT+="\nConfig | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n\Z4>> Extensions\Zn"
   TEXT+="\nLoader Addons selected: \Zb${ADDONSINFO}\Zn"
   TEXT+="\nDSM Extensions selected: \Zb${EXTENSIONSINFO}\Zn"
@@ -2038,13 +2035,13 @@ function sysinfo() {
       if lsscsi -b | grep -v - | grep -q "\[${P}:"; then
         DUMMY="$([ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ] && echo 1 || echo 2)" 
         if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ]; then
-          TEXT+="\Z1$(printf "%02d" ${P})\Zn "
+          TEXT+="\Z1\Zb$(printf "%02d" ${P})\Zn "
         else
           TEXT+="\Z2\Zb$(printf "%02d" ${P})\Zn "
           NUMPORTS=$((${NUMPORTS} + 1))
         fi
       else
-        TEXT+="$(printf "%02d" ${P}) "
+        TEXT+="\Zb$(printf "%02d" ${P})\Zn "
       fi
     done
     TEXT+="\n"
@@ -2081,8 +2078,8 @@ function sysinfo() {
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
     done
   fi
-  TEXT+="\nDrives total: ${NUMPORTS}\n"
-  TEXT+="\nPorts with color \Z1red\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected."
+  TEXT+="\nPorts with color \Z1\Zbred\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected.\n"
+  TEXT+="\nDrives total: \Zb${NUMPORTS}\Zn"
   dialog --backtitle "$(backtitle)" --colors --title "Sysinfo" \
     --msgbox "${TEXT}" 0 0
 }
@@ -2268,92 +2265,101 @@ function boot() {
 ###############################################################################
 
 # Main loop
-[ "${CONFDONE}" = "true" ] && NEXT="5" || NEXT="1"
+[ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
 while true; do
   echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
   echo "1 \"Choose Model for Loader \" "                                                    >>"${TMP_PATH}/menu"
   if [ "${CONFDONE}" = "true" ]; then
-    echo "5 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
+    echo "2 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
   fi
   if [ "${BUILDDONE}" = "true" ]; then
-    echo "6 \"Boot Loader \" "                                                              >>"${TMP_PATH}/menu"
+    echo "3 \"Boot Loader \" "                                                              >>"${TMP_PATH}/menu"
   fi
   echo "= \"\Z4========== Info ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
   if [ "${CONFDONE}" = "true" ]; then
     echo "= \"\Z4========= System =========\Zn \" "                                         >>"${TMP_PATH}/menu"
-    echo "2 \"Loader Addons \" "                                                            >>"${TMP_PATH}/menu"
-    echo "3 \"DSM Extensions \" "                                                           >>"${TMP_PATH}/menu"
-    echo "4 \"DSM Modules \" "                                                              >>"${TMP_PATH}/menu"
+    echo "b \"Loader Addons \" "                                                            >>"${TMP_PATH}/menu"
+    echo "c \"DSM Extensions \" "                                                           >>"${TMP_PATH}/menu"
+    echo "d \"DSM Modules \" "                                                              >>"${TMP_PATH}/menu"
     if [ "${ARCOPTS}" = "true" ]; then
-      echo "7 \"\Z1Hide Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      echo "5 \"\Z1Hide Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     else
-      echo "7 \"\Z1Show Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      echo "5 \"\Z1Show Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     fi
     if [ "${ARCOPTS}" = "true" ]; then
       echo "= \"\Z4========== Arc ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
-      echo "v \"Change DSM Version \" "                                                     >>"${TMP_PATH}/menu"
-      echo "n \"Change Network Config \" "                                                  >>"${TMP_PATH}/menu"
-      echo "s \"Show/Change Storage Map \" "                                                >>"${TMP_PATH}/menu"
+      echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
+      echo "f \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
+      echo "g \"Storage Map \" "                                                            >>"${TMP_PATH}/menu"
       if [ "${DT}" = "false" ]; then
-        echo "u \"Change USB Port Config \" "                                               >>"${TMP_PATH}/menu"
+        echo "h \"USB Port Config \" "                                                      >>"${TMP_PATH}/menu"
         if [ $(lspci | grep LSI | wc -l) -gt 0 ]; then
-          echo "j \"LSI Controller: \Z4${LSIMODE}\Zn \" "                                   >>"${TMP_PATH}/menu"
+          echo "i \"LSI Controller: \Z4${LSIMODE}\Zn \" "                                   >>"${TMP_PATH}/menu"
         fi
-      fi
-      echo "k \"Load Kernel: \Z4${KERNELLOAD}\Zn \" "                                       >>"${TMP_PATH}/menu"
-      echo "m \"Disable Boot MAC: \Z4${NOTSETMAC}\Zn \" "                                   >>"${TMP_PATH}/menu"
-      echo "p \"Disable Boot WOL: \Z4${NOTSETWOL}\Zn \" "                                   >>"${TMP_PATH}/menu"
-      if [ "${DIRECTBOOT}" = "false" ]; then
-        echo "b \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
-      fi
-      echo "d \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
-      if [ "${DIRECTBOOT}" = "true" ] && [ "${DIRECTDSM}" = "true" ]; then
-        echo "l \"Reset DirectDSM: \Z4${DIRECTDSM}\Zn \" "                                  >>"${TMP_PATH}/menu"
       fi
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
-      echo "8 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
+      echo "6 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
     else
-      echo "8 \"\Z1Show Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
+      echo "6 \"\Z1Show Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
       echo "= \"\Z4======== Advanced =======\Zn \" "                                        >>"${TMP_PATH}/menu"
-      echo "f \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
-      echo "g \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
-      echo "h \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
+      echo "j \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
+      echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
+      echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
+      echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
+    fi
+    if [ "${BOOTOPTS}" = "true" ]; then
+      echo "7 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
+    else
+      echo "7 \"\Z1Show Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
+    fi
+    if [ "${BOOTOPTS}" = "true" ]; then
+      echo "= \"\Z4========== Boot =========\Zn \" "                                        >>"${TMP_PATH}/menu"
+      echo "m \"DSM Kernelload: \Z4${KERNELLOAD}\Zn \" "                                    >>"${TMP_PATH}/menu"
+      echo "n \"Boot MAC disable: \Z4${NOTSETMAC}\Zn \" "                                   >>"${TMP_PATH}/menu"
+      echo "o \"Boot WOL disable: \Z4${NOTSETWOL}\Zn \" "                                   >>"${TMP_PATH}/menu"
+      if [ "${DIRECTBOOT}" = "false" ]; then
+        echo "p \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
+      fi
+      echo "q \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
+      if [ "${DIRECTBOOT}" = "true" ] && [ "${DIRECTDSM}" = "true" ]; then
+        echo "r \"Reset DirectDSM: \Z4${DIRECTDSM}\Zn \" "                                  >>"${TMP_PATH}/menu"
+      fi
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
     if [ "${DSMOPTS}" = "true" ]; then
-      echo "9 \"\Z1Hide DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      echo "8 \"\Z1Hide DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     else
-      echo "9 \"\Z1Show DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      echo "8 \"\Z1Show DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     fi
     if [ "${DSMOPTS}" = "true" ]; then
       echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
-      echo "w \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
-      echo "x \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
+      echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
+      echo "t \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
     if [ "${DEVOPTS}" = "true" ]; then
-      echo "- \"\Z1Hide Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      echo "9 \"\Z1Hide Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     else
-      echo "- \"\Z1Show Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      echo "9 \"\Z1Show Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+    fi
+    if [ "${DEVOPTS}" = "true" ]; then
+      echo "= \"\Z4========== Dev ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
+      echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
+      echo "v \"Save Modifications to Disk \" "                                             >>"${TMP_PATH}/menu"
+      echo "w \"Clean old Loader Boot Files \" "                                            >>"${TMP_PATH}/menu"
+      echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >>"${TMP_PATH}/menu"
+      echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
   fi
-  if [ "${DEVOPTS}" = "true" ]; then
-    echo "= \"\Z4========== Dev ==========\Zn \" "                                          >>"${TMP_PATH}/menu"
-    echo "j \"Switch LKM version: \Z4${LKM}\Zn \" "                                         >>"${TMP_PATH}/menu"
-    echo "z \"Save Modifications to Disk \" "                                               >>"${TMP_PATH}/menu"
-    echo "o \"Clean old Loader Boot Files \" "                                              >>"${TMP_PATH}/menu"
-    echo "+ \"\Z1Format Disk(s)\Zn \" "                                                     >>"${TMP_PATH}/menu"
-    echo "= \"\Z4=========================\Zn \" "                                          >>"${TMP_PATH}/menu"
-  fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >>"${TMP_PATH}/menu"
-  echo "t \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
-  echo "c \"Choose a keymap \" "                                                            >>"${TMP_PATH}/menu"
-  echo "e \"Update \" "                                                                     >>"${TMP_PATH}/menu"
+  echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
+  echo "y \"Choose a keymap \" "                                                            >>"${TMP_PATH}/menu"
+  echo "z \"Update \" "                                                                     >>"${TMP_PATH}/menu"
   echo "0 \"\Z1Exit\Zn \" "                                                                 >>"${TMP_PATH}/menu"
 
   dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --colors \
@@ -2362,85 +2368,90 @@ while true; do
   [ $? -ne 0 ] && break
   case $(<"${TMP_PATH}/resp") in
     # Main Section
-    1) arcMenu; NEXT="5" ;;
-    5) make; NEXT="6" ;;
-    6) boot && exit 0 || sleep 3 ;;
+    1) arcMenu; NEXT="2" ;;
+    2) make; NEXT="3" ;;
+    3) boot && exit 0 || sleep 3 ;;
     # Info Section
     a) sysinfo; NEXT="a" ;;
     # System Section
-    2) addonMenu; NEXT="2" ;;
-    3) extensionMenu; NEXT="3" ;;
-    4) modulesMenu; NEXT="4" ;;
+    b) addonMenu; NEXT="b" ;;
+    c) extensionMenu; NEXT="c" ;;
+    d) modulesMenu; NEXT="d" ;;
     # Arc Section
-    7) [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
+    5) [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
        ARCOPTS="${ARCOPTS}"
-       NEXT="7"
+       NEXT="5"
        ;;
-    v) ONLYVERSION="true" && arcbuild; NEXT="v" ;;
-    n) networkMenu; NEXT="n" ;;
-    s) storageMenu; NEXT="s" ;;
-    u) usbMenu; NEXT="u" ;;
-    j) [ "${LSIMODE}" = "RAID" ] && LSIMODE='HBA' || LSIMODE='RAID'
+    e) ONLYVERSION="true" && arcbuild; NEXT="e" ;;
+    f) networkMenu; NEXT="f" ;;
+    g) storageMenu; NEXT="g" ;;
+    h) usbMenu; NEXT="h" ;;
+    i) [ "${LSIMODE}" = "RAID" ] && LSIMODE='HBA' || LSIMODE='RAID'
       writeConfigKey "arc.lsimode" "${LSIMODE}" "${USER_CONFIG_FILE}"
       LSIMODE="$(readConfigKey "arc.lsimode" "${USER_CONFIG_FILE}")"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="j"
-      ;;
-    k) [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
-      writeConfigKey "arc.kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
-      NEXT="k"
-      ;;
-    m) [ "${NOTSETMAC}" = "false" ] && NOTSETMAC='true' || NOTSETMAC='false'
-      writeConfigKey "arc.notsetmac" "${NOTSETMAC}" "${USER_CONFIG_FILE}"
-      NEXT="m"
-      ;;
-    p) [ "${NOTSETWOL}" = "false" ] && NOTSETWOL='true' || NOTSETWOL='false'
-      writeConfigKey "arc.notsetwol" "${NOTSETWOL}" "${USER_CONFIG_FILE}"
-      NEXT="p"
-      ;;
-    b) bootipwaittime; NEXT="b" ;;
-    d) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
-      writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
-      NEXT="d"
-      ;;
-    l)
-      writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
-      DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
-      NEXT="l"
+      NEXT="i"
       ;;
     # Advanced Section
-    8) [ "${ADVOPTS}" = "true" ] && ADVOPTS='false' || ADVOPTS='true'
+    6) [ "${ADVOPTS}" = "true" ] && ADVOPTS='false' || ADVOPTS='true'
        ADVOPTS="${ADVOPTS}"
-       NEXT="8"
+       NEXT="6"
        ;;
-    f) cmdlineMenu; NEXT="f" ;;
-    g) synoinfoMenu; NEXT="g" ;;
-    h) editUserConfig; NEXT="h" ;;
+    j) cmdlineMenu; NEXT="j" ;;
+    k) synoinfoMenu; NEXT="k" ;;
+    l) editUserConfig; NEXT="l" ;;
+    # Boot Section
+    7) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
+       ARCOPTS="${BOOTOPTS}"
+       NEXT="7"
+       ;;
+    m) [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
+      writeConfigKey "arc.kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
+      NEXT="m"
+      ;;
+    n) [ "${NOTSETMAC}" = "false" ] && NOTSETMAC='true' || NOTSETMAC='false'
+      writeConfigKey "arc.notsetmac" "${NOTSETMAC}" "${USER_CONFIG_FILE}"
+      NEXT="n"
+      ;;
+    o) [ "${NOTSETWOL}" = "false" ] && NOTSETWOL='true' || NOTSETWOL='false'
+      writeConfigKey "arc.notsetwol" "${NOTSETWOL}" "${USER_CONFIG_FILE}"
+      NEXT="o"
+      ;;
+    p) bootipwaittime; NEXT="p" ;;
+    q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
+      writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
+      NEXT="q"
+      ;;
+    r)
+      writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
+      DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
+      NEXT="r"
+      ;;
     # DSM Section
-    9) [ "${DSMOPTS}" = "true" ] && DSMOPTS='false' || DSMOPTS='true'
+    8) [ "${DSMOPTS}" = "true" ] && DSMOPTS='false' || DSMOPTS='true'
       DSMOPTS="${DSMOPTS}"
+      NEXT="8"
+      ;;
+    s) downgradeMenu; NEXT="s" ;;
+    t) resetPassword; NEXT="t" ;;
+    # Dev Section
+    9) [ "${DEVOPTS}" = "true" ] && DEVOPTS='false' || DEVOPTS='true'
+      DEVOPTS="${DEVOPTS}"
       NEXT="9"
       ;;
-    w) downgradeMenu; NEXT="w" ;;
-    x) resetPassword; NEXT="x" ;;
-    # Dev Section
-    -) [ "${DEVOPTS}" = "true" ] && DEVOPTS='false' || DEVOPTS='true'
-      DEVOPTS="${DEVOPTS}"
-      NEXT="-"
-      ;;
-    j) [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
+    u) [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
       writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
-      NEXT="j"
+      NEXT="u"
       ;;
-    z) saveMenu; NEXT="z" ;;
-    o) cleanOld; NEXT="o" ;;
+    v) saveMenu; NEXT="v" ;;
+    w) cleanOld; NEXT="w" ;;
     +) formatdisks; NEXT="+" ;;
     # Loader Settings
-    t) backupMenu; NEXT="t" ;;
-    c) keymapMenu; NEXT="c" ;;
-    e) updateMenu; NEXT="e" ;;
+    x) backupMenu; NEXT="t" ;;
+    y) keymapMenu; NEXT="c" ;;
+    z) updateMenu; NEXT="e" ;;
     0) break ;;
   esac
 done

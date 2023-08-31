@@ -10,7 +10,7 @@ function getmap() {
     rm -f "${TMP_PATH}/ports"
     touch "${TMP_PATH}ports"
     rm -f "${TMP_PATH}/remap"
-    touch "${TMP_PATH}remap"
+    touch "${TMP_PATH}/remap"
     # Do the work
     let DISKIDXMAPIDX=0
     DISKIDXMAP=""
@@ -45,8 +45,8 @@ function getmap() {
       let DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS
       SATADRIVES=$((${SATADRIVES} + ${CONPORTS}))
     done
-    SATAPORTMAPMAX="$(awk '{print$1}' ${TMP_PATH}/drivesmax)"
-    SATAPORTMAP="$(awk '{print$1}' ${TMP_PATH}/drivescon)"
+    SATAPORTMAPMAX="$(<"${TMP_PATH}/drivesmax")"
+    SATAPORTMAP="$(<"${TMP_PATH}/drivescon")"
     LASTDRIVE=0
     # Check for VM
     while read -r LINE; do
@@ -178,7 +178,7 @@ function getmap() {
           --msgbox "Usersetting: We don't need this." 0 0
       fi
     fi
-    if [ ${SASCONTROLLER} -gt 0 ] && [ $(lspci | grep LSI | wc -l) -gt 0 ]; then
+    if [ -z ${CONFDONE} ] && [ ${SASCONTROLLER} -gt 0 ] && [ $(lspci | grep LSI | wc -l) -gt 0 ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Disks" \
         --menu "LSI Controller found!\nController Mode?" 0 0 0 \
         1 "HBA Mode (IT Firmware)" \
