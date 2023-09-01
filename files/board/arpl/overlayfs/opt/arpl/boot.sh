@@ -192,7 +192,8 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   if [ "${NOTSETMAC}" = "true" ]; then
     echo -e "\r\033[1;34mDisable Boot MAC is true, the DSM IP can be different!\033[0m"
   fi
-  [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=10
+  BOOTWAIT="$(readConfigKey "arc.bootwait" "${USER_CONFIG_FILE}")"
+  [ -z "${BOOTWAIT}" ] && BOOTWAIT=10
   w | awk '{print $1" "$2" "$4" "$5" "$6}' >WO
   MSG=""
   while test ${BOOTIPWAIT} -ge 0; do
@@ -204,10 +205,10 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       break
     fi
     sleep 1
-    BOOTIPWAIT=$((BOOTIPWAIT - 1))
+    BOOTWAIT=$((BOOTWAIT - 1))
   done
   rm -f WO WC
-  [ ${BOOTIPWAIT} -eq 0 ] && exit 0
+  [ ${BOOTWAIT} -eq 0 ] && exit 0
   echo -en "\r$(printf "%${#MSG}s" " ")\n"
 fi
 echo

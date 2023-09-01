@@ -93,6 +93,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.bootwait" "10" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.notsetmac" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.notsetwol" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"

@@ -66,6 +66,7 @@ CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
+BOOTWAIT="$(readConfigKey "arc.bootwait" "${USER_CONFIG_FILE}")"
 REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 NOTSETWOL="$(readConfigKey "arc.notsetwol" "${USER_CONFIG_FILE}")"
@@ -2175,7 +2176,20 @@ function bootipwaittime() {
   resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
   [ -z "${resp}" ] && return 1
   BOOTIPWAIT=${resp}
-  writeConfigKey "bootipwait" "${BOOTIPWAIT}" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.bootipwait" "${BOOTIPWAIT}" "${USER_CONFIG_FILE}"
+}
+
+###############################################################################
+# modify bootwaittime
+function bootwaittime() {
+  ITEMS="$(echo -e "5 \n10 \n20 \n30 \n60 \n")"
+  dialog --backtitle "$(backtitle)" --title "Boot IP Waittime" \
+    --default-item "${BOOTWAIT}" --no-items --menu "Choose a Waitingtime(seconds)" 0 0 0 ${ITEMS} \
+    2>"${TMP_PATH}/resp"
+  resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
+  [ -z "${resp}" ] && return 1
+  BOOTWAIT=${resp}
+  writeConfigKey "arc.bootwait" "${BOOTWAIT}" "${USER_CONFIG_FILE}"
 }
 
 ###############################################################################
@@ -2324,6 +2338,7 @@ while true; do
       echo "o \"Boot WOL disable: \Z4${NOTSETWOL}\Zn \" "                                   >>"${TMP_PATH}/menu"
       if [ "${DIRECTBOOT}" = "false" ]; then
         echo "p \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
+        echo "- \"Boot Waittime: \Z4${BOOTWAIT}\Zn \" "                                     >>"${TMP_PATH}/menu"
       fi
       echo "q \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
       if [ "${DIRECTBOOT}" = "true" ] && [ "${DIRECTDSM}" = "true" ]; then
@@ -2419,6 +2434,7 @@ while true; do
       NEXT="o"
       ;;
     p) bootipwaittime; NEXT="p" ;;
+    -) bootwaittime; NEXT="-" ;;
     q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
