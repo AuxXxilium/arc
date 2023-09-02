@@ -179,7 +179,7 @@ function arcMenu() {
       done < <(cat "${TMP_PATH}/modellist" | sort -n -k 2)
     [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models\Zn\"" >>"${TMP_PATH}/menu"
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >>"${TMP_PATH}/menu"
-    dialog --backtitle "$(backtitle)" --menu "Choose Model for Loader" 0 62 0 \
+    dialog --backtitle "$(backtitle)" --colors --menu "Choose Model for Loader" 0 62 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     resp="$(<"${TMP_PATH}/resp")"
@@ -698,7 +698,7 @@ function modulesMenu() {
           --msgbox "${ITEMS}" 0 0
         ;;
       2)
-        dialog --backtitle "$(backtitle)" --title "Modules" \
+        dialog --backtitle "$(backtitle)" --colors --title "Modules" \
           --infobox "Selecting loaded modules" 0 0
         KOLIST=""
         for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
@@ -862,7 +862,7 @@ function cmdlineMenu() {
         ;;
       3)
         while true; do
-          dialog --backtitle "$(backtitle)" --title "Cmdline" \
+          dialog --backtitle "$(backtitle)" --colors --title "Cmdline" \
             --inputbox "Please enter a serial number " 0 0 "" \
             2>"${TMP_PATH}/resp"
           [ $? -ne 0 ] && break 2
@@ -874,7 +874,7 @@ function cmdlineMenu() {
           fi
           # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
           break
-          dialog --backtitle "$(backtitle)" --title "Cmdline" \
+          dialog --backtitle "$(backtitle)" --colors --title "Cmdline" \
             --yesno "Invalid serial, continue?" 0 0
           [ $? -eq 0 ] && break
         done
@@ -1154,7 +1154,7 @@ function backupMenu() {
           ;;
         3)
           if ! tty | grep -q "/dev/pts"; then
-            dialog --backtitle "$(backtitle)" --aspect 18 \
+            dialog --backtitle "$(backtitle)" --colors --aspect 18 \
               --msgbox "This feature is only available when accessed via web/ssh." 0 0
             return
           fi 
@@ -1181,13 +1181,13 @@ function backupMenu() {
           else                          # ssh
             sz -be /var/www/data/arc-backup.img.gz
           fi
-          dialog --backtitle "$(backtitle)" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --colors --aspect 18 \
               --msgbox "Backup is complete." 0 0
           rm -f /var/www/data/arc-backup.img.gz
           ;;
         4)
           if ! tty | grep -q "/dev/pts"; then
-            dialog --backtitle "$(backtitle)" --aspect 18 \
+            dialog --backtitle "$(backtitle)" --colors --aspect 18 \
               --msgbox "This feature is only available when accessed via web/ssh." 0 0
             return 1
           fi 
@@ -1362,7 +1362,7 @@ function backupMenu() {
           ;;
         2)
           if ! tty | grep -q "/dev/pts"; then
-            dialog --backtitle "$(backtitle)" --aspect 18 \
+            dialog --backtitle "$(backtitle)" --colors --aspect 18 \
               --msgbox "This feature is only available when accessed via web/ssh." 0 0
             return
           fi 
@@ -2081,7 +2081,7 @@ function sysinfo() {
   fi
   TEXT+="\nPorts with color \Z1\Zbred\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected.\n"
   TEXT+="\nDrives total: \Zb${NUMPORTS}\Zn"
-  dialog --backtitle "$(backtitle)" --title "Sysinfo" \
+  dialog --backtitle "$(backtitle)" --colors --title "Sysinfo" \
     --msgbox "${TEXT}" 0 0
 }
 
@@ -2108,7 +2108,7 @@ function downgradeMenu() {
   ) | dialog --backtitle "$(backtitle)" --title "Allow downgrade installation" \
       --progressbox "Removing ..." 20 70
   TEXT="Remove VERSION file for all disks completed."
-  dialog --backtitle "$(backtitle)" --aspect 18 \
+  dialog --backtitle "$(backtitle)" --colors --aspect 18 \
     --msgbox "${TEXT}" 0 0
 }
 
@@ -2162,7 +2162,7 @@ function resetPassword() {
   ) | dialog --backtitle "$(backtitle)" --title "Reset DSM Password" \
       --progressbox "Resetting ..." 20 70
   [ -f "${SHADOW_FILE}" ] && rm -rf "${SHADOW_FILE}"
-  dialog --backtitle "$(backtitle)" --aspect 18 \
+  dialog --backtitle "$(backtitle)" --colors --aspect 18 \
     --msgbox "Password reset completed." 0 0
 }
 
@@ -2170,7 +2170,7 @@ function resetPassword() {
 # modify bootipwaittime
 function bootipwaittime() {
   ITEMS="$(echo -e "5 \n10 \n20 \n30 \n60 \n")"
-  dialog --backtitle "$(backtitle)" --title "Boot IP Waittime" \
+  dialog --backtitle "$(backtitle)" --colors --title "Boot IP Waittime" \
     --default-item "${BOOTIPWAIT}" --no-items --menu "Choose a Waitingtime(seconds)" 0 0 0 ${ITEMS} \
     2>"${TMP_PATH}/resp"
   resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
@@ -2207,7 +2207,7 @@ function saveMenu() {
   cp -rf "/opt" "${RDXZ_PATH}"
   (cd "${RDXZ_PATH}"; find . 2>/dev/null | cpio -o -H newc -R root:root | xz --check=crc32 >"${CACHE_PATH}/initrd-arc") || true
   rm -rf "${RDXZ_PATH}"
-  dialog --backtitle "$(backtitle)" --aspect 18 \
+  dialog --backtitle "$(backtitle)" --colors --aspect 18 \
     --msgbox "Save to Disk is complete." 0 0
 }
 
@@ -2220,17 +2220,17 @@ function formatdisks() {
     echo "${POSITION}" | grep -q "${LOADER_DEVICE_NAME}" && continue
     echo "\"${POSITION}\" \"${NAME}\" \"off\"" >>"${TMP_PATH}/opts"
   done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd|/dev/nvme" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
-  dialog --backtitle "$(backtitle)" --title "Format" \
+  dialog --backtitle "$(backtitle)" --colors --title "Format" \
     --checklist "Format" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return 1
   resp=$(<"${TMP_PATH}/resp")
   [ -z "${resp}" ] && return 1
-  dialog --backtitle "$(backtitle)" --title "Format" \
+  dialog --backtitle "$(backtitle)" --colors --title "Format" \
     --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return 1
   if [ $(ls /dev/md* | wc -l) -gt 0 ]; then
-    dialog --backtitle "$(backtitle)" --title "Format" \
+    dialog --backtitle "$(backtitle)" --colors --title "Format" \
       --yesno "Warning:\nThe current hds is in raid, do you still want to format them?" 0 0
     [ $? -ne 0 ] && return 1
     for I in $(ls /dev/md*); do
@@ -2241,9 +2241,9 @@ function formatdisks() {
     for I in ${resp}; do
       mkfs.ext4 -T largefile4 "${I}"
     done
-  ) | dialog --backtitle "$(backtitle)" --title "Format" \
+  ) | dialog --backtitle "$(backtitle)" --colors --title "Format" \
     --progressbox "Formatting ..." 20 70
-  dialog --backtitle "$(backtitle)" --title "Format" \
+  dialog --backtitle "$(backtitle)" --colors --title "Format" \
     --msgbox "Formatting is complete." 0 0
 }
 
@@ -2254,7 +2254,7 @@ function cleanOld() {
     # Delete old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   fi
-  dialog --backtitle "$(backtitle)" --title "Clean Old" \
+  dialog --backtitle "$(backtitle)" --colors --title "Clean Old" \
     --msgbox "Clean is complete." 0 0
 }
 
