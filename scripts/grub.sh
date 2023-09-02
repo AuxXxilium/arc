@@ -34,40 +34,40 @@ fdisk -l grub.img
 
 LOOPX=$(sudo losetup -f)
 sudo losetup -P ${LOOPX} grub.img
-sudo mkdosfs -F32 -n ARPL1 ${LOOPX}p1
-sudo mkfs.ext2 -F -L ARPL2 ${LOOPX}p2
-sudo mkfs.ext4 -F -L ARPL3 ${LOOPX}p3
+sudo mkdosfs -F32 -n ARC1 ${LOOPX}p1
+sudo mkfs.ext2 -F -L ARC2 ${LOOPX}p2
+sudo mkfs.ext4 -F -L ARC3 ${LOOPX}p3
 
-rm -rf ARPL1
-mkdir -p ARPL1
-sudo mount ${LOOPX}p1 ARPL1
+rm -rf ARC1
+mkdir -p ARC1
+sudo mount ${LOOPX}p1 ARC1
 
-sudo mkdir -p ARPL1/EFI
-sudo mkdir -p ARPL1/boot/grub
+sudo mkdir -p ARC1/EFI
+sudo mkdir -p ARC1/boot/grub
 cat >device.map <<EOF
 (hd0)   ${LOOPX}
 EOF
-sudo mv device.map ARPL1/boot/grub/device.map
+sudo mv device.map ARC1/boot/grub/device.map
 
 for B in ${BIOS}; do
   args=""
-  args+=" ${LOOPX} --target=${B} --no-floppy --recheck --grub-mkdevicemap=ARPL1/boot/grub/device.map --boot-directory=ARPL1/boot"
+  args+=" ${LOOPX} --target=${B} --no-floppy --recheck --grub-mkdevicemap=ARC1/boot/grub/device.map --boot-directory=ARC1/boot"
   if [[ "${B}" == *"efi" ]]; then
-    args+=" --efi-directory=ARPL1 --removable --no-nvram"
+    args+=" --efi-directory=ARC1 --removable --no-nvram"
   else
-    args+=" --root-directory=ARPL1"
+    args+=" --root-directory=ARC1"
   fi
   sudo ${GRUB}/${B}/grub-install ${args}
 done
 
-if [ -d ARPL1/boot/grub/fonts ] && [ -f /usr/share/grub/unicode.pf2 ]; then
-  sudo cp /usr/share/grub/unicode.pf2 ARPL1/boot/grub/fonts
+if [ -d ARC1/boot/grub/fonts ] && [ -f /usr/share/grub/unicode.pf2 ]; then
+  sudo cp /usr/share/grub/unicode.pf2 ARC1/boot/grub/fonts
 fi
 
 sudo sync
 
 sudo umount ${LOOPX}p1
 sudo losetup -d ${LOOPX}
-sudo rm -rf ARPL1
+sudo rm -rf ARC1
 
 gzip grub.img
