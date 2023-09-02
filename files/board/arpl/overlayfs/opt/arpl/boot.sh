@@ -194,21 +194,21 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   fi
   BOOTWAIT="$(readConfigKey "arc.bootwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTWAIT}" ] && BOOTWAIT=10
-  w | awk '{print $1" "$2" "$4" "$5" "$6}' >WO
+  w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
   while test ${BOOTIPWAIT} -ge 0; do
     MSG="$(printf "%2ds (accessing Arc will interrupt boot)")" "${BOOTWAIT}"
     echo -en "\r${MSG}"
     w | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
-    if ! diff WO WC >/dev/null 2>&1; then
+    if ! diff WB WC >/dev/null 2>&1; then
       echo -en "\rA new access is connected, the boot process is interrupted.\n"
-      break
+      rm -f WB WC
+      exit 0
     fi
     sleep 1
     BOOTWAIT=$((BOOTWAIT - 1))
   done
-  rm -f WO WC
-  [ ${BOOTWAIT} -eq 0 ] && exit 0
+  rm -f WB WC
   echo -en "\r$(printf "%${#MSG}s" " ")\n"
 fi
 echo
