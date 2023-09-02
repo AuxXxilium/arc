@@ -358,6 +358,7 @@ function arcsettings() {
     make
   elif [ ${resp} -eq 2 ]; then
     dialog --clear --no-items --backtitle "$(backtitle)"
+    return 1
   fi
 }
 
@@ -540,6 +541,7 @@ function make() {
     boot && exit 0
   elif [ ${resp} -eq 2 ]; then
     dialog --clear --no-items --backtitle "$(backtitle)"
+    return 1
   fi
 }
 
@@ -2093,9 +2095,9 @@ function resetPassword() {
 ###############################################################################
 # modify bootipwaittime
 function bootipwaittime() {
-  ITEMS="$(echo -e "5 \n10 \n20 \n30 \n60 \n")"
+  ITEMS="$(echo -e "0 \n5 \n10 \n20 \n30 \n60 \n")"
   dialog --backtitle "$(backtitle)" --colors --title "Boot IP Waittime" \
-    --default-item "${BOOTIPWAIT}" --no-items --menu "Choose a Waitingtime(seconds)" 0 0 0 ${ITEMS} \
+    --default-item "${BOOTIPWAIT}" --no-items --menu "Choose Waittime(seconds)\nto get an IP" 0 0 0 ${ITEMS} \
     2>"${TMP_PATH}/resp"
   resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
   [ -z "${resp}" ] && return 1
@@ -2106,9 +2108,9 @@ function bootipwaittime() {
 ###############################################################################
 # modify bootwaittime
 function bootwaittime() {
-  ITEMS="$(echo -e "5 \n10 \n20 \n30 \n60 \n")"
-  dialog --backtitle "$(backtitle)" --title "Boot IP Waittime" \
-    --default-item "${BOOTWAIT}" --no-items --menu "Choose a Waitingtime(seconds)" 0 0 0 ${ITEMS} \
+  ITEMS="$(echo -e "0 \n5 \n10 \n20 \n30 \n60 \n")"
+  dialog --backtitle "$(backtitle)" --title "Boot Waittime" \
+    --default-item "${BOOTWAIT}" --no-items --menu "Choose Waittime(seconds)\nto init the Hardware" 0 0 0 ${ITEMS} \
     2>"${TMP_PATH}/resp"
   resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
   [ -z "${resp}" ] && return 1
