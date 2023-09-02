@@ -1,7 +1,5 @@
 !.gitkeep
 .vscode
-arpl.img
-arpl*.vmdk
 arc.img
 arc*.vmdk
 *.zip
@@ -11,9 +9,9 @@ docker/syno-compiler/Dockerfile
 cache
 *.bak
 *.o
-/files/board/arpl/p3/addons
-/files/board/arpl/p3/lkms
-/files/board/arpl/p3/modules
-/files/board/arpl/p3/configs
-/files/board/arpl/p3/extensions
+/files/board/arc/p3/addons
+/files/board/arc/p3/lkms
+/files/board/arc/p3/modules
+/files/board/arc/p3/configs
+/files/board/arc/p3/extensions
 /tests
