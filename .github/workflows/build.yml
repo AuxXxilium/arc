@@ -11,15 +11,15 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'format %y.%-m.$i or auto'
+        description: "format %y.%-m.$i or auto"
         required: false
         type: string
       prerelease:
-        description: 'pre release'
+        description: "pre release"
         default: false
         type: boolean
       clean:
-        description: 'clean'
+        description: "clean"
         default: false
         type: boolean
 
