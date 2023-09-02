@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       push:
-        description: 'push'
+        description: "push"
         default: false
         type: boolean
 jobs:
@@ -46,14 +46,14 @@ jobs:
         run: |
           if [ -f "grub.img.gz" ]; then
             echo "Copy img ..."
-            mv -f grub.img.gz files/board/arpl/grub.img.gz
+            mv -f grub.img.gz files/board/arc/grub.img.gz
 
             echo "Git push ..."
             git pull
             status=$(git status -s | grep -E 'grub.img.gz' | awk '{printf " %s", $2}')
             if [ -n "${status}" ]; then
               git add ${status}
-              git commit -m "arc: grub: update $(date +%Y-%m-%d" "%H:%M:%S)"
+              git commit -m "grub: update $(date +%Y-%m-%d" "%H:%M:%S)"
               git push -f
             fi
           else
