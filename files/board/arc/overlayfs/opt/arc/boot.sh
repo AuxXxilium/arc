@@ -197,7 +197,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
   while test ${BOOTIPWAIT} -ge 0; do
-    MSG="$(printf "%2ds (accessing Arc will interrupt boot)")" "${BOOTWAIT}"
+    MSG="$(printf "%2ds (accessing Arc will interrupt boot)" "${BOOTWAIT}")"
     echo -en "\r${MSG}"
     w | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
     if ! diff WB WC >/dev/null 2>&1; then
