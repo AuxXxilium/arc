@@ -9,7 +9,7 @@
 
 LOADER_DISK="$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1)"
 LOADER_DEVICE_NAME=$(echo "${LOADER_DISK}" | sed 's|/dev/||')
-BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
+BUS=$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_BUS | cut -d= -f2)
 [ "${BUS}" = "ata" ] && BUS="sata"
 
 # Memory: Check Memory installed

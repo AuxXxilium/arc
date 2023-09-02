@@ -5,7 +5,7 @@ set -e
 . /opt/arc/include/functions.sh
 
 LOADER_DISK="$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1)"
-BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
+BUS=$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_BUS | cut -d= -f2)
 [ "${BUS}" = "ata" ] && BUS="sata"
 
 # Check if machine has EFI
@@ -13,13 +13,13 @@ BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d
 
 # Print text centralized
 clear
-[ -z "${COLUMNS}" ] && COLUMNS=50
+COLUMNS=${COLUMNS:-50}
 TITLE="${ARC_TITLE}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
-TITLE="BOOTING..."
+TITLE="BOOTING:"
 [ ${EFI} -eq 1 ] && TITLE+=" [EFI]" || TITLE+=" [Legacy]"
 TITLE+=" [${BUS^^}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
@@ -93,7 +93,7 @@ while IFS=': ' read -r KEY VALUE; do
 done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 
 if [ ! "${BUS}" = "usb" ]; then
-  LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
+  LOADER_DEVICE_NAME=$(echo "${LOADER_DISK}" | sed 's|/dev/||')
   SIZE=$(($(cat /sys/block/${LOADER_DEVICE_NAME}/size) / 2048 + 10))
   # Read SATADoM type
   DOM="$(readModelKey "${MODEL}" "dom")"

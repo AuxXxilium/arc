@@ -137,12 +137,12 @@ echo
 # Get the VID/PID if we are in USB
 VID="0x0000"
 PID="0x0000"
-BUS=$(udevadm info --query property --name ${LOADER_DISK} | grep ID_BUS | cut -d= -f2)
+BUS=$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_BUS | cut -d= -f2)
 [ "${BUS}" = "ata" ] && BUS="sata"
 
 if [ "${BUS}" = "usb" ]; then
-  VID="0x$(udevadm info --query property --name ${LOADER_DISK} | grep ID_VENDOR_ID | cut -d= -f2)"
-  PID="0x$(udevadm info --query property --name ${LOADER_DISK} | grep ID_MODEL_ID | cut -d= -f2)"
+  VID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_VENDOR_ID | cut -d= -f2)"
+  PID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_MODEL_ID | cut -d= -f2)"
 elif [ "${BUS}" != "sata" ] && [ "${BUS}" != "scsi" ]; then
   die "Loader Disk neither USB, SATA or SCSI"
 fi
