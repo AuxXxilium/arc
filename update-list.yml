@@ -1,6 +1,6 @@
 remove:
 replace:
-  ".buildroot/output/images/bzImage": "/mnt/p3/bzImage-arpl"
-  ".buildroot/output/images/rootfs.cpio.xz": "/mnt/p3/initrd-arpl"
-  "files/board/arpl/p1/ARPL-VERSION": "/mnt/p1/ARPL-VERSION"
-  "files/board/arpl/p1/boot/grub/grub.cfg": "/mnt/p1/boot/grub/grub.cfg"
+  ".buildroot/output/images/bzImage": "/mnt/p3/bzImage-arc"
+  ".buildroot/output/images/rootfs.cpio.xz": "/mnt/p3/initrd-arc"
+  "files/board/arc/p1/ARPL-VERSION": "/mnt/p1/ARC-VERSION"
+  "files/board/arc/p1/boot/grub/grub.cfg": "/mnt/p1/boot/grub/grub.cfg"
