@@ -38,6 +38,12 @@ jobs:
           keep-count: 10
           keep-old-minor-releases: false
 
+      - name: Changelog
+        uses: Bullrich/generate-release-changelog@master
+        id: Changelog
+        env:
+          REPO: ${{ github.repository }}
+
       # Install Dependencies
       - name: Install Dependencies
         run: |
@@ -200,6 +206,8 @@ jobs:
         with:
           tag_name: ${{ env.VERSION }}
           prerelease: ${{ inputs.prerelease }}
+          body: |
+            ${{ steps.Changelog.outputs.changelog }}
           files: |
             arc-${{ env.VERSION }}.img.zip
             arc-${{ env.VERSION }}.vmdk-dyn.zip
