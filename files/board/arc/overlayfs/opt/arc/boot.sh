@@ -211,7 +211,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   rm -f WB WC
   echo -en "\r$(printf "%${#MSG}s" " ")\n"
 fi
-echo
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
 # Executes DSM kernel via KEXEC
