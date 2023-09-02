@@ -1897,55 +1897,58 @@ function sysinfo() {
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4> System: ${MACHINE}\Zn"
-  TEXT+="\nVendor | Boot: \Zb${VENDOR} | ${BOOTSYS}\Zn"
-  TEXT+="\nCPU | Threads: \Zb${CPUINFO} | ${CPUCORES}\Zn"
-  TEXT+="\nMemory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
+  TEXT+="\n  Vendor | Boot: \Zb${VENDOR} | ${BOOTSYS}\Zn"
+  TEXT+="\n  CPU | Threads: \Zb${CPUINFO} | ${CPUCORES}\Zn"
+  TEXT+="\n  Memory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
+  TEXT+="\n"
   TEXT+="\n\Z4> Network: ${ETHXNUM} Adapter\Zn"
   for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     MAC="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
     while true; do
       if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
+        TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
         break
       fi
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n${DRIVER} (${SPEED}): \ZbIP: ${IP} | Mac: ${MAC}\Zn"
+        TEXT+="\n  ${DRIVER} (${SPEED}): \ZbIP: ${IP} | Mac: ${MAC}\Zn"
         break
       fi
     done
   done
   # Print Config Informations
+  TEXT+="\n"
   TEXT+="\n\Z4> Arc: ${ARC_VERSION}\Zn"
-  TEXT+="\nSubversion Loader: \ZbAddons ${ADDONSVERSION} | LKM ${LKMVERSION}\Zn"
-  TEXT+="\nSubversion DSM: \ZbModules ${MODULESVERSION} | Extensions ${EXTENSIONSVERSION} | Configs ${CONFIGSVERSION}\Zn"
+  TEXT+="\n  Subversion Loader: \ZbAddons ${ADDONSVERSION} | LKM ${LKMVERSION}\Zn"
+  TEXT+="\n  Subversion DSM: \ZbModules ${MODULESVERSION} | Extensions ${EXTENSIONSVERSION} | Configs ${CONFIGSVERSION}\Zn"
+  TEXT+="\n"
   TEXT+="\n\Z4>> DSM ${PRODUCTVER}: ${MODEL}\Zn"
-  TEXT+="\nKernel | Platform | LKM: \Zb${KVER} | ${PLATFORM} | ${LKM}\Zn"
+  TEXT+="\n   Kernel | Platform | LKM: \Zb${KVER} | ${PLATFORM} | ${LKM}\Zn"
   TEXT+="\n\Z4>> Loader\Zn"
-  TEXT+="\nArcpatch | Kernelload: \Zb${ARCPATCH} | ${KERNELLOAD}\Zn"
-  TEXT+="\nDirectboot | DirectDSM: \Zb${DIRECTBOOT} | ${DIRECTDSM}\Zn"
-  TEXT+="\nConfig | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
+  TEXT+="\n   Arcpatch | Kernelload: \Zb${ARCPATCH} | ${KERNELLOAD}\Zn"
+  TEXT+="\n   Directboot | DirectDSM: \Zb${DIRECTBOOT} | ${DIRECTDSM}\Zn"
+  TEXT+="\n   Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n\Z4>> Extensions\Zn"
-  TEXT+="\nLoader Addons selected: \Zb${ADDONSINFO}\Zn"
-  TEXT+="\nDSM Extensions selected: \Zb${EXTENSIONSINFO}\Zn"
-  TEXT+="\nArc Modules loaded: \Zb${MODULESINFO}\Zn"
+  TEXT+="\n   Loader Addons selected: \Zb${ADDONSINFO}\Zn"
+  TEXT+="\n   DSM Extensions selected: \Zb${EXTENSIONSINFO}\Zn"
+  TEXT+="\n   Arc Modules loaded: \Zb${MODULESINFO}\Zn"
   TEXT+="\n\Z4>> Settings\Zn"
   if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
-    TEXT+="\nSataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
+    TEXT+="\n   SataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
   elif [ "${REMAP}" = "remap" ]; then
-    TEXT+="\nSataRemap: \Zb${PORTMAP}\Zn"
+    TEXT+="\n   SataRemap: \Zb${PORTMAP}\Zn"
   elif [ "${REMAP}" = "user" ]; then
-    TEXT+="\nPortMap: \Zb"User"\Zn"
+    TEXT+="\n   PortMap: \Zb"User"\Zn"
   fi
   if [ "${PLATFORM}" = "broadwellnk" ]; then
-    TEXT+="\nUSB Mount: \Zb${USBMOUNT}\Zn"
+    TEXT+="\n   USB Mount: \Zb${USBMOUNT}\Zn"
   fi
   # LSI Controller check
   if [ $(lspci | grep LSI | wc -l) -gt 0 ]; then
     LSIMODE="$(readConfigKey "arc.lsimode" "${USER_CONFIG_FILE}")"
-    TEXT+="\nLSI Mode: \Zb${LSIMODE}\Zn"
+    TEXT+="\n   LSI Mode: \Zb${LSIMODE}\Zn"
   fi
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
@@ -1953,10 +1956,10 @@ function sysinfo() {
   # Get Information for Sata Controller
   NUMPORTS=0
   if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
-  TEXT+="\nSATA:\n"
+  TEXT+="\n  SATA:\n"
   for PCI in $(lspci -d ::106 | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-    TEXT+="\Zb${NAME}\Zn\nPorts: "
+    TEXT+="\Zb  ${NAME}\Zn\n  Ports: "
     PORTS=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     for P in ${PORTS}; do
       if lsscsi -b | grep -v - | grep -q "\[${P}:"; then
@@ -1975,38 +1978,38 @@ function sysinfo() {
   done
   fi
   if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
-    TEXT+="\nSAS/SCSI:\n"
+    TEXT+="\n  SAS/SCSI:\n"
     for PCI in $(lspci -d ::107 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
-      TEXT+="\Zb${NAME}\Zn\nDrives: ${PORTNUM}\n"
+      TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
     done
   fi
   if [ $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]; then
-    TEXT+="\nUSB:\n"
+    TEXT+="\n USB:\n"
     for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
       [ ${PORTNUM} -eq 0 ] && continue
-      TEXT+="\Zb${NAME}\Zn\nDrives: ${PORTNUM}\n"
+      TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
     done
   fi
   if [ $(lspci -d ::108 | wc -l) -gt 0 ]; then
-    TEXT+="\nNVME:\n"
+    TEXT+="\n NVME:\n"
     for PCI in $(lspci -d ::108 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[N:${PORT}:" | wc -l)
-      TEXT+="\Zb${NAME}\Zn\nDrives: ${PORTNUM}\n"
+      TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
     done
   fi
-  TEXT+="\nPorts with color \Z1\Zbred\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected.\n"
-  TEXT+="\nDrives total: \Zb${NUMPORTS}\Zn"
+  TEXT+="\n  Ports with color \Z1\Zbred\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected.\n"
+  TEXT+="\n  Drives total: \Zb${NUMPORTS}\Zn"
   dialog --backtitle "$(backtitle)" --colors --title "Sysinfo" \
     --msgbox "${TEXT}" 0 0
 }
