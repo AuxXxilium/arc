@@ -114,11 +114,11 @@ if [ ${ETHXNUM} -gt 8 ]; then
 fi
 # set missing mac to cmdline if needed
 if [ ${NETIF_NUM} -ne ${ETHXNUM} ]; then
-  for N in $(seq $((${NETIF_NUM} + 1)) ${ETHXNUM}); do 
+  for N in $(seq $((${NETIF_NUM} + 1)) ${ETHXNUM}); do
     MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
     # no duplicates
     while [[ "${MACS[*]}" =~ "${MACR}" ]]; do # no duplicates
-      MACR="${MACR:0:10}$(printf "%02x" $((0x${MACR:10:2} + 1)))" 
+      MACR="${MACR:0:10}$(printf "%02x" $((0x${MACR:10:2} + 1)))"
     done
     CMDLINE["mac${N}"]="${MACR}"
   done
@@ -219,7 +219,7 @@ echo -e "\033[1;37m"Booting DSM..."\033[0m"
 for T in $(w | grep -v "TTY" | awk -F' ' '{print $2}')
 do
   echo -e "\n\033[1;37mThis interface will not be operational. Please use \033[1;34mhttp://find.synology.com/ \033[1;37mto find DSM and connect.\033[0m\n" >"/dev/${T}" 2>/dev/null || true
-done 
+done
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 [ "${KERNELLOAD}" = "kexec" ] && kexec -f -e || poweroff
 exit 0

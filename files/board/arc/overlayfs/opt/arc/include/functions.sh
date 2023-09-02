@@ -82,7 +82,7 @@ function generateSerial() {
   SERIAL+=$(readModelKey "${1}" "serial.middle")
   case "$(readModelKey "${1}" "serial.suffix")" in
     numeric)
-      SERIAL+=$(random)      
+      SERIAL+=$(random)
       ;;
     alpha)
       SERIAL+=$(generateRandomLetter)$(generateRandomValue)$(generateRandomValue)$(generateRandomValue)$(generateRandomValue)$(generateRandomLetter)

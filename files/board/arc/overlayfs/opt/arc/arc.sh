@@ -26,7 +26,7 @@ SATACONTROLLER=$(lspci -d ::106 | wc -l)
 writeConfigKey "device.satacontroller" "${SATACONTROLLER}" "${USER_CONFIG_FILE}"
 SASCONTROLLER=$(lspci -d ::107 | wc -l)
 writeConfigKey "device.sascontroller" "${SASCONTROLLER}" "${USER_CONFIG_FILE}"
-if [ ${SASCONTROLLER} -gt 0 ]; then 
+if [ ${SASCONTROLLER} -gt 0 ]; then
   # LSI Controller check
   if [ $(lspci | grep LSI | wc -l) -gt 0 ]; then
     LSIMODE="$(readConfigKey "arc.lsimode" "${USER_CONFIG_FILE}")"
@@ -840,7 +840,7 @@ function cmdlineMenu() {
         ;;
       2)
         if [ ${#CMDLINE[@]} -eq 0 ]; then
-          dialog --backtitle "$(backtitle)" --msgbox "No user cmdline to remove" 0 0 
+          dialog --backtitle "$(backtitle)" --msgbox "No user cmdline to remove" 0 0
           continue
         fi
         ITEMS=""
@@ -996,7 +996,7 @@ function synoinfoMenu() {
         ;;
       2)
         if [ ${#SYNOINFO[@]} -eq 0 ]; then
-          dialog --backtitle "$(backtitle)" --msgbox "No synoinfo entries to remove" 0 0 
+          dialog --backtitle "$(backtitle)" --msgbox "No synoinfo entries to remove" 0 0
           continue
         fi
         ITEMS=""
@@ -1157,7 +1157,7 @@ function backupMenu() {
             dialog --backtitle "$(backtitle)" --colors --aspect 18 \
               --msgbox "This feature is only available when accessed via web/ssh." 0 0
             return
-          fi 
+          fi
           dialog --backtitle "$(backtitle)" --title "Backup Loader Disk" \
               --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
           [ $? -ne 0 ] && return
@@ -1190,7 +1190,7 @@ function backupMenu() {
             dialog --backtitle "$(backtitle)" --colors --aspect 18 \
               --msgbox "This feature is only available when accessed via web/ssh." 0 0
             return 1
-          fi 
+          fi
           dialog --backtitle "$(backtitle)" --title "Restore bootloader disk" --aspect 18 \
               --yesno "Please upload the Backup file.\nCurrently, arc-x.zip(github) and arc-backup.img.gz(Backup) files are supported." 0 0
           [ $? -ne 0 ] && continue
@@ -1204,7 +1204,7 @@ function backupMenu() {
             USER_FILE="${F}"
             [ "${F##*.}" = "zip" -a $(unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$") -eq 1 ] && IFTOOL="zip"
             [ "${F##*.}" = "gz" -a "${F#*.}" = "img.gz" ] && IFTOOL="gzip"
-            break 
+            break
           done
           popd
           if [ -z "${IFTOOL}" ] || [ -z "${TMP_PATH}/${USER_FILE}" ]; then
@@ -1215,7 +1215,7 @@ function backupMenu() {
                 --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
             [ $? -ne 0 ] && (
               rm -f "${LOADER_DISK}"
-              return 1 
+              return 1
             )
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --infobox "Restore in progress..." 0 0
@@ -1365,7 +1365,7 @@ function backupMenu() {
             dialog --backtitle "$(backtitle)" --colors --aspect 18 \
               --msgbox "This feature is only available when accessed via web/ssh." 0 0
             return
-          fi 
+          fi
           dialog --backtitle "$(backtitle)" --title "Restore bootloader disk" --aspect 18 \
               --yesno "Please upload the Backup file.\nCurrently, arc-x.zip(github) and arc-backup.img.gz(Backup) files are supported." 0 0
           [ $? -ne 0 ] && return
@@ -1379,7 +1379,7 @@ function backupMenu() {
             USER_FILE="${F}"
             [ "${F##*.}" = "zip" ] && [ $(unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$") -eq 1 ] && IFTOOL="zip"
             [ "${F##*.}" = "gz" ] && [ "${F#*.}" = "img.gz" ] && IFTOOL="gzip"
-            break 
+            break
           done
           popd
           if [ -z "${IFTOOL}" ] || [ -z "${TMP_PATH}/${USER_FILE}" ]; then
@@ -2034,7 +2034,7 @@ function sysinfo() {
     PORTS=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     for P in ${PORTS}; do
       if lsscsi -b | grep -v - | grep -q "\[${P}:"; then
-        DUMMY="$([ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ] && echo 1 || echo 2)" 
+        DUMMY="$([ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ] && echo 1 || echo 2)"
         if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ]; then
           TEXT+="\Z1\Zb$(printf "%02d" ${P})\Zn "
         else
@@ -2199,7 +2199,7 @@ function saveMenu() {
       --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the arc. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return 1
   dialog --backtitle "$(backtitle)" --title "Save to Disk" \
-      --infobox "Saving ..." 0 0 
+      --infobox "Saving ..." 0 0
   RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
   mkdir -p "${RDXZ_PATH}"
   (cd "${RDXZ_PATH}"; xz -dc <"${CACHE_PATH}/initrd-arc" | cpio -idm) >/dev/null 2>&1 || true

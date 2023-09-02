@@ -9,7 +9,7 @@ function getnet() {
     # Write real MAC to cmdline config
     writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
   done
-  if [ "${ARCPATCH}" = "true" ]; then 
+  if [ "${ARCPATCH}" = "true" ]; then
     # Set first Mac from cmdline config
     writeConfigKey "cmdline.mac1" "" "${USER_CONFIG_FILE}"
     # Install with Arc Patch - Check for model config and set custom Mac Address
