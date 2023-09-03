@@ -35,6 +35,7 @@ LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 UNIQUE=$(readModelKey "${MODEL}" "unique")
 PLATFORM="$(readModelKey "${MODEL}" "platform")"
+STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
 
 # Check if DSM Version changed
 . "${RAMDISK_PATH}/etc/VERSION"
@@ -197,9 +198,16 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 /opt/arc/depmod -a -b "${RAMDISK_PATH}" 2>/dev/null
 
 # Network card configuration file
-for N in $(seq 0 7); do
-  echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
-done
+STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
+if [ "${STATICIP}" = "false" ]; then
+  for N in $(seq 0 7); do
+    echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
+  done
+elif "${STATICIP}" = "true" ]; then
+  for N in $(seq 1 7); do
+    echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
+  done
+fi
 
 # Reassembly ramdisk
 if [ "${RD_COMPRESSED}" == "true" ]; then

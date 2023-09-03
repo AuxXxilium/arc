@@ -175,6 +175,13 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         break
       fi
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+      STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
+      if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ -n "${IPADDR}" ]; then
+        ip addr add "${IPADDR}" dev "${ETHX[${N}]}"
+        SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
+        echo -e "\r${DRIVER} (${SPEED}): Satic IP is set"
+        IP="${IPADDR}"
+      fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
         echo -e "\r${DRIVER} (${SPEED}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web."

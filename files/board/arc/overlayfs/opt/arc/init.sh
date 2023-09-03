@@ -176,6 +176,25 @@ if [ -f "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" ]; then
 fi
 echo
 
+# Get IP Config
+if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1) -gt 0 ]; then
+  (
+    mkdir -p "${TMP_PATH}/sdX1"
+    for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
+      mount "${I}" "${TMP_PATH}/sdX1"
+      [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
+      umount "${I}"
+      break
+    done
+    rm -rf "${TMP_PATH}/sdX1"
+  )
+  if [ "${BOOTPROTO}" = "static" ]; then
+    writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
+  else
+    writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
+  fi
+fi
+
 # Decide if boot automatically
 if grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
   echo -e "\033[1;34mUser requested edit settings.\033[0m"
@@ -205,6 +224,13 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
       break
     fi
     IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+    STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
+    if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ -n "${IPADDR}" ]; then
+      ip addr add "${IPADDR}" dev "${ETHX[${N}]}"
+      SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
+      echo -e "\r${DRIVER} (${SPEED}): Access \033[1;34mhttp://${IPADDR}:7681\033[0m to connect Arc via web."
+      break
+    fi
     if [ -n "${IP}" ]; then
       SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
       echo -e "\r${DRIVER} (${SPEED}): Access \033[1;34mhttp://${IP}:7681\033[0m to connect Arc via web."

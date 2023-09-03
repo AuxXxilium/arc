@@ -71,6 +71,7 @@ REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 NOTSETWOL="$(readConfigKey "arc.notsetwol" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
+STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
 
 # Reset DirectDSM if User boot to Config
 if [ "${DIRECTBOOT}" = "true" ] && [ "${DIRECTDSM}" = "true" ]; then
@@ -2015,6 +2016,72 @@ function sysinfo() {
 }
 
 ###############################################################################
+# allow setting Static IP for DSM
+function staticIPMenu() {
+  (
+    mkdir -p "${TMP_PATH}/sdX1"
+    for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
+      mount "${I}" "${TMP_PATH}/sdX1"
+      [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
+      umount "${I}"
+      break
+    done
+    rm -rf "${TMP_PATH}/sdX1"
+  )
+  TEXT=""
+  TEXT+="This feature will allow you to set a static IP for eth0.\n"
+  TEXT+="Actual Settings are:\n"
+  TEXT+="Mode: ${BOOTPROTO}"
+  if [ "${BOOTPROTO}" = "static" ]; then
+    TEXT+="IP: ${IPADDR}"
+    TEXT+="NETMASK: ${NETMASK}"
+  fi
+  TEXT+="Do you want to change Config?"
+  dialog --backtitle "$(backtitle)" --title "Static IP" \
+      --yesno "${TEXT}" 0 0
+  [ $? -ne 0 ] && return 1
+  dialog --clear --backtitle "$(backtitle)" --title "Static IP" \
+    --menu "DHCP or STATIC?" 0 0 0 \
+      1 "DHCP" \
+      2 "STATIC" \
+    2>"${TMP_PATH}/opts"
+    opts="$(<"${TMP_PATH}/opts")"
+    [ -z "${opts}" ] && return 1
+    if [ ${opts} -eq 1 ]; then
+      echo -e "DEVICE=eth0\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=off" >"${TMP_PATH}/ifcfg-eth0"
+      writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
+    elif [ ${opts} -eq 2 ]; then
+      dialog --backtitle "$(backtitle)" --title "Static IP" \
+        --inputbox "Type a Static IP" 0 0 \
+        2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && return 1
+      IPADDR="$(<"${TMP_PATH}/resp")"
+      dialog --backtitle "$(backtitle)" --title "Static IP" \
+        --inputbox "Type a Netmask" 0 0 \
+        2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && return 1
+      NETMASK="$(<"${TMP_PATH}/resp")"
+      echo -e "DEVICE=eth0\nBOOTPROTO=static\nONBOOT=yes\nIPV6INIT=off\nIPADDR=${IPADDR}\nNETMASK=${NETMASK}" >"${TMP_PATH}/ifcfg-eth0"
+      writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
+    fi
+    dialog --backtitle "$(backtitle)" --title "Static IP" \
+      --yesno "Do you want to set this Config?" 0 0
+    [ $? -ne 0 ] && return 1
+    (
+      mkdir -p "${TMP_PATH}/sdX1"
+      for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
+        mount "${I}" "${TMP_PATH}/sdX1"
+        [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && cp -f "${TMP_PATH}/ifcfg-eth0" "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
+        sync
+        umount "${I}"
+      done
+      rm -rf "${TMP_PATH}/sdX1"
+    )
+    dialog --backtitle "$(backtitle)" --title "Static IP" --colors --aspect 18 \
+      --msgbox "IP Settings done!" 0 0
+}
+
+###############################################################################
 # allow downgrade dsm version
 function downgradeMenu() {
   TEXT=""
@@ -2284,6 +2351,7 @@ while true; do
       echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
       echo "t \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
+      echo ". \"Static IP Settings \" "                                                     >>"${TMP_PATH}/menu"
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
     if [ "${DEVOPTS}" = "true" ]; then
@@ -2381,6 +2449,7 @@ while true; do
       ;;
     s) downgradeMenu; NEXT="s" ;;
     t) resetPassword; NEXT="t" ;;
+    .) staticIPMenu; NEXT="." ;;
     # Dev Section
     9) [ "${DEVOPTS}" = "true" ] && DEVOPTS='false' || DEVOPTS='true'
       DEVOPTS="${DEVOPTS}"
