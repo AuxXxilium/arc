@@ -3,13 +3,13 @@ function getmap() {
   # Sata Disks
   if [ ${SATACONTROLLER} -gt 0 ]; then
     # Clean old files
-    rm -f "${TMP_PATH}/drivesmax"
+    [ -f "${TMP_PATH}/drivesmax" ] && rm -f "${TMP_PATH}/drivesmax"
     touch "${TMP_PATH}/drivesmax"
-    rm -f "${TMP_PATH}/drivescon"
+    [ -f "${TMP_PATH}/drivescon" ] && rm -f "${TMP_PATH}/drivescon"
     touch "${TMP_PATH}/drivescon"
-    rm -f "${TMP_PATH}/ports"
+    [ -f "${TMP_PATH}/ports" ] && rm -f "${TMP_PATH}/ports"
     touch "${TMP_PATH}ports"
-    rm -f "${TMP_PATH}/remap"
+    [ -f "${TMP_PATH}/remap" ] && rm -f "${TMP_PATH}/remap"
     touch "${TMP_PATH}/remap"
     # Do the work
     let DISKIDXMAPIDX=0
