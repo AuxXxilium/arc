@@ -2018,23 +2018,21 @@ function sysinfo() {
 ###############################################################################
 # allow setting Static IP for DSM
 function staticIPMenu() {
-  (
-    mkdir -p "${TMP_PATH}/sdX1"
-    for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
-      mount "${I}" "${TMP_PATH}/sdX1"
-      [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
-      umount "${I}"
-      break
-    done
-    rm -rf "${TMP_PATH}/sdX1"
-  )
+  mkdir -p "${TMP_PATH}/sdX1"
+  for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
+    mount "${I}" "${TMP_PATH}/sdX1"
+    [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
+    umount "${I}"
+    break
+  done
+  rm -rf "${TMP_PATH}/sdX1"
   TEXT=""
   TEXT+="This feature will allow you to set a static IP for eth0.\n"
   TEXT+="Actual Settings are:\n"
-  TEXT+="Mode: ${BOOTPROTO}"
+  TEXT+="Mode: ${BOOTPROTO}\n"
   if [ "${BOOTPROTO}" = "static" ]; then
-    TEXT+="IP: ${IPADDR}"
-    TEXT+="NETMASK: ${NETMASK}"
+    TEXT+="IP: ${IPADDR}\n"
+    TEXT+="NETMASK: ${NETMASK}\n"
   fi
   TEXT+="Do you want to change Config?"
   dialog --backtitle "$(backtitle)" --title "Static IP" \
@@ -2052,12 +2050,12 @@ function staticIPMenu() {
       writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
     elif [ ${opts} -eq 2 ]; then
       dialog --backtitle "$(backtitle)" --title "Static IP" \
-        --inputbox "Type a Static IP" 0 0 \
+        --inputbox "Type a Static IP" 0 0 "${IPADDR}" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
       IPADDR="$(<"${TMP_PATH}/resp")"
       dialog --backtitle "$(backtitle)" --title "Static IP" \
-        --inputbox "Type a Netmask" 0 0 \
+        --inputbox "Type a Netmask" 0 0 "${NETMASK}" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
       NETMASK="$(<"${TMP_PATH}/resp")"

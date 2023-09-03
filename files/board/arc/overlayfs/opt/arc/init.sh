@@ -178,16 +178,14 @@ echo
 
 # Get IP Config
 if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1 | wc -l) -gt 0 ]; then
-  (
-    mkdir -p "${TMP_PATH}/sdX1"
-    for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
-      mount "${I}" "${TMP_PATH}/sdX1"
-      [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
-      umount "${I}"
-      break
-    done
-    rm -rf "${TMP_PATH}/sdX1"
-  )
+  mkdir -p "${TMP_PATH}/sdX1"
+  for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
+    mount "${I}" "${TMP_PATH}/sdX1"
+    [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
+    umount "${I}"
+    break
+  done
+  rm -rf "${TMP_PATH}/sdX1"
   if [ "${BOOTPROTO}" = "static" ]; then
     writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
   else

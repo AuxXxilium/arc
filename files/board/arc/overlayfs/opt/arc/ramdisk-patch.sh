@@ -200,11 +200,7 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 # Network card configuration file
 STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
 if [ "${STATICIP}" = "false" ]; then
-  for N in $(seq 0 7); do
-    echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
-  done
-elif "${STATICIP}" = "true" ]; then
-  for N in $(seq 1 7); do
+  for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
   done
 fi
