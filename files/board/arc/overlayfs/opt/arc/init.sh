@@ -226,8 +226,8 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ -n "${IPADDR}" ]; then
       ip addr add "${IPADDR}" dev "${ETHX[${N}]}"
       SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-      echo -e "\r${DRIVER} (${SPEED}): Access \033[1;34mhttp://${IPADDR}:7681\033[0m to connect Arc via web."
-      break
+      echo -e "\r${DRIVER} (${SPEED}): Satic IP enabled"
+      IP="${IPADDR}"
     fi
     if [ -n "${IP}" ]; then
       SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')

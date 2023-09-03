@@ -1903,6 +1903,9 @@ function sysinfo() {
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${ETHXNUM} Adapter\Zn"
+  STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
+  if [ "${STATICIP}" = "static" ]; then
+    TEXT+="\n   Static IP for eth0 is set"
   for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     MAC="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
@@ -1912,6 +1915,9 @@ function sysinfo() {
         break
       fi
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+      if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ -n "${IPADDR}" ]; then
+        IP="${IPADDR}"
+      fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
         TEXT+="\n  ${DRIVER} (${SPEED}): \ZbIP: ${IP} | Mac: ${MAC}\Zn"

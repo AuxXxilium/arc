@@ -179,7 +179,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ -n "${IPADDR}" ]; then
         ip addr add "${IPADDR}" dev "${ETHX[${N}]}"
         SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-        echo -e "\r${DRIVER} (${SPEED}): Satic IP is set"
+        echo -e "\r${DRIVER} (${SPEED}): Satic IP enabled"
         IP="${IPADDR}"
       fi
       if [ -n "${IP}" ]; then
