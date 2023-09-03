@@ -177,7 +177,7 @@ fi
 echo
 
 # Get IP Config
-if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1) -gt 0 ]; then
+if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1 | wc -l) -gt 0 ]; then
   (
     mkdir -p "${TMP_PATH}/sdX1"
     for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
