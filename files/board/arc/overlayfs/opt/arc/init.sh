@@ -206,7 +206,7 @@ echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
 for N in $(seq 0 $((${#ETHX[@]} - 1))); do
   DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
   if [ "${N}" -eq "8" ]; then
-    echo -e "\r${ETHX[${N}]}(${DRIVER}): More than 8 NIC are not supported."
+    echo -e "\r${DRIVER}: More than 8 NIC are not supported."
     break
   fi
   COUNT=0
@@ -220,13 +220,14 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
     if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ -n "${IPADDR}" ]; then
       ip addr add "${IPADDR}" dev "${ETHX[${N}]}"
-      SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-      echo -e "\r${DRIVER} (${SPEED}): Satic IP for 1. NIC enabled"
       IP="${IPADDR}"
+      MSG="STATIC"
+    else
+      MSG="DHCP"
     fi
     if [ -n "${IP}" ]; then
       SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-      echo -e "\r${DRIVER} (${SPEED}): Access \033[1;34mhttp://${IP}:7681\033[0m to connect Arc via web."
+      echo -e "\r${DRIVER} (${SPEED} / ${MSG}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web."
       break
     fi
     COUNT=$((${COUNT} + 1))
