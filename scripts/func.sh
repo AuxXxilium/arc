@@ -180,5 +180,5 @@ function getPatches() {
   mkdir -p "${DEST_PATH}"
   unzip "${CACHE_FILE}" -d "${DEST_PATH}"
   rm -f "${CACHE_FILE}"
-  echo "Getting Configs end - ${TAG}"
+  echo "Getting Patches end - ${TAG}"
 }

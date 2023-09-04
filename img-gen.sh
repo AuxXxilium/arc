@@ -22,7 +22,7 @@ getAddons "files/board/arc/p3/addons"
 getExtensions "files/board/arc/p3/extensions"
 getModules "files/board/arc/p3/modules"
 getConfigs "files/board/arc/p3/configs"
-getPatches "files/board/arc/p3/patch"
+getPatches "files/board/arc/p3/patches"
 
 echo "Extractor, LKM, Addons and Modules loaded"
 
