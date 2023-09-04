@@ -1906,25 +1906,26 @@ function sysinfo() {
   STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
   if [ "${STATICIP}" = "static" ]; then
     TEXT+="\n   Static IP for eth0 is set"
-  for N in $(seq 0 $((${#ETHX[@]} - 1))); do
-    DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-    MAC="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
-    while true; do
-      if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
-        break
-      fi
-      IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
-      if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ -n "${IPADDR}" ]; then
-        IP="${IPADDR}"
-      fi
-      if [ -n "${IP}" ]; then
-        SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n  ${DRIVER} (${SPEED}): \ZbIP: ${IP} | Mac: ${MAC}\Zn"
-        break
-      fi
+    for N in $(seq 0 $((${#ETHX[@]} - 1))); do
+      DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+      MAC="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
+      while true; do
+        if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
+          TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
+          break
+        fi
+        IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+        if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ -n "${IPADDR}" ]; then
+          IP="${IPADDR}"
+        fi
+        if [ -n "${IP}" ]; then
+          SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
+          TEXT+="\n  ${DRIVER} (${SPEED}): \ZbIP: ${IP} | Mac: ${MAC}\Zn"
+          break
+        fi
+      done
     done
-  done
+  fi
   # Print Config Informations
   TEXT+="\n"
   TEXT+="\n\Z4> Arc: ${ARC_VERSION}\Zn"
@@ -1963,26 +1964,26 @@ function sysinfo() {
   # Get Information for Sata Controller
   NUMPORTS=0
   if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
-  TEXT+="\n  SATA:\n"
-  for PCI in $(lspci -d ::106 | awk '{print $1}'); do
-    NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-    TEXT+="\Zb  ${NAME}\Zn\n  Ports: "
-    PORTS=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
-    for P in ${PORTS}; do
-      if lsscsi -b | grep -v - | grep -q "\[${P}:"; then
-        DUMMY="$([ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ] && echo 1 || echo 2)"
-        if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ]; then
-          TEXT+="\Z1\Zb$(printf "%02d" ${P})\Zn "
+    TEXT+="\n  SATA:\n"
+    for PCI in $(lspci -d ::106 | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      TEXT+="\Zb  ${NAME}\Zn\n  Ports: "
+      PORTS=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      for P in ${PORTS}; do
+        if lsscsi -b | grep -v - | grep -q "\[${P}:"; then
+          DUMMY="$([ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ] && echo 1 || echo 2)"
+          if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ]; then
+            TEXT+="\Z1\Zb$(printf "%02d" ${P})\Zn "
+          else
+            TEXT+="\Z2\Zb$(printf "%02d" ${P})\Zn "
+            NUMPORTS=$((${NUMPORTS} + 1))
+          fi
         else
-          TEXT+="\Z2\Zb$(printf "%02d" ${P})\Zn "
-          NUMPORTS=$((${NUMPORTS} + 1))
+          TEXT+="\Zb$(printf "%02d" ${P})\Zn "
         fi
-      else
-        TEXT+="\Zb$(printf "%02d" ${P})\Zn "
-      fi
+      done
+      TEXT+="\n"
     done
-    TEXT+="\n"
-  done
   fi
   if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
     TEXT+="\n  SAS/SCSI:\n"
