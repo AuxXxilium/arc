@@ -219,6 +219,7 @@ function arcMenu() {
     if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+      rm -f "${CACHE_PATH}/bootcount"
     fi
   fi
   arcbuild
@@ -249,6 +250,7 @@ function arcbuild() {
       if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
         # Delete old files
         rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+        rm -f "${CACHE_PATH}/bootcount"
       fi
     fi
   fi
@@ -530,6 +532,7 @@ function make() {
   writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  [ -f "${CACHE_PATH}/bootcount" ] && rm -f "${CACHE_PATH}/bootcount"
   # Ask for Boot
   dialog --clear --backtitle "$(backtitle)" \
     --menu "Build done. Boot now?" 0 0 0 \

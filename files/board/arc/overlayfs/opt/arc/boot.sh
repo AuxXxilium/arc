@@ -149,21 +149,38 @@ DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 
-# Get IP Config
-if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1 | wc -l) -gt 0 ]; then
-  mkdir -p "${TMP_PATH}/sdX1"
-  for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
-    mount "${I}" "${TMP_PATH}/sdX1"
-    [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
-    umount "${I}"
-    break
-  done
-  rm -rf "${TMP_PATH}/sdX1"
-  if [ "${BOOTPROTO}" = "static" ]; then
-    writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
-  else
-    writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
+# Bootcount
+if [ ! -f "${CACHE_PATH}/bootcount" ]; then
+  BOOTCOUNT=0
+  echo "${BOOTCOUNT}" >"${CACHE_PATH}/bootcount"
+else
+  BOOTCOUNT=$(cat "${CACHE_PATH}/bootcount")
+  BOOTCOUNT=$(( ${BOOTCOUNT} + 1 ))
+  rm -f "${CACHE_PATH}/bootcount"
+  echo "${BOOTCOUNT}" >"${CACHE_PATH}/bootcount"
+fi
+
+if [ ${BOOTCOUNT} -gt 0 ]; then
+  # Get IP Config
+  if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1 | wc -l) -gt 0 ]; then
+    mkdir -p "${TMP_PATH}/sdX1"
+    for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
+      mount "${I}" "${TMP_PATH}/sdX1"
+      [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
+      umount "${I}"
+      break
+    done
+    rm -rf "${TMP_PATH}/sdX1"
+    if [ "${BOOTPROTO}" = "static" ]; then
+      writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
+      echo -e "\033[1;34mDSM installed -> Enable Static IP\033[0m"
+    else
+      writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
+      echo -e "\033[1;34mDSM installed -> Enable DHCP\033[0m"
+    fi
   fi
+else
+  echo -e "\033[1;34mDSM not installed -> Enable DHCP\033[0m"
 fi
 
 # Make Directboot persistent if DSM is installed
@@ -198,7 +215,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       fi
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
       STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
-      if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ -n "${IPADDR}" ]; then
+      if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ -n "${IPADDR}" ] && [ ${BOOTCOUNT} -gt 0 ]; then
         ip addr add "${IPADDR}" dev "${ETHX[${N}]}"
         IP="${IPADDR}"
         MSG="STATIC"
