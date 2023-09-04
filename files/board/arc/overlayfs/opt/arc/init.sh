@@ -176,6 +176,17 @@ if [ -f "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" ]; then
 fi
 echo
 
+# Decide if boot automatically
+if grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
+  echo -e "\033[1;34mUser requested edit settings.\033[0m"
+elif [ "${BUILDDONE}" = "true" ]; then
+  echo -e "\033[1;34mLoader is configured!\033[0m"
+  boot.sh && exit 0
+else
+  echo -e "\033[1;34mUser requested edit settings.\033[0m"
+fi
+echo
+
 # Get IP Config
 if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1 | wc -l) -gt 0 ]; then
   mkdir -p "${TMP_PATH}/sdX1"
@@ -192,17 +203,6 @@ if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1 | wc -l) -gt 0 ]; then
     writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
   fi
 fi
-
-# Decide if boot automatically
-if grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
-  echo -e "\033[1;34mUser requested edit settings.\033[0m"
-elif [ "${BUILDDONE}" = "true" ]; then
-  echo -e "\033[1;34mLoader is configured!\033[0m"
-  boot.sh && exit 0
-else
-  echo -e "\033[1;34mUser requested edit settings.\033[0m"
-fi
-echo
 
 # Wait for an IP
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
