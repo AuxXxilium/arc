@@ -182,21 +182,28 @@ else
 fi
 echo
 
-# Get IP Config
-if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1 | wc -l) -gt 0 ]; then
-  mkdir -p "${TMP_PATH}/sdX1"
-  for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
-    mount "${I}" "${TMP_PATH}/sdX1"
-    [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
-    umount "${I}"
-    break
-  done
-  rm -rf "${TMP_PATH}/sdX1"
-  if [ "${BOOTPROTO}" = "static" ]; then
-    writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
-  else
-    writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
+BOOTCOUNT=$(cat "${CACHE_PATH}/bootcount")
+if [ ${BOOTCOUNT} -gt 0 ]; then
+  # Get IP Config
+  if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1 | wc -l) -gt 0 ]; then
+    mkdir -p "${TMP_PATH}/sdX1"
+    for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
+      mount "${I}" "${TMP_PATH}/sdX1"
+      [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
+      umount "${I}"
+      break
+    done
+    rm -rf "${TMP_PATH}/sdX1"
+    if [ "${BOOTPROTO}" = "static" ]; then
+      writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
+      echo -e "\033[1;34mDSM installed -> Enable Static IP\033[0m"
+    else
+      writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
+      echo -e "\033[1;34mDSM installed -> Enable DHCP\033[0m"
+    fi
   fi
+else
+  echo -e "\033[1;34mDSM not installed or in Recovery Mode -> Enable DHCP\033[0m"
 fi
 
 # Wait for an IP
@@ -218,7 +225,7 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     fi
     IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
     STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
-    if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ -n "${IPADDR}" ]; then
+    if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ -n "${IPADDR}" ] && [ ${BOOTCOUNT} -gt 0 ]; then
       ip addr add "${IPADDR}" dev "${ETHX[${N}]}"
       IP="${IPADDR}"
       MSG="STATIC"
@@ -227,7 +234,7 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     fi
     if [ -n "${IP}" ]; then
       SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-      echo -e "\r${DRIVER} (${SPEED} / ${MSG}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web."
+      echo -e "\r${DRIVER} (${SPEED} / ${MSG}): Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
       break
     fi
     COUNT=$((${COUNT} + 1))

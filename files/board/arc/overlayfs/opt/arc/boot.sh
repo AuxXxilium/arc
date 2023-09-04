@@ -180,7 +180,7 @@ if [ ${BOOTCOUNT} -gt 0 ]; then
     fi
   fi
 else
-  echo -e "\033[1;34mDSM not installed -> Enable DHCP\033[0m"
+  echo -e "\033[1;34mDSM not installed  or in Recovery Mode -> Enable DHCP\033[0m"
 fi
 
 # Make Directboot persistent if DSM is installed
@@ -224,7 +224,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-        echo -e "\r${DRIVER} (${SPEED} / ${MSG}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect the DSM via web."
+        echo -e "\r${DRIVER} (${SPEED} / ${MSG}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
         break
       fi
       COUNT=$((${COUNT} + 1))
@@ -265,7 +265,7 @@ kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDL
 echo -e "\033[1;37m"Booting DSM..."\033[0m"
 for T in $(w | grep -v "TTY" | awk -F' ' '{print $2}')
 do
-  echo -e "\n\033[1;37mThis interface will not be operational. Please use \033[1;34mhttp://find.synology.com/ \033[1;37mto find DSM and connect.\033[0m\n" >"/dev/${T}" 2>/dev/null || true
+  echo -e "\n\033[1;37mThis interface will not be operational. Please use \033[1;34mhttps://finds.synology.com/ \033[1;37mto find DSM and connect.\033[0m\n" >"/dev/${T}" 2>/dev/null || true
 done
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 [ "${KERNELLOAD}" = "kexec" ] && kexec -f -e || poweroff
