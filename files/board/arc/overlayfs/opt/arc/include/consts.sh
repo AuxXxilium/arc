@@ -3,6 +3,8 @@ ARC_VERSION="23.1.1"
 ARC_TITLE="Arc ${ARC_VERSION}"
 
 # Define paths
+INCLUDE_PATH="/opt/arc/include"
+
 TMP_PATH="/tmp"
 UNTAR_PAT_PATH="${CACHE_PATH}/dsm"
 RAMDISK_PATH="${TMP_PATH}/ramdisk"
@@ -28,9 +30,6 @@ LKM_PATH="${CACHE_PATH}/lkms"
 MODULES_PATH="${CACHE_PATH}/modules"
 USER_UP_PATH="${CACHE_PATH}/users"
 MODEL_CONFIG_PATH="${CACHE_PATH}/configs"
-
-INCLUDE_PATH="/opt/arc/include"
-PATCH_PATH="/opt/arc/patch"
-
+PATCH_PATH="${CACHE_PATH}/patches"
 EXTRACTOR_PATH="${CACHE_PATH}/extractor"
 EXTRACTOR_BIN="syno_extract_system_patch"

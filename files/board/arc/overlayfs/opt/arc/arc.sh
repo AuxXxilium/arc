@@ -1507,10 +1507,11 @@ function updateMenu() {
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
       1 "Full Upgrade Loader" \
       2 "Update Loader Addons" \
-      3 "Update DSM Extensions" \
-      4 "Update DSM Modules" \
-      5 "Update DSM Configs" \
-      6 "Update Loader LKMs" \
+      3 "Update Loader Patches" \
+      4 "Update DSM Extensions" \
+      5 "Update DSM Modules" \
+      6 "Update DSM Configs" \
+      7 "Update Loader LKMs" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     case "$(<"${TMP_PATH}/resp")" in
@@ -1636,6 +1637,48 @@ function updateMenu() {
         ;;
       3)
         # Ask for Tag
+        dialog --clear --backtitle "$(backtitle)" --title "Update Loader Patches" \
+          --menu "Which Version?" 0 0 0 \
+          1 "Latest" \
+          2 "Select Version" \
+        2>"${TMP_PATH}/opts"
+        opts="$(<"${TMP_PATH}/opts")"
+        [ -z "${opts}" ] && return 1
+        if [ ${opts} -eq 1 ]; then
+          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+            dialog --backtitle "$(backtitle)" --title "Update Loader Patches" --aspect 18 \
+              --msgbox "Error checking new version" 0 0
+            return 1
+          fi
+        elif [ ${opts} -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Update Loader Patches" \
+          --inputbox "Type the Version!" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG="$(<"${TMP_PATH}/input")"
+          [ -z "${TAG}" ] && continue
+        fi
+        dialog --backtitle "$(backtitle)" --title "Update Loader Patches" --aspect 18 \
+          --infobox "Downloading ${TAG}" 0 0
+        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip")
+        if [ $? -ne 0 ] || [] ${STATUS} -ne 200 ]; then
+          dialog --backtitle "$(backtitle)" --title "Update Loader Patches" --aspect 18 \
+            --msgbox "Error downloading" 0 0
+          return 1
+        fi
+        dialog --backtitle "$(backtitle)" --title "Update Loader Patches" --aspect 18 \
+          --infobox "Extracting" 0 0
+        rm -rf "${PATCH_PATH}"
+        mkdir -p "${PATCH_PATH}"
+        unzip -oq "${TMP_PATH}/patches.zip" -d "${PATCH_PATH}" >/dev/null 2>&1
+        rm -f "${TMP_PATH}/patches.zip"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "$(backtitle)" --title "Update Loader Patches" --aspect 18 \
+          --msgbox "Patches updated with success! ${TAG}" 0 0
+        ;;
+      4)
+        # Ask for Tag
         dialog --clear --backtitle "$(backtitle)" --title "Update DSM Extensions" \
           --menu "Which Version?" 0 0 0 \
           1 "Latest" \
@@ -1685,7 +1728,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update DSM Extensions" --aspect 18 \
           --msgbox "Extensions updated with success! ${TAG}" 0 0
         ;;
-      4)
+      5)
         # Ask for Tag
         dialog --clear --backtitle "$(backtitle)" --title "Update DSM Modules" \
           --menu "Which Version?" 0 0 0 \
@@ -1738,7 +1781,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update DSM Modules" --aspect 18 \
           --msgbox "Modules updated to ${TAG} with success!" 0 0
         ;;
-      5)
+      6)
         # Ask for Tag
         dialog --clear --backtitle "$(backtitle)" --title "Update DSM Configs" \
           --menu "Which Version?" 0 0 0 \
@@ -1780,7 +1823,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update DSM Configs" --aspect 18 \
           --msgbox "Configs updated with success! ${TAG}" 0 0
         ;;
-      6)
+      7)
         # Ask for Tag
         dialog --clear --backtitle "$(backtitle)" --title "Update Loader LKMs" \
           --menu "Which Version?" 0 0 0 \
@@ -1895,6 +1938,7 @@ function sysinfo() {
   EXTENSIONSVERSION="$(cat "${EXTENSIONS_PATH}/VERSION")"
   LKMVERSION="$(cat "${LKM_PATH}/VERSION")"
   CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
+  PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")"
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4> System: ${MACHINE}\Zn"
@@ -1929,7 +1973,7 @@ function sysinfo() {
   # Print Config Informations
   TEXT+="\n"
   TEXT+="\n\Z4> Arc: ${ARC_VERSION}\Zn"
-  TEXT+="\n  Subversion Loader: \ZbAddons ${ADDONSVERSION} | LKM ${LKMVERSION}\Zn"
+  TEXT+="\n  Subversion Loader: \ZbAddons ${ADDONSVERSION} | LKM ${LKMVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Subversion DSM: \ZbModules ${MODULESVERSION} | Extensions ${EXTENSIONSVERSION} | Configs ${CONFIGSVERSION}\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4>> DSM ${PRODUCTVER}: ${MODEL}\Zn"

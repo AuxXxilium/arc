@@ -164,14 +164,21 @@ function getConfigs() {
   echo "Getting Configs end - ${TAG}"
 }
 
-
-
-
-
-
-
-
-
-
-
-
+# Get latest Patches
+# $1 path
+function getPatches() {
+  echo "Getting Patches begin"
+  local DEST_PATH="${1:-patches}"
+  local CACHE_FILE="/tmp/patches.zip"
+  rm -f "${CACHE_FILE}"
+  TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${CACHE_FILE}")
+  echo "TAG=${TAG}; Status=${STATUS}"
+  [ ${STATUS} -ne 200 ] && exit 1
+  # Unzip Modules
+  rm -rf "${DEST_PATH}"
+  mkdir -p "${DEST_PATH}"
+  unzip "${CACHE_FILE}" -d "${DEST_PATH}"
+  rm -f "${CACHE_FILE}"
+  echo "Getting Configs end - ${TAG}"
+}
