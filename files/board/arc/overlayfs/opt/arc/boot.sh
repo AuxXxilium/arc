@@ -216,7 +216,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     BOOTWAIT=$((BOOTWAIT - 1))
   done
   rm -f WB WC
-  echo -en "\r$(printf "%${#MSG}s" " ")\n"
+  echo -en "\r$(printf "%$((${#MSG} * 3))s" " ")\n"
 fi
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
