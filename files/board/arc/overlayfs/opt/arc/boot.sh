@@ -109,8 +109,8 @@ CMDLINE["netif_num"]=${NETIF_NUM}
 ETHXNUM=$(ls /sys/class/net/ | grep eth | wc -l) # Amount of NIC
 ETHX=($(ls /sys/class/net/ | grep eth))  # Real NIC List
 if [ ${ETHXNUM} -gt 8 ]; then
-  ETHX=8
-  echo -e "\033[0;31m*** WARNING: More than 8 NIC are not supported.***\033[0m"
+  ETHXNUM=8
+  echo -e "\033[0;31m*** WARNING: More than 8 NIC are not supported! ***\033[0m"
 fi
 # set missing mac to cmdline if needed
 if [ ${NETIF_NUM} -ne ${ETHXNUM} ]; then
@@ -147,7 +147,6 @@ echo
 
 # Grep Config Values
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 
 # Read Bootcount
