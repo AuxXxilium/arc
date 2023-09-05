@@ -218,10 +218,6 @@ BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
 for N in $(seq 0 $((${#ETHX[@]} - 1))); do
   DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-  if [ "${N}" -eq "8" ]; then
-    echo -e "\r${DRIVER}: More than 8 NIC are not supported."
-    break
-  fi
   COUNT=0
   sleep 3
   while true; do
@@ -267,11 +263,14 @@ if [ ${RAM} -le 3500 ]; then
 fi
 
 mkdir -p "${ADDONS_PATH}"
-mkdir -p "${LKM_PATH}"
+mkdir -p "${EXTENSIONS_PATH}"
 mkdir -p "${MODULES_PATH}"
+mkdir -p "${MODEL_CONFIG_PATH}"
+mkdir -p "${PATCHES_PATH}"
+mkdir -p "${LKM_PATH}"
 
 # Load arc
 install-addons.sh
 install-extensions.sh
-sleep 5
+sleep 3
 arc.sh

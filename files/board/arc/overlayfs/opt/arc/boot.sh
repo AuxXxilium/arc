@@ -173,10 +173,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
   for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-    if [ "${N}" -eq "8" ]; then
-      echo -e "\r${DRIVER}: More than 8 NIC are not supported."
-      break
-    fi
     COUNT=0
     sleep 3
     while true; do
