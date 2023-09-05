@@ -35,7 +35,6 @@ LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 UNIQUE=$(readModelKey "${MODEL}" "unique")
 PLATFORM="$(readModelKey "${MODEL}" "platform")"
-STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
 
 # Check if DSM Version changed
 . "${RAMDISK_PATH}/etc/VERSION"
@@ -159,15 +158,15 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # Required addons: misc, eudev, disks, wol, acpid, bootwait
 installAddon eudev
-echo "/addons/eudev.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+echo "/addons/eudev.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon disks
-echo "/addons/disks.sh \${1} ${DT} ${UNIQUE}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+echo "/addons/disks.sh \${1} ${DT} ${UNIQUE}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon localrss
 echo "/addons/localrss.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon misc
-echo "/addons/misc.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+echo "/addons/misc.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon wol
-echo "/addons/wol.sh \${1} " >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+echo "/addons/wol.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 
 # User Addons
 for ADDON in ${!ADDONS[@]}; do
@@ -176,7 +175,7 @@ for ADDON in ${!ADDONS[@]}; do
     echo -n "${ADDON} is not available for this Platform!" | tee -a "${LOG_FILE}"
     exit 1
   fi
-  echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+  echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 done
 
 # User Extensions
@@ -186,7 +185,7 @@ for EXTENSION in ${!EXTENSIONS[@]}; do
     echo -n "${EXTENSION} is not available for this Platform!" | tee -a "${LOG_FILE}"
     exit 1
   fi
-  echo "/addons/${EXTENSION}.sh \${1} ${PARAMS}" >> "${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+  echo "/addons/${EXTENSION}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 done
 
 # Enable Telnet
@@ -198,12 +197,10 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 /opt/arc/depmod -a -b "${RAMDISK_PATH}" 2>/dev/null
 
 # Network card configuration file
-STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
-if [ "${STATICIP}" = "false" ]; then
-  for N in $(seq 0 $((${#ETHX[@]} - 1))); do
-    echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
-  done
-fi
+ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
+for N in $(seq 0 $((${#ETHX[@]} - 1))); do
+  echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=off" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
+done
 
 # Reassembly ramdisk
 if [ "${RD_COMPRESSED}" == "true" ]; then

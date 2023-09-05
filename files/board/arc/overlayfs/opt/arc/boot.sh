@@ -145,55 +145,27 @@ CMDLINE_DIRECT=$(echo ${CMDLINE_DIRECT} | sed 's/>/\\\\>/g')
 echo -e "Cmdline:\n\033[1;37m${CMDLINE_LINE}\033[0m"
 echo
 
+# Grep Config Values
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 
-# Bootcount
-if [ ! -f "${CACHE_PATH}/bootcount" ]; then
-  BOOTCOUNT=0
-  echo "${BOOTCOUNT}" >"${CACHE_PATH}/bootcount"
-else
-  BOOTCOUNT=$(cat "${CACHE_PATH}/bootcount")
-  BOOTCOUNT=$(( ${BOOTCOUNT} + 1 ))
-  rm -f "${CACHE_PATH}/bootcount"
-  echo "${BOOTCOUNT}" >"${CACHE_PATH}/bootcount"
-fi
-
-if [ ${BOOTCOUNT} -gt 0 ]; then
-  # Get IP Config
-  if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1 | wc -l) -gt 0 ]; then
-    mkdir -p "${TMP_PATH}/sdX1"
-    for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
-      mount "${I}" "${TMP_PATH}/sdX1"
-      [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
-      umount "${I}"
-      break
-    done
-    rm -rf "${TMP_PATH}/sdX1"
-    if [ "${BOOTPROTO}" = "static" ]; then
-      writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
-      echo -e "\033[1;34mDSM installed -> Enable Static IP\033[0m"
-    else
-      writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
-      echo -e "\033[1;34mDSM installed -> Enable DHCP\033[0m"
-    fi
-  fi
-else
-  echo -e "\033[1;34mDSM not installed  or in Recovery Mode -> Enable DHCP\033[0m"
-fi
+# Read Bootcount
+BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 
 # Make Directboot persistent if DSM is installed
-if [ "${DIRECTBOOT}" = "true" ] && [ "${DIRECTDSM}" = "true" ]; then
+if [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
     grub-editenv ${GRUB_PATH}/grubenv set default="direct"
-    echo -e "\033[1;34mEnable Directboot - DirectDSM\033[0m"
-    echo -e "\033[1;34mDSM installed - Reboot with Directboot\033[0m"
+    BOOTCOUNT=$((${BOOTCOUNT} + 1))
+    writeConfigKey "arc.bootcount" "{BOOTCOUNT}" "${USER_CONFIG_FILE}"
+    echo -e "\033[1;34mDSM installed - Make Directboot persistent\033[0m"
     exec reboot
-elif [ "${DIRECTBOOT}" = "true" ] && [ "${DIRECTDSM}" = "false" ]; then
+elif [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -eq 0 ]; then
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
     grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
-    writeConfigKey "arc.directdsm" "true" "${USER_CONFIG_FILE}"
+    BOOTCOUNT=$((${BOOTCOUNT} + 1))
+    writeConfigKey "arc.bootcount" "{BOOTCOUNT}" "${USER_CONFIG_FILE}"
     echo -e "\033[1;34mDSM not installed - Reboot with Directboot\033[0m"
     exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
@@ -215,9 +187,9 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       fi
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
       STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
-      if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ -n "${IPADDR}" ] && [ ${BOOTCOUNT} -gt 0 ]; then
-        ip addr add "${IPADDR}" dev "${ETHX[${N}]}"
-        IP="${IPADDR}"
+      if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
+        IP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
+        ip addr add "${IP}" dev "${ETHX[${N}]}"
         MSG="STATIC"
       else
         MSG="DHCP"
@@ -244,11 +216,11 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
   while test ${BOOTWAIT} -ge 0; do
-    MSG="$(printf "%2ds (accessing Arc will interrupt boot)" "${BOOTWAIT}")"
+    MSG="$(printf "%2ds (Accessing Arc will interrupt Boot)" "${BOOTWAIT}")"
     echo -en "\r${MSG}"
     w | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
     if ! diff WB WC >/dev/null 2>&1; then
-      echo -en "\rA new access is connected, the boot process is interrupted.\n"
+      echo -en "\rA new access is connected, Boot is interrupted.\n"
       rm -f WB WC
       exit 0
     fi
@@ -259,6 +231,10 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo -en "\r$(printf "%$((${#MSG} * 3))s" " ")\n"
 fi
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
+
+# Write new Bootcount
+BOOTCOUNT=$((${BOOTCOUNT} + 1))
+writeConfigKey "arc.bootcount" "{BOOTCOUNT}" "${USER_CONFIG_FILE}"
 
 # Executes DSM kernel via KEXEC
 kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog

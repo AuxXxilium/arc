@@ -61,7 +61,7 @@ fi
 
 # Get Arc Data from Config
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
+BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
@@ -72,11 +72,6 @@ NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 NOTSETWOL="$(readConfigKey "arc.notsetwol" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
-
-# Reset DirectDSM if User boot to Config
-if [ "${DIRECTBOOT}" = "true" ] && [ "${DIRECTDSM}" = "true" ]; then
-  writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
-fi
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -408,18 +403,19 @@ function make() {
     # Check zImage Hash
     ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}')"
     ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
-    if [ "${ZIMAGE_HASH}" = "${ZIMAGE_HASH_CUR}" ]; then
-      NEWIMAGE="false"
-    fi
     # Check Ramdisk Hash
     RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')"
     RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
-    if [ "${RAMDISK_HASH}" = "${RAMDISK_HASH_CUR}" ]; then
+    if [ "${ZIMAGE_HASH}" = "${ZIMAGE_HASH_CUR}" ] && [ "${RAMDISK_HASH}" = "${RAMDISK_HASH_CUR}" ]; then
       NEWIMAGE="false"
+    else
+      NEWIMAGE="true"
     fi
+  else
+    NEWIMAGE="true"
   fi
   # Build if NEWIMAGE is not falses
-  if [ "${NEWIMAGE}" != "false" ]; then
+  if [ "${NEWIMAGE}" = "true" ]; then
     # Clean old files
     rm -rf "${UNTAR_PAT_PATH}"
     rm -rf "${CACHE_PATH}/${MODEL}/${PRODUCTVER}"
@@ -495,14 +491,18 @@ function make() {
       mkdir -p "${UNTAR_PAT_PATH}"
       tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
     fi
-    # Copy DSM Files to locations
-    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
+    # Copy DSM Files to Locations if DSM Files not found
     if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+      #cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
+      #cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
       cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
       cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
+      # Reset Bootcount if User rebuild DSM
+      if [ ${BOOTCOUNT} -gt 0 ]; then
+        writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
+      fi
     fi
   fi
   # Update PAT Info for Update
@@ -526,13 +526,11 @@ function make() {
       --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 0 0
     return 1
   fi
-  echo "Ready!"
+  echo "DSM Files patched - Ready!"
   sleep 3
   # Build is done
-  writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  [ -f "${CACHE_PATH}/bootcount" ] && rm -f "${CACHE_PATH}/bootcount"
   # Ask for Boot
   dialog --clear --backtitle "$(backtitle)" \
     --menu "Build done. Boot now?" 0 0 0 \
@@ -1910,7 +1908,7 @@ function sysinfo() {
     REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-    DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
+    BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
     USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
     LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1983,8 +1981,9 @@ function sysinfo() {
   TEXT+="\n   Kernel | Platform | LKM: \Zb${KVER} | ${PLATFORM} | ${LKM}\Zn"
   TEXT+="\n\Z4>> Loader\Zn"
   TEXT+="\n   Arcpatch | Kernelload: \Zb${ARCPATCH} | ${KERNELLOAD}\Zn"
-  TEXT+="\n   Directboot | DirectDSM: \Zb${DIRECTBOOT} | ${DIRECTDSM}\Zn"
+  TEXT+="\n   Directboot: \Zb${DIRECTBOOT}\Zn"
   TEXT+="\n   Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
+  TEXT+="\n   BOOTCOUNT: \Zb${BOOTCOUNT}\Zn"
   TEXT+="\n\Z4>> Extensions\Zn"
   TEXT+="\n   Loader Addons selected: \Zb${ADDONSINFO}\Zn"
   TEXT+="\n   DSM Extensions selected: \Zb${EXTENSIONSINFO}\Zn"
@@ -2389,8 +2388,8 @@ while true; do
         echo "- \"Boot Waittime: \Z4${BOOTWAIT}\Zn \" "                                     >>"${TMP_PATH}/menu"
       fi
       echo "q \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
-      if [ "${DIRECTBOOT}" = "true" ] && [ "${DIRECTDSM}" = "true" ]; then
-        echo "r \"Reset DirectDSM: \Z4${DIRECTDSM}\Zn \" "                                  >>"${TMP_PATH}/menu"
+      if [ ${BOOTCOUNT} -gt 0 ]; then
+        echo "r \"Reset Bootcount: \Z4${BOOTCOUNT}\Zn \" "                                  >>"${TMP_PATH}/menu"
       fi
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
@@ -2486,12 +2485,12 @@ while true; do
     -) bootwaittime; NEXT="-" ;;
     q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
       NEXT="q"
       ;;
     r)
-      writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
-      DIRECTDSM="$(readConfigKey "arc.directdsm" "${USER_CONFIG_FILE}")"
+      writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
+      BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
       NEXT="r"
       ;;
     # DSM Section

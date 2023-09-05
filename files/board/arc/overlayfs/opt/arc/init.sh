@@ -81,7 +81,6 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.directdsm" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
@@ -92,12 +91,17 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.notsetmac" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.notsetwol" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 fi
 
+# Grep Config Values
 NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 NOTSETWOL="$(readConfigKey "arc.notsetwol" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+
+# Init Network
 ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
 # No network devices
 [ ${#ETHX[@]} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
@@ -182,25 +186,27 @@ else
 fi
 echo
 
-BOOTCOUNT=$(cat "${CACHE_PATH}/bootcount")
+# Read Bootcount
+BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 if [ ${BOOTCOUNT} -gt 0 ]; then
-  # Get IP Config
-  if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1 | wc -l) -gt 0 ]; then
-    mkdir -p "${TMP_PATH}/sdX1"
-    for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
-      mount "${I}" "${TMP_PATH}/sdX1"
-      [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
-      umount "${I}"
-      break
-    done
-    rm -rf "${TMP_PATH}/sdX1"
-    if [ "${BOOTPROTO}" = "static" ]; then
-      writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
-      echo -e "\033[1;34mDSM installed -> Enable Static IP\033[0m"
-    else
-      writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
-      echo -e "\033[1;34mDSM installed -> Enable DHCP\033[0m"
-    fi
+# Get IP Config
+if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1 | wc -l) -gt 0 ]; then
+  mkdir -p "${TMP_PATH}/sdX1"
+  for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
+    mount "${I}" "${TMP_PATH}/sdX1"
+    [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
+    umount "${I}"
+    break
+  done
+  rm -rf "${TMP_PATH}/sdX1"
+  if [ "${BOOTPROTO}" = "static" ]; then
+    writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.ip" "${IPADDR}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.netmask" "${NETMASK}" "${USER_CONFIG_FILE}"
+    echo -e "\033[1;34mDSM installed -> Enable Static IP\033[0m"
+  else
+    writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
+    echo -e "\033[1;34mDSM installed -> Enable DHCP\033[0m"
   fi
 else
   echo -e "\033[1;34mDSM not installed or in Recovery Mode -> Enable DHCP\033[0m"
@@ -225,9 +231,9 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     fi
     IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
     STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
-    if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ -n "${IPADDR}" ] && [ ${BOOTCOUNT} -gt 0 ]; then
-      ip addr add "${IPADDR}" dev "${ETHX[${N}]}"
-      IP="${IPADDR}"
+    if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
+      IP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
+      ip addr add "${IP}" dev "${ETHX[${N}]}"
       MSG="STATIC"
     else
       MSG="DHCP"
@@ -267,5 +273,5 @@ mkdir -p "${MODULES_PATH}"
 # Load arc
 install-addons.sh
 install-extensions.sh
-sleep 3
+sleep 5
 arc.sh
