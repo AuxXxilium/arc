@@ -237,7 +237,7 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     fi
     if [ -n "${IP}" ]; then
       SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-      echo -e "\r${DRIVER} (${SPEED} / ${MSG}): Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
+      echo -e "\r${DRIVER} (${SPEED} | ${MSG}): Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
       break
     fi
     COUNT=$((${COUNT} + 1))

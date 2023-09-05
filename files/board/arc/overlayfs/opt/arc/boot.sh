@@ -191,7 +191,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-        echo -e "\r${DRIVER} (${SPEED} / ${MSG}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
+        echo -e "\r${DRIVER} (${SPEED} | ${MSG}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
         break
       fi
       COUNT=$((${COUNT} + 1))

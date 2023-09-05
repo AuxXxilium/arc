@@ -1895,7 +1895,6 @@ function networkMenu() {
 function sysinfo() {
   # Checks for Systeminfo Menu
   CPUINFO="$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')"
-  CPUCORES="$(awk -F: '/model name/ {core++} END {print core}' /proc/cpuinfo)"
   # Check if machine has EFI
   [ -d /sys/firmware/efi ] && BOOTSYS="EFI" || BOOTSYS="Legacy"
   VENDOR="$(dmidecode -s system-product-name)"
@@ -1905,35 +1904,25 @@ function sysinfo() {
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
     PLATFORM="$(readModelKey "${MODEL}" "platform")"
     KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-    REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-    DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-    BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
-    USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
-    LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
-    MODULESINFO=""
-    KOLIST=""
-    for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
-      KOLIST+="$(getdepends ${PLATFORM} ${KVER} ${I}) ${I} "
-    done
-    KOLIST=($(echo ${KOLIST} | tr ' ' '\n' | sort -u))
-    for ID in ${KOLIST[@]}; do
-      MODULESINFO+="${ID} "
-    done
-  fi
-  IPLIST="$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')"
-  if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
-    PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
-    DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
-  elif [ "${REMAP}" = "remap" ]; then
-    PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
-  fi
-  if [ "${CONFDONE}" = "true" ]; then
     ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
     EXTENSIONSINFO="$(readConfigEntriesArray "extensions" "${USER_CONFIG_FILE}")"
+    REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
+    if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
+      PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
+      DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
+    elif [ "${REMAP}" = "remap" ]; then
+      PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
+    fi
   fi
+  DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
+  BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
+  STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
+  USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
+  LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
+  MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
   MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")"
   ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")"
   EXTENSIONSVERSION="$(cat "${EXTENSIONS_PATH}/VERSION")"
@@ -1944,33 +1933,38 @@ function sysinfo() {
   # Print System Informations
   TEXT+="\n\Z4> System: ${MACHINE}\Zn"
   TEXT+="\n  Vendor | Boot: \Zb${VENDOR} | ${BOOTSYS}\Zn"
-  TEXT+="\n  CPU | Threads: \Zb${CPUINFO} | ${CPUCORES}\Zn"
+  TEXT+="\n  CPU: \Zb${CPUINFO}\Zn"
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${ETHXNUM} Adapter\Zn"
-  STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
-  if [ "${STATICIP}" = "static" ]; then
-    TEXT+="\n   Static IP for eth0 is set"
-    for N in $(seq 0 $((${#ETHX[@]} - 1))); do
-      DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-      MAC="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
-      while true; do
-        if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
-          TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
-          break
-        fi
-        IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
-        if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ -n "${IPADDR}" ]; then
-          IP="${IPADDR}"
-        fi
-        if [ -n "${IP}" ]; then
-          SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-          TEXT+="\n  ${DRIVER} (${SPEED}): \ZbIP: ${IP} | Mac: ${MAC}\Zn"
-          break
-        fi
-      done
+  for N in $(seq 0 $((${#ETHX[@]} - 1))); do
+    DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    MAC="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
+    while true; do
+      if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
+        TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
+        break
+      fi
+      IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+      if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
+        IP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
+        MSG="STATIC"
+      else
+        MSG="DHCP"
+      fi
+      if [ -n "${IP}" ]; then
+        SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
+        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}): \ZbIP: ${IP} | Mac: ${MAC}\Zn"
+        break
+      fi
+      COUNT=$((${COUNT} + 1))
+      if [ ${COUNT} -eq 3 ]; then
+        TEXT+="\n  ${DRIVER}: \ZbIP: TIMEOUT| MAC: ${MAC}\Zn"
+        break
+      fi
+      sleep 1
     done
-  fi
+  done
   # Print Config Informations
   TEXT+="\n"
   TEXT+="\n\Z4> Arc: ${ARC_VERSION}\Zn"
@@ -1983,7 +1977,7 @@ function sysinfo() {
   TEXT+="\n   Arcpatch | Kernelload: \Zb${ARCPATCH} | ${KERNELLOAD}\Zn"
   TEXT+="\n   Directboot: \Zb${DIRECTBOOT}\Zn"
   TEXT+="\n   Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
-  TEXT+="\n   BOOTCOUNT: \Zb${BOOTCOUNT}\Zn"
+  TEXT+="\n   Bootcount: \Zb${BOOTCOUNT}\Zn"
   TEXT+="\n\Z4>> Extensions\Zn"
   TEXT+="\n   Loader Addons selected: \Zb${ADDONSINFO}\Zn"
   TEXT+="\n   DSM Extensions selected: \Zb${EXTENSIONSINFO}\Zn"

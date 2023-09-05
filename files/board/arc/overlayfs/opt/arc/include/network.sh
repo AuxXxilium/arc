@@ -38,6 +38,12 @@ function getnet() {
 }
 
 # Get actual IP and ETHXNUM
-IP="$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)"
+STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
+BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
+if [ "${STATICIP}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
+  IP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
+else
+  IP="$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)"
+fi
 ETHXNUM=$(ls /sys/class/net/ | grep eth | wc -l) # Amount of NIC
 ETHX=($(ls /sys/class/net/ | grep eth))  # Real NIC List
