@@ -266,7 +266,7 @@ mkdir -p "${ADDONS_PATH}"
 mkdir -p "${EXTENSIONS_PATH}"
 mkdir -p "${MODULES_PATH}"
 mkdir -p "${MODEL_CONFIG_PATH}"
-mkdir -p "${PATCHES_PATH}"
+mkdir -p "${PATCH_PATH}"
 mkdir -p "${LKM_PATH}"
 
 # Load arc
