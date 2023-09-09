@@ -493,14 +493,14 @@ function make() {
     fi
     # Copy DSM Files to Locations if DSM Files not found
     if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-      #cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
-      #cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
       cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
       cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
       cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
       cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
       # Reset Bootcount if User rebuild DSM
-      if [ ${BOOTCOUNT} -gt 0 ]; then
+      if [ ${BOOTCOUNT} -gt 0 ] || [ -z "${BOOTCOUNT}" ]; then
         writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
       fi
     fi

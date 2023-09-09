@@ -151,6 +151,7 @@ NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 
 # Read Bootcount
 BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
+[ -z "${BOOTCOUNT}" ] && BOOTCOUNT=0
 
 # Make Directboot persistent if DSM is installed
 if [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then

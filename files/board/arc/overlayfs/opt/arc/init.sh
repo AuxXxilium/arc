@@ -188,6 +188,7 @@ echo
 
 # Read Bootcount
 BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
+[ -z "${BOOTCOUNT}" ] && BOOTCOUNT=0
 if [ ${BOOTCOUNT} -gt 0 ]; then
   # Get IP Config
   if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1 | wc -l) -gt 0 ]; then
