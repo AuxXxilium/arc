@@ -158,14 +158,14 @@ if [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
     grub-editenv ${GRUB_PATH}/grubenv set default="direct"
     BOOTCOUNT=$((${BOOTCOUNT} + 1))
-    writeConfigKey "arc.bootcount" "{BOOTCOUNT}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
     echo -e "\033[1;34mDSM installed - Make Directboot persistent\033[0m"
     exec reboot
 elif [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -eq 0 ]; then
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
     grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
     BOOTCOUNT=$((${BOOTCOUNT} + 1))
-    writeConfigKey "arc.bootcount" "{BOOTCOUNT}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
     echo -e "\033[1;34mDSM not installed - Reboot with Directboot\033[0m"
     exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
@@ -230,7 +230,7 @@ echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
 # Write new Bootcount
 BOOTCOUNT=$((${BOOTCOUNT} + 1))
-writeConfigKey "arc.bootcount" "{BOOTCOUNT}" "${USER_CONFIG_FILE}"
+writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
 
 # Executes DSM kernel via KEXEC
 kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
