@@ -72,6 +72,7 @@ NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
 NOTSETWOL="$(readConfigKey "arc.notsetwol" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
+ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -2399,6 +2400,7 @@ while true; do
       echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
       echo "t \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
       echo ". \"Static IP Settings \" "                                                     >>"${TMP_PATH}/menu"
+      echo ", \"Official Driver Priority \Z4${ODP}\Zn \" "                                  >>"${TMP_PATH}/menu"
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
     if [ "${DEVOPTS}" = "true" ]; then
@@ -2497,6 +2499,10 @@ while true; do
     s) downgradeMenu; NEXT="s" ;;
     t) resetPassword; NEXT="t" ;;
     .) staticIPMenu; NEXT="." ;;
+    ,)
+      [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
+      writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
+      ;;
     # Dev Section
     9) [ "${DEVOPTS}" = "true" ] && DEVOPTS='false' || DEVOPTS='true'
       DEVOPTS="${DEVOPTS}"
