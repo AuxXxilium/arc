@@ -26,16 +26,6 @@ SATACONTROLLER=$(lspci -d ::106 | wc -l)
 writeConfigKey "device.satacontroller" "${SATACONTROLLER}" "${USER_CONFIG_FILE}"
 SASCONTROLLER=$(lspci -d ::107 | wc -l)
 writeConfigKey "device.sascontroller" "${SASCONTROLLER}" "${USER_CONFIG_FILE}"
-if [ ${SASCONTROLLER} -gt 0 ]; then
-  # LSI Controller check
-  if [ $(lspci | grep LSI | wc -l) -gt 0 ]; then
-    LSIMODE="$(readConfigKey "arc.lsimode" "${USER_CONFIG_FILE}")"
-    if [ -z "${LSIMODE}" ]; then
-      LSIMODE="RAID"
-      writeConfigKey "arc.lsimode" "${LSIMODE}" "${USER_CONFIG_FILE}"
-    fi
-  fi
-fi
 
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
@@ -372,15 +362,6 @@ function make() {
   # Memory: Set mem_max_mb to the amount of installed memory
   writeConfigKey "synoinfo.mem_max_mb" "${RAMTOTAL}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
-  # LSI Controller check
-  if [ ${SASCONTROLLER} -gt 0 ] && [ $(lspci | grep LSI | wc -l) -gt 0 ]; then
-    LSIMODE="$(readConfigKey "arc.lsimode" "${USER_CONFIG_FILE}")"
-    if [ "${LSIMODE}" = "HBA" ]; then
-      deleteConfigKey "modules.scsi_transport_sas" "${USER_CONFIG_FILE}"
-    elif [ "${LSIMODE}" = "RAID" ]; then
-      writeConfigKey "modules.scsi_transport_sas" "" "${USER_CONFIG_FILE}"
-    fi
-  fi
   # Check if all addon exists
   while IFS=': ' read -r ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
@@ -1996,11 +1977,6 @@ function sysinfo() {
   if [ "${PLATFORM}" = "broadwellnk" ]; then
     TEXT+="\n   USB Mount: \Zb${USBMOUNT}\Zn"
   fi
-  # LSI Controller check
-  if [ $(lspci | grep LSI | wc -l) -gt 0 ]; then
-    LSIMODE="$(readConfigKey "arc.lsimode" "${USER_CONFIG_FILE}")"
-    TEXT+="\n   LSI Mode: \Zb${LSIMODE}\Zn"
-  fi
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
   TEXT+="\n\Z4> Storage\Zn"
@@ -2352,9 +2328,6 @@ while true; do
       echo "g \"Storage Map \" "                                                            >>"${TMP_PATH}/menu"
       if [ "${DT}" = "false" ]; then
         echo "h \"USB Port Config \" "                                                      >>"${TMP_PATH}/menu"
-        if [ $(lspci | grep LSI | wc -l) -gt 0 ]; then
-          echo "i \"LSI Controller: \Z4${LSIMODE}\Zn \" "                                   >>"${TMP_PATH}/menu"
-        fi
       fi
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
@@ -2447,13 +2420,6 @@ while true; do
     f) networkMenu; NEXT="f" ;;
     g) storageMenu; NEXT="g" ;;
     h) usbMenu; NEXT="h" ;;
-    i) [ "${LSIMODE}" = "RAID" ] && LSIMODE='HBA' || LSIMODE='RAID'
-      writeConfigKey "arc.lsimode" "${LSIMODE}" "${USER_CONFIG_FILE}"
-      LSIMODE="$(readConfigKey "arc.lsimode" "${USER_CONFIG_FILE}")"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="i"
-      ;;
     # Advanced Section
     6) [ "${ADVOPTS}" = "true" ] && ADVOPTS='false' || ADVOPTS='true'
        ADVOPTS="${ADVOPTS}"
