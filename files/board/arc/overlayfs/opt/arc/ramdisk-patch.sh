@@ -92,10 +92,21 @@ while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
 done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
-# Patches
-while read -r f; do
-  echo "Patching with ${f}" >"${LOG_FILE}" 2>&1
-  (cd "${RAMDISK_PATH}" && patch -p1 <"${PATCH_PATH}/${f}") >>"${LOG_FILE}" 2>&1 || dieLog
+# Patches (diff -Naru OLDFILE NEWFILE > xxx.patch)
+while read PE; do
+  RET=1
+  echo "Patching with ${PE}" >"${LOG_FILE}" 2>&1
+  for PF in $(ls ${PATCH_PATH}/${PE}); do
+    echo -n "."
+    echo "Patching with ${PF}" >>"${LOG_FILE}" 2>&1
+    (
+      cd "${RAMDISK_PATH}"
+      patch -p1 -i "${PF}" >>"${LOG_FILE}" 2>&1
+    )
+    RET=$?
+    [ ${RET} -eq 0 ] && break
+  done
+  [ ${RET} -ne 0 ] && dieLog
 done < <(readModelArray "${MODEL}" "productvers.[${PRODUCTVER}].patch")
 
 # Patch /etc/synoinfo.conf
