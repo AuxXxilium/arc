@@ -97,7 +97,6 @@ while read PE; do
   RET=1
   echo "Patching with ${PE}" >"${LOG_FILE}" 2>&1
   for PF in $(ls ${PATCH_PATH}/${PE}); do
-    echo -n "."
     echo "Patching with ${PF}" >>"${LOG_FILE}" 2>&1
     (
       cd "${RAMDISK_PATH}"
