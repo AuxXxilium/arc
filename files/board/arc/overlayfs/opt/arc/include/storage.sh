@@ -178,22 +178,5 @@ function getmap() {
           --msgbox "Usersetting: We don't need this." 0 0
       fi
     fi
-    if [ -z ${CONFDONE} ] && [ ${SASCONTROLLER} -gt 0 ] && [ $(lspci | grep LSI | wc -l) -gt 0 ]; then
-      dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-        --menu "LSI Controller found!\nController Mode?" 0 0 0 \
-        1 "HBA Mode (IT Firmware)" \
-        2 "Raid Mode (IR Firmware)" \
-      2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return 1
-      resp="$(<"${TMP_PATH}/resp")"
-      [ -z "${resp}" ] && return 1
-      if [ ${resp} -eq 1 ]; then
-        writeConfigKey "arc.lsimode" "HBA" "${USER_CONFIG_FILE}"
-        LSIMODE="$(readConfigKey "arc.lsimode" "${USER_CONFIG_FILE}")"
-      elif [ ${resp} -eq 2 ]; then
-        writeConfigKey "arc.lsimode" "RAID" "${USER_CONFIG_FILE}"
-        LSIMODE="$(readConfigKey "arc.lsimode" "${USER_CONFIG_FILE}")"
-      fi
-    fi
   fi
 }
