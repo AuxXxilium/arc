@@ -192,11 +192,13 @@ BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTCOUNT}" ] && BOOTCOUNT=0
 if [ ${BOOTCOUNT} -gt 0 ]; then
   # Get IP Config
+  sleep 1
   if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1 | wc -l) -gt 0 ]; then
     mkdir -p "${TMP_PATH}/sdX1"
     for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
       mount "${I}" "${TMP_PATH}/sdX1"
       [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
+      sleep 1
       umount "${I}"
       break
     done

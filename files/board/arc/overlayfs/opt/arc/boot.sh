@@ -170,6 +170,7 @@ elif [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -eq 0 ]; then
     exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
+  STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
   echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
   for N in $(seq 0 $((${#ETHX[@]} - 1))); do
@@ -182,7 +183,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         break
       fi
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
-      STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
       if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
         IP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
         ip addr add "${IP}" dev "${ETHX[${N}]}"
