@@ -93,7 +93,7 @@ while IFS=': ' read -r KEY VALUE; do
 done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 # Patches (diff -Naru OLDFILE NEWFILE > xxx.patch)
-while read PE; do
+while read -r PE; do
   RET=1
   echo "Patching with ${PE}" >"${LOG_FILE}" 2>&1
   for PF in $(ls ${PATCH_PATH}/${PE}); do
