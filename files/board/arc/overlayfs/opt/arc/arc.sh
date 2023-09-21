@@ -255,9 +255,7 @@ function arcbuild() {
   if [ "${ONLYVERSION}" != "true" ]; then
     arcsettings
   else
-    # Config is done | Build isn't done
-    writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
-    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+    # Build isn't done
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     # Ask for Build
