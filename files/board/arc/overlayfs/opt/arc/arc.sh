@@ -255,8 +255,25 @@ function arcbuild() {
   if [ "${ONLYVERSION}" != "true" ]; then
     arcsettings
   else
+    # Config is done | Build isn't done
+    writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
+    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    # Ask for Build
+    dialog --clear --backtitle "$(backtitle)" \
+      --menu "Build now?" 0 0 0 \
+      1 "Yes - Build Arc Loader now" \
+      2 "No - I want to make changes" \
+    2>"${TMP_PATH}/resp"
+    resp="$(<"${TMP_PATH}/resp")"
+    [ -z "${resp}" ] && return 1
+    if [ ${resp} -eq 1 ]; then
+      make
+    elif [ ${resp} -eq 2 ]; then
+      dialog --clear --no-items --backtitle "$(backtitle)"
+      return 1
+    fi
   fi
 }
 
