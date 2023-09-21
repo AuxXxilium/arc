@@ -34,6 +34,7 @@ if [ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" ]; then
       --msgbox "zImage not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1
   fi
+  writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
   echo
 fi
 
@@ -47,6 +48,7 @@ if [ "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]; then
       --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 12 70
     exit 1
   fi
+  writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
   echo
 fi
 

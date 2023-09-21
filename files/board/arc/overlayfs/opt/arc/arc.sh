@@ -205,7 +205,6 @@ function arcMenu() {
     if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-      rm -f "${CACHE_PATH}/bootcount"
     fi
   fi
   arcbuild
@@ -236,7 +235,6 @@ function arcbuild() {
       if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
         # Delete old files
         rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-        rm -f "${CACHE_PATH}/bootcount"
       fi
     fi
   fi
@@ -380,24 +378,7 @@ function make() {
       return 1
     fi
   done < <(readConfigMap "extensions" "${USER_CONFIG_FILE}")
-  # Check for old DSM Kernel
-  if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
-    # Check zImage Hash
-    ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print$1}')"
-    ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
-    # Check Ramdisk Hash
-    RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print$1}')"
-    RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
-    if [ "${ZIMAGE_HASH}" = "${ZIMAGE_HASH_CUR}" ] && [ "${RAMDISK_HASH}" = "${RAMDISK_HASH_CUR}" ]; then
-      NEWIMAGE="false"
-    else
-      NEWIMAGE="true"
-    fi
-  else
-    NEWIMAGE="true"
-  fi
-  # Build if NEWIMAGE is not falses
-  if [ "${NEWIMAGE}" = "true" ]; then
+  if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
     # Clean old files
     rm -rf "${UNTAR_PAT_PATH}"
     rm -rf "${CACHE_PATH}/${MODEL}/${PRODUCTVER}"
@@ -473,20 +454,23 @@ function make() {
       mkdir -p "${UNTAR_PAT_PATH}"
       tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
     fi
-    # Copy DSM Files to Locations if DSM Files not found
-    if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
-      cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
-      # Reset Bootcount if User rebuild DSM
-      if [ ${BOOTCOUNT} -gt 0 ] || [ -z "${BOOTCOUNT}" ]; then
-        writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
-      fi
-    fi
   fi
+  # Copy DSM Files to Locations if DSM Files not found
+  cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
+  cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
+  cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
+  cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
+  cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
+  cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
+  # Reset Bootcount if User rebuild DSM
+  if [ ${BOOTCOUNT} -gt 0 ] || [ -z "${BOOTCOUNT}" ]; then
+    writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
+  fi
+  # Write Hash to Config
+  ZIMAGE_HASH="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
+  writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
+  RAMDISK_HASH="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
+  writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
   # Update PAT Info for Update
   PAT_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
   PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
