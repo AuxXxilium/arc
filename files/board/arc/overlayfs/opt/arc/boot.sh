@@ -60,13 +60,24 @@ PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 CPU="$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')"
-MEM="$(free -m | grep -i mem | awk '{print$2}') MB"
+RAMTOTAL=0
+while read -r LINE; do
+  RAMSIZE=${LINE}
+  RAMTOTAL=$((${RAMTOTAL} + ${RAMSIZE}))
+done < <(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i "[1-9]")
+RAMTOTAL=$((${RAMTOTAL} * 1024))
+VENDOR="$(dmidecode -s system-product-name)"
+BOARD="$(dmidecode -s baseboard-product-name)"
 
+echo -e "DSM"
 echo -e "Model: \033[1;37m${MODEL}\033[0m"
-echo -e "DSM: \033[1;37m${PRODUCTVER}\033[0m"
+echo -e "Version: \033[1;37m${PRODUCTVER}\033[0m"
 echo -e "LKM: \033[1;37m${LKM}\033[0m"
+echo
+echo -e "System"
+echo -e "Vendor | Board: \033[1;37m${VENDOR}\033[0m | \033[1;37m${BOARD}\033[0m"
 echo -e "CPU: \033[1;37m${CPU}\033[0m"
-echo -e "MEM: \033[1;37m${MEM}\033[0m"
+echo -e "MEM: \033[1;37m${RAMTOTAL}\033[0m"
 echo
 
 if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}]")" ]; then

@@ -1879,6 +1879,7 @@ function sysinfo() {
   # Check if machine has EFI
   [ -d /sys/firmware/efi ] && BOOTSYS="EFI" || BOOTSYS="Legacy"
   VENDOR="$(dmidecode -s system-product-name)"
+  BOARD="$(dmidecode -s baseboard-product-name)"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
@@ -1913,8 +1914,8 @@ function sysinfo() {
   PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")"
   TEXT=""
   # Print System Informations
-  TEXT+="\n\Z4> System: ${MACHINE}\Zn"
-  TEXT+="\n  Vendor | Boot: \Zb${VENDOR} | ${BOOTSYS}\Zn"
+  TEXT+="\n\Z4> System: ${MACHINE} | ${BOOTSYS}\Zn"
+  TEXT+="\n  Vendor | Board: \Zb${VENDOR} | ${BOARD}\Zn"
   TEXT+="\n  CPU: \Zb${CPUINFO}\Zn"
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
   TEXT+="\n"
