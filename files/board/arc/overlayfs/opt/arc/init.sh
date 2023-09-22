@@ -264,7 +264,7 @@ echo
 # Check memory
 RAM=$(free -m | grep -i mem | awk '{print$2}')
 if [ ${RAM} -le 3500 ]; then
-  echo -e "\033[1;34You have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n"
+  echo -e "\033[1;34mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n"
 fi
 
 mkdir -p "${ADDONS_PATH}"
@@ -277,6 +277,6 @@ mkdir -p "${LKM_PATH}"
 # Load arc
 install-addons.sh
 install-extensions.sh
-echo -e "\033[1;34Loading Arc Loader Overlay...\033[0m"
+echo -e "\033[1;34mLoading Arc Loader Overlay...\033[0m"
 sleep 3
 arc.sh
