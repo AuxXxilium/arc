@@ -469,14 +469,14 @@ function make() {
       mkdir -p "${UNTAR_PAT_PATH}"
       tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
     fi
+    # Copy DSM Files to Locations if DSM Files not found
+    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
+    cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
   fi
-  # Copy DSM Files to Locations if DSM Files not found
-  cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
-  cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
-  cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
-  cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
-  cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
-  cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
   # Reset Bootcount if User rebuild DSM
   if [ ${BOOTCOUNT} -gt 0 ] || [ -z "${BOOTCOUNT}" ]; then
     writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
@@ -2373,7 +2373,7 @@ while true; do
       echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
       echo "t \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
       echo ". \"Static IP Settings \" "                                                     >>"${TMP_PATH}/menu"
-      echo ", \"Official Driver Priority \Z4${ODP}\Zn \" "                                  >>"${TMP_PATH}/menu"
+      echo ", \"Official Driver Priority: \Z4${ODP}\Zn \" "                                  >>"${TMP_PATH}/menu"
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
     if [ "${DEVOPTS}" = "true" ]; then

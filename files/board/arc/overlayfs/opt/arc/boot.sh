@@ -65,7 +65,6 @@ while read -r LINE; do
   RAMSIZE=${LINE}
   RAMTOTAL=$((${RAMTOTAL} + ${RAMSIZE}))
 done < <(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i "[1-9]")
-RAMTOTAL=$((${RAMTOTAL} * 1024))
 VENDOR="$(dmidecode -s system-product-name)"
 BOARD="$(dmidecode -s baseboard-product-name)"
 
@@ -77,7 +76,7 @@ echo
 echo -e "System"
 echo -e "Vendor | Board: \033[1;37m${VENDOR}\033[0m | \033[1;37m${BOARD}\033[0m"
 echo -e "CPU: \033[1;37m${CPU}\033[0m"
-echo -e "MEM: \033[1;37m${RAMTOTAL}\033[0m"
+echo -e "MEM: \033[1;37m${RAMTOTAL}GB\033[0m"
 echo
 
 if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}]")" ]; then
