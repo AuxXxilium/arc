@@ -4,7 +4,7 @@ config BR2_PACKAGE_R8169
 	help
 	  A standalone driver for the RTL8169 Ethernet adapter.
 
-	  https://github.com/AuxXxilium/r8169
+	  https://github.com/wjz304/r8169
 
 comment "r8169 needs a Linux kernel to be built"
 	depends on !BR2_LINUX_KERNEL
