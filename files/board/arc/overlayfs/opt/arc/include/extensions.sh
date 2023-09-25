@@ -57,9 +57,9 @@ function installExtension() {
   done < <(readConfigEntriesArray "available-for" "${EXTENSIONS_PATH}/${EXTENSION}/manifest.yml")
   # If has files to copy, copy it, else return error
   [ ${HAS_FILES} -ne 1 ] || [ ${ACTIVATE} = "false" ] && return 1
-  cp "${TMP_PATH}/${EXTENSION}/install.sh" "${RAMDISK_PATH}/addons/${EXTENSION}.sh" 2>"${LOG_FILE}" || dieLog
+  cp -f "${TMP_PATH}/${EXTENSION}/install.sh" "${RAMDISK_PATH}/addons/${EXTENSION}.sh" 2>"${LOG_FILE}" || dieLog
   chmod +x "${RAMDISK_PATH}/addons/${EXTENSION}.sh"
-  [ -d ${TMP_PATH}/${EXTENSION}/root ] && (cp -R "${TMP_PATH}/${EXTENSION}/root/"* "${RAMDISK_PATH}/" 2>"${LOG_FILE}" || dieLog)
+  [ -d ${TMP_PATH}/${EXTENSION}/root ] && (cp -Rf "${TMP_PATH}/${EXTENSION}/root/"* "${RAMDISK_PATH}/" 2>"${LOG_FILE}" || dieLog)
   rm -rf "${TMP_PATH}/${EXTENSION:?}"
   return 0
 }
@@ -75,6 +75,6 @@ function untarExtension() {
   EXTENSION=$(readConfigKey "name" "${TMP_PATH}/${EXTENSION}/manifest.yml")
   [ -z "${EXTENSION}" ] && return
   rm -rf "${EXTENSIONS_PATH}/${EXTENSION:?}"
-  mv "${TMP_PATH}/${EXTENSION}" "${EXTENSIONS_PATH}/${EXTENSION}"
+  mv -f "${TMP_PATH}/${EXTENSION}" "${EXTENSIONS_PATH}/${EXTENSION}"
   echo "${EXTENSION}"
 }

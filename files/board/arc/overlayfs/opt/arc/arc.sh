@@ -535,7 +535,7 @@ function editUserConfig() {
     dialog --backtitle "$(backtitle)" --title "Edit with caution" \
       --editbox "${USER_CONFIG_FILE}" 0 0 2>"${TMP_PATH}/userconfig"
     [ $? -ne 0 ] && return 1
-    mv "${TMP_PATH}/userconfig" "${USER_CONFIG_FILE}"
+    mv -f "${TMP_PATH}/userconfig" "${USER_CONFIG_FILE}"
     ERRORS=$(yq eval "${USER_CONFIG_FILE}" 2>&1)
     [ $? -eq 0 ] && break
     dialog --backtitle "$(backtitle)" --title "Invalid YAML format" --msgbox "${ERRORS}" 0 0
@@ -575,7 +575,7 @@ function addonSelection() {
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  rm "${TMP_PATH}/opts"
+  rm -f "${TMP_PATH}/opts"
   touch "${TMP_PATH}/opts"
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"         # Check if addon has already been added
@@ -622,7 +622,7 @@ function extensionSelection() {
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && EXTENSIONS["${KEY}"]="${VALUE}"
   done < <(readConfigMap "extensions" "${USER_CONFIG_FILE}")
-  rm "${TMP_PATH}/opts"
+  rm -f "${TMP_PATH}/opts"
   touch "${TMP_PATH}/opts"
   while read -r EXTENSION DESC; do
     arrayExistItem "${EXTENSION}" "${!EXTENSIONS[@]}" && ACT="on" || ACT="off"         # Check if addon has already been added
@@ -1442,8 +1442,8 @@ function backupMenu() {
                   writeConfigKey "productver" "${majorversion}.${minorversion}" "${USER_CONFIG_FILE}"
                   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
                   if [ -n "${PRODUCTVER}" ]; then
-                    cp "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
-                    cp "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
+                    cp -f "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
+                    cp -f "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
                     TEXT="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
                     SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
                     if [ -n "${SN}" ]; then
@@ -2276,7 +2276,7 @@ function saveMenu() {
   mkdir -p "${RDXZ_PATH}"
   (cd "${RDXZ_PATH}"; xz -dc <"${CACHE_PATH}/initrd-arc" | cpio -idm) >/dev/null 2>&1 || true
   rm -rf "${RDXZ_PATH}/opt/arc"
-  cp -rf "/opt" "${RDXZ_PATH}"
+  cp -Rf "/opt" "${RDXZ_PATH}"
   (cd "${RDXZ_PATH}"; find . 2>/dev/null | cpio -o -H newc -R root:root | xz --check=crc32 >"${CACHE_PATH}/initrd-arc") || true
   rm -rf "${RDXZ_PATH}"
   dialog --backtitle "$(backtitle)" --colors --aspect 18 \
