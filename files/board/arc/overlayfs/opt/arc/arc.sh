@@ -206,8 +206,25 @@ function arcMenu() {
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
     fi
+  else
+    # Ask for Clean
+    dialog --clear --backtitle "$(backtitle)" \
+      --menu "Clean old Loader Files?" 0 0 0 \
+      1 "Yes" \
+      2 "No" \
+    2>"${TMP_PATH}/resp"
+    resp="$(<"${TMP_PATH}/resp")"
+    [ -z "${resp}" ] && return 1
+    if [ ${resp} -eq 1 ]; then
+      if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
+        # Delete old files
+        rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+      fi
+      arcbuild
+    elif [ ${resp} -eq 2 ]; then
+      arcbuild
+    fi
   fi
-  arcbuild
 }
 
 ###############################################################################
