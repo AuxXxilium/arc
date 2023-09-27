@@ -1,0 +1,13 @@
+comment "r8168 needs a Linux kernel to be built"
+	depends on !BR2_LINUX_KERNEL
+
+config BR2_PACKAGE_R8168
+	bool "r8168"
+	depends on BR2_LINUX_KERNEL
+	help
+	  A kernel module for Realtek 8168 network cards
+
+	  https://github.com/mtorromeo/r8168
+
+	  Kernel patches courtesy of:
+	  Jan Alexander Steffens (heftig)" <heftig@archlinux.org
