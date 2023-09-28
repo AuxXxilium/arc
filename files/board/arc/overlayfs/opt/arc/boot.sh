@@ -152,6 +152,7 @@ elif [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -eq 0 ]; then
     echo -e "\033[1;34mDSM not installed - Reboot with Directboot\033[0m"
     exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
+  ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
   echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
