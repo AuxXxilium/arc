@@ -65,12 +65,12 @@ done < <(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i "[1-9]")
 VENDOR="$(dmidecode -s system-product-name)"
 BOARD="$(dmidecode -s baseboard-product-name)"
 
-echo -e "DSM"
+echo -e "\033[1;37mDSM:\033[0m"
 echo -e "Model: \033[1;37m${MODEL}\033[0m"
 echo -e "Version: \033[1;37m${PRODUCTVER}\033[0m"
 echo -e "LKM: \033[1;37m${LKM}\033[0m"
 echo
-echo -e "System"
+echo -e "\033[1;37mSystem:\033[0m"
 echo -e "Vendor | Board: \033[1;37m${VENDOR}\033[0m | \033[1;37m${BOARD}\033[0m"
 echo -e "CPU: \033[1;37m${CPU}\033[0m"
 echo -e "MEM: \033[1;37m${RAMTOTAL}GB\033[0m"
