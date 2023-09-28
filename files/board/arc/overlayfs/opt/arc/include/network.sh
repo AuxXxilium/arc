@@ -1,17 +1,13 @@
 # Get Network Config for Loader
 function getnet() {
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  writeConfigKey "cmdline.netif_num" "${ETHXNUM}" "${USER_CONFIG_FILE}"
-  # Get MAC address
-  for N in $(seq 1 ${#ETHX[@]}); do
-    # Get real Mac that is written to config while Init
-    MACR="$(readConfigKey "device.mac${N}" "${USER_CONFIG_FILE}")"
-    # Write real MAC to cmdline config
-    writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
-  done
+  # Get real Mac that is written to config while Init
+  MACR="$(cat /sys/class/net/eth0/address | sed 's/://g')"
+  # Write real MAC to cmdline config
+  writeConfigKey "arc.mac1" "${MACR}" "${USER_CONFIG_FILE}"
   if [ "${ARCPATCH}" = "true" ]; then
     # Set first Mac from cmdline config
-    writeConfigKey "cmdline.mac1" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
     # Install with Arc Patch - Check for model config and set custom Mac Address
     [ -f "${TMP_PATH}/opts" ] && rm -f "${TMP_PATH}/opts"
     touch "${TMP_PATH}/opts"
@@ -33,17 +29,9 @@ function getnet() {
     resp="$(<"${TMP_PATH}/resp")"
     [ -z "${resp}" ] && return 1
     MAC="${resp}"
-    writeConfigKey "cmdline.mac1" "${MAC}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.mac1" "${MAC}" "${USER_CONFIG_FILE}"
   fi
 }
 
-# Get actual IP and ETHXNUM
-STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
-BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
-if [ "${STATICIP}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
-  IP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
-else
-  IP="$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)"
-fi
-ETHXNUM=$(ls /sys/class/net/ | grep eth | wc -l) # Amount of NIC
-ETHX=($(ls /sys/class/net/ | grep eth))  # Real NIC List
+# Get actual IP
+IP="$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)"

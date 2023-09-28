@@ -23,13 +23,11 @@ NUM_PARTITIONS=$(blkid | grep "${LOADER_DISK}[0-9]\+" | cut -d: -f1 | wc -l)
 fsck.vfat -aw ${LOADER_DISK}1 >/dev/null 2>&1 || true
 fsck.ext2 -p ${LOADER_DISK}2 >/dev/null 2>&1 || true
 fsck.ext4 -p ${LOADER_DISK}3 >/dev/null 2>&1 || true
-
 # Make folders to mount partitions
 mkdir -p ${BOOTLOADER_PATH}
 mkdir -p ${SLPART_PATH}
 mkdir -p ${CACHE_PATH}
 mkdir -p ${DSMROOT_PATH}
-
 # Mount the partitions
 mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "Can't mount ${BOOTLOADER_PATH}"
 mount ${LOADER_DISK}2 ${SLPART_PATH} || die "Can't mount ${SLPART_PATH}"
@@ -80,6 +78,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
@@ -88,55 +87,28 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootwait" "10" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.notsetmac" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.notsetwol" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 fi
 
-# Grep Config Values
-NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
-NOTSETWOL="$(readConfigKey "arc.notsetwol" "${USER_CONFIG_FILE}")"
-BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-
 # Init Network
 ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
 # No network devices
 [ ${#ETHX[@]} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
-# Get MAC address
-for N in $(seq 1 ${#ETHX[@]}); do
-  MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
-  MACF="$(readConfigKey "cmdline.mac${N}" "${USER_CONFIG_FILE}")"
-  # Initialize with real MAC
-  writeConfigKey "device.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
-  if [ "${NOTSETMAC}" = "false" ] && [ "${BUILDDONE}" = "true" ]; then
-    if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
-      MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-      echo "Setting ${ETHX[$((${N} - 1))]} MAC to ${MAC}"
-      ip link set dev ${ETHX[$((${N} - 1))]} address "${MAC}" >/dev/null 2>&1 &&
-      (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
-    elif [ -z "${MACF}" ]; then
-      # Write real Mac to cmdline config
-      writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
-    fi
-  else
-    # Write real Mac to cmdline config
-    writeConfigKey "cmdline.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
-  fi
-  if [ "${NOTSETWOL}" = "false" ]; then
-    # Enable Wake on Lan, ignore errors
-    ethtool -s ${ETHX[$((${N} - 1))]} wol g 2>/dev/null
-    echo -e "WOL enabled: ${ETHX[$((${N} - 1))]}"
+for ETH in ${ETHX[@]}; do
+  MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
+  IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
+  if [ -n "${IPR}" ]; then
+    ip addr add ${IPC}/24 dev ${ETH}
+    sleep 1
   fi
 done
-echo
 
 # Get the VID/PID if we are in USB
-VID="0x0000"
-PID="0x0000"
+VID="0x46f4"
+PID="0x0001"
 BUS=$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_BUS | cut -d= -f2)
 [ "${BUS}" = "ata" ] && BUS="sata"
 
@@ -175,6 +147,9 @@ if [ -f "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" ]; then
   zcat "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" | loadkeys
 fi
 echo
+
+# Grep Config Values
+BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
 # Decide if boot automatically
 if grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
@@ -261,12 +236,6 @@ echo -e "User config is on \033[1;34m${USER_CONFIG_FILE}\033[0m"
 echo -e "Default SSH Root password is \033[1;34marc\033[0m"
 echo
 
-# Check memory
-RAM=$(free -m | grep -i mem | awk '{print$2}')
-if [ ${RAM} -le 3500 ]; then
-  echo -e "\033[1;34mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n"
-fi
-
 mkdir -p "${ADDONS_PATH}"
 mkdir -p "${EXTENSIONS_PATH}"
 mkdir -p "${MODULES_PATH}"
@@ -279,4 +248,11 @@ install-addons.sh
 install-extensions.sh
 echo -e "\033[1;34mLoading Arc Loader Overlay...\033[0m"
 sleep 3
-arc.sh
+
+# Check memory and load Arc
+RAM=$(free -m | grep -i mem | awk '{print$2}')
+if [ ${RAM} -le 3500 ]; then
+  echo -e "\033[1;34mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n"
+else
+  arc.sh
+fi

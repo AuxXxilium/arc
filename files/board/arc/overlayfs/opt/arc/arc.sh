@@ -58,11 +58,9 @@ ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 BOOTWAIT="$(readConfigKey "arc.bootwait" "${USER_CONFIG_FILE}")"
 REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
-NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
-NOTSETWOL="$(readConfigKey "arc.notsetwol" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
-STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
+MAC1="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -200,6 +198,9 @@ function arcMenu() {
     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "paturl" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "patsum" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
@@ -1970,7 +1971,6 @@ function sysinfo() {
   fi
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
   BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
-  STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
@@ -1998,15 +1998,9 @@ function sysinfo() {
         break
       fi
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
-      if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
-        IP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
-        MSG="STATIC"
-      else
-        MSG="DHCP"
-      fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}): \ZbIP: ${IP} | Mac: ${MAC}\Zn"
+        TEXT+="\n  ${DRIVER} (${SPEED}): \ZbIP: ${IP} | Mac: ${MAC}\Zn"
         break
       fi
       COUNT=$((${COUNT} + 1))
@@ -2108,70 +2102,6 @@ function sysinfo() {
   TEXT+="\n  Drives total: \Zb${NUMPORTS}\Zn"
   dialog --backtitle "$(backtitle)" --colors --title "Sysinfo" \
     --msgbox "${TEXT}" 0 0
-}
-
-###############################################################################
-# allow setting Static IP for DSM
-function staticIPMenu() {
-  mkdir -p "${TMP_PATH}/sdX1"
-  for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
-    mount "${I}" "${TMP_PATH}/sdX1"
-    [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
-    umount "${I}"
-    break
-  done
-  rm -rf "${TMP_PATH}/sdX1"
-  TEXT=""
-  TEXT+="This feature will allow you to set a static IP for eth0.\n"
-  TEXT+="Actual Settings are:\n"
-  TEXT+="Mode: ${BOOTPROTO}\n"
-  if [ "${BOOTPROTO}" = "static" ]; then
-    TEXT+="IP: ${IPADDR}\n"
-    TEXT+="NETMASK: ${NETMASK}\n"
-  fi
-  TEXT+="Do you want to change Config?"
-  dialog --backtitle "$(backtitle)" --title "Static IP" \
-      --yesno "${TEXT}" 0 0
-  [ $? -ne 0 ] && return 1
-  dialog --clear --backtitle "$(backtitle)" --title "Static IP" \
-    --menu "DHCP or STATIC?" 0 0 0 \
-      1 "DHCP" \
-      2 "STATIC" \
-    2>"${TMP_PATH}/opts"
-    opts="$(<"${TMP_PATH}/opts")"
-    [ -z "${opts}" ] && return 1
-    if [ ${opts} -eq 1 ]; then
-      echo -e "DEVICE=eth0\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=off" >"${TMP_PATH}/ifcfg-eth0"
-      writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
-    elif [ ${opts} -eq 2 ]; then
-      dialog --backtitle "$(backtitle)" --title "Static IP" \
-        --inputbox "Type a Static IP" 0 0 "${IPADDR}" \
-        2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return 1
-      IPADDR="$(<"${TMP_PATH}/resp")"
-      dialog --backtitle "$(backtitle)" --title "Static IP" \
-        --inputbox "Type a Netmask" 0 0 "${NETMASK}" \
-        2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return 1
-      NETMASK="$(<"${TMP_PATH}/resp")"
-      echo -e "DEVICE=eth0\nBOOTPROTO=static\nONBOOT=yes\nIPV6INIT=off\nIPADDR=${IPADDR}\nNETMASK=${NETMASK}" >"${TMP_PATH}/ifcfg-eth0"
-      writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
-    fi
-    dialog --backtitle "$(backtitle)" --title "Static IP" \
-      --yesno "Do you want to set this Config?" 0 0
-    [ $? -ne 0 ] && return 1
-    (
-      mkdir -p "${TMP_PATH}/sdX1"
-      for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
-        mount "${I}" "${TMP_PATH}/sdX1"
-        [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && cp -f "${TMP_PATH}/ifcfg-eth0" "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
-        sync
-        umount "${I}"
-      done
-      rm -rf "${TMP_PATH}/sdX1"
-    )
-    dialog --backtitle "$(backtitle)" --title "Static IP" --colors --aspect 18 \
-      --msgbox "IP Settings done!" 0 0
 }
 
 ###############################################################################
@@ -2420,8 +2350,6 @@ while true; do
     if [ "${BOOTOPTS}" = "true" ]; then
       echo "= \"\Z4========== Boot =========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "m \"DSM Kernelload: \Z4${KERNELLOAD}\Zn \" "                                    >>"${TMP_PATH}/menu"
-      echo "n \"Boot MAC disable: \Z4${NOTSETMAC}\Zn \" "                                   >>"${TMP_PATH}/menu"
-      echo "o \"Boot WOL disable: \Z4${NOTSETWOL}\Zn \" "                                   >>"${TMP_PATH}/menu"
       if [ "${DIRECTBOOT}" = "false" ]; then
         echo "p \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
         echo "- \"Boot Waittime: \Z4${BOOTWAIT}\Zn \" "                                     >>"${TMP_PATH}/menu"
@@ -2441,7 +2369,6 @@ while true; do
       echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
       echo "t \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
-      echo ". \"Static IP Settings \" "                                                     >>"${TMP_PATH}/menu"
       echo ", \"Official Driver Priority: \Z4${ODP}\Zn \" "                                  >>"${TMP_PATH}/menu"
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
@@ -2506,14 +2433,6 @@ while true; do
       writeConfigKey "arc.kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
       NEXT="m"
       ;;
-    n) [ "${NOTSETMAC}" = "false" ] && NOTSETMAC='true' || NOTSETMAC='false'
-      writeConfigKey "arc.notsetmac" "${NOTSETMAC}" "${USER_CONFIG_FILE}"
-      NEXT="n"
-      ;;
-    o) [ "${NOTSETWOL}" = "false" ] && NOTSETWOL='true' || NOTSETWOL='false'
-      writeConfigKey "arc.notsetwol" "${NOTSETWOL}" "${USER_CONFIG_FILE}"
-      NEXT="o"
-      ;;
     p) bootipwaittime; NEXT="p" ;;
     -) bootwaittime; NEXT="-" ;;
     q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
@@ -2533,7 +2452,6 @@ while true; do
       ;;
     s) downgradeMenu; NEXT="s" ;;
     t) resetPassword; NEXT="t" ;;
-    .) staticIPMenu; NEXT="." ;;
     ,)
       [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
       writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"

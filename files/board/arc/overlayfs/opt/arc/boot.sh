@@ -52,12 +52,9 @@ if [ "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]; then
   echo
 fi
 
-# Load necessary variables
-VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
-PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
+# Load model variables
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 CPU="$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')"
 RAMTOTAL=0
@@ -84,17 +81,23 @@ if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "$(readModelKey "${MODEL
   exit 1
 fi
 
+# Load necessary variables
+VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
+PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
+SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
+MAC1="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
+
 declare -A CMDLINE
 
-# Fixed values
-CMDLINE['netif_num']=0
 # Automatic values
 CMDLINE['syno_hw_version']="${MODEL}"
-[ -z "${VID}" ] && VID="0x0000" # Sanity check
-[ -z "${PID}" ] && PID="0x0000" # Sanity check
+[ -z "${VID}" ] && VID="0x46f4" # Sanity check
+[ -z "${PID}" ] && PID="0x0001" # Sanity check
 CMDLINE['vid']="${VID}"
 CMDLINE['pid']="${PID}"
 CMDLINE['sn']="${SN}"
+CMDLINE['mac1']="${MAC1}"
+CMDLINE['netif_num']="1"
 
 # Read cmdline
 while IFS=': ' read -r KEY VALUE; do
@@ -111,62 +114,29 @@ if [ ! "${BUS}" = "usb" ]; then
   DOM="$(readModelKey "${MODEL}" "dom")"
 fi
 
-# Validate netif_num
-MACS=()
-for N in $(seq 1 8); do  # Currently, only up to 8 are supported.
-  [ -n "${CMDLINE["mac${N}"]}" ] && MACS+=(${CMDLINE["mac${N}"]})
-done
-NETIF_NUM=${#MACS[*]}
-CMDLINE["netif_num"]=${NETIF_NUM}
-ETHXNUM=$(ls /sys/class/net/ | grep eth | wc -l) # Amount of NIC
-ETHX=($(ls /sys/class/net/ | grep eth))  # Real NIC List
-if [ ${ETHXNUM} -gt 8 ]; then
-  ETHXNUM=8
-  echo -e "\033[0;31m*** WARNING: More than 8 NIC are not supported! ***\033[0m"
-fi
-# set missing mac to cmdline if needed
-if [ ${NETIF_NUM} -ne ${ETHXNUM} ]; then
-  for N in $(seq $((${NETIF_NUM} + 1)) ${ETHXNUM}); do
-    MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
-    # no duplicates
-    while [[ "${MACS[*]}" =~ "${MACR}" ]]; do # no duplicates
-      MACR="${MACR:0:10}$(printf "%02x" $((0x${MACR:10:2} + 1)))"
-    done
-    CMDLINE["mac${N}"]="${MACR}"
-  done
-  CMDLINE["netif_num"]=${ETHXNUM}
-fi
-
 # Prepare command line
 CMDLINE_LINE=""
 grep -q "force_junior" /proc/cmdline && CMDLINE_LINE+="force_junior "
 [ ${EFI} -eq 1 ] && CMDLINE_LINE+="withefi " || CMDLINE_LINE+="noefi "
 [ ! "${BUS}" = "usb" ] && CMDLINE_LINE+="synoboot_satadom=${DOM} dom_szmax=${SIZE} "
-CMDLINE_DIRECT="${CMDLINE_LINE}"
-CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 loglevel=15 log_buf_len=32M"
+CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 skip_vender_mac_interfaces=0,1,2,3,4,5,6,7 loglevel=15 log_buf_len=32M"
 for KEY in ${!CMDLINE[@]}; do
   VALUE="${CMDLINE[${KEY}]}"
   CMDLINE_LINE+=" ${KEY}"
-  CMDLINE_DIRECT+=" ${KEY}"
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
-  [ -n "${VALUE}" ] && CMDLINE_DIRECT+="=${VALUE}"
 done
-# Escape special chars
-#CMDLINE_LINE=`echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g'`
-CMDLINE_DIRECT=$(echo ${CMDLINE_DIRECT} | sed 's/>/\\\\>/g')
 echo -e "Cmdline:\n\033[1;37m${CMDLINE_LINE}\033[0m"
 echo
 
 # Grep Config Values
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
-
 # Read Bootcount
 BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTCOUNT}" ] && BOOTCOUNT=0
 
 # Make Directboot persistent if DSM is installed
 if [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
+    CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
     grub-editenv ${GRUB_PATH}/grubenv set default="direct"
     BOOTCOUNT=$((${BOOTCOUNT} + 1))
@@ -174,6 +144,7 @@ if [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
     echo -e "\033[1;34mDSM installed - Make Directboot persistent\033[0m"
     exec reboot
 elif [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -eq 0 ]; then
+    CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
     grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
     grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
     BOOTCOUNT=$((${BOOTCOUNT} + 1))
@@ -188,7 +159,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     COUNT=0
-    sleep 3
     while true; do
       if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
         echo -e "\r${DRIVER}: NOT CONNECTED"
@@ -215,10 +185,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       sleep 1
     done
   done
-  NOTSETMAC="$(readConfigKey "arc.notsetmac" "${USER_CONFIG_FILE}")"
-  if [ "${NOTSETMAC}" = "true" ]; then
-    echo -e "\r\033[1;34mDisable Boot MAC is true, the DSM IP can be different!\033[0m"
-  fi
   BOOTWAIT="$(readConfigKey "arc.bootwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTWAIT}" ] && BOOTWAIT=10
   w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
