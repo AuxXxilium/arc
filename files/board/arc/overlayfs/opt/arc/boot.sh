@@ -153,7 +153,6 @@ elif [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -eq 0 ]; then
     exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
-  STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
   echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
   for N in $(seq 0 $((${#ETHX[@]} - 1))); do
@@ -165,16 +164,9 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         break
       fi
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
-      if [ "${ETHX[${N}]}" = "eth0" ] && [ "${STATICIP}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
-        IP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
-        ip addr add "${IP}" dev "${ETHX[${N}]}"
-        MSG="STATIC"
-      else
-        MSG="DHCP"
-      fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-        echo -e "\r${DRIVER} (${SPEED} | ${MSG}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
+        echo -e "\r${DRIVER} (${SPEED}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
         break
       fi
       COUNT=$((${COUNT} + 1))
