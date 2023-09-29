@@ -52,7 +52,7 @@ if [ "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]; then
   echo
 fi
 
-# Load model variables
+# Load model/system variables
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
@@ -106,7 +106,6 @@ done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].cmdline")
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
 done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
-
 if [ ! "${BUS}" = "usb" ]; then
   LOADER_DEVICE_NAME=$(echo "${LOADER_DISK}" | sed 's|/dev/||')
   SIZE=$(($(cat /sys/block/${LOADER_DEVICE_NAME}/size) / 2048 + 10))
@@ -130,10 +129,8 @@ echo
 
 # Grep Config Values
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-# Read Bootcount
 BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTCOUNT}" ] && BOOTCOUNT=0
-
 # Make Directboot persistent if DSM is installed
 if [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
     CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
@@ -202,7 +199,6 @@ echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 # Write new Bootcount
 BOOTCOUNT=$((${BOOTCOUNT} + 1))
 writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
-
 # Executes DSM kernel via KEXEC
 kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
 echo -e "\033[1;37m"Booting DSM..."\033[0m"
