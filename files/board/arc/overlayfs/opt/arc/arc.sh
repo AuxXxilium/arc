@@ -200,7 +200,7 @@ function arcMenu() {
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
     writeConfigKey "paturl" "" "${USER_CONFIG_FILE}"
     writeConfigKey "patsum" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+    writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
@@ -488,12 +488,8 @@ function make() {
   RAMDISK_HASH="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
   writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
   # Update PAT Info for Update
-  PAT_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
-  PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
-  PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
-  PAT_URL="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
-  PAT_HASH="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
-  PAT_URL="${PAT_URL%%\?*}"
+  PAT_URL="$(cat ${UNTAR_PAT_PATH}/pat_url)"
+  PAT_HASH="$(cat ${UNTAR_PAT_PATH}/pat_hash)"
   writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
   # Patch zImage
@@ -796,11 +792,10 @@ function cmdlineMenu() {
   echo "1 \"Add/edit a Cmdline item\""                          >"${TMP_PATH}/menu"
   echo "2 \"Delete Cmdline item(s)\""                           >>"${TMP_PATH}/menu"
   echo "3 \"Define a serial number\""                           >>"${TMP_PATH}/menu"
-  echo "4 \"Define a custom MAC\""                              >>"${TMP_PATH}/menu"
-  echo "5 \"Add experimental CPU Fix\""                         >>"${TMP_PATH}/menu"
-  echo "6 \"Add experimental RAM Fix\""                         >>"${TMP_PATH}/menu"
-  echo "7 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
-  echo "8 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
+  echo "4 \"Add experimental CPU Fix\""                         >>"${TMP_PATH}/menu"
+  echo "5 \"Add experimental RAM Fix\""                         >>"${TMP_PATH}/menu"
+  echo "6 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
+  echo "7 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
   # Loop menu
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
@@ -870,44 +865,6 @@ function cmdlineMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       4)
-        for N in $(seq 1 8); do # Currently, only up to 8 are supported.  (<==> boot.sh L96, <==> lkm: MAX_NET_IFACES)
-          MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
-          MACF=${CMDLINE["mac${N}"]}
-          [ -n "${MACF}" ] && MAC=${MACF} || MAC=${MACR}
-          RET=1
-          while true; do
-            dialog --backtitle "$(backtitle)" --title "User cmdline" \
-              --inputbox "Type a custom MAC address of mac${N}" 0 0 "${MAC}"\
-              2>"${TMP_PATH}/resp"
-            RET=$?
-            [ ${RET} -ne 0 ] && break 2
-            MAC="$(<"${TMP_PATH}/resp")"
-            [ -z "${MAC}" ] && MAC="$(readConfigKey "device.mac${i}" "${USER_CONFIG_FILE}")"
-            [ -z "${MAC}" ] && MAC="${MACFS[$((${i} - 1))]}"
-            MACF="$(echo "${MAC}" | sed "s/:\|-\| //g")"
-            [ ${#MACF} -eq 12 ] && break
-            dialog --backtitle "$(backtitle)" --title "User cmdline" --msgbox "Invalid MAC" 0 0
-          done
-          if [ ${RET} -eq 0 ]; then
-            CMDLINE["mac${N}"]="${MACF}"
-            CMDLINE["netif_num"]=${N}
-            writeConfigKey "cmdline.mac${N}"      "${MACF}" "${USER_CONFIG_FILE}"
-            writeConfigKey "cmdline.netif_num"    "${N}"    "${USER_CONFIG_FILE}"
-            MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
-            ip link set dev ${ETHX[$((${N} - 1))]} address "${MAC}" 2>&1 | dialog --backtitle "$(backtitle)" \
-              --title "User cmdline" --progressbox "Changing MAC" 20 70
-            /etc/init.d/S41dhcpcd restart 2>&1 | dialog --backtitle "$(backtitle)" \
-              --title "User cmdline" --progressbox "Renewing IP" 20 70
-            IP="$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)"
-            dialog --backtitle "$(backtitle)" --title "Alert" \
-              --yesno "Continue with next MAC?" 0 0
-            [ $? -ne 0 ] && break
-          fi
-        done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      5)
         writeConfigKey "cmdline.nmi_watchdog" "0" "${USER_CONFIG_FILE}"
         writeConfigKey "cmdline.tsc" "reliable" "${USER_CONFIG_FILE}"
         dialog --backtitle "$(backtitle)" --title "CPU Fix" \
@@ -915,7 +872,7 @@ function cmdlineMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      6)
+      5)
         writeConfigKey "cmdline.disable_mtrr_trim" "0" "${USER_CONFIG_FILE}"
         writeConfigKey "cmdline.crashkernel" "192M" "${USER_CONFIG_FILE}"
         dialog --backtitle "$(backtitle)" --title "RAM Fix" \
@@ -923,7 +880,7 @@ function cmdlineMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      7)
+      6)
         ITEMS=""
         for KEY in ${!CMDLINE[@]}; do
           ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
@@ -931,7 +888,7 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" --title "User cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      8)
+      7)
         ITEMS=""
         while IFS=': ' read -r KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
@@ -1998,7 +1955,7 @@ function sysinfo() {
   TEXT+="\n"
   TEXT+="\n\Z4> Arc: ${ARC_VERSION}\Zn"
   TEXT+="\n  Subversion Loader: \ZbAddons ${ADDONSVERSION} | LKM ${LKMVERSION} | Patches ${PATCHESVERSION}\Zn"
-  TEXT+="\n  Subversion DSM: \ZbModules ${MODULESVERSION} | Extensions ${EXTENSIONSVERSION} | Configs ${CONFIGSVERSION}\Zn"
+  TEXT+="\n  Subversion Arc/DSM: \ZbModules ${MODULESVERSION} | Extensions ${EXTENSIONSVERSION} | Configs ${CONFIGSVERSION}\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4>> DSM ${PRODUCTVER}: ${MODEL}\Zn"
   TEXT+="\n   Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
