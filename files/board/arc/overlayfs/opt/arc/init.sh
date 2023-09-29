@@ -97,6 +97,13 @@ fi
 ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
 # No network devices
 [ ${#ETHX[@]} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
+MACR="$(cat /sys/class/net/eth0/address | sed 's/://g')"
+MACF="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
+if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
+  MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
+  ip link set dev eth0 address "${MAC}" >/dev/null 2>&1 &&
+  (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
+fi
 for ETH in ${ETHX[@]}; do
   MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
   IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
