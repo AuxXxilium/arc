@@ -71,7 +71,6 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
-  writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
   writeConfigKey "extensions" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
