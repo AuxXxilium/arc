@@ -40,11 +40,11 @@ ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 # Check if DSM Version changed
 . "${RAMDISK_PATH}/etc/VERSION"
 
+# Read DSM Informations
 PRODUCTVERDSM=${majorversion}.${minorversion}
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
 RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compressed")"
-
 # Read new PAT Info from Config
 PAT_URL="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
 PAT_HASH="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
