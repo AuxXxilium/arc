@@ -194,3 +194,15 @@ function findAndMountDSMRoot() {
   fi
   return 0
 }
+
+###############################################################################
+# Convert Netmask eq. 255.255.255.0 to /24
+# 1 - Netmask
+  convert_netmask() {
+    bits=0
+    for octet in $(echo $1| sed 's/\./ /g'); do 
+        binbits=$(echo "obase=2; ibase=10; ${octet}"| bc | sed 's/0//g') 
+        bits=$(expr $bits + ${#binbits})
+    done
+    echo "${bits}"
+  }

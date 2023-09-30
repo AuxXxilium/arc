@@ -65,4 +65,9 @@ function getnet() {
 }
 
 # Get actual IP
-IP="$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)"
+ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
+if [ -n "${ARCIP}"]; then
+  IP="${ARCIP}"
+else
+  IP="$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)"
+fi

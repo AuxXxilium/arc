@@ -1938,14 +1938,21 @@ function sysinfo() {
         break
       fi
       IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+      ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
+      if [ "${ETHX[${N}]}" = "eth0" ] && [ -n "${ARCIP}" ] && [ ${BOOTCOUNT} -gt 0 ]; then
+        IP="${ARCIP}"
+        MSG="STATIC"
+      else
+        MSG="DHCP"
+      fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n  ${DRIVER} (${SPEED}): \ZbIP: ${IP} | Mac: ${MAC}\Zn"
+        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}): \ZbIP: ${IP} | Mac: ${MAC}\Zn"
         break
       fi
       COUNT=$((${COUNT} + 1))
       if [ ${COUNT} -eq 3 ]; then
-        TEXT+="\n  ${DRIVER}: \ZbIP: TIMEOUT| MAC: ${MAC}\Zn"
+        TEXT+="\n  ${DRIVER}: \ZbIP: TIMEOUT | MAC: ${MAC}\Zn"
         break
       fi
       sleep 1
@@ -2042,6 +2049,80 @@ function sysinfo() {
   TEXT+="\n  Drives total: \Zb${NUMPORTS}\Zn"
   dialog --backtitle "$(backtitle)" --colors --title "Sysinfo" \
     --msgbox "${TEXT}" 0 0
+}
+
+###############################################################################
+# allow setting Static IP for DSM
+function staticIPMenu() {
+  mkdir -p "${TMP_PATH}/sdX1"
+  for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
+    mount "${I}" "${TMP_PATH}/sdX1"
+    [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
+    umount "${I}"
+    break
+  done
+  rm -rf "${TMP_PATH}/sdX1"
+  TEXT=""
+  TEXT+="This feature will allow you to set a static IP for eth0.\n"
+  TEXT+="Actual Settings are:\n"
+  TEXT+="Mode: ${BOOTPROTO}\n"
+  if [ "${BOOTPROTO}" = "static" ]; then
+    TEXT+="IP: ${IPADDR}\n"
+    TEXT+="NETMASK: ${NETMASK}\n"
+  fi
+  TEXT+="Do you want to change Config?"
+  dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
+      --yesno "${TEXT}" 0 0
+  [ $? -ne 0 ] && return 1
+  dialog --clear --backtitle "$(backtitle)" --title "DHCP/Static IP" \
+    --menu "DHCP or STATIC?" 0 0 0 \
+      1 "DHCP" \
+      2 "STATIC" \
+    2>"${TMP_PATH}/opts"
+    opts="$(<"${TMP_PATH}/opts")"
+    [ -z "${opts}" ] && return 1
+    if [ ${opts} -eq 1 ]; then
+      echo -e "DEVICE=eth0\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=off" >"${TMP_PATH}/ifcfg-eth0"
+    elif [ ${opts} -eq 2 ]; then
+      dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
+        --inputbox "Type a Static IP\n Eq: 192.168.0.1" 0 0 "${IPADDR}" \
+        2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && return 1
+      IPADDR="$(<"${TMP_PATH}/resp")"
+      dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
+        --inputbox "Type a Netmask\n Eq: 255.255.255.0" 0 0 "${NETMASK}" \
+        2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && return 1
+      NETMASK="$(<"${TMP_PATH}/resp")"
+      echo -e "DEVICE=eth0\nBOOTPROTO=static\nONBOOT=yes\nIPV6INIT=off\nIPADDR=${IPADDR}\nNETMASK=${NETMASK}" >"${TMP_PATH}/ifcfg-eth0"
+    fi
+    dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
+      --yesno "Do you want to set this Config?" 0 0
+    [ $? -ne 0 ] && return 1
+    (
+      mkdir -p "${TMP_PATH}/sdX1"
+      for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
+        mount "${I}" "${TMP_PATH}/sdX1"
+        [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && cp -f "${TMP_PATH}/ifcfg-eth0" "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
+        sync
+        umount "${I}"
+      done
+      rm -rf "${TMP_PATH}/sdX1"
+    )
+    if [ -n "${IPADDR}" ] && [ -n "${NETMASK}" ]; then
+      IP="${IPADDR}"
+      NETMASK=$(convert_netmask "${NETMASK}")
+      ip addr add ${IP}/${NETMASK} dev eth0
+      writeConfigKey "arc.ip" "${IPADDR}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.netmask" "${NETMASK}" "${USER_CONFIG_FILE}"
+      dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" --colors --aspect 18 \
+      --msgbox "IP Settings to STATIC done!." 0 0
+    else
+      writeConfigKey "arc.ip" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.netmask" "" "${USER_CONFIG_FILE}"
+      dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" --colors --aspect 18 \
+      --msgbox "IP Settings to DHCP done!" 0 0
+    fi
 }
 
 ###############################################################################
@@ -2309,7 +2390,8 @@ while true; do
       echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
       echo "t \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
-      echo ", \"Official Driver Priority: \Z4${ODP}\Zn \" "                                  >>"${TMP_PATH}/menu"
+      echo ". \"DHCP/Static IP Settings \" "                                                >>"${TMP_PATH}/menu"
+      echo ", \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
     if [ "${DEVOPTS}" = "true" ]; then
@@ -2392,6 +2474,7 @@ while true; do
       ;;
     s) downgradeMenu; NEXT="s" ;;
     t) resetPassword; NEXT="t" ;;
+    .) staticIPMenu; NEXT="." ;;
     ,)
       [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
       writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"

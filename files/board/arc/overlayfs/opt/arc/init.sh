@@ -77,6 +77,8 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.ip" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.netmask" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
@@ -102,14 +104,6 @@ if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
   ip link set dev eth0 address "${MAC}" >/dev/null 2>&1 &&
   (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
 fi
-for ETH in ${ETHX[@]}; do
-  MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
-  IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
-  if [ -n "${IPR}" ]; then
-    ip addr add ${IPC}/24 dev ${ETH}
-    sleep 1
-  fi
-done
 
 # Get the VID/PID if we are in USB
 VID="0x46f4"
@@ -183,13 +177,11 @@ if [ ${BOOTCOUNT} -gt 0 ]; then
       break
     done
     rm -rf "${TMP_PATH}/sdX1"
-    if [ "${BOOTPROTO}" = "static" ]; then
-      writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
+    if [ -n "${IPADDR}" ]; then
       writeConfigKey "arc.ip" "${IPADDR}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.netmask" "${NETMASK}" "${USER_CONFIG_FILE}"
       echo -e "\033[1;34mDSM installed -> Enable Static IP\033[0m"
     else
-      writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
       echo -e "\033[1;34mDSM installed -> Enable DHCP\033[0m"
     fi
   else
@@ -211,9 +203,19 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
       break
     fi
     IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+    ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
+    NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
+    if [ "${ETHX[${N}]}" = "eth0" ] && [ -n "${ARCIP}" ] && [ ${BOOTCOUNT} -gt 0 ]; then
+      IP="${ARCIP}"
+      NETMASK=$(convert_netmask "${NETMASK}")
+      ip addr add ${IP}/${NETMASK} dev eth0
+      MSG="STATIC"
+    else
+      MSG="DHCP"
+    fi
     if [ -n "${IP}" ]; then
       SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-      echo -e "\r${DRIVER} (${SPEED}): Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
+      echo -e "\r${DRIVER} (${SPEED} | ${MSG}): Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
       break
     fi
     COUNT=$((${COUNT} + 1))
@@ -244,12 +246,12 @@ mkdir -p "${LKM_PATH}"
 install-addons.sh
 install-extensions.sh
 echo -e "\033[1;34mLoading Arc Loader Overlay...\033[0m"
-sleep 3
 
 # Check memory and load Arc
 RAM=$(free -m | grep -i mem | awk '{print$2}')
 if [ ${RAM} -le 3500 ]; then
   echo -e "\033[1;34mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n"
+  echo -e "\033[1;34mUse arc.sh to proceed. Not recommended!\033[0m\n"
 else
   arc.sh
 fi
