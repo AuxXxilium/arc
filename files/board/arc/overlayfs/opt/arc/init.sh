@@ -90,6 +90,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 fi
 
 # Init Network

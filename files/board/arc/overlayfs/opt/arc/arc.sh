@@ -322,10 +322,7 @@ function arcsettings() {
   getmap
   # Select Extensions
   extensionSelection
-  # All Settings done
-  dialog --backtitle "$(backtitle)" --title "Arc Config" \
-    --infobox "Configuration successful!" 0 0
-  sleep 1
+  # Check Warnings
   if [ ${WARNON} -eq 1 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
       --msgbox "WARN: Your Controller has more than 8 Disks connected. Max Disks per Controller: 8" 0 0
