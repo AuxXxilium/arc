@@ -2,8 +2,6 @@
 function getnet() {
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   if [ "${ARCPATCH}" = "true" ]; then
-    # Set first Mac from cmdline config
-    writeConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
     # Install with Arc Patch - Check for model config and set custom Mac Address
     [ -f "${TMP_PATH}/opts" ] && rm -f "${TMP_PATH}/opts"
     touch "${TMP_PATH}/opts"
@@ -17,7 +15,7 @@ function getnet() {
         break
       fi
     done
-    dialog --clear --backtitle "$(backtitle)" \
+    dialog --clear --backtitle "$(backtitle)" --title "Mac Setting"\
       --menu "Network: MAC for 1. NIC" 0 0 0 \
       --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
@@ -42,24 +40,23 @@ function getnet() {
       MAC=($(generateMacAddress "${MODEL}" 1))
     elif [ ${resp} -eq 3 ]; then
       # User Mac
-      MACR="$(cat /sys/class/net/eth0/address | sed 's/://g')"
-      MACF="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
-      [ -n "${MACF}" ] && MAC=${MACF} || MAC=${MACR}
+      MAC="$(cat /sys/class/net/eth0/address | sed 's/://g')"
       RET=1
       while true; do
         dialog --backtitle "$(backtitle)" --title "Mac Setting" \
-          --inputbox "Type a custom MAC address of mac1" 0 0 "${MAC}"\
+          --inputbox "Type a custom MAC address of mac1.\n Eq. 001132123456" 0 0 "${MAC}"\
           2>"${TMP_PATH}/resp"
         RET=$?
         [ ${RET} -ne 0 ] && break 2
         MAC="$(<"${TMP_PATH}/resp")"
-        [ -z "${MAC}" ] && MAC="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
-        [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/eth0/address | sed 's/://g')"
+        [ "${MAC}" = "" ] && MAC="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
+        [ "${MAC}" = "" ] && MAC="$(cat /sys/class/net/eth0/address | sed 's/://g')"
         MAC="$(echo "${MAC}" | sed "s/:\|-\| //g")"
         [ ${#MAC} -eq 12 ] && break
         dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "Invalid MAC" 0 0
       done
     fi
+    dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "MAC for 1. NIC set to:\n ${MAC}" 0 0
   fi
   writeConfigKey "arc.mac1" "${MAC}" "${USER_CONFIG_FILE}"
 }
