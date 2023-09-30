@@ -1890,6 +1890,8 @@ function sysinfo() {
   [ -d /sys/firmware/efi ] && BOOTSYS="EFI" || BOOTSYS="Legacy"
   VENDOR="$(dmidecode -s system-product-name)"
   BOARD="$(dmidecode -s baseboard-product-name)"
+  ETHXNUM=$(ls /sys/class/net/ | grep eth | wc -l) # Amount of NIC
+  ETHX=($(ls /sys/class/net/ | grep eth))  # Real NIC List
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
@@ -1937,17 +1939,17 @@ function sysinfo() {
         TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
         break
       fi
-      IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+      NETIP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
       ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
-      if [ "${ETHX[${N}]}" = "eth0" ] && [ -n "${ARCIP}" ] && [ ${BOOTCOUNT} -gt 0 ]; then
-        IP="${ARCIP}"
+      if [ "${ETHX[${N}]}" = "eth0" ] && [ "${ARCIP}" != "" ] && [ ${BOOTCOUNT} -gt 0 ]; then
+        NETIP="${ARCIP}"
         MSG="STATIC"
       else
         MSG="DHCP"
       fi
-      if [ -n "${IP}" ]; then
+      if [ -n "${NETIP}" ]; then
         SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}): \ZbIP: ${IP} | Mac: ${MAC}\Zn"
+        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}): \ZbIP: ${NETIP} | Mac: ${MAC}\Zn"
         break
       fi
       COUNT=$((${COUNT} + 1))

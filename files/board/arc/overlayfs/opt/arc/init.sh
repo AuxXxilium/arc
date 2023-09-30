@@ -205,7 +205,7 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
     ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
     NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
-    if [ "${ETHX[${N}]}" = "eth0" ] && [ -n "${ARCIP}" ] && [ ${BOOTCOUNT} -gt 0 ]; then
+    if [ "${ETHX[${N}]}" = "eth0" ] && [ "${ARCIP}" != "" ] && [ ${BOOTCOUNT} -gt 0 ]; then
       IP="${ARCIP}"
       NETMASK=$(convert_netmask "${NETMASK}")
       ip addr add ${IP}/${NETMASK} dev eth0
