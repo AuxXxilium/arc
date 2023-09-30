@@ -60,8 +60,6 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
   writeConfigKey "model" "" "${USER_CONFIG_FILE}"
   writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
   writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
   # writeConfigKey "maxdisks" "" "${USER_CONFIG_FILE}"
   writeConfigKey "layout" "qwertz" "${USER_CONFIG_FILE}"
@@ -76,6 +74,8 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.ip" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.netmask" "" "${USER_CONFIG_FILE}"
@@ -86,11 +86,10 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.bootwait" "10" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.bootwait" "5" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 fi
 
 # Init Network
@@ -99,7 +98,7 @@ ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
 [ ${#ETHX[@]} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
 MACR="$(cat /sys/class/net/eth0/address | sed 's/://g')"
 MACF="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
-if [ -n "${MACF}" ] && [ "${MACF}" != "${MACR}" ]; then
+if [ "${MACF}" != "" ] && [ "${MACF}" != "${MACR}" ]; then
   MAC="${MACF:0:2}:${MACF:2:2}:${MACF:4:2}:${MACF:6:2}:${MACF:8:2}:${MACF:10:2}"
   ip link set dev eth0 address "${MAC}" >/dev/null 2>&1 &&
   (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true

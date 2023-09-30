@@ -186,7 +186,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     done
   done
   BOOTWAIT="$(readConfigKey "arc.bootwait" "${USER_CONFIG_FILE}")"
-  [ -z "${BOOTWAIT}" ] && BOOTWAIT=10
+  [ -z "${BOOTWAIT}" ] && BOOTWAIT=5
   w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
   while test ${BOOTWAIT} -ge 0; do
