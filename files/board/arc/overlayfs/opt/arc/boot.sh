@@ -124,7 +124,7 @@ for KEY in ${!CMDLINE[@]}; do
   CMDLINE_LINE+=" ${KEY}"
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
-echo -e "Cmdline:\n\033[1;37m${CMDLINE_LINE}\033[0m"
+echo -e "\033[1;37mCmdline:\033[0m\n${CMDLINE_LINE}"
 echo
 
 # Grep Config Values
@@ -152,7 +152,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-  echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
+  echo -e "\033[1;34m${#ETHX[@]} NIC detected.\033[0m \033[1;37mWaiting for Connection:\033[0m"
   for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     COUNT=0
@@ -174,7 +174,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-        echo -e "\r${DRIVER} (${SPEED} | ${MSG}): Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
+        echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
         break
       fi
       COUNT=$((${COUNT} + 1))
