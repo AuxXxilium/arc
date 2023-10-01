@@ -134,7 +134,7 @@ BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 # Make Directboot persistent if DSM is installed
 if [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
     CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
-    grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
+    grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE}"
     grub-editenv ${GRUB_PATH}/grubenv set default="direct"
     BOOTCOUNT=$((${BOOTCOUNT} + 1))
     writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
@@ -142,7 +142,7 @@ if [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
     exec reboot
 elif [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -eq 0 ]; then
     CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
-    grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
+    grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE}"
     grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
     BOOTCOUNT=$((${BOOTCOUNT} + 1))
     writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
