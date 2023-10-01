@@ -503,22 +503,27 @@ function make() {
   fi
   echo "DSM Files patched - Ready!"
   sleep 3
-  # Build is done
-  writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  # Ask for Boot
-  dialog --clear --backtitle "$(backtitle)" \
-    --menu "Build done. Boot now?" 0 0 0 \
-    1 "Yes - Boot Arc Loader now" \
-    2 "No - I want to make changes" \
-  2>"${TMP_PATH}/resp"
-  resp="$(<"${TMP_PATH}/resp")"
-  [ -z "${resp}" ] && return 1
-  if [ ${resp} -eq 1 ]; then
-    boot && exit 0
-  elif [ ${resp} -eq 2 ]; then
-    dialog --clear --no-items --backtitle "$(backtitle)"
-    return 1
+  if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
+    # Build is done
+    writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    # Ask for Boot
+    dialog --clear --backtitle "$(backtitle)" \
+      --menu "Build done. Boot now?" 0 0 0 \
+      1 "Yes - Boot Arc Loader now" \
+      2 "No - I want to make changes" \
+    2>"${TMP_PATH}/resp"
+    resp="$(<"${TMP_PATH}/resp")"
+    [ -z "${resp}" ] && return 1
+    if [ ${resp} -eq 1 ]; then
+      boot && exit 0
+    elif [ ${resp} -eq 2 ]; then
+      dialog --clear --no-items --backtitle "$(backtitle)"
+      return 1
+    fi
+  else
+    dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
+      --msgbox "Build failed!\nPlease check your Internetconnection and Diskspace!" 0 0
   fi
 }
 

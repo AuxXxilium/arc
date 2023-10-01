@@ -140,21 +140,7 @@ jobs:
           else
             zip -9 "arc.img.zip" arc.img
           fi
-          sha256sum update-list.yml update-check.sh > sha256sum
-          zip -9j update.zip update-list.yml update-check.sh
-          while read F; do
-            if [ -d "${F}" ]; then
-              FTGZ="$(basename "${F}").tgz"
-              tar -czf "${FTGZ}" -C "${F}" .
-              sha256sum "${FTGZ}" >> sha256sum
-              zip -9j update.zip "${FTGZ}"
-              rm "${FTGZ}"
-            else
-              (cd $(dirname ${F}) && sha256sum $(basename ${F})) >> sha256sum
-              zip -9j update.zip "${F}"
-            fi
-          done < <(yq '.replace | explode(.) | to_entries | map([.key])[] | .[]' update-list.yml)
-          zip -9j update.zip sha256sum
+          zip -9j update.zip ".buildroot/output/images/bzImage" ".buildroot/output/images/rootfs.cpio.xz" "files/board/arc/p1/ARC-VERSION" "files/board/arc/p1/boot/grub/grub.cfg"
 
       # Upload artifact
       - name: Upload

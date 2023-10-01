@@ -56,7 +56,7 @@ function getnet() {
         dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "Invalid MAC" 0 0
       done
     fi
-    dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "MAC for 1. NIC set to:\n ${MAC}" 0 0
+    dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "MAC for 1. NIC set to:\n${MAC}" 0 0
   fi
   writeConfigKey "arc.mac1" "${MAC}" "${USER_CONFIG_FILE}"
 }
