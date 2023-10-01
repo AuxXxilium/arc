@@ -50,7 +50,6 @@ if [ -n "${MODEL}" ]; then
 fi
 
 # Get Arc Data from Config
-DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -479,11 +478,6 @@ function make() {
   if [ ${BOOTCOUNT} -gt 0 ] || [ -z "${BOOTCOUNT}" ]; then
     writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   fi
-  # Write Hash to Config
-  ZIMAGE_HASH="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
-  writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
-  RAMDISK_HASH="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
-  writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
   # Update PAT Info for Update
   PAT_URL="$(cat ${UNTAR_PAT_PATH}/pat_url)"
   PAT_HASH="$(cat ${UNTAR_PAT_PATH}/pat_hash)"
@@ -494,12 +488,18 @@ function make() {
     dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
       --msgbox "zImage not patched:\n$(<"${LOG_FILE}")" 0 0
     return 1
+  else
+    ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
+    writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
   fi
   # Patch Ramdisk
   if ! /opt/arc/ramdisk-patch.sh; then
     dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
       --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 0 0
     return 1
+  else
+    RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
+    writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
   fi
   echo "DSM Files patched - Ready!"
   sleep 3
@@ -2375,11 +2375,8 @@ while true; do
     if [ "${BOOTOPTS}" = "true" ]; then
       echo "= \"\Z4========== Boot =========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "m \"DSM Kernelload: \Z4${KERNELLOAD}\Zn \" "                                    >>"${TMP_PATH}/menu"
-      if [ "${DIRECTBOOT}" = "false" ]; then
-        echo "p \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
-        echo "- \"Boot Waittime: \Z4${BOOTWAIT}\Zn \" "                                     >>"${TMP_PATH}/menu"
-      fi
-      echo "q \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
+      echo "p \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                  >>"${TMP_PATH}/menu"
+      echo "- \"Boot Waittime: \Z4${BOOTWAIT}\Zn \" "                                       >>"${TMP_PATH}/menu"
       if [ ${BOOTCOUNT} -gt 0 ]; then
         echo "r \"Reset Bootcount: \Z4${BOOTCOUNT}\Zn \" "                                  >>"${TMP_PATH}/menu"
       fi
@@ -2461,11 +2458,6 @@ while true; do
       ;;
     p) bootipwaittime; NEXT="p" ;;
     -) bootwaittime; NEXT="-" ;;
-    q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
-      writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
-      NEXT="q"
-      ;;
     r)
       writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
       BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"

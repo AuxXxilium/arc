@@ -128,82 +128,62 @@ echo -e "\033[1;37mCmdline:\033[0m\n${CMDLINE_LINE}"
 echo
 
 # Grep Config Values
-DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTCOUNT}" ] && BOOTCOUNT=0
-# Make Directboot persistent if DSM is installed
-if [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
-  CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
-  grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
-  grub-editenv ${GRUB_PATH}/grubenv set default="direct"
-  BOOTCOUNT=$((${BOOTCOUNT} + 1))
-  writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
-  echo -e "\033[1;34mDSM installed - Make Directboot persistent\033[0m"
-  exec reboot
-elif [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -eq 0 ]; then
-  CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
-  grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
-  grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
-  BOOTCOUNT=$((${BOOTCOUNT} + 1))
-  writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
-  echo -e "\033[1;34mDSM not installed - Reboot with Directboot\033[0m"
-  exec reboot
-elif [ "${DIRECTBOOT}" = "false" ]; then
-  ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
-  BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
-  [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-  echo -e "\033[1;34m${#ETHX[@]} NIC detected.\033[0m \033[1;37mWaiting for Connection:\033[0m"
-  for N in $(seq 0 $((${#ETHX[@]} - 1))); do
-    DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-    COUNT=0
-    while true; do
-      if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
-        echo -e "\r${DRIVER}: NOT CONNECTED"
-        break
-      fi
-      IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
-      ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
-      NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
-      if [ "${ETHX[${N}]}" = "eth0" ] && [ "${ARCIP}" != "" ] && [ ${BOOTCOUNT} -gt 0 ]; then
-        IP="${ARCIP}"
-        NETMASK=$(convert_netmask "${NETMASK}")
-        ip addr add ${IP}/${NETMASK} dev eth0
-        MSG="STATIC"
-      else
-        MSG="DHCP"
-      fi
-      if [ -n "${IP}" ]; then
-        SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
-        echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
-        break
-      fi
-      COUNT=$((${COUNT} + 1))
-      if [ ${COUNT} -eq ${BOOTIPWAIT} ]; then
-        echo -e "\r${DRIVER}: TIMEOUT."
-        break
-      fi
-      sleep 1
-    done
-  done
-  BOOTWAIT="$(readConfigKey "arc.bootwait" "${USER_CONFIG_FILE}")"
-  [ -z "${BOOTWAIT}" ] && BOOTWAIT=5
-  w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
-  MSG=""
-  while test ${BOOTWAIT} -ge 0; do
-    MSG="$(printf "%2ds (Accessing Arc will interrupt Boot)" "${BOOTWAIT}")"
-    echo -en "\r${MSG}"
-    w | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
-    if ! diff WB WC >/dev/null 2>&1; then
-      echo -en "\rA new access is connected, Boot is interrupted.\n"
-      rm -f WB WC
-      exit 0
+ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
+BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
+[ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
+echo -e "\033[1;34m${#ETHX[@]} NIC detected.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+for N in $(seq 0 $((${#ETHX[@]} - 1))); do
+  DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+  COUNT=0
+  while true; do
+    if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
+      echo -e "\r${DRIVER}: NOT CONNECTED"
+      break
+    fi
+    IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+    ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
+    NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
+    if [ "${ETHX[${N}]}" = "eth0" ] && [ "${ARCIP}" != "" ] && [ ${BOOTCOUNT} -gt 0 ]; then
+      IP="${ARCIP}"
+      NETMASK=$(convert_netmask "${NETMASK}")
+      ip addr add ${IP}/${NETMASK} dev eth0
+      MSG="STATIC"
+    else
+      MSG="DHCP"
+    fi
+    if [ -n "${IP}" ]; then
+      SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
+      echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
+      break
+    fi
+    COUNT=$((${COUNT} + 1))
+    if [ ${COUNT} -eq ${BOOTIPWAIT} ]; then
+      echo -e "\r${DRIVER}: TIMEOUT."
+      break
     fi
     sleep 1
-    BOOTWAIT=$((BOOTWAIT - 1))
   done
-  rm -f WB WC
-  echo -en "\r$(printf "%$((${#MSG} * 3))s" " ")\n"
-fi
+done
+BOOTWAIT="$(readConfigKey "arc.bootwait" "${USER_CONFIG_FILE}")"
+[ -z "${BOOTWAIT}" ] && BOOTWAIT=5
+w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
+MSG=""
+while test ${BOOTWAIT} -ge 0; do
+  MSG="$(printf "%2ds (Accessing Arc will interrupt Boot)" "${BOOTWAIT}")"
+  echo -en "\r${MSG}"
+  w | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
+  if ! diff WB WC >/dev/null 2>&1; then
+    echo -en "\rA new access is connected, Boot is interrupted.\n"
+    rm -f WB WC
+    exit 0
+  fi
+  sleep 1
+  BOOTWAIT=$((BOOTWAIT - 1))
+done
+rm -f WB WC
+echo -en "\r$(printf "%$((${#MSG} * 3))s" " ")\n"
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
 # Write new Bootcount
