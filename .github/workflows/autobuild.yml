@@ -8,6 +8,7 @@
 name: Build Arc Dev
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - dev
