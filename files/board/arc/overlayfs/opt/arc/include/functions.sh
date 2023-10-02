@@ -198,11 +198,85 @@ function findAndMountDSMRoot() {
 ###############################################################################
 # Convert Netmask eq. 255.255.255.0 to /24
 # 1 - Netmask
-  convert_netmask() {
-    bits=0
-    for octet in $(echo $1| sed 's/\./ /g'); do 
-        binbits=$(echo "obase=2; ibase=10; ${octet}"| bc | sed 's/0//g') 
-        bits=$((${bits} + ${#binbits}))
-    done
-    echo "${bits}"
-  }
+function convert_netmask() {
+  bits=0
+  for octet in $(echo $1| sed 's/\./ /g'); do 
+      binbits=$(echo "obase=2; ibase=10; ${octet}"| bc | sed 's/0//g') 
+      bits=$((${bits} + ${#binbits}))
+  done
+  echo "${bits}"
+}
+
+###############################################################################
+# Livepatch
+function livepatch() {
+  # Update PAT Info for Update
+  PAT_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
+  PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
+  PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
+  PAT_URL="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
+  PAT_HASH="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
+  PAT_URL="${PAT_URL%%\?*}"
+  writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+  FAIL=0
+  # Patch zImage
+  if ! /opt/arc/zimage-patch.sh; then
+    FAIL=1
+  else
+    ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
+    writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
+  fi
+  # Patch Ramdisk
+  if ! /opt/arc/ramdisk-patch.sh; then
+    FAIL=1
+  else
+    RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
+    writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
+  fi
+  # Looking for Update
+  if [ ${FAIL} -eq 1 ]; then
+    # Update Configs
+    TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+    if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+      return 1
+    fi
+    STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")
+    if [ $? -ne 0 ] || [] ${STATUS} -ne 200 ]; then
+      return 1
+    fi
+    rm -rf "${MODEL_CONFIG_PATH}"
+    mkdir -p "${MODEL_CONFIG_PATH}"
+    unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}" >/dev/null 2>&1
+    rm -f "${TMP_PATH}/configs.zip"
+    # Update Patches
+    TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+    if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+      return 1
+    fi
+    STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip")
+    if [ $? -ne 0 ] || [] ${STATUS} -ne 200 ]; then
+      return 1
+    fi
+    rm -rf "${PATCH_PATH}"
+    mkdir -p "${PATCH_PATH}"
+    unzip -oq "${TMP_PATH}/patches.zip" -d "${PATCH_PATH}" >/dev/null 2>&1
+    rm -f "${TMP_PATH}/patches.zip"
+    # Patch zImage
+    if ! /opt/arc/zimage-patch.sh; then
+      FAIL=1
+    else
+      ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
+      writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
+      FAIL=0
+    fi
+    # Patch Ramdisk
+    if ! /opt/arc/ramdisk-patch.sh; then
+      FAIL=1
+    else
+      RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
+      writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
+      FAIL=0
+    fi
+  fi
+}

@@ -478,28 +478,11 @@ function make() {
   if [ ${BOOTCOUNT} -gt 0 ] || [ -z "${BOOTCOUNT}" ]; then
     writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   fi
-  # Update PAT Info for Update
-  PAT_URL="$(cat ${UNTAR_PAT_PATH}/pat_url)"
-  PAT_HASH="$(cat ${UNTAR_PAT_PATH}/pat_hash)"
-  writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
-  # Patch zImage
-  if ! /opt/arc/zimage-patch.sh; then
+  livepatch
+  if [ ${FAIL} -eq 1 ]; then
     dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-      --msgbox "zImage not patched:\n$(<"${LOG_FILE}")" 0 0
+      --msgbox "Patching DSM Files failed!\nPlease stay patient for Update" 0 0
     return 1
-  else
-    ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
-    writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
-  fi
-  # Patch Ramdisk
-  if ! /opt/arc/ramdisk-patch.sh; then
-    dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-      --msgbox "Ramdisk not patched:\n$(<"${LOG_FILE}")" 0 0
-    return 1
-  else
-    RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
-    writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
   fi
   echo "DSM Files patched - Ready!"
   sleep 3
@@ -524,6 +507,7 @@ function make() {
   else
     dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
       --msgbox "Build failed!\nPlease check your Internetconnection and Diskspace!" 0 0
+    return 1
   fi
 }
 
