@@ -50,6 +50,7 @@ if [ -n "${MODEL}" ]; then
 fi
 
 # Get Arc Data from Config
+DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -480,11 +481,12 @@ function make() {
   fi
   livepatch
   if [ ${FAIL} -eq 1 ]; then
-    dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-      --msgbox "Patching DSM Files failed!\nPlease stay patient for Update" 0 0
+    echo "Patching DSM Files failed! Please stay patient for Update."
+    sleep 5
     return 1
+  else
+    echo "DSM Files patched - Ready!"
   fi
-  echo "DSM Files patched - Ready!"
   sleep 3
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     # Build is done
@@ -2359,8 +2361,11 @@ while true; do
     if [ "${BOOTOPTS}" = "true" ]; then
       echo "= \"\Z4========== Boot =========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "m \"DSM Kernelload: \Z4${KERNELLOAD}\Zn \" "                                    >>"${TMP_PATH}/menu"
-      echo "p \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                  >>"${TMP_PATH}/menu"
-      echo "- \"Boot Waittime: \Z4${BOOTWAIT}\Zn \" "                                       >>"${TMP_PATH}/menu"
+      if [ "${DIRECTBOOT}" = "false" ]; then
+        echo "p \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
+        echo "- \"Boot Waittime: \Z4${BOOTWAIT}\Zn \" "                                     >>"${TMP_PATH}/menu"
+      fi
+      echo "q \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
       if [ ${BOOTCOUNT} -gt 0 ]; then
         echo "r \"Reset Bootcount: \Z4${BOOTCOUNT}\Zn \" "                                  >>"${TMP_PATH}/menu"
       fi
@@ -2442,6 +2447,11 @@ while true; do
       ;;
     p) bootipwaittime; NEXT="p" ;;
     -) bootwaittime; NEXT="-" ;;
+    q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
+      writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
+      NEXT="q"
+      ;;
     r)
       writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
       BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"

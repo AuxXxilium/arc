@@ -79,6 +79,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.ip" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.netmask" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
