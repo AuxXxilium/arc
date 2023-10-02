@@ -25,10 +25,17 @@ TITLE+=" [${BUS^^}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
 # Check if DSM zImage/Ramdisk is changed, patch it if necessary, update Files if necessary
-livepatch
-if [ ${FAIL} -eq 1 ]; then
-  echo -e "\033[1;31mPatching DSM Files failed! Please stay patient for Update.\033[0m" 0 0
-  exit 1
+ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
+ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
+RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
+RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
+if [ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" ] || [ "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]; then
+  echo -e "\033[1;31mDSM zImage/Ramdisk changed! Try to Patch them.\033[0m"
+  livepatch
+  if [ ${FAIL} -eq 1 ]; then
+    echo -e "\033[1;31mPatching DSM Files failed! Please stay patient for Update.\033[0m" 0 0
+    exit 1
+  fi
 fi
 
 # Load model/system variables
