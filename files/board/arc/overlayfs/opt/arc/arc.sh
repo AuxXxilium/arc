@@ -2374,7 +2374,7 @@ while true; do
     if [ "${DSMOPTS}" = "true" ]; then
       echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
-      echo "t \"Reset DSM Password \" "                                                     >>"${TMP_PATH}/menu"
+      echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
       echo ". \"DHCP/Static IP Settings \" "                                                >>"${TMP_PATH}/menu"
       echo ", \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
