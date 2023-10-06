@@ -210,15 +210,6 @@ function convert_netmask() {
 ###############################################################################
 # Livepatch
 function livepatch() {
-  # Update PAT Info for Update
-  PAT_MODEL="$(echo "${MODEL}" | sed -e 's/\./%2E/g' -e 's/+/%2B/g')"
-  PAT_MAJOR="$(echo "${PRODUCTVER}" | cut -b 1)"
-  PAT_MINOR="$(echo "${PRODUCTVER}" | cut -b 3)"
-  PAT_URL="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
-  PAT_HASH="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${PAT_MODEL}&major=${PAT_MAJOR}&minor=${PAT_MINOR}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
-  PAT_URL="${PAT_URL%%\?*}"
-  writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
   FAIL=0
   # Patch zImage
   if ! /opt/arc/zimage-patch.sh; then

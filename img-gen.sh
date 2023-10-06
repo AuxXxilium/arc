@@ -16,15 +16,15 @@ rm -rf ".buildroot/board/arc/p3"
 
 . ./scripts/func.sh
 
-getExtractor "files/board/arc/p3/extractor"
-getLKMs "files/board/arc/p3/lkms"
-getAddons "files/board/arc/p3/addons"
-getExtensions "files/board/arc/p3/extensions"
-getModules "files/board/arc/p3/modules"
-getConfigs "files/board/arc/p3/configs"
-getPatches "files/board/arc/p3/patches"
+getExtractor "files/board/arc/p3/extractor" true
+getLKMs "files/board/arc/p3/lkms" true
+getAddons "files/board/arc/p3/addons" true
+getExtensions "files/board/arc/p3/extensions" true
+getModules "files/board/arc/p3/modules" true
+getConfigs "files/board/arc/p3/configs" true
+getPatches "files/board/arc/p3/patches" true
 
-echo "Extractor, LKM, Addons and Modules loaded"
+echo "Subrepos loaded"
 
 # Copy files
 echo "Copying files"

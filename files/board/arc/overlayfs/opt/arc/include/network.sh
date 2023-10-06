@@ -16,7 +16,7 @@ function getnet() {
       fi
     done
     dialog --clear --backtitle "$(backtitle)" --title "Mac Setting"\
-      --menu "Network: MAC for 1. NIC" 0 0 0 \
+      --menu "Choose a MAC" 0 0 0 \
       --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && continue
@@ -25,7 +25,7 @@ function getnet() {
     MAC="${resp}"
   else
     dialog --clear --backtitle "$(backtitle)" --title "Mac Setting" \
-      --menu "Use Hardware, Random, Custom MAC?" 0 0 0 \
+      --menu "Hardware, Random or Custom MAC?" 0 0 0 \
       1 "Use Hardware MAC" \
       2 "Use Random MAC" \
       3 "Use Custom MAC" \
@@ -44,26 +44,26 @@ function getnet() {
       RET=1
       while true; do
         dialog --backtitle "$(backtitle)" --title "Mac Setting" \
-          --inputbox "Type a custom MAC address of mac1.\n Eq. 001132123456" 0 0 "${MAC}"\
+          --inputbox "Type a custom MAC.\n Eq. 001132123456" 0 0 "${MAC}"\
           2>"${TMP_PATH}/resp"
         RET=$?
         [ ${RET} -ne 0 ] && break 2
         MAC="$(<"${TMP_PATH}/resp")"
-        [ "${MAC}" = "" ] && MAC="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
-        [ "${MAC}" = "" ] && MAC="$(cat /sys/class/net/eth0/address | sed 's/://g')"
+        [ -z "${MAC}" ] && MAC="$(readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}")"
+        [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/eth0/address | sed 's/://g')"
         MAC="$(echo "${MAC}" | sed "s/:\|-\| //g")"
         [ ${#MAC} -eq 12 ] && break
         dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "Invalid MAC" 0 0
       done
     fi
-    dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "MAC for 1. NIC set to:\n${MAC}" 0 0
   fi
+  dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "MAC set to: ${MAC}\nThis is only cosmetic, the\nMAC will not be applied to your NIC." 0 0
   writeConfigKey "arc.mac1" "${MAC}" "${USER_CONFIG_FILE}"
 }
 
 # Get actual IP
 ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
-if [ "${ARCIP}" != "" ]; then
+if [ -n "${ARCIP}" ]; then
   IP="${ARCIP}"
 else
   IP="$(ip route 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)"
