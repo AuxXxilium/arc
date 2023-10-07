@@ -79,6 +79,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.ip" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.netmask" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
@@ -159,38 +160,12 @@ echo
 # Read Bootcount
 BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTCOUNT}" ] && BOOTCOUNT=0
-echo -e "\033[1;37mCheck for DHCP or Static IP\033[0m"
-if [ ${BOOTCOUNT} -gt 0 ]; then
-  # Get IP Config
-  sleep 1
-  if [ $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1 | wc -l) -gt 0 ]; then
-    mkdir -p "${TMP_PATH}/sdX1"
-    for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
-      mount "${I}" "${TMP_PATH}/sdX1"
-      [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
-      sleep 1
-      umount "${I}"
-      break
-    done
-    rm -rf "${TMP_PATH}/sdX1"
-    if [ -n "${IPADDR}" ] && [ -n "${NETMASK}" ]; then
-      writeConfigKey "arc.ip" "${IPADDR}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.netmask" "${NETMASK}" "${USER_CONFIG_FILE}"
-      echo -e "\033[1;34mDSM installed -> Enable Static IP\033[0m"
-    else
-      echo -e "\033[1;34mDSM installed -> Enable DHCP\033[0m"
-    fi
-  else
-    echo -e "\033[1;34mDSM not installed or in Recovery Mode -> Enable DHCP\033[0m"
-  fi
-else
-  echo -e "\033[1;34mDSM not installed or in Recovery Mode -> Enable DHCP\033[0m"
-fi
-
+# Read Staticip/DHCP
+STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
 # Wait for an IP
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-echo "Detected ${#ETHX[@]} NIC. Waiting for Connection:"
+echo -e "\033[1;34mDetected ${#ETHX[@]} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
 for N in $(seq 0 $((${#ETHX[@]} - 1))); do
   DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
   COUNT=0
@@ -201,13 +176,17 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
       break
     fi
     IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
-    ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
-    NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
-    if [ "${ETHX[${N}]}" = "eth0" ] && [ -n "${ARCIP}" ] && [ ${BOOTCOUNT} -gt 0 ]; then
-      IP="${ARCIP}"
-      NETMASK=$(convert_netmask "${NETMASK}")
-      ip addr add ${IP}/${NETMASK} dev eth0
-      MSG="STATIC"
+    if [ "${STATICIP}" = "true" ]; then
+      ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
+      NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
+      if [ "${ETHX[${N}]}" = "eth0" ] && [ -n "${ARCIP}" ] && [ ${BOOTCOUNT} -gt 0 ]; then
+        IP="${ARCIP}"
+        NETMASK=$(convert_netmask "${NETMASK}")
+        ip addr add ${IP}/${NETMASK} dev eth0
+        MSG="STATIC"
+      else
+        MSG="DHCP"
+      fi
     else
       MSG="DHCP"
     fi
@@ -235,15 +214,16 @@ echo
 
 mkdir -p "${ADDONS_PATH}"
 mkdir -p "${EXTENSIONS_PATH}"
+mkdir -p "${LKM_PATH}"
 mkdir -p "${MODULES_PATH}"
 mkdir -p "${MODEL_CONFIG_PATH}"
 mkdir -p "${PATCH_PATH}"
-mkdir -p "${LKM_PATH}"
 
 # Load arc
 install-addons.sh
 install-extensions.sh
 echo -e "\033[1;34mLoading Arc Loader Overlay...\033[0m"
+sleep 2
 
 # Check memory and load Arc
 RAM=$(free -m | grep -i mem | awk '{print$2}')
