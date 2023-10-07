@@ -393,7 +393,7 @@ function make() {
   done < <(readConfigMap "extensions" "${USER_CONFIG_FILE}")
   # Update PAT Data
   dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-    --infobox "Get PAT Data..." 0 0
+    --infobox "Get PAT Data..." 5 30
   idx=0
   while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
     PAT_URL="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
@@ -426,11 +426,11 @@ function make() {
       STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
       if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
         dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-        --msgbox "DSM Image download failed!" 0 0
+        --msgbox "DSM Image Download failed!" 0 0
         return 1
       fi
       dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-        --msgbox "DSM Download successful!" 0 0
+        --msgbox "DSM Image Download successful!" 0 0
     fi
     if [ -f "${DSM_FILE}" ]; then
       mkdir -p "${UNTAR_PAT_PATH}"
@@ -462,11 +462,11 @@ function make() {
   clear
   livepatch
   if [ ${FAIL} -eq 1 ]; then
-    echo "Patching DSM Files failed! Please stay patient for Update."
+    echo "Patching DSM Image failed! Please stay patient for Update."
     sleep 5
     return 1
   else
-    echo "DSM Files patched - Ready!"
+    echo "DSM Image patched - Ready!"
   fi
   sleep 3
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
