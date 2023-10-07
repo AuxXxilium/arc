@@ -2307,8 +2307,8 @@ while true; do
   fi
   echo "= \"\Z4========== Info ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
+  echo "= \"\Z4========= System =========\Zn \" "                                           >>"${TMP_PATH}/menu"
   if [ "${CONFDONE}" = "true" ]; then
-    echo "= \"\Z4========= System =========\Zn \" "                                         >>"${TMP_PATH}/menu"
     echo "b \"Loader Addons \" "                                                            >>"${TMP_PATH}/menu"
     echo "c \"DSM Extensions \" "                                                           >>"${TMP_PATH}/menu"
     echo "d \"DSM Modules \" "                                                              >>"${TMP_PATH}/menu"
@@ -2368,21 +2368,21 @@ while true; do
       echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
       echo ". \"DHCP/Static IP Settings \" "                                                >>"${TMP_PATH}/menu"
       echo ", \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
-      echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
-    fi
-    if [ "${DEVOPTS}" = "true" ]; then
-      echo "9 \"\Z1Hide Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
-    else
-      echo "9 \"\Z1Show Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
-    fi
-    if [ "${DEVOPTS}" = "true" ]; then
-      echo "= \"\Z4========== Dev ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
-      echo "v \"Save Modifications to Disk \" "                                             >>"${TMP_PATH}/menu"
-      echo "w \"Clean old Loader Boot Files \" "                                            >>"${TMP_PATH}/menu"
-      echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >>"${TMP_PATH}/menu"
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
     fi
+  fi
+  if [ "${DEVOPTS}" = "true" ]; then
+    echo "9 \"\Z1Hide Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+  else
+    echo "9 \"\Z1Show Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+  fi
+  if [ "${DEVOPTS}" = "true" ]; then
+    echo "= \"\Z4========== Dev ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
+    echo "v \"Save Modifications to Disk \" "                                             >>"${TMP_PATH}/menu"
+    echo "w \"Clean old Loader Boot Files \" "                                            >>"${TMP_PATH}/menu"
+    echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >>"${TMP_PATH}/menu"
+    echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
@@ -2456,14 +2456,14 @@ while true; do
       [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
       writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
       ;;
+    u) [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
+      writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
+      NEXT="u"
+      ;;
     # Dev Section
     9) [ "${DEVOPTS}" = "true" ] && DEVOPTS='false' || DEVOPTS='true'
       DEVOPTS="${DEVOPTS}"
       NEXT="9"
-      ;;
-    u) [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
-      writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
-      NEXT="u"
       ;;
     v) saveMenu; NEXT="v" ;;
     w) cleanOld; NEXT="w" ;;
