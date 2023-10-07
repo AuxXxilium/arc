@@ -370,7 +370,7 @@ function make() {
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-  # Memory: Set mem_max_mb to the amount of installed memory
+  # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMTOTAL}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
   # Check if all addon exists
@@ -392,6 +392,8 @@ function make() {
     fi
   done < <(readConfigMap "extensions" "${USER_CONFIG_FILE}")
   # Update PAT Data
+  PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
+  PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
     --infobox "Get PAT Data from Syno..." 3 30
   idx=0
@@ -405,10 +407,10 @@ function make() {
     sleep 1
     idx=$((${idx} + 1))
   done
-  [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ] && return
+  [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ] && return 1
   writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
-  if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+  if [ "${PAT_URL}" != "${PAT_URL_CONF}" ] || [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
     # Clean old Files
     rm -rf "${UNTAR_PAT_PATH}"
     rm -rf "${CACHE_PATH}/${MODEL}/${PRODUCTVER}"
@@ -445,15 +447,11 @@ function make() {
     cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
     cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
     # Check Pat Hash
-    PAT_HASH="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
     PAT_URL_PRE="$(cat ${UNTAR_PAT_PATH}/pat_url)"
-    PAT_HASH="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
     PAT_HASH_PRE="$(cat ${UNTAR_PAT_PATH}/pat_hash)"
     if [ "${PAT_URL}" != "${PAT_URL_PRE}" ] || [ "${PAT_HASH}" != "${PAT_HASH_PRE}" ]; then
       dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-        --msgbox "PAT Files do not match!\nTry with preloaded Files!" 0 0
-      writeConfigKey "arc.paturl" "${PAT_URL_PRE}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.pathash" "${PAT_HASH_PRE}" "${USER_CONFIG_FILE}"
+        --msgbox "PAT Files do not match!\nPreload Files need to be updated!" 0 0
     fi
   fi
   # Reset Bootcount if User rebuild DSM
