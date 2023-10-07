@@ -393,7 +393,7 @@ function make() {
   done < <(readConfigMap "extensions" "${USER_CONFIG_FILE}")
   # Update PAT Data
   dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-    --infobox "Get PAT Data ..." 0 0
+    --infobox "Get PAT Data..." 0 0
   idx=0
   while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
     PAT_URL="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
@@ -2298,7 +2298,7 @@ function boot() {
 [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
 while true; do
   echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
-  echo "1 \"Choose Model for Loader \" "                                                    >>"${TMP_PATH}/menu"
+  echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
   if [ "${CONFDONE}" = "true" ]; then
     echo "2 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
   fi
