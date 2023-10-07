@@ -393,7 +393,7 @@ function make() {
   done < <(readConfigMap "extensions" "${USER_CONFIG_FILE}")
   # Update PAT Data
   dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-    --infobox "Get PAT Data..." 5 30
+    --infobox "Get PAT Data from Syno..." 3 30
   idx=0
   while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
     PAT_URL="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
@@ -402,6 +402,7 @@ function make() {
     if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
       break
     fi
+    sleep 1
     idx=$((${idx} + 1))
   done
   [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ] && return
@@ -2272,8 +2273,10 @@ function cleanOld() {
     # Delete old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   fi
+  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --colors --title "Clean Old" \
-    --msgbox "Clean is complete." 0 0
+    --msgbox "Clean is complete." 5 30
 }
 
 ###############################################################################
@@ -2373,16 +2376,16 @@ while true; do
     fi
   fi
   if [ "${DEVOPTS}" = "true" ]; then
-    echo "9 \"\Z1Hide Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+    echo "9 \"\Z1Hide Dev Options\Zn \" "                                                   >>"${TMP_PATH}/menu"
   else
-    echo "9 \"\Z1Show Dev Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+    echo "9 \"\Z1Show Dev Options\Zn \" "                                                   >>"${TMP_PATH}/menu"
   fi
   if [ "${DEVOPTS}" = "true" ]; then
-    echo "= \"\Z4========== Dev ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
-    echo "v \"Save Modifications to Disk \" "                                             >>"${TMP_PATH}/menu"
-    echo "w \"Clean old Loader Boot Files \" "                                            >>"${TMP_PATH}/menu"
-    echo "+ \"\Z1Format Disk(s)\Zn \" "                                                   >>"${TMP_PATH}/menu"
-    echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
+    echo "= \"\Z4========== Dev ==========\Zn \" "                                          >>"${TMP_PATH}/menu"
+    echo "v \"Save Modifications to Disk \" "                                               >>"${TMP_PATH}/menu"
+    echo "w \"Clean old Boot Files \" "                                                     >>"${TMP_PATH}/menu"
+    echo "+ \"\Z1Format Disk(s)\Zn \" "                                                     >>"${TMP_PATH}/menu"
+    echo "= \"\Z4=========================\Zn \" "                                          >>"${TMP_PATH}/menu"
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
