@@ -91,6 +91,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootwait" "5" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.macsys" "new" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
@@ -100,6 +101,31 @@ fi
 ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
 # No network devices
 [ ${#ETHX[@]} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
+MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
+if [ "$MACSYS" = "old" ]; then
+  # Get MAC address
+  for N in $(seq 1 ${#ETHX[@]}); do
+    MACR="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
+    MACA="$(readConfigKey "arc.mac${N}" "${USER_CONFIG_FILE}")"
+    # Initialize with real MAC
+    writeConfigKey "arc.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+    if [ "${BUILDDONE}" = "true" ]; then
+      if [ -n "${MACA}" ] && [ "${MACA}" != "${MACR}" ]; then
+        MAC="${MACA:0:2}:${MACA:2:2}:${MACA:4:2}:${MACA:6:2}:${MACA:8:2}:${MACA:10:2}"
+        echo "Setting ${ETHX[$((${N} - 1))]} MAC to ${MAC}"
+        ip link set dev ${ETHX[$((${N} - 1))]} address "${MAC}" >/dev/null 2>&1 &&
+        (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
+      elif [ -z "${MACA}" ]; then
+        # Write real Mac to cmdline config
+        writeConfigKey "arc.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+      fi
+    else
+      # Write real Mac to cmdline config
+      writeConfigKey "arc.mac${N}" "${MACR}" "${USER_CONFIG_FILE}"
+    fi
+  done
+  echo
+fi
 
 # Get the VID/PID if we are in USB
 VID="0x46f4"

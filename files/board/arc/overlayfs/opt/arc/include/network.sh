@@ -57,7 +57,11 @@ function getnet() {
       done
     fi
   fi
-  dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "MAC set to: ${MAC}\nThis is only cosmetic, the\nMAC will not be applied to your NIC." 0 0
+  if [ "$MACSYS" = "new" ]; then
+    dialog --backtitle "$(backtitle)" --title "New MacSys Setting" --msgbox "1. MAC set to: ${MAC}\nThis is only cosmetic, the\nMAC will not be applied to your NIC." 0 0
+  elif [ "$MACSYS" = "old" ]; then
+    dialog --backtitle "$(backtitle)" --title "Old MacSys Setting" --msgbox "1. MAC set to: ${MAC}\nThe MAC will be applied to your NIC.\nYou can add more custom MAC in Config." 0 0
+  fi
   writeConfigKey "arc.mac1" "${MAC}" "${USER_CONFIG_FILE}"
 }
 

@@ -42,6 +42,7 @@ fi
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
+MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 CPU="$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')"
 RAMTOTAL=0
 while read -r LINE; do
@@ -55,6 +56,7 @@ echo -e "\033[1;37mDSM:\033[0m"
 echo -e "Model: \033[1;37m${MODEL}\033[0m"
 echo -e "Version: \033[1;37m${PRODUCTVER}\033[0m"
 echo -e "LKM: \033[1;37m${LKM}\033[0m"
+echo -e "Macsys: \033[1;37m${MACSYS}\033[0m"
 echo
 echo -e "\033[1;37mSystem:\033[0m"
 echo -e "Vendor | Board: \033[1;37m${VENDOR}\033[0m | \033[1;37m${BOARD}\033[0m"
@@ -71,7 +73,6 @@ fi
 VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
 PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
-MAC1="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
 
 declare -A CMDLINE
 
@@ -82,8 +83,19 @@ CMDLINE['syno_hw_version']="${MODEL}"
 CMDLINE['vid']="${VID}"
 CMDLINE['pid']="${PID}"
 CMDLINE['sn']="${SN}"
-CMDLINE['mac1']="${MAC1}"
-CMDLINE['netif_num']="1"
+if [ "$MACSYS" = "new" ]; then
+  MAC1="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
+  CMDLINE['mac1']="${MAC1}"
+  CMDLINE['netif_num']="1"
+elif [ "$MACSYS" = "old" ]; then
+  NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
+  for N in $(seq 1 ${NIC}); do  # Currently, only up to 8 are supported.
+    MAC="$(readConfigKey "arc.mac${N}" "${USER_CONFIG_FILE}")"
+    [ -n "${MAC}" ] && CMDLINE['mac${N}']="${MAC}"
+    [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')" && CMDLINE['mac${N}']="${MAC}"
+  done
+  CMDLINE["netif_num"]=${NIC}
+fi
 
 # Read cmdline
 while IFS=': ' read -r KEY VALUE; do
@@ -104,7 +116,11 @@ CMDLINE_LINE=""
 grep -q "force_junior" /proc/cmdline && CMDLINE_LINE+="force_junior "
 [ ${EFI} -eq 1 ] && CMDLINE_LINE+="withefi " || CMDLINE_LINE+="noefi "
 [ ! "${BUS}" = "usb" ] && CMDLINE_LINE+="synoboot_satadom=${DOM} dom_szmax=${SIZE} "
-CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 skip_vender_mac_interfaces=0,1,2,3,4,5,6,7 loglevel=15 log_buf_len=32M"
+if [ "$MACSYS" = "new" ]; then
+  CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 skip_vender_mac_interfaces=0,1,2,3,4,5,6,7 loglevel=15 log_buf_len=32M"
+elif [ "$MACSYS" = "old" ]; then
+  CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 loglevel=15 log_buf_len=32M"
+fi
 for KEY in ${!CMDLINE[@]}; do
   VALUE="${CMDLINE[${KEY}]}"
   CMDLINE_LINE+=" ${KEY}"
@@ -113,9 +129,8 @@ done
 echo -e "\033[1;37mCmdline:\033[0m\n${CMDLINE_LINE}"
 echo
 
-# Grep Config Values
+# Read Boot Settings
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-# Read Bootcount
 BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTCOUNT}" ] && BOOTCOUNT=0
 # Make Directboot persistent if DSM is installed
@@ -137,9 +152,8 @@ elif [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -eq 0 ]; then
   exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
   ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
-  # Read Staticip/DHCP
+  # Read Ip Settings
   STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
-  # Wait for an IP
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   echo -e "\033[1;34mDetected ${#ETHX[@]} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
   for N in $(seq 0 $((${#ETHX[@]} - 1))); do
