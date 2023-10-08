@@ -2242,7 +2242,7 @@ function formatdisks() {
     echo "\"${POSITION}\" \"${NAME}\" \"off\"" >>"${TMP_PATH}/opts"
   done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd|/dev/nvme" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
   dialog --backtitle "$(backtitle)" --colors --title "Format" \
-    --checklist "Format" 0 0 0 --file "${TMP_PATH}/opts" \
+    --checklist "Format Disks" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return 1
   resp=$(<"${TMP_PATH}/resp")
