@@ -452,6 +452,7 @@ function make() {
     if [ "${PAT_URL}" != "${PAT_URL_PRE}" ] || [ "${PAT_HASH}" != "${PAT_HASH_PRE}" ]; then
       dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
         --msgbox "PAT Files do not match!\nPreload Files need to be updated!" 0 0
+      return 1
     fi
   fi
   # Reset Bootcount if User rebuild DSM
