@@ -31,6 +31,3 @@ USER_UP_PATH="${CACHE_PATH}/users"
 
 BACKUPDIR="${CACHE_PATH}/backup"
 BB_USER_CONFIG_FILE="${BACKUPDIR}/user-config.yml"
-
-EXTRACTOR_PATH="${CACHE_PATH}/extractor"
-EXTRACTOR_BIN="syno_extract_system_patch"

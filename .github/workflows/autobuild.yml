@@ -98,7 +98,6 @@ jobs:
         run: |
           . scripts/func.sh
 
-          getExtractor "files/board/arc/p3/extractor"
           getLKMs "files/board/arc/p3/lkms"
           getAddons "files/board/arc/p3/addons"
           getExtensions "files/board/arc/p3/extensions"
