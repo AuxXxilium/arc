@@ -92,7 +92,7 @@ elif [ "$MACSYS" = "old" ]; then
   for N in $(seq 1 ${NIC}); do  # Currently, only up to 8 are supported.
     MAC="$(readConfigKey "arc.mac${N}" "${USER_CONFIG_FILE}")"
     [ -n "${MAC}" ] && CMDLINE['mac${N}']="${MAC}"
-    [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')" && CMDLINE['mac${N}']="${MAC}"
+    [ -z "${MAC}" ] && CMDLINE['mac${N}']="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
   done
   CMDLINE["netif_num"]=${NIC}
 fi
@@ -117,9 +117,9 @@ grep -q "force_junior" /proc/cmdline && CMDLINE_LINE+="force_junior "
 [ ${EFI} -eq 1 ] && CMDLINE_LINE+="withefi " || CMDLINE_LINE+="noefi "
 [ ! "${BUS}" = "usb" ] && CMDLINE_LINE+="synoboot_satadom=${DOM} dom_szmax=${SIZE} "
 if [ "$MACSYS" = "new" ]; then
-  CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 skip_vender_mac_interfaces=0,1,2,3,4,5,6,7 loglevel=15 log_buf_len=32M"
+  CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 net.ifnames=0 skip_vender_mac_interfaces=0,1,2,3,4,5,6,7 loglevel=15 log_buf_len=32M"
 elif [ "$MACSYS" = "old" ]; then
-  CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 loglevel=15 log_buf_len=32M"
+  CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 net.ifnames=0 loglevel=15 log_buf_len=32M"
 fi
 for KEY in ${!CMDLINE[@]}; do
   VALUE="${CMDLINE[${KEY}]}"
