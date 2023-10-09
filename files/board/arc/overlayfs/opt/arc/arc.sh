@@ -324,8 +324,6 @@ function arcsettings() {
   getnet
   # Get Portmap for Loader
   getmap
-  # Select Extensions
-  extensionSelection
   # Check Warnings
   if [ ${WARNON} -eq 1 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
@@ -337,16 +335,14 @@ function arcsettings() {
   fi
   if [ ${WARNON} -eq 3 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-      --msgbox "WARN: You have more than 8 Ethernet Ports. There are only 8 supported by Redpill." 0 0
+      --msgbox "WARN: You have more than 8 Ethernet Ports. There are only 8 supported by DSM." 0 0
   fi
   if [ ${WARNON} -eq 4 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
       --msgbox "WARN: Your CPU does not have AES Support for Hardwareencryption in DSM." 0 0
   fi
-  if [ ${WARNON} -eq 5 ]; then
-    dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-      --msgbox "You have ${NUMPORTS} Drives connected.\nMax Drivecount is 26!" 5 40
-  fi
+  # Select Extensions
+  extensionSelection
   # Config is done
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"

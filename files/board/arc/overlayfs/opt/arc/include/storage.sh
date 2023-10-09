@@ -97,18 +97,31 @@ function getmap() {
   fi
   # Disk Count for MaxDisks
   DRIVES=$((${SATADRIVES:-0} + ${SASDRIVES:-0} + ${USBDRIVES:-0} + ${NVMEDRIVES:-0}))
-  if [ ${DRIVES} -gt 26 ]; then
-    WARNON=5
+  if [ ${SATADRIVES} -gt 0 ] || [ ${SASDRIVES} -gt 0 ]; then
+    TEXT="\Z4Disks found!\Zn\n"
+    [ -n "${SATADRIVES}" ] && TEXT+="\nSATA Disks: \Zb${SATADRIVES}\Zn"
+    [ -n "${SASDRIVES}" ] && TEXT+="\nSAS Disks: \Zb${SASDRIVES}\Zn"
+    [ -n "${USBDRIVES}" ] && TEXT+="\nUSB Disks: \Zb${USBDRIVES}\Zn"
+    [ -n "${NVMEDRIVES}" ] && TEXT+="\nNVME Disks: \Zb${NVMEDRIVES}\Zn"
+    TEXT+="\n"
+    TEXT+="\nTotal Disks: \Zb${DRIVES}\Zn"
+    if [ ${DRIVES} -gt 26 ]; then
+      TEXT+="\nYou have connected more"
+      TEXT+="\nthen 26 Disks."
+      TEXT+="\nDSM can only adress a"
+      TEXT+="\nmaximum of 26 Disks."
+    fi
+    dialog --backtitle "$(backtitle)" --colors --title "Arc Disks" \
+      --msgbox "${TEXT}" 0 0
+  else
+    TEXT="\Z4No Sata/SAS Disks found!\Zn\n"
+    TEXT+="\n"
+    TEXT+="\nYou need at least 1 Sata/SAS"
+    TEXT+="\nDisk for installing DSM!"
+    dialog --backtitle "$(backtitle)" --colors --title "Arc Disks" \
+      --msgbox "${TEXT}" 0 0
+    return 1
   fi
-  TEXT="\Z4Disks found!\Zn\n"
-  [ -n "${SATADRIVES}" ] && TEXT+="\nSATA Disks: \Zb${SATADRIVES}\Zn"
-  [ -n "${SASDRIVES}" ] && TEXT+="\nSAS Disks: \Zb${SASDRIVES}\Zn"
-  [ -n "${USBDRIVES}" ] && TEXT+="\nUSB Disks: \Zb${USBDRIVES}\Zn"
-  [ -n "${NVMEDRIVES}" ] && TEXT+="\nNVME Disks: \Zb${NVMEDRIVES}\Zn"
-  TEXT+="\n"
-  TEXT+="\nTotal Disks: \Zb${DRIVES}\Zn"
-  dialog --backtitle "$(backtitle)" --colors --title "Arc Disks" \
-    --msgbox "${TEXT}" 0 0
   # Compute PortMap Options
   if [ "${DT}" != "true" ]; then
     if [ ${SATACONTROLLER} -gt 0 ]; then
