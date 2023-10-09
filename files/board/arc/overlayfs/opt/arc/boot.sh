@@ -38,7 +38,7 @@ if [ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" ] || [ "${RAMDISK_HASH_CUR}" != "$
   fi
 fi
 
-# Load model/system variables
+# Read model/system variables
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
@@ -79,10 +79,15 @@ for D in $(lsblk -dnp -o name); do
 done
 [ ${HASATA} = "0" ] &&  echo -e "\033[1;33m*** Please insert at least one Sata/SAS Disk for System Installation, except the Bootloader Disk. ***\033[0m"
 
-# Load necessary variables
+# Read necessary variables
 VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
 PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
+KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
+KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
+DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
+BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
+[ -z "${BOOTCOUNT}" ] && BOOTCOUNT=0
 
 declare -A CMDLINE
 
@@ -127,9 +132,9 @@ grep -q "force_junior" /proc/cmdline && CMDLINE_LINE+="force_junior "
 [ ${EFI} -eq 1 ] && CMDLINE_LINE+="withefi " || CMDLINE_LINE+="noefi "
 [ ! "${BUS}" = "usb" ] && CMDLINE_LINE+="synoboot_satadom=${DOM} dom_szmax=${SIZE} "
 if [ "$MACSYS" = "new" ]; then
-  CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 skip_vender_mac_interfaces=0,1,2,3,4,5,6,7 loglevel=15 log_buf_len=32M"
+  CMDLINE_LINE+="panic=${KERNELPANIC:-0} console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 skip_vender_mac_interfaces=0,1,2,3,4,5,6,7 loglevel=15 log_buf_len=32M"
 elif [ "$MACSYS" = "old" ]; then
-  CMDLINE_LINE+="console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 loglevel=15 log_buf_len=32M"
+  CMDLINE_LINE+="panic=${KERNELPANIC:-0} console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 loglevel=15 log_buf_len=32M"
 fi
 for KEY in ${!CMDLINE[@]}; do
   VALUE="${CMDLINE[${KEY}]}"
@@ -139,10 +144,6 @@ done
 echo -e "\033[1;37mCmdline:\033[0m\n${CMDLINE_LINE}"
 echo
 
-# Read Boot Settings
-DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
-[ -z "${BOOTCOUNT}" ] && BOOTCOUNT=0
 # Make Directboot persistent if DSM is installed
 if [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -gt 0 ]; then
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
@@ -233,6 +234,5 @@ for T in $(w | grep -v "TTY" | awk -F' ' '{print $2}')
 do
   echo -e "\n\033[1;37mThis interface will not be operational. Please use \033[1;34mhttps://finds.synology.com/ \033[1;37mto find DSM and connect.\033[0m\n" >"/dev/${T}" 2>/dev/null || true
 done
-KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 [ "${KERNELLOAD}" = "kexec" ] && kexec -f -e || poweroff
 exit 0

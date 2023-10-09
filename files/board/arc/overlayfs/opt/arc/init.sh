@@ -91,6 +91,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   writeConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootwait" "5" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.macsys" "new" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"

@@ -19,6 +19,7 @@ while read -r LINE; do
   RAMTOTAL=$((${RAMTOTAL} + ${RAMSIZE}))
 done < <(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i "[1-9]")
 RAMTOTAL=$((${RAMTOTAL} * 1024))
+RAMMAX=$((${RAMTOTAL} * 2))
 RAMMIN=$((${RAMTOTAL} / 2))
 
 # Check for Controller
@@ -59,6 +60,7 @@ BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 BOOTWAIT="$(readConfigKey "arc.bootwait" "${USER_CONFIG_FILE}")"
 REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
+KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
@@ -372,7 +374,7 @@ function make() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
-  writeConfigKey "synoinfo.mem_max_mb" "${RAMTOTAL}" "${USER_CONFIG_FILE}"
+  writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
   # Check if all addon exists
   while IFS=': ' read -r ADDON PARAM; do
@@ -768,6 +770,7 @@ function cmdlineMenu() {
   echo "7 \"PCI/IRQ Fix\""                                      >>"${TMP_PATH}/menu"
   echo "8 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
   echo "9 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
+  echo "0 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
   # Loop menu
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
@@ -935,6 +938,20 @@ function cmdlineMenu() {
         done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].cmdline")
         dialog --backtitle "$(backtitle)" --title "Model/Version cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
+        ;;
+      0)
+        rm -f "${TMP_PATH}/opts"
+        echo "5 \"Reboot after 5 seconds\"" >>"${TMP_PATH}/opts"
+        echo "0 \"No reboot\"" >>"${TMP_PATH}/opts"
+        echo "-1 \"Restart immediately\"" >>"${TMP_PATH}/opts"
+        dialog --backtitle "$(backtitle)" --colors --title "Kernelpanic" \
+          --default-item "${KERNELPANIC}" --menu "Choose a time(seconds)" 0 0 0 --file "${TMP_PATH}/opts" \
+          2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && return
+        resp=$(cat ${TMP_PATH}/resp 2>/dev/null)
+        [ -z "${resp}" ] && return
+        KERNELPANIC=${resp}
+        writeConfigKey "arc.kernelpanic" "${KERNELPANIC}" "${USER_CONFIG_FILE}"
         ;;
     esac
   done
