@@ -91,17 +91,41 @@ BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 
 declare -A CMDLINE
 
-# Automatic values
+# Read and Set Cmdline
+if grep -q "force_junior" /proc/cmdline; then
+  CMDLINE['force_junior']=""
+fi
+if [ ${EFI} -eq 1 ]; then
+  CMDLINE['withefi']=""
+else
+  CMDLINE['noefi']=""
+fi
+if [ ! "${BUS}" = "usb" ]; then
+  LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
+  SIZE=$(($(cat /sys/block/${LOADER_DEVICE_NAME}/size) / 2048 + 10))
+  # Read SATADoM type
+  DOM="$(readModelKey "${MODEL}" "dom")"
+  CMDLINE['synoboot_satadom']="${DOM}"
+  CMDLINE['dom_szmax']="${SIZE}"
+fi
 CMDLINE['syno_hw_version']="${MODEL}"
 [ -z "${VID}" ] && VID="0x46f4" # Sanity check
 [ -z "${PID}" ] && PID="0x0001" # Sanity check
 CMDLINE['vid']="${VID}"
 CMDLINE['pid']="${PID}"
+CMDLINE['panic']="${KERNELPANIC:-0}"
+CMDLINE['console']="ttyS0,115200n8"
+CMDLINE['earlyprintk']=""
+CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
+CMDLINE['root']="/dev/md0"
+CMDLINE['loglevel']="15"
+CMDLINE['log_buf_len']="32M"
 CMDLINE['sn']="${SN}"
 if [ "$MACSYS" = "new" ]; then
   MAC1="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
   CMDLINE['mac1']="${MAC1}"
   CMDLINE['netif_num']="1"
+  CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 elif [ "$MACSYS" = "old" ]; then
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   for N in $(seq 1 ${NIC}); do  # Currently, only up to 8 are supported.
@@ -113,34 +137,21 @@ elif [ "$MACSYS" = "old" ]; then
 fi
 
 # Read cmdline
-while IFS=': ' read -r KEY VALUE; do
+while IFS=': ' read KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
 done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].cmdline")
-while IFS=': ' read -r KEY VALUE; do
+while IFS=': ' read KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
 done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
-if [ ! "${BUS}" = "usb" ]; then
-  LOADER_DEVICE_NAME=$(echo "${LOADER_DISK}" | sed 's|/dev/||')
-  SIZE=$(($(cat /sys/block/${LOADER_DEVICE_NAME}/size) / 2048 + 10))
-  # Read SATADoM type
-  DOM="$(readModelKey "${MODEL}" "dom")"
-fi
 
 # Prepare command line
 CMDLINE_LINE=""
-grep -q "force_junior" /proc/cmdline && CMDLINE_LINE+="force_junior "
-[ ${EFI} -eq 1 ] && CMDLINE_LINE+="withefi " || CMDLINE_LINE+="noefi "
-[ ! "${BUS}" = "usb" ] && CMDLINE_LINE+="synoboot_satadom=${DOM} dom_szmax=${SIZE} "
-if [ "$MACSYS" = "new" ]; then
-  CMDLINE_LINE+="panic=${KERNELPANIC:-0} console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 skip_vender_mac_interfaces=0,1,2,3,4,5,6,7 loglevel=15 log_buf_len=32M"
-elif [ "$MACSYS" = "old" ]; then
-  CMDLINE_LINE+="panic=${KERNELPANIC:-0} console=ttyS0,115200n8 earlyprintk earlycon=uart8250,io,0x3f8,115200n8 root=/dev/md0 loglevel=15 log_buf_len=32M"
-fi
 for KEY in ${!CMDLINE[@]}; do
   VALUE="${CMDLINE[${KEY}]}"
   CMDLINE_LINE+=" ${KEY}"
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
+CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
 echo -e "\033[1;37mCmdline:\033[0m\n${CMDLINE_LINE}"
 echo
 
