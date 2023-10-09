@@ -762,10 +762,12 @@ function cmdlineMenu() {
   echo "1 \"Add/edit a Cmdline item\""                          >"${TMP_PATH}/menu"
   echo "2 \"Delete Cmdline item(s)\""                           >>"${TMP_PATH}/menu"
   echo "3 \"Define a serial number\""                           >>"${TMP_PATH}/menu"
-  echo "4 \"Add CPU Fix\""                                      >>"${TMP_PATH}/menu"
-  echo "5 \"Add RAM Fix\""                                      >>"${TMP_PATH}/menu"
-  echo "6 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
-  echo "7 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
+  echo "4 \"CPU Fix\""                                          >>"${TMP_PATH}/menu"
+  echo "5 \"RAM Fix\""                                          >>"${TMP_PATH}/menu"
+  echo "6 \"Apparmor Fix\""                                     >>"${TMP_PATH}/menu"
+  echo "7 \"PCI/IRQ Fix\""                                      >>"${TMP_PATH}/menu"
+  echo "8 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
+  echo "9 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
   # Loop menu
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
@@ -835,22 +837,90 @@ function cmdlineMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       4)
-        writeConfigKey "cmdline.nmi_watchdog" "0" "${USER_CONFIG_FILE}"
-        writeConfigKey "cmdline.tsc" "reliable" "${USER_CONFIG_FILE}"
-        dialog --backtitle "$(backtitle)" --title "CPU Fix" \
-          --aspect 18 --msgbox "Fix added to Cmdline" 0 0
+        dialog --clear --backtitle "$(backtitle)" \
+          --title "CPU Fix" --menu "Fix?" 0 0 0 \
+          1 "Install" \
+          2 "Uninnstall" \
+        2>"${TMP_PATH}/resp"
+        resp="$(<"${TMP_PATH}/resp")"
+        [ -z "${resp}" ] && return 1
+        if [ ${resp} -eq 1 ]; then
+          writeConfigKey "cmdline.nmi_watchdog" "0" "${USER_CONFIG_FILE}"
+          writeConfigKey "cmdline.tsc" "reliable" "${USER_CONFIG_FILE}"
+          dialog --backtitle "$(backtitle)" --title "CPU Fix" \
+            --aspect 18 --msgbox "Fix installed to Cmdline" 0 0
+        elif [ ${resp} -eq 2 ]; then
+          deleteConfigKey "cmdline.nmi_watchdog" "${USER_CONFIG_FILE}"
+          deleteConfigKey "cmdline.tsc" "${USER_CONFIG_FILE}"
+          dialog --backtitle "$(backtitle)" --title "CPU Fix" \
+            --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
+        fi
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       5)
-        writeConfigKey "cmdline.disable_mtrr_trim" "0" "${USER_CONFIG_FILE}"
-        writeConfigKey "cmdline.crashkernel" "192M" "${USER_CONFIG_FILE}"
-        dialog --backtitle "$(backtitle)" --title "RAM Fix" \
-          --aspect 18 --msgbox "Fix added to Cmdline" 0 0
+        dialog --clear --backtitle "$(backtitle)" \
+          --title "RAM Fix" --menu "Fix?" 0 0 0 \
+          1 "Install" \
+          2 "Uninnstall" \
+        2>"${TMP_PATH}/resp"
+        resp="$(<"${TMP_PATH}/resp")"
+        [ -z "${resp}" ] && return 1
+        if [ ${resp} -eq 1 ]; then
+          writeConfigKey "cmdline.disable_mtrr_trim" "0" "${USER_CONFIG_FILE}"
+          writeConfigKey "cmdline.crashkernel" "192M" "${USER_CONFIG_FILE}"
+          dialog --backtitle "$(backtitle)" --title "RAM Fix" \
+            --aspect 18 --msgbox "Fix installed to Cmdline" 0 0
+        elif [ ${resp} -eq 2 ]; then
+          deleteConfigKey "cmdline.disable_mtrr_trim" "${USER_CONFIG_FILE}"
+          deleteConfigKey "cmdline.crashkernel" "${USER_CONFIG_FILE}"
+          dialog --backtitle "$(backtitle)" --title "RAM Fix" \
+            --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
+        fi
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       6)
+        dialog --clear --backtitle "$(backtitle)" \
+          --title "Apparmor Fix" --menu "Fix?" 0 0 0 \
+          1 "Install" \
+          2 "Uninnstall" \
+        2>"${TMP_PATH}/resp"
+        resp="$(<"${TMP_PATH}/resp")"
+        [ -z "${resp}" ] && return 1
+        if [ ${resp} -eq 1 ]; then
+          writeConfigKey "cmdline.apparmor" "0" "${USER_CONFIG_FILE}"
+          dialog --backtitle "$(backtitle)" --title "Apparmor Fix" \
+            --aspect 18 --msgbox "Fix installed to Cmdline" 0 0
+        elif [ ${resp} -eq 2 ]; then
+          deleteConfigKey "cmdline.apparmor" "${USER_CONFIG_FILE}"
+          dialog --backtitle "$(backtitle)" --title "Apparmor Fix" \
+            --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
+        fi
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
+      7)
+        dialog --clear --backtitle "$(backtitle)" \
+          --title "PCI/IRQ Fix" --menu "Fix?" 0 0 0 \
+          1 "Install" \
+          2 "Uninnstall" \
+        2>"${TMP_PATH}/resp"
+        resp="$(<"${TMP_PATH}/resp")"
+        [ -z "${resp}" ] && return 1
+        if [ ${resp} -eq 1 ]; then
+          writeConfigKey "cmdline.pci" "routeirq" "${USER_CONFIG_FILE}"
+          dialog --backtitle "$(backtitle)" --title "PCI/IRQ Fix" \
+            --aspect 18 --msgbox "Fix installed to Cmdline" 0 0
+        elif [ ${resp} -eq 2 ]; then
+          deleteConfigKey "cmdline.pci" "${USER_CONFIG_FILE}"
+          dialog --backtitle "$(backtitle)" --title "PCI/IRQ Fix" \
+            --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
+        fi
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
+      8)
         ITEMS=""
         for KEY in ${!CMDLINE[@]}; do
           ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
@@ -858,7 +928,7 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" --title "User cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      7)
+      9)
         ITEMS=""
         while IFS=': ' read -r KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
