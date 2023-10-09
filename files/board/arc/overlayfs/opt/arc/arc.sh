@@ -2388,7 +2388,7 @@ function boot() {
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting to DSM - Please stay patient!" 0 0
   sleep 2
-  boot.sh
+  exec reboot
 }
 
 ###############################################################################
