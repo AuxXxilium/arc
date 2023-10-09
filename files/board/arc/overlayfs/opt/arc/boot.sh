@@ -123,7 +123,7 @@ elif [ "$MACSYS" = "old" ]; then
     [ -n "${MAC}" ] && CMDLINE['mac${N}']="${MAC}"
     [ -z "${MAC}" ] && CMDLINE['mac${N}']="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
   done
-  CMDLINE["netif_num"]=${NIC}
+  CMDLINE["netif_num"]="${NIC}"
 fi
 
 # Read cmdline
