@@ -2209,7 +2209,7 @@ function downgradeMenu() {
       umount "${I}"
     done
     rm -rf "${TMP_PATH}/sdX1"
-  ) | dialog --backtitle "$(backtitle)" --title "Allow downgrade installation" \
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Allow downgrade installation" \
       --progressbox "Removing ..." 20 70
   TEXT="Remove VERSION file for all disks completed."
   dialog --backtitle "$(backtitle)" --colors --aspect 18 \
@@ -2263,7 +2263,7 @@ function resetPassword() {
       umount "${I}"
     done
     rm -rf "${TMP_PATH}/sdX1"
-  ) | dialog --backtitle "$(backtitle)" --title "Reset DSM Password" \
+  ) 2>&1  | dialog --backtitle "$(backtitle)" --title "Reset DSM Password" \
       --progressbox "Resetting ..." 20 70
   [ -f "${SHADOW_FILE}" ] && rm -rf "${SHADOW_FILE}"
   dialog --backtitle "$(backtitle)" --colors --aspect 18 \
@@ -2343,9 +2343,9 @@ function formatdisks() {
   fi
   (
     for I in ${resp}; do
-      mkfs.ext4 -T largefile4 "${I}"
+      echo y | mkfs.ext4 -T largefile4 "${I}" 2>&1
     done
-  ) | dialog --backtitle "$(backtitle)" --colors --title "Format" \
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Format" \
     --progressbox "Formatting ..." 20 70
   dialog --backtitle "$(backtitle)" --colors --title "Format" \
     --msgbox "Formatting is complete." 0 0
