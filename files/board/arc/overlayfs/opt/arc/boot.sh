@@ -119,9 +119,9 @@ CMDLINE['log_buf_len']="32M"
 CMDLINE['sn']="${SN}"
 CMDLINE['mac1']="${MAC1}"
 CMDLINE['netif_num']="1"
-if [ "${MACSYS}" = "real" ]; then
+if [ "${MACSYS}" = "hardware" ]; then
   CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-elif [ "${MACSYS}" = "arc" ]; then
+elif [ "${MACSYS}" = "custom" ]; then
   CMDLINE['skip_vender_mac_interfaces']="1,2,3,4,5,6,7"
 fi
 
