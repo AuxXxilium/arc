@@ -98,21 +98,19 @@ function getmap() {
   # Disk Count for MaxDisks
   DRIVES=$((${SATADRIVES:-0} + ${SASDRIVES:-0} + ${USBDRIVES:-0} + ${NVMEDRIVES:-0}))
   if [ ${SATADRIVES} -gt 0 ] || [ ${SASDRIVES} -gt 0 ]; then
-    TEXT="\Z4Disks found!\Zn\n"
-    [ -n "${SATADRIVES}" ] && TEXT+="\nSATA Disks: \Zb${SATADRIVES}\Zn"
-    [ -n "${SASDRIVES}" ] && TEXT+="\nSAS Disks: \Zb${SASDRIVES}\Zn"
-    [ -n "${USBDRIVES}" ] && TEXT+="\nUSB Disks: \Zb${USBDRIVES}\Zn"
-    [ -n "${NVMEDRIVES}" ] && TEXT+="\nNVME Disks: \Zb${NVMEDRIVES}\Zn"
-    TEXT+="\n"
-    TEXT+="\nTotal Disks: \Zb${DRIVES}\Zn"
+    [ -n "${SATADRIVES}" ] && writeConfigKey "device.satadrives" "${SATADRIVES}" "${USER_CONFIG_FILE}"
+    [ -n "${SASDRIVES}" ] && writeConfigKey "device.sasdrives" "${SASDRIVES}" "${USER_CONFIG_FILE}"
+    [ -n "${USBDRIVES}" ] && writeConfigKey "device.usbdrives" "${USBDRIVES}" "${USER_CONFIG_FILE}"
+    [ -n "${NVMEDRIVES}" ] && writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
+    writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
     if [ ${DRIVES} -gt 26 ]; then
       TEXT+="\nYou have connected more"
       TEXT+="\nthen 26 Disks."
       TEXT+="\nDSM can only adress a"
       TEXT+="\nmaximum of 26 Disks."
+      dialog --backtitle "$(backtitle)" --colors --title "Arc Disks" \
+        --msgbox "${TEXT}" 0 0
     fi
-    dialog --backtitle "$(backtitle)" --colors --title "Arc Disks" \
-      --msgbox "${TEXT}" 0 0
   else
     TEXT="\Z4No Sata/SAS Disks found!\Zn\n"
     TEXT+="\n"

@@ -23,6 +23,7 @@ function getnet() {
     resp="$(<"${TMP_PATH}/resp")"
     [ -z "${resp}" ] && return 1
     MAC="${resp}"
+    writeConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
   else
     dialog --clear --backtitle "$(backtitle)" --title "Mac Setting" \
       --menu "Hardware, Random or Custom MAC?" 0 0 0 \
@@ -35,9 +36,11 @@ function getnet() {
     if [ ${resp} -eq 1 ]; then
       # Get real Mac
       MAC="$(cat /sys/class/net/eth0/address | sed 's/://g')"
+      writeConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 2 ]; then
       # Generate Random Mac
       MAC=($(generateMacAddress "${MODEL}" 1))
+      writeConfigKey "arc.macsys" "custom" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 3 ]; then
       # User Mac
       MAC="$(cat /sys/class/net/eth0/address | sed 's/://g')"
@@ -49,18 +52,14 @@ function getnet() {
         RET=$?
         [ ${RET} -ne 0 ] && break 2
         MAC="$(<"${TMP_PATH}/resp")"
-        [ -z "${MAC}" ] && MAC="$(readConfigKey "cmdline.mac1" "${USER_CONFIG_FILE}")"
+        [ -z "${MAC}" ] && MAC="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
         [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/eth0/address | sed 's/://g')"
         MAC="$(echo "${MAC}" | sed "s/:\|-\| //g")"
+        writeConfigKey "arc.macsys" "custom" "${USER_CONFIG_FILE}"
         [ ${#MAC} -eq 12 ] && break
         dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "Invalid MAC" 0 0
       done
     fi
-  fi
-  if [ "$MACSYS" = "new" ]; then
-    dialog --backtitle "$(backtitle)" --title "New MacSys Setting" --msgbox "1. MAC set to: ${MAC}\nThis is only cosmetic, the\nMAC will not be applied to your NIC." 0 0
-  elif [ "$MACSYS" = "old" ]; then
-    dialog --backtitle "$(backtitle)" --title "Old MacSys Setting" --msgbox "1. MAC set to: ${MAC}\nThe MAC will be applied to your NIC.\nYou can add more custom MAC in Config." 0 0
   fi
   writeConfigKey "arc.mac1" "${MAC}" "${USER_CONFIG_FILE}"
 }

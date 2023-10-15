@@ -30,12 +30,14 @@ ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
 RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
 RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
 if [ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" ] || [ "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]; then
-  echo -e "\033[1;34mDSM zImage/Ramdisk changed! Try to Patch them.\033[0m"
+  echo -e "\033[1;34mDSM zImage/Ramdisk changed!\033[0m"
+  echo
   livepatch
   if [ ${FAIL} -eq 1 ]; then
     echo -e "\033[1;34mPatching DSM Files failed! Please stay patient for Update.\033[0m" 0 0
     exit 1
   fi
+  echo
 fi
 
 # Read model/system variables
@@ -75,10 +77,12 @@ fi
 VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
 PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
+MAC1="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
+ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
 [ -z "${BOOTCOUNT}" ] && BOOTCOUNT=0
 
 declare -A CMDLINE
@@ -113,19 +117,12 @@ CMDLINE['root']="/dev/md0"
 CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 CMDLINE['sn']="${SN}"
-if [ "$MACSYS" = "new" ]; then
-  MAC1="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
-  CMDLINE['mac1']="${MAC1}"
-  CMDLINE['netif_num']="1"
+CMDLINE['mac1']="${MAC1}"
+CMDLINE['netif_num']="1"
+if [ "${MACSYS}" = "real" ]; then
   CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-elif [ "$MACSYS" = "old" ]; then
-  NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
-  for N in $(seq 1 ${NIC}); do  # Currently, only up to 8 are supported.
-    MAC="$(readConfigKey "arc.mac${N}" "${USER_CONFIG_FILE}")"
-    [ -n "${MAC}" ] && CMDLINE['mac${N}']="${MAC}"
-    [ -z "${MAC}" ] && CMDLINE['mac${N}']="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
-  done
-  CMDLINE["netif_num"]="${NIC}"
+elif [ "${MACSYS}" = "arc" ]; then
+  CMDLINE['skip_vender_mac_interfaces']="1,2,3,4,5,6,7"
 fi
 
 # Read cmdline
@@ -165,7 +162,6 @@ elif [ "${DIRECTBOOT}" = "true" ] && [ ${BOOTCOUNT} -eq 0 ]; then
   echo -e "\033[1;34mDSM not installed - Reboot with Directboot\033[0m"
   exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
-  ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
   # Read Ip Settings
   STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"

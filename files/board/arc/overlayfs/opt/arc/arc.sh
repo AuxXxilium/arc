@@ -300,8 +300,8 @@ function arcsettings() {
         # read valid serial from file
         SN="$(readModelKey "${MODEL}" "arc.serial")"
         writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
-        writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
+        writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 2 ]; then
         # Generate random serial
         SN="$(generateSerial "${MODEL}")"
@@ -2558,7 +2558,7 @@ while true; do
       [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
       writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
       ;;
-    o) [ "${MACSYS}" = "new" ] && MACSYS='old' || MACSYS='new'
+    o) [ "${MACSYS}" = "hardware" ] && MACSYS='custom' || MACSYS='hardware'
       writeConfigKey "arc.macsys" "${MACSYS}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
