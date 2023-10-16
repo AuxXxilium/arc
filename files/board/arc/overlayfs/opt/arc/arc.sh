@@ -290,7 +290,7 @@ function arcsettings() {
   if [ -n "${ARCCONF}" ]; then
     if [ "${ARCRECOVERY}" != "true" ]; then
       dialog --clear --backtitle "$(backtitle)" \
-        --menu "Arc Patch\nDo you want to use Syno Services?" 0 0 0 \
+        --menu "Arc Patch\nDo you want to use Syno Services?\nIf NO, you can add your own Serial/Mac" 0 0 0 \
         1 "Yes - Install with Arc Patch" \
         2 "No - Install without Arc Patch" \
       2>"${TMP_PATH}/resp"
@@ -313,9 +313,39 @@ function arcsettings() {
       writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
     fi
   else
-    # Generate random serial
-    SN="$(generateSerial "${MODEL}")"
-    writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
+    if [ "${ARCRECOVERY}" != "true" ]; then
+      dialog --clear --backtitle "$(backtitle)" \
+        --menu "DSM Serial\nDo you want set your own?" 0 0 0 \
+        1 "Yes - Set my Serial" \
+        2 "No - Generate Random Serial" \
+      2>"${TMP_PATH}/resp"
+      resp="$(<"${TMP_PATH}/resp")"
+      [ -z "${resp}" ] && return 1
+      if [ ${resp} -eq 1 ]; then
+        while true; do
+          dialog --backtitle "$(backtitle)" --colors --title "Cmdline" \
+            --inputbox "Please enter a serial number " 0 0 "" \
+            2>"${TMP_PATH}/resp"
+          [ $? -ne 0 ] && break 2
+          SN="$(cat ${TMP_PATH}/resp)"
+          if [ -z "${SN}" ]; then
+            return
+          elif [ $(validateSerial ${MODEL} ${SN}) -eq 1 ]; then
+            break
+          fi
+          # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
+          break
+          dialog --backtitle "$(backtitle)" --colors --title "Cmdline" \
+            --yesno "Invalid serial, continue?" 0 0
+          [ $? -eq 0 ] && break
+        done
+        writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+      elif [ ${resp} -eq 2 ]; then
+        # Generate random serial
+        SN="$(generateSerial "${MODEL}")"
+      fi
+      writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
+    fi
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
   fi
@@ -759,14 +789,13 @@ function cmdlineMenu() {
   done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
   echo "1 \"Add/edit a Cmdline item\""                          >"${TMP_PATH}/menu"
   echo "2 \"Delete Cmdline item(s)\""                           >>"${TMP_PATH}/menu"
-  echo "3 \"Define a serial number\""                           >>"${TMP_PATH}/menu"
-  echo "4 \"CPU Fix\""                                          >>"${TMP_PATH}/menu"
-  echo "5 \"RAM Fix\""                                          >>"${TMP_PATH}/menu"
-  echo "6 \"Apparmor Fix\""                                     >>"${TMP_PATH}/menu"
-  echo "7 \"PCI/IRQ Fix\""                                      >>"${TMP_PATH}/menu"
-  echo "8 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
-  echo "9 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
-  echo "0 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
+  echo "3 \"CPU Fix\""                                          >>"${TMP_PATH}/menu"
+  echo "4 \"RAM Fix\""                                          >>"${TMP_PATH}/menu"
+  echo "5 \"Apparmor Fix\""                                     >>"${TMP_PATH}/menu"
+  echo "6 \"PCI/IRQ Fix\""                                      >>"${TMP_PATH}/menu"
+  echo "7 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
+  echo "8 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
+  echo "9 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
   # Loop menu
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
@@ -813,29 +842,6 @@ function cmdlineMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       3)
-        while true; do
-          dialog --backtitle "$(backtitle)" --colors --title "Cmdline" \
-            --inputbox "Please enter a serial number " 0 0 "" \
-            2>"${TMP_PATH}/resp"
-          [ $? -ne 0 ] && break 2
-          SERIAL="$(cat ${TMP_PATH}/resp)"
-          if [ -z "${SERIAL}" ]; then
-            return
-          elif [ $(validateSerial ${MODEL} ${SERIAL}) -eq 1 ]; then
-            break
-          fi
-          # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
-          break
-          dialog --backtitle "$(backtitle)" --colors --title "Cmdline" \
-            --yesno "Invalid serial, continue?" 0 0
-          [ $? -eq 0 ] && break
-        done
-        SN="${SERIAL}"
-        writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      4)
         dialog --clear --backtitle "$(backtitle)" \
           --title "CPU Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
@@ -857,7 +863,7 @@ function cmdlineMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      5)
+      4)
         dialog --clear --backtitle "$(backtitle)" \
           --title "RAM Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
@@ -879,7 +885,7 @@ function cmdlineMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      6)
+      5)
         dialog --clear --backtitle "$(backtitle)" \
           --title "Apparmor Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
@@ -899,7 +905,7 @@ function cmdlineMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      7)
+      6)
         dialog --clear --backtitle "$(backtitle)" \
           --title "PCI/IRQ Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
@@ -919,7 +925,7 @@ function cmdlineMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      8)
+      7)
         ITEMS=""
         for KEY in ${!CMDLINE[@]}; do
           ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
@@ -927,7 +933,7 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" --title "User cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      9)
+      8)
         ITEMS=""
         while IFS=': ' read -r KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
@@ -935,7 +941,7 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" --title "Model/Version cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      0)
+      9)
         rm -f "${TMP_PATH}/opts"
         echo "5 \"Reboot after 5 seconds\"" >>"${TMP_PATH}/opts"
         echo "0 \"No reboot\"" >>"${TMP_PATH}/opts"
