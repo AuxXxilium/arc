@@ -22,12 +22,6 @@ RAMTOTAL=$((${RAMTOTAL} * 1024))
 RAMMAX=$((${RAMTOTAL} * 2))
 RAMMIN=$((${RAMTOTAL} / 2))
 
-# Check for Controller
-SATACONTROLLER=$(lspci -d ::106 | wc -l)
-writeConfigKey "device.satacontroller" "${SATACONTROLLER}" "${USER_CONFIG_FILE}"
-SASCONTROLLER=$(lspci -d ::107 | wc -l)
-writeConfigKey "device.sascontroller" "${SASCONTROLLER}" "${USER_CONFIG_FILE}"
-
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
   # Check for Hypervisor
@@ -395,6 +389,10 @@ function arcsettings() {
 ###############################################################################
 # Building Loader
 function make() {
+  # Clean old Files
+  rm -rf "${UNTAR_PAT_PATH}"
+  rm -rf "${CACHE_PATH}/${MODEL}/${PRODUCTVER}"
+  # Read Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -436,13 +434,14 @@ function make() {
     sleep 1
     idx=$((${idx} + 1))
   done
-  [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ] && return 1
+  if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
+    dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+      --infobox "Get PAT Data from Syno...\nFAILED!" 3 30
+    return 1
+  fi
   writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
   if [ "${PAT_URL}" != "${PAT_URL_CONF}" ] || [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-    # Clean old Files
-    rm -rf "${UNTAR_PAT_PATH}"
-    rm -rf "${CACHE_PATH}/${MODEL}/${PRODUCTVER}"
     # Check for existing Files
     mkdir -p "${CACHE_PATH}/${MODEL}/${PRODUCTVER}"
     DSM_FILE="${CACHE_PATH}/${MODEL}/${PRODUCTVER}/dsm.tar"
@@ -500,6 +499,7 @@ function make() {
   sleep 3
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     # Build is done
+    writeConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     # Ask for Boot
@@ -1136,13 +1136,21 @@ function backupMenu() {
           dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
             --infobox "Restore Config from ${BACKUPDIR}" 0 0
           if [ -f "${BACKUPDIR}/user-config.yml" ]; then
-            # Copy config back to location
-            cp -f "${BACKUPDIR}/user-config.yml" "${USER_CONFIG_FILE}"
-            dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
-              --msgbox "Restore complete" 0 0
+            CONFIG_VERSION="$(readConfigKey "arc.version" "${BACKUPDIR}/user-config.yml")"
+            if [ "${ARC_VERSION}" = "${CONFIG_VERSION}" ]; then
+              # Copy config back to location
+              cp -f "${BACKUPDIR}/user-config.yml" "${USER_CONFIG_FILE}"
+              dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
+                --msgbox "Restore complete" 0 0
+            else
+              dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
+                --msgbox "Restore Version mismatch!" 0 0
+              return 1
+            fi
           else
             dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
               --msgbox "No Config Backup found" 0 0
+            return 1
           fi
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
           PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -1255,9 +1263,25 @@ function backupMenu() {
             [ ${#GENHASH} -eq 9 ] && break
             dialog --backtitle "$(backtitle)" --title "Restore with Code" --msgbox "Invalid Code" 0 0
           done
-          rm -f "${TMP_PATH}/user-config.yml"
-          curl -k https://dpaste.com/${GENHASH}.txt >"${TMP_PATH}/user-config.yml"
-          cp -f "${TMP_PATH}/user-config.yml" "${USER_CONFIG_FILE}"
+          rm -f "${BACKUPDIR}/user-config.yml"
+          curl -k https://dpaste.com/${GENHASH}.txt >"${BACKUPDIR}/user-config.yml"
+          if [ -f "${BACKUPDIR}/user-config.yml" ]; then
+            CONFIG_VERSION="$(readConfigKey "arc.version" "${BACKUPDIR}/user-config.yml")"
+            if [ "${ARC_VERSION}" = "${CONFIG_VERSION}" ]; then
+              # Copy config back to location
+              cp -f "${BACKUPDIR}/user-config.yml" "${USER_CONFIG_FILE}"
+              dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
+                --msgbox "Restore complete" 0 0
+            else
+              dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
+                --msgbox "Restore Version mismatch!" 0 0
+              return 1
+            fi
+          else
+            dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
+              --msgbox "No Config Backup found" 0 0
+            return 1
+          fi
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
           PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
           ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
@@ -1344,13 +1368,21 @@ function backupMenu() {
           dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
             --infobox "Restore Config from ${BACKUPDIR}" 0 0
           if [ -f "${BACKUPDIR}/user-config.yml" ]; then
-            # Copy config back to location
-            cp -f "${BACKUPDIR}/user-config.yml" "${USER_CONFIG_FILE}"
-            dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
-              --msgbox "Restore complete" 0 0
+            CONFIG_VERSION="$(readConfigKey "arc.version" "${BACKUPDIR}/user-config.yml")"
+            if [ "${ARC_VERSION}" = "${CONFIG_VERSION}" ]; then
+              # Copy config back to location
+              cp -f "${BACKUPDIR}/user-config.yml" "${USER_CONFIG_FILE}"
+              dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
+                --msgbox "Restore complete" 0 0
+            else
+              dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
+                --msgbox "Restore Version mismatch!" 0 0
+              return 1
+            fi
           else
             dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
               --msgbox "No Config Backup found" 0 0
+            return 1
           fi
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
           PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -1420,9 +1452,25 @@ function backupMenu() {
             [ ${#GENHASH} -eq 9 ] && break
             dialog --backtitle "$(backtitle)" --title "Restore with Code" --msgbox "Invalid Code" 0 0
           done
-          rm -f "${TMP_PATH}/user-config.yml"
-          curl -k https://dpaste.com/${GENHASH}.txt >${TMP_PATH}/user-config.yml
-          cp -f "${TMP_PATH}/user-config.yml" "${USER_CONFIG_FILE}"
+          rm -f "${BACKUPDIR}/user-config.yml"
+          curl -k https://dpaste.com/${GENHASH}.txt >"${BACKUPDIR}/user-config.yml"
+          if [ -f "${BACKUPDIR}/user-config.yml" ]; then
+            CONFIG_VERSION="$(readConfigKey "arc.version" "${BACKUPDIR}/user-config.yml")"
+            if [ "${ARC_VERSION}" = "${CONFIG_VERSION}" ]; then
+              # Copy config back to location
+              cp -f "${BACKUPDIR}/user-config.yml" "${USER_CONFIG_FILE}"
+              dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
+                --msgbox "Restore complete" 0 0
+            else
+              dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
+                --msgbox "Restore Version mismatch!" 0 0
+              return 1
+            fi
+          else
+            dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
+              --msgbox "No Config Backup found" 0 0
+            return 1
+          fi
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
           PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
           ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"

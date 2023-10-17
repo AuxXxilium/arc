@@ -191,3 +191,9 @@ function getmap() {
     fi
   fi
 }
+
+# Check for Controller
+SATACONTROLLER=$(lspci -d ::106 | wc -l)
+writeConfigKey "device.satacontroller" "${SATACONTROLLER}" "${USER_CONFIG_FILE}"
+SASCONTROLLER=$(lspci -d ::107 | wc -l)
+writeConfigKey "device.sascontroller" "${SASCONTROLLER}" "${USER_CONFIG_FILE}"
