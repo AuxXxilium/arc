@@ -1,9 +1,0 @@
-[submodule "redpill-lkm"]
-	path = redpill-lkm
-	url = https://github.com/AuxXxilium/redpill-lkm
-[submodule "addons"]
-	path = addons
-	url = https://github.com/AuxXxilium/arc-addons
-[submodule "modules"]
-	path = modules
-	url = https://github.com/AuxXxilium/arc-modules
