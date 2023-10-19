@@ -6,7 +6,7 @@ ARC_TITLE="Arc ${ARC_VERSION}"
 INCLUDE_PATH="/opt/arc/include"
 
 TMP_PATH="/tmp"
-UNTAR_PAT_PATH="${CACHE_PATH}/dsm"
+UNTAR_PAT_PATH="${CACHE_PATH}/DSM"
 RAMDISK_PATH="${TMP_PATH}/ramdisk"
 LOG_FILE="${TMP_PATH}/log.txt"
 

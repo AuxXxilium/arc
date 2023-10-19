@@ -445,7 +445,7 @@ function make() {
     fi
     dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
       --extra-button --extra-label "Retry" \
-      --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 5 100 0 "HASH" 2 1 "${PAT_HASH}" 2 5 100 0 \
+      --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 7 100 0 \
       2>"${TMP_PATH}/resp"
     RET=$?
     [ ${RET} -eq 0 ] && break    # ok-button
@@ -458,9 +458,8 @@ function make() {
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
     # Check for existing Files
-    mkdir -p "${CACHE_PATH}/DSM"
     mkdir -p "${UNTAR_PAT_PATH}"
-    DSM_FILE="${CACHE_PATH}/DSM/${PAT_HASH}.tar"
+    DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
     # Get new Files
     DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL}/${PRODUCTVER}/${PAT_HASH}.tar"
     STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
@@ -468,8 +467,7 @@ function make() {
       dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
       --msgbox "No DSM Image found!\nTry Syno Link." 0 0
       # Grep PAT_URL
-      PAT_FILE="${CACHE_PATH}/DSM/${PAT_HASH}.pat"
-      mkdir -p "${CACHE_PATH}/DSM"
+      PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
       STATUS=$(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" --progress-bar)
       if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
         dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
@@ -477,7 +475,7 @@ function make() {
         return 1
       fi
       # Extract Files
-      header=$(od -bcN2 ${PAT_PATH} | head -1 | awk '{print $3}')
+      header=$(od -bcN2 ${PAT_FILE} | head -1 | awk '{print $3}')
       case ${header} in
           105)
           echo "Uncompressed tar"
@@ -496,20 +494,23 @@ function make() {
           ;;
       esac
       if [ "${isencrypted}" = "yes" ]; then
-          # Uses the extractor to untar PAT file
-          LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_PATH}" "${UNTAR_PAT_PATH}"
+        # Uses the extractor to untar PAT file
+        LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_FILE}" "${UNTAR_PAT_PATH}"
       else
-          # Untar PAT file
-          tar -xf "${PAT_PATH}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+        # Untar PAT file
+        tar -xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
       fi
       # Cleanup PAT Download
+      rm -f "${PAT_FILE}"
       dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
       --msgbox "DSM Extraction successful!" 0 0
-    fi
-    if [ -f "${DSM_FILE}" ]; then
+    elif [ -f "${DSM_FILE}" ]; then
       tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
       dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
         --msgbox "DSM Image Download successful!" 0 0
+    else
+      dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
+        --msgbox "ERROR: No DSM Image found!" 0 0
     fi
     # Copy DSM Files to Locations if DSM Files not found
     cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
@@ -519,7 +520,6 @@ function make() {
     cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
     cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
     rm -rf "${UNTAR_PAT_PATH}"
-    rm -rf "${CACHE_PATH}/DSM"
   fi
   # Reset Bootcount if User rebuild DSM
   if [ ${BOOTCOUNT} -gt 0 ] || [ -z "${BOOTCOUNT}" ]; then
