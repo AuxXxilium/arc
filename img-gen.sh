@@ -12,10 +12,11 @@ rm -rf ".buildroot/board/arc/overlayfs"
 rm -rf ".buildroot/board/arc/p1"
 rm -rf ".buildroot/board/arc/p3"
 
-# Get Additions
+# Get extractor, LKM, Addons and Modules
 
 . ./scripts/func.sh
 
+getExtractor "files/board/arc/p3/extractor" true
 getLKMs "files/board/arc/p3/lkms" true
 getAddons "files/board/arc/p3/addons" true
 getExtensions "files/board/arc/p3/extensions" true
