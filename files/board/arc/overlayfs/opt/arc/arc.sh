@@ -1202,8 +1202,7 @@ function backupMenu() {
                 --msgbox "Restore complete" 0 0
             else
               dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
-                --msgbox "Restore Version mismatch!" 0 0
-              return 1
+                --msgbox "Restore Version mismatch!\nIt is possible that your Config will not work!" 0 0
             fi
           else
             dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
@@ -1332,8 +1331,7 @@ function backupMenu() {
                 --msgbox "Restore complete" 0 0
             else
               dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
-                --msgbox "Restore Version mismatch!" 0 0
-              return 1
+                --msgbox "Restore Version mismatch!\nIt is possible that your Config will not work!" 0 0
             fi
           else
             dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
@@ -1434,8 +1432,7 @@ function backupMenu() {
                 --msgbox "Restore complete" 0 0
             else
               dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
-                --msgbox "Restore Version mismatch!" 0 0
-              return 1
+                  --msgbox "Restore Version mismatch!\nIt is possible that your Config will not work!" 0 0
             fi
           else
             dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
@@ -1521,8 +1518,7 @@ function backupMenu() {
                 --msgbox "Restore complete" 0 0
             else
               dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
-                --msgbox "Restore Version mismatch!" 0 0
-              return 1
+                  --msgbox "Restore Version mismatch!\nIt is possible that your Config will not work!" 0 0
             fi
           else
             dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
