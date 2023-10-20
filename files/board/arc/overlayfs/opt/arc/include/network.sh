@@ -48,7 +48,7 @@ function getnet() {
   writeConfigKey "arc.mac1" "${MAC}" "${USER_CONFIG_FILE}"
   # Ask for Macsys
   dialog --clear --backtitle "$(backtitle)" --title "Macsys Setting" \
-    --menu "Do you want to apply Mac to 1. NIC?" 0 0 0 \
+    --menu "Do you want to apply Mac to 1. NIC?" 7 50 0 \
     1 "No - Do not apply (Fake)Mac" \
     2 "Yes - Apply (Fake)Mac" \
   2>"${TMP_PATH}/resp"

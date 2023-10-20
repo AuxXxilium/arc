@@ -63,7 +63,7 @@ echo -e "LKM: \033[1;37m${LKM}\033[0m"
 echo -e "Macsys: \033[1;37m${MACSYS}\033[0m"
 echo
 echo -e "\033[1;37mSystem:\033[0m"
-echo -e "Vendor | Board: \033[1;37m${VENDOR}\033[0m / \033[1;37m${BOARD}\033[0m"
+echo -e "Vendor / Board: \033[1;37m${VENDOR}\033[0m / \033[1;37m${BOARD}\033[0m"
 echo -e "CPU: \033[1;37m${CPU}\033[0m"
 echo -e "MEM: \033[1;37m${RAM}\033[0m / \033[1;37m${RAMTOTAL} MB\033[0m"
 echo

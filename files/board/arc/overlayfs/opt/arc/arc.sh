@@ -287,7 +287,7 @@ function arcsettings() {
     writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
   elif [ "${ARCRECOVERY}" != "true" ] && [ -n "${ARCCONF}" ]; then
     dialog --clear --backtitle "$(backtitle)" --title "Arc Patch Model"\
-      --menu "Do you want to use Syno Services?\nIf NO, you can add your own Serial/Mac" 0 0 0 \
+      --menu "Do you want to use Syno Services?" 7 50 0 \
       1 "Yes - Install with Arc Patch" \
       2 "No - Install with random Serial/Mac" \
       3 "No - Install with my Serial/Mac" \
@@ -328,9 +328,9 @@ function arcsettings() {
     writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
   elif [ "${ARCRECOVERY}" != "true" ] && [ -z "${ARCCONF}" ]; then
     dialog --clear --backtitle "$(backtitle)" --title "Non Arc Patch Model" \
-      --menu "Do you want to use Syno Services?\nIf NO, you can add your own Serial/Mac" 0 0 0 \
-      1 "No - Install with random Serial/Mac" \
-      2 "No - Install with my Serial/Mac" \
+      --menu "Please select an Option?" 7 50 0 \
+      1 "Install with random Serial/Mac" \
+      2 "Install with my Serial/Mac" \
     2>"${TMP_PATH}/resp"
     resp="$(<"${TMP_PATH}/resp")"
     [ -z "${resp}" ] && return 1
@@ -463,12 +463,11 @@ function make() {
       MSG="Successfully got PAT Data.\nPlease confirm or modify as needed."
     fi
     dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-      --extra-button --extra-label "Retry" \
+      --extra-button --extra-label "Retry" --default-button "OK" \
       --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 7 100 0 \
       2>"${TMP_PATH}/resp"
     RET=$?
     [ ${RET} -eq 0 ] && break    # ok-button
-    [ ${RET} -eq 3 ] && continue # extra-button
     return                       # 1 or 255  # cancel-button or ESC
   done
   PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
