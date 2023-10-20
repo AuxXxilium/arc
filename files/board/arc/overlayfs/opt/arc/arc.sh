@@ -81,10 +81,12 @@ function backtitle() {
     BACKTITLE+=" (no IP)"
   fi
   BACKTITLE+=" |"
-  if [ "${ARCPATCH}" = "true" ]; then
-    BACKTITLE+=" Patch: Y"
-  else
-    BACKTITLE+=" Patch: N"
+  if [ "${ARCPATCH}" = "arc" ]; then
+    BACKTITLE+=" Patch: A"
+  elif [ "${ARCPATCH}" = "random" ]; then
+    BACKTITLE+=" Patch: R"
+  elif [ "${ARCPATCH}" = "user" ]; then
+    BACKTITLE+=" Patch: U"
   fi
   BACKTITLE+=" |"
   if [ "${CONFDONE}" = "true" ]; then
@@ -281,67 +283,84 @@ function arcsettings() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
   ARCCONF="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${MODEL}.yml")"
-  if [ -n "${ARCCONF}" ]; then
-    if [ "${ARCRECOVERY}" != "true" ]; then
-      dialog --clear --backtitle "$(backtitle)" \
-        --menu "Arc Patch\nDo you want to use Syno Services?\nIf NO, you can add your own Serial/Mac" 0 0 0 \
-        1 "Yes - Install with Arc Patch" \
-        2 "No - Install without Arc Patch" \
-      2>"${TMP_PATH}/resp"
-      resp="$(<"${TMP_PATH}/resp")"
-      [ -z "${resp}" ] && return 1
-      if [ ${resp} -eq 1 ]; then
-        # read valid serial from file
-        SN="$(readModelKey "${MODEL}" "arc.serial")"
-        writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-        writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
-      elif [ ${resp} -eq 2 ]; then
-        # Generate random serial
-        SN="$(generateSerial "${MODEL}")"
-        writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-        writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
-      fi
-    elif [ "${ARCRECOVERY}" = "true" ]; then
+  if [ "${ARCRECOVERY}" = "true" ]; then
+    writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+  elif [ "${ARCRECOVERY}" != "true" ] && [ -n "${ARCCONF}" ]; then
+    dialog --clear --backtitle "$(backtitle)" --title "Arc Patch Model"\
+      --menu "Do you want to use Syno Services?\nIf NO, you can add your own Serial/Mac" 0 0 0 \
+      1 "Yes - Install with Arc Patch" \
+      2 "No - Install with random Serial/Mac" \
+      3 "No - Install with my Serial/Mac" \
+    2>"${TMP_PATH}/resp"
+    resp="$(<"${TMP_PATH}/resp")"
+    [ -z "${resp}" ] && return 1
+    if [ ${resp} -eq 1 ]; then
+      # Read Arc Patch from File
+      SN="$(readModelKey "${MODEL}" "arc.serial")"
+      writeConfigKey "arc.patch" "arc" "${USER_CONFIG_FILE}"
+      writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+    elif [ ${resp} -eq 2 ]; then
+      # Generate random Serial
+      SN="$(generateSerial "${MODEL}")"
+      writeConfigKey "arc.patch" "random" "${USER_CONFIG_FILE}"
+      writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+    elif [ ${resp} -eq 3 ]; then
+      while true; do
+        dialog --backtitle "$(backtitle)" --colors --title "Serial" \
+          --inputbox "Please enter a valid Serial " 0 0 "" \
+          2>"${TMP_PATH}/resp"
+        [ $? -ne 0 ] && break 2
+        SN="$(cat ${TMP_PATH}/resp)"
+        if [ -z "${SN}" ]; then
+          return
+        elif [ $(validateSerial ${MODEL} ${SN}) -eq 1 ]; then
+          break
+        fi
+        # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
+        break
+        dialog --backtitle "$(backtitle)" --colors --title "Serial" \
+          --yesno "Invalid Serial, continue?" 0 0
+        [ $? -eq 0 ] && break
+      done
+      writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
       writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
     fi
-  else
-    if [ "${ARCRECOVERY}" != "true" ]; then
-      dialog --clear --backtitle "$(backtitle)" \
-        --menu "DSM Serial\nDo you want set your own?" 0 0 0 \
-        1 "Yes - Set my Serial" \
-        2 "No - Generate Random Serial" \
-      2>"${TMP_PATH}/resp"
-      resp="$(<"${TMP_PATH}/resp")"
-      [ -z "${resp}" ] && return 1
-      if [ ${resp} -eq 1 ]; then
-        while true; do
-          dialog --backtitle "$(backtitle)" --colors --title "Cmdline" \
-            --inputbox "Please enter a serial number " 0 0 "" \
-            2>"${TMP_PATH}/resp"
-          [ $? -ne 0 ] && break 2
-          SN="$(cat ${TMP_PATH}/resp)"
-          if [ -z "${SN}" ]; then
-            return
-          elif [ $(validateSerial ${MODEL} ${SN}) -eq 1 ]; then
-            break
-          fi
-          # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
+    writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
+  elif [ "${ARCRECOVERY}" != "true" ] && [ -z "${ARCCONF}" ]; then
+    dialog --clear --backtitle "$(backtitle)" --title "Non Arc Patch Model" \
+      --menu "Do you want to use Syno Services?\nIf NO, you can add your own Serial/Mac" 0 0 0 \
+      1 "No - Install with random Serial/Mac" \
+      2 "No - Install with my Serial/Mac" \
+    2>"${TMP_PATH}/resp"
+    resp="$(<"${TMP_PATH}/resp")"
+    [ -z "${resp}" ] && return 1
+    if [ ${resp} -eq 1 ]; then
+      # Generate random Serial
+      SN="$(generateSerial "${MODEL}")"
+      writeConfigKey "arc.patch" "random" "${USER_CONFIG_FILE}"
+      writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+    elif [ ${resp} -eq 2 ]; then
+      while true; do
+        dialog --backtitle "$(backtitle)" --colors --title "Serial" \
+          --inputbox "Please enter a serial number " 0 0 "" \
+          2>"${TMP_PATH}/resp"
+        [ $? -ne 0 ] && break 2
+        SN="$(cat ${TMP_PATH}/resp)"
+        if [ -z "${SN}" ]; then
+          return
+        elif [ $(validateSerial ${MODEL} ${SN}) -eq 1 ]; then
           break
-          dialog --backtitle "$(backtitle)" --colors --title "Cmdline" \
-            --yesno "Invalid serial, continue?" 0 0
-          [ $? -eq 0 ] && break
-        done
-        writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
-      elif [ ${resp} -eq 2 ]; then
-        # Generate random serial
-        SN="$(generateSerial "${MODEL}")"
-      fi
-      writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
+        fi
+        # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
+        break
+        dialog --backtitle "$(backtitle)" --colors --title "Serial" \
+          --yesno "Invalid Serial, continue?" 0 0
+        [ $? -eq 0 ] && break
+      done
+      writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
+      writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
     fi
-    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
   fi
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   # Get Network Config for Loader
@@ -355,7 +374,7 @@ function arcsettings() {
   fi
   if [ ${WARNON} -eq 2 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-      --msgbox "WARN: You have selected a DT Model. There is no support for Raid/SCSI Controller." 0 0
+      --msgbox "WARN: You have selected a DT Model. There is no support for SAS Controller." 0 0
   fi
   if [ ${WARNON} -eq 3 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
@@ -437,11 +456,11 @@ function make() {
       idx=$((${idx} + 1))
     done
     if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
-      MSG="Failed to get PAT Data,\nPlease manually fill in the URL and Hash of PAT."
+      MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
       PAT_URL=""
       PAT_HASH=""
     else
-      MSG="Successfully to got PAT Data,\nPlease confirm or modify as needed."
+      MSG="Successfully got PAT Data.\nPlease confirm or modify as needed."
     fi
     dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
       --extra-button --extra-label "Retry" \
