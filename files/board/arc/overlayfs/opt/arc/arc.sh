@@ -2500,7 +2500,7 @@ function resetLoader() {
     writeConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.patch" "random" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
