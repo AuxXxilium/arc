@@ -59,6 +59,7 @@ function getnet() {
   elif [ ${resp} -eq 2 ]; then
     writeConfigKey "arc.macsys" "custom" "${USER_CONFIG_FILE}"
   fi
+  MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 }
 
 # Get Amount of NIC
