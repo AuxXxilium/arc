@@ -104,10 +104,8 @@ function getmap() {
     [ -n "${NVMEDRIVES}" ] && writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
     writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
     if [ ${DRIVES} -gt 26 ]; then
-      TEXT+="\nYou have connected more"
-      TEXT+="\nthen 26 Disks."
-      TEXT+="\nDSM can only adress a"
-      TEXT+="\nmaximum of 26 Disks."
+      TEXT+="\nYou have connected more then 26 Disks."
+      TEXT+="\nDSM can only adress a maximum of 26 Disks."
       dialog --backtitle "$(backtitle)" --colors --title "Arc Disks" \
         --msgbox "${TEXT}" 0 0
     fi
@@ -138,7 +136,8 @@ function getmap() {
         1 "SataPortMap: Active Ports ${REMAP1}" \
         2 "SataPortMap: Max Ports ${REMAP2}" \
         3 "SataRemap: Remove blank Ports ${REMAP3}" \
-        4 "I want to set my own Portmap" \
+        4 "AhciRemap: Remove blank Ports (experimental) ${REMAP4}" \
+        5 "I want to set my own Portmap" \
       2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
       resp="$(<"${TMP_PATH}/resp")"
@@ -156,6 +155,10 @@ function getmap() {
           --infobox "Use SataRemap:\nRemove blank Drives" 4 40
         writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 4 ]; then
+        dialog --backtitle "$(backtitle)" --title "Arc Disks" \
+          --infobox "Use AhciRemap:\nRemove blank Drives" 4 40
+        writeConfigKey "arc.remap" "ahci" "${USER_CONFIG_FILE}"
+      elif [ ${resp} -eq 5 ]; then
         dialog --backtitle "$(backtitle)" --title "Arc Disks" \
           --infobox "I want to set my own PortMap!" 4 40
         writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}"
@@ -181,12 +184,18 @@ function getmap() {
         deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
         dialog --backtitle "$(backtitle)" --title "Arc Disks" \
           --msgbox "Computed Values:\nSataRemap: ${SATAREMAP}" 0 0
+      elif [ "${REMAP}" = "ahci" ]; then
+        writeConfigKey "cmdline.ahci_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
+        deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+        deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+        dialog --backtitle "$(backtitle)" --title "Arc Disks" \
+          --msgbox "Computed Values:\nSataRemap: ${SATAREMAP}" 0 0
       elif [ "${REMAP}" = "user" ]; then
         deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
         deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
         deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
         dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-          --msgbox "Usersetting: We don't need this." 0 0
+          --msgbox "Usersetting: Set your own Values in Userconfig." 0 0
       fi
     fi
   fi
