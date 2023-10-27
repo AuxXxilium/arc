@@ -162,6 +162,8 @@ installAddon disks
 echo "/addons/disks.sh \${1} ${DT} ${UNIQUE}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon localrss
 echo "/addons/localrss.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+installAddon wol
+echo "/addons/wol.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon misc
 echo "/addons/misc.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 
@@ -189,20 +191,8 @@ done
 /opt/arc/depmod -a -b "${RAMDISK_PATH}" 2>/dev/null
 
 # Network card configuration file
-ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
-STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
-for N in $(seq 0 $((${#ETHX[@]} - 1))); do
-  if [ "${STATICIP}" = "true" ] && [ ${N} -eq 0 ]; then
-    IPADDR=$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")
-    NETMASK=$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")
-    if [ -n "${IPADDR}" ] && [ -n "${NETMASK}" ]; then
-      echo -e "DEVICE=eth0\nBOOTPROTO=static\nONBOOT=yes\nIPV6INIT=off\nIPADDR=${IPADDR}\nNETMASK=${NETMASK}" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
-    else
-      echo -e "DEVICE=eth0\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=off" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
-    fi
-  else
-    echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=off" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
-  fi
+for N in $(seq 0 7); do
+  echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=off" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
 done
 
 # Reassembly ramdisk
