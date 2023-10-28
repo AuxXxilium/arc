@@ -59,7 +59,7 @@ function installExtension() {
   [ ${HAS_FILES} -ne 1 ] || [ ${ACTIVATE} = "false" ] && return 1
   cp -f "${TMP_PATH}/${EXTENSION}/install.sh" "${RAMDISK_PATH}/addons/${EXTENSION}.sh" 2>"${LOG_FILE}" || dieLog
   chmod +x "${RAMDISK_PATH}/addons/${EXTENSION}.sh"
-  [ -d ${TMP_PATH}/${EXTENSION}/root ] && (cp -Rf "${TMP_PATH}/${EXTENSION}/root/"* "${RAMDISK_PATH}/" 2>"${LOG_FILE}" || dieLog)
+  [ -d ${TMP_PATH}/${EXTENSION}/root ] && (cp -rnf "${TMP_PATH}/${EXTENSION}/root/"* "${RAMDISK_PATH}/" 2>"${LOG_FILE}" || dieLog)
   rm -rf "${TMP_PATH}/${EXTENSION:?}"
   return 0
 }
@@ -77,4 +77,17 @@ function untarExtension() {
   rm -rf "${EXTENSIONS_PATH}/${EXTENSION:?}"
   mv -f "${TMP_PATH}/${EXTENSION}" "${EXTENSIONS_PATH}/${EXTENSION}"
   echo "${EXTENSION}"
+}
+
+###############################################################################
+# Detect if has new local plugins to install/reinstall
+function updateExtensions() {
+  for F in $(ls ${CACHE_PATH}/*.extension 2>/dev/null); do
+    EXTENSION=$(basename "${F}" | sed 's|.extension||')
+    rm -rf "${EXTENSIONS_PATH}/${EXTENSION:?}"
+    mkdir -p "${EXTENSIONS_PATH}/${EXTENSION}"
+    echo "Installing ${F} to ${EXTENSIONS_PATH}/${EXTENSION}"
+    tar -xaf "${F}" -C "${EXTENSIONS_PATH}/${EXTENSION}"
+    rm -f "${F}"
+  done
 }

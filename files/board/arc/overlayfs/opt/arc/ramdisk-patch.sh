@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-. /opt/arc/include/functions.sh
-. /opt/arc/include/addons.sh
-. /opt/arc/include/extensions.sh
+[ -z "${ARC_PATH}" ] || [ ! -d "${ARC_PATH}/include" ] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+
+. ${ARC_PATH}/include/functions.sh
+. ${ARC_PATH}/include/addons.sh
+. ${ARC_PATH}/include/extensions.sh
 
 set -o pipefail # Get exit code from process piped
 
@@ -13,11 +15,6 @@ echo -e "Patching Ramdisk"
 
 # Remove old rd.gz patched
 rm -f "${MOD_RDGZ_FILE}"
-
-# Check disk space left
-LOADER_DISK="$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1)"
-LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
-SPACELEFT=$(df --block-size=1 | awk '/'${LOADER_DEVICE_NAME}'3/{print$4}')
 
 # Unzipping ramdisk
 rm -rf "${RAMDISK_PATH}" # Force clean
@@ -155,6 +152,10 @@ echo "export LAYOUT=${LAYOUT}" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export KEYMAP=${KEYMAP}" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
+# Required addons: restore
+installAddon revert
+echo "/addons/revert.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+
 # Install System Addons
 installAddon eudev
 echo "/addons/eudev.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
@@ -188,7 +189,7 @@ for EXTENSION in ${!EXTENSIONS[@]}; do
 done
 
 # Build modules dependencies
-/opt/arc/depmod -a -b "${RAMDISK_PATH}" 2>/dev/null
+${ARC_PATH}/depmod -a -b "${RAMDISK_PATH}" 2>/dev/null
 
 # Network card configuration file
 for N in $(seq 0 7); do

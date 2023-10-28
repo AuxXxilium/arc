@@ -1,7 +1,9 @@
 #!/bin/sh
 # Based on code and ideas from @jumkey
 
-. /opt/arc/include/functions.sh
+[ -z "${ARC_PATH}" ] || [ ! -d "${ARC_PATH}/include" ] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+
+. ${ARC_PATH}/include/functions.sh
 
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"

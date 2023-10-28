@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 set -e
+[ -z "${ARC_PATH}" ] || [ ! -d "${ARC_PATH}/include" ] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
-. /opt/arc/include/functions.sh
+. ${ARC_PATH}/include/functions.sh
 
 # Wait kernel enumerate the disks
 CNT=3
@@ -35,6 +36,7 @@ mount ${LOADER_DISK}3 ${CACHE_PATH} || die "Can't mount ${CACHE_PATH}"
 
 # Shows title
 clear
+[ -z "${COLUMNS}" ] && COLUMNS=50
 TITLE="${ARC_TITLE}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
@@ -42,13 +44,13 @@ printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
 
 # Move/link SSH machine keys to/from cache volume
-[ ! -d "${CACHE_PATH}/ssh" ] && cp -R "/etc/ssh" "${CACHE_PATH}/ssh"
+[ ! -d "${PART3_PATH}/ssh" ] && cp -R "/etc/ssh" "${PART3_PATH}/ssh"
 rm -rf "/etc/ssh"
-ln -s "${CACHE_PATH}/ssh" "/etc/ssh"
+ln -s "${PART3_PATH}/ssh" "/etc/ssh"
 
 # Link bash history to cache volume
 rm -rf ~/.bash_history
-ln -s "${CACHE_PATH}/.bash_history" ~/.bash_history
+ln -s "${PART3_PATH}/.bash_history" ~/.bash_history
 touch ~/.bash_history
 if ! grep -q "arc.sh" ~/.bash_history; then
   echo "arc.sh " >>~/.bash_history
@@ -57,43 +59,42 @@ fi
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
-  writeConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
-  writeConfigKey "model" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
-  # writeConfigKey "maxdisks" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "layout" "qwertz" "${USER_CONFIG_FILE}"
-  writeConfigKey "keymap" "de" "${USER_CONFIG_FILE}"
-  writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
-  writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
-  writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
-  writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "extensions" "{}" "${USER_CONFIG_FILE}"
-  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.patch" "random" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.bootwait" "5" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
-  writeConfigKey "device" "{}" "${USER_CONFIG_FILE}"
+  initConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
+  initConfigKey "model" "" "${USER_CONFIG_FILE}"
+  initConfigKey "productver" "" "${USER_CONFIG_FILE}"
+  initConfigKey "layout" "qwertz" "${USER_CONFIG_FILE}"
+  initConfigKey "keymap" "de" "${USER_CONFIG_FILE}"
+  initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+  initConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
+  initConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
+  initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
+  initConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
+  initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
+  initConfigKey "extensions" "{}" "${USER_CONFIG_FILE}"
+  initConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+  initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.patch" "random" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.bootwait" "5" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
+  initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 fi
 
 # Init Network
@@ -120,14 +121,13 @@ fi
 # Get the VID/PID if we are in USB
 VID="0x46f4"
 PID="0x0001"
-BUS=$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_BUS | cut -d= -f2)
-[ "${BUS}" = "ata" ] && BUS="sata"
+BUS=$(getBus "${LOADER_DISK}")
 
 if [ "${BUS}" = "usb" ]; then
   VID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_VENDOR_ID | cut -d= -f2)"
   PID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_MODEL_ID | cut -d= -f2)"
-elif [ "${BUS}" != "sata" ] && [ "${BUS}" != "scsi" ]; then
-  die "Loader Disk neither USB, SATA or SCSI"
+elif [ "${BUS}" != "sata" -a "${BUS}" != "scsi" -a "${BUS}" != "nvme" ]; then
+  die "Loader disk is not USB or SATA/SCSI/NVME DoM"
 fi
 
 # Save variables to user config file
@@ -137,16 +137,6 @@ writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 # Inform user
 echo -e "Loader Disk: \033[1;34m${LOADER_DISK}\033[0m"
 echo -e "Loader Disk Type: \033[1;34m${BUS^^}\033[0m"
-
-# Check if partition 3 occupies all free space, resize if needed
-LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
-SIZEOFDISK=$(cat /sys/block/${LOADER_DEVICE_NAME}/size)
-ENDSECTOR=$(($(fdisk -l ${LOADER_DISK} | awk '/'${LOADER_DEVICE_NAME}3'/{print$3}') + 1))
-if [ ${SIZEOFDISK} -ne ${ENDSECTOR} ]; then
-  echo -e "\033[1;36m$(printf "Resizing ${LOADER_DISK}3")\033[0m"
-  echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${LOADER_DISK}" >"${LOG_FILE}" 2>&1 || dieLog
-  resize2fs "${LOADER_DISK}3" >"${LOG_FILE}" 2>&1 || dieLog
-fi
 
 # Load keymap name
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
@@ -191,7 +181,7 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
       echo -e "\r${DRIVER}: NOT CONNECTED"
       break
     fi
-    IP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+    IP="$(getIP ${ETHX[${N}]})"
     if [ "${STATICIP}" = "true" ]; then
       ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
       NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
@@ -236,8 +226,8 @@ mkdir -p "${MODEL_CONFIG_PATH}"
 mkdir -p "${PATCH_PATH}"
 
 # Load arc
-install-addons.sh
-install-extensions.sh
+updateAddons
+updateExtensions
 echo -e "\033[1;34mLoading Arc Loader Overlay...\033[0m"
 sleep 2
 

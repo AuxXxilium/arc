@@ -1,5 +1,10 @@
-. /opt/arc/include/consts.sh
-. /opt/arc/include/configFile.sh
+
+[ -z "${ARC_PATH}" ] || [ ! -d "${ARC_PATH}/include" ] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+
+. ${ARC_PATH}/include/consts.sh
+. ${ARC_PATH}/include/configFile.sh
+. ${ARC_PATH}/include/addons.sh
+. ${ARC_PATH}/include/extensions.sh
 
 ###############################################################################
 # read key value from model config file
@@ -181,6 +186,35 @@ function _set_conf_kv() {
 }
 
 ###############################################################################
+# get bus of disk
+# 1 - device path
+function getBus() {
+  BUS=""
+  # usb/ata(sata/ide)/scsi
+  [ -z "${BUS}" ] && BUS=$(udevadm info --query property --name "${1}" 2>/dev/null | grep ID_BUS | cut -d= -f2 | sed 's/ata/sata/')
+  # usb/sata(sata/ide)/nvme
+  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,TRAN 2>/dev/null | grep "${1}" | awk '{print $2}')
+  # usb/scsi(sata/ide)/virtio(scsi/virtio)/nvme
+  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1}" | awk -F':' '{print $(NF-1)}')
+  echo "${BUS}"
+}
+
+###############################################################################
+# get IP
+# 1 - ethN
+function getIP() {
+  IP=""
+  if [ -n "${1}" -a -d "/sys/class/net/${1}" ]; then
+    IP=$(ip route show dev ${1} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+    [ -z "${IP}" ] && IP=$(ip addr show ${1} | grep -E "inet .* eth" | awk '{print $2}' | cut -f1 -d'/' | head -1)
+  else
+    IP=$(ip route show 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)
+    [ -z "${IP}" ] && IP=$(ip addr show | grep -E "inet .* eth" | awk '{print $2}' | cut -f1 -d'/' | head -1)
+  fi
+  echo "${IP}"
+}
+
+###############################################################################
 # Find and mount the DSM root filesystem
 # (based on pocopico's TCRP code)
 function findAndMountDSMRoot() {
@@ -241,37 +275,37 @@ EOF
   fi
   ETHLIST="$(echo -e "${ETHLIST}" | grep -v '^$')"
 
-  echo -e "${ETHLIST}" > /tmp/ethlist
-  # cat /tmp/ethlist
+  echo -e "${ETHLIST}" >${TMP_PATH}/ethlist
+  # cat ${TMP_PATH}/ethlist
 
   # sort
   IDX=0
   while true; do
-    # cat /tmp/ethlist 
-    [ ${IDX} -ge $(wc -l < /tmp/ethlist) ] && break
-    ETH=$(cat /tmp/ethlist | sed -n "$((${IDX} + 1))p" | awk '{print $3}')
+    # cat ${TMP_PATH}/ethlist
+    [ ${IDX} -ge $(wc -l <${TMP_PATH}/ethlist) ] && break
+    ETH=$(cat ${TMP_PATH}/ethlist | sed -n "$((${IDX} + 1))p" | awk '{print $3}')
     # echo "ETH: ${ETH}"
     if [ -n "${ETH}" ] && [ ! "${ETH}" = "eth${IDX}" ]; then
       # echo "change ${ETH} <=> eth${IDX}"
       ip link set dev eth${IDX} down
       ip link set dev ${ETH} down
       sleep 1
-      ip link set dev eth${IDX} name tmp
+      ip link set dev eth${IDX} name ethN
       ip link set dev ${ETH} name eth${IDX}
-      ip link set dev tmp name ${ETH}
+      ip link set dev ethN name ${ETH}
       sleep 1
       ip link set dev eth${IDX} up
       ip link set dev ${ETH} up
       sleep 1
-      sed -i "s/eth${IDX}/tmp/" /tmp/ethlist
-      sed -i "s/${ETH}/eth${IDX}/" /tmp/ethlist
-      sed -i "s/tmp/${ETH}/" /tmp/ethlist
+      sed -i "s/eth${IDX}/ethN/" ${TMP_PATH}/ethlist
+      sed -i "s/${ETH}/eth${IDX}/" ${TMP_PATH}/ethlist
+      sed -i "s/ethN/${ETH}/" ${TMP_PATH}/ethlist
       sleep 1
     fi
     IDX=$((${IDX} + 1))
   done
 
-  rm -f /tmp/ethlist
+  rm -f ${TMP_PATH}/ethlist
 }
 
 ###############################################################################
@@ -279,14 +313,14 @@ EOF
 function livepatch() {
   FAIL=0
   # Patch zImage
-  if ! /opt/arc/zimage-patch.sh; then
+  if ! ${ARC_PATH}/zimage-patch.sh; then
     FAIL=1
   else
     ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
     writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
   fi
   # Patch Ramdisk
-  if ! /opt/arc/ramdisk-patch.sh; then
+  if ! ${ARC_PATH}/ramdisk-patch.sh; then
     FAIL=1
   else
     RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
@@ -321,7 +355,7 @@ function livepatch() {
     unzip -oq "${TMP_PATH}/patches.zip" -d "${PATCH_PATH}" >/dev/null 2>&1
     rm -f "${TMP_PATH}/patches.zip"
     # Patch zImage
-    if ! /opt/arc/zimage-patch.sh; then
+    if ! ${ARC_PATH}/zimage-patch.sh; then
       FAIL=1
     else
       ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
@@ -329,7 +363,7 @@ function livepatch() {
       FAIL=0
     fi
     # Patch Ramdisk
-    if ! /opt/arc/ramdisk-patch.sh; then
+    if ! ${ARC_PATH}/ramdisk-patch.sh; then
       FAIL=1
     else
       RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
@@ -337,4 +371,17 @@ function livepatch() {
       FAIL=0
     fi
   fi
+}
+
+###############################################################################
+# Rebooting
+# (based on pocopico's TCRP code)
+function rebootTo() {
+  [ "${1}" != "junior" -a "${1}" != "config" ] && exit 1
+  # echo "Rebooting to ${1} mode"
+  GRUBPATH="$(dirname $(find ${BOOTLOADER_PATH}/ -name grub.cfg | head -1))"
+  ENVFILE="${GRUBPATH}/grubenv"
+  [ ! -f "${ENVFILE}" ] && grub-editenv ${ENVFILE} create
+  grub-editenv ${ENVFILE} set next_entry="${1}"
+  reboot
 }

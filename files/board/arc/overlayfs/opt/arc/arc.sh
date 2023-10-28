@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
 
-. /opt/arc/include/functions.sh
-. /opt/arc/include/addons.sh
-. /opt/arc/include/extensions.sh
-. /opt/arc/include/modules.sh
-. /opt/arc/include/storage.sh
-. /opt/arc/include/network.sh
+[ -z "${ARC_PATH}" ] || [ ! -d "${ARC_PATH}/include" ] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
-LOADER_DISK="$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1)"
-LOADER_DEVICE_NAME=$(echo "${LOADER_DISK}" | sed 's|/dev/||')
-BUS=$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_BUS | cut -d= -f2)
-[ "${BUS}" = "ata" ] && BUS="sata"
+. ${ARC_PATH}/include/functions.sh
+. ${ARC_PATH}/include/addons.sh
+. ${ARC_PATH}/include/extensions.sh
+. ${ARC_PATH}/include/modules.sh
+. ${ARC_PATH}/include/storage.sh
+. ${ARC_PATH}/include/network.sh
 
 # Memory: Check Memory installed
 RAMTOTAL=0
@@ -101,7 +98,7 @@ function backtitle() {
     BACKTITLE+=" Build: N"
   fi
   BACKTITLE+=" |"
-  BACKTITLE+=" ${MACHINE}(${BUS})"
+  BACKTITLE+=" ${MACHINE}"
   echo "${BACKTITLE}"
 }
 
@@ -535,11 +532,11 @@ function make() {
     fi
     # Copy DSM Files to Locations if DSM Files not found
     cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${BOOTLOADER_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${BOOTLOADER_PATH}"
     cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/GRUB_VER"        "${SLPART_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/zImage"          "${ORI_ZIMAGE_FILE}"
-    cp -f "${UNTAR_PAT_PATH}/rd.gz"           "${ORI_RDGZ_FILE}"
+    cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${SLPART_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/zImage" "${ORI_ZIMAGE_FILE}"
+    cp -f "${UNTAR_PAT_PATH}/rd.gz" "${ORI_RDGZ_FILE}"
     rm -rf "${UNTAR_PAT_PATH}"
   fi
   # Reset Bootcount if User rebuild DSM
@@ -1274,14 +1271,14 @@ function backupMenu() {
             break
           done
           popd
-          if [ -z "${IFTOOL}" ] || [ -z "${TMP_PATH}/${USER_FILE}" ]; then
+          if [ -z "${IFTOOL}" ] || [ ! -f "${TMP_PATH}/${USER_FILE}" ]; then
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --msgbox "Not a valid .zip/.img.gz file, please try again!\n${USER_FILE}" 0 0
           else
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" \
                 --yesno "Warning:\nDo not terminate midway, otherwise it may cause damage to the Loader. Do you want to continue?" 0 0
             [ $? -ne 0 ] && (
-              rm -f "${LOADER_DISK}"
+              rm -f "${TMP_UP_PATH}/${USER_FILE}"
               return 1
             )
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
@@ -2101,7 +2098,7 @@ function sysinfo() {
         TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
         break
       fi
-      NETIP=$(ip route show dev ${ETHX[${N}]} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+      NETIP="$(getIP)"
       if [ "${STATICIP}" = "true" ]; then
         ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
         if [ "${ETHX[${N}]}" = "eth0" ] && [ -n "${ARCIP}" ]; then
@@ -2225,7 +2222,7 @@ function sysinfo() {
 # allow setting Static IP for DSM
 function staticIPMenu() {
   mkdir -p "${TMP_PATH}/sdX1"
-  for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
+  for I in $(ls /dev/sd.*1 2>/dev/null | grep -v "${LOADER_DISK}1"); do
     mount "${I}" "${TMP_PATH}/sdX1"
     [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
     umount "${I}"
@@ -2271,7 +2268,7 @@ function staticIPMenu() {
     [ $? -ne 0 ] && return 1
     (
       mkdir -p "${TMP_PATH}/sdX1"
-      for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
+      for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK}1"); do
         mount "${I}" "${TMP_PATH}/sdX1"
         [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && cp -f "${TMP_PATH}/ifcfg-eth0" "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
         sync
@@ -2280,9 +2277,8 @@ function staticIPMenu() {
       rm -rf "${TMP_PATH}/sdX1"
     )
     if [ -n "${IPADDR}" ] && [ -n "${NETMASK}" ]; then
-      IP="${IPADDR}"
       NETMASK=$(convert_netmask "${NETMASK}")
-      ip addr add ${IP}/${NETMASK} dev eth0
+      ip addr add ${IPADDR}/${NETMASK} dev eth0
       writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.ip" "${IPADDR}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.netmask" "${NETMASK}" "${USER_CONFIG_FILE}"
@@ -2309,7 +2305,7 @@ function downgradeMenu() {
   [ $? -ne 0 ] && return 1
   (
     mkdir -p "${TMP_PATH}/sdX1"
-    for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
+    for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK}1"); do
       mount "${I}" "${TMP_PATH}/sdX1"
       [ -f "${TMP_PATH}/sdX1/etc/VERSION" ] && rm -f "${TMP_PATH}/sdX1/etc/VERSION"
       [ -f "${TMP_PATH}/sdX1/etc.defaults/VERSION" ] && rm -f "${TMP_PATH}/sdX1/etc.defaults/VERSION"
@@ -2364,7 +2360,7 @@ function resetPassword() {
   NEWPASSWD="$(python -c "import crypt,getpass;pw=\"${VALUE}\";print(crypt.crypt(pw))")"
   (
     mkdir -p "${TMP_PATH}/sdX1"
-    for I in $(ls /dev/sd*1 2>/dev/null | grep -v ${LOADER_DISK}1); do
+    for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK}1"); do
       mount "${I}" "${TMP_PATH}/sdX1"
       sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "${TMP_PATH}/sdX1/etc/shadow"
       sync
