@@ -73,16 +73,13 @@ if [ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" ] || [ -z "$(readModelKey "${MODEL
 fi
 
 HASATA=0
-for D in $(lsblk -dnp -o name); do
 for D in $(lsblk -dpno NAME); do
   [ "${D}" = "${LOADER_DISK}" ] && continue
-  if [ "$(udevadm info --query property --name ${D} | grep ID_BUS | cut -d= -f2)" = "ata" ]; then
   if [ "$(getBus "${D}")" = "sata" -o "$(getBus "${D}")" = "scsi" ]; then
     HASATA=1
     break
   fi
 done
-[ ${HASATA} = "0" ] &&  echo -e "\033[1;33m*** Please insert at least one sata disk for system installation, except for the bootloader disk. ***\033[0m"
 [ ${HASATA} = "0" ] && echo -e "\033[1;33m*** Please insert at least one sata/scsi disk for system installation, except for the bootloader disk. ***\033[0m"
 
 # Read necessary variables
