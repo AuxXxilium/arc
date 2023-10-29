@@ -145,7 +145,7 @@ KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 
 # Loads a keymap if is valid
 if [ -f "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" ]; then
-  echo -e "Loading Keymap \033[1;34m${LAYOUT}/${KEYMAP}\033[0m"
+  echo -e "Loading Keymap: \033[1;34m${LAYOUT}/${KEYMAP}\033[0m"
   zcat "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" | loadkeys
 fi
 echo
