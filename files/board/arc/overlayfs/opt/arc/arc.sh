@@ -849,9 +849,10 @@ function cmdlineMenu() {
   echo "4 \"RAM Fix\""                                          >>"${TMP_PATH}/menu"
   echo "5 \"Apparmor Fix\""                                     >>"${TMP_PATH}/menu"
   echo "6 \"PCI/IRQ Fix\""                                      >>"${TMP_PATH}/menu"
-  echo "7 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
-  echo "8 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
-  echo "9 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
+  echo "7 \"C-State Fix\""                                      >>"${TMP_PATH}/menu"
+  echo "8 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
+  echo "9 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
+  echo "0 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
   # Loop menu
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
@@ -929,7 +930,7 @@ function cmdlineMenu() {
         [ -z "${resp}" ] && return 1
         if [ ${resp} -eq 1 ]; then
           writeConfigKey "cmdline.disable_mtrr_trim" "0" "${USER_CONFIG_FILE}"
-          writeConfigKey "cmdline.crashkernel" "192M" "${USER_CONFIG_FILE}"
+          writeConfigKey "cmdline.crashkernel" "auto" "${USER_CONFIG_FILE}"
           dialog --backtitle "$(backtitle)" --title "RAM Fix" \
             --aspect 18 --msgbox "Fix installed to Cmdline" 0 0
         elif [ ${resp} -eq 2 ]; then
@@ -982,6 +983,26 @@ function cmdlineMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       7)
+        dialog --clear --backtitle "$(backtitle)" \
+          --title "C-State Fix" --menu "Fix?" 0 0 0 \
+          1 "Install" \
+          2 "Uninnstall" \
+        2>"${TMP_PATH}/resp"
+        resp="$(<"${TMP_PATH}/resp")"
+        [ -z "${resp}" ] && return 1
+        if [ ${resp} -eq 1 ]; then
+          writeConfigKey "cmdline.intel_idle.max_cstate" "1" "${USER_CONFIG_FILE}"
+          dialog --backtitle "$(backtitle)" --title "C-State Fix" \
+            --aspect 18 --msgbox "Fix installed to Cmdline" 0 0
+        elif [ ${resp} -eq 2 ]; then
+          deleteConfigKey "cmdline.intel_idle.max_cstate" "${USER_CONFIG_FILE}"
+          dialog --backtitle "$(backtitle)" --title "C-State Fix" \
+            --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
+        fi
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
+      8)
         ITEMS=""
         for KEY in ${!CMDLINE[@]}; do
           ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
@@ -989,7 +1010,7 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" --title "User cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      8)
+      9)
         ITEMS=""
         while IFS=': ' read -r KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
@@ -997,7 +1018,7 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" --title "Model/Version cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      9)
+      0)
         rm -f "${TMP_PATH}/opts"
         echo "5 \"Reboot after 5 seconds\"" >>"${TMP_PATH}/opts"
         echo "0 \"No reboot\"" >>"${TMP_PATH}/opts"
