@@ -84,7 +84,7 @@ fi
 HASATA=0
 for D in $(lsblk -dpno NAME); do
   [ "${D}" = "${LOADER_DISK}" ] && continue
-  if [ "$(getBus "${D}")" = "sata" -o "$(getBus "${D}")" = "scsi" ]; then
+  if [ "$(getBus "${D}")" = "sata" ] || [ "$(getBus "${D}")" = "scsi" ]; then
     HASATA=1
     break
   fi
@@ -136,6 +136,7 @@ CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 CMDLINE['sn']="${SN}"
 CMDLINE['mac1']="${MAC1}"
+CMDLINE['net.ifnames']="0"
 CMDLINE['netif_num']="${NETIFNUM}"
 if [ "${MACSYS}" = "hardware" ]; then
   CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
