@@ -32,7 +32,7 @@ LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 PLATFORM="$(readModelKey "${MODEL}" "platform")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
-#HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
+HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 
 # Check if DSM Version changed
 . "${RAMDISK_PATH}/etc/VERSION"
@@ -137,7 +137,7 @@ cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
 gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko"
 
 # Check if model needs Device-tree dynamic patch
-DT="$(readModelKey "${MODEL}" "dt")"
+# DT="$(readModelKey "${MODEL}" "dt")"
 
 # Addons
 mkdir -p "${RAMDISK_PATH}/addons"
@@ -159,8 +159,8 @@ echo "/addons/revert.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FI
 installAddon eudev
 echo "/addons/eudev.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon disks
-echo "/addons/disks.sh \${1} ${DT}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-# echo "/addons/disks.sh \${1} ${HDDSORT}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+#echo "/addons/disks.sh \${1} ${DT}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+echo "/addons/disks.sh \${1} ${HDDSORT}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon localrss
 echo "/addons/localrss.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon wol
