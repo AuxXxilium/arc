@@ -109,11 +109,7 @@ declare -A CMDLINE
 if grep -q "force_junior" /proc/cmdline; then
   CMDLINE['force_junior']=""
 fi
-if [ ${EFI} -eq 1 ]; then
-  CMDLINE['withefi']=""
-else
-  CMDLINE['noefi']=""
-fi
+[ ${EFI} -eq 1 ] && CMDLINE['withefi']="" || CMDLINE['noefi']=""
 if [ ! "${BUS}" = "usb" ]; then
   LOADER_DEVICE_NAME=$(echo ${LOADER_DISK} | sed 's|/dev/||')
   SIZE=$(($(cat /sys/block/${LOADER_DISK/\/dev\//}/size) / 2048 + 10))
@@ -138,11 +134,7 @@ CMDLINE['sn']="${SN}"
 CMDLINE['mac1']="${MAC1}"
 CMDLINE['net.ifnames']="0"
 CMDLINE['netif_num']="1"
-if [ "${MACSYS}" = "hardware" ]; then
-  CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-elif [ "${MACSYS}" = "custom" ]; then
-  CMDLINE['skip_vender_mac_interfaces']="1,2,3,4,5,6,7"
-fi
+[ "${MACSYS}" = "hardware" ] && CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7" || CMDLINE['skip_vender_mac_interfaces']="1,2,3,4,5,6,7"
 
 # Read cmdline
 while IFS=': ' read -r KEY VALUE; do
