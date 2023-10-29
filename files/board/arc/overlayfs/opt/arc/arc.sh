@@ -2640,7 +2640,7 @@ while true; do
       echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
       echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
       echo ", \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
-      echo "* \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
+      echo "/ \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
       echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "= \"\Z4=========================\Zn \" "                                        >>"${TMP_PATH}/menu"
@@ -2734,12 +2734,12 @@ while true; do
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       ;;
-    *)
+    /)
       [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
       writeConfigKey "arc.hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="*"
+      NEXT="/"
       ;;
     o) [ "${MACSYS}" = "hardware" ] && MACSYS='custom' || MACSYS='hardware'
       writeConfigKey "arc.macsys" "${MACSYS}" "${USER_CONFIG_FILE}"
