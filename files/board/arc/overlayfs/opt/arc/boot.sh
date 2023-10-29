@@ -100,7 +100,7 @@ KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
-NETIFNUM=$(ls /sys/class/net/ | grep eth | wc -l); [ ${NETIFNUM} -eq 0 ] && NETIFNUM=1
+
 [ -z "${BOOTCOUNT}" ] && BOOTCOUNT=0
 
 declare -A CMDLINE
@@ -137,7 +137,7 @@ CMDLINE['log_buf_len']="32M"
 CMDLINE['sn']="${SN}"
 CMDLINE['mac1']="${MAC1}"
 CMDLINE['net.ifnames']="0"
-CMDLINE['netif_num']="${NETIFNUM}"
+CMDLINE['netif_num']="1"
 if [ "${MACSYS}" = "hardware" ]; then
   CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 elif [ "${MACSYS}" = "custom" ]; then
