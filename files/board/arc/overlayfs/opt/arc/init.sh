@@ -127,7 +127,7 @@ BUS=$(getBus "${LOADER_DISK}")
 if [ "${BUS}" = "usb" ]; then
   VID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_VENDOR_ID | cut -d= -f2)"
   PID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_MODEL_ID | cut -d= -f2)"
-elif [ "${BUS}" != "sata" -a "${BUS}" != "scsi" -a "${BUS}" != "nvme" ]; then
+elif [ "${BUS}" != "sata" ] && [ "${BUS}" != "scsi" ] && [ "${BUS}" != "nvme" ]; then
   die "Loader disk is not USB or SATA/SCSI/NVME DoM"
 fi
 
