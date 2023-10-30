@@ -219,8 +219,9 @@ function getIP() {
 # (based on pocopico's TCRP code)
 function findAndMountDSMRoot() {
   [ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) -gt 0 ] && return 0
-  dsmrootdisk="$(blkid /dev/sd* | grep -i raid | awk '{print $1 " " $4}' | grep UUID | grep sd[a-z]1 | head -1 | awk -F ":" '{print $1}')"
-  [ -z "${dsmrootdisk}" ] && return 1
+  dsmrootdisk="$(blkid | grep -i linux_raid_member | grep -E "/dev/.*1:" | head -1 | awk -F ":" '{print $1}')"
+  [ -z "${dsmrootdisk}" ] && return -1
+  [ ! -d "${DSMROOT_PATH}" ] && mkdir -p "${DSMROOT_PATH}"
   [ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) -eq 0 ] && mount -t ext4 "${dsmrootdisk}" "${DSMROOT_PATH}"
   if [ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) -eq 0 ]; then
     echo "Failed to mount"
