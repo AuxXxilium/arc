@@ -97,26 +97,16 @@ function getmap() {
   fi
   # Disk Count for MaxDisks
   DRIVES=$((${SATADRIVES:-0} + ${SASDRIVES:-0} + ${USBDRIVES:-0} + ${NVMEDRIVES:-0}))
-  if [ ${SATADRIVES} -gt 0 ] || [ ${SASDRIVES} -gt 0 ]; then
-    [ -n "${SATADRIVES}" ] && writeConfigKey "device.satadrives" "${SATADRIVES}" "${USER_CONFIG_FILE}"
-    [ -n "${SASDRIVES}" ] && writeConfigKey "device.sasdrives" "${SASDRIVES}" "${USER_CONFIG_FILE}"
-    [ -n "${USBDRIVES}" ] && writeConfigKey "device.usbdrives" "${USBDRIVES}" "${USER_CONFIG_FILE}"
-    [ -n "${NVMEDRIVES}" ] && writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
-    writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
-    if [ ${DRIVES} -gt 26 ]; then
-      TEXT+="\nYou have connected more then 26 Disks."
-      TEXT+="\nDSM can only adress a maximum of 26 Disks."
-      dialog --backtitle "$(backtitle)" --colors --title "Arc Disks" \
-        --msgbox "${TEXT}" 0 0
-    fi
-  else
-    TEXT="\Z4No Sata/SAS Disks found!\Zn\n"
-    TEXT+="\n"
-    TEXT+="\nYou need at least 1 Sata/SAS"
-    TEXT+="\nDisk for installing DSM!"
+  [ -n "${SATADRIVES}" ] && writeConfigKey "device.satadrives" "${SATADRIVES}" "${USER_CONFIG_FILE}"
+  [ -n "${SASDRIVES}" ] && writeConfigKey "device.sasdrives" "${SASDRIVES}" "${USER_CONFIG_FILE}"
+  [ -n "${USBDRIVES}" ] && writeConfigKey "device.usbdrives" "${USBDRIVES}" "${USER_CONFIG_FILE}"
+  [ -n "${NVMEDRIVES}" ] && writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
+  writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
+  if [ ${DRIVES} -gt 26 ]; then
+    TEXT+="\nYou have connected more then 26 Disks."
+    TEXT+="\nDSM can only adress a maximum of 26 Disks."
     dialog --backtitle "$(backtitle)" --colors --title "Arc Disks" \
       --msgbox "${TEXT}" 0 0
-    return 1
   fi
   # Compute PortMap Options
   if [ "${DT}" != "true" ]; then
