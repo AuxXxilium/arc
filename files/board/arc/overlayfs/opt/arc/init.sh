@@ -164,12 +164,9 @@ else
 fi
 echo
 
-# Read Bootcount
 BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTCOUNT}" ] && BOOTCOUNT=0
-# Read Staticip/DHCP
 STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
-# Wait for an IP
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
 echo -e "\033[1;34mDetected ${#ETHX[@]} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
@@ -178,10 +175,6 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
   COUNT=0
   sleep 3
   while true; do
-    if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
-      echo -e "\r${DRIVER}: NOT CONNECTED"
-      break
-    fi
     IP="$(getIP ${ETHX[${N}]})"
     if [ "${STATICIP}" = "true" ]; then
       ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
@@ -205,6 +198,10 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     COUNT=$((${COUNT} + 1))
     if [ ${COUNT} -eq ${BOOTIPWAIT} ]; then
       echo -e "\r${DRIVER}: TIMEOUT"
+      break
+    fi
+    if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
+      echo -e "\r${DRIVER}: NOT CONNECTED"
       break
     fi
     sleep 1

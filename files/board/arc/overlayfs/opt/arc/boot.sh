@@ -180,11 +180,8 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     COUNT=0
+    sleep 3
     while true; do
-      if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
-        echo -e "\r${DRIVER}: NOT CONNECTED"
-        break
-      fi
       IP="$(getIP ${ETHX[${N}]})"
       if [ "${STATICIP}" = "true" ]; then
         ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
@@ -208,6 +205,10 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       COUNT=$((${COUNT} + 1))
       if [ ${COUNT} -eq ${BOOTIPWAIT} ]; then
         echo -e "\r${DRIVER}: TIMEOUT."
+        break
+      fi
+      if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
+        echo -e "\r${DRIVER}: NOT CONNECTED"
         break
       fi
       sleep 1
