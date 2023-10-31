@@ -248,12 +248,12 @@ function arcbuild() {
   # Delete synoinfo and reload model/build synoinfo
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS=': ' read -r KEY VALUE; do
-    writeConfigKey "synoinfo.${KEY}" "${VALUE}" "${USER_CONFIG_FILE}"
+    writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
   done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].synoinfo")
   # Rebuild modules
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read -r ID DESC; do
-    writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
   done < <(getAllModules "${PLATFORM}" "${KVER}")
   if [ "${ONLYVERSION}" != "true" ]; then
     arcsettings
@@ -650,7 +650,7 @@ function addonSelection() {
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   for ADDON in ${resp}; do
     USERADDONS["${ADDON}"]=""
-    writeConfigKey "addons.${ADDON}" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "addons.\"${ADDON}\"" "" "${USER_CONFIG_FILE}"
   done
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --title "Addons" \
@@ -697,7 +697,7 @@ function extensionSelection() {
   writeConfigKey "extensions" "{}" "${USER_CONFIG_FILE}"
   for EXTENSION in ${resp}; do
     USEREXTENSIONS["${EXTENSION}"]=""
-    writeConfigKey "extensions.${EXTENSION}" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "extensions.\"${EXTENSION}\"" "" "${USER_CONFIG_FILE}"
   done
   EXTENSIONSINFO="$(readConfigEntriesArray "extensions" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --title "DSM Extensions" \
@@ -752,7 +752,7 @@ function modulesMenu() {
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         for ID in ${KOLIST[@]}; do
           USERMODULES["${ID}"]=""
-          writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+          writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
         done
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -765,7 +765,7 @@ function modulesMenu() {
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         while read -r ID DESC; do
           USERMODULES["${ID}"]=""
-          writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+          writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
         done <<<${ALLMODULES}
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -797,7 +797,7 @@ function modulesMenu() {
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         for ID in ${resp}; do
           USERMODULES["${ID}"]=""
-          writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+          writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
         done
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -871,14 +871,14 @@ function cmdlineMenu() {
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
         NAME="$(sed 's/://g' <"${TMP_PATH}/resp")"
-        [ -z "${NAME}" ] && continue
+        [ -z "${NAME//\"/}" ] && continue
         dialog --backtitle "$(backtitle)" --title "User cmdline" \
           --inputbox "Type a value of '${NAME}' cmdline" 0 0 "${CMDLINE[${NAME}]}" \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
         VALUE="$(<"${TMP_PATH}/resp")"
         CMDLINE[${NAME}]="${VALUE}"
-        writeConfigKey "cmdline.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
+        writeConfigKey "cmdline.\"${NAME//\"/}\"" "${VALUE}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -899,7 +899,7 @@ function cmdlineMenu() {
         [ -z "${resp}" ] && continue
         for I in ${resp}; do
           unset 'CMDLINE[${I}]'
-          deleteConfigKey "cmdline.${I}" "${USER_CONFIG_FILE}"
+          deleteConfigKey "cmdline.\"${I}\"" "${USER_CONFIG_FILE}"
         done
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1068,14 +1068,14 @@ function synoinfoMenu() {
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
         NAME="$(<"${TMP_PATH}/resp")"
-        [ -z "${NAME}" ] && continue
+        [ -z "${NAME//\"/}" ] && continue
         dialog --backtitle "$(backtitle)" --title "Synoinfo entries" \
           --inputbox "Type a value of '${NAME}' entry" 0 0 "${SYNOINFO[${NAME}]}" \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
         VALUE="$(<"${TMP_PATH}/resp")"
         SYNOINFO[${NAME}]="${VALUE}"
-        writeConfigKey "synoinfo.${NAME}" "${VALUE}" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.\"${NAME//\"/}\"" "${VALUE}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -1096,7 +1096,7 @@ function synoinfoMenu() {
         [ -z "${resp}" ] && continue
         for I in ${resp}; do
           unset 'SYNOINFO[${I}]'
-          deleteConfigKey "synoinfo.${I}" "${USER_CONFIG_FILE}"
+          deleteConfigKey "synoinfo.\"${I}\"" "${USER_CONFIG_FILE}"
         done
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
