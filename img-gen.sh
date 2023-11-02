@@ -30,9 +30,6 @@ echo "Repack initrd"
 cp -f "br/bzImage-arc" "/tmp/p3/bzImage-arc"
 repackInitrd "br/initrd-arc" "files/initrd" "/tmp/p3/initrd-arc"
 
-echo "Copying files"
-sudo cp -Rf "files/p1/"* "/tmp/p1"
-sudo cp -Rf "files/p3/"* "/tmp/p3"
 # Get extractor, LKM, addons and Modules
 getExtractor "files/p3/extractor"
 getLKMs "files/p3/lkms" true
@@ -41,6 +38,10 @@ getExtensions "files/p3/extensions" true
 getModules "files/p3/modules" true
 getConfigs "files/p3/configs" true
 getPatches "files/p3/patches" true
+
+echo "Copying files"
+sudo cp -Rf "files/p1/"* "/tmp/p1"
+sudo cp -Rf "files/p3/"* "/tmp/p3"
 
 read -p "Subrepos loaded. Press enter to continue"
 
