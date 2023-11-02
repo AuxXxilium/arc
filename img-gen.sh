@@ -43,7 +43,7 @@ echo "Copying files"
 sudo cp -Rf "files/p1/"* "/tmp/p1"
 sudo cp -Rf "files/p3/"* "/tmp/p3"
 
-read -p "Subrepos loaded. Press enter to continue"
+read -r -p "Subrepos loaded. Press ENTER to continue"
 
 sync
 
