@@ -82,7 +82,7 @@ function untarExtension() {
 ###############################################################################
 # Detect if has new local plugins to install/reinstall
 function updateExtensions() {
-  for F in $(ls ${CACHE_PATH}/*.extension 2>/dev/null); do
+  for F in $(ls ${PART3_PATH}/*.extension 2>/dev/null); do
     EXTENSION=$(basename "${F}" | sed 's|.extension||')
     rm -rf "${EXTENSIONS_PATH}/${EXTENSION:?}"
     mkdir -p "${EXTENSIONS_PATH}/${EXTENSION}"

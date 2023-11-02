@@ -27,9 +27,7 @@ else
   MACHINE="NATIVE"
 fi
 
-# Get Loader Disk information
-LOADER_DISK="$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1)"
-LOADER_DEVICE_NAME=$(echo "${LOADER_DISK}" | sed 's|/dev/||')
+# Get Loader Disk Bus
 BUS=$(getBus "${LOADER_DISK}")
 
 # Set Warning to 0
@@ -539,10 +537,10 @@ function make() {
         --msgbox "ERROR: No DSM Image found!" 0 0
     fi
     # Copy DSM Files to Locations if DSM Files not found
-    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${BOOTLOADER_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${BOOTLOADER_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${SLPART_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${SLPART_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART1_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART1_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART2_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART2_PATH}"
     cp -f "${UNTAR_PAT_PATH}/zImage" "${ORI_ZIMAGE_FILE}"
     cp -f "${UNTAR_PAT_PATH}/rd.gz" "${ORI_RDGZ_FILE}"
     rm -rf "${UNTAR_PAT_PATH}"
@@ -1312,7 +1310,7 @@ function backupMenu() {
             )
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --infobox "Restore in progress..." 0 0
-            umount "${BOOTLOADER_PATH}" "${SLPART_PATH}" "${CACHE_PATH}"
+            umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
             if [ "${IFTOOL}" = "zip" ]; then
               unzip -p "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
             elif [ "${IFTOOL}" = "gzip" ]; then
@@ -1400,8 +1398,8 @@ function backupMenu() {
                   writeConfigKey "productver" "${majorversion}.${minorversion}" "${USER_CONFIG_FILE}"
                   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
                   if [ -n "${PRODUCTVER}" ]; then
-                    cp -f "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
-                    cp -f "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
+                    cp -f "${DSMROOT_PATH}/.syno/patch/zImage" "${PART2_PATH}"
+                    cp -f "${DSMROOT_PATH}/.syno/patch/rd.gz" "${PART2_PATH}"
                     TEXT="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
                     SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
                     if [ -n "${SN}" ]; then
@@ -1509,7 +1507,7 @@ function backupMenu() {
             )
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --infobox "Restore in progress..." 0 0
-            umount "${BOOTLOADER_PATH}" "${SLPART_PATH}" "${CACHE_PATH}"
+            umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
             if [ "${IFTOOL}" = "zip" ]; then
               unzip -p "${TMP_PATH}/${USER_FILE}" | dd of="${LOADER_DISK}" bs=1M conv=fsync
             elif [ "${IFTOOL}" = "gzip" ]; then
@@ -1587,8 +1585,8 @@ function backupMenu() {
                   writeConfigKey "productver" "${majorversion}.${minorversion}" "${USER_CONFIG_FILE}"
                   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
                   if [ -n "${PRODUCTVER}" ]; then
-                    cp -f "${DSMROOT_PATH}/.syno/patch/zImage" "${SLPART_PATH}"
-                    cp -f "${DSMROOT_PATH}/.syno/patch/rd.gz" "${SLPART_PATH}"
+                    cp -f "${DSMROOT_PATH}/.syno/patch/zImage" "${PART2_PATH}"
+                    cp -f "${DSMROOT_PATH}/.syno/patch/rd.gz" "${PART2_PATH}"
                     TEXT="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
                     SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
                     if [ -n "${SN}" ]; then
@@ -1701,7 +1699,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
           --infobox "Installing new Loader Image" 0 0
         # Process complete update
-        umount "${BOOTLOADER_PATH}" "${SLPART_PATH}" "${CACHE_PATH}"
+        umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
         dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1) bs=1M conv=fsync
         # Ask for Boot
         rm -f "${TMP_PATH}/arc.img"
@@ -1750,10 +1748,10 @@ function updateMenu() {
         unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update" >/dev/null 2>&1
         dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
           --infobox "Updating Loader Image" 0 0
-        cp -f "${TMP_PATH}/update/bzImage" "${CACHE_PATH}/bzImage-arc"
-        cp -f "${TMP_PATH}/update/rootfs.cpio.xz" "${CACHE_PATH}/initrd-arc"
-        cp -f "${TMP_PATH}/update/ARC-VERSION" "${BOOTLOADER_PATH}/ARC-VERSION"
-        cp -f "${TMP_PATH}/update/grub.cfg" "${BOOTLOADER_PATH}/boot/grub/grub.cfg"
+        cp -f "${TMP_PATH}/update/bzImage" "${PART3_PATH}/bzImage-arc"
+        cp -f "${TMP_PATH}/update/rootfs.cpio.xz" "${PART3_PATH}/initrd-arc"
+        cp -f "${TMP_PATH}/update/ARC-VERSION" "${PART1_PATH}/ARC-VERSION"
+        cp -f "${TMP_PATH}/update/grub.cfg" "${PART1_PATH}/boot/grub/grub.cfg"
         rm -rf "${TMP_PATH}/update" 
         rm -f "${TMP_PATH}/update.zip"
         dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
@@ -2441,10 +2439,10 @@ function saveMenu() {
       --infobox "Saving ..." 0 0
   RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
   mkdir -p "${RDXZ_PATH}"
-  (cd "${RDXZ_PATH}"; xz -dc <"${CACHE_PATH}/initrd-arc" | cpio -idm) >/dev/null 2>&1 || true
+  (cd "${RDXZ_PATH}"; xz -dc <"${PART3_PATH}/initrd-arc" | cpio -idm) >/dev/null 2>&1 || true
   rm -rf "${RDXZ_PATH}/opt/arc"
   cp -Rf "/opt" "${RDXZ_PATH}"
-  (cd "${RDXZ_PATH}"; find . 2>/dev/null | cpio -o -H newc -R root:root | xz --check=crc32 >"${CACHE_PATH}/initrd-arc") || true
+  (cd "${RDXZ_PATH}"; find . 2>/dev/null | cpio -o -H newc -R root:root | xz --check=crc32 >"${PART3_PATH}/initrd-arc") || true
   rm -rf "${RDXZ_PATH}"
   dialog --backtitle "$(backtitle)" --colors --aspect 18 \
     --msgbox "Save to Disk is complete." 0 0
@@ -2493,7 +2491,7 @@ function resetLoader() {
     # Clean old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" "${USER_CONFIG_FILE}"
     rm -rf "${UNTAR_PAT_PATH}"
-    rm -rf "${CACHE_PATH}/${MODEL}"
+    rm -rf "${PART3_PATH}/${MODEL}"
   fi
   if [ ! -f "${USER_CONFIG_FILE}" ]; then
     touch "${USER_CONFIG_FILE}"

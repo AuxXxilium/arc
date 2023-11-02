@@ -5,34 +5,7 @@ set -e
 
 . ${ARC_PATH}/include/functions.sh
 
-# Wait kernel enumerate the disks
-CNT=3
-while true; do
-  [ ${CNT} -eq 0 ] && break
-  LOADER_DISK="$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1)"
-  [ -n "${LOADER_DISK}" ] && break
-  CNT=$((${CNT} - 1))
-  sleep 1
-done
-
-[ -z "${LOADER_DISK}" ] && die "Loader disk not found!"
-NUM_PARTITIONS=$(blkid | grep "${LOADER_DISK}[0-9]\+" | cut -d: -f1 | wc -l)
-[ ${NUM_PARTITIONS} -lt 3 ] && die "Loader disk seems to be damaged!"
-[ ${NUM_PARTITIONS} -gt 3 ] && die "There are multiple loader disks, please insert only one loader disk!"
-
-# Check partitions and ignore errors
-fsck.vfat -aw ${LOADER_DISK}1 >/dev/null 2>&1 || true
-fsck.ext2 -p ${LOADER_DISK}2 >/dev/null 2>&1 || true
-fsck.ext4 -p ${LOADER_DISK}3 >/dev/null 2>&1 || true
-# Make folders to mount partitions
-mkdir -p ${BOOTLOADER_PATH}
-mkdir -p ${SLPART_PATH}
-mkdir -p ${CACHE_PATH}
-mkdir -p ${DSMROOT_PATH}
-# Mount the partitions
-mount ${LOADER_DISK}1 ${BOOTLOADER_PATH} || die "Can't mount ${BOOTLOADER_PATH}"
-mount ${LOADER_DISK}2 ${SLPART_PATH} || die "Can't mount ${SLPART_PATH}"
-mount ${LOADER_DISK}3 ${CACHE_PATH} || die "Can't mount ${CACHE_PATH}"
+[ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
 # Shows title
 clear
@@ -42,19 +15,6 @@ printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
-
-# Move/link SSH machine keys to/from cache volume
-[ ! -d "${PART3_PATH}/ssh" ] && cp -R "/etc/ssh" "${PART3_PATH}/ssh"
-rm -rf "/etc/ssh"
-ln -s "${PART3_PATH}/ssh" "/etc/ssh"
-
-# Link bash history to cache volume
-rm -rf ~/.bash_history
-ln -s "${PART3_PATH}/.bash_history" ~/.bash_history
-touch ~/.bash_history
-if ! grep -q "arc.sh" ~/.bash_history; then
-  echo "arc.sh " >>~/.bash_history
-fi
 
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then

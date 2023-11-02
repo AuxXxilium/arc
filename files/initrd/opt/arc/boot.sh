@@ -5,15 +5,7 @@ set -e
 
 . ${ARC_PATH}/include/functions.sh
 
-# Wait kernel enumerate the disks
-CNT=3
-while true; do
-  [ ${CNT} -eq 0 ] && break
-  LOADER_DISK="$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1)"
-  [ -n "${LOADER_DISK}" ] && break
-  CNT=$((${CNT} - 1))
-  sleep 1
-done
+# Get Loader Disk Bus
 BUS=$(getBus "${LOADER_DISK}")
 
 # Check if machine has EFI
