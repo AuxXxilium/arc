@@ -1,22 +1,14 @@
 # https://taskfile.dev
 
-version: '3'
+version: "3"
 
 tasks:
   build-img:
     cmds:
       - ./img-gen.sh
 
-  build-docker-img:
-    dir: docker
+  compile-kpatch:
+    dir: kpatch
     cmds:
-      - ./build.sh
-
-  compile-lkms:
-    cmds:
-      - ./compile-lkm.sh
-
-  compile-addons:
-    dir: addons
-    cmds:
-      - ./compile-addons.sh {{.CLI_ARGS}}
+      - make clean all
+      - mv kpatch ../files/board/arc/overlayfs/opt/arc/
