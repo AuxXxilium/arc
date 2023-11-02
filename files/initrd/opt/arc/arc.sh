@@ -104,7 +104,7 @@ function backtitle() {
     BACKTITLE+=" Build: N"
   fi
   BACKTITLE+=" |"
-  BACKTITLE+=" ${MACHINE}${BUS^^}"
+  BACKTITLE+=" ${MACHINE}(${BUS^^})"
   echo "${BACKTITLE}"
 }
 
