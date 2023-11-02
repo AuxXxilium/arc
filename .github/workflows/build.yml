@@ -140,9 +140,9 @@ jobs:
 
           sudo losetup --detach ${LOOPX}
 
-          # echo "Image Converter"
-          # qemu-img convert -O vmdk arc.img arc-dyn.vmdk
-          # qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
+          echo "Image Converter"
+          qemu-img convert -O vmdk arc.img arc-dyn.vmdk
+          qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
 
       # Zip image and generate checksum
       - name: Pack
