@@ -83,7 +83,7 @@ jobs:
           if [ -n "${VERSION}" ]; then
             # Modify Source File
             echo "${VERSION}" >VERSION
-            echo "${VERSION}" >files/arc/p1/ARC-VERSION
+            echo "${VERSION}" >files/p1/ARC-VERSION
             sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
           fi
 
