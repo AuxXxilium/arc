@@ -115,8 +115,8 @@ jobs:
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
             zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
-            # zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
-            # zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
           else
             zip -9 "arc.img.zip" arc.img
           fi
