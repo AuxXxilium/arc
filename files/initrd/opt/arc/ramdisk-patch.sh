@@ -182,8 +182,13 @@ for EXTENSION in ${!EXTENSIONS[@]}; do
   echo "/addons/${EXTENSION}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 done
 
+# Enable Telnet
+echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
+
+[ "2" = "${BUILDNUM:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
+
 # Build modules dependencies
-${ARC_PATH}/depmod -a -b "${RAMDISK_PATH}" 2>/dev/null
+${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
 
 # Network card configuration file
 for N in $(seq 0 7); do
