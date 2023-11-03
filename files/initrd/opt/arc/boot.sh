@@ -33,10 +33,6 @@ if [ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" ] || [ "${RAMDISK_HASH_CUR}" != "$
   echo -e "\033[1;34mDSM zImage/Ramdisk changed!\033[0m"
   echo
   livepatch
-  if [ ${FAIL} -eq 1 ]; then
-    echo -e "\033[1;34mPatching DSM Files failed! Please stay patient for Update.\033[0m" 0 0
-    exit 1
-  fi
   echo
 fi
 

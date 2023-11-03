@@ -551,13 +551,6 @@ function make() {
   fi
   clear
   livepatch
-  if [ ${FAIL} -eq 1 ]; then
-    echo "Patching DSM Image failed! Please stay patient for Update."
-    sleep 5
-    return 1
-  else
-    echo "DSM Image patched - Ready!"
-  fi
   sleep 3
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     # Build is done

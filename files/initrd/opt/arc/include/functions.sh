@@ -319,6 +319,7 @@ function livepatch() {
   else
     ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
     writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
+    FAIL=0
   fi
   # Patch Ramdisk
   if ! ${ARC_PATH}/ramdisk-patch.sh; then
@@ -326,6 +327,7 @@ function livepatch() {
   else
     RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
     writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
+    FAIL=0
   fi
   # Looking for Update
   if [ ${FAIL} -eq 1 ]; then
@@ -371,6 +373,13 @@ function livepatch() {
       writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
       FAIL=0
     fi
+  fi
+  if [ ${FAIL} -eq 1 ]; then
+    echo -e "\033[1;34mPatching DSM Files failed! Please stay patient for Update.\033[0m" 0 0
+    sleep 5
+    exit 1
+  else
+    echo "DSM Image patched - Ready!"
   fi
 }
 
