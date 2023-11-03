@@ -2454,7 +2454,7 @@ function formatdisks() {
   rm -f "${TMP_PATH}/opts"
   while read -r POSITION NAME; do
     [ -z "${POSITION}" ] || [ -z "${NAME}" ] && continue
-    echo "${POSITION}" | grep -q "${LOADER_DEVICE_NAME}" && continue
+    echo "${POSITION}" | grep -q "${LOADER_DISK}" && continue
     echo "\"${POSITION}\" \"${NAME}\" \"off\"" >>"${TMP_PATH}/opts"
   done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd|/dev/nvme" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
