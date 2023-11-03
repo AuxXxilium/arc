@@ -1631,13 +1631,12 @@ function updateMenu() {
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
       1 "Upgrade Loader" \
-      2 "Update Loader" \
-      3 "Update Addons" \
-      4 "Update Patches" \
-      5 "Update Extensions" \
-      6 "Update Modules" \
-      7 "Update Configs" \
-      8 "Update LKMs" \
+      2 "Update Addons" \
+      3 "Update Patches" \
+      4 "Update Extensions" \
+      5 "Update Modules" \
+      6 "Update Configs" \
+      7 "Update LKMs" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     case "$(<"${TMP_PATH}/resp")" in
@@ -1711,57 +1710,6 @@ function updateMenu() {
         ;;
       2)
         # Ask for Tag
-        dialog --clear --backtitle "$(backtitle)" --title "Update Loader" \
-          --menu "Which Version?" 0 0 0 \
-          1 "Latest" \
-          2 "Select Version" \
-        2>"${TMP_PATH}/opts"
-        [ $? -ne 0 ] && continue
-        opts="$(<"${TMP_PATH}/opts")"
-        [ -z "${opts}" ] && return 1
-        if [ ${opts} -eq 1 ]; then
-          TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
-            dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-              --msgbox "Error checking new version" 0 0
-            return 1
-          fi
-        elif [ ${opts} -eq 2 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Loader" \
-          --inputbox "Type the Version!" 0 0 \
-          2>"${TMP_PATH}/input"
-          TAG="$(<"${TMP_PATH}/input")"
-          [ -z "${TAG}" ] && continue
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-          --infobox "Downloading ${TAG}" 0 0
-        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip")
-        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-            --msgbox "Error downloading" 0 0
-          return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-          --infobox "Extracting" 0 0
-        [ -f "${TMP_PATH}/update" ] && rm -rf "${TMP_PATH}/update"
-        mkdir -p "${TMP_PATH}/update"
-        unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update" >/dev/null 2>&1
-        dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-          --infobox "Updating Loader Image" 0 0
-        cp -f "${TMP_PATH}/update/bzImage" "${PART3_PATH}/bzImage-arc"
-        cp -f "${TMP_PATH}/update/rootfs.cpio.xz" "${PART3_PATH}/initrd-arc"
-        cp -f "${TMP_PATH}/update/ARC-VERSION" "${PART1_PATH}/ARC-VERSION"
-        cp -f "${TMP_PATH}/update/grub.cfg" "${PART1_PATH}/boot/grub/grub.cfg"
-        rm -rf "${TMP_PATH}/update" 
-        rm -f "${TMP_PATH}/update.zip"
-        dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-          --yesno "Arc updated with success to ${TAG}!\nReboot?" 0 0
-        [ $? -ne 0 ] && continue
-        exec reboot
-        exit 0
-        ;;
-      3)
-        # Ask for Tag
         dialog --clear --backtitle "$(backtitle)" --title "Update Addons" \
           --menu "Which Version?" 0 0 0 \
           1 "Latest" \
@@ -1812,7 +1760,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
           --msgbox "Addons updated with success! ${TAG}" 0 0
         ;;
-      4)
+      3)
         # Ask for Tag
         dialog --clear --backtitle "$(backtitle)" --title "Update Patches" \
           --menu "Which Version?" 0 0 0 \
@@ -1854,7 +1802,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
           --msgbox "Patches updated with success! ${TAG}" 0 0
         ;;
-      5)
+      4)
         # Ask for Tag
         dialog --clear --backtitle "$(backtitle)" --title "Update Extensions" \
           --menu "Which Version?" 0 0 0 \
@@ -1905,7 +1853,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Extensions" --aspect 18 \
           --msgbox "Extensions updated with success! ${TAG}" 0 0
         ;;
-      6)
+      5)
         # Ask for Tag
         dialog --clear --backtitle "$(backtitle)" --title "Update Modules" \
           --menu "Which Version?" 0 0 0 \
@@ -1958,7 +1906,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
           --msgbox "Modules updated to ${TAG} with success!" 0 0
         ;;
-      7)
+      6)
         # Ask for Tag
         dialog --clear --backtitle "$(backtitle)" --title "Update Configs" \
           --menu "Which Version?" 0 0 0 \
@@ -2000,7 +1948,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
           --msgbox "Configs updated with success! ${TAG}" 0 0
         ;;
-      8)
+      7)
         # Ask for Tag
         dialog --clear --backtitle "$(backtitle)" --title "Update LKMs" \
           --menu "Which Version?" 0 0 0 \
