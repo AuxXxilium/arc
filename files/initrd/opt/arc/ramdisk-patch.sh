@@ -116,7 +116,7 @@ rm -rf "${TMP_PATH}/modules"
 mkdir -p "${TMP_PATH}/modules"
 tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
 for F in $(ls "${TMP_PATH}/modules/"*.ko); do
-  M="$(basename ${F})"
+  M=$(basename ${F})
   [ "${ODP}" = "true" ] && [ -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ] && continue
   if arrayExistItem "${M:0:-3}" "${!USERMODULES[@]}"; then
     cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}"
@@ -146,7 +146,7 @@ echo "export LAYOUT=${LAYOUT}" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export KEYMAP=${KEYMAP}" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
-# Required addons: revert
+# Required Addons: revert
 installAddon revert
 echo "/addons/revert.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 
