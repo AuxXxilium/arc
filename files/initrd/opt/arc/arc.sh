@@ -2544,9 +2544,9 @@ while true; do
     if [ "${ARCOPTS}" = "true" ]; then
       echo "= \"\Z4========== Arc ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
-      echo "p \"Arc Settings \" "                                                           >>"${TMP_PATH}/menu"
       echo "f \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
       echo "g \"Storage Map \" "                                                            >>"${TMP_PATH}/menu"
+      echo "p \"Arc Settings \" "                                                           >>"${TMP_PATH}/menu"
       if [ "${DT}" = "false" ]; then
         echo "h \"USB Port Config \" "                                                      >>"${TMP_PATH}/menu"
       fi
@@ -2635,9 +2635,9 @@ while true; do
        NEXT="5"
        ;;
     e) ONLYVERSION="true" && arcbuild; NEXT="e" ;;
-    p) ONLYPATCH="true" && arcsettings; NEXT="p" ;;
     f) networkMenu; NEXT="f" ;;
     g) storageMenu; NEXT="g" ;;
+    p) ONLYPATCH="true" && arcsettings; NEXT="p" ;;
     h) usbMenu; NEXT="h" ;;
     .) staticIPMenu; NEXT="." ;;
     # Advanced Section
