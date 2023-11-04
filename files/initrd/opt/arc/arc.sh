@@ -2292,24 +2292,24 @@ function resetPassword() {
   done
   rm -rf "${TMP_PATH}/sdX1"
   if [ ! -f "${TMP_PATH}/menu" ]; then
-    DIALOG --title "Reset DSM Password" \
+    dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
       --msgbox "The installed Syno system not found in the currently inserted disks!" 0 0
     return
   fi
-  DIALOG --title "Reset DSM Password" \
+  dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
     --no-items --menu "Choose a User" 0 0 0  --file "${TMP_PATH}/menu" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
   USER="$(cat "${TMP_PATH}/resp" | awk '{print $1}')"
   [ -z "${USER}" ] && return
   while true; do
-    DIALOG --title "Reset DSM Password" \
+    dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
       --inputbox "$(printf "Type a new password for user '%s'")" "${USER}" 0 70 "${CMDLINE[${NAME}]}" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break 2
     VALUE="$(<"${TMP_PATH}/resp")"
     [ -n "${VALUE}" ] && break
-    DIALOG --title "Reset DSM Password" \
+    dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
       --msgbox "Invalid password" 0 0
   done
   NEWPASSWD="$(python -c "import crypt,getpass;pw=\"${VALUE}\";print(crypt.crypt(pw))")"
@@ -2324,10 +2324,10 @@ function resetPassword() {
       umount "${I}"
     done
     rm -rf "${TMP_PATH}/sdX1"
-  ) 2>&1 | DIALOG --title "Reset DSM Password" \
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
     --progressbox "Resetting ..." 20 100
   [ -f "${SHADOW_FILE}" ] && rm -rf "${SHADOW_FILE}"
-  DIALOG --title "Reset DSM Password" --aspect 18 \
+  dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" --aspect 18 \
     --msgbox "Password reset completed." 0 0
 }
 
