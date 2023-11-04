@@ -22,6 +22,10 @@ on:
         description: "clean"
         default: false
         type: boolean
+      br_version:
+        description: "buildroot version"
+        default: "2023.02.x"
+        type: string
 
 jobs:
   build:
@@ -103,24 +107,27 @@ jobs:
           echo "OK"
 
       # Build incremental
-      - name: Build image
+      - name: Build Image
         run: |
           . scripts/func.sh
 
+          echo "Create Arc Image"
           gzip -dc "files/grub.img.gz" >"arc.img"
           fdisk -l "arc.img"
           
           LOOPX=$(sudo losetup -f)
           sudo losetup -P "${LOOPX}" "arc.img"
 
-          echo "Mounting image file"
+          echo "Mounting Image File"
           mkdir -p "/tmp/p1"
           mkdir -p "/tmp/p3"
           sudo mount ${LOOPX}p1 "/tmp/p1"
           sudo mount ${LOOPX}p3 "/tmp/p3"
 
           echo "Get Buildroot"
-          getBuildroot "2023.02.x" "br"
+          br_version="${{ inputs.br_version }}"
+          [ -z "${br_version}" ] && br_version="2023.02.x"
+          getBuildroot "${br_version}" "br"
           [ ! -f "br/bzImage-arc" ] || [ ! -f "br/initrd-arc" ] && return 1
           
           echo "Repack initrd"
@@ -140,6 +147,9 @@ jobs:
 
           sudo losetup --detach ${LOOPX}
 
+          echo "Create Arc_4GB Image"
+          resizeImg "arc.img" "+3072M" "arc_4GB.img"
+
           echo "Image Converter"
           qemu-img convert -O vmdk arc.img arc-dyn.vmdk
           qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
@@ -149,10 +159,12 @@ jobs:
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
             zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
+            zip -9 "arc_4GB-${{ env.VERSION }}.img.zip" arc_4GB.img
             zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
             zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
           else
             zip -9 "arc.img.zip" arc.img
+            zip -9 "arc_4GB.img.zip" arc_4GB.img
           fi
           zip -9j update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
 
@@ -163,6 +175,8 @@ jobs:
         with:
           name: Images
           path: |
+            arc.img.zip
+            arc_4GB.img.zip
             update.zip
           retention-days: 5
 
@@ -177,6 +191,7 @@ jobs:
             ${{ steps.Changelog.outputs.changelog }}
           files: |
             arc-${{ env.VERSION }}.img.zip
+            arc_4GB-${{ env.VERSION }}.img.zip
             arc-${{ env.VERSION }}.vmdk-dyn.zip
             arc-${{ env.VERSION }}.vmdk-flat.zip
             update.zip
