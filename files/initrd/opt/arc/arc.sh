@@ -9,6 +9,8 @@
 . ${ARC_PATH}/include/storage.sh
 . ${ARC_PATH}/include/network.sh
 
+[ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
+
 # Memory: Check Memory installed
 RAMTOTAL=0
 while read -r LINE; do
