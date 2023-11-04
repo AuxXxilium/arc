@@ -150,13 +150,6 @@ function arcMenu() {
               break
             fi
           done
-          for F in "$(readModelArray "${M}" "dt")"; do
-            if [ "${DT}" = "true" ] && [ ${SASCONTROLLER} -gt 0 ]; then
-              COMPATIBLE=0
-              FLGNEX=1
-              break
-            fi
-          done
         fi
         [ "${DT}" = "true" ] && DT="DT" || DT=""
         [ "${BETA}" = "true" ] && BETA="Beta" || BETA=""
@@ -182,12 +175,6 @@ function arcMenu() {
   # read model config for dt and aes
   if [ "${MODEL}" != "${resp}" ]; then
     MODEL="${resp}"
-    # Check for DT and SAS Controller
-    DT="$(readModelKey "${resp}" "dt")"
-    if [ "${DT}" = "true" ] && [ ${SASCONTROLLER} -gt 0 ]; then
-      # There is no Raid/SCSI Support for DT Models
-      WARNON=2
-    fi
     # Check for AES
     if ! grep -q "^flags.*aes.*" /proc/cpuinfo; then
       WARNON=4
@@ -376,10 +363,6 @@ function arcsettings() {
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
       --msgbox "WARN: Your Controller has more than 8 Disks connected. Max Disks per Controller: 8" 0 0
   fi
-  if [ ${WARNON} -eq 2 ]; then
-    dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-      --msgbox "WARN: You have selected a DT Model. There is no support for SAS Controller." 0 0
-  fi
   if [ ${WARNON} -eq 3 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
       --msgbox "WARN: You have more than 8 Ethernet Ports. There are only 8 supported by DSM." 0 0
@@ -390,8 +373,6 @@ function arcsettings() {
   fi
   # Select Extensions
   extensionSelection
-  # Select Fix
-  #fixSelection
   # Config is done
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
