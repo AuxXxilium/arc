@@ -9,10 +9,6 @@
 . ${ARC_PATH}/include/storage.sh
 . ${ARC_PATH}/include/network.sh
 
-[ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
-
-alias DIALOG='dialog --backtitle "$(backtitle)" --colors --aspect 50'
-
 # Memory: Check Memory installed
 RAMTOTAL=0
 while read -r LINE; do
@@ -161,7 +157,7 @@ function arcMenu() {
       done < <(cat "${TMP_PATH}/modellist" | sort -n -k 2)
     [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models\Zn\"" >>"${TMP_PATH}/menu"
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >>"${TMP_PATH}/menu"
-    DIALOG --menu "Choose Model for Loader" 0 62 0 \
+    dialog --backtitle "$(backtitle)" --colors --menu "Choose Model for Loader" 0 62 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     resp="$(<"${TMP_PATH}/resp")"
@@ -298,7 +294,7 @@ function arcsettings() {
       writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 3 ]; then
       while true; do
-        DIALOG --title "Serial" \
+        dialog --backtitle "$(backtitle)" --colors --title "Serial" \
           --inputbox "Please enter a valid Serial " 0 0 "" \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break 2
@@ -310,7 +306,7 @@ function arcsettings() {
         fi
         # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
         break
-        DIALOG --title "Serial" \
+        dialog --backtitle "$(backtitle)" --colors --title "Serial" \
           --yesno "Invalid Serial, continue?" 0 0
         [ $? -eq 0 ] && break
       done
@@ -333,7 +329,7 @@ function arcsettings() {
       writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 2 ]; then
       while true; do
-        DIALOG --title "Serial" \
+        dialog --backtitle "$(backtitle)" --colors --title "Serial" \
           --inputbox "Please enter a serial number " 0 0 "" \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break 2
@@ -345,7 +341,7 @@ function arcsettings() {
         fi
         # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
         break
-        DIALOG --title "Serial" \
+        dialog --backtitle "$(backtitle)" --colors --title "Serial" \
           --yesno "Invalid Serial, continue?" 0 0
         [ $? -eq 0 ] && break
       done
@@ -433,7 +429,7 @@ function make() {
     PAT_HASH_CONF="0"
   fi
   while true; do
-    DIALOG --title "Arc Build" \
+    dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
       --infobox "Get PAT Data from Syno..." 3 30
     idx=0
     while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
@@ -453,7 +449,7 @@ function make() {
     else
       MSG="Successfully got PAT Data.\nPlease confirm or modify as needed."
     fi
-    DIALOG --title "Arc Build" \
+    dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
       --extra-button --extra-label "Retry" --default-button "OK" \
       --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 7 100 0 \
       2>"${TMP_PATH}/resp"
@@ -717,7 +713,7 @@ function modulesMenu() {
           --msgbox "${ITEMS}" 0 0
         ;;
       2)
-        DIALOG --title "Modules" \
+        dialog --backtitle "$(backtitle)" --colors --title "Modules" \
           --infobox "Selecting loaded modules" 0 0
         KOLIST=""
         for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
@@ -1006,7 +1002,7 @@ function cmdlineMenu() {
         echo "5 \"Reboot after 5 seconds\"" >>"${TMP_PATH}/opts"
         echo "0 \"No reboot\"" >>"${TMP_PATH}/opts"
         echo "-1 \"Restart immediately\"" >>"${TMP_PATH}/opts"
-        DIALOG --title "Kernelpanic" \
+        dialog --backtitle "$(backtitle)" --colors --title "Kernelpanic" \
           --default-item "${KERNELPANIC}" --menu "Choose a time(seconds)" 0 0 0 --file "${TMP_PATH}/opts" \
           2>${TMP_PATH}/resp
         [ $? -ne 0 ] && return
@@ -1223,7 +1219,7 @@ function backupMenu() {
           ;;
         3)
           if ! tty | grep -q "/dev/pts"; then
-            DIALOG --aspect 18 \
+            dialog --backtitle "$(backtitle)" --colors --aspect 18 \
               --msgbox "This feature is only available when accessed via web/ssh." 0 0
             return
           fi
@@ -1250,13 +1246,13 @@ function backupMenu() {
           else                          # ssh
             sz -be /var/www/data/arc-backup.img.gz
           fi
-          DIALOG --aspect 18 \
+          dialog --backtitle "$(backtitle)" --colors --aspect 18 \
               --msgbox "Backup is complete." 0 0
           rm -f /var/www/data/arc-backup.img.gz
           ;;
         4)
           if ! tty | grep -q "/dev/pts"; then
-            DIALOG --aspect 18 \
+            dialog --backtitle "$(backtitle)" --colors --aspect 18 \
               --msgbox "This feature is only available when accessed via web/ssh." 0 0
             return 1
           fi
@@ -1453,7 +1449,7 @@ function backupMenu() {
           ;;
         2)
           if ! tty | grep -q "/dev/pts"; then
-            DIALOG --aspect 18 \
+            dialog --backtitle "$(backtitle)" --colors --aspect 18 \
               --msgbox "This feature is only available when accessed via web/ssh." 0 0
             return
           fi
@@ -2169,7 +2165,7 @@ function sysinfo() {
   fi
   TEXT+="\n  Ports with color \Z1\Zbred\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected.\n"
   TEXT+="\n  Drives total: \Zb${NUMPORTS}\Zn"
-  DIALOG --title "Sysinfo" \
+  dialog --backtitle "$(backtitle)" --colors --title "Sysinfo" \
     --msgbox "${TEXT}" 0 0
 }
 
@@ -2271,7 +2267,7 @@ function downgradeMenu() {
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Allow downgrade installation" \
       --progressbox "Removing ..." 20 70
   TEXT="Remove VERSION file for all disks completed."
-  DIALOG --aspect 18 \
+  dialog --backtitle "$(backtitle)" --colors --aspect 18 \
     --msgbox "${TEXT}" 0 0
 }
 
@@ -2329,7 +2325,7 @@ function resetPassword() {
   ) 2>&1 | DIALOG --title "Reset DSM Password" \
     --progressbox "Resetting ..." 20 100
   [ -f "${SHADOW_FILE}" ] && rm -rf "${SHADOW_FILE}"
-  DIALOG --title "Reset DSM Password" \
+  DIALOG --title "Reset DSM Password" --aspect 18 \
     --msgbox "Password reset completed." 0 0
 }
 
@@ -2337,7 +2333,7 @@ function resetPassword() {
 # modify bootipwaittime
 function bootipwaittime() {
   ITEMS="$(echo -e "0 \n5 \n10 \n20 \n30 \n60 \n")"
-  DIALOG --title "Boot IP Waittime" \
+  dialog --backtitle "$(backtitle)" --colors --title "Boot IP Waittime" \
     --default-item "${BOOTIPWAIT}" --no-items --menu "Choose Waittime(seconds)\nto get an IP" 0 0 0 ${ITEMS} \
     2>"${TMP_PATH}/resp"
   resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
@@ -2374,7 +2370,7 @@ function saveMenu() {
   cp -Rf "/opt" "${RDXZ_PATH}"
   (cd "${RDXZ_PATH}"; find . 2>/dev/null | cpio -o -H newc -R root:root | xz --check=crc32 >"${PART3_PATH}/initrd-arc") || true
   rm -rf "${RDXZ_PATH}"
-  DIALOG --aspect 18 \
+  dialog --backtitle "$(backtitle)" --colors --aspect 18 \
     --msgbox "Save to Disk is complete." 0 0
 }
 
@@ -2387,17 +2383,17 @@ function formatdisks() {
     echo "${POSITION}" | grep -q "${LOADER_DISK}" && continue
     echo "\"${POSITION}\" \"${NAME}\" \"off\"" >>"${TMP_PATH}/opts"
   done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd|/dev/nvme" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
-  DIALOG --title "Format Disks" \
+  dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --checklist "" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return 1
   resp=$(<"${TMP_PATH}/resp")
   [ -z "${resp}" ] && return 1
-  DIALOG --title "Format Disks" \
+  dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return 1
   if [ $(ls /dev/md* | wc -l) -gt 0 ]; then
-    DIALOG --title "Format Disks" \
+    dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
       --yesno "Warning:\nThe current hds is in raid, do you still want to format them?" 0 0
     [ $? -ne 0 ] && return 1
     for I in $(ls /dev/md*); do
@@ -2408,9 +2404,9 @@ function formatdisks() {
     for I in ${resp}; do
       echo y | mkfs.ext4 -T largefile4 "${I}" 2>&1
     done
-  ) 2>&1 | DIALOG --title "Format Disks" \
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --progressbox "Formatting ..." 20 70
-  DIALOG --title "Format Disks" \
+  dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --msgbox "Formatting is complete." 0 0
 }
 
@@ -2466,14 +2462,14 @@ function resetLoader() {
   fi
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  DIALOG --title "Clean Old" \
+  dialog --backtitle "$(backtitle)" --colors --title "Clean Old" \
     --msgbox "Clean is complete." 5 30
 
 ###############################################################################
 # let user edit the grub.cfg
 function editGrubCfg() {
   while true; do
-    DIALOG --title "Edit grub.cfg with caution" \
+    dialog --backtitle "$(backtitle)" --colors --title "Edit grub.cfg with caution" \
       --editbox "${GRUB_PATH}/grub.cfg" 0 0 2>"${TMP_PATH}/usergrub.cfg"
     [ $? -ne 0 ] && return
     mv -f "${TMP_PATH}/usergrub.cfg" "${GRUB_PATH}/grub.cfg"
