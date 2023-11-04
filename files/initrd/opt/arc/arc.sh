@@ -1264,7 +1264,7 @@ function backupMenu() {
           rm -rf "${TMP_PATH}"
           mkdir -p "${TMP_PATH}"
           pushd "${TMP_PATH}"
-          rz -be
+          rz -be -B 536870912
           for F in $(ls -A); do
             USER_FILE="${F}"
             [ "${F##*.}" = "zip" -a $(unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$") -eq 1 ] && IFTOOL="zip"
@@ -1461,7 +1461,7 @@ function backupMenu() {
           rm -rf "${TMP_PATH}"
           mkdir -p "${TMP_PATH}"
           pushd "${TMP_PATH}"
-          rz -be
+          rz -be -B 536870912
           for F in $(ls -A); do
             USER_FILE="${F}"
             [ "${F##*.}" = "zip" ] && [ $(unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$") -eq 1 ] && IFTOOL="zip"
@@ -2274,54 +2274,58 @@ function downgradeMenu() {
 ###############################################################################
 # Reset DSM password
 function resetPassword() {
-  SHADOW_FILE=""
+  rm -f "${TMP_PATH}/menu"
   mkdir -p "${TMP_PATH}/sdX1"
-  for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK}1"); do
-    mount "${I}" "${TMP_PATH}/sdX1"
+  for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK_PART1}"); do
+    mount ${I} "${TMP_PATH}/sdX1"
     if [ -f "${TMP_PATH}/sdX1/etc/shadow" ]; then
-      cp "${TMP_PATH}/sdX1/etc/shadow" "${TMP_PATH}/shadow_bak"
-      SHADOW_FILE="${TMP_PATH}/shadow_bak"
+      for U in $(cat "${TMP_PATH}/sdX1/etc/shadow" | awk -F ':' '{if ($2 != "*" && $2 != "!!") {print $1;}}'); do
+        grep -q "status=on" "${TMP_PATH}//usr/syno/etc/packages/SecureSignIn/preference/${U}/method.config" 2>/dev/null
+        [ $? -eq 0 ] && SS="SecureSignIn" || SS="            "
+        printf "\"%-36s %-16s\"\n" "${U}" "${SS}" >>"${TMP_PATH}/menu"
+      done
     fi
     umount "${I}"
-    [ -n "${SHADOW_FILE}" ] && break
+    [ -f "${TMP_PATH}/menu" ] && break
   done
   rm -rf "${TMP_PATH}/sdX1"
-  if [ -z "${SHADOW_FILE}" ]; then
-    dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-      --msgbox "No DSM found in the currently inserted disks!" 0 0
-    return 1
+  if [ ! -f "${TMP_PATH}/menu" ]; then
+    DIALOG --title "Reset DSM Password" \
+      --msgbox "The installed Syno system not found in the currently inserted disks!" 0 0
+    return
   fi
-  ITEMS="$(cat "${SHADOW_FILE}" | awk -F ':' '{if ($2 != "*" && $2 != "!!") {print $1;}}')"
-  dialog --clear --no-items --backtitle "$(backtitle)" --title "Reset DSM Password" \
-        --menu "Choose a user name" 0 0 0 ${ITEMS} 2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return 1
-  USER="$(<"${TMP_PATH}/resp")"
-  [ -z "${USER}" ] && return 1
-  OLDPASSWD="$(cat "${SHADOW_FILE}" | grep "^${USER}:" | awk -F ':' '{print $2}')"
-
+  DIALOG --title "Reset DSM Password" \
+    --no-items --menu "Choose a User" 0 0 0  --file "${TMP_PATH}/menu" \
+    2>${TMP_PATH}/resp
+  [ $? -ne 0 ] && return
+  USER="$(cat "${TMP_PATH}/resp" | awk '{print $1}')"
+  [ -z "${USER}" ] && return
   while true; do
-    dialog --backtitle "$(backtitle)" --title "Reset DSM Password" \
-      --inputbox "Type a new password for user ${USER}" 0 0 "${CMDLINE[${NAME}]}" \
-      2>"${TMP_PATH}/resp"
+    DIALOG --title "Reset DSM Password" \
+      --inputbox "$(printf "Type a new password for user '%s'")" "${USER}" 0 70 "${CMDLINE[${NAME}]}" \
+      2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break 2
     VALUE="$(<"${TMP_PATH}/resp")"
     [ -n "${VALUE}" ] && break
-    dialog --backtitle "$(backtitle)" --title "Reset syno system password" --msgbox "Invalid password" 0 0
+    DIALOG --title "Reset DSM Password" \
+      --msgbox "Invalid password" 0 0
   done
   NEWPASSWD="$(python -c "import crypt,getpass;pw=\"${VALUE}\";print(crypt.crypt(pw))")"
   (
     mkdir -p "${TMP_PATH}/sdX1"
-    for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK}1"); do
+    for I in $(ls /dev/sd.*1 2>/dev/null | grep -v ${LOADER_DISK_PART1}); do
       mount "${I}" "${TMP_PATH}/sdX1"
-      sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "${TMP_PATH}/sdX1/etc/shadow"
+      OLDPASSWD="$(cat "${TMP_PATH}/sdX1/etc/shadow" | grep "^${USER}:" | awk -F ':' '{print $2}')"
+      [ -n "${OLDPASSWD}" ] && sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "${TMP_PATH}/sdX1/etc/shadow"
+      sed -i "s|status=on|status=off|g" "${TMP_PATH}//usr/syno/etc/packages/SecureSignIn/preference/${USER}/method.config" 2>/dev/null
       sync
       umount "${I}"
     done
     rm -rf "${TMP_PATH}/sdX1"
-  ) 2>&1  | dialog --backtitle "$(backtitle)" --title "Reset DSM Password" \
-      --progressbox "Resetting ..." 20 70
+  ) 2>&1 | DIALOG --title "Reset DSM Password" \
+    --progressbox "Resetting ..." 20 100
   [ -f "${SHADOW_FILE}" ] && rm -rf "${SHADOW_FILE}"
-  dialog --backtitle "$(backtitle)" --colors --aspect 18 \
+  DIALOG --title "Reset DSM Password" --aspect 18 \
     --msgbox "Password reset completed." 0 0
 }
 
