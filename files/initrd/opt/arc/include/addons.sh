@@ -60,7 +60,7 @@ function installAddon() {
     [ "${AVAILABLE}" = "${PLATFORM}-${KVER}" ] && ACTIVATE="true" && break || ACTIVATE="false"
   done < <(readConfigEntriesArray "available-for" "${ADDONS_PATH}/${ADDON}/manifest.yml")
   # If has files to copy, copy it, else return error
-  [ ${HAS_FILES} -ne 1 ] || [ ${ACTIVATE} = "false" ] && return 1
+  [[ ${HAS_FILES} -ne 1 || ${ACTIVATE} = "false" ]] && return 1
   cp -f "${TMP_PATH}/${ADDON}/install.sh" "${RAMDISK_PATH}/addons/${ADDON}.sh" 2>"${LOG_FILE}" || dieLog
   chmod +x "${RAMDISK_PATH}/addons/${ADDON}.sh"
   [ -d ${TMP_PATH}/${ADDON}/root ] && (cp -rnf "${TMP_PATH}/${ADDON}/root/"* "${RAMDISK_PATH}/" 2>"${LOG_FILE}" || dieLog)

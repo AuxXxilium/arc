@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-[ -z "${ARC_PATH}" ] || [ ! -d "${ARC_PATH}/include" ] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 . ${ARC_PATH}/include/functions.sh
 . ${ARC_PATH}/include/addons.sh
@@ -137,7 +137,7 @@ function arcMenu() {
         else
           ARCAV="NonArc"
         fi
-        if [ "${PLATFORM}" = "r1000" ] || [ "${PLATFORM}" = "v1000" ] || [ "${PLATFORM}" = "epyc7002" ]; then
+        if [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]]; then
           CPU="AMD"
         else
           CPU="Intel"
@@ -193,7 +193,7 @@ function arcMenu() {
     writeConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
+    if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
     fi
@@ -223,7 +223,7 @@ function arcbuild() {
     if [ "${PRODUCTVER}" != "${resp}" ]; then
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-      if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
+      if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
         # Delete old files
         rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
       fi
@@ -426,7 +426,7 @@ function make() {
   # Update PAT Data
   PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
-  if [ -z "${PAT_URL_CONF}" ] || [ -z "${PAT_HASH_CONF}" ]; then
+  if [[ -z "${PAT_URL_CONF}" || -z "${PAT_HASH_CONF}" ]]; then
     PAT_URL_CONF="0"
     PAT_HASH_CONF="0"
   fi
@@ -461,7 +461,7 @@ function make() {
   done
   PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
   PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
-  if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+  if [[ "${PAT_HASH}" != "${PAT_HASH_CONF}" || ! -f "${ORI_ZIMAGE_FILE}" || ! -f "${ORI_RDGZ_FILE}" ]]; then
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
     # Check for existing Files
@@ -470,13 +470,13 @@ function make() {
     # Get new Files
     DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL}/${PRODUCTVER}/${PAT_HASH}.tar"
     STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
-    if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
+    if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
       dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
       --msgbox "No DSM Image found!\nTry Syno Link." 0 0
       # Grep PAT_URL
       PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
       STATUS=$(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" --progress-bar)
-      if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
+      if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
         dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
           --msgbox "No DSM Image found!\ Exit." 0 0
         return 1
@@ -529,13 +529,13 @@ function make() {
     rm -rf "${UNTAR_PAT_PATH}"
   fi
   # Reset Bootcount if User rebuild DSM
-  if [ ${BOOTCOUNT} -gt 0 ] || [ -z "${BOOTCOUNT}" ]; then
+  if [[ -z "${BOOTCOUNT}" || ${BOOTCOUNT} -gt 0 ]]; then
     writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   fi
   clear
   livepatch
   sleep 3
-  if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
+  if [[ -f "${ORI_ZIMAGE_FILE}" && -f "${ORI_RDGZ_FILE}" && -f "${MOD_ZIMAGE_FILE}" && -f "${MOD_RDGZ_FILE}" ]]; then
     # Build is done
     writeConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
@@ -578,7 +578,7 @@ function editUserConfig() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
-  if [ "${MODEL}" != "${OLDMODEL}" ] || [ "${PRODUCTVER}" != "${OLDPRODUCTVER}" ]; then
+  if [[ "${MODEL}" != "${OLDMODEL}" || "${PRODUCTVER}" != "${OLDPRODUCTVER}" ]]; then
     # Delete old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   fi
@@ -794,13 +794,13 @@ function modulesMenu() {
         clear
         echo "Downloading ${URL}"
         STATUS=$(curl -kLJO -w "%{http_code}" "${URL}" --progress-bar)
-        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
+        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Add external Module" --aspect 18 \
             --msgbox "ERROR: Check internet, URL or cache disk space" 0 0
           continue
         fi
         KONAME=$(basename "$URL")
-        if [ -n "${KONAME}" -a "${KONAME##*.}" = "ko" ]; then
+        if [[ -n "${KONAME}" && "${KONAME##*.}" = "ko" ]]; then
           addToModules "${PLATFORM}" "${KVER}" "${KONAME}"
           dialog --backtitle "$(backtitle)" --title "Add external Module" --aspect 18 \
             --msgbox "Module ${KONAME} added to ${PLATFORM}-${KVER}" 0 0
@@ -1274,7 +1274,7 @@ function backupMenu() {
             break
           done
           popd
-          if [ -z "${IFTOOL}" ] || [ ! -f "${TMP_PATH}/${USER_FILE}" ]; then
+          if [[ -z "${IFTOOL}" || ! -f "${TMP_PATH}/${USER_FILE}" ]]; then
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --msgbox "Not a valid .zip/.img.gz file, please try again!\n${USER_FILE}" 0 0
           else
@@ -1471,7 +1471,7 @@ function backupMenu() {
             break
           done
           popd
-          if [ -z "${IFTOOL}" ] || [ -z "${TMP_PATH}/${USER_FILE}" ]; then
+          if [[ -z "${IFTOOL}" || -z "${TMP_PATH}/${USER_FILE}" ]]; then
             dialog --backtitle "$(backtitle)" --title "Restore Loader disk" --aspect 18 \
               --msgbox "Not a valid .zip/.img.gz file, please try again!\n${USER_FILE}" 0 0
           else
@@ -1630,7 +1630,7 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+          if [[ $? -ne 0 || -z "${TAG}" ]]; then
             dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
               --msgbox "Error checking new version" 0 0
             return 1
@@ -1651,7 +1651,7 @@ function updateMenu() {
         fi
         # Download update file
         STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
-        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
+        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
             --msgbox "Error downloading update file" 0 0
           return 1
@@ -1663,7 +1663,7 @@ function updateMenu() {
             --msgbox "Error extracting update file" 0 0
           return 1
         fi
-        if [ -f "${USER_CONFIG_FILE}" ] && [ "${CONFDONE}" = "true" ]; then
+        if [[ -f "${USER_CONFIG_FILE}" && "${CONFDONE}" = "true" ]]; then
           GENHASH="$(cat "${USER_CONFIG_FILE}" | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)"
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
           --msgbox "Backup config successful!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Backup - Restore with Code." 0 0
@@ -1696,7 +1696,7 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+          if [[ $? -ne 0 || -z "${TAG}" ]]; then
             dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
               --msgbox "Error checking new version" 0 0
             return 1
@@ -1711,7 +1711,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip")
-        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
+        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
             --msgbox "Error downloading" 0 0
           return 1
@@ -1747,7 +1747,7 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+          if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
             dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
               --msgbox "Error checking new version" 0 0
             return 1
@@ -1762,7 +1762,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip")
-        if [ $? -ne 0 ] || [] ${STATUS} -ne 200 ]; then
+        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
             --msgbox "Error downloading" 0 0
           return 1
@@ -1789,7 +1789,7 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-extensions/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+          if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
             dialog --backtitle "$(backtitle)" --title "Update Extensions" --aspect 18 \
               --msgbox "Error checking new version" 0 0
             return 1
@@ -1804,7 +1804,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Extensions" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-extensions/releases/download/${TAG}/extensions.zip" -o "${TMP_PATH}/extensions.zip")
-        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
+        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Update Extensions" --aspect 18 \
             --msgbox "Error downloading" 0 0
           return 1
@@ -1840,7 +1840,7 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+          if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
             dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
               --msgbox "Error checking new version" 0 0
             return 1
@@ -1855,7 +1855,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
-        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
+        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
             --msgbox "Error downloading" 0 0
           return 1
@@ -1893,7 +1893,7 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+          if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
             dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
               --msgbox "Error checking new version" 0 0
             return 1
@@ -1908,7 +1908,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")
-        if [ $? -ne 0 ] || [] ${STATUS} -ne 200 ]; then
+        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
             --msgbox "Error downloading" 0 0
           return 1
@@ -1935,7 +1935,7 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+          if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
             dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
               --msgbox "Error checking new version" 0 0
             return 1
@@ -1950,7 +1950,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip")
-        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
+        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
             --msgbox "Error downloading" 0 0
           return 1
@@ -2013,7 +2013,7 @@ function sysinfo() {
     ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
     EXTENSIONSINFO="$(readConfigEntriesArray "extensions" "${USER_CONFIG_FILE}")"
     REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
-    if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
+    if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
       PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
       DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
     elif [ "${REMAP}" = "remap" ]; then
@@ -2096,7 +2096,7 @@ function sysinfo() {
   TEXT+="\n   Arc Modules loaded: \Zb${MODULESINFO}\Zn"
   TEXT+="\n\Z4>> Settings\Zn"
   TEXT+="\n   Static IP: \Zb${STATICIP}\Zn"
-  if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
+  if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
     TEXT+="\n   SataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
   elif [ "${REMAP}" = "remap" ]; then
     TEXT+="\n   SataRemap: \Zb${PORTMAP}\Zn"
@@ -2381,7 +2381,7 @@ function saveMenu() {
 function formatdisks() {
   rm -f "${TMP_PATH}/opts"
   while read -r POSITION NAME; do
-    [ -z "${POSITION}" ] || [ -z "${NAME}" ] && continue
+    [[ -z "${POSITION}" || -z "${NAME}" ]] && continue
     echo "${POSITION}" | grep -q "${LOADER_DISK}" && continue
     echo "\"${POSITION}\" \"${NAME}\" \"off\"" >>"${TMP_PATH}/opts"
   done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd|/dev/nvme" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
@@ -2415,7 +2415,7 @@ function formatdisks() {
 ###############################################################################
 # let user delete Loader Boot Files
 function resetLoader() {
-  if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
+  if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
     # Clean old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" "${USER_CONFIG_FILE}"
     rm -rf "${UNTAR_PAT_PATH}"

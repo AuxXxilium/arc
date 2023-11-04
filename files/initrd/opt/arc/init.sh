@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
-[ -z "${ARC_PATH}" ] || [ ! -d "${ARC_PATH}/include" ] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 . ${ARC_PATH}/include/functions.sh
 
@@ -66,7 +66,7 @@ MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 if [ "${MACSYS}" = "custom" ]; then
   MACR="$(cat /sys/class/net/eth0/address | sed 's/://g')"
   MACA="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
-  if [ -n "${MACA}" ] && [ "${MACA}" != "${MACR}" ]; then
+  if [[ -n "${MACA}" && "${MACA}" != "${MACR}" ]]; then
     MAC="${MACA:0:2}:${MACA:2:2}:${MACA:4:2}:${MACA:6:2}:${MACA:8:2}:${MACA:10:2}"
     echo "Setting eth0 MAC to ${MAC}"
     ip link set dev eth0 address "${MAC}" >/dev/null 2>&1 &&
@@ -87,7 +87,7 @@ BUS=$(getBus "${LOADER_DISK}")
 if [ "${BUS}" = "usb" ]; then
   VID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_VENDOR_ID | cut -d= -f2)"
   PID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_MODEL_ID | cut -d= -f2)"
-elif [ "${BUS}" != "sata" ] && [ "${BUS}" != "scsi" ] && [ "${BUS}" != "nvme" ]; then
+elif [[ "${BUS}" != "sata" && "${BUS}" != "scsi" && "${BUS}" != "nvme" ]]; then
   die "Loader disk is not USB or SATA/SCSI/NVME DoM"
 fi
 
@@ -139,7 +139,7 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
     if [ "${STATICIP}" = "true" ]; then
       ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
       NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
-      if [ "${ETHX[${N}]}" = "eth0" ] && [ -n "${ARCIP}" ] && [ ${BOOTCOUNT} -gt 0 ]; then
+      if [[ "${ETHX[${N}]}" = "eth0" && -n "${ARCIP}" && ${BOOTCOUNT} -gt 0 ]]; then
         IP="${ARCIP}"
         NETMASK=$(convert_netmask "${NETMASK}")
         ip addr add ${IP}/${NETMASK} dev eth0

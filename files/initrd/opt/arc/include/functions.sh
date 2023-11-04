@@ -1,5 +1,5 @@
 
-[ -z "${ARC_PATH}" ] || [ ! -d "${ARC_PATH}/include" ] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 . ${ARC_PATH}/include/consts.sh
 . ${ARC_PATH}/include/configFile.sh
@@ -333,11 +333,11 @@ function livepatch() {
   if [ ${FAIL} -eq 1 ]; then
     # Update Configs
     TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-    if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+    if [[ $? -ne 0 || -z "${TAG}" ]]; then
       return 1
     fi
     STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")
-    if [ $? -ne 0 ] || [] ${STATUS} -ne 200 ]; then
+    if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
       return 1
     fi
     rm -rf "${MODEL_CONFIG_PATH}"
@@ -346,11 +346,11 @@ function livepatch() {
     rm -f "${TMP_PATH}/configs.zip"
     # Update Patches
     TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-    if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+    if [[ $? -ne 0 || -z "${TAG}" ]]; then
       return 1
     fi
     STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip")
-    if [ $? -ne 0 ] || [] ${STATUS} -ne 200 ]; then
+    if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
       return 1
     fi
     rm -rf "${PATCH_PATH}"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-[ -z "${ARC_PATH}" ] || [ ! -d "${ARC_PATH}/include" ] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 . ${ARC_PATH}/include/functions.sh
 
@@ -51,7 +51,7 @@ if [ "${PRODUCTVERDSM}" != "${PRODUCTVER}" ]; then
 fi
 
 # Sanity check
-[ -z "${PLATFORM}" ] || [ -z "${KVER}" ] && (die "ERROR: Configuration for Model ${MODEL} and Version ${PRODUCTVER} not found." | tee -a "${LOG_FILE}")
+[[ -z "${PLATFORM}" || -z "${KVER}" ]] && (die "ERROR: Configuration for Model ${MODEL} and Version ${PRODUCTVER} not found." | tee -a "${LOG_FILE}")
 
 declare -A SYNOINFO
 declare -A ADDONS
