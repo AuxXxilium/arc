@@ -248,7 +248,7 @@ function resizeImg() {
   CHANGE_SIZE="${2}"
   OUTPUT_FILE="${3:-${INPUT_FILE}}"
 
-  [ -z "${INPUT_FILE}" -o ! -f "${INPUT_FILE}" ] && exit 1
+  [[ -z "${INPUT_FILE}" || ! -f "${INPUT_FILE}" ]] && exit 1
   [ -z "${CHANGE_SIZE}" ] && exit 1
 
   INPUT_FILE="$(readlink -f "${INPUT_FILE}")"
@@ -256,7 +256,7 @@ function resizeImg() {
 
 
   SIZE=$(($(du -m "${INPUT_FILE}" | awk '{print $1}')$(echo "${CHANGE_SIZE}" | sed 's/M//g; s/b//g')))
-  [ -z "${SIZE}" -o "${SIZE}" -lt 0 ] && exit 1
+  [[ -z "${SIZE}" || "${SIZE}" -lt 0 ]] && exit 1
 
   if [ ! "${INPUT_FILE}" = "${OUTPUT_FILE}" ]; then
     sudo cp -f "${INPUT_FILE}" "${OUTPUT_FILE}"

@@ -204,7 +204,7 @@ function getBus() {
 # 1 - ethN
 function getIP() {
   IP=""
-  if [ -n "${1}" -a -d "/sys/class/net/${1}" ]; then
+  if [[ -n "${1}" && -d "/sys/class/net/${1}" ]]; then
     IP=$(ip route show dev ${1} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
     [ -z "${IP}" ] && IP=$(ip addr show ${1} | grep -E "inet .* eth" | awk '{print $2}' | cut -f1 -d'/' | head -1)
   else
@@ -220,7 +220,7 @@ function getIP() {
 function findAndMountDSMRoot() {
   [ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) -gt 0 ] && return 0
   dsmrootdisk="$(blkid | grep -i linux_raid_member | grep -E "/dev/.*1:" | head -1 | awk -F ":" '{print $1}')"
-  [ -z "${dsmrootdisk}" ] && return -1
+  [ -z "${dsmrootdisk}" ] && return 1
   [ ! -d "${DSMROOT_PATH}" ] && mkdir -p "${DSMROOT_PATH}"
   [ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) -eq 0 ] && mount -t ext4 "${dsmrootdisk}" "${DSMROOT_PATH}"
   if [ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) -eq 0 ]; then
@@ -387,7 +387,7 @@ function livepatch() {
 # Rebooting
 # (based on pocopico's TCRP code)
 function rebootTo() {
-  [ "${1}" != "junior" -a "${1}" != "config" ] && exit 1
+  [[ "${1}" != "junior" && "${1}" != "config" ]] && exit 1
   # echo "Rebooting to ${1} mode"
   GRUBPATH="$(dirname $(find ${BOOTLOADER_PATH}/ -name grub.cfg | head -1))"
   ENVFILE="${GRUBPATH}/grubenv"

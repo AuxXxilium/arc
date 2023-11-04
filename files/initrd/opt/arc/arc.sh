@@ -117,7 +117,7 @@ function arcMenu() {
   dialog --backtitle "$(backtitle)" --title "Model" --aspect 18 \
     --infobox "Reading models" 3 20
     echo -n "" >"${TMP_PATH}/modellist"
-    while read M; do
+    while read -r M; do
       Y="$(readModelKey "${M}" "disks")"
       echo "${M} ${Y}" >>"${TMP_PATH}/modellist"
     done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sed 's/.*\///; s/\.yml//')
@@ -125,7 +125,7 @@ function arcMenu() {
     while true; do
       echo -n "" >"${TMP_PATH}/menu"
       FLGNEX=0
-      while read M Y; do
+      while read -r M Y; do
         PLATFORM=$(readModelKey "${M}" "platform")
         DT="$(readModelKey "${M}" "dt")"
         BETA="$(readModelKey "${M}" "beta")"
@@ -1269,8 +1269,8 @@ function backupMenu() {
           rz -be -B 536870912
           for F in $(ls -A); do
             USER_FILE="${F}"
-            [ "${F##*.}" = "zip" -a $(unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$") -eq 1 ] && IFTOOL="zip"
-            [ "${F##*.}" = "gz" -a "${F#*.}" = "img.gz" ] && IFTOOL="gzip"
+            [[ "${F##*.}" = "zip" && $(unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$") -eq 1 ]] && IFTOOL="zip"
+            [[ "${F##*.}" = "gz" && "${F#*.}" = "img.gz" ]] && IFTOOL="gzip"
             break
           done
           popd
@@ -2356,13 +2356,13 @@ function resetPassword() {
   [ -z "${USER}" ] && return
   while true; do
     dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
-      --inputbox "$(printf "Type a new password for user '%s'")" "${USER}" 0 70 "${CMDLINE[${NAME}]}" \
+      --inputbox "Type a new Password for User ${USER}" 0 70 "${CMDLINE[${NAME}]}" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break 2
     VALUE="$(<"${TMP_PATH}/resp")"
     [ -n "${VALUE}" ] && break
     dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
-      --msgbox "Invalid password" 0 0
+      --msgbox "Invalid Password" 0 0
   done
   NEWPASSWD="$(python -c "import crypt,getpass;pw=\"${VALUE}\";print(crypt.crypt(pw))")"
   (
