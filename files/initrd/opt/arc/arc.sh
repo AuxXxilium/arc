@@ -2227,6 +2227,7 @@ function sysinfo() {
 # Shows Systeminfo to user
 function credits() {
   # Print Credits Informations
+  TEXT=""
   TEXT+="\n"
   TEXT+="\n\Z4> Arc Loader:\Zn"
   TEXT+="\n  Github: \Zbhttps://github.com/AuxXxilium\Zn"
