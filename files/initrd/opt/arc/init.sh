@@ -54,7 +54,7 @@ initConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
 initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
 initConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
 initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.hddsort" "true" "${USER_CONFIG_FILE}"
+initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
 initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 
