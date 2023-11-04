@@ -2228,7 +2228,6 @@ function sysinfo() {
 function credits() {
   # Print Credits Informations
   TEXT=""
-  TEXT+="\n"
   TEXT+="\n\Z4> Arc Loader:\Zn"
   TEXT+="\n  Github: \Zbhttps://github.com/AuxXxilium\Zn"
   TEXT+="\n  Website: \Zbhttps://auxxxilium.tech\Zn"
@@ -2599,9 +2598,9 @@ while true; do
     echo "c \"DSM Extensions \" "                                                           >>"${TMP_PATH}/menu"
     echo "d \"DSM Modules \" "                                                              >>"${TMP_PATH}/menu"
     if [ "${ARCOPTS}" = "true" ]; then
-      echo "5 \"\Z1Hide Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      echo "4 \"\Z1Hide Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     else
-      echo "5 \"\Z1Show Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      echo "4 \"\Z1Show Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     fi
     if [ "${ARCOPTS}" = "true" ]; then
       echo "= \"\Z4========== Arc ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
@@ -2615,9 +2614,9 @@ while true; do
       echo ". \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
-      echo "6 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
+      echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
     else
-      echo "6 \"\Z1Show Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
+      echo "5 \"\Z1Show Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
       echo "= \"\Z4======== Advanced =======\Zn \" "                                        >>"${TMP_PATH}/menu"
@@ -2626,9 +2625,9 @@ while true; do
       echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
     fi
     if [ "${BOOTOPTS}" = "true" ]; then
-      echo "7 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
+      echo "6 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
     else
-      echo "7 \"\Z1Show Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
+      echo "6 \"\Z1Show Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
     fi
     if [ "${BOOTOPTS}" = "true" ]; then
       echo "= \"\Z4========== Boot =========\Zn \" "                                        >>"${TMP_PATH}/menu"
@@ -2643,9 +2642,9 @@ while true; do
       fi
     fi
     if [ "${DSMOPTS}" = "true" ]; then
-      echo "8 \"\Z1Hide DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      echo "7 \"\Z1Hide DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     else
-      echo "8 \"\Z1Show DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      echo "7 \"\Z1Show DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     fi
     if [ "${DSMOPTS}" = "true" ]; then
       echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
@@ -2658,9 +2657,9 @@ while true; do
     fi
   fi
   if [ "${DEVOPTS}" = "true" ]; then
-    echo "9 \"\Z1Hide Dev Options\Zn \" "                                                   >>"${TMP_PATH}/menu"
+    echo "8 \"\Z1Hide Dev Options\Zn \" "                                                   >>"${TMP_PATH}/menu"
   else
-    echo "9 \"\Z1Show Dev Options\Zn \" "                                                   >>"${TMP_PATH}/menu"
+    echo "8 \"\Z1Show Dev Options\Zn \" "                                                   >>"${TMP_PATH}/menu"
   fi
   if [ "${DEVOPTS}" = "true" ]; then
     echo "= \"\Z4========== Dev ===========\Zn \" "                                         >>"${TMP_PATH}/menu"
@@ -2673,6 +2672,7 @@ while true; do
   echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
   echo "y \"Choose a keymap \" "                                                            >>"${TMP_PATH}/menu"
   echo "z \"Update \" "                                                                     >>"${TMP_PATH}/menu"
+  echo "9 \"Credits \" "                                                                     >>"${TMP_PATH}/menu"
   echo "0 \"\Z1Exit\Zn \" "                                                                 >>"${TMP_PATH}/menu"
 
   dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --colors \
