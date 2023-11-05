@@ -2393,14 +2393,14 @@ function resetPassword() {
     dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
       --msgbox "Invalid Password" 0 0
   done
-  NEWPASSWD="$(python -c "import crypt,getpass;pw=\"${VALUE}\";print(crypt.crypt(pw))")"
+  NEWPASSWD="$(python -c "from passlib.hash import sha512_crypt;pw=\"${VALUE}\";print(sha512_crypt.using(rounds=5000).hash(pw))")"
   (
     mkdir -p "${TMP_PATH}/sdX1"
     for I in $(ls /dev/sd.*1 2>/dev/null | grep -v ${LOADER_DISK_PART1}); do
       mount "${I}" "${TMP_PATH}/sdX1"
       OLDPASSWD="$(cat "${TMP_PATH}/sdX1/etc/shadow" | grep "^${USER}:" | awk -F ':' '{print $2}')"
-      [ -n "${OLDPASSWD}" ] && sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "${TMP_PATH}/sdX1/etc/shadow"
-      sed -i "s|status=on|status=off|g" "${TMP_PATH}//usr/syno/etc/packages/SecureSignIn/preference/${USER}/method.config" 2>/dev/null
+      [ -n "${NEWPASSWD}" -a -n "${OLDPASSWD}" ] && sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "${TMP_PATH}/sdX1/etc/shadow"
+      sed -i "s|status=on|status=off|g" "${TMP_PATH}/usr/syno/etc/packages/SecureSignIn/preference/${USER}/method.config" 2>/dev/null
       sync
       umount "${I}"
     done
