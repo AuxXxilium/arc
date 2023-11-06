@@ -51,7 +51,7 @@ function getmap() {
       LASTDRIVE=0
       # Check for VM
       while read -r LINE; do
-        if [ "${BUS}" != "usb" ] && [ ${LINE} -eq 0 ] && [ "${LOADER_DISK}" = "/dev/sda" ]; then
+        if [[ "${BUS}" != "usb" && ${LINE} -eq 0 && "${LOADER_DISK}" = "/dev/sda" ]]; then
           MAXDISKS="$(readModelKey "${MODEL}" "disks")"
           if [ ${MAXDISKS} -lt ${SATADRIVES} ]; then
             MAXDISKS=${SATADRIVES}
@@ -113,9 +113,9 @@ function getmap() {
     if [ ${SATACONTROLLER} -gt 0 ]; then
       SATAREMAP="$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')"
       # Show recommended Option to user
-      if [ -n "${SATAREMAP}" ] && [ ${SASCONTROLLER} -eq 0 ]; then
+      if [[ -n "${SATAREMAP}" && ${SASCONTROLLER} -eq 0 ]]; then
         REMAP3="*"
-      elif [ -n "${SATAREMAP}" ] && [ ${SASCONTROLLER} -gt 0 ] && [ "${MACHINE}" = "NATIVE" ]; then
+      elif [[ -n "${SATAREMAP}" && ${SASCONTROLLER} -gt 0 && "${MACHINE}" = "NATIVE" ]]; then
         REMAP2="*"
       else
         REMAP1="*"

@@ -286,7 +286,7 @@ EOF
     [ ${IDX} -ge $(wc -l <${TMP_PATH}/ethlist) ] && break
     ETH=$(cat ${TMP_PATH}/ethlist | sed -n "$((${IDX} + 1))p" | awk '{print $3}')
     # echo "ETH: ${ETH}"
-    if [ -n "${ETH}" ] && [ ! "${ETH}" = "eth${IDX}" ]; then
+    if [[ -n "${ETH}" && ! "${ETH}" = "eth${IDX}" ]]; then
       # echo "change ${ETH} <=> eth${IDX}"
       ip link set dev eth${IDX} down
       ip link set dev ${ETH} down

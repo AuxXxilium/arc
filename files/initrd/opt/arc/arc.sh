@@ -129,7 +129,7 @@ function arcMenu() {
         PLATFORM=$(readModelKey "${M}" "platform")
         DT="$(readModelKey "${M}" "dt")"
         BETA="$(readModelKey "${M}" "beta")"
-        [ "${BETA}" = "true" ] && [ ${FLGBETA} -eq 0 ] && continue
+        [[ "${BETA}" = "true" && ${FLGBETA} -eq 0 ]] && continue
         DISKS="$(readModelKey "${M}" "disks")-Bay"
         ARCCONF="$(readModelKey "${M}" "arc.serial")"
         if [ -n "${ARCCONF}" ]; then
@@ -275,7 +275,7 @@ function arcsettings() {
   ARCCONF="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${MODEL}.yml")"
   if [ "${ARCRECOVERY}" = "true" ]; then
     writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
-  elif [ "${ARCRECOVERY}" != "true" ] && [ -n "${ARCCONF}" ]; then
+  elif [[ "${ARCRECOVERY}" != "true" && -n "${ARCCONF}" ]]; then
     dialog --clear --backtitle "$(backtitle)" --title "Arc Patch Model"\
       --menu "Do you want to use Syno Services?" 7 50 0 \
       1 "Yes - Install with Arc Patch" \
@@ -316,7 +316,7 @@ function arcsettings() {
       writeConfigKey "extensions.cpuinfo" "" "${USER_CONFIG_FILE}"
     fi
     writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
-  elif [ "${ARCRECOVERY}" != "true" ] && [ -z "${ARCCONF}" ]; then
+  elif [[ "${ARCRECOVERY}" != "true" && -z "${ARCCONF}" ]]; then
     dialog --clear --backtitle "$(backtitle)" --title "Non Arc Patch Model" \
       --menu "Please select an Option?" 7 50 0 \
       1 "Install with random Serial/Mac" \
@@ -438,13 +438,13 @@ function make() {
       PAT_URL="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
       PAT_HASH="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
       PAT_URL=${PAT_URL%%\?*}
-      if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+      if [[ -n "${PAT_URL}" && -n "${PAT_HASH}" ]]; then
         break
       fi
       sleep 1
       idx=$((${idx} + 1))
     done
-    if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
+    if [[ -z "${PAT_URL}" || -z "${PAT_HASH}" ]]; then
       MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
       PAT_URL=""
       PAT_HASH=""
@@ -1466,8 +1466,8 @@ function backupMenu() {
           rz -be -B 536870912
           for F in $(ls -A); do
             USER_FILE="${F}"
-            [ "${F##*.}" = "zip" ] && [ $(unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$") -eq 1 ] && IFTOOL="zip"
-            [ "${F##*.}" = "gz" ] && [ "${F#*.}" = "img.gz" ] && IFTOOL="gzip"
+            [[ "${F##*.}" = "zip" && $(unzip -l "${TMP_PATH}/${USER_FILE}" | grep -c "\.img$") -eq 1 ]] && IFTOOL="zip"
+            [[ "${F##*.}" = "gz" && "${F#*.}" = "img.gz" ]] && IFTOOL="gzip"
             break
           done
           popd
@@ -1922,7 +1922,7 @@ function updateMenu() {
         mkdir -p "${MODULES_PATH}"
         unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}" >/dev/null 2>&1
         # Rebuild modules if model/build is selected
-        if [ -n "${PLATFORM}" ] && [ -n "${KVER}" ]; then
+        if [[ -n "${PLATFORM}" && -n "${KVER}" ]]; then
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           while read -r ID DESC; do
             writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
@@ -2105,7 +2105,7 @@ function sysinfo() {
       NETIP="$(getIP)"
       if [ "${STATICIP}" = "true" ]; then
         ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
-        if [ "${ETHX[${N}]}" = "eth0" ] && [ -n "${ARCIP}" ]; then
+        if [[ "${ETHX[${N}]}" = "eth0" && -n "${ARCIP}" ]]; then
           NETIP="${ARCIP}"
           MSG="STATIC"
         else
@@ -2302,7 +2302,7 @@ function staticIPMenu() {
     [ $? -ne 0 ] && return 1
     (
       mkdir -p "${TMP_PATH}/sdX1"
-      for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK}1"); do
+      for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK_PART1}"); do
         mount "${I}" "${TMP_PATH}/sdX1"
         [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && cp -f "${TMP_PATH}/ifcfg-eth0" "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
         sync
@@ -2310,7 +2310,7 @@ function staticIPMenu() {
       done
       rm -rf "${TMP_PATH}/sdX1"
     )
-    if [ -n "${IPADDR}" ] && [ -n "${NETMASK}" ]; then
+    if [[ -n "${IPADDR}" && -n "${NETMASK}" ]]; then
       NETMASK=$(convert_netmask "${NETMASK}")
       ip addr add ${IPADDR}/${NETMASK} dev eth0
       writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
@@ -2339,7 +2339,7 @@ function downgradeMenu() {
   [ $? -ne 0 ] && return 1
   (
     mkdir -p "${TMP_PATH}/sdX1"
-    for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK}1"); do
+    for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK_PART1}"); do
       mount "${I}" "${TMP_PATH}/sdX1"
       [ -f "${TMP_PATH}/sdX1/etc/VERSION" ] && rm -f "${TMP_PATH}/sdX1/etc/VERSION"
       [ -f "${TMP_PATH}/sdX1/etc.defaults/VERSION" ] && rm -f "${TMP_PATH}/sdX1/etc.defaults/VERSION"
@@ -2363,7 +2363,7 @@ function resetPassword() {
     mount ${I} "${TMP_PATH}/sdX1"
     if [ -f "${TMP_PATH}/sdX1/etc/shadow" ]; then
       for U in $(cat "${TMP_PATH}/sdX1/etc/shadow" | awk -F ':' '{if ($2 != "*" && $2 != "!!") {print $1;}}'); do
-        grep -q "status=on" "${TMP_PATH}//usr/syno/etc/packages/SecureSignIn/preference/${U}/method.config" 2>/dev/null
+        grep -q "status=on" "${TMP_PATH}/sdX1/usr/syno/etc/packages/SecureSignIn/preference/${U}/method.config" 2>/dev/nulll
         [ $? -eq 0 ] && SS="SecureSignIn" || SS="            "
         printf "\"%-36s %-16s\"\n" "${U}" "${SS}" >>"${TMP_PATH}/menu"
       done
@@ -2396,18 +2396,17 @@ function resetPassword() {
   NEWPASSWD="$(python -c "from passlib.hash import sha512_crypt;pw=\"${VALUE}\";print(sha512_crypt.using(rounds=5000).hash(pw))")"
   (
     mkdir -p "${TMP_PATH}/sdX1"
-    for I in $(ls /dev/sd.*1 2>/dev/null | grep -v ${LOADER_DISK_PART1}); do
+    for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK_PART1}"); do
       mount "${I}" "${TMP_PATH}/sdX1"
       OLDPASSWD="$(cat "${TMP_PATH}/sdX1/etc/shadow" | grep "^${USER}:" | awk -F ':' '{print $2}')"
       [ -n "${NEWPASSWD}" -a -n "${OLDPASSWD}" ] && sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "${TMP_PATH}/sdX1/etc/shadow"
-      sed -i "s|status=on|status=off|g" "${TMP_PATH}/usr/syno/etc/packages/SecureSignIn/preference/${USER}/method.config" 2>/dev/null
+      sed -i "s|status=on|status=off|g" "${TMP_PATH}/sdX1/usr/syno/etc/packages/SecureSignIn/preference/${USER}/method.config" 2>/dev/null
       sync
       umount "${I}"
     done
     rm -rf "${TMP_PATH}/sdX1"
   ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
     --progressbox "Resetting ..." 20 100
-  [ -f "${SHADOW_FILE}" ] && rm -rf "${SHADOW_FILE}"
   dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" --aspect 18 \
     --msgbox "Password reset completed." 0 0
 }
