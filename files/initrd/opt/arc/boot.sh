@@ -31,7 +31,6 @@ RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
 RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
 if [[ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" || "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]]; then
   echo -e "\033[1;34mDSM zImage/Ramdisk changed!\033[0m"
-  echo
   livepatch
   echo
 fi
@@ -84,6 +83,7 @@ VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
 PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
 MAC1="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
+MAC2="$(readConfigKey "arc.mac2" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
@@ -119,10 +119,17 @@ CMDLINE['root']="/dev/md0"
 CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 CMDLINE['sn']="${SN}"
-CMDLINE['mac1']="${MAC1}"
 CMDLINE['net.ifnames']="0"
-CMDLINE['netif_num']="1"
-[ "${MACSYS}" = "hardware" ] && CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7" || CMDLINE['skip_vender_mac_interfaces']="1,2,3,4,5,6,7"
+CMDLINE['netif_num']="0"
+if [ "${MACSYS}" = "hardware" ]; then
+  [[ -z "${MAC1}" && -n "${MAC2}" ]] && MAC1=${MAC2} && MAC2="" # Sanity check
+  [ -n "${MAC1}" ] && CMDLINE['mac1']="${MAC1}" && CMDLINE['netif_num']="1" && CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
+  [ -n "${MAC2}" ] && CMDLINE['mac2']="${MAC2}" && CMDLINE['netif_num']="2" && CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
+elif [ "${MACSYS}" = "custom" ]; then
+  [[ -z "${MAC1}" && -n "${MAC2}" ]] && MAC1=${MAC2} && MAC2="" # Sanity check
+  [ -n "${MAC1}" ] && CMDLINE['mac1']="${MAC1}" && CMDLINE['netif_num']="1" && CMDLINE['skip_vender_mac_interfaces']="1,2,3,4,5,6,7"
+  [ -n "${MAC2}" ] && CMDLINE['mac2']="${MAC2}" && CMDLINE['netif_num']="2" && CMDLINE['skip_vender_mac_interfaces']="2,3,4,5,6,7"
+fi
 
 # Read cmdline
 while IFS=': ' read -r KEY VALUE; do
