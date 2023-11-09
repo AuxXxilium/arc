@@ -153,6 +153,8 @@ jobs:
           echo "Image Converter"
           qemu-img convert -O vmdk arc.img arc-dyn.vmdk
           qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
+          qemu-img convert -O vmdk arc_4GB.img arc_4GB-dyn.vmdk
+          qemu-img convert -O vmdk -o adapter_type=lsilogic arc_4GB.img -o subformat=monolithicFlat arc_4GB.vmdk
 
       # Zip image and generate checksum
       - name: Pack
@@ -161,7 +163,9 @@ jobs:
             zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
             zip -9 "arc_4GB-${{ env.VERSION }}.img.zip" arc_4GB.img
             zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc_4GB-${{ env.VERSION }}.vmdk-dyn.zip" arc_4GB-dyn.vmdk
             zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc_4GB-${{ env.VERSION }}.vmdk-flat.zip" arc_4GB.vmdk arc-flat.vmdk
           else
             zip -9 "arc.img.zip" arc.img
             zip -9 "arc_4GB.img.zip" arc_4GB.img
@@ -193,5 +197,7 @@ jobs:
             arc-${{ env.VERSION }}.img.zip
             arc_4GB-${{ env.VERSION }}.img.zip
             arc-${{ env.VERSION }}.vmdk-dyn.zip
+            arc_4GB-${{ env.VERSION }}.vmdk-dyn.zip
             arc-${{ env.VERSION }}.vmdk-flat.zip
+            arc_4GB-${{ env.VERSION }}.vmdk-flat.zip
             update.zip
