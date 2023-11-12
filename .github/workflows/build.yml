@@ -23,8 +23,8 @@ on:
         default: false
         type: boolean
       br_version:
-        description: "buildroot version"
-        default: "2023.02.x"
+        description: "buildroot"
+        default: "2023.08.x"
         type: string
 
 jobs:
