@@ -104,7 +104,7 @@ function getmap() {
   if [[ ${SATADRIVES} -eq 0 || -z ${SATADRIVES} ]] && [[ ${SASDRIVES} -eq 0 || -z ${SASDRIVES} ]]; then
     dialog --backtitle "$(backtitle)" --title "Arc Disks" \
       --msgbox "Please insert at least one Sata/SAS Disk for System Installation, except the Bootloader Disk.." 0 0
-    return 1
+    exit 1
   fi
   writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
   if [ ${DRIVES} -gt 26 ]; then
