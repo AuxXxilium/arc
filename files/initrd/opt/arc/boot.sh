@@ -76,7 +76,7 @@ for D in $(lsblk -dpno NAME); do
     break
   fi
 done
-[ ${HASATA} = "0" ] && echo -e "\033[1;33m*** Please insert at least one sata/scsi disk for system installation, except for the bootloader disk. ***\033[0m"
+[ ${HASATA} = "0" ] && echo -e "\033[1;33m*** Please insert at least one Sata/SAS Disk for System Installation, except the Bootloader Disk.. ***\033[0m"
 
 # Read necessary variables
 VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
