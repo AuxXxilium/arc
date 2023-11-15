@@ -168,20 +168,20 @@ elif [[ "${DIRECTBOOT}" = "true" && ${BOOTCOUNT} -eq 0 ]]; then
   echo -e "\033[1;34mDSM not installed - Reboot with Directboot\033[0m"
   exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
-  ETHX=($(ls /sys/class/net/ | grep eth)) # real network cards list
+  ETHX=$(ls /sys/class/net/ | grep -v lo || true)
   STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
-  echo -e "\033[1;34mDetected ${#ETHX[@]} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
-  for N in $(seq 0 $((${#ETHX[@]} - 1))); do
-    DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+  echo -e "\033[1;34mDetected ${ETHX} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+  for N in ${ETHX}; do
+    DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     COUNT=0
     sleep 3
     while true; do
-      IP="$(getIP ${ETHX[${N}]})"
+      IP="$(getIP ${N})"
       if [ "${STATICIP}" = "true" ]; then
         ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
         NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
-        if [[ "${ETHX[${N}]}" = "eth0" && -n "${ARCIP}" && ${BOOTCOUNT} -gt 0 ]]; then
+        if [[ "${N}" = "eth0" && -n "${ARCIP}" && ${BOOTCOUNT} -gt 0 ]]; then
           IP="${ARCIP}"
           NETMASK=$(convert_netmask "${NETMASK}")
           ip addr add ${IP}/${NETMASK} dev eth0
@@ -193,7 +193,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         MSG="DHCP"
       fi
       if [ -n "${IP}" ]; then
-        SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
+        SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
         echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
         break
       fi
@@ -202,7 +202,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         echo -e "\r${DRIVER}: TIMEOUT."
         break
       fi
-      if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
+      if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
         echo -e "\r${DRIVER}: NOT CONNECTED"
         break
       fi

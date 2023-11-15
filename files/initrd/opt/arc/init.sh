@@ -59,9 +59,9 @@ initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
 initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 
 # Init Network
-ETHX=($(ls /sys/class/net/ | grep eth))  # real network cards list
+ETHX=$(ls /sys/class/net/ | grep -v lo || true)
 # No network devices
-[ ${#ETHX[@]} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
+[ $(echo ${ETHX} | wc -w) -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 if [ "${MACSYS}" = "custom" ]; then
   MACR="$(cat /sys/class/net/eth0/address | sed 's/://g')"
@@ -129,17 +129,17 @@ BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-echo -e "\033[1;34mDetected ${#ETHX[@]} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
-for N in $(seq 0 $((${#ETHX[@]} - 1))); do
-  DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+echo -e "\033[1;34mDetected ${ETHX} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+for N in ${ETHX}; do
+  DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
   COUNT=0
   sleep 3
   while true; do
-    IP="$(getIP ${ETHX[${N}]})"
+    IP="$(getIP ${N})"
     if [ "${STATICIP}" = "true" ]; then
       ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
       NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
-      if [[ "${ETHX[${N}]}" = "eth0" && -n "${ARCIP}" && ${BOOTCOUNT} -gt 0 ]]; then
+      if [[ "${N}" = "eth0" && -n "${ARCIP}" && ${BOOTCOUNT} -gt 0 ]]; then
         IP="${ARCIP}"
         NETMASK=$(convert_netmask "${NETMASK}")
         ip addr add ${IP}/${NETMASK} dev eth0
@@ -151,7 +151,7 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
       MSG="DHCP"
     fi
     if [ -n "${IP}" ]; then
-      SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
+      SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
       echo -e "\r${DRIVER} (${SPEED} | ${MSG}): Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
       break
     fi
@@ -160,7 +160,7 @@ for N in $(seq 0 $((${#ETHX[@]} - 1))); do
       echo -e "\r${DRIVER}: TIMEOUT"
       break
     fi
-    if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
+    if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
       echo -e "\r${DRIVER}: NOT CONNECTED"
       break
     fi

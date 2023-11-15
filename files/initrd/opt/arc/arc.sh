@@ -2030,7 +2030,7 @@ function sysinfo() {
   [ -d /sys/firmware/efi ] && BOOTSYS="EFI" || BOOTSYS="Legacy"
   VENDOR="$(dmidecode -s system-product-name)"
   BOARD="$(dmidecode -s baseboard-product-name)"
-  ETHX=($(ls /sys/class/net/ | grep eth))
+  ETHX=$(ls /sys/class/net/ | grep -v lo || true)
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -2073,18 +2073,18 @@ function sysinfo() {
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${NIC} Adapter\Zn"
-  for N in $(seq 0 $((${#ETHX[@]} - 1))); do
-    DRIVER=$(ls -ld /sys/class/net/${ETHX[${N}]}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-    MAC="$(cat /sys/class/net/${ETHX[$((${N} - 1))]}/address | sed 's/://g')"
+  for N in ${ETHX}; do
+    DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    MAC="$(cat /sys/class/net/${N}/address | sed 's/://g')"
     while true; do
-      if ethtool ${ETHX[${N}]} | grep 'Link detected' | grep -q 'no'; then
+      if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
         TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
         break
       fi
       NETIP="$(getIP)"
       if [ "${STATICIP}" = "true" ]; then
         ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
-        if [[ "${ETHX[${N}]}" = "eth0" && -n "${ARCIP}" ]]; then
+        if [[ "${N}" = "eth0" && -n "${ARCIP}" ]]; then
           NETIP="${ARCIP}"
           MSG="STATIC"
         else
@@ -2094,7 +2094,7 @@ function sysinfo() {
         MSG="DHCP"
       fi
       if [ -n "${NETIP}" ]; then
-        SPEED=$(ethtool ${ETHX[${N}]} | grep "Speed:" | awk '{print $2}')
+        SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
         TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) \ZbIP: ${NETIP} | Mac: ${MAC}\Zn"
         break
       fi
