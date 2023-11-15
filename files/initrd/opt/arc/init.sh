@@ -151,6 +151,7 @@ for N in ${ETHX}; do
       MSG="DHCP"
     fi
     if [ -n "${IP}" ]; then
+      ethtool -s ${N} wol g 2>/dev/null
       SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
       echo -e "\r${DRIVER} (${SPEED} | ${MSG}): Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
       break

@@ -193,6 +193,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         MSG="DHCP"
       fi
       if [ -n "${IP}" ]; then
+        ethtool -s ${N} wol g 2>/dev/null
         SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
         echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
         break
