@@ -171,7 +171,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   ETHX=$(ls /sys/class/net/ | grep -v lo || true)
   STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
-  echo -e "\033[1;34mDetected ${ETHX} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+  echo -e "\033[1;34mDetected ${#ETHX[@]} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
   for N in ${ETHX}; do
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     COUNT=0
