@@ -43,7 +43,6 @@ sudo cp -Rf "files/p3/"* "/tmp/files/p3"
 getExtractor "/tmp/files/p3/extractor"
 getLKMs "/tmp/files/p3/lkms" true
 getAddons "/tmp/files/p3/addons" true
-getExtensions "/tmp/files/p3/extensions" true
 getModules "/tmp/files/p3/modules" true
 getConfigs "/tmp/files/p3/configs" true
 getPatches "/tmp/files/p3/patches" true

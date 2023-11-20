@@ -31,7 +31,6 @@ initConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
-initConfigKey "extensions" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
@@ -178,7 +177,6 @@ echo -e "Default SSH Root password is \033[1;34marc\033[0m"
 echo
 
 mkdir -p "${ADDONS_PATH}"
-mkdir -p "${EXTENSIONS_PATH}"
 mkdir -p "${LKM_PATH}"
 mkdir -p "${MODULES_PATH}"
 mkdir -p "${MODEL_CONFIG_PATH}"
@@ -186,7 +184,6 @@ mkdir -p "${PATCH_PATH}"
 
 # Load arc
 updateAddons
-updateExtensions
 echo -e "\033[1;34mLoading Arc Loader Overlay...\033[0m"
 sleep 2
 

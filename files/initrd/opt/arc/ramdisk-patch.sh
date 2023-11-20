@@ -55,7 +55,6 @@ fi
 
 declare -A SYNOINFO
 declare -A ADDONS
-declare -A EXTENSIONS
 declare -A USERMODULES
 
 # Read synoinfo, addons and extensions from config
@@ -65,9 +64,6 @@ done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
 done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-while IFS=': ' read -r KEY VALUE; do
-  [ -n "${KEY}" ] && EXTENSIONS["${KEY}"]="${VALUE}"
-done < <(readConfigMap "extensions" "${USER_CONFIG_FILE}")
 
 # Read modules from user config
 while IFS=': ' read -r KEY VALUE; do
@@ -170,16 +166,6 @@ for ADDON in ${!ADDONS[@]}; do
     exit 1
   fi
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-done
-
-# User Extensions
-for EXTENSION in ${!EXTENSIONS[@]}; do
-  PARAMS=${EXTENSIONS[${EXTENSION}]}
-  if ! installExtension ${EXTENSION}; then
-    echo -n "${EXTENSION} is not available for this Platform!" | tee -a "${LOG_FILE}"
-    exit 1
-  fi
-  echo "/addons/${EXTENSION}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 done
 
 # Enable Telnet
