@@ -61,7 +61,6 @@ jobs:
           getExtractor "files/p3/extractor"
           getLKMs "files/p3/lkms" ${{ inputs.prerelease }}
           getAddons "files/p3/addons" ${{ inputs.prerelease }}
-          getExtensions "files/p3/extensions" ${{ inputs.prerelease }}
           getModules "files/p3/modules" ${{ inputs.prerelease }}
           getConfigs "files/p3/configs" ${{ inputs.prerelease }}
           getPatches "files/p3/patches" ${{ inputs.prerelease }}
