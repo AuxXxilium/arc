@@ -2,6 +2,7 @@
 function getmap() {
   if [ ! "${DT}" = "true" ]; then
     # Sata Disks
+    SATADRIVES=0
     if [ ${SATACONTROLLER} -gt 0 ]; then
       # Clean old files
       [ -f "${TMP_PATH}/drivesmax" ] && rm -f "${TMP_PATH}/drivesmax"
@@ -17,7 +18,6 @@ function getmap() {
       DISKIDXMAP=""
       let DISKIDXMAPIDXMAX=0
       DISKIDXMAPMAX=""
-      SATADRIVES=0
       for PCI in $(lspci -d ::106 | awk '{print $1}'); do
         NUMPORTS=0
         CONPORTS=0
@@ -66,8 +66,8 @@ function getmap() {
       done < <(cat "${TMP_PATH}/ports")
     fi
     # SAS Disks
+    SASDRIVES=0
     if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
-      SASDRIVES=0
       for PCI in $(lspci -d ::107 | awk '{print $1}'); do
         NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
         PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
@@ -76,8 +76,8 @@ function getmap() {
       done
     fi
     # USB Disks
+    USBDRIVES=0
     if [ $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]; then
-      USBDRIVES=0
       for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
         NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
         PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
@@ -86,9 +86,19 @@ function getmap() {
         USBDRIVES=$((${USBDRIVES} + ${PORTNUM}))
       done
     fi
+    # MMC Disks
+    MMCDRIVES=0
+    if [ $(ls -l /sys/class/mmc_host | grep mmc_host | wc -l) -gt 0 ]; then
+      for PCI in $(lspci -d ::805 | awk '{print $1}'); do
+        NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+        PORTNUM=$(ls -l /sys/class/mmc_host | grep "${PCI}" | wc -l)
+        PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l)
+        [ ${PORTNUM} -eq 0 ] && continue
+        MMCDRIVES=$((${MMCDRIVES} + ${PORTNUM}))
+      done
     # NVMe Disks
+    NVMEDRIVES=0
     if [ $(lspci -d ::108 | wc -l) -gt 0 ]; then
-      NVMEDRIVES=0
       for PCI in $(lspci -d ::108 | awk '{print $1}'); do
         NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
         PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
@@ -97,11 +107,12 @@ function getmap() {
       done
     fi
     # Disk Count for MaxDisks
-    DRIVES=$((${SATADRIVES:-0} + ${SASDRIVES:-0} + ${USBDRIVES:-0} + ${NVMEDRIVES:-0}))
-    [ -n "${SATADRIVES}" ] && writeConfigKey "device.satadrives" "${SATADRIVES}" "${USER_CONFIG_FILE}"
-    [ -n "${SASDRIVES}" ] && writeConfigKey "device.sasdrives" "${SASDRIVES}" "${USER_CONFIG_FILE}"
-    [ -n "${USBDRIVES}" ] && writeConfigKey "device.usbdrives" "${USBDRIVES}" "${USER_CONFIG_FILE}"
-    [ -n "${NVMEDRIVES}" ] && writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
+    DRIVES=$((${SATADRIVES} + ${SASDRIVES} + ${USBDRIVES} + ${MMCDRIVES} + ${NVMEDRIVES}))
+    [ "${SATADRIVES}" -gt 0 ] && writeConfigKey "device.satadrives" "${SATADRIVES}" "${USER_CONFIG_FILE}"
+    [ "${SASDRIVES}" -gt 0 ] && writeConfigKey "device.sasdrives" "${SASDRIVES}" "${USER_CONFIG_FILE}"
+    [ "${USBDRIVES}" -gt 0 ] && writeConfigKey "device.usbdrives" "${USBDRIVES}" "${USER_CONFIG_FILE}"
+    [ "${MMCDRIVES}" -gt 0 ] && writeConfigKey "device.mmcdrives" "${MMCDRIVES}" "${USER_CONFIG_FILE}"
+    [ "${NVMEDRIVES}" -gt 0 ] && writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
     writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
     if [ ${DRIVES} -gt 26 ]; then
       TEXT+="\nYou have connected more then 26 Disks."
