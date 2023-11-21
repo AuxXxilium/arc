@@ -906,6 +906,28 @@ function cmdlineMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       7)
+        dialog --clear --backtitle "$(backtitle)" \
+          --title "i915 Patch" --menu "Fix?" 0 0 0 \
+          1 "Install" \
+          2 "Uninnstall" \
+        2>"${TMP_PATH}/resp"
+        resp="$(<"${TMP_PATH}/resp")"
+        [ -z "${resp}" ] && return 1
+        if [ ${resp} -eq 1 ]; then
+          writeConfigKey "cmdline.i915.enable_guc" "2" "${USER_CONFIG_FILE}"
+          writeConfigKey "cmdline.i915.max_vfs" "7" "${USER_CONFIG_FILE}"
+          dialog --backtitle "$(backtitle)" --title "C-State Fix" \
+            --aspect 18 --msgbox "Fix installed to Cmdline" 0 0
+        elif [ ${resp} -eq 2 ]; then
+          deleteConfigKey "cmdline.i915.enable_guc" "${USER_CONFIG_FILE}"
+          deleteConfigKey "cmdline.i915.max_vfs" "${USER_CONFIG_FILE}"
+          dialog --backtitle "$(backtitle)" --title "C-State Fix" \
+            --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
+        fi
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
+      8)
         ITEMS=""
         for KEY in ${!CMDLINE[@]}; do
           ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
@@ -913,7 +935,7 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" --title "User cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      8)
+      9)
         ITEMS=""
         while IFS=': ' read -r KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
@@ -921,7 +943,7 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" --title "Model/Version cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      9)
+      0)
         rm -f "${TMP_PATH}/opts"
         echo "5 \"Reboot after 5 seconds\"" >>"${TMP_PATH}/opts"
         echo "0 \"No reboot\"" >>"${TMP_PATH}/opts"
