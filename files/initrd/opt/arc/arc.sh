@@ -1828,8 +1828,8 @@ function sysinfo() {
   TEXT+="\n   MacSys: \Zb${MACSYS}\Zn"
   TEXT+="\n   Bootcount: \Zb${BOOTCOUNT}\Zn"
   TEXT+="\n\Z4>> Addons | Modules\Zn"
-  TEXT+="\n   Loader Addons selected: \Zb${ADDONSINFO}\Zn"
-  TEXT+="\n   Arc Modules loaded: \Zb${MODULESINFO}\Zn"
+  TEXT+="\n   Addons selected: \Zb${ADDONSINFO}\Zn"
+  TEXT+="\n   Loader Modules loaded: \Zb${MODULESINFO}\Zn"
   TEXT+="\n\Z4>> Settings\Zn"
   TEXT+="\n   Static IP: \Zb${STATICIP}\Zn"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
