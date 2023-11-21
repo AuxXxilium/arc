@@ -91,7 +91,6 @@ function getmap() {
     if [ $(ls -l /sys/class/mmc_host | grep mmc_host | wc -l) -gt 0 ]; then
       for PCI in $(lspci -d ::805 | awk '{print $1}'); do
         NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-        PORTNUM=$(ls -l /sys/class/mmc_host | grep "${PCI}" | wc -l)
         PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l)
         [ ${PORTNUM} -eq 0 ] && continue
         MMCDRIVES=$((${MMCDRIVES} + ${PORTNUM}))
