@@ -117,7 +117,7 @@ function getmap() {
     writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
     if [ ${DRIVES} -gt 26 ]; then
       TEXT+="\nYou have connected more then 26 Disks."
-      TEXT+="\nDSM can only adress a maximum of 26 Disks."
+      TEXT+="\nDSM can only address a maximum of 26 Disks."
       dialog --backtitle "$(backtitle)" --colors --title "Arc Disks" \
         --msgbox "${TEXT}" 0 0
     fi
