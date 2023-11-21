@@ -96,6 +96,7 @@ function getmap() {
         [ ${PORTNUM} -eq 0 ] && continue
         MMCDRIVES=$((${MMCDRIVES} + ${PORTNUM}))
       done
+    fi
     # NVMe Disks
     NVMEDRIVES=0
     if [ $(lspci -d ::108 | wc -l) -gt 0 ]; then
@@ -120,6 +121,9 @@ function getmap() {
       dialog --backtitle "$(backtitle)" --colors --title "Arc Disks" \
         --msgbox "${TEXT}" 0 0
     fi
+  fi
+}
+function getportmap() {
     # Compute PortMap Options
     if [ ${SATACONTROLLER} -gt 0 ]; then
       SATAREMAP="$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')"

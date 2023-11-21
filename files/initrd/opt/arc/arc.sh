@@ -359,6 +359,7 @@ function arcsettings() {
   fi
   # Get Portmap for Loader
   getmap
+  getportmap
   # Check Warnings
   if [ ${WARNON} -eq 1 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
@@ -1714,6 +1715,7 @@ function storageMenu() {
   DT="$(readModelKey "${MODEL}" "dt")"
   # Get Portmap for Loader
   getmap
+  getportmap
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
@@ -1884,6 +1886,17 @@ function sysinfo() {
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+      [ ${PORTNUM} -eq 0 ] && continue
+      TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
+      NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+    done
+  fi
+  if [ $(ls -l /sys/class/mmc_host | grep mmc_host | wc -l) -gt 0 ]; then
+    TEXT+="\n MMC:\n"
+    for PCI in $(lspci -d ::805 | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      PORTNUM=$(ls -l /sys/class/mmc_host | grep "${PCI}" | wc -l)
+      PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l)
       [ ${PORTNUM} -eq 0 ] && continue
       TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
