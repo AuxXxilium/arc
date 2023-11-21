@@ -1867,6 +1867,7 @@ function sysinfo() {
           TEXT+="\Zb$(printf "%02d" ${P})\Zn "
         fi
       done
+      TEXT+="\n  Ports with color \Z1\Zbred\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected.\n"
       TEXT+="\n"
     done
   fi
@@ -1912,7 +1913,6 @@ function sysinfo() {
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
     done
   fi
-  TEXT+="\n  Ports with color \Z1\Zbred\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected.\n"
   TEXT+="\n  Drives total: \Zb${NUMPORTS}\Zn"
   dialog --backtitle "$(backtitle)" --colors --title "Sysinfo" \
     --msgbox "${TEXT}" 0 0

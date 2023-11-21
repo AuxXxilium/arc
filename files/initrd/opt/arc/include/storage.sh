@@ -109,11 +109,11 @@ function getmap() {
     fi
     # Disk Count for MaxDisks
     DRIVES=$((${SATADRIVES} + ${SASDRIVES} + ${USBDRIVES} + ${MMCDRIVES} + ${NVMEDRIVES}))
-    [ "${SATADRIVES}" -gt 0 ] && writeConfigKey "device.satadrives" "${SATADRIVES}" "${USER_CONFIG_FILE}"
-    [ "${SASDRIVES}" -gt 0 ] && writeConfigKey "device.sasdrives" "${SASDRIVES}" "${USER_CONFIG_FILE}"
-    [ "${USBDRIVES}" -gt 0 ] && writeConfigKey "device.usbdrives" "${USBDRIVES}" "${USER_CONFIG_FILE}"
-    [ "${MMCDRIVES}" -gt 0 ] && writeConfigKey "device.mmcdrives" "${MMCDRIVES}" "${USER_CONFIG_FILE}"
-    [ "${NVMEDRIVES}" -gt 0 ] && writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
+    [ ${SATADRIVES} -gt 0 ] && writeConfigKey "device.satadrives" "${SATADRIVES}" "${USER_CONFIG_FILE}"
+    [ ${SASDRIVES} -gt 0 ] && writeConfigKey "device.sasdrives" "${SASDRIVES}" "${USER_CONFIG_FILE}"
+    [ ${USBDRIVES} -gt 0 ] && writeConfigKey "device.usbdrives" "${USBDRIVES}" "${USER_CONFIG_FILE}"
+    [ ${MMCDRIVES} -gt 0 ] && writeConfigKey "device.mmcdrives" "${MMCDRIVES}" "${USER_CONFIG_FILE}"
+    [ ${NVMEDRIVES} -gt 0 ] && writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
     writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
     if [ ${DRIVES} -gt 26 ]; then
       TEXT+="\nYou have connected more then 26 Disks."
