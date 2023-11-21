@@ -77,7 +77,7 @@ function getmap() {
     fi
     # USB Disks
     USBDRIVES=0
-    if [ $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]; then
+    if [[ -d "/sys/class/scsi_host" && $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]]; then
       for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
         NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
         PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
@@ -88,7 +88,7 @@ function getmap() {
     fi
     # MMC Disks
     MMCDRIVES=0
-    if [ $(ls -l /sys/class/mmc_host | grep mmc_host | wc -l) -gt 0 ]; then
+    if [[ -d "/sys/class/mmc_host" && $(ls -l /sys/class/mmc_host | grep mmc_host | wc -l) -gt 0 ]]; then
       for PCI in $(lspci -d ::805 | awk '{print $1}'); do
         NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
         PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l)

@@ -1881,7 +1881,7 @@ function sysinfo() {
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
     done
   fi
-  if [ $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]; then
+  if [[ -d "/sys/class/scsi_host" && $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]]; then
     TEXT+="\n USB:\n"
     for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
@@ -1892,7 +1892,7 @@ function sysinfo() {
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
     done
   fi
-  if [ $(ls -l /sys/class/mmc_host | grep mmc_host | wc -l) -gt 0 ]; then
+  if [[ -d "/sys/class/mmc_host" && $(ls -l /sys/class/mmc_host | grep mmc_host | wc -l) -gt 0 ]]; then
     TEXT+="\n MMC:\n"
     for PCI in $(lspci -d ::805 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
