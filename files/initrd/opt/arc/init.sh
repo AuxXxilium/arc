@@ -181,6 +181,7 @@ mkdir -p "${LKM_PATH}"
 mkdir -p "${MODULES_PATH}"
 mkdir -p "${MODEL_CONFIG_PATH}"
 mkdir -p "${PATCH_PATH}"
+mkdir -p "${BACKUPDIR}"
 
 # Load arc
 updateAddons

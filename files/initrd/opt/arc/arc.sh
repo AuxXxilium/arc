@@ -1159,8 +1159,6 @@ function backupMenu() {
           CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
           writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
           BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-          dialog --backtitle "$(backtitle)" --title "Restore with Code" --aspect 18 \
-              --msgbox "Restore complete" 0 0
           arcbuild
           ;;
         3)
@@ -1271,8 +1269,6 @@ function backupMenu() {
           CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
           writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
           BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-          dialog --backtitle "$(backtitle)" --title "Restore with Code" --aspect 18 \
-              --msgbox "Restore complete" 0 0
           arcbuild
           ;;
         2)
