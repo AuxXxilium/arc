@@ -138,9 +138,9 @@ function getportmap() {
   if [ ${SATACONTROLLER} -gt 0 ]; then
     SATAREMAP="$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')"
     # Show recommended Option to user
-    if [[ -n "${SATAREMAP}" && ${SASCONTROLLER} -eq 0 && ${SCSICONTROLLER} -eq 0 ]]; then
+    if [[ -n "${SATAREMAP}" && ( ${SASCONTROLLER} -eq 0 && ${SCSICONTROLLER} -eq 0 )]]; then
       REMAP3="*"
-    elif [[ -n "${SATAREMAP}" && ${SASCONTROLLER} -gt 0 || ${SCSICONTROLLER} -gt 0 && "${MACHINE}" = "NATIVE" ]]; then
+    elif [[ -n "${SATAREMAP}" && ( ${SASCONTROLLER} -gt 0 || ${SCSICONTROLLER} -gt 0 ) && "${MACHINE}" = "NATIVE" ]]; then
       REMAP2="*"
     else
       REMAP1="*"
