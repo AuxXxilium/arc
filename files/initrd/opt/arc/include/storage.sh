@@ -75,6 +75,16 @@ function getmap() {
         SASDRIVES=$((${SASDRIVES} + ${PORTNUM}))
       done
     fi
+    # SCSI Disks
+    SCSIDRIVES=0
+    if [ $(lspci -d ::104 | wc -l) -gt 0 ]; then
+      for PCI in $(lspci -d ::104 | awk '{print $1}'); do
+        NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+        PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+        PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+        SCSIDRIVES=$((${SCSIDRIVES} + ${PORTNUM}))
+      done
+    fi
     # USB Disks
     USBDRIVES=0
     if [[ -d "/sys/class/scsi_host" && $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]]; then
@@ -107,9 +117,10 @@ function getmap() {
       done
     fi
     # Disk Count for MaxDisks
-    DRIVES=$((${SATADRIVES} + ${SASDRIVES} + ${USBDRIVES} + ${MMCDRIVES} + ${NVMEDRIVES}))
+    DRIVES=$((${SATADRIVES} + ${SASDRIVES} + ${SCSIDRIVES} + ${USBDRIVES} + ${MMCDRIVES} + ${NVMEDRIVES}))
     [ ${SATADRIVES} -gt 0 ] && writeConfigKey "device.satadrives" "${SATADRIVES}" "${USER_CONFIG_FILE}"
     [ ${SASDRIVES} -gt 0 ] && writeConfigKey "device.sasdrives" "${SASDRIVES}" "${USER_CONFIG_FILE}"
+    [ ${SCSIDRIVES} -gt 0 ] && writeConfigKey "device.scsidrives" "${SCSIDRIVES}" "${USER_CONFIG_FILE}"
     [ ${USBDRIVES} -gt 0 ] && writeConfigKey "device.usbdrives" "${USBDRIVES}" "${USER_CONFIG_FILE}"
     [ ${MMCDRIVES} -gt 0 ] && writeConfigKey "device.mmcdrives" "${MMCDRIVES}" "${USER_CONFIG_FILE}"
     [ ${NVMEDRIVES} -gt 0 ] && writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
@@ -127,9 +138,9 @@ function getportmap() {
   if [ ${SATACONTROLLER} -gt 0 ]; then
     SATAREMAP="$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')"
     # Show recommended Option to user
-    if [[ -n "${SATAREMAP}" && ${SASCONTROLLER} -eq 0 ]]; then
+    if [[ -n "${SATAREMAP}" && ${SASCONTROLLER} -eq 0 && ${SCSICONTROLLER} -eq 0 ]]; then
       REMAP3="*"
-    elif [[ -n "${SATAREMAP}" && ${SASCONTROLLER} -gt 0 && "${MACHINE}" = "NATIVE" ]]; then
+    elif [[ -n "${SATAREMAP}" && ${SASCONTROLLER} -gt 0 || ${SCSICONTROLLER} -gt 0 && "${MACHINE}" = "NATIVE" ]]; then
       REMAP2="*"
     else
       REMAP1="*"
@@ -209,3 +220,5 @@ SATACONTROLLER=$(lspci -d ::106 | wc -l)
 writeConfigKey "device.satacontroller" "${SATACONTROLLER}" "${USER_CONFIG_FILE}"
 SASCONTROLLER=$(lspci -d ::107 | wc -l)
 writeConfigKey "device.sascontroller" "${SASCONTROLLER}" "${USER_CONFIG_FILE}"
+SCSICONTROLLER=$(lspci -d ::104 | wc -l)
+writeConfigKey "device.scsicontroller" "${SCSICONTROLLER}" "${USER_CONFIG_FILE}"

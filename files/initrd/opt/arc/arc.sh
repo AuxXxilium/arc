@@ -1825,9 +1825,10 @@ function sysinfo() {
   TEXT+="\n   Bootcount: \Zb${BOOTCOUNT}\Zn"
   TEXT+="\n\Z4>> Addons | Modules\Zn"
   TEXT+="\n   Addons selected: \Zb${ADDONSINFO}\Zn"
-  TEXT+="\n   Loader Modules loaded: \Zb${MODULESINFO}\Zn"
+  TEXT+="\n   Modules loaded: \Zb${MODULESINFO}\Zn"
   TEXT+="\n\Z4>> Settings\Zn"
   TEXT+="\n   Static IP: \Zb${STATICIP}\Zn"
+  TEXT+="\n   Sort Drives: \Zb${HDDSORT}\Zn"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
     TEXT+="\n   SataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
   elif [ "${REMAP}" = "remap" ]; then
@@ -1841,11 +1842,10 @@ function sysinfo() {
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
   TEXT+="\n\Z4> Storage\Zn"
-  TEXT+="\n  Sort Drives: \Zb${HDDSORT}\Zn"
   # Get Information for Sata Controller
   NUMPORTS=0
   if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
-    TEXT+="\n  SATA:\n"
+    TEXT+="\n  SATA Controller:\n"
     for PCI in $(lspci -d ::106 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       TEXT+="\Zb  ${NAME}\Zn\n  Ports: "
@@ -1864,11 +1864,10 @@ function sysinfo() {
         fi
       done
       TEXT+="\n  Ports with color \Z1\Zbred\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected.\n"
-      TEXT+="\n"
     done
   fi
   if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
-    TEXT+="\n  SAS/SCSI:\n"
+    TEXT+="\n  SAS Controller:\n"
     for PCI in $(lspci -d ::107 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
@@ -1877,8 +1876,18 @@ function sysinfo() {
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
     done
   fi
+  if [ $(lspci -d ::104 | wc -l) -gt 0 ]; then
+    TEXT+="\n  SCSI Controller:\n"
+    for PCI in $(lspci -d ::104 | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+      TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
+      NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+    done
+  fi
   if [[ -d "/sys/class/scsi_host" && $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]]; then
-    TEXT+="\n USB:\n"
+    TEXT+="\n USB Controller:\n"
     for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
@@ -1889,7 +1898,7 @@ function sysinfo() {
     done
   fi
   if [[ -d "/sys/class/mmc_host" && $(ls -l /sys/class/mmc_host | grep mmc_host | wc -l) -gt 0 ]]; then
-    TEXT+="\n MMC:\n"
+    TEXT+="\n MMC Controller:\n"
     for PCI in $(lspci -d ::805 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORTNUM=$(ls -l /sys/class/mmc_host | grep "${PCI}" | wc -l)
@@ -1900,7 +1909,7 @@ function sysinfo() {
     done
   fi
   if [ $(lspci -d ::108 | wc -l) -gt 0 ]; then
-    TEXT+="\n NVME:\n"
+    TEXT+="\n NVMe Controller:\n"
     for PCI in $(lspci -d ::108 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
