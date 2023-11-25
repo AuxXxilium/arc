@@ -1774,7 +1774,7 @@ function sysinfo() {
   TEXT+="\n  CPU: \Zb${CPUINFO}\Zn"
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
   TEXT+="\n"
-  TEXT+="\n\Z4> Network: ${NIC} Adapter\Zn"
+  TEXT+="\n\Z4> Network: ${NIC} NIC\Zn"
   for N in ${ETHX}; do
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     MAC="$(cat /sys/class/net/${N}/address | sed 's/://g')"
