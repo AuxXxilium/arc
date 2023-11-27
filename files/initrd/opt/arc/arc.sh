@@ -1811,8 +1811,8 @@ function sysinfo() {
   # Print Config Informations
   TEXT+="\n"
   TEXT+="\n\Z4> Arc: ${ARC_VERSION}\Zn"
-  TEXT+="\n  Subversion Loader: \ZbAddons ${ADDONSVERSION} | LKM ${LKMVERSION} | Patches ${PATCHESVERSION}\Zn"
-  TEXT+="\n  Subversion Arc/DSM: \ZbModules ${MODULESVERSION} | Configs ${CONFIGSVERSION}\Zn"
+  TEXT+="\n  Subversion Loader: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | Patches ${PATCHESVERSION}\Zn"
+  TEXT+="\n  Subversion DSM: \ZbModules ${MODULESVERSION} | LKM ${LKMVERSION}\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4>> DSM ${PRODUCTVER}: ${MODEL}\Zn"
   TEXT+="\n   Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
