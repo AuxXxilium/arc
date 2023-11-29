@@ -359,7 +359,6 @@ function arcsettings() {
   fi
   # Get Portmap for Loader
   getmap
-  getportmap
   # Check Warnings
   if [ ${WARNON} -eq 1 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
@@ -1711,7 +1710,6 @@ function storageMenu() {
   DT="$(readModelKey "${MODEL}" "dt")"
   # Get Portmap for Loader
   getmap
-  getportmap
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
