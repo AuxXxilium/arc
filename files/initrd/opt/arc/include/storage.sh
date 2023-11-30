@@ -44,24 +44,6 @@ function getmap() {
       let DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS
       SATADRIVES=$((${SATADRIVES} + ${CONPORTS}))
     done
-    SATAPORTMAPMAX="$(<"${TMP_PATH}/drivesmax")"
-    SATAPORTMAP="$(<"${TMP_PATH}/drivescon")"
-    LASTDRIVE=0
-    # Check for VM
-    while read -r LINE; do
-      if [[ "${BUS}" != "usb" && ${LINE} -eq 0 && "${LOADER_DISK}" = "/dev/sda" ]]; then
-        MAXDISKS="$(readModelKey "${MODEL}" "disks")"
-        if [ ${MAXDISKS} -lt ${SATADRIVES} ]; then
-          MAXDISKS=${SATADRIVES}
-        fi
-        echo -n "${LINE}>${MAXDISKS}:" >>"${TMP_PATH}/remap"
-      elif [ ! ${LINE} = ${LASTDRIVE} ]; then
-        echo -n "${LINE}>${LASTDRIVE}:" >>"${TMP_PATH}/remap"
-        LASTDRIVE=$((${LASTDRIVE} + 1))
-      elif [ ${LINE} = ${LASTDRIVE} ]; then
-        LASTDRIVE=$((${LINE} + 1))
-      fi
-    done < <(cat "${TMP_PATH}/ports")
     # SAS Disks
     SASDRIVES=0
     if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
@@ -129,14 +111,32 @@ function getmap() {
         --msgbox "${TEXT}" 0 0
     fi
     # Compute PortMap Options
+    SATAPORTMAPMAX="$(awk '{print $1}' "${TMP_PATH}/drivesmax")"
+    SATAPORTMAP="$(awk '{print $1}' "${TMP_PATH}/drivescon")"
     SATAREMAP="$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')"
+    # Check for Sata Boot
+    LASTDRIVE=0
+    while read -r LINE; do
+      if [[ "${BUS}" != "usb" && ${LINE} -eq 0 && "${LOADER_DISK}" = "/dev/sda" ]]; then
+        MAXDISKS="$(readModelKey "${MODEL}" "disks")"
+        if [ ${MAXDISKS} -lt ${DRIVES} ]; then
+          MAXDISKS=${DRIVES}
+        fi
+        echo -n "${LINE}>${MAXDISKS}:">>"${TMP_PATH}/remap"
+      elif [ ! ${LINE} = ${LASTDRIVE} ]; then
+        echo -n "${LINE}>${LASTDRIVE}:">>"${TMP_PATH}/remap"
+        LASTDRIVE=$((${LASTDRIVE} + 1))
+      elif [ ${LINE} = ${LASTDRIVE} ]; then
+        LASTDRIVE=$((${LINE} + 1))
+      fi
+    done < <(cat "${TMP_PATH}/ports")
     # Show recommended Option to user
-    if [[ -n "${SATAREMAP}" && ${SASCONTROLLER} -eq 0 && ${SCSICONTROLLER} -eq 0 ]]; then
-      REMAP3="*"
-    elif [ -n "${SATAREMAP}" ] && [[ ${SASCONTROLLER} -gt 0 || ${SCSICONTROLLER} -gt 0 ]] && [ "${MACHINE}" = "NATIVE" ]; then
-      REMAP2="*"
-    else
+    if [ ! -n "${SATAREMAP}" ]; then
       REMAP1="*"
+    elif [ -n "${SATAREMAP}" ] && [[ ${SASCONTROLLER} -gt 0 || ${SCSICONTROLLER} -gt 0 ]]; then
+      REMAP2="*"
+    elif [ -n "${SATAREMAP}" ] && [[ ${SASCONTROLLER} -eq 0 && ${SCSICONTROLLER} -eq 0 ]]; then
+      REMAP3="*"
     fi
     # Ask for Portmap
     dialog --backtitle "$(backtitle)" --title "Arc Disks" \
@@ -197,7 +197,7 @@ function getmap() {
       deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
       deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
       dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-        --msgbox "Computed Values:\nSataRemap: ${SATAREMAP}" 0 0
+        --msgbox "Computed Values:\nAhciRemap: ${SATAREMAP}" 0 0
     elif [ "${REMAP}" = "user" ]; then
       deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
       deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
