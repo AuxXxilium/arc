@@ -2241,6 +2241,7 @@ function resetLoader() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --colors --title "Clean Old" \
     --msgbox "Clean is complete." 5 30
+}
 
 ###############################################################################
 # let user edit the grub.cfg
@@ -2252,7 +2253,6 @@ function editGrubCfg() {
     mv -f "${TMP_PATH}/usergrub.cfg" "${GRUB_PATH}/grub.cfg"
     break
   done
-}
 }
 
 ###############################################################################

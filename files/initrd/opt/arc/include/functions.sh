@@ -374,6 +374,7 @@ function livepatch() {
     fi
   fi
   if [ ${FAIL} -eq 1 ]; then
+    echo
     echo -e "\033[1;34mPatching DSM Files failed! Please stay patient for Update.\033[0m" 0 0
     sleep 5
     exit 1
