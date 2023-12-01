@@ -1432,7 +1432,7 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 ] || [ -z "${TAG}" ]; then
+          if [[ $? -ne 0 || -z "${TAG}" ]]; then
             dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
               --msgbox "Error checking new version!" 0 0
             return 1
@@ -1534,7 +1534,7 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+          if [[ $? -ne 0 || -z "${TAG}" ]]; then
             dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
               --msgbox "Error checking new Version!" 0 0
             return 1
@@ -1576,7 +1576,7 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+          if [[ $? -ne 0 || -z "${TAG}" ]]; then
             dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
               --msgbox "Error checking new Version!" 0 0
             return 1
@@ -1629,7 +1629,7 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+          if [[ $? -ne 0 || -z "${TAG}" ]]; then
             dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
               --msgbox "Error checking new Version!" 0 0
             return 1
@@ -1671,7 +1671,7 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+          if [[ $? -ne 0 || -z "${TAG}" ]]; then
             dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
               --msgbox "Error checking new Version!" 0 0
             return 1
