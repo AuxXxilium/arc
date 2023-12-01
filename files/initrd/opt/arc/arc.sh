@@ -592,7 +592,6 @@ function addonSelection() {
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   KPRE="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kpre")"
-  ALLADDONS=$(availableAddons "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}")
   # read addons from user config
   unset ADDONS
   declare -A ADDONS
@@ -602,9 +601,9 @@ function addonSelection() {
   rm -f "${TMP_PATH}/opts"
   touch "${TMP_PATH}/opts"
   while read -r ADDON DESC; do
-    arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"         # Check if addon has already been added
+    arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
-  done <<<${ALLADDONS}
+  done < <(availableAddons "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}")
   dialog --backtitle "$(backtitle)" --title "Loader Addons" --aspect 18 \
     --checklist "Select Loader Addons to include.\nPlease read Wiki before choosing anything.\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
@@ -634,7 +633,6 @@ function modulesMenu() {
   KPRE="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kpre")"
   dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
     --infobox "Reading modules" 0 0
-  ALLMODULES=$(getAllModules "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}")
   unset USERMODULES
   declare -A USERMODULES
   while IFS=': ' read -r KEY VALUE; do
@@ -687,7 +685,7 @@ function modulesMenu() {
         while read -r ID DESC; do
           USERMODULES["${ID}"]=""
           writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-        done <<<${ALLMODULES}
+        done < <(getAllModules "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}")
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -705,7 +703,7 @@ function modulesMenu() {
         while read -r ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
           echo "${ID} ${DESC} ${ACT}" >>"${TMP_PATH}/opts"
-        done <<<${ALLMODULES}
+        done < <(getAllModules "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}")
         dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
           --checklist "Select modules to include" 0 0 0 \
           --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
