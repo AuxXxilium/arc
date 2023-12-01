@@ -186,9 +186,10 @@ for N in $(seq 0 7); do
 done
 
 # issues/313
-if [ ${PLATFORM} = "epyc7002" ]; then
+if [ "${PLATFORM}" = "epyc7002" ]; then
   sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
+  echo -e "Activate Epyc7002 Fixes!"
 fi
 
 # Reassembly ramdisk
