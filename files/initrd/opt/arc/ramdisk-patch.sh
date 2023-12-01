@@ -38,8 +38,8 @@ HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 # Read DSM Informations
 PRODUCTVERDSM=${majorversion}.${minorversion}
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-KPRE="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kpre")"
 KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+KPRE="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kpre")"
 RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compressed")"
 # Read new PAT Info from Config
 PAT_URL="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
@@ -164,6 +164,7 @@ for ADDON in ${!ADDONS[@]}; do
   PARAMS=${ADDONS[${ADDON}]}
   if ! installAddon ${ADDON}; then
     echo -n "${ADDON} is not available for this Platform!" | tee -a "${LOG_FILE}"
+    echo
     exit 1
   fi
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
@@ -181,6 +182,12 @@ ${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
 for N in $(seq 0 7); do
   echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
 done
+
+# issues/313
+if [ ${PLATFORM} = "epyc7002" ]; then
+  sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
+  sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
+fi
 
 # Reassembly ramdisk
 if [ "${RD_COMPRESSED}" == "true" ]; then
