@@ -9,14 +9,11 @@ function availableAddons() {
     checkAddonExist "${ADDON}" "${1}" "${2}" || continue
     SYSTEM=$(readConfigKey "system" "${D}/manifest.yml")
     [ "${SYSTEM}" = true ] && continue
-    while IFS=': ' read -r AVAILABLE; do
-    [ "${AVAILABLE}" = "${1}-${2}" ] && ACTIVATE="true" || ACTIVATE="false"
-    done < <(readConfigEntriesArray "available-for" "${D}/manifest.yml")
-    [ "${ACTIVATE}" = "false" ] && continue
     DESC="$(readConfigKey "description" "${D}/manifest.yml")"
     BETA="$(readConfigKey "beta" "${D}/manifest.yml")"
+    ACT="$(readConfigKey "${1}" "${D}/manifest.yml")"
     [ "${BETA}" = true ] && BETA="(Beta) " || BETA=""
-    echo -e "${ADDON}\t${BETA}${DESC}"
+    [ "${ACT}" = true ] && echo -e "${ADDON}\t${BETA}${DESC}"
   done < <(find "${ADDONS_PATH}" -maxdepth 1 -type d | sort)
 }
 
