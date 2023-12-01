@@ -230,7 +230,9 @@ function arcbuild() {
   fi
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-  KPRE="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kpre")"
+  if [ "${PLATFORM}" = "epyc7002" ]; than
+    KVER="${PRODUCTVER}-${KVER}"
+  fi
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
     --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
   # Delete synoinfo and reload model/build synoinfo
@@ -242,7 +244,7 @@ function arcbuild() {
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read -r ID DESC; do
     writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-  done < <(getAllModules "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}")
+  done < <(getAllModules "${PLATFORM}" "${KVER}")
   if [ "${ONLYVERSION}" != "true" ]; then
     arcsettings
   else
@@ -402,14 +404,16 @@ function make() {
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-  KPRE="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kpre")"
+  if [ "${PLATFORM}" = "epyc7002" ]; than
+    KVER="${PRODUCTVER}-${KVER}"
+  fi
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
   # Check if all addon exists
   while IFS=': ' read -r ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
-    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}"; then
+    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
       dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
         --msgbox "Addon ${ADDON} not found!" 0 0
       return 1
@@ -592,7 +596,9 @@ function addonSelection() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-  KPRE="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kpre")"
+  if [ "${PLATFORM}" = "epyc7002" ]; than
+    KVER="${PRODUCTVER}-${KVER}"
+  fi
   # read addons from user config
   unset ADDONS
   declare -A ADDONS
@@ -604,7 +610,7 @@ function addonSelection() {
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
-  done < <(availableAddons "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}")
+  done < <(availableAddons "${PLATFORM}" "${KVER}")
   dialog --backtitle "$(backtitle)" --title "Loader Addons" --aspect 18 \
     --checklist "Select Loader Addons to include.\nPlease read Wiki before choosing anything.\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
@@ -631,7 +637,9 @@ function modulesMenu() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-  KPRE="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kpre")"
+  if [ "${PLATFORM}" = "epyc7002" ]; than
+    KVER="${PRODUCTVER}-${KVER}"
+  fi
   dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
     --infobox "Reading modules" 0 0
   unset USERMODULES
@@ -664,7 +672,7 @@ function modulesMenu() {
           --infobox "Selecting loaded modules" 0 0
         KOLIST=""
         for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
-          KOLIST+="$(getdepends "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}" "${I}") ${I} "
+          KOLIST+="$(getdepends "${PLATFORM}" "${KVER}" "${I}") ${I} "
         done
         KOLIST=($(echo ${KOLIST} | tr ' ' '\n' | sort -u))
         unset USERMODULES
@@ -686,7 +694,7 @@ function modulesMenu() {
         while read -r ID DESC; do
           USERMODULES["${ID}"]=""
           writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-        done < <(getAllModules "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}")
+        done < <(getAllModules "${PLATFORM}" "${KVER}")
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -704,7 +712,7 @@ function modulesMenu() {
         while read -r ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
           echo "${ID} ${DESC} ${ACT}" >>"${TMP_PATH}/opts"
-        done < <(getAllModules "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}")
+        done < <(getAllModules "${PLATFORM}" "${KVER}")
         dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
           --checklist "Select modules to include" 0 0 0 \
           --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
@@ -746,7 +754,7 @@ function modulesMenu() {
         fi
         KONAME=$(basename "$URL")
         if [[ -n "${KONAME}" && "${KONAME##*.}" = "ko" ]]; then
-          addToModules ${PLATFORM} "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}" "${TMP_UP_PATH}/${USER_FILE}"
+          addToModules "${PLATFORM}" "${KVER}" "${TMP_UP_PATH}/${USER_FILE}"
           dialog --backtitle "$(backtitle)" --title "Add external Module" --aspect 18 \
             --msgbox "Module ${KONAME} added to ${PLATFORM}-${KVER}" 0 0
           rm -f "${KONAME}"
@@ -1596,10 +1604,13 @@ function updateMenu() {
           return 1
         fi
         MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-        if [ -n "${MODEL}" ]; then
+        PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+        if [[ -n "${MODEL}" && -n "${PRODUCTVER}" ]]; then
           PLATFORM="$(readModelKey "${MODEL}" "platform")"
           KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-          KPRE="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kpre")"
+          if [ "${PLATFORM}" = "epyc7002" ]; than
+            KVER="${PRODUCTVER}-${KVER}"
+          fi
         fi
         rm -rf "${MODULES_PATH}"
         mkdir -p "${MODULES_PATH}"
@@ -1609,7 +1620,7 @@ function updateMenu() {
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           while read -r ID DESC; do
             writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-          done < <(getAllModules "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}")
+          done < <(getAllModules "${PLATFORM}" "${KVER}")
         fi
         rm -f "${TMP_PATH}/modules.zip"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
