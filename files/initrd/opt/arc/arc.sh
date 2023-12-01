@@ -230,6 +230,7 @@ function arcbuild() {
   fi
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  KPRE="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kpre")"
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
     --infobox "Reconfiguring Synoinfo, Addons and Modules" 0 0
   # Delete synoinfo and reload model/build synoinfo
@@ -241,7 +242,7 @@ function arcbuild() {
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read -r ID DESC; do
     writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-  done < <(getAllModules "${PLATFORM}" "${KVER}")
+  done < <(getAllModules "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}")
   if [ "${ONLYVERSION}" != "true" ]; then
     arcsettings
   else
