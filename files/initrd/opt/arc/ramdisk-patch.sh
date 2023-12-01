@@ -39,7 +39,7 @@ HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 PRODUCTVERDSM=${majorversion}.${minorversion}
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-if [ "${PLATFORM}" = "epyc7002" ]; than
+if [ "${PLATFORM}" = "epyc7002" ]; then
   KVER="${PRODUCTVER}-${KVER}"
 fi
 RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compressed")"

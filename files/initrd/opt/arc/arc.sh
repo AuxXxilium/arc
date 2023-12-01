@@ -230,7 +230,7 @@ function arcbuild() {
   fi
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-  if [ "${PLATFORM}" = "epyc7002" ]; than
+  if [ "${PLATFORM}" = "epyc7002" ]; then
     KVER="${PRODUCTVER}-${KVER}"
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
@@ -365,11 +365,11 @@ function arcsettings() {
   # Check Warnings
   if [ ${WARNON} -eq 1 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-      --msgbox "WARN: Your Controller has more than 8 Disks connected. Max Disks per Controller: 8" 0 0
+      --msgbox "WARN: Your Controller has more then 8 Disks connected. Max Disks per Controller: 8" 0 0
   fi
   if [ ${WARNON} -eq 3 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-      --msgbox "WARN: You have more than 8 Ethernet Ports. There are only 8 supported by DSM." 0 0
+      --msgbox "WARN: You have more then 8 Ethernet Ports. There are only 8 supported by DSM." 0 0
   fi
   if [ ${WARNON} -eq 4 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
@@ -404,7 +404,7 @@ function make() {
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-  if [ "${PLATFORM}" = "epyc7002" ]; than
+  if [ "${PLATFORM}" = "epyc7002" ]; then
     KVER="${PRODUCTVER}-${KVER}"
   fi
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
@@ -596,7 +596,7 @@ function addonSelection() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-  if [ "${PLATFORM}" = "epyc7002" ]; than
+  if [ "${PLATFORM}" = "epyc7002" ]; then
     KVER="${PRODUCTVER}-${KVER}"
   fi
   # read addons from user config
@@ -637,7 +637,7 @@ function modulesMenu() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-  if [ "${PLATFORM}" = "epyc7002" ]; than
+  if [ "${PLATFORM}" = "epyc7002" ]; then
     KVER="${PRODUCTVER}-${KVER}"
   fi
   dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
@@ -1608,7 +1608,7 @@ function updateMenu() {
         if [[ -n "${MODEL}" && -n "${PRODUCTVER}" ]]; then
           PLATFORM="$(readModelKey "${MODEL}" "platform")"
           KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-          if [ "${PLATFORM}" = "epyc7002" ]; than
+          if [ "${PLATFORM}" = "epyc7002" ]; then
             KVER="${PRODUCTVER}-${KVER}"
           fi
         fi
