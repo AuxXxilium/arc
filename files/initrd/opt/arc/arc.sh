@@ -401,13 +401,14 @@ function make() {
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  KPRE="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kpre")"
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
   # Check if all addon exists
   while IFS=': ' read -r ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
-    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
+    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}"; then
       dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
         --msgbox "Addon ${ADDON} not found!" 0 0
       return 1
@@ -590,7 +591,8 @@ function addonSelection() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-  ALLADDONS="$(availableAddons "${PLATFORM}" "${KVER}")"
+  KPRE="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kpre")"
+  ALLADDONS=$(availableAddons "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}")
   # read addons from user config
   unset ADDONS
   declare -A ADDONS
@@ -629,9 +631,10 @@ function modulesMenu() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  KPRE="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kpre")"
   dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
     --infobox "Reading modules" 0 0
-  ALLMODULES=$(getAllModules "${PLATFORM}" "${KVER}")
+  ALLMODULES=$(getAllModules "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}")
   unset USERMODULES
   declare -A USERMODULES
   while IFS=': ' read -r KEY VALUE; do
@@ -662,7 +665,7 @@ function modulesMenu() {
           --infobox "Selecting loaded modules" 0 0
         KOLIST=""
         for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
-          KOLIST+="$(getdepends ${PLATFORM} ${KVER} ${I}) ${I} "
+          KOLIST+="$(getdepends "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}" "${I}") ${I} "
         done
         KOLIST=($(echo ${KOLIST} | tr ' ' '\n' | sort -u))
         unset USERMODULES
@@ -744,7 +747,7 @@ function modulesMenu() {
         fi
         KONAME=$(basename "$URL")
         if [[ -n "${KONAME}" && "${KONAME##*.}" = "ko" ]]; then
-          addToModules "${PLATFORM}" "${KVER}" "${KONAME}"
+          addToModules ${PLATFORM} "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}" "${TMP_UP_PATH}/${USER_FILE}"
           dialog --backtitle "$(backtitle)" --title "Add external Module" --aspect 18 \
             --msgbox "Module ${KONAME} added to ${PLATFORM}-${KVER}" 0 0
           rm -f "${KONAME}"
@@ -1594,10 +1597,10 @@ function updateMenu() {
           return 1
         fi
         MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-        PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
         if [ -n "${MODEL}" ]; then
           PLATFORM="$(readModelKey "${MODEL}" "platform")"
           KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+          KPRE="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kpre")"
         fi
         rm -rf "${MODULES_PATH}"
         mkdir -p "${MODULES_PATH}"
@@ -1607,7 +1610,7 @@ function updateMenu() {
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           while read -r ID DESC; do
             writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-          done < <(getAllModules "${PLATFORM}" "${KVER}")
+          done < <(getAllModules "${PLATFORM}" "$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}")
         fi
         rm -f "${TMP_PATH}/modules.zip"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
