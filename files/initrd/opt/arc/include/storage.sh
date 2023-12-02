@@ -110,10 +110,6 @@ function getmap() {
       dialog --backtitle "$(backtitle)" --colors --title "Arc Disks" \
         --msgbox "${TEXT}" 0 0
     fi
-    # Compute PortMap Options
-    SATAPORTMAPMAX="$(awk '{print $1}' "${TMP_PATH}/drivesmax")"
-    SATAPORTMAP="$(awk '{print $1}' "${TMP_PATH}/drivescon")"
-    SATAREMAP="$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')"
     # Check for Sata Boot
     LASTDRIVE=0
     while read -r LINE; do
@@ -130,6 +126,10 @@ function getmap() {
         LASTDRIVE=$((${LINE} + 1))
       fi
     done < <(cat "${TMP_PATH}/ports")
+     # Compute PortMap Options
+    SATAPORTMAPMAX=$(awk '{print $1}' "${TMP_PATH}/drivesmax")
+    SATAPORTMAP=$(awk '{print $1}' "${TMP_PATH}/drivescon")
+    SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
     # Show recommended Option to user
     if [ ! -n "${SATAREMAP}" ]; then
       REMAP1="*"
