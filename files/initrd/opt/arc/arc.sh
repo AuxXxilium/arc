@@ -1233,10 +1233,8 @@ function backupMenu() {
   else
     while true; do
       dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
-        1 "Restore Config" \
-        2 "Restore Loader Disk" \
-        3 "Restore Config with Code" \
-        4 "Recover from DSM" \
+        1 "Restore Config with Code" \
+        2 "Recover from DSM" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
       case "$(<"${TMP_PATH}/resp")" in
@@ -1263,7 +1261,7 @@ function backupMenu() {
             else
               cp -f "${BACKUPDIR}/user-config.yml" "${USER_CONFIG_FILE}"
               dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
-                  --msgbox "Version mismatch!\nIt is possible that your Config will not work!" 0 0
+                --msgbox "Version mismatch!\nIt is possible that your Config will not work!" 0 0
             fi
           else
             dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
