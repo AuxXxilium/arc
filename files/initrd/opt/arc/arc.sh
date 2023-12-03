@@ -2205,9 +2205,13 @@ function formatdisks() {
 function resetLoader() {
   if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
     # Clean old files
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" "${USER_CONFIG_FILE}"
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+  fi
+  if [ -f "${USER_CONFIG_FILE}" ]; then
+    rm -f "${USER_CONFIG_FILE}"
+  fi
+  if [ -d "${UNTAR_PAT_PATH}" ]; then
     rm -rf "${UNTAR_PAT_PATH}"
-    rm -rf "${PART3_PATH}/${MODEL}"
   fi
   if [ ! -f "${USER_CONFIG_FILE}" ]; then
     touch "${USER_CONFIG_FILE}"
@@ -2248,10 +2252,18 @@ function resetLoader() {
   initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
   initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
+  if [ -n "${MODEL}" ]; then
+    PLATFORM="$(readModelKey "${MODEL}" "platform")"
+    DT="$(readModelKey "${MODEL}" "dt")"
+  fi
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --colors --title "Clean Old" \
     --msgbox "Clean is complete." 5 30
+  clear
 }
 
 ###############################################################################
