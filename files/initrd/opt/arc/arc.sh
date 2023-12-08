@@ -783,9 +783,10 @@ function cmdlineMenu() {
   echo "4 \"RAM Fix\""                                          >>"${TMP_PATH}/menu"
   echo "5 \"PCI/IRQ Fix\""                                      >>"${TMP_PATH}/menu"
   echo "6 \"C-State Fix\""                                      >>"${TMP_PATH}/menu"
-  echo "7 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
-  echo "8 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
-  echo "9 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
+  echo "7 \"i915 Patch\""                                       >>"${TMP_PATH}/menu"
+  echo "8 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
+  echo "9 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
+  echo "0 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
   # Loop menu
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
