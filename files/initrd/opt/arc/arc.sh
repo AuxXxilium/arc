@@ -2322,11 +2322,11 @@ while true; do
       echo "= \"\Z4========== Arc ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
       echo "f \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
-      echo "g \"Storage Map \" "                                                            >>"${TMP_PATH}/menu"
-      echo "p \"Arc Settings \" "                                                           >>"${TMP_PATH}/menu"
       if [ "${DT}" = "false" ]; then
+        echo "g \"Storage Map \" "                                                          >>"${TMP_PATH}/menu"
         echo "h \"USB Port Config \" "                                                      >>"${TMP_PATH}/menu"
       fi
+      echo "p \"Arc Settings \" "                                                           >>"${TMP_PATH}/menu"
       echo ". \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
