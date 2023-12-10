@@ -151,6 +151,13 @@ function arcMenu() {
               break
             fi
           done
+          for F in "$(readModelArray "${M}" "dt")"; do
+            if [ "${DT}" = "true" ] && [[ ${SASCONTROLLER} -gt 0 || ${SCSICONTROLLER} -gt 0 ]]; then
+              COMPATIBLE=0
+              FLGNEX=1
+              break
+            fi
+          done
         fi
         [ "${DT}" = "true" ] && DT="DT" || DT=""
         [ "${BETA}" = "true" ] && BETA="Beta" || BETA=""
