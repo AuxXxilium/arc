@@ -174,27 +174,23 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
   for N in ${ETHX}; do
+    IP=""
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     COUNT=0
-    sleep 3
+    sleep 2
     while true; do
-      IP="$(getIP ${N})"
-      if [ "${STATICIP}" = "true" ]; then
+      if [[ "${STATICIP}" = "true" && "${N}" = "eth0" && -n "${ARCIP}" && ${BOOTCOUNT} -gt 0 ]]; then
         ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
         NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
-        if [[ "${N}" = "eth0" && -n "${ARCIP}" && ${BOOTCOUNT} -gt 0 ]]; then
-          IP="${ARCIP}"
-          NETMASK=$(convert_netmask "${NETMASK}")
-          ip addr add ${IP}/${NETMASK} dev eth0
-          MSG="STATIC"
-        else
-          MSG="DHCP"
-        fi
+        IP="${ARCIP}"
+        NETMASK=$(convert_netmask "${NETMASK}")
+        ip addr add ${IP}/${NETMASK} dev eth0
+        MSG="STATIC"
       else
+        IP="$(getIP ${N})"
         MSG="DHCP"
       fi
       if [ -n "${IP}" ]; then
-        ethtool -s ${N} wol g 2>/dev/null
         SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
         echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
         break
