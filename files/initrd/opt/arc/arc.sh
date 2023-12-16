@@ -663,6 +663,7 @@ function modulesMenu() {
       4 "Deselect all Modules" \
       5 "Choose Modules to include" \
       6 "Add external module" \
+      7 "Switch to new Realtek Modules" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(<"${TMP_PATH}/resp")" in
@@ -769,6 +770,43 @@ function modulesMenu() {
           dialog --backtitle "$(backtitle)" --title "Add external Module" --aspect 18 \
             --msgbox "File format not recognized!" 0 0
         fi
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
+      7)
+        TEXT=""
+        TEXT+="Arc will download the new Realtek Modules, they can fix some Issues with Realtek NIC.\n"
+        TEXT+="If you want to remove it, please go to the \"Update Menu\" -> \"Update modules\" to forcibly update the modules.\n"
+        TEXT+="Do you want to continue?"
+        dialog --backtitle "$(backtitle)" --title "Realtek Switch" \
+            --yesno "${TEXT}" 0 0
+        [ $? -ne 0 ] && continue
+        dialog --backtitle "$(backtitle)" --title "Realtek Switch" --aspect 18 \
+          --infobox "Downloading ${TAG}" 0 0
+        STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/realtek/modules.zip" -o "${TMP_PATH}/modules.zip")
+        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+          dialog --backtitle "$(backtitle)" --title "Realtek Switch" --aspect 18 \
+            --msgbox "Error downloading!" 0 0
+          return 1
+        fi
+        MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+        PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+        if [[ -n "${MODEL}" && -n "${PRODUCTVER}" ]]; then
+          PLATFORM="$(readModelKey "${MODEL}" "platform")"
+          KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+          if [ "${PLATFORM}" = "epyc7002" ]; then
+            KVER="${PRODUCTVER}-${KVER}"
+          fi
+        fi
+        unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}" >/dev/null 2>&1
+        # Rebuild modules if model/build is selected
+        if [[ -n "${PLATFORM}" && -n "${KVER}" ]]; then
+          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+          while read -r ID DESC; do
+            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+          done < <(getAllModules "${PLATFORM}" "${KVER}")
+        fi
+        rm -f "${TMP_PATH}/modules.zip"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
