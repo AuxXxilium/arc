@@ -782,8 +782,8 @@ function modulesMenu() {
             --yesno "${TEXT}" 0 0
         [ $? -ne 0 ] && continue
         dialog --backtitle "$(backtitle)" --title "Realtek Switch" --aspect 18 \
-          --infobox "Downloading ${TAG}" 0 0
-        STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/realtek/modules.zip" -o "${TMP_PATH}/modules.zip")
+          --infobox "Downloading Realtek" 0 0
+        STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/realtek/modules.zip" -o "${TMP_PATH}/realtek.zip")
         if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Realtek Switch" --aspect 18 \
             --msgbox "Error downloading!" 0 0
@@ -798,7 +798,8 @@ function modulesMenu() {
             KVER="${PRODUCTVER}-${KVER}"
           fi
         fi
-        unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}" >/dev/null 2>&1
+        unzip -oq "${TMP_PATH}/realtek.zip" -d "${TMP_PATH}/realtek" >/dev/null 2>&1
+        cp -Rf "${TMP_PATH}/realtek" "${MODULES_PATH}"
         # Rebuild modules if model/build is selected
         if [[ -n "${PLATFORM}" && -n "${KVER}" ]]; then
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
@@ -806,7 +807,7 @@ function modulesMenu() {
             writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
           done < <(getAllModules "${PLATFORM}" "${KVER}")
         fi
-        rm -f "${TMP_PATH}/modules.zip"
+        rm -f "${TMP_PATH}/realtek.zip"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
