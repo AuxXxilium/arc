@@ -189,6 +189,7 @@ done
 if [ "${PLATFORM}" = "epyc7002" ]; then
   sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
+  sed -i 's/WithInternal=0/WithInternal=1/' ${RAMDISK_PATH}/linuxrc.syno.impl
   echo -e "Apply Epyc7002 Fixes"
 fi
 
