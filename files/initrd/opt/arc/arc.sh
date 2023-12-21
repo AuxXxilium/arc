@@ -539,7 +539,7 @@ function make() {
     livepatch
     sleep 3
   ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Build Loader" \
-    --progressbox "Build Bootimage..." 20 70
+    --progressbox "Doing the Magic..." 20 70
   if [[ -f "${ORI_ZIMAGE_FILE}" && -f "${ORI_RDGZ_FILE}" && -f "${MOD_ZIMAGE_FILE}" && -f "${MOD_RDGZ_FILE}" ]]; then
     # Build is done
     writeConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
