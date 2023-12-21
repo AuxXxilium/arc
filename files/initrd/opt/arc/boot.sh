@@ -30,7 +30,7 @@ ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
 RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
 RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
 if [[ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" || "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]]; then
-  echo -e "\033[1;34mDSM zImage/Ramdisk changed!\033[0m"
+  echo -e "\033[1;31mDSM zImage/Ramdisk changed!\033[0m"
   livepatch
   echo
 fi
@@ -68,6 +68,7 @@ if [[ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" || -z "$(readModelKey "${MODEL}" 
   exit 1
 fi
 
+# Diskcheck
 HASATA=0
 for D in $(lsblk -dpno NAME); do
   [ "${D}" = "${LOADER_DISK}" ] && continue
@@ -76,7 +77,7 @@ for D in $(lsblk -dpno NAME); do
     break
   fi
 done
-[ ${HASATA} = "0" ] && echo -e "\033[1;33m*** Please insert at least one Sata/SAS Disk for System Installation, except for the Bootloader Disk. ***\033[0m"
+[ ${HASATA} = "0" ] && echo -e "\033[1;31m*** Please insert at least one Sata/SAS Disk for System Installation, except for the Bootloader Disk. ***\033[0m"
 
 # Read necessary variables
 VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
