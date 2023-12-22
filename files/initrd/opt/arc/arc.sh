@@ -2201,17 +2201,23 @@ function formatdisks() {
     [[ -z "${POSITION}" || -z "${NAME}" ]] && continue
     echo "${POSITION}" | grep -q "${LOADER_DISK}" && continue
     echo "\"${POSITION}\" \"${NAME}\" \"off\"" >>"${TMP_PATH}/opts"
-  done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd|/dev/nvme" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
+  done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd|/dev/mmc|/dev/nvme" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
+  if [ ! -f "${TMP_PATH}/opts" ]; then
+    dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
+      --msgbox "No Disk found!" 0 0
+    return 1
+  fi
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --checklist "" 0 0 0 --file "${TMP_PATH}/opts" \
-    2>${TMP_PATH}/resp
+    2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
-  resp=$(<"${TMP_PATH}/resp")
-  [ -z "${resp}" ] && return 1
+  RESP="$(<"${TMP_PATH}/resp")"
+  [ -z "${RESP}" ] && return 1
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return 1
-  if [ $(ls /dev/md* | wc -l) -gt 0 ]; then
+  RAID=$(ls /dev/md* | wc -l)
+  if [ ${RAID} -gt 0 ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
       --yesno "Warning:\nThe current hds is in raid, do you still want to format them?" 0 0
     [ $? -ne 0 ] && return 1
@@ -2220,11 +2226,13 @@ function formatdisks() {
     done
   fi
   (
-    for I in ${resp}; do
-      echo y | mkfs.ext4 -T largefile4 "${I}" 2>&1
+    for I in ${RESP}; do
+      echo -e ">>> Formatting: ${I}"
+      echo y | mkfs.ext4 -T largefile4 "${I}" &>/dev/null
+      echo -e ">>> Done\n"
     done
   ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
-    --progressbox "Formatting ..." 20 70
+    --progressbox "Doing the Magic..." 20 70
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --msgbox "Formatting is complete." 0 0
 }
