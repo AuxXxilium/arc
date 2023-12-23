@@ -202,16 +202,6 @@ if [ "${PLATFORM}" = "epyc7002" ]; then
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
 fi
 
-# USB install
-USBINSTALL="$(readConfigKey "arc.usbinstall" "${USER_CONFIG_FILE}")"
-USBDEVICE="$(readConfigKey "arc.usbdevice" "${USER_CONFIG_FILE}")"
-if [ "${USBINSTALL}" = "true" ]; then
-  echo -e "Apply USBInstall Fixes"
-  sed -i 's/WithInternal=0/WithInternal=1/' ${RAMDISK_PATH}/linuxrc.syno.impl
-  sed -i "s/sda/${USBDEVICE}/" ${RAMDISK_PATH}/usr/syno/web/webman/get_state.cgi
-  _set_conf_kv "support_buildin_storage" "true" "${RAMDISK_PATH}/etc/synoinfo.conf" >"${LOG_FILE}" 2>&1 || dieLog
-fi
-
 # Reassembly ramdisk
 if [ "${RD_COMPRESSED}" == "true" ]; then
   (cd "${RAMDISK_PATH}" && find . | cpio -o -H newc -R root:root | xz -9 --format=lzma >"${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || dieLog
@@ -220,4 +210,4 @@ else
 fi
 
 # Clean
-#rm -rf "${RAMDISK_PATH}"
+rm -rf "${RAMDISK_PATH}"

@@ -2291,8 +2291,6 @@ function resetLoader() {
   initConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
-  initConfigKey "arc.usbinstall" "false" "${USER_CONFIG_FILE}"
-  initConfigKey "arc.usbdevice" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
   initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
