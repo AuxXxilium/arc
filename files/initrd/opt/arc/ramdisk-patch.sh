@@ -190,10 +190,20 @@ done
 
 # SA6400 patches
 if [ "${PLATFORM}" = "epyc7002" ]; then
+  echo -e "Apply Epyc7002 Fixes"
   sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
   sed -i 's/WithInternal=0/WithInternal=1/' ${RAMDISK_PATH}/linuxrc.syno.impl
-  echo -e "Apply Epyc7002 Fixes"
+fi
+
+# USB install
+USBINSTALL="$(readConfigKey "arc.usbinstall" "${USER_CONFIG_FILE}")"
+USBDEVICE="$(readConfigKey "arc.usbdevice" "${USER_CONFIG_FILE}")"
+if [ "${USBINSTALL}" = "true" ]; then
+  echo -e "Apply USBInstall Fixes"
+  sed -i 's/WithInternal=0/WithInternal=1/' ${RAMDISK_PATH}/linuxrc.syno.impl
+  sed -i 's/buildin_storage_node="/dev/sda"/buildin_storage_node="${USBDEVICE}"/' ${RAMDISK_PATH}/usr/syno/web/webman/get_state.cgi
+  _set_conf_kv "SupportBuildinStorage" "true" "${RAMDISK_PATH}/etc/synoinfo.conf" >"${LOG_FILE}" 2>&1 || dieLog
 fi
 
 # Reassembly ramdisk
