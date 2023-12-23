@@ -49,8 +49,11 @@ PAT_HASH="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
 
 if [ "${PRODUCTVERDSM}" != "${PRODUCTVER}" ]; then
   # Update new buildnumber
-  echo -e "Error: Ramdisk Version does not match DSM Version"
-  exit 1
+  echo -e "Ramdisk Version ${PRODUCTVER} does not match DSM Version ${PRODUCTVERDSM}!"
+  echo -e "Try to use DSM Version ${PRODUCTVERDSM} for Patch."
+  writeConfigKey "productver" "${USER_CONFIG_FILE}"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
 fi
 
 # Sanity check
