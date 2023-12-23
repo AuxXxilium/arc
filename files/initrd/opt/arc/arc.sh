@@ -414,6 +414,10 @@ function make() {
   if [ "${PLATFORM}" = "epyc7002" ]; then
     KVER="${PRODUCTVER}-${KVER}"
   fi
+  if [ -d "${UNTAR_PAT_PATH}" ]; then
+    rm -rf "${UNTAR_PAT_PATH}"
+    mkdir -p "${UNTAR_PAT_PATH}"
+  fi
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
