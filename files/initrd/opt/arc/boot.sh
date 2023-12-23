@@ -51,6 +51,8 @@ RAM=$(free -m | grep -i mem | awk '{print$2}')
 VENDOR="$(dmidecode -s system-product-name)"
 BOARD="$(dmidecode -s baseboard-product-name)"
 
+echo -e "Loader Disk: \033[1;34m${LOADER_DISK}\033[0m"
+echo
 echo -e "\033[1;37mDSM:\033[0m"
 echo -e "Model: \033[1;37m${MODEL}\033[0m"
 echo -e "Version: \033[1;37m${PRODUCTVER}\033[0m"
@@ -194,6 +196,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
         echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
+        IPCON="${IP}"
         break
       fi
       COUNT=$((${COUNT} + 1))
@@ -237,7 +240,7 @@ kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDL
 echo -e "\033[1;37m"Booting DSM..."\033[0m"
 for T in $(w | grep -v "TTY" | awk -F' ' '{print $2}')
 do
-  echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\nUse \033[1;34mhttp://${IP}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[1;37mto find DSM and proceed.\033[0m\n" >"/dev/${T}" 2>/dev/null || true
+  echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\nUse \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[1;37mto find DSM and proceed.\033[0m\n" >"/dev/${T}" 2>/dev/null || true
 done
 [ "${KERNELLOAD}" = "kexec" ] && kexec -f -e || poweroff
 exit 0
