@@ -202,8 +202,8 @@ USBDEVICE="$(readConfigKey "arc.usbdevice" "${USER_CONFIG_FILE}")"
 if [ "${USBINSTALL}" = "true" ]; then
   echo -e "Apply USBInstall Fixes"
   sed -i 's/WithInternal=0/WithInternal=1/' ${RAMDISK_PATH}/linuxrc.syno.impl
-  sed -i 's/buildin_storage_node="/dev/sda"/buildin_storage_node="${USBDEVICE}"/' ${RAMDISK_PATH}/usr/syno/web/webman/get_state.cgi
-  _set_conf_kv "SupportBuildinStorage" "true" "${RAMDISK_PATH}/etc/synoinfo.conf" >"${LOG_FILE}" 2>&1 || dieLog
+  sed -i 's/dev/sda/dev/{USBDEVICE}/' ${RAMDISK_PATH}/usr/syno/web/webman/get_state.cgi
+  _set_conf_kv "support_buildin_storage" "true" "${RAMDISK_PATH}/etc/synoinfo.conf" >"${LOG_FILE}" 2>&1 || dieLog
 fi
 
 # Reassembly ramdisk
