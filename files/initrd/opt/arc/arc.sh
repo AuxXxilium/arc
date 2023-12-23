@@ -636,9 +636,6 @@ function addonSelection() {
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --title "Addons" \
     --msgbox "Loader Addons selected:\n${ADDONSINFO}" 0 0
-  if [ $(readConfigKey "addons.patches" "${USER_CONFIG_FILE}") = "" ]; then
-    writeConfigKey "addons.patches" "1234" "${USER_CONFIG_FILE}"
-  fi
 }
 
 ###############################################################################
