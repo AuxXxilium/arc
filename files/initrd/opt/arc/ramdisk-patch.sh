@@ -184,16 +184,22 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 ${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
 
 # Network card configuration file
-for N in $(seq 0 7); do
-  echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=no" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
-done
+IPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
+if [ "${IPV6}" = "false" ]; then
+  for N in $(seq 0 7); do
+    echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=no" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
+  done
+elif [ "${IPV6}" = "false" ]; then
+  for N in $(seq 0 7); do
+    echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
+  done
+fi
 
 # SA6400 patches
 if [ "${PLATFORM}" = "epyc7002" ]; then
   echo -e "Apply Epyc7002 Fixes"
   sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
-  sed -i 's/WithInternal=0/WithInternal=1/' ${RAMDISK_PATH}/linuxrc.syno.impl
 fi
 
 # USB install
@@ -202,7 +208,7 @@ USBDEVICE="$(readConfigKey "arc.usbdevice" "${USER_CONFIG_FILE}")"
 if [ "${USBINSTALL}" = "true" ]; then
   echo -e "Apply USBInstall Fixes"
   sed -i 's/WithInternal=0/WithInternal=1/' ${RAMDISK_PATH}/linuxrc.syno.impl
-  sed -i 's/dev/sda/dev/{USBDEVICE}/' ${RAMDISK_PATH}/usr/syno/web/webman/get_state.cgi
+  sed -i "s/sda/${USBDEVICE}/" ${RAMDISK_PATH}/usr/syno/web/webman/get_state.cgi
   _set_conf_kv "support_buildin_storage" "true" "${RAMDISK_PATH}/etc/synoinfo.conf" >"${LOG_FILE}" 2>&1 || dieLog
 fi
 
@@ -214,4 +220,4 @@ else
 fi
 
 # Clean
-rm -rf "${RAMDISK_PATH}"
+#rm -rf "${RAMDISK_PATH}"

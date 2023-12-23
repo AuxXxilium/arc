@@ -60,6 +60,7 @@ MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
+ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -2275,6 +2276,7 @@ function resetLoader() {
   initConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
@@ -2289,6 +2291,8 @@ function resetLoader() {
   initConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.usbinstall" "false" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.usbdevice" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
   initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -2367,6 +2371,7 @@ while true; do
       fi
       echo "p \"Arc Settings \" "                                                           >>"${TMP_PATH}/menu"
       echo ". \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu"
+      echo "u \"Use IPv6: \Z4${ARCIPV6}\Zn \" "                                             >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
       echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
@@ -2456,6 +2461,10 @@ while true; do
     p) ONLYPATCH="true" && arcsettings; NEXT="p" ;;
     h) usbMenu; NEXT="h" ;;
     .) staticIPMenu; NEXT="." ;;
+    c) [ "${ARCIPV6}" = "true" ] && KERNELLOAD='false' || KERNELLOAD='true'
+      writeConfigKey "arc.ipv6" "${ARCIPV6}" "${USER_CONFIG_FILE}"
+      NEXT="c"
+      ;;
     # Advanced Section
     5) [ "${ADVOPTS}" = "true" ] && ADVOPTS='false' || ADVOPTS='true'
        ADVOPTS="${ADVOPTS}"
