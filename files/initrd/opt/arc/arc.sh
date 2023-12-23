@@ -1772,7 +1772,7 @@ function sysinfo() {
   VENDOR="$(dmidecode -s system-product-name)"
   BOARD="$(dmidecode -s baseboard-product-name)"
   ETHX=$(ls /sys/class/net/ | grep -v lo || true)
-  NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
+  ETH="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
@@ -1812,7 +1812,7 @@ function sysinfo() {
   TEXT+="\n  CPU: \Zb${CPUINFO}\Zn"
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
   TEXT+="\n"
-  TEXT+="\n\Z4> Network: ${NIC} NIC\Zn"
+  TEXT+="\n\Z4> Network: ${ETH} NIC\Zn"
   for N in ${ETHX}; do
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     MAC="$(cat /sys/class/net/${N}/address | sed 's/://g')"

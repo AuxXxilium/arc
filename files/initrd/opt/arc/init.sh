@@ -59,7 +59,7 @@ initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 
 # Init Network
 ETHX=$(ls /sys/class/net/ | grep -v lo || true)
-NIC=$(ls /sys/class/net/ | grep eth | wc -l)
+ETH=$(ls /sys/class/net/ | grep eth | wc -l)
 # No network devices
 [ $(echo ${ETHX} | wc -w) -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
@@ -129,7 +129,7 @@ BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+echo -e "\033[1;34mDetected ${ETH} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
 for N in ${ETHX}; do
   IP=""
   DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
