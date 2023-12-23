@@ -103,13 +103,14 @@ function getmap() {
     [ ${USBDRIVES} -gt 0 ] && writeConfigKey "device.usbdrives" "${USBDRIVES}" "${USER_CONFIG_FILE}"
     [ ${MMCDRIVES} -gt 0 ] && writeConfigKey "device.mmcdrives" "${MMCDRIVES}" "${USER_CONFIG_FILE}"
     [ ${NVMEDRIVES} -gt 0 ] && writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
-    writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
     if [ ${DRIVES} -gt 26 ]; then
-      TEXT+="\nYou have connected more then 26 Disks."
+      TEXT+="\nYou have more then 26 Disks connected."
       TEXT+="\nDSM can only address a maximum of 26 Disks."
+      DRIVES=26
       dialog --backtitle "$(backtitle)" --colors --title "Arc Disks" \
         --msgbox "${TEXT}" 0 0
     fi
+    writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
     # Check for Sata Boot
     LASTDRIVE=0
     while read -r LINE; do
