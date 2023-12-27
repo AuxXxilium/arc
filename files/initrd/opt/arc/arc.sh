@@ -61,6 +61,7 @@ ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
 ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
+OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -405,7 +406,7 @@ function arcsettings() {
 }
 
 ###############################################################################
-# Building Loader
+# Building Loader Online
 function make() {
   # Read Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -581,6 +582,125 @@ function make() {
   else
     dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
       --msgbox "Build failed!\nPlease check your Connection and Diskspace!" 0 0
+    return 1
+  fi
+}
+
+###############################################################################
+# Building Loader Offline
+function makeoffline() {
+  # Read Config
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  if [ "${PLATFORM}" = "epyc7002" ]; then
+    KVER="${PRODUCTVER}-${KVER}"
+  fi
+  if [ -d "${UNTAR_PAT_PATH}" ]; then
+    rm -rf "${UNTAR_PAT_PATH}"
+    mkdir -p "${UNTAR_PAT_PATH}"
+  fi
+  # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
+  writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
+  writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
+  # Check if all addon exists
+  while IFS=': ' read -r ADDON PARAM; do
+    [ -z "${ADDON}" ] && continue
+    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
+      dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
+        --msgbox "Addon ${ADDON} not found!" 0 0
+      return 1
+    fi
+  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+  # Check for existing Files
+  mkdir -p "${UNTAR_PAT_PATH}"
+  mkdir -p "${UPLOAD_PATH}"
+  # Get new Files
+  dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
+  --msgbox "Upload your DSM .pat File to /tmp/upload.\nUse SSH/SFTP to connect to ${IP}.\nUser: root | Password: arc\nPress OK to continue!" 0 0
+  # Grep PAT_FILE
+  PAT_UPLOAD="$(ls ${UPLOAD_PATH}/*.pat)"
+  PAT_FILE="${UPLOAD_PATH}/${PAT_UPLOAD}"
+  if [ ! -f "${PAT_FILE}" ]; then
+    dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+      --msgbox "No DSM Image found!\nExit." 0 0
+    return 1
+  else
+    # Update PAT Data to 0 for Offline
+    PAT_URL="0"
+    PAT_HASH="0"
+    writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+    # Extract Files
+    header=$(od -bcN2 ${PAT_FILE} | head -1 | awk '{print $3}')
+    case ${header} in
+        105)
+        echo "Uncompressed tar"
+        isencrypted="no"
+        ;;
+        213)
+        echo "Compressed tar"
+        isencrypted="no"
+        ;;
+        255)
+        echo "Encrypted"
+        isencrypted="yes"
+        ;;
+        *)
+        echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
+        ;;
+    esac
+    if [ "${isencrypted}" = "yes" ]; then
+      # Uses the extractor to untar PAT file
+      LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_FILE}" "${UNTAR_PAT_PATH}"
+    else
+      # Untar PAT file
+      tar -xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+    fi
+    # Cleanup old PAT
+    rm -f "${PAT_FILE}"
+    dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+      --msgbox "DSM Extraction successful!" 0 0
+    # Copy DSM Files to Locations if DSM Files not found
+    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART1_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART1_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART2_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART2_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/zImage" "${ORI_ZIMAGE_FILE}"
+    cp -f "${UNTAR_PAT_PATH}/rd.gz" "${ORI_RDGZ_FILE}"
+    rm -rf "${UNTAR_PAT_PATH}"
+  fi
+  # Reset Bootcount if User rebuild DSM
+  if [[ -z "${BOOTCOUNT}" || ${BOOTCOUNT} -gt 0 ]]; then
+    writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
+  fi
+  (
+    livepatch
+    sleep 3
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Build Loader" \
+    --progressbox "Doing the Magic..." 20 70
+  if [[ -f "${ORI_ZIMAGE_FILE}" && -f "${ORI_RDGZ_FILE}" && -f "${MOD_ZIMAGE_FILE}" && -f "${MOD_RDGZ_FILE}" ]]; then
+    # Build is done
+    writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    # Ask for Boot
+    dialog --clear --backtitle "$(backtitle)" \
+      --menu "Build done. Boot now?" 0 0 0 \
+      1 "Yes - Boot Arc Loader now" \
+      2 "No - I want to make changes" \
+    2>"${TMP_PATH}/resp"
+    resp="$(<"${TMP_PATH}/resp")"
+    [ -z "${resp}" ] && return 1
+    if [ ${resp} -eq 1 ]; then
+      boot && exit 0
+    elif [ ${resp} -eq 2 ]; then
+      dialog --clear --no-items --backtitle "$(backtitle)"
+      return 1
+    fi
+  else
+    dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
+      --msgbox "Build failed!\nPlease check your Diskspace!" 0 0
     return 1
   fi
 }
@@ -2262,15 +2382,9 @@ function resetLoader() {
     # Clean old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   fi
-  if [ -f "${USER_CONFIG_FILE}" ]; then
-    rm -f "${USER_CONFIG_FILE}"
-  fi
-  if [ -d "${UNTAR_PAT_PATH}" ]; then
-    rm -rf "${UNTAR_PAT_PATH}"
-  fi
-  if [ ! -f "${USER_CONFIG_FILE}" ]; then
-    touch "${USER_CONFIG_FILE}"
-  fi
+  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
+  [ -f "${USER_CONFIG_FILE}" ] && rm -f "${USER_CONFIG_FILE}"
+  [ ! -f "${USER_CONFIG_FILE}" ] && touch "${USER_CONFIG_FILE}"
   initConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
   initConfigKey "model" "" "${USER_CONFIG_FILE}"
   initConfigKey "productver" "" "${USER_CONFIG_FILE}"
@@ -2292,6 +2406,7 @@ function resetLoader() {
   initConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
@@ -2443,8 +2558,11 @@ while true; do
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
+  echo "* \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
   echo "y \"Choose a keymap \" "                                                            >>"${TMP_PATH}/menu"
-  echo "z \"Update \" "                                                                     >>"${TMP_PATH}/menu"
+  if [ "${OFFLINE}" = "false" ]; then
+    echo "z \"Update \" "                                                                   >>"${TMP_PATH}/menu"
+  fi
   echo "9 \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
   echo "0 \"\Z1Exit\Zn \" "                                                                 >>"${TMP_PATH}/menu"
 
@@ -2455,7 +2573,8 @@ while true; do
   case $(<"${TMP_PATH}/resp") in
     # Main Section
     1) arcMenu; NEXT="2" ;;
-    2) make; NEXT="3" ;;
+    2) [ "${OFFLINE}" = "false" ] && make || makeoffline
+      NEXT="3" ;;
     3) boot && exit 0 || sleep 3 ;;
     # Info Section
     a) sysinfo; NEXT="a" ;;
@@ -2551,6 +2670,10 @@ while true; do
     +) formatdisks; NEXT="+" ;;
     # Loader Settings
     x) backupMenu; NEXT="x" ;;
+    *) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
+      OFFLINE="${OFFLINE}"
+      NEXT="*"
+      ;;
     y) keymapMenu; NEXT="y" ;;
     z) updateMenu; NEXT="z" ;;
     9) credits; NEXT="9" ;;

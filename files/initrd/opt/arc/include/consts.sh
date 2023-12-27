@@ -8,6 +8,7 @@ PART2_PATH="/mnt/p2"
 PART3_PATH="/mnt/p3"
 DSMROOT_PATH="/mnt/dsmroot"
 TMP_PATH="/tmp"
+UPLOAD_PATH="${TMP_PATH}/upload"
 
 UNTAR_PAT_PATH="${TMP_PATH}/DSM"
 RAMDISK_PATH="${TMP_PATH}/ramdisk"
