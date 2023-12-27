@@ -408,58 +408,48 @@ function arcsettings() {
 ###############################################################################
 # Building Loader Online
 function make() {
-  # Read Config
-  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  PLATFORM="$(readModelKey "${MODEL}" "platform")"
-  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-  if [ "${PLATFORM}" = "epyc7002" ]; then
-    KVER="${PRODUCTVER}-${KVER}"
-  fi
-  if [ -d "${UNTAR_PAT_PATH}" ]; then
-    rm -rf "${UNTAR_PAT_PATH}"
-    mkdir -p "${UNTAR_PAT_PATH}"
-  fi
-  # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
-  writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
-  writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
-  # Check if all addon exists
-  while IFS=': ' read -r ADDON PARAM; do
-    [ -z "${ADDON}" ] && continue
-    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
-      dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-        --msgbox "Addon ${ADDON} not found!" 0 0
-      return 1
+  if [ "${OFFLINE}" = "true" ]; then
+    offlinemake
+    return
+  else
+    # Read Config
+    MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+    PLATFORM="$(readModelKey "${MODEL}" "platform")"
+    PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+    KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+    if [ "${PLATFORM}" = "epyc7002" ]; then
+      KVER="${PRODUCTVER}-${KVER}"
     fi
-  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  # Update PAT Data
-  PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
-  PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
-  if [[ -z "${PAT_URL_CONF}" || -z "${PAT_HASH_CONF}" ]]; then
-    PAT_URL_CONF="0"
-    PAT_HASH_CONF="0"
-  fi
-  while true; do
-    dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-      --infobox "Get PAT Data from Syno..." 3 30
-    idx=0
-    while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-      PAT_URL="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
-      PAT_HASH="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
-      PAT_URL=${PAT_URL%%\?*}
-      if [[ -n "${PAT_URL}" && -n "${PAT_HASH}" ]]; then
-        break
+    if [ -d "${UNTAR_PAT_PATH}" ]; then
+      rm -rf "${UNTAR_PAT_PATH}"
+      mkdir -p "${UNTAR_PAT_PATH}"
+    fi
+    # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
+    writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
+    writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
+    # Check if all addon exists
+    while IFS=': ' read -r ADDON PARAM; do
+      [ -z "${ADDON}" ] && continue
+      if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
+        dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
+          --msgbox "Addon ${ADDON} not found!" 0 0
+        return 1
       fi
-      sleep 1
-      idx=$((${idx} + 1))
-    done
-    if [[ -z "${PAT_URL}" || -z "${PAT_HASH}" ]]; then
+    done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+    # Update PAT Data
+    PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
+    PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
+    if [[ -z "${PAT_URL_CONF}" || -z "${PAT_HASH_CONF}" ]]; then
+      PAT_URL_CONF="0"
+      PAT_HASH_CONF="0"
+    fi
+    while true; do
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-        --infobox "Syno Connection failed,  try to get from Github..." 3 30
+        --infobox "Get PAT Data from Syno..." 3 30
       idx=0
       while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-        PAT_URL="$(curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER%%.*}.${PRODUCTVER##*.}/pat_url")"
-        PAT_HASH="$(curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER%%.*}.${PRODUCTVER##*.}/pat_hash")"
+        PAT_URL="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
+        PAT_HASH="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
         PAT_URL=${PAT_URL%%\?*}
         if [[ -n "${PAT_URL}" && -n "${PAT_HASH}" ]]; then
           break
@@ -467,128 +457,140 @@ function make() {
         sleep 1
         idx=$((${idx} + 1))
       done
-    fi
-    if [[ -z "${PAT_URL}" || -z "${PAT_HASH}" ]]; then
-      MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
-      PAT_URL=""
-      PAT_HASH=""
-    else
-      MSG="Successfully got PAT Data.\nPlease confirm or modify as needed."
-    fi
-    dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-      --extra-button --extra-label "Retry" --default-button "OK" \
-      --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 7 100 0 \
-      2>"${TMP_PATH}/resp"
-    RET=$?
-    [ ${RET} -eq 0 ] && break    # ok-button
-    return                       # 1 or 255  # cancel-button or ESC
-  done
-  PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
-  PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
-  if [[ "${PAT_HASH}" != "${PAT_HASH_CONF}" || ! -f "${ORI_ZIMAGE_FILE}" || ! -f "${ORI_RDGZ_FILE}" ]]; then
-    writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
-    # Check for existing Files
-    mkdir -p "${UNTAR_PAT_PATH}"
-    DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
-    # Get new Files
-    DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL}/${PRODUCTVER}/${PAT_HASH}.tar"
-    STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
-    if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
-      dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-      --msgbox "No DSM Image found!\nTry Syno Link." 0 0
-      # Grep PAT_URL
-      PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
-      STATUS=$(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" --progress-bar)
+      if [[ -z "${PAT_URL}" || -z "${PAT_HASH}" ]]; then
+        dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+          --infobox "Syno Connection failed,  try to get from Github..." 3 30
+        idx=0
+        while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
+          PAT_URL="$(curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER%%.*}.${PRODUCTVER##*.}/pat_url")"
+          PAT_HASH="$(curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER%%.*}.${PRODUCTVER##*.}/pat_hash")"
+          PAT_URL=${PAT_URL%%\?*}
+          if [[ -n "${PAT_URL}" && -n "${PAT_HASH}" ]]; then
+            break
+          fi
+          sleep 1
+          idx=$((${idx} + 1))
+        done
+      fi
+      if [[ -z "${PAT_URL}" || -z "${PAT_HASH}" ]]; then
+        MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
+        PAT_URL=""
+        PAT_HASH=""
+      else
+        MSG="Successfully got PAT Data.\nPlease confirm or modify as needed."
+      fi
+      dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+        --extra-button --extra-label "Retry" --default-button "OK" \
+        --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 7 100 0 \
+        2>"${TMP_PATH}/resp"
+      RET=$?
+      [ ${RET} -eq 0 ] && break    # ok-button
+      return                       # 1 or 255  # cancel-button or ESC
+    done
+    PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+    PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+    if [[ "${PAT_HASH}" != "${PAT_HASH_CONF}" || ! -f "${ORI_ZIMAGE_FILE}" || ! -f "${ORI_RDGZ_FILE}" ]]; then
+      writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+      # Check for existing Files
+      mkdir -p "${UNTAR_PAT_PATH}"
+      DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
+      # Get new Files
+      DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL}/${PRODUCTVER}/${PAT_HASH}.tar"
+      STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
       if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
         dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-          --msgbox "No DSM Image found!\ Exit." 0 0
+        --msgbox "No DSM Image found!\nTry Syno Link." 0 0
+        # Grep PAT_URL
+        PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
+        STATUS=$(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" --progress-bar)
+        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+          dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
+            --msgbox "No DSM Image found!\ Exit." 0 0
+          return 1
+        fi
+        # Extract Files
+        header=$(od -bcN2 ${PAT_FILE} | head -1 | awk '{print $3}')
+        case ${header} in
+            105)
+            isencrypted="no"
+            ;;
+            213)
+            isencrypted="no"
+            ;;
+            255)
+            isencrypted="yes"
+            ;;
+            *)
+            echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
+            ;;
+        esac
+        if [ "${isencrypted}" = "yes" ]; then
+          # Uses the extractor to untar PAT file
+          LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_FILE}" "${UNTAR_PAT_PATH}"
+        else
+          # Untar PAT file
+          tar -xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+        fi
+        # Cleanup PAT Download
+        rm -f "${PAT_FILE}"
+        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+        --msgbox "DSM Extraction successful!" 0 0
+      elif [ -f "${DSM_FILE}" ]; then
+        tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+        dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
+          --msgbox "DSM Image Download successful!" 0 0
+      else
+        dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
+          --msgbox "ERROR: No DSM Image found!" 0 0
+      fi
+      # Copy DSM Files to Locations if DSM Files not found
+      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART1_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART1_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART2_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART2_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/zImage" "${ORI_ZIMAGE_FILE}"
+      cp -f "${UNTAR_PAT_PATH}/rd.gz" "${ORI_RDGZ_FILE}"
+      rm -rf "${UNTAR_PAT_PATH}"
+    fi
+    # Reset Bootcount if User rebuild DSM
+    if [[ -z "${BOOTCOUNT}" || ${BOOTCOUNT} -gt 0 ]]; then
+      writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
+    fi
+    (
+      livepatch
+      sleep 3
+    ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Build Loader" \
+      --progressbox "Doing the Magic..." 20 70
+    if [[ -f "${ORI_ZIMAGE_FILE}" && -f "${ORI_RDGZ_FILE}" && -f "${MOD_ZIMAGE_FILE}" && -f "${MOD_RDGZ_FILE}" ]]; then
+      # Build is done
+      writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      # Ask for Boot
+      dialog --clear --backtitle "$(backtitle)" \
+        --menu "Build done. Boot now?" 0 0 0 \
+        1 "Yes - Boot Arc Loader now" \
+        2 "No - I want to make changes" \
+      2>"${TMP_PATH}/resp"
+      resp="$(<"${TMP_PATH}/resp")"
+      [ -z "${resp}" ] && return 1
+      if [ ${resp} -eq 1 ]; then
+        boot && exit 0
+      elif [ ${resp} -eq 2 ]; then
+        dialog --clear --no-items --backtitle "$(backtitle)"
         return 1
       fi
-      # Extract Files
-      header=$(od -bcN2 ${PAT_FILE} | head -1 | awk '{print $3}')
-      case ${header} in
-          105)
-          echo "Uncompressed tar"
-          isencrypted="no"
-          ;;
-          213)
-          echo "Compressed tar"
-          isencrypted="no"
-          ;;
-          255)
-          echo "Encrypted"
-          isencrypted="yes"
-          ;;
-          *)
-          echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
-          ;;
-      esac
-      if [ "${isencrypted}" = "yes" ]; then
-        # Uses the extractor to untar PAT file
-        LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_FILE}" "${UNTAR_PAT_PATH}"
-      else
-        # Untar PAT file
-        tar -xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
-      fi
-      # Cleanup PAT Download
-      rm -f "${PAT_FILE}"
-      dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-      --msgbox "DSM Extraction successful!" 0 0
-    elif [ -f "${DSM_FILE}" ]; then
-      tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
-      dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-        --msgbox "DSM Image Download successful!" 0 0
     else
-      dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-        --msgbox "ERROR: No DSM Image found!" 0 0
-    fi
-    # Copy DSM Files to Locations if DSM Files not found
-    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART1_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART1_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART2_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART2_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/zImage" "${ORI_ZIMAGE_FILE}"
-    cp -f "${UNTAR_PAT_PATH}/rd.gz" "${ORI_RDGZ_FILE}"
-    rm -rf "${UNTAR_PAT_PATH}"
-  fi
-  # Reset Bootcount if User rebuild DSM
-  if [[ -z "${BOOTCOUNT}" || ${BOOTCOUNT} -gt 0 ]]; then
-    writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
-  fi
-  (
-    livepatch
-    sleep 3
-  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Build Loader" \
-    --progressbox "Doing the Magic..." 20 70
-  if [[ -f "${ORI_ZIMAGE_FILE}" && -f "${ORI_RDGZ_FILE}" && -f "${MOD_ZIMAGE_FILE}" && -f "${MOD_RDGZ_FILE}" ]]; then
-    # Build is done
-    writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    # Ask for Boot
-    dialog --clear --backtitle "$(backtitle)" \
-      --menu "Build done. Boot now?" 0 0 0 \
-      1 "Yes - Boot Arc Loader now" \
-      2 "No - I want to make changes" \
-    2>"${TMP_PATH}/resp"
-    resp="$(<"${TMP_PATH}/resp")"
-    [ -z "${resp}" ] && return 1
-    if [ ${resp} -eq 1 ]; then
-      boot && exit 0
-    elif [ ${resp} -eq 2 ]; then
-      dialog --clear --no-items --backtitle "$(backtitle)"
+      dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
+        --msgbox "Build failed!\nPlease check your Connection and Diskspace!" 0 0
       return 1
     fi
-  else
-    dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-      --msgbox "Build failed!\nPlease check your Connection and Diskspace!" 0 0
-    return 1
   fi
 }
 
 ###############################################################################
 # Building Loader Offline
-function makeoffline() {
+function offlinemake() {
   # Read Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
@@ -620,31 +622,27 @@ function makeoffline() {
   dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
   --msgbox "Upload your DSM .pat File to /tmp/upload.\nUse SSH/SFTP to connect to ${IP}.\nUser: root | Password: arc\nPress OK to continue!" 0 0
   # Grep PAT_FILE
-  PAT_UPLOAD="$(ls ${UPLOAD_PATH}/*.pat)"
-  PAT_FILE="${UPLOAD_PATH}/${PAT_UPLOAD}"
+  PAT_FILE=$(ls ${UPLOAD_PATH}/*.pat)
   if [ ! -f "${PAT_FILE}" ]; then
     dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
       --msgbox "No DSM Image found!\nExit." 0 0
     return 1
   else
     # Update PAT Data to 0 for Offline
-    PAT_URL="0"
-    PAT_HASH="0"
+    PAT_URL=""
+    PAT_HASH=""
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
     # Extract Files
     header=$(od -bcN2 ${PAT_FILE} | head -1 | awk '{print $3}')
     case ${header} in
         105)
-        echo "Uncompressed tar"
         isencrypted="no"
         ;;
         213)
-        echo "Compressed tar"
         isencrypted="no"
         ;;
         255)
-        echo "Encrypted"
         isencrypted="yes"
         ;;
         *)
@@ -2558,13 +2556,12 @@ while true; do
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
-  echo "* \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
+  echo "0 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
   echo "y \"Choose a keymap \" "                                                            >>"${TMP_PATH}/menu"
   if [ "${OFFLINE}" = "false" ]; then
     echo "z \"Update \" "                                                                   >>"${TMP_PATH}/menu"
   fi
   echo "9 \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
-  echo "0 \"\Z1Exit\Zn \" "                                                                 >>"${TMP_PATH}/menu"
 
   dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --colors \
     --title "Arc Menu" --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
@@ -2573,15 +2570,13 @@ while true; do
   case $(<"${TMP_PATH}/resp") in
     # Main Section
     1) arcMenu; NEXT="2" ;;
-    2) [ "${OFFLINE}" = "false" ] && make || makeoffline
-      NEXT="3" ;;
+    2) make; NEXT="3" ;;
     3) boot && exit 0 || sleep 3 ;;
     # Info Section
     a) sysinfo; NEXT="a" ;;
     # System Section
     b) addonMenu; NEXT="b" ;;
     d) modulesMenu; NEXT="d" ;;
-    !) fixSelection; NEXT="!" ;;
     # Arc Section
     4) [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
        ARCOPTS="${ARCOPTS}"
@@ -2670,14 +2665,14 @@ while true; do
     +) formatdisks; NEXT="+" ;;
     # Loader Settings
     x) backupMenu; NEXT="x" ;;
-    *) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
+    0) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
       OFFLINE="${OFFLINE}"
-      NEXT="*"
+      writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"
+      NEXT="0"
       ;;
     y) keymapMenu; NEXT="y" ;;
     z) updateMenu; NEXT="z" ;;
     9) credits; NEXT="9" ;;
-    0) break ;;
   esac
 done
 clear
