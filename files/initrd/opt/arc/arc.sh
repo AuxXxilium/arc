@@ -453,6 +453,21 @@ function make() {
       idx=$((${idx} + 1))
     done
     if [[ -z "${PAT_URL}" || -z "${PAT_HASH}" ]]; then
+      dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+        --infobox "Syno Connection failed,  try to get from Github..." 3 30
+      idx=0
+      while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
+        PAT_URL="$(curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER%%.*}.${PRODUCTVER##*.}/pat_url")"
+        PAT_HASH="$(curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER%%.*}.${PRODUCTVER##*.}/pat_hash")"
+        PAT_URL=${PAT_URL%%\?*}
+        if [[ -n "${PAT_URL}" && -n "${PAT_HASH}" ]]; then
+          break
+        fi
+        sleep 1
+        idx=$((${idx} + 1))
+      done
+    fi
+    if [[ -z "${PAT_URL}" || -z "${PAT_HASH}" ]]; then
       MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
       PAT_URL=""
       PAT_HASH=""
