@@ -2497,7 +2497,6 @@ while true; do
       fi
       echo "p \"Arc Settings \" "                                                           >>"${TMP_PATH}/menu"
       echo ". \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu"
-      echo "u \"Use IPv6: \Z4${ARCIPV6}\Zn \" "                                             >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
       echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
@@ -2540,6 +2539,7 @@ while true; do
       echo "/ \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
       echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
+      echo "c \"Use IPv6: \Z4${ARCIPV6}\Zn \" "                                             >>"${TMP_PATH}/menu"
     fi
   fi
   if [ "${DEVOPTS}" = "true" ]; then
@@ -2556,12 +2556,12 @@ while true; do
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
-  echo "0 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
+  echo "9 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
   echo "y \"Choose a keymap \" "                                                            >>"${TMP_PATH}/menu"
   if [ "${OFFLINE}" = "false" ]; then
     echo "z \"Update \" "                                                                   >>"${TMP_PATH}/menu"
   fi
-  echo "9 \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
+  echo "0 \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
 
   dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --colors \
     --title "Arc Menu" --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
@@ -2588,8 +2588,10 @@ while true; do
     p) ONLYPATCH="true" && arcsettings; NEXT="p" ;;
     h) usbMenu; NEXT="h" ;;
     .) staticIPMenu; NEXT="." ;;
-    c) [ "${ARCIPV6}" = "true" ] && KERNELLOAD='false' || KERNELLOAD='true'
+    c) [ "${ARCIPV6}" = "true" ] && ARCIPV6='false' || ARCIPV6='true'
       writeConfigKey "arc.ipv6" "${ARCIPV6}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       NEXT="c"
       ;;
     # Advanced Section
@@ -2668,11 +2670,13 @@ while true; do
     0) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
       OFFLINE="${OFFLINE}"
       writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       NEXT="0"
       ;;
     y) keymapMenu; NEXT="y" ;;
     z) updateMenu; NEXT="z" ;;
-    9) credits; NEXT="9" ;;
+    0) credits; NEXT="0" ;;
   esac
 done
 clear
