@@ -11,7 +11,7 @@ assignees: ''
 A clear and concise description of what the bug is.
 
 **Screenshots**
-If applicable, add screenshots from Arc - Sysinfo menu.
+Screenshots from Arc - Sysinfo menu. <- IMPORTANT
 
 **Additional context**
 Add any other context about the problem here.
