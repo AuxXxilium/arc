@@ -116,7 +116,7 @@ echo
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
 # Decide if boot automatically
-if grep -q "IWANTTOCHANGETHECONFIG" /proc/cmdline; then
+if grep -q "force_arc" /proc/cmdline; then
   echo -e "\033[1;34mUser requested edit settings.\033[0m"
 elif [ "${BUILDDONE}" = "true" ]; then
   echo -e "\033[1;34mLoader is configured!\033[0m"
