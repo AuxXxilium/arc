@@ -2667,12 +2667,12 @@ while true; do
     +) formatdisks; NEXT="+" ;;
     # Loader Settings
     x) backupMenu; NEXT="x" ;;
-    0) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
+    9) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
       OFFLINE="${OFFLINE}"
       writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="0"
+      NEXT="9"
       ;;
     y) keymapMenu; NEXT="y" ;;
     z) updateMenu; NEXT="z" ;;
