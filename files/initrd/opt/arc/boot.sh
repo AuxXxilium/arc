@@ -132,7 +132,7 @@ if [ "${MACSYS}" = "hardware" ]; then
 elif [ "${MACSYS}" = "custom" ]; then
   [[ -z "${MAC1}" && -n "${MAC2}" ]] && MAC1=${MAC2} && MAC2="" # Sanity check
   [ -n "${MAC1}" ] && CMDLINE['netif_num']="1" && CMDLINE['mac1']="${MAC1}" && CMDLINE['skip_vender_mac_interfaces']="1,2,3,4,5,6,7"
-  [ -n "${MAC2}" ] && CMDLINE['netif_num']="2" && CMDLINE['mac2']="${MAC2}" && && CMDLINE['skip_vender_mac_interfaces']="2,3,4,5,6,7"
+  [ -n "${MAC2}" ] && CMDLINE['netif_num']="2" && CMDLINE['mac2']="${MAC2}" && CMDLINE['skip_vender_mac_interfaces']="2,3,4,5,6,7"
 fi
 
 # Read cmdline
