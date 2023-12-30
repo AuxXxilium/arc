@@ -116,7 +116,7 @@ function arcMenu() {
   RESTRICT=1
   FLGBETA=0
   dialog --backtitle "$(backtitle)" --title "Model" --aspect 18 \
-    --infobox "Reading models" 3 20
+    --infobox "Reading Models" 3 20
     echo -n "" >"${TMP_PATH}/modellist"
     while read -r M; do
       Y="$(readModelKey "${M}" "disks")"
@@ -1936,6 +1936,8 @@ function sysinfo() {
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
   MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
+  OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+  ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
   MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
@@ -1999,7 +2001,8 @@ function sysinfo() {
   TEXT+="\n   Directboot: \Zb${DIRECTBOOT}\Zn"
   TEXT+="\n   Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n   Config Version: \Zb${CONFIGVER}\Zn"
-  TEXT+="\n   MacSys: \Zb${MACSYS}\Zn"
+  TEXT+="\n   MacSys | IPv6: \Zb${MACSYS} | ${ARCIPV6}\Zn"
+  TEXT+="\n   Offline Mode: \Zb${Offline}\Zn"
   TEXT+="\n   Bootcount: \Zb${BOOTCOUNT}\Zn"
   TEXT+="\n\Z4>> Addons | Modules\Zn"
   TEXT+="\n   Addons selected: \Zb${ADDONSINFO}\Zn"
@@ -2098,7 +2101,244 @@ function sysinfo() {
   fi
   TEXT+="\n  Drives total: \Zb${NUMPORTS}\Zn"
   dialog --backtitle "$(backtitle)" --colors --title "Sysinfo" \
-    --msgbox "${TEXT}" 0 0
+    --extra-button --extra-label "Full Diag" --msgbox "${TEXT}" 0 0
+  RET=$?
+  case ${RET} in
+  0) # ok-button
+    return 0
+    ;;
+  3) # extra-button
+    fullsysinfo
+    ;;
+  255) # ESC
+    return 0
+    ;;
+  esac
+}
+
+function fullsysinfo() {
+  # Checks for Systeminfo Menu
+  CPUINFO="$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')"
+  # Check if machine has EFI
+  [ -d /sys/firmware/efi ] && BOOTSYS="EFI" || BOOTSYS="Legacy"
+  VENDOR="$(dmidecode -s system-product-name)"
+  BOARD="$(dmidecode -s baseboard-product-name)"
+  ETHX=$(ls /sys/class/net/ | grep -v lo || true)
+  ETH="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  if [ "${CONFDONE}" = "true" ]; then
+    MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+    PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+    PLATFORM="$(readModelKey "${MODEL}" "platform")"
+    DT="$(readModelKey "${MODEL}" "dt")"
+    KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+    ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+    ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
+    REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
+    if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
+      PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
+      DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
+    elif [ "${REMAP}" = "remap" ]; then
+      PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
+    fi
+  fi
+  DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
+  BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
+  USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
+  LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
+  KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
+  MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
+  OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+  ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
+  CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
+  HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
+  MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
+  MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")"
+  ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")"
+  LKMVERSION="$(cat "${LKM_PATH}/VERSION")"
+  CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
+  PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")"
+  TEXT=""
+  # Print System Informations
+  TEXT+="\nSystem: ${MACHINE} | ${BOOTSYS}"
+  TEXT+="\nVendor | Board: ${VENDOR} | ${BOARD}"
+  TEXT+="\nCPU: ${CPUINFO}"
+  TEXT+="\nMemory: $((${RAMTOTAL} / 1024))GB"
+  TEXT+="\n"
+  TEXT+="\nNetwork: ${ETH} NIC"
+  for N in ${ETHX}; do
+    DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    MAC="$(cat /sys/class/net/${N}/address | sed 's/://g')"
+    while true; do
+      if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
+        TEXT+="\n${DRIVER}: IP: NOT CONNECTED | MAC: ${MAC}"
+        break
+      fi
+      NETIP="$(getIP)"
+      if [ "${STATICIP}" = "true" ]; then
+        ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
+        if [[ "${N}" = "eth0" && -n "${ARCIP}" ]]; then
+          NETIP="${ARCIP}"
+          MSG="STATIC"
+        else
+          MSG="DHCP"
+        fi
+      else
+        MSG="DHCP"
+      fi
+      if [ -n "${NETIP}" ]; then
+        SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
+        TEXT+="\n${DRIVER} (${SPEED} | ${MSG}) IP: ${NETIP} | Mac: ${MAC}"
+        break
+      fi
+      COUNT=$((${COUNT} + 1))
+      if [ ${COUNT} -eq 3 ]; then
+        TEXT+="\n${DRIVER}: IP: TIMEOUT | MAC: ${MAC}"
+        break
+      fi
+      sleep 1
+    done
+  done
+  TEXT+="\n"
+  TEXT+="\nNIC Controller:\n"
+  TEXT+="$(lspci -d ::200 -nnk)"
+  # Print Config Informations
+  TEXT+="\n"
+  TEXT+="\nArc: ${ARC_VERSION}"
+  TEXT+="\nSubversion Loader: Addons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | Patches ${PATCHESVERSION}"
+  TEXT+="\nSubversion DSM: Modules ${MODULESVERSION} | LKM ${LKMVERSION}"
+  TEXT+="\n"
+  TEXT+="\nDSM ${PRODUCTVER}: ${MODEL}"
+  TEXT+="\nKernel | LKM: ${KVER} | ${LKM}"
+  TEXT+="\nPlatform | DeviceTree: ${PLATFORM} | ${DT}"
+  TEXT+="\n"
+  TEXT+="\nLoader"
+  TEXT+="\nArc Settings | Kernelload: ${ARCPATCH} | ${KERNELLOAD}"
+  TEXT+="\nDirectboot: ${DIRECTBOOT}"
+  TEXT+="\nConfig | Build: ${CONFDONE} | ${BUILDDONE}"
+  TEXT+="\nConfig Version: ${CONFIGVER}"
+  TEXT+="\nMacSys | IPv6: ${MACSYS} | ${ARCIPV6}"
+  TEXT+="\nOffline Mode: ${OFFLINE}"
+  TEXT+="\nBootcount: ${BOOTCOUNT}"
+  TEXT+="\n"
+  TEXT+="\nAddons selected:"
+  TEXT+="\n${ADDONSINFO}"
+  TEXT+="\n"
+  TEXT+="\nModules loaded:"
+  TEXT+="\n${MODULESINFO}"
+  TEXT+="\n"
+  TEXT+="\nSettings"
+  TEXT+="\nStatic IP: ${STATICIP}"
+  TEXT+="\nSort Drives: ${HDDSORT}"
+  if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
+    TEXT+="\nSataPortMap | DiskIdxMap: ${PORTMAP} | ${DISKMAP}"
+  elif [ "${REMAP}" = "remap" ]; then
+    TEXT+="\nSataRemap: ${PORTMAP}"
+  elif [ "${REMAP}" = "user" ]; then
+    TEXT+="\nPortMap: "User""
+  fi
+  if [ "${PLATFORM}" = "broadwellnk" ]; then
+    TEXT+="\nUSB Mount: ${USBMOUNT}"
+  fi
+  TEXT+="\n"
+  # Check for Controller // 104=RAID // 106=SATA // 107=SAS
+  TEXT+="\nStorage"
+  # Get Information for Sata Controller
+  NUMPORTS=0
+  if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
+    TEXT+="\nSATA Controller:\n"
+    for PCI in $(lspci -d ::106 | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      TEXT+="${NAME}\nPorts in Use: "
+      PORTS=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      for P in ${PORTS}; do
+        if lsscsi -b | grep -v - | grep -q "\[${P}:"; then
+          DUMMY="$([ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ] && echo 1 || echo 2)"
+          if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ]; then
+            TEXT+=""
+          else
+            TEXT+="$(printf "%02d" ${P}) "
+            NUMPORTS=$((${NUMPORTS} + 1))
+          fi
+        fi
+      done
+    done
+  fi
+  if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
+    TEXT+="\nSAS Controller:\n"
+    for PCI in $(lspci -d ::107 | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+      TEXT+="${NAME}\nDrives: ${PORTNUM}\n"
+      NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+    done
+  fi
+  if [ $(lspci -d ::104 | wc -l) -gt 0 ]; then
+    TEXT+="\n  SCSI Controller:\n"
+    for PCI in $(lspci -d ::104 | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+      TEXT+="${NAME}\nDrives: ${PORTNUM}\n"
+      NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+    done
+  fi
+  if [[ -d "/sys/class/scsi_host" && $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]]; then
+    TEXT+="\n USB Controller:\n"
+    for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+      [ ${PORTNUM} -eq 0 ] && continue
+      TEXT+="${NAME}\nDrives: ${PORTNUM}\n"
+      NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+    done
+  fi
+  if [[ -d "/sys/class/mmc_host" && $(ls -l /sys/class/mmc_host | grep mmc_host | wc -l) -gt 0 ]]; then
+    TEXT+="\n MMC Controller:\n"
+    for PCI in $(lspci -d ::805 | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      PORTNUM=$(ls -l /sys/class/mmc_host | grep "${PCI}" | wc -l)
+      PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l)
+      [ ${PORTNUM} -eq 0 ] && continue
+      TEXT+="${NAME}\nDrives: ${PORTNUM}\n"
+      NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+    done
+  fi
+  if [ $(lspci -d ::108 | wc -l) -gt 0 ]; then
+    TEXT+="\n NVMe Controller:\n"
+    for PCI in $(lspci -d ::108 | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
+      PORTNUM=$(lsscsi -b | grep -v - | grep "\[N:${PORT}:" | wc -l)
+      TEXT+="${NAME}\nDrives: ${PORTNUM}\n"
+      NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+    done
+  fi
+  TEXT+="\nDrives total: ${NUMPORTS}"
+  [ -f "${TMP_PATH}/diag" ] && rm -f "${TMP_PATH}/diag"
+  echo -e "${TEXT}" >"${TMP_PATH}/diag"
+  dialog --backtitle "$(backtitle)" --colors --title "Full Sysinfo" \
+    --extra-button --extra-label "Upload" --no-cancel --textbox "${TMP_PATH}/diag" 0 0
+  RET=$?
+  case ${RET} in
+  0) # ok-button
+    return 0
+    ;;
+  3) # extra-button
+    if [ -f "${TMP_PATH}/diag" ]; then
+      GENHASH="$(cat "${TMP_PATH}/diag" | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)"
+      dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Your Code: ${GENHASH}" 0 0
+    else
+      dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "No Diag File found!" 0 0
+    fi
+    ;;
+  255) # ESC
+    return 0
+    ;;
+  esac
 }
 
 ###############################################################################
