@@ -7,11 +7,11 @@ assignees: ''
 
 ---
 
-**Describe the bug**
+**Describe the Bug**
 A clear and concise description of what the bug is.
 
 **Screenshots**
-Screenshots from Arc - Sysinfo menu. <- IMPORTANT
+Screenshot the Systeminfo (Arc - Sysinfo) or use new "Full Sysinfo - Upload" Function provide the Code!!! <- IMPORTANT
 
-**Additional context**
-Add any other context about the problem here.
+**Hardware**
+Add your Hardware Informations here. CPU / Board / Networkcontroller / Storagecontroller / ...
