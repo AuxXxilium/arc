@@ -85,13 +85,7 @@ function backtitle() {
     BACKTITLE+=" (no IP)"
   fi
   BACKTITLE+=" |"
-  if [ "${ARCPATCH}" = "arc" ]; then
-    BACKTITLE+=" Patch: A"
-  elif [ "${ARCPATCH}" = "random" ]; then
-    BACKTITLE+=" Patch: R"
-  elif [ "${ARCPATCH}" = "user" ]; then
-    BACKTITLE+=" Patch: U"
-  fi
+  BACKTITLE+=" Settings: ${ARCPATCH}"
   BACKTITLE+=" |"
   if [ "${CONFDONE}" = "true" ]; then
     BACKTITLE+=" Config: Y"
