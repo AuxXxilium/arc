@@ -2804,7 +2804,7 @@ while true; do
   echo "0 \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
 
   dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --colors \
-    --title "Arc Menu" --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
+    --cancel-label "Exit" --title "Arc Menu" --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && break
   case $(<"${TMP_PATH}/resp") in
