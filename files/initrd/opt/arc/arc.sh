@@ -1271,8 +1271,8 @@ function usbMenu() {
 # Shows backup menu to user
 function backupMenu() {
   NEXT="1"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  if [ "${BUILDDONE}" = "true" ]; then
+  OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+  if [ "${OFFLINE}" = "false" ]; then
     while true; do
       dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
         1 "Backup Config with Code" \
@@ -1394,52 +1394,11 @@ function backupMenu() {
   else
     while true; do
       dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
-        1 "Restore Config with Code" \
-        2 "Recover from DSM" \
+        1 "Recover from DSM" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
       case "$(<"${TMP_PATH}/resp")" in
         1)
-          while true; do
-            dialog --backtitle "$(backtitle)" --title "Restore with Code" \
-              --inputbox "Type your Code here!" 0 0 \
-              2>"${TMP_PATH}/resp"
-            RET=$?
-            [ ${RET} -ne 0 ] && break 2
-            GENHASH="$(<"${TMP_PATH}/resp")"
-            [ ${#GENHASH} -eq 9 ] && break
-            dialog --backtitle "$(backtitle)" --title "Restore with Code" --msgbox "Invalid Code" 0 0
-          done
-          rm -f "${BACKUPDIR}/user-config.yml"
-          curl -k https://dpaste.com/${GENHASH}.txt >"${BACKUPDIR}/user-config.yml"
-          if [ -f "${BACKUPDIR}/user-config.yml" ]; then
-            CONFIG_VERSION="$(readConfigKey "arc.version" "${BACKUPDIR}/user-config.yml")"
-            if [ "${ARC_VERSION}" = "${CONFIG_VERSION}" ]; then
-              # Copy config back to location
-              cp -f "${BACKUPDIR}/user-config.yml" "${USER_CONFIG_FILE}"
-              dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
-                --msgbox "Restore complete!" 0 0
-            else
-              cp -f "${BACKUPDIR}/user-config.yml" "${USER_CONFIG_FILE}"
-              dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
-                --msgbox "Version mismatch!\nIt is possible that your Config will not work!" 0 0
-            fi
-          else
-            dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
-              --msgbox "No Config Backup found" 0 0
-            return 1
-          fi
-          MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-          ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-          ARCRECOVERY="true"
-          ONLYVERSION="true"
-          CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-          arcbuild
-          ;;
-        2)
           dialog --backtitle "$(backtitle)" --title "Try to recover DSM" --aspect 18 \
             --infobox "Trying to recover a DSM installed system" 0 0
           if findAndMountDSMRoot; then
