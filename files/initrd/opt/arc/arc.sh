@@ -1263,6 +1263,8 @@ function usbMenu() {
         ;;
     esac
   else
+    dialog --backtitle "$(backtitle)" --title "Mount USB as Internal" \
+      --aspect 18 --msgbox "Please configure your System first." 0 0
     return 1
   fi
 }
