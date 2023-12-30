@@ -161,9 +161,9 @@ function arcMenu() {
             fi
           done
         fi
-        [ "${DT}" = "true" ] && DT="DT" || DT=""
+        [ "${DT}" = "true" ] && DTO="DT" || DTO=""
         [ "${BETA}" = "true" ] && BETA="Beta" || BETA=""
-        [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"$(printf "\Zb%-7s\Zn \Zb%-6s\Zn \Zb%-13s\Zn \Zb%-3s\Zn \Zb%-7s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DT}" "${ARCAV}" "${BETA}")\" ">>"${TMP_PATH}/menu"
+        [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"$(printf "\Zb%-7s\Zn \Zb%-6s\Zn \Zb%-13s\Zn \Zb%-3s\Zn \Zb%-7s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DTO}" "${ARCAV}" "${BETA}")\" ">>"${TMP_PATH}/menu"
       done < <(cat "${TMP_PATH}/modellist" | sort -n -k 2)
     [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models\Zn\"" >>"${TMP_PATH}/menu"
     [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >>"${TMP_PATH}/menu"
@@ -185,6 +185,7 @@ function arcMenu() {
   # read model config for dt and aes
   if [ "${MODEL}" != "${resp}" ]; then
     MODEL="${resp}"
+    DT="$(readModelKey "${MODEL}" "dt")"
     # Check for AES
     if ! grep -q "^flags.*aes.*" /proc/cpuinfo; then
       WARNON=4
@@ -199,6 +200,11 @@ function arcMenu() {
     writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
+    if [ "${DT}" = "true" ]; then
+      deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+      deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+    fi
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
@@ -1242,7 +1248,6 @@ function usbMenu() {
     [ $? -ne 0 ] && return 1
     case "$(<"${TMP_PATH}/resp")" in
       1)
-        MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
         writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.usbportcfg" "0" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
@@ -1253,7 +1258,6 @@ function usbMenu() {
           --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
         ;;
       2)
-        MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
         deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
         deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
         deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
@@ -2420,7 +2424,9 @@ function resetLoader() {
   initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
-  initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+  deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
