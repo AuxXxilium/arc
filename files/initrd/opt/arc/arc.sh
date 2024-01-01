@@ -1957,7 +1957,7 @@ function sysinfo() {
   TEXT+="\n   Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n   Config Version: \Zb${CONFIGVER}\Zn"
   TEXT+="\n   MacSys | IPv6: \Zb${MACSYS} | ${ARCIPV6}\Zn"
-  TEXT+="\n   Offline Mode: \Zb${Offline}\Zn"
+  TEXT+="\n   Offline Mode: \Zb${OFFLINE}\Zn"
   TEXT+="\n   Bootcount: \Zb${BOOTCOUNT}\Zn"
   TEXT+="\n\Z4>> Addons | Modules\Zn"
   TEXT+="\n   Addons selected: \Zb${ADDONSINFO}\Zn"
