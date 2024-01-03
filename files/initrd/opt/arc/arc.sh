@@ -1547,8 +1547,8 @@ function updateMenu() {
         unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update" >/dev/null 2>&1
         dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
           --infobox "Updating Loader Image" 0 0
-        cp -f "${TMP_PATH}/update/bzImage" "${PART3_PATH}/bzImage-arc"
-        cp -f "${TMP_PATH}/update/rootfs.cpio.xz" "${PART3_PATH}/initrd-arc"
+        cp -f "${TMP_PATH}/update/bzImage-arc" "${PART3_PATH}/bzImage-arc"
+        cp -f "${TMP_PATH}/update/initrc-arc" "${PART3_PATH}/initrd-arc"
         cp -f "${TMP_PATH}/update/ARC-VERSION" "${PART1_PATH}/ARC-VERSION"
         cp -f "${TMP_PATH}/update/grub.cfg" "${PART1_PATH}/boot/grub/grub.cfg"
         rm -rf "${TMP_PATH}/update" 
