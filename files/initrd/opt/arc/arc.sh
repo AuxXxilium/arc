@@ -436,6 +436,15 @@ function make() {
         return 1
       fi
     done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+
+    # Check for eMMC Boot
+    if [[ "${LOADER_DISK}" = /dev/mmcblk* ]]; then
+      echo "Boot Device is eMMC."
+    else
+      deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
+      deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
+    fi
+
     # Update PAT Data
     PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
