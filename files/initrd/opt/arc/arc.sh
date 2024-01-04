@@ -85,7 +85,7 @@ function backtitle() {
     BACKTITLE+=" (no IP)"
   fi
   BACKTITLE+=" |"
-  BACKTITLE+=" Settings: ${ARCPATCH}"
+  BACKTITLE+=" Patch: ${ARCPATCH}"
   BACKTITLE+=" |"
   if [ "${CONFDONE}" = "true" ]; then
     BACKTITLE+=" Config: Y"
@@ -1913,7 +1913,7 @@ function sysinfo() {
   TEXT+="\n   Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
   TEXT+="\n   Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
   TEXT+="\n\Z4>> Loader\Zn"
-  TEXT+="\n   Arc Settings | Kernelload: \Zb${ARCPATCH} | ${KERNELLOAD}\Zn"
+  TEXT+="\n   Arc Patch | Kernelload: \Zb${ARCPATCH} | ${KERNELLOAD}\Zn"
   TEXT+="\n   Directboot: \Zb${DIRECTBOOT}\Zn"
   TEXT+="\n   Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n   Config Version: \Zb${CONFIGVER}\Zn"
@@ -2130,7 +2130,7 @@ function fullsysinfo() {
   TEXT+="\nPlatform | DeviceTree: ${PLATFORM} | ${DT}"
   TEXT+="\n"
   TEXT+="\nLoader"
-  TEXT+="\nArc Settings | Kernelload: ${ARCPATCH} | ${KERNELLOAD}"
+  TEXT+="\nArc Patch | Kernelload: ${ARCPATCH} | ${KERNELLOAD}"
   TEXT+="\nDirectboot: ${DIRECTBOOT}"
   TEXT+="\nConfig | Build: ${CONFDONE} | ${BUILDDONE}"
   TEXT+="\nConfig Version: ${CONFIGVER}"
