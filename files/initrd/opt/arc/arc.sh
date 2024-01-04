@@ -454,7 +454,7 @@ function make() {
         if [[ -n "${PAT_URL}" && -n "${PAT_HASH}" ]]; then
           break
         fi
-        sleep 1
+        sleep 3
         idx=$((${idx} + 1))
       done
       if [[ -z "${PAT_URL}" || -z "${PAT_HASH}" ]]; then
@@ -468,7 +468,7 @@ function make() {
           if [[ -n "${PAT_URL}" && -n "${PAT_HASH}" ]]; then
             break
           fi
-          sleep 1
+          sleep 3
           idx=$((${idx} + 1))
         done
       fi
