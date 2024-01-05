@@ -26,6 +26,26 @@ on:
         description: "buildroot version"
         default: "2023.02.x"
         type: string
+      addons_version:
+        description: "addons version"
+        default: "24.x.x"
+        type: string
+      configs_version:
+        description: "configs version"
+        default: "24.x.x"
+        type: string
+      modules_version:
+        description: "modules version"
+        default: "24.x.x"
+        type: string
+      lkm_version:
+        description: "lkm version"
+        default: "24.x.x"
+        type: string
+      patches_version:
+        description: "patches version"
+        default: "24.x.x"
+        type: string
 
 jobs:
   build:
@@ -97,11 +117,21 @@ jobs:
           . scripts/func.sh
 
           getExtractor "files/p3/extractor"
+          LKMTAG="${{ inputs.lkm_version }}"
           getLKMs "files/p3/lkms" ${{ inputs.prerelease }}
+          echo "LKMTAG=${TAG}" >> $GITHUB_ENV
+          ADDONSTAG="${{ inputs.addons_version }}"
           getAddons "files/p3/addons" ${{ inputs.prerelease }}
+          echo "ADDONSTAG=${TAG}" >> $GITHUB_ENV
+          MODULESTAG="${{ inputs.modules_version }}"
           getModules "files/p3/modules" ${{ inputs.prerelease }}
+          echo "MODULESTAG=${TAG}" >> $GITHUB_ENV
+          CONFIGSTAG="${{ inputs.configs_version }}"
           getConfigs "files/p3/configs" ${{ inputs.prerelease }}
+          echo "CONFIGSTAG=${TAG}" >> $GITHUB_ENV
+          PATCHESTAG="${{ inputs.patches_version }}"
           getPatches "files/p3/patches" ${{ inputs.prerelease }}
+          echo "PATCHESTAG=${TAG}" >> $GITHUB_ENV
 
           echo "OK"
 
@@ -191,6 +221,12 @@ jobs:
           tag_name: ${{ env.VERSION }}
           prerelease: ${{ inputs.prerelease }}
           body: |
+            Buildroot: ${{ inputs.br_version }}
+            Addons: ${{ env.ADDONSTAG }}
+            Configs: ${{ env.CONFIGSTAG }}
+            Modules: ${{ env.MODULESTAG }}
+            Patches: ${{ env.PATCHESTAG }}
+            LKM: ${{ env.LKMTAG }}
             ${{ steps.Changelog.outputs.changelog }}
           files: |
             arc-${{ env.VERSION }}.img.zip

@@ -58,7 +58,11 @@ function getLKMs() {
   local DEST_PATH="${1:-lkms}"
   local CACHE_FILE="/tmp/rp-lkms.zip"
   rm -f "${CACHE_FILE}"
-  TAG="$(curl -s "https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest" | grep -oP '"tag_name": "\K(.*)(?=")')"
+  if [ -n "${LKMTAG}" ]; then
+    TAG="${LKMTAG}"
+  else
+    TAG="$(curl -s "https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest" | grep -oP '"tag_name": "\K(.*)(?=")')"
+  fi
   STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${CACHE_FILE}")
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
@@ -77,7 +81,11 @@ function getAddons() {
   local DEST_PATH="${1:-addons}"
   local CACHE_DIR="/tmp/addons"
   local CACHE_FILE="/tmp/addons.zip"
-  TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  if [ -n "${ADDONSTAG}" ]; then
+    TAG="${ADDONSTAG}"
+  else
+    TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  fi
   STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${CACHE_FILE}")
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
@@ -105,7 +113,11 @@ function getModules() {
   local DEST_PATH="${1:-modules}"
   local CACHE_FILE="/tmp/modules.zip"
   rm -f "${CACHE_FILE}"
-  TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  if [ -n "${MODULESTAG}" ]; then
+    TAG="${MODULESTAG}"
+  else
+    TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  fi
   STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${CACHE_FILE}")
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
@@ -124,7 +136,11 @@ function getConfigs() {
   local DEST_PATH="${1:-configs}"
   local CACHE_FILE="/tmp/configs.zip"
   rm -f "${CACHE_FILE}"
-  TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  if [ -n "${CONFIGSTAG}" ]; then
+    TAG="${CONFIGSTAG}"
+  else
+    TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  fi
   STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${CACHE_FILE}")
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
@@ -143,7 +159,11 @@ function getPatches() {
   local DEST_PATH="${1:-patches}"
   local CACHE_FILE="/tmp/patches.zip"
   rm -f "${CACHE_FILE}"
-  TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  if [ -n "${PATCHESTAG}" ]; then
+    TAG="${PATCHESTAG}"
+  else
+    TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  fi
   STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${CACHE_FILE}")
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
