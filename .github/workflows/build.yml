@@ -28,23 +28,23 @@ on:
         type: string
       addons_version:
         description: "addons version"
-        default: "24.x.x"
+        default: ""
         type: string
       configs_version:
         description: "configs version"
-        default: "24.x.x"
+        default: ""
         type: string
       modules_version:
         description: "modules version"
-        default: "24.x.x"
+        default: ""
         type: string
       lkm_version:
         description: "lkm version"
-        default: "24.x.x"
+        default: ""
         type: string
       patches_version:
         description: "patches version"
-        default: "24.x.x"
+        default: ""
         type: string
 
 jobs:
