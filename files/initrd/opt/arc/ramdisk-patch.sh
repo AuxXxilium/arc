@@ -36,7 +36,7 @@ HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 . "${RAMDISK_PATH}/etc/VERSION"
 
 # Read DSM Informations
-PRODUCTVERDSM=${majorversion}.${minorversion}
+PRODUCTVERDSM="${majorversion}.${minorversion}"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
 if [ "${PLATFORM}" = "epyc7002" ]; then
@@ -189,7 +189,7 @@ if [ "${IPV6}" = "false" ]; then
   for N in $(seq 0 7); do
     echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=no" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
   done
-elif [ "${IPV6}" = "false" ]; then
+elif [ "${IPV6}" = "true" ]; then
   for N in $(seq 0 7); do
     echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
   done
