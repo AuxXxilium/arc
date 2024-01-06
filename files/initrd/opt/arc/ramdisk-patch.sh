@@ -39,9 +39,6 @@ HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 PRODUCTVERDSM="${majorversion}.${minorversion}"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-if [ "${PLATFORM}" = "epyc7002" ]; then
-  KVER="${PRODUCTVER}-${KVER}"
-fi
 RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compressed")"
 # Read new PAT Info from Config
 PAT_URL="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
@@ -58,6 +55,11 @@ fi
 
 # Sanity check
 [[ -z "${PLATFORM}" || -z "${KVER}" ]] && (die "ERROR: Configuration for Model ${MODEL} and Version ${PRODUCTVER} not found." | tee -a "${LOG_FILE}")
+
+# Modify KVER for Epyc7002
+if [ "${PLATFORM}" = "epyc7002" ]; then
+  KVER="${PRODUCTVER}-${KVER}"
+fi
 
 declare -A SYNOINFO
 declare -A ADDONS
