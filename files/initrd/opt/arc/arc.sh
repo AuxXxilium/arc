@@ -391,7 +391,7 @@ function arcsettings() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   # Ask for Build
   dialog --clear --backtitle "$(backtitle)" \
-    --menu "Build now?" 0 0 0 \
+    --menu "Config done -> Build now?" 0 0 0 \
     1 "Yes - Build Arc Loader now" \
     2 "No - I want to make changes" \
   2>"${TMP_PATH}/resp"
@@ -577,7 +577,7 @@ function make() {
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       # Ask for Boot
       dialog --clear --backtitle "$(backtitle)" \
-        --menu "Build done. Boot now?" 0 0 0 \
+        --menu "Build done -> Boot now?" 0 0 0 \
         1 "Yes - Boot Arc Loader now" \
         2 "No - I want to make changes" \
       2>"${TMP_PATH}/resp"
