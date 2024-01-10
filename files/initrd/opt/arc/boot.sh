@@ -181,8 +181,8 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     IP=""
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     COUNT=0
-    sleep 2
     while true; do
+      sleep 3
       if [[ "${STATICIP}" = "true" && "${N}" = "eth0" && -n "${ARCIP}" && ${BOOTCOUNT} -gt 0 ]]; then
         ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
         NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
@@ -200,8 +200,8 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         [ ! -n "${IPCON}" ] && IPCON="${IP}"
         break
       fi
-      COUNT=$((${COUNT} + 1))
-      if [ ${COUNT} -eq ${BOOTIPWAIT} ]; then
+      COUNT=$((${COUNT} + 3))
+      if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
         echo -e "\r${DRIVER}: TIMEOUT."
         break
       fi
@@ -209,7 +209,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         echo -e "\r${DRIVER}: NOT CONNECTED"
         break
       fi
-      sleep 1
     done
   done
   BOOTWAIT="$(readConfigKey "arc.bootwait" "${USER_CONFIG_FILE}")"

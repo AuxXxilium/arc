@@ -824,7 +824,7 @@ function modulesMenu() {
         ;;
       2)
         dialog --backtitle "$(backtitle)" --colors --title "Modules" \
-          --infobox "Selecting loaded modules" 0 0
+          --infobox "Selecting loaded Modules" 0 0
         KOLIST=""
         for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
           KOLIST+="$(getdepends "${PLATFORM}" "${KVER}" "${I}") ${I} "
@@ -842,7 +842,7 @@ function modulesMenu() {
         ;;
       3)
         dialog --backtitle "$(backtitle)" --title "Modules" \
-           --infobox "Selecting all modules" 0 0
+           --infobox "Selecting all Modules" 0 0
         unset USERMODULES
         declare -A USERMODULES
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
@@ -855,7 +855,7 @@ function modulesMenu() {
         ;;
       4)
         dialog --backtitle "$(backtitle)" --title "Modules" \
-           --infobox "Deselecting all modules" 0 0
+           --infobox "Deselecting all Modules" 0 0
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         unset USERMODULES
         declare -A USERMODULES
@@ -869,7 +869,7 @@ function modulesMenu() {
           echo "${ID} ${DESC} ${ACT}" >>"${TMP_PATH}/opts"
         done < <(getAllModules "${PLATFORM}" "${KVER}")
         dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
-          --checklist "Select modules to include" 0 0 0 \
+          --checklist "Select Modules to include" 0 0 0 \
           --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
         resp="$(<"${TMP_PATH}/resp")"

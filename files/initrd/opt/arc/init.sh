@@ -136,9 +136,8 @@ for N in ${ETHX}; do
   IP=""
   DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
   COUNT=0
-  sleep 2
   while true; do
-    IP=""
+    sleep 3
     if [[ "${STATICIP}" = "true" && "${N}" = "eth0" && -n "${ARCIP}" && ${BOOTCOUNT} -gt 0 ]]; then
       ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
       NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
@@ -155,8 +154,8 @@ for N in ${ETHX}; do
       echo -e "\r${DRIVER} (${SPEED} | ${MSG}): Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
       break
     fi
-    COUNT=$((${COUNT} + 1))
-    if [ ${COUNT} -eq ${BOOTIPWAIT} ]; then
+    COUNT=$((${COUNT} + 3))
+    if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
       echo -e "\r${DRIVER}: TIMEOUT"
       break
     fi
@@ -164,7 +163,6 @@ for N in ${ETHX}; do
       echo -e "\r${DRIVER}: NOT CONNECTED"
       break
     fi
-    sleep 1
   done
 done
 
