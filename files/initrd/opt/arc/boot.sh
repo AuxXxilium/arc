@@ -211,6 +211,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       fi
       COUNT=$((${COUNT} + 3))
     done
+    ethtool -s ${N} wol g 2>/dev/null
   done
   BOOTWAIT="$(readConfigKey "arc.bootwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTWAIT}" ] && BOOTWAIT=0

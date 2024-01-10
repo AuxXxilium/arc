@@ -165,6 +165,7 @@ for N in ${ETHX}; do
     fi
     COUNT=$((${COUNT} + 3))
   done
+  ethtool -s ${N} wol g 2>/dev/null
 done
 
 # Inform user
