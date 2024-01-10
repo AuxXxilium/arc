@@ -200,15 +200,16 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         [ ! -n "${IPCON}" ] && IPCON="${IP}"
         break
       fi
-      COUNT=$((${COUNT} + 3))
       if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
         echo -e "\r${DRIVER}: TIMEOUT."
         break
       fi
+      sleep 3
       if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
-        echo -e "\r${DRIVER}: NOT CONNECTED"
+        TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
         break
       fi
+      COUNT=$((${COUNT} + 3))
     done
   done
   BOOTWAIT="$(readConfigKey "arc.bootwait" "${USER_CONFIG_FILE}")"
@@ -220,7 +221,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     echo -en "\r${MSG}"
     w | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
     if ! diff WB WC >/dev/null 2>&1; then
-      echo -en "\rA new access is connected, Boot is interrupted.\n"
+      echo -en "\rA new access is connected, Boot is interrupted."
       rm -f WB WC
       exit 0
     fi

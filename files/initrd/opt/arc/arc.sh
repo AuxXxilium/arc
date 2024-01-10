@@ -1880,14 +1880,11 @@ function sysinfo() {
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${ETH} NIC\Zn"
   for N in ${ETHX}; do
+    IP=""
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     MAC="$(cat /sys/class/net/${N}/address | sed 's/://g')"
     while true; do
-      if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
-        break
-      fi
-      NETIP="$(getIP)"
+      IP="$(getIP ${N})"
       if [ "${STATICIP}" = "true" ]; then
         ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
         if [[ "${N}" = "eth0" && -n "${ARCIP}" ]]; then
@@ -1899,17 +1896,21 @@ function sysinfo() {
       else
         MSG="DHCP"
       fi
-      if [ -n "${NETIP}" ]; then
+      if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) \ZbIP: ${NETIP} | Mac: ${MAC}\Zn"
+        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) \ZbIP: ${IP} | Mac: ${MAC}\Zn"
         break
       fi
-      COUNT=$((${COUNT} + 1))
-      if [ ${COUNT} -eq 3 ]; then
+      if [ ${COUNT} -gt 3 ]; then
         TEXT+="\n  ${DRIVER}: \ZbIP: TIMEOUT | MAC: ${MAC}\Zn"
         break
       fi
-      sleep 1
+      sleep 3
+      if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
+        TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
+        break
+      fi
+      COUNT=$((${COUNT} + 3))
     done
   done
   # Print Config Informations
@@ -2093,14 +2094,11 @@ function fullsysinfo() {
   TEXT+="\n"
   TEXT+="\nNetwork: ${ETH} NIC"
   for N in ${ETHX}; do
+    IP=""
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     MAC="$(cat /sys/class/net/${N}/address | sed 's/://g')"
     while true; do
-      if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n${DRIVER}: IP: NOT CONNECTED | MAC: ${MAC}"
-        break
-      fi
-      NETIP="$(getIP)"
+      IP="$(getIP ${N})"
       if [ "${STATICIP}" = "true" ]; then
         ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
         if [[ "${N}" = "eth0" && -n "${ARCIP}" ]]; then
@@ -2112,17 +2110,21 @@ function fullsysinfo() {
       else
         MSG="DHCP"
       fi
-      if [ -n "${NETIP}" ]; then
+      if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n${DRIVER} (${SPEED} | ${MSG}) IP: ${NETIP} | Mac: ${MAC}"
+        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) \ZbIP: ${IP} | Mac: ${MAC}\Zn"
         break
       fi
-      COUNT=$((${COUNT} + 1))
-      if [ ${COUNT} -eq 3 ]; then
-        TEXT+="\n${DRIVER}: IP: TIMEOUT | MAC: ${MAC}"
+      if [ ${COUNT} -gt 3 ]; then
+        TEXT+="\n  ${DRIVER}: \ZbIP: TIMEOUT | MAC: ${MAC}\Zn"
         break
       fi
-      sleep 1
+      sleep 3
+      if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
+        TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
+        break
+      fi
+      COUNT=$((${COUNT} + 3))
     done
   done
   TEXT+="\n"

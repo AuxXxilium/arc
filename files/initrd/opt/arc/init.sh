@@ -154,15 +154,16 @@ for N in ${ETHX}; do
       echo -e "\r${DRIVER} (${SPEED} | ${MSG}): Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
       break
     fi
-    COUNT=$((${COUNT} + 3))
     if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
       echo -e "\r${DRIVER}: TIMEOUT"
       break
     fi
+    sleep 3
     if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
-      echo -e "\r${DRIVER}: NOT CONNECTED"
+      TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
       break
     fi
+    COUNT=$((${COUNT} + 3))
   done
 done
 
