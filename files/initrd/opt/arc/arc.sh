@@ -1117,6 +1117,7 @@ function synoinfoMenu() {
   echo "1 \"Add/edit Synoinfo item\""     >"${TMP_PATH}/menu"
   echo "2 \"Delete Synoinfo item(s)\""    >>"${TMP_PATH}/menu"
   echo "3 \"Show Synoinfo entries\""      >>"${TMP_PATH}/menu"
+  echo "4 \"Thermal Shutdown\""           >>"${TMP_PATH}/menu"
 
   # menu loop
   while true; do
@@ -1170,6 +1171,47 @@ function synoinfoMenu() {
         done
         dialog --backtitle "$(backtitle)" --title "Synoinfo entries" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
+        ;;
+      4)
+        if [ "${BUILDDONE}" = "true" ]; then
+          if findAndMountDSMRoot; then
+            if [ -f "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml" ]; then
+              cp -f "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml" "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml.bak"
+              dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" \
+              --inputbox "CPU Temperature: (Default 90 °C)" 0 0 \
+              2>"${TMP_PATH}/resp"
+              RET=$?
+              [ ${RET} -ne 0 ] && break 2
+              CPUTEMP="$(<"${TMP_PATH}/resp")"
+              sed -i 's;<cpu_temperature fan_speed="99%40hz" action="SHUTDOWN">90</cpu_temperature>;<cpu_temperature fan_speed="99%40hz" action="SHUTDOWN">${CPUTEMP}</cpu_temperature>;g' "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
+              dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" \
+              --inputbox "Disk Temperature: (Default 61 °C)" 0 0 \
+              2>"${TMP_PATH}/resp"
+              RET=$?
+              [ ${RET} -ne 0 ] && break 2
+              DISKTEMP="$(<"${TMP_PATH}/resp")"
+              sed -i 's;<disk_temperature fan_speed="99%40hz" action="SHUTDOWN">61</disk_temperature>;<disk_temperature fan_speed="99%40hz" action="SHUTDOWN">${DISKTEMP}</disk_temperature>;g' "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
+              dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" \
+              --inputbox "M.2 Temperature: (Default 70 °C)" 0 0 \
+              2>"${TMP_PATH}/resp"
+              RET=$?
+              [ ${RET} -ne 0 ] && break 2
+              M2TEMP="$(<"${TMP_PATH}/resp")"
+              sed -i 's;<m2_temperature fan_speed="99%40hz" action="SHUTDOWN">70</m2_temperature>;<m2_temperature fan_speed="99%40hz" action="SHUTDOWN">${M2TEMP}</m2_temperature>;g' "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
+              dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" --aspect 18 \
+                --msgbox "Change Thermal Shutdown Settings successful!\nCPU: ${CPUTEMP}\nDisk: ${DISKTEMP}\nM.2: ${M2TEMP}" 0 0
+            else
+              dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" --aspect 18 \
+                --msgbox "Change Thermal Shutdown Settings not possible!" 0 0
+            fi
+          else
+            dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" --aspect 18 \
+                --msgbox "Unfortunately Arc couldn't mount the DSM Partition!" 0 0
+          fi
+        else
+          dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" --aspect 18 \
+            --msgbox "Please build and install DSM first!" 0 0
+        fi
         ;;
     esac
   done
@@ -2733,8 +2775,8 @@ while true; do
     fi
     if [ "${ADVOPTS}" = "true" ]; then
       echo "= \"\Z4======== Advanced =======\Zn \" "                                        >>"${TMP_PATH}/menu"
-      echo "j \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
-      echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
+      echo "j \"Cmdline / Fixes \" "                                                        >>"${TMP_PATH}/menu"
+      echo "k \"Synoinfo / Fixes \" "                                                       >>"${TMP_PATH}/menu"
       echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
     fi
     if [ "${BOOTOPTS}" = "true" ]; then
