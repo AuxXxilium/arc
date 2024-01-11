@@ -1183,21 +1183,21 @@ function synoinfoMenu() {
               RET=$?
               [ ${RET} -ne 0 ] && break 2
               CPUTEMP="$(<"${TMP_PATH}/resp")"
-              sed -i 's;<cpu_temperature fan_speed="99%40hz" action="SHUTDOWN">90</cpu_temperature>;<cpu_temperature fan_speed="99%40hz" action="SHUTDOWN">${CPUTEMP}</cpu_temperature>;g' "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
+              sed -i 's;<cpu_temperature fan_speed="99%40hz" action="SHUTDOWN">90</cpu_temperature>;<cpu_temperature fan_speed="99%40hz" action="SHUTDOWN">$CPUTEMP</cpu_temperature>;g' "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
               dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" \
               --inputbox "Disk Temperature: (Default 61 °C)" 0 0 \
               2>"${TMP_PATH}/resp"
               RET=$?
               [ ${RET} -ne 0 ] && break 2
               DISKTEMP="$(<"${TMP_PATH}/resp")"
-              sed -i 's;<disk_temperature fan_speed="99%40hz" action="SHUTDOWN">61</disk_temperature>;<disk_temperature fan_speed="99%40hz" action="SHUTDOWN">${DISKTEMP}</disk_temperature>;g' "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
+              sed -i 's;<disk_temperature fan_speed="99%40hz" action="SHUTDOWN">61</disk_temperature>;<disk_temperature fan_speed="99%40hz" action="SHUTDOWN">$DISKTEMP</disk_temperature>;g' "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
               dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" \
               --inputbox "M.2 Temperature: (Default 70 °C)" 0 0 \
               2>"${TMP_PATH}/resp"
               RET=$?
               [ ${RET} -ne 0 ] && break 2
               M2TEMP="$(<"${TMP_PATH}/resp")"
-              sed -i 's;<m2_temperature fan_speed="99%40hz" action="SHUTDOWN">70</m2_temperature>;<m2_temperature fan_speed="99%40hz" action="SHUTDOWN">${M2TEMP}</m2_temperature>;g' "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
+              sed -i 's;<m2_temperature fan_speed="99%40hz" action="SHUTDOWN">70</m2_temperature>;<m2_temperature fan_speed="99%40hz" action="SHUTDOWN">$M2TEMP</m2_temperature>;g' "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
               dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" --aspect 18 \
                 --msgbox "Change Thermal Shutdown Settings successful!\nCPU: ${CPUTEMP}\nDisk: ${DISKTEMP}\nM.2: ${M2TEMP}" 0 0
             else
