@@ -1250,6 +1250,8 @@ function backupMenu() {
         1 "Backup Config with Code" \
         2 "Restore Config with Code" \
         3 "Recover from DSM" \
+        4 "Backup Encryption Key" \
+        5 "Restore Encryption Key" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
       case "$(<"${TMP_PATH}/resp")" in
@@ -1361,12 +1363,48 @@ function backupMenu() {
               --msgbox "Unfortunately Arc couldn't mount the DSM partition!" 0 0
           fi
           ;;
+        4)
+          dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
+            --infobox "Backup Encryption Key..." 0 0
+          if [ -f "${PART2_PATH}/machine.key" ]; then
+            if findAndMountDSMRoot; then
+              mkdir -p "${DSMROOT_PATH}/root/Xpenology_backup"
+              cp -f "${PART2_PATH}/machine.key" "${DSMROOT_PATH}/root/Xpenology_backup/machine.key"
+              dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
+                --msgbox "Encryption Key backup successful!" 0 0
+            else
+              dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
+                --msgbox "Unfortunately Arc couldn't mount the DSM Partition for Backup!" 0 0
+            fi
+          else
+            dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
+              --msgbox "No Encryption Key found!" 0 0
+          fi
+          ;;
+        5)
+          dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
+            --infobox "Restore Encryption Key..." 0 0
+          if findAndMountDSMRoot; then
+            if [ -f "${DSMROOT_PATH}/root/Xpenology_backup/machine.key" ]; then
+              cp -f "${DSMROOT_PATH}/root/Xpenology_backup/machine.key" "${PART2_PATH}/machine.key"
+              dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
+                --msgbox "Encryption Key restore successful!" 0 0
+            else
+              dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
+              --msgbox "No Encryption Key found!" 0 0
+            fi
+          else
+            dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
+                --msgbox "Unfortunately Arc couldn't mount the DSM Partition for Restore!" 0 0
+          fi
+          ;;
       esac
     done
   else
     while true; do
       dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
         1 "Recover from DSM" \
+        2 "Restore Encryption Key" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
       case "$(<"${TMP_PATH}/resp")" in
@@ -1426,6 +1464,23 @@ function backupMenu() {
           else
             dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
               --msgbox "Unfortunately Arc couldn't mount the DSM partition!" 0 0
+          fi
+          ;;
+        2)
+          dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
+            --infobox "Restore Encryption Key..." 0 0
+          if findAndMountDSMRoot; then
+            if [ -f "${DSMROOT_PATH}/root/Xpenology_backup/machine.key" ]; then
+              cp -f "${DSMROOT_PATH}/root/Xpenology_backup/machine.key" "${PART2_PATH}/machine.key"
+              dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
+                --msgbox "Encryption Key restore successful!" 0 0
+            else
+              dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
+              --msgbox "No Encryption Key found!" 0 0
+            fi
+          else
+            dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
+                --msgbox "Unfortunately Arc couldn't mount the DSM Partition for Restore!" 0 0
           fi
           ;;
       esac
