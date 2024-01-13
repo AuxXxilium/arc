@@ -173,7 +173,7 @@ elif [[ "${DIRECTBOOT}" = "true" && ${BOOTCOUNT} -eq 0 ]]; then
   exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
   ETHX=$(ls /sys/class/net/ | grep -v lo || true)
-  ETH=$(ls /sys/class/net/ | grep eth | wc -l)
+  ETH=$(echo ${ETHX} | wc -w)
   STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   echo -e "\033[1;34mDetected ${ETH} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"

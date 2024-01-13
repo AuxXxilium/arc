@@ -65,7 +65,8 @@ function getnet() {
 }
 
 # Get Amount of NIC
-ETH=$(ls /sys/class/net/ | grep eth | wc -l)
+ETHX=$(ls /sys/class/net/ | grep -v lo || true)
+ETH=$(echo ${ETHX} | wc -w)
 writeConfigKey "device.nic" "${ETH}" "${USER_CONFIG_FILE}"
 # Get actual IP
 ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"

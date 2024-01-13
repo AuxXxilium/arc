@@ -138,6 +138,7 @@ cp -f "${TMP_PATH}/modules/rp.ko" "${RAMDISK_PATH}/usr/lib/modules/rp.ko"
 rm -rf "${TMP_PATH}/modules"
 
 # Copying hwdb.bin to destination
+mkdir -p "${RAMDISK_PATH}/etc/udev"
 cp -f "/etc/udev/hwdb.bin" "${RAMDISK_PATH}/etc/udev/hwdb.bin"
 
 # Copying fake modprobe

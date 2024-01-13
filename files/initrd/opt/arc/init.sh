@@ -61,9 +61,9 @@ initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 
 # Init Network
 ETHX=$(ls /sys/class/net/ | grep -v lo || true)
-ETH=$(ls /sys/class/net/ | grep eth | wc -l)
+ETH=$(echo ${ETHX} | wc -w)
 # No network devices
-[ $(echo ${ETHX} | wc -w) -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
+[ ${ETH} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 if [ "${MACSYS}" = "custom" ]; then
   MACR="$(cat /sys/class/net/eth0/address | sed 's/://g')"
