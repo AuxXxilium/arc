@@ -159,7 +159,7 @@ for N in ${ETHX}; do
     fi
     sleep 3
     if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
-      TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
+      echo -e "\r${DRIVER}: NOT CONNECTED"
       break
     fi
     COUNT=$((${COUNT} + 3))
