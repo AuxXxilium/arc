@@ -123,7 +123,7 @@ CMDLINE['root']="/dev/md0"
 CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 CMDLINE['sn']="${SN}"
-CMDLINE['net.ifnames']="0"
+# CMDLINE['net.ifnames']="0"
 CMDLINE['netif_num']="0"
 if [ "${MACSYS}" = "hardware" ]; then
   [[ -z "${MAC1}" && -n "${MAC2}" ]] && MAC1=${MAC2} && MAC2="" # Sanity check
