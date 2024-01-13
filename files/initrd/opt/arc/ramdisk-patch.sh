@@ -137,6 +137,9 @@ cp -f "${TMP_PATH}/modules/rp.ko" "${RAMDISK_PATH}/usr/lib/modules/rp.ko"
 # Clean
 rm -rf "${TMP_PATH}/modules"
 
+# Copying hwdb.bin to destination
+cp -f "/etc/udev/hwdb.bin" "${RAMDISK_PATH}/etc/udev/hwdb.bin"
+
 # Copying fake modprobe
 cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
 
@@ -157,8 +160,8 @@ installAddon revert
 echo "/addons/revert.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 
 # Install System Addons
-installAddon eudev
-echo "/addons/eudev.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+installAddon eudevlite
+echo "/addons/eudevlite.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon disks
 echo "/addons/disks.sh \${1} ${HDDSORT}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon localrss
