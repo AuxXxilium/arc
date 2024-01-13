@@ -150,16 +150,16 @@ for N in ${ETHX}; do
     fi
     if [ -n "${IP}" ]; then
       SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
-      echo -e "\r${DRIVER} (${SPEED} | ${MSG}): Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
+      echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
       break
     fi
     if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
-      echo -e echo -e "\r\033[1;37m${DRIVER}: TIMEOUT\033[0m"
+      echo -e echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
       break
     fi
     sleep 3
     if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
-      echo -e "\r\033[1;37m${DRIVER}: NOT CONNECTED\033[0m"
+      echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
       break
     fi
     COUNT=$((${COUNT} + 3))
