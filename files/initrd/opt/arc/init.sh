@@ -154,12 +154,12 @@ for N in ${ETHX}; do
       break
     fi
     if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
-      echo -e "\r${DRIVER}: TIMEOUT"
+      echo -e echo -e "\r\033[1;37m${DRIVER}: TIMEOUT\033[0m"
       break
     fi
     sleep 3
     if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
-      echo -e "\r${DRIVER}: NOT CONNECTED"
+      echo -e "\r\033[1;37m${DRIVER}: NOT CONNECTED\033[0m"
       break
     fi
     COUNT=$((${COUNT} + 3))
