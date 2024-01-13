@@ -22,7 +22,7 @@ sudo mount ${LOOPX}p3 "/tmp/files/p3"
 echo "Get Buildroot"
 read -rp 'Version (2023.02.x): ' br_version
 [ -z "${br_version}" ] && br_version="2023.02.x"
-[[ ! -f "br/bzImage-arc" || ! -f "br/initrd-arc" ]] && getBuildroot "${br_version}" "br"
+getBuildroot "${br_version}" "br"
 [[ ! -f "br/bzImage-arc" || ! -f "br/initrd-arc" ]] && return 1
 
 VERSION=$(date +'%y.%-m.dev')
