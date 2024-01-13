@@ -71,7 +71,7 @@ writeConfigKey "device.nic" "${ETH}" "${USER_CONFIG_FILE}"
 # Get actual IP
 ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
 if [ -n "${ARCIP}" ]; then
-  IP="${ARCIP}"
+  IPCON="${ARCIP}"
 else
-  IP="$(getIP)"
+  IPCON="$(getIP)"
 fi

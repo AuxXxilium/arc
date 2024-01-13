@@ -79,8 +79,8 @@ function backtitle() {
     BACKTITLE+=" (no version)"
   fi
   BACKTITLE+=" |"
-  if [ -n "${IP}" ]; then
-    BACKTITLE+=" ${IP}"
+  if [ -n "${IPCON}" ]; then
+    BACKTITLE+=" ${IPCON}"
   else
     BACKTITLE+=" (no IP)"
   fi
@@ -1947,6 +1947,7 @@ function sysinfo() {
     IP=""
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     MAC="$(cat /sys/class/net/${N}/address | sed 's/://g')"
+    COUNT=0
     while true; do
       IP="$(getIP ${N})"
       if [ "${STATICIP}" = "true" ]; then
@@ -1963,6 +1964,7 @@ function sysinfo() {
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
         TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) \ZbIP: ${IP} | Mac: ${MAC}\Zn"
+        [ ! -n "${IPCON}" ] && IPCON="${IP}"
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
@@ -2161,6 +2163,7 @@ function fullsysinfo() {
     IP=""
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     MAC="$(cat /sys/class/net/${N}/address | sed 's/://g')"
+    COUNT=0
     while true; do
       IP="$(getIP ${N})"
       if [ "${STATICIP}" = "true" ]; then
@@ -2177,6 +2180,7 @@ function fullsysinfo() {
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
         TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) \ZbIP: ${IP} | Mac: ${MAC}\Zn"
+        [ ! -n "${IPCON}" ] && IPCON="${IP}"
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
