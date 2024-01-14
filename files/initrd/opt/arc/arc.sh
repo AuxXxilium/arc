@@ -2712,7 +2712,7 @@ while true; do
         echo "h \"USB Port Config \" "                                                      >>"${TMP_PATH}/menu"
       fi
       echo "p \"Arc Settings \" "                                                           >>"${TMP_PATH}/menu"
-      echo ". \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu"
+      echo ". \"Static Loader IP for eth0\" "                                               >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
       echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
