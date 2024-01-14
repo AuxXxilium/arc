@@ -2381,6 +2381,12 @@ function staticIPMenu() {
     opts="$(<"${TMP_PATH}/opts")"
     [ -z "${opts}" ] && return 1
     if [ ${opts} -eq 1 ]; then
+      writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
+      deleteConfigKey "arc.ip" "${USER_CONFIG_FILE}"
+      deleteConfigKey "arc.netmask" "${USER_CONFIG_FILE}"
+      dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" --colors --aspect 18 \
+      --msgbox "Network set to DHCP!" 0 0
+      STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
     elif [ ${opts} -eq 2 ]; then
       dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
         --inputbox "Type a Static IP\nEq: 192.168.0.1" 0 0 "${IPADDR}" \
@@ -2392,11 +2398,6 @@ function staticIPMenu() {
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
       NETMASK="$(<"${TMP_PATH}/resp")"
-    fi
-    dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
-      --yesno "Do you want to set this Config?" 0 0
-    [ $? -ne 0 ] && return 1
-    if [[ -n "${IPADDR}" && -n "${NETMASK}" ]]; then
       NETMASK=$(convert_netmask "${NETMASK}")
       ip addr add ${IPADDR}/${NETMASK} dev eth0
       writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
@@ -2404,13 +2405,6 @@ function staticIPMenu() {
       writeConfigKey "arc.netmask" "${NETMASK}" "${USER_CONFIG_FILE}"
       dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" --colors --aspect 18 \
       --msgbox "Network set to STATIC!" 0 0
-      STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
-    else
-      writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.ip" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.netmask" "" "${USER_CONFIG_FILE}"
-      dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" --colors --aspect 18 \
-      --msgbox "Network set to DHCP!" 0 0
       STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
     fi
 }
