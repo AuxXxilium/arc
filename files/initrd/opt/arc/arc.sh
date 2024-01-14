@@ -468,7 +468,7 @@ function make() {
       done
       if [[ -z "${PAT_URL}" || -z "${PAT_HASH}" ]]; then
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-          --infobox "Syno Connection failed,  try to get from Github..." 3 30
+          --infobox "Syno Connection failed,\ntry to get from Github..." 4 30
         idx=0
         while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
           PAT_URL="$(curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER%%.*}.${PRODUCTVER##*.}/pat_url")"
