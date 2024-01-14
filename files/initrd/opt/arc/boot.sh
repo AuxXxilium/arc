@@ -241,7 +241,7 @@ kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDL
 echo -e "\033[1;37m"Booting DSM..."\033[0m"
 for T in $(w | grep -v "TTY" | awk -F' ' '{print $2}')
 do
-  echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\nUse \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[1;37mto find DSM and proceed.\033[0m\n" >"/dev/${T}" 2>/dev/null || true
+  echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\nUse \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
 done
 [ "${KERNELLOAD}" = "kexec" ] && kexec -f -e || poweroff
 exit 0
