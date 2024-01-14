@@ -6,8 +6,11 @@
 
 if findAndMountDSMRoot; then
   if [ -f "${DSMROOT_PATH}/usr/log/dmesg.txt" ]; then
-    LOG="$(cat ${DSMROOT_PATH}/usr/log/dmesg.txt)"
+    cp -f "${DSMROOT_PATH}/usr/log/dmesg.txt" "/tmp/dmesg.txt"
+    LOG="$(cat /tmp/dmesg.txt)"
     echo -e "${LOG}"
+    echo
+    echo "Logfile can be found at /tmp/dmesg.txt"
   else
     echo "Can't find Logfile"
   fi
