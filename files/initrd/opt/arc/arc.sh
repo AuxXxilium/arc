@@ -2258,6 +2258,7 @@ function fullsysinfo() {
           fi
         fi
       done
+      echo
     done
   fi
   if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
