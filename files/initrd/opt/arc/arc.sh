@@ -60,7 +60,6 @@ MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
-ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 
 ###############################################################################
@@ -1926,7 +1925,6 @@ function sysinfo() {
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
   MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
   MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
@@ -1993,7 +1991,7 @@ function sysinfo() {
   TEXT+="\n   Directboot: \Zb${DIRECTBOOT}\Zn"
   TEXT+="\n   Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n   Config Version: \Zb${CONFIGVER}\Zn"
-  TEXT+="\n   MacSys | IPv6: \Zb${MACSYS} | ${ARCIPV6}\Zn"
+  TEXT+="\n   MacSys : \Zb${MACSYS}\Zn"
   TEXT+="\n   Offline Mode: \Zb${OFFLINE}\Zn"
   TEXT+="\n   Bootcount: \Zb${BOOTCOUNT}\Zn"
   TEXT+="\n\Z4>> Addons | Modules\Zn"
@@ -2142,7 +2140,6 @@ function fullsysinfo() {
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
   MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
   MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
@@ -2213,7 +2210,7 @@ function fullsysinfo() {
   TEXT+="\nDirectboot: ${DIRECTBOOT}"
   TEXT+="\nConfig | Build: ${CONFDONE} | ${BUILDDONE}"
   TEXT+="\nConfig Version: ${CONFIGVER}"
-  TEXT+="\nMacSys | IPv6: ${MACSYS} | ${ARCIPV6}"
+  TEXT+="\nMacSys: ${MACSYS}"
   TEXT+="\nOffline Mode: ${OFFLINE}"
   TEXT+="\nBootcount: ${BOOTCOUNT}"
   TEXT+="\n"
@@ -2368,22 +2365,10 @@ function credits() {
 ###############################################################################
 # allow setting Static IP for DSM
 function staticIPMenu() {
-  mkdir -p "${TMP_PATH}/sdX1"
-  for I in $(ls /dev/sd.*1 2>/dev/null | grep -v "${LOADER_DISK}1"); do
-    mount "${I}" "${TMP_PATH}/sdX1"
-    [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
-    umount "${I}"
-    break
-  done
-  rm -rf "${TMP_PATH}/sdX1"
   TEXT=""
   TEXT+="This feature will allow you to set a static IP for eth0.\n"
   TEXT+="Actual Settings are:\n"
-  TEXT+="Mode: ${BOOTPROTO}\n"
-  if [ "${BOOTPROTO}" = "static" ]; then
-    TEXT+="IP: ${IPADDR}\n"
-    TEXT+="NETMASK: ${NETMASK}\n"
-  fi
+  TEXT+="StaticIP Mode: ${STATICIP}\n"
   TEXT+="Do you want to change Config?"
   dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
       --yesno "${TEXT}" 0 0
@@ -2396,7 +2381,6 @@ function staticIPMenu() {
     opts="$(<"${TMP_PATH}/opts")"
     [ -z "${opts}" ] && return 1
     if [ ${opts} -eq 1 ]; then
-      echo -e "DEVICE=eth0\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=off" >"${TMP_PATH}/ifcfg-eth0"
     elif [ ${opts} -eq 2 ]; then
       dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
         --inputbox "Type a Static IP\nEq: 192.168.0.1" 0 0 "${IPADDR}" \
@@ -2408,21 +2392,10 @@ function staticIPMenu() {
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
       NETMASK="$(<"${TMP_PATH}/resp")"
-      echo -e "DEVICE=eth0\nBOOTPROTO=static\nONBOOT=yes\nIPV6INIT=off\nIPADDR=${IPADDR}\nNETMASK=${NETMASK}" >"${TMP_PATH}/ifcfg-eth0"
     fi
     dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
       --yesno "Do you want to set this Config?" 0 0
     [ $? -ne 0 ] && return 1
-    (
-      mkdir -p "${TMP_PATH}/sdX1"
-      for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK_PART1}"); do
-        mount "${I}" "${TMP_PATH}/sdX1"
-        [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && cp -f "${TMP_PATH}/ifcfg-eth0" "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
-        sync
-        umount "${I}"
-      done
-      rm -rf "${TMP_PATH}/sdX1"
-    )
     if [[ -n "${IPADDR}" && -n "${NETMASK}" ]]; then
       NETMASK=$(convert_netmask "${NETMASK}")
       ip addr add ${IPADDR}/${NETMASK} dev eth0
@@ -2431,12 +2404,14 @@ function staticIPMenu() {
       writeConfigKey "arc.netmask" "${NETMASK}" "${USER_CONFIG_FILE}"
       dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" --colors --aspect 18 \
       --msgbox "Network set to STATIC!" 0 0
+      STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
     else
       writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.ip" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.netmask" "" "${USER_CONFIG_FILE}"
       dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" --colors --aspect 18 \
       --msgbox "Network set to DHCP!" 0 0
+      STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
     fi
 }
 
@@ -2643,7 +2618,6 @@ function resetLoader() {
   initConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
-  initConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
@@ -2781,7 +2755,6 @@ while true; do
       echo "/ \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
       echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
-      echo "c \"Use IPv6: \Z4${ARCIPV6}\Zn \" "                                             >>"${TMP_PATH}/menu"
     fi
   fi
   if [ "${DEVOPTS}" = "true" ]; then
@@ -2830,12 +2803,6 @@ while true; do
     p) ONLYPATCH="true" && arcsettings; NEXT="p" ;;
     h) usbMenu; NEXT="h" ;;
     .) staticIPMenu; NEXT="." ;;
-    c) [ "${ARCIPV6}" = "true" ] && ARCIPV6='false' || ARCIPV6='true'
-      writeConfigKey "arc.ipv6" "${ARCIPV6}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="c"
-      ;;
     # Advanced Section
     5) [ "${ADVOPTS}" = "true" ] && ADVOPTS='false' || ADVOPTS='true'
        ADVOPTS="${ADVOPTS}"
