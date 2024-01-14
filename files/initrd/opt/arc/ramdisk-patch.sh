@@ -192,16 +192,16 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 ${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
 
 # Network card configuration file
-#IPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
-#if [ "${IPV6}" = "false" ]; then
-#  for N in $(seq 0 7); do
-#    echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=no" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
-#  done
-#elif [ "${IPV6}" = "true" ]; then
-#  for N in $(seq 0 7); do
-#    echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
-#  done
-#fi
+IPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
+if [ "${IPV6}" = "false" ]; then
+  for N in $(seq 0 7); do
+    echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=no" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
+  done
+elif [ "${IPV6}" = "true" ]; then
+  for N in $(seq 0 7); do
+    echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
+  done
+fi
 
 # SA6400 patches
 if [ "${PLATFORM}" = "epyc7002" ]; then
