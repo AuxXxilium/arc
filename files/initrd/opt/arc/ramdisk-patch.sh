@@ -115,13 +115,13 @@ echo "_set_conf_kv 'SN' '${SN}' '/tmpRoot/etc.defaults/synoinfo.conf'" >>"${TMP_
 sed -e "/@@@CONFIG-GENERATED@@@/ {" -e "r ${TMP_PATH}/rp.txt" -e 'd' -e '}' -i "${RAMDISK_PATH}/sbin/init.post"
 rm -f "${TMP_PATH}/rp.txt"
 
-# Extract modules to ramdisk
+# Extract Modules to Ramdisk
 rm -rf "${TMP_PATH}/modules"
 mkdir -p "${TMP_PATH}/modules"
-tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
-for F in $(ls "${TMP_PATH}/modules/"*.ko); do
+tar -zxf "${MODULES_PATH}/${PLATFORM}-$([ -n "${KPRE}" ] && echo "${KPRE}-")${KVER}.tgz" -C "${TMP_PATH}/modules"
+for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
   M=$(basename ${F})
-  [[ "${ODP}" = "true" && -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ]] && continue
+  [ "${ODP}" = "true" -a -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ] && continue
   if arrayExistItem "${M:0:-3}" "${!USERMODULES[@]}"; then
     cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}"
   else
@@ -131,23 +131,19 @@ done
 mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
 tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
 
-# Copying LKM to /usr/lib/modules
-gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" >"${TMP_PATH}/modules/rp.ko"
-cp -f "${TMP_PATH}/modules/rp.ko" "${RAMDISK_PATH}/usr/lib/modules/rp.ko"
-# Clean
-rm -rf "${TMP_PATH}/modules"
-
-# Copying hwdb.bin to destination
-mkdir -p "${RAMDISK_PATH}/etc/udev"
-cp -f "/etc/udev/hwdb.bin" "${RAMDISK_PATH}/etc/udev/hwdb.bin"
-
 # Copying fake modprobe
 cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
+# Copying LKM to /usr/lib/modules
+gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko"
+# Clean
+rm -rf "${TMP_PATH}/modules"
 
 # Addons
 mkdir -p "${RAMDISK_PATH}/addons"
 echo "#!/bin/sh" >"${RAMDISK_PATH}/addons/addons.sh"
 echo 'echo "addons.sh called with params ${@}"' >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export LOADERLABEL=ARC" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export LOADERVERSION=${ARC_VERSION}" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export PLATFORM=${PLATFORM}" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MODEL=${MODEL}" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MLINK=${PAT_URL}" >>"${RAMDISK_PATH}/addons/addons.sh"
@@ -164,7 +160,8 @@ echo "/addons/revert.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FI
 installAddon eudev
 echo "/addons/eudev.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon disks
-echo "/addons/disks.sh \${1} ${HDDSORT}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+echo "/addons/disks.sh \${1} ${HDDSORT} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+[ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
 installAddon localrss
 echo "/addons/localrss.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 installAddon wol
@@ -189,7 +186,13 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 [ "2" = "${BUILDNUM:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
 
 # Build modules dependencies
-${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
+${WORK_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
+# Copying modulelist
+if [ -f "${USER_UP_PATH}/modulelist" ]; then
+  cp -f "${USER_UP_PATH}/modulelist" "${RAMDISK_PATH}/addons/modulelist"
+else
+  cp -f "${ARC_PATH}/patch/modulelist" "${RAMDISK_PATH}/addons/modulelist"
+fi
 
 # Network card configuration file
 IPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
