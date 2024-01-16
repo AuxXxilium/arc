@@ -2799,7 +2799,7 @@ while true; do
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
   echo "9 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
-  echo "y \"Choose a keymap \" "                                                            >>"${TMP_PATH}/menu"
+  echo "y \"Choose a Keymap \" "                                                            >>"${TMP_PATH}/menu"
   if [ "${OFFLINE}" = "false" ]; then
     echo "z \"Update \" "                                                                   >>"${TMP_PATH}/menu"
   fi
