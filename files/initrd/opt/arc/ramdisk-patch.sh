@@ -119,6 +119,8 @@ rm -f "${TMP_PATH}/rp.txt"
 # Extract Modules to Ramdisk
 rm -rf "${TMP_PATH}/modules"
 mkdir -p "${TMP_PATH}/modules"
+# Make Modules Path for eudev 3.2.14
+mkdir -p "${RAMDISK_PATH}/usr/lib/modules/${KVERM}"
 tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
 for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
   M=$(basename ${F})
