@@ -186,13 +186,7 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 [ "2" = "${BUILDNUM:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
 
 # Build modules dependencies
-${WORK_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
-# Copying modulelist
-if [ -f "${USER_UP_PATH}/modulelist" ]; then
-  cp -f "${USER_UP_PATH}/modulelist" "${RAMDISK_PATH}/addons/modulelist"
-else
-  cp -f "${PATCH_PATH}/modulelist" "${RAMDISK_PATH}/addons/modulelist"
-fi
+${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
 
 # Network card configuration file
 IPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
