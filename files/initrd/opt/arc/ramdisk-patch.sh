@@ -39,7 +39,6 @@ HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 PRODUCTVERDSM="${majorversion}.${minorversion}"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-KVERM="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")+"
 RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compressed")"
 # Read new PAT Info from Config
 PAT_URL="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
@@ -120,15 +119,15 @@ rm -f "${TMP_PATH}/rp.txt"
 rm -rf "${TMP_PATH}/modules"
 mkdir -p "${TMP_PATH}/modules"
 # Make Modules Path for eudev 3.2.14
-mkdir -p "${RAMDISK_PATH}/usr/lib/modules/${KVERM}"
+mkdir -p "${RAMDISK_PATH}/usr/lib/modules"
 tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
 for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
   M=$(basename ${F})
   [[ "${ODP}" = "true" && -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ]] && continue
   if arrayExistItem "${M:0:-3}" "${!USERMODULES[@]}"; then
-    cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${KVERM}/${M}" >"${LOG_FILE}" 2>&1 || dieLog
+    cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}" >"${LOG_FILE}" 2>&1 || dieLog
   else
-    rm -f "${RAMDISK_PATH}/usr/lib/modules/${KVERM}/${M}" >"${LOG_FILE}" 2>&1 || dieLog
+    rm -f "${RAMDISK_PATH}/usr/lib/modules/${M}" >"${LOG_FILE}" 2>&1 || dieLog
   fi
 done
 mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
