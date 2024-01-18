@@ -20,7 +20,7 @@ sudo mount ${LOOPX}p1 "/tmp/files/p1"
 sudo mount ${LOOPX}p3 "/tmp/files/p3"
 
 echo "Get Buildroot"
-read -rp 'Version (2023.02.x): ' br_version
+# read -rp 'Version (2023.02.x): ' br_version
 [ -z "${br_version}" ] && br_version="2023.02.x"
 getBuildroot "${br_version}" "br"
 [[ ! -f "br/bzImage-arc" || ! -f "br/initrd-arc" ]] && return 1
@@ -30,7 +30,7 @@ echo "${VERSION}" >files/p1/ARC-VERSION
 echo "${VERSION}" >VERSION
 sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
 
-read -rp "Build: ${VERSION}? Press ENTER to continue"
+# read -rp "Build: ${VERSION}? Press ENTER to continue"
 
 echo "Repack initrd"
 sudo cp -f "br/bzImage-arc" "/tmp/files/p3/bzImage-arc"
