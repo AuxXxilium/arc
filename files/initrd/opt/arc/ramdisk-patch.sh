@@ -126,9 +126,9 @@ for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
   M=$(basename ${F})
   [[ "${ODP}" = "true" && -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ]] && continue
   if arrayExistItem "${M:0:-3}" "${!USERMODULES[@]}"; then
-    cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${KVERM}/${M}"
+    cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${KVERM}/${M}" >"${LOG_FILE}" 2>&1 || dieLog
   else
-    rm -f "${RAMDISK_PATH}/usr/lib/modules/${KVERM}/${M}"
+    rm -f "${RAMDISK_PATH}/usr/lib/modules/${KVERM}/${M}" >"${LOG_FILE}" 2>&1 || dieLog
   fi
 done
 mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
@@ -184,7 +184,7 @@ for ADDON in ${!ADDONS[@]}; do
 done
 
 # Enable Telnet
-echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 
 [ "2" = "${BUILDNUM:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
 
