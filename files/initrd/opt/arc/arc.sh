@@ -961,7 +961,7 @@ function cmdlineMenu() {
         MSG+="\nEnter the Parameter Name and Value you want to add.\n"
         LINENUM=$(($(echo -e "${MSG}" | wc -l) + 10))
         while true; do
-          DIALOG --title "User Cmdline" \
+          dialog --clear --backtitle "$(backtitle)" --title "User Cmdline" \
             --form "${MSG}" ${LINENUM:-16} 70 2 "Name:" 1 1 "" 1 10 55 0 "Value:" 2 1 "" 2 10 55 0 \
             2>"${TMP_PATH}/resp"
           RET=$?
@@ -970,7 +970,7 @@ function cmdlineMenu() {
             NAME="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
             VALUE="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
             if [ -z "${NAME//\"/}" ]; then
-              DIALOG --title "User Cmdline" \
+                        dialog --clear --backtitle "$(backtitle)" --title "User Cmdline" \
                 --yesno "Invalid Parameter Name, retry?" 0 0
               [ $? -eq 0 ] && break
             fi
