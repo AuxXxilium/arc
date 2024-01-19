@@ -1299,6 +1299,7 @@ function usbMenu() {
       1)
         writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.usbportcfg" "0" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1308,6 +1309,7 @@ function usbMenu() {
       2)
         writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.usbportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
