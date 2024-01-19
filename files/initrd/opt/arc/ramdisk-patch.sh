@@ -3,6 +3,8 @@
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 . ${ARC_PATH}/include/functions.sh
+. ${ARC_PATH}/include/addons.sh
+. ${ARC_PATH}/include/modules.sh
 
 set -o pipefail # Get exit code from process piped
 
@@ -82,7 +84,7 @@ done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 while read -r PE; do
   RET=1
   echo "Patching with ${PE}" >"${LOG_FILE}" 2>&1
-  for PF in $(ls ${PATCH_PATH}/${PE}); do
+  for PF in $(ls ${PATCH_PATH}/${PE} 2>/dev/null); do
     echo "Patching with ${PF}" >>"${LOG_FILE}" 2>&1
     (
       cd "${RAMDISK_PATH}"
@@ -118,20 +120,21 @@ rm -f "${TMP_PATH}/rp.txt"
 # Extract Modules to Ramdisk
 rm -rf "${TMP_PATH}/modules"
 mkdir -p "${TMP_PATH}/modules"
-# Make Modules Path for eudev 3.2.14
-mkdir -p "${RAMDISK_PATH}/usr/lib/modules"
+# Copy Modules to Ramdisk
 tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
 for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
   M=$(basename ${F})
   [[ "${ODP}" = "true" && -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ]] && continue
   if arrayExistItem "${M:0:-3}" "${!USERMODULES[@]}"; then
-    cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}" >"${LOG_FILE}" 2>&1 || dieLog
+    cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}"
   else
-    rm -f "${RAMDISK_PATH}/usr/lib/modules/${M}" >"${LOG_FILE}" 2>&1 || dieLog
+    rm -f "${RAMDISK_PATH}/usr/lib/modules/${M}"
   fi
 done
 mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
 tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
+# Clean
+rm -rf "${TMP_PATH}/modules"
 
 # Copying fake modprobe
 cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
@@ -189,6 +192,12 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 
 # Build modules dependencies
 ${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
+# Copying modulelist
+if [ -f "${USER_UP_PATH}/modulelist" ]; then
+  cp -f "${USER_UP_PATH}/modulelist" "${RAMDISK_PATH}/addons/modulelist"
+else
+  cp -f "${WORK_PATH}/include/modulelist" "${RAMDISK_PATH}/addons/modulelist"
+fi
 
 # Network card configuration file
 IPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
@@ -208,6 +217,16 @@ if [ "${PLATFORM}" = "epyc7002" ]; then
   sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
 fi
+
+#if [[ "${PLATFORM}" = "kvmx64" || "${PLATFORM}" = "broadwellntbap" ]]; then
+#  sed -i 's/kvmx64/RRING/g' ${RAMDISK_PATH}/etc/synoinfo.conf ${RAMDISK_PATH}/etc/VERSION
+#fi
+
+# Call user patch scripts
+for F in $(ls -1 ${SCRIPTS_PATH}/*.sh 2>/dev/null); do
+  echo "Calling ${F}" >>"${LOG_FILE}" 2>&1
+  . "${F}" >>"${LOG_FILE}" 2>&1 || dieLog
+done
 
 # Reassembly ramdisk
 if [ "${RD_COMPRESSED}" == "true" ]; then
