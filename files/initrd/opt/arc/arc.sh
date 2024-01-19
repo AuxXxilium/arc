@@ -932,7 +932,7 @@ function cmdlineMenu() {
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
   done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
-  echo "1 \"Add/edit a Cmdline item\""                          >"${TMP_PATH}/menu"
+  echo "1 \"Add a Cmdline item\""                                >"${TMP_PATH}/menu"
   echo "2 \"Delete Cmdline item(s)\""                           >>"${TMP_PATH}/menu"
   echo "3 \"CPU Fix\""                                          >>"${TMP_PATH}/menu"
   echo "4 \"RAM Fix\""                                          >>"${TMP_PATH}/menu"
@@ -948,21 +948,43 @@ function cmdlineMenu() {
     [ $? -ne 0 ] && return 1
     case "$(<"${TMP_PATH}/resp")" in
       1)
-        dialog --backtitle "$(backtitle)" --title "User cmdline" \
-          --inputbox "Type a name of cmdline" 0 0 \
-          2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && continue
-        NAME="$(sed 's/://g' <"${TMP_PATH}/resp")"
-        [ -z "${NAME//\"/}" ] && continue
-        dialog --backtitle "$(backtitle)" --title "User cmdline" \
-          --inputbox "Type a value of '${NAME}' cmdline" 0 0 "${CMDLINE[${NAME}]}" \
-          2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && continue
-        VALUE="$(<"${TMP_PATH}/resp")"
-        CMDLINE[${NAME}]="${VALUE}"
-        writeConfigKey "cmdline.\"${NAME//\"/}\"" "${VALUE}" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        MSG=""
+        MSG+="Commonly used Parameter:\n"
+        MSG+=" * \Z4disable_mtrr_trim=\Zn\n    disables kernel trim any uncacheable memory out.\n"
+        MSG+=" * \Z4intel_idle.max_cstate=1\Zn\n    Set the maximum C-state depth allowed by the intel_idle driver.\n"
+        MSG+=" * \Z4pcie_port_pm=off\Zn\n    Turn off the power management of the PCIe port.\n"
+        MSG+=" * \Z4libata.force=noncq\Zn\n    Disable NCQ for all SATA ports.\n"
+        MSG+=" * \Z4SataPortMap=??\Zn\n    Sata Port Map.\n"
+        MSG+=" * \Z4DiskIdxMap=??\Zn\n    Disk Index Map, Modify disk name sequence.\n"
+        MSG+=" * \Z4i915.enable_guc=2\Zn\n    Enable the GuC firmware on Intel graphics hardware.(value: 1,2 or 3)\n"
+        MSG+=" * \Z4i915.max_vfs=7\Zn\n     Set the maximum number of virtual functions (VFs) that can be created for Intel graphics hardware.\n"
+        MSG+="\nEnter the Parameter Name and Value you want to add.\n"
+        LINENUM=$(($(echo -e "${MSG}" | wc -l) + 10))
+        while true; do
+          DIALOG --title "User Cmdline" \
+            --form "${MSG}" ${LINENUM:-16} 70 2 "Name:" 1 1 "" 1 10 55 0 "Value:" 2 1 "" 2 10 55 0 \
+            2>"${TMP_PATH}/resp"
+          RET=$?
+          case ${RET} in
+          0) # ok-button
+            NAME="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+            VALUE="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+            if [ -z "${NAME//\"/}" ]; then
+              DIALOG --title "User Cmdline" \
+                --yesno "Invalid Parameter Name, retry?" 0 0
+              [ $? -eq 0 ] && break
+            fi
+            writeConfigKey "cmdline.\"${NAME//\"/}\"" "${VALUE}" "${USER_CONFIG_FILE}"
+            break
+            ;;
+          1) # cancel-button
+            break
+            ;;
+          255) # ESC
+            break
+            ;;
+          esac
+        done
         ;;
       2)
         if [ ${#CMDLINE[@]} -eq 0 ]; then
@@ -998,7 +1020,7 @@ function cmdlineMenu() {
           writeConfigKey "cmdline.nmi_watchdog" "0" "${USER_CONFIG_FILE}"
           writeConfigKey "cmdline.tsc" "reliable" "${USER_CONFIG_FILE}"
           dialog --backtitle "$(backtitle)" --title "CPU Fix" \
-            --aspect 18 --msgbox "Fix installed to Cmdline" 0 0
+            --aspect 18 --msgbox "Fix added to Cmdline" 0 0
         elif [ ${resp} -eq 2 ]; then
           deleteConfigKey "cmdline.nmi_watchdog" "${USER_CONFIG_FILE}"
           deleteConfigKey "cmdline.tsc" "${USER_CONFIG_FILE}"
@@ -1020,12 +1042,12 @@ function cmdlineMenu() {
           writeConfigKey "cmdline.disable_mtrr_trim" "0" "${USER_CONFIG_FILE}"
           writeConfigKey "cmdline.crashkernel" "auto" "${USER_CONFIG_FILE}"
           dialog --backtitle "$(backtitle)" --title "RAM Fix" \
-            --aspect 18 --msgbox "Fix installed to Cmdline" 0 0
+            --aspect 18 --msgbox "Fix added to Cmdline" 0 0
         elif [ ${resp} -eq 2 ]; then
           deleteConfigKey "cmdline.disable_mtrr_trim" "${USER_CONFIG_FILE}"
           deleteConfigKey "cmdline.crashkernel" "${USER_CONFIG_FILE}"
           dialog --backtitle "$(backtitle)" --title "RAM Fix" \
-            --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
+            --aspect 18 --msgbox "Fix removed from Cmdline" 0 0
         fi
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1041,7 +1063,7 @@ function cmdlineMenu() {
         if [ ${resp} -eq 1 ]; then
           writeConfigKey "cmdline.pci" "routeirq" "${USER_CONFIG_FILE}"
           dialog --backtitle "$(backtitle)" --title "PCI/IRQ Fix" \
-            --aspect 18 --msgbox "Fix installed to Cmdline" 0 0
+            --aspect 18 --msgbox "Fix added to Cmdline" 0 0
         elif [ ${resp} -eq 2 ]; then
           deleteConfigKey "cmdline.pci" "${USER_CONFIG_FILE}"
           dialog --backtitle "$(backtitle)" --title "PCI/IRQ Fix" \
@@ -1061,7 +1083,7 @@ function cmdlineMenu() {
         if [ ${resp} -eq 1 ]; then
           writeConfigKey "cmdline.intel_idle.max_cstate" "1" "${USER_CONFIG_FILE}"
           dialog --backtitle "$(backtitle)" --title "C-State Fix" \
-            --aspect 18 --msgbox "Fix installed to Cmdline" 0 0
+            --aspect 18 --msgbox "Fix added to Cmdline" 0 0
         elif [ ${resp} -eq 2 ]; then
           deleteConfigKey "cmdline.intel_idle.max_cstate" "${USER_CONFIG_FILE}"
           dialog --backtitle "$(backtitle)" --title "C-State Fix" \
