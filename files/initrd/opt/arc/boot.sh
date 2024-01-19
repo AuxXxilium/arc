@@ -243,5 +243,9 @@ for T in $(w | grep -v "TTY" | awk -F' ' '{print $2}')
 do
   echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\nUse \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
 done
+
+# Clear logs for dbgutils addons
+rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
+
 [ "${KERNELLOAD}" = "kexec" ] && kexec -f -e || poweroff
 exit 0

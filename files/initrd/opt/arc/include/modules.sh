@@ -6,6 +6,10 @@
 function getAllModules() {
   PLATFORM=${1}
   KVER=${2}
+  if [[ -z "${PLATFORM}" || -z "${KVER}" ]]; then
+    echo ""
+    return 1
+  fi
   # Unzip modules for temporary folder
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
@@ -30,6 +34,10 @@ function addToModules() {
   PLATFORM=${1}
   KVER=${2}
   KOFILE=${3}
+  if [[ -z "${PLATFORM}" || -z "${KVER}" || -z "${KOFILE}" ]]; then
+    echo ""
+    return 1
+  fi
   # Unzip modules for temporary folder
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
@@ -47,6 +55,10 @@ function delToModules() {
   PLATFORM=${1}
   KVER=${2}
   KONAME=${3}
+  if [[ -z "${PLATFORM}" || -z "${KVER}" || -z "${KOFILE}" ]]; then
+    echo ""
+    return 1
+  fi
   # Unzip modules for temporary folder
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
@@ -75,6 +87,10 @@ function getdepends() {
   PLATFORM=${1}
   KVER=${2}
   KONAME=${3}
+  if [[ -z "${PLATFORM}" || -z "${KVER}" || -z "${KOFILE}" ]]; then
+    echo ""
+    return 1
+  fi
   # Unzip modules for temporary folder
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"

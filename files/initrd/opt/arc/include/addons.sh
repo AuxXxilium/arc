@@ -3,6 +3,10 @@
 # 1 - Platform
 # 2 - Kernel Version
 function availableAddons() {
+  if [[ -z "${1}" || -z "${2}" ]]; then
+    echo ""
+    return 1
+  fi
   while read -r D; do
     [ ! -f "${D}/manifest.yml" ] && continue
     ADDON=$(basename ${D})
@@ -24,6 +28,9 @@ function availableAddons() {
 # 3 - Kernel Version
 # Return ERROR if not exists
 function checkAddonExist() {
+  if [[ -z "${1}" || -z "${2}" || -z "${3}" ]]; then
+    return 1 # ERROR
+  fi
   # First check generic files
   if [ -f "${ADDONS_PATH}/${1}/all.tgz" ]; then
     return 0 # OK
@@ -39,6 +46,9 @@ function checkAddonExist() {
 # Install Addon into ramdisk image
 # 1 - Addon id
 function installAddon() {
+  if [ -z "${1}" ]; then
+    return 1
+  fi
   ADDON="${1}"
   mkdir -p "${TMP_PATH}/${ADDON}"
   HAS_FILES=0
@@ -66,6 +76,10 @@ function installAddon() {
 # 1 - Addon file path
 # Return name of addon on sucess or empty on error
 function untarAddon() {
+  if [ -z "${1}" ]; then
+    echo ""
+    return 1
+  fi
   rm -rf "${TMP_PATH}/${ADDON:?}"
   mkdir -p "${TMP_PATH}/${ADDON}"
   tar -xaf "${1}" -C "${TMP_PATH}/${ADDON}" || return
