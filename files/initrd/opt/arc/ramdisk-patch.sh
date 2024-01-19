@@ -133,8 +133,6 @@ for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
 done
 mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
 tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
-# Clean
-rm -rf "${TMP_PATH}/modules"
 
 # Copying fake modprobe
 cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
