@@ -194,7 +194,7 @@ ${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
 if [ -f "${USER_UP_PATH}/modulelist" ]; then
   cp -f "${USER_UP_PATH}/modulelist" "${RAMDISK_PATH}/addons/modulelist"
 else
-  cp -f "${WORK_PATH}/include/modulelist" "${RAMDISK_PATH}/addons/modulelist"
+  cp -f "${ARC_PATH}/include/modulelist" "${RAMDISK_PATH}/addons/modulelist"
 fi
 
 # Network card configuration file
