@@ -2682,7 +2682,7 @@ function resetLoader() {
   initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
-  initConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.usbmount" "auto" "${USER_CONFIG_FILE}"
   initConfigKey "arc.patch" "random" "${USER_CONFIG_FILE}"
   initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
