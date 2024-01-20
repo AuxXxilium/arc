@@ -14,6 +14,10 @@ on:
         description: "format %y.%-m.$i or auto"
         required: false
         type: string
+      next:
+        description: "-next Release"
+        required: false
+        type: boolean
       prerelease:
         description: "pre release"
         default: false
@@ -100,7 +104,11 @@ jobs:
               VERSION="`date +'%y.%-m.%-d'`"
             fi
           fi
-
+          
+          if [ "${{ inputs.next }}" = "true" ]; then
+            VERSION="${VERSION}-next"
+          fi
+          
           echo "Version: ${VERSION}"
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
