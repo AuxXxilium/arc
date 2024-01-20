@@ -100,6 +100,7 @@ declare -A CMDLINE
 # Read and Set Cmdline
 if grep -q "force_junior" /proc/cmdline; then
   CMDLINE['force_junior']=""
+  writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
 fi
 [ ${EFI} -eq 1 ] && CMDLINE['withefi']="" || CMDLINE['noefi']=""
 if [ ! "${BUS}" = "usb" ]; then

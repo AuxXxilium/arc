@@ -2733,6 +2733,7 @@ function boot() {
   if [ $? -eq 0 ]; then
     make
   fi
+  writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting to DSM - Please stay patient!" 0 0
   sleep 2
