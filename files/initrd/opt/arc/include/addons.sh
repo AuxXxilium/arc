@@ -54,12 +54,12 @@ function installAddon() {
   HAS_FILES=0
   # First check generic files
   if [ -f "${ADDONS_PATH}/${ADDON}/all.tgz" ]; then
-    tar -zxf "${ADDONS_PATH}/${ADDON}/all.tgz" -C "${TMP_PATH}/${ADDON}"
+    tar zxf "${ADDONS_PATH}/${ADDON}/all.tgz" -C "${TMP_PATH}/${ADDON}"
     HAS_FILES=1
   fi
   # Now check specific platform files
   if [ -f "${ADDONS_PATH}/${ADDON}/${PLATFORM}-${KVER}.tgz" ]; then
-    tar -zxf "${ADDONS_PATH}/${ADDON}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/${ADDON}"
+    tar zxf "${ADDONS_PATH}/${ADDON}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/${ADDON}"
     HAS_FILES=1
   fi
   # If has files to copy, copy it, else return error
@@ -82,7 +82,7 @@ function untarAddon() {
   fi
   rm -rf "${TMP_PATH}/${ADDON:?}"
   mkdir -p "${TMP_PATH}/${ADDON}"
-  tar -xaf "${1}" -C "${TMP_PATH}/${ADDON}" || return
+  tar xaf "${1}" -C "${TMP_PATH}/${ADDON}" || return
   ADDON=$(readConfigKey "name" "${TMP_PATH}/${ADDON}/manifest.yml")
   [ -z "${ADDON}" ] && return
   rm -rf "${ADDONS_PATH}/${ADDON:?}"
@@ -97,8 +97,8 @@ function updateAddons() {
     ADDON=$(basename "${F}" | sed 's|.addon||')
     rm -rf "${ADDONS_PATH}/${ADDON:?}"
     mkdir -p "${ADDONS_PATH}/${ADDON}"
-    echo "Installing ${F} to ${ADDONS_PATH}/${ADDON}"
-    tar -xaf "${F}" -C "${ADDONS_PATH}/${ADDON}"
+    echo "Installing ${F} to ${ADDONS_PATH}/${ADDON}" 2>"${LOG_FILE}" || dieLog
+    tar xaf "${F}" -C "${ADDONS_PATH}/${ADDON}"
     rm -f "${F}"
   done
 }
