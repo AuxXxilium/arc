@@ -539,14 +539,14 @@ function make() {
           LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_FILE}" "${UNTAR_PAT_PATH}"
         else
           # Untar PAT file
-          tar -xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+          tar xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
         fi
         # Cleanup PAT Download
         rm -f "${PAT_FILE}"
         dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
         --msgbox "DSM Extraction successful!" 0 0
       elif [ -f "${DSM_FILE}" ]; then
-        tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+        tar xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
         dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
           --msgbox "DSM Image Download successful!" 0 0
       else
@@ -663,7 +663,7 @@ function offlinemake() {
       LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_FILE}" "${UNTAR_PAT_PATH}"
     else
       # Untar PAT file
-      tar -xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+      tar xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
     fi
     # Cleanup old PAT
     rm -f "${PAT_FILE}"
@@ -1710,7 +1710,7 @@ function updateMenu() {
           ADDON=$(basename ${PKG} | sed 's|.addon||')
           rm -rf "${ADDONS_PATH}/${ADDON}"
           mkdir -p "${ADDONS_PATH}/${ADDON}"
-          tar -xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
+          tar xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
           rm -f "${ADDONS_PATH}/${ADDON}.addon"
         done
         rm -f "${TMP_PATH}/addons.zip"
@@ -2128,11 +2128,15 @@ function sysinfo() {
   fi
   TEXT+="\n  Drives total: \Zb${NUMPORTS}\Zn"
   dialog --backtitle "$(backtitle)" --colors --title "Sysinfo" \
-    --extra-button --extra-label "Full Diag" --msgbox "${TEXT}" 0 0
+    --help-button --help-label "Networkdiag" --extra-button --extra-label "Full Sysinfo" \
+    --msgbox "${TEXT}" 0 0
   RET=$?
   case ${RET} in
   0) # ok-button
     return 0
+    ;;
+  2) # help-button
+    networkdiag
     ;;
   3) # extra-button
     fullsysinfo
@@ -2307,7 +2311,7 @@ function fullsysinfo() {
     done
   fi
   if [ $(lspci -d ::104 | wc -l) -gt 0 ]; then
-    TEXT+="\n  SCSI Controller:\n"
+    TEXT+="\nSCSI Controller:\n"
     for PCI in $(lspci -d ::104 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
@@ -2317,7 +2321,7 @@ function fullsysinfo() {
     done
   fi
   if [[ -d "/sys/class/scsi_host" && $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]]; then
-    TEXT+="\n USB Controller:\n"
+    TEXT+="\nUSB Controller:\n"
     for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
@@ -2328,7 +2332,7 @@ function fullsysinfo() {
     done
   fi
   if [[ -d "/sys/class/mmc_host" && $(ls -l /sys/class/mmc_host | grep mmc_host | wc -l) -gt 0 ]]; then
-    TEXT+="\n MMC Controller:\n"
+    TEXT+="\nMMC Controller:\n"
     for PCI in $(lspci -d ::805 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORTNUM=$(ls -l /sys/class/mmc_host | grep "${PCI}" | wc -l)
@@ -2339,7 +2343,7 @@ function fullsysinfo() {
     done
   fi
   if [ $(lspci -d ::108 | wc -l) -gt 0 ]; then
-    TEXT+="\n NVMe Controller:\n"
+    TEXT+="\nNVMe Controller:\n"
     for PCI in $(lspci -d ::108 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
@@ -2373,6 +2377,52 @@ function fullsysinfo() {
 }
 
 ###############################################################################
+# Shows Networkdiag to user
+function networkdiag() {
+  MSG=""
+  for iface in $(ls /sys/class/net/ | grep -v lo || true)
+  do
+    MSG+="Interface: ${iface}\n"
+    addr=$(getIP ${iface})
+    netmask=$(ifconfig eth0 | grep inet | grep 255 | awk '{print $4}' | cut -f2 -d':')
+    MSG+="IP Address: ${addr}\n"
+    MSG+="Netmask: ${netmask}\n"
+    MSG+="\n"
+  done
+  gateway=$(route -n | grep 'UG[ \t]' | awk '{print $2}' | head -n 1)
+  MSG+="Gateway: ${gateway}\n"
+  dnsserver="$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')"
+  MSG+="DNS Server: ${dnsserver}\n"
+  MSG+="\n"
+  websites=("google.com" "github.com" "auxxxilium.tech")
+  for website in "${websites[@]}"; do
+    if ping -c 1 "${website}" &> /dev/null; then
+      MSG+="Connection to ${website} is successful.\n"
+    else
+      MSG+="Connection to ${website} failed.\n"
+    fi
+  done
+  if [ "${CONFDONE}" = "true" ]; then
+    GITHUBAPI="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+    if [[ $? -ne 0 || -z "${GITHUBAPI}" ]]; then
+      MSG+="\nGithub API not reachable!"
+    else
+      MSG+="\nGithub API reachable!"
+    fi
+    SYNOAPI="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
+    if [[ $? -ne 0 || -z "${SYNOAPI}" ]]; then
+      MSG+="\nSyno API not reachable!"
+    else
+      MSG+="\nSyno API reachable!"
+    fi
+  else
+    MSG+="\nFor API Checks you need to configure Loader first!"
+  fi
+  dialog --backtitle "$(backtitle)" --colors --title "Networkdiag" \
+    --msgbox "${MSG}" 0 0
+}
+
+###############################################################################
 # Shows Systeminfo to user
 function credits() {
   # Print Credits Informations
@@ -2387,7 +2437,7 @@ function credits() {
   TEXT+="\n\Z4>> Based on:\Zn"
   TEXT+="\n   Redpill: \ZbTTG / Pocopico\Zn"
   TEXT+="\n   ARPL: \Zbfbelavenuto / wjz304\Zn"
-  TEXT+="\n   CPU Info: \ZbFOXBI\Zn"
+  TEXT+="\n   NVMe Scripts: \Zb007revad\Zn"
   TEXT+="\n   System: \ZbBuildroot 2023.02.x\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4>> Note:\Zn"
@@ -2707,7 +2757,7 @@ function resetLoader() {
   fi
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  dialog --backtitle "$(backtitle)" --colors --title "Clean Old" \
+  dialog --backtitle "$(backtitle)" --colors --title "Reset Loader" \
     --msgbox "Clean is complete." 5 30
   clear
 }
@@ -2725,6 +2775,17 @@ function editGrubCfg() {
 }
 
 ###############################################################################
+# Grep Logs from dbgutils
+function greplogs() {
+  dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
+    --infobox "Copy Log Files." 3 20
+  sleep 2
+  tar cfz "${TMP_PATH}/log.tar.gz" "${PART1_PATH}/logs" >/dev/null 2>&1
+  dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
+    --msgbox "Logs can be found at /tmp/log.tar.gz" 5 40
+}
+
+###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -2735,7 +2796,7 @@ function boot() {
   fi
   writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
-    --infobox "Booting to DSM - Please stay patient!" 0 0
+    --infobox "Booting to DSM - Please stay patient!" 5 30
   sleep 2
   exec reboot
 }
@@ -2774,7 +2835,7 @@ while true; do
       fi
       echo "h \"USB Mount Options \" "                                                      >>"${TMP_PATH}/menu"
       echo "p \"Arc Settings \" "                                                           >>"${TMP_PATH}/menu"
-      echo ". \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu"
+      echo "D \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
       echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
@@ -2797,7 +2858,7 @@ while true; do
       echo "m \"DSM Kernelload: \Z4${KERNELLOAD}\Zn \" "                                    >>"${TMP_PATH}/menu"
       if [ "${DIRECTBOOT}" = "false" ]; then
         echo "i \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
-        echo "- \"Boot Waittime: \Z4${BOOTWAIT}\Zn \" "                                     >>"${TMP_PATH}/menu"
+        echo "B \"Boot Waittime: \Z4${BOOTWAIT}\Zn \" "                                     >>"${TMP_PATH}/menu"
       fi
       echo "q \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
       if [ ${BOOTCOUNT} -gt 0 ]; then
@@ -2813,8 +2874,8 @@ while true; do
       echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
       echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
-      echo ", \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
-      echo "/ \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
+      echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
+      echo "H \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
       echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "c \"Use IPv6: \Z4${ARCIPV6}\Zn \" "                                             >>"${TMP_PATH}/menu"
@@ -2830,7 +2891,8 @@ while true; do
     echo "v \"Save Modifications to Disk \" "                                               >>"${TMP_PATH}/menu"
     echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
     echo "w \"Reset Loader \" "                                                             >>"${TMP_PATH}/menu"
-    echo "+ \"\Z1Format Sata/NVMe Disk\Zn \" "                                              >>"${TMP_PATH}/menu"
+    echo "F \"\Z1Format Sata/NVMe Disk\Zn \" "                                              >>"${TMP_PATH}/menu"
+    echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
   fi
   echo "= \"\Z4===== Loader Settings ====\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
@@ -2865,7 +2927,7 @@ while true; do
     g) storageMenu; NEXT="g" ;;
     p) ONLYPATCH="true" && arcsettings; NEXT="p" ;;
     h) usbMenu; NEXT="h" ;;
-    .) staticIPMenu; NEXT="." ;;
+    D) staticIPMenu; NEXT="D" ;;
     c) [ "${ARCIPV6}" = "true" ] && ARCIPV6='false' || ARCIPV6='true'
       writeConfigKey "arc.ipv6" "${ARCIPV6}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -2890,7 +2952,7 @@ while true; do
       NEXT="m"
       ;;
     i) bootipwaittime; NEXT="i" ;;
-    -) bootwaittime; NEXT="-" ;;
+    B) bootwaittime; NEXT="B" ;;
     q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
       grub-editenv "${GRUB_PATH}/grubenv" create
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
@@ -2909,18 +2971,19 @@ while true; do
       ;;
     s) downgradeMenu; NEXT="s" ;;
     t) resetPassword; NEXT="t" ;;
-    ,)
+    O)
       [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
       writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      NEXT="O"
       ;;
-    /)
+    H)
       [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
       writeConfigKey "arc.hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="/"
+      NEXT="H"
       ;;
     o) [ "${MACSYS}" = "hardware" ] && MACSYS='custom' || MACSYS='hardware'
       writeConfigKey "arc.macsys" "${MACSYS}" "${USER_CONFIG_FILE}"
@@ -2942,7 +3005,8 @@ while true; do
     v) saveMenu; NEXT="v" ;;
     n) editGrubCfg; NEXT="n" ;;
     w) resetLoader; NEXT="w" ;;
-    +) formatdisks; NEXT="+" ;;
+    F) formatdisks; NEXT="F" ;;
+    L) greplogs; NEXT="L" ;;
     # Loader Settings
     x) backupMenu; NEXT="x" ;;
     9) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
