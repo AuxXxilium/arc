@@ -2796,7 +2796,7 @@ function boot() {
   fi
   writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
-    --infobox "Booting to DSM - Please stay patient!" 5 30
+    --infobox "Booting to DSM...\nPlease stay patient!" 4 25
   sleep 2
   exec reboot
 }
