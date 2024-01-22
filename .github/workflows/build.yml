@@ -92,13 +92,6 @@ jobs:
           echo "Version: ${VERSION}"
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
-          if [ -n "${VERSION}" ]; then
-            # Modify Source File
-            echo "${VERSION}" >VERSION
-            echo "${VERSION}" >files/p1/ARC-VERSION
-            sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
-          fi
-
       # Build incremental
       - name: Build Image
         run: |
@@ -125,7 +118,15 @@ jobs:
           [ -z "${br_version}" ] && br_version="2023.02.x"
           getBuildroot "${br_version}" "br"
           [ ! -f "br/bzImage-arc" ] || [ ! -f "br/initrd-arc" ] && return 1
-          
+
+          VERSION="${{ env.VERSION }}"
+          if [ -n "${VERSION}" ]; then
+            # Modify Source File
+            echo "${VERSION}" >VERSION
+            echo "${VERSION}" >files/p1/ARC-VERSION
+            sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
+          fi
+
           echo "Repack initrd"
           cp -f "br/bzImage-arc" "files/p3/bzImage-arc"
           repackInitrd "br/initrd-arc" "files/initrd" "files/p3/initrd-arc"
