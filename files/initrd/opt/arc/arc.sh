@@ -1289,43 +1289,31 @@ function keymapMenu() {
 function usbMenu() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "Mount USB Options" \
-      --menu "Choose an Option" 0 0 0 \
-      1 "Mount USB as Internal" \
-      2 "Mount USB as Device" \
-      3 "Mount USB automatically" \
+    dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
+      1 "Mount USB as Device" \
+      2 "Mount USB as Internal" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     case "$(<"${TMP_PATH}/resp")" in
       1)
-        writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.usbportcfg" "0" "${USER_CONFIG_FILE}"
-        deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.usbportcfg" "0xffff" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Mount USB Options" \
-          --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
+        dialog --backtitle "$(backtitle)" --title "Mount USB as Device" \
+          --aspect 18 --msgbox "Mount USB as Device - successful!" 0 0
         ;;
       2)
-        writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.usbportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
         deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Mount USB Options" \
-          --aspect 18 --msgbox "Mount USB as Device - successful!" 0 0
-        ;;
-      3)
-        deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
-        deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
-        deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.usbmount" "auto" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Mount USB Options" \
-          --aspect 18 --msgbox "Mount USB automatically - successful!" 0 0
+        dialog --backtitle "$(backtitle)" --title "Mount USB as Internal" \
+          --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
         ;;
     esac
   else
@@ -2732,7 +2720,7 @@ function resetLoader() {
   initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
-  initConfigKey "arc.usbmount" "auto" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
   initConfigKey "arc.patch" "random" "${USER_CONFIG_FILE}"
   initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
