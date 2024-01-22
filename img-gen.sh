@@ -40,7 +40,7 @@ echo "Copying files"
 sudo cp -Rf "files/p1/"* "/tmp/files/p1"
 sudo cp -Rf "files/p3/"* "/tmp/files/p3"
 # Get extractor, LKM, addons and Modules
-getExtractor "/tmp/files/p3/extractor"
+#getExtractor "/tmp/files/p3/extractor"
 getLKMs "/tmp/files/p3/lkms"
 getAddons "/tmp/files/p3/addons"
 getModules "/tmp/files/p3/modules"
