@@ -149,11 +149,12 @@ jobs:
           . scripts/func.sh
 
           echo "Create Arc Image"
-          gzip -dc "files/grub.img.gz" >"arc.img"
-          fdisk -l "arc.img"
+          IMAGE_FILE="arc.img"
+          gzip -dc "files/grub.img.gz" >"${IMAGE_FILE}"
+          fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
-          sudo losetup -P "${LOOPX}" "arc.img"
+          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
 
           echo "Mounting Image File"
           mkdir -p "/tmp/p1"
