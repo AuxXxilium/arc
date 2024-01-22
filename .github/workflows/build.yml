@@ -135,12 +135,12 @@ jobs:
           sudo cp -Rf "files/p1/"* "/tmp/files/p1"
           sudo cp -Rf "files/p3/"* "/tmp/files/p3"
           # Get extractor, LKM, addons and Modules
-          sudo getExtractor "/tmp/files/p3/extractor"
-          sudo getLKMs "/tmp/files/p3/lkms"
-          sudo getAddons "/tmp/files/p3/addons"
-          sudo getModules "/tmp/files/p3/modules"
-          sudo getConfigs "/tmp/files/p3/configs"
-          sudo getPatches "/tmp/files/p3/patches"
+          #getExtractor "/tmp/files/p3/extractor"
+          getLKMs "/tmp/files/p3/lkms"
+          getAddons "/tmp/files/p3/addons"
+          getModules "/tmp/files/p3/modules"
+          getConfigs "/tmp/files/p3/configs"
+          getPatches "/tmp/files/p3/patches"
           
           sync
           
