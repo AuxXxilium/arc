@@ -1289,33 +1289,42 @@ function keymapMenu() {
 function usbMenu() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
-    dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
-      1 "Mount USB as Device" \
-      2 "Mount USB as Internal" \
-      2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
-    case "$(<"${TMP_PATH}/resp")" in
-      1)
-        writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.usbportcfg" "0xffff" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Mount USB as Device" \
-          --aspect 18 --msgbox "Mount USB as Device - successful!" 0 0
-        ;;
-      2)
-        deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
-        deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
-        deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Mount USB as Internal" \
-          --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
-        ;;
-    esac
+    DT="$(readModelKey "${MODEL}" "dt")"
+    if [ ! "${DT}" = "true" ]; then
+      dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
+        1 "Mount USB as Internal" \
+        2 "Mount USB as Device" \
+        2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && return 1
+      case "$(<"${TMP_PATH}/resp")" in
+        1)
+          MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+          writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.usbportcfg" "0x0" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
+          writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          dialog --backtitle "$(backtitle)" --title "Mount USB as Internal" \
+            --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
+          ;;
+        2)
+          MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+          deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
+          deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
+          deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
+          writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          dialog --backtitle "$(backtitle)" --title "Mount USB as Device" \
+            --aspect 18 --msgbox "Mount USB as Device - successful!" 0 0
+          ;;
+      esac
+    else
+      dialog --backtitle "$(backtitle)" --title "Mount USB Options" \
+        --aspect 18 --msgbox "Please select a nonDT Model." 0 0
+      return 1
+    fi
   else
     dialog --backtitle "$(backtitle)" --title "Mount USB Options" \
       --aspect 18 --msgbox "Please configure your System first." 0 0
@@ -2820,8 +2829,8 @@ while true; do
       echo "f \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
       if [ "${DT}" = "false" ]; then
         echo "g \"Storage Map \" "                                                          >>"${TMP_PATH}/menu"
+        echo "h \"USB Mount Options \" "                                                    >>"${TMP_PATH}/menu"
       fi
-      echo "h \"USB Mount Options \" "                                                      >>"${TMP_PATH}/menu"
       echo "p \"Arc Settings \" "                                                           >>"${TMP_PATH}/menu"
       echo "D \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu"
     fi
