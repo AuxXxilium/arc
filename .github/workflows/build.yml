@@ -30,26 +30,6 @@ on:
         description: "buildroot version"
         default: "2023.02.x"
         type: string
-      addons_version:
-        description: "addons version"
-        default: ""
-        type: string
-      configs_version:
-        description: "configs version"
-        default: ""
-        type: string
-      modules_version:
-        description: "modules version"
-        default: ""
-        type: string
-      lkm_version:
-        description: "lkm version"
-        default: ""
-        type: string
-      patches_version:
-        description: "patches version"
-        default: ""
-        type: string
 
 jobs:
   build:
@@ -119,47 +99,26 @@ jobs:
             sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
           fi
 
-      # Get extractor, LKM, Addons, Modules and Configs
-      - name: Get extractor, LKM, Addons, Extensions, Modules and Configs
-        run: |
-          . scripts/func.sh
-
-          getExtractor "files/p3/extractor"
-          LKMTAG="${{ inputs.lkm_version }}"
-          getLKMs "files/p3/lkms" ${{ inputs.prerelease }}
-          echo "LKMTAG=${TAG}" >> $GITHUB_ENV
-          ADDONSTAG="${{ inputs.addons_version }}"
-          getAddons "files/p3/addons" ${{ inputs.prerelease }}
-          echo "ADDONSTAG=${TAG}" >> $GITHUB_ENV
-          MODULESTAG="${{ inputs.modules_version }}"
-          getModules "files/p3/modules" ${{ inputs.prerelease }}
-          echo "MODULESTAG=${TAG}" >> $GITHUB_ENV
-          CONFIGSTAG="${{ inputs.configs_version }}"
-          getConfigs "files/p3/configs" ${{ inputs.prerelease }}
-          echo "CONFIGSTAG=${TAG}" >> $GITHUB_ENV
-          PATCHESTAG="${{ inputs.patches_version }}"
-          getPatches "files/p3/patches" ${{ inputs.prerelease }}
-          echo "PATCHESTAG=${TAG}" >> $GITHUB_ENV
-
-          echo "OK"
-
       # Build incremental
       - name: Build Image
         run: |
           . scripts/func.sh
 
           echo "Create Arc Image"
-          gzip -dc "files/grub.img.gz" >"arc.img"
-          fdisk -l "arc.img"
+          IMAGE_FILE="arc.img"
+          gzip -dc "files/grub.img.gz" >"${IMAGE_FILE}"
+          fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
-          sudo losetup -P "${LOOPX}" "arc.img"
-
+          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
+          
           echo "Mounting Image File"
-          mkdir -p "/tmp/p1"
-          mkdir -p "/tmp/p3"
-          sudo mount ${LOOPX}p1 "/tmp/p1"
-          sudo mount ${LOOPX}p3 "/tmp/p3"
+          sudo rm -rf "/tmp/files/p1"
+          sudo rm -rf "/tmp/files/p3"
+          sudo mkdir -p "/tmp/files/p1"
+          sudo mkdir -p "/tmp/files/p3"
+          sudo mount ${LOOPX}p1 "/tmp/files/p1"
+          sudo mount ${LOOPX}p3 "/tmp/files/p3"
 
           echo "Get Buildroot"
           br_version="${{ inputs.br_version }}"
@@ -172,16 +131,22 @@ jobs:
           repackInitrd "br/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
-          sudo cp -Rf "files/p1/"* "/tmp/p1"
-          sudo cp -Rf "files/p3/"* "/tmp/p3"
+          sudo cp -Rf "files/p1/"* "/tmp/files/p1"
+          sudo cp -Rf "files/p3/"* "/tmp/files/p3"
+          # Get extractor, LKM, addons and Modules
+          getExtractor "/tmp/files/p3/extractor"
+          getLKMs "/tmp/files/p3/lkms"
+          getAddons "/tmp/files/p3/addons"
+          getModules "/tmp/files/p3/modules"
+          getConfigs "/tmp/files/p3/configs"
+          getPatches "/tmp/files/p3/patches"
+          
           sync
-
-          echo "Unmount image file"
-          sudo umount "/tmp/p1"
-          sudo umount "/tmp/p3"
-          rmdir "/tmp/p1"
-          rmdir "/tmp/p3"
-
+          
+          echo "Unmount Image File"
+          sudo umount "/tmp/files/p1"
+          sudo umount "/tmp/files/p3"
+          
           sudo losetup --detach ${LOOPX}
 
           echo "Create Arc_4GB Image"
