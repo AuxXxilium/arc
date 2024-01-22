@@ -67,7 +67,7 @@ function getLKMs() {
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
   # Unzip LKMs
-  rm -rf "${DEST_PATH}"
+  sudo rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
   unzip "${CACHE_FILE}" -d "${DEST_PATH}"
   rm -f "${CACHE_FILE}"
