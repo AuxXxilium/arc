@@ -89,7 +89,7 @@ function getAddons() {
   STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${CACHE_FILE}")
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
-  rm -rf "${DEST_PATH}"
+  sudo rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
   # Install Addons
   rm -rf "${CACHE_DIR}"
@@ -122,7 +122,7 @@ function getModules() {
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
   # Unzip Modules
-  rm -rf "${DEST_PATH}"
+  sudo rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
   unzip "${CACHE_FILE}" -d "${DEST_PATH}"
   rm -f "${CACHE_FILE}"
@@ -145,7 +145,7 @@ function getConfigs() {
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
   # Unzip Modules
-  rm -rf "${DEST_PATH}"
+  sudo rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
   unzip "${CACHE_FILE}" -d "${DEST_PATH}"
   rm -f "${CACHE_FILE}"
@@ -168,7 +168,7 @@ function getPatches() {
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
   # Unzip Modules
-  rm -rf "${DEST_PATH}"
+  sudo rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
   unzip "${CACHE_FILE}" -d "${DEST_PATH}"
   rm -f "${CACHE_FILE}"
