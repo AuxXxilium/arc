@@ -68,7 +68,7 @@ function getLKMs() {
   [ ${STATUS} -ne 200 ] && exit 1
   # Unzip LKMs
   sudo rm -rf "${DEST_PATH}"
-  mkdir -p "${DEST_PATH}"
+  sudo mkdir -p "${DEST_PATH}"
   unzip "${CACHE_FILE}" -d "${DEST_PATH}"
   rm -f "${CACHE_FILE}"
   echo "Getting LKMs end - ${TAG}"
@@ -90,7 +90,7 @@ function getAddons() {
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
   sudo rm -rf "${DEST_PATH}"
-  mkdir -p "${DEST_PATH}"
+  sudo mkdir -p "${DEST_PATH}"
   # Install Addons
   rm -rf "${CACHE_DIR}"
   mkdir -p "${CACHE_DIR}"
@@ -123,7 +123,7 @@ function getModules() {
   [ ${STATUS} -ne 200 ] && exit 1
   # Unzip Modules
   sudo rm -rf "${DEST_PATH}"
-  mkdir -p "${DEST_PATH}"
+  sudo mkdir -p "${DEST_PATH}"
   unzip "${CACHE_FILE}" -d "${DEST_PATH}"
   rm -f "${CACHE_FILE}"
   echo "Getting Modules end - ${TAG}"
@@ -146,7 +146,7 @@ function getConfigs() {
   [ ${STATUS} -ne 200 ] && exit 1
   # Unzip Modules
   sudo rm -rf "${DEST_PATH}"
-  mkdir -p "${DEST_PATH}"
+  sudo mkdir -p "${DEST_PATH}"
   unzip "${CACHE_FILE}" -d "${DEST_PATH}"
   rm -f "${CACHE_FILE}"
   echo "Getting Configs end - ${TAG}"
@@ -169,7 +169,7 @@ function getPatches() {
   [ ${STATUS} -ne 200 ] && exit 1
   # Unzip Modules
   sudo rm -rf "${DEST_PATH}"
-  mkdir -p "${DEST_PATH}"
+  sudo mkdir -p "${DEST_PATH}"
   unzip "${CACHE_FILE}" -d "${DEST_PATH}"
   rm -f "${CACHE_FILE}"
   echo "Getting Patches end - ${TAG}"
