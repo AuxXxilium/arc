@@ -137,10 +137,15 @@ jobs:
           # Get extractor, LKM, addons and Modules
           #getExtractor "/tmp/files/p3/extractor"
           getLKMs "/tmp/files/p3/lkms"
+          echo "LKMTAG=${TAG}" >> $GITHUB_ENV
           getAddons "/tmp/files/p3/addons"
+          echo "ADDONSTAG=${TAG}" >> $GITHUB_ENV
           getModules "/tmp/files/p3/modules"
+          echo "MODULESTAG=${TAG}" >> $GITHUB_ENV
           getConfigs "/tmp/files/p3/configs"
+          echo "CONFIGSTAG=${TAG}" >> $GITHUB_ENV
           getPatches "/tmp/files/p3/patches"
+          echo "PATCHESTAG=${TAG}" >> $GITHUB_ENV
           
           sync
           
