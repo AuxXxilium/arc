@@ -46,6 +46,34 @@ jobs:
           echo "Version: ${VERSION}"
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
+      # Build incremental
+      - name: Build Image
+        run: |
+          . scripts/func.sh
+
+          echo "Create Arc Image"
+          IMAGE_FILE="arc.img"
+          gzip -dc "files/grub.img.gz" >"${IMAGE_FILE}"
+          fdisk -l "${IMAGE_FILE}"
+          
+          LOOPX=$(sudo losetup -f)
+          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
+          
+          echo "Mounting Image File"
+          sudo rm -rf "/tmp/files/p1"
+          sudo rm -rf "/tmp/files/p3"
+          sudo mkdir -p "/tmp/files/p1"
+          sudo mkdir -p "/tmp/files/p3"
+          sudo mount ${LOOPX}p1 "/tmp/files/p1"
+          sudo mount ${LOOPX}p3 "/tmp/files/p3"
+
+          echo "Get Buildroot"
+          br_version="${{ inputs.br_version }}"
+          [ -z "${br_version}" ] && br_version="2023.02.x"
+          getBuildroot "${br_version}" "br"
+          [ ! -f "br/bzImage-arc" ] || [ ! -f "br/initrd-arc" ] && return 1
+
+          VERSION="${{ env.VERSION }}"
           if [ -n "${VERSION}" ]; then
             # Modify Source File
             echo "${VERSION}" >VERSION
@@ -53,61 +81,37 @@ jobs:
             sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
           fi
 
-      # Get extractor, LKM, Addons, Modules and Configs
-      - name: Get extractor, LKM, Addons, Extensions, Modules and Configs
-        run: |
-          . scripts/func.sh
-
-          getExtractor "files/p3/extractor"
-          getLKMs "files/p3/lkms" ${{ inputs.prerelease }}
-          getAddons "files/p3/addons" ${{ inputs.prerelease }}
-          getModules "files/p3/modules" ${{ inputs.prerelease }}
-          getConfigs "files/p3/configs" ${{ inputs.prerelease }}
-          getPatches "files/p3/patches" ${{ inputs.prerelease }}
-
-          echo "OK"
-
-      # Build incremental
-      - name: Build image
-        run: |
-          . scripts/func.sh
-
-          gzip -dc "files/grub.img.gz" >"arc.img"
-          fdisk -l "arc.img"
-          
-          LOOPX=$(sudo losetup -f)
-          sudo losetup -P "${LOOPX}" "arc.img"
-
-          echo "Mounting image file"
-          mkdir -p "/tmp/p1"
-          mkdir -p "/tmp/p3"
-          sudo mount ${LOOPX}p1 "/tmp/p1"
-          sudo mount ${LOOPX}p3 "/tmp/p3"
-
-          echo "Get Buildroot"
-          getBuildroot "2023.02.x" "br"
-          [ ! -f "br/bzImage-arc" ] || [ ! -f "br/initrd-arc" ] && return 1
-          
           echo "Repack initrd"
           cp -f "br/bzImage-arc" "files/p3/bzImage-arc"
           repackInitrd "br/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
-          sudo cp -Rf "files/p1/"* "/tmp/p1"
-          sudo cp -Rf "files/p3/"* "/tmp/p3"
+          sudo cp -Rf "files/p1/"* "/tmp/files/p1"
+          sudo cp -Rf "files/p3/"* "/tmp/files/p3"
+          # Get extractor, LKM, addons and Modules
+          getExtractor "/tmp/files/p3/extractor"
+          getLKMs "/tmp/files/p3/lkms"
+          getAddons "/tmp/files/p3/addons"
+          getModules "/tmp/files/p3/modules"
+          getConfigs "/tmp/files/p3/configs"
+          getPatches "/tmp/files/p3/patches"
+          
           sync
-
-          echo "Unmount image file"
-          sudo umount "/tmp/p1"
-          sudo umount "/tmp/p3"
-          rmdir "/tmp/p1"
-          rmdir "/tmp/p3"
-
+          
+          echo "Unmount Image File"
+          sudo umount "/tmp/files/p1"
+          sudo umount "/tmp/files/p3"
+          
           sudo losetup --detach ${LOOPX}
+
+          echo "Create Arc_4GB Image"
+          resizeImg "arc.img" "+3072M" "arc_4GB.img"
 
           echo "Image Converter"
           qemu-img convert -O vmdk arc.img arc-dyn.vmdk
           qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
+          qemu-img convert -O vmdk arc_4GB.img arc_4GB-dyn.vmdk
+          qemu-img convert -O vmdk -o adapter_type=lsilogic arc_4GB.img -o subformat=monolithicFlat arc_4GB.vmdk
 
       # Zip image and generate checksum
       - name: Pack
