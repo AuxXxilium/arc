@@ -37,7 +37,7 @@ function getExtractor() {
     xz -dc <rd.gz | cpio -idm
   ) >/dev/null 2>&1 || true
 
-  rm -rf "${DEST_PATH}"
+  sudo rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
 
   # Copy only necessary files
