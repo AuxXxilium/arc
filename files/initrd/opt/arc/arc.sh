@@ -1299,7 +1299,7 @@ function usbMenu() {
       case "$(<"${TMP_PATH}/resp")" in
         1)
           MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          writeConfigKey "synoinfo.maxdisks" "24" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
           writeConfigKey "synoinfo.usbportcfg" "0x0" "${USER_CONFIG_FILE}"
           writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
           writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
