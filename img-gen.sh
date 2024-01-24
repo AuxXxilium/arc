@@ -4,6 +4,10 @@ set -e
 
 . scripts/func.sh
 
+# Clean cached Files
+sudo git clean -fdx
+sudo git pull
+
 # Get extractor, LKM, addons and Modules
 getExtractor "files/p3/extractor"
 getLKMs "files/p3/lkms"
