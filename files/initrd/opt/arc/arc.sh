@@ -2815,8 +2815,6 @@ while true; do
   echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
   echo "= \"\Z4========= System =========\Zn \" "                                           >>"${TMP_PATH}/menu"
   if [ "${CONFDONE}" = "true" ]; then
-    echo "b \"Addons \" "                                                                   >>"${TMP_PATH}/menu"
-    echo "d \"Modules \" "                                                                  >>"${TMP_PATH}/menu"
     if [ "${ARCOPTS}" = "true" ]; then
       echo "4 \"\Z1Hide Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
     else
@@ -2824,6 +2822,8 @@ while true; do
     fi
     if [ "${ARCOPTS}" = "true" ]; then
       echo "= \"\Z4========== Arc ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
+      echo "b \"Addons \" "                                                                 >>"${TMP_PATH}/menu"
+      echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
       echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
       echo "f \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
       if [ "${DT}" = "false" ]; then
@@ -2911,13 +2911,13 @@ while true; do
     # Info Section
     a) sysinfo; NEXT="a" ;;
     # System Section
-    b) addonMenu; NEXT="b" ;;
-    d) modulesMenu; NEXT="d" ;;
     # Arc Section
     4) [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
        ARCOPTS="${ARCOPTS}"
        NEXT="4"
        ;;
+    b) addonMenu; NEXT="b" ;;
+    d) modulesMenu; NEXT="d" ;;
     e) ONLYVERSION="true" && arcbuild; NEXT="e" ;;
     f) networkMenu; NEXT="f" ;;
     g) storageMenu; NEXT="g" ;;
