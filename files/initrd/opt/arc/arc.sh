@@ -488,8 +488,7 @@ function make() {
       else
         MSG="Successfully got PAT Data.\nPlease confirm or modify as needed."
       fi
-      dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-        --extra-button --extra-label "Retry" --default-button "OK" \
+      dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
         --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 7 100 0 \
         2>"${TMP_PATH}/resp"
       RET=$?
