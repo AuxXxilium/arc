@@ -170,7 +170,7 @@ done
 
 # Inform user
 echo
-echo -e "Call \033[1;34marc.sh\033[0m to configure loader"
+echo -e "Call \033[1;34marc.sh\033[0m to configure Arc"
 echo
 echo -e "User config is on \033[1;34m${USER_CONFIG_FILE}\033[0m"
 echo -e "Default SSH Root password is \033[1;34marc\033[0m"
@@ -183,9 +183,9 @@ mkdir -p "${MODEL_CONFIG_PATH}"
 mkdir -p "${PATCH_PATH}"
 mkdir -p "${BACKUPDIR}"
 
-# Load arc
+# Load Arc
 updateAddons
-echo -e "\033[1;34mLoading Arc Loader Overlay...\033[0m"
+echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
 sleep 2
 
 # Diskcheck
