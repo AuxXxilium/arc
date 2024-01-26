@@ -35,7 +35,7 @@ jobs:
           . scripts/grub.sh "grub-2.06" "i386-pc i386-efi x86_64-efi"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: grub
           path: |

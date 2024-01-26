@@ -212,7 +212,7 @@ jobs:
 
       # Upload artifact
       - name: Upload
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: env.VERSION != ''
         with:
           name: Images
