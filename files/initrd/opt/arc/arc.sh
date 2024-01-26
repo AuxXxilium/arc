@@ -1999,12 +1999,12 @@ function sysinfo() {
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
-        TEXT+="\n  ${DRIVER}: \ZbIP: TIMEOUT | MAC: ${MAC}\Zn"
+        TEXT+="\n  ${DRIVER} \ZbIP: TIMEOUT | MAC: ${MAC}\Zn"
         break
       fi
       sleep 3
       if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
+        TEXT+="\n  ${DRIVER} \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
         break
       fi
       COUNT=$((${COUNT} + 3))
@@ -2214,17 +2214,17 @@ function fullsysinfo() {
       fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) \ZbIP: ${IP} | Mac: ${MAC}\Zn"
+        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) IP: ${IP} | Mac: ${MAC}"
         [ ! -n "${IPCON}" ] && IPCON="${IP}"
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
-        TEXT+="\n  ${DRIVER}: \ZbIP: TIMEOUT | MAC: ${MAC}\Zn"
+        TEXT+="\n  ${DRIVER} IP: TIMEOUT | MAC: ${MAC}"
         break
       fi
       sleep 3
       if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n  ${DRIVER}: \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
+        TEXT+="\n  ${DRIVER} IP: NOT CONNECTED | MAC: ${MAC}"
         break
       fi
       COUNT=$((${COUNT} + 3))
