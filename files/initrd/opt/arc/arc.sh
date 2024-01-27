@@ -56,6 +56,7 @@ BOOTWAIT="$(readConfigKey "arc.bootwait" "${USER_CONFIG_FILE}")"
 REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
+KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
@@ -408,43 +409,63 @@ function arcsettings() {
 ###############################################################################
 # Building Loader Online
 function make() {
+  # KVM check
+  KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
+  if [ "${KVMSUPPORT}" = "true" ]; then
+    # Check if KVM is enabled
+    if ! grep -q '^flags.*(vmx|svm)' /proc/cpuinfo; then
+      dialog --backtitle "$(backtitle)" --title "Arc Build" \
+        --msgbox "Virtualization is not enabled in BIOS.\nDisable KVM Support for now." 0 0
+      writeConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
+    fi
+  fi
+  if [ "${KVMSUPPORT}" = "true" ]; then
+    writeConfigKey "modules.kvm" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modules.kvm-amd" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modules.kvm-intel" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modules.irqbypass" "" "${USER_CONFIG_FILE}"
+  elif [ "${KVMSUPPORT}" = "false" ]; then
+    deleteConfigKey "modules.kvm" "${USER_CONFIG_FILE}"
+    deleteConfigKey "modules.kvm-amd" "${USER_CONFIG_FILE}"
+    delteConfigKey "modules.kvm-intel" "${USER_CONFIG_FILE}"
+    delteConfigKey "modules.irqbypass" "${USER_CONFIG_FILE}"
+  fi
+  # Read Config
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  if [ "${PLATFORM}" = "epyc7002" ]; then
+    KVER="${PRODUCTVER}-${KVER}"
+  fi
+  if [ -d "${UNTAR_PAT_PATH}" ]; then
+    rm -rf "${UNTAR_PAT_PATH}"
+  fi
+  mkdir -p "${UNTAR_PAT_PATH}"
+  # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
+  writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
+  writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
+  # Check if all addon exists
+  while IFS=': ' read -r ADDON PARAM; do
+    [ -z "${ADDON}" ] && continue
+    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
+      dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
+        --msgbox "Addon ${ADDON} not found!" 0 0
+      return 1
+    fi
+  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+  # Check for eMMC Boot
+  if [[ "${LOADER_DISK}" = /dev/mmcblk* ]]; then
+    echo "Boot Device is eMMC."
+  else
+    deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
+    deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
+  fi
+  # Check for offline Mode
   if [ "${OFFLINE}" = "true" ]; then
     offlinemake
     return
   else
-    # Read Config
-    MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-    PLATFORM="$(readModelKey "${MODEL}" "platform")"
-    PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-    KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-    if [ "${PLATFORM}" = "epyc7002" ]; then
-      KVER="${PRODUCTVER}-${KVER}"
-    fi
-    if [ -d "${UNTAR_PAT_PATH}" ]; then
-      rm -rf "${UNTAR_PAT_PATH}"
-      mkdir -p "${UNTAR_PAT_PATH}"
-    fi
-    # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
-    writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
-    writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
-    # Check if all addon exists
-    while IFS=': ' read -r ADDON PARAM; do
-      [ -z "${ADDON}" ] && continue
-      if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
-        dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-          --msgbox "Addon ${ADDON} not found!" 0 0
-        return 1
-      fi
-    done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-
-    # Check for eMMC Boot
-    if [[ "${LOADER_DISK}" = /dev/mmcblk* ]]; then
-      echo "Boot Device is eMMC."
-    else
-      deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
-      deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
-    fi
-
     # Update PAT Data
     PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
@@ -501,7 +522,6 @@ function make() {
       writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
       # Check for existing Files
-      mkdir -p "${UNTAR_PAT_PATH}"
       DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
       # Get new Files
       DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL}/${PRODUCTVER}/${PAT_HASH}.tar"
@@ -599,32 +619,7 @@ function make() {
 ###############################################################################
 # Building Loader Offline
 function offlinemake() {
-  # Read Config
-  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  PLATFORM="$(readModelKey "${MODEL}" "platform")"
-  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-  if [ "${PLATFORM}" = "epyc7002" ]; then
-    KVER="${PRODUCTVER}-${KVER}"
-  fi
-  if [ -d "${UNTAR_PAT_PATH}" ]; then
-    rm -rf "${UNTAR_PAT_PATH}"
-    mkdir -p "${UNTAR_PAT_PATH}"
-  fi
-  # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
-  writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
-  writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
-  # Check if all addon exists
-  while IFS=': ' read -r ADDON PARAM; do
-    [ -z "${ADDON}" ] && continue
-    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
-      dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-        --msgbox "Addon ${ADDON} not found!" 0 0
-      return 1
-    fi
-  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
   # Check for existing Files
-  mkdir -p "${UNTAR_PAT_PATH}"
   mkdir -p "${UPLOAD_PATH}"
   # Get new Files
   dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
@@ -636,7 +631,7 @@ function offlinemake() {
       --msgbox "No DSM Image found!\nExit." 0 0
     return 1
   else
-    # Update PAT Data to 0 for Offline
+    # Remove PAT Data for Offline
     PAT_URL=""
     PAT_HASH=""
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
@@ -1955,6 +1950,7 @@ function sysinfo() {
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
+  KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
   MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
@@ -2031,6 +2027,7 @@ function sysinfo() {
   TEXT+="\n   Addons selected: \Zb${ADDONSINFO}\Zn"
   TEXT+="\n   Modules loaded: \Zb${MODULESINFO}\Zn"
   TEXT+="\n\Z4>> Settings\Zn"
+  TEXT+="\n   KVM Support: \Zb${KVMSUPPORT}\Zn"
   TEXT+="\n   Static IP: \Zb${STATICIP}\Zn"
   TEXT+="\n   Sort Drives: \Zb${HDDSORT}\Zn"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
@@ -2175,6 +2172,7 @@ function fullsysinfo() {
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
+  KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
   MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
@@ -2259,6 +2257,7 @@ function fullsysinfo() {
   TEXT+="\n${MODULESINFO}"
   TEXT+="\n"
   TEXT+="\nSettings"
+  TEXT+="\nKVM Support: ${KVMSUPPORT}"
   TEXT+="\nStatic IP: ${STATICIP}"
   TEXT+="\nSort Drives: ${HDDSORT}"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
@@ -2736,6 +2735,7 @@ function resetLoader() {
   initConfigKey "arc.bootwait" "0" "${USER_CONFIG_FILE}"
   initConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
   initConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
   initConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
@@ -2872,6 +2872,7 @@ while true; do
       echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
       echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
       echo "H \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
+      echo "K \"KVM in DSM: \Z4${KVMSUPPORT}\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "c \"Use IPv6: \Z4${ARCIPV6}\Zn \" "                                             >>"${TMP_PATH}/menu"
@@ -2980,6 +2981,13 @@ while true; do
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       NEXT="H"
+      ;;
+    K)
+      [ "${KVMSUPPORT}" = "true" ] && KVMSUPPORT='false' || KVMSUPPORT='true'
+      writeConfigKey "arc.kvmsupport" "${KVMSUPPORT}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      NEXT="K"
       ;;
     o) [ "${MACSYS}" = "hardware" ] && MACSYS='custom' || MACSYS='hardware'
       writeConfigKey "arc.macsys" "${MACSYS}" "${USER_CONFIG_FILE}"
