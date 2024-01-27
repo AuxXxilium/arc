@@ -417,6 +417,7 @@ function make() {
       dialog --backtitle "$(backtitle)" --title "Arc Build" \
         --msgbox "Virtualization is not enabled in BIOS.\nDisable KVM Support for now." 0 0
       writeConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
+      KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
     fi
   fi
   if [ "${KVMSUPPORT}" = "true" ]; then
