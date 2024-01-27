@@ -633,8 +633,8 @@ function offlinemake() {
     return 1
   else
     # Remove PAT Data for Offline
-    PAT_URL=""
-    PAT_HASH=""
+    PAT_URL="0"
+    PAT_HASH="0"
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
     # Extract Files
