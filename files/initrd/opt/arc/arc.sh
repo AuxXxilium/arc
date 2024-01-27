@@ -428,8 +428,8 @@ function make() {
   elif [ "${KVMSUPPORT}" = "false" ]; then
     deleteConfigKey "modules.kvm" "${USER_CONFIG_FILE}"
     deleteConfigKey "modules.kvm-amd" "${USER_CONFIG_FILE}"
-    delteConfigKey "modules.kvm-intel" "${USER_CONFIG_FILE}"
-    delteConfigKey "modules.irqbypass" "${USER_CONFIG_FILE}"
+    deleteConfigKey "modules.kvm-intel" "${USER_CONFIG_FILE}"
+    deleteConfigKey "modules.irqbypass" "${USER_CONFIG_FILE}"
   fi
   # Read Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
