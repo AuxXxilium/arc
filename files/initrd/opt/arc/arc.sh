@@ -413,7 +413,7 @@ function make() {
   KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
   if [ "${KVMSUPPORT}" = "true" ]; then
     # Check if KVM is enabled
-    if ! grep -q '^flags.*(vmx|svm)' /proc/cpuinfo; then
+    if ! egrep -q '^flags.*(vmx|svm)' /proc/cpuinfo; then
       dialog --backtitle "$(backtitle)" --title "Arc Build" \
         --msgbox "Virtualization is not enabled in BIOS.\nDisable KVM Support for now." 0 0
       writeConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
@@ -747,6 +747,10 @@ function addonSelection() {
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   if [ "${PLATFORM}" = "epyc7002" ]; then
     KVER="${PRODUCTVER}-${KVER}"
+  fi
+  # Check for ACPI Support
+  if ! grep -q "^flags.*acpi.*" /proc/cpuinfo; then
+    deleteConfigKey "addons.acpid" "${USER_CONFIG_FILE}"
   fi
   # read addons from user config
   unset ADDONS
