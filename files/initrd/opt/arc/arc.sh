@@ -413,7 +413,7 @@ function make() {
   KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
   if [ "${KVMSUPPORT}" = "true" ]; then
     # Check if KVM is enabled
-    if ! egrep -q '^flags.*(vmx|svm)' /proc/cpuinfo; then
+    if ! grep -q '^flags.*(vmx|svm)' /proc/cpuinfo; then
       dialog --backtitle "$(backtitle)" --title "Arc Build" \
         --msgbox "Virtualization is not enabled in BIOS.\nDisable KVM Support for now." 0 0
       writeConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
@@ -456,7 +456,7 @@ function make() {
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
   # Check for eMMC Boot
-  if [ ! "${LOADER_DISK}" = /dev/mmcblk* ]; then
+  if [[ ! "${LOADER_DISK}" = /dev/mmcblk* ]]; then
     deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
     deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
   fi
