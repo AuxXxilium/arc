@@ -456,9 +456,7 @@ function make() {
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
   # Check for eMMC Boot
-  if [[ "${LOADER_DISK}" = /dev/mmcblk* ]]; then
-    echo "Boot Device is eMMC."
-  else
+  if [ ! "${LOADER_DISK}" = /dev/mmcblk* ]; then
     deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
     deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
   fi
