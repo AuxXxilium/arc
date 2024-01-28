@@ -221,7 +221,7 @@ function arcbuild() {
     # Select Build for DSM
     ITEMS="$(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r)"
     if [ -z "${1}" ]; then
-      dialog --clear --no-items --backtitle "$(backtitle)" \
+      dialog --clear --no-items --nocancel --backtitle "$(backtitle)" \
         --menu "Choose a Version" 0 0 0 ${ITEMS} 2>"${TMP_PATH}/resp"
       resp="$(<"${TMP_PATH}/resp")"
       [ -z "${resp}" ] && return 1
@@ -288,7 +288,8 @@ function arcsettings() {
   if [ "${ARCRECOVERY}" = "true" ]; then
     writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
   elif [[ "${ARCRECOVERY}" != "true" && -n "${ARCCONF}" ]]; then
-    dialog --clear --backtitle "$(backtitle)" --title "Arc Patch Model"\
+    dialog --clear --backtitle "$(backtitle)" \
+      --nocancel --title "Arc Patch Model"\
       --menu "Do you want to use Syno Services?" 7 50 0 \
       1 "Yes - Install with Arc Patch" \
       2 "No - Install with random Serial/Mac" \
@@ -329,7 +330,8 @@ function arcsettings() {
     fi
     writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
   elif [[ "${ARCRECOVERY}" != "true" && -z "${ARCCONF}" ]]; then
-    dialog --clear --backtitle "$(backtitle)" --title "Non Arc Patch Model" \
+    dialog --clear --backtitle "$(backtitle)" \
+      --nocancel --title "Non Arc Patch Model" \
       --menu "Please select an Option?" 7 50 0 \
       1 "Install with random Serial/Mac" \
       2 "Install with my Serial/Mac" \
