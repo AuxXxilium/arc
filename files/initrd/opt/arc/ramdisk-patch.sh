@@ -121,7 +121,7 @@ rm -f "${TMP_PATH}/rp.txt"
 rm -rf "${TMP_PATH}/modules"
 mkdir -p "${TMP_PATH}/modules"
 # Copy Modules to Ramdisk
-tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
+tar zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
 for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
   M=$(basename ${F})
   [[ "${ODP}" = "true" && -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ]] && continue
@@ -132,7 +132,7 @@ for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
   fi
 done
 mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
-tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
+tar zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
 
 # Copying fake modprobe
 cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
