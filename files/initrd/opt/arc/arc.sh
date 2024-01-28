@@ -1337,7 +1337,7 @@ function storagepanelMenu() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "StoragePanel" \
-      --aspect 18 --msgbox "This Option enables custom StoragePanel Addon." 0 0
+      --aspect 18 --msgbox "Enable custom StoragePanel Addon." 0 0
     ITEMS="$(echo -e "2_Bay \n4_Bay \n8_Bay \n12_Bay \n16_Bay \n24_Bay \n")"
     dialog --backtitle "$(backtitle)" --title "StoragePanel" \
       --default-item "24_Bay" --no-items --menu "Choose a Disk Panel" 0 0 0 ${ITEMS} \
@@ -2866,7 +2866,9 @@ while true; do
         echo "h \"USB Mount Options \" "                                                    >>"${TMP_PATH}/menu"
       fi
       echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
-      echo "S \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
+      if [ "${CONFDONE}" = "true" ]; then
+        echo "S \"Custom StoragePanel \" "                                                  >>"${TMP_PATH}/menu"
+      fi
       echo "D \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
