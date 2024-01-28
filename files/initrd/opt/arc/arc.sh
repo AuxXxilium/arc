@@ -1345,9 +1345,9 @@ function storagepanelMenu() {
     resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
     [ -z "${resp}" ] && return 1
     STORAGE=${resp}
-    ITEMS="$(echo -e "1x2 \n1x4 \n1x8 \n")"
+    ITEMS="$(echo -e "1X2 \n1X4 \n1X8 \n")"
     dialog --backtitle "$(backtitle)" --title "StoragePanel" \
-      --default-item "1x8" --no-items --menu "Choose a M.2 Panel" 0 0 0 ${ITEMS} \
+      --default-item "1X8" --no-items --menu "Choose a M.2 Panel" 0 0 0 ${ITEMS} \
       2>"${TMP_PATH}/resp"
     resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
     [ -z "${resp}" ] && return 1
