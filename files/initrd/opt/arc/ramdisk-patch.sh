@@ -190,12 +190,6 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 
 # Build modules dependencies
 ${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
-# Copying modulelist
-if [ -f "${USER_UP_PATH}/modulelist" ]; then
-  cp -f "${USER_UP_PATH}/modulelist" "${RAMDISK_PATH}/addons/modulelist"
-else
-  cp -f "${ARC_PATH}/include/modulelist" "${RAMDISK_PATH}/addons/modulelist"
-fi
 
 # Network card configuration file
 IPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
