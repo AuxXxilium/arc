@@ -19,7 +19,6 @@ function getnet() {
       --menu "Choose a MAC" 0 0 0 \
       --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && continue
     resp="$(<"${TMP_PATH}/resp")"
     [ -z "${resp}" ] && return 1
     MAC="${resp}"
