@@ -221,7 +221,7 @@ function arcbuild() {
     # Select Build for DSM
     ITEMS="$(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r)"
     if [ -z "${1}" ]; then
-      dialog --clear --no-items --backtitle "$(backtitle)" \
+      dialog --clear --no-items --nocancel --backtitle "$(backtitle)" \
         --menu "Choose a Version" 0 0 0 ${ITEMS} 2>"${TMP_PATH}/resp"
       resp="$(<"${TMP_PATH}/resp")"
       [ -z "${resp}" ] && return 1
@@ -288,7 +288,8 @@ function arcsettings() {
   if [ "${ARCRECOVERY}" = "true" ]; then
     writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
   elif [[ "${ARCRECOVERY}" != "true" && -n "${ARCCONF}" ]]; then
-    dialog --clear --backtitle "$(backtitle)" --title "Arc Patch Model"\
+    dialog --clear --backtitle "$(backtitle)" \
+      --nocancel --title "Arc Patch Model"\
       --menu "Do you want to use Syno Services?" 7 50 0 \
       1 "Yes - Install with Arc Patch" \
       2 "No - Install with random Serial/Mac" \
@@ -329,7 +330,8 @@ function arcsettings() {
     fi
     writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
   elif [[ "${ARCRECOVERY}" != "true" && -z "${ARCCONF}" ]]; then
-    dialog --clear --backtitle "$(backtitle)" --title "Non Arc Patch Model" \
+    dialog --clear --backtitle "$(backtitle)" \
+      --nocancel --title "Non Arc Patch Model" \
       --menu "Please select an Option?" 7 50 0 \
       1 "Install with random Serial/Mac" \
       2 "Install with my Serial/Mac" \
@@ -1325,6 +1327,36 @@ function usbMenu() {
   else
     dialog --backtitle "$(backtitle)" --title "Mount USB Options" \
       --aspect 18 --msgbox "Please configure your System first." 0 0
+    return 1
+  fi
+}
+
+###############################################################################
+# Shows storagepanel menu to user
+function storagepanelMenu() {
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  if [ "${CONFDONE}" = "true" ]; then
+    dialog --backtitle "$(backtitle)" --title "StoragePanel" \
+      --aspect 18 --msgbox "This Option enables custom StoragePanel Addon." 0 0
+    ITEMS="$(echo -e "2_Bay \n4_Bay \n8_Bay \n12_Bay \n16_Bay \n24_Bay \n")"
+    dialog --backtitle "$(backtitle)" --title "StoragePanel" \
+      --default-item "24_Bay" --no-items --menu "Choose a Disk Panel" 0 0 0 ${ITEMS} \
+      2>"${TMP_PATH}/resp"
+    resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
+    [ -z "${resp}" ] && return 1
+    STORAGE=${resp}
+    ITEMS="$(echo -e "1x2 \n1x4 \n1x8 \n")"
+    dialog --backtitle "$(backtitle)" --title "StoragePanel" \
+      --default-item "1x8" --no-items --menu "Choose a M.2 Panel" 0 0 0 ${ITEMS} \
+      2>"${TMP_PATH}/resp"
+    resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
+    [ -z "${resp}" ] && return 1
+    M2PANEL=${resp}
+    STORAGEPANEL="RACK_${STORAGE} ${M2PANEL}"
+    writeConfigKey "addons.storagepanel" "${STORAGEPANEL}" "${USER_CONFIG_FILE}"
+  else
+    dialog --backtitle "$(backtitle)" --title "Storagepanel" \
+      --aspect 18 --msgbox "Please configure your System, first." 0 0
     return 1
   fi
 }
@@ -2833,7 +2865,8 @@ while true; do
         echo "g \"Storage Map \" "                                                          >>"${TMP_PATH}/menu"
         echo "h \"USB Mount Options \" "                                                    >>"${TMP_PATH}/menu"
       fi
-      echo "p \"Arc Settings \" "                                                           >>"${TMP_PATH}/menu"
+      echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
+      echo "S \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
       echo "D \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
@@ -2843,8 +2876,8 @@ while true; do
     fi
     if [ "${ADVOPTS}" = "true" ]; then
       echo "= \"\Z4======== Advanced =======\Zn \" "                                        >>"${TMP_PATH}/menu"
-      echo "j \"Cmdline / Fixes \" "                                                        >>"${TMP_PATH}/menu"
-      echo "k \"Synoinfo / Fixes \" "                                                       >>"${TMP_PATH}/menu"
+      echo "j \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
+      echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
       echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
     fi
     if [ "${BOOTOPTS}" = "true" ]; then
@@ -2927,6 +2960,7 @@ while true; do
     g) storageMenu; NEXT="g" ;;
     p) ONLYPATCH="true" && arcsettings; NEXT="p" ;;
     h) usbMenu; NEXT="h" ;;
+    S) storagepanelMenu; NEXT="S" ;;
     D) staticIPMenu; NEXT="D" ;;
     c) [ "${ARCIPV6}" = "true" ] && ARCIPV6='false' || ARCIPV6='true'
       writeConfigKey "arc.ipv6" "${ARCIPV6}" "${USER_CONFIG_FILE}"

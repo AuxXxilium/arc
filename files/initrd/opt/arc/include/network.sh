@@ -15,11 +15,11 @@ function getnet() {
         break
       fi
     done
-    dialog --clear --backtitle "$(backtitle)" --title "Mac Setting"\
+    dialog --clear --backtitle "$(backtitle)" \
+      --nocancel --title "Mac Setting" \
       --menu "Choose a MAC" 0 0 0 \
       --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && continue
     resp="$(<"${TMP_PATH}/resp")"
     [ -z "${resp}" ] && return 1
     MAC="${resp}"
@@ -49,7 +49,8 @@ function getnet() {
     done
   fi
   # Ask for Macsys
-  dialog --clear --backtitle "$(backtitle)" --title "Macsys Setting" \
+  dialog --clear --backtitle "$(backtitle)" \
+    --nocancel --title "Macsys Setting" \
     --menu "Do you want to apply Mac to NIC?" 7 50 0 \
     1 "No - Do not apply (Fake)Mac" \
     2 "Yes - Apply (Fake)Mac" \
