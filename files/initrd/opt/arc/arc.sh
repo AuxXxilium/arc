@@ -2987,9 +2987,11 @@ while true; do
       grub-editenv "${GRUB_PATH}/grubenv" create
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
+      BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
       NEXT="q"
       ;;
     r)
+      grub-editenv "${GRUB_PATH}/grubenv" create
       writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
       BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
       NEXT="r"
