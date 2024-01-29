@@ -52,7 +52,6 @@ CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
-BOOTWAIT="$(readConfigKey "arc.bootwait" "${USER_CONFIG_FILE}")"
 REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
@@ -2665,19 +2664,6 @@ function bootipwaittime() {
 }
 
 ###############################################################################
-# modify bootwaittime
-function bootwaittime() {
-  ITEMS="$(echo -e "0 \n5 \n10 \n20 \n30 \n60 \n")"
-  dialog --backtitle "$(backtitle)" --title "Boot Waittime" \
-    --default-item "${BOOTWAIT}" --no-items --menu "Choose Waittime(seconds)\nto init the Hardware" 0 0 0 ${ITEMS} \
-    2>"${TMP_PATH}/resp"
-  resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
-  [ -z "${resp}" ] && return 1
-  BOOTWAIT=${resp}
-  writeConfigKey "arc.bootwait" "${BOOTWAIT}" "${USER_CONFIG_FILE}"
-}
-
-###############################################################################
 # allow user to save modifications to disk
 function saveMenu() {
   dialog --backtitle "$(backtitle)" --title "Save to Disk" \
@@ -2779,7 +2765,6 @@ function resetLoader() {
   initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
-  initConfigKey "arc.bootwait" "0" "${USER_CONFIG_FILE}"
   initConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
   initConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
   initConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
@@ -2903,7 +2888,6 @@ while true; do
       echo "m \"DSM Kernelload: \Z4${KERNELLOAD}\Zn \" "                                    >>"${TMP_PATH}/menu"
       if [ "${DIRECTBOOT}" = "false" ]; then
         echo "i \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
-        echo "B \"Boot Waittime: \Z4${BOOTWAIT}\Zn \" "                                     >>"${TMP_PATH}/menu"
       fi
       echo "q \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
       if [ ${BOOTCOUNT} -gt 0 ]; then
@@ -2999,7 +2983,6 @@ while true; do
       NEXT="m"
       ;;
     i) bootipwaittime; NEXT="i" ;;
-    B) bootwaittime; NEXT="B" ;;
     q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
       grub-editenv "${GRUB_PATH}/grubenv" create
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"

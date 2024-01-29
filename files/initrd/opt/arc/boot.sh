@@ -212,25 +212,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     done
     ethtool -s ${N} wol g 2>/dev/null
   done
-  BOOTWAIT="$(readConfigKey "arc.bootwait" "${USER_CONFIG_FILE}")"
-  [ -z "${BOOTWAIT}" ] && BOOTWAIT=0
-  w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
-  MSG=""
-  while test ${BOOTWAIT} -ge 0; do
-    MSG="$(printf "%2ds (Accessing Arc Overlay will interrupt Boot)" "${BOOTWAIT}")"
-    echo -en "\r${MSG}"
-    w | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
-    if ! diff WB WC >/dev/null 2>&1; then
-      echo -en "\rA new access is connected, Boot is interrupted."
-      rm -f WB WC
-      exit 0
-    fi
-    sleep 1
-    BOOTWAIT=$((BOOTWAIT - 1))
-  done
-  rm -f WB WC
-  echo -en "\r$(printf "%$((${#MSG} * 3))s" " ")\n"
-fi
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
 # Write new Bootcount
