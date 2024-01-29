@@ -289,7 +289,7 @@ function arcsettings() {
     writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
   elif [[ "${ARCRECOVERY}" != "true" && -n "${ARCCONF}" ]]; then
     dialog --clear --backtitle "$(backtitle)" \
-      --nocancel --title "Arc Patch Model"\
+      --nocancel --title "Arc Patch"\
       --menu "Do you want to use Syno Services?" 7 50 0 \
       1 "Yes - Install with Arc Patch" \
       2 "No - Install with random Serial/Mac" \
@@ -417,8 +417,20 @@ function make() {
     # Check if KVM is enabled
     if [[ ! grep -q "^flags.*vmx.*" /proc/cpuinfo | ! grep -q "^flags.*svm.*" /proc/cpuinfo ]]; then
       dialog --backtitle "$(backtitle)" --title "Arc Build" \
+        --extra-button --extra-label "Force Enable" --no-cancel \
         --msgbox "Virtualization is not enabled in BIOS.\nDisable KVM Support for now." 0 0
-      writeConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
+      RET=$?
+      case ${RET} in
+      0) # ok-button
+        writeConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
+        ;;
+      3) # extra-button
+        writeConfigKey "arc.kvmsupport" "true" "${USER_CONFIG_FILE}"
+        ;;
+      255) # ESC
+        writeConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
+        ;;
+      esac
       KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
     fi
   fi
