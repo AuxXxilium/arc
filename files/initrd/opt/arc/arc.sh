@@ -415,7 +415,7 @@ function make() {
   KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
   if [ "${KVMSUPPORT}" = "true" ]; then
     # Check if KVM is enabled
-    if ! grep -q '^flags.*(vmx|svm)' /proc/cpuinfo; then
+    if [[ ! grep -q "^flags.*vmx.*" /proc/cpuinfo | ! grep -q "^flags.*svm.*" /proc/cpuinfo ]]; then
       dialog --backtitle "$(backtitle)" --title "Arc Build" \
         --msgbox "Virtualization is not enabled in BIOS.\nDisable KVM Support for now." 0 0
       writeConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
