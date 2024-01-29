@@ -212,6 +212,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     done
     ethtool -s ${N} wol g 2>/dev/null
   done
+fi
 echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
 # Write new Bootcount
