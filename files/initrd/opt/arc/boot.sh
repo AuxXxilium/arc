@@ -53,13 +53,12 @@ VENDOR="$(dmidecode -s system-product-name)"
 BOARD="$(dmidecode -s baseboard-product-name)"
 
 cat <<EOF
-   #
-  # #    #####    ####
- #   #   #    #  #    #
-#     #  #    #  #
-#######  #####   #
-#     #  #   #   #    #
-#     #  #    #   ####
+    ###    #####    ####
+   #   #   #    #  #    #
+  #     #  #    #  #
+  #######  #####   #
+  #     #  #   #   #    #
+  #     #  #    #   ####
 EOF
 
 echo
