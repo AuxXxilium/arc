@@ -52,6 +52,16 @@ RAM=$(free -m | grep -i mem | awk '{print$2}')
 VENDOR="$(dmidecode -s system-product-name)"
 BOARD="$(dmidecode -s baseboard-product-name)"
 
+cat <<EOF
+   #
+  # #    #####    ####
+ #   #   #    #  #    #
+#     #  #    #  #
+#######  #####   #
+#     #  #   #   #    #
+#     #  #    #   ####
+EOF
+
 echo
 echo -e "\033[1;37mDSM:\033[0m"
 echo -e "Model: \033[1;37m${MODEL}\033[0m"
