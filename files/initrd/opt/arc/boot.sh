@@ -202,17 +202,17 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
-        echo -e " \r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
+        echo -e "\r \033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
         [ ! -n "${IPCON}" ] && IPCON="${IP}"
         break
       fi
       if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
-        echo -e " \r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
+        echo -e "\r \033[1;37m${DRIVER}:\033[0m TIMEOUT"
         break
       fi
       sleep 3
       if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
-        echo -e " \r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
+        echo -e "\r \033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
         break
       fi
       COUNT=$((${COUNT} + 3))
@@ -231,7 +231,7 @@ kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDL
 echo -e " \033[1;37m"Booting DSM..."\033[0m"
 for T in $(w | grep -v "TTY" | awk -F' ' '{print $2}')
 do
-  echo -e " \n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\nUse \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
+  echo -e "\n \033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\n  Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
 done
 
 # Clear logs for dbgutils addons
