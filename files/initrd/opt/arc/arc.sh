@@ -644,8 +644,8 @@ function offlinemake() {
     return 1
   else
     # Remove PAT Data for Offline
-    PAT_URL="0"
-    PAT_HASH="0"
+    PAT_URL=""
+    PAT_HASH=""
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
     # Extract Files
@@ -1968,7 +1968,7 @@ function sysinfo() {
   # Checks for Systeminfo Menu
   CPUINFO="$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')"
   # Check if machine has EFI
-  [ -d /sys/firmware/efi ] && BOOTSYS="EFI" || BOOTSYS="Legacy"
+  [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="Legacy"
   VENDOR="$(dmidecode -s system-product-name)"
   BOARD="$(dmidecode -s baseboard-product-name)"
   ETHX=$(ls /sys/class/net/ | grep -v lo || true)
@@ -2190,7 +2190,7 @@ function fullsysinfo() {
   # Checks for Systeminfo Menu
   CPUINFO="$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')"
   # Check if machine has EFI
-  [ -d /sys/firmware/efi ] && BOOTSYS="EFI" || BOOTSYS="Legacy"
+  [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="Legacy"
   VENDOR="$(dmidecode -s system-product-name)"
   BOARD="$(dmidecode -s baseboard-product-name)"
   ETHX=$(ls /sys/class/net/ | grep -v lo || true)

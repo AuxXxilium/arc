@@ -20,7 +20,7 @@ printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
 TITLE="BOOTING:"
-[ ${EFI} -eq 1 ] && TITLE+=" [EFI]" || TITLE+=" [Legacy]"
+[ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [Legacy]"
 TITLE+=" [${BUS^^}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
@@ -52,17 +52,26 @@ RAM=$(free -m | grep -i mem | awk '{print$2}')
 VENDOR="$(dmidecode -s system-product-name)"
 BOARD="$(dmidecode -s baseboard-product-name)"
 
+cat <<EOF
+    ###    #####    ####
+   #   #   #    #  #    #
+  #     #  #    #  #
+  #######  #####   #
+  #     #  #   #   #    #
+  #     #  #    #   ####
+EOF
+
 echo
-echo -e "\033[1;37mDSM:\033[0m"
-echo -e "Model: \033[1;37m${MODEL}\033[0m"
-echo -e "Version: \033[1;37m${PRODUCTVER}\033[0m"
-echo -e "LKM: \033[1;37m${LKM}\033[0m"
-echo -e "Macsys: \033[1;37m${MACSYS}\033[0m"
+echo -e " \033[1;37mDSM:\033[0m"
+echo -e " Model: \033[1;37m${MODEL}\033[0m"
+echo -e " Version: \033[1;37m${PRODUCTVER}\033[0m"
+echo -e " LKM: \033[1;37m${LKM}\033[0m"
+echo -e " Macsys: \033[1;37m${MACSYS}\033[0m"
 echo
-echo -e "\033[1;37mSystem:\033[0m"
-echo -e "Vendor / Board: \033[1;37m${VENDOR}\033[0m / \033[1;37m${BOARD}\033[0m"
-echo -e "CPU: \033[1;37m${CPU}\033[0m"
-echo -e "MEM: \033[1;37m${RAM}\033[0m / \033[1;37m${RAMTOTAL} MB\033[0m"
+echo -e " \033[1;37mSystem:\033[0m"
+echo -e " Vendor / Board: \033[1;37m${VENDOR}\033[0m / \033[1;37m${BOARD}\033[0m"
+echo -e " CPU: \033[1;37m${CPU}\033[0m"
+echo -e " MEM: \033[1;37m${RAM}\033[0m / \033[1;37m${RAMTOTAL} MB\033[0m"
 echo
 
 if [[ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" || -z "$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}]")" ]]; then
@@ -151,8 +160,6 @@ for KEY in ${!CMDLINE[@]}; do
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
 CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
-echo -e "\033[1;37mCmdline:\033[0m\n${CMDLINE_LINE}"
-echo
 
 # Make Directboot persistent if DSM is installed
 if [[ "${DIRECTBOOT}" = "true" && ${BOOTCOUNT} -gt 0 ]]; then
@@ -161,7 +168,7 @@ if [[ "${DIRECTBOOT}" = "true" && ${BOOTCOUNT} -gt 0 ]]; then
   grub-editenv ${GRUB_PATH}/grubenv set default="direct"
   BOOTCOUNT=$((${BOOTCOUNT} + 1))
   writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
-  echo -e "\033[1;34mDSM installed - Make Directboot persistent\033[0m"
+  echo -e " \033[1;34mDSM installed - Make Directboot persistent\033[0m"
   exec reboot
 elif [[ "${DIRECTBOOT}" = "true" && ${BOOTCOUNT} -eq 0 ]]; then
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
@@ -169,14 +176,14 @@ elif [[ "${DIRECTBOOT}" = "true" && ${BOOTCOUNT} -eq 0 ]]; then
   grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
   BOOTCOUNT=$((${BOOTCOUNT} + 1))
   writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
-  echo -e "\033[1;34mDSM not installed - Reboot with Directboot\033[0m"
+  echo -e " \033[1;34mDSM not installed - Reboot with Directboot\033[0m"
   exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
   ETHX=$(ls /sys/class/net/ | grep -v lo || true)
   ETH=$(echo ${ETHX} | wc -w)
   STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
-  echo -e "\033[1;34mDetected ${ETH} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+  echo -e " \033[1;34mDetected ${ETH} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
   for N in ${ETHX}; do
     IP=""
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
@@ -195,17 +202,17 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
-        echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
+        echo -e "\r \033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
         [ ! -n "${IPCON}" ] && IPCON="${IP}"
         break
       fi
       if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
-        echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
+        echo -e "\r \033[1;37m${DRIVER}:\033[0m TIMEOUT"
         break
       fi
       sleep 3
       if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
-        echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
+        echo -e "\r \033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
         break
       fi
       COUNT=$((${COUNT} + 3))
@@ -213,17 +220,18 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     ethtool -s ${N} wol g 2>/dev/null
   done
 fi
-echo -e "\033[1;37mLoading DSM kernel...\033[0m"
+echo
+echo -e " \033[1;37mLoading DSM kernel...\033[0m"
 
 # Write new Bootcount
 BOOTCOUNT=$((${BOOTCOUNT} + 1))
 writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
 # Executes DSM kernel via KEXEC
 kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
-echo -e "\033[1;37m"Booting DSM..."\033[0m"
+echo -e " \033[1;37m"Booting DSM..."\033[0m"
 for T in $(w | grep -v "TTY" | awk -F' ' '{print $2}')
 do
-  echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\nUse \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
+  echo -e "\n \033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\n  Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
 done
 
 # Clear logs for dbgutils addons
