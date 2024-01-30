@@ -151,8 +151,6 @@ for KEY in ${!CMDLINE[@]}; do
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
 CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
-echo -e "\033[1;37mCmdline:\033[0m\n${CMDLINE_LINE}"
-echo
 
 # Make Directboot persistent if DSM is installed
 if [[ "${DIRECTBOOT}" = "true" && ${BOOTCOUNT} -gt 0 ]]; then
