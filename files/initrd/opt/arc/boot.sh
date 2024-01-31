@@ -179,7 +179,7 @@ elif [[ "${DIRECTBOOT}" = "true" && ${BOOTCOUNT} -eq 0 ]]; then
   echo -e " \033[1;34mDSM not installed - Reboot with Directboot\033[0m"
   exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
-  ETHX=$(ls /sys/class/net/ | grep -v lo || true)
+  ETHX=$(ls /sys/class/net/ | grep -v lo) || true
   ETH=$(echo ${ETHX} | wc -w)
   STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
