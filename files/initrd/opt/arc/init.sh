@@ -61,7 +61,7 @@ initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
 initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 
 # Init Network
-ETHX=$(ls /sys/class/net/ | grep -v lo || true)
+ETHX=$(ls /sys/class/net/ | grep -v lo) || true
 ETH=$(echo ${ETHX} | wc -w)
 # No network devices
 [ ${ETH} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
@@ -90,8 +90,8 @@ BUS=$(getBus "${LOADER_DISK}")
 if [ "${BUS}" = "usb" ]; then
   VID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_VENDOR_ID | cut -d= -f2)"
   PID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_MODEL_ID | cut -d= -f2)"
-elif [[ "${BUS}" != "sata" && "${BUS}" != "scsi" && "${BUS}" != "nvme" ]]; then
-  die "Loader disk is not USB or SATA/SCSI/NVME DoM"
+elif [[ "${BUS}" != "sata" && "${BUS}" != "scsi" && "${BUS}" != "nvme" && "${BUS}" != "mmc" ]]; then
+  die "Loader disk is not USB or SATA/SCSI/NVME/eMMC DoM"
 fi
 
 # Save variables to user config file

@@ -66,7 +66,7 @@ function getnet() {
 }
 
 # Get Amount of NIC
-ETHX=$(ls /sys/class/net/ | grep -v lo || true)
+ETHX=$(ls /sys/class/net/ | grep -v lo) || true
 ETH=$(echo ${ETHX} | wc -w)
 writeConfigKey "device.nic" "${ETH}" "${USER_CONFIG_FILE}"
 # Get actual IP
