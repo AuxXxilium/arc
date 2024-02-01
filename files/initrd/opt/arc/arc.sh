@@ -574,15 +574,12 @@ function make() {
         fi
         # Cleanup PAT Download
         rm -f "${PAT_FILE}"
-        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-        --msgbox "DSM Extraction successful!" 0 0
       elif [ -f "${DSM_FILE}" ]; then
         tar xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
-        dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-          --msgbox "DSM Image Download successful!" 0 0
-      else
+      elif [ ! -f "${UNTAR_PAT_PATH}/zImage" ]; then
         dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
           --msgbox "ERROR: No DSM Image found!" 0 0
+        return 1
       fi
       # Copy DSM Files to Locations if DSM Files not found
       cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART1_PATH}"
