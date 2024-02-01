@@ -59,11 +59,11 @@ jobs:
           . scripts/func.sh
 
           getExtractor "files/p3/extractor"
-          getLKMs "files/p3/lkms" ${{ inputs.prerelease }}
-          getAddons "files/p3/addons" ${{ inputs.prerelease }}
-          getModules "files/p3/modules" ${{ inputs.prerelease }}
-          getConfigs "files/p3/configs" ${{ inputs.prerelease }}
-          getPatches "files/p3/patches" ${{ inputs.prerelease }}
+          getLKMs "files/p3/lkms"
+          getAddons "files/p3/addons"
+          getModules "files/p3/modules"
+          getConfigs "files/p3/configs"
+          getPatches "files/p3/patches"
 
           echo "OK"
 
@@ -139,7 +139,7 @@ jobs:
         if: env.VERSION != ''
         with:
           tag_name: ${{ env.VERSION }}
-          prerelease: ${{ inputs.prerelease }}
+          prerelease: true
           files: |
             arc-${{ env.VERSION }}.img.zip
             arc-${{ env.VERSION }}.vmdk-dyn.zip
