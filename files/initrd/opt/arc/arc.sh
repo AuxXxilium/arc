@@ -578,8 +578,6 @@ function make() {
         --msgbox "DSM Extraction successful!" 0 0
       elif [ -f "${DSM_FILE}" ]; then
         tar xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
-        dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-          --msgbox "DSM Image Download successful!" 0 0
       else
         dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
           --msgbox "ERROR: No DSM Image found!" 0 0
