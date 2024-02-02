@@ -2811,17 +2811,35 @@ function greplogs() {
 }
 
 ###############################################################################
+# Calls boot.sh to boot into DSM Recovery
+function juniorboot() {
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  [ "${BUILDDONE}" = "false" ] && dialog --backtitle "$(backtitle)" --title "Alert" \
+    --yesno "Config changed, please build Loader first." 0 0
+  if [ $? -eq 0 ]; then
+    make
+  fi
+  grub-editenv ${GRUB_PATH}/grubenv set next_entry="junior"
+  writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
+  dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+    --infobox "Booting DSM Recovery...\nPlease stay patient!" 4 30
+  sleep 2
+  exec reboot
+}
+
+###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   [ "${BUILDDONE}" = "false" ] && dialog --backtitle "$(backtitle)" --title "Alert" \
-    --yesno "Config changed, you need to rebuild the loader?" 0 0
+    --yesno "Config changed, you need to rebuild the Loader?" 0 0
   if [ $? -eq 0 ]; then
     make
   fi
+  grub-editenv ${GRUB_PATH}/grubenv set next_entry="boot"
   writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
-    --infobox "Booting to DSM...\nPlease stay patient!" 4 25
+    --infobox "Booting DSM...\nPlease stay patient!" 4 25
   sleep 2
   exec reboot
 }
@@ -2918,6 +2936,7 @@ while true; do
     echo "v \"Save Modifications to Disk \" "                                               >>"${TMP_PATH}/menu"
     echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
     echo "w \"Reset Loader \" "                                                             >>"${TMP_PATH}/menu"
+    echo "J \"DSM force Reinstall \" "                                                      >>"${TMP_PATH}/menu"
     echo "F \"\Z1Format Sata/NVMe Disk\Zn \" "                                              >>"${TMP_PATH}/menu"
     echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
   fi
@@ -3041,6 +3060,7 @@ while true; do
     v) saveMenu; NEXT="v" ;;
     n) editGrubCfg; NEXT="n" ;;
     w) resetLoader; NEXT="w" ;;
+    J) juniorboot; NEXT="J" ;;
     F) formatdisks; NEXT="F" ;;
     L) greplogs; NEXT="L" ;;
     # Loader Settings
