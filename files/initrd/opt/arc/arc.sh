@@ -55,7 +55,6 @@ BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
-KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
@@ -412,40 +411,6 @@ function arcsettings() {
 ###############################################################################
 # Building Loader Online
 function make() {
-  # KVM check
-  KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
-  if [ "${KVMSUPPORT}" = "true" ]; then
-    # Check if KVM is enabled
-    if ! grep -qE '^flags.*\b(vmx|svm)\b' /proc/cpuinfo; then
-      dialog --backtitle "$(backtitle)" --title "Arc Build" \
-        --extra-button --extra-label "Force Enable" --no-cancel \
-        --msgbox "Virtualization is disabled.\nPlease enable VMX or SVM in Bios.\nDisable KVM Support for now." 0 0
-      RET=$?
-      case ${RET} in
-      0) # ok-button
-        writeConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
-        ;;
-      3) # extra-button
-        writeConfigKey "arc.kvmsupport" "true" "${USER_CONFIG_FILE}"
-        ;;
-      255) # ESC
-        writeConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
-        ;;
-      esac
-      KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
-    fi
-  fi
-  if [ "${KVMSUPPORT}" = "true" ]; then
-    writeConfigKey "modules.kvm" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modules.kvm-amd" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modules.kvm-intel" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modules.irqbypass" "" "${USER_CONFIG_FILE}"
-  elif [ "${KVMSUPPORT}" = "false" ]; then
-    deleteConfigKey "modules.kvm" "${USER_CONFIG_FILE}"
-    deleteConfigKey "modules.kvm-amd" "${USER_CONFIG_FILE}"
-    deleteConfigKey "modules.kvm-intel" "${USER_CONFIG_FILE}"
-    deleteConfigKey "modules.irqbypass" "${USER_CONFIG_FILE}"
-  fi
   # Read Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
@@ -1995,7 +1960,6 @@ function sysinfo() {
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
-  KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
   MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
@@ -2072,7 +2036,6 @@ function sysinfo() {
   TEXT+="\n   Addons selected: \Zb${ADDONSINFO}\Zn"
   TEXT+="\n   Modules loaded: \Zb${MODULESINFO}\Zn"
   TEXT+="\n\Z4>> Settings\Zn"
-  TEXT+="\n   KVM Support: \Zb${KVMSUPPORT}\Zn"
   TEXT+="\n   Static IP: \Zb${STATICIP}\Zn"
   TEXT+="\n   Sort Drives: \Zb${HDDSORT}\Zn"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
@@ -2217,7 +2180,6 @@ function fullsysinfo() {
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
-  KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
   MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
@@ -2302,7 +2264,6 @@ function fullsysinfo() {
   TEXT+="\n${MODULESINFO}"
   TEXT+="\n"
   TEXT+="\nSettings"
-  TEXT+="\nKVM Support: ${KVMSUPPORT}"
   TEXT+="\nStatic IP: ${STATICIP}"
   TEXT+="\nSort Drives: ${HDDSORT}"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
@@ -2766,7 +2727,6 @@ function resetLoader() {
   initConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
   initConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
   initConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
-  initConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
   initConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
@@ -2922,7 +2882,6 @@ while true; do
       echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
       echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
       echo "H \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
-      echo "K \"KVM in DSM: \Z4${KVMSUPPORT}\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "c \"Use IPv6: \Z4${ARCIPV6}\Zn \" "                                             >>"${TMP_PATH}/menu"
@@ -3034,13 +2993,6 @@ while true; do
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       NEXT="H"
-      ;;
-    K)
-      [ "${KVMSUPPORT}" = "true" ] && KVMSUPPORT='false' || KVMSUPPORT='true'
-      writeConfigKey "arc.kvmsupport" "${KVMSUPPORT}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="K"
       ;;
     o) [ "${MACSYS}" = "hardware" ] && MACSYS='custom' || MACSYS='hardware'
       writeConfigKey "arc.macsys" "${MACSYS}" "${USER_CONFIG_FILE}"
