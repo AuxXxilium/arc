@@ -120,27 +120,25 @@ rm -f "${TMP_PATH}/rp.txt"
 # Extract Modules to Ramdisk
 rm -rf "${TMP_PATH}/modules"
 mkdir -p "${TMP_PATH}/modules"
-# Copy Modules to Ramdisk
-tar zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
+tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
 for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
   M=$(basename ${F})
   [[ "${ODP}" = "true" && -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ]] && continue
-  if arrayExistItem "${M:0:-3}" "${!USERMODULES[@]}"; then
+  if arrayExistItem "${M:0:-3}" "${!MODULES[@]}"; then
     cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}"
   else
     rm -f "${RAMDISK_PATH}/usr/lib/modules/${M}"
   fi
 done
 mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
-tar zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
-
-# Copying fake modprobe
-cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
-# Copying LKM to /usr/lib/modules
-gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" >"${TMP_PATH}/modules/rp.ko"
-cp -f "${TMP_PATH}/modules/rp.ko" "${RAMDISK_PATH}/usr/lib/modules/rp.ko"
+tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
 # Clean
 rm -rf "${TMP_PATH}/modules"
+
+# Copying fake modprobe
+cp -f "${ARC_PATH}/patch/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
+# Copying LKM to /usr/lib/modules
+gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko"
 
 # Addons
 mkdir -p "${RAMDISK_PATH}/addons"
@@ -190,6 +188,12 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 
 # Build modules dependencies
 ${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
+# Copying modulelist
+if [ -f "${USER_UP_PATH}/modulelist" ]; then
+  cp -f "${USER_UP_PATH}/modulelist" "${RAMDISK_PATH}/addons/modulelist"
+else
+  cp -f "${ARC_PATH}/include/modulelist" "${RAMDISK_PATH}/addons/modulelist"
+fi
 
 # Network card configuration file
 IPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
