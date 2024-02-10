@@ -65,7 +65,7 @@ fi
 
 declare -A SYNOINFO
 declare -A ADDONS
-declare -A USERMODULES
+declare -A MODULES
 
 # Read synoinfo, addons and extensions from config
 while IFS=': ' read -r KEY VALUE; do
@@ -77,7 +77,7 @@ done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
 # Read modules from user config
 while IFS=': ' read -r KEY VALUE; do
-  [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
+  [ -n "${KEY}" ] && MODULES["${KEY}"]="${VALUE}"
 done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 # Patches (diff -Naru OLDFILE NEWFILE > xxx.patch)
