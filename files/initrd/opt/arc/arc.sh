@@ -300,8 +300,6 @@ function arcsettings() {
       SN="$(readModelKey "${MODEL}" "arc.serial")"
       writeConfigKey "arc.patch" "arc" "${USER_CONFIG_FILE}"
       writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-      dialog --backtitle "$(backtitle)" --title "Arc Patch" \
-        --msgbox "WARN: You can connect your Syno Account.\nDo not try to register this Device for extended Warranty!" 0 0
     elif [ ${resp} -eq 2 ]; then
       # Generate random Serial
       SN="$(generateSerial "${MODEL}")"
