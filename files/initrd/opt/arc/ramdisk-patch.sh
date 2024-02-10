@@ -120,7 +120,7 @@ rm -f "${TMP_PATH}/rp.txt"
 # Extract Modules to Ramdisk
 rm -rf "${TMP_PATH}/modules"
 mkdir -p "${TMP_PATH}/modules"
-tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
+tar zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
 for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
   M=$(basename ${F})
   [[ "${ODP}" = "true" && -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ]] && continue
@@ -131,7 +131,7 @@ for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
   fi
 done
 mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
-tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
+tar zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
 # Clean
 rm -rf "${TMP_PATH}/modules"
 
