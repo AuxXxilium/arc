@@ -998,7 +998,7 @@ function cmdlineMenu() {
             sn="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
             mac1="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
             mac2="$(cat "${TMP_PATH}/resp" | sed -n '3p')"
-            if [ -z "${sn}" -o -z "${mac1}" ]; then
+            if [[ -z "${sn}" || -z "${mac1}" ]]; then
               dialog --backtitle "$(backtitle)" \ --title "Customize Mac" \
                 --yesno "Invalid SN/MAC, retry?" 0 0
               [ $? -eq 0 ] && break
