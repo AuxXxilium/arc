@@ -55,7 +55,6 @@ BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
-KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
@@ -301,8 +300,6 @@ function arcsettings() {
       SN="$(readModelKey "${MODEL}" "arc.serial")"
       writeConfigKey "arc.patch" "arc" "${USER_CONFIG_FILE}"
       writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-      dialog --backtitle "$(backtitle)" --title "Arc Patch" \
-        --msgbox "WARN: You can connect your Syno Account.\nDo not try to register this Device for extended Warranty!" 0 0
     elif [ ${resp} -eq 2 ]; then
       # Generate random Serial
       SN="$(generateSerial "${MODEL}")"
@@ -347,7 +344,7 @@ function arcsettings() {
     elif [ ${resp} -eq 2 ]; then
       while true; do
         dialog --backtitle "$(backtitle)" --colors --title "Serial" \
-          --inputbox "Please enter a serial number " 0 0 "" \
+          --inputbox "Please enter a Serial Number " 0 0 "" \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break 2
         SN="$(cat ${TMP_PATH}/resp)"
@@ -412,40 +409,6 @@ function arcsettings() {
 ###############################################################################
 # Building Loader Online
 function make() {
-  # KVM check
-  KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
-  if [ "${KVMSUPPORT}" = "true" ]; then
-    # Check if KVM is enabled
-    if ! grep -qE '^flags.*\b(vmx|svm)\b' /proc/cpuinfo; then
-      dialog --backtitle "$(backtitle)" --title "Arc Build" \
-        --extra-button --extra-label "Force Enable" --no-cancel \
-        --msgbox "Virtualization is disabled.\nPlease enable VMX or SVM in Bios.\nDisable KVM Support for now." 0 0
-      RET=$?
-      case ${RET} in
-      0) # ok-button
-        writeConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
-        ;;
-      3) # extra-button
-        writeConfigKey "arc.kvmsupport" "true" "${USER_CONFIG_FILE}"
-        ;;
-      255) # ESC
-        writeConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
-        ;;
-      esac
-      KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
-    fi
-  fi
-  if [ "${KVMSUPPORT}" = "true" ]; then
-    writeConfigKey "modules.kvm" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modules.kvm-amd" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modules.kvm-intel" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modules.irqbypass" "" "${USER_CONFIG_FILE}"
-  elif [ "${KVMSUPPORT}" = "false" ]; then
-    deleteConfigKey "modules.kvm" "${USER_CONFIG_FILE}"
-    deleteConfigKey "modules.kvm-amd" "${USER_CONFIG_FILE}"
-    deleteConfigKey "modules.kvm-intel" "${USER_CONFIG_FILE}"
-    deleteConfigKey "modules.irqbypass" "${USER_CONFIG_FILE}"
-  fi
   # Read Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
@@ -943,13 +906,14 @@ function cmdlineMenu() {
   done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
   echo "1 \"Add a Cmdline item\""                                >"${TMP_PATH}/menu"
   echo "2 \"Delete Cmdline item(s)\""                           >>"${TMP_PATH}/menu"
-  echo "3 \"CPU Fix\""                                          >>"${TMP_PATH}/menu"
-  echo "4 \"RAM Fix\""                                          >>"${TMP_PATH}/menu"
-  echo "5 \"PCI/IRQ Fix\""                                      >>"${TMP_PATH}/menu"
-  echo "6 \"C-State Fix\""                                      >>"${TMP_PATH}/menu"
-  echo "7 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
-  echo "8 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
-  echo "9 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
+  echo "3 \"Customize Mac(s) \""                                >>"${TMP_PATH}/menu"
+  echo "4 \"CPU Fix\""                                          >>"${TMP_PATH}/menu"
+  echo "5 \"RAM Fix\""                                          >>"${TMP_PATH}/menu"
+  echo "6 \"PCI/IRQ Fix\""                                      >>"${TMP_PATH}/menu"
+  echo "7 \"C-State Fix\""                                      >>"${TMP_PATH}/menu"
+  echo "8 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
+  echo "9 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
+  echo "0 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
   # Loop menu
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
@@ -1019,6 +983,52 @@ function cmdlineMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       3)
+        MSG="Note: (MAC will not be set to NIC, Only for activation services.)"
+        sn="${SN}"
+        mac1="${MAC1}"
+        mac2="${MAC2}"
+        while true; do
+          dialog --backtitle "$(backtitle)" \ --title "Customize Mac" \
+            --extra-button --extra-label "Random" \
+            --form "${MSG}" 11 60 3 "sn" 1 1 "${sn}" 1 5 50 0 "mac1" 2 1 "${mac1}" 2 5 50 0 "mac2" 3 1 "${mac2}" 3 5 50 0 \
+            2>"${TMP_PATH}/resp"
+          RET=$?
+          case ${RET} in
+          0) # ok-button
+            sn="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+            mac1="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+            mac2="$(cat "${TMP_PATH}/resp" | sed -n '3p')"
+            if [ -z "${sn}" -o -z "${mac1}" ]; then
+              dialog --backtitle "$(backtitle)" \ --title "Customize Mac" \
+                --yesno "Invalid SN/MAC, retry?" 0 0
+              [ $? -eq 0 ] && break
+            fi
+            SN="${sn}"
+            writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+            MAC1="${mac1}"
+            writeConfigKey "mac1" "${MAC1}" "${USER_CONFIG_FILE}"
+            MAC2="${mac2}"
+            writeConfigKey "mac2" "${MAC2}" "${USER_CONFIG_FILE}"
+            writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+            BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+            break
+            ;;
+          3) # extra-button
+            sn=$(generateSerial "${MODEL}")
+            MACS=($(generateMacAddress "${MODEL}" 2))
+            mac1=${MACS[0]}
+            mac2=${MACS[1]}
+            ;;
+          1) # cancel-button
+            break
+            ;;
+          255) # ESC
+            break
+            ;;
+          esac
+        done
+        ;;
+      4)
         dialog --clear --backtitle "$(backtitle)" \
           --title "CPU Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
@@ -1040,7 +1050,7 @@ function cmdlineMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      4)
+      5)
         dialog --clear --backtitle "$(backtitle)" \
           --title "RAM Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
@@ -1062,7 +1072,7 @@ function cmdlineMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      5)
+      6)
         dialog --clear --backtitle "$(backtitle)" \
           --title "PCI/IRQ Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
@@ -1082,7 +1092,7 @@ function cmdlineMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      6)
+      7)
         dialog --clear --backtitle "$(backtitle)" \
           --title "C-State Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
@@ -1102,7 +1112,7 @@ function cmdlineMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      7)
+      8)
         ITEMS=""
         for KEY in ${!CMDLINE[@]}; do
           ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
@@ -1110,7 +1120,7 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" --title "User cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      8)
+      9)
         ITEMS=""
         while IFS=': ' read -r KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
@@ -1118,7 +1128,7 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" --title "Model/Version cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      9)
+      0)
         rm -f "${TMP_PATH}/opts"
         echo "5 \"Reboot after 5 seconds\"" >>"${TMP_PATH}/opts"
         echo "0 \"No reboot\"" >>"${TMP_PATH}/opts"
@@ -1298,42 +1308,37 @@ function keymapMenu() {
 function usbMenu() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
-    DT="$(readModelKey "${MODEL}" "dt")"
-    if [ ! "${DT}" = "true" ]; then
-      dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
-        1 "Mount USB as Internal" \
-        2 "Mount USB as Device" \
-        2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return 1
-      case "$(<"${TMP_PATH}/resp")" in
-        1)
-          MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
-          writeConfigKey "synoinfo.usbportcfg" "0x0" "${USER_CONFIG_FILE}"
-          writeConfigKey "synoinfo.internalportcfg" "0xffffffff" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-          dialog --backtitle "$(backtitle)" --title "Mount USB as Internal" \
-            --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
-          ;;
-        2)
-          MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
-          deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
-          deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-          dialog --backtitle "$(backtitle)" --title "Mount USB as Device" \
-            --aspect 18 --msgbox "Mount USB as Device - successful!" 0 0
-          ;;
-      esac
-    else
-      dialog --backtitle "$(backtitle)" --title "Mount USB Options" \
-        --aspect 18 --msgbox "Please select a nonDT Model." 0 0
-      return 1
-    fi
+    dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
+      1 "Mount USB as Internal" \
+      2 "Mount USB as Device" \
+      2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && return 1
+    case "$(<"${TMP_PATH}/resp")" in
+      1)
+        MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+        writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.internalportcfg" "0x3ffffff" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "$(backtitle)" --title "Mount USB as Internal" \
+          --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
+        ;;
+      2)
+        MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+        deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "$(backtitle)" --title "Mount USB as Device" \
+          --aspect 18 --msgbox "Mount USB as Device - successful!" 0 0
+        ;;
+    esac
   else
     dialog --backtitle "$(backtitle)" --title "Mount USB Options" \
       --aspect 18 --msgbox "Please configure your System first." 0 0
@@ -1995,7 +2000,6 @@ function sysinfo() {
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
-  KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
   MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
@@ -2072,7 +2076,6 @@ function sysinfo() {
   TEXT+="\n   Addons selected: \Zb${ADDONSINFO}\Zn"
   TEXT+="\n   Modules loaded: \Zb${MODULESINFO}\Zn"
   TEXT+="\n\Z4>> Settings\Zn"
-  TEXT+="\n   KVM Support: \Zb${KVMSUPPORT}\Zn"
   TEXT+="\n   Static IP: \Zb${STATICIP}\Zn"
   TEXT+="\n   Sort Drives: \Zb${HDDSORT}\Zn"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
@@ -2217,7 +2220,6 @@ function fullsysinfo() {
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
-  KVMSUPPORT="$(readConfigKey "arc.kvmsupport" "${USER_CONFIG_FILE}")"
   MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
@@ -2302,7 +2304,6 @@ function fullsysinfo() {
   TEXT+="\n${MODULESINFO}"
   TEXT+="\n"
   TEXT+="\nSettings"
-  TEXT+="\nKVM Support: ${KVMSUPPORT}"
   TEXT+="\nStatic IP: ${STATICIP}"
   TEXT+="\nSort Drives: ${HDDSORT}"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
@@ -2766,7 +2767,6 @@ function resetLoader() {
   initConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
   initConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
   initConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
-  initConfigKey "arc.kvmsupport" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
   initConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
@@ -2922,7 +2922,6 @@ while true; do
       echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
       echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
       echo "H \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
-      echo "K \"KVM in DSM: \Z4${KVMSUPPORT}\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "c \"Use IPv6: \Z4${ARCIPV6}\Zn \" "                                             >>"${TMP_PATH}/menu"
@@ -3034,13 +3033,6 @@ while true; do
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       NEXT="H"
-      ;;
-    K)
-      [ "${KVMSUPPORT}" = "true" ] && KVMSUPPORT='false' || KVMSUPPORT='true'
-      writeConfigKey "arc.kvmsupport" "${KVMSUPPORT}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="K"
       ;;
     o) [ "${MACSYS}" = "hardware" ] && MACSYS='custom' || MACSYS='hardware'
       writeConfigKey "arc.macsys" "${MACSYS}" "${USER_CONFIG_FILE}"

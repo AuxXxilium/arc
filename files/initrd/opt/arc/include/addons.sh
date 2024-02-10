@@ -64,10 +64,10 @@ function installAddon() {
   fi
   # If has files to copy, copy it, else return error
   [ ${HAS_FILES} -ne 1 ] && return 1
-  cp -f "${TMP_PATH}/${ADDON}/install.sh" "${RAMDISK_PATH}/addons/${ADDON}.sh" 2>"${LOG_FILE}" || dieLog
+  cp -f "${TMP_PATH}/${ADDON}/install.sh" "${RAMDISK_PATH}/addons/${ADDON}.sh" 2>"${LOG_FILE}"
   chmod +x "${RAMDISK_PATH}/addons/${ADDON}.sh"
-  [ -d ${TMP_PATH}/${ADDON}/root ] && (cp -rnf "${TMP_PATH}/${ADDON}/root/"* "${RAMDISK_PATH}/" 2>"${LOG_FILE}" || dieLog)
-  rm -rf "${TMP_PATH}/${ADDON:?}"
+  [ -d ${TMP_PATH}/${ADDON}/root ] && (cp -rnf "${TMP_PATH}/${ADDON}/root/"* "${RAMDISK_PATH}/" 2>"${LOG_FILE}")
+  rm -rf "${TMP_PATH}/${ADDON}"
   return 0
 }
 
@@ -80,13 +80,13 @@ function untarAddon() {
     echo ""
     return 1
   fi
-  rm -rf "${TMP_PATH}/${ADDON:?}"
-  mkdir -p "${TMP_PATH}/${ADDON}"
-  tar xaf "${1}" -C "${TMP_PATH}/${ADDON}" || return
-  ADDON=$(readConfigKey "name" "${TMP_PATH}/${ADDON}/manifest.yml")
+  rm -rf "${TMP_PATH}/addon"
+  mkdir -p "${TMP_PATH}/addon"
+  tar xaf "${1}" -C "${TMP_PATH}/addon" || return
+  ADDON=$(readConfigKey "name" "${TMP_PATH}/addon/manifest.yml")
   [ -z "${ADDON}" ] && return
-  rm -rf "${ADDONS_PATH}/${ADDON:?}"
-  mv -f "${TMP_PATH}/${ADDON}" "${ADDONS_PATH}/${ADDON}"
+  rm -rf "${ADDONS_PATH}/${ADDON}"
+  mv -f "${TMP_PATH}/addon" "${ADDONS_PATH}/${ADDON}"
   echo "${ADDON}"
 }
 
@@ -95,9 +95,9 @@ function untarAddon() {
 function updateAddons() {
   for F in $(ls ${PART3_PATH}/*.addon 2>/dev/null); do
     ADDON=$(basename "${F}" | sed 's|.addon||')
-    rm -rf "${ADDONS_PATH}/${ADDON:?}"
+    rm -rf "${ADDONS_PATH}/${ADDON}"
     mkdir -p "${ADDONS_PATH}/${ADDON}"
-    echo "Installing ${F} to ${ADDONS_PATH}/${ADDON}" 2>"${LOG_FILE}" || dieLog
+    echo "Installing ${F} to ${ADDONS_PATH}/${ADDON}"
     tar xaf "${F}" -C "${ADDONS_PATH}/${ADDON}"
     rm -f "${F}"
   done
