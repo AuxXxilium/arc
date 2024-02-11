@@ -501,7 +501,7 @@ function make() {
       # Check for existing Files
       DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
       # Get new Files
-      DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL}/${PRODUCTVER}/${PAT_HASH}.tar"
+      DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
       STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
       if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
         dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
