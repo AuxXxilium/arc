@@ -33,6 +33,7 @@ OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 if [[ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" || "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]]; then
   echo -e "\033[1;31mDSM zImage/Ramdisk changed!\033[0m"
   livepatch
+  readConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}" # Reset Bootcount
   echo
 fi
 
@@ -162,21 +163,13 @@ done
 CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
 
 # Make Directboot persistent if DSM is installed
-if [[ "${DIRECTBOOT}" = "true" && ${BOOTCOUNT} -gt 0 ]]; then
-  CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
-  grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
-  grub-editenv ${GRUB_PATH}/grubenv set default="direct"
-  BOOTCOUNT=$((${BOOTCOUNT} + 1))
-  writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
-  echo -e " \033[1;34mDSM installed - Make Directboot persistent\033[0m"
-  exec reboot
-elif [[ "${DIRECTBOOT}" = "true" && ${BOOTCOUNT} -eq 0 ]]; then
+if [ "${DIRECTBOOT}" = "true" ]; then
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
   grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
   grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
   BOOTCOUNT=$((${BOOTCOUNT} + 1))
   writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
-  echo -e " \033[1;34mDSM not installed - Reboot with Directboot\033[0m"
+  echo -e " \033[1;34mReboot with Directboot\033[0m"
   exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
   ETHX=$(ls /sys/class/net/ | grep -v lo) || true

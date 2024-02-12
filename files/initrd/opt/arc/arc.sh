@@ -2786,7 +2786,6 @@ function boot() {
   if [ $? -eq 0 ]; then
     make
   fi
-  grub-editenv ${GRUB_PATH}/grubenv set next_entry="boot"
   writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM...\nPlease stay patient!" 4 25
