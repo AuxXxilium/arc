@@ -1634,14 +1634,14 @@ function updateMenu() {
         STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
         if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-            --msgbox "Error downloading update File!" 0 0
+            --msgbox "Error downloading Updatefile!" 0 0
           return 1
         fi
         unzip -oq "${TMP_PATH}/arc-${TAG}.img.zip" -d "${TMP_PATH}"
         rm -f "${TMP_PATH}/arc-${TAG}.img.zip"
         if [ $? -ne 0 ]; then
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-            --msgbox "Error extracting update file" 0 0
+            --msgbox "Error extracting Updatefile" 0 0
           return 1
         fi
         if [[ -f "${USER_CONFIG_FILE}" && "${CONFDONE}" = "true" ]]; then
@@ -1694,7 +1694,7 @@ function updateMenu() {
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip")
         if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
-            --msgbox "Error downloading update File!" 0 0
+            --msgbox "Error downloading Updatefile!" 0 0
           return 1
         fi
         dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
@@ -1745,7 +1745,7 @@ function updateMenu() {
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip")
         if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
-            --msgbox "Error downloading update File!" 0 0
+            --msgbox "Error downloading Updatefile!" 0 0
           return 1
         fi
         dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
@@ -1787,7 +1787,7 @@ function updateMenu() {
         STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
         if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
-            --msgbox "Error downloading update File!" 0 0
+            --msgbox "Error downloading Updatefile!" 0 0
           return 1
         fi
         MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -1843,7 +1843,7 @@ function updateMenu() {
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")
         if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
-            --msgbox "Error downloading update File!" 0 0
+            --msgbox "Error downloading Updatefile!" 0 0
           return 1
         fi
         dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
@@ -1885,7 +1885,7 @@ function updateMenu() {
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip")
         if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
-            --msgbox "Error downloading update File" 0 0
+            --msgbox "Error downloading Updatefile" 0 0
           return 1
         fi
         dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
