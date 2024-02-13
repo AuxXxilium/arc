@@ -415,6 +415,7 @@ function make() {
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   if [ "${PLATFORM}" = "epyc7002" ]; then
     KVER="${PRODUCTVER}-${KVER}"
   fi
@@ -425,6 +426,18 @@ function make() {
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
+  # USBMount: If set to force
+  if [ "${USBMOUNT}" = "force" ]; then
+    writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
+    writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
+    writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
+    writeConfigKey "synoinfo.internalportcfg" "0x3ffffff" "${USER_CONFIG_FILE}"
+  else
+    deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
+    deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
+    deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
+    deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
+  fi
   # Check if all addon exists
   while IFS=': ' read -r ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
@@ -745,7 +758,7 @@ function addonSelection() {
   [ $? -ne 0 ] && return 1
   resp="$(<"${TMP_PATH}/resp")"
   dialog --backtitle "$(backtitle)" --title "Addons" \
-      --infobox "Writing to user config" 0 0
+      --infobox "Writing to user config" 20 5
   unset ADDONS
   declare -A ADDONS
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
@@ -847,7 +860,7 @@ function modulesMenu() {
         [ $? -ne 0 ] && continue
         resp="$(<"${TMP_PATH}/resp")"
         dialog --backtitle "$(backtitle)" --title "Modules" \
-           --infobox "Writing to user config" 0 0
+           --infobox "Writing to user config" 20 5
         unset USERMODULES
         declare -A USERMODULES
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
@@ -2876,7 +2889,8 @@ while true; do
       echo "f \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
       if [ "${DT}" = "false" ]; then
         echo "g \"Storage Map \" "                                                          >>"${TMP_PATH}/menu"
-        echo "c \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                         >>"${TMP_PATH}/menu"
+        echo "U \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                         >>"${TMP_PATH}/menu"
+        echo "W \"Force USB Mount \" "                                                      >>"${TMP_PATH}/menu"
       fi
       echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
       echo "S \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
@@ -2977,6 +2991,13 @@ while true; do
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       NEXT="U"
+      ;;
+    W)
+      USBMOUNT='force'
+      writeConfigKey "arc.usbmount" "force" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      NEXT="W"
       ;;
     S) storagepanelMenu; NEXT="S" ;;
     D) staticIPMenu; NEXT="D" ;;
