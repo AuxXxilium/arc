@@ -212,7 +212,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     done
     ethtool -s ${N} wol g 2>/dev/null
   done
-  echo
   BOOTWAIT=1
   w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
