@@ -33,7 +33,7 @@ OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 if [[ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" || "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]]; then
   echo -e "\033[1;31mDSM zImage/Ramdisk changed!\033[0m"
   livepatch
-  readConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}" # Reset Bootcount
+  writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}" # Reset Bootcount
   echo
 fi
 
@@ -212,7 +212,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     done
     ethtool -s ${N} wol g 2>/dev/null
   done
-  echo
   BOOTWAIT=1
   w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
