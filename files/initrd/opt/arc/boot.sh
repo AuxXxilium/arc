@@ -162,7 +162,7 @@ for KEY in ${!CMDLINE[@]}; do
 done
 CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
 
-# Make Directboot persistent if DSM is installed
+# Boot
 if [ "${DIRECTBOOT}" = "true" ]; then
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
   grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
@@ -212,23 +212,40 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     done
     ethtool -s ${N} wol g 2>/dev/null
   done
+  echo
+  BOOTWAIT=1
+  w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
+  MSG=""
+  while test ${BOOTWAIT} -ge 0; do
+    MSG="\033[1;33mAccess SSH/Web will interrupt boot...\033[0m"
+    echo -en "\r${MSG}"
+    w | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
+    if ! diff WB WC >/dev/null 2>&1; then
+      echo -en "\r\033[1;33mAccess SSH/Web detected and boot is interrupted.\033[0m\n"
+      rm -f WB WC
+      exit 0
+    fi
+    sleep 1
+    BOOTWAIT=$((BOOTWAIT - 1))
+  done
+  rm -f WB WC
+  echo -en "\r$(printf "%$((${#MSG} * 2))s" " ")\n"
+  echo -e " \033[1;37mLoading DSM kernel...\033[0m"
+
+  # Write new Bootcount
+  BOOTCOUNT=$((${BOOTCOUNT} + 1))
+  writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
+  # Executes DSM kernel via KEXEC
+  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
+  echo -e " \033[1;37m"Booting DSM..."\033[0m"
+  for T in $(w | grep -v "TTY" | awk -F' ' '{print $2}')
+  do
+    echo -e "\n \033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\n  Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
+  done
+
+  # Clear logs for dbgutils addons
+  rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
+
+  [ "${KERNELLOAD}" = "kexec" ] && kexec -f -e || poweroff
+  exit 0
 fi
-echo
-echo -e " \033[1;37mLoading DSM kernel...\033[0m"
-
-# Write new Bootcount
-BOOTCOUNT=$((${BOOTCOUNT} + 1))
-writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
-# Executes DSM kernel via KEXEC
-kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
-echo -e " \033[1;37m"Booting DSM..."\033[0m"
-for T in $(w | grep -v "TTY" | awk -F' ' '{print $2}')
-do
-  echo -e "\n \033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\n  Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
-done
-
-# Clear logs for dbgutils addons
-rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
-
-[ "${KERNELLOAD}" = "kexec" ] && kexec -f -e || poweroff
-exit 0
