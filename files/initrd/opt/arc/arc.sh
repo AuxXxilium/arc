@@ -1304,6 +1304,49 @@ function keymapMenu() {
 }
 
 ###############################################################################
+# Shows usb menu to user
+function usbMenu() {
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  if [ "${CONFDONE}" = "true" ]; then
+    dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
+      1 "Mount USB as Internal (force)" \
+      2 "Mount USB as Device" \
+      2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && return 1
+    case "$(<"${TMP_PATH}/resp")" in
+      1)
+        MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+        writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.internalportcfg" "0x3ffffff" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "$(backtitle)" --title "Mount USB as Internal" \
+          --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
+        ;;
+      2)
+        MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+        deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "$(backtitle)" --title "Mount USB as Device" \
+          --aspect 18 --msgbox "Mount USB as Device - successful!" 0 0
+        ;;
+    esac
+  else
+    dialog --backtitle "$(backtitle)" --title "Mount USB Options" \
+      --aspect 18 --msgbox "Please configure your System first." 0 0
+    return 1
+  fi
+}
+
+###############################################################################
 # Shows storagepanel menu to user
 function storagepanelMenu() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -1954,6 +1997,7 @@ function sysinfo() {
   fi
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
   BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
+  USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
   MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
@@ -2040,6 +2084,9 @@ function sysinfo() {
     TEXT+="\n   SataRemap: \Zb${PORTMAP}\Zn"
   elif [ "${REMAP}" = "user" ]; then
     TEXT+="\n   PortMap: \Zb"User"\Zn"
+  fi
+  if [ "${DT}" = "false" ]; then
+    TEXT+="\n   USB Mount: \Zb${USBMOUNT}\Zn"
   fi
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
@@ -2170,6 +2217,7 @@ function fullsysinfo() {
   fi
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
   BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
+  USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
   MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
@@ -2264,6 +2312,9 @@ function fullsysinfo() {
     TEXT+="\nSataRemap: ${PORTMAP}"
   elif [ "${REMAP}" = "user" ]; then
     TEXT+="\nPortMap: "User""
+  fi
+  if [ "${DT}" = "false" ]; then
+    TEXT+="\nUSB Mount: ${USBMOUNT}"
   fi
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS
@@ -2709,6 +2760,7 @@ function resetLoader() {
   initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.patch" "random" "${USER_CONFIG_FILE}"
   initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
@@ -2823,11 +2875,10 @@ while true; do
       echo "f \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
       if [ "${DT}" = "false" ]; then
         echo "g \"Storage Map \" "                                                          >>"${TMP_PATH}/menu"
+        echo "h \"USB Mount Options \" "                                                    >>"${TMP_PATH}/menu"
       fi
       echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
-      if [ "${CONFDONE}" = "true" ]; then
-        echo "S \"Custom StoragePanel \" "                                                  >>"${TMP_PATH}/menu"
-      fi
+      echo "S \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
       echo "D \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
@@ -2919,6 +2970,7 @@ while true; do
     f) networkMenu; NEXT="f" ;;
     g) storageMenu; NEXT="g" ;;
     p) ONLYPATCH="true" && arcsettings; NEXT="p" ;;
+    h) usbMenu; NEXT="h" ;;
     S) storagepanelMenu; NEXT="S" ;;
     D) staticIPMenu; NEXT="D" ;;
     c) [ "${ARCIPV6}" = "true" ] && ARCIPV6='false' || ARCIPV6='true'
