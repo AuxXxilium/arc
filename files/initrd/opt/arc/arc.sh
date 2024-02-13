@@ -1309,7 +1309,7 @@ function usbMenu() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
-      1 "Mount USB as Internal" \
+      1 "Mount USB as Internal (force)" \
       2 "Mount USB as Device" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
@@ -1328,9 +1328,9 @@ function usbMenu() {
         ;;
       2)
         MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-        writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.usbportcfg" "0x3ffffff" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
+        deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
         deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
