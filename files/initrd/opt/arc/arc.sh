@@ -58,6 +58,7 @@ KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
+USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
 STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
 ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
@@ -2875,7 +2876,7 @@ while true; do
       echo "f \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
       if [ "${DT}" = "false" ]; then
         echo "g \"Storage Map \" "                                                          >>"${TMP_PATH}/menu"
-        echo "h \"USB Mount Options \" "                                                    >>"${TMP_PATH}/menu"
+        echo "c \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                         >>"${TMP_PATH}/menu"
       fi
       echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
       echo "S \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
@@ -2970,7 +2971,13 @@ while true; do
     f) networkMenu; NEXT="f" ;;
     g) storageMenu; NEXT="g" ;;
     p) ONLYPATCH="true" && arcsettings; NEXT="p" ;;
-    h) usbMenu; NEXT="h" ;;
+    U)
+      [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
+      writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      NEXT="U"
+      ;;
     S) storagepanelMenu; NEXT="S" ;;
     D) staticIPMenu; NEXT="D" ;;
     c) [ "${ARCIPV6}" = "true" ] && ARCIPV6='false' || ARCIPV6='true'
