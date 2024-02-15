@@ -47,7 +47,6 @@ fi
 
 # Get Arc Data from Config
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
@@ -193,7 +192,6 @@ function arcMenu() {
     writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
     if [ "${DT}" = "true" ]; then
       deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
       deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
@@ -569,10 +567,6 @@ function make() {
       cp -f "${UNTAR_PAT_PATH}/rd.gz" "${ORI_RDGZ_FILE}"
       rm -rf "${UNTAR_PAT_PATH}"
     fi
-    # Reset Bootcount if User rebuild DSM
-    if [[ -z "${BOOTCOUNT}" || ${BOOTCOUNT} -gt 0 ]]; then
-      writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
-    fi
     (
       livepatch
       sleep 3
@@ -659,10 +653,6 @@ function offlinemake() {
     cp -f "${UNTAR_PAT_PATH}/zImage" "${ORI_ZIMAGE_FILE}"
     cp -f "${UNTAR_PAT_PATH}/rd.gz" "${ORI_RDGZ_FILE}"
     rm -rf "${UNTAR_PAT_PATH}"
-  fi
-  # Reset Bootcount if User rebuild DSM
-  if [[ -z "${BOOTCOUNT}" || ${BOOTCOUNT} -gt 0 ]]; then
-    writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   fi
   (
     livepatch
@@ -999,8 +989,8 @@ function cmdlineMenu() {
       3)
         MSG="Note: (MAC will not be set to NIC, Only for activation services.)"
         sn="${SN}"
-        mac1="${MAC1}"
-        mac2="${MAC2}"
+        mac1="$(readConfigKey "mac.eth0" "${USER_CONFIG_FILE}")" # TO-DO
+        mac2="$(readConfigKey "mac.eth1" "${USER_CONFIG_FILE}")"
         while true; do
           dialog --backtitle "$(backtitle)" \ --title "Customize Mac" \
             --extra-button --extra-label "Random" \
@@ -1020,9 +1010,9 @@ function cmdlineMenu() {
             SN="${sn}"
             writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
             MAC1="${mac1}"
-            writeConfigKey "mac1" "${MAC1}" "${USER_CONFIG_FILE}"
+            writeConfigKey "mac.eth0" "${MAC1}" "${USER_CONFIG_FILE}"
             MAC2="${mac2}"
-            writeConfigKey "mac2" "${MAC2}" "${USER_CONFIG_FILE}"
+            writeConfigKey "mac.eth1" "${MAC2}" "${USER_CONFIG_FILE}"
             writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
             BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
             break
@@ -1763,7 +1753,7 @@ function updateMenu() {
           --infobox "Installing new Addons" 0 0
         for PKG in $(ls ${ADDONS_PATH}/*.addon); do
           ADDON=$(basename ${PKG} | sed 's|.addon||')
-          rm -rf "${ADDONS_PATH}/${ADDON}"
+          rm -rf "${ADDONS_PATH}/${ADDON:?}"
           mkdir -p "${ADDONS_PATH}/${ADDON}"
           tar xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
           rm -f "${ADDONS_PATH}/${ADDON}.addon"
@@ -2010,7 +2000,6 @@ function sysinfo() {
     fi
   fi
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-  BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
@@ -2085,7 +2074,6 @@ function sysinfo() {
   TEXT+="\n   Config Version: \Zb${CONFIGVER}\Zn"
   TEXT+="\n   MacSys | IPv6: \Zb${MACSYS} | ${ARCIPV6}\Zn"
   TEXT+="\n   Offline Mode: \Zb${OFFLINE}\Zn"
-  TEXT+="\n   Bootcount: \Zb${BOOTCOUNT}\Zn"
   TEXT+="\n\Z4>> Addons | Modules\Zn"
   TEXT+="\n   Addons selected: \Zb${ADDONSINFO}\Zn"
   TEXT+="\n   Modules loaded: \Zb${MODULESINFO}\Zn"
@@ -2230,7 +2218,6 @@ function fullsysinfo() {
     fi
   fi
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-  BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
@@ -2309,7 +2296,6 @@ function fullsysinfo() {
   TEXT+="\nConfig Version: ${CONFIGVER}"
   TEXT+="\nMacSys | IPv6: ${MACSYS} | ${ARCIPV6}"
   TEXT+="\nOffline Mode: ${OFFLINE}"
-  TEXT+="\nBootcount: ${BOOTCOUNT}"
   TEXT+="\n"
   TEXT+="\nAddons selected:"
   TEXT+="\n${ADDONSINFO}"
@@ -2435,11 +2421,11 @@ function fullsysinfo() {
 # Shows Networkdiag to user
 function networkdiag() {
   MSG=""
-  for iface in $(ls /sys/class/net/ | grep -v lo || true)
-  do
-    MSG+="Interface: ${iface}\n"
-    addr=$(getIP ${iface})
-    netmask=$(ifconfig eth0 | grep inet | grep 255 | awk '{print $4}' | cut -f2 -d':')
+  ETHX=$(ls /sys/class/net/ | grep -v lo) || true
+  for ETH in ${ETHX}; do
+    MSG+="Interface: ${ETH}\n"
+    addr=$(getIP ${ETH})
+    netmask=$(ifconfig ${ETH} | grep inet | grep 255 | awk '{print $4}' | cut -f2 -d':')
     MSG+="IP Address: ${addr}\n"
     MSG+="Netmask: ${netmask}\n"
     MSG+="\n"
@@ -2768,7 +2754,6 @@ function resetLoader() {
   initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
-  initConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
@@ -2782,10 +2767,11 @@ function resetLoader() {
   initConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
   initConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
   initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
-  initConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
+  initConfigKey "ip" "{}" "${USER_CONFIG_FILE}"
+  initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
@@ -2798,8 +2784,10 @@ function resetLoader() {
   fi
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  dialog --backtitle "$(backtitle)" --colors --title "Reset Loader" \
-    --msgbox "Clean is complete." 5 30
+    dialog --backtitle "$(backtitle)" --title "Reset Loader" --aspect 18 \
+    --yesno "Clean successful.\nReboot?" 0 0
+  [ $? -ne 0 ] && continue
+  exec reboot
   clear
 }
 
@@ -2836,7 +2824,6 @@ function juniorboot() {
     make
   fi
   grub-editenv ${GRUB_PATH}/grubenv set next_entry="junior"
-  writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM Recovery...\nPlease stay patient!" 4 30
   sleep 2
@@ -2852,7 +2839,6 @@ function boot() {
   if [ $? -eq 0 ]; then
     make
   fi
-  writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM...\nPlease stay patient!" 4 25
   sleep 2
@@ -2894,7 +2880,7 @@ while true; do
       fi
       echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
       echo "S \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
-      echo "D \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu"
+      #echo "D \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu" TO-DO
     fi
     if [ "${ADVOPTS}" = "true" ]; then
       echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
@@ -2919,9 +2905,6 @@ while true; do
         echo "i \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
       fi
       echo "q \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
-      if [ ${BOOTCOUNT} -gt 0 ]; then
-        echo "r \"Reset Bootcount: \Z4${BOOTCOUNT}\Zn \" "                                  >>"${TMP_PATH}/menu"
-      fi
     fi
     if [ "${DSMOPTS}" = "true" ]; then
       echo "7 \"\Z1Hide DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
@@ -3028,15 +3011,7 @@ while true; do
     q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
       grub-editenv "${GRUB_PATH}/grubenv" create
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
-      BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
       NEXT="q"
-      ;;
-    r)
-      grub-editenv "${GRUB_PATH}/grubenv" create
-      writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
-      BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
-      NEXT="r"
       ;;
     # DSM Section
     7) [ "${DSMOPTS}" = "true" ] && DSMOPTS='false' || DSMOPTS='true'
