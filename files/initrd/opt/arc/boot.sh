@@ -94,11 +94,10 @@ done
 VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
 PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
-MAC1="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
-MAC2="$(readConfigKey "arc.mac2" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
+ETHX=$(ls /sys/class/net/ | grep -v lo) || true
 
 declare -A CMDLINE
 
@@ -129,16 +128,21 @@ CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 CMDLINE['sn']="${SN}"
 CMDLINE['net.ifnames']="0"
-CMDLINE['netif_num']="0"
+N=0
 if [ "${MACSYS}" = "hardware" ]; then
-  [[ -z "${MAC1}" && -n "${MAC2}" ]] && MAC1=${MAC2} && MAC2="" # Sanity check
-  [ -n "${MAC1}" ] && CMDLINE['netif_num']="1" && CMDLINE['mac1']="${MAC1}" && CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-  [ -n "${MAC2}" ] && CMDLINE['netif_num']="2" && CMDLINE['mac2']="${MAC2}" && CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
+  for ETH in ${ETHX}; do
+    MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
+    [ -n "${MAC}" ] && N=$((${N} + 1)) && CMDLINE["mac${N}"]="${MAC}"
+  done
+  CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 elif [ "${MACSYS}" = "custom" ]; then
-  [[ -z "${MAC1}" && -n "${MAC2}" ]] && MAC1=${MAC2} && MAC2="" # Sanity check
-  [ -n "${MAC1}" ] && CMDLINE['netif_num']="1" && CMDLINE['mac1']="${MAC1}" && CMDLINE['skip_vender_mac_interfaces']="1,2,3,4,5,6,7"
-  [ -n "${MAC2}" ] && CMDLINE['netif_num']="2" && CMDLINE['mac2']="${MAC2}" && CMDLINE['skip_vender_mac_interfaces']="2,3,4,5,6,7"
+  for ETH in ${ETHX}; do
+    MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
+    [ -n "${MAC}" ] && N=$((${N} + 1)) && CMDLINE["mac${N}"]="${MAC}"
+  done
+  CMDLINE['skip_vender_mac_interfaces']="$(seq -s, ${N} 7)"
 fi
+CMDLINE['netif_num']="${N}"
 
 # Read cmdline
 while IFS=': ' read -r KEY VALUE; do
@@ -165,30 +169,29 @@ if [ "${DIRECTBOOT}" = "true" ]; then
   echo -e " \033[1;34mReboot with Directboot\033[0m"
   exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
-  ETHX=$(ls /sys/class/net/ | grep -v lo) || true
-  ETH=$(echo ${ETHX} | wc -w)
   STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
-  echo -e " \033[1;34mDetected ${ETH} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
-  for N in ${ETHX}; do
+  echo -e " \033[1;34mDetected ${N} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+  for ETH in ${ETHX}; do
     IP=""
-    DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     COUNT=0
     while true; do
-      if [[ "${STATICIP}" = "true" && "${N}" = "eth0" && -n "${ARCIP}" ]]; then
-        ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
+      ARCIP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
+      if [[ "${STATICIP}" = "true" && -n "${ARCIP}" ]]; then
         NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
         IP="${ARCIP}"
         NETMASK=$(convert_netmask "${NETMASK}")
-        ip addr add ${IP}/${NETMASK} dev eth0
+        ip addr add ${IP}/${NETMASK} dev ${ETH}
         MSG="STATIC"
       else
-        IP="$(getIP ${N})"
+        IP="$(getIP ${ETH})"
         MSG="DHCP"
       fi
       if [ -n "${IP}" ]; then
-        SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
+        SPEED=$(ethtool ${ETH} | grep "Speed:" | awk '{print $2}')
         echo -e "\r \033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
+        ethtool -s ${ETH} wol g 2>/dev/null
         [ ! -n "${IPCON}" ] && IPCON="${IP}"
         break
       fi
@@ -197,13 +200,12 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         break
       fi
       sleep 3
-      if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
+      if ethtool ${ETH} | grep 'Link detected' | grep -q 'no'; then
         echo -e "\r \033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
         break
       fi
       COUNT=$((${COUNT} + 3))
     done
-    ethtool -s ${N} wol g 2>/dev/null
   done
   BOOTWAIT=1
   w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB

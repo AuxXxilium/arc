@@ -39,7 +39,6 @@ initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
-initConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
@@ -57,28 +56,35 @@ initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
 initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "ip" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
 
 # Init Network
 ETHX=$(ls /sys/class/net/ | grep -v lo) || true
-ETH=$(echo ${ETHX} | wc -w)
-# No network devices
-[ ${ETH} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
-if [ "${MACSYS}" = "custom" ]; then
-  MACR="$(cat /sys/class/net/eth0/address | sed 's/://g')"
-  MACA="$(readConfigKey "arc.mac1" "${USER_CONFIG_FILE}")"
-  if [[ -n "${MACA}" && "${MACA}" != "${MACR}" ]]; then
-    MAC="${MACA:0:2}:${MACA:2:2}:${MACA:4:2}:${MACA:6:2}:${MACA:8:2}:${MACA:10:2}"
-    echo "Setting eth0 MAC to ${MAC}"
-    ip link set dev eth0 address "${MAC}" >/dev/null 2>&1 &&
-    (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
-    sleep 2
-  elif [ -z "${MACA}" ]; then
-    # Write real Mac to cmdline config
-    writeConfigKey "arc.mac1" "${MACR}" "${USER_CONFIG_FILE}"
+# Write Mac to config
+N=0
+for ETH in ${ETHX}; do
+  MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
+  initConfigKey "mac.${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
+  if [ "${MACSYS}" = "custom" ]; then
+    MACA="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
+    if [[ -n "${MACA}" && "${MACA}" != "${MACR}" ]]; then
+      MAC="${MACA:0:2}:${MACA:2:2}:${MACA:4:2}:${MACA:6:2}:${MACA:8:2}:${MACA:10:2}"
+      echo "Setting ${ETH} MAC to ${MAC}"
+      ip link set dev ${ETH} address "${MAC}" >/dev/null 2>&1 &&
+      (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
+      sleep 2
+    fi
+    echo
   fi
-  echo
-fi
+  ethtool -s ${ETH} wol g 2>/dev/null
+  N=$((${N} + 1))
+done
+# Write NIC Amount to config
+writeConfigKey "device.nic" "${N}" "${USER_CONFIG_FILE}"
+# No network devices
+[ ${N} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
 
 # Get the VID/PID if we are in USB
 VID="0x46f4"
@@ -128,26 +134,28 @@ echo
 STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-echo -e "\033[1;34mDetected ${ETH} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
-for N in ${ETHX}; do
+echo -e "\033[1;34mDetected ${N} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+for ETH in ${ETHX}; do
   IP=""
-  DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+  DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
   COUNT=0
   while true; do
-    if [[ "${STATICIP}" = "true" && "${N}" = "eth0" && -n "${ARCIP}" ]]; then
-      ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
+    ARCIP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
+    if [[ "${STATICIP}" = "true" && -n "${ARCIP}" ]]; then
       NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
       IP="${ARCIP}"
       NETMASK=$(convert_netmask "${NETMASK}")
-      ip addr add ${IP}/${NETMASK} dev eth0
+      ip addr add ${IP}/${NETMASK} dev ${ETH}
       MSG="STATIC"
     else
-      IP="$(getIP ${N})"
+      IP="$(getIP ${ETH})"
       MSG="DHCP"
     fi
     if [ -n "${IP}" ]; then
-      SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
+      SPEED=$(ethtool ${ETH} | grep "Speed:" | awk '{print $2}')
+      writeConfigKey "ip.${ETH}" "${IP}" "${USER_CONFIG_FILE}"
       echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
+      ethtool -s ${ETH} wol g 2>/dev/null
       break
     fi
     if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
@@ -155,13 +163,12 @@ for N in ${ETHX}; do
       break
     fi
     sleep 3
-    if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
+    if ethtool ${ETH} | grep 'Link detected' | grep -q 'no'; then
       echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
       break
     fi
     COUNT=$((${COUNT} + 3))
   done
-  ethtool -s ${N} wol g 2>/dev/null
 done
 
 # Inform user

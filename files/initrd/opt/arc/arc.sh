@@ -192,7 +192,6 @@ function arcMenu() {
     writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
     if [ "${DT}" = "true" ]; then
       deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
       deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
@@ -990,8 +989,8 @@ function cmdlineMenu() {
       3)
         MSG="Note: (MAC will not be set to NIC, Only for activation services.)"
         sn="${SN}"
-        mac1="${MAC1}"
-        mac2="${MAC2}"
+        mac1="$(readConfigKey "mac.eth0" "${USER_CONFIG_FILE}")" # TO-DO
+        mac2="$(readConfigKey "mac.eth1" "${USER_CONFIG_FILE}")"
         while true; do
           dialog --backtitle "$(backtitle)" \ --title "Customize Mac" \
             --extra-button --extra-label "Random" \
@@ -1011,9 +1010,9 @@ function cmdlineMenu() {
             SN="${sn}"
             writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
             MAC1="${mac1}"
-            writeConfigKey "mac1" "${MAC1}" "${USER_CONFIG_FILE}"
+            writeConfigKey "mac.eth0" "${MAC1}" "${USER_CONFIG_FILE}"
             MAC2="${mac2}"
-            writeConfigKey "mac2" "${MAC2}" "${USER_CONFIG_FILE}"
+            writeConfigKey "mac.eth1" "${MAC2}" "${USER_CONFIG_FILE}"
             writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
             BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
             break
@@ -2422,11 +2421,11 @@ function fullsysinfo() {
 # Shows Networkdiag to user
 function networkdiag() {
   MSG=""
-  for iface in $(ls /sys/class/net/ | grep -v lo || true)
-  do
-    MSG+="Interface: ${iface}\n"
-    addr=$(getIP ${iface})
-    netmask=$(ifconfig eth0 | grep inet | grep 255 | awk '{print $4}' | cut -f2 -d':')
+  ETHX=$(ls /sys/class/net/ | grep -v lo) || true
+  for ETH in ${ETHX}; do
+    MSG+="Interface: ${ETH}\n"
+    addr=$(getIP ${ETH})
+    netmask=$(ifconfig ${ETH} | grep inet | grep 255 | awk '{print $4}' | cut -f2 -d':')
     MSG+="IP Address: ${addr}\n"
     MSG+="Netmask: ${netmask}\n"
     MSG+="\n"
@@ -2755,7 +2754,6 @@ function resetLoader() {
   initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
-  initConfigKey "arc.mac1" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
@@ -2772,6 +2770,8 @@ function resetLoader() {
   initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
+  initConfigKey "ip" "{}" "${USER_CONFIG_FILE}"
+  initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
@@ -2784,8 +2784,10 @@ function resetLoader() {
   fi
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  dialog --backtitle "$(backtitle)" --colors --title "Reset Loader" \
-    --msgbox "Clean is complete." 5 30
+    dialog --backtitle "$(backtitle)" --title "Reset Loader" --aspect 18 \
+    --yesno "Clean successful.\nReboot?" 0 0
+  [ $? -ne 0 ] && continue
+  exec reboot
   clear
 }
 
@@ -2878,7 +2880,7 @@ while true; do
       fi
       echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
       echo "S \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
-      echo "D \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu"
+      #echo "D \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu" TO-DO
     fi
     if [ "${ADVOPTS}" = "true" ]; then
       echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
