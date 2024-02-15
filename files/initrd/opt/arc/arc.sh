@@ -1753,7 +1753,7 @@ function updateMenu() {
           --infobox "Installing new Addons" 0 0
         for PKG in $(ls ${ADDONS_PATH}/*.addon); do
           ADDON=$(basename ${PKG} | sed 's|.addon||')
-          rm -rf "${ADDONS_PATH}/${ADDON}"
+          rm -rf "${ADDONS_PATH}/${ADDON:?}"
           mkdir -p "${ADDONS_PATH}/${ADDON}"
           tar xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
           rm -f "${ADDONS_PATH}/${ADDON}.addon"
