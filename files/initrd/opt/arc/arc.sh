@@ -47,7 +47,6 @@ fi
 
 # Get Arc Data from Config
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
@@ -569,10 +568,6 @@ function make() {
       cp -f "${UNTAR_PAT_PATH}/rd.gz" "${ORI_RDGZ_FILE}"
       rm -rf "${UNTAR_PAT_PATH}"
     fi
-    # Reset Bootcount if User rebuild DSM
-    if [[ -z "${BOOTCOUNT}" || ${BOOTCOUNT} -gt 0 ]]; then
-      writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
-    fi
     (
       livepatch
       sleep 3
@@ -659,10 +654,6 @@ function offlinemake() {
     cp -f "${UNTAR_PAT_PATH}/zImage" "${ORI_ZIMAGE_FILE}"
     cp -f "${UNTAR_PAT_PATH}/rd.gz" "${ORI_RDGZ_FILE}"
     rm -rf "${UNTAR_PAT_PATH}"
-  fi
-  # Reset Bootcount if User rebuild DSM
-  if [[ -z "${BOOTCOUNT}" || ${BOOTCOUNT} -gt 0 ]]; then
-    writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   fi
   (
     livepatch
@@ -2010,7 +2001,6 @@ function sysinfo() {
     fi
   fi
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-  BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
@@ -2085,7 +2075,6 @@ function sysinfo() {
   TEXT+="\n   Config Version: \Zb${CONFIGVER}\Zn"
   TEXT+="\n   MacSys | IPv6: \Zb${MACSYS} | ${ARCIPV6}\Zn"
   TEXT+="\n   Offline Mode: \Zb${OFFLINE}\Zn"
-  TEXT+="\n   Bootcount: \Zb${BOOTCOUNT}\Zn"
   TEXT+="\n\Z4>> Addons | Modules\Zn"
   TEXT+="\n   Addons selected: \Zb${ADDONSINFO}\Zn"
   TEXT+="\n   Modules loaded: \Zb${MODULESINFO}\Zn"
@@ -2230,7 +2219,6 @@ function fullsysinfo() {
     fi
   fi
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-  BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
@@ -2309,7 +2297,6 @@ function fullsysinfo() {
   TEXT+="\nConfig Version: ${CONFIGVER}"
   TEXT+="\nMacSys | IPv6: ${MACSYS} | ${ARCIPV6}"
   TEXT+="\nOffline Mode: ${OFFLINE}"
-  TEXT+="\nBootcount: ${BOOTCOUNT}"
   TEXT+="\n"
   TEXT+="\nAddons selected:"
   TEXT+="\n${ADDONSINFO}"
@@ -2782,7 +2769,6 @@ function resetLoader() {
   initConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
   initConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
   initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
-  initConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
@@ -2836,7 +2822,6 @@ function juniorboot() {
     make
   fi
   grub-editenv ${GRUB_PATH}/grubenv set next_entry="junior"
-  writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM Recovery...\nPlease stay patient!" 4 30
   sleep 2
@@ -2852,7 +2837,6 @@ function boot() {
   if [ $? -eq 0 ]; then
     make
   fi
-  writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM...\nPlease stay patient!" 4 25
   sleep 2
@@ -2919,9 +2903,6 @@ while true; do
         echo "i \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
       fi
       echo "q \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
-      if [ ${BOOTCOUNT} -gt 0 ]; then
-        echo "r \"Reset Bootcount: \Z4${BOOTCOUNT}\Zn \" "                                  >>"${TMP_PATH}/menu"
-      fi
     fi
     if [ "${DSMOPTS}" = "true" ]; then
       echo "7 \"\Z1Hide DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
@@ -3028,15 +3009,7 @@ while true; do
     q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
       grub-editenv "${GRUB_PATH}/grubenv" create
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
-      BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
       NEXT="q"
-      ;;
-    r)
-      grub-editenv "${GRUB_PATH}/grubenv" create
-      writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
-      BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
-      NEXT="r"
       ;;
     # DSM Section
     7) [ "${DSMOPTS}" = "true" ] && DSMOPTS='false' || DSMOPTS='true'

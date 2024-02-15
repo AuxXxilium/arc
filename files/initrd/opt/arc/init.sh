@@ -53,7 +53,6 @@ initConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
 initConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
 initConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
 initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
-initConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
 initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
@@ -126,8 +125,6 @@ else
 fi
 echo
 
-BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
-[ -z "${BOOTCOUNT}" ] && BOOTCOUNT=0
 STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
@@ -137,7 +134,7 @@ for N in ${ETHX}; do
   DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
   COUNT=0
   while true; do
-    if [[ "${STATICIP}" = "true" && "${N}" = "eth0" && -n "${ARCIP}" && ${BOOTCOUNT} -gt 0 ]]; then
+    if [[ "${STATICIP}" = "true" && "${N}" = "eth0" && -n "${ARCIP}" ]]; then
       ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
       NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
       IP="${ARCIP}"

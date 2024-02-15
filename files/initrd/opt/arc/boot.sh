@@ -33,7 +33,6 @@ OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 if [[ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" || "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]]; then
   echo -e "\033[1;31mDSM zImage/Ramdisk changed!\033[0m"
   livepatch
-  writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}" # Reset Bootcount
   echo
 fi
 
@@ -100,16 +99,12 @@ MAC2="$(readConfigKey "arc.mac2" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-BOOTCOUNT="$(readConfigKey "arc.bootcount" "${USER_CONFIG_FILE}")"
-
-[ -z "${BOOTCOUNT}" ] && BOOTCOUNT=0
 
 declare -A CMDLINE
 
 # Read and Set Cmdline
 if grep -q "force_junior" /proc/cmdline; then
   CMDLINE['force_junior']=""
-  writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
 fi
 [ ${EFI} -eq 1 ] && CMDLINE['withefi']="" || CMDLINE['noefi']=""
 if [ ! "${BUS}" = "usb" ]; then
@@ -167,8 +162,6 @@ if [ "${DIRECTBOOT}" = "true" ]; then
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
   grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
   grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
-  BOOTCOUNT=$((${BOOTCOUNT} + 1))
-  writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
   echo -e " \033[1;34mReboot with Directboot\033[0m"
   exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
@@ -182,7 +175,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     COUNT=0
     while true; do
-      if [[ "${STATICIP}" = "true" && "${N}" = "eth0" && -n "${ARCIP}" && ${BOOTCOUNT} -gt 0 ]]; then
+      if [[ "${STATICIP}" = "true" && "${N}" = "eth0" && -n "${ARCIP}" ]]; then
         ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
         NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
         IP="${ARCIP}"
@@ -231,9 +224,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo -en "\r$(printf "%$((${#MSG} * 2))s" " ")\n"
   echo -e " \033[1;37mLoading DSM kernel...\033[0m"
 
-  # Write new Bootcount
-  BOOTCOUNT=$((${BOOTCOUNT} + 1))
-  writeConfigKey "arc.bootcount" "${BOOTCOUNT}" "${USER_CONFIG_FILE}"
   # Executes DSM kernel via KEXEC
   kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
   echo -e " \033[1;37m"Booting DSM..."\033[0m"
