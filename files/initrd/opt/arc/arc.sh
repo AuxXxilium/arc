@@ -910,14 +910,13 @@ function cmdlineMenu() {
   done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
   echo "1 \"Add a Cmdline item\""                                >"${TMP_PATH}/menu"
   echo "2 \"Delete Cmdline item(s)\""                           >>"${TMP_PATH}/menu"
-  echo "3 \"Customize Mac(s) \""                                >>"${TMP_PATH}/menu"
-  echo "4 \"CPU Fix\""                                          >>"${TMP_PATH}/menu"
-  echo "5 \"RAM Fix\""                                          >>"${TMP_PATH}/menu"
-  echo "6 \"PCI/IRQ Fix\""                                      >>"${TMP_PATH}/menu"
-  echo "7 \"C-State Fix\""                                      >>"${TMP_PATH}/menu"
-  echo "8 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
-  echo "9 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
-  echo "0 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
+  echo "3 \"CPU Fix\""                                          >>"${TMP_PATH}/menu"
+  echo "4 \"RAM Fix\""                                          >>"${TMP_PATH}/menu"
+  echo "5 \"PCI/IRQ Fix\""                                      >>"${TMP_PATH}/menu"
+  echo "6 \"C-State Fix\""                                      >>"${TMP_PATH}/menu"
+  echo "7 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
+  echo "8 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
+  echo "9 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
   # Loop menu
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
@@ -987,52 +986,6 @@ function cmdlineMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       3)
-        MSG="Note: (MAC will not be set to NIC, Only for activation services.)"
-        sn="${SN}"
-        mac1="$(readConfigKey "mac.eth0" "${USER_CONFIG_FILE}")" # TO-DO
-        mac2="$(readConfigKey "mac.eth1" "${USER_CONFIG_FILE}")"
-        while true; do
-          dialog --backtitle "$(backtitle)" \ --title "Customize Mac" \
-            --extra-button --extra-label "Random" \
-            --form "${MSG}" 11 60 3 "sn" 1 1 "${sn}" 1 5 50 0 "mac1" 2 1 "${mac1}" 2 5 50 0 "mac2" 3 1 "${mac2}" 3 5 50 0 \
-            2>"${TMP_PATH}/resp"
-          RET=$?
-          case ${RET} in
-          0) # ok-button
-            sn="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
-            mac1="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
-            mac2="$(cat "${TMP_PATH}/resp" | sed -n '3p')"
-            if [[ -z "${sn}" || -z "${mac1}" ]]; then
-              dialog --backtitle "$(backtitle)" \ --title "Customize Mac" \
-                --yesno "Invalid SN/MAC, retry?" 0 0
-              [ $? -eq 0 ] && break
-            fi
-            SN="${sn}"
-            writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-            MAC1="${mac1}"
-            writeConfigKey "mac.eth0" "${MAC1}" "${USER_CONFIG_FILE}"
-            MAC2="${mac2}"
-            writeConfigKey "mac.eth1" "${MAC2}" "${USER_CONFIG_FILE}"
-            writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-            BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-            break
-            ;;
-          3) # extra-button
-            sn=$(generateSerial "${MODEL}")
-            MACS=($(generateMacAddress "${MODEL}" 2))
-            mac1=${MACS[0]}
-            mac2=${MACS[1]}
-            ;;
-          1) # cancel-button
-            break
-            ;;
-          255) # ESC
-            break
-            ;;
-          esac
-        done
-        ;;
-      4)
         dialog --clear --backtitle "$(backtitle)" \
           --title "CPU Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
@@ -1054,7 +1007,7 @@ function cmdlineMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      5)
+      4)
         dialog --clear --backtitle "$(backtitle)" \
           --title "RAM Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
@@ -1076,7 +1029,7 @@ function cmdlineMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      6)
+      5)
         dialog --clear --backtitle "$(backtitle)" \
           --title "PCI/IRQ Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
@@ -1096,7 +1049,7 @@ function cmdlineMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      7)
+      6)
         dialog --clear --backtitle "$(backtitle)" \
           --title "C-State Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
@@ -1116,7 +1069,7 @@ function cmdlineMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      8)
+      7)
         ITEMS=""
         for KEY in ${!CMDLINE[@]}; do
           ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
@@ -1124,7 +1077,7 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" --title "User cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      9)
+      8)
         ITEMS=""
         while IFS=': ' read -r KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
@@ -1132,7 +1085,7 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" --title "Model/Version cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      0)
+      9)
         rm -f "${TMP_PATH}/opts"
         echo "5 \"Reboot after 5 seconds\"" >>"${TMP_PATH}/opts"
         echo "0 \"No reboot\"" >>"${TMP_PATH}/opts"
