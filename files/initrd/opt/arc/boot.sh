@@ -207,6 +207,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       COUNT=$((${COUNT} + 3))
     done
   done
+  # Exec Bootwait to check SSH/Web connection
   BOOTWAIT=1
   w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
