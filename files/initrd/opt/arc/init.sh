@@ -57,6 +57,7 @@ initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
 initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "ip" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "netmask" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
 
 # Init Network
@@ -142,7 +143,7 @@ for ETH in ${ETHX}; do
   while true; do
     ARCIP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
     if [[ "${STATICIP}" = "true" && -n "${ARCIP}" ]]; then
-      NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
+      NETMASK="$(readConfigKey "netmask.${ETH}" "${USER_CONFIG_FILE}")"
       IP="${ARCIP}"
       NETMASK=$(convert_netmask "${NETMASK}")
       ip addr add ${IP}/${NETMASK} dev ${ETH}

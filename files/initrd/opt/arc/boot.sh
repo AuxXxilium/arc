@@ -179,7 +179,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     while true; do
       ARCIP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
       if [[ "${STATICIP}" = "true" && -n "${ARCIP}" ]]; then
-        NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
+        NETMASK="$(readConfigKey "netmask.${ETH}" "${USER_CONFIG_FILE}")"
         IP="${ARCIP}"
         NETMASK=$(convert_netmask "${NETMASK}")
         ip addr add ${IP}/${NETMASK} dev ${ETH}

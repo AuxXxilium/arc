@@ -2447,76 +2447,65 @@ function credits() {
 ###############################################################################
 # allow setting Static IP for DSM
 function staticIPMenu() {
+  # Get Amount of NIC
+  ETHX=$(ls /sys/class/net/ | grep -v lo) || true
+  writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
   mkdir -p "${TMP_PATH}/sdX1"
   for I in $(ls /dev/sd.*1 2>/dev/null | grep -v "${LOADER_DISK}1"); do
     mount "${I}" "${TMP_PATH}/sdX1"
-    [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && . "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
-    umount "${I}"
-    break
+    for ETH in ${ETHX}; do
+      [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-${ETH}" ] && cp -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-${ETH}" "${TMP_PATH}/ifcfg-${ETH}"
+      [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-${ETH}" ] && break
+      NETMASK=$(cat "${TMP_PATH}/ifcfg-${ETH}" | grep BOOTPROTO | awk -F'=' '{print $2}')
+      TEXT=""
+      TEXT+="This feature will allow you to set a static IP for your NIC.\n"
+      TEXT+="Actual Settings are:\n"
+      TEXT+="\nNIC: ${ETH}\n"
+      TEXT+="Mode: ${BOOTPROTO}\n"
+      if [ "${BOOTPROTO}" = "static" ]; then
+        IPADDR=$(cat "${TMP_PATH}/ifcfg-${ETH}" | grep IPADDR | awk -F'=' '{print $2}')
+        NETMASK=$(cat "${TMP_PATH}/ifcfg-${ETH}" | grep NETMASK | awk -F'=' '{print $2}')
+        TEXT+="IP: ${IPADDR}\n"
+        TEXT+="NETMASK: ${NETMASK}\n"
+      fi
+      TEXT+="Do you want to change Config?"
+      dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
+          --yesno "${TEXT}" 0 0
+      [ $? -ne 0 ] && continue
+      dialog --clear --backtitle "$(backtitle)" --title "DHCP/Static IP" \
+        --menu "DHCP or STATIC?" 0 0 0 \
+          1 "DHCP" \
+          2 "STATIC" \
+        2>"${TMP_PATH}/opts"
+      opts="$(<"${TMP_PATH}/opts")"
+      [ -z "${opts}" ] && continue
+      if [ ${opts} -eq 1 ]; then
+        echo -e "DEVICE=${ETH}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=off" >"${TMP_PATH}/ifcfg-${ETH}"
+        deleteConfigKey "ip.${ETH}" "" "${USER_CONFIG_FILE}"
+        deleteConfigKey "netmask.${ETH}" "" "${USER_CONFIG_FILE}"
+      elif [ ${opts} -eq 2 ]; then
+        dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
+          --inputbox "Type a Static IP\nEq: 192.168.0.1" 0 0 "${IPADDR}" \
+          2>"${TMP_PATH}/resp"
+        [ $? -ne 0 ] && continue
+        IPADDR="$(<"${TMP_PATH}/resp")"
+        dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
+          --inputbox "Type a Netmask\nEq: 255.255.255.0" 0 0 "${NETMASK}" \
+          2>"${TMP_PATH}/resp"
+        [ $? -ne 0 ] && continue
+        NETMASK="$(<"${TMP_PATH}/resp")"
+        writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
+        writeConfigKey "ip.${ETH}" "${IPADDR}" "${USER_CONFIG_FILE}"
+        writeConfigKey "netmask.${ETH}" "${NETMASK}" "${USER_CONFIG_FILE}"
+        echo -e "DEVICE=${ETH}\nBOOTPROTO=static\nONBOOT=yes\nIPV6INIT=off\nIPADDR=${IPADDR}\nNETMASK=${NETMASK}" >"${TMP_PATH}/ifcfg-${ETH}"
+        NETMASK=$(convert_netmask "${NETMASK}")
+        ip addr add ${IPADDR}/${NETMASK} dev ${ETH}
+      fi
+      [ -f "${TMP_PATH}/ifcfg-${ETH}" ] && cp -f "${TMP_PATH}/ifcfg-${ETH}" "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-${ETH}"
+    done
+  umount "${I}"
+  break
   done
-  rm -rf "${TMP_PATH}/sdX1"
-  TEXT=""
-  TEXT+="This feature will allow you to set a static IP for eth0.\n"
-  TEXT+="Actual Settings are:\n"
-  TEXT+="Mode: ${BOOTPROTO}\n"
-  if [ "${BOOTPROTO}" = "static" ]; then
-    TEXT+="IP: ${IPADDR}\n"
-    TEXT+="NETMASK: ${NETMASK}\n"
-  fi
-  TEXT+="Do you want to change Config?"
-  dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
-      --yesno "${TEXT}" 0 0
-  [ $? -ne 0 ] && return 1
-  dialog --clear --backtitle "$(backtitle)" --title "DHCP/Static IP" \
-    --menu "DHCP or STATIC?" 0 0 0 \
-      1 "DHCP" \
-      2 "STATIC" \
-    2>"${TMP_PATH}/opts"
-    opts="$(<"${TMP_PATH}/opts")"
-    [ -z "${opts}" ] && return 1
-    if [ ${opts} -eq 1 ]; then
-      echo -e "DEVICE=eth0\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=off" >"${TMP_PATH}/ifcfg-eth0"
-    elif [ ${opts} -eq 2 ]; then
-      dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
-        --inputbox "Type a Static IP\nEq: 192.168.0.1" 0 0 "${IPADDR}" \
-        2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return 1
-      IPADDR="$(<"${TMP_PATH}/resp")"
-      dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
-        --inputbox "Type a Netmask\nEq: 255.255.255.0" 0 0 "${NETMASK}" \
-        2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return 1
-      NETMASK="$(<"${TMP_PATH}/resp")"
-      echo -e "DEVICE=eth0\nBOOTPROTO=static\nONBOOT=yes\nIPV6INIT=off\nIPADDR=${IPADDR}\nNETMASK=${NETMASK}" >"${TMP_PATH}/ifcfg-eth0"
-    fi
-    dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
-      --yesno "Do you want to set this Config?" 0 0
-    [ $? -ne 0 ] && return 1
-    (
-      mkdir -p "${TMP_PATH}/sdX1"
-      for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK_PART1}"); do
-        mount "${I}" "${TMP_PATH}/sdX1"
-        [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0" ] && cp -f "${TMP_PATH}/ifcfg-eth0" "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-eth0"
-        sync
-        umount "${I}"
-      done
-      rm -rf "${TMP_PATH}/sdX1"
-    )
-    if [[ -n "${IPADDR}" && -n "${NETMASK}" ]]; then
-      NETMASK=$(convert_netmask "${NETMASK}")
-      ip addr add ${IPADDR}/${NETMASK} dev eth0
-      writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.ip" "${IPADDR}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.netmask" "${NETMASK}" "${USER_CONFIG_FILE}"
-      dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" --colors --aspect 18 \
-      --msgbox "Network set to STATIC!" 0 0
-    else
-      writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.ip" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.netmask" "" "${USER_CONFIG_FILE}"
-      dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" --colors --aspect 18 \
-      --msgbox "Network set to DHCP!" 0 0
-    fi
 }
 
 ###############################################################################
@@ -2724,6 +2713,7 @@ function resetLoader() {
   initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
   initConfigKey "ip" "{}" "${USER_CONFIG_FILE}"
+  initConfigKey "netmask" "{}" "${USER_CONFIG_FILE}"
   initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
@@ -2738,7 +2728,7 @@ function resetLoader() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     dialog --backtitle "$(backtitle)" --title "Reset Loader" --aspect 18 \
-    --yesno "Clean successful.\nReboot?" 0 0
+    --yesno "Reset successful.\nReboot?" 0 0
   [ $? -ne 0 ] && continue
   exec reboot
   clear
@@ -2833,7 +2823,7 @@ while true; do
       fi
       echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
       echo "S \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
-      #echo "D \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu" TO-DO
+      echo "D \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu" TO-DO
     fi
     if [ "${ADVOPTS}" = "true" ]; then
       echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
