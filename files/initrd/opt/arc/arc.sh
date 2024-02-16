@@ -2823,7 +2823,7 @@ while true; do
       fi
       echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
       echo "S \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
-      echo "D \"DHCP/Static Loader IP \" "                                                  >>"${TMP_PATH}/menu" TO-DO
+      echo "D \"DHCP/Static IP \" "                                                         >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
       echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
