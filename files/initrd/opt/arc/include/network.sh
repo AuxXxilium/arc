@@ -35,7 +35,7 @@ function getnet() {
     for ETH in ${ETHX}; do
       MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
       dialog --backtitle "$(backtitle)" --title "Mac Setting" \
-        --inputbox "Type a custom MAC for ${ETH}. NIC.\n Eq. 001132123456" 0 0 "${MAC}"\
+        --inputbox "Type a custom MAC for ${ETH}.\n Eq. 001132123456" 0 0 "${MAC}"\
         2>"${TMP_PATH}/resp"
       RET=$?
       [ ${RET} -ne 0 ] && break 2
