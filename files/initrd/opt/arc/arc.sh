@@ -62,9 +62,15 @@ STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
 ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 
+# Update Check
+NEWTAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
+  if [ ! "${NEWTAG}" = "${ARC_VERSION}" ]; then
+    ARC_TITLE="${ARC_TITLE} | Update: ${NEWTAG}"
+  fi
   BACKTITLE="${ARC_TITLE} |"
   if [ -n "${MODEL}" ]; then
     BACKTITLE+=" ${MODEL}"
