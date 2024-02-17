@@ -443,13 +443,14 @@ function make() {
     offlinemake
     return
   else
-    # Update PAT Data
+    # Get PAT Data from Config
     PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
     if [[ -z "${PAT_URL_CONF}" || -z "${PAT_HASH_CONF}" ]]; then
       PAT_URL_CONF="0"
       PAT_HASH_CONF="0"
     fi
+    # Get PAT Data from Syno
     while true; do
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
         --infobox "Get PAT Data from Syno..." 3 30
@@ -484,7 +485,7 @@ function make() {
         PAT_URL=""
         PAT_HASH=""
       else
-        MSG="Successfully got PAT Data.\nPlease confirm or modify as needed."
+        MSG="Successfully got PAT Data.\nPlease confirm or modify if needed."
       fi
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
         --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 7 100 0 \
