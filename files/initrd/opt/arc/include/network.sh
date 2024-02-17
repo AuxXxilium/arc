@@ -1,7 +1,7 @@
 # Get Network Config for Loader
 function getnet() {
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  if [ "${ARCPATCH}" = "arc" ]; then
+  if [ "${ARCPATCH}" = "true" ]; then
     # Install with Arc Patch - Check for model config and set custom Mac Address
     [ -f "${TMP_PATH}/opts" ] && rm -f "${TMP_PATH}/opts"
     touch "${TMP_PATH}/opts"
@@ -24,7 +24,7 @@ function getnet() {
     [ -z "${resp}" ] && return 1
     MAC="${resp}"
     writeConfigKey "mac.eth0" "${MAC}" "${USER_CONFIG_FILE}"
-  elif [ "${ARCPATCH}" = "random" ]; then
+  elif [ "${ARCPATCH}" = "false" ]; then
     for ETH in ${ETHX}; do
       MACS=$(generateMacAddress "${MODEL}" 1)
       writeConfigKey "mac.${ETH}" "${MAC}" "${USER_CONFIG_FILE}"
@@ -35,7 +35,7 @@ function getnet() {
     for ETH in ${ETHX}; do
       MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
       dialog --backtitle "$(backtitle)" --title "Mac Setting" \
-        --inputbox "Type a custom MAC for ${ETH}. NIC.\n Eq. 001132123456" 0 0 "${MAC}"\
+        --inputbox "Type a custom MAC for ${ETH}.\n Eq. 001132123456" 0 0 "${MAC}"\
         2>"${TMP_PATH}/resp"
       RET=$?
       [ ${RET} -ne 0 ] && break 2
@@ -47,7 +47,6 @@ function getnet() {
       [ ${#MAC} -eq 12 ] && break
       dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "Invalid MAC" 0 0
     done
-    writeConfigKey "arc.macsys" "custom" "${USER_CONFIG_FILE}"
   fi
   # Ask for Macsys
   dialog --clear --backtitle "$(backtitle)" \

@@ -8,10 +8,10 @@ assignees: ''
 ---
 
 **Describe the Bug**
-A clear and concise description of what the bug is.
+First read Wiki to find a Solution. If you can't find a Solution, provide a clear and concise description of what the bug is.
 
 **Screenshots**
-Screenshot the Systeminfo (Arc - Sysinfo) or use new "Full Sysinfo - Upload" Function provide the Code!!! <- IMPORTANT
+Actual Screenshot from Systeminfo (Config Mode - Sysinfo) or use new "Full Sysinfo - Upload" Function provide the Code!!! <- IMPORTANT
 
 **Hardware**
 Add your Hardware Informations here. CPU / Board / Networkcontroller / Storagecontroller / ...

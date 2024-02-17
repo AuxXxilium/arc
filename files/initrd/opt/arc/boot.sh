@@ -119,7 +119,7 @@ CMDLINE['syno_hw_version']="${MODEL}"
 [ -z "${PID}" ] && PID="0x0001" # Sanity check
 CMDLINE['vid']="${VID}"
 CMDLINE['pid']="${PID}"
-CMDLINE['panic']="${KERNELPANIC:-0}"
+CMDLINE['panic']="${KERNELPANIC:-5}"
 CMDLINE['console']="ttyS0,115200n8"
 CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
@@ -169,17 +169,17 @@ if [ "${DIRECTBOOT}" = "true" ]; then
   echo -e " \033[1;34mReboot with Directboot\033[0m"
   exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
-  STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   echo -e " \033[1;34mDetected ${N} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
   for ETH in ${ETHX}; do
     IP=""
+    STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     COUNT=0
     while true; do
       ARCIP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
       if [[ "${STATICIP}" = "true" && -n "${ARCIP}" ]]; then
-        NETMASK="$(readConfigKey "arc.netmask" "${USER_CONFIG_FILE}")"
+        NETMASK="$(readConfigKey "netmask.${ETH}" "${USER_CONFIG_FILE}")"
         IP="${ARCIP}"
         NETMASK=$(convert_netmask "${NETMASK}")
         ip addr add ${IP}/${NETMASK} dev ${ETH}
@@ -207,6 +207,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       COUNT=$((${COUNT} + 3))
     done
   done
+  # Exec Bootwait to check SSH/Web connection
   BOOTWAIT=1
   w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
@@ -231,7 +232,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo -e " \033[1;37m"Booting DSM..."\033[0m"
   for T in $(w | grep -v "TTY" | awk -F' ' '{print $2}')
   do
-    echo -e "\n \033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\n  Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
+    echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\n  Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
   done
 
   # Clear logs for dbgutils addons
