@@ -919,8 +919,6 @@ function cmdlineMenu() {
         MSG+=" * \Z4intel_idle.max_cstate=1\Zn\n    Set the maximum C-state depth allowed by the intel_idle driver.\n"
         MSG+=" * \Z4pcie_port_pm=off\Zn\n    Turn off the power management of the PCIe port.\n"
         MSG+=" * \Z4libata.force=noncq\Zn\n    Disable NCQ for all SATA ports.\n"
-        MSG+=" * \Z4SataPortMap=??\Zn\n    Sata Port Map.\n"
-        MSG+=" * \Z4DiskIdxMap=??\Zn\n    Disk Index Map, Modify disk name sequence.\n"
         MSG+=" * \Z4i915.enable_guc=2\Zn\n    Enable the GuC firmware on Intel graphics hardware.(value: 1,2 or 3)\n"
         MSG+=" * \Z4i915.max_vfs=7\Zn\n     Set the maximum number of virtual functions (VFs) that can be created for Intel graphics hardware.\n"
         MSG+="\nEnter the Parameter Name and Value you want to add.\n"
@@ -2783,13 +2781,13 @@ while true; do
       echo "b \"Addons \" "                                                                 >>"${TMP_PATH}/menu"
       echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
       echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
+      echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
       echo "f \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
       if [ "${DT}" = "false" ]; then
         echo "g \"Storage Map \" "                                                          >>"${TMP_PATH}/menu"
         echo "U \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                         >>"${TMP_PATH}/menu"
         echo "W \"Force USB Mount \" "                                                      >>"${TMP_PATH}/menu"
       fi
-      echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
       echo "S \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
       echo "D \"Switch DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
     fi
@@ -2828,10 +2826,10 @@ while true; do
       echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
       echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
       echo "H \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
-      echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
-      echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "c \"Use IPv6: \Z4${ARCIPV6}\Zn \" "                                             >>"${TMP_PATH}/menu"
       echo "c \"Enable eMMC Boot: \Z4${EMMCBOOT}\Zn \" "                                    >>"${TMP_PATH}/menu"
+      echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
+      echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
     fi
   fi
   if [ "${DEVOPTS}" = "true" ]; then
