@@ -511,7 +511,7 @@ function make() {
         STATUS=$(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" --progress-bar)
         if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-            --msgbox "No DSM Image found!\ Exit." 0 0
+            --msgbox "No DSM Image found!\nExit." 0 0
           return 1
         fi
         # Extract Files
@@ -736,7 +736,7 @@ function addonSelection() {
   [ $? -ne 0 ] && return 1
   resp="$(<"${TMP_PATH}/resp")"
   dialog --backtitle "$(backtitle)" --title "Addons" \
-      --infobox "Writing to user config" 20 5
+      --infobox "Writing to user config" 5 30
   unset ADDONS
   declare -A ADDONS
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
