@@ -69,42 +69,25 @@ NEWTAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/release
 # Mounts backtitle dynamically
 function backtitle() {
   if [ ! "${NEWTAG}" = "${ARC_VERSION}" ]; then
-    ARC_TITLE="${ARC_TITLE} | Update: ${NEWTAG}"
+    ARC_TITLE="${ARC_TITLE} -> Update: ${NEWTAG}"
   fi
-  BACKTITLE="${ARC_TITLE} |"
-  if [ -n "${MODEL}" ]; then
-    BACKTITLE+=" ${MODEL}"
-  else
-    BACKTITLE+=" (no model)"
+  if [ ! -n "${MODEL}" ]; then
+    MODEL=" (no Model)"
   fi
-  BACKTITLE+=" |"
-  if [ -n "${PRODUCTVER}" ]; then
-    BACKTITLE+=" ${PRODUCTVER}"
-  else
-    BACKTITLE+=" (no version)"
+  if [ ! -n "${PRODUCTVER}" ]; then
+    IPCON=" (no Version)"
   fi
-  BACKTITLE+=" |"
-  if [ -n "${IPCON}" ]; then
-    BACKTITLE+=" ${IPCON}"
-  else
-    BACKTITLE+=" (no IP)"
+  if [ ! -n "${IPCON}" ]; then
+    IPCON=" (no IP)"
   fi
-  BACKTITLE+=" |"
-  BACKTITLE+=" Patch: ${ARCPATCH}"
-  BACKTITLE+=" |"
-  if [ "${CONFDONE}" = "true" ]; then
-    BACKTITLE+=" Config: Y"
-  else
-    BACKTITLE+=" Config: N"
-  fi
-  BACKTITLE+=" |"
-  if [ "${BUILDDONE}" = "true" ]; then
-    BACKTITLE+=" Build: Y"
-  else
-    BACKTITLE+=" Build: N"
-  fi
-  BACKTITLE+=" |"
-  BACKTITLE+=" ${MACHINE}(${BUS^^})"
+  BACKTITLE="${ARC_TITLE} | "
+  BACKTITLE+="${MODEL} | "
+  BACKTITLE+="${PRODUCTVER} | "
+  BACKTITLE+="${IPCON} | "
+  BACKTITLE+="Patch: ${ARCPATCH} | "
+  BACKTITLE+="Config: ${CONFDONE} | "
+  BACKTITLE+="Build: ${BUILDDONE} | "
+  BACKTITLE+="${MACHINE}(${BUS^^})"
   echo "${BACKTITLE}"
 }
 
@@ -288,9 +271,7 @@ function arcsettings() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
   ARCCONF="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${MODEL}.yml")"
-  if [ "${ARCRECOVERY}" = "true" ]; then
-    writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-  elif [[ "${ARCRECOVERY}" != "true" && -n "${ARCCONF}" ]]; then
+  if [[ "${ARCRECOVERY}" != "true" && -n "${ARCCONF}" ]]; then
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "Arc Patch"\
       --menu "Do you want to use Syno Services?" 7 50 0 \
@@ -303,13 +284,11 @@ function arcsettings() {
     if [ ${resp} -eq 1 ]; then
       # Read Arc Patch from File
       SN="$(readModelKey "${MODEL}" "arc.serial")"
-      writeConfigKey "arc.patch" "arc" "${USER_CONFIG_FILE}"
-      writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 2 ]; then
       # Generate random Serial
       SN="$(generateSerial "${MODEL}")"
-      writeConfigKey "arc.patch" "random" "${USER_CONFIG_FILE}"
-      writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 3 ]; then
       while true; do
         dialog --backtitle "$(backtitle)" --colors --title "Serial" \
@@ -329,7 +308,6 @@ function arcsettings() {
         [ $? -eq 0 ] && break
       done
       writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
-      writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
     fi
     writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
   elif [[ "${ARCRECOVERY}" != "true" && -z "${ARCCONF}" ]]; then
@@ -344,8 +322,7 @@ function arcsettings() {
     if [ ${resp} -eq 1 ]; then
       # Generate random Serial
       SN="$(generateSerial "${MODEL}")"
-      writeConfigKey "arc.patch" "random" "${USER_CONFIG_FILE}"
-      writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 2 ]; then
       while true; do
         dialog --backtitle "$(backtitle)" --colors --title "Serial" \
@@ -365,7 +342,6 @@ function arcsettings() {
         [ $? -eq 0 ] && break
       done
       writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
-      writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
     fi
     writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
   fi
@@ -1939,7 +1915,7 @@ function sysinfo() {
   VENDOR="$(dmidecode -s system-product-name)"
   BOARD="$(dmidecode -s baseboard-product-name)"
   ETHX=$(ls /sys/class/net/ | grep -v lo) || true
-  ETH="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
+  NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
@@ -1980,29 +1956,23 @@ function sysinfo() {
   TEXT+="\n  CPU: \Zb${CPUINFO}\Zn"
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
   TEXT+="\n"
-  TEXT+="\n\Z4> Network: ${ETH} NIC\Zn"
-  for N in ${ETHX}; do
+  TEXT+="\n\Z4> Network: ${NIC} NIC\Zn"
+  for ETH in ${ETHX}; do
     IP=""
-    DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-    MAC="$(cat /sys/class/net/${N}/address | sed 's/://g')"
+    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
     COUNT=0
     while true; do
-      IP="$(getIP ${N})"
+      IP="$(getIP ${ETH})"
       if [ "${STATICIP}" = "true" ]; then
-        ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
-        if [[ "${N}" = "eth0" && -n "${ARCIP}" ]]; then
-          NETIP="${ARCIP}"
-          MSG="STATIC"
-        else
-          MSG="DHCP"
-        fi
+        IP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
+        MSG="STATIC"
       else
         MSG="DHCP"
       fi
       if [ -n "${IP}" ]; then
-        SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
+        SPEED=$(ethtool ${ETH} | grep "Speed:" | awk '{print $2}')
         TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) \ZbIP: ${IP} | Mac: ${MAC}\Zn"
-        [ ! -n "${IPCON}" ] && IPCON="${IP}"
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
@@ -2010,7 +1980,7 @@ function sysinfo() {
         break
       fi
       sleep 3
-      if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
+      if ethtool ${ETH} | grep 'Link detected' | grep -q 'no'; then
         TEXT+="\n  ${DRIVER} \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
         break
       fi
@@ -2023,21 +1993,21 @@ function sysinfo() {
   TEXT+="\n  Subversion Loader: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Subversion DSM: \ZbModules ${MODULESVERSION} | LKM ${LKMVERSION}\Zn"
   TEXT+="\n"
+  TEXT+="\n\Z4>> Loader\Zn"
+  TEXT+="\n   Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
+  TEXT+="\n   Config Version: \Zb${CONFIGVER}\Zn"
   TEXT+="\n\Z4>> DSM ${PRODUCTVER}: ${MODEL}\Zn"
   TEXT+="\n   Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
   TEXT+="\n   Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
-  TEXT+="\n\Z4>> Loader\Zn"
   TEXT+="\n   Arc Patch | Kernelload: \Zb${ARCPATCH} | ${KERNELLOAD}\Zn"
   TEXT+="\n   Directboot: \Zb${DIRECTBOOT}\Zn"
-  TEXT+="\n   Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
-  TEXT+="\n   Config Version: \Zb${CONFIGVER}\Zn"
-  TEXT+="\n   MacSys | IPv6: \Zb${MACSYS} | ${ARCIPV6}\Zn"
-  TEXT+="\n   Offline Mode: \Zb${OFFLINE}\Zn"
   TEXT+="\n\Z4>> Addons | Modules\Zn"
   TEXT+="\n   Addons selected: \Zb${ADDONSINFO}\Zn"
   TEXT+="\n   Modules loaded: \Zb${MODULESINFO}\Zn"
   TEXT+="\n\Z4>> Settings\Zn"
-  TEXT+="\n   Static IP: \Zb${STATICIP}\Zn"
+  TEXT+="\n   MacSys: \Zb${MACSYS}\Zn"
+  TEXT+="\n   StaticIP | IPv6: \Zb${STATICIP} | ${ARCIPV6}\Zn"
+  TEXT+="\n   Offline Mode: \Zb${OFFLINE}\Zn"
   TEXT+="\n   Sort Drives: \Zb${HDDSORT}\Zn"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
     TEXT+="\n   SataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
@@ -2046,7 +2016,7 @@ function sysinfo() {
   elif [ "${REMAP}" = "user" ]; then
     TEXT+="\n   PortMap: \Zb"User"\Zn"
   fi
-  if [ "${DT}" = "false" ]; then
+  if [ ! "${DT}" = "true" ]; then
     TEXT+="\n   USB Mount: \Zb${USBMOUNT}\Zn"
   fi
   TEXT+="\n"
@@ -2157,7 +2127,7 @@ function fullsysinfo() {
   VENDOR="$(dmidecode -s system-product-name)"
   BOARD="$(dmidecode -s baseboard-product-name)"
   ETHX=$(ls /sys/class/net/ | grep -v lo || true)
-  ETH="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
+  NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
@@ -2198,45 +2168,39 @@ function fullsysinfo() {
   TEXT+="\nCPU: ${CPUINFO}"
   TEXT+="\nMemory: $((${RAMTOTAL} / 1024))GB"
   TEXT+="\n"
-  TEXT+="\nNetwork: ${ETH} NIC"
-  for N in ${ETHX}; do
+  TEXT+="\nNetwork: ${NIC} NIC"
+  for ETH in ${ETHX}; do
     IP=""
-    DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-    MAC="$(cat /sys/class/net/${N}/address | sed 's/://g')"
+    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
     COUNT=0
     while true; do
-      IP="$(getIP ${N})"
+      IP="$(getIP ${ETH})"
       if [ "${STATICIP}" = "true" ]; then
-        ARCIP="$(readConfigKey "arc.ip" "${USER_CONFIG_FILE}")"
-        if [[ "${N}" = "eth0" && -n "${ARCIP}" ]]; then
-          NETIP="${ARCIP}"
-          MSG="STATIC"
-        else
-          MSG="DHCP"
-        fi
+        IP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
+        MSG="STATIC"
       else
         MSG="DHCP"
       fi
       if [ -n "${IP}" ]; then
-        SPEED=$(ethtool ${N} | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) IP: ${IP} | Mac: ${MAC}"
-        [ ! -n "${IPCON}" ] && IPCON="${IP}"
+        SPEED=$(ethtool ${ETH} | grep "Speed:" | awk '{print $2}')
+        TEXT+="\n${DRIVER} (${SPEED} | ${MSG}) IP: ${IP} | Mac: ${MAC}"
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
-        TEXT+="\n  ${DRIVER} IP: TIMEOUT | MAC: ${MAC}"
+        TEXT+="\n${DRIVER} IP: TIMEOUT | MAC: ${MAC}"
         break
       fi
       sleep 3
-      if ethtool ${N} | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n  ${DRIVER} IP: NOT CONNECTED | MAC: ${MAC}"
+      if ethtool ${ETH} | grep 'Link detected' | grep -q 'no'; then
+        TEXT+="\n${DRIVER} IP: NOT CONNECTED | MAC: ${MAC}"
         break
       fi
       COUNT=$((${COUNT} + 3))
     done
   done
   TEXT+="\n"
-  TEXT+="\nNIC Controller:\n"
+  TEXT+="\nNIC:\n"
   TEXT+="$(lspci -d ::200 -nnk)"
   # Print Config Informations
   TEXT+="\n"
@@ -2244,17 +2208,15 @@ function fullsysinfo() {
   TEXT+="\nSubversion Loader: Addons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | Patches ${PATCHESVERSION}"
   TEXT+="\nSubversion DSM: Modules ${MODULESVERSION} | LKM ${LKMVERSION}"
   TEXT+="\n"
+  TEXT+="\nLoader"
+  TEXT+="\nConfig | Build: ${CONFDONE} | ${BUILDDONE}"
+  TEXT+="\nConfig Version: ${CONFIGVER}"
+  TEXT+="\n"
   TEXT+="\nDSM ${PRODUCTVER}: ${MODEL}"
   TEXT+="\nKernel | LKM: ${KVER} | ${LKM}"
   TEXT+="\nPlatform | DeviceTree: ${PLATFORM} | ${DT}"
-  TEXT+="\n"
-  TEXT+="\nLoader"
   TEXT+="\nArc Patch | Kernelload: ${ARCPATCH} | ${KERNELLOAD}"
   TEXT+="\nDirectboot: ${DIRECTBOOT}"
-  TEXT+="\nConfig | Build: ${CONFDONE} | ${BUILDDONE}"
-  TEXT+="\nConfig Version: ${CONFIGVER}"
-  TEXT+="\nMacSys | IPv6: ${MACSYS} | ${ARCIPV6}"
-  TEXT+="\nOffline Mode: ${OFFLINE}"
   TEXT+="\n"
   TEXT+="\nAddons selected:"
   TEXT+="\n${ADDONSINFO}"
@@ -2263,7 +2225,9 @@ function fullsysinfo() {
   TEXT+="\n${MODULESINFO}"
   TEXT+="\n"
   TEXT+="\nSettings"
-  TEXT+="\nStatic IP: ${STATICIP}"
+  TEXT+="\nMacSys: ${MACSYS}"
+  TEXT+="\nStaticIP | IPv6: ${STATICIP} | ${ARCIPV6}"
+  TEXT+="\nOffline Mode: ${OFFLINE}"
   TEXT+="\nSort Drives: ${HDDSORT}"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
     TEXT+="\nSataPortMap | DiskIdxMap: ${PORTMAP} | ${DISKMAP}"
@@ -2272,7 +2236,7 @@ function fullsysinfo() {
   elif [ "${REMAP}" = "user" ]; then
     TEXT+="\nPortMap: "User""
   fi
-  if [ "${DT}" = "false" ]; then
+  if [ ! "${DT}" = "true" ]; then
     TEXT+="\nUSB Mount: ${USBMOUNT}"
   fi
   TEXT+="\n"
@@ -2297,7 +2261,7 @@ function fullsysinfo() {
           fi
         fi
       done
-      echo
+      TEXT+="\n"
     done
   fi
   if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
@@ -2456,24 +2420,28 @@ function staticIPMenu() {
   # Get Amount of NIC
   ETHX=$(ls /sys/class/net/ | grep -v lo) || true
   writeConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
-  mkdir -p "${TMP_PATH}/sdX1"
-  for I in $(ls /dev/sd.*1 2>/dev/null | grep -v "${LOADER_DISK}1"); do
-    mount "${I}" "${TMP_PATH}/sdX1"
+  if findAndMountDSMRoot; then
     for ETH in ${ETHX}; do
-      [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-${ETH}" ] && cp -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-${ETH}" "${TMP_PATH}/ifcfg-${ETH}"
-      [ -f "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-${ETH}" ] && break
-      NETMASK=$(cat "${TMP_PATH}/ifcfg-${ETH}" | grep BOOTPROTO | awk -F'=' '{print $2}')
+      [ -f "${DSMROOT_PATH}/etc/sysconfig/network-scripts/ifcfg-${ETH}" ] && cp -f "${DSMROOT_PATH}/etc/sysconfig/network-scripts/ifcfg-${ETH}" "${TMP_PATH}/ifcfg-${ETH}"
+      [ ! -f "${DSMROOT_PATH}/etc/sysconfig/network-scripts/ifcfg-${ETH}" ] && continue
+    done
+    for ETH in ${ETHX}; do
+      BOOTPROTO=$(cat "${TMP_PATH}/ifcfg-${ETH}" | grep BOOTPROTO | awk -F'=' '{print $2}')
       TEXT=""
       TEXT+="This feature will allow you to set a static IP for your NIC.\n"
       TEXT+="Actual Settings are:\n"
       TEXT+="\nNIC: ${ETH}\n"
       TEXT+="Mode: ${BOOTPROTO}\n"
       if [ "${BOOTPROTO}" = "static" ]; then
-        IPADDR=$(cat "${TMP_PATH}/ifcfg-${ETH}" | grep IPADDR | awk -F'=' '{print $2}')
-        NETMASK=$(cat "${TMP_PATH}/ifcfg-${ETH}" | grep NETMASK | awk -F'=' '{print $2}')
+        IPADDR="$(cat "${TMP_PATH}/ifcfg-${ETH}" | grep IPADDR | awk -F'=' '{print $2}')"
+        NETMASK="$(cat "${TMP_PATH}/ifcfg-${ETH}" | grep NETMASK | awk -F'=' '{print $2}')"
         TEXT+="IP: ${IPADDR}\n"
         TEXT+="NETMASK: ${NETMASK}\n"
+      else
+        IPADDR=""
+        NETMASK=""
       fi
+      TEXT+=""
       TEXT+="Do you want to change Config?"
       dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
           --yesno "${TEXT}" 0 0
@@ -2487,8 +2455,7 @@ function staticIPMenu() {
       [ -z "${opts}" ] && continue
       if [ ${opts} -eq 1 ]; then
         echo -e "DEVICE=${ETH}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=off" >"${TMP_PATH}/ifcfg-${ETH}"
-        deleteConfigKey "ip.${ETH}" "" "${USER_CONFIG_FILE}"
-        deleteConfigKey "netmask.${ETH}" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "static.${ETH}" "false" "${USER_CONFIG_FILE}"
       elif [ ${opts} -eq 2 ]; then
         dialog --backtitle "$(backtitle)" --title "DHCP/Static IP" \
           --inputbox "Type a Static IP\nEq: 192.168.0.1" 0 0 "${IPADDR}" \
@@ -2500,18 +2467,16 @@ function staticIPMenu() {
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
         NETMASK="$(<"${TMP_PATH}/resp")"
-        writeConfigKey "arc.staticip" "true" "${USER_CONFIG_FILE}"
+        writeConfigKey "static.${ETH}" "true" "${USER_CONFIG_FILE}"
         writeConfigKey "ip.${ETH}" "${IPADDR}" "${USER_CONFIG_FILE}"
         writeConfigKey "netmask.${ETH}" "${NETMASK}" "${USER_CONFIG_FILE}"
         echo -e "DEVICE=${ETH}\nBOOTPROTO=static\nONBOOT=yes\nIPV6INIT=off\nIPADDR=${IPADDR}\nNETMASK=${NETMASK}" >"${TMP_PATH}/ifcfg-${ETH}"
         NETMASK=$(convert_netmask "${NETMASK}")
         ip addr add ${IPADDR}/${NETMASK} dev ${ETH}
       fi
-      [ -f "${TMP_PATH}/ifcfg-${ETH}" ] && cp -f "${TMP_PATH}/ifcfg-${ETH}" "${TMP_PATH}/sdX1/etc/sysconfig/network-scripts/ifcfg-${ETH}"
+      [ -f "${TMP_PATH}/ifcfg-${ETH}" ] && cp -f "${TMP_PATH}/ifcfg-${ETH}" "${DSMROOT_PATH}/etc/sysconfig/network-scripts/ifcfg-${ETH}"
     done
-  umount "${I}"
-  break
-  done
+  fi
 }
 
 ###############################################################################
@@ -2695,6 +2660,7 @@ function resetLoader() {
   initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   initConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
+  initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
   initConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
   initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
@@ -2708,7 +2674,7 @@ function resetLoader() {
   initConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
-  initConfigKey "arc.patch" "random" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
   initConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
@@ -2735,7 +2701,7 @@ function resetLoader() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     dialog --backtitle "$(backtitle)" --title "Reset Loader" --aspect 18 \
     --yesno "Reset successful.\nReboot?" 0 0
-  [ $? -ne 0 ] && continue
+  [ $? -ne 0 ] && return
   exec reboot
   clear
 }
@@ -2829,7 +2795,7 @@ while true; do
       fi
       echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
       echo "S \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
-      echo "D \"DHCP/Static IP \" "                                                         >>"${TMP_PATH}/menu"
+      echo "D \"Switch DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
       echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
@@ -3023,12 +2989,12 @@ done
 clear
 
 # Inform user
-echo -e "Call \033[1;34marc.sh\033[0m to configure loader"
+echo -e "Call \033[1;34marc.sh\033[0m to configure Loader"
 echo
-echo -e "Access:"
+echo -e "SSH Access:"
 echo -e "IP: \033[1;34m${IPCON}\033[0m"
 echo -e "User: \033[1;34mroot\033[0m"
 echo -e "Password: \033[1;34marc\033[0m"
 echo
-echo -e "Web Terminal Access:"
+echo -e "Web Terminal:"
 echo -e "Address: \033[1;34mhttp://${IPCON}:7681\033[0m"

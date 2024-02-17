@@ -198,13 +198,16 @@ fi
 
 # Network card configuration file
 IPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
+ETHX=$(ls /sys/class/net/ | grep -v lo) || true
 if [ "${IPV6}" = "false" ]; then
-  for N in $(seq 0 7); do
-    echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=no" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
+  for ETH in ${ETHX}; do
+    STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
+    [ "${STATICIP}" = "false" ] && echo -e "DEVICE=${ETH}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=no" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-${ETH}"
   done
 elif [ "${IPV6}" = "true" ]; then
-  for N in $(seq 0 7); do
-    echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
+  for ETH in ${ETHX}; do
+    STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
+    [ "${STATICIP}" = "false" ] && echo -e "DEVICE=${ETH}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-${ETH}"
   done
 fi
 

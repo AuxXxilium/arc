@@ -169,11 +169,11 @@ if [ "${DIRECTBOOT}" = "true" ]; then
   echo -e " \033[1;34mReboot with Directboot\033[0m"
   exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
-  STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   echo -e " \033[1;34mDetected ${N} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
   for ETH in ${ETHX}; do
     IP=""
+    STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     COUNT=0
     while true; do

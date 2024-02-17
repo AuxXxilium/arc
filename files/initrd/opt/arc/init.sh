@@ -32,6 +32,7 @@ initConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
+initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
 initConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
@@ -39,7 +40,6 @@ initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
-initConfigKey "arc.staticip" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
@@ -59,6 +59,7 @@ initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "ip" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "netmask" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "static" "{}" "${USER_CONFIG_FILE}"
 
 # Init Network
 ETHX=$(ls /sys/class/net/ | grep -v lo) || true
@@ -132,12 +133,12 @@ else
 fi
 echo
 
-STATICIP="$(readConfigKey "arc.staticip" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
 echo -e "\033[1;34mDetected ${N} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
 for ETH in ${ETHX}; do
   IP=""
+  STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
   DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
   COUNT=0
   while true; do
@@ -150,6 +151,7 @@ for ETH in ${ETHX}; do
       MSG="STATIC"
     else
       IP="$(getIP ${ETH})"
+      initConfigKey "static.${ETH}" "false" "${USER_CONFIG_FILE}"
       MSG="DHCP"
     fi
     if [ -n "${IP}" ]; then
