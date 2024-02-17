@@ -74,13 +74,13 @@ function backtitle() {
     ARC_TITLE="${ARC_TITLE} -> Update: ${NEWTAG}"
   fi
   if [ ! -n "${MODEL}" ]; then
-    MODEL=" (no Model)"
+    MODEL="(no Model)"
   fi
   if [ ! -n "${PRODUCTVER}" ]; then
-    IPCON=" (no Version)"
+    PRODUCTVER="(no Version)"
   fi
   if [ ! -n "${IPCON}" ]; then
-    IPCON=" (no IP)"
+    IPCON="(no IP)"
   fi
   BACKTITLE="${ARC_TITLE} | "
   BACKTITLE+="${MODEL} | "
