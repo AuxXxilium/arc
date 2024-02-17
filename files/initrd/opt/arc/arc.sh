@@ -2062,7 +2062,7 @@ function sysinfo() {
     done
   fi
   if [ $(lspci -d ::104 | wc -l) -gt 0 ]; then
-    TEXT+="\n  SCSI Controller:\n"
+    TEXT+="\n  Raid/SCSI Controller:\n"
     for PCI in $(lspci -d ::104 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
@@ -2280,7 +2280,7 @@ function fullsysinfo() {
     done
   fi
   if [ $(lspci -d ::104 | wc -l) -gt 0 ]; then
-    TEXT+="\nSCSI Controller:\n"
+    TEXT+="\nRaid/SCSI Controller:\n"
     for PCI in $(lspci -d ::104 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
