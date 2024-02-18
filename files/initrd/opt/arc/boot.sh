@@ -128,6 +128,7 @@ CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 CMDLINE['sn']="${SN}"
 CMDLINE['net.ifnames']="0"
+CMDLINE['biosdevname']="0"
 N=0
 if [ "${MACSYS}" = "hardware" ]; then
   for ETH in ${ETHX}; do
