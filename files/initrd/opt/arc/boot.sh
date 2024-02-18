@@ -97,6 +97,7 @@ SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
+EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
 ETHX=$(ls /sys/class/net/ | grep -v lo) || true
 
 declare -A CMDLINE
@@ -123,7 +124,11 @@ CMDLINE['panic']="${KERNELPANIC:-5}"
 CMDLINE['console']="ttyS0,115200n8"
 CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
-CMDLINE['root']="/dev/md0"
+if [ "${EMMCBOOT}" = "false" ]; then
+  CMDLINE['root']="/dev/md0"
+elif [ "${EMMCBOOT}" = "true" ]; then
+  CMDLINE['root']="/dev/mmcblk0p1"
+fi
 CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 CMDLINE['sn']="${SN}"

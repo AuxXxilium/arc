@@ -2902,14 +2902,12 @@ while true; do
     E) [ "${EMMCBOOT}" = "true" ] && EMMCBOOT='false' || EMMCBOOT='true'
       if [ "${EMMCBOOT}" = "false" ]; then
         writeConfigKey "arc.emmcboot" "false" "${USER_CONFIG_FILE}"
-        deleteConfigKey "cmdline.root" "${USER_CONFIG_FILE}"
         deleteConfigKey "synoinfo.disk_swap" "${USER_CONFIG_FILE}"
         deleteConfigKey "synoinfo.supportraid" "${USER_CONFIG_FILE}"
         deleteConfigKey "synoinfo.support_emmc_boot" "${USER_CONFIG_FILE}"
         deleteConfigKey "synoinfo.support_install_only_dev" "${USER_CONFIG_FILE}"
       elif [ "${EMMCBOOT}" = "true" ]; then
         writeConfigKey "arc.emmcboot" "true" "${USER_CONFIG_FILE}"
-        writeConfigKey "cmdline.root" "/dev/mmcblk0p1" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.disk_swap" "no" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.supportraid" "no" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.support_emmc_boot" "yes" "${USER_CONFIG_FILE}"
