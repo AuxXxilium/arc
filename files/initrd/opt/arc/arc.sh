@@ -53,6 +53,7 @@ ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
+KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
@@ -354,6 +355,8 @@ function arcsettings() {
   fi
   # Get Portmap for Loader
   getmap
+  # Select Addons
+  addonSelection
   # Check Warnings
   if [ ${WARNON} -eq 1 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
@@ -367,8 +370,13 @@ function arcsettings() {
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
       --msgbox "WARN: Your CPU does not have AES Support for Hardwareencryption in DSM." 0 0
   fi
-  # Select Addons
-  addonSelection
+  KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
+  if [ "${KVMSUPPORT}" = "true" ]; then
+    if ! grep -q "^flags.*vmx.*" /proc/cpuinfo | grep -q "^flags.*svm.*" /proc/cpuinfo; then
+      dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+        --msgbox "WARN: Your CPU does not support VMM/KVM in DSM.\nCheck CPU/Bios for VMX or SVM Support." 0 0
+    fi
+  fi
   # Config is done
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -1947,6 +1955,7 @@ function sysinfo() {
   ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
+  KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
   MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
   MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")"
   ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")"
@@ -2013,6 +2022,7 @@ function sysinfo() {
   TEXT+="\n   IPv6: \Zb${ARCIPV6}\Zn"
   TEXT+="\n   Offline Mode: \Zb${OFFLINE}\Zn"
   TEXT+="\n   Sort Drives: \Zb${HDDSORT}\Zn"
+  TEXT+="\n   VMM/KVM Support: \Zb${KVMSUPPORT}\Zn"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
     TEXT+="\n   SataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
   elif [ "${REMAP}" = "remap" ]; then
@@ -2159,6 +2169,7 @@ function fullsysinfo() {
   ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
+  KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
   MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
   MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")"
   ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")"
@@ -2233,6 +2244,7 @@ function fullsysinfo() {
   TEXT+="\nIPv6: ${ARCIPV6}"
   TEXT+="\nOffline Mode: ${OFFLINE}"
   TEXT+="\nSort Drives: ${HDDSORT}"
+  TEXT+="\nVMM/KVM Support: ${KVMSUPPORT}"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
     TEXT+="\nSataPortMap | DiskIdxMap: ${PORTMAP} | ${DISKMAP}"
   elif [ "${REMAP}" = "remap" ]; then
@@ -2688,6 +2700,12 @@ function resetLoader() {
   initConfigKey "netmask" "{}" "${USER_CONFIG_FILE}"
   initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
   initConfigKey "static" "{}" "${USER_CONFIG_FILE}"
+  # KVM Check
+  if grep -q "^flags.*vmx.*" /proc/cpuinfo | grep -q "^flags.*svm.*" /proc/cpuinfo; then
+    writeConfigKey "arc.kvm" "true" "${USER_CONFIG_FILE}"
+  else
+    writeConfigKey "arc.kvm" "false" "${USER_CONFIG_FILE}"
+  fi
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -2781,9 +2799,9 @@ while true; do
       echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
       echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
       echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
-      echo "f \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
+      echo "N \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
       if [ "${DT}" = "false" ]; then
-        echo "g \"Storage Map \" "                                                          >>"${TMP_PATH}/menu"
+        echo "S \"Storage Map \" "                                                          >>"${TMP_PATH}/menu"
         echo "U \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                         >>"${TMP_PATH}/menu"
         echo "W \"Force USB Mount \" "                                                      >>"${TMP_PATH}/menu"
       fi
@@ -2825,8 +2843,9 @@ while true; do
       echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
       echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
       echo "H \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
+      echo "V \"VMM/KVM Support: \Z4${KVMSUPPORT}\Zn \" "                                   >>"${TMP_PATH}/menu"
       echo "c \"Use IPv6: \Z4${ARCIPV6}\Zn \" "                                             >>"${TMP_PATH}/menu"
-      echo "c \"Enable eMMC Boot: \Z4${EMMCBOOT}\Zn \" "                                    >>"${TMP_PATH}/menu"
+      echo "E \"Enable eMMC Boot: \Z4${EMMCBOOT}\Zn \" "                                    >>"${TMP_PATH}/menu"
       echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
     fi
@@ -2868,24 +2887,22 @@ while true; do
     # System Section
     # Arc Section
     4) [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
-       ARCOPTS="${ARCOPTS}"
-       NEXT="4"
-       ;;
+      ARCOPTS="${ARCOPTS}"
+      NEXT="4"
+      ;;
     b) addonMenu; NEXT="b" ;;
     d) modulesMenu; NEXT="d" ;;
     e) ONLYVERSION="true" && arcbuild; NEXT="e" ;;
-    f) networkMenu; NEXT="f" ;;
-    g) storageMenu; NEXT="g" ;;
+    N) networkMenu; NEXT="N" ;;
+    S) storageMenu; NEXT="S" ;;
     p) ONLYPATCH="true" && arcsettings; NEXT="p" ;;
-    U)
-      [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
+    U) [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
       writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       NEXT="U"
       ;;
-    W)
-      USBMOUNT='force'
+    W) USBMOUNT='force'
       writeConfigKey "arc.usbmount" "force" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -2893,6 +2910,54 @@ while true; do
       ;;
     S) storagepanelMenu; NEXT="S" ;;
     D) staticIPMenu; NEXT="D" ;;
+    # Advanced Section
+    5) [ "${ADVOPTS}" = "true" ] && ADVOPTS='false' || ADVOPTS='true'
+       ADVOPTS="${ADVOPTS}"
+       NEXT="5"
+       ;;
+    j) cmdlineMenu; NEXT="j" ;;
+    k) synoinfoMenu; NEXT="k" ;;
+    l) editUserConfig; NEXT="l" ;;
+    # Boot Section
+    6) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
+      ARCOPTS="${BOOTOPTS}"
+      NEXT="6"
+      ;;
+    m) [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
+      writeConfigKey "arc.kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
+      NEXT="m"
+      ;;
+    i) bootipwaittime; NEXT="i" ;;
+    q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
+      grub-editenv "${GRUB_PATH}/grubenv" create
+      writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
+      NEXT="q"
+      ;;
+    # DSM Section
+    7) [ "${DSMOPTS}" = "true" ] && DSMOPTS='false' || DSMOPTS='true'
+      DSMOPTS="${DSMOPTS}"
+      NEXT="7"
+      ;;
+    s) downgradeMenu; NEXT="s" ;;
+    t) resetPassword; NEXT="t" ;;
+    O) [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
+      writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      NEXT="O"
+      ;;
+    H) [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
+      writeConfigKey "arc.hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      NEXT="H"
+      ;;
+    V) [ "${KVMSUPPORT}" = "true" ] && KVMSUPPORT='false' || KVMSUPPORT='true'
+      writeConfigKey "arc.kvm" "${KVMSUPPORT}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      NEXT="V"
+      ;;
     c) [ "${ARCIPV6}" = "true" ] && ARCIPV6='false' || ARCIPV6='true'
       writeConfigKey "arc.ipv6" "${ARCIPV6}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -2916,50 +2981,6 @@ while true; do
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       NEXT="E"
-      ;;
-    # Advanced Section
-    5) [ "${ADVOPTS}" = "true" ] && ADVOPTS='false' || ADVOPTS='true'
-       ADVOPTS="${ADVOPTS}"
-       NEXT="5"
-       ;;
-    j) cmdlineMenu; NEXT="j" ;;
-    k) synoinfoMenu; NEXT="k" ;;
-    l) editUserConfig; NEXT="l" ;;
-    # Boot Section
-    6) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
-       ARCOPTS="${BOOTOPTS}"
-       NEXT="6"
-       ;;
-    m) [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
-      writeConfigKey "arc.kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
-      NEXT="m"
-      ;;
-    i) bootipwaittime; NEXT="i" ;;
-    q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
-      grub-editenv "${GRUB_PATH}/grubenv" create
-      writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-      NEXT="q"
-      ;;
-    # DSM Section
-    7) [ "${DSMOPTS}" = "true" ] && DSMOPTS='false' || DSMOPTS='true'
-      DSMOPTS="${DSMOPTS}"
-      NEXT="7"
-      ;;
-    s) downgradeMenu; NEXT="s" ;;
-    t) resetPassword; NEXT="t" ;;
-    O)
-      [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
-      writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="O"
-      ;;
-    H)
-      [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
-      writeConfigKey "arc.hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="H"
       ;;
     o) [ "${MACSYS}" = "hardware" ] && MACSYS='custom' || MACSYS='hardware'
       writeConfigKey "arc.macsys" "${MACSYS}" "${USER_CONFIG_FILE}"
