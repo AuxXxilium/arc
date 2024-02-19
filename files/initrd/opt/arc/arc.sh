@@ -2714,7 +2714,6 @@ function resetLoader() {
     --yesno "Reset successful.\nReboot?" 0 0
   [ $? -ne 0 ] && return
   exec reboot
-  clear
 }
 
 ###############################################################################
