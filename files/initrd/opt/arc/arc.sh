@@ -2418,6 +2418,7 @@ function credits() {
   TEXT+="\n   Redpill: \ZbTTG / Pocopico\Zn"
   TEXT+="\n   ARPL: \Zbfbelavenuto / wjz304\Zn"
   TEXT+="\n   NVMe Scripts: \Zb007revad\Zn"
+  TEXT+="\n   NVMe Install: \ZbKodeCR\Zn"
   TEXT+="\n   System: \ZbBuildroot 2023.02.x\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4>> Note:\Zn"
