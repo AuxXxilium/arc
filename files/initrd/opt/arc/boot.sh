@@ -79,17 +79,6 @@ if [[ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" || -z "$(readModelKey "${MODEL}" 
   exit 1
 fi
 
-# Diskcheck
-HASATA=0
-for D in $(lsblk -dpno NAME); do
-  [ "${D}" = "${LOADER_DISK}" ] && continue
-  if [[ "$(getBus "${D}")" = "sata" || "$(getBus "${D}")" = "scsi" ]]; then
-    HASATA=1
-    break
-  fi
-done
-[ ${HASATA} = "0" ] && echo -e "\033[1;31m*** Please insert at least one Sata/SAS Disk for System Installation, except for the Bootloader Disk. ***\033[0m"
-
 # Read necessary variables
 VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
 PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
