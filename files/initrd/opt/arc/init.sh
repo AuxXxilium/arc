@@ -133,7 +133,7 @@ if grep -q "force_arc" /proc/cmdline; then
   echo -e "\033[1;34mUser requested edit settings.\033[0m"
 elif [ "${BUILDDONE}" = "true" ]; then
   echo -e "\033[1;34mLoader is configured!\033[0m"
-  boot.sh && exit 0
+  boot.sh
 else
   echo -e "\033[1;34mUser requested edit settings.\033[0m"
 fi
