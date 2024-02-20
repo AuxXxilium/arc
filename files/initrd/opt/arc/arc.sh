@@ -2805,7 +2805,7 @@ while true; do
         echo "U \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                         >>"${TMP_PATH}/menu"
         echo "W \"Force USB Mount \" "                                                      >>"${TMP_PATH}/menu"
       fi
-      echo "S \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
+      echo "P \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
       echo "D \"Switch DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
@@ -2908,7 +2908,7 @@ while true; do
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       NEXT="W"
       ;;
-    S) storagepanelMenu; NEXT="S" ;;
+    P) storagepanelMenu; NEXT="S" ;;
     D) staticIPMenu; NEXT="D" ;;
     # Advanced Section
     5) [ "${ADVOPTS}" = "true" ] && ADVOPTS='false' || ADVOPTS='true'
