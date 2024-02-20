@@ -135,20 +135,29 @@ CMDLINE['sn']="${SN}"
 CMDLINE['net.ifnames']="0"
 CMDLINE['biosdevname']="0"
 N=0
-if [ "${MACSYS}" = "hardware" ]; then
+if [ "${MACSYS}" = "arc" ]; then
+  MAC="$(readConfigKey "mac.eth0" "${USER_CONFIG_FILE}")"
+  [ -n "${MAC}" ] && CMDLINE["mac1"]="${MAC}"
+  for ETH in ${ETHX}; do
+    N=$((${N} + 1))
+  done
+  CMDLINE['netif_num']="1"
+  CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
+elif [ "${MACSYS}" = "hardware" ]; then
   for ETH in ${ETHX}; do
     MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
     [ -n "${MAC}" ] && N=$((${N} + 1)) && CMDLINE["mac${N}"]="${MAC}"
   done
+  CMDLINE['netif_num']="${N}"
   CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 elif [ "${MACSYS}" = "custom" ]; then
   for ETH in ${ETHX}; do
     MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
     [ -n "${MAC}" ] && N=$((${N} + 1)) && CMDLINE["mac${N}"]="${MAC}"
   done
+  CMDLINE['netif_num']="${N}"
   CMDLINE['skip_vender_mac_interfaces']="$(seq -s, ${N} 7)"
 fi
-CMDLINE['netif_num']="${N}"
 
 # Read cmdline
 while IFS=': ' read -r KEY VALUE; do
