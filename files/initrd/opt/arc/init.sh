@@ -157,7 +157,7 @@ for ETH in ${ETHX}; do
       MSG="STATIC"
     else
       IP="$(getIP ${ETH})"
-      initConfigKey "static.${ETH}" "false" "${USER_CONFIG_FILE}"
+      writeConfigKey "static.${ETH}" "false" "${USER_CONFIG_FILE}"
       MSG="DHCP"
     fi
     if [ -n "${IP}" ]; then
@@ -169,11 +169,13 @@ for ETH in ${ETHX}; do
     fi
     if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
       echo -e echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
+      deleteConfigKey "ip.${ETH}" "${IP}" "${USER_CONFIG_FILE}"
       break
     fi
     sleep 3
     if ethtool ${ETH} | grep 'Link detected' | grep -q 'no'; then
       echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
+      deleteConfigKey "ip.${ETH}" "${IP}" "${USER_CONFIG_FILE}"
       break
     fi
     COUNT=$((${COUNT} + 3))
