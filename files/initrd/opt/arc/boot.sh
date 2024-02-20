@@ -197,6 +197,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         NETMASK="$(readConfigKey "netmask.${ETH}" "${USER_CONFIG_FILE}")"
         IP="${ARCIP}"
         NETMASK=$(convert_netmask "${NETMASK}")
+        [ ! -n "${NETMASK}" ] && NETMASK="16"
         ip addr add ${IP}/${NETMASK} dev ${ETH}
         MSG="STATIC"
       else
