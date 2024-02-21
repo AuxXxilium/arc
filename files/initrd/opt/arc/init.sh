@@ -60,12 +60,6 @@ initConfigKey "ip" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "netmask" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "static" "{}" "${USER_CONFIG_FILE}"
-# KVM Check
-if grep -q -E "(vmx|svm)" /proc/cpuinfo; then
-  writeConfigKey "arc.kvm" "true" "${USER_CONFIG_FILE}"
-else
-  writeConfigKey "arc.kvm" "false" "${USER_CONFIG_FILE}"
-fi
 
 # Init Network
 ETHX=$(ls /sys/class/net/ | grep -v lo) || true
