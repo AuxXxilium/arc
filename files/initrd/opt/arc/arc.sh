@@ -1159,10 +1159,10 @@ function synoinfoMenu() {
         ;;
       4)
         MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        CONFDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         PLATFORM="$(readModelKey "${MODEL}" "platform")"
         DT="$(readModelKey "${MODEL}" "dt")"
-        if [[ "${BUILDDONE}" = "true" && "${DT}" = "true" ]]; then
+        if [[ "${CONFDONE}" = "true" && "${DT}" = "true" ]]; then
           if findAndMountDSMRoot; then
             if [ -f "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml" ]; then
               if [ -f "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml.bak" ]; then
