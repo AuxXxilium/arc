@@ -134,6 +134,17 @@ CMDLINE['log_buf_len']="32M"
 CMDLINE['sn']="${SN}"
 CMDLINE['net.ifnames']="0"
 CMDLINE['biosdevname']="0"
+
+if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ ! "${BUS}" = "mmc" ] && [ ! "${EMMCBOOT}" = "true" ]; then
+  [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+  CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
+fi
+
+if [ "$(readModelKey "${MODEL}" "dt")" = "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "$(readModelKey "${MODEL}" "platform")"; then
+  [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+  CMDLINE['modprobe.blacklist']+="mpt3sas"
+fi
+
 N=0
 if [ "${MACSYS}" = "arc" ]; then
   MAC="$(readConfigKey "mac.eth0" "${USER_CONFIG_FILE}")"
