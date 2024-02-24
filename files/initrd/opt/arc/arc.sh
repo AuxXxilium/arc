@@ -1312,10 +1312,8 @@ function storagepanelMenu() {
     M2PANEL=${resp}
     STORAGEPANEL="RACK_${STORAGE} ${M2PANEL}"
     writeConfigKey "addons.storagepanel" "${STORAGEPANEL}" "${USER_CONFIG_FILE}"
-  else
-    dialog --backtitle "$(backtitle)" --title "Storagepanel" \
-      --aspect 18 --msgbox "Please configure your System, first." 0 0
-    return 1
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   fi
 }
 
