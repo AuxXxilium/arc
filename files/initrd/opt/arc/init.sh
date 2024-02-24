@@ -71,7 +71,7 @@ for ETH in ${ETHX}; do
   initConfigKey "mac.${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
   if [ "${MACSYS}" = "custom" ]; then
     MACA="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
-    if [[ -n "${MACA}" && "${MACA}" != "${MACR}" ]]; then
+    if [ ! "${MACA}" = "${MACR}" ]; then
       MAC="${MACA:0:2}:${MACA:2:2}:${MACA:4:2}:${MACA:6:2}:${MACA:8:2}:${MACA:10:2}"
       echo "Setting ${ETH} MAC to ${MAC}"
       ip link set dev ${ETH} address "${MAC}" >/dev/null 2>&1 &&
