@@ -91,9 +91,9 @@ function addToModules() {
   # Unzip modules for temporary folder
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
-  tar zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
+  tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   cp -f ${KOFILE} ${TMP_PATH}/modules
-  tar zcf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" .
+  tar -zcf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" .
 }
 
 ###############################################################################
@@ -113,9 +113,9 @@ function delToModules() {
   # Unzip modules for temporary folder
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
-  tar zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
+  tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   rm -f ${TMP_PATH}/modules/${KONAME}
-  tar zcf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" .
+  tar -zcf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" .
 }
 
 ###############################################################################
@@ -146,7 +146,7 @@ function getdepends() {
   # Unzip modules for temporary folder
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
-  tar zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
+  tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   DPS=($(_getdepends ${KONAME} | tr ' ' '\n' | sort -u))
   echo ${DPS[@]}
   rm -rf "${TMP_PATH}/modules"
