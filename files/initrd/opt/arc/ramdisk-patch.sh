@@ -146,26 +146,26 @@ installAddon revert
 echo "/addons/revert.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 
 # Install System Addons
-installAddon eudev
+installAddon "eudev" "${PLATFORM}" "${KVER}"
 echo "/addons/eudev.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-installAddon disks
+installAddon "disks" "${PLATFORM}" "${KVER}"
 echo "/addons/disks.sh \${1} ${HDDSORT} ${USBMOUNT} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-installAddon misc
+installAddon "misc" "${PLATFORM}" "${KVER}"
 echo "/addons/misc.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-installAddon localrss
+installAddon "localrss" "${PLATFORM}" "${KVER}"
 echo "/addons/localrss.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
-installAddon wol
+installAddon "wol" "${PLATFORM}" "${KVER}"
 echo "/addons/wol.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 
 # User Addons check
 for ADDON in ${!ADDONS[@]}; do
   PARAMS=${ADDONS[${ADDON}]}
-  if ! installAddon ${ADDON}; then
+  if ! installAddon "${ADDON}" "${PLATFORM}" "${KVER}"; then
     echo -n "${ADDON} is not available for this Platform!" | tee -a "${LOG_FILE}"
     echo
     exit 1
   fi
-  echo "/addons/${ADDON}.sh \${1} ${PARAMS} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
+  echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 done
 
 # Enable Telnet
