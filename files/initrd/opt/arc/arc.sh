@@ -2933,11 +2933,17 @@ while true; do
         ODP="false"
         writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
       fi
+      PLATFORM="$(readModelKey "${MODEL}" "platform")"
+      PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+      KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+      if [ "${PLATFORM}" = "epyc7002" ]; then
+        KVER="${PRODUCTVER}-${KVER}"
+      fi
       if [[ -n "${PLATFORM}" && -n "${KVER}" ]]; then
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         while read -r ID DESC; do
           writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-        done < <(getAllModules "${PLATFORM}" "${PRODUCTVER}-${KVER}")
+        done < <(getAllModules "${PLATFORM}" "${KVER}")
       fi
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
