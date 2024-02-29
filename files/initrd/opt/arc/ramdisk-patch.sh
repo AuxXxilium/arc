@@ -142,7 +142,7 @@ echo "export KEYMAP=${KEYMAP}" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # Required Addons: revert
-installAddon revert
+installAddon "revert" "${PLATFORM}" "${KVER}"
 echo "/addons/revert.sh \${1} " >>"${RAMDISK_PATH}/addons/addons.sh" 2>"${LOG_FILE}" || dieLog
 
 # Install System Addons
