@@ -81,7 +81,6 @@ for ETH in ${ETHX}; do
     fi
     echo
   fi
-  ethtool -s ${ETH} wol g 2>/dev/null
   N=$((${N} + 1))
 done
 # Write NIC Amount to config
