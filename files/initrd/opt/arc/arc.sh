@@ -56,6 +56,7 @@ KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
+KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
 ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
@@ -182,6 +183,9 @@ function arcMenu() {
     writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
+    writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
+    writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
     if [ "${DT}" = "true" ]; then
       deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
       deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
@@ -2682,6 +2686,7 @@ function resetLoader() {
   initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
   initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
   initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
   initConfigKey "ip" "{}" "${USER_CONFIG_FILE}"
   initConfigKey "netmask" "{}" "${USER_CONFIG_FILE}"
@@ -2821,6 +2826,9 @@ while true; do
       echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
       echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
+      if [ "${MODEL}" = "SA6400" ]; then
+        echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
+      fi
       echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
       echo "H \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
       echo "c \"Use IPv6: \Z4${ARCIPV6}\Zn \" "                                             >>"${TMP_PATH}/menu"
@@ -2919,6 +2927,22 @@ while true; do
       ;;
     s) downgradeMenu; NEXT="s" ;;
     t) resetPassword; NEXT="t" ;;
+    K) [ "${KERNEL}" = "official" ] && KERNEL='custom' || KERNEL='official'
+      writeConfigKey "arc.kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
+      if [ "${ODP}" = "true" ]; then
+        ODP="false"
+        writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
+      fi
+      if [[ -n "${PLATFORM}" && -n "${KVER}" ]]; then
+        writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+        while read -r ID DESC; do
+          writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
+        done < <(getAllModules "${PLATFORM}" "${PRODUCTVER}-${KVER}")
+      fi
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      NEXT="K"
+      ;;
     O) [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
       writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"

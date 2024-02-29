@@ -31,7 +31,6 @@ SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 PLATFORM="$(readModelKey "${MODEL}" "platform")"
-ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
 
@@ -54,6 +53,8 @@ if [ "${PRODUCTVERDSM}" != "${PRODUCTVER}" ]; then
   writeConfigKey "productver" "${USER_CONFIG_FILE}"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  PATURL=""
+  PATSUM=""
 fi
 
 # Sanity check
@@ -119,22 +120,7 @@ sed -e "/@@@CONFIG-GENERATED@@@/ {" -e "r ${TMP_PATH}/rp.txt" -e 'd' -e '}' -i "
 rm -f "${TMP_PATH}/rp.txt"
 
 # Extract Modules to Ramdisk
-rm -rf "${TMP_PATH}/modules"
-mkdir -p "${TMP_PATH}/modules"
-tar zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
-for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
-  M=$(basename ${F})
-  [[ "${ODP}" = "true" && -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ]] && continue
-  if arrayExistItem "${M:0:-3}" "${!MODULES[@]}"; then
-    cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}"
-  else
-    rm -f "${RAMDISK_PATH}/usr/lib/modules/${M}"
-  fi
-done
-mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
-tar zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
-# Clean
-rm -rf "${TMP_PATH}/modules"
+installModules "${PLATFORM}" "${KVER}" "${!MODULES[@]}"
 
 # Copying fake modprobe
 cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
