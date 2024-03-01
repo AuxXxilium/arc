@@ -445,7 +445,7 @@ function make() {
   if [ "${EMMCBOOT}" = "false" ]; then
     deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
     deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
-  else
+  elif [ "${EMMCBOOT}" = "true" ]; then
     writeConfigKey "modules.mmc_block" "" "${USER_CONFIG_FILE}"
     writeConfigKey "modules.mmc_core" "" "${USER_CONFIG_FILE}"
   fi
