@@ -141,6 +141,7 @@ elif [ "${EMMCBOOT}" = "true" ]; then
 fi
 CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
+CMDLINE['net.ifnames']="0"
 CMDLINE['sn']="${SN}"
 
 if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ ! "${BUS}" = "mmc" ] && [ ! "${EMMCBOOT}" = "true" ]; then
