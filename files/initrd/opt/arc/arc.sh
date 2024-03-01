@@ -72,7 +72,7 @@ fi
 # Mounts backtitle dynamically
 function backtitle() {
   if [ ! "${NEWTAG}" = "${ARC_VERSION}" ] && [ "${OFFLINE}" = "false" ]; then
-    ARC_TITLE="${ARC_TITLE} -> Update: ${NEWTAG}"
+    ARC_TITLE="${ARC_TITLE} -> ${NEWTAG}"
   fi
   if [ ! -n "${MODEL}" ]; then
     MODEL="(Model)"
