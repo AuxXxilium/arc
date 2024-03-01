@@ -2850,8 +2850,8 @@ while true; do
       echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
       echo "H \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
       echo "V \"VMM/KVM Support: \Z4${KVMSUPPORT}\Zn \" "                                   >>"${TMP_PATH}/menu"
-      echo "c \"Use IPv6: \Z4${ARCIPV6}\Zn \" "                                             >>"${TMP_PATH}/menu"
-      echo "E \"Enable eMMC Boot: \Z4${EMMCBOOT}\Zn \" "                                    >>"${TMP_PATH}/menu"
+      echo "c \"IPv6 Support: \Z4${ARCIPV6}\Zn \" "                                         >>"${TMP_PATH}/menu"
+      echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
       echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
     fi
