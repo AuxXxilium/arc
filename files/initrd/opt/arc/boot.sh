@@ -208,22 +208,11 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo -e " \033[1;34mDetected ${N} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
   for ETH in ${ETHX}; do
     IP=""
-    STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     COUNT=0
     while true; do
-      ARCIP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
-      if [[ "${STATICIP}" = "true" && -n "${ARCIP}" ]]; then
-        NETMASK="$(readConfigKey "netmask.${ETH}" "${USER_CONFIG_FILE}")"
-        IP="${ARCIP}"
-        NETMASK=$(convert_netmask "${NETMASK}")
-        [ ! -n "${NETMASK}" ] && NETMASK="16"
-        ip addr add ${IP}/${NETMASK} dev ${ETH}
-        MSG="STATIC"
-      else
-        IP="$(getIP ${ETH})"
-        MSG="DHCP"
-      fi
+      IP="$(getIP ${ETH})"
+      MSG="DHCP"
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} | grep "Speed:" | awk '{print $2}')
         echo -e "\r \033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."

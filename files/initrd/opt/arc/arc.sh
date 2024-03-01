@@ -1974,15 +1974,16 @@ function sysinfo() {
   TEXT+="\n\Z4> Network: ${NIC} NIC\Zn"
   for ETH in ${ETHX}; do
     IP=""
+    STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
     COUNT=0
     while true; do
-      IP="$(getIP ${ETH})"
       if [ "${STATICIP}" = "true" ]; then
         IP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
         MSG="STATIC"
       else
+        IP="$(getIP ${ETH})"
         MSG="DHCP"
       fi
       if [ -n "${IP}" ]; then
@@ -2188,15 +2189,16 @@ function fullsysinfo() {
   TEXT+="\nNetwork: ${NIC} NIC"
   for ETH in ${ETHX}; do
     IP=""
+    STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
     COUNT=0
     while true; do
-      IP="$(getIP ${ETH})"
       if [ "${STATICIP}" = "true" ]; then
         IP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
         MSG="STATIC"
       else
+        IP="$(getIP ${ETH})"
         MSG="DHCP"
       fi
       if [ -n "${IP}" ]; then
@@ -2434,65 +2436,61 @@ function credits() {
 }
 
 ###############################################################################
-# allow setting Static IP for DSM
+# allow setting Static IP for Loader
 function staticIPMenu() {
   # Get Amount of NIC
   ETHX=$(ls /sys/class/net/ | grep -v lo) || true
-  if findAndMountDSMRoot; then
-    for ETH in ${ETHX}; do
-      BOOTPROTO=$(cat "${DSMROOT_PATH}/etc/sysconfig/network-scripts/ifcfg-${ETH}" | grep BOOTPROTO | awk -F'=' '{print $2}')
-      DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-      TEXT=""
-      TEXT+="This feature will allow you to set a static IP for your NIC.\n"
-      TEXT+="Actual Settings are:\n"
-      TEXT+="\nNIC: ${ETH} (${DRIVER})\n"
-      TEXT+="Mode: ${BOOTPROTO}\n"
-      if [ "${BOOTPROTO}" = "static" ]; then
-        IPADDR="$(cat "${DSMROOT_PATH}/etc/sysconfig/network-scripts/ifcfg-${ETH}" | grep IPADDR | awk -F'=' '{print $2}')"
-        NETMASK="$(cat "${DSMROOT_PATH}/etc/sysconfig/network-scripts/ifcfg-${ETH}" | grep NETMASK | awk -F'=' '{print $2}')"
-        TEXT+="IP: ${IPADDR}\n"
-        TEXT+="NETMASK: ${NETMASK}\n"
-      else
-        IPADDR=""
-        NETMASK=""
-      fi
-      TEXT+=""
-      TEXT+="Do you want to change Config?"
-      dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-          --yesno "${TEXT}" 0 0
-      [ $? -ne 0 ] && continue
-      dialog --clear --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-        --menu "DHCP or STATIC?" 0 0 0 \
-          1 "DHCP" \
-          2 "STATIC" \
-        2>"${TMP_PATH}/opts"
-      opts="$(<"${TMP_PATH}/opts")"
-      [ -z "${opts}" ] && continue
-      if [ ${opts} -eq 1 ]; then
-        writeConfigKey "static.${ETH}" "false" "${USER_CONFIG_FILE}"
-      elif [ ${opts} -eq 2 ]; then
-        dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-          --inputbox "Type a Static IP\nEq: 192.168.0.1" 0 0 "${IPADDR}" \
-          2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && continue
-        IPADDR="$(<"${TMP_PATH}/resp")"
-        dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-          --inputbox "Type a Netmask\nEq: 255.255.255.0" 0 0 "${NETMASK}" \
-          2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && continue
-        NETMASK="$(<"${TMP_PATH}/resp")"
-        writeConfigKey "ip.${ETH}" "${IPADDR}" "${USER_CONFIG_FILE}"
-        writeConfigKey "netmask.${ETH}" "${NETMASK}" "${USER_CONFIG_FILE}"
-        writeConfigKey "static.${ETH}" "true" "${USER_CONFIG_FILE}"
-        NETMASK=$(convert_netmask "${NETMASK}")
-        ip addr add ${IPADDR}/${NETMASK} dev ${ETH}
-      fi
-    done
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  for ETH in ${ETHX}; do
+    STATIC="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
+    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    TEXT=""
+    TEXT+="This Feature allow you to set a StaticIP for the Loader.\n"
+    TEXT+="Actual Settings are:\n"
+    TEXT+="\nNIC: ${ETH} (${DRIVER})\n"
+    TEXT+="StaticIP: ${STATIC}\n"
+    if [ "${STATIC}" = "true" ]; then
+      IPADDR="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
+      NETMASK="$(readConfigKey "netmask.${ETH}" "${USER_CONFIG_FILE}")"
+      TEXT+="IP: ${IPADDR}\n"
+      TEXT+="NETMASK: ${NETMASK}\n"
+    else
+      IPADDR=""
+      NETMASK=""
+    fi
+    TEXT+=""
+    TEXT+="Do you want to change Config?"
     dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-    --msgbox "Settings written to Config.\nWill be applied to DSM while Build." 5 40
-  fi
+        --yesno "${TEXT}" 0 0
+    [ $? -ne 0 ] && continue
+    dialog --clear --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
+      --menu "DHCP or STATIC?" 0 0 0 \
+        1 "DHCP" \
+        2 "STATIC" \
+      2>"${TMP_PATH}/opts"
+    opts="$(<"${TMP_PATH}/opts")"
+    [ -z "${opts}" ] && continue
+    if [ ${opts} -eq 1 ]; then
+      writeConfigKey "static.${ETH}" "false" "${USER_CONFIG_FILE}"
+    elif [ ${opts} -eq 2 ]; then
+      dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
+        --inputbox "Type a Static IP\nEq: 192.168.0.1" 0 0 "${IPADDR}" \
+        2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && continue
+      IPADDR="$(<"${TMP_PATH}/resp")"
+      dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
+        --inputbox "Type a Netmask\nEq: 24" 0 0 "${NETMASK}" \
+        2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && continue
+      NETMASK="$(<"${TMP_PATH}/resp")"
+      writeConfigKey "ip.${ETH}" "${IPADDR}" "${USER_CONFIG_FILE}"
+      writeConfigKey "netmask.${ETH}" "${NETMASK}" "${USER_CONFIG_FILE}"
+      writeConfigKey "static.${ETH}" "true" "${USER_CONFIG_FILE}"
+      #NETMASK=$(convert_netmask "${NETMASK}")
+      ip addr add ${IPADDR}/${NETMASK} dev ${ETH}
+    fi
+  done
+  dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
+  --msgbox "Settings written and enabled.\nThis will be not applied to DSM." 5 50
 }
 
 ###############################################################################
@@ -2809,7 +2807,7 @@ while true; do
         echo "W \"Force USB Mount \" "                                                      >>"${TMP_PATH}/menu"
       fi
       echo "P \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
-      echo "D \"Switch DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
+      echo "D \"Loader DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
     fi
     if [ "${ADVOPTS}" = "true" ]; then
       echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
@@ -2915,7 +2913,6 @@ while true; do
       NEXT="W"
       ;;
     P) storagepanelMenu; NEXT="S" ;;
-    D) staticIPMenu; NEXT="D" ;;
     # Advanced Section
     5) [ "${ADVOPTS}" = "true" ] && ADVOPTS='false' || ADVOPTS='true'
        ADVOPTS="${ADVOPTS}"
