@@ -56,6 +56,7 @@ KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
+MODULESCOPY="$(readConfigKey "arc.modulescopy" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
@@ -410,8 +411,11 @@ function make() {
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
+  # Changes for SA6400
   if [ "${PLATFORM}" = "epyc7002" ]; then
     KVER="${PRODUCTVER}-${KVER}"
+    MODULESCOPY="false"
+    writeConfigKey "arc.modulescopy" "${MODULESCOPY}" "${USER_CONFIG_FILE}"
   fi
   if [ -d "${UNTAR_PAT_PATH}" ]; then
     rm -rf "${UNTAR_PAT_PATH}"
@@ -2695,6 +2699,7 @@ function resetLoader() {
   initConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
   initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
   initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.modulescopy" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
   initConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
   initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
@@ -2845,6 +2850,9 @@ while true; do
       if [ "${MODEL}" = "SA6400" ]; then
         echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
       fi
+      if [ ! "${MODEL}" = "SA6400" ]; then
+        echo "M \"Copy Modules to DSM: \Z4${MODULESCOPY}\Zn \" "                            >>"${TMP_PATH}/menu"
+      fi
       echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
       echo "H \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
       echo "V \"VMM/KVM Support: \Z4${KVMSUPPORT}\Zn \" "                                   >>"${TMP_PATH}/menu"
@@ -2949,6 +2957,10 @@ while true; do
         ODP="false"
         writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
       fi
+      if [ "${MODULESCOPY}" = "true" ]; then
+        MODULESCOPY="false"
+        writeConfigKey "arc.modulescopy" "${MODULESCOPY}" "${USER_CONFIG_FILE}"
+      fi
       PLATFORM="$(readModelKey "${MODEL}" "platform")"
       PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
       KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
@@ -2970,6 +2982,12 @@ while true; do
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       NEXT="O"
+      ;;
+    M) [ "${MODULESCOPY}" = "false" ] && MODULESCOPY='true' || MODULESCOPY='false'
+      writeConfigKey "arc.modulescopy" "${MODULESCOPY}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      NEXT="M"
       ;;
     H) [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
       writeConfigKey "arc.hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
