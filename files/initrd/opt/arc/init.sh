@@ -63,7 +63,7 @@ initConfigKey "netmask" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "static" "{}" "${USER_CONFIG_FILE}"
 # KVM Check
-if grep -q -E "(vmx|svm)" /proc/cpuinfo; then
+if grep -q -E '(vmx|svm)' /proc/cpuinfo; then
   writeConfigKey "arc.kvm" "true" "${USER_CONFIG_FILE}"
 else
   writeConfigKey "arc.kvm" "false" "${USER_CONFIG_FILE}"
@@ -73,9 +73,12 @@ fi
 ETHX=$(ls /sys/class/net/ | grep -v lo) || true
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 # Write Mac to config
-N=0
+NIC=0
 for ETH in ${ETHX}; do
   MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
+  if [ -z "${MACR}" ]; then
+    MACR="000000000000"
+  fi
   initConfigKey "mac.${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
   if [ "${MACSYS}" = "custom" ]; then
     MACA="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
@@ -88,12 +91,12 @@ for ETH in ${ETHX}; do
     fi
     echo
   fi
-  N=$((${N} + 1))
+  NIC=$((${NIC} + 1))
 done
 # Write NIC Amount to config
-writeConfigKey "device.nic" "${N}" "${USER_CONFIG_FILE}"
+writeConfigKey "device.nic" "${NIC}" "${USER_CONFIG_FILE}"
 # No network devices
-[ ${N} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
+[ ${NIC} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
 
 # Get the VID/PID if we are in USB
 VID="0x46f4"
