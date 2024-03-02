@@ -9,19 +9,19 @@ set -o pipefail # Get exit code from process piped
 # Sanity check
 [ -f "${ORI_ZIMAGE_FILE}" ] || (die "${ORI_ZIMAGE_FILE} not found!" | tee -a "${LOG_FILE}")
 
-echo -e "Patching zImage"
-
 rm -f "${MOD_ZIMAGE_FILE}"
 
 KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
 if [ "${KERNEL}" = "custom" ]; then
+  echo -e "Using customized zImage"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   # Extract bzImage
-  gzip -dc "${CUSTOM_PATH}/bzImage.gz" >"${MOD_ZIMAGE_FILE}"
+  gzip -dc "${CUSTOM_PATH}/bzImage-${PLATFORM}-${PRODUCTVER}-${KVER}.gz" >"${MOD_ZIMAGE_FILE}"
 else
+  echo -e "Patching zImage"
   # Extract vmlinux
   ${ARC_PATH}/bzImage-to-vmlinux.sh "${ORI_ZIMAGE_FILE}" "${TMP_PATH}/vmlinux" >"${LOG_FILE}" 2>&1 || dieLog
   # Patch boot params and ramdisk check

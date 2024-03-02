@@ -201,6 +201,12 @@ if [ "${PLATFORM}" = "epyc7002" ]; then
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
 fi
 
+# Broadwellntbap patches
+if [ "${PLATFORM}" = "broadwellntbap" ]; then
+  echo -e "Apply Broadwellntbap Fixes"
+  sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' ${RAMDISK_PATH}/usr/syno/share/environments.sh
+fi
+
 # Call user patch scripts
 for F in $(ls -1 ${SCRIPTS_PATH}/*.sh 2>/dev/null); do
   echo "Calling ${F}" >>"${LOG_FILE}" 2>&1
