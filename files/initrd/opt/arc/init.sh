@@ -145,7 +145,7 @@ echo
 
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-echo -e "\033[1;34mDetected ${N} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
 for ETH in ${ETHX}; do
   IP=""
   STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"

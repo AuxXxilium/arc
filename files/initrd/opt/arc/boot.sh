@@ -154,29 +154,29 @@ if [ "$(readModelKey "${MODEL}" "dt")" = "true" ] && ! echo "epyc7002 purley bro
   CMDLINE['modprobe.blacklist']+="mpt3sas"
 fi
 
-N=0
+NIC=0
 if [ "${MACSYS}" = "arc" ]; then
   MAC="$(readConfigKey "mac.eth0" "${USER_CONFIG_FILE}")"
   [ -n "${MAC}" ] && CMDLINE["mac1"]="${MAC}"
   for ETH in ${ETHX}; do
-    N=$((${N} + 1))
+    NIC=$((${NIC} + 1))
   done
   CMDLINE['netif_num']="1"
   CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 elif [ "${MACSYS}" = "hardware" ]; then
   for ETH in ${ETHX}; do
     MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
-    [ -n "${MAC}" ] && N=$((${N} + 1)) && CMDLINE["mac${N}"]="${MAC}"
+    [ -n "${MAC}" ] && NIC=$((${NIC} + 1)) && CMDLINE["mac${NIC}"]="${MAC}"
   done
-  CMDLINE['netif_num']="${N}"
+  CMDLINE['netif_num']="${NIC}"
   CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 elif [ "${MACSYS}" = "custom" ]; then
   for ETH in ${ETHX}; do
     MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
-    [ -n "${MAC}" ] && N=$((${N} + 1)) && CMDLINE["mac${N}"]="${MAC}"
+    [ -n "${MAC}" ] && NIC=$((${NIC} + 1)) && CMDLINE["mac${NIC}"]="${MAC}"
   done
-  CMDLINE['netif_num']="${N}"
-  CMDLINE['skip_vender_mac_interfaces']="$(seq -s, ${N} 7)"
+  CMDLINE['netif_num']="${NIC}"
+  CMDLINE['skip_vender_mac_interfaces']="$(seq -s, ${NIC} 7)"
 fi
 
 # Read cmdline
@@ -205,7 +205,7 @@ if [ "${DIRECTBOOT}" = "true" ]; then
   exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
-  echo -e " \033[1;34mDetected ${N} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+  echo -e " \033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
   for ETH in ${ETHX}; do
     IP=""
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
