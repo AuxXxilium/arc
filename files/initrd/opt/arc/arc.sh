@@ -31,12 +31,6 @@ fi
 # Get Loader Disk Bus
 BUS=$(getBus "${LOADER_DISK}")
 
-# Set Warning to false
-WARNON1="false"
-WARNON2="false"
-WARNON3="false"
-WARNON4="false"
-
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -2487,12 +2481,12 @@ function staticIPMenu() {
       writeConfigKey "static.${ETH}" "false" "${USER_CONFIG_FILE}"
     elif [ ${opts} -eq 2 ]; then
       dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-        --inputbox "Type a Static IP\nEq: 192.168.0.1" 0 0 "${IPADDR}" \
+        --inputbox "Type a Static IP\nLike: 192.168.0.1" 0 0 "${IPADDR}" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && continue
       IPADDR="$(<"${TMP_PATH}/resp")"
       dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-        --inputbox "Type a Netmask\nEq: 24" 0 0 "${NETMASK}" \
+        --inputbox "Type a Netmask\nLike: 24" 0 0 "${NETMASK}" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && continue
       NETMASK="$(<"${TMP_PATH}/resp")"
@@ -2930,7 +2924,8 @@ while true; do
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       NEXT="W"
       ;;
-    P) storagepanelMenu; NEXT="S" ;;
+    P) storagepanelMenu; NEXT="P" ;;
+    D) staticIPMenu; NEXT="D" ;;
     # Advanced Section
     5) [ "${ADVOPTS}" = "true" ] && ADVOPTS='false' || ADVOPTS='true'
        ADVOPTS="${ADVOPTS}"
