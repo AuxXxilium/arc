@@ -66,7 +66,10 @@ OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 
 if [ "${OFFLINE}" = "false" ]; then
   # Update Check
-  NEWTAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+  NEWTAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+  if [ -z "${NEWTAG}" ]; then
+    NEWTAG="${ARC_VERSION}"
+  fi
 fi
 
 ###############################################################################
