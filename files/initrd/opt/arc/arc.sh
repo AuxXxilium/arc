@@ -179,6 +179,10 @@ function arcMenu() {
     if ! grep -q "^flags.*aes.*" /proc/cpuinfo; then
       WARNON=4
     fi
+    # Check for DT and SAS/SCSI
+    if [ "${DT}" = "true" ] && [[ ${SASCONTROLLER} -gt 0 || ${SCSICONTROLLER} -gt 0 ]]; then
+      WARNON=2
+    fi
     PRODUCTVER=""
     writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
     writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
@@ -369,6 +373,10 @@ function arcsettings() {
   if [ ${WARNON} -eq 1 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
       --msgbox "WARN: Your Controller has more then 8 Disks connected. Max Disks per Controller: 8" 0 0
+  fi
+  if [ ${WARNON} -eq 2 ]; then
+    dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+      --msgbox "WARN: You use a HBA Controller and selected a HBA Model.\nThis is still an experimental Feature." 0 0
   fi
   if [ ${WARNON} -eq 3 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
