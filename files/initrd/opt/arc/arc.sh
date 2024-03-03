@@ -2812,7 +2812,9 @@ while true; do
       echo "N \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
       if [ "${DT}" = "false" ]; then
         echo "S \"Storage Map \" "                                                          >>"${TMP_PATH}/menu"
+      fi
         echo "U \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                         >>"${TMP_PATH}/menu"
+      if [ "${DT}" = "false" ]; then
         echo "W \"Force USB Mount \" "                                                      >>"${TMP_PATH}/menu"
       fi
       echo "P \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
