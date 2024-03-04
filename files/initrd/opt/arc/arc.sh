@@ -182,13 +182,9 @@ function arcMenu() {
     writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-    if [ "${DT}" = "true" ]; then
-      deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-    fi
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
@@ -233,37 +229,25 @@ function arcbuild() {
     KVER="${PRODUCTVER}-${KVER}"
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
-    --infobox "Reconfiguring Synoinfo, Addons and Modules" 3 46
-  # Delete synoinfo and reload model/build synoinfo
+    --infobox "Reconfiguring Synoinfo, Cmdline and Modules" 3 46
+  # Reset synoinfo
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS=': ' read -r KEY VALUE; do
     writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
   done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].synoinfo")
-  # Rebuild modules
+  # Reset modules
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read -r ID DESC; do
     writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
   done < <(getAllModules "${PLATFORM}" "${KVER}")
+  # Reset cmdline
+  writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
   if [ "${ONLYVERSION}" != "true" ]; then
     arcsettings
   else
     # Build isn't done
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    # Ask for Build
-    dialog --clear --backtitle "$(backtitle)" \
-      --menu "Build now?" 0 0 0 \
-      1 "Yes - Build Arc Loader now" \
-      2 "No - I want to make changes" \
-    2>"${TMP_PATH}/resp"
-    resp="$(<"${TMP_PATH}/resp")"
-    [ -z "${resp}" ] && return 1
-    if [ ${resp} -eq 1 ]; then
-      make
-    elif [ ${resp} -eq 2 ]; then
-      dialog --clear --no-items --backtitle "$(backtitle)"
-      return 1
-    fi
   fi
 }
 
@@ -364,7 +348,7 @@ function arcsettings() {
       --msgbox "WARN: Your Controller has more then 8 Disks connected.\nMax Disks per Controller: 8" 0 0
   fi
   # Check for DT and SAS/SCSI
-  if [ "${DT}" = "true" ] && [[ ${SASCONTROLLER} -gt 0 || ${SCSICONTROLLER} -gt 0 ]]; then
+  if [[ "${DT}" = "true" && ${SASCONTROLLER} -gt 0 || ${SCSICONTROLLER} -gt 0 ]]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
       --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental Feature." 0 0
   fi
@@ -413,33 +397,58 @@ function make() {
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  # Read Config for Arc Settings
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
+  KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
-  # Changes for SA6400
+  # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
+  writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
+  writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
+  # USBMount Support
+  if [ "${USBMOUNT}" = "true" ]; then
+    DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
+    writeConfigKey "synoinfo.maxdisks" "${DRIVES}" "${USER_CONFIG_FILE}"
+    writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
+    writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
+    writeConfigKey "synoinfo.internalportcfg" "0x3ffffff" "${USER_CONFIG_FILE}"
+  else
+    HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
+    writeConfigKey "synoinfo.maxdisks" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
+    deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
+    deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
+  fi
+  # KVM Support
+  if [ "${KVMSUPPORT}" = "true" ]; then
+    writeConfigKey "modules.kvm_intel" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modules.kvm_amd" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modules.kvm" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modules.irgbypass" "" "${USER_CONFIG_FILE}"
+  else
+    deleteConfigKey "modules.kvm_intel" "${USER_CONFIG_FILE}"
+    deleteConfigKey "modules.kvm_amd" "${USER_CONFIG_FILE}"
+    deleteConfigKey "modules.kvm" "${USER_CONFIG_FILE}"
+    deleteConfigKey "modules.irgbypass" "${USER_CONFIG_FILE}"
+  fi
+  # eMMC Boot Support
+  if [ "${EMMCBOOT}" = "true" ]; then
+    writeConfigKey "modules.mmc_block" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modules.mmc_core" "" "${USER_CONFIG_FILE}"
+  else
+    deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
+    deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
+  fi
+  # Fixes for SA6400
   if [ "${PLATFORM}" = "epyc7002" ]; then
     KVER="${PRODUCTVER}-${KVER}"
     MODULESCOPY="false"
     writeConfigKey "arc.modulescopy" "${MODULESCOPY}" "${USER_CONFIG_FILE}"
   fi
+  # Cleanup
   if [ -d "${UNTAR_PAT_PATH}" ]; then
     rm -rf "${UNTAR_PAT_PATH}"
   fi
   mkdir -p "${UNTAR_PAT_PATH}"
-  # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
-  writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
-  writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
-  # USBMount: If set to force
-  if [ "${USBMOUNT}" = "force" ]; then
-    writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
-    writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
-    writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
-    writeConfigKey "synoinfo.internalportcfg" "0x3ffffff" "${USER_CONFIG_FILE}"
-  else
-    deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
-    deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
-    deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
-    deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
-  fi
   # Check if all addon exists
   while IFS=': ' read -r ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
@@ -449,14 +458,6 @@ function make() {
       return 1
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  # Check for eMMC Boot
-  if [ "${EMMCBOOT}" = "false" ]; then
-    deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
-    deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
-  elif [ "${EMMCBOOT}" = "true" ]; then
-    writeConfigKey "modules.mmc_block" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modules.mmc_core" "" "${USER_CONFIG_FILE}"
-  fi
   # Check for offline Mode
   if [ "${OFFLINE}" = "true" ]; then
     offlinemake
@@ -466,8 +467,8 @@ function make() {
     PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
     if [[ -z "${PAT_URL_CONF}" || -z "${PAT_HASH_CONF}" ]]; then
-      PAT_URL_CONF="0"
-      PAT_HASH_CONF="0"
+      PAT_URL_CONF=""
+      PAT_HASH_CONF=""
     fi
     # Get PAT Data from Syno
     while true; do
@@ -489,7 +490,7 @@ function make() {
           --infobox "Syno Connection failed,\ntry to get from Github..." 4 30
         idx=0
         while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-          PAT_URL="$(curl -m 5-skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER%%.*}.${PRODUCTVER##*.}/pat_url")"
+          PAT_URL="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER%%.*}.${PRODUCTVER##*.}/pat_url")"
           PAT_HASH="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER%%.*}.${PRODUCTVER##*.}/pat_hash")"
           PAT_URL=${PAT_URL%%\?*}
           if [[ -n "${PAT_URL}" && -n "${PAT_HASH}" ]]; then
@@ -2813,10 +2814,7 @@ while true; do
       if [ "${DT}" = "false" ]; then
         echo "S \"Storage Map \" "                                                          >>"${TMP_PATH}/menu"
       fi
-        echo "U \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                         >>"${TMP_PATH}/menu"
-      if [ "${DT}" = "false" ]; then
-        echo "W \"Force USB Mount \" "                                                      >>"${TMP_PATH}/menu"
-      fi
+      echo "U \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                           >>"${TMP_PATH}/menu"
       echo "P \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
       echo "D \"Loader DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
     fi
@@ -2919,12 +2917,6 @@ while true; do
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       NEXT="U"
-      ;;
-    W) USBMOUNT='force'
-      writeConfigKey "arc.usbmount" "force" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="W"
       ;;
     P) storagepanelMenu; NEXT="P" ;;
     D) staticIPMenu; NEXT="D" ;;

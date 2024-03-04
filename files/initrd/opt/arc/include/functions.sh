@@ -35,7 +35,7 @@ function readModelArray() {
 ###############################################################################
 # Just show error message and dies
 function die() {
-  echo -e "\033[1;41m$*\033[0m"
+  echo -e "\033[1;41m$@\033[0m"
   exit 1
 }
 
@@ -72,9 +72,9 @@ function generateRandomLetter() {
 ###############################################################################
 # Generate a random digit (0-9A-Z)
 function generateRandomValue() {
-	 for i in 0 1 2 3 4 5 6 7 8 9 A B C D E F G H J K L M N P Q R S T V W X Y Z; do
-     echo $i
-	 done | sort -R | tail -1
+  for i in 0 1 2 3 4 5 6 7 8 9 A B C D E F G H J K L M N P Q R S T V W X Y Z; do
+    echo ${i}
+  done | sort -R | tail -1
 }
 
 ###############################################################################
@@ -85,12 +85,12 @@ function generateSerial() {
   SERIAL="$(readModelArray "${1}" "serial.prefix" | sort -R | tail -1)"
   SERIAL+=$(readModelKey "${1}" "serial.middle")
   case "$(readModelKey "${1}" "serial.suffix")" in
-    numeric)
-      SERIAL+=$(random)
-      ;;
-    alpha)
-      SERIAL+=$(generateRandomLetter)$(generateRandomValue)$(generateRandomValue)$(generateRandomValue)$(generateRandomValue)$(generateRandomLetter)
-      ;;
+  numeric)
+    SERIAL+=$(random)
+    ;;
+  alpha)
+    SERIAL+=$(generateRandomLetter)$(generateRandomValue)$(generateRandomValue)$(generateRandomValue)$(generateRandomValue)$(generateRandomLetter)
+    ;;
   esac
   echo ${SERIAL}
 }
@@ -332,7 +332,7 @@ function livepatch() {
     # Looking for Update
     if [ ${FAIL} -eq 1 ]; then
       # Update Configs
-      TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+      TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
       if [[ $? -ne 0 || -z "${TAG}" ]]; then
         return 1
       fi
@@ -345,7 +345,7 @@ function livepatch() {
       unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}" >/dev/null 2>&1
       rm -f "${TMP_PATH}/configs.zip"
       # Update Patches
-      TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+      TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
       if [[ $? -ne 0 || -z "${TAG}" ]]; then
         return 1
       fi
