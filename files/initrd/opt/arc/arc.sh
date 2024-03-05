@@ -230,7 +230,7 @@ function arcbuild() {
     KVER="${PRODUCTVER}-${KVER}"
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
-    --infobox "Reconfiguring Synoinfo, Cmdline and Modules" 3 46
+    --infobox "Reconfiguring Synoinfo, Cmdline and Modules" 3 55
   # Reset synoinfo
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS=': ' read -r KEY VALUE; do
