@@ -57,12 +57,12 @@ function installAddon() {
   local HAS_FILES=0
   # First check generic files
   if [ -f "${ADDONS_PATH}/${ADDON}/all.tgz" ]; then
-    tar -zxf "${ADDONS_PATH}/${ADDON}/all.tgz" -C "${TMP_PATH}/${ADDON}"
+    tar zxf "${ADDONS_PATH}/${ADDON}/all.tgz" -C "${TMP_PATH}/${ADDON}"
     HAS_FILES=1
   fi
   # Now check specific platform files
   if [ -f "${ADDONS_PATH}/${ADDON}/${2}-${3}.tgz" ]; then
-    tar -zxf "${ADDONS_PATH}/${ADDON}/${2}-${3}.tgz" -C "${TMP_PATH}/${ADDON}"
+    tar zxf "${ADDONS_PATH}/${ADDON}/${2}-${3}.tgz" -C "${TMP_PATH}/${ADDON}"
     HAS_FILES=1
   fi
   # If has files to copy, copy it, else return error
@@ -85,7 +85,7 @@ function untarAddon() {
   fi
   rm -rf "${TMP_PATH}/addon"
   mkdir -p "${TMP_PATH}/addon"
-  tar -xaf "${1}" -C "${TMP_PATH}/addon" || return
+  tar xaf "${1}" -C "${TMP_PATH}/addon" || return
   local ADDON=$(readConfigKey "name" "${TMP_PATH}/addon/manifest.yml")
   [ -z "${ADDON}" ] && return
   rm -rf "${ADDONS_PATH}/${ADDON:?}"
@@ -101,7 +101,7 @@ function updateAddons() {
     rm -rf "${ADDONS_PATH}/${ADDON:?}"
     mkdir -p "${ADDONS_PATH}/${ADDON}"
     echo "Installing ${F} to ${ADDONS_PATH}/${ADDON}"
-    tar -xaf "${F}" -C "${ADDONS_PATH}/${ADDON}"
+    tar xaf "${F}" -C "${ADDONS_PATH}/${ADDON}"
     rm -f "${F}"
   done
 }

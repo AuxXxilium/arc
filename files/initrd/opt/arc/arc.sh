@@ -562,12 +562,12 @@ function make() {
           LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_FILE}" "${UNTAR_PAT_PATH}"
         else
           # Untar PAT file
-          tar -xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+          tar xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
         fi
         # Cleanup PAT Download
         rm -f "${PAT_FILE}"
       elif [ -f "${DSM_FILE}" ]; then
-        tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+        tar xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
       elif [ ! -f "${UNTAR_PAT_PATH}/zImage" ]; then
         dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
           --msgbox "ERROR: No DSM Image found!" 0 0
@@ -654,7 +654,7 @@ function offlinemake() {
       LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_FILE}" "${UNTAR_PAT_PATH}"
     else
       # Untar PAT file
-      tar -xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+      tar xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
     fi
     # Cleanup old PAT
     rm -f "${PAT_FILE}"
@@ -1719,7 +1719,7 @@ function updateMenu() {
           ADDON=$(basename ${PKG} | sed 's|.addon||')
           rm -rf "${ADDONS_PATH}/${ADDON:?}"
           mkdir -p "${ADDONS_PATH}/${ADDON}"
-          tar -xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
+          tar xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
           rm -f "${ADDONS_PATH}/${ADDON}.addon"
         done
         rm -f "${TMP_PATH}/addons.zip"
@@ -2776,7 +2776,8 @@ function greplogs() {
   dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
     --infobox "Copy Log Files." 3 20
   sleep 2
-  tar -cfz "${TMP_PATH}/log.tar.gz" "${PART1_PATH}/logs" >/dev/null 2>&1
+  tar cfz "${PART1_PATH}/log.tar.gz" "${PART1_PATH}/logs"
+  mv -f "${PART1_PATH}/log.tar.gz" "${TMP_PATH}/log.tar.gz"
   dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
     --msgbox "Logs can be found at /tmp/log.tar.gz" 5 40
 }
