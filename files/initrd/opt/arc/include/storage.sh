@@ -118,6 +118,9 @@ function getmap() {
   [ ${NVMEDRIVES} -gt 0 ] && writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.harddrives" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
+  # Check for nonDT
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  DT="$(readModelKey "${MODEL}" "dt")"
   if [ ! "{DT}" = "true" ] && [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
     # Check for Sata Boot
     LASTDRIVE=0

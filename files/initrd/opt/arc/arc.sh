@@ -408,7 +408,7 @@ function make() {
   # USBMount Support
   if [ "${USBMOUNT}" = "true" ]; then
     DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
-    writeConfigKey "synoinfo.maxdisks" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
+    writeConfigKey "synoinfo.maxdisks" "${DRIVES}" "${USER_CONFIG_FILE}"
     deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
     deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
     deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
