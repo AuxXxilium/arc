@@ -60,6 +60,7 @@ USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
 ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
 
 if [ "${OFFLINE}" = "false" ]; then
   # Update Check
@@ -140,7 +141,7 @@ function arcMenu() {
             fi
           done
           for F in "$(readModelArray "${M}" "dt")"; do
-            if [ "${DT}" = "true" ] && [[ ${SASCONTROLLER} -gt 0 || ${SCSICONTROLLER} -gt 0 ]]; then
+            if [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
               COMPATIBLE=0
               FLGNEX=1
               break
@@ -348,7 +349,7 @@ function arcsettings() {
       --msgbox "WARN: Your Controller has more then 8 Disks connected.\nMax Disks per Controller: 8" 0 0
   fi
   # Check for DT and SAS/SCSI
-  if [[ "${DT}" = "true" && ${SASCONTROLLER} -gt 0 || ${SCSICONTROLLER} -gt 0 ]]; then
+  if [[ "${DT}" = "true" && "${EXTERNALCONTROLLER}" = "true" ]]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
       --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental Feature." 0 0
   fi
@@ -1972,6 +1973,7 @@ function sysinfo() {
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
   KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
+  EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
   MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")"
   ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")"
@@ -2051,8 +2053,9 @@ function sysinfo() {
     TEXT+="\n   USB Mount: \Zb${USBMOUNT}\Zn"
   fi
   TEXT+="\n"
-  # Check for Controller // 104=RAID // 106=SATA // 107=SAS
+  # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
   TEXT+="\n\Z4> Storage\Zn"
+  TEXT+="\n  External Controller: \Zb${EXTERNALCONTROLLER}\Zn"
   # Get Information for Sata Controller
   NUMPORTS=0
   if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
@@ -2088,8 +2091,18 @@ function sysinfo() {
     done
   fi
   if [ $(lspci -d ::104 | wc -l) -gt 0 ]; then
-    TEXT+="\n  Raid/SCSI Controller:\n"
+    TEXT+="\n  Raid Controller:\n"
     for PCI in $(lspci -d ::104 | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+      TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
+      NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+    done
+  fi
+  if [ $(lspci -d ::100 | wc -l) -gt 0 ]; then
+    TEXT+="\n  SCSI Controller:\n"
+    for PCI in $(lspci -d ::100 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
@@ -2187,6 +2200,7 @@ function fullsysinfo() {
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
   KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
+  EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
   MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")"
   ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")"
@@ -2274,8 +2288,9 @@ function fullsysinfo() {
     TEXT+="\nUSB Mount: ${USBMOUNT}"
   fi
   TEXT+="\n"
-  # Check for Controller // 104=RAID // 106=SATA // 107=SAS
+  # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
   TEXT+="\nStorage"
+  TEXT+="\nExternal Controller: ${EXTERNALCONTROLLER}"
   # Get Information for Sata Controller
   NUMPORTS=0
   if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
@@ -2309,12 +2324,22 @@ function fullsysinfo() {
     done
   fi
   if [ $(lspci -d ::104 | wc -l) -gt 0 ]; then
-    TEXT+="\nRaid/SCSI Controller:\n"
+    TEXT+="\nRaid Controller:\n"
     for PCI in $(lspci -d ::104 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
       TEXT+="${NAME}\nDrives: ${PORTNUM}\n"
+      NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
+    done
+  fi
+  if [ $(lspci -d ::100 | wc -l) -gt 0 ]; then
+    TEXT+="\nSCSI Controller:\n"
+    for PCI in $(lspci -d ::100 | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+      TEXT+="${NAME}\n  Drives: ${PORTNUM}\n"
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
     done
   fi
