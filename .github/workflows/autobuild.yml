@@ -20,18 +20,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@main
 
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          swap-storage: false
+
       # Install Dependencies
       - name: Install Dependencies
         run: |
           git config --global user.email "info@auxxxilium.tech"
           git config --global user.name "AuxXxilium"
           sudo timedatectl set-timezone "Europe/Berlin"
-
-          # Clean up disk space
-          docker rmi $(docker images -q)
-          sudo apt update
-          sudo apt -y purge azure-cli* docker* llvm* google* dotnet* powershell* sphinxsearch* mysql* php* 
-          sudo apt -y full-upgrade
 
           sudo apt update
           sudo apt install -y jq gawk libelf-dev qemu-utils
@@ -87,7 +86,7 @@ jobs:
           sudo mount ${LOOPX}p3 "/tmp/p3"
 
           echo "Get Buildroot"
-          getBuildroot "2023.02.x" "br"
+          getBuildroot "2023.08.x" "br"
           [ ! -f "br/bzImage-arc" ] || [ ! -f "br/initrd-arc" ] && return 1
           
           echo "Repack initrd"

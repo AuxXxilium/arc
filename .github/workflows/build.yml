@@ -28,7 +28,7 @@ on:
         type: boolean
       br_version:
         description: "buildroot version"
-        default: "2023.02.x"
+        default: "2023.08.x"
         type: string
       addons_version:
         description: "addons version"
@@ -72,18 +72,17 @@ jobs:
         env:
           REPO: ${{ github.repository }}
 
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          swap-storage: false
+
       # Install Dependencies
       - name: Install Dependencies
         run: |
           git config --global user.email "info@auxxxilium.tech"
           git config --global user.name "AuxXxilium"
           sudo timedatectl set-timezone "Europe/Berlin"
-
-          # Clean up disk space
-          docker rmi $(docker images -q)
-          sudo apt update
-          sudo apt -y purge azure-cli* docker* llvm* google* dotnet* powershell* sphinxsearch* mysql* php* 
-          sudo apt -y full-upgrade
 
           sudo apt update
           sudo apt install -y jq gawk libelf-dev qemu-utils
