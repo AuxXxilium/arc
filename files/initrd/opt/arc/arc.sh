@@ -407,7 +407,12 @@ function make() {
   # USBMount Support
   if [ "${USBMOUNT}" = "true" ]; then
     DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
-    writeConfigKey "synoinfo.maxdisks" "${DRIVES}" "${USER_CONFIG_FILE}"
+    writeConfigKey "synoinfo.maxdisks" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
+    deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
+    deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
+  elif [ "${USBMOUNT}" = "force" ]; then
+    writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo.internalportcfg" "0x3ffffff" "${USER_CONFIG_FILE}"
@@ -2815,6 +2820,9 @@ while true; do
         echo "S \"Storage Map \" "                                                          >>"${TMP_PATH}/menu"
       fi
       echo "U \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                           >>"${TMP_PATH}/menu"
+      if [ "${DT}" = "false" ]; then
+        echo "W \"Force USB Mount \" "                                                      >>"${TMP_PATH}/menu"
+      fi
       echo "P \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
       echo "D \"Loader DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
     fi
@@ -2917,6 +2925,12 @@ while true; do
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       NEXT="U"
+      ;;
+    W) USBMOUNT='force'
+      writeConfigKey "arc.usbmount" "force" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      NEXT="W"
       ;;
     P) storagepanelMenu; NEXT="P" ;;
     D) staticIPMenu; NEXT="D" ;;
