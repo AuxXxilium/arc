@@ -1129,7 +1129,8 @@ function synoinfoMenu() {
   echo "1 \"Add/edit Synoinfo item\""     >"${TMP_PATH}/menu"
   echo "2 \"Delete Synoinfo item(s)\""    >>"${TMP_PATH}/menu"
   echo "3 \"Show Synoinfo entries\""      >>"${TMP_PATH}/menu"
-  echo "4 \"Thermal Shutdown (DT only)\"" >>"${TMP_PATH}/menu"
+  echo "4 \"Add optimized Synoinfo\""     >>"${TMP_PATH}/menu"
+  echo "5 \"Thermal Shutdown (DT only)\"" >>"${TMP_PATH}/menu"
 
   # menu loop
   while true; do
@@ -1185,6 +1186,16 @@ function synoinfoMenu() {
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
       4)
+        writeConfigKey "synoinfo.support_oob_ctl" "no" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.support_trim" "yes" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.support_disk_hibernation" "yes" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.support_bde_internal_10g" "no" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.support_btrfs_dedupe" "yes" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.support_tiny_btrfs_dedupe" "yes" "${USER_CONFIG_FILE}"
+        dialog --backtitle "$(backtitle)" --title "Optimized Synoinfo entries" \
+          --aspect 18 --msgbox "Optimized Synoinfo is written to Config." 0 0
+        ;;
+      5)
         MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
         CONFDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         PLATFORM="$(readModelKey "${MODEL}" "platform")"
