@@ -230,7 +230,7 @@ function arcbuild() {
     KVER="${PRODUCTVER}-${KVER}"
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
-    --infobox "Reconfiguring Synoinfo, Cmdline and Modules" 3 55
+    --infobox "Reconfiguring Synoinfo, Cmdline and Modules" 3 50
   # Reset synoinfo
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS=': ' read -r KEY VALUE; do
@@ -335,12 +335,20 @@ function arcsettings() {
   fi
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   # Get Network Config for Loader
+  dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
+    --infobox "Get Network Config..." 3 30
   getnet
   if [ "${ONLYPATCH}" = "true" ]; then
     return 1
   fi
   # Get Portmap for Loader
+  dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
+    --infobox "Get Storage Map..." 3 30
   getmap
+  # Select Storagemap
+  if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
+    getmapSelection
+  fi
   # Select Addons
   addonSelection
   # Check Warnings
@@ -1935,6 +1943,9 @@ function storageMenu() {
   DT="$(readModelKey "${MODEL}" "dt")"
   # Get Portmap for Loader
   getmap
+  if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
+    getmapSelection
+  fi
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
@@ -2857,7 +2868,7 @@ while true; do
       echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
       echo "N \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
       if [ "${DT}" = "false" ]; then
-        echo "S \"Storage Map \" "                                                          >>"${TMP_PATH}/menu"
+        echo "S \"Update Storage Map \" "                                                   >>"${TMP_PATH}/menu"
       fi
       echo "U \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                           >>"${TMP_PATH}/menu"
       if [ "${DT}" = "false" ]; then

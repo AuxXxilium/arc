@@ -118,105 +118,103 @@ function getmap() {
   [ ${NVMEDRIVES} -gt 0 ] && writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.harddrives" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
-  # Check for nonDT
-  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  DT="$(readModelKey "${MODEL}" "dt")"
-  if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
-    # Check for Sata Boot
-    LASTDRIVE=0
-    while read -r LINE; do
-      if [[ "${BUS}" != "usb" && ${LINE} -eq 0 && "${LOADER_DISK}" = "/dev/sda" ]]; then
-        MAXDISKS="$(readModelKey "${MODEL}" "disks")"
-        if [ ${MAXDISKS} -lt ${DRIVES} ]; then
-          MAXDISKS=${DRIVES}
-        fi
-        echo -n "${LINE}>${MAXDISKS}:">>"${TMP_PATH}/remap"
-      elif [ ! ${LINE} = ${LASTDRIVE} ]; then
-        echo -n "${LINE}>${LASTDRIVE}:">>"${TMP_PATH}/remap"
-        LASTDRIVE=$((${LASTDRIVE} + 1))
-      elif [ ${LINE} = ${LASTDRIVE} ]; then
-        LASTDRIVE=$((${LINE} + 1))
+}
+
+function getmapSelection() {
+  # Check for Sata Boot
+  LASTDRIVE=0
+  while read -r LINE; do
+    if [[ "${BUS}" != "usb" && ${LINE} -eq 0 && "${LOADER_DISK}" = "/dev/sda" ]]; then
+      MAXDISKS="$(readModelKey "${MODEL}" "disks")"
+      if [ ${MAXDISKS} -lt ${DRIVES} ]; then
+        MAXDISKS=${DRIVES}
       fi
-    done < <(cat "${TMP_PATH}/ports")
-     # Compute PortMap Options
-    SATAPORTMAPMAX=$(awk '{print $1}' "${TMP_PATH}/drivesmax")
-    SATAPORTMAP=$(awk '{print $1}' "${TMP_PATH}/drivescon")
-    SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
-    # Show recommended Option to user
-    if [ -n "${SATAREMAP}" ] && [[ ${SASCONTROLLER} -gt 0 || ${SCSICONTROLLER} -gt 0 ]] && [ "${MACHINE}" = "NATIVE" ]; then
-      REMAP2="*"
-    elif [ -n "${SATAREMAP}" ] && [[ ${SASCONTROLLER} -eq 0 && ${SCSICONTROLLER} -eq 0 ]]; then
-      REMAP3="*"
-    else
-      REMAP1="*"
+      echo -n "${LINE}>${MAXDISKS}:">>"${TMP_PATH}/remap"
+    elif [ ! ${LINE} = ${LASTDRIVE} ]; then
+      echo -n "${LINE}>${LASTDRIVE}:">>"${TMP_PATH}/remap"
+      LASTDRIVE=$((${LASTDRIVE} + 1))
+    elif [ ${LINE} = ${LASTDRIVE} ]; then
+      LASTDRIVE=$((${LINE} + 1))
     fi
-    # Ask for Portmap
+  done < <(cat "${TMP_PATH}/ports")
+    # Compute PortMap Options
+  SATAPORTMAPMAX=$(awk '{print $1}' "${TMP_PATH}/drivesmax")
+  SATAPORTMAP=$(awk '{print $1}' "${TMP_PATH}/drivescon")
+  SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
+  # Show recommended Option to user
+  if [ -n "${SATAREMAP}" ] && [[ ${SASCONTROLLER} -gt 0 || ${SCSICONTROLLER} -gt 0 ]] && [ "${MACHINE}" = "NATIVE" ]; then
+    REMAP2="*"
+  elif [ -n "${SATAREMAP}" ] && [[ ${SASCONTROLLER} -eq 0 && ${SCSICONTROLLER} -eq 0 ]]; then
+    REMAP3="*"
+  else
+    REMAP1="*"
+  fi
+  # Ask for Portmap
+  dialog --backtitle "$(backtitle)" --title "Arc Disks" \
+    --menu "SataPortMap or SataRemap?\n* Recommended Option" 0 0 0 \
+    1 "SataPortMap: Active Ports ${REMAP1}" \
+    2 "SataPortMap: Max Ports ${REMAP2}" \
+    3 "SataRemap: Remove blank Ports ${REMAP3}" \
+    4 "AhciRemap: Remove blank Ports (experimental) ${REMAP4}" \
+    5 "I want to set my own Portmap" \
+  2>"${TMP_PATH}/resp"
+  [ $? -ne 0 ] && return 1
+  resp="$(<"${TMP_PATH}/resp")"
+  [ -z "${resp}" ] && return 1
+  if [ ${resp} -eq 1 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-      --menu "SataPortMap or SataRemap?\n* Recommended Option" 0 0 0 \
-      1 "SataPortMap: Active Ports ${REMAP1}" \
-      2 "SataPortMap: Max Ports ${REMAP2}" \
-      3 "SataRemap: Remove blank Ports ${REMAP3}" \
-      4 "AhciRemap: Remove blank Ports (experimental) ${REMAP4}" \
-      5 "I want to set my own Portmap" \
-    2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
-    resp="$(<"${TMP_PATH}/resp")"
-    [ -z "${resp}" ] && return 1
-    if [ ${resp} -eq 1 ]; then
-      dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-        --infobox "Use SataPortMap:\nActive Ports!" 4 40
-      writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}"
-    elif [ ${resp} -eq 2 ]; then
-      dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-        --infobox "Use SataPortMap:\nMax Ports!" 4 40
-      writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}"
-    elif [ ${resp} -eq 3 ]; then
-      dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-        --infobox "Use SataRemap:\nRemove blank Drives" 4 40
-      writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}"
-    elif [ ${resp} -eq 4 ]; then
-      dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-        --infobox "Use AhciRemap:\nRemove blank Drives" 4 40
-      writeConfigKey "arc.remap" "ahci" "${USER_CONFIG_FILE}"
-    elif [ ${resp} -eq 5 ]; then
-      dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-        --infobox "I want to set my own PortMap!" 4 40
-      writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}"
-    fi
-    # Check Remap for correct config
-    REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
-    # Write Map to config and show Map to User
-    if [ "${REMAP}" = "acports" ]; then
-      writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
-      writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-      dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-        --msgbox "Computed Values:\nSataPortMap: ${SATAPORTMAP}\nDiskIdxMap: ${DISKIDXMAP}" 0 0
-    elif [ "${REMAP}" = "maxports" ]; then
-      writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAPMAX}" "${USER_CONFIG_FILE}"
-      writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAPMAX}" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-      dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-        --msgbox "Computed Values:\nSataPortMap: ${SATAPORTMAPMAX}\nDiskIdxMap: ${DISKIDXMAPMAX}" 0 0
-    elif [ "${REMAP}" = "remap" ]; then
-      writeConfigKey "cmdline.sata_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-      dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-        --msgbox "Computed Values:\nSataRemap: ${SATAREMAP}" 0 0
-    elif [ "${REMAP}" = "ahci" ]; then
-      writeConfigKey "cmdline.ahci_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-      dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-        --msgbox "Computed Values:\nAhciRemap: ${SATAREMAP}" 0 0
-    elif [ "${REMAP}" = "user" ]; then
-      deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
-      deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-      dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-        --msgbox "Usersetting: Set your own Values in Userconfig." 0 0
-    fi
+      --infobox "Use SataPortMap:\nActive Ports!" 4 40
+    writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}"
+  elif [ ${resp} -eq 2 ]; then
+    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
+      --infobox "Use SataPortMap:\nMax Ports!" 4 40
+    writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}"
+  elif [ ${resp} -eq 3 ]; then
+    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
+      --infobox "Use SataRemap:\nRemove blank Drives" 4 40
+    writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}"
+  elif [ ${resp} -eq 4 ]; then
+    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
+      --infobox "Use AhciRemap:\nRemove blank Drives" 4 40
+    writeConfigKey "arc.remap" "ahci" "${USER_CONFIG_FILE}"
+  elif [ ${resp} -eq 5 ]; then
+    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
+      --infobox "I want to set my own PortMap!" 4 40
+    writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}"
+  fi
+  # Check Remap for correct config
+  REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
+  # Write Map to config and show Map to User
+  if [ "${REMAP}" = "acports" ]; then
+    writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
+      --msgbox "Computed Values:\nSataPortMap: ${SATAPORTMAP}\nDiskIdxMap: ${DISKIDXMAP}" 0 0
+  elif [ "${REMAP}" = "maxports" ]; then
+    writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAPMAX}" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAPMAX}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
+      --msgbox "Computed Values:\nSataPortMap: ${SATAPORTMAPMAX}\nDiskIdxMap: ${DISKIDXMAPMAX}" 0 0
+  elif [ "${REMAP}" = "remap" ]; then
+    writeConfigKey "cmdline.sata_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
+      --msgbox "Computed Values:\nSataRemap: ${SATAREMAP}" 0 0
+  elif [ "${REMAP}" = "ahci" ]; then
+    writeConfigKey "cmdline.ahci_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
+      --msgbox "Computed Values:\nAhciRemap: ${SATAREMAP}" 0 0
+  elif [ "${REMAP}" = "user" ]; then
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
+      --msgbox "Usersetting: Set your own Values in Userconfig." 0 0
   fi
 }
 
