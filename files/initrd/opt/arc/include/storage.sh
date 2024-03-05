@@ -2,7 +2,7 @@
 function getmap() {
   # Sata Disks
   SATADRIVES=0
-  if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
+  if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
     # Clean old files
     [ -f "${TMP_PATH}/drivesmax" ] && rm -f "${TMP_PATH}/drivesmax"
     touch "${TMP_PATH}/drivesmax"
@@ -107,7 +107,7 @@ function getmap() {
   [ ${NVMEDRIVES} -gt 0 ] && writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.harddrives" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
-  if [ ! "{DT}" = "true" ] && [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
+  if [ ! "{DT}" = "true" ] && [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
     # Check for Sata Boot
     LASTDRIVE=0
     while read -r LINE; do
