@@ -419,9 +419,9 @@ function make() {
     writeConfigKey "synoinfo.internalportcfg" "0x3ffffff" "${USER_CONFIG_FILE}"
   else
     HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
-    if [ "${BUS}" = "usb" ]; then
-      HARDDRIVES=$((${HARDDRIVES} + 1))
-    fi
+    #if [ "${BUS}" = "usb" ]; then
+    #  HARDDRIVES=$((${HARDDRIVES} + 1))
+    #fi
     writeConfigKey "synoinfo.maxdisks" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
     deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
     deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
