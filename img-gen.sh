@@ -32,8 +32,8 @@ sudo mount ${LOOPX}p1 "/tmp/p1"
 sudo mount ${LOOPX}p3 "/tmp/p3"
 
 echo "Get Buildroot"
-# read -rp 'Version (2023.02.x): ' br_version
-[ -z "${br_version}" ] && br_version="2023.02.x"
+# read -rp 'Version (2023.08.x): ' br_version
+[ -z "${br_version}" ] && br_version="2023.08.x"
 getBuildroot "${br_version}" "br"
 [[ ! -f "br/bzImage-arc" || ! -f "br/initrd-arc" ]] && return 1
 
