@@ -121,7 +121,7 @@ function getmap() {
   # Check for nonDT
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
-  if [[ "{DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
+  if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
     # Check for Sata Boot
     LASTDRIVE=0
     while read -r LINE; do
