@@ -2673,44 +2673,79 @@ function saveMenu() {
 # let user format disks from inside arc
 function formatdisks() {
   rm -f "${TMP_PATH}/opts"
-  while read -r POSITION NAME; do
-    [[ -z "${POSITION}" || -z "${NAME}" ]] && continue
-    echo "${POSITION}" | grep -q "${LOADER_DISK}" && continue
-    echo "\"${POSITION}\" \"${NAME}\" \"off\"" >>"${TMP_PATH}/opts"
-  done < <(ls -l /dev/disk/by-id/ | sed 's|../..|/dev|g' | grep -E "/dev/sd|/dev/mmc|/dev/nvme" | awk -F' ' '{print $NF" "$(NF-2)}' | sort -uk 1,1)
+  while read -r KNAME ID; do
+    [ -z "${KNAME}" ] && continue
+    [[ "${KNAME}" = /dev/md* ]] && continue
+    [ -z "${ID}" ] && ID="Unknown"
+    echo "${KNAME}" | grep -q "${LOADER_DISK}" && continue
+    echo "\"${KNAME}\" \"${ID}\" \"off\"" >>"${TMP_PATH}/opts"
+  done < <(lsblk -pno KNAME,ID)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
-      --msgbox "No Disk found!" 0 0
-    return 1
+      --msgbox "No disk found!" 0 0
+    return
   fi
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
-    --checklist "" 0 0 0 --file "${TMP_PATH}/opts" \
-    2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return 1
-  RESP="$(<"${TMP_PATH}/resp")"
-  [ -z "${RESP}" ] && return 1
+    --checklist "Advanced" 0 0 0 --file "${TMP_PATH}/opts" \
+    2>${TMP_PATH}/resp
+  [ $? -ne 0 ] && return
+  RESP=$(<"${TMP_PATH}/resp")
+  [ -z "${RESP}" ] && return
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
-  [ $? -ne 0 ] && return 1
-  RAID=$(ls /dev/md* | wc -l)
-  if [ ${RAID} -gt 0 ]; then
+  [ $? -ne 0 ] && return
+  if [ $(ls /dev/md* 2>/dev/null | wc -l) -gt 0 ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
       --yesno "Warning:\nThe current hds is in raid, do you still want to format them?" 0 0
-    [ $? -ne 0 ] && return 1
-    for I in $(ls /dev/md*); do
+    [ $? -ne 0 ] && return
+    for I in $(ls /dev/md* 2>/dev/null); do
       mdadm -S "${I}"
     done
   fi
   (
     for I in ${RESP}; do
-      echo -e ">>> Formatting: ${I}"
-      echo y | mkfs.ext4 -T largefile4 "${I}" &>/dev/null
-      echo -e ">>> Done\n"
+      if [[ "${I}" = /dev/mmc* ]]; then
+        echo y | mkdosfs -F32 "${I}"
+      else
+        echo y | mkfs.ext4 -T largefile4 "${I}"
+      fi
     done
   ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
-    --progressbox "Doing the Magic..." 20 70
+    --progressbox "Formatting ..." 20 100
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --msgbox "Formatting is complete." 0 0
+}
+
+###############################################################################
+# let user format disks from inside arc
+function forcessh() {
+      dialog --backtitle "$(backtitle)" --colors --title "Force SSH" \
+        --yesno "Please insert all disks before continuing.\n" 0 0
+      [ $? -ne 0 ] && return
+      (
+        ONBOOTUP=""
+        ONBOOTUP="${ONBOOTUP}synowebapi --exec api=SYNO.Core.Terminal method=set version=3 enable_telnet=true enable_ssh=true ssh_port=22 forbid_console=false\n"
+        ONBOOTUP="${ONBOOTUP}echo \"DELETE FROM task WHERE task_name LIKE ''ARCONBOOTUPARC'';\" | sqlite3 /usr/syno/etc/esynoscheduler/esynoscheduler.db\n"
+        mkdir -p "${TMP_PATH}/sdX1"
+        for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK_PART1}"); do
+          mount "${I}" "${TMP_PATH}/sdX1"
+          if [ -f "${TMP_PATH}/sdX1/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
+            sqlite3 ${TMP_PATH}/sdX1/usr/syno/etc/esynoscheduler/esynoscheduler.db <<EOF
+DELETE FROM task WHERE task_name LIKE 'ARCONBOOTUPARC';
+INSERT INTO task VALUES('ARCONBOOTUPARC', '', 'bootup', '', 1, 0, 0, 0, '', 0, '$(echo -e ${ONBOOTUP})', 'script', '{}', '', '', '{}', '{}');
+EOF
+            sleep 1
+            sync
+            echo "true" >${TMP_PATH}/isEnable
+          fi
+          umount "${I}"
+        done
+        rm -rf "${TMP_PATH}/sdX1"
+      ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Force SSH" \
+        --progressbox "Enabling ..." 20 100
+      [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Telnet&SSH is enabled." || MSG="Telnet&SSH is not enabled."
+      dialog --backtitle "$(backtitle)" --colors --title "Force SSH" \
+        --msgbox "${MSG}" 0 0
 }
 
 ###############################################################################
@@ -2863,9 +2898,7 @@ while true; do
       echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
       echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
       echo "N \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
-      if [ "${DT}" = "false" ]; then
-        echo "S \"Update Storage Map \" "                                                   >>"${TMP_PATH}/menu"
-      fi
+      echo "S \"Update Storage Map \" "                                                     >>"${TMP_PATH}/menu"
       echo "U \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                           >>"${TMP_PATH}/menu"
       echo "P \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
       echo "D \"Loader DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
@@ -2931,6 +2964,7 @@ while true; do
     echo "J \"DSM force Reinstall \" "                                                      >>"${TMP_PATH}/menu"
     echo "F \"\Z1Format Sata/NVMe Disk\Zn \" "                                              >>"${TMP_PATH}/menu"
     echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
+    echo "T \"Force enable SSH in DSM \" "                                                  >>"${TMP_PATH}/menu"
   fi
   echo "= \"\Z4====== Misc Settings =====\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
@@ -3099,6 +3133,7 @@ while true; do
     J) juniorboot; NEXT="J" ;;
     F) formatdisks; NEXT="F" ;;
     L) greplogs; NEXT="L" ;;
+    T) forcessh; NEXT="T" ;;
     # Loader Settings
     x) backupMenu; NEXT="x" ;;
     9) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
