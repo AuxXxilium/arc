@@ -2674,20 +2674,20 @@ function saveMenu() {
 # let user format disks from inside arc
 function formatdisks() {
   rm -f "${TMP_PATH}/opts"
-  while read -r KNAME ID; do
+  while read -r KNAME KMODEL; do
     [ -z "${KNAME}" ] && continue
     [[ "${KNAME}" = /dev/md* ]] && continue
-    [ -z "${ID}" ] && ID="Unknown"
+    [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
     echo "${KNAME}" | grep -q "${LOADER_DISK}" && continue
-    echo "\"${KNAME}\" \"${ID}\" \"off\"" >>"${TMP_PATH}/opts"
-  done < <(lsblk -pno KNAME,ID)
+    echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
+  done < <(lsblk -pno KNAME,MODEL,TYPE)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
       --msgbox "No disk found!" 0 0
     return
   fi
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
-    --checklist "Advanced" 0 0 0 --file "${TMP_PATH}/opts" \
+    --checklist "Select Disk(s)" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
   RESP=$(<"${TMP_PATH}/resp")
@@ -2697,7 +2697,7 @@ function formatdisks() {
   [ $? -ne 0 ] && return
   if [ $(ls /dev/md* 2>/dev/null | wc -l) -gt 0 ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
-      --yesno "Warning:\nThe current hds is in raid, do you still want to format them?" 0 0
+      --yesno "Warning:\nThe current HDD are in Raid, do you still want to format them?" 0 0
     [ $? -ne 0 ] && return
     for I in $(ls /dev/md* 2>/dev/null); do
       mdadm -S "${I}"
