@@ -415,7 +415,7 @@ function make() {
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
   # USBMount Support
-  if [ "${USBMOUNT}" = "true" && "${DT}" = "false" ]; then
+  if [[ "${USBMOUNT}" = "force" && "${DT}" = "false" ]]; then
     writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
@@ -2984,7 +2984,7 @@ while true; do
     # Main Section
     1) arcMenu; NEXT="2" ;;
     2) make; NEXT="3" ;;
-    3) boot && exit 0 || sleep 3 ;;
+    3) boot && exit 0 ;;
     # Info Section
     a) sysinfo; NEXT="a" ;;
     # System Section
@@ -2999,7 +2999,14 @@ while true; do
     N) networkMenu; NEXT="N" ;;
     S) storageMenu; NEXT="S" ;;
     p) ONLYPATCH="true" && arcsettings; NEXT="p" ;;
-    U) [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
+    U)
+      if [ "${USBMOUNT}" = "true" ]; then
+        USBMOUNT="false"
+      elif [[ "${USBMOUNT}" = "false" && "${DT}" = "false" ]]; then
+        USBMOUNT="force"
+      elif [[ "${USBMOUNT}" = "force" || "${USBMOUNT}" = "false" ]]; then
+        USBMOUNT="true"
+      fi
       writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
