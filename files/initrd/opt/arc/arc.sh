@@ -410,29 +410,17 @@ function make() {
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
-  EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
   # USBMount Support
   if [ "${USBMOUNT}" = "true" ]; then
-    DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
-    writeConfigKey "synoinfo.maxdisks" "${DRIVES}" "${USER_CONFIG_FILE}"
-    deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
-    deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
-    deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
-  elif [ "${USBMOUNT}" = "force" ]; then
     writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo.internalportcfg" "0x3ffffff" "${USER_CONFIG_FILE}"
   else
-    if [ "${EXTERNALCONTROLLER}" = "false" ]; then
-      DRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
-    else
-      DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
-    fi
-    writeConfigKey "synoinfo.maxdisks" "${DRIVES}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
     deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
     deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
     deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
@@ -2879,9 +2867,6 @@ while true; do
         echo "S \"Update Storage Map \" "                                                   >>"${TMP_PATH}/menu"
       fi
       echo "U \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                           >>"${TMP_PATH}/menu"
-      if [ "${DT}" = "false" ]; then
-        echo "W \"Force USB Mount \" "                                                      >>"${TMP_PATH}/menu"
-      fi
       echo "P \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
       echo "D \"Loader DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
     fi
@@ -2984,12 +2969,6 @@ while true; do
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       NEXT="U"
-      ;;
-    W) USBMOUNT='force'
-      writeConfigKey "arc.usbmount" "force" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="W"
       ;;
     P) storagepanelMenu; NEXT="P" ;;
     D) staticIPMenu; NEXT="D" ;;
