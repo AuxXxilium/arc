@@ -376,7 +376,7 @@ function arcsettings() {
   if [ "${KVMSUPPORT}" = "true" ]; then
     if ! grep -q "^flags.*vmx.*" /proc/cpuinfo | grep -q "^flags.*svm.*" /proc/cpuinfo; then
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-        --msgbox "WARN: Your CPU does not support VMM/KVM in DSM.\nCheck CPU/Bios for VMX or SVM Support." 0 0
+        --msgbox "WARN: Your CPU does not support KVM in DSM.\nCheck CPU/Bios for VMX or SVM Support." 0 0
     fi
   fi
   # Config is done
@@ -2944,7 +2944,7 @@ while true; do
       fi
       echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
       echo "H \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
-      echo "V \"VMM/KVM Support: \Z4${KVMSUPPORT}\Zn \" "                                   >>"${TMP_PATH}/menu"
+      echo "V \"KVM Support: \Z4${KVMSUPPORT}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "c \"IPv6 Support: \Z4${ARCIPV6}\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
       echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
