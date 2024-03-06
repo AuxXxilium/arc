@@ -401,11 +401,12 @@ function arcsettings() {
 ###############################################################################
 # Building Loader Online
 function make() {
-  # Read Config
+  # Read Model Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  DT="$(readModelKey "${MODEL}" "dt")"
   # Read Config for Arc Settings
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
@@ -414,7 +415,7 @@ function make() {
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
   # USBMount Support
-  if [ "${USBMOUNT}" = "true" ]; then
+  if [ "${USBMOUNT}" = "true" && "${DT}" = "false" ]; then
     writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
