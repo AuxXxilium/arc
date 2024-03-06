@@ -410,6 +410,7 @@ function make() {
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
+  EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
@@ -426,11 +427,12 @@ function make() {
     writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo.internalportcfg" "0x3ffffff" "${USER_CONFIG_FILE}"
   else
-    HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
-    #if [ "${BUS}" = "usb" ]; then
-    #  HARDDRIVES=$((${HARDDRIVES} + 1))
-    #fi
-    writeConfigKey "synoinfo.maxdisks" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
+    if [ "${EXTERNALCONTROLLER}" = "false" ]; then
+      DRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
+    else
+      DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
+    fi
+    writeConfigKey "synoinfo.maxdisks" "${DRIVES}" "${USER_CONFIG_FILE}"
     deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
     deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
     deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
@@ -1999,6 +2001,8 @@ function sysinfo() {
   HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
   KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
+  HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
+  DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
   MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
   MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")"
   ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")"
@@ -2081,6 +2085,7 @@ function sysinfo() {
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
   TEXT+="\n\Z4> Storage\Zn"
   TEXT+="\n  External Controller: \Zb${EXTERNALCONTROLLER}\Zn"
+  TEXT+="\n  Drives | Harddrives: \Zb${DRIVES} | ${HARDDRIVES}\Zn"
   # Get Information for Sata Controller
   NUMPORTS=0
   if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
@@ -2226,6 +2231,8 @@ function fullsysinfo() {
   HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
   KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
+  HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
+  DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
   MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
   MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")"
   ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")"
@@ -2316,6 +2323,7 @@ function fullsysinfo() {
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
   TEXT+="\nStorage"
   TEXT+="\nExternal Controller: ${EXTERNALCONTROLLER}"
+  TEXT+="\nDrives | Harddrives: \Zb${DRIVES} | ${HARDDRIVES}\Zn"
   # Get Information for Sata Controller
   NUMPORTS=0
   if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
