@@ -351,11 +351,6 @@ function arcsettings() {
   fi
   # Select Addons
   addonSelection
-  # Check Warnings
-  if [ "${WARNON1}" = "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-      --msgbox "WARN: Your Controller has more then 8 Disks connected.\nMax Disks per Controller: 8" 0 0
-  fi
   # Check for DT and SAS/SCSI
   if [[ "${DT}" = "true" && "${EXTERNALCONTROLLER}" = "true" ]]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
