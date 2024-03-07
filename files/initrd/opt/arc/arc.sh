@@ -414,18 +414,6 @@ function make() {
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
-  # USBMount Support
-  if [[ "${USBMOUNT}" = "force" && "${DT}" = "false" ]]; then
-    writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
-    writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
-    writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
-    writeConfigKey "synoinfo.internalportcfg" "0x3ffffff" "${USER_CONFIG_FILE}"
-  else
-    deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
-    deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
-    deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
-    deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
-  fi
   # KVM Support
   if [ "${KVMSUPPORT}" = "true" ]; then
     writeConfigKey "modules.kvm_intel" "" "${USER_CONFIG_FILE}"
@@ -2999,14 +2987,7 @@ while true; do
     N) networkMenu; NEXT="N" ;;
     S) storageMenu; NEXT="S" ;;
     p) ONLYPATCH="true" && arcsettings; NEXT="p" ;;
-    U)
-      if [ "${USBMOUNT}" = "true" ]; then
-        USBMOUNT="false"
-      elif [[ "${USBMOUNT}" = "false" && "${DT}" = "false" ]]; then
-        USBMOUNT="force"
-      elif [[ "${USBMOUNT}" = "force" || "${USBMOUNT}" = "false" ]]; then
-        USBMOUNT="true"
-      fi
+    U) [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
       writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
