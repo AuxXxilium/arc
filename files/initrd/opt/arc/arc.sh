@@ -2869,6 +2869,7 @@ while true; do
   fi
   echo "= \"\Z4========== Info ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
+  echo "A \" Full Sysinfo \" "                                                              >>"${TMP_PATH}/menu"
   echo "= \"\Z4========= System =========\Zn \" "                                           >>"${TMP_PATH}/menu"
   if [ "${CONFDONE}" = "true" ]; then
     if [ "${ARCOPTS}" = "true" ]; then
@@ -2971,6 +2972,7 @@ while true; do
     3) boot && exit 0 ;;
     # Info Section
     a) sysinfo; NEXT="a" ;;
+    A) fullsysinfo; NEXT="A" ;;
     # System Section
     # Arc Section
     4) [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
