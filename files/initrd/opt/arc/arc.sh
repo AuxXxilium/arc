@@ -2868,7 +2868,7 @@ while true; do
   fi
   echo "= \"\Z4========== Info ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
-  echo "A \" Full Sysinfo \" "                                                              >>"${TMP_PATH}/menu"
+  echo "A \"Full Sysinfo \" "                                                               >>"${TMP_PATH}/menu"
   echo "= \"\Z4========= System =========\Zn \" "                                           >>"${TMP_PATH}/menu"
   if [ "${CONFDONE}" = "true" ]; then
     if [ "${ARCOPTS}" = "true" ]; then
