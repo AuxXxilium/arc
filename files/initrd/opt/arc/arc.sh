@@ -336,7 +336,7 @@ function arcsettings() {
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   # Get Network Config for Loader
   dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
-    --infobox "Get Network Config..." 3 30
+    --infobox "Network Config..." 3 30
   getnet
   if [ "${ONLYPATCH}" = "true" ]; then
     return 1
@@ -346,7 +346,7 @@ function arcsettings() {
   # Select Portmap for Loader (nonDT)
   if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
     dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
-      --infobox "Get Storage Map..." 3 30
+      --infobox "Storage Map..." 3 30
     getmapSelection
   fi
   # Select Addons
