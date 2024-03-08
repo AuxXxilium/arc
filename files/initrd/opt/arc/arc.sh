@@ -2983,7 +2983,14 @@ while true; do
     N) networkMenu; NEXT="N" ;;
     S) storageMenu; NEXT="S" ;;
     p) ONLYPATCH="true" && arcsettings; NEXT="p" ;;
-    U) [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
+    U)
+      if [ "${USBMOUNT}" = "true" ]; then
+        USBMOUNT="false"
+      elif [[ "${USBMOUNT}" = "false" && "${DT}" = "false" ]]; then
+        USBMOUNT="force"
+      elif [[ "${USBMOUNT}" = "force" || "${USBMOUNT}" = "false" ]]; then
+        USBMOUNT="true"
+      fi
       writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
