@@ -748,8 +748,6 @@ function addonSelection() {
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
   resp="$(<"${TMP_PATH}/resp")"
-  dialog --backtitle "$(backtitle)" --title "Addons" \
-      --infobox "Writing to user config" 5 30
   unset ADDONS
   declare -A ADDONS
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
