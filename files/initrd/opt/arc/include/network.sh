@@ -109,5 +109,6 @@ ETHX=$(ls /sys/class/net/ | grep -v lo) || true
 # Get actual IP
 for ETH in ${ETHX}; do
   IPCON="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
+  [ -z "${IPCON}" ] && IPCON="$(getIP ${ETH})"
   [ -n "${IPCON}" ] && break
 done
