@@ -342,16 +342,16 @@ function arcsettings() {
     return 1
   fi
   # Get Portmap for Loader
-  dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
-    --infobox "Get Storage Map..." 3 30
   getmap
-  # Select Storagemap
+  # Select Portmap for Loader (nonDT)
   if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
+    dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
+      --infobox "Get Storage Map..." 3 30
     getmapSelection
   fi
   # Select Addons
   addonSelection
-  # Check for DT and SAS/SCSI
+  # Check for DT and HBA/Raid Controller
   if [[ "${DT}" = "true" && "${EXTERNALCONTROLLER}" = "true" ]]; then
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
       --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental Feature." 0 0
@@ -367,6 +367,7 @@ function arcsettings() {
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
       --msgbox "WARN: Your CPU does not have AES Support for Hardwareencryption in DSM." 0 0
   fi
+  # Check for KVM
   KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
   if [ "${KVMSUPPORT}" = "true" ]; then
     if ! grep -q "^flags.*vmx.*" /proc/cpuinfo | grep -q "^flags.*svm.*" /proc/cpuinfo; then
