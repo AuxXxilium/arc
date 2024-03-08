@@ -14,10 +14,10 @@ on:
         description: "format %y.%-m.$i or auto"
         required: false
         type: string
-      next:
-        description: "-next Release"
+      notice:
+        description: "Notice here"
         required: false
-        type: boolean
+        type: string
       prerelease:
         description: "pre release"
         default: false
@@ -102,10 +102,6 @@ jobs:
             else
               VERSION="`date +'%y.%-m.%-d'`"
             fi
-          fi
-          
-          if [ "${{ inputs.next }}" = "true" ]; then
-            VERSION="${VERSION}-next"
           fi
           
           echo "Version: ${VERSION}"
@@ -229,13 +225,18 @@ jobs:
           tag_name: ${{ env.VERSION }}
           prerelease: ${{ inputs.prerelease }}
           body: |
+            Notice:
+              ${{ inputs.notice }}
+
             Buildroot: ${{ inputs.br_version }}
             Addons: ${{ env.ADDONSTAG }}
             Configs: ${{ env.CONFIGSTAG }}
             Modules: ${{ env.MODULESTAG }}
             Patches: ${{ env.PATCHESTAG }}
             LKM: ${{ env.LKMTAG }}
-            ${{ steps.Changelog.outputs.changelog }}
+
+            Changelog:
+              ${{ steps.Changelog.outputs.changelog }}
           files: |
             arc-${{ env.VERSION }}.img.zip
             # arc_4GB-${{ env.VERSION }}.img.zip
