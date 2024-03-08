@@ -2026,7 +2026,6 @@ function sysinfo() {
   TEXT+="\n\Z4> Arc: ${ARC_VERSION}\Zn"
   TEXT+="\n  Subversion Loader: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Subversion DSM: \ZbModules ${MODULESVERSION} | LKM ${LKMVERSION}\Zn"
-  TEXT+="\n"
   TEXT+="\n\Z4>> Loader\Zn"
   TEXT+="\n   Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n   Config Version: \Zb${CONFIGVER}\Zn"
