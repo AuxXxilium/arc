@@ -2295,7 +2295,7 @@ function fullsysinfo() {
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
   TEXT+="\nStorage"
   TEXT+="\nExternal Controller: ${EXTERNALCONTROLLER}"
-  TEXT+="\nDrives | Harddrives: \Zb${DRIVES} | ${HARDDRIVES}\Zn"
+  TEXT+="\nDrives | Harddrives: ${DRIVES} | ${HARDDRIVES}"
   # Get Information for Sata Controller
   NUMPORTS=0
   if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
