@@ -141,10 +141,11 @@ function getmapSelection() {
   SATAPORTMAPMAX=$(awk '{print $1}' "${TMP_PATH}/drivesmax")
   SATAPORTMAP=$(awk '{print $1}' "${TMP_PATH}/drivescon")
   SATAREMAP=$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')
+  EXTERNALCONTROLLER="$(readConfigKey "arc.externalcontroller" "${USER_CONFIG_FILE}")"
   # Show recommended Option to user
-  if [ -n "${SATAREMAP}" ] && [[ ${SASCONTROLLER} -gt 0 || ${SCSICONTROLLER} -gt 0 ]] && [ "${MACHINE}" = "NATIVE" ]; then
+  if [[ -n "${SATAREMAP}" && "${EXTERNALCONTROLLER}" = "true" && "${MACHINE}" = "NATIVE" ]]; then
     REMAP2="*"
-  elif [ -n "${SATAREMAP}" ] && [[ ${SASCONTROLLER} -eq 0 && ${SCSICONTROLLER} -eq 0 ]]; then
+  elif [[ -n "${SATAREMAP}" && "${EXTERNALCONTROLLER}" = "true" ]]; then
     REMAP3="*"
   else
     REMAP1="*"
