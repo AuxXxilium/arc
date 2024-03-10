@@ -15,7 +15,7 @@ function getAllModules() {
   mkdir -p "${TMP_PATH}/modules"
   local KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
   if [ "${KERNEL}" = "custom" ]; then
-    tar zxf "${CUSTOM_PATH}/modules.tgz" -C "${TMP_PATH}/modules"
+    tar zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   else
     tar zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   fi
