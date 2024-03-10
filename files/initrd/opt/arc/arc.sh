@@ -2687,7 +2687,7 @@ function formatdisks() {
   (
     for I in ${RESP}; do
       if [[ "${I}" = /dev/mmc* ]]; then
-        echo y | mkdosfs -F32 "${I}"
+        echo y | mkfs.ext4 -T largefile4 -E nodiscard "${I}"
       else
         echo y | mkfs.ext4 -T largefile4 "${I}"
       fi
