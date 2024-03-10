@@ -1269,49 +1269,6 @@ function keymapMenu() {
 }
 
 ###############################################################################
-# Shows usb menu to user
-function usbMenu() {
-  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-  if [ "${CONFDONE}" = "true" ]; then
-    dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
-      1 "Mount USB as Internal (force)" \
-      2 "Mount USB as Device" \
-      2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
-    case "$(<"${TMP_PATH}/resp")" in
-      1)
-        MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-        writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.internalportcfg" "0x3ffffff" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Mount USB as Internal" \
-          --aspect 18 --msgbox "Mount USB as Internal - successful!" 0 0
-        ;;
-      2)
-        MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-        deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
-        deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
-        deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
-        deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Mount USB as Device" \
-          --aspect 18 --msgbox "Mount USB as Device - successful!" 0 0
-        ;;
-    esac
-  else
-    dialog --backtitle "$(backtitle)" --title "Mount USB Options" \
-      --aspect 18 --msgbox "Please configure your System first." 0 0
-    return 1
-  fi
-}
-
-###############################################################################
 # Shows storagepanel menu to user
 function storagepanelMenu() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -2547,7 +2504,8 @@ function downgradeMenu() {
   [ $? -ne 0 ] && return 1
   (
     mkdir -p "${TMP_PATH}/sdX1"
-    for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK_PART1}"); do
+    # for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK_PART1}"); do
+    for I in $(blkid 2>/dev/null | grep -i linux_raid_member | grep -E "/dev/.*1: " | awk -F ":" '{print $1}'); do
       mount "${I}" "${TMP_PATH}/sdX1"
       [ -f "${TMP_PATH}/sdX1/etc/VERSION" ] && rm -f "${TMP_PATH}/sdX1/etc/VERSION"
       [ -f "${TMP_PATH}/sdX1/etc.defaults/VERSION" ] && rm -f "${TMP_PATH}/sdX1/etc.defaults/VERSION"
@@ -2567,14 +2525,17 @@ function downgradeMenu() {
 function resetPassword() {
   rm -f "${TMP_PATH}/menu"
   mkdir -p "${TMP_PATH}/sdX1"
-  for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK_PART1}"); do
+  for I in $(blkid 2>/dev/null | grep -i linux_raid_member | grep -E "/dev/.*1: " | awk -F ":" '{print $1}'); do
     mount ${I} "${TMP_PATH}/sdX1"
     if [ -f "${TMP_PATH}/sdX1/etc/shadow" ]; then
-      for U in $(cat "${TMP_PATH}/sdX1/etc/shadow" | awk -F ':' '{if ($2 != "*" && $2 != "!!") {print $1;}}'); do
-        grep -q "status=on" "${TMP_PATH}/sdX1/usr/syno/etc/packages/SecureSignIn/preference/${U}/method.config" 2>/dev/nulll
-        [ $? -eq 0 ] && SS="SecureSignIn" || SS="            "
-        printf "\"%-36s %-16s\"\n" "${U}" "${SS}" >>"${TMP_PATH}/menu"
-      done
+      while read -r L; do
+        U=$(echo "${L}" | awk -F ':' '{if ($2 != "*" && $2 != "!!") print $1;}')
+        [ -z "${U}" ] && continue
+        E=$(echo "${L}" | awk -F ':' '{if ($8 == "1") print "disabled"; else print "        ";}')
+        grep -q "status=on" "${TMP_PATH}/sdX1/usr/syno/etc/packages/SecureSignIn/preference/${U}/method.config" 2>/dev/null
+        [ $? -eq 0 ] && S="SecureSignIn" || S="            "
+        printf "\"%-36s %-10s %-14s\"\n" "${U}" "${E}" "${S}" >>"${TMP_PATH}/menu"
+      done <<<$(cat "${TMP_PATH}/sdX1/etc/shadow")
     fi
     umount "${I}"
     [ -f "${TMP_PATH}/menu" ] && break
@@ -2604,10 +2565,14 @@ function resetPassword() {
   NEWPASSWD="$(python -c "from passlib.hash import sha512_crypt;pw=\"${VALUE}\";print(sha512_crypt.using(rounds=5000).hash(pw))")"
   (
     mkdir -p "${TMP_PATH}/sdX1"
-    for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK_PART1}"); do
+    # for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK_PART1}"); do
+    for I in $(blkid 2>/dev/null | grep -i linux_raid_member | grep -E "/dev/.*1: " | awk -F ":" '{print $1}'); do
       mount "${I}" "${TMP_PATH}/sdX1"
-      OLDPASSWD="$(cat "${TMP_PATH}/sdX1/etc/shadow" | grep "^${USER}:" | awk -F ':' '{print $2}')"
-      [[ -n "${NEWPASSWD}" && -n "${OLDPASSWD}" ]] && sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "${TMP_PATH}/sdX1/etc/shadow"
+      OLDPASSWD="$(cat "${TMP_PATH}/sdX1/etc/shadow" 2>/dev/null | grep "^${USER}:" | awk -F ':' '{print $2}')"
+      if [ -n "${NEWPASSWD}" -a -n "${OLDPASSWD}" ]; then
+        sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "${TMP_PATH}/sdX1/etc/shadow"
+        sed -i "/^${USER}:/ s/\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\)/\1:\2:\3:\4:\5:\6:\7::\9/" "${TMP_PATH}/sdX1/etc/shadow"
+      fi
       sed -i "s|status=on|status=off|g" "${TMP_PATH}/sdX1/usr/syno/etc/packages/SecureSignIn/preference/${USER}/method.config" 2>/dev/null
       sync
       umount "${I}"
@@ -2701,33 +2666,33 @@ function formatdisks() {
 ###############################################################################
 # let user format disks from inside arc
 function forcessh() {
-      dialog --backtitle "$(backtitle)" --colors --title "Force SSH" \
-        --yesno "Please insert all disks before continuing.\n" 0 0
-      [ $? -ne 0 ] && return
-      (
-        ONBOOTUP=""
-        ONBOOTUP="${ONBOOTUP}synowebapi --exec api=SYNO.Core.Terminal method=set version=3 enable_telnet=true enable_ssh=true ssh_port=22 forbid_console=false\n"
-        ONBOOTUP="${ONBOOTUP}echo \"DELETE FROM task WHERE task_name LIKE ''ARCONBOOTUPARC'';\" | sqlite3 /usr/syno/etc/esynoscheduler/esynoscheduler.db\n"
-        mkdir -p "${TMP_PATH}/sdX1"
-        for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK_PART1}"); do
-          mount "${I}" "${TMP_PATH}/sdX1"
-          if [ -f "${TMP_PATH}/sdX1/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
-            sqlite3 ${TMP_PATH}/sdX1/usr/syno/etc/esynoscheduler/esynoscheduler.db <<EOF
+  dialog --backtitle "$(backtitle)" --colors --title "Force SSH" \
+    --yesno "Please insert all disks before continuing.\n" 0 0
+  [ $? -ne 0 ] && return
+  (
+    ONBOOTUP=""
+    ONBOOTUP="${ONBOOTUP}synowebapi --exec api=SYNO.Core.Terminal method=set version=3 enable_telnet=true enable_ssh=true ssh_port=22 forbid_console=false\n"
+    ONBOOTUP="${ONBOOTUP}echo \"DELETE FROM task WHERE task_name LIKE ''ARCONBOOTUPARC'';\" | sqlite3 /usr/syno/etc/esynoscheduler/esynoscheduler.db\n"
+    mkdir -p "${TMP_PATH}/sdX1"
+    for I in $(blkid 2>/dev/null | grep -i linux_raid_member | grep -E "/dev/.*1: " | awk -F ":" '{print $1}'); do
+      mount "${I}" "${TMP_PATH}/sdX1"
+      if [ -f "${TMP_PATH}/sdX1/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
+        sqlite3 ${TMP_PATH}/sdX1/usr/syno/etc/esynoscheduler/esynoscheduler.db <<EOF
 DELETE FROM task WHERE task_name LIKE 'ARCONBOOTUPARC';
 INSERT INTO task VALUES('ARCONBOOTUPARC', '', 'bootup', '', 1, 0, 0, 0, '', 0, '$(echo -e ${ONBOOTUP})', 'script', '{}', '', '', '{}', '{}');
 EOF
-            sleep 1
-            sync
-            echo "true" >${TMP_PATH}/isEnable
-          fi
-          umount "${I}"
-        done
-        rm -rf "${TMP_PATH}/sdX1"
-      ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Force SSH" \
-        --progressbox "Enabling ..." 20 100
-      [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Telnet&SSH is enabled." || MSG="Telnet&SSH is not enabled."
-      dialog --backtitle "$(backtitle)" --colors --title "Force SSH" \
-        --msgbox "${MSG}" 0 0
+        sleep 1
+        sync
+        echo "true" >${TMP_PATH}/isEnable
+      fi
+      umount "${I}"
+    done
+    rm -rf "${TMP_PATH}/sdX1"
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Force SSH" \
+    --progressbox "Enabling ..." 20 100
+  [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Telnet&SSH is enabled." || MSG="Telnet&SSH is not enabled."
+  dialog --backtitle "$(backtitle)" --colors --title "Force SSH" \
+    --msgbox "${MSG}" 0 0
 }
 
 ###############################################################################
