@@ -23,6 +23,7 @@ for B in ${BIOS}; do
 
   mkdir -p ${B}
   pushd ${B}
+  autoreconf -f -i
   ../configure --prefix=$PWD/usr -sbindir=$PWD/sbin --sysconfdir=$PWD/etc --disable-werror --target=${b[0]} --with-platform=${b[1]}
   make
   make install
