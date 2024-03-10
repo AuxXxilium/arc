@@ -28,7 +28,7 @@ jobs:
           sudo timedatectl set-timezone "Europe/Berlin"
 
           sudo apt update
-          sudo apt install -y build-essential bison flex dosfstools
+          sudo apt install -y build-essential bison flex dosfstools automake-1.15
 
       - name: Make Grub
         run: |
