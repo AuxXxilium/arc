@@ -6,12 +6,14 @@
 # See /LICENSE for more information.
 #
 
-GRUB=${1:-"grub-2.06"}
+GRUB=${1:-"grub-2.12"}
 BIOS=${2:-"i386-pc i386-efi x86_64-efi"}
 NAME=${3:-"ARC"}
 
 curl -#kLO https://ftp.gnu.org/gnu/grub/${GRUB}.tar.gz
 tar -zxvf ${GRUB}.tar.gz
+
+echo "EXTRA_DIST += grub-core/extra_deps.ls" >> ${GRUB}/conf/Makefile.extra-dist
 
 pushd ${GRUB}
 for B in ${BIOS}; do

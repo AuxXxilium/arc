@@ -32,7 +32,7 @@ jobs:
 
       - name: Make Grub
         run: |
-          . scripts/grub.sh "grub-2.06" "i386-pc i386-efi x86_64-efi"
+          . scripts/grub.sh "grub-2.12" "i386-pc i386-efi x86_64-efi"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
