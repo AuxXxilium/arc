@@ -145,7 +145,7 @@ function getmapSelection() {
   # Show recommended Option to user
   if [[ -n "${SATAREMAP}" && "${EXTERNALCONTROLLER}" = "true" && "${MACHINE}" = "NATIVE" ]]; then
     REMAP2="*"
-  elif [[ -n "${SATAREMAP}" && "${EXTERNALCONTROLLER}" = "true" ]]; then
+  elif [[ -n "${SATAREMAP}" && "${EXTERNALCONTROLLER}" = "false" ]]; then
     REMAP3="*"
   else
     REMAP1="*"
