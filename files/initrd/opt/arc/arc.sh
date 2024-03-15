@@ -370,7 +370,7 @@ function arcsettings() {
   # Check for KVM
   KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
   if [ "${KVMSUPPORT}" = "true" ]; then
-    if ! grep -q "^flags.*vmx.*" /proc/cpuinfo | grep -q "^flags.*svm.*" /proc/cpuinfo; then
+    if grep -q -E '(vmx|svm)' /proc/cpuinfo; then
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
         --msgbox "WARN: Your CPU does not support KVM in DSM.\nCheck CPU/Bios for VMX or SVM Support." 0 0
     fi
@@ -2068,7 +2068,7 @@ function sysinfo() {
     done
   fi
   if [[ -d "/sys/class/scsi_host" && $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]]; then
-    TEXT+="\n USB Controller:\n"
+    TEXT+="\n  USB Controller:\n"
     for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
