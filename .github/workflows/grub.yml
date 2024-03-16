@@ -28,11 +28,11 @@ jobs:
           sudo timedatectl set-timezone "Europe/Berlin"
 
           sudo apt update
-          sudo apt install -y build-essential bison flex dosfstools
+          sudo apt install -y build-essential bison flex dosfstools gawk gettext pkg-config autoconf automake autopoint
 
       - name: Make Grub
         run: |
-          . scripts/grub.sh "grub-2.06" "i386-pc i386-efi x86_64-efi"
+          . scripts/grub.sh "grub-2.12" "i386-pc i386-efi x86_64-efi"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
