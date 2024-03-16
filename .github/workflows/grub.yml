@@ -46,7 +46,7 @@ jobs:
         run: |
           if [ -f "grub.img.gz" ]; then
             echo "Copy img ..."
-            mv -f grub.img.gz files/board/arc/grub.img.gz
+            mv -f grub.img.gz files/grub.img.gz
 
             echo "Git push ..."
             git pull
