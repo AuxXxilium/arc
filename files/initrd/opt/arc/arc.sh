@@ -377,15 +377,15 @@ function arcsettings() {
     fi
   fi
   # Check for NVMe only
-  HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
-  NVMEDRIVES="$(readConfigKey "device.nvmedrives" "${USER_CONFIG_FILE}")"
-  if [ "${BUS^^}" = "SATA" ] && [ $((${HARDDRIVES} - ${NVMEDRIVES})) -eq 1 ] && [ ! "${MODEL}" = "SA6400" ]; then
-    dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-      --msgbox "WARN: You have only NVMe Drives.\nDSM will not boot without a SATA Drive.\nYou can use SA6400 and NVMeSystem Addon." 0 0
-  elif [ $((${HARDDRIVES} - ${NVMEDRIVES})) -eq 0 ] && [ ! "${MODEL}" = "SA6400" ]; then
-    dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-      --msgbox "WARN: You have only NVMe Drives.\nDSM will not boot without a SATA Drive.\nYou can use SA6400 and NVMeSystem Addon." 0 0
-  fi
+  #HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
+  #NVMEDRIVES="$(readConfigKey "device.nvmedrives" "${USER_CONFIG_FILE}")"
+  #if [ "${BUS^^}" = "SATA" ] && [ $((${HARDDRIVES} - ${NVMEDRIVES})) -eq 1 ] && [ ! "${MODEL}" = "SA6400" ]; then
+  #  dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+  #    --msgbox "WARN: You have only NVMe Drives.\nDSM will not boot without a SATA Drive.\nYou can use SA6400 and NVMeSystem Addon." 0 0
+  #elif [ $((${HARDDRIVES} - ${NVMEDRIVES})) -eq 0 ] && [ ! "${MODEL}" = "SA6400" ]; then
+  #  dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+  #    --msgbox "WARN: You have only NVMe Drives.\nDSM will not boot without a SATA Drive.\nYou can use SA6400 and NVMeSystem Addon." 0 0
+  #fi
   # Config is done
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -2843,7 +2843,7 @@ while true; do
   fi
   echo "= \"\Z4========== Info ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
-  echo "A \"Full Sysinfo \" "                                                               >>"${TMP_PATH}/menu"
+  echo "A \"Networkdiag \" "                                                                >>"${TMP_PATH}/menu"
   echo "= \"\Z4========= System =========\Zn \" "                                           >>"${TMP_PATH}/menu"
   if [ "${CONFDONE}" = "true" ]; then
     if [ "${ARCOPTS}" = "true" ]; then
@@ -2946,7 +2946,7 @@ while true; do
     3) boot && exit 0 ;;
     # Info Section
     a) sysinfo; NEXT="a" ;;
-    A) fullsysinfo; NEXT="A" ;;
+    A) networkdiag; NEXT="A" ;;
     # System Section
     # Arc Section
     4) [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
