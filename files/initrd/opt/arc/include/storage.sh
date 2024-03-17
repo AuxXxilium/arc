@@ -137,7 +137,7 @@ function getmapSelection() {
       LASTDRIVE=$((${LINE} + 1))
     fi
   done < <(cat "${TMP_PATH}/ports")
-    # Compute PortMap Options
+  # Compute PortMap Options
   SATAPORTMAPMAX="$(awk '{print $1}' "${TMP_PATH}/drivesmax")"
   SATAPORTMAP="$(awk '{print $1}' "${TMP_PATH}/drivescon")"
   SATAREMAP="$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')"
