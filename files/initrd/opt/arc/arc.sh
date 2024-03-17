@@ -145,10 +145,6 @@ function arcMenu() {
             COMPATIBLE=0
             FLGNEX=1
           fi
-          if [ ! "${M}" = "SA6400" ] && [[ ${SATACONTROLLER} -eq 0 && "${EXTERNALCONTROLLER}" = "false" ]]; then
-            COMPATIBLE=0
-            FLGNEX=1
-          fi
         fi
         [ "${DT}" = "true" ] && DTO="DT" || DTO=""
         [ "${BETA}" = "true" ] && BETA="Beta" || BETA=""
