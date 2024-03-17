@@ -17,6 +17,7 @@ while read -r LINE; do
   RAMTOTAL=$((${RAMTOTAL} + ${RAMSIZE}))
 done < <(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i "[1-9]")
 RAMTOTAL=$((${RAMTOTAL} * 1024))
+[ -z "${RAMTOTAL}" ] || [ ${RAMTOTAL} -le 0 ] && RAMMAX=8192
 RAMMAX=$((${RAMTOTAL} * 2))
 RAMMIN=$((${RAMTOTAL} / 2))
 
