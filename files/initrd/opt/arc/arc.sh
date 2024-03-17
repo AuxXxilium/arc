@@ -377,15 +377,15 @@ function arcsettings() {
     fi
   fi
   # Check for NVMe only
-  HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
-  NVMEDRIVES="$(readConfigKey "device.nvmedrives" "${USER_CONFIG_FILE}")"
-  if [ "${BUS^^}" = "SATA" ] && [ $((${HARDDRIVES} - ${NVMEDRIVES})) -eq 1 ] && [ ! "${MODEL}" = "SA6400" ]; then
-    dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-      --msgbox "WARN: You have only NVMe Drives.\nDSM will not boot without a SATA Drive.\nYou can use SA6400 and NVMeSystem Addon." 0 0
-  elif [ $((${HARDDRIVES} - ${NVMEDRIVES})) -eq 0 ] && [ ! "${MODEL}" = "SA6400" ]; then
-    dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-      --msgbox "WARN: You have only NVMe Drives.\nDSM will not boot without a SATA Drive.\nYou can use SA6400 and NVMeSystem Addon." 0 0
-  fi
+  #HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
+  #NVMEDRIVES="$(readConfigKey "device.nvmedrives" "${USER_CONFIG_FILE}")"
+  #if [ "${BUS^^}" = "SATA" ] && [ $((${HARDDRIVES} - ${NVMEDRIVES})) -eq 1 ] && [ ! "${MODEL}" = "SA6400" ]; then
+  #  dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+  #    --msgbox "WARN: You have only NVMe Drives.\nDSM will not boot without a SATA Drive.\nYou can use SA6400 and NVMeSystem Addon." 0 0
+  #elif [ $((${HARDDRIVES} - ${NVMEDRIVES})) -eq 0 ] && [ ! "${MODEL}" = "SA6400" ]; then
+  #  dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+  #    --msgbox "WARN: You have only NVMe Drives.\nDSM will not boot without a SATA Drive.\nYou can use SA6400 and NVMeSystem Addon." 0 0
+  #fi
   # Config is done
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
