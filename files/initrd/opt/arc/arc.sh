@@ -618,7 +618,7 @@ function make() {
         2>"${TMP_PATH}/resp"
       RET=$?
       [ ${RET} -eq 0 ] && break    # ok-button
-      return                       # 1 or 255  # cancel-button or ESC
+      return 1                     # 1 or 255  # cancel-button or ESC
     done
     PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
     PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
