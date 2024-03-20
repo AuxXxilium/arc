@@ -520,9 +520,10 @@ function arcsummary() {
   SUMMARY+="\n>> Addons: \Zb${ADDONSINFO}\Zn"
   SUMMARY+="\n"
   SUMMARY+="\n\Z4> Device Information\Zn"
+  SUMMARY+="\n>> NIC Count: \Zb${NIC}\Zn"
   SUMMARY+="\n>> Disks Count (incl. USB): \Zb${DRIVES}\Zn"
-  SUMMARY+="\n>> Network Interface: \Zb${NIC}\Zn"
   SUMMARY+="\n>> External Controller: \Zb${EXTERNALCONTROLLER}\Zn"
+  SUMMARY+="\n>> Memory Min/Max MB: \Zb${RAMMIN}/${RAMMAX}\Zn"
   dialog --backtitle "$(backtitle)" --colors --title "Config Summary" \
     --extra-button --extra-label "Cancel" --msgbox "${SUMMARY}" 0 0
   RET=$?
