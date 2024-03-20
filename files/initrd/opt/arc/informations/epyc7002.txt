@@ -1,9 +1,0 @@
-Hardwaresupport for AMD (working on most Intel)
-Up to 24 Threads (Up to 128 Threads with Custom Kernel)
-Possible to get i915 (Intel Graphics up to 13th Gen) working
-Experimental for RAID/SCSI/HBA Controller
-USB Storage as External
-Support for SATA Controller
-NVMe Cache working
-Possible to use Custom Kernel (Switch in Loader)
-Devicetree - DT

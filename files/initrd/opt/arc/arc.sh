@@ -156,23 +156,37 @@ function arcModel() {
         [ "${BETA}" = "true" ] && BETA="Beta" || BETA=""
         [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"$(printf "\Zb%-7s\Zn \Zb%-6s\Zn \Zb%-13s\Zn \Zb%-3s\Zn \Zb%-7s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DTO}" "${ARCAV}" "${BETA}")\" ">>"${TMP_PATH}/menu"
       done < <(cat "${TMP_PATH}/modellist" | sort -n -k 2)
-    [ ${FLGBETA} -eq 0 ] && echo "b \"\Z1Show beta Models\Zn\"" >>"${TMP_PATH}/menu"
-    [ ${FLGNEX} -eq 1 ] && echo "f \"\Z1Show incompatible Models \Zn\"" >>"${TMP_PATH}/menu"
-    dialog --backtitle "$(backtitle)" --colors --menu "Choose Model for Loader" 0 62 0 \
-      --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
-    resp="$(<"${TMP_PATH}/resp")"
-    [ -z "${resp}" ] && return 1
-    if [ "${resp}" = "b" ]; then
-      FLGBETA=1
-      continue
-    fi
-    if [ "${resp}" = "f" ]; then
-      RESTRICT=0
-      continue
-    fi
-    break
-  done
+      dialog --backtitle "$(backtitle)" --colors \
+        --cancel-label "Show all" --help-button --help-label "Exit" \
+        --extra-button --extra-label "Info" \
+        --menu "Choose Model for Loader" 0 70 0 \
+        --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
+      RET=$?
+      case ${RET} in
+      0) # ok-button
+        resp="$(<"${TMP_PATH}/resp")"
+        [ -z "${resp}" ] && return 1
+        break
+        ;;
+      1) # cancel-button -> Show all Models
+        FLGBETA=1
+        RESTRICT=0
+        ;;
+      2) # help-button -> Exit
+        return 1
+        break
+        ;;
+      3) # extra-button -> Platform Info
+        resp="$(<"${TMP_PATH}/resp")"
+        PLATFORM="$(readModelKey "${resp}" "platform")"
+        dialog --textbox "./informations/${PLATFORM}.yml" 15 80
+        ;;
+      255) # ESC -> Exit
+        return 1
+        break
+        ;;
+      esac
+    done
   # read model config for dt and aes
   if [ "${MODEL}" != "${resp}" ]; then
     MODEL="${resp}"
@@ -396,7 +410,7 @@ function arcsettings() {
   resp="$(<"${TMP_PATH}/resp")"
   [ -z "${resp}" ] && return 1
   if [ ${resp} -eq 1 ]; then
-    make
+    premake
   elif [ ${resp} -eq 2 ]; then
     dialog --clear --no-items --backtitle "$(backtitle)"
     return 1
@@ -482,43 +496,41 @@ function arcsummary() {
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
   # Print Summary
-  SUMMARY=""
+  SUMMARY="\Z4> DSM Information\Zn"
+  SUMMARY+="\n>> DSM Model: \Zb${MODEL}\Zn"
+  SUMMARY+="\n>> DSM Version: \Zb${PRODUCTVER}\Zn"
+  SUMMARY+="\n>> DSM Platform: \Zb${PLATFORM}\Zn"
+  SUMMARY+="\n>> DeviceTree: \Zb${DT}\Zn"
+  SUMMARY+="\n>> Kernel: \Zb${KERNEL}\Zn"
+  SUMMARY+="\n>> Kernel Version: \Zb${KVER}\Zn"
   SUMMARY+="\n"
-  SUMMARY+="\n\Z4>DSM Information\Zn"
-  SUMMARY+="\nDSM Model: \Zb${MODEL}\Zn"
-  SUMMARY+="\nDSM Version: \Zb${PRODUCTVER}\Zn"
-  SUMMARY+="\nDSM Platform: \Zb${PLATFORM}\Zn"
-  SUMMARY+="\nDeviceTree: \Zb${DT}\Zn"
-  SUMMARY+="\nKernel: \Zb${KERNEL}\Zn"
-  SUMMARY+="\nKernel Version: \Zb${KVER}\Zn"
+  SUMMARY+="\n\Z4> Arc Information\Zn"
+  SUMMARY+="\n>> Arc Patch: \Zb${ARCPATCH}\Zn"
+  SUMMARY+="\n>> MacSys: \Zb${MACSYS}\Zn"
+  [ -n "${PORTMAP}" ] && SUMMARY+="\n>> Portmap: \Zb${PORTMAP}\Zn"
+  [ -n "${DISKMAP}" ] && SUMMARY+="\n>> Diskmap: \Zb${DISKMAP}\Zn"
+  SUMMARY+="\n>> USB Mount: \Zb${USBMOUNT}\Zn"
+  SUMMARY+="\n>> IPv6: \Zb${ARCIPV6}\Zn"
+  SUMMARY+="\n>> KVM Support: \Zb${KVMSUPPORT}\Zn"
+  SUMMARY+="\n>> Offline Mode: \Zb${OFFLINE}\Zn"
+  SUMMARY+="\n>> Sort Drives: \Zb${HDDSORT}\Zn"
+  SUMMARY+="\n>> Directboot: \Zb${DIRECTBOOT}\Zn"
+  SUMMARY+="\n>> eMMC Boot: \Zb${EMMCBOOT}\Zn"
+  SUMMARY+="\n>> Kernelload: \Zb${KERNELLOAD}\Zn"
+  SUMMARY+="\n>> Addons: \Zb${ADDONSINFO}\Zn"
   SUMMARY+="\n"
-  SUMMARY+="\n\Z4>Arc Information\Zn"
-  SUMMARY+="\nArc Patch: \Zb${ARCPATCH}\Zn"
-  SUMMARY+="\nMacSys: \Zb${MACSYS}\Zn"
-  SUMMARY+="\nIPv6: \Zb${ARCIPV6}\Zn"
-  [ -n "${PORTMAP}" ] && SUMMARY+="\nPortmap: \Zb${PORTMAP}\Zn"
-  [ -n "${DISKMAP}" ] && SUMMARY+="\nDiskmap: \Zb${DISKMAP}\Zn"
-  SUMMARY+="\nUSB Mount: \Zb${USBMOUNT}\Zn"
-  SUMMARY+="\nKVM Support: \Zb${KVMSUPPORT}\Zn"
-  SUMMARY+="\nOffline Mode: \Zb${OFFLINE}\Zn"
-  SUMMARY+="\nSort Drives: \Zb${HDDSORT}\Zn"
-  SUMMARY+="\nDirectboot: \Zb${DIRECTBOOT}\Zn"
-  SUMMARY+="\neMMC Boot: \Zb${EMMCBOOT}\Zn"
-  SUMMARY+="\nKernelload: \Zb${KERNELLOAD}\Zn"
-  SUMMARY+="\nAddons selected: \Zb${ADDONSINFO}\Zn"
-  SUMMARY+="\n"
-  SUMMARY+="\n\Z4>Device Information\Zn"
-  SUMMARY+="\nDisks Count (incl. USB): \Zb${DRIVES}\Zn"
-  SUMMARY+="\nNetwork Interface: \Zb${NIC}\Zn"
-  SUMMARY+="\nExternal Controller: \Zb${EXTERNALCONTROLLER}\Zn"
+  SUMMARY+="\n\Z4> Device Information\Zn"
+  SUMMARY+="\n>> Disks Count (incl. USB): \Zb${DRIVES}\Zn"
+  SUMMARY+="\n>> Network Interface: \Zb${NIC}\Zn"
+  SUMMARY+="\n>> External Controller: \Zb${EXTERNALCONTROLLER}\Zn"
   dialog --backtitle "$(backtitle)" --colors --title "Config Summary" \
-    --msgbox "${SUMMARY}" 0 0
+    --extra-button --extra-label "Cancel" --msgbox "${SUMMARY}" 0 0
   RET=$?
   case ${RET} in
   0) # ok-button
     make
     ;;
-  1) # cancel-button
+  3) # extra-button
     return 1
     ;;
   255) # ESC
@@ -793,7 +805,7 @@ function juniorboot() {
   [ "${BUILDDONE}" = "false" ] && dialog --backtitle "$(backtitle)" --title "Alert" \
     --yesno "Config changed, please build Loader first." 0 0
   if [ $? -eq 0 ]; then
-    make
+    premake
   fi
   grub-editenv ${GRUB_PATH}/grubenv set next_entry="junior"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
@@ -809,7 +821,7 @@ function boot() {
   [ "${BUILDDONE}" = "false" ] && dialog --backtitle "$(backtitle)" --title "Alert" \
     --yesno "Config changed, you need to rebuild the Loader?" 0 0
   if [ $? -eq 0 ]; then
-    make
+    premake
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM...\nPlease stay patient!" 4 25
@@ -823,7 +835,7 @@ function boot() {
 [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
 while true; do
   echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
-  echo "1 \"Choose Model: ${MODEL} \" "                                                     >>"${TMP_PATH}/menu"
+  echo "1 \"Choose Model: ${MODEL:-none} \" "                                               >>"${TMP_PATH}/menu"
   if [ "${CONFDONE}" = "true" ]; then
     echo "2 \"Build Loader: ${BUILDDONE} \" "                                               >>"${TMP_PATH}/menu"
   fi
@@ -931,7 +943,7 @@ while true; do
   case $(<"${TMP_PATH}/resp") in
     # Main Section
     1) arcModel; NEXT="2" ;;
-    2) make; NEXT="3" ;;
+    2) premake; NEXT="3" ;;
     3) boot && exit 0 ;;
     # Info Section
     a) sysinfo; NEXT="a" ;;

@@ -1,8 +1,0 @@
-Hardwaresupport for Intel (may work on AMD)
-Up to 8 Threads
-Possible to get i915 (Intel Graphics up to 10th Gen) working
-Experimental support for RAID/SCSI/HBA Controller
-USB Storage as External
-Support for SATA Controller
-NVMe Cache working
-Devicetree - DT

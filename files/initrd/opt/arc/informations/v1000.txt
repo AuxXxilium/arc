@@ -1,7 +1,0 @@
-Hardwaresupport for AMD (may work on Intel)
-Up to 16 Threads
-Experimental support for RAID/SCSI/HBA Controller
-USB Storage as External
-Support for SATA Controller
-NVMe Cache working
-Devicetree - DT
