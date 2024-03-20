@@ -480,6 +480,7 @@ function arcsummary() {
   DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+  KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
   # Print Summary
   SUMMARY=""
   SUMMARY+="\n"
@@ -488,7 +489,8 @@ function arcsummary() {
   SUMMARY+="\nDSM Version: \Zb${PRODUCTVER}\Zn"
   SUMMARY+="\nDSM Platform: \Zb${PLATFORM}\Zn"
   SUMMARY+="\nDeviceTree: \Zb${DT}\Zn"
-  SUMMARY+="\nKernel: \Zb${KVER}\Zn"
+  SUMMARY+="\nKernel: \Zb${KERNEL}\Zn"
+  SUMMARY+="\nKernel Version: \Zb${KVER}\Zn"
   SUMMARY+="\n"
   SUMMARY+="\n\Z4>Arc Information\Zn"
   SUMMARY+="\nArc Patch: \Zb${ARCPATCH}\Zn"
