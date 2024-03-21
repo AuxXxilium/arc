@@ -24,6 +24,17 @@ TITLE="BOOTING:"
 TITLE+=" [${BUS^^}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
+echo
+cat <<EOF
+    ###    #####    ####
+   #   #   #    #  #    #
+  #     #  #    #  #
+  #######  #####   #
+  #     #  #   #   #    #
+  #     #  #    #   ####
+EOF
+echo
+
 # Check if DSM zImage/Ramdisk is changed, patch it if necessary, update Files if necessary
 ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
 ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
@@ -52,16 +63,6 @@ RAM=$(free -m | grep -i mem | awk '{print$2}')
 VENDOR="$(dmidecode -s system-product-name)"
 BOARD="$(dmidecode -s baseboard-product-name)"
 
-cat <<EOF
-    ###    #####    ####
-   #   #   #    #  #    #
-  #     #  #    #  #
-  #######  #####   #
-  #     #  #   #   #    #
-  #     #  #    #   ####
-EOF
-
-echo
 echo -e " \033[1;37mDSM:\033[0m"
 echo -e " Model: \033[1;37m${MODEL}\033[0m"
 echo -e " Version: \033[1;37m${PRODUCTVER}\033[0m"
