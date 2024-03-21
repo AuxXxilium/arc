@@ -35,8 +35,15 @@ fi
 # Get Loader Disk Bus
 BUS=$(getBus "${LOADER_DISK}")
 
-# Get Portmap for Loader
-getmap
+# Offline Mode check
+OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+if [ "${OFFLINE}" = "false" ]; then
+  if ping -c 1 "github.com" &> /dev/null; then
+    writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
+  else
+    writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
+  fi
+fi
 
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -367,6 +374,7 @@ function arcsettings() {
     --infobox "Network Config..." 3 30
   getnet
   # Select Portmap for Loader (nonDT)
+  getmap
   if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
     dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
       --infobox "Storage Map..." 3 30

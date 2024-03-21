@@ -1733,7 +1733,6 @@ function credits() {
   TEXT+="\n\Z4>> Based on:\Zn"
   TEXT+="\n   Redpill: \ZbTTG / Pocopico\Zn"
   TEXT+="\n   ARPL/RR: \Zbfbelavenuto / wjz304\Zn"
-  TEXT+="\n   NVMe Scripts: \Zb007revad\Zn"
   TEXT+="\n   NVMe System: \Zbjim3ma\Zn"
   TEXT+="\n   System: \ZbBuildroot 2023.08.x\Zn"
   TEXT+="\n   DSM: \ZbSynology Inc.\Zn"
