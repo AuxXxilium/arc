@@ -218,12 +218,12 @@ function arcModel() {
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
     fi
   fi
-  arcversion
+  arcVersion
 }
 
 ###############################################################################
 # Arc Version Section
-function arcversion() {
+function arcVersion() {
   # read model values for arcbuild
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
@@ -255,7 +255,7 @@ function arcversion() {
     KVER="${PRODUCTVER}-${KVER}"
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
-    --infobox "Reconfiguring Synoinfo, Cmdline and Modules" 3 50
+    --infobox "Reconfiguring Synoinfo and Modules" 3 40
   # Reset synoinfo
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS=': ' read -r KEY VALUE; do
@@ -266,10 +266,8 @@ function arcversion() {
   while read -r ID DESC; do
     writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
   done < <(getAllModules "${PLATFORM}" "${KVER}")
-  # Reset cmdline
-  writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
   if [ "${ONLYVERSION}" != "true" ]; then
-    arcpatch
+    arcPatch
   else
     # Build isn't done
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -279,7 +277,7 @@ function arcversion() {
 
 ###############################################################################
 # Arc Patch Section
-function arcpatch() {
+function arcPatch() {
   # Read Model Values
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
@@ -362,13 +360,13 @@ function arcpatch() {
   if [ "${ONLYPATCH}" = "true" ]; then
     return 1
   else
-    arcsettings
+    arcSettings
   fi
 }
 
 ###############################################################################
 # Arc Settings Section
-function arcsettings() {
+function arcSettings() {
   # Get Network Config for Loader
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
     --infobox "Network Config..." 3 30
@@ -468,12 +466,12 @@ function premake() {
     writeConfigKey "arc.modulescopy" "${MODULESCOPY}" "${USER_CONFIG_FILE}"
   fi
   # Show Config Summary
-  arcsummary
+  arcSummary
 }
 
 ###############################################################################
 # Calls boot.sh to boot into DSM Recovery
-function arcsummary() {
+function arcSummary() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
@@ -558,6 +556,9 @@ function make() {
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   DT="$(readModelKey "${MODEL}" "dt")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+  if [ "${PLATFORM}" = "epyc7002" ]; then
+    KVER="${PRODUCTVER}-${KVER}"
+  fi
   # Cleanup
   if [ -d "${UNTAR_PAT_PATH}" ]; then
     rm -rf "${UNTAR_PAT_PATH}"
@@ -965,10 +966,10 @@ while true; do
       ;;
     b) addonMenu; NEXT="b" ;;
     d) modulesMenu; NEXT="d" ;;
-    e) ONLYVERSION="true" && arcversion; NEXT="e" ;;
+    e) ONLYVERSION="true" && arcVersion; NEXT="e" ;;
     N) networkMenu; NEXT="N" ;;
     S) storageMenu; NEXT="S" ;;
-    p) ONLYPATCH="true" && arcpatch; NEXT="p" ;;
+    p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
     P) storagepanelMenu; NEXT="P" ;;
     D) staticIPMenu; NEXT="D" ;;
     # Advanced Section
