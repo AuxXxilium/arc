@@ -845,9 +845,9 @@ function boot() {
 [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
 while true; do
   echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
-  echo "1 \"Choose Model: ${MODEL:-none} \" "                                               >>"${TMP_PATH}/menu"
+  echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
   if [ "${CONFDONE}" = "true" ]; then
-    echo "2 \"Build Loader: ${BUILDDONE} \" "                                               >>"${TMP_PATH}/menu"
+    echo "2 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
   fi
   if [ "${BUILDDONE}" = "true" ]; then
     echo "3 \"Boot Loader \" "                                                              >>"${TMP_PATH}/menu"
