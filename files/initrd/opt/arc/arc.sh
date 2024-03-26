@@ -14,13 +14,8 @@
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
 # Memory: Check Memory installed
-RAMTOTAL=0
-while read -r LINE; do
-  RAMSIZE=${LINE}
-  RAMTOTAL=$((${RAMTOTAL} + ${RAMSIZE}))
-done <<<$(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i "[1-9]")
-RAMTOTAL=$((${RAMTOTAL} * 1024))
-[ -z "${RAMTOTAL}" ] || [ ${RAMTOTAL} -le 0 ] && RAMMAX=8192
+RAMTOTAL=$(free -m | grep -i mem | awk '{print$2}')
+[ -z "${RAMTOTAL}" ] || [ ${RAMTOTAL} -le 0 ] && RAMTOTAL=8192
 RAMMAX=$((${RAMTOTAL} * 2))
 RAMMIN=$((${RAMTOTAL} / 2))
 

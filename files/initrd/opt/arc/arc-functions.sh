@@ -1205,12 +1205,12 @@ function networkMenu() {
 ###############################################################################
 # Shows Systeminfo to user
 function sysinfo() {
-  # Checks for Systeminfo Menu
-  CPUINFO="$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')"
   # Check if machine has EFI
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="Legacy"
-  VENDOR="$(dmidecode -s system-product-name)"
-  BOARD="$(dmidecode -s baseboard-product-name)"
+  # Get System Informations
+  CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
+  RAM="$(free -m 2>/dev/null | grep -i mem | awk '{print $2}') MB"
+  VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
   ETHX=$(ls /sys/class/net/ | grep eth) || true
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -1253,8 +1253,8 @@ function sysinfo() {
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4> System: ${MACHINE} | ${BOOTSYS}\Zn"
-  TEXT+="\n  Vendor | Board: \Zb${VENDOR} | ${BOARD}\Zn"
-  TEXT+="\n  CPU: \Zb${CPUINFO}\Zn"
+  TEXT+="\n  Vendor: \Zb${VENDOR}\Zn"
+  TEXT+="\n  CPU: \Zb${CPU}\Zn"
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${NIC} NIC\Zn"
@@ -1435,12 +1435,12 @@ function sysinfo() {
 }
 
 function fullsysinfo() {
-  # Checks for Systeminfo Menu
-  CPUINFO="$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')"
   # Check if machine has EFI
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="Legacy"
-  VENDOR="$(dmidecode -s system-product-name)"
-  BOARD="$(dmidecode -s baseboard-product-name)"
+  # Get System Informations
+  CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
+  RAM="$(free -m 2>/dev/null | grep -i mem | awk '{print $2}') MB"
+  VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
   ETHX=$(ls /sys/class/net/ | grep -v lo || true)
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -1483,8 +1483,8 @@ function fullsysinfo() {
   TEXT=""
   # Print System Informations
   TEXT+="\nSystem: ${MACHINE} | ${BOOTSYS}"
-  TEXT+="\nVendor | Board: ${VENDOR} | ${BOARD}"
-  TEXT+="\nCPU: ${CPUINFO}"
+  TEXT+="\nVendor: ${VENDOR}"
+  TEXT+="\nCPU: ${CPU}"
   TEXT+="\nMemory: $((${RAMTOTAL} / 1024))GB"
   TEXT+="\n"
   TEXT+="\nNetwork: ${NIC} NIC"
