@@ -93,6 +93,33 @@ ETHX=$(ls /sys/class/net/ | grep -v lo) || true
 declare -A CMDLINE
 
 # Read and Set Cmdline
+MODELID="$(readModelKey ${MODEL} "id")"
+CMDLINE['syno_hw_version']="${MODELID:-${MODEL}}"
+[ -z "${VID}" ] && VID="0x46f4" # Sanity check
+[ -z "${PID}" ] && PID="0x0001" # Sanity check
+CMDLINE['vid']="${VID}"
+CMDLINE['pid']="${PID}"
+CMDLINE['sn']="${SN}"
+
+if [ "${MACSYS}" = "hardware" ]; then
+  NIC=0
+  for ETH in ${ETHX}; do
+    MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
+    [ -n "${MAC}" ] && NIC=$((${NIC} + 1)) && CMDLINE["mac${NIC}"]="${MAC}"
+  done
+  CMDLINE['netif_num']="${NIC}"
+  CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
+elif [ "${MACSYS}" = "custom" ]; then
+  NIC=0
+  for ETH in ${ETHX}; do
+    MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
+    [ -n "${MAC}" ] && NIC=$((${NIC} + 1)) && CMDLINE["mac${NIC}"]="${MAC}"
+  done
+  CMDLINE['netif_num']="${NIC}"
+  CMDLINE['skip_vender_mac_interfaces']="$(seq -s, ${NIC} 7)"
+fi
+
+# set fixed cmdline
 if grep -q "force_junior" /proc/cmdline; then
   CMDLINE['force_junior']=""
 fi
@@ -106,33 +133,30 @@ else
   CMDLINE['noefi']=""
 fi
 if [ ! "${BUS}" = "usb" ]; then
-  SIZE=$(($(cat /sys/block/${LOADER_DISK/\/dev\//}/size) / 2048 + 10))
+  SZ=$(blockdev --getsz ${LOADER_DISK} 2>/dev/null)  # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
+  SS=$(blockdev --getss ${LOADER_DISK} 2>/dev/null)  # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
+  SIZE=$((${SZ} * ${SS} / 1024 / 1024 + 10))
   # Read SATADoM type
   DOM="$(readModelKey "${MODEL}" "dom")"
   CMDLINE['synoboot_satadom']="${DOM}"
   CMDLINE['dom_szmax']="${SIZE}"
 fi
-MODELID="$(readModelKey ${MODEL} "id")"
-CMDLINE['syno_hw_version']="${MODELID:-${MODEL}}"
-[ -z "${VID}" ] && VID="0x46f4" # Sanity check
-[ -z "${PID}" ] && PID="0x0001" # Sanity check
-CMDLINE['vid']="${VID}"
-CMDLINE['pid']="${PID}"
-CMDLINE['panic']="${KERNELPANIC:-5}"
+CMDLINE['panic']="${KERNELPANIC:-0}"
 CMDLINE['console']="ttyS0,115200n8"
 CMDLINE['no_console_suspend']="1"
 CMDLINE['consoleblank']="0"
 CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
+
+# eMMC Boot
 if [ "${EMMCBOOT}" = "false" ]; then
   CMDLINE['root']="/dev/md0"
 elif [ "${EMMCBOOT}" = "true" ]; then
   CMDLINE['root']="/dev/mmcblk0p1"
 fi
+
 CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
-CMDLINE['net.ifnames']="0"
-CMDLINE['sn']="${SN}"
 
 if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ ! "${BUS}" = "mmc" ] && [ ! "${EMMCBOOT}" = "true" ]; then
   [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
@@ -144,38 +168,13 @@ if [ "$(readModelKey "${MODEL}" "dt")" = "true" ] && ! echo "epyc7002 purley bro
   CMDLINE['modprobe.blacklist']+="mpt3sas"
 fi
 
-NIC=0
-if [ "${MACSYS}" = "arc" ]; then
-  MAC="$(readConfigKey "mac.eth0" "${USER_CONFIG_FILE}")"
-  [ -n "${MAC}" ] && CMDLINE["mac1"]="${MAC}"
-  for ETH in ${ETHX}; do
-    NIC=$((${NIC} + 1))
-  done
-  CMDLINE['netif_num']="1"
-  CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-elif [ "${MACSYS}" = "hardware" ]; then
-  for ETH in ${ETHX}; do
-    MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
-    [ -n "${MAC}" ] && NIC=$((${NIC} + 1)) && CMDLINE["mac${NIC}"]="${MAC}"
-  done
-  CMDLINE['netif_num']="${NIC}"
-  CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-elif [ "${MACSYS}" = "custom" ]; then
-  for ETH in ${ETHX}; do
-    MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
-    [ -n "${MAC}" ] && NIC=$((${NIC} + 1)) && CMDLINE["mac${NIC}"]="${MAC}"
-  done
-  CMDLINE['netif_num']="${NIC}"
-  CMDLINE['skip_vender_mac_interfaces']="$(seq -s, ${NIC} 7)"
-fi
-
 # Read cmdline
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].cmdline")
+done <<<$(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].cmdline")
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
+done <<<$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 
 # Prepare command line
 CMDLINE_LINE=""
@@ -253,6 +252,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   # Clear logs for dbgutils addons
   rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
 
-  [ "${KERNELLOAD}" = "kexec" ] && kexec -f -e || poweroff
+  [ "${KERNELLOAD}" = "kexec" ] && kexec -i -a -e || poweroff
   exit 0
 fi

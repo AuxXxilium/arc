@@ -49,13 +49,13 @@ function addonSelection() {
   declare -A ADDONS
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
-  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+  done <<<(readConfigMap "addons" "${USER_CONFIG_FILE}")
   rm -f "${TMP_PATH}/opts"
   touch "${TMP_PATH}/opts"
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
-  done < <(availableAddons "${PLATFORM}" "${KVER}")
+  done <<<(availableAddons "${PLATFORM}" "${KVER}")
   dialog --backtitle "$(backtitle)" --title "Loader Addons" --aspect 18 \
     --checklist "Select Loader Addons to include.\nPlease read Wiki before choosing anything.\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
@@ -89,7 +89,7 @@ function modulesMenu() {
   declare -A USERMODULES
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
-  done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
+  done <<<(readConfigMap "modules" "${USER_CONFIG_FILE}")
   # menu loop
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
@@ -137,7 +137,7 @@ function modulesMenu() {
         while read -r ID DESC; do
           USERMODULES["${ID}"]=""
           writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-        done < <(getAllModules "${PLATFORM}" "${KVER}")
+        done <<<(getAllModules "${PLATFORM}" "${KVER}")
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -155,7 +155,7 @@ function modulesMenu() {
         while read -r ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
           echo "${ID} ${DESC} ${ACT}" >>"${TMP_PATH}/opts"
-        done < <(getAllModules "${PLATFORM}" "${KVER}")
+        done <<<(getAllModules "${PLATFORM}" "${KVER}")
         dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
           --checklist "Select Modules to include" 0 0 0 \
           --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
@@ -219,7 +219,7 @@ function cmdlineMenu() {
   declare -A CMDLINE
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-  done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
+  done <<<(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
   echo "1 \"Add a Cmdline item\""                                >"${TMP_PATH}/menu"
   echo "2 \"Delete Cmdline item(s)\""                           >>"${TMP_PATH}/menu"
   echo "3 \"CPU Fix\""                                          >>"${TMP_PATH}/menu"
@@ -391,7 +391,7 @@ function cmdlineMenu() {
         ITEMS=""
         while IFS=': ' read -r KEY VALUE; do
           ITEMS+="${KEY}: ${VALUE}\n"
-        done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].cmdline")
+        done <<<(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].cmdline")
         dialog --backtitle "$(backtitle)" --title "Model/Version cmdline" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
@@ -421,7 +421,7 @@ function synoinfoMenu() {
   declare -A SYNOINFO
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
-  done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
+  done <<<(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 
   echo "1 \"Add/edit Synoinfo item\""     >"${TMP_PATH}/menu"
   echo "2 \"Delete Synoinfo item(s)\""    >>"${TMP_PATH}/menu"
@@ -568,7 +568,7 @@ function keymapMenu() {
   OPTIONS=""
   while read -r KM; do
     OPTIONS+="${KM::-7} "
-  done < <(cd /usr/share/keymaps/i386/${LAYOUT}; ls *.map.gz)
+  done <<<(cd /usr/share/keymaps/i386/${LAYOUT}; ls *.map.gz)
   dialog --backtitle "$(backtitle)" --no-items --default-item "${KEYMAP}" \
     --menu "Choice a keymap" 0 0 0 ${OPTIONS} \
     2>"${TMP_PATH}/resp"
@@ -693,7 +693,7 @@ function backupMenu() {
                   [ "${unique}" = "${UNIQUE}" ] || continue
                   # Found
                   writeConfigKey "model" "${M}" "${USER_CONFIG_FILE}"
-                done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
+                done <<<(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
                 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
                 if [ -n "${MODEL}" ]; then
                   writeConfigKey "productver" "${majorversion}.${minorversion}" "${USER_CONFIG_FILE}"
@@ -796,7 +796,7 @@ function backupMenu() {
                   [ "${unique}" = "${UNIQUE}" ] || continue
                   # Found
                   writeConfigKey "model" "${M}" "${USER_CONFIG_FILE}"
-                done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
+                done <<<(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
                 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
                 if [ -n "${MODEL}" ]; then
                   writeConfigKey "productver" "${majorversion}.${minorversion}" "${USER_CONFIG_FILE}"
@@ -1083,7 +1083,7 @@ function updateMenu() {
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           while read -r ID DESC; do
             writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-          done < <(getAllModules "${PLATFORM}" "${KVER}")
+          done <<<(getAllModules "${PLATFORM}" "${KVER}")
         fi
         rm -f "${TMP_PATH}/modules.zip"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -1939,7 +1939,7 @@ function formatdisks() {
     [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
     echo "${KNAME}" | grep -q "${LOADER_DISK}" && continue
     echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
-  done < <(lsblk -pno KNAME,MODEL,TYPE)
+  done <<<(lsblk -pno KNAME,MODEL,TYPE)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
       --msgbox "No disk found!" 0 0

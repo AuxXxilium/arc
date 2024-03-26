@@ -18,7 +18,7 @@ RAMTOTAL=0
 while read -r LINE; do
   RAMSIZE=${LINE}
   RAMTOTAL=$((${RAMTOTAL} + ${RAMSIZE}))
-done < <(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i "[1-9]")
+done <<<(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i "[1-9]")
 RAMTOTAL=$((${RAMTOTAL} * 1024))
 [ -z "${RAMTOTAL}" ] || [ ${RAMTOTAL} -le 0 ] && RAMMAX=8192
 RAMMAX=$((${RAMTOTAL} * 2))
@@ -122,7 +122,7 @@ function arcModel() {
     while read -r M; do
       Y="$(readModelKey "${M}" "disks")"
       echo "${M} ${Y}" >>"${TMP_PATH}/modellist"
-    done < <(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sed 's/.*\///; s/\.yml//')
+    done <<<(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sed 's/.*\///; s/\.yml//')
 
     while true; do
       echo -n "" >"${TMP_PATH}/menu"
@@ -162,7 +162,7 @@ function arcModel() {
         [ "${DT}" = "true" ] && DTO="DT" || DTO=""
         [ "${BETA}" = "true" ] && BETA="Beta" || BETA=""
         [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"$(printf "\Zb%-7s\Zn \Zb%-6s\Zn \Zb%-13s\Zn \Zb%-3s\Zn \Zb%-7s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DTO}" "${ARCAV}" "${BETA}")\" ">>"${TMP_PATH}/menu"
-      done < <(cat "${TMP_PATH}/modellist" | sort -n -k 2)
+      done <<<(cat "${TMP_PATH}/modellist" | sort -n -k 2)
       dialog --backtitle "$(backtitle)" --colors \
         --cancel-label "Show all" --help-button --help-label "Exit" \
         --extra-button --extra-label "Info" \
@@ -260,12 +260,12 @@ function arcVersion() {
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS=': ' read -r KEY VALUE; do
     writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
-  done < <(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].synoinfo")
+  done <<<(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].synoinfo")
   # Reset modules
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read -r ID DESC; do
     writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-  done < <(getAllModules "${PLATFORM}" "${KVER}")
+  done <<<(getAllModules "${PLATFORM}" "${KVER}")
   if [ "${ONLYVERSION}" != "true" ]; then
     arcPatch
   else
@@ -572,7 +572,7 @@ function make() {
         --msgbox "Addon ${ADDON} not found!" 0 0
       return 1
     fi
-  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+  done <<<(readConfigMap "addons" "${USER_CONFIG_FILE}")
   # Check for offline Mode
   if [ "${OFFLINE}" = "true" ]; then
     offlinemake
@@ -1022,7 +1022,7 @@ while true; do
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         while read -r ID DESC; do
           writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-        done < <(getAllModules "${PLATFORM}" "${KVER}")
+        done <<<(getAllModules "${PLATFORM}" "${KVER}")
       fi
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
