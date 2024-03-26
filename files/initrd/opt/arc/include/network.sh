@@ -52,7 +52,7 @@ function getnet() {
     # Ask for Macsys
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "Macsys Setting" \
-      --menu "Choose an Option\n* Recommended Option" 4 50 0 \
+      --menu "Choose an Option\n* Recommended Option" 5 50 0 \
       1 "Hardware - Use Hardware Mac for DSM *" \
       2 "Custom - Use Custom Mac for DSM" \
     2>"${TMP_PATH}/resp"
