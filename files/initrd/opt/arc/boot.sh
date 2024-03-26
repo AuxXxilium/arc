@@ -88,7 +88,7 @@ KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
-ETHX=$(ls /sys/class/net/ | grep -v lo) || true
+ETHX=$(ls /sys/class/net/ | grep eth) || true
 
 declare -A CMDLINE
 
@@ -101,21 +101,16 @@ CMDLINE['vid']="${VID}"
 CMDLINE['pid']="${PID}"
 CMDLINE['sn']="${SN}"
 
+NIC=0
+for ETH in ${ETHX}; do
+  MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
+  [ -n "${MAC}" ] && NIC=$((${NIC} + 1)) && CMDLINE["mac${NIC}"]="${MAC}"
+done
+CMDLINE['netif_num']="${NIC}"
+
 if [ "${MACSYS}" = "hardware" ]; then
-  NIC=0
-  for ETH in ${ETHX}; do
-    MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
-    [ -n "${MAC}" ] && NIC=$((${NIC} + 1)) && CMDLINE["mac${NIC}"]="${MAC}"
-  done
-  CMDLINE['netif_num']="${NIC}"
   CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 elif [ "${MACSYS}" = "custom" ]; then
-  NIC=0
-  for ETH in ${ETHX}; do
-    MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
-    [ -n "${MAC}" ] && NIC=$((${NIC} + 1)) && CMDLINE["mac${NIC}"]="${MAC}"
-  done
-  CMDLINE['netif_num']="${NIC}"
   CMDLINE['skip_vender_mac_interfaces']="$(seq -s, ${NIC} 7)"
 fi
 

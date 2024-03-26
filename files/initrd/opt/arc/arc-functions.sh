@@ -1211,7 +1211,7 @@ function sysinfo() {
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="Legacy"
   VENDOR="$(dmidecode -s system-product-name)"
   BOARD="$(dmidecode -s baseboard-product-name)"
-  ETHX=$(ls /sys/class/net/ | grep -v lo) || true
+  ETHX=$(ls /sys/class/net/ | grep eth) || true
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1263,6 +1263,7 @@ function sysinfo() {
     STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
+    MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
     COUNT=0
     while true; do
       if [ "${STATICIP}" = "true" ]; then
@@ -1274,16 +1275,16 @@ function sysinfo() {
       fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) \ZbIP: ${IP} | Mac: ${MAC}\Zn"
+        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) \ZbIP: ${IP} | Mac: ${MACR} (${MAC})\Zn"
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
-        TEXT+="\n  ${DRIVER} \ZbIP: TIMEOUT | MAC: ${MAC}\Zn"
+        TEXT+="\n  ${DRIVER} \ZbIP: TIMEOUT | MAC: ${MACR} (${MAC})\Zn"
         break
       fi
       sleep 3
       if ethtool ${ETH} | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n  ${DRIVER} \ZbIP: NOT CONNECTED | MAC: ${MAC}\Zn"
+        TEXT+="\n  ${DRIVER} \ZbIP: NOT CONNECTED | MAC: ${MACR} (${MAC})\Zn"
         break
       fi
       COUNT=$((${COUNT} + 3))
@@ -1492,6 +1493,7 @@ function fullsysinfo() {
     STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
+    MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
     COUNT=0
     while true; do
       if [ "${STATICIP}" = "true" ]; then
@@ -1503,16 +1505,16 @@ function fullsysinfo() {
       fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n${DRIVER} (${SPEED} | ${MSG}) IP: ${IP} | Mac: ${MAC}"
+        TEXT+="\n${DRIVER} (${SPEED} | ${MSG}) IP: ${IP} | Mac: ${MACR} (${MAC})"
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
-        TEXT+="\n${DRIVER} IP: TIMEOUT | MAC: ${MAC}"
+        TEXT+="\n${DRIVER} IP: TIMEOUT | MAC: ${MACR} (${MAC})"
         break
       fi
       sleep 3
       if ethtool ${ETH} | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n${DRIVER} IP: NOT CONNECTED | MAC: ${MAC}"
+        TEXT+="\n${DRIVER} IP: NOT CONNECTED | MAC: ${MACR} (${MAC})"
         break
       fi
       COUNT=$((${COUNT} + 3))
@@ -1676,7 +1678,7 @@ function fullsysinfo() {
 # Shows Networkdiag to user
 function networkdiag() {
   MSG=""
-  ETHX=$(ls /sys/class/net/ | grep -v lo) || true
+  ETHX=$(ls /sys/class/net/ | grep eth) || true
   for ETH in ${ETHX}; do
     MSG+="Interface: ${ETH}\n"
     addr=$(getIP ${ETH})
@@ -1751,7 +1753,7 @@ function credits() {
 # allow setting Static IP for Loader
 function staticIPMenu() {
   # Get Amount of NIC
-  ETHX=$(ls /sys/class/net/ | grep -v lo) || true
+  ETHX=$(ls /sys/class/net/ | grep eth) || true
   for ETH in ${ETHX}; do
     STATIC="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')

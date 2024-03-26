@@ -68,7 +68,7 @@ function getnet() {
 }
 
 # Get Amount of NIC
-ETHX=$(ls /sys/class/net/ | grep -v lo) || true
+ETHX=$(ls /sys/class/net/ | grep eth) || true
 # Get actual IP
 for ETH in ${ETHX}; do
   IPCON="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
