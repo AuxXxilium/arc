@@ -43,16 +43,16 @@ function getnet() {
     2>"${TMP_PATH}/resp"
     resp="$(<"${TMP_PATH}/resp")"
     [ -z "${resp}" ] && return 1
-    if [ ${resp} -eq 2 ]; then
+    if [ ${resp} -eq 1 ]; then
       writeConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
-    elif [ ${resp} -eq 3 ]; then
+    elif [ ${resp} -eq 2 ]; then
       writeConfigKey "arc.macsys" "custom" "${USER_CONFIG_FILE}"
     fi
   else
     # Ask for Macsys
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "Macsys Setting" \
-      --menu "Choose an Option\n* Recommended Option" 5 50 0 \
+      --menu "Choose an Option\n* Recommended Option" 4 50 0 \
       1 "Hardware - Use Hardware Mac for DSM *" \
       2 "Custom - Use Custom Mac for DSM" \
     2>"${TMP_PATH}/resp"

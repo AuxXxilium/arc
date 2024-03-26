@@ -126,7 +126,6 @@ function arcModel() {
 
     while true; do
       echo -n "" >"${TMP_PATH}/menu"
-      FLGNEX=0
       while read -r M Y; do
         PLATFORM=$(readModelKey "${M}" "platform")
         DT="$(readModelKey "${M}" "dt")"
@@ -150,13 +149,14 @@ function arcModel() {
           for F in "$(readModelArray "${M}" "flags")"; do
             if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
               COMPATIBLE=0
-              FLGNEX=1
               break
             fi
           done
           if [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
             COMPATIBLE=0
-            FLGNEX=1
+          fi
+          if [[ ${SATACONTROLLER} -eq 0 && "${EXTERNALCONTROLLER}" = "false" && "${M}" != "SA6400" ]]; then
+            COMPATIBLE=0
           fi
         fi
         [ "${DT}" = "true" ] && DTO="DT" || DTO=""
