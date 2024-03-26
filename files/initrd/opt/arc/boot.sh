@@ -21,7 +21,7 @@ printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
 TITLE="BOOTING:"
 [ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [Legacy]"
-TITLE+=" [${BUS^^}]"
+TITLE+=" [${BUS}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
 echo
@@ -52,16 +52,9 @@ MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
-CPU="$(awk -F':' '/^model name/ {print $2}' /proc/cpuinfo | uniq | sed -e 's/^[ \t]*//')"
-RAMTOTAL=0
-while read -r LINE; do
-  RAMSIZE=${LINE}
-  RAMTOTAL=$((${RAMTOTAL} + ${RAMSIZE}))
-done < <(dmidecode -t memory | grep -i "Size" | cut -d" " -f2 | grep -i "[1-9]")
-RAMTOTAL=$((${RAMTOTAL} * 1024))
-RAM=$(free -m | grep -i mem | awk '{print$2}')
-VENDOR="$(dmidecode -s system-product-name)"
-BOARD="$(dmidecode -s baseboard-product-name)"
+CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
+RAM="$(free -m 2>/dev/null | grep -i mem | awk '{print $2}') MB"
+VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
 
 echo -e " \033[1;37mDSM:\033[0m"
 echo -e " Model: \033[1;37m${MODEL}\033[0m"
@@ -70,9 +63,9 @@ echo -e " LKM: \033[1;37m${LKM}\033[0m"
 echo -e " Macsys: \033[1;37m${MACSYS}\033[0m"
 echo
 echo -e " \033[1;37mSystem:\033[0m"
-echo -e " Vendor / Board: \033[1;37m${VENDOR}\033[0m / \033[1;37m${BOARD}\033[0m"
+echo -e " VENDOR: \033[1;37m${VENDOR}\033[0m"
 echo -e " CPU: \033[1;37m${CPU}\033[0m"
-echo -e " MEM: \033[1;37m${RAM}\033[0m / \033[1;37m${RAMTOTAL} MB\033[0m"
+echo -e " MEM: \033[1;37m${RAM}\033[0m"
 echo
 
 if [[ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" || -z "$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}]")" ]]; then
