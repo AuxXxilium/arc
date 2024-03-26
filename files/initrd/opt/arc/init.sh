@@ -8,6 +8,9 @@ set -e
 
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
+# Get Loader Disk Bus
+BUS=$(getBus "${LOADER_DISK}")
+
 # Shows title
 clear
 [ -z "${COLUMNS}" ] && COLUMNS=50
@@ -71,7 +74,7 @@ else
 fi
 
 # Init Network
-ETHX=$(ls /sys/class/net/ | grep -v lo) || true
+ETHX=$(ls /sys/class/net/ | grep eth) || true
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 # Write Mac to config
 NIC=0
@@ -102,7 +105,6 @@ writeConfigKey "device.nic" "${NIC}" "${USER_CONFIG_FILE}"
 # Get the VID/PID if we are in USB
 VID="0x46f4"
 PID="0x0001"
-BUS=$(getBus "${LOADER_DISK}")
 
 if [ "${BUS}" = "usb" ]; then
   VID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_VENDOR_ID | cut -d= -f2)"
@@ -203,8 +205,7 @@ mkdir -p "${MODEL_CONFIG_PATH}"
 mkdir -p "${PATCH_PATH}"
 mkdir -p "${BACKUPDIR}"
 
-# Load Arc
-updateAddons
+# Load Arc Overlay
 echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
 sleep 2
 

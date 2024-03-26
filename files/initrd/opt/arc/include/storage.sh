@@ -25,7 +25,7 @@ function getmap() {
         ATAPORT="$(echo ${LINE} | grep -o 'ata[0-9]*')"
         PORT=$(echo ${ATAPORT} | sed 's/ata//')
         HOSTPORTS[${PORT}]=$(echo ${LINE} | grep -o 'host[0-9]*$')
-      done < <(ls -l /sys/class/scsi_host | grep -F "${PCI}")
+      done <<<$(ls -l /sys/class/scsi_host | grep -F "${PCI}")
       while read -r PORT; do
         ls -l /sys/block | grep -F -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
         PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
@@ -33,7 +33,7 @@ function getmap() {
         [ ${ATTACH} = 1 ] && CONPORTS=$((${CONPORTS} + 1)) && echo "$((${PORT} - 1))" >>"${TMP_PATH}/ports"
         [ ${DUMMY} = 1 ] # Do nothing for now
         NUMPORTS=$((${NUMPORTS} + 1))
-      done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
+      done <<<$(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
       [ ${NUMPORTS} -gt 8 ] && NUMPORTS=8
       [ ${CONPORTS} -gt 8 ] && CONPORTS=8
       echo -n "${NUMPORTS}" >>"${TMP_PATH}/drivesmax"
@@ -136,7 +136,7 @@ function getmapSelection() {
     elif [ ${LINE} = ${LASTDRIVE} ]; then
       LASTDRIVE=$((${LINE} + 1))
     fi
-  done < <(cat "${TMP_PATH}/ports")
+  done <<<$(cat "${TMP_PATH}/ports")
   # Compute PortMap Options
   SATAPORTMAPMAX="$(awk '{print $1}' "${TMP_PATH}/drivesmax")"
   SATAPORTMAP="$(awk '{print $1}' "${TMP_PATH}/drivescon")"
