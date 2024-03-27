@@ -1273,7 +1273,7 @@ function sysinfo() {
         MSG="DHCP"
       fi
       if [ -n "${IP}" ]; then
-        SPEED=$(ethtool ${ETH} | grep "Speed:" | awk '{print $2}')
+        SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) \ZbIP: ${IP} | Mac: ${MACR} (${MAC})\Zn"
         break
       fi
@@ -1282,7 +1282,7 @@ function sysinfo() {
         break
       fi
       sleep 3
-      if ethtool ${ETH} | grep 'Link detected' | grep -q 'no'; then
+      if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
         TEXT+="\n  ${DRIVER} \ZbIP: NOT CONNECTED | MAC: ${MACR} (${MAC})\Zn"
         break
       fi
@@ -1502,7 +1502,7 @@ function fullsysinfo() {
         MSG="DHCP"
       fi
       if [ -n "${IP}" ]; then
-        SPEED=$(ethtool ${ETH} | grep "Speed:" | awk '{print $2}')
+        SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         TEXT+="\n${DRIVER} (${SPEED} | ${MSG}) IP: ${IP} | Mac: ${MACR} (${MAC})"
         break
       fi
@@ -1511,7 +1511,7 @@ function fullsysinfo() {
         break
       fi
       sleep 3
-      if ethtool ${ETH} | grep 'Link detected' | grep -q 'no'; then
+      if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
         TEXT+="\n${DRIVER} IP: NOT CONNECTED | MAC: ${MACR} (${MAC})"
         break
       fi

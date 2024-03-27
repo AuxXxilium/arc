@@ -57,16 +57,16 @@ RAMFREE=$(($(free -m | grep -i mem | awk '{print$2}') / 1024 + 1))
 RAM="${RAMTOTAL}GB"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
 
-echo -e " \033[1;37mDSM:\033[0m"
-echo -e " Model: \033[1;37m${MODEL}\033[0m"
-echo -e " Version: \033[1;37m${PRODUCTVER}\033[0m"
-echo -e " LKM: \033[1;37m${LKM}\033[0m"
-echo -e " Macsys: \033[1;37m${MACSYS}\033[0m"
+echo -e "\033[1;37mDSM:\033[0m"
+echo -e "Model: \033[1;37m${MODEL}\033[0m"
+echo -e "Version: \033[1;37m${PRODUCTVER}\033[0m"
+echo -e "LKM: \033[1;37m${LKM}\033[0m"
+echo -e "Macsys: \033[1;37m${MACSYS}\033[0m"
 echo
-echo -e " \033[1;37mSystem:\033[0m"
-echo -e " VENDOR: \033[1;37m${VENDOR}\033[0m"
-echo -e " CPU: \033[1;37m${CPU}\033[0m"
-echo -e " MEM: \033[1;37m${RAM}\033[0m"
+echo -e "\033[1;37mSystem:\033[0m"
+echo -e "VENDOR: \033[1;37m${VENDOR}\033[0m"
+echo -e "CPU: \033[1;37m${CPU}\033[0m"
+echo -e "MEM: \033[1;37m${RAM}\033[0m"
 echo
 
 if [[ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" || -z "$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}]")" ]]; then
@@ -179,7 +179,7 @@ if [ "${DIRECTBOOT}" = "true" ]; then
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
   grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
   grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
-  echo -e " \033[1;34mReboot with Directboot\033[0m"
+  echo -e "\033[1;34mReboot with Directboot\033[0m"
   exec reboot
 elif [ "${DIRECTBOOT}" = "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
@@ -192,19 +192,19 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       IP="$(getIP ${ETH})"
       MSG="DHCP"
       if [ -n "${IP}" ]; then
-        SPEED=$(ethtool ${ETH} | grep "Speed:" | awk '{print $2}')
-        echo -e "\r \033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
+        SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
+        echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
         ethtool -s ${ETH} wol g 2>/dev/null
         [ ! -n "${IPCON}" ] && IPCON="${IP}"
         break
       fi
       if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
-        echo -e "\r \033[1;37m${DRIVER}:\033[0m TIMEOUT"
+        echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
         break
       fi
       sleep 3
-      if ethtool ${ETH} | grep 'Link detected' | grep -q 'no'; then
-        echo -e "\r \033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
+      if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
+        echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
         break
       fi
       COUNT=$((${COUNT} + 3))
@@ -232,10 +232,10 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
 
   # Executes DSM kernel via KEXEC
   kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
-  echo -e " \033[1;37m"Booting DSM..."\033[0m"
+  echo -e "\033[1;37m"Booting DSM..."\033[0m"
   for T in $(w | grep -v "TTY" | awk -F' ' '{print $2}')
   do
-    echo -e "\n \033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\n Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
+    echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\n Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
   done
 
   # Clear logs for dbgutils addons

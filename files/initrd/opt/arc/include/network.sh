@@ -1,5 +1,6 @@
 # Get Network Config for Loader
 function getnet() {
+  ETHX=$(ls /sys/class/net/ | grep eth) || true
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   if [ "${ARCPATCH}" = "true" ]; then
     ARCMACNUM=1

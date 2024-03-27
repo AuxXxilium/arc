@@ -169,7 +169,7 @@ for ETH in ${ETHX}; do
       MSG="DHCP"
     fi
     if [ -n "${IP}" ]; then
-      SPEED=$(ethtool ${ETH} | grep "Speed:" | awk '{print $2}')
+      SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
       writeConfigKey "ip.${ETH}" "${IP}" "${USER_CONFIG_FILE}"
       echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
       ethtool -s ${ETH} wol g 2>/dev/null
@@ -181,7 +181,7 @@ for ETH in ${ETHX}; do
       break
     fi
     sleep 3
-    if ethtool ${ETH} | grep 'Link detected' | grep -q 'no'; then
+    if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
       echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
       deleteConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}"
       break
