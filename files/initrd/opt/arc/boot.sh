@@ -53,7 +53,7 @@ PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
-RAMFREE=$(($(free -m | grep -i mem | awk '{print$2}') / 1024 + 1))
+RAMTOAL=$(($(free -m | grep -i mem | awk '{print$2}') / 1024 + 1))
 RAM="${RAMTOTAL}GB"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
 
