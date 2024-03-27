@@ -1209,7 +1209,6 @@ function sysinfo() {
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="Legacy"
   # Get System Informations
   CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
-  RAM="${RAMTOTAL} MB"
   VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
   ETHX=$(ls /sys/class/net/ | grep eth) || true
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
@@ -1439,7 +1438,6 @@ function fullsysinfo() {
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="Legacy"
   # Get System Informations
   CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
-  RAM="${RAMTOTAL} MB"
   VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
   ETHX=$(ls /sys/class/net/ | grep -v lo || true)
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"

@@ -54,7 +54,7 @@ LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
 RAMFREE=$(($(free -m | grep -i mem | awk '{print$2}') / 1024 + 1))
-RAM="$((${RAMFREE} * 1024)) MB"
+RAM="${RAMTOTAL}GB"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
 
 echo -e " \033[1;37mDSM:\033[0m"
