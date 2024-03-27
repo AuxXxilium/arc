@@ -53,7 +53,8 @@ PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
-RAM="$(free -m 2>/dev/null | grep -i mem | awk '{print $2}') MB"
+RAMFREE=$(($(free -m | grep -i mem | awk '{print$2}') / 1024 + 1))
+RAM="$((${RAMFREE} * 1024)) MB"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
 
 echo -e " \033[1;37mDSM:\033[0m"
@@ -185,7 +186,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo -e " \033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
   for ETH in ${ETHX}; do
     IP=""
-    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    DRIVER="$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
     COUNT=0
     while true; do
       IP="$(getIP ${ETH})"

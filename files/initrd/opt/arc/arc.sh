@@ -14,7 +14,8 @@
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
 # Memory: Check Memory installed
-RAMTOTAL=$(free -m | grep -i mem | awk '{print$2}')
+RAMFREE=$(($(free -m | grep -i mem | awk '{print$2}') / 1024 + 1))
+RAMTOTAL=$((${RAMFREE} * 1024))
 [ -z "${RAMTOTAL}" ] || [ ${RAMTOTAL} -le 0 ] && RAMTOTAL=8192
 RAMMAX=$((${RAMTOTAL} * 2))
 RAMMIN=$((${RAMTOTAL} / 2))

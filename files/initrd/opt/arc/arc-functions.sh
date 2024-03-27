@@ -1209,7 +1209,7 @@ function sysinfo() {
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="Legacy"
   # Get System Informations
   CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
-  RAM="$(free -m 2>/dev/null | grep -i mem | awk '{print $2}') MB"
+  RAM="${RAMTOTAL} MB"
   VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
   ETHX=$(ls /sys/class/net/ | grep eth) || true
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
@@ -1261,7 +1261,7 @@ function sysinfo() {
   for ETH in ${ETHX}; do
     IP=""
     STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
-    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    DRIVER="$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
     MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
     MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
     COUNT=0
@@ -1439,7 +1439,7 @@ function fullsysinfo() {
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="Legacy"
   # Get System Informations
   CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
-  RAM="$(free -m 2>/dev/null | grep -i mem | awk '{print $2}') MB"
+  RAM="${RAMTOTAL} MB"
   VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
   ETHX=$(ls /sys/class/net/ | grep -v lo || true)
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
@@ -1491,7 +1491,7 @@ function fullsysinfo() {
   for ETH in ${ETHX}; do
     IP=""
     STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
-    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    DRIVER="$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
     MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
     MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
     COUNT=0
