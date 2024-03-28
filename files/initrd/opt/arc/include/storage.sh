@@ -152,7 +152,7 @@ function getmapSelection() {
   fi
   # Ask for Portmap
   dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-    --menu "SataPortMap or SataRemap?\n* Recommended Option" 0 0 0 \
+    --menu "SataPortMap or SataRemap?\n* Recommended Option" 8 60 0 \
     1 "SataPortMap: Active Ports ${REMAP1}" \
     2 "SataPortMap: Max Ports ${REMAP2}" \
     3 "SataRemap: Remove blank Ports ${REMAP3}" \

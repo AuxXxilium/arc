@@ -13,8 +13,6 @@
 
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
-alias DIALOG='dialog --backtitle "$(backtitle)" --colors'
-
 # Memory: Check Memory installed
 RAMFREE=$(($(free -m | grep -i mem | awk '{print$2}') / 1024 + 1))
 RAMTOTAL=$((${RAMFREE} * 1024))
@@ -231,7 +229,7 @@ function arcVersion() {
     ITEMS="$(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r)"
     if [ -z "${1}" ]; then
       dialog --clear --no-items --nocancel --backtitle "$(backtitle)" \
-        --menu "Choose a Version" 0 0 0 ${ITEMS} 2>"${TMP_PATH}/resp"
+        --menu "Choose a Version" 7 30 0 ${ITEMS} 2>"${TMP_PATH}/resp"
       resp="$(<"${TMP_PATH}/resp")"
       [ -z "${resp}" ] && return 1
     else
@@ -322,7 +320,7 @@ function arcPatch() {
   elif [[ "${ARCRECOVERY}" != "true" && -z "${ARCCONF}" ]]; then
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "Non Arc Patch Model" \
-      --menu "Please select an Option?" 7 50 0 \
+      --menu "Please select an Option?" 8 50 0 \
       1 "Install with random Serial/Mac" \
       2 "Install with my Serial/Mac" \
     2>"${TMP_PATH}/resp"
@@ -407,7 +405,7 @@ function arcSettings() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   # Ask for Build
   dialog --clear --backtitle "$(backtitle)" \
-    --menu "Config done -> Build now?" 0 0 0 \
+    --menu "Config done -> Build now?" 7 50 0 \
     1 "Yes - Build Arc Loader now" \
     2 "No - I want to make changes" \
   2>"${TMP_PATH}/resp"
@@ -700,7 +698,7 @@ function make() {
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       # Ask for Boot
       dialog --clear --backtitle "$(backtitle)" \
-        --menu "Build done -> Boot now?" 0 0 0 \
+        --menu "Build done -> Boot now?" 8 50 0 \
         1 "Yes - Boot Arc Loader now" \
         2 "No - I want to make changes" \
       2>"${TMP_PATH}/resp"
