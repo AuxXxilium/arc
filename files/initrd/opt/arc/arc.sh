@@ -13,6 +13,8 @@
 
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
+alias DIALOG='dialog --backtitle "$(backtitle)" --colors'
+
 # Memory: Check Memory installed
 RAMFREE=$(($(free -m | grep -i mem | awk '{print$2}') / 1024 + 1))
 RAMTOTAL=$((${RAMFREE} * 1024))
