@@ -55,7 +55,6 @@ function getnet() {
 ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
 # Get actual IP
 for ETH in ${ETHX}; do
-  IPCON="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
-  [ -z "${IPCON}" ] && IPCON="$(getIP ${ETH})"
+  IPCON="$(getIP ${ETH})"
   [ -n "${IPCON}" ] && break
 done
