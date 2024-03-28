@@ -82,7 +82,7 @@ KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
-ETHX=$(ls /sys/class/net/ | grep eth) || true
+ETHX=$(ls /sys/class/net/ | grep -v lo) || true
 
 declare -A CMDLINE
 

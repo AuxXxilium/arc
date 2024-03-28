@@ -74,7 +74,7 @@ else
 fi
 
 # Init Network
-ETHX=$(ls /sys/class/net/ | grep eth) || true
+ETHX=$(ls /sys/class/net/ | grep -v lo) || true
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 # Write Mac to config
 NIC=0

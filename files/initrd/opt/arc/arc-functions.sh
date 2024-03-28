@@ -1210,7 +1210,7 @@ function sysinfo() {
   # Get System Informations
   CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
   VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
-  ETHX=$(ls /sys/class/net/ | grep eth) || true
+  ETHX=$(ls /sys/class/net/ | grep -v lo) || true
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1676,7 +1676,7 @@ function fullsysinfo() {
 # Shows Networkdiag to user
 function networkdiag() {
   MSG=""
-  ETHX=$(ls /sys/class/net/ | grep eth) || true
+  ETHX=$(ls /sys/class/net/ | grep -v lo) || true
   for ETH in ${ETHX}; do
     MSG+="Interface: ${ETH}\n"
     addr=$(getIP ${ETH})
@@ -1751,7 +1751,7 @@ function credits() {
 # allow setting Static IP for Loader
 function staticIPMenu() {
   # Get Amount of NIC
-  ETHX=$(ls /sys/class/net/ | grep eth) || true
+  ETHX=$(ls /sys/class/net/ | grep -v lo) || true
   for ETH in ${ETHX}; do
     STATIC="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
