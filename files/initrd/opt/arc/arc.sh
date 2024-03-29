@@ -943,7 +943,7 @@ while true; do
     --cancel-label "Exit" --title "Arc Menu" --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && break
-  case $(<"${TMP_PATH}/resp") in
+  case "$(cat ${TMP_PATH}/resp)" in
     # Main Section
     1) arcModel; NEXT="2" ;;
     2) premake; NEXT="3" ;;

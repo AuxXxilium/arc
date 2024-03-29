@@ -160,7 +160,7 @@ function getmapSelection() {
     5 "I want to set my own Portmap" \
   2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
-  resp="$(<"${TMP_PATH}/resp")"
+  resp=$(cat "${TMP_PATH}/resp")
   [ -z "${resp}" ] && return 1
   if [ ${resp} -eq 1 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Disks" \

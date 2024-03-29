@@ -25,7 +25,7 @@ function getnet() {
         2>"${TMP_PATH}/resp"
       RET=$?
       [ ${RET} -ne 0 ] && break 2
-      MAC="$(<"${TMP_PATH}/resp")"
+      MAC=$(cat "${TMP_PATH}/resp")
       [ -z "${MAC}" ] && MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
       [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
       MAC="$(echo "${MAC}" | sed "s/:\|-\| //g")"
@@ -41,7 +41,7 @@ function getnet() {
     1 "Hardware - Use Hardware Mac for DSM *" \
     2 "Custom - Use Custom/Fake Mac for DSM" \
   2>"${TMP_PATH}/resp"
-  resp="$(<"${TMP_PATH}/resp")"
+  resp=$(cat "${TMP_PATH}/resp")
   [ -z "${resp}" ] && return 1
   if [ ${resp} -eq 1 ]; then
     writeConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"

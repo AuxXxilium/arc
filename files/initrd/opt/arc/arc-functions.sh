@@ -101,7 +101,7 @@ function modulesMenu() {
       6 "Add external module" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
-    case "$(<"${TMP_PATH}/resp")" in
+    case "$(cat ${TMP_PATH}/resp)" in
       1)
         ITEMS=""
         for KEY in ${!USERMODULES[@]}; do
@@ -185,7 +185,7 @@ function modulesMenu() {
         [ $? -ne 0 ] && continue
         dialog --backtitle "$(backtitle)" --aspect 18 --colors --inputbox "Please enter the complete URL to download.\n" 0 0 \
           2>"${TMP_PATH}/resp"
-        URL="$(<"${TMP_PATH}/resp")"
+        URL=$(cat "${TMP_PATH}/resp")
         [ -z "${URL}" ] && continue
         clear
         echo "Downloading ${URL}"
@@ -234,7 +234,7 @@ function cmdlineMenu() {
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
-    case "$(<"${TMP_PATH}/resp")" in
+    case "$(cat ${TMP_PATH}/resp)" in
       1)
         MSG=""
         MSG+="Commonly used Parameter:\n"
@@ -434,19 +434,19 @@ function synoinfoMenu() {
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
-    case "$(<"${TMP_PATH}/resp")" in
+    case "$(cat ${TMP_PATH}/resp)" in
       1)
         dialog --backtitle "$(backtitle)" --title "Synoinfo entries" \
           --inputbox "Type a name of synoinfo entry" 0 0 \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
-        NAME="$(<"${TMP_PATH}/resp")"
+        NAME=$(cat "${TMP_PATH}/resp")
         [ -z "${NAME//\"/}" ] && continue
         dialog --backtitle "$(backtitle)" --title "Synoinfo entries" \
           --inputbox "Type a value of '${NAME}' entry" 0 0 "${SYNOINFO[${NAME}]}" \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
-        VALUE="$(<"${TMP_PATH}/resp")"
+        VALUE=$(cat "${TMP_PATH}/resp")
         SYNOINFO[${NAME}]="${VALUE}"
         writeConfigKey "synoinfo.\"${NAME//\"/}\"" "${VALUE}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -509,7 +509,7 @@ function synoinfoMenu() {
               2>"${TMP_PATH}/resp"
               RET=$?
               [ ${RET} -ne 0 ] && break 2
-              CPUTEMP="$(<"${TMP_PATH}/resp")"
+              CPUTEMP=$(cat "${TMP_PATH}/resp")
               if [ "${PLATFORM}" = "geminilake" ]; then
                 sed -i 's|<cpu_temperature fan_speed="99%40hz" action="SHUTDOWN">90</cpu_temperature>|<cpu_temperature fan_speed="99%40hz" action="SHUTDOWN">'"${CPUTEMP}"'</cpu_temperature>|g' "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
               elif [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]]; then
@@ -520,7 +520,7 @@ function synoinfoMenu() {
               2>"${TMP_PATH}/resp"
               RET=$?
               [ ${RET} -ne 0 ] && break 2
-              DISKTEMP="$(<"${TMP_PATH}/resp")"
+              DISKTEMP=$(cat "${TMP_PATH}/resp")
               if [ "${PLATFORM}" = "geminilake" ]; then
                 sed -i 's|<disk_temperature fan_speed="99%40hz" action="SHUTDOWN">61</disk_temperature>|<disk_temperature fan_speed="99%40hz" action="SHUTDOWN">'"${DISKTEMP}"'</disk_temperature>|g' "/mnt/dsmroot/usr/syno/etc.defaults/scemd.xml"
               elif [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]]; then
@@ -531,7 +531,7 @@ function synoinfoMenu() {
               2>"${TMP_PATH}/resp"
               RET=$?
               [ ${RET} -ne 0 ] && break 2
-              M2TEMP="$(<"${TMP_PATH}/resp")"
+              M2TEMP=$(cat "${TMP_PATH}/resp")
               if [ "${PLATFORM}" = "geminilake" ]; then
                 sed -i 's|<m2_temperature fan_speed="99%40hz" action="SHUTDOWN">70</m2_temperature>|<m2_temperature fan_speed="99%40hz" action="SHUTDOWN">'"${M2TEMP}"'</m2_temperature>|g' "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
               elif [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]]; then
@@ -564,7 +564,7 @@ function keymapMenu() {
     "dvorak" "fgGIod" "neo" "olpc" "qwerty" "qwertz" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
-  LAYOUT="$(<"${TMP_PATH}/resp")"
+  LAYOUT=$(cat "${TMP_PATH}/resp")
   OPTIONS=""
   while read -r KM; do
     OPTIONS+="${KM::-7} "
@@ -624,7 +624,7 @@ function backupMenu() {
         5 "Restore Encryption Key" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
-      case "$(<"${TMP_PATH}/resp")" in
+      case "$(cat ${TMP_PATH}/resp)" in
         1)
           dialog --backtitle "$(backtitle)" --title "Backup Config with Code" \
               --infobox "Write down your Code for Restore!" 0 0
@@ -642,7 +642,7 @@ function backupMenu() {
               2>"${TMP_PATH}/resp"
             RET=$?
             [ ${RET} -ne 0 ] && break 2
-            GENHASH="$(<"${TMP_PATH}/resp")"
+            GENHASH=$(cat "${TMP_PATH}/resp")
             [ ${#GENHASH} -eq 9 ] && break
             dialog --backtitle "$(backtitle)" --title "Restore with Code" --msgbox "Invalid Code" 0 0
           done
@@ -777,7 +777,7 @@ function backupMenu() {
         2 "Restore Encryption Key" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
-      case "$(<"${TMP_PATH}/resp")" in
+      case "$(cat ${TMP_PATH}/resp)" in
         1)
           dialog --backtitle "$(backtitle)" --title "Try to recover DSM" --aspect 18 \
             --infobox "Trying to recover a DSM installed system" 0 0
@@ -872,7 +872,7 @@ function updateMenu() {
       6 "Update LKMs" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
-    case "$(<"${TMP_PATH}/resp")" in
+    case "$(cat ${TMP_PATH}/resp)" in
       1)
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
           --infobox "Checking latest version..." 0 0
@@ -896,7 +896,7 @@ function updateMenu() {
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
           --inputbox "Type the Version!" 0 0 \
           2>"${TMP_PATH}/input"
-          TAG="$(<"${TMP_PATH}/input")"
+          TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && continue
         fi
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
@@ -962,8 +962,8 @@ function updateMenu() {
           dialog --backtitle "$(backtitle)" --title "Update Addons" \
           --inputbox "Type the Version!" 0 0 \
           2>"${TMP_PATH}/input"
-          TAG="$(<"${TMP_PATH}/input")"
-          [ -z "${TAG}" ] && continue
+          TAG=$(cat "${TMP_PATH}/input")
+          [ -z "${TAG}" ] && return 1
         fi
         dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
@@ -1013,8 +1013,8 @@ function updateMenu() {
           dialog --backtitle "$(backtitle)" --title "Update Patches" \
           --inputbox "Type the Version!" 0 0 \
           2>"${TMP_PATH}/input"
-          TAG="$(<"${TMP_PATH}/input")"
-          [ -z "${TAG}" ] && continue
+          TAG=$(cat "${TMP_PATH}/input")
+          [ -z "${TAG}" ] && return 1
         fi
         dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
@@ -1055,8 +1055,8 @@ function updateMenu() {
           dialog --backtitle "$(backtitle)" --title "Update Modules" \
           --inputbox "Type the Version!" 0 0 \
           2>"${TMP_PATH}/input"
-          TAG="$(<"${TMP_PATH}/input")"
-          [ -z "${TAG}" ] && continue
+          TAG=$(cat "${TMP_PATH}/input")
+          [ -z "${TAG}" ] && return 1
         fi
         dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
@@ -1111,8 +1111,8 @@ function updateMenu() {
           dialog --backtitle "$(backtitle)" --title "Update Configs" \
           --inputbox "Type the Version!" 0 0 \
           2>"${TMP_PATH}/input"
-          TAG="$(<"${TMP_PATH}/input")"
-          [ -z "${TAG}" ] && continue
+          TAG=$(cat "${TMP_PATH}/input")
+          [ -z "${TAG}" ] && return 1
         fi
         dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
@@ -1153,8 +1153,8 @@ function updateMenu() {
           dialog --backtitle "$(backtitle)" --title "Update LKMs" \
           --inputbox "Type the Version!" 0 0 \
           2>"${TMP_PATH}/input"
-          TAG="$(<"${TMP_PATH}/input")"
-          [ -z "${TAG}" ] && continue
+          TAG=$(cat "${TMP_PATH}/input")
+          [ -z "${TAG}" ] && return 1
         fi
         dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
@@ -1788,12 +1788,12 @@ function staticIPMenu() {
         --inputbox "Type a Static IP\nLike: 192.168.0.1" 0 0 "${IPADDR}" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && continue
-      IPADDR="$(<"${TMP_PATH}/resp")"
+      IPADDR=$(cat "${TMP_PATH}/resp")
       dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
         --inputbox "Type a Netmask\nLike: 24" 0 0 "${NETMASK}" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && continue
-      NETMASK="$(<"${TMP_PATH}/resp")"
+      NETMASK=$(cat "${TMP_PATH}/resp")
       writeConfigKey "ip.${ETH}" "${IPADDR}" "${USER_CONFIG_FILE}"
       writeConfigKey "netmask.${ETH}" "${NETMASK}" "${USER_CONFIG_FILE}"
       writeConfigKey "static.${ETH}" "true" "${USER_CONFIG_FILE}"
@@ -1870,7 +1870,7 @@ function resetPassword() {
       --inputbox "Type a new Password for User ${USER}" 0 70 "${CMDLINE[${NAME}]}" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break 2
-    VALUE="$(<"${TMP_PATH}/resp")"
+    VALUE=$(cat "${TMP_PATH}/resp")
     [ -n "${VALUE}" ] && break
     dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
       --msgbox "Invalid Password" 0 0
