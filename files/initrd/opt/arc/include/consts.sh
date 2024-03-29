@@ -3,11 +3,11 @@ ARC_VERSION="23.1.1"
 ARC_TITLE="Arc ${ARC_VERSION}"
 
 # Define paths
-PART1_PATH="${CHROOT_PATH}/mnt/p1"
-PART2_PATH="${CHROOT_PATH}/mnt/p2"
-PART3_PATH="${CHROOT_PATH}/mnt/p3"
-DSMROOT_PATH="${CHROOT_PATH}/mnt/dsmroot"
-TMP_PATH="${CHROOT_PATH}/tmp"
+PART1_PATH="/mnt/p1"
+PART2_PATH="/mnt/p2"
+PART3_PATH="/mnt/p3"
+DSMROOT_PATH="/mnt/dsmroot"
+TMP_PATH="/tmp"
 
 UNTAR_PAT_PATH="${TMP_PATH}/DSM"
 RAMDISK_PATH="${TMP_PATH}/ramdisk"

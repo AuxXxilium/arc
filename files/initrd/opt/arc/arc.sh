@@ -38,6 +38,8 @@ if [ "${OFFLINE}" = "false" ]; then
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
   else
     writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
+    dialog --backtitle "$(backtitle)" --title "Offline Mode" \
+        --msgbox "Can't connect to Github.\nSwitch to Offline Mode!" 0 0
   fi
 fi
 
