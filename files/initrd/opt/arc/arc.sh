@@ -169,7 +169,7 @@ function arcModel() {
       RET=$?
       case ${RET} in
       0) # ok-button
-        resp="$(<"${TMP_PATH}/resp")"
+        resp=$(cat ${TMP_PATH}/resp)
         [ -z "${resp}" ] && return 1
         break
         ;;
@@ -182,7 +182,7 @@ function arcModel() {
         break
         ;;
       3) # extra-button -> Platform Info
-        resp="$(<"${TMP_PATH}/resp")"
+        resp=$(cat ${TMP_PATH}/resp)
         PLATFORM="$(readModelKey "${resp}" "platform")"
         dialog --textbox "./informations/${PLATFORM}.yml" 15 80
         ;;
@@ -229,15 +229,10 @@ function arcVersion() {
   if [ "${ARCRECOVERY}" != "true" ]; then
     # Select Build for DSM
     ITEMS="$(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r)"
-    if [ -z "${1}" ]; then
-      dialog --clear --no-items --nocancel --backtitle "$(backtitle)" \
-        --menu "Choose a Version" 7 30 0 ${ITEMS} 2>"${TMP_PATH}/resp"
-      resp="$(<"${TMP_PATH}/resp")"
-      [ -z "${resp}" ] && return 1
-    else
-      if ! arrayExistItem "${1}" ${ITEMS}; then return; fi
-      resp="${1}"
-    fi
+    dialog --clear --no-items --nocancel --backtitle "$(backtitle)" \
+      --menu "Choose a Version" 7 30 0 ${ITEMS} 2>"${TMP_PATH}/resp"
+    resp=$(cat ${TMP_PATH}/resp)
+    [ -z "${resp}" ] && return 1
     if [ "${PRODUCTVER}" != "${resp}" ]; then
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
@@ -288,7 +283,7 @@ function arcPatch() {
       2 "No - Install with random Serial/Mac" \
       3 "No - Install with my Serial/Mac" \
     2>"${TMP_PATH}/resp"
-    resp="$(<"${TMP_PATH}/resp")"
+    resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
       # Read Arc Patch from File
@@ -326,7 +321,7 @@ function arcPatch() {
       1 "Install with random Serial/Mac" \
       2 "Install with my Serial/Mac" \
     2>"${TMP_PATH}/resp"
-    resp="$(<"${TMP_PATH}/resp")"
+    resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
       # Generate random Serial
@@ -411,7 +406,7 @@ function arcSettings() {
     1 "Yes - Build Arc Loader now" \
     2 "No - I want to make changes" \
   2>"${TMP_PATH}/resp"
-  resp="$(<"${TMP_PATH}/resp")"
+  resp=$(cat ${TMP_PATH}/resp)
   [ -z "${resp}" ] && return 1
   if [ ${resp} -eq 1 ]; then
     premake
@@ -704,7 +699,7 @@ function make() {
         1 "Yes - Boot Arc Loader now" \
         2 "No - I want to make changes" \
       2>"${TMP_PATH}/resp"
-      resp="$(<"${TMP_PATH}/resp")"
+      resp=$(cat ${TMP_PATH}/resp)
       [ -z "${resp}" ] && return 1
       if [ ${resp} -eq 1 ]; then
         boot && exit 0
@@ -791,7 +786,7 @@ function offlinemake() {
       1 "Yes - Boot Arc Loader now" \
       2 "No - I want to make changes" \
     2>"${TMP_PATH}/resp"
-    resp="$(<"${TMP_PATH}/resp")"
+    resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
       boot && exit 0

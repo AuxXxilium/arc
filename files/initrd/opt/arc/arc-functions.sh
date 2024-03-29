@@ -60,7 +60,7 @@ function addonSelection() {
     --checklist "Select Loader Addons to include.\nPlease read Wiki before choosing anything.\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
-  resp="$(<"${TMP_PATH}/resp")"
+  resp=$(cat ${TMP_PATH}/resp)
   unset ADDONS
   declare -A ADDONS
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
@@ -160,7 +160,7 @@ function modulesMenu() {
           --checklist "Select Modules to include" 0 0 0 \
           --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
-        resp="$(<"${TMP_PATH}/resp")"
+        resp=$(cat ${TMP_PATH}/resp)
         dialog --backtitle "$(backtitle)" --title "Modules" \
            --infobox "Writing to user config" 20 5
         unset USERMODULES
@@ -286,7 +286,7 @@ function cmdlineMenu() {
           --checklist "Select cmdline to remove" 0 0 0 ${ITEMS} \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
-        resp="$(<"${TMP_PATH}/resp")"
+        resp=$(cat ${TMP_PATH}/resp)
         [ -z "${resp}" ] && continue
         for I in ${resp}; do
           unset 'CMDLINE[${I}]'
@@ -301,7 +301,7 @@ function cmdlineMenu() {
           1 "Install" \
           2 "Uninnstall" \
         2>"${TMP_PATH}/resp"
-        resp="$(<"${TMP_PATH}/resp")"
+        resp=$(cat ${TMP_PATH}/resp)
         [ -z "${resp}" ] && return 1
         if [ ${resp} -eq 1 ]; then
           writeConfigKey "cmdline.nmi_watchdog" "0" "${USER_CONFIG_FILE}"
@@ -323,7 +323,7 @@ function cmdlineMenu() {
           1 "Install" \
           2 "Uninnstall" \
         2>"${TMP_PATH}/resp"
-        resp="$(<"${TMP_PATH}/resp")"
+        resp=$(cat ${TMP_PATH}/resp)
         [ -z "${resp}" ] && return 1
         if [ ${resp} -eq 1 ]; then
           writeConfigKey "cmdline.disable_mtrr_trim" "0" "${USER_CONFIG_FILE}"
@@ -345,7 +345,7 @@ function cmdlineMenu() {
           1 "Install" \
           2 "Uninnstall" \
         2>"${TMP_PATH}/resp"
-        resp="$(<"${TMP_PATH}/resp")"
+        resp=$(cat ${TMP_PATH}/resp)
         [ -z "${resp}" ] && return 1
         if [ ${resp} -eq 1 ]; then
           writeConfigKey "cmdline.pci" "routeirq" "${USER_CONFIG_FILE}"
@@ -365,7 +365,7 @@ function cmdlineMenu() {
           1 "Install" \
           2 "Uninnstall" \
         2>"${TMP_PATH}/resp"
-        resp="$(<"${TMP_PATH}/resp")"
+        resp=$(cat ${TMP_PATH}/resp)
         [ -z "${resp}" ] && return 1
         if [ ${resp} -eq 1 ]; then
           writeConfigKey "cmdline.intel_idle.max_cstate" "1" "${USER_CONFIG_FILE}"
@@ -404,7 +404,7 @@ function cmdlineMenu() {
           --default-item "${KERNELPANIC}" --menu "Choose a time(seconds)" 0 0 0 --file "${TMP_PATH}/opts" \
           2>${TMP_PATH}/resp
         [ $? -ne 0 ] && return
-        resp=$(cat ${TMP_PATH}/resp 2>/dev/null)
+        resp=$(cat ${TMP_PATH}/resp)
         [ -z "${resp}" ] && return
         KERNELPANIC=${resp}
         writeConfigKey "arc.kernelpanic" "${KERNELPANIC}" "${USER_CONFIG_FILE}"
@@ -465,7 +465,7 @@ function synoinfoMenu() {
           --checklist "Select synoinfo entry to remove" 0 0 0 ${ITEMS} \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
-        resp="$(<"${TMP_PATH}/resp")"
+        resp=$(cat ${TMP_PATH}/resp)
         [ -z "${resp}" ] && continue
         for I in ${resp}; do
           unset 'SYNOINFO[${I}]'
@@ -573,7 +573,7 @@ function keymapMenu() {
     --menu "Choice a keymap" 0 0 0 ${OPTIONS} \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && continue
-  resp="$(<"${TMP_PATH}/resp")"
+  resp=$(cat ${TMP_PATH}/resp)
   [ -z "${resp}" ] && continue
   KEYMAP=${resp}
   writeConfigKey "layout" "${LAYOUT}" "${USER_CONFIG_FILE}"
@@ -592,14 +592,14 @@ function storagepanelMenu() {
     dialog --backtitle "$(backtitle)" --title "StoragePanel" \
       --default-item "24_Bay" --no-items --menu "Choose a Disk Panel" 0 0 0 ${ITEMS} \
       2>"${TMP_PATH}/resp"
-    resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
+    resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     STORAGE=${resp}
     ITEMS="$(echo -e "1X2 \n1X4 \n1X8 \n")"
     dialog --backtitle "$(backtitle)" --title "StoragePanel" \
       --default-item "1X8" --no-items --menu "Choose a M.2 Panel" 0 0 0 ${ITEMS} \
       2>"${TMP_PATH}/resp"
-    resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
+    resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     M2PANEL=${resp}
     STORAGEPANEL="RACK_${STORAGE} ${M2PANEL}"
@@ -883,7 +883,7 @@ function updateMenu() {
           1 "Latest" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
-        opts="$(<"${TMP_PATH}/opts")"
+        opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
@@ -949,7 +949,7 @@ function updateMenu() {
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && continue
-        opts="$(<"${TMP_PATH}/opts")"
+        opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
@@ -1000,7 +1000,7 @@ function updateMenu() {
           1 "Latest" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
-        opts="$(<"${TMP_PATH}/opts")"
+        opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
@@ -1042,7 +1042,7 @@ function updateMenu() {
           1 "Latest" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
-        opts="$(<"${TMP_PATH}/opts")"
+        opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
@@ -1098,7 +1098,7 @@ function updateMenu() {
           1 "Latest" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
-        opts="$(<"${TMP_PATH}/opts")"
+        opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
@@ -1140,7 +1140,7 @@ function updateMenu() {
           1 "Latest" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
-        opts="$(<"${TMP_PATH}/opts")"
+        opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
@@ -1779,7 +1779,7 @@ function staticIPMenu() {
         1 "DHCP" \
         2 "STATIC" \
       2>"${TMP_PATH}/opts"
-    opts="$(<"${TMP_PATH}/opts")"
+    opts=$(cat ${TMP_PATH}/opts)
     [ -z "${opts}" ] && continue
     if [ ${opts} -eq 1 ]; then
       writeConfigKey "static.${ETH}" "false" "${USER_CONFIG_FILE}"
@@ -1904,7 +1904,7 @@ function bootipwaittime() {
   dialog --backtitle "$(backtitle)" --colors --title "Boot IP Waittime" \
     --default-item "${BOOTIPWAIT}" --no-items --menu "Choose Waittime(seconds)\nto get an IP" 0 0 0 ${ITEMS} \
     2>"${TMP_PATH}/resp"
-  resp="$(cat ${TMP_PATH}/resp 2>/dev/null)"
+  resp=$(cat ${TMP_PATH}/resp)
   [ -z "${resp}" ] && return 1
   BOOTIPWAIT=${resp}
   writeConfigKey "arc.bootipwait" "${BOOTIPWAIT}" "${USER_CONFIG_FILE}"
@@ -1949,8 +1949,8 @@ function formatdisks() {
     --checklist "Select Disk(s)" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
-  RESP=$(<"${TMP_PATH}/resp")
-  [ -z "${RESP}" ] && return
+  resp=$(cat ${TMP_PATH}/resp)
+  [ -z "${resp}" ] && return
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return
@@ -1963,7 +1963,7 @@ function formatdisks() {
     done
   fi
   (
-    for I in ${RESP}; do
+    for I in ${resp}; do
       if [[ "${I}" = /dev/mmc* ]]; then
         echo y | mkfs.ext4 -T largefile4 -E nodiscard "${I}"
       else
