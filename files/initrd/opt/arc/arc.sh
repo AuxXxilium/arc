@@ -570,8 +570,8 @@ function make() {
     PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
     if [[ -z "${PAT_URL_CONF}" || -z "${PAT_HASH_CONF}" ]]; then
-      PAT_URL_CONF=""
-      PAT_HASH_CONF=""
+      PAT_URL_CONF="#"
+      PAT_HASH_CONF="#"
     fi
     # Get PAT Data from Syno
     while true; do
@@ -726,8 +726,8 @@ function offlinemake() {
     return 1
   else
     # Remove PAT Data for Offline
-    PAT_URL=""
-    PAT_HASH=""
+    PAT_URL="#"
+    PAT_HASH="#"
     writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
     # Extract Files
