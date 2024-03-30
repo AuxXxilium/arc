@@ -1922,7 +1922,7 @@ function saveMenu() {
   mkdir -p "${RDXZ_PATH}"
   (cd "${RDXZ_PATH}"; xz -dc <"${PART3_PATH}/initrd-arc" | cpio -idm) >/dev/null 2>&1 || true
   rm -rf "${RDXZ_PATH}/opt/arc"
-  cp -Rf "/opt" "${RDXZ_PATH}"
+  cp -Rf "$(dirname ${ARC_PATH})" "${RDXZ_PATH}"
   (cd "${RDXZ_PATH}"; find . 2>/dev/null | cpio -o -H newc -R root:root | xz --check=crc32 >"${PART3_PATH}/initrd-arc") || true
   rm -rf "${RDXZ_PATH}"
   dialog --backtitle "$(backtitle)" --colors --aspect 18 \
