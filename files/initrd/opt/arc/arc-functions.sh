@@ -1964,7 +1964,7 @@ function formatdisks() {
   fi
   (
     for I in ${resp}; do
-      if [[ "${I}" = /dev/mmc* ]]; then
+      if [[ "${I}" = "/dev/mmc"* ]]; then
         echo y | mkfs.ext4 -T largefile4 -E nodiscard "${I}"
       else
         echo y | mkfs.ext4 -T largefile4 "${I}"
@@ -1974,6 +1974,22 @@ function formatdisks() {
     --progressbox "Formatting ..." 20 100
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --msgbox "Formatting is complete." 0 0
+}
+
+###############################################################################
+# install opkg package manager
+function package() {
+  dialog --backtitle "$(backtitle)" --colors --title "Package" \
+    --yesno "This installs opkg Package Management,\nallowing you to install more Tools for use and debugging.\nDo you want to continue?" 0 0
+  [ $? -ne 0 ] && return
+  (
+    wget -O - http://bin.entware.net/x64-k3.2/installer/generic.sh | /bin/sh
+    opkg update
+    #opkg install python3 python3-pip
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Package" \
+    --progressbox "Installing opkg ..." 20 100
+  dialog --backtitle "$(backtitle)" --colors --title "Package" \
+    --msgbox "Installation is complete.\nPlease reconnect to ssh/web,\nor execute 'source ~/.bashrc'" 0 0
 }
 
 ###############################################################################
@@ -2019,29 +2035,29 @@ function cloneLoader() {
     echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
   done <<<$(lsblk -dpno KNAME,MODEL,TYPE)
   if [ ! -f "${TMP_PATH}/opts" ]; then
-    dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
+    dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --msgbox "No disk found!" 0 0
     return
   fi
-  dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
+  dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
     --radiolist "Choose a Destination" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
   resp=$(cat ${TMP_PATH}/resp)
   if [ -z "${resp}" ]; then
-    dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
+    dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --msgbox "No disk selected!" 0 0
     return
   else
     SIZE=$(df -m ${resp} 2>/dev/null | awk 'NR==2 {print $2}')
     if [ ${SIZE:-0} -lt 1024 ]; then
-      dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
+      dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
         --msgbox "Disk ${resp} size is less than 1GB and cannot be cloned!" 0 0
       return
     fi
     MSG=""
     MSG+="Warning:\nDisk ${resp} will be formatted and written to the bootloader. Please confirm that important data has been backed up. \nDo you want to continue?"
-    dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
+    dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --yesno "${MSG}" 0 0
     [ $? -ne 0 ] && return
   fi
@@ -2072,10 +2088,10 @@ function cloneLoader() {
     sync
     umount "${TMP_PATH}/sdX3"
     sleep 3
-  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
     --progressbox "Cloning ..." 20 100
-  dialog --backtitle "$(backtitle)" --colors --title "${T}" \
-    --msgbox "Bootloader has been cloned to disk ${resp}, please remove the current bootloader disk!\nReboot?" 0 0
+  dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
+    --msgbox "Bootloader has been cloned to disk ${resp},\nplease remove the current bootloader disk!\nReboot?" 0 0
   rebootTo config
   return
 }

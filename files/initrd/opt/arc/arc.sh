@@ -871,6 +871,8 @@ while true; do
       echo "j \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
       echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
       echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
+      echo "w \"Reset Loader \" "                                                           >>"${TMP_PATH}/menu"
+      echo "J \"DSM force Reinstall \" "                                                    >>"${TMP_PATH}/menu"
     fi
     if [ "${BOOTOPTS}" = "true" ]; then
       echo "6 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
@@ -919,12 +921,11 @@ while true; do
     echo "= \"\Z4========== Dev ===========\Zn \" "                                         >>"${TMP_PATH}/menu"
     echo "v \"Save Modifications to Disk \" "                                               >>"${TMP_PATH}/menu"
     echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
-    echo "w \"Reset Loader \" "                                                             >>"${TMP_PATH}/menu"
-    echo "J \"DSM force Reinstall \" "                                                      >>"${TMP_PATH}/menu"
     echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
     echo "T \"Force enable SSH in DSM \" "                                                  >>"${TMP_PATH}/menu"
     echo "C \"Clone Loaderdisk \" "                                                         >>"${TMP_PATH}/menu"
     echo "F \"\Z1Format Sata/NVMe Disk\Zn \" "                                              >>"${TMP_PATH}/menu"
+    echo "G \"Install opkg Package Manager \" "                                             >>"${TMP_PATH}/menu"
   fi
   echo "= \"\Z4====== Misc Settings =====\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
@@ -969,6 +970,8 @@ while true; do
     j) cmdlineMenu; NEXT="j" ;;
     k) synoinfoMenu; NEXT="k" ;;
     l) editUserConfig; NEXT="l" ;;
+    w) resetLoader; NEXT="w" ;;
+    J) juniorboot; NEXT="J" ;;
     # Boot Section
     6) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
       ARCOPTS="${BOOTOPTS}"
@@ -1097,12 +1100,11 @@ while true; do
       ;;
     v) saveMenu; NEXT="v" ;;
     n) editGrubCfg; NEXT="n" ;;
-    w) resetLoader; NEXT="w" ;;
-    J) juniorboot; NEXT="J" ;;
     L) greplogs; NEXT="L" ;;
     T) forcessh; NEXT="T" ;;
     C) cloneLoader; NEXT="C" ;;
     F) formatdisks; NEXT="F" ;;
+    G) package; NEXT="G" ;;
     # Loader Settings
     x) backupMenu; NEXT="x" ;;
     9) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
