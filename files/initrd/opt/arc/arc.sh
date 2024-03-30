@@ -128,7 +128,7 @@ function arcModel() {
         DT="$(readModelKey "${M}" "dt")"
         BETA="$(readModelKey "${M}" "beta")"
         [[ "${BETA}" = "true" && ${FLGBETA} -eq 0 ]] && continue
-        DISKS="$(readModelKey "${M}" "disks")-Bay"
+        DISKS="${Y}-Bay"
         ARCCONF="$(readModelKey "${M}" "arc.serial")"
         [ -n "${ARCCONF}" ] && ARC="x" || ARC=""
         [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]] && CPU="AMD" || CPU="Intel"
@@ -921,9 +921,10 @@ while true; do
     echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
     echo "w \"Reset Loader \" "                                                             >>"${TMP_PATH}/menu"
     echo "J \"DSM force Reinstall \" "                                                      >>"${TMP_PATH}/menu"
-    echo "F \"\Z1Format Sata/NVMe Disk\Zn \" "                                              >>"${TMP_PATH}/menu"
     echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
     echo "T \"Force enable SSH in DSM \" "                                                  >>"${TMP_PATH}/menu"
+    echo "C \"Clone Loaderdisk \" "                                                         >>"${TMP_PATH}/menu"
+    echo "F \"\Z1Format Sata/NVMe Disk\Zn \" "                                              >>"${TMP_PATH}/menu"
   fi
   echo "= \"\Z4====== Misc Settings =====\Zn \" "                                           >>"${TMP_PATH}/menu"
   echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
@@ -1098,9 +1099,10 @@ while true; do
     n) editGrubCfg; NEXT="n" ;;
     w) resetLoader; NEXT="w" ;;
     J) juniorboot; NEXT="J" ;;
-    F) formatdisks; NEXT="F" ;;
     L) greplogs; NEXT="L" ;;
     T) forcessh; NEXT="T" ;;
+    C) cloneLoader; NEXT="C" ;;
+    F) formatdisks; NEXT="F" ;;
     # Loader Settings
     x) backupMenu; NEXT="x" ;;
     9) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'

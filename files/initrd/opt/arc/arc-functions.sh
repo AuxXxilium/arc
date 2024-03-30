@@ -2009,6 +2009,77 @@ EOF
 }
 
 ###############################################################################
+# Clone Loader Disk
+function cloneLoader() {
+  rm -f "${TMP_PATH}/opts"
+  while read KNAME ID; do
+    [ -z "${KNAME}" -o -z "${ID}" ] && continue
+    echo "${KNAME}" | grep -q "${LOADER_DISK}" && continue
+    echo "\"${KNAME}\" \"${ID}\" \"off\"" >>"${TMP_PATH}/opts"
+  done <<<$(lsblk -dpno KNAME,ID)
+  if [ ! -f "${TMP_PATH}/opts" ]; then
+    DIALOG --title "Advanced" \
+      --msgbox "No disk found!" 0 0
+    return
+  fi
+  DIALOG --title "Advanced" \
+    --radiolist "Choose a disk to clone to" 0 0 0 --file "${TMP_PATH}/opts" \
+    2>${TMP_PATH}/resp
+  [ $? -ne 0 ] && return
+  RESP=$(<"${TMP_PATH}/resp")
+  if [ -z "${RESP}" ]; then
+    DIALOG --title "Advanced" \
+      --msgbox "No disk selected!" 0 0
+    return
+  else
+    SIZE=$(df -m ${RESP} 2>/dev/null | awk 'NR==2 {print $2}')
+    if [ ${SIZE:-0} -lt 1024 ]; then
+      DIALOG --title "Advanced" \
+        --msgbox "Disk ${RESP} size is less than 1GB and cannot be cloned!" 0 0
+      return
+    fi
+    MSG=""
+    MSG+="Warning:\nDisk ${RESP} will be formatted and written to the bootloader. Please confirm that important data has been backed up. \nDo you want to continue?"
+    DIALOG --title "Advanced" \
+      --yesno "${MSG}" 0 0
+    [ $? -ne 0 ] && return
+  fi
+  (
+    rm -rf "${PART3_PATH}/dl"
+    CLEARCACHE=0
+
+    gzip -dc "${CUSTOM_PATH}/grub.img.gz" | dd of="${RESP}" bs=1M conv=fsync status=progress
+    hdparm -z "${RESP}" # reset disk cache
+    fdisk -l "${RESP}"
+    sleep 3
+
+    mkdir -p "${TMP_PATH}/sdX1"
+    mount "$(lsblk "${RESP}" -pno KNAME,LABEL 2>/dev/null | grep ARC1 | awk '{print $1}')" "${TMP_PATH}/sdX1"
+    cp -vRf "${PART1_PATH}/". "${TMP_PATH}/sdX1/"
+    sync
+    umount "${TMP_PATH}/sdX1"
+
+    mkdir -p "${TMP_PATH}/sdX2"
+    mount "$(lsblk "${RESP}" -pno KNAME,LABEL 2>/dev/null | grep ARC2 | awk '{print $1}')" "${TMP_PATH}/sdX2"
+    cp -vRf "${PART2_PATH}/". "${TMP_PATH}/sdX2/"
+    sync
+    umount "${TMP_PATH}/sdX2"
+
+    mkdir -p "${TMP_PATH}/sdX3"
+    mount "$(lsblk "${RESP}" -pno KNAME,LABEL 2>/dev/null | grep ARC3 | awk '{print $1}')" "${TMP_PATH}/sdX3"
+    cp -vRf "${PART3_PATH}/". "${TMP_PATH}/sdX3/"
+    sync
+    umount "${TMP_PATH}/sdX3"
+    sleep 3
+  ) 2>&1 | DIALOG --title "Advanced" \
+    --progressbox "Cloning ..." 20 100
+  DIALOG --title "${T}" \
+    --msgbox "Bootloader has been cloned to disk ${RESP}, please remove the current bootloader disk!\nReboot?" 0 0
+  rebootTo config
+  return
+}
+
+###############################################################################
 # let user delete Loader Boot Files
 function resetLoader() {
   if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
