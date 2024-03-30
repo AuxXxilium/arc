@@ -106,10 +106,11 @@ writeConfigKey "device.nic" "${NIC}" "${USER_CONFIG_FILE}"
 VID="0x46f4"
 PID="0x0001"
 
+BUSLIST="usb sata scsi nvme mmc"
 if [ "${BUS}" = "usb" ]; then
   VID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_VENDOR_ID | cut -d= -f2)"
   PID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_MODEL_ID | cut -d= -f2)"
-elif [[ "${BUS}" != "sata" && "${BUS}" != "scsi" && "${BUS}" != "nvme" && "${BUS}" != "mmc" ]]; then
+elif ! echo "${BUSLIST}" | grep -wq "${BUS}"; then
   die "Loader disk is not USB or SATA/SCSI/NVME/eMMC DoM"
 fi
 
