@@ -104,10 +104,13 @@ function generateMacAddress() {
   PRE="$(readModelArray "${1}" "serial.macpre")"
   SUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
   NUM=${2:-1}
+  MACS=""
   for I in $(seq 1 ${NUM}); do
-    printf '%06x%06x' $((0x${PRE:-"001132"})) $(($((0x${SUF})) + ${I}))
-    [ ${I} -lt ${NUM} ] && printf ' '
+    MACS+="$(printf '%06x%06x' $((0x${PRE:-"001132"})) $(($((0x${SUF})) + ${I})))"
+    [ ${I} -lt ${NUM} ] && MACS+=" "
   done
+  echo "${MACS}"
+  return 0
 }
 
 ###############################################################################
@@ -122,19 +125,16 @@ function validateSerial() {
   P=${2:4:3}
   L=${#2}
   if [ ${L} -ne 13 ]; then
-    echo 0
-    return
+    return 0
   fi
   echo "${PREFIX}" | grep -q "${S}"
   if [ $? -eq 1 ]; then
-    echo 0
-    return
+    return 0
   fi
   if [ "${MIDDLE}" != "${P}" ]; then
-    echo 0
-    return
+    return 0
   fi
-  echo 1
+  return 1
 }
 
 ###############################################################################
@@ -196,6 +196,7 @@ function getBus() {
   # usb/scsi(sata/ide)/virtio(scsi/virtio)/mmc/nvme
   [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | awk -F':' '{print $(NF-1)}' | sed 's/_host//')
   echo "${BUS}"
+  return 0
 }
 
 ###############################################################################
@@ -211,6 +212,7 @@ function getIP() {
     [ -z "${IP}" ] && IP=$(ip addr show | grep -E "inet .* eth" | awk '{print $2}' | cut -f1 -d'/' | head -1)
   fi
   echo "${IP}"
+  return 0
 }
 
 ###############################################################################
@@ -306,6 +308,7 @@ EOF
   done
 
   rm -f ${TMP_PATH}/ethlist
+  return 0
 }
 
 ###############################################################################
@@ -389,7 +392,9 @@ function livepatch() {
 # Rebooting
 # (based on pocopico's TCRP code)
 function rebootTo() {
-  [[ "${1}" != "junior" && "${1}" != "config" ]] && exit 1
+  MODES="config recovery junior"
+  [ -z "${1}" ] && exit 1
+  if ! echo "${MODES}" | grep -qw "${1}"; then exit 1; fi
   # echo "Rebooting to ${1} mode"
   GRUBPATH="$(dirname $(find ${BOOTLOADER_PATH}/ -name grub.cfg | head -1))"
   ENVFILE="${GRUBPATH}/grubenv"
