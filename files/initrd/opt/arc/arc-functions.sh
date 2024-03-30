@@ -159,7 +159,7 @@ function modulesMenu() {
         dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
           --checklist "Select Modules to include" 0 0 0 \
           --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && continue
+        [ $? -ne 0 ] && return 1
         resp=$(cat ${TMP_PATH}/resp)
         dialog --backtitle "$(backtitle)" --title "Modules" \
            --infobox "Writing to user config" 20 5
@@ -182,18 +182,18 @@ function modulesMenu() {
         TEXT+="Do you want to continue?"
         dialog --backtitle "$(backtitle)" --title "Add external Module" \
             --yesno "${TEXT}" 0 0
-        [ $? -ne 0 ] && continue
+        [ $? -ne 0 ] && return 1
         dialog --backtitle "$(backtitle)" --aspect 18 --colors --inputbox "Please enter the complete URL to download.\n" 0 0 \
           2>"${TMP_PATH}/resp"
         URL=$(cat "${TMP_PATH}/resp")
-        [ -z "${URL}" ] && continue
+        [ -z "${URL}" ] && return 1
         clear
         echo "Downloading ${URL}"
         STATUS=$(curl -kLJO -w "%{http_code}" "${URL}" --progress-bar)
         if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Add external Module" --aspect 18 \
             --msgbox "ERROR: Check internet, URL or cache disk space" 0 0
-          continue
+          return 1
         fi
         KONAME=$(basename "$URL")
         if [[ -n "${KONAME}" && "${KONAME##*.}" = "ko" ]]; then
@@ -285,9 +285,9 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" \
           --checklist "Select cmdline to remove" 0 0 0 ${ITEMS} \
           2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && continue
+        [ $? -ne 0 ] && return 1
         resp=$(cat ${TMP_PATH}/resp)
-        [ -z "${resp}" ] && continue
+        [ -z "${resp}" ] && return 1
         for I in ${resp}; do
           unset 'CMDLINE[${I}]'
           deleteConfigKey "cmdline.\"${I}\"" "${USER_CONFIG_FILE}"
@@ -403,9 +403,9 @@ function cmdlineMenu() {
         dialog --backtitle "$(backtitle)" --colors --title "Kernelpanic" \
           --default-item "${KERNELPANIC}" --menu "Choose a time(seconds)" 0 0 0 --file "${TMP_PATH}/opts" \
           2>${TMP_PATH}/resp
-        [ $? -ne 0 ] && return
+        [ $? -ne 0 ] && return 1
         resp=$(cat ${TMP_PATH}/resp)
-        [ -z "${resp}" ] && return
+        [ -z "${resp}" ] && return 1
         KERNELPANIC=${resp}
         writeConfigKey "arc.kernelpanic" "${KERNELPANIC}" "${USER_CONFIG_FILE}"
         ;;
@@ -439,13 +439,13 @@ function synoinfoMenu() {
         dialog --backtitle "$(backtitle)" --title "Synoinfo entries" \
           --inputbox "Type a name of synoinfo entry" 0 0 \
           2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && continue
+        [ $? -ne 0 ] && return 1
         NAME=$(cat "${TMP_PATH}/resp")
-        [ -z "${NAME//\"/}" ] && continue
+        [ -z "${NAME//\"/}" ] && return 1
         dialog --backtitle "$(backtitle)" --title "Synoinfo entries" \
           --inputbox "Type a value of '${NAME}' entry" 0 0 "${SYNOINFO[${NAME}]}" \
           2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && continue
+        [ $? -ne 0 ] && return 1
         VALUE=$(cat "${TMP_PATH}/resp")
         SYNOINFO[${NAME}]="${VALUE}"
         writeConfigKey "synoinfo.\"${NAME//\"/}\"" "${VALUE}" "${USER_CONFIG_FILE}"
@@ -464,9 +464,9 @@ function synoinfoMenu() {
         dialog --backtitle "$(backtitle)" \
           --checklist "Select synoinfo entry to remove" 0 0 0 ${ITEMS} \
           2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && continue
+        [ $? -ne 0 ] && return 1
         resp=$(cat ${TMP_PATH}/resp)
-        [ -z "${resp}" ] && continue
+        [ -z "${resp}" ] && return 1
         for I in ${resp}; do
           unset 'SYNOINFO[${I}]'
           deleteConfigKey "synoinfo.\"${I}\"" "${USER_CONFIG_FILE}"
@@ -572,9 +572,9 @@ function keymapMenu() {
   dialog --backtitle "$(backtitle)" --no-items --default-item "${KEYMAP}" \
     --menu "Choice a keymap" 0 0 0 ${OPTIONS} \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && continue
+  [ $? -ne 0 ] && return 1
   resp=$(cat ${TMP_PATH}/resp)
-  [ -z "${resp}" ] && continue
+  [ -z "${resp}" ] && return 1
   KEYMAP=${resp}
   writeConfigKey "layout" "${LAYOUT}" "${USER_CONFIG_FILE}"
   writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
@@ -897,14 +897,14 @@ function updateMenu() {
           --inputbox "Type the Version!" 0 0 \
           2>"${TMP_PATH}/input"
           TAG=$(cat "${TMP_PATH}/input")
-          [ -z "${TAG}" ] && continue
+          [ -z "${TAG}" ] && return 1
         fi
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         if [ "${ACTUALVERSION}" = "${TAG}" ]; then
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
             --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
-          [ $? -ne 0 ] && continue
+          [ $? -ne 0 ] && return 1
         fi
         # Download update file
         STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
@@ -937,7 +937,7 @@ function updateMenu() {
         rm -f "${TMP_PATH}/arc.img"
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
           --yesno "Arc Upgrade successful. New Version: ${TAG}\nReboot?" 0 0
-        [ $? -ne 0 ] && continue
+        [ $? -ne 0 ] && return 1
         exec reboot
         exit 0
         ;;
@@ -1773,26 +1773,26 @@ function staticIPMenu() {
     TEXT+="Do you want to change Config?"
     dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
         --yesno "${TEXT}" 0 0
-    [ $? -ne 0 ] && continue
+    [ $? -ne 0 ] && return 1
     dialog --clear --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
       --menu "DHCP or STATIC?" 0 0 0 \
         1 "DHCP" \
         2 "STATIC" \
       2>"${TMP_PATH}/opts"
     opts=$(cat ${TMP_PATH}/opts)
-    [ -z "${opts}" ] && continue
+    [ -z "${opts}" ] && return 1
     if [ ${opts} -eq 1 ]; then
       writeConfigKey "static.${ETH}" "false" "${USER_CONFIG_FILE}"
     elif [ ${opts} -eq 2 ]; then
       dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
         --inputbox "Type a Static IP\nLike: 192.168.0.1" 0 0 "${IPADDR}" \
         2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && continue
+      [ $? -ne 0 ] && return 1
       IPADDR=$(cat "${TMP_PATH}/resp")
       dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
         --inputbox "Type a Netmask\nLike: 24" 0 0 "${NETMASK}" \
         2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && continue
+      [ $? -ne 0 ] && return 1
       NETMASK=$(cat "${TMP_PATH}/resp")
       writeConfigKey "ip.${ETH}" "${IPADDR}" "${USER_CONFIG_FILE}"
       writeConfigKey "netmask.${ETH}" "${NETMASK}" "${USER_CONFIG_FILE}"
@@ -1857,14 +1857,14 @@ function resetPassword() {
   if [ ! -f "${TMP_PATH}/menu" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
       --msgbox "The installed Syno system not found in the currently inserted disks!" 0 0
-    return
+    return 1
   fi
   dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
     --no-items --menu "Choose a User" 0 0 0  --file "${TMP_PATH}/menu" \
     2>${TMP_PATH}/resp
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   USER="$(cat "${TMP_PATH}/resp" | awk '{print $1}')"
-  [ -z "${USER}" ] && return
+  [ -z "${USER}" ] && return 1
   while true; do
     dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
       --inputbox "Type a new Password for User ${USER}" 0 70 "${CMDLINE[${NAME}]}" \
