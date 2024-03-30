@@ -1936,14 +1936,14 @@ function formatdisks() {
   while read -r KNAME KMODEL; do
     [ -z "${KNAME}" ] && continue
     [[ "${KNAME}" = /dev/md* ]] && continue
-    [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
+    [ -z "${KMODEL}" ] && KMODEL="Partition"
     echo "${KNAME}" | grep -q "${LOADER_DISK}" && continue
     echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
-  done <<<$(lsblk -pno KNAME,MODEL,TYPE)
+  done <<<$(lsblk -pno KNAME,MODEL)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
       --msgbox "No disk found!" 0 0
-    return
+    return 1
   fi
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --checklist "Select Disk(s)" 0 0 0 --file "${TMP_PATH}/opts" \
@@ -1954,17 +1954,17 @@ function formatdisks() {
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return
-  if [ $(ls /dev/md* 2>/dev/null | wc -l) -gt 0 ]; then
+  if [ $(ls /dev/md[0-9]* 2>/dev/null | wc -l) -gt 0 ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
-      --yesno "Warning:\nThe current HDD are in Raid, do you still want to format them?" 0 0
+      --yesno "Warning:\nThe current HDD(s) are in Raid, do you still want to format them?" 0 0
     [ $? -ne 0 ] && return
-    for I in $(ls /dev/md* 2>/dev/null); do
+    for I in $(ls /dev/md[0-9]* 2>/dev/null); do
       mdadm -S "${I}"
     done
   fi
   (
     for I in ${resp}; do
-      if [[ "${I}" = "/dev/mmc"* ]]; then
+      if [[ "${I}" = /dev/mmc* ]]; then
         echo y | mkfs.ext4 -T largefile4 -E nodiscard "${I}"
       else
         echo y | mkfs.ext4 -T largefile4 "${I}"
