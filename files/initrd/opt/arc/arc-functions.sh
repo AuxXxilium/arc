@@ -2012,35 +2012,36 @@ EOF
 # Clone Loader Disk
 function cloneLoader() {
   rm -f "${TMP_PATH}/opts"
-  while read KNAME ID; do
-    [ -z "${KNAME}" -o -z "${ID}" ] && continue
+  while read -r KNAME KMODEL; do
+    [ -z "${KNAME}" ] && continue
+    [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
     echo "${KNAME}" | grep -q "${LOADER_DISK}" && continue
-    echo "\"${KNAME}\" \"${ID}\" \"off\"" >>"${TMP_PATH}/opts"
-  done <<<$(lsblk -dpno KNAME,ID)
+    echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
+  done <<<$(lsblk -dpno KNAME,MODEL,TYPE)
   if [ ! -f "${TMP_PATH}/opts" ]; then
-    DIALOG --title "Advanced" \
+    dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
       --msgbox "No disk found!" 0 0
     return
   fi
-  DIALOG --title "Advanced" \
-    --radiolist "Choose a disk to clone to" 0 0 0 --file "${TMP_PATH}/opts" \
+  dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
+    --radiolist "Choose a Destination" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
-  RESP=$(<"${TMP_PATH}/resp")
-  if [ -z "${RESP}" ]; then
-    DIALOG --title "Advanced" \
+  resp=$(cat ${TMP_PATH}/resp)
+  if [ -z "${resp}" ]; then
+    dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
       --msgbox "No disk selected!" 0 0
     return
   else
-    SIZE=$(df -m ${RESP} 2>/dev/null | awk 'NR==2 {print $2}')
+    SIZE=$(df -m ${resp} 2>/dev/null | awk 'NR==2 {print $2}')
     if [ ${SIZE:-0} -lt 1024 ]; then
-      DIALOG --title "Advanced" \
-        --msgbox "Disk ${RESP} size is less than 1GB and cannot be cloned!" 0 0
+      dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
+        --msgbox "Disk ${resp} size is less than 1GB and cannot be cloned!" 0 0
       return
     fi
     MSG=""
-    MSG+="Warning:\nDisk ${RESP} will be formatted and written to the bootloader. Please confirm that important data has been backed up. \nDo you want to continue?"
-    DIALOG --title "Advanced" \
+    MSG+="Warning:\nDisk ${resp} will be formatted and written to the bootloader. Please confirm that important data has been backed up. \nDo you want to continue?"
+    dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
       --yesno "${MSG}" 0 0
     [ $? -ne 0 ] && return
   fi
@@ -2048,33 +2049,33 @@ function cloneLoader() {
     rm -rf "${PART3_PATH}/dl"
     CLEARCACHE=0
 
-    gzip -dc "${CUSTOM_PATH}/grub.img.gz" | dd of="${RESP}" bs=1M conv=fsync status=progress
-    hdparm -z "${RESP}" # reset disk cache
-    fdisk -l "${RESP}"
+    gzip -dc "${CUSTOM_PATH}/grub.img.gz" | dd of="${resp}" bs=1M conv=fsync status=progress
+    hdparm -z "${resp}" # reset disk cache
+    fdisk -l "${resp}"
     sleep 3
 
     mkdir -p "${TMP_PATH}/sdX1"
-    mount "$(lsblk "${RESP}" -pno KNAME,LABEL 2>/dev/null | grep ARC1 | awk '{print $1}')" "${TMP_PATH}/sdX1"
+    mount "$(lsblk "${resp}" -pno KNAME,LABEL 2>/dev/null | grep ARC1 | awk '{print $1}')" "${TMP_PATH}/sdX1"
     cp -vRf "${PART1_PATH}/". "${TMP_PATH}/sdX1/"
     sync
     umount "${TMP_PATH}/sdX1"
 
     mkdir -p "${TMP_PATH}/sdX2"
-    mount "$(lsblk "${RESP}" -pno KNAME,LABEL 2>/dev/null | grep ARC2 | awk '{print $1}')" "${TMP_PATH}/sdX2"
+    mount "$(lsblk "${resp}" -pno KNAME,LABEL 2>/dev/null | grep ARC2 | awk '{print $1}')" "${TMP_PATH}/sdX2"
     cp -vRf "${PART2_PATH}/". "${TMP_PATH}/sdX2/"
     sync
     umount "${TMP_PATH}/sdX2"
 
     mkdir -p "${TMP_PATH}/sdX3"
-    mount "$(lsblk "${RESP}" -pno KNAME,LABEL 2>/dev/null | grep ARC3 | awk '{print $1}')" "${TMP_PATH}/sdX3"
+    mount "$(lsblk "${resp}" -pno KNAME,LABEL 2>/dev/null | grep ARC3 | awk '{print $1}')" "${TMP_PATH}/sdX3"
     cp -vRf "${PART3_PATH}/". "${TMP_PATH}/sdX3/"
     sync
     umount "${TMP_PATH}/sdX3"
     sleep 3
-  ) 2>&1 | DIALOG --title "Advanced" \
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Advanced" \
     --progressbox "Cloning ..." 20 100
-  DIALOG --title "${T}" \
-    --msgbox "Bootloader has been cloned to disk ${RESP}, please remove the current bootloader disk!\nReboot?" 0 0
+  dialog --backtitle "$(backtitle)" --colors --title "${T}" \
+    --msgbox "Bootloader has been cloned to disk ${resp}, please remove the current bootloader disk!\nReboot?" 0 0
   rebootTo config
   return
 }
