@@ -144,6 +144,7 @@ elif [ "${EMMCBOOT}" = "true" ]; then
   CMDLINE['root']="/dev/mmcblk0p1"
 fi
 
+[ ! "${MODEL}" = "SA6400" ] && CMDLINE['elevator']="elevator"
 CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 
