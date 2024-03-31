@@ -346,7 +346,7 @@ function arcPatch() {
   fi
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   if [ "${ONLYPATCH}" = "true" ]; then
-    return 1
+    return 0
   else
     arcSettings
   fi
@@ -526,10 +526,10 @@ function arcSummary() {
     make
     ;;
   3) # extra-button
-    return 1
+    return 0
     ;;
   255) # ESC
-    return 1
+    return 0
     ;;
   esac
 }
@@ -699,8 +699,7 @@ function make() {
       if [ ${resp} -eq 1 ]; then
         boot && exit 0
       elif [ ${resp} -eq 2 ]; then
-        dialog --clear --no-items --backtitle "$(backtitle)"
-        return 1
+        return 0
       fi
     else
       dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
@@ -786,8 +785,7 @@ function offlinemake() {
     if [ ${resp} -eq 1 ]; then
       boot && exit 0
     elif [ ${resp} -eq 2 ]; then
-      dialog --clear --no-items --backtitle "$(backtitle)"
-      return 1
+      return 0
     fi
   else
     dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
