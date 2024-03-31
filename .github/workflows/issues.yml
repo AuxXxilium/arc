@@ -44,3 +44,11 @@ jobs:
             
             **Hardware**
             Add your Hardware Informations here. CPU / Board / Networkcontroller / Storagecontroller / ...
+
+      - name: Close Issues
+        if: env.FALG == 'false'
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'close-issue'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}

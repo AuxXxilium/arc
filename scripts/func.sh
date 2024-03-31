@@ -103,6 +103,7 @@ function getAddons() {
     echo "Extracting ${PKG} to ${DEST_PATH}/${ADDON}"
     tar -xaf "${PKG}" -C "${DEST_PATH}/${ADDON}"
   done
+  rm -f "${CACHE_FILE}"
   echo "Getting Addons end - ${TAG}"
 }
 
