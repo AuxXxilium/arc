@@ -4,7 +4,6 @@ set -e
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 . ${ARC_PATH}/include/functions.sh
-. ${ARC_PATH}/include/addons.sh
 
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
