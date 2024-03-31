@@ -1,4 +1,4 @@
-#0!/usr/bin/env bash
+#!/usr/bin/env bash
 
 set -e
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
@@ -11,29 +11,20 @@ BUS=$(getBus "${LOADER_DISK}")
 # Check if machine has EFI
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
 
-# Print text centralized
+# Print Title centralized
 clear
 COLUMNS=${COLUMNS:-50}
-TITLE="${ARC_TITLE}"
+BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
+TITLE="Version:"
+TITLE+=" ${ARC_TITLE}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
+printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
-TITLE="BOOTING:"
-[ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [Legacy]"
+[ ${EFI} -eq 1 ] && TITLE="[UEFI]" || TITLE="[Legacy]"
 TITLE+=" [${BUS}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
-
-echo
-cat <<EOF
-    ###    #####    ####
-   #   #   #    #  #    #
-  #     #  #    #  #
-  #######  #####   #
-  #     #  #   #   #    #
-  #     #  #    #   ####
-EOF
-echo
 
 # Check if DSM zImage/Ramdisk is changed, patch it if necessary, update Files if necessary
 ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"

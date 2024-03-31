@@ -11,12 +11,15 @@ set -e
 # Get Loader Disk Bus
 BUS=$(getBus "${LOADER_DISK}")
 
-# Shows title
+# Print Title centralized
 clear
-[ -z "${COLUMNS}" ] && COLUMNS=50
-TITLE="${ARC_TITLE}"
+COLUMNS=${COLUMNS:-50}
+BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
+TITLE="Version:"
+TITLE+=" ${ARC_TITLE}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
+printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
 
