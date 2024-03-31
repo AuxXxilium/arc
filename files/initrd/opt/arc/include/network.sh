@@ -9,6 +9,7 @@ function getnet() {
       [ -n "${ARCMAC}" ] && writeConfigKey "mac.${ETH}" "${ARCMAC}" "${USER_CONFIG_FILE}"
       [ -z "${ARCMAC}" ] && break
       ARCMACNUM=$((${ARCMACNUM} + 1))
+      ARCMAC=""
     done
   elif [ "${ARCPATCH}" = "false" ]; then
     for ETH in ${ETHX}; do
