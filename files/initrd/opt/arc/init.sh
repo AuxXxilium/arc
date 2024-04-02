@@ -74,6 +74,10 @@ if grep -q -E '(vmx|svm)' /proc/cpuinfo; then
 else
   writeConfigKey "arc.kvm" "false" "${USER_CONFIG_FILE}"
 fi
+# Check for ACPI Support
+if ! grep -q "^flags.*acpi.*" /proc/cpuinfo; then
+  deleteConfigKey "addons.acpid" "${USER_CONFIG_FILE}"
+fi
 
 # Init Network
 ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true

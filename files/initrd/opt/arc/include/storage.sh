@@ -223,6 +223,7 @@ function getmapSelection() {
 if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
   SATACONTROLLER=$(lspci -d ::106 | wc -l)
   writeConfigKey "device.satacontroller" "${SATACONTROLLER}" "${USER_CONFIG_FILE}"
+  writeConfigKey "device.externalcontroller" "false" "${USER_CONFIG_FILE}"
 fi
 if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
   SASCONTROLLER=$(lspci -d ::107 | wc -l)

@@ -40,10 +40,6 @@ function addonSelection() {
   if [ "${PLATFORM}" = "epyc7002" ]; then
     KVER="${PRODUCTVER}-${KVER}"
   fi
-  # Check for ACPI Support
-  if ! grep -q "^flags.*acpi.*" /proc/cpuinfo; then
-    deleteConfigKey "addons.acpid" "${USER_CONFIG_FILE}"
-  fi
   # read addons from user config
   unset ADDONS
   declare -A ADDONS
