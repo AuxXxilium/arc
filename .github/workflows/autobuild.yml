@@ -124,8 +124,8 @@ jobs:
 
       # Upload artifact
       - name: Upload
-        uses: actions/upload-artifact@v3
-        if: env.VERSION != ''
+        if: success() && env.VERSION == ''
+        uses: actions/upload-artifact@v4
         with:
           name: Images
           path: |
@@ -134,8 +134,8 @@ jobs:
 
       # Publish a release if is a tag
       - name: Release
-        uses: softprops/action-gh-release@v1
-        if: env.VERSION != ''
+        uses: ncipollo/action-gh-release@v1
+        if: success() && env.VERSION != ''
         with:
           tag_name: ${{ env.VERSION }}
           prerelease: true
