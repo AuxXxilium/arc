@@ -2061,7 +2061,7 @@ function cloneLoader() {
     rm -rf "${PART3_PATH}/dl"
     CLEARCACHE=0
 
-    gzip -dc "${CUSTOM_PATH}/grub.img.gz" | dd of="${resp}" bs=1M conv=fsync status=progress
+    gzip -dc "${ARC_PATH}/grub.img.gz" | dd of="${resp}" bs=1M conv=fsync status=progress
     hdparm -z "${resp}" # reset disk cache
     fdisk -l "${resp}"
     sleep 3
