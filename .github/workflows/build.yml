@@ -224,6 +224,7 @@ jobs:
         with:
           tag: ${{ env.VERSION }}
           prerelease: ${{ inputs.prerelease }}
+          allowUpdates: true
           body: |
             Notice:
               ${{ inputs.notice }}

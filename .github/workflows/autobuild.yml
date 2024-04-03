@@ -139,6 +139,7 @@ jobs:
         with:
           tag: ${{ env.VERSION }}
           prerelease: true
+          allowUpdates: true
           artifacts: |
             arc-${{ env.VERSION }}.img.zip
             arc-${{ env.VERSION }}.vmdk-dyn.zip
