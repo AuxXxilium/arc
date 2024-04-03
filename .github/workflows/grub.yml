@@ -28,7 +28,8 @@ jobs:
           sudo timedatectl set-timezone "Europe/Berlin"
 
           sudo apt update
-          sudo apt install -y build-essential bison flex dosfstools gawk gettext pkg-config autoconf automake autopoint
+          sudo apt install -y autoconf automake autopoint gettext build-essential bison flex libtool dosfstools e2fsprogs
+          sudo apt install -y libfreetype6-dev unifont fonts-dejavu libfuse-dev liblzma-dev libzfslinux-dev
 
       - name: Make Grub
         run: |
@@ -46,7 +47,7 @@ jobs:
         run: |
           if [ -f "grub.img.gz" ]; then
             echo "Copy img ..."
-            mv -f grub.img.gz files/grub.img.gz
+            mv -f files/initrd/opt/arc/grub.img.gz
 
             echo "Git push ..."
             git pull

@@ -17,7 +17,7 @@ getConfigs "files/p3/configs"
 getPatches "files/p3/patches"
 
 IMAGE_FILE="arc.img"
-gzip -dc "files/grub.img.gz" >"${IMAGE_FILE}"
+gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
 fdisk -l "${IMAGE_FILE}"
 
 LOOPX=$(sudo losetup -f)
