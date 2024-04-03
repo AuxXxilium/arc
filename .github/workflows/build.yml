@@ -145,7 +145,7 @@ jobs:
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
-          gzip -dc "files/grub.img.gz" >"${IMAGE_FILE}"
+          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
@@ -207,8 +207,8 @@ jobs:
 
       # Upload artifact
       - name: Upload
-        uses: actions/upload-artifact@v3
-        if: env.VERSION != ''
+        if: success() && env.VERSION == ''
+        uses: actions/upload-artifact@v4
         with:
           name: Images
           path: |
@@ -219,11 +219,12 @@ jobs:
 
       # Publish a release if is a tag
       - name: Release
-        uses: softprops/action-gh-release@v1
-        if: env.VERSION != ''
+        if: success() && env.VERSION != ''
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ env.VERSION }}
+          tag: ${{ env.VERSION }}
           prerelease: ${{ inputs.prerelease }}
+          allowUpdates: true
           body: |
             Notice:
               ${{ inputs.notice }}
@@ -237,7 +238,7 @@ jobs:
 
             Changelog:
               ${{ steps.Changelog.outputs.changelog }}
-          files: |
+          artifacts: |
             arc-${{ env.VERSION }}.img.zip
             # arc_4GB-${{ env.VERSION }}.img.zip
             arc-${{ env.VERSION }}.vmdk-dyn.zip
