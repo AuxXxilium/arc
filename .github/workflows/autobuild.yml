@@ -137,9 +137,9 @@ jobs:
         if: success() && env.VERSION != ''
         uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ env.VERSION }}
+          tag: ${{ env.VERSION }}
           prerelease: true
-          files: |
+          artifacts: |
             arc-${{ env.VERSION }}.img.zip
             arc-${{ env.VERSION }}.vmdk-dyn.zip
             arc-${{ env.VERSION }}.vmdk-flat.zip

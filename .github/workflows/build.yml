@@ -222,7 +222,7 @@ jobs:
         if: success() && env.VERSION != ''
         uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ env.VERSION }}
+          tag: ${{ env.VERSION }}
           prerelease: ${{ inputs.prerelease }}
           body: |
             Notice:
@@ -237,7 +237,7 @@ jobs:
 
             Changelog:
               ${{ steps.Changelog.outputs.changelog }}
-          files: |
+          artifacts: |
             arc-${{ env.VERSION }}.img.zip
             # arc_4GB-${{ env.VERSION }}.img.zip
             arc-${{ env.VERSION }}.vmdk-dyn.zip
