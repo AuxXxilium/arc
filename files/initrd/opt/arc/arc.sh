@@ -190,7 +190,6 @@ function arcModel() {
   # read model config for dt and aes
   if [ "${MODEL}" != "${resp}" ]; then
     MODEL="${resp}"
-    DT="$(readModelKey "${MODEL}" "dt")"
     PRODUCTVER=""
     writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
     writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
