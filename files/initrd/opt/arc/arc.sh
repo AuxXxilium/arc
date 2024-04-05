@@ -43,11 +43,13 @@ if [ "${OFFLINE}" = "false" ]; then
   fi
 fi
 
+# Get Loader Config
+LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
+KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
-KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 if [ -n "${MODEL}" ]; then
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
@@ -56,8 +58,6 @@ fi
 
 # Get Arc Data from Config
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
@@ -73,6 +73,10 @@ ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
+
+# Get Config/Build Status
+CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
 if [ "${OFFLINE}" = "false" ]; then
   # Update Check
