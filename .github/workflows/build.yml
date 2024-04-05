@@ -121,19 +121,19 @@ jobs:
 
           getExtractor "files/p3/extractor"
           LKMTAG="${{ inputs.lkm_version }}"
-          getLKMs "files/p3/lkms" ${{ inputs.prerelease }}
+          getLKMs "files/p3/lkms"
           echo "LKMTAG=${TAG}" >> $GITHUB_ENV
           ADDONSTAG="${{ inputs.addons_version }}"
-          getAddons "files/p3/addons" ${{ inputs.prerelease }}
+          getAddons "files/p3/addons"
           echo "ADDONSTAG=${TAG}" >> $GITHUB_ENV
           MODULESTAG="${{ inputs.modules_version }}"
-          getModules "files/p3/modules" ${{ inputs.prerelease }}
+          getModules "files/p3/modules"
           echo "MODULESTAG=${TAG}" >> $GITHUB_ENV
           CONFIGSTAG="${{ inputs.configs_version }}"
-          getConfigs "files/p3/configs" ${{ inputs.prerelease }}
+          getConfigs "files/p3/configs" "${{ secrets.ACTION }}"
           echo "CONFIGSTAG=${TAG}" >> $GITHUB_ENV
           PATCHESTAG="${{ inputs.patches_version }}"
-          getPatches "files/p3/patches" ${{ inputs.prerelease }}
+          getPatches "files/p3/patches"
           echo "PATCHESTAG=${TAG}" >> $GITHUB_ENV
 
           echo "OK"
