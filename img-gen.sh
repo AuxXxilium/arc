@@ -8,15 +8,12 @@ set -e
 sudo git clean -fdx
 sudo git pull
 
-# Get Github Key
-KEY="$(cat ../key)"
-
 # Get extractor, LKM, addons and Modules
 getExtractor "files/p3/extractor"
 getLKMs "files/p3/lkms"
 getAddons "files/p3/addons"
 getModules "files/p3/modules"
-getConfigs "files/p3/configs" "${KEY}"
+getConfigs "files/p3/configs"
 getPatches "files/p3/patches"
 
 IMAGE_FILE="arc.img"

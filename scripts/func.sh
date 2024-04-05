@@ -136,14 +136,13 @@ function getConfigs() {
   echo "Getting Configs begin"
   local DEST_PATH="${1:-configs}"
   local CACHE_FILE="/tmp/configs.zip"
-  local KEY="${2:-${{ secrets.ACTION }}}"
   rm -f "${CACHE_FILE}"
   if [ -n "${CONFIGSTAG}" ]; then
     TAG="${CONFIGSTAG}"
   else
-    TAG="$(curl -s https://oauth2:${KEY}@api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+    TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
   fi
-  STATUS=$(curl -w "%{http_code}" -L "https://oauth2:${KEY}@github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${CACHE_FILE}")
+  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${CACHE_FILE}")
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
   # Unzip Modules

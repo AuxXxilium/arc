@@ -61,7 +61,7 @@ jobs:
           getLKMs "files/p3/lkms"
           getAddons "files/p3/addons"
           getModules "files/p3/modules"
-          getConfigs "files/p3/configs" "${{ secrets.ACTION }}"
+          getConfigs "files/p3/configs"
           getPatches "files/p3/patches"
 
           echo "OK"
