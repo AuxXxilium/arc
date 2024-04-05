@@ -36,8 +36,6 @@ initConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
 initConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
-initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
-initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
 initConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
@@ -222,5 +220,9 @@ if [ ${RAM} -le 3500 ]; then
   echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n"
   echo -e "\033[1;31mUse arc.sh to proceed. Not recommended!\033[0m\n"
 else
-  arc.sh
+  if [ -f "${PRESET_CONFIG_FILE}" ]; then
+    automated.sh
+  else
+    arc.sh
+  fi
 fi
