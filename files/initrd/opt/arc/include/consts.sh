@@ -15,6 +15,7 @@ LOG_FILE="${TMP_PATH}/log.txt"
 UPLOAD_PATH="${TMP_PATH}/upload"
 
 USER_CONFIG_FILE="${PART1_PATH}/user-config.yml"
+PRESET_CONFIG_FILE="${PART1_PATH}/preset-config.yml"
 GRUB_PATH="${PART1_PATH}/boot/grub"
 
 ORI_ZIMAGE_FILE="${PART2_PATH}/zImage"
