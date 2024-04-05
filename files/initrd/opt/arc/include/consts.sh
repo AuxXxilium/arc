@@ -1,5 +1,5 @@
 
-ARC_VERSION="23.1.1"
+ARC_VERSION="24.1.1"
 ARC_TITLE="Arc ${ARC_VERSION}"
 
 # Define paths
@@ -16,6 +16,9 @@ UPLOAD_PATH="${TMP_PATH}/upload"
 
 USER_CONFIG_FILE="${PART1_PATH}/user-config.yml"
 PRESET_CONFIG_FILE="${PART1_PATH}/preset-config.yml"
+if [ -f "${PRESET_CONFIG_FILE}" ]; then
+  USER_CONFIG_FILE="${PART1_PATH}/preset-config.yml"
+fi
 GRUB_PATH="${PART1_PATH}/boot/grub"
 
 ORI_ZIMAGE_FILE="${PART2_PATH}/zImage"
