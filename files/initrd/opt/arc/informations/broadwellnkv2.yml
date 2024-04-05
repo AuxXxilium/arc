@@ -1,7 +1,7 @@
-- Hardwaresupport for Intel (may work on AMD eq. HP Microserver Gen7)
+- Hardwaresupport for Intel (may work on AMD)
 - Up to 24 Threads
-- Support for RAID/SCSI/HBA Controller
-- USB Storage as Internal or External
+- Experimental support for RAID/SCSI/HBA Controller
+- USB Storage as External
 - Support for SATA Controller
 - NVMe Cache working
-- No Devicetree - nonDT
+- Devicetree - DT
