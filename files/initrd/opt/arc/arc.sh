@@ -803,7 +803,7 @@ function offlinemake() {
 }
 
 ###############################################################################
-# Calls boot.sh to boot into DSM Recovery
+# Calls boot.sh to boot into DSM Reinstall Mode
 function juniorboot() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   [ "${BUILDDONE}" = "false" ] && dialog --backtitle "$(backtitle)" --title "Alert" \
@@ -813,7 +813,23 @@ function juniorboot() {
   fi
   grub-editenv ${GRUB_PATH}/grubenv set next_entry="junior"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
-    --infobox "Booting DSM Recovery...\nPlease stay patient!" 4 30
+    --infobox "Booting DSM Reinstall Mode...\nPlease stay patient!" 4 30
+  sleep 2
+  exec reboot
+}
+
+###############################################################################
+# Calls boot.sh to boot into DSM Recovery Mode
+function recoveryboot() {
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  [ "${BUILDDONE}" = "false" ] && dialog --backtitle "$(backtitle)" --title "Alert" \
+    --yesno "Config changed, please build Loader first." 0 0
+  if [ $? -eq 0 ]; then
+    premake
+  fi
+  grub-editenv ${GRUB_PATH}/grubenv set next_entry="recovery"
+  dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+    --infobox "Booting DSM Recovery Mode...\nPlease stay patient!" 4 30
   sleep 2
   exec reboot
 }
@@ -878,7 +894,8 @@ while true; do
       echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
       echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
       echo "w \"Reset Loader \" "                                                           >>"${TMP_PATH}/menu"
-      echo "J \"DSM force Reinstall \" "                                                    >>"${TMP_PATH}/menu"
+      echo "J \"Boot DSM Reinstall Mode\" "                                                 >>"${TMP_PATH}/menu"
+      echo "I \"Boot DSM Recovery Mode\" "                                                  >>"${TMP_PATH}/menu"
     fi
     if [ "${BOOTOPTS}" = "true" ]; then
       echo "6 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
@@ -978,6 +995,7 @@ while true; do
     l) editUserConfig; NEXT="l" ;;
     w) resetLoader; NEXT="w" ;;
     J) juniorboot; NEXT="J" ;;
+    I) recoveryboot; NEXT="I" ;;
     # Boot Section
     6) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
       ARCOPTS="${BOOTOPTS}"
