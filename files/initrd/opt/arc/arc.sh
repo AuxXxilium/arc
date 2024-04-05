@@ -662,12 +662,12 @@ function make() {
           LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_FILE}" "${UNTAR_PAT_PATH}"
         else
           # Untar PAT file
-          tar xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+          tar -xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
         fi
         # Cleanup PAT Download
         rm -f "${PAT_FILE}"
       elif [ -f "${DSM_FILE}" ]; then
-        tar xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+        tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
       elif [ ! -f "${UNTAR_PAT_PATH}/zImage" ]; then
         dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
           --msgbox "ERROR: No DSM Image found!" 0 0
@@ -757,7 +757,7 @@ function offlinemake() {
         LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_FILE}" "${UNTAR_PAT_PATH}"
       else
         # Untar PAT file
-        tar xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+        tar -xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
       fi
       # Cleanup old PAT
       rm -f "${PAT_FILE}"
@@ -944,6 +944,7 @@ while true; do
     echo "= \"\Z4========== Dev ===========\Zn \" "                                         >>"${TMP_PATH}/menu"
     echo "v \"Save Modifications to Disk \" "                                               >>"${TMP_PATH}/menu"
     echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
+    echo "B \"Get DSM Config Backup \" "                                                    >>"${TMP_PATH}/menu"
     echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
     echo "T \"Force enable SSH in DSM \" "                                                  >>"${TMP_PATH}/menu"
     echo "C \"Clone Loaderdisk \" "                                                         >>"${TMP_PATH}/menu"
@@ -1124,6 +1125,7 @@ while true; do
       ;;
     v) saveMenu; NEXT="v" ;;
     n) editGrubCfg; NEXT="n" ;;
+    B) getbackup; NEXT="B" ;;
     L) greplogs; NEXT="L" ;;
     T) forcessh; NEXT="T" ;;
     C) cloneLoader; NEXT="C" ;;

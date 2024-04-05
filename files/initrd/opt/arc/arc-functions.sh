@@ -980,7 +980,7 @@ function updateMenu() {
           ADDON=$(basename ${PKG} | sed 's|.addon||')
           rm -rf "${ADDONS_PATH}/${ADDON:?}"
           mkdir -p "${ADDONS_PATH}/${ADDON}"
-          tar xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
+          tar -xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
           rm -f "${ADDONS_PATH}/${ADDON}.addon"
         done
         rm -f "${TMP_PATH}/addons.zip"
@@ -2122,11 +2122,55 @@ function editGrubCfg() {
 ###############################################################################
 # Grep Logs from dbgutils
 function greplogs() {
-  dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
-    --infobox "Copy Log Files." 3 20
-  sleep 2
-  tar cfz "${PART1_PATH}/log.tar.gz" "${PART1_PATH}/logs"
-  mv -f "${PART1_PATH}/log.tar.gz" "${TMP_PATH}/log.tar.gz"
-  dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
-    --msgbox "Logs can be found at /tmp/log.tar.gz" 5 40
+  if [ -d "${PART1_PATH}/logs" ]; then
+    rm -f "${TMP_PATH}/log.tar.gz"
+    tar -czf "${PART1_PATH}/log.tar.gz" "${PART1_PATH}" logs
+    if [ -z "${SSH_TTY}" ]; then # web
+      mv -f "${PART1_PATH}/log.tar.gz" "/var/www/data/log.tar.gz"
+      URL="http://$(getIP)/log.tar.gz"
+      dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
+        --msgbox "Please via ${URL} to download the log,\nAnd unzip it and back it up in order by file name." 0 0
+    else
+      sz -be -B 536870912 "${TMP_PATH}/log.tar.gz"
+      dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
+        --msgbox "Please unzip it and back it up in order by file name." 0 0
+    fi
+  else
+    MSG=""
+    MSG+="\Z1No log found!\Zn\n\n"
+    MSG+="Please do as follows:\n"
+    MSG+=" 1. Add dbgutils in Addons and rebuild.\n"
+    MSG+=" 2. Normal use.\n"
+    MSG+=" 3. Reboot to Config Mode and use this Option.\n"
+    dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
+      --msgbox "${MSG}" 0 0
+  fi
+}
+
+###############################################################################
+# Get DSM Config File from dsmbackup
+function getbackup() {
+  if [ -d "${PART1_PATH}/dsmbackup" ]; then
+    rm -f "${TMP_PATH}/dsmconfig.tar.gz"
+    tar -czf "${TMP_PATH}/dsmconfig.tar.gz" -C "${PART1_PATH}" dsmbackup
+    if [ -z "${SSH_TTY}" ]; then # web
+      mv -f "${TMP_PATH}/dsmconfig.tar.gz" "/var/www/data/dsmconfig.tar.gz"
+      URL="http://$(getIP)/dsmconfig.tar.gz"
+      dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
+        --msgbox "Please via ${URL} to download the dsmconfig,\nAnd unzip it and back it up in order by file name." 0 0
+    else
+      sz -be -B 536870912 "${TMP_PATH}/dsmconfig.tar.gz"
+      dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
+        --msgbox "Please unzip it and back it up in order by file name." 0 0
+    fi
+  else
+    MSG=""
+    MSG+="\Z1No dsmbackup found!\Zn\n\n"
+    MSG+="Please do as follows:\n"
+    MSG+=" 1. Add dsmconfigbackup in Addons and rebuild.\n"
+    MSG+=" 2. Normal use.\n"
+    MSG+=" 3. Reboot to Config Mode and use this Option.\n"
+    dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
+      --msgbox "${MSG}" 0 0
+  fi
 }
