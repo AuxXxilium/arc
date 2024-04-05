@@ -715,58 +715,63 @@ function make() {
 ###############################################################################
 # Building Loader Offline
 function offlinemake() {
-  # Check for existing Files
-  mkdir -p "${UPLOAD_PATH}"
-  # Get new Files
-  dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
-  --msgbox "Upload your DSM .pat File to /tmp/upload.\nUse SSH/SFTP to connect to ${IP}.\nUser: root | Password: arc\nPress OK to continue!" 0 0
-  # Grep PAT_FILE
-  PAT_FILE=$(ls ${UPLOAD_PATH}/*.pat)
-  if [ ! -f "${PAT_FILE}" ]; then
-    dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-      --msgbox "No DSM Image found!\nExit." 0 0
-    return 1
+  if [[ -f "${ORI_ZIMAGE_FILE}" && -f "${ORI_RDGZ_FILE}" && -f "${MOD_ZIMAGE_FILE}" && -f "${MOD_RDGZ_FILE}" ]]; then
+    dialog --backtitle "$(backtitle)" --title "DSM Data" --aspect 18 \
+      --infobox "DSM Model Data found." 0 0
   else
-    # Remove PAT Data for Offline
-    PAT_URL="#"
-    PAT_HASH="#"
-    writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
-    # Extract Files
-    header=$(od -bcN2 ${PAT_FILE} | head -1 | awk '{print $3}')
-    case ${header} in
-        105)
-        isencrypted="no"
-        ;;
-        213)
-        isencrypted="no"
-        ;;
-        255)
-        isencrypted="yes"
-        ;;
-        *)
-        echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
-        ;;
-    esac
-    if [ "${isencrypted}" = "yes" ]; then
-      # Uses the extractor to untar PAT file
-      LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_FILE}" "${UNTAR_PAT_PATH}"
+    # Check for existing Files
+    mkdir -p "${UPLOAD_PATH}"
+    # Get new Files
+    dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
+    --msgbox "Upload your DSM .pat File to /tmp/upload.\nUse SSH/SFTP to connect to ${IP}.\nUser: root | Password: arc\nPress OK to continue!" 0 0
+    # Grep PAT_FILE
+    PAT_FILE=$(ls ${UPLOAD_PATH}/*.pat)
+    if [ ! -f "${PAT_FILE}" ]; then
+      dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+        --msgbox "No DSM Image found!\nExit." 0 0
+      return 1
     else
-      # Untar PAT file
-      tar xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+      # Remove PAT Data for Offline
+      PAT_URL="#"
+      PAT_HASH="#"
+      writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+      # Extract Files
+      header=$(od -bcN2 ${PAT_FILE} | head -1 | awk '{print $3}')
+      case ${header} in
+          105)
+          isencrypted="no"
+          ;;
+          213)
+          isencrypted="no"
+          ;;
+          255)
+          isencrypted="yes"
+          ;;
+          *)
+          echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
+          ;;
+      esac
+      if [ "${isencrypted}" = "yes" ]; then
+        # Uses the extractor to untar PAT file
+        LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_FILE}" "${UNTAR_PAT_PATH}"
+      else
+        # Untar PAT file
+        tar xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+      fi
+      # Cleanup old PAT
+      rm -f "${PAT_FILE}"
+      dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+        --msgbox "DSM Extraction successful!" 0 0
+      # Copy DSM Files to Locations if DSM Files not found
+      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART1_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART1_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART2_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART2_PATH}"
+      cp -f "${UNTAR_PAT_PATH}/zImage" "${ORI_ZIMAGE_FILE}"
+      cp -f "${UNTAR_PAT_PATH}/rd.gz" "${ORI_RDGZ_FILE}"
+      rm -rf "${UNTAR_PAT_PATH}"
     fi
-    # Cleanup old PAT
-    rm -f "${PAT_FILE}"
-    dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-      --msgbox "DSM Extraction successful!" 0 0
-    # Copy DSM Files to Locations if DSM Files not found
-    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART1_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART1_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART2_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART2_PATH}"
-    cp -f "${UNTAR_PAT_PATH}/zImage" "${ORI_ZIMAGE_FILE}"
-    cp -f "${UNTAR_PAT_PATH}/rd.gz" "${ORI_RDGZ_FILE}"
-    rm -rf "${UNTAR_PAT_PATH}"
   fi
   (
     livepatch
