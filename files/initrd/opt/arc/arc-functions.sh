@@ -295,7 +295,7 @@ function cmdlineMenu() {
         dialog --clear --backtitle "$(backtitle)" \
           --title "CPU Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
-          2 "Uninnstall" \
+          2 "Uninstall" \
         2>"${TMP_PATH}/resp"
         resp=$(cat ${TMP_PATH}/resp)
         [ -z "${resp}" ] && return 1
@@ -317,7 +317,7 @@ function cmdlineMenu() {
         dialog --clear --backtitle "$(backtitle)" \
           --title "RAM Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
-          2 "Uninnstall" \
+          2 "Uninstall" \
         2>"${TMP_PATH}/resp"
         resp=$(cat ${TMP_PATH}/resp)
         [ -z "${resp}" ] && return 1
@@ -339,7 +339,7 @@ function cmdlineMenu() {
         dialog --clear --backtitle "$(backtitle)" \
           --title "PCI/IRQ Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
-          2 "Uninnstall" \
+          2 "Uninstall" \
         2>"${TMP_PATH}/resp"
         resp=$(cat ${TMP_PATH}/resp)
         [ -z "${resp}" ] && return 1
@@ -359,7 +359,7 @@ function cmdlineMenu() {
         dialog --clear --backtitle "$(backtitle)" \
           --title "C-State Fix" --menu "Fix?" 0 0 0 \
           1 "Install" \
-          2 "Uninnstall" \
+          2 "Uninstall" \
         2>"${TMP_PATH}/resp"
         resp=$(cat ${TMP_PATH}/resp)
         [ -z "${resp}" ] && return 1
