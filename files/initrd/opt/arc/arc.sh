@@ -207,6 +207,7 @@ function arcModel() {
     writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+    writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
@@ -369,6 +370,14 @@ function arcSettings() {
       --infobox "Storage Map..." 3 30
     getmapSelection
   fi
+  # Check for ACPI Support
+  if grep -q "^flags.*acpi.*" /proc/cpuinfo; then
+    writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
+  else
+    deleteConfigKey "addons.acpid" "${USER_CONFIG_FILE}"
+  fi
+  # Add Arc Addons
+  writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
   # Select Addons
   addonSelection
   # Check for DT and HBA/Raid Controller
