@@ -30,7 +30,7 @@ function getmap() {
         ls -l /sys/block | grep -F -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
         PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
         [ ${PCMD} = 0 ] && DUMMY=1 || DUMMY=0
-        [ ${ATTACH} = 1 ] && CONPORTS=$((${CONPORTS} + 1)) && echo "$((${PORT} - 1))" >>"${TMP_PATH}/ports"
+        [ ${ATTACH} = 1 ] && CONPORTS="$((${CONPORTS} + 1))" && echo "$((${PORT} - 1))" >>"${TMP_PATH}/ports"
         [ ${DUMMY} = 1 ] # Do nothing for now
         NUMPORTS=$((${NUMPORTS} + 1))
       done <<<$(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
