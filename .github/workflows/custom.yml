@@ -96,6 +96,7 @@ jobs:
 
       # Get extractor, LKM, Addons, Modules and Configs
       - name: Get extractor, LKM, Addons, Extensions, Modules and Configs
+        if: env.iscustom == 'true'
         run: |
           . scripts/func.sh
 
@@ -110,6 +111,7 @@ jobs:
 
       # Build incremental
       - name: Build image
+        if: env.iscustom == 'true'
         run: |
           . scripts/func.sh
 
@@ -166,6 +168,7 @@ jobs:
 
       # Zip image and generate checksum
       - name: Pack
+        if: env.iscustom == 'true'
         run: |
           if [ "${{ env.FORMAT }}" = "img" ]; then
             zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.img.zip" arc.img
@@ -207,7 +210,7 @@ jobs:
           to: ${{ env.EMAIL }}
           from: ${{ secrets.MAIL_USERNAME }}
           body: |
-            ${{ env.TTDLURL }}
+            ${{ env.FIOURL }}
 
       - name: Update Comment Success
         if: env.iscustom == 'true' && success() && env.EMAIL != 'null'
@@ -233,7 +236,7 @@ jobs:
           update-mode: replace
           body: |
             Hi @${{ github.event.issue.user.login }}.  
-            ${{ env.FIOURL }}
+            arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} is ready to download: ${{ env.FIOURL }}
             > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}  
             ----
 
@@ -258,3 +261,46 @@ jobs:
             arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} failed to build and package, please try again.  
             > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}  
             ----
+
+  comment:
+    if: github.event.label.name == 'bug'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Init Env
+        run: |
+          git config --global user.email "info@auxxxilium.tech"
+          git config --global user.name "AuxXxilium"
+          sudo timedatectl set-timezone "Europe/Berlin"
+
+      - name: Check Issues
+        run: |
+          if echo "${{ github.event.issue.body }}" | grep -q "Screenshots"; then 
+            echo "FALG=true" >> $GITHUB_ENV
+          else
+            echo "FALG=false" >> $GITHUB_ENV
+          fi
+
+      - name: Create Issues comment
+        if: env.FALG == 'false'
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: "create-comment"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            **Describe the Bug**
+            A clear and concise description of what the bug is.
+            
+            **Screenshots**
+            Screenshot the Systeminfo (Arc - Sysinfo) or use new "Full Sysinfo - Upload" Function provide the Code!!! <- IMPORTANT
+            
+            **Hardware**
+            Add your Hardware Informations here. CPU / Board / Networkcontroller / Storagecontroller / ...
+
+      - name: Close Issues
+        if: env.FALG == 'false'
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'close-issue'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
