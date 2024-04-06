@@ -136,17 +136,16 @@ jobs:
           repackInitrd "br/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Set Custom Config"
-          sudo echo "model: ${{ env.MODEL }}" >"/tmp/p1/preset-config"
-          sudo echo "productver: ${{ env.PRODUCTVER }}" >>"/tmp/p1/preset-config"
-          sudo echo "addons:" >>"/tmp/p1/preset-config"
+          sudo echo "model: ${{ env.MODEL }}" >"files/p1/preset-config"
+          sudo echo "productver: ${{ env.PRODUCTVER }}" >>"files/p1/preset-config"
+          sudo echo "addons:" >>"files/p1/preset-config"
           for ADDON in ${{ env.ADDONS }}; do
-            sudo echo "addons.${ADDON}" >>"/tmp/p1/preset-config"
+            sudo echo "addons.${ADDON}" >>"files/p1/preset-config"
           done
-          sudo echo "${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"/tmp/p3/.automated"
+          sudo echo "${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"files/p3/.automated"
           echo "Copying files"
           sudo cp -Rf "files/p1/"* "/tmp/p1"
           sudo cp -Rf "files/p3/"* "/tmp/p3"
-          sudo cp -f "files/p1/preset-config" "/tmp/p1/preset-config"
           sync
 
           echo "Unmount image file"
