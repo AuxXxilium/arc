@@ -68,9 +68,9 @@ initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "static" "{}" "${USER_CONFIG_FILE}"
 # KVM Check
 if grep -q -E '(vmx|svm)' /proc/cpuinfo; then
-  writeConfigKey "arc.kvm" "true" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.kvm" "true" "${USER_CONFIG_FILE}"
 else
-  writeConfigKey "arc.kvm" "false" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.kvm" "false" "${USER_CONFIG_FILE}"
 fi
 
 # Init Network
