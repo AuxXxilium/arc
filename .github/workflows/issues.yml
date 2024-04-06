@@ -8,10 +8,12 @@
 name: Auto Comment
 on:
   issues:
-    types: [opened, reopened]
+    types:
+      - labeled
 
 jobs:
   build:
+    if: github.event.label.name == 'bug'
     runs-on: ubuntu-latest
     steps:
       - name: Init Env
