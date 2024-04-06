@@ -102,7 +102,7 @@
             }
 
             body = JSON.stringify(body).replace(/\+/g, "%2b");
-            window.location.href = `https://github.com/${repo}/issues/new?&abels=custom&template=custom_build.md&title=${title}&body=${body}`;
+            window.location.href = `https://github.com/${repo}/issues/new?assignees=&labels=custom&projects=&template=custom_build.md&title=${title}&body=${body}`;
 
         }
     </script>
