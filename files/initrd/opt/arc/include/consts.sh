@@ -14,10 +14,11 @@ RAMDISK_PATH="${TMP_PATH}/ramdisk"
 LOG_FILE="${TMP_PATH}/log.txt"
 UPLOAD_PATH="${TMP_PATH}/upload"
 
-USER_CONFIG_FILE="${PART1_PATH}/user-config.yml"
 PRESET_CONFIG_FILE="${PART1_PATH}/preset-config.yml"
 if [ -f "${PRESET_CONFIG_FILE}" ]; then
   USER_CONFIG_FILE="${PART1_PATH}/preset-config.yml"
+else
+  USER_CONFIG_FILE="${PART1_PATH}/user-config.yml"
 fi
 GRUB_PATH="${PART1_PATH}/boot/grub"
 

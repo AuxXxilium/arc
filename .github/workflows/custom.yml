@@ -142,9 +142,9 @@ jobs:
           sudo echo "productver: ${{ env.PRODUCTVER }}" >>"files/p1/preset-config"
           sudo echo "addons:" >>"files/p1/preset-config"
           for ADDON in ${{ env.ADDONS }}; do
-            sudo $(echo " addons.${ADDON}" | sed 's/[//' | sed 's/]//' | sed 's/,//') >>"files/p1/preset-config"
+            sudo $(echo ' ${ADDON}: ""' | sed 's/[//' | sed 's/]//' | sed 's/,//') >>"files/p1/preset-config"
           done
-          sudo echo "${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"files/p3/.automated"
+          sudo echo "${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"files/p3/automated"
           echo "Copying files"
           sudo cp -Rf "files/p1/"* "/tmp/p1"
           sudo cp -Rf "files/p3/"* "/tmp/p3"
