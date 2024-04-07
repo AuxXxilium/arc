@@ -1929,13 +1929,13 @@ function saveMenu() {
 # let user format disks from inside arc
 function formatdisks() {
   rm -f "${TMP_PATH}/opts"
-  while read -r KNAME KMODEL; do
+  while read -r KNAME KMODEL PKNAME; do
     [ -z "${KNAME}" ] && continue
     [[ "${KNAME}" = /dev/md* ]] && continue
-    [ -z "${KMODEL}" ] && KMODEL="Partition"
-    echo "${KNAME}" | grep -q "${LOADER_DISK}" && continue
+    [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
+    [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
     echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
-  done <<<$(lsblk -pno KNAME,MODEL)
+  done <<<$(lsblk -pno KNAME,MODEL,PKNAME,TYPE)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
       --msgbox "No disk found!" 0 0
@@ -2024,12 +2024,12 @@ EOF
 # Clone Loader Disk
 function cloneLoader() {
   rm -f "${TMP_PATH}/opts"
-  while read -r KNAME KMODEL; do
+  while read -r KNAME KMODEL PKNAME TYPE; do
     [ -z "${KNAME}" ] && continue
     [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
-    echo "${KNAME}" | grep -q "${LOADER_DISK}" && continue
+    [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
     echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
-  done <<<$(lsblk -dpno KNAME,MODEL,TYPE)
+  done <<<$(lsblk -dpno KNAME,MODEL,PKNAME,TYPE)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --msgbox "No disk found!" 0 0
