@@ -86,7 +86,7 @@ jobs:
           issue-number: ${{ github.event.issue.number }}
           body: |
             Hi @${{ github.event.issue.user.login }}.  
-            arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} is being build and package and will be sent to your email later..  
+            arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} is being build, it will be uploaded here and sent to your email later..  
             > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}  
             ----
 
