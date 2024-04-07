@@ -144,7 +144,7 @@ jobs:
           echo "productver: ${{ env.PRODUCTVER }}"
           echo "addons:" >>"files/p1/preset-config.yml"
           for ADDON in ${{ env.ADDONS }}; do
-            echo " ${ADDON}: \"\"" | sed 's/,//g' | sed 's/\[//g' | sed 's/\]//g' >>"files/p1/preset-config.yml"
+            echo "  ${ADDON}: \"\"" | sed 's/,//g' | sed 's/\[//g' | sed 's/\]//g' >>"files/p1/preset-config.yml"
           done
           echo "addons: ${{ env.ADDONS }}"
           echo "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"files/p3/automated"
