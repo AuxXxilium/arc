@@ -64,6 +64,7 @@
             }
             changeModel();
         }
+
         function changeModel() {
             model = $("#model").val();
             var versions = _modules[model];
@@ -73,11 +74,25 @@
                 $("#version").append(`<option value="${version}">${version}</option>`);
             }
             changeproductsimage();
+            changeAddons();
         }
 
         function changeproductsimage() {
             var model = $("#model").val().replace("#", "").replace("+", "%2B");
             $('#products').html(`<img src="https://www.synology.com/api/products/getPhoto?product=${model}&type=img_s&sort=0" width="20%">`);
+        }
+
+        function changeAddons() {
+            var model = $("#model").val();
+            httpGetAsync("https://raw.githubusercontent.com/AuxXxilium/arc/main/docs/addons.json", function (result) {
+                var addons = JSON.parse(result);
+                var selectedAddons = addons[model];
+                $("#addons")[0].options.length = 0;
+                for (var i = 0; i < selectedAddons.length; i++) {
+                    var addon = selectedAddons[i];
+                    $("#addons").append(`<option value="${addon}">${addon}</option>`);
+                }
+            });
         }
 
         function createIssues() {
@@ -170,6 +185,16 @@
         </div>
         <div class="form-group mt-1 mb-2 ">
             <div class="form-group-header">
+                <label class="color-fg-default text-mono f6">Addons (Select only needed Addons, not all Addons work with all Models):</label>
+            </div>
+            <div class="form-group-body">
+                <select class="form-select form-control select-sm input-contrast" id="addons" name="inputs[addons]" value="" multiple>
+                    <option selected="selected" value="acpid">acpid</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group mt-1 mb-2 ">
+            <div class="form-group-header">
                 <label class="color-fg-default text-mono f6">Format (Choose Format for Output File):</label>
             </div>
             <div class="form-group-body">
@@ -177,42 +202,6 @@
                     <option selected="selected" value="img">img</option>
                     <option value="dyn">vmdk-dyn</option>
                     <option value="flat">vmdk-flat</option>
-                </select>
-            </div>
-        </div>
-        <div class="form-group mt-1 mb-2 ">
-            <div class="form-group-header">
-                <label class="color-fg-default text-mono f6">Addons (Select only needed Addons, not all Addons work with all Models):</label>
-            </div>
-            <div class="form-group-body">
-                <select class="form-select form-control select-sm input-contrast" id="addons" name="inputs[addons]" value="" multiple>
-                    <option value="acpid">acpid</option>
-                    <option value="addincards">addincards</option>
-                    <option value="amepatch">amepatch</option>
-                    <option value="bootwait">bootwait</option>
-                    <option value="codecpatch">codecpatch</option>
-                    <option value="cpuinfo">cpuinfo</option>
-                    <option value="dbgutils">dbgutils</option>
-                    <option value="deduplication">deduplication</option>
-                    <option value="deduplicationhdd">deduplicationhdd</option>
-                    <option value="dsmconfigbackup">dsmconfigbackup</option>
-                    <option value="expands">expands</option>
-                    <option value="hdddb">hdddb</option>
-                    <option value="i915">i915</option>
-                    <option value="lsiutil">lsiutil</option>
-                    <option value="multismb3">multismb3</option>
-                    <option value="nvmecache">nvmecache</option>
-                    <option value="nvmesystem">nvmesystem</option>
-                    <option value="nvmevolume">nvmevolume</option>
-                    <option value="photosfacepatch">photosfacepatch</option>
-                    <option value="powersched">powersched</option>
-                    <option value="reboottoloader">reboottoloader</option>
-                    <option value="rndis">rndis</option>
-                    <option value="sanmanager-repair">sanmanager-repair</option>
-                    <option value="setrootpw">setrootpw</option>
-                    <option value="sortnetif">sortnetif</option>
-                    <option value="storagepanel">storagepanel</option>
-                    <option value="surveillancepatch">surveillancepatch</option>
                 </select>
             </div>
         </div>
