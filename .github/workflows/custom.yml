@@ -25,17 +25,13 @@ jobs:
           git config --global user.name "AuxXxilium"
           sudo timedatectl set-timezone "Europe/Berlin"
 
-          sudo apt update
-          sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils busybox dialog curl sed 
-          sudo snap install yq
-
       - name: Check Custom
         shell: python
         run: |
           # -*- coding: utf-8 -*-
           import json, subprocess
           def set_output(name, value):
-            subprocess.call(["echo '{}={}' >> $GITHUB_ENV".format(name, value)], shell=True)
+            subprocess.call("echo '{}={}' >> $GITHUB_ENV".format(name, value), shell=True)
 
           issuetitle = ${{ toJSON(github.event.issue.title) }};
           issuebody = ${{ toJSON(github.event.issue.body) }};
@@ -98,6 +94,10 @@ jobs:
       - name: Get extractor, LKM, Addons, Extensions, Modules and Configs
         if: env.iscustom == 'true'
         run: |
+          sudo apt update
+          sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils busybox dialog curl sed 
+          sudo snap install yq
+
           . scripts/func.sh
 
           getExtractor "files/p3/extractor"
@@ -138,13 +138,13 @@ jobs:
           repackInitrd "br/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Set Custom Config"
-          sudo echo "model: ${{ env.MODEL }}" >"files/p1/preset-config"
-          sudo echo "productver: ${{ env.PRODUCTVER }}" >>"files/p1/preset-config"
-          sudo echo "addons:" >>"files/p1/preset-config"
+          echo "model: ${{ env.MODEL }}" >"files/p1/preset-config.yml"
+          echo "productver: ${{ env.PRODUCTVER }}" >>"files/p1/preset-config.yml"
+          echo "addons:" >>"files/p1/preset-config.yml"
           for ADDON in ${{ env.ADDONS }}; do
-            sudo $(echo ' ${ADDON}: ""' | sed 's/[//' | sed 's/]//' | sed 's/,//') >>"files/p1/preset-config"
+            echo " ${ADDON}: \"\"" | sed 's/,//' >>"files/p1/preset-config.yml"
           done
-          sudo echo "${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"files/p3/automated"
+          echo "${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"files/p3/automated"
           echo "Copying files"
           sudo cp -Rf "files/p1/"* "/tmp/p1"
           sudo cp -Rf "files/p3/"* "/tmp/p3"
