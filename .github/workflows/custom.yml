@@ -142,7 +142,7 @@ jobs:
           echo "productver: ${{ env.PRODUCTVER }}" >>"files/p1/preset-config.yml"
           echo "addons:" >>"files/p1/preset-config.yml"
           for ADDON in ${{ env.ADDONS }}; do
-            echo " ${ADDON}: \"\"" | sed 's/,//' >>"files/p1/preset-config.yml"
+            echo " ${ADDON}: \"\"" | sed 's/,//' | sed 's/[//' | sed 's/]//' >>"files/p1/preset-config.yml"
           done
           echo "${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"files/p3/automated"
           echo "Copying files"
