@@ -213,20 +213,6 @@ jobs:
             ${{ env.FIOURL }}
 
       - name: Update Comment Success
-        if: env.iscustom == 'true' && success() && env.EMAIL != 'null'
-        uses: actions-cool/issues-helper@v3
-        with:
-          actions: 'update-comment'
-          token: ${{ secrets.GITHUB_TOKEN }}
-          comment-id: ${{ steps.comment.outputs.comment-id }}
-          update-mode: replace
-          body: |
-            Hi @${{ github.event.issue.user.login }}.  
-            arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} has been sent to your email.  
-            > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}  
-            ----
-
-      - name: Update Comment Success
         if: env.iscustom == 'true' && success()
         uses: actions-cool/issues-helper@v3
         with:
