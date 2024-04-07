@@ -903,8 +903,6 @@ while true; do
       echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
       echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
       echo "w \"Reset Loader \" "                                                           >>"${TMP_PATH}/menu"
-      echo "J \"Boot DSM Reinstall Mode\" "                                                 >>"${TMP_PATH}/menu"
-      echo "I \"Boot DSM Recovery Mode\" "                                                  >>"${TMP_PATH}/menu"
     fi
     if [ "${BOOTOPTS}" = "true" ]; then
       echo "6 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
@@ -918,6 +916,8 @@ while true; do
         echo "i \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
       fi
       echo "q \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
+      echo "J \"Boot DSM Reinstall Mode\" "                                                 >>"${TMP_PATH}/menu"
+      echo "I \"Boot DSM Recovery Mode\" "                                                  >>"${TMP_PATH}/menu"
     fi
     if [ "${DSMOPTS}" = "true" ]; then
       echo "7 \"\Z1Hide DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
@@ -1004,8 +1004,6 @@ while true; do
     k) synoinfoMenu; NEXT="k" ;;
     l) editUserConfig; NEXT="l" ;;
     w) resetLoader; NEXT="w" ;;
-    J) juniorboot; NEXT="J" ;;
-    I) recoveryboot; NEXT="I" ;;
     # Boot Section
     6) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
       ARCOPTS="${BOOTOPTS}"
@@ -1021,6 +1019,8 @@ while true; do
       writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
       NEXT="q"
       ;;
+    J) juniorboot; NEXT="J" ;;
+    I) recoveryboot; NEXT="I" ;;
     # DSM Section
     7) [ "${DSMOPTS}" = "true" ] && DSMOPTS='false' || DSMOPTS='true'
       DSMOPTS="${DSMOPTS}"
