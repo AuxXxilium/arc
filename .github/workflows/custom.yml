@@ -25,17 +25,13 @@ jobs:
           git config --global user.name "AuxXxilium"
           sudo timedatectl set-timezone "Europe/Berlin"
 
-          sudo apt update
-          sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils busybox dialog curl sed 
-          sudo snap install yq
-
       - name: Check Custom
         shell: python
         run: |
           # -*- coding: utf-8 -*-
           import json, subprocess
           def set_output(name, value):
-            subprocess.call(["echo '{}={}' >> $GITHUB_ENV".format(name, value)], shell=True)
+            subprocess.call("echo '{}={}' >> $GITHUB_ENV".format(name, value), shell=True)
 
           issuetitle = ${{ toJSON(github.event.issue.title) }};
           issuebody = ${{ toJSON(github.event.issue.body) }};
@@ -90,13 +86,18 @@ jobs:
           issue-number: ${{ github.event.issue.number }}
           body: |
             Hi @${{ github.event.issue.user.login }}.  
-            arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} is being build and package and will be sent to your email later..  
+            arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} is being build, it will be uploaded here and sent to your email later..  
             > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}  
             ----
 
       # Get extractor, LKM, Addons, Modules and Configs
       - name: Get extractor, LKM, Addons, Extensions, Modules and Configs
+        if: env.iscustom == 'true'
         run: |
+          sudo apt update
+          sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils busybox dialog curl sed 
+          sudo snap install yq
+
           . scripts/func.sh
 
           getExtractor "files/p3/extractor"
@@ -110,6 +111,7 @@ jobs:
 
       # Build incremental
       - name: Build image
+        if: env.iscustom == 'true'
         run: |
           . scripts/func.sh
 
@@ -136,17 +138,19 @@ jobs:
           repackInitrd "br/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Set Custom Config"
-          sudo echo "model: ${{ env.MODEL }}" >"/tmp/p1/preset-config"
-          sudo echo "productver: ${{ env.PRODUCTVER }}" >>"/tmp/p1/preset-config"
-          sudo echo "addons:" >>"/tmp/p1/preset-config"
+          echo "model: ${{ env.MODEL }}" >"files/p1/preset-config.yml"
+          echo "model: ${{ env.MODEL }}"
+          echo "productver: ${{ env.PRODUCTVER }}" >>"files/p1/preset-config.yml"
+          echo "productver: ${{ env.PRODUCTVER }}"
+          echo "addons:" >>"files/p1/preset-config.yml"
           for ADDON in ${{ env.ADDONS }}; do
-            sudo echo "addons.${ADDON}" >>"/tmp/p1/preset-config"
+            echo " ${ADDON}: \"\"" | sed 's/,//g' | sed 's/\[//g' | sed 's/\]//g' >>"files/p1/preset-config.yml"
           done
-          sudo echo "${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"/tmp/p3/.automated"
+          echo "addons: ${{ env.ADDONS }}"
+          echo "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"files/p3/automated"
           echo "Copying files"
           sudo cp -Rf "files/p1/"* "/tmp/p1"
           sudo cp -Rf "files/p3/"* "/tmp/p3"
-          sudo cp -f "files/p1/preset-config" "/tmp/p1/preset-config"
           sync
 
           echo "Unmount image file"
@@ -167,6 +171,7 @@ jobs:
 
       # Zip image and generate checksum
       - name: Pack
+        if: env.iscustom == 'true'
         run: |
           if [ "${{ env.FORMAT }}" = "img" ]; then
             zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.img.zip" arc.img
@@ -208,33 +213,19 @@ jobs:
           to: ${{ env.EMAIL }}
           from: ${{ secrets.MAIL_USERNAME }}
           body: |
-            ${{ env.TTDLURL }}
-
-      - name: Update Comment Success
-        if: env.iscustom == 'true' && success() && env.EMAIL != 'null'
-        uses: actions-cool/issues-helper@v3
-        with:
-          actions: 'update-comment'
-          token: ${{ secrets.GITHUB_TOKEN }}
-          comment-id: ${{ steps.comment.outputs.comment-id }}
-          update-mode: replace
-          body: |
-            Hi @${{ github.event.issue.user.login }}.  
-            arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} has been sent to your email.  
-            > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}  
-            ----
-
-      - name: Update Comment Success
-        if: env.iscustom == 'true' && success() && env.EMAIL == 'null'
-        uses: actions-cool/issues-helper@v3
-        with:
-          actions: 'update-comment'
-          token: ${{ secrets.GITHUB_TOKEN }}
-          comment-id: ${{ steps.comment.outputs.comment-id }}
-          update-mode: replace
-          body: |
-            Hi @${{ github.event.issue.user.login }}.  
             ${{ env.FIOURL }}
+
+      - name: Update Comment Success
+        if: env.iscustom == 'true' && success()
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'update-comment'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          comment-id: ${{ steps.comment.outputs.comment-id }}
+          update-mode: replace
+          body: |
+            Hi @${{ github.event.issue.user.login }}.  
+            arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} is ready to download: ${{ env.FIOURL }}
             > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}  
             ----
 
@@ -259,3 +250,46 @@ jobs:
             arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} failed to build and package, please try again.  
             > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}  
             ----
+
+  comment:
+    if: github.event.label.name == 'bug'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Init Env
+        run: |
+          git config --global user.email "info@auxxxilium.tech"
+          git config --global user.name "AuxXxilium"
+          sudo timedatectl set-timezone "Europe/Berlin"
+
+      - name: Check Issues
+        run: |
+          if echo "${{ github.event.issue.body }}" | grep -q "Screenshots"; then 
+            echo "FALG=true" >> $GITHUB_ENV
+          else
+            echo "FALG=false" >> $GITHUB_ENV
+          fi
+
+      - name: Create Issues comment
+        if: env.FALG == 'false'
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: "create-comment"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            **Describe the Bug**
+            A clear and concise description of what the bug is.
+            
+            **Screenshots**
+            Screenshot the Systeminfo (Arc - Sysinfo) or use new "Full Sysinfo - Upload" Function provide the Code!!! <- IMPORTANT
+            
+            **Hardware**
+            Add your Hardware Informations here. CPU / Board / Networkcontroller / Storagecontroller / ...
+
+      - name: Close Issues
+        if: env.FALG == 'false'
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'close-issue'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
