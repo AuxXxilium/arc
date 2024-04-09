@@ -49,6 +49,7 @@ jobs:
                   MODEL = jsonbody.get('model', '')
                   PRODUCTVER = jsonbody.get('version', '')
                   ADDONS = jsonbody.get('addons', '')
+                  MACSYS = jsonbody.get('macsys', '')
                   FORMAT = jsonbody.get('format', '')
           except ValueError as e:
               pass
@@ -58,6 +59,7 @@ jobs:
           set_output("MODEL", MODEL)
           set_output("PRODUCTVER", PRODUCTVER)
           set_output("ADDONS", ADDONS)
+          set_output("MACSYS", MACSYS)
           set_output("FORMAT", FORMAT)
 
       # calculates the version number and push
@@ -142,6 +144,9 @@ jobs:
           echo "model: ${{ env.MODEL }}"
           echo "productver: ${{ env.PRODUCTVER }}" >>"files/p1/preset-config.yml"
           echo "productver: ${{ env.PRODUCTVER }}"
+          echo "arc:" >>"files/p1/preset-config.yml"
+          echo "macsys: ${{ env.MACSYS }}" >>"files/p1/preset-config.yml"
+          echo "  macsys: ${{ env.MACSYS }}"
           echo "addons:" >>"files/p1/preset-config.yml"
           for ADDON in ${{ env.ADDONS }}; do
             echo "  ${ADDON}: \"\"" | sed 's/,//g' | sed 's/\[//g' | sed 's/\]//g' >>"files/p1/preset-config.yml"

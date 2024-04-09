@@ -100,7 +100,7 @@
             let formData = new FormData(form);
             var title = "custom";
             var body = {};
-            var _parameters = ["title", "model", "version", "format", "addons"];
+            var _parameters = ["title", "model", "version", "addons", "macsys", "format"];
             for (var key in _parameters) {
                 var name = _parameters[key];
                 if (name == "title") {
@@ -157,6 +157,15 @@
         </div>
         <div class="form-group mt-1 mb-2 ">
             <div class="form-group-header">
+                <label class="color-fg-default text-mono f6">Notice:</label>
+            </div>
+            <div class="form-group-body">
+                <p>This way for image creation has limited features.</p>
+                <p>To get full features and option, use <a href="https://github.com/AuxXxilium/arc">Arc Loader</a>.</p>
+            </div>
+        </div>
+        <div class="form-group mt-1 mb-2 ">
+            <div class="form-group-header">
                 <label class="color-fg-default text-mono f6">Title:</label>
             </div>
             <div class="form-group-body">
@@ -190,6 +199,17 @@
             <div class="form-group-body">
                 <select class="form-select form-control select-sm input-contrast" id="addons" name="inputs[addons]" value="" multiple>
                     <option selected="selected" value="acpid">acpid</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group mt-1 mb-2 ">
+            <div class="form-group-header">
+                <label class="color-fg-default text-mono f6">Macsys (Choose an Option):</label>
+            </div>
+            <div class="form-group-body">
+                <select class="form-select form-control select-sm input-contrast" id="format" name="inputs[format]" value="">
+                    <option selected="selected" value="hardware">use hardware mac</option>
+                    <option value="custom">use fake mac</option>
                 </select>
             </div>
         </div>
