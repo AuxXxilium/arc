@@ -41,6 +41,7 @@ jobs:
           MODEL = ''
           PRODUCTVER = ''
           ADDONS = ''
+          MACSYS = ''
           FORMAT = ''
           try:
               if issuetitle.lower().startswith('custom'):
