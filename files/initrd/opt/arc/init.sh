@@ -21,6 +21,10 @@ printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 printf "\033[1;30m%*s\033[0m\n" ${COLUMNS} ""
+TITLE="Boot:"
+[ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [Legacy]"
+TITLE+=" [${BUS}]"
+printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
 # If user config file not exists, initialize it
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
@@ -120,7 +124,7 @@ writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 
 # Inform user
 echo -e "Loader Disk: \033[1;34m${LOADER_DISK}\033[0m"
-echo -e "Loader Disk Type: \033[1;34m${BUS^^}\033[0m"
+echo -e "Loader Disk Type: \033[1;34m${BUS}\033[0m"
 
 # Load keymap name
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"

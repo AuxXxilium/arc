@@ -153,8 +153,8 @@ function getmapSelection() {
   # Ask for Portmap
   dialog --backtitle "$(backtitle)" --title "Arc Disks" \
     --menu "SataPortMap or SataRemap?\n* Recommended Option" 8 60 0 \
-    1 "SataPortMap: Active Ports ${REMAP1}" \
-    2 "SataPortMap: Max Ports ${REMAP2}" \
+    1 "DiskIdxMap: Active Ports ${REMAP1}" \
+    2 "DiskIdxMap: Max Ports ${REMAP2}" \
     3 "SataRemap: Remove blank Ports ${REMAP3}" \
     4 "AhciRemap: Remove blank Ports (experimental) ${REMAP4}" \
     5 "I want to set my own Portmap" \
@@ -164,11 +164,11 @@ function getmapSelection() {
   [ -z "${resp}" ] && return 1
   if [ ${resp} -eq 1 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-      --infobox "Use SataPortMap:\nActive Ports!" 4 40
+      --infobox "Use DiskIdxMap:\nActive Ports!" 4 40
     writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}"
   elif [ ${resp} -eq 2 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-      --infobox "Use SataPortMap:\nMax Ports!" 4 40
+      --infobox "Use DiskIdxMap:\nMax Ports!" 4 40
     writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}"
   elif [ ${resp} -eq 3 ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Disks" \
