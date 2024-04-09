@@ -1486,7 +1486,7 @@ function fullsysinfo() {
     IP=""
     STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
     DRIVER="$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
-    MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
+    MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
     MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
     COUNT=0
     while true; do
