@@ -888,7 +888,7 @@ while true; do
       echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
       echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
       echo "N \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
-      echo "S \"Update Storage Map \" "                                                     >>"${TMP_PATH}/menu"
+      echo "S \"Change Storage Map \" "                                                     >>"${TMP_PATH}/menu"
       echo "P \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
       echo "D \"Loader DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
     fi
