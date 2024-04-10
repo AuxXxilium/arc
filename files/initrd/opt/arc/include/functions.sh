@@ -102,11 +102,13 @@ function generateSerial() {
 # Returns serial number
 function generateMacAddress() {
   PRE="$(readModelArray "${1}" "serial.macpre")"
-  SUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
+  KEY="$((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256))"
+  SUF="$(printf '%02x%02x%02x' ${KEY})"
   NUM=${2:-1}
   MACS=""
   for I in $(seq 1 ${NUM}); do
-    MACS+="$(printf '%06x%06x' $((0x${PRE:-"001132"})) $(($((0x${SUF})) + ${I})))"
+    MACKEY="$((0x${PRE:-001132})) $(($((0x${SUF})) + ${I}))"
+    MACS+="$(printf '%06x%06x' ${MACKEY})"
     [ ${I} -lt ${NUM} ] && MACS+=" "
   done
   echo "${MACS}"
