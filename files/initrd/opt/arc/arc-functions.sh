@@ -1929,11 +1929,11 @@ function saveMenu() {
 # let user format disks from inside arc
 function formatdisks() {
   rm -f "${TMP_PATH}/opts"
-  while read -r KNAME KMODEL PKNAME; do
+  while read -r KNAME KMODEL PKNAME TYPE; do
     [ -z "${KNAME}" ] && continue
+    [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" || "${KMODEL}" = "${LOADER_DISK}" ]] && continue
     [[ "${KNAME}" = /dev/md* ]] && continue
     [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
-    [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
     echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
   done <<<$(lsblk -pno KNAME,MODEL,PKNAME,TYPE)
   if [ ! -f "${TMP_PATH}/opts" ]; then
