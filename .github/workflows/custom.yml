@@ -39,14 +39,12 @@ jobs:
           MACSYS = ''
           FORMAT = ''
           try:
-              if issuetitle.lower().startswith('custom'):
-                  jsonbody = json.loads(issuebody)
-                  iscustom = 'true'
-                  MODEL = jsonbody.get('model', '')
-                  PRODUCTVER = jsonbody.get('version', '')
-                  ADDONS = jsonbody.get('addons', '')
-                  MACSYS = jsonbody.get('macsys', '')
-                  FORMAT = jsonbody.get('format', '')
+              jsonbody = json.loads(issuebody)
+              MODEL = jsonbody.get('model', '')
+              PRODUCTVER = jsonbody.get('version', '')
+              ADDONS = jsonbody.get('addons', '')
+              MACSYS = jsonbody.get('macsys', '')
+              FORMAT = jsonbody.get('format', '')
           except ValueError as e:
               pass
 
