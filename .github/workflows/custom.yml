@@ -107,6 +107,8 @@ jobs:
       # Build incremental
       - name: Build image
         run: |
+          . scripts/func.sh
+          
           function writeConfigKey() {
             [ "${2}" = "{}" ] && sudo yq eval '.'${1}' = {}' --inplace "${3}" 2>/dev/null || sudo yq eval '.'${1}' = "'"${2}"'"' --inplace "${3}" 2>/dev/null
           }
