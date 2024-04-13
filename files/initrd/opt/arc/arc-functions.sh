@@ -684,8 +684,8 @@ function backupMenu() {
           if findAndMountDSMRoot; then
             MODEL=""
             PRODUCTVER=""
-            if [ -f "${TMP_PATH}/mdX/usr/arc/backup/user-config.yml" ]; then
-              cp -f "${TMP_PATH}/mdX/usr/arc/backup/user-config.yml" "${USER_CONFIG_FILE}"
+            if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" ]; then
+              cp -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" "${USER_CONFIG_FILE}"
               MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
               PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
               if [[ -n "${MODEL}" && -n "${PRODUCTVER}" ]]; then
@@ -714,8 +714,8 @@ function backupMenu() {
             --infobox "Backup Encryption Key..." 0 0
           if [ -f "${PART2_PATH}/machine.key" ]; then
             if findAndMountDSMRoot; then
-              mkdir -p "${TMP_PATH}/mdX/usr/arc/backup"
-              cp -f "${PART2_PATH}/machine.key" "${TMP_PATH}/mdX/usr/arc/backup/machine.key"
+              mkdir -p "${TMP_PATH}/mdX/usr/arc/backup/p2"
+              cp -f "${PART2_PATH}/machine.key" "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key"
               dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
                 --msgbox "Encryption Key backup successful!" 0 0
             else
@@ -731,8 +731,8 @@ function backupMenu() {
           dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
             --infobox "Restore Encryption Key..." 0 0
           if findAndMountDSMRoot; then
-            if [ -f "${TMP_PATH}/mdX/usr/arc/backup/machine.key" ]; then
-              cp -f "${TMP_PATH}/mdX/usr/arc/backup/machine.key" "${PART2_PATH}/machine.key"
+            if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" ]; then
+              cp -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" "${PART2_PATH}/machine.key"
               dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
                 --msgbox "Encryption Key restore successful!" 0 0
             else
@@ -816,8 +816,8 @@ function backupMenu() {
           dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
             --infobox "Restore Encryption Key..." 0 0
           if findAndMountDSMRoot; then
-            if [ -f "${TMP_PATH}/mdX/usr/arc/backup/machine.key" ]; then
-              cp -f "${TMP_PATH}/mdX/usr/arc/backup/machine.key" "${PART2_PATH}/machine.key"
+            if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" ]; then
+              cp -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" "${PART2_PATH}/machine.key"
               dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
                 --msgbox "Encryption Key restore successful!" 0 0
             else
