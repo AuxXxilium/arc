@@ -36,7 +36,6 @@ KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 PLATFORM="$(readModelKey "${MODEL}" "platform")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
-KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
 MODULESCOPY="$(readConfigKey "arc.modulescopy" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 
@@ -158,13 +157,13 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # Required addons: "revert" "misc" "eudev" "disks" "localrss" "wol"
 # This order cannot be changed.
-for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "wol"; do
+for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     PARAMS='${HDDSORT} ${USBMOUNT}'
   fi
   if [ "${ADDON}" = "eudev" ]; then
-    PARAMS='${MODULESCOPY} ${KVMSUPPORT}'
+    PARAMS='${MODULESCOPY}'
   fi
   installAddon "${ADDON}" "${PLATFORM}" "${KVER}" || exit 1
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1

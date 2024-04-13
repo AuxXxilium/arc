@@ -32,18 +32,18 @@ jobs:
           . scripts/func.sh
           models="{"
           WORK_PATH="files/p3"
-          mkdir -p "${WORK_PATH}/autoconfigs"
-          getConfigs "${WORK_PATH}/autoconfigs"
-          for M in $(find "${WORK_PATH}/autoconfigs" -maxdepth 1 -name \*.yml 2>/dev/null | sed 's/.*\///; s/\.yml//'); do
+          mkdir -p "${WORK_PATH}/configs"
+          getConfigs "${WORK_PATH}/configs"
+          for M in $(find "${WORK_PATH}/configs" -maxdepth 1 -name \*.yml 2>/dev/null | sed 's/.*\///; s/\.yml//'); do
             models+="\"${M}\":["
-            for V in $(yq eval '.productvers | explode(.) | to_entries | map([.key])[] | .[]' "${WORK_PATH}/autoconfigs/${M}.yml" 2>/dev/null | sort -r); do
+            for V in $(yq eval '.productvers | explode(.) | to_entries | map([.key])[] | .[]' "${WORK_PATH}/configs/${M}.yml" 2>/dev/null | sort -r); do
               models+="\"${V}\","
             done
             models="${models%,}],"
           done
           models="${models%,}}"
           echo "${models}" >docs/models.json
-          rm -rf "${WORK_PATH}/autoconfigs"
+          rm -rf "${WORK_PATH}/configs"
 
       - name: Check and Push
         if: success() && inputs.push == true

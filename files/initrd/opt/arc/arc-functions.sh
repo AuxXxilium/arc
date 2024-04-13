@@ -913,7 +913,7 @@ function updateMenu() {
         rm -f "${TMP_PATH}/arc-${TAG}.img.zip"
         if [ $? -ne 0 ]; then
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-            --msgbox "Error extracting Updatefile" 0 0
+            --msgbox "Error extracting Updatefile!" 0 0
           return 1
         fi
         if [[ -f "${USER_CONFIG_FILE}" && "${CONFDONE}" = "true" ]]; then
@@ -925,7 +925,7 @@ function updateMenu() {
           --msgbox "No config for Backup found!" 0 0
         fi
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-          --infobox "Installing new Loader Image" 0 0
+          --infobox "Installing new Loader Image..." 0 0
         # Process complete update
         umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
         dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1) bs=1M conv=fsync
@@ -934,7 +934,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
           --yesno "Arc Upgrade successful. New Version: ${TAG}\nReboot?" 0 0
         [ $? -ne 0 ] && return 1
-        exec reboot
+        rebootTo config
         exit 0
         ;;
       2)
@@ -1235,7 +1235,6 @@ function sysinfo() {
   ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
-  KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
   DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
@@ -1306,7 +1305,6 @@ function sysinfo() {
   TEXT+="\n   IPv6: \Zb${ARCIPV6}\Zn"
   TEXT+="\n   Offline Mode: \Zb${OFFLINE}\Zn"
   TEXT+="\n   Sort Drives: \Zb${HDDSORT}\Zn"
-  TEXT+="\n   VMM/KVM Support: \Zb${KVMSUPPORT}\Zn"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
     TEXT+="\n   SataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
   elif [ "${REMAP}" = "remap" ]; then
@@ -1464,7 +1462,6 @@ function fullsysinfo() {
   ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
-  KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
   DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
@@ -1544,7 +1541,6 @@ function fullsysinfo() {
   TEXT+="\nIPv6: ${ARCIPV6}"
   TEXT+="\nOffline Mode: ${OFFLINE}"
   TEXT+="\nSort Drives: ${HDDSORT}"
-  TEXT+="\nVMM/KVM Support: ${KVMSUPPORT}"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
     TEXT+="\nSataPortMap | DiskIdxMap: ${PORTMAP} | ${DISKMAP}"
   elif [ "${REMAP}" = "remap" ]; then

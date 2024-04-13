@@ -33,11 +33,6 @@ jobs:
           def set_output(name, value):
             subprocess.call("echo '{}={}' >> $GITHUB_ENV".format(name, value), shell=True)
 
-          issuetitle = ${{ toJSON(github.event.issue.title) }};
-          issuebody = ${{ toJSON(github.event.issue.body) }};
-          
-          iscustom = 'false'
-
           MODEL = ''
           PRODUCTVER = ''
           ADDONS = ''
@@ -54,8 +49,6 @@ jobs:
                   FORMAT = jsonbody.get('format', '')
           except ValueError as e:
               pass
-    
-          set_output("iscustom", iscustom)
 
           set_output("MODEL", MODEL)
           set_output("PRODUCTVER", PRODUCTVER)
@@ -80,7 +73,6 @@ jobs:
           fi
 
       - name: Update Comment Building
-        if: env.iscustom == 'true'
         id: comment
         uses: actions-cool/issues-helper@v3
         with:
@@ -95,7 +87,6 @@ jobs:
 
       # Get extractor, LKM, Addons, Modules and Configs
       - name: Get extractor, LKM, Addons, Extensions, Modules and Configs
-        if: env.iscustom == 'true'
         run: |
           sudo apt update
           sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils busybox dialog curl sed 
@@ -114,7 +105,6 @@ jobs:
 
       # Build incremental
       - name: Build image
-        if: env.iscustom == 'true'
         run: |
           . scripts/func.sh
 
@@ -141,18 +131,22 @@ jobs:
           repackInitrd "br/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Set Custom Config"
-          echo "model: ${{ env.MODEL }}" >"files/p1/preset-config.yml"
-          echo "model: ${{ env.MODEL }}"
-          echo "productver: ${{ env.PRODUCTVER }}" >>"files/p1/preset-config.yml"
-          echo "productver: ${{ env.PRODUCTVER }}"
-          echo "arc:" >>"files/p1/preset-config.yml"
-          echo "macsys: ${{ env.MACSYS }}" >>"files/p1/preset-config.yml"
-          echo "  macsys: ${{ env.MACSYS }}"
-          echo "addons:" >>"files/p1/preset-config.yml"
-          for ADDON in ${{ env.ADDONS }}; do
-            echo "  ${ADDON}: \"\"" | sed 's/,//g' | sed 's/\[//g' | sed 's/\]//g' >>"files/p1/preset-config.yml"
-          done
-          echo "addons: ${{ env.ADDONS }}"
+          PRESET_CONFIG_FILE="files/p1/user-config.yml"
+          touch "${PRESET_CONFIG_FILE}"
+          writeConfigKey "model" "${{ env.MODEL }}" "${PRESET_CONFIG_FILE}"
+          writeConfigKey "productver" "${{ env.PRODUCTVER }}" "${PRESET_CONFIG_FILE}"
+          writeConfigKey "arc" "{}" "${PRESET_CONFIG_FILE}"
+          writeConfigKey "arc.macsys" "${{ env.MACSYS }}" "${PRESET_CONFIG_FILE}"
+          writeConfigKey "arc.custom" "true" "${PRESET_CONFIG_FILE}"
+          writeConfigKey "addons" "{}" "${PRESET_CONFIG_FILE}"
+          if [ -n "${{ env.ADDONS }}" ]; then
+            writeConfigKey "addons" "{}" "${PRESET_CONFIG_FILE}"
+            for A in $(echo "${{ env.ADDONS }}" | tr ',' ' '); do
+              VALUE=""
+              writeConfigKey "addons.\"${A}\"" "${VALUE}" "${PRESET_CONFIG_FILE}"
+            done
+          fi
+          echo "$(cat "${PRESET_CONFIG_FILE}")"
           echo "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"files/p3/automated"
           echo "Copying files"
           sudo cp -Rf "files/p1/"* "/tmp/p1"
@@ -177,7 +171,6 @@ jobs:
 
       # Zip image and generate checksum
       - name: Pack
-        if: env.iscustom == 'true'
         run: |
           if [ "${{ env.FORMAT }}" = "img" ]; then
             zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.img.zip" arc.img
@@ -208,7 +201,7 @@ jobs:
           echo "FIOURL=${FIOURL}" >> $GITHUB_ENV
 
       - name: Send mail
-        if: env.iscustom == 'true' && success() && env.EMAIL != 'null'
+        if: success() && env.EMAIL != 'null'
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
@@ -222,7 +215,7 @@ jobs:
             ${{ env.FIOURL }}
 
       - name: Update Comment Success
-        if: env.iscustom == 'true' && success()
+        if: success()
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'update-comment'
@@ -236,7 +229,7 @@ jobs:
             ----
 
       - name: Close Issues
-        if: env.iscustom == 'true' && success()
+        if: success()
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'close-issue'
@@ -244,7 +237,7 @@ jobs:
           issue-number: ${{ github.event.issue.number }}
 
       - name: Update Comment Fail
-        if: env.iscustom == 'true' && failure()
+        if: failure()
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'update-comment'
