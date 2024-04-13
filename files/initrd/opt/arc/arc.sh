@@ -1239,7 +1239,7 @@ else
         writeConfigKey "arc.custom" "${CUSTOM}" "${USER_CONFIG_FILE}"
         if [ "${CUSTOM}" = "true" ]; then
           [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-{PRODUCTVER}-custom" >"${PART3_PATH}/automated"
-        if [ "${CUSTOM}" = "false" ]; then
+        elif [ "${CUSTOM}" = "false" ]; then
           [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated"
         fi
         NEXT="R"
