@@ -14,7 +14,6 @@ RAMDISK_PATH="${TMP_PATH}/ramdisk"
 LOG_FILE="${TMP_PATH}/log.txt"
 UPLOAD_PATH="${TMP_PATH}/upload"
 
-PRESET_CONFIG_FILE="${PART1_PATH}/preset-config.yml"
 USER_CONFIG_FILE="${PART1_PATH}/user-config.yml"
 GRUB_PATH="${PART1_PATH}/boot/grub"
 

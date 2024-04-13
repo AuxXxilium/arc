@@ -62,7 +62,7 @@ function backtitle() {
 ###############################################################################
 # Auto Update Loader
 function arcUpdate() {
-  [ -f "${USER_CONFIG_FILE}" ] && cp -f "${USER_CONFIG_FILE}" "${TMP_PATH}/${USER_CONFIG_FILE}"
+  [ -f "${USER_CONFIG_FILE}" ] && cp -f "${USER_CONFIG_FILE}" "${TMP_PATH}/user-config.yml"
   [ -f "/mnt/p3/automated" ] && cp -f "/mnt/p3/automated" "${TMP_PATH}/automated"
   dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
     --infobox "Checking latest version..." 0 0
@@ -105,7 +105,7 @@ function arcUpdate() {
   mount ${LOADER_DISK_PART3} /mnt/p3 2>/dev/null || (
     break
   )
-  [ -f "${TMP_PATH}/${USER_CONFIG_FILE}" ] && cp -f "${TMP_PATH}/${USER_CONFIG_FILE}" "${USER_CONFIG_FILE}"
+  [ -f "${TMP_PATH}/${USER_CONFIG_FILE}" ] && cp -f "${TMP_PATH}/user-config.yml" "${USER_CONFIG_FILE}"
   [ -f "${TMP_PATH}/automated" ] && cp -f "${TMP_PATH}/automated" "/mnt/p3/automated"
   boot
 }
