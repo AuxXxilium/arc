@@ -221,12 +221,12 @@ function getIP() {
 # Find and mount the DSM root filesystem
 # (based on pocopico's TCRP code)
 function findAndMountDSMRoot() {
-  [ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) -gt 0 ] && return 0
-  dsmrootdisk="$(blkid | grep -i linux_raid_member | grep -E "/dev/.*1:" | head -1 | awk -F ":" '{print $1}')"
+  [ $(ls /dev/md/*:0 2>/dev/null | head -n 1 | wc -l) -gt 0 ] && return 0
+  dsmrootdisk="$(ls /dev/md/*:0 2>/dev/null | head -n 1)"
   [ -z "${dsmrootdisk}" ] && return 1
-  [ ! -d "${DSMROOT_PATH}" ] && mkdir -p "${DSMROOT_PATH}"
-  [ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) -eq 0 ] && mount -t ext4 "${dsmrootdisk}" "${DSMROOT_PATH}"
-  if [ $(mount | grep -i "${DSMROOT_PATH}" | wc -l) -eq 0 ]; then
+  [ ! -d "${TMP_PATH}/mdX" ] && mkdir -p "${TMP_PATH}/mdX"
+  [ $(mount | grep -i "${TMP_PATH}/mdX" | wc -l) -eq 0 ] && mount -t ext4 "${dsmrootdisk}" "${TMP_PATH}/mdX"
+  if [ $(mount | grep -i "${TMP_PATH}/mdX" | wc -l) -eq 0 ]; then
     echo "Failed to mount"
     return 1
   fi

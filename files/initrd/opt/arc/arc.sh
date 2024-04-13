@@ -264,6 +264,7 @@ function arcVersion() {
     # Build isn't done
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    return 0
   fi
 }
 
@@ -845,9 +846,11 @@ function arcAutomated() {
   [ -n "${ARCCONF}" ] && ARCPATCH="true" || ARCPATCH="false"
   if [ "${ARCPATCH}" = "true" ]; then
     SN="$(readModelKey "${MODEL}" "arc.serial")"
+    writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
   elif [ "${ARCPATCH}" = "false" ]; then
     SN="$(generateSerial "${MODEL}")"
+    writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   fi
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
@@ -1077,10 +1080,6 @@ function automake() {
     cp -f "${UNTAR_PAT_PATH}/zImage" "${ORI_ZIMAGE_FILE}"
     cp -f "${UNTAR_PAT_PATH}/rd.gz" "${ORI_RDGZ_FILE}"
     rm -rf "${UNTAR_PAT_PATH}"
-  fi
-  # Reset Bootcount if User rebuild DSM
-  if [[ -z "${BOOTCOUNT}" || ${BOOTCOUNT} -gt 0 ]]; then
-    writeConfigKey "arc.bootcount" "0" "${USER_CONFIG_FILE}"
   fi
   (
     livepatch

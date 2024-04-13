@@ -21,6 +21,7 @@ function editUserConfig() {
   fi
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  return
 }
 
 ###############################################################################
@@ -29,6 +30,7 @@ function addonMenu() {
   addonSelection
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  return
 }
 
 function addonSelection() {
@@ -206,6 +208,7 @@ function modulesMenu() {
         ;;
     esac
   done
+  return
 }
 
 ###############################################################################
@@ -407,6 +410,7 @@ function cmdlineMenu() {
         ;;
     esac
   done
+  return
 }
 
 ###############################################################################
@@ -495,11 +499,11 @@ function synoinfoMenu() {
         DT="$(readModelKey "${MODEL}" "dt")"
         if [[ "${CONFDONE}" = "true" && "${DT}" = "true" ]]; then
           if findAndMountDSMRoot; then
-            if [ -f "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml" ]; then
-              if [ -f "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml.bak" ]; then
-                cp -f "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml.bak" "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
+            if [ -f "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml" ]; then
+              if [ -f "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml.bak" ]; then
+                cp -f "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml.bak" "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml"
               fi
-              cp -f "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml" "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml.bak"
+              cp -f "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml" "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml.bak"
               dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" \
               --inputbox "CPU Temperature: (Default 90 °C)" 0 0 \
               2>"${TMP_PATH}/resp"
@@ -507,9 +511,9 @@ function synoinfoMenu() {
               [ ${RET} -ne 0 ] && break 2
               CPUTEMP=$(cat "${TMP_PATH}/resp")
               if [ "${PLATFORM}" = "geminilake" ]; then
-                sed -i 's|<cpu_temperature fan_speed="99%40hz" action="SHUTDOWN">90</cpu_temperature>|<cpu_temperature fan_speed="99%40hz" action="SHUTDOWN">'"${CPUTEMP}"'</cpu_temperature>|g' "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
+                sed -i 's|<cpu_temperature fan_speed="99%40hz" action="SHUTDOWN">90</cpu_temperature>|<cpu_temperature fan_speed="99%40hz" action="SHUTDOWN">'"${CPUTEMP}"'</cpu_temperature>|g' "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml"
               elif [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]]; then
-                sed -i 's|<alert_config threshold="2" period="30" alert_temp="85" shutdown_temp="95" name="cpu"/>|<alert_config threshold="2" period="30" alert_temp="85" shutdown_temp="'"${CPUTEMP}"'" name="cpu"/>|g' "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
+                sed -i 's|<alert_config threshold="2" period="30" alert_temp="85" shutdown_temp="95" name="cpu"/>|<alert_config threshold="2" period="30" alert_temp="85" shutdown_temp="'"${CPUTEMP}"'" name="cpu"/>|g' "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml"
               fi
               dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" \
               --inputbox "Disk Temperature: (Default 61 °C)" 0 0 \
@@ -518,9 +522,9 @@ function synoinfoMenu() {
               [ ${RET} -ne 0 ] && break 2
               DISKTEMP=$(cat "${TMP_PATH}/resp")
               if [ "${PLATFORM}" = "geminilake" ]; then
-                sed -i 's|<disk_temperature fan_speed="99%40hz" action="SHUTDOWN">61</disk_temperature>|<disk_temperature fan_speed="99%40hz" action="SHUTDOWN">'"${DISKTEMP}"'</disk_temperature>|g' "/mnt/dsmroot/usr/syno/etc.defaults/scemd.xml"
+                sed -i 's|<disk_temperature fan_speed="99%40hz" action="SHUTDOWN">61</disk_temperature>|<disk_temperature fan_speed="99%40hz" action="SHUTDOWN">'"${DISKTEMP}"'</disk_temperature>|g' "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml"
               elif [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]]; then
-                sed -i 's|<alert_config threshold="2" period="300" alert_temp="58" shutdown_temp="61" name="disk"/>|<alert_config threshold="2" period="300" alert_temp="58" shutdown_temp="'"${DISKTEMP}"'" name="disk"/>|g' "/mnt/dsmroot/usr/syno/etc.defaults/scemd.xml"
+                sed -i 's|<alert_config threshold="2" period="300" alert_temp="58" shutdown_temp="61" name="disk"/>|<alert_config threshold="2" period="300" alert_temp="58" shutdown_temp="'"${DISKTEMP}"'" name="disk"/>|g' "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml"
               fi
               dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" \
               --inputbox "M.2 Temperature: (Default 70 °C)" 0 0 \
@@ -529,9 +533,9 @@ function synoinfoMenu() {
               [ ${RET} -ne 0 ] && break 2
               M2TEMP=$(cat "${TMP_PATH}/resp")
               if [ "${PLATFORM}" = "geminilake" ]; then
-                sed -i 's|<m2_temperature fan_speed="99%40hz" action="SHUTDOWN">70</m2_temperature>|<m2_temperature fan_speed="99%40hz" action="SHUTDOWN">'"${M2TEMP}"'</m2_temperature>|g' "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
+                sed -i 's|<m2_temperature fan_speed="99%40hz" action="SHUTDOWN">70</m2_temperature>|<m2_temperature fan_speed="99%40hz" action="SHUTDOWN">'"${M2TEMP}"'</m2_temperature>|g' "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml"
               elif [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]]; then
-                sed -i 's|<alert_config threshold="2" period="30" alert_temp="68" shutdown_temp="71" name="m2"/>|<alert_config threshold="2" period="30" alert_temp="68" shutdown_temp="'"${M2TEMP}"'" name="m2"/>|g' "${DSMROOT_PATH}/usr/syno/etc.defaults/scemd.xml"
+                sed -i 's|<alert_config threshold="2" period="30" alert_temp="68" shutdown_temp="71" name="m2"/>|<alert_config threshold="2" period="30" alert_temp="68" shutdown_temp="'"${M2TEMP}"'" name="m2"/>|g' "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml"
               fi
               dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" --aspect 18 \
                 --msgbox "Change Thermal Shutdown Settings successful!\nCPU: ${CPUTEMP}\nDisk: ${DISKTEMP}\nM.2: ${M2TEMP}" 0 0
@@ -550,6 +554,7 @@ function synoinfoMenu() {
         ;;
     esac
   done
+  return
 }
 
 ###############################################################################
@@ -575,6 +580,7 @@ function keymapMenu() {
   writeConfigKey "layout" "${LAYOUT}" "${USER_CONFIG_FILE}"
   writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
   loadkeys /usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz
+  return
 }
 
 ###############################################################################
@@ -603,6 +609,7 @@ function storagepanelMenu() {
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   fi
+  return
 }
 
 ###############################################################################
@@ -677,53 +684,26 @@ function backupMenu() {
           if findAndMountDSMRoot; then
             MODEL=""
             PRODUCTVER=""
-            if [ -f "${DSMROOT_PATH}/.syno/patch/VERSION" ]; then
-              eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep unique)
-              eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep majorversion)
-              eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep minorversion)
-              if [ -n "${unique}" ] ; then
-                while read -r F; do
-                  M="$(basename ${F})"
-                  M="${M::-4}"
-                  UNIQUE="$(readModelKey "${M}" "unique")"
-                  [ "${unique}" = "${UNIQUE}" ] || continue
-                  # Found
-                  writeConfigKey "model" "${M}" "${USER_CONFIG_FILE}"
-                done <<<$(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
-                MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-                if [ -n "${MODEL}" ]; then
-                  writeConfigKey "productver" "${majorversion}.${minorversion}" "${USER_CONFIG_FILE}"
-                  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-                  if [ -n "${PRODUCTVER}" ]; then
-                    cp -f "${DSMROOT_PATH}/.syno/patch/zImage" "${PART2_PATH}"
-                    cp -f "${DSMROOT_PATH}/.syno/patch/rd.gz" "${PART2_PATH}"
-                    TEXT="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
-                    SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
-                    if [ -n "${SN}" ]; then
-                      deleteConfigKey "arc.patch" "${USER_CONFIG_FILE}"
-                      SNARC="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${MODEL}.yml")"
-                      writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
-                      TEXT+="\nSerial: ${SN}"
-                      if [ "${SN}" = "${SNARC}" ]; then
-                        writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-                      else
-                        writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-                      fi
-                      ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-                      TEXT+="\nArc Patch: ${ARCPATCH}"
-                    fi
-                    dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
-                      --aspect 18 --msgbox "${TEXT}" 0 0
-                    ARCRECOVERY="true"
-                    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-                    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-                    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-                    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-                    arcbuild
-                  fi
-                fi
+            if [ -f "${TMP_PATH}/mdX/usr/arc/backup/user-config.yml" ]; then
+              cp -f "${TMP_PATH}/mdX/usr/arc/backup/user-config.yml" "${USER_CONFIG_FILE}"
+              MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+              if [[ -n "${MODEL}" && -n "${PRODUCTVER}" ]]; then
+                TEXT="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
+                SN="$(readModelKey "${MODEL}" "arc.sn")"
+                TEXT+="\nSerial: ${SN}"
+                ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+                TEXT+="\nArc Patch: ${ARCPATCH}"
+                dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
+                  --aspect 18 --msgbox "${TEXT}" 0 0
+                writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+                CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+                writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+                BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
               fi
             fi
+            dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
+              --msgbox "Recovery completed!\Build Loader and Boot." 0 0
           else
             dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
               --msgbox "Unfortunately Arc couldn't mount the DSM partition!" 0 0
@@ -734,8 +714,8 @@ function backupMenu() {
             --infobox "Backup Encryption Key..." 0 0
           if [ -f "${PART2_PATH}/machine.key" ]; then
             if findAndMountDSMRoot; then
-              mkdir -p "${DSMROOT_PATH}/root/Xpenology_backup"
-              cp -f "${PART2_PATH}/machine.key" "${DSMROOT_PATH}/root/Xpenology_backup/machine.key"
+              mkdir -p "${TMP_PATH}/mdX/usr/arc/backup"
+              cp -f "${PART2_PATH}/machine.key" "${TMP_PATH}/mdX/usr/arc/backup/machine.key"
               dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
                 --msgbox "Encryption Key backup successful!" 0 0
             else
@@ -751,8 +731,8 @@ function backupMenu() {
           dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
             --infobox "Restore Encryption Key..." 0 0
           if findAndMountDSMRoot; then
-            if [ -f "${DSMROOT_PATH}/root/Xpenology_backup/machine.key" ]; then
-              cp -f "${DSMROOT_PATH}/root/Xpenology_backup/machine.key" "${PART2_PATH}/machine.key"
+            if [ -f "${TMP_PATH}/mdX/usr/arc/backup/machine.key" ]; then
+              cp -f "${TMP_PATH}/mdX/usr/arc/backup/machine.key" "${PART2_PATH}/machine.key"
               dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
                 --msgbox "Encryption Key restore successful!" 0 0
             else
@@ -780,10 +760,10 @@ function backupMenu() {
           if findAndMountDSMRoot; then
             MODEL=""
             PRODUCTVER=""
-            if [ -f "${DSMROOT_PATH}/.syno/patch/VERSION" ]; then
-              eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep unique)
-              eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep majorversion)
-              eval $(cat ${DSMROOT_PATH}/.syno/patch/VERSION | grep minorversion)
+            if [ -f "${TMP_PATH}/mdX/.syno/patch/VERSION" ]; then
+              eval $(cat ${TMP_PATH}/mdX/.syno/patch/VERSION | grep unique)
+              eval $(cat ${TMP_PATH}/mdX/.syno/patch/VERSION | grep majorversion)
+              eval $(cat ${TMP_PATH}/mdX/.syno/patch/VERSION | grep minorversion)
               if [ -n "${unique}" ] ; then
                 while read -r F; do
                   M="$(basename ${F})"
@@ -798,10 +778,10 @@ function backupMenu() {
                   writeConfigKey "productver" "${majorversion}.${minorversion}" "${USER_CONFIG_FILE}"
                   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
                   if [ -n "${PRODUCTVER}" ]; then
-                    cp -f "${DSMROOT_PATH}/.syno/patch/zImage" "${PART2_PATH}"
-                    cp -f "${DSMROOT_PATH}/.syno/patch/rd.gz" "${PART2_PATH}"
+                    cp -f "${TMP_PATH}/mdX/.syno/patch/zImage" "${PART2_PATH}"
+                    cp -f "${TMP_PATH}/mdX/.syno/patch/rd.gz" "${PART2_PATH}"
                     TEXT="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
-                    SN=$(_get_conf_kv SN "${DSMROOT_PATH}/etc/synoinfo.conf")
+                    SN=$(_get_conf_kv SN "${TMP_PATH}/mdX/etc/synoinfo.conf")
                     if [ -n "${SN}" ]; then
                       deleteConfigKey "arc.patch" "${USER_CONFIG_FILE}"
                       SNARC="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${MODEL}.yml")"
@@ -836,8 +816,8 @@ function backupMenu() {
           dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
             --infobox "Restore Encryption Key..." 0 0
           if findAndMountDSMRoot; then
-            if [ -f "${DSMROOT_PATH}/root/Xpenology_backup/machine.key" ]; then
-              cp -f "${DSMROOT_PATH}/root/Xpenology_backup/machine.key" "${PART2_PATH}/machine.key"
+            if [ -f "${TMP_PATH}/mdX/usr/arc/backup/machine.key" ]; then
+              cp -f "${TMP_PATH}/mdX/usr/arc/backup/machine.key" "${PART2_PATH}/machine.key"
               dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
                 --msgbox "Encryption Key restore successful!" 0 0
             else
@@ -1173,6 +1153,7 @@ function updateMenu() {
         ;;
     esac
   done
+  return
 }
 
 ###############################################################################
@@ -1187,6 +1168,7 @@ function storageMenu() {
   fi
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  return
 }
 
 ###############################################################################
@@ -1196,6 +1178,7 @@ function networkMenu() {
   getnet
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  return
 }
 
 ###############################################################################
@@ -1425,6 +1408,7 @@ function sysinfo() {
     return 0
     ;;
   esac
+  return
 }
 
 function fullsysinfo() {
@@ -1662,6 +1646,7 @@ function fullsysinfo() {
     return 0
     ;;
   esac
+  return
 }
 
 ###############################################################################
@@ -1708,6 +1693,7 @@ function networkdiag() {
   fi
   dialog --backtitle "$(backtitle)" --colors --title "Networkdiag" \
     --msgbox "${MSG}" 0 0
+  return
 }
 
 ###############################################################################
@@ -1737,6 +1723,7 @@ function credits() {
   TEXT+="\n"
   dialog --backtitle "$(backtitle)" --colors --title "Credits" \
     --msgbox "${TEXT}" 0 0
+  return
 }
 
 ###############################################################################
@@ -1795,6 +1782,7 @@ function staticIPMenu() {
   done
   dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
   --msgbox "Settings written and enabled.\nThis will be not applied to DSM." 5 50
+  return
 }
 
 ###############################################################################
@@ -1807,86 +1795,97 @@ function downgradeMenu() {
   dialog --backtitle "$(backtitle)" --title "Allow downgrade installation" \
       --yesno "${TEXT}" 0 0
   [ $? -ne 0 ] && return 1
-  (
-    mkdir -p "${TMP_PATH}/sdX1"
-    # for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK_PART1}"); do
-    for I in $(blkid 2>/dev/null | grep -i linux_raid_member | grep -E "/dev/.*1: " | awk -F ":" '{print $1}'); do
-      mount "${I}" "${TMP_PATH}/sdX1"
-      [ -f "${TMP_PATH}/sdX1/etc/VERSION" ] && rm -f "${TMP_PATH}/sdX1/etc/VERSION"
-      [ -f "${TMP_PATH}/sdX1/etc.defaults/VERSION" ] && rm -f "${TMP_PATH}/sdX1/etc.defaults/VERSION"
-      sync
-      umount "${I}"
-    done
-    rm -rf "${TMP_PATH}/sdX1"
-  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Allow downgrade installation" \
+  if [ -z "$(ls /dev/md/*:0 2>/dev/null)" ]; then # SynologyNAS:0, DiskStation:0, SynologyNVR:0, BeeStation:0
+    dialog --backtitle "$(backtitle)" --title "Allow downgrade installation" \
+      --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
+    return 1
+  fi
+  while true; do
+    mkdir -p "${TMP_PATH}/mdX"
+    mount "$(ls /dev/md/*:0 2>/dev/null | head -n 1)" "${TMP_PATH}/mdX"
+    [ $? -ne 0 ] && break
+    [ -f "${TMP_PATH}/mdX/etc/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc/VERSION"
+    [ -f "${TMP_PATH}/mdX/etc.defaults/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc.defaults/VERSION"
+    sync
+    umount "${TMP_PATH}/mdX"
+    rm -rf "${TMP_PATH}/mdX"
+    break
+  done 2>&1 | dialog --backtitle "$(backtitle)" --title "Allow downgrade installation" \
       --progressbox "Removing ..." 20 70
   TEXT="Remove VERSION file for all disks completed."
   dialog --backtitle "$(backtitle)" --colors --aspect 18 \
     --msgbox "${TEXT}" 0 0
+  return
 }
 
 ###############################################################################
 # Reset DSM password
 function resetPassword() {
+  if [ -z "$(ls /dev/md/*:0 2>/dev/null)" ]; then # SynologyNAS:0, DiskStation:0, SynologyNVR:0, BeeStation:0
+    dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
+      --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
+    return
+  fi
   rm -f "${TMP_PATH}/menu"
-  mkdir -p "${TMP_PATH}/sdX1"
-  for I in $(blkid 2>/dev/null | grep -i linux_raid_member | grep -E "/dev/.*1: " | awk -F ":" '{print $1}'); do
-    mount ${I} "${TMP_PATH}/sdX1"
-    if [ -f "${TMP_PATH}/sdX1/etc/shadow" ]; then
-      while read -r L; do
+  while true; do
+    mkdir -p "${TMP_PATH}/mdX"
+    mount "$(ls /dev/md/*:0 2>/dev/null | head -n 1)" "${TMP_PATH}/mdX"
+    [ $? -ne 0 ] && break
+    if [ -f "${TMP_PATH}/mdX/etc/shadow" ]; then
+      while read L; do
         U=$(echo "${L}" | awk -F ':' '{if ($2 != "*" && $2 != "!!") print $1;}')
         [ -z "${U}" ] && continue
         E=$(echo "${L}" | awk -F ':' '{if ($8 == "1") print "disabled"; else print "        ";}')
-        grep -q "status=on" "${TMP_PATH}/sdX1/usr/syno/etc/packages/SecureSignIn/preference/${U}/method.config" 2>/dev/null
+        grep -q "status=on" "${TMP_PATH}/mdX/usr/syno/etc/packages/SecureSignIn/preference/${U}/method.config" 2>/dev/null
         [ $? -eq 0 ] && S="SecureSignIn" || S="            "
         printf "\"%-36s %-10s %-14s\"\n" "${U}" "${E}" "${S}" >>"${TMP_PATH}/menu"
-      done <<<$(cat "${TMP_PATH}/sdX1/etc/shadow")
+      done <<<$(cat "${TMP_PATH}/mdX/etc/shadow" 2>/dev/null)
     fi
-    umount "${I}"
-    [ -f "${TMP_PATH}/menu" ] && break
+    umount "${TMP_PATH}/mdX"
+    rm -rf "${TMP_PATH}/mdX"
+    break
   done
-  rm -rf "${TMP_PATH}/sdX1"
   if [ ! -f "${TMP_PATH}/menu" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
-      --msgbox "The installed Syno system not found in the currently inserted disks!" 0 0
-    return 1
+      --msgbox "All existing users have been disabled. Please try adding new user." 0 0
+    return
   fi
   dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
-    --no-items --menu "Choose a User" 0 0 0  --file "${TMP_PATH}/menu" \
+    --no-items --menu "Choose a user name" 0 0 0 --file "${TMP_PATH}/menu" \
     2>${TMP_PATH}/resp
-  [ $? -ne 0 ] && return 1
-  USER="$(cat "${TMP_PATH}/resp" | awk '{print $1}')"
-  [ -z "${USER}" ] && return 1
+  [ $? -ne 0 ] && return
+  USER="$(cat "${TMP_PATH}/resp" 2>/dev/null | awk '{print $1}')"
+  [ -z "${USER}" ] && return
   while true; do
     dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
-      --inputbox "Type a new Password for User ${USER}" 0 70 "${CMDLINE[${NAME}]}" \
+      --inputbox "Type a new password for user ${USER}" 0 70 "${CMDLINE[${NAME}]}" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break 2
-    VALUE=$(cat "${TMP_PATH}/resp")
+    VALUE="$(cat "${TMP_PATH}/resp")"
     [ -n "${VALUE}" ] && break
     dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
-      --msgbox "Invalid Password" 0 0
+      --msgbox "Invalid password" 0 0
   done
   NEWPASSWD="$(python -c "from passlib.hash import sha512_crypt;pw=\"${VALUE}\";print(sha512_crypt.using(rounds=5000).hash(pw))")"
-  (
-    mkdir -p "${TMP_PATH}/sdX1"
-    # for I in $(ls /dev/sd*1 2>/dev/null | grep -v "${LOADER_DISK_PART1}"); do
-    for I in $(blkid 2>/dev/null | grep -i linux_raid_member | grep -E "/dev/.*1: " | awk -F ":" '{print $1}'); do
-      mount "${I}" "${TMP_PATH}/sdX1"
-      OLDPASSWD="$(cat "${TMP_PATH}/sdX1/etc/shadow" 2>/dev/null | grep "^${USER}:" | awk -F ':' '{print $2}')"
-      if [ -n "${NEWPASSWD}" -a -n "${OLDPASSWD}" ]; then
-        sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "${TMP_PATH}/sdX1/etc/shadow"
-        sed -i "/^${USER}:/ s/\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\)/\1:\2:\3:\4:\5:\6:\7::\9/" "${TMP_PATH}/sdX1/etc/shadow"
-      fi
-      sed -i "s|status=on|status=off|g" "${TMP_PATH}/sdX1/usr/syno/etc/packages/SecureSignIn/preference/${USER}/method.config" 2>/dev/null
-      sync
-      umount "${I}"
-    done
-    rm -rf "${TMP_PATH}/sdX1"
-  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
+  while true; do
+    mkdir -p "${TMP_PATH}/mdX"
+    mount "$(ls /dev/md/*:0 2>/dev/null | head -n 1)" "${TMP_PATH}/mdX"
+    [ $? -ne 0 ] && break
+    OLDPASSWD="$(cat "${TMP_PATH}/mdX/etc/shadow" 2>/dev/null | grep "^${USER}:" | awk -F ':' '{print $2}')"
+    if [ -n "${NEWPASSWD}" -a -n "${OLDPASSWD}" ]; then
+      sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "${TMP_PATH}/mdX/etc/shadow"
+      sed -i "/^${USER}:/ s/\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\)/\1:\2:\3:\4:\5:\6:\7::\9/" "${TMP_PATH}/mdX/etc/shadow"
+    fi
+    sed -i "s|status=on|status=off|g" "${TMP_PATH}/mdX/usr/syno/etc/packages/SecureSignIn/preference/${USER}/method.config" 2>/dev/null
+    sync
+    umount "${TMP_PATH}/mdX"
+    rm -rf "${TMP_PATH}/mdX"
+    break
+  done 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
     --progressbox "Resetting ..." 20 100
-  dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" --aspect 18 \
+  dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
     --msgbox "Password reset completed." 0 0
+  return
 }
 
 ###############################################################################
@@ -1919,6 +1918,7 @@ function saveMenu() {
   rm -rf "${RDXZ_PATH}"
   dialog --backtitle "$(backtitle)" --colors --aspect 18 \
     --msgbox "Save to Disk is complete." 0 0
+  return
 }
 
 ###############################################################################
@@ -1966,6 +1966,7 @@ function formatdisks() {
     --progressbox "Formatting ..." 20 100
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --msgbox "Formatting is complete." 0 0
+  return
 }
 
 ###############################################################################
@@ -1982,6 +1983,7 @@ function package() {
     --progressbox "Installing opkg ..." 20 100
   dialog --backtitle "$(backtitle)" --colors --title "Package" \
     --msgbox "Installation is complete.\nPlease reconnect to ssh/web,\nor execute 'source ~/.bashrc'" 0 0
+  return
 }
 
 ###############################################################################
@@ -1994,11 +1996,12 @@ function forcessh() {
     ONBOOTUP=""
     ONBOOTUP="${ONBOOTUP}synowebapi --exec api=SYNO.Core.Terminal method=set version=3 enable_telnet=true enable_ssh=true ssh_port=22 forbid_console=false\n"
     ONBOOTUP="${ONBOOTUP}echo \"DELETE FROM task WHERE task_name LIKE ''ARCONBOOTUPARC'';\" | sqlite3 /usr/syno/etc/esynoscheduler/esynoscheduler.db\n"
-    mkdir -p "${TMP_PATH}/sdX1"
-    for I in $(blkid 2>/dev/null | grep -i linux_raid_member | grep -E "/dev/.*1: " | awk -F ":" '{print $1}'); do
-      mount "${I}" "${TMP_PATH}/sdX1"
-      if [ -f "${TMP_PATH}/sdX1/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
-        sqlite3 ${TMP_PATH}/sdX1/usr/syno/etc/esynoscheduler/esynoscheduler.db <<EOF
+    while true; do
+      mkdir -p "${TMP_PATH}/mdX"
+      mount "$(ls /dev/md/*:0 2>/dev/null | head -n 1)" "${TMP_PATH}/mdX"
+      [ $? -ne 0 ] && break
+      if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
+        sqlite3 ${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db <<EOF
 DELETE FROM task WHERE task_name LIKE 'ARCONBOOTUPARC';
 INSERT INTO task VALUES('ARCONBOOTUPARC', '', 'bootup', '', 1, 0, 0, 0, '', 0, '$(echo -e ${ONBOOTUP})', 'script', '{}', '', '', '{}', '{}');
 EOF
@@ -2006,14 +2009,16 @@ EOF
         sync
         echo "true" >${TMP_PATH}/isEnable
       fi
-      umount "${I}"
+      umount "${TMP_PATH}/mdX"
+      rm -rf "${TMP_PATH}/mdX"
+      break
     done
-    rm -rf "${TMP_PATH}/sdX1"
   ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Force SSH" \
     --progressbox "Enabling ..." 20 100
   [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Telnet&SSH is enabled." || MSG="Telnet&SSH is not enabled."
   dialog --backtitle "$(backtitle)" --colors --title "Force SSH" \
     --msgbox "${MSG}" 0 0
+  return
 }
 
 ###############################################################################
@@ -2113,6 +2118,7 @@ function editGrubCfg() {
     mv -f "${TMP_PATH}/usergrub.cfg" "${GRUB_PATH}/grub.cfg"
     break
   done
+  return
 }
 
 ###############################################################################
@@ -2141,6 +2147,7 @@ function greplogs() {
     dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
       --msgbox "${MSG}" 0 0
   fi
+  return
 }
 
 ###############################################################################
@@ -2169,4 +2176,5 @@ function getbackup() {
     dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
       --msgbox "${MSG}" 0 0
   fi
+  return
 }

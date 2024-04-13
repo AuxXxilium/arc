@@ -139,13 +139,7 @@ CMDLINE['console']="ttyS0,115200n8"
 CMDLINE['consoleblank']="600"
 CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
-
-# eMMC Boot
-if [ "${EMMCBOOT}" = "false" ]; then
-  CMDLINE['root']="/dev/md0"
-elif [ "${EMMCBOOT}" = "true" ]; then
-  CMDLINE['root']="/dev/mmcblk0p1"
-fi
+CMDLINE['root']="/dev/md0"
 
 [ ! "${MODEL}" = "SA6400" ] && CMDLINE['elevator']="elevator"
 CMDLINE['loglevel']="15"

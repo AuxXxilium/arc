@@ -193,7 +193,7 @@ else
   cp -f "${ARC_PATH}/include/modulelist" "${RAMDISK_PATH}/addons/modulelist"
 fi
 
-# backup current loader configs
+# Backup current loader configs
 BACKUP_PATH="${RAMDISK_PATH}/usr/arc/backup"
 rm -rf "${BACKUP_PATH}"
 for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}"; do
