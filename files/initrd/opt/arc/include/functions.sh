@@ -394,7 +394,7 @@ function livepatch() {
 # Rebooting
 # (based on pocopico's TCRP code)
 function rebootTo() {
-  MODES="config recovery junior"
+  MODES="config recovery junior automated update"
   [ -z "${1}" ] && exit 1
   if ! echo "${MODES}" | grep -qw "${1}"; then exit 1; fi
   # echo "Rebooting to ${1} mode"
