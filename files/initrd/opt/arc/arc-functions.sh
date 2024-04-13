@@ -686,24 +686,24 @@ function backupMenu() {
             PRODUCTVER=""
             if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" ]; then
               cp -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" "${USER_CONFIG_FILE}"
+              sleep 2
               MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
               PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
               if [[ -n "${MODEL}" && -n "${PRODUCTVER}" ]]; then
                 TEXT="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
-                SN="$(readModelKey "${MODEL}" "arc.sn")"
+                SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
                 TEXT+="\nSerial: ${SN}"
                 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
                 TEXT+="\nArc Patch: ${ARCPATCH}"
                 dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
                   --aspect 18 --msgbox "${TEXT}" 0 0
-                writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
                 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
                 writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
                 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
               fi
             fi
             dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
-              --msgbox "Recovery completed!\Build Loader and Boot." 0 0
+              --msgbox "Recovery completed!\nBuild Loader and Boot." 0 0
           else
             dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
               --msgbox "Unfortunately Arc couldn't mount the DSM partition!" 0 0
@@ -750,7 +750,8 @@ function backupMenu() {
     while true; do
       dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
         1 "Recover from DSM" \
-        2 "Restore Encryption Key" \
+        2 "Backup Encryption Key" \
+        3 "Restore Encryption Key" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
       case "$(cat ${TMP_PATH}/resp)" in
@@ -760,59 +761,50 @@ function backupMenu() {
           if findAndMountDSMRoot; then
             MODEL=""
             PRODUCTVER=""
-            if [ -f "${TMP_PATH}/mdX/.syno/patch/VERSION" ]; then
-              eval $(cat ${TMP_PATH}/mdX/.syno/patch/VERSION | grep unique)
-              eval $(cat ${TMP_PATH}/mdX/.syno/patch/VERSION | grep majorversion)
-              eval $(cat ${TMP_PATH}/mdX/.syno/patch/VERSION | grep minorversion)
-              if [ -n "${unique}" ] ; then
-                while read -r F; do
-                  M="$(basename ${F})"
-                  M="${M::-4}"
-                  UNIQUE="$(readModelKey "${M}" "unique")"
-                  [ "${unique}" = "${UNIQUE}" ] || continue
-                  # Found
-                  writeConfigKey "model" "${M}" "${USER_CONFIG_FILE}"
-                done <<<$(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sort)
-                MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-                if [ -n "${MODEL}" ]; then
-                  writeConfigKey "productver" "${majorversion}.${minorversion}" "${USER_CONFIG_FILE}"
-                  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-                  if [ -n "${PRODUCTVER}" ]; then
-                    cp -f "${TMP_PATH}/mdX/.syno/patch/zImage" "${PART2_PATH}"
-                    cp -f "${TMP_PATH}/mdX/.syno/patch/rd.gz" "${PART2_PATH}"
-                    TEXT="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
-                    SN=$(_get_conf_kv SN "${TMP_PATH}/mdX/etc/synoinfo.conf")
-                    if [ -n "${SN}" ]; then
-                      deleteConfigKey "arc.patch" "${USER_CONFIG_FILE}"
-                      SNARC="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${MODEL}.yml")"
-                      writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
-                      TEXT+="\nSerial: ${SN}"
-                      if [ "${SN}" = "${SNARC}" ]; then
-                        writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-                      else
-                        writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-                      fi
-                      ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-                      TEXT+="\nArc Patch: ${ARCPATCH}"
-                    fi
-                    dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
-                      --aspect 18 --msgbox "${TEXT}" 0 0
-                    ARCRECOVERY="true"
-                    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-                    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-                    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-                    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-                    arcbuild
-                  fi
-                fi
+            if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" ]; then
+              cp -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" "${USER_CONFIG_FILE}"
+              sleep 2
+              MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+              if [[ -n "${MODEL}" && -n "${PRODUCTVER}" ]]; then
+                TEXT="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
+                SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
+                TEXT+="\nSerial: ${SN}"
+                ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+                TEXT+="\nArc Patch: ${ARCPATCH}"
+                dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
+                  --aspect 18 --msgbox "${TEXT}" 0 0
+                CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+                writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+                BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
               fi
             fi
+            dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
+              --msgbox "Recovery completed!\nBuild Loader and Boot." 0 0
           else
             dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
               --msgbox "Unfortunately Arc couldn't mount the DSM partition!" 0 0
           fi
           ;;
         2)
+          dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
+            --infobox "Backup Encryption Key..." 0 0
+          if [ -f "${PART2_PATH}/machine.key" ]; then
+            if findAndMountDSMRoot; then
+              mkdir -p "${TMP_PATH}/mdX/usr/arc/backup/p2"
+              cp -f "${PART2_PATH}/machine.key" "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key"
+              dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
+                --msgbox "Encryption Key backup successful!" 0 0
+            else
+              dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
+                --msgbox "Unfortunately Arc couldn't mount the DSM Partition for Backup!" 0 0
+            fi
+          else
+            dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
+              --msgbox "No Encryption Key found!" 0 0
+          fi
+          ;;
+        3)
           dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
             --infobox "Restore Encryption Key..." 0 0
           if findAndMountDSMRoot; then
