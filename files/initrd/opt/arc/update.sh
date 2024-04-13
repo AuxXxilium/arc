@@ -96,17 +96,13 @@ function arcUpdate() {
   rm -f "${TMP_PATH}/arc.img"
   dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
     --infobox "Upgrade successfull!" 0 0
-  mount ${LOADER_DISK_PART1} /mnt/p1 2>/dev/null || (
-    break
-  )
-  mount ${LOADER_DISK_PART2} /mnt/p2 2>/dev/null || (
-    break
-  )
-  mount ${LOADER_DISK_PART3} /mnt/p3 2>/dev/null || (
-    break
-  )
+  mount ${LOADER_DISK_PART1} /mnt/p1 2>/dev/null
+  mount ${LOADER_DISK_PART2} /mnt/p2 2>/dev/null
+  mount ${LOADER_DISK_PART3} /mnt/p3 2>/dev/null
   [ -f "${TMP_PATH}/${USER_CONFIG_FILE}" ] && cp -f "${TMP_PATH}/user-config.yml" "${USER_CONFIG_FILE}"
   [ -f "${TMP_PATH}/automated" ] && cp -f "${TMP_PATH}/automated" "/mnt/p3/automated"
+  sync
+  umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
   boot
 }
 
