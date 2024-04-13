@@ -62,47 +62,168 @@ function backtitle() {
 ###############################################################################
 # Auto Update Loader
 function arcUpdate() {
-  [ -f "${USER_CONFIG_FILE}" ] && cp -f "${USER_CONFIG_FILE}" "${TMP_PATH}/user-config.yml"
-  [ -f "/mnt/p3/automated" ] && cp -f "/mnt/p3/automated" "${TMP_PATH}/automated"
-  dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
+  # Update Loader
+  dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
     --infobox "Checking latest version..." 0 0
   ACTUALVERSION="${ARC_VERSION}"
-  TAG="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+  TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
   if [[ $? -ne 0 || -z "${TAG}" ]]; then
-    dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
       --infobox "Error checking new Version!" 0 0
     return 1
   fi
-  dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
+  dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
     --infobox "Downloading ${TAG}" 0 0
   # Download update file
-  STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
+  STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip")
   if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
-    dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
       --infobox "Error downloading Updatefile!" 0 0
     return 1
   fi
-  unzip -oq "${TMP_PATH}/arc-${TAG}.img.zip" -d "${TMP_PATH}"
-  rm -f "${TMP_PATH}/arc-${TAG}.img.zip"
+  unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}"
+  rm -f "${TMP_PATH}/update.zip"
   if [ $? -ne 0 ]; then
-    dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
       --infobox "Error extracting Updatefile!" 0 0
     return 1
   fi
   # Process complete update
-  umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
-  dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1) bs=1M conv=fsync
+  cp -f "${TMP_PATH}/grub.cfg" "${GRUB_PATH}/grub.cfg"
+  cp -f "${TMP_PATH}/bzImage-arc" "${ARC_BZIMAGE_FILE}"
+  cp -f "${TMP_PATH}/initrd-arc" "${ARC_RAMDISK_FILE}"
+  rm -f "${TMP_PATH}/update.zip"
+  # Update Addons
+  TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+  if [[ $? -ne 0 || -z "${TAG}" ]]; then
+    dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
+      --infobox "Error checking new Version!" 0 0
+    return 1
+  fi
+  dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
+    --infobox "Downloading ${TAG}" 0 0
+  STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip")
+  if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+    dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
+      --infobox "Error downloading Updatefile!" 0 0
+    return 1
+  fi
+  dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
+    --infobox "Extracting" 0 0
+  rm -rf "${ADDONS_PATH}"
+  mkdir -p "${ADDONS_PATH}"
+  unzip -oq "${TMP_PATH}/addons.zip" -d "${ADDONS_PATH}" >/dev/null 2>&1
+  dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
+    --infobox "Installing new Addons" 0 0
+  for PKG in $(ls ${ADDONS_PATH}/*.addon); do
+    ADDON=$(basename ${PKG} | sed 's|.addon||')
+    rm -rf "${ADDONS_PATH}/${ADDON:?}"
+    mkdir -p "${ADDONS_PATH}/${ADDON}"
+    tar -xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
+    rm -f "${ADDONS_PATH}/${ADDON}.addon"
+  done
+  rm -f "${TMP_PATH}/addons.zip"
+  # Update Patches
+  TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+  if [[ $? -ne 0 || -z "${TAG}" ]]; then
+    dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
+      --infobox "Error checking new Version!" 0 0
+    return 1
+  fi
+  dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
+    --infobox "Downloading ${TAG}" 0 0
+  STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip")
+  if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+    dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
+      --infobox "Error downloading Updatefile!" 0 0
+    return 1
+  fi
+  dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
+    --infobox "Extracting" 0 0
+  rm -rf "${PATCH_PATH}"
+  mkdir -p "${PATCH_PATH}"
+  unzip -oq "${TMP_PATH}/patches.zip" -d "${PATCH_PATH}" >/dev/null 2>&1
+  rm -f "${TMP_PATH}/patches.zip"
+  # Update Modules
+  TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+  if [[ $? -ne 0 || -z "${TAG}" ]]; then
+    dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
+      --infobox "Error checking new Version!" 0 0
+    return 1
+  fi
+  dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
+    --infobox "Downloading ${TAG}" 0 0
+  STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
+  if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+    dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
+      --infobox "Error downloading Updatefile!" 0 0
+    return 1
+  fi
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  if [[ -n "${MODEL}" && -n "${PRODUCTVER}" ]]; then
+    PLATFORM="$(readModelKey "${MODEL}" "platform")"
+    KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+    if [ "${PLATFORM}" = "epyc7002" ]; then
+      KVER="${PRODUCTVER}-${KVER}"
+    fi
+  fi
+  rm -rf "${MODULES_PATH}"
+  mkdir -p "${MODULES_PATH}"
+  unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}" >/dev/null 2>&1
+  # Rebuild modules if model/build is selected
+  if [[ -n "${PLATFORM}" && -n "${KVER}" ]]; then
+    writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+    while read -r ID DESC; do
+      writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+    done <<<$(getAllModules "${PLATFORM}" "${KVER}")
+  fi
+  rm -f "${TMP_PATH}/modules.zip"
+  # Update Configs
+  TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+  if [[ $? -ne 0 || -z "${TAG}" ]]; then
+    dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
+      --infobox "Error checking new Version!" 0 0
+    return 1
+  fi
+  dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
+    --infobox "Downloading ${TAG}" 0 0
+  STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")
+  if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+    dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
+      --infobox "Error downloading Updatefile!" 0 0
+    return 1
+  fi
+  dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
+    --infobox "Extracting" 0 0
+  rm -rf "${MODEL_CONFIG_PATH}"
+  mkdir -p "${MODEL_CONFIG_PATH}"
+  unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}" >/dev/null 2>&1
+  rm -f "${TMP_PATH}/configs.zip"
+  # Update LKMs
+  TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+  if [[ $? -ne 0 || -z "${TAG}" ]]; then
+    dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
+      --infobox "Error checking new Version!" 0 0
+    return 1
+  fi
+  dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
+    --infobox "Downloading ${TAG}" 0 0
+  STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip")
+  if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+    dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
+      --infobox "Error downloading Updatefile" 0 0
+    return 1
+  fi
+  dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
+    --infobox "Extracting" 0 0
+  rm -rf "${LKM_PATH}"
+  mkdir -p "${LKM_PATH}"
+  unzip -oq "${TMP_PATH}/rp-lkms.zip" -d "${LKM_PATH}" >/dev/null 2>&1
+  rm -f "${TMP_PATH}/rp-lkms.zip"
   # Ask for Boot
-  rm -f "${TMP_PATH}/arc.img"
-  dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-    --infobox "Upgrade successfull!" 0 0
-  mount ${LOADER_DISK_PART1} /mnt/p1 2>/dev/null
-  mount ${LOADER_DISK_PART2} /mnt/p2 2>/dev/null
-  mount ${LOADER_DISK_PART3} /mnt/p3 2>/dev/null
-  [ -f "${TMP_PATH}/${USER_CONFIG_FILE}" ] && cp -f "${TMP_PATH}/user-config.yml" "${USER_CONFIG_FILE}"
-  [ -f "${TMP_PATH}/automated" ] && cp -f "${TMP_PATH}/automated" "/mnt/p3/automated"
-  sync
-  umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
+  dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+    --infobox "Update successfull!" 0 0
   boot
 }
 
@@ -132,14 +253,3 @@ else
     --infobox "Offline Mode enabled.\nCan't Update Loader!" 0 0
   sleep 5
 fi
-
-# Inform user
-echo -e "Call \033[1;34marc.sh\033[0m to configure Loader"
-echo
-echo -e "SSH Access:"
-echo -e "IP: \033[1;34m${IPCON}\033[0m"
-echo -e "User: \033[1;34mroot\033[0m"
-echo -e "Password: \033[1;34marc\033[0m"
-echo
-echo -e "Web Terminal:"
-echo -e "Address: \033[1;34mhttp://${IPCON}:7681\033[0m"
