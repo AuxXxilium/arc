@@ -888,14 +888,6 @@ function updateMenu() {
             --msgbox "Error extracting Updatefile!" 0 0
           return 1
         fi
-        if [[ -f "${USER_CONFIG_FILE}" && "${CONFDONE}" = "true" ]]; then
-          GENHASH="$(cat "${USER_CONFIG_FILE}" | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)"
-          dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-          --msgbox "Backup config successful!\nWrite down your Code: ${GENHASH}\n\nAfter Reboot use: Restore with Code." 0 0
-        else
-          dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-          --msgbox "No config for Backup found!" 0 0
-        fi
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
           --infobox "Installing new Loader Image..." 0 0
         # Process complete update
@@ -904,7 +896,7 @@ function updateMenu() {
         # Ask for Boot
         rm -f "${TMP_PATH}/arc.img"
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-          --yesno "Arc Upgrade successful. New Version: ${TAG}\nReboot?" 0 0
+          --yesno "Arc Upgrade successful. New Version: ${TAG}\nUse Recover from DSM to get your old Config.\nReboot?" 0 0
         [ $? -ne 0 ] && return 1
         rebootTo config
         exit 0
