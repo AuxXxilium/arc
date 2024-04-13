@@ -65,6 +65,18 @@ if [[ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" || -z "$(readModelKey "${MODEL}" 
   exit 1
 fi
 
+if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
+  HASATA=0
+  for D in $(lsblk -dpno NAME); do
+    [ "${D}" = "${LOADER_DISK}" ] && continue
+    if [ "$(getBus "${D}")" = "sata" -o "$(getBus "${D}")" = "scsi" ]; then
+      HASATA=1
+      break
+    fi
+  done
+  [ ${HASATA} = "0" ] && echo -e "\033[1;31m*** Please insert at least one Sata/SAS/SCSI Disk for System installation, except for the Bootloader Disk. ***\033[0m"
+fi
+
 # Read necessary variables
 VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
 PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
