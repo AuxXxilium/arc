@@ -144,7 +144,7 @@ jobs:
           writeConfigKey "addons" "{}" "${PRESET_CONFIG_FILE}"
           if [ -n "${{ env.ADDONS }}" ]; then
             writeConfigKey "addons" "{}" "${PRESET_CONFIG_FILE}"
-            for A in $(echo "${{ env.ADDONS }}" | tr ',' ' '); do
+            for A in $(echo "${{ env.ADDONS }}" | tr ',' '' | tr '[' '' | tr ']' ''); do
               VALUE=""
               writeConfigKey "addons.\"${A}\"" "${VALUE}" "${PRESET_CONFIG_FILE}"
             done
