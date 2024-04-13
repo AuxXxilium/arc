@@ -65,6 +65,18 @@ if [[ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" || -z "$(readModelKey "${MODEL}" 
   exit 1
 fi
 
+if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
+  HASATA=0
+  for D in $(lsblk -dpno NAME); do
+    [ "${D}" = "${LOADER_DISK}" ] && continue
+    if [ "$(getBus "${D}")" = "sata" -o "$(getBus "${D}")" = "scsi" ]; then
+      HASATA=1
+      break
+    fi
+  done
+  [ ${HASATA} = "0" ] && echo -e "\033[1;31m*** Please insert at least one Sata/SAS/SCSI Disk for System installation, except for the Bootloader Disk. ***\033[0m"
+fi
+
 # Read necessary variables
 VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
 PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
@@ -127,13 +139,7 @@ CMDLINE['console']="ttyS0,115200n8"
 CMDLINE['consoleblank']="600"
 CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
-
-# eMMC Boot
-if [ "${EMMCBOOT}" = "false" ]; then
-  CMDLINE['root']="/dev/md0"
-elif [ "${EMMCBOOT}" = "true" ]; then
-  CMDLINE['root']="/dev/mmcblk0p1"
-fi
+CMDLINE['root']="/dev/md0"
 
 [ ! "${MODEL}" = "SA6400" ] && CMDLINE['elevator']="elevator"
 CMDLINE['loglevel']="15"

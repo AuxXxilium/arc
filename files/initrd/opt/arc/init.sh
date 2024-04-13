@@ -65,6 +65,7 @@ initConfigKey "arc.modulescopy" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
+initConfigKey "arc.custom" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
 initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "device.externalcontroller" "false" "${USER_CONFIG_FILE}"
@@ -72,12 +73,6 @@ initConfigKey "ip" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "netmask" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "static" "{}" "${USER_CONFIG_FILE}"
-# KVM Check
-if grep -q -E '(vmx|svm)' /proc/cpuinfo; then
-  initConfigKey "arc.kvm" "true" "${USER_CONFIG_FILE}"
-else
-  initConfigKey "arc.kvm" "false" "${USER_CONFIG_FILE}"
-fi
 
 # Init Network
 ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
@@ -145,8 +140,10 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 # Decide if boot automatically
 if grep -q "force_arc" /proc/cmdline; then
   echo -e "\033[1;34mLoading Config Mode.\033[0m"
-elif grep -q "automated" /proc/cmdline; then
+elif grep -q "automated_arc" /proc/cmdline; then
   echo -e "\033[1;34mLoading Automated Config Mode.\033[0m"
+elif grep -q "update_arc" /proc/cmdline; then
+  echo -e "\033[1;34mLoading Update Mode.\033[0m"
 elif [ "${BUILDDONE}" = "true" ]; then
   echo -e "\033[1;34mLoading DSM Mode.\033[0m"
   boot.sh && exit 0
@@ -224,8 +221,8 @@ if [ ${RAM} -le 3500 ]; then
   echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n"
   echo -e "\033[1;31mUse arc.sh to proceed. Not recommended!\033[0m\n"
 else
-  if grep -q "automated" /proc/cmdline; then
-    automated.sh
+ if grep -q "update_arc" /proc/cmdline; then
+    update.sh
   else
     arc.sh
   fi

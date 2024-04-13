@@ -62,7 +62,6 @@ ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
-KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 MODULESCOPY="$(readConfigKey "arc.modulescopy" "${USER_CONFIG_FILE}")"
@@ -73,6 +72,7 @@ ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
+CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
 
 # Get Config/Build Status
 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -264,6 +264,7 @@ function arcVersion() {
     # Build isn't done
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    return 0
   fi
 }
 
@@ -396,14 +397,6 @@ function arcSettings() {
     dialog --backtitle "$(backtitle)" --title "Arc Warning" \
       --msgbox "WARN: Your CPU does not have AES Support for Hardwareencryption in DSM." 0 0
   fi
-  # Check for KVM
-  KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
-  if [ "${KVMSUPPORT}" = "true" ]; then
-    if ! grep -q -E '(vmx|svm)' /proc/cpuinfo; then
-      dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-        --msgbox "WARN: Your CPU does not support KVM in DSM.\nCheck CPU/Bios for VMX or SVM Support." 0 0
-    fi
-  fi
   # Config is done
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -434,23 +427,10 @@ function premake() {
   DT="$(readModelKey "${MODEL}" "dt")"
   # Read Config for Arc Settings
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
-  KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
-  # KVM Support
-  if [ "${KVMSUPPORT}" = "true" ]; then
-    writeConfigKey "modules.kvm_intel" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modules.kvm_amd" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modules.kvm" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modules.irgbypass" "" "${USER_CONFIG_FILE}"
-  else
-    deleteConfigKey "modules.kvm_intel" "${USER_CONFIG_FILE}"
-    deleteConfigKey "modules.kvm_amd" "${USER_CONFIG_FILE}"
-    deleteConfigKey "modules.kvm" "${USER_CONFIG_FILE}"
-    deleteConfigKey "modules.irgbypass" "${USER_CONFIG_FILE}"
-  fi
   # eMMC Boot Support
   if [ "${EMMCBOOT}" = "true" ]; then
     writeConfigKey "modules.mmc_block" "" "${USER_CONFIG_FILE}"
@@ -493,7 +473,6 @@ function arcSummary() {
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
-  KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
@@ -518,7 +497,6 @@ function arcSummary() {
   SUMMARY+="\n>> USB Mount: \Zb${USBMOUNT}\Zn"
   SUMMARY+="\n>> Sort Drives: \Zb${HDDSORT}\Zn"
   SUMMARY+="\n>> IPv6: \Zb${ARCIPV6}\Zn"
-  SUMMARY+="\n>> KVM Support: \Zb${KVMSUPPORT}\Zn"
   SUMMARY+="\n>> Offline Mode: \Zb${OFFLINE}\Zn"
   SUMMARY+="\n>> Directboot: \Zb${DIRECTBOOT}\Zn"
   SUMMARY+="\n>> eMMC Boot: \Zb${EMMCBOOT}\Zn"
@@ -859,302 +837,567 @@ function boot() {
 }
 
 ###############################################################################
+# Make Model Config
+function arcAutomated() {
+  # read model config for dt and aes
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  DT="$(readModelKey "${MODEL}" "dt")"
+  ARCCONF="$(readModelKey "${M}" "arc.serial")"
+  [ -n "${ARCCONF}" ] && ARCPATCH="true" || ARCPATCH="false"
+  if [ "${ARCPATCH}" = "true" ]; then
+    SN="$(readModelKey "${MODEL}" "arc.serial")"
+    writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
+  elif [ "${ARCPATCH}" = "false" ]; then
+    SN="$(generateSerial "${MODEL}")"
+    writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+  fi
+  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  if [ "${PLATFORM}" = "epyc7002" ]; then
+    KVER="${PRODUCTVER}-${KVER}"
+  fi
+  writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
+    # Delete old files
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+  fi
+  dialog --backtitle "$(backtitle)" --title "Arc Config" \
+    --infobox "Reconfiguring Synoinfo and Modules" 3 40
+  # Reset synoinfo
+  writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
+  while IFS=': ' read -r KEY VALUE; do
+    writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
+  done <<<$(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].synoinfo")
+  # Reset modules
+  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+  while read -r ID DESC; do
+    writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
+  done <<<$(getAllModules "${PLATFORM}" "${KVER}")
+  # Check for ACPI Support
+  if ! grep -q "^flags.*acpi.*" /proc/cpuinfo; then
+    deleteConfigKey "addons.acpid" "${USER_CONFIG_FILE}"
+  fi
+  autoarcSettings
+}
+
+###############################################################################
+# Arc Settings Section
+function autoarcSettings() {
+  # Get Network Config for Loader
+  dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
+    --infobox "Network Config..." 3 30
+  autogetnet
+  # Select Portmap for Loader (nonDT)
+  getmap
+  if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
+    dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
+      --infobox "Storage Map..." 3 30
+    autogetmapSelection
+  fi
+  # Config is done
+  writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  autopremake
+}
+
+###############################################################################
+# Building Loader Online
+function autopremake() {
+  # Read Model Config
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  DT="$(readModelKey "${MODEL}" "dt")"
+  # Read Config for Arc Settings
+  USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
+  KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
+  EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
+  # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
+  writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
+  writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
+  # KVM Support
+  if [ "${KVMSUPPORT}" = "true" ]; then
+    writeConfigKey "modules.kvm_intel" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modules.kvm_amd" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modules.kvm" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modules.irgbypass" "" "${USER_CONFIG_FILE}"
+  else
+    deleteConfigKey "modules.kvm_intel" "${USER_CONFIG_FILE}"
+    deleteConfigKey "modules.kvm_amd" "${USER_CONFIG_FILE}"
+    deleteConfigKey "modules.kvm" "${USER_CONFIG_FILE}"
+    deleteConfigKey "modules.irgbypass" "${USER_CONFIG_FILE}"
+  fi
+  # eMMC Boot Support
+  if [ "${EMMCBOOT}" = "true" ]; then
+    writeConfigKey "modules.mmc_block" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modules.mmc_core" "" "${USER_CONFIG_FILE}"
+  else
+    deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
+    deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
+  fi
+  # Fixes for SA6400
+  if [ "${PLATFORM}" = "epyc7002" ]; then
+    KVER="${PRODUCTVER}-${KVER}"
+    MODULESCOPY="false"
+    writeConfigKey "arc.modulescopy" "${MODULESCOPY}" "${USER_CONFIG_FILE}"
+  fi
+  # Build Loader
+  automake
+}
+
+###############################################################################
+# Building Loader Online
+function automake() {
+  # Read Model Config
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  DT="$(readModelKey "${MODEL}" "dt")"
+  OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+  if [ "${PLATFORM}" = "epyc7002" ]; then
+    KVER="${PRODUCTVER}-${KVER}"
+  fi
+  # Cleanup
+  if [ -d "${UNTAR_PAT_PATH}" ]; then
+    rm -rf "${UNTAR_PAT_PATH}"
+  fi
+  mkdir -p "${UNTAR_PAT_PATH}"
+  # Check if all addon exists
+  while IFS=': ' read -r ADDON PARAM; do
+    [ -z "${ADDON}" ] && continue
+    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
+      deleteConfigKey "addons.${ADDON}" "${USER_CONFIG_FILE}"
+      continue
+    fi
+  done <<<$(readConfigMap "addons" "${USER_CONFIG_FILE}")
+  dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+    --infobox "Get PAT Data from Syno..." 3 30
+  # Get PAT Data from Syno
+  idx=0
+  while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
+    PAT_URL="$(curl -m 5 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
+    PAT_HASH="$(curl -m 5 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
+    PAT_URL=${PAT_URL%%\?*}
+    if [[ -n "${PAT_URL}" && -n "${PAT_HASH}" ]]; then
+      break
+    fi
+    sleep 3
+    idx=$((${idx} + 1))
+  done
+  if [[ -z "${PAT_URL}" || -z "${PAT_HASH}" ]]; then
+    dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+      --infobox "Syno Connection failed,\ntry to get from Github..." 4 30
+    idx=0
+    while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
+      PAT_URL="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER%%.*}.${PRODUCTVER##*.}/pat_url")"
+      PAT_HASH="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER%%.*}.${PRODUCTVER##*.}/pat_hash")"
+      PAT_URL=${PAT_URL%%\?*}
+      if [[ -n "${PAT_URL}" && -n "${PAT_HASH}" ]]; then
+        break
+      fi
+      sleep 3
+      idx=$((${idx} + 1))
+    done
+  fi
+  if [[ -z "${PAT_URL}" || -z "${PAT_HASH}" ]]; then
+    dialog --backtitle "$(backtitle)" --title "DSM Data" --aspect 18 \
+      --infobox "No DSM Data found!\nExit." 0 0
+    sleep 5
+    return 1
+  else
+    dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+      --infobox "Get PAT Data sucessfull..." 3 30
+  fi
+  if [[ "${PAT_HASH}" != "${PAT_HASH_CONF}" || ! -f "${ORI_ZIMAGE_FILE}" || ! -f "${ORI_RDGZ_FILE}" ]]; then
+    writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+    # Check for existing Files
+    DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
+    # Get new Files
+    DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
+    STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
+    if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+      dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
+      --infobox "No DSM Image found!\nTry Syno Link." 0 0
+      # Grep PAT_URL
+      PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
+      STATUS=$(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" --progress-bar)
+      if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+        dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
+          --infobox "No DSM Image found!\ Exit." 0 0
+        sleep 5
+        return 1
+      fi
+      # Extract Files
+      header=$(od -bcN2 ${PAT_FILE} | head -1 | awk '{print $3}')
+      case ${header} in
+          105)
+          isencrypted="no"
+          ;;
+          213)
+          isencrypted="no"
+          ;;
+          255)
+          isencrypted="yes"
+          ;;
+          *)
+          echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
+          ;;
+      esac
+      if [ "${isencrypted}" = "yes" ]; then
+        # Uses the extractor to untar PAT file
+        LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_FILE}" "${UNTAR_PAT_PATH}"
+      else
+        # Untar PAT file
+        tar -xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+      fi
+      # Cleanup PAT Download
+      rm -f "${PAT_FILE}"
+    elif [ -f "${DSM_FILE}" ]; then
+      tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+    elif [ ! -f "${UNTAR_PAT_PATH}/zImage" ]; then
+      dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
+        --infobox "ERROR: No DSM Image found!" 0 0
+      sleep 5
+      return 1
+    fi
+    dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+      --infobox "Image unpack sucessfull..." 3 30
+    # Copy DSM Files to Locations if DSM Files not found
+    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART1_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART1_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART2_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART2_PATH}"
+    cp -f "${UNTAR_PAT_PATH}/zImage" "${ORI_ZIMAGE_FILE}"
+    cp -f "${UNTAR_PAT_PATH}/rd.gz" "${ORI_RDGZ_FILE}"
+    rm -rf "${UNTAR_PAT_PATH}"
+  fi
+  (
+    livepatch
+    sleep 3
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Build Loader" \
+    --progressbox "Doing the Magic..." 20 70
+  if [[ -f "${ORI_ZIMAGE_FILE}" && -f "${ORI_RDGZ_FILE}" && -f "${MOD_ZIMAGE_FILE}" && -f "${MOD_RDGZ_FILE}" ]]; then
+    # Build is done
+    writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    boot && exit 0
+  fi
+}
+
+###############################################################################
 ###############################################################################
 # Main loop
-[ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
-while true; do
-  echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
-  echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
-  if [ "${CONFDONE}" = "true" ]; then
-    echo "2 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
-  fi
-  if [ "${BUILDDONE}" = "true" ]; then
-    echo "3 \"Boot Loader \" "                                                              >>"${TMP_PATH}/menu"
-  fi
-  echo "= \"\Z4========== Info ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
-  echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
-  echo "A \"Networkdiag \" "                                                                >>"${TMP_PATH}/menu"
-  echo "= \"\Z4========= System =========\Zn \" "                                           >>"${TMP_PATH}/menu"
-  if [ "${CONFDONE}" = "true" ]; then
-    if [ "${ARCOPTS}" = "true" ]; then
-      echo "4 \"\Z1Hide Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
-    else
-      echo "4 \"\Z1Show Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+if grep -q "automated_arc" /proc/cmdline; then
+  arcAutomated
+else
+  [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
+  while true; do
+    echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
+    echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
+    if [ "${CONFDONE}" = "true" ]; then
+      echo "2 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
     fi
-    if [ "${ARCOPTS}" = "true" ]; then
-      echo "= \"\Z4========== Arc ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
-      echo "b \"Addons \" "                                                                 >>"${TMP_PATH}/menu"
-      echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
-      echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
-      echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
-      echo "N \"Network Config \" "                                                         >>"${TMP_PATH}/menu"
-      echo "S \"Change Storage Map \" "                                                     >>"${TMP_PATH}/menu"
-      echo "P \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
-      echo "D \"Loader DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
+    if [ "${BUILDDONE}" = "true" ]; then
+      echo "3 \"Boot Loader \" "                                                              >>"${TMP_PATH}/menu"
     fi
-    if [ "${ADVOPTS}" = "true" ]; then
-      echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
-    else
-      echo "5 \"\Z1Show Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
-    fi
-    if [ "${ADVOPTS}" = "true" ]; then
-      echo "= \"\Z4======== Advanced =======\Zn \" "                                        >>"${TMP_PATH}/menu"
-      echo "j \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
-      echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
-      echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
-      echo "w \"Reset Loader \" "                                                           >>"${TMP_PATH}/menu"
-    fi
-    if [ "${BOOTOPTS}" = "true" ]; then
-      echo "6 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
-    else
-      echo "6 \"\Z1Show Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
-    fi
-    if [ "${BOOTOPTS}" = "true" ]; then
-      echo "= \"\Z4========== Boot =========\Zn \" "                                        >>"${TMP_PATH}/menu"
-      echo "m \"DSM Kernelload: \Z4${KERNELLOAD}\Zn \" "                                    >>"${TMP_PATH}/menu"
-      if [ "${DIRECTBOOT}" = "false" ]; then
-        echo "i \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
+    echo "= \"\Z4========== Info ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
+    echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
+    echo "A \"Networkdiag \" "                                                                >>"${TMP_PATH}/menu"
+    echo "= \"\Z4========= System =========\Zn \" "                                           >>"${TMP_PATH}/menu"
+    if [ "${CONFDONE}" = "true" ]; then
+      if [ "${ARCOPTS}" = "true" ]; then
+        echo "4 \"\Z1Hide Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      else
+        echo "4 \"\Z1Show Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
       fi
-      echo "q \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
-      echo "J \"Boot DSM Reinstall Mode\" "                                                 >>"${TMP_PATH}/menu"
-      echo "I \"Boot DSM Recovery Mode\" "                                                  >>"${TMP_PATH}/menu"
+      if [ "${ARCOPTS}" = "true" ]; then
+        echo "= \"\Z4========== Arc ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
+        echo "b \"Addons \" "                                                                 >>"${TMP_PATH}/menu"
+        echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
+        echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
+        echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
+        echo "N \"Change Network Config \" "                                                  >>"${TMP_PATH}/menu"
+        echo "S \"Change Storage Map \" "                                                     >>"${TMP_PATH}/menu"
+        echo "P \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
+        echo "D \"Loader DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
+        echo "R \"Automated: \Z4${CUSTOM}\Zn \" "                                             >>"${TMP_PATH}/menu"
+      fi
+      if [ "${ADVOPTS}" = "true" ]; then
+        echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
+      else
+        echo "5 \"\Z1Show Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
+      fi
+      if [ "${ADVOPTS}" = "true" ]; then
+        echo "= \"\Z4======== Advanced =======\Zn \" "                                        >>"${TMP_PATH}/menu"
+        echo "j \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
+        echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
+        echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
+        echo "w \"Reset Loader \" "                                                           >>"${TMP_PATH}/menu"
+      fi
+      if [ "${BOOTOPTS}" = "true" ]; then
+        echo "6 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
+      else
+        echo "6 \"\Z1Show Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
+      fi
+      if [ "${BOOTOPTS}" = "true" ]; then
+        echo "= \"\Z4========== Boot =========\Zn \" "                                        >>"${TMP_PATH}/menu"
+        echo "m \"DSM Kernelload: \Z4${KERNELLOAD}\Zn \" "                                    >>"${TMP_PATH}/menu"
+        if [ "${DIRECTBOOT}" = "false" ]; then
+          echo "i \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
+        fi
+        echo "q \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
+        echo "J \"Boot DSM Reinstall Mode\" "                                                 >>"${TMP_PATH}/menu"
+        echo "I \"Boot DSM Recovery Mode\" "                                                  >>"${TMP_PATH}/menu"
+      fi
+      if [ "${DSMOPTS}" = "true" ]; then
+        echo "7 \"\Z1Hide DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      else
+        echo "7 \"\Z1Show DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      fi
+      if [ "${DSMOPTS}" = "true" ]; then
+        echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
+        echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
+        echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
+        if [ "${MODEL}" = "SA6400" ]; then
+          echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
+        fi
+        if [ ! "${MODEL}" = "SA6400" ]; then
+          echo "M \"Copy Modules to DSM: \Z4${MODULESCOPY}\Zn \" "                            >>"${TMP_PATH}/menu"
+        fi
+        echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
+        echo "H \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
+        echo "U \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                           >>"${TMP_PATH}/menu"
+        echo "c \"IPv6 Support: \Z4${ARCIPV6}\Zn \" "                                         >>"${TMP_PATH}/menu"
+        echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
+        echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
+        echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
+      fi
     fi
-    if [ "${DSMOPTS}" = "true" ]; then
-      echo "7 \"\Z1Hide DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+    if [ "${DEVOPTS}" = "true" ]; then
+      echo "8 \"\Z1Hide Dev Options\Zn \" "                                                   >>"${TMP_PATH}/menu"
     else
-      echo "7 \"\Z1Show DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      echo "8 \"\Z1Show Dev Options\Zn \" "                                                   >>"${TMP_PATH}/menu"
     fi
-    if [ "${DSMOPTS}" = "true" ]; then
-      echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
-      echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
-      echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
-      if [ "${MODEL}" = "SA6400" ]; then
-        echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
-      fi
-      if [ ! "${MODEL}" = "SA6400" ]; then
-        echo "M \"Copy Modules to DSM: \Z4${MODULESCOPY}\Zn \" "                            >>"${TMP_PATH}/menu"
-      fi
-      echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
-      echo "H \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                          >>"${TMP_PATH}/menu"
-      echo "U \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                           >>"${TMP_PATH}/menu"
-      echo "V \"KVM Support: \Z4${KVMSUPPORT}\Zn \" "                                       >>"${TMP_PATH}/menu"
-      echo "c \"IPv6 Support: \Z4${ARCIPV6}\Zn \" "                                         >>"${TMP_PATH}/menu"
-      echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
-      echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
-      echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
+    if [ "${DEVOPTS}" = "true" ]; then
+      echo "= \"\Z4========== Dev ===========\Zn \" "                                         >>"${TMP_PATH}/menu"
+      echo "v \"Save Modifications to Disk \" "                                               >>"${TMP_PATH}/menu"
+      echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
+      echo "B \"Get DSM Config Backup \" "                                                    >>"${TMP_PATH}/menu"
+      echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
+      echo "T \"Force enable SSH in DSM \" "                                                  >>"${TMP_PATH}/menu"
+      echo "C \"Clone Loaderdisk \" "                                                         >>"${TMP_PATH}/menu"
+      echo "F \"\Z1Format Sata/NVMe Disk\Zn \" "                                              >>"${TMP_PATH}/menu"
+      echo "G \"Install opkg Package Manager \" "                                             >>"${TMP_PATH}/menu"
     fi
-  fi
-  if [ "${DEVOPTS}" = "true" ]; then
-    echo "8 \"\Z1Hide Dev Options\Zn \" "                                                   >>"${TMP_PATH}/menu"
-  else
-    echo "8 \"\Z1Show Dev Options\Zn \" "                                                   >>"${TMP_PATH}/menu"
-  fi
-  if [ "${DEVOPTS}" = "true" ]; then
-    echo "= \"\Z4========== Dev ===========\Zn \" "                                         >>"${TMP_PATH}/menu"
-    echo "v \"Save Modifications to Disk \" "                                               >>"${TMP_PATH}/menu"
-    echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
-    echo "B \"Get DSM Config Backup \" "                                                    >>"${TMP_PATH}/menu"
-    echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
-    echo "T \"Force enable SSH in DSM \" "                                                  >>"${TMP_PATH}/menu"
-    echo "C \"Clone Loaderdisk \" "                                                         >>"${TMP_PATH}/menu"
-    echo "F \"\Z1Format Sata/NVMe Disk\Zn \" "                                              >>"${TMP_PATH}/menu"
-    echo "G \"Install opkg Package Manager \" "                                             >>"${TMP_PATH}/menu"
-  fi
-  echo "= \"\Z4====== Misc Settings =====\Zn \" "                                           >>"${TMP_PATH}/menu"
-  echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
-  echo "9 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
-  echo "y \"Choose a Keymap \" "                                                            >>"${TMP_PATH}/menu"
-  if [ "${OFFLINE}" = "false" ]; then
-    echo "z \"Update \" "                                                                   >>"${TMP_PATH}/menu"
-  fi
-  echo "0 \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
+    echo "= \"\Z4====== Misc Settings =====\Zn \" "                                           >>"${TMP_PATH}/menu"
+    echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
+    echo "9 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
+    echo "y \"Choose a Keymap \" "                                                            >>"${TMP_PATH}/menu"
+    if [ "${OFFLINE}" = "false" ]; then
+      echo "z \"Update \" "                                                                   >>"${TMP_PATH}/menu"
+    fi
+    echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
 
-  dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --colors \
-    --cancel-label "Exit" --title "Arc Menu" --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
-    2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && break
-  case "$(cat ${TMP_PATH}/resp)" in
-    # Main Section
-    1) arcModel; NEXT="2" ;;
-    2) premake; NEXT="3" ;;
-    3) boot && exit 0 ;;
-    # Info Section
-    a) sysinfo; NEXT="a" ;;
-    A) networkdiag; NEXT="A" ;;
-    # System Section
-    # Arc Section
-    4) [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
-      ARCOPTS="${ARCOPTS}"
-      NEXT="4"
-      ;;
-    b) addonMenu; NEXT="b" ;;
-    d) modulesMenu; NEXT="d" ;;
-    e) ONLYVERSION="true" && arcVersion; NEXT="e" ;;
-    N) networkMenu; NEXT="N" ;;
-    S) storageMenu; NEXT="S" ;;
-    p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
-    P) storagepanelMenu; NEXT="P" ;;
-    D) staticIPMenu; NEXT="D" ;;
-    # Advanced Section
-    5) [ "${ADVOPTS}" = "true" ] && ADVOPTS='false' || ADVOPTS='true'
-       ADVOPTS="${ADVOPTS}"
-       NEXT="5"
-       ;;
-    j) cmdlineMenu; NEXT="j" ;;
-    k) synoinfoMenu; NEXT="k" ;;
-    l) editUserConfig; NEXT="l" ;;
-    w) resetLoader; NEXT="w" ;;
-    # Boot Section
-    6) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
-      ARCOPTS="${BOOTOPTS}"
-      NEXT="6"
-      ;;
-    m) [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
-      writeConfigKey "arc.kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
-      NEXT="m"
-      ;;
-    i) bootipwaittime; NEXT="i" ;;
-    q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
-      grub-editenv "${GRUB_PATH}/grubenv" create
-      writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-      NEXT="q"
-      ;;
-    J) juniorboot; NEXT="J" ;;
-    I) recoveryboot; NEXT="I" ;;
-    # DSM Section
-    7) [ "${DSMOPTS}" = "true" ] && DSMOPTS='false' || DSMOPTS='true'
-      DSMOPTS="${DSMOPTS}"
-      NEXT="7"
-      ;;
-    s) downgradeMenu; NEXT="s" ;;
-    t) resetPassword; NEXT="t" ;;
-    K) [ "${KERNEL}" = "official" ] && KERNEL='custom' || KERNEL='official'
-      writeConfigKey "arc.kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
-      if [ "${ODP}" = "true" ]; then
-        ODP="false"
+    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --colors \
+      --cancel-label "Exit" --title "Arc Menu" --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
+      2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && break
+    case "$(cat ${TMP_PATH}/resp)" in
+      # Main Section
+      1) arcModel; NEXT="2" ;;
+      2) premake; NEXT="3" ;;
+      3) boot && exit 0 ;;
+      # Info Section
+      a) sysinfo; NEXT="a" ;;
+      A) networkdiag; NEXT="A" ;;
+      # System Section
+      # Arc Section
+      4) [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
+        ARCOPTS="${ARCOPTS}"
+        NEXT="4"
+        ;;
+      b) addonMenu; NEXT="b" ;;
+      d) modulesMenu; NEXT="d" ;;
+      e) ONLYVERSION="true" && arcVersion; NEXT="e" ;;
+      N) networkMenu; NEXT="N" ;;
+      S) storageMenu; NEXT="S" ;;
+      p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
+      P) storagepanelMenu; NEXT="P" ;;
+      D) staticIPMenu; NEXT="D" ;;
+      R) [ "${CUSTOM}" = "false" ] && CUSTOM='true' || CUSTOM='false'
+        writeConfigKey "arc.custom" "${CUSTOM}" "${USER_CONFIG_FILE}"
+        if [ "${CUSTOM}" = "true" ]; then
+          [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-{PRODUCTVER}-custom" >"${PART3_PATH}/automated"
+        elif [ "${CUSTOM}" = "false" ]; then
+          [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated"
+        fi
+        NEXT="R"
+        ;;
+      # Advanced Section
+      5) [ "${ADVOPTS}" = "true" ] && ADVOPTS='false' || ADVOPTS='true'
+        ADVOPTS="${ADVOPTS}"
+        NEXT="5"
+        ;;
+      j) cmdlineMenu; NEXT="j" ;;
+      k) synoinfoMenu; NEXT="k" ;;
+      l) editUserConfig; NEXT="l" ;;
+      w) resetLoader; NEXT="w" ;;
+      # Boot Section
+      6) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
+        ARCOPTS="${BOOTOPTS}"
+        NEXT="6"
+        ;;
+      m) [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
+        writeConfigKey "arc.kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
+        NEXT="m"
+        ;;
+      i) bootipwaittime; NEXT="i" ;;
+      q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
+        grub-editenv "${GRUB_PATH}/grubenv" create
+        writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
+        NEXT="q"
+        ;;
+      J) juniorboot; NEXT="J" ;;
+      I) recoveryboot; NEXT="I" ;;
+      # DSM Section
+      7) [ "${DSMOPTS}" = "true" ] && DSMOPTS='false' || DSMOPTS='true'
+        DSMOPTS="${DSMOPTS}"
+        NEXT="7"
+        ;;
+      s) downgradeMenu; NEXT="s" ;;
+      t) resetPassword; NEXT="t" ;;
+      K) [ "${KERNEL}" = "official" ] && KERNEL='custom' || KERNEL='official'
+        writeConfigKey "arc.kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
+        if [ "${ODP}" = "true" ]; then
+          ODP="false"
+          writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
+        fi
+        if [ "${MODULESCOPY}" = "true" ]; then
+          MODULESCOPY="false"
+          writeConfigKey "arc.modulescopy" "${MODULESCOPY}" "${USER_CONFIG_FILE}"
+        fi
+        PLATFORM="$(readModelKey "${MODEL}" "platform")"
+        PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+        KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+        if [ "${PLATFORM}" = "epyc7002" ]; then
+          KVER="${PRODUCTVER}-${KVER}"
+        fi
+        if [[ -n "${PLATFORM}" && -n "${KVER}" ]]; then
+          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+          while read -r ID DESC; do
+            writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
+          done <<<$(getAllModules "${PLATFORM}" "${KVER}")
+        fi
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        NEXT="K"
+        ;;
+      O) [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
         writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
-      fi
-      if [ "${MODULESCOPY}" = "true" ]; then
-        MODULESCOPY="false"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        NEXT="O"
+        ;;
+      M) [ "${MODULESCOPY}" = "false" ] && MODULESCOPY='true' || MODULESCOPY='false'
         writeConfigKey "arc.modulescopy" "${MODULESCOPY}" "${USER_CONFIG_FILE}"
-      fi
-      PLATFORM="$(readModelKey "${MODEL}" "platform")"
-      PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-      KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-      if [ "${PLATFORM}" = "epyc7002" ]; then
-        KVER="${PRODUCTVER}-${KVER}"
-      fi
-      if [[ -n "${PLATFORM}" && -n "${KVER}" ]]; then
-        writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-        while read -r ID DESC; do
-          writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-        done <<<$(getAllModules "${PLATFORM}" "${KVER}")
-      fi
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="K"
-      ;;
-    O) [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
-      writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="O"
-      ;;
-    M) [ "${MODULESCOPY}" = "false" ] && MODULESCOPY='true' || MODULESCOPY='false'
-      writeConfigKey "arc.modulescopy" "${MODULESCOPY}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="M"
-      ;;
-    H) [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
-      writeConfigKey "arc.hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="H"
-      ;;
-    U)
-      if [ "${USBMOUNT}" = "true" ]; then
-        USBMOUNT="false"
-      elif [[ "${USBMOUNT}" = "false" && "${DT}" = "false" ]]; then
-        USBMOUNT="force"
-      elif [[ "${USBMOUNT}" = "force" || "${USBMOUNT}" = "false" ]]; then
-        USBMOUNT="true"
-      fi
-      writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="U"
-      ;;
-    V) [ "${KVMSUPPORT}" = "true" ] && KVMSUPPORT='false' || KVMSUPPORT='true'
-      writeConfigKey "arc.kvm" "${KVMSUPPORT}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="V"
-      ;;
-    c) [ "${ARCIPV6}" = "true" ] && ARCIPV6='false' || ARCIPV6='true'
-      writeConfigKey "arc.ipv6" "${ARCIPV6}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="c"
-      ;;
-    E) [ "${EMMCBOOT}" = "true" ] && EMMCBOOT='false' || EMMCBOOT='true'
-      if [ "${EMMCBOOT}" = "false" ]; then
-        writeConfigKey "arc.emmcboot" "false" "${USER_CONFIG_FILE}"
-        deleteConfigKey "synoinfo.disk_swap" "${USER_CONFIG_FILE}"
-        deleteConfigKey "synoinfo.supportraid" "${USER_CONFIG_FILE}"
-        deleteConfigKey "synoinfo.support_emmc_boot" "${USER_CONFIG_FILE}"
-        deleteConfigKey "synoinfo.support_install_only_dev" "${USER_CONFIG_FILE}"
-      elif [ "${EMMCBOOT}" = "true" ]; then
-        writeConfigKey "arc.emmcboot" "true" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.disk_swap" "no" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.supportraid" "no" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.support_emmc_boot" "yes" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.support_install_only_dev" "yes" "${USER_CONFIG_FILE}"
-      fi
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="E"
-      ;;
-    o) [ "${MACSYS}" = "hardware" ] && MACSYS='custom' || MACSYS='hardware'
-      writeConfigKey "arc.macsys" "${MACSYS}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="o"
-      ;;
-    u) [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
-      writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="u"
-      ;;
-    # Dev Section
-    8) [ "${DEVOPTS}" = "true" ] && DEVOPTS='false' || DEVOPTS='true'
-      DEVOPTS="${DEVOPTS}"
-      NEXT="8"
-      ;;
-    v) saveMenu; NEXT="v" ;;
-    n) editGrubCfg; NEXT="n" ;;
-    B) getbackup; NEXT="B" ;;
-    L) greplogs; NEXT="L" ;;
-    T) forcessh; NEXT="T" ;;
-    C) cloneLoader; NEXT="C" ;;
-    F) formatdisks; NEXT="F" ;;
-    G) package; NEXT="G" ;;
-    # Loader Settings
-    x) backupMenu; NEXT="x" ;;
-    9) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
-      OFFLINE="${OFFLINE}"
-      writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      NEXT="9"
-      ;;
-    y) keymapMenu; NEXT="y" ;;
-    z) updateMenu; NEXT="z" ;;
-    0) credits; NEXT="0" ;;
-  esac
-done
-clear
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        NEXT="M"
+        ;;
+      H) [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
+        writeConfigKey "arc.hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        NEXT="H"
+        ;;
+      U)
+        if [ "${USBMOUNT}" = "true" ]; then
+          USBMOUNT="false"
+        elif [[ "${USBMOUNT}" = "false" && "${DT}" = "false" ]]; then
+          USBMOUNT="force"
+        elif [[ "${USBMOUNT}" = "force" || "${USBMOUNT}" = "false" ]]; then
+          USBMOUNT="true"
+        fi
+        writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        NEXT="U"
+        ;;
+      c) [ "${ARCIPV6}" = "true" ] && ARCIPV6='false' || ARCIPV6='true'
+        writeConfigKey "arc.ipv6" "${ARCIPV6}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        NEXT="c"
+        ;;
+      E) [ "${EMMCBOOT}" = "true" ] && EMMCBOOT='false' || EMMCBOOT='true'
+        if [ "${EMMCBOOT}" = "false" ]; then
+          writeConfigKey "arc.emmcboot" "false" "${USER_CONFIG_FILE}"
+          deleteConfigKey "synoinfo.disk_swap" "${USER_CONFIG_FILE}"
+          deleteConfigKey "synoinfo.supportraid" "${USER_CONFIG_FILE}"
+          deleteConfigKey "synoinfo.support_emmc_boot" "${USER_CONFIG_FILE}"
+          deleteConfigKey "synoinfo.support_install_only_dev" "${USER_CONFIG_FILE}"
+        elif [ "${EMMCBOOT}" = "true" ]; then
+          writeConfigKey "arc.emmcboot" "true" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.disk_swap" "no" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.supportraid" "no" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.support_emmc_boot" "yes" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.support_install_only_dev" "yes" "${USER_CONFIG_FILE}"
+        fi
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        NEXT="E"
+        ;;
+      o) [ "${MACSYS}" = "hardware" ] && MACSYS='custom' || MACSYS='hardware'
+        writeConfigKey "arc.macsys" "${MACSYS}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        NEXT="o"
+        ;;
+      u) [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
+        writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        NEXT="u"
+        ;;
+      # Dev Section
+      8) [ "${DEVOPTS}" = "true" ] && DEVOPTS='false' || DEVOPTS='true'
+        DEVOPTS="${DEVOPTS}"
+        NEXT="8"
+        ;;
+      v) saveMenu; NEXT="v" ;;
+      n) editGrubCfg; NEXT="n" ;;
+      B) getbackup; NEXT="B" ;;
+      L) greplogs; NEXT="L" ;;
+      T) forcessh; NEXT="T" ;;
+      C) cloneLoader; NEXT="C" ;;
+      F) formatdisks; NEXT="F" ;;
+      G) package; NEXT="G" ;;
+      # Loader Settings
+      x) backupMenu; NEXT="x" ;;
+      9) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
+        OFFLINE="${OFFLINE}"
+        writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        NEXT="9"
+        ;;
+      y) keymapMenu; NEXT="y" ;;
+      z) updateMenu; NEXT="z" ;;
+      V) credits; NEXT="V" ;;
+    esac
+  done
+  clear
+fi
 
 # Inform user
 echo -e "Call \033[1;34marc.sh\033[0m to configure Loader"

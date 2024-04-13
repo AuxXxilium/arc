@@ -6,7 +6,6 @@ ARC_TITLE="Arc ${ARC_VERSION}"
 PART1_PATH="/mnt/p1"
 PART2_PATH="/mnt/p2"
 PART3_PATH="/mnt/p3"
-DSMROOT_PATH="/mnt/dsmroot"
 TMP_PATH="/tmp"
 
 UNTAR_PAT_PATH="${TMP_PATH}/DSM"
@@ -14,12 +13,7 @@ RAMDISK_PATH="${TMP_PATH}/ramdisk"
 LOG_FILE="${TMP_PATH}/log.txt"
 UPLOAD_PATH="${TMP_PATH}/upload"
 
-PRESET_CONFIG_FILE="${PART1_PATH}/preset-config.yml"
-if [ -f "${PRESET_CONFIG_FILE}" ]; then
-  USER_CONFIG_FILE="${PART1_PATH}/preset-config.yml"
-else
-  USER_CONFIG_FILE="${PART1_PATH}/user-config.yml"
-fi
+USER_CONFIG_FILE="${PART1_PATH}/user-config.yml"
 GRUB_PATH="${PART1_PATH}/boot/grub"
 
 ORI_ZIMAGE_FILE="${PART2_PATH}/zImage"

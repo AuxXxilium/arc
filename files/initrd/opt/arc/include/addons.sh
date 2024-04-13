@@ -10,12 +10,12 @@ function availableAddons() {
   for D in $(find "${ADDONS_PATH}" -maxdepth 1 -type d 2>/dev/null | sort); do
     [ ! -f "${D}/manifest.yml" ] && continue
     ADDON=$(basename ${D})
-    checkAddonExist "${ADDON}" "${1}" "${2}" || continue
+    ACT="$(readConfigKey "${1}" "${D}/manifest.yml")"
+    [ "${ACT}" = false ] && continue
     SYSTEM=$(readConfigKey "system" "${D}/manifest.yml")
     [ "${SYSTEM}" = true ] && continue
     DESC="$(readConfigKey "description" "${D}/manifest.yml")"
     BETA="$(readConfigKey "beta" "${D}/manifest.yml")"
-    ACT="$(readConfigKey "${1}" "${D}/manifest.yml")"
     [ "${BETA}" = true ] && BETA="(Beta) " || BETA=""
     [ "${ACT}" = true ] && echo -e "${ADDON}\t${BETA}${DESC}"
   done

@@ -219,6 +219,62 @@ function getmapSelection() {
   fi
 }
 
+function autogetmapSelection() {
+  # Check for Sata Boot
+  LASTDRIVE=0
+  while read -r LINE; do
+    if [[ "${BUS}" != "usb" && ${LINE} -eq 0 && "${LOADER_DISK}" = "/dev/sda" ]]; then
+      MAXDISKS="$(readModelKey "${MODEL}" "disks")"
+      if [ ${MAXDISKS} -lt ${DRIVES} ]; then
+        MAXDISKS=${DRIVES}
+      fi
+      echo -n "${LINE}>${MAXDISKS}:">>"${TMP_PATH}/remap"
+    elif [ ! ${LINE} = ${LASTDRIVE} ]; then
+      echo -n "${LINE}>${LASTDRIVE}:">>"${TMP_PATH}/remap"
+      LASTDRIVE=$((${LASTDRIVE} + 1))
+    elif [ ${LINE} = ${LASTDRIVE} ]; then
+      LASTDRIVE=$((${LINE} + 1))
+    fi
+  done <<<$(cat "${TMP_PATH}/ports")
+  # Compute PortMap Options
+  SATAPORTMAPMAX="$(awk '{print $1}' "${TMP_PATH}/drivesmax")"
+  SATAPORTMAP="$(awk '{print $1}' "${TMP_PATH}/drivescon")"
+  SATAREMAP="$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')"
+  EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
+  # Show recommended Option to user
+  if [[ -n "${SATAREMAP}" && "${EXTERNALCONTROLLER}" = "true" && "${MACHINE}" = "NATIVE" ]]; then
+    writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}"
+  elif [[ -n "${SATAREMAP}" && "${EXTERNALCONTROLLER}" = "false" ]]; then
+    writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}"
+  else
+    writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}"
+  fi
+  # Check Remap for correct config
+  REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
+  # Write Map to config and show Map to User
+  if [ "${REMAP}" = "acports" ]; then
+    writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+  elif [ "${REMAP}" = "maxports" ]; then
+    writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAPMAX}" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAPMAX}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+  elif [ "${REMAP}" = "remap" ]; then
+    writeConfigKey "cmdline.sata_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+  elif [ "${REMAP}" = "ahci" ]; then
+    writeConfigKey "cmdline.ahci_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+  elif [ "${REMAP}" = "user" ]; then
+    deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
+    deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
+  fi
+}
+
 # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
 if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
   SATACONTROLLER=$(lspci -d ::106 | wc -l)
