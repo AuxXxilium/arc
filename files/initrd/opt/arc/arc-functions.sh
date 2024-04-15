@@ -616,214 +616,82 @@ function storagepanelMenu() {
 # Shows backup menu to user
 function backupMenu() {
   NEXT="1"
-  OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  if [ "${OFFLINE}" = "false" ]; then
-    while true; do
-      dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
-        1 "Backup Config with Code" \
-        2 "Restore Config with Code" \
-        3 "Recover from DSM" \
-        4 "Backup Encryption Key" \
-        5 "Restore Encryption Key" \
-        2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return 1
-      case "$(cat ${TMP_PATH}/resp)" in
-        1)
-          dialog --backtitle "$(backtitle)" --title "Backup Config with Code" \
-              --infobox "Write down your Code for Restore!" 0 0
-          if [ -f "${USER_CONFIG_FILE}" ]; then
-            GENHASH="$(cat "${USER_CONFIG_FILE}" | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)"
-            dialog --backtitle "$(backtitle)" --title "Backup Config with Code" --msgbox "Your Code: ${GENHASH}" 0 0
-          else
-            dialog --backtitle "$(backtitle)" --title "Backup Config with Code" --msgbox "No Config for Backup found!" 0 0
-          fi
-          ;;
-        2)
-          while true; do
-            dialog --backtitle "$(backtitle)" --title "Restore with Code" \
-              --inputbox "Type your Code here!" 0 0 \
-              2>"${TMP_PATH}/resp"
-            RET=$?
-            [ ${RET} -ne 0 ] && break 2
-            GENHASH=$(cat "${TMP_PATH}/resp")
-            [ ${#GENHASH} -eq 9 ] && break
-            dialog --backtitle "$(backtitle)" --title "Restore with Code" --msgbox "Invalid Code" 0 0
-          done
-          rm -f "${BACKUPDIR}/user-config.yml"
-          curl -k https://dpaste.com/${GENHASH}.txt >"${BACKUPDIR}/user-config.yml"
-          if [ -f "${BACKUPDIR}/user-config.yml" ]; then
-            CONFIG_VERSION="$(readConfigKey "arc.version" "${BACKUPDIR}/user-config.yml")"
-            if [ "${ARC_VERSION}" = "${CONFIG_VERSION}" ]; then
-              # Copy config back to location
-              cp -f "${BACKUPDIR}/user-config.yml" "${USER_CONFIG_FILE}"
-              dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
-                --msgbox "Restore complete!" 0 0
-            else
-              cp -f "${BACKUPDIR}/user-config.yml" "${USER_CONFIG_FILE}"
-              dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
-                --msgbox "Version mismatch!\nIt is possible that your Config will not work!" 0 0
+  while true; do
+    dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
+      1 "Recover from DSM" \
+      2 "Backup Encryption Key" \
+      3 "Restore Encryption Key" \
+      2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && return 1
+    case "$(cat ${TMP_PATH}/resp)" in
+      1)
+        dialog --backtitle "$(backtitle)" --title "Try to recover DSM" --aspect 18 \
+          --infobox "Trying to recover a DSM installed system" 0 0
+        if findAndMountDSMRoot; then
+          MODEL=""
+          PRODUCTVER=""
+          if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" ]; then
+            cp -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" "${USER_CONFIG_FILE}"
+            sleep 2
+            MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+            PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+            if [[ -n "${MODEL}" && -n "${PRODUCTVER}" ]]; then
+              TEXT="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
+              SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
+              TEXT+="\nSerial: ${SN}"
+              ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+              TEXT+="\nArc Patch: ${ARCPATCH}"
+              dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
+                --aspect 18 --msgbox "${TEXT}" 0 0
+              CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+              writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+              BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
             fi
-          else
-            dialog --backtitle "$(backtitle)" --title "Restore Config" --aspect 18 \
-              --msgbox "No Config Backup found" 0 0
-            return 1
           fi
-          MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-          PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-          ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-          ARCRECOVERY="true"
-          ONLYVERSION="true"
-          CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-          arcbuild
-          ;;
-        3)
-          dialog --backtitle "$(backtitle)" --title "Try to recover DSM" --aspect 18 \
-            --infobox "Trying to recover a DSM installed system" 0 0
+          dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
+            --msgbox "Recovery completed!\nBuild Loader and Boot." 0 0
+        else
+          dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
+            --msgbox "Unfortunately Arc couldn't mount the DSM partition!" 0 0
+        fi
+        ;;
+      2)
+        dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
+          --infobox "Backup Encryption Key..." 0 0
+        if [ -f "${PART2_PATH}/machine.key" ]; then
           if findAndMountDSMRoot; then
-            MODEL=""
-            PRODUCTVER=""
-            if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" ]; then
-              cp -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" "${USER_CONFIG_FILE}"
-              sleep 2
-              MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-              if [[ -n "${MODEL}" && -n "${PRODUCTVER}" ]]; then
-                TEXT="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
-                SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
-                TEXT+="\nSerial: ${SN}"
-                ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-                TEXT+="\nArc Patch: ${ARCPATCH}"
-                dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
-                  --aspect 18 --msgbox "${TEXT}" 0 0
-                CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-                writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-                BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-              fi
-            fi
-            dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
-              --msgbox "Recovery completed!\nBuild Loader and Boot." 0 0
-          else
-            dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
-              --msgbox "Unfortunately Arc couldn't mount the DSM partition!" 0 0
-          fi
-          ;;
-        4)
-          dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
-            --infobox "Backup Encryption Key..." 0 0
-          if [ -f "${PART2_PATH}/machine.key" ]; then
-            if findAndMountDSMRoot; then
-              mkdir -p "${TMP_PATH}/mdX/usr/arc/backup/p2"
-              cp -f "${PART2_PATH}/machine.key" "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key"
-              dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
-                --msgbox "Encryption Key backup successful!" 0 0
-            else
-              dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
-                --msgbox "Unfortunately Arc couldn't mount the DSM Partition for Backup!" 0 0
-            fi
+            mkdir -p "${TMP_PATH}/mdX/usr/arc/backup/p2"
+            cp -f "${PART2_PATH}/machine.key" "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key"
+            dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
+              --msgbox "Encryption Key backup successful!" 0 0
           else
             dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
-              --msgbox "No Encryption Key found!" 0 0
+              --msgbox "Unfortunately Arc couldn't mount the DSM Partition for Backup!" 0 0
           fi
-          ;;
-        5)
-          dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-            --infobox "Restore Encryption Key..." 0 0
-          if findAndMountDSMRoot; then
-            if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" ]; then
-              cp -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" "${PART2_PATH}/machine.key"
-              dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-                --msgbox "Encryption Key restore successful!" 0 0
-            else
-              dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-              --msgbox "No Encryption Key found!" 0 0
-            fi
-          else
-            dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-                --msgbox "Unfortunately Arc couldn't mount the DSM Partition for Restore!" 0 0
-          fi
-          ;;
-      esac
-    done
-  else
-    while true; do
-      dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
-        1 "Recover from DSM" \
-        2 "Backup Encryption Key" \
-        3 "Restore Encryption Key" \
-        2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return 1
-      case "$(cat ${TMP_PATH}/resp)" in
-        1)
-          dialog --backtitle "$(backtitle)" --title "Try to recover DSM" --aspect 18 \
-            --infobox "Trying to recover a DSM installed system" 0 0
-          if findAndMountDSMRoot; then
-            MODEL=""
-            PRODUCTVER=""
-            if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" ]; then
-              cp -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" "${USER_CONFIG_FILE}"
-              sleep 2
-              MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-              if [[ -n "${MODEL}" && -n "${PRODUCTVER}" ]]; then
-                TEXT="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
-                SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
-                TEXT+="\nSerial: ${SN}"
-                ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-                TEXT+="\nArc Patch: ${ARCPATCH}"
-                dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
-                  --aspect 18 --msgbox "${TEXT}" 0 0
-                CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-                writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-                BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-              fi
-            fi
-            dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
-              --msgbox "Recovery completed!\nBuild Loader and Boot." 0 0
-          else
-            dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
-              --msgbox "Unfortunately Arc couldn't mount the DSM partition!" 0 0
-          fi
-          ;;
-        2)
+        else
           dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
-            --infobox "Backup Encryption Key..." 0 0
-          if [ -f "${PART2_PATH}/machine.key" ]; then
-            if findAndMountDSMRoot; then
-              mkdir -p "${TMP_PATH}/mdX/usr/arc/backup/p2"
-              cp -f "${PART2_PATH}/machine.key" "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key"
-              dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
-                --msgbox "Encryption Key backup successful!" 0 0
-            else
-              dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
-                --msgbox "Unfortunately Arc couldn't mount the DSM Partition for Backup!" 0 0
-            fi
-          else
-            dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
-              --msgbox "No Encryption Key found!" 0 0
-          fi
-          ;;
-        3)
-          dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-            --infobox "Restore Encryption Key..." 0 0
-          if findAndMountDSMRoot; then
-            if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" ]; then
-              cp -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" "${PART2_PATH}/machine.key"
-              dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-                --msgbox "Encryption Key restore successful!" 0 0
-            else
-              dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-              --msgbox "No Encryption Key found!" 0 0
-            fi
+            --msgbox "No Encryption Key found!" 0 0
+        fi
+        ;;
+      3)
+        dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
+          --infobox "Restore Encryption Key..." 0 0
+        if findAndMountDSMRoot; then
+          if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" ]; then
+            cp -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" "${PART2_PATH}/machine.key"
+            dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
+              --msgbox "Encryption Key restore successful!" 0 0
           else
             dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-                --msgbox "Unfortunately Arc couldn't mount the DSM Partition for Restore!" 0 0
+            --msgbox "No Encryption Key found!" 0 0
           fi
-          ;;
-      esac
-    done
-  fi
+        else
+          dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
+              --msgbox "Unfortunately Arc couldn't mount the DSM Partition for Restore!" 0 0
+        fi
+        ;;
+    esac
+  done
 }
 
 ###############################################################################
