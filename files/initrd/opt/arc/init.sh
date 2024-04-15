@@ -28,8 +28,55 @@ TITLE="Boot:"
 TITLE+=" [${BUS}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
-# Init User Config
-configInit
+# Check for Config File
+if [ ! -f "${USER_CONFIG_FILE}" ]; then
+  touch "${USER_CONFIG_FILE}"
+fi
+# Config Init
+initConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
+initConfigKey "model" "" "${USER_CONFIG_FILE}"
+initConfigKey "productver" "" "${USER_CONFIG_FILE}"
+initConfigKey "layout" "qwertz" "${USER_CONFIG_FILE}"
+initConfigKey "keymap" "de" "${USER_CONFIG_FILE}"
+initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+initConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
+initConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
+initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
+initConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
+initConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.emmcboot" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
+initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
+initConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
+initConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
+initConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
+initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
+initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.usbmount" "automated" "${USER_CONFIG_FILE}"
+initConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
+initConfigKey "arc.custom" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
+initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "device.externalcontroller" "false" "${USER_CONFIG_FILE}"
+initConfigKey "ip" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "netmask" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "static" "{}" "${USER_CONFIG_FILE}"
+# Config Update
+USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
+[ "${USBMOUNT}" = "true" ] && writeConfigKey "arc.usbmount" "external" "${USER_CONFIG_FILE}"
+[ "${USBMOUNT}" = "false" ] && writeConfigKey "arc.usbmount" "internal" "${USER_CONFIG_FILE}"
 
 # Init Network
 ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true

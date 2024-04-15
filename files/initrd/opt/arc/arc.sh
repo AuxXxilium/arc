@@ -367,7 +367,7 @@ function arcSettings() {
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
     --infobox "Network Config..." 3 30
   getnet
-  # Select Portmap for Loader (nonDT)
+  # Select Portmap for Loader
   getmap
   if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
     dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
@@ -901,7 +901,7 @@ function autoarcSettings() {
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
     --infobox "Network Config..." 3 30
   autogetnet
-  # Select Portmap for Loader (nonDT)
+  # Select Portmap for Loader
   getmap
   if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
     dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
@@ -1309,8 +1309,8 @@ else
         NEXT="H"
         ;;
       U)
-        [ "${USBMOUNT}" = "automated" ] && USBMOUNT="internal"
-        [ "${USBMOUNT}" = "internal" ] && USBMOUNT="external"
+        [ "${USBMOUNT}" = "automated" ] && USBMOUNT="internal" ||
+        [ "${USBMOUNT}" = "internal" ] && USBMOUNT="external" || 
         [ "${USBMOUNT}" = "external" ] && USBMOUNT="automated"
         writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
