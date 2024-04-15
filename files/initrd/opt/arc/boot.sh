@@ -144,7 +144,6 @@ CMDLINE['root']="/dev/md0"
 [ ! "${MODEL}" = "SA6400" ] && CMDLINE['elevator']="elevator"
 CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
-CMDLINE['modprobe.blacklist']=""
 
 if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ ! "${BUS}" = "mmc" ] && [ ! "${EMMCBOOT}" = "true" ]; then
   [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
@@ -154,11 +153,6 @@ fi
 if [ "$(readModelKey "${MODEL}" "dt")" = "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "$(readModelKey "${MODEL}" "platform")"; then
   [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
   CMDLINE['modprobe.blacklist']+="mpt3sas"
-fi
-
-if echo "broadwell broadwellnk" | grep -wq "$(readModelKey "${MODEL}" "platform")"; then
-  [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
-  CMDLINE['modprobe.blacklist']+="scsi_transport_sas"
 fi
 
 # Read cmdline
