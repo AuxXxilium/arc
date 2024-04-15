@@ -434,6 +434,16 @@ function premake() {
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
+  # Disks Mount Option
+  if [ "${USBMOUNT}" = "internal" ]; then
+    MAXDISKS="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
+    writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
+  elif [ "${USBMOUNT}" = "external" ]; then
+    MAXDISKS="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
+     writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
+  else
+    deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
+  fi
   # eMMC Boot Support
   if [ "${EMMCBOOT}" = "true" ]; then
     writeConfigKey "modules.mmc_block" "" "${USER_CONFIG_FILE}"
@@ -491,7 +501,7 @@ function arcSummary() {
   SUMMARY+="\n>> MacSys: \Zb${MACSYS}\Zn"
   [ -n "${PORTMAP}" ] && SUMMARY+="\n>> Portmap: \Zb${PORTMAP}\Zn"
   [ -n "${DISKMAP}" ] && SUMMARY+="\n>> Diskmap: \Zb${DISKMAP}\Zn"
-  SUMMARY+="\n>> USB Mount: \Zb${USBMOUNT}\Zn"
+  SUMMARY+="\n>> Mount as Disks: \Zb${USBMOUNT}\Zn"
   SUMMARY+="\n>> Sort Drives: \Zb${HDDSORT}\Zn"
   SUMMARY+="\n>> IPv6: \Zb${ARCIPV6}\Zn"
   SUMMARY+="\n>> Offline Mode: \Zb${OFFLINE}\Zn"
@@ -920,17 +930,15 @@ function autopremake() {
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
-  # KVM Support
-  if [ "${KVMSUPPORT}" = "true" ]; then
-    writeConfigKey "modules.kvm_intel" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modules.kvm_amd" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modules.kvm" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modules.irgbypass" "" "${USER_CONFIG_FILE}"
+    # Disks Mount Option
+  if [ "${USBMOUNT}" = "internal" ]; then
+    MAXDISKS="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
+    writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
+  elif [ "${USBMOUNT}" = "external" ]; then
+    MAXDISKS="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
+     writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
   else
-    deleteConfigKey "modules.kvm_intel" "${USER_CONFIG_FILE}"
-    deleteConfigKey "modules.kvm_amd" "${USER_CONFIG_FILE}"
-    deleteConfigKey "modules.kvm" "${USER_CONFIG_FILE}"
-    deleteConfigKey "modules.irgbypass" "${USER_CONFIG_FILE}"
+    deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
   fi
   # eMMC Boot Support
   if [ "${EMMCBOOT}" = "true" ]; then
@@ -1166,7 +1174,7 @@ else
         if [ "${DT}" = "true" ]; then
           echo "H \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                        >>"${TMP_PATH}/menu"
         fi
-        echo "U \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                           >>"${TMP_PATH}/menu"
+        echo "U \"Mount as Drives: \Z4${USBMOUNT}\Zn \" "                                     >>"${TMP_PATH}/menu"
         echo "c \"IPv6 Support: \Z4${ARCIPV6}\Zn \" "                                         >>"${TMP_PATH}/menu"
         echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
         echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
@@ -1301,13 +1309,9 @@ else
         NEXT="H"
         ;;
       U)
-        if [ "${USBMOUNT}" = "true" ]; then
-          USBMOUNT="false"
-        elif [[ "${USBMOUNT}" = "false" && "${DT}" = "false" ]]; then
-          USBMOUNT="force"
-        elif [[ "${USBMOUNT}" = "force" || "${USBMOUNT}" = "false" ]]; then
-          USBMOUNT="true"
-        fi
+        [ "${USBMOUNT}" = "automated" ] && USBMOUNT="internal"
+        [ "${USBMOUNT}" = "internal" ] && USBMOUNT="external"
+        [ "${USBMOUNT}" = "external" ] && USBMOUNT="automated"
         writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
