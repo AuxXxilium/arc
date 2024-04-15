@@ -575,7 +575,7 @@ function make() {
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
         --infobox "Get PAT Data from Syno..." 3 30
       idx=0
-      while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
+      while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
         PAT_URL="$(curl -m 5 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
         PAT_HASH="$(curl -m 5 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
         PAT_URL=${PAT_URL%%\?*}
@@ -982,7 +982,7 @@ function automake() {
     --infobox "Get PAT Data from Syno..." 3 30
   # Get PAT Data from Syno
   idx=0
-  while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
+  while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
     PAT_URL="$(curl -m 5 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
     PAT_HASH="$(curl -m 5 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
     PAT_URL=${PAT_URL%%\?*}
