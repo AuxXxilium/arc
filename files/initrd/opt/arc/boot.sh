@@ -155,6 +155,11 @@ if [ "$(readModelKey "${MODEL}" "dt")" = "true" ] && ! echo "epyc7002 purley bro
   CMDLINE['modprobe.blacklist']+="mpt3sas"
 fi
 
+if ! echo "broadwell broadwellnk" | grep -wq "$(readModelKey "${MODEL}" "platform")"; then
+  [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+  CMDLINE['modprobe.blacklist']+="scsi_transport_sas"
+fi
+
 # Read cmdline
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
