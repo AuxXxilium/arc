@@ -590,7 +590,7 @@ function storagepanelMenu() {
   if [ "${CONFDONE}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "StoragePanel" \
       --aspect 18 --msgbox "Enable custom StoragePanel Addon." 0 0
-    ITEMS="$(echo -e "2_Bay \n4_Bay \n8_Bay \n12_Bay \n16_Bay \n24_Bay \n")"
+    ITEMS="$(echo -e "2_Bay \n4_Bay \n8_Bay \n12_Bay \n16_Bay \n24_Bay \n60_Bay \n")"
     dialog --backtitle "$(backtitle)" --title "StoragePanel" \
       --default-item "24_Bay" --no-items --menu "Choose a Disk Panel" 0 0 0 ${ITEMS} \
       2>"${TMP_PATH}/resp"
