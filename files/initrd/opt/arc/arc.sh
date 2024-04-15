@@ -136,7 +136,7 @@ function arcModel() {
         [ -n "${ARCCONF}" ] && ARC="x" || ARC=""
         [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]] && CPU="AMD" || CPU="Intel"
         [[ "${PLATFORM}" = "apollolake" || "${PLATFORM}" = "geminilake" || "${PLATFORM}" = "epyc7002" ]] && IGPUS="x" || IGPUS=""
-        [[ ! "${DT}" = "true" || "${PLATFORM}" = "epyc7002" ]] && HBAS="x" || HBAS=""
+        [[ "${DT}" = "true" || "${DT}" = "false" ]] && HBAS="x" || HBAS=""
         [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DS918+" || "${M}" = "DS1019+" || "${M}" = "DS1621xs+" || "${M}" = "RS1619xs+" ]] && M_2_CACHE="" || M_2_CACHE="x"
         [[ "${DT}" = "true" && "${M}" != "DS220+" && "${M}" != "DS224+" ]] && M_2_STORAGE="x" || M_2_STORAGE=""
         # Check id model is compatible with CPU
@@ -148,7 +148,7 @@ function arcModel() {
               break
             fi
           done
-          if [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
+          if [ "${DT}" = "true" ] && [[ ${SCSICONTROLLER} -gt 0 || ${RAIDCONTROLLER} -gt 0 ]]; then
             COMPATIBLE=0
           fi
           if [[ ${SATACONTROLLER} -eq 0 && "${EXTERNALCONTROLLER}" = "false" && "${M}" != "SA6400" ]]; then
