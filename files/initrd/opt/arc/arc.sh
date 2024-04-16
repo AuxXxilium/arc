@@ -495,7 +495,7 @@ function arcSummary() {
   SUMMARY+="\n>> MacSys: \Zb${MACSYS}\Zn"
   [ -n "${PORTMAP}" ] && SUMMARY+="\n>> Portmap: \Zb${PORTMAP}\Zn"
   [ -n "${DISKMAP}" ] && SUMMARY+="\n>> Diskmap: \Zb${DISKMAP}\Zn"
-  SUMMARY+="\n>> Mount as Disks: \Zb${USBMOUNT}\Zn"
+  SUMMARY+="\n>> Mount Disks: \Zb${USBMOUNT}\Zn"
   SUMMARY+="\n>> Sort Drives: \Zb${HDDSORT}\Zn"
   SUMMARY+="\n>> IPv6: \Zb${ARCIPV6}\Zn"
   SUMMARY+="\n>> Offline Mode: \Zb${OFFLINE}\Zn"
@@ -1162,9 +1162,9 @@ else
         fi
         echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
         if [ "${DT}" = "true" ]; then
-          echo "H \"Sort Drives: \Z4${HDDSORT}\Zn \" "                                        >>"${TMP_PATH}/menu"
+          echo "H \"Sort Disks: \Z4${HDDSORT}\Zn \" "                                        >>"${TMP_PATH}/menu"
         fi
-        echo "U \"Mount as Drives: \Z4${USBMOUNT}\Zn \" "                                     >>"${TMP_PATH}/menu"
+        echo "U \"Mount Disks: \Z4${USBMOUNT}\Zn \" "                                     >>"${TMP_PATH}/menu"
         echo "c \"IPv6 Support: \Z4${ARCIPV6}\Zn \" "                                         >>"${TMP_PATH}/menu"
         echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
         echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
