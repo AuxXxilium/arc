@@ -156,7 +156,7 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # Required addons: "revert" "misc" "eudev" "disks" "localrss" "wol"
 # This order cannot be changed.
-for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol"; do
+for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol" "acpid"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     PARAMS='${HDDSORT}'

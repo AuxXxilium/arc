@@ -374,12 +374,6 @@ function arcSettings() {
       --infobox "Storage Map..." 3 30
     getmapSelection
   fi
-  # Check for ACPI Support
-  if grep -q "^flags.*acpi.*" /proc/cpuinfo; then
-    writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
-  else
-    deleteConfigKey "addons.acpid" "${USER_CONFIG_FILE}"
-  fi
   # Add Arc Addons
   writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
   # Select Addons
@@ -440,7 +434,7 @@ function premake() {
     writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
   elif [ "${USBMOUNT}" = "external" ]; then
     MAXDISKS="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
-     writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
+    writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
   else
     deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
   fi
@@ -887,10 +881,6 @@ function arcAutomated() {
   while read -r ID DESC; do
     writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
   done <<<$(getAllModules "${PLATFORM}" "${KVER}")
-  # Check for ACPI Support
-  if ! grep -q "^flags.*acpi.*" /proc/cpuinfo; then
-    deleteConfigKey "addons.acpid" "${USER_CONFIG_FILE}"
-  fi
   autoarcSettings
 }
 
