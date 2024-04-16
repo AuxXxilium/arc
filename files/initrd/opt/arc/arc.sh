@@ -1309,9 +1309,13 @@ else
         NEXT="H"
         ;;
       U)
-        [ "${USBMOUNT}" = "automated" ] && USBMOUNT="internal" ||
-        [ "${USBMOUNT}" = "internal" ] && USBMOUNT="external" || 
-        [ "${USBMOUNT}" = "external" ] && USBMOUNT="automated"
+        if [ "${USBMOUNT}" = "automated" ]; then
+          USBMOUNT="internal"
+        elif [ "${USBMOUNT}" = "internal" ]; then
+          USBMOUNT="external"
+        elif [ "${USBMOUNT}" = "external" ]; then
+          USBMOUNT="automated"
+        fi
         writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
