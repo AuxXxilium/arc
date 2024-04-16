@@ -1147,9 +1147,7 @@ function sysinfo() {
   elif [ "${REMAP}" = "user" ]; then
     TEXT+="\n   PortMap: \Zb"User"\Zn"
   fi
-  if [ ! "${DT}" = "true" ]; then
-    TEXT+="\n   USB Mount: \Zb${USBMOUNT}\Zn"
-  fi
+  TEXT+="\n   Mount Disks: \Zb${USBMOUNT}\Zn"
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
   TEXT+="\n\Z4> Storage\Zn"
@@ -1384,9 +1382,7 @@ function fullsysinfo() {
   elif [ "${REMAP}" = "user" ]; then
     TEXT+="\nPortMap: "User""
   fi
-  if [ ! "${DT}" = "true" ]; then
-    TEXT+="\nUSB Mount: ${USBMOUNT}"
-  fi
+  TEXT+="\nMount Disks: ${USBMOUNT}"
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
   TEXT+="\nStorage"

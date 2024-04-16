@@ -926,7 +926,7 @@ function autopremake() {
     writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
   elif [ "${USBMOUNT}" = "external" ]; then
     MAXDISKS="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
-     writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
+    writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
   else
     deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
   fi
@@ -1164,7 +1164,7 @@ else
         if [ "${DT}" = "true" ]; then
           echo "H \"Sort Disks: \Z4${HDDSORT}\Zn \" "                                        >>"${TMP_PATH}/menu"
         fi
-        echo "U \"Mount Disks: \Z4${USBMOUNT}\Zn \" "                                     >>"${TMP_PATH}/menu"
+        echo "U \"Mount Disks: \Z4${USBMOUNT}\Zn \" "                                         >>"${TMP_PATH}/menu"
         echo "c \"IPv6 Support: \Z4${ARCIPV6}\Zn \" "                                         >>"${TMP_PATH}/menu"
         echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
         echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
