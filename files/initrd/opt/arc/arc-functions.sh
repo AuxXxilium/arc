@@ -252,25 +252,27 @@ function cmdlineMenu() {
             2>"${TMP_PATH}/resp"
           RET=$?
           case ${RET} in
-          0) # ok-button
-            NAME="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
-            VALUE="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
-            if [ -z "${NAME//\"/}" ]; then
-                        dialog --clear --backtitle "$(backtitle)" --title "User Cmdline" \
-                --yesno "Invalid Parameter Name, retry?" 0 0
-              [ $? -eq 0 ] && break
-            fi
-            writeConfigKey "cmdline.\"${NAME//\"/}\"" "${VALUE}" "${USER_CONFIG_FILE}"
-            break
-            ;;
-          1) # cancel-button
-            break
-            ;;
-          255) # ESC
-            break
-            ;;
+            0) # ok-button
+              NAME="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+              VALUE="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+              if [ -z "${NAME//\"/}" ]; then
+                dialog --clear --backtitle "$(backtitle)" --title "User Cmdline" \
+                  --yesno "Invalid Parameter Name, retry?" 0 0
+                [ $? -eq 0 ] && break
+              fi
+              writeConfigKey "cmdline.\"${NAME//\"/}\"" "${VALUE}" "${USER_CONFIG_FILE}"
+              break
+              ;;
+            1) # cancel-button
+              break
+              ;;
+            255) # ESC
+              break
+              ;;
           esac
         done
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       2)
         if [ ${#CMDLINE[@]} -eq 0 ]; then
@@ -428,6 +430,7 @@ function synoinfoMenu() {
   echo "3 \"Show Synoinfo entries\""      >>"${TMP_PATH}/menu"
   echo "4 \"Add optimized Synoinfo\""     >>"${TMP_PATH}/menu"
   echo "5 \"Thermal Shutdown (DT only)\"" >>"${TMP_PATH}/menu"
+  echo "6 \"Set Maxdisks for DSM\""       >>"${TMP_PATH}/menu"
 
   # menu loop
   while true; do
@@ -436,19 +439,41 @@ function synoinfoMenu() {
     [ $? -ne 0 ] && return 1
     case "$(cat ${TMP_PATH}/resp)" in
       1)
-        dialog --backtitle "$(backtitle)" --title "Synoinfo entries" \
-          --inputbox "Type a name of synoinfo entry" 0 0 \
-          2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && return 1
-        NAME=$(cat "${TMP_PATH}/resp")
-        [ -z "${NAME//\"/}" ] && return 1
-        dialog --backtitle "$(backtitle)" --title "Synoinfo entries" \
-          --inputbox "Type a value of '${NAME}' entry" 0 0 "${SYNOINFO[${NAME}]}" \
-          2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && return 1
-        VALUE=$(cat "${TMP_PATH}/resp")
-        SYNOINFO[${NAME}]="${VALUE}"
-        writeConfigKey "synoinfo.\"${NAME//\"/}\"" "${VALUE}" "${USER_CONFIG_FILE}"
+        MSG=""
+        MSG+="Commonly used Synoinfo:\n"
+        MSG+=" * \Z4maxdisks=??\Zn\n    Maximum number of disks supported.\n"
+        MSG+=" * \Z4internalportcfg=0x????\Zn\n    Internal(sata) disks mask.\n"
+        MSG+=" * \Z4esataportcfg=0x????\Zn\n    Esata disks mask.\n"
+        MSG+=" * \Z4usbportcfg=0x????\Zn\n    USB disks mask.\n"
+        MSG+=" * \Z4max_sys_raid_disks=12\Zn\n    Maximum number of system partition(md0) raid disks.\n"
+        MSG+="\nEnter the Parameter Name and Value you want to add.\n"
+        LINENUM=$(($(echo -e "${MSG}" | wc -l) + 10))
+        while true; do
+          dialog --clear --backtitle "$(backtitle)" \
+            --colors --title "User Cmdline" \
+            --form "${MSG}" ${LINENUM:-16} 70 2 "Name:" 1 1 "" 1 10 55 0 "Value:" 2 1 "" 2 10 55 0 \
+            2>"${TMP_PATH}/resp"
+          RET=$?
+          case ${RET} in
+            0) # ok-button
+              NAME="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+              VALUE="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+              if [ -z "${NAME//\"/}" ]; then
+                dialog --clear --backtitle "$(backtitle)" --title "User Cmdline" \
+                  --yesno "Invalid Parameter Name, retry?" 0 0
+                [ $? -eq 0 ] && break
+              fi
+              writeConfigKey "synoinfo.\"${NAME//\"/}\"" "${VALUE}" "${USER_CONFIG_FILE}"
+              break
+              ;;
+            1) # cancel-button
+              break
+              ;;
+            255) # ESC
+              break
+              ;;
+          esac
+        done
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -491,13 +516,15 @@ function synoinfoMenu() {
         writeConfigKey "synoinfo.support_tiny_btrfs_dedupe" "yes" "${USER_CONFIG_FILE}"
         dialog --backtitle "$(backtitle)" --title "Optimized Synoinfo entries" \
           --aspect 18 --msgbox "Optimized Synoinfo is written to Config." 0 0
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       5)
         MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
         CONFDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         PLATFORM="$(readModelKey "${MODEL}" "platform")"
         DT="$(readModelKey "${MODEL}" "dt")"
-        if [[ "${CONFDONE}" = "true" && "${DT}" = "true" ]]; then
+        if ["${DT}" = "true" ]; then
           if findAndMountDSMRoot; then
             if [ -f "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml" ]; then
               if [ -f "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml.bak" ]; then
@@ -551,6 +578,16 @@ function synoinfoMenu() {
           dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" --aspect 18 \
             --msgbox "Please build and install DSM first!" 0 0
         fi
+        ;;
+      6)
+        dialog --backtitle "$(backtitle)" --title "Set Maxdisks" \
+          --inputbox "Set Maxdisks for DSM!" 0 0 \
+        2>"${TMP_PATH}/input"
+        MAXDISKS=$(cat "${TMP_PATH}/input")
+        [ -z "${MAXDISKS}" ] && return 1
+        writeConfigKey "device.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
     esac
   done
@@ -1147,7 +1184,7 @@ function sysinfo() {
   elif [ "${REMAP}" = "user" ]; then
     TEXT+="\n   PortMap: \Zb"User"\Zn"
   fi
-  TEXT+="\n   Mount Disks: \Zb${USBMOUNT}\Zn"
+  TEXT+="\n   USB Drives as: \Zb${USBMOUNT}\Zn"
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
   TEXT+="\n\Z4> Storage\Zn"
@@ -1219,7 +1256,7 @@ function sysinfo() {
     done
   fi
   if [[ -d "/sys/class/mmc_host" && $(ls -l /sys/class/mmc_host | grep mmc_host | wc -l) -gt 0 ]]; then
-    TEXT+="\n MMC Controller:\n"
+    TEXT+="\n  MMC Controller:\n"
     for PCI in $(lspci -d ::805 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORTNUM=$(ls -l /sys/class/mmc_host | grep "${PCI}" | wc -l)
@@ -1230,7 +1267,7 @@ function sysinfo() {
     done
   fi
   if [ $(lspci -d ::108 | wc -l) -gt 0 ]; then
-    TEXT+="\n NVMe Controller:\n"
+    TEXT+="\n  NVMe Controller:\n"
     for PCI in $(lspci -d ::108 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
@@ -1245,18 +1282,18 @@ function sysinfo() {
     --msgbox "${TEXT}" 0 0
   RET=$?
   case ${RET} in
-  0) # ok-button
-    return 0
-    ;;
-  2) # help-button
-    networkdiag
-    ;;
-  3) # extra-button
-    fullsysinfo
-    ;;
-  255) # ESC
-    return 0
-    ;;
+    0) # ok-button
+      return 0
+      ;;
+    2) # help-button
+      networkdiag
+      ;;
+    3) # extra-button
+      fullsysinfos
+      ;;
+    255) # ESC
+      return 0
+      ;;
   esac
   return
 }
@@ -1382,7 +1419,7 @@ function fullsysinfo() {
   elif [ "${REMAP}" = "user" ]; then
     TEXT+="\nPortMap: "User""
   fi
-  TEXT+="\nMount Disks: ${USBMOUNT}"
+  TEXT+="\nUSB Drives as: ${USBMOUNT}"
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
   TEXT+="\nStorage"
@@ -1876,7 +1913,7 @@ function cloneLoader() {
   while read -r KNAME KMODEL PKNAME TYPE; do
     [ -z "${KNAME}" ] && continue
     [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
-    [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
+    [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" || "${KMODEL}" = "${LOADER_DISK}" ]] && continue
     echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
   done <<<$(lsblk -dpno KNAME,MODEL,PKNAME,TYPE)
   if [ ! -f "${TMP_PATH}/opts" ]; then

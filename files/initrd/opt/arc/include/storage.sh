@@ -106,6 +106,19 @@ function getmap() {
       NVMEDRIVES=$((${NVMEDRIVES} + ${PORTNUM}))
     done
   fi
+  # Check for Sata Boot
+  LASTDRIVE=0
+  while read -r LINE; do
+    if [[ "${BUS}" != "usb" && ${LINE} -eq 0 && "${LOADER_DISK}" = "/dev/sda" ]]; then
+      MAXDISKS=$((${SATADRIVES} + 1))
+      echo -n "${LINE}>${MAXDISKS}:">>"${TMP_PATH}/remap"
+    elif [ ! ${LINE} = ${LASTDRIVE} ]; then
+      echo -n "${LINE}>${LASTDRIVE}:">>"${TMP_PATH}/remap"
+      LASTDRIVE=$((${LASTDRIVE} + 1))
+    elif [ ${LINE} = ${LASTDRIVE} ]; then
+      LASTDRIVE=$((${LINE} + 1))
+    fi
+  done <<<$(cat "${TMP_PATH}/ports")
   # Disk Count for MaxDisks
   DRIVES=$((${SATADRIVES} + ${SASDRIVES} + ${SCSIDRIVES} + ${RAIDDRIVES} + ${USBDRIVES} + ${MMCDRIVES} + ${NVMEDRIVES}))
   HARDDRIVES=$((${SATADRIVES} + ${SASDRIVES} + ${SCSIDRIVES} + ${RAIDDRIVES} + ${NVMEDRIVES}))
@@ -118,25 +131,11 @@ function getmap() {
   writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.harddrives" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
+  MAXDISKS=$((${HARDDRIVES} + 1))
+  writeConfigKey "device.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
 }
 
 function getmapSelection() {
-  # Check for Sata Boot
-  LASTDRIVE=0
-  while read -r LINE; do
-    if [[ "${BUS}" != "usb" && ${LINE} -eq 0 && "${LOADER_DISK}" = "/dev/sda" ]]; then
-      MAXDISKS="$(readModelKey "${MODEL}" "disks")"
-      if [ ${MAXDISKS} -lt ${DRIVES} ]; then
-        MAXDISKS=${DRIVES}
-      fi
-      echo -n "${LINE}>${MAXDISKS}:">>"${TMP_PATH}/remap"
-    elif [ ! ${LINE} = ${LASTDRIVE} ]; then
-      echo -n "${LINE}>${LASTDRIVE}:">>"${TMP_PATH}/remap"
-      LASTDRIVE=$((${LASTDRIVE} + 1))
-    elif [ ${LINE} = ${LASTDRIVE} ]; then
-      LASTDRIVE=$((${LINE} + 1))
-    fi
-  done <<<$(cat "${TMP_PATH}/ports")
   # Compute PortMap Options
   SATAPORTMAPMAX="$(awk '{print $1}' "${TMP_PATH}/drivesmax")"
   SATAPORTMAP="$(awk '{print $1}' "${TMP_PATH}/drivescon")"
@@ -220,22 +219,6 @@ function getmapSelection() {
 }
 
 function autogetmapSelection() {
-  # Check for Sata Boot
-  LASTDRIVE=0
-  while read -r LINE; do
-    if [[ "${BUS}" != "usb" && ${LINE} -eq 0 && "${LOADER_DISK}" = "/dev/sda" ]]; then
-      MAXDISKS="$(readModelKey "${MODEL}" "disks")"
-      if [ ${MAXDISKS} -lt ${DRIVES} ]; then
-        MAXDISKS=${DRIVES}
-      fi
-      echo -n "${LINE}>${MAXDISKS}:">>"${TMP_PATH}/remap"
-    elif [ ! ${LINE} = ${LASTDRIVE} ]; then
-      echo -n "${LINE}>${LASTDRIVE}:">>"${TMP_PATH}/remap"
-      LASTDRIVE=$((${LASTDRIVE} + 1))
-    elif [ ${LINE} = ${LASTDRIVE} ]; then
-      LASTDRIVE=$((${LINE} + 1))
-    fi
-  done <<<$(cat "${TMP_PATH}/ports")
   # Compute PortMap Options
   SATAPORTMAPMAX="$(awk '{print $1}' "${TMP_PATH}/drivesmax")"
   SATAPORTMAP="$(awk '{print $1}' "${TMP_PATH}/drivescon")"

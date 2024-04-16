@@ -63,7 +63,7 @@ initConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
 initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
 initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.usbmount" "automated" "${USER_CONFIG_FILE}"
+initConfigKey "arc.usbmount" "external" "${USER_CONFIG_FILE}"
 initConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
 initConfigKey "arc.custom" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
@@ -75,8 +75,8 @@ initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "static" "{}" "${USER_CONFIG_FILE}"
 # Config Update
 USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
-[ "${USBMOUNT}" = "true" ] && writeConfigKey "arc.usbmount" "external" "${USER_CONFIG_FILE}"
-[ "${USBMOUNT}" = "false" ] && writeConfigKey "arc.usbmount" "internal" "${USER_CONFIG_FILE}"
+[ "${USBMOUNT}" = "true" ] && writeConfigKey "arc.usbmount" "internal" "${USER_CONFIG_FILE}"
+[ "${USBMOUNT}" = "false" ] && writeConfigKey "arc.usbmount" "external" "${USER_CONFIG_FILE}"
 
 # Init Network
 ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
@@ -143,16 +143,16 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
 # Decide if boot automatically
 if grep -q "force_arc" /proc/cmdline; then
-  echo -e "\033[1;34mLoading Config Mode.\033[0m"
+  echo -e "\033[1;34mStarting Config Mode...\033[0m"
 elif grep -q "automated_arc" /proc/cmdline; then
-  echo -e "\033[1;34mLoading Automated Config Mode.\033[0m"
+  echo -e "\033[1;34mStarting Automated Config Mode...\033[0m"
 elif grep -q "update_arc" /proc/cmdline; then
-  echo -e "\033[1;34mLoading Update Mode.\033[0m"
+  echo -e "\033[1;34mStarting Update Mode...\033[0m"
 elif [ "${BUILDDONE}" = "true" ]; then
-  echo -e "\033[1;34mLoading DSM Mode.\033[0m"
+  echo -e "\033[1;34mStarting DSM Mode...\033[0m"
   boot.sh && exit 0
 else
-  echo -e "\033[1;34mLoading Config Mode.\033[0m"
+  echo -e "\033[1;34mStarting Config Mode...\033[0m"
 fi
 echo
 

@@ -140,7 +140,7 @@ function arcModel() {
         [ -n "${ARCCONF}" ] && ARC="x" || ARC=""
         [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]] && CPU="AMD" || CPU="Intel"
         [[ "${PLATFORM}" = "apollolake" || "${PLATFORM}" = "geminilake" || "${PLATFORM}" = "epyc7002" ]] && IGPUS="x" || IGPUS=""
-        [[ "${DT}" = "true" || "${DT}" = "false" ]] && HBAS="x" || HBAS=""
+        [ "${DT}" = "false" ] && USBS="x" || USBS=""
         [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DS918+" || "${M}" = "DS1019+" || "${M}" = "DS1621xs+" || "${M}" = "RS1619xs+" ]] && M_2_CACHE="" || M_2_CACHE="x"
         [[ "${DT}" = "true" && "${M}" != "DS220+" && "${M}" != "DS224+" ]] && M_2_STORAGE="x" || M_2_STORAGE=""
         # Check id model is compatible with CPU
@@ -161,37 +161,37 @@ function arcModel() {
         fi
         [ "${DT}" = "true" ] && DTS="x" || DTS=""
         [ "${BETA}" = "true" ] && BETA="x" || BETA=""
-        [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"$(printf "\Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${BETA}")\" ">>"${TMP_PATH}/menu"
+        [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"$(printf "\Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DTS}" "${ARC}" "${IGPUS}" "${USBS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${BETA}")\" ">>"${TMP_PATH}/menu"
       done <<<$(cat "${TMP_PATH}/modellist" | sort -n -k 2)
       dialog --backtitle "$(backtitle)" --colors \
         --cancel-label "Show all" --help-button --help-label "Exit" \
         --extra-button --extra-label "Info" \
-        --menu "Choose Model for Loader (This Chart indicates the original Values, without Addons.)\n $(printf "\Zb%-10s\Zn \Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-4s\Zn" "Model" "Disks" "CPU" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "Beta")" 0 105 0 \
+        --menu "Choose Model for Loader (This Chart indicates the original Values, without Addons.)\n $(printf "\Zb%-10s\Zn \Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-4s\Zn" "Model" "Disks" "CPU" "Platform" "DT" "Arc" "iGPU" "USB Mount" "M.2 Cache" "M.2 Volume" "Beta")" 0 105 0 \
         --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       RET=$?
       case ${RET} in
-      0) # ok-button
-        resp=$(cat ${TMP_PATH}/resp)
-        [ -z "${resp}" ] && return 1
-        break
-        ;;
-      1) # cancel-button -> Show all Models
-        FLGBETA=1
-        RESTRICT=0
-        ;;
-      2) # help-button -> Exit
-        return 0
-        break
-        ;;
-      3) # extra-button -> Platform Info
-        resp=$(cat ${TMP_PATH}/resp)
-        PLATFORM="$(readModelKey "${resp}" "platform")"
-        dialog --textbox "./informations/${PLATFORM}.yml" 15 80
-        ;;
-      255) # ESC -> Exit
-        return 1
-        break
-        ;;
+        0) # ok-button
+          resp=$(cat ${TMP_PATH}/resp)
+          [ -z "${resp}" ] && return 1
+          break
+          ;;
+        1) # cancel-button -> Show all Models
+          FLGBETA=1
+          RESTRICT=0
+          ;;
+        2) # help-button -> Exit
+          return 0
+          break
+          ;;
+        3) # extra-button -> Platform Info
+          resp=$(cat ${TMP_PATH}/resp)
+          PLATFORM="$(readModelKey "${resp}" "platform")"
+          dialog --textbox "./informations/${PLATFORM}.yml" 15 80
+          ;;
+        255) # ESC -> Exit
+          return 1
+          break
+          ;;
       esac
     done
   # read model config for dt and aes
@@ -429,11 +429,8 @@ function premake() {
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
   # Disks Mount Option
-  if [ "${USBMOUNT}" = "internal" ]; then
+  if [ "${USBMOUNT}" = "external" ]; then
     MAXDISKS="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
-    writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
-  elif [ "${USBMOUNT}" = "external" ]; then
-    MAXDISKS="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
     writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
   else
     deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
@@ -495,7 +492,7 @@ function arcSummary() {
   SUMMARY+="\n>> MacSys: \Zb${MACSYS}\Zn"
   [ -n "${PORTMAP}" ] && SUMMARY+="\n>> Portmap: \Zb${PORTMAP}\Zn"
   [ -n "${DISKMAP}" ] && SUMMARY+="\n>> Diskmap: \Zb${DISKMAP}\Zn"
-  SUMMARY+="\n>> Mount Disks: \Zb${USBMOUNT}\Zn"
+  SUMMARY+="\n>> USB Disks as: \Zb${USBMOUNT}\Zn"
   SUMMARY+="\n>> Sort Drives: \Zb${HDDSORT}\Zn"
   SUMMARY+="\n>> IPv6: \Zb${ARCIPV6}\Zn"
   SUMMARY+="\n>> Offline Mode: \Zb${OFFLINE}\Zn"
@@ -513,15 +510,15 @@ function arcSummary() {
     --extra-button --extra-label "Cancel" --msgbox "${SUMMARY}" 0 0
   RET=$?
   case ${RET} in
-  0) # ok-button
-    make
-    ;;
-  3) # extra-button
-    return 0
-    ;;
-  255) # ESC
-    return 0
-    ;;
+    0) # ok-button
+      make
+      ;;
+    3) # extra-button
+      return 0
+      ;;
+    255) # ESC
+      return 0
+      ;;
   esac
 }
 
@@ -632,18 +629,18 @@ function make() {
         # Extract Files
         header=$(od -bcN2 ${PAT_FILE} | head -1 | awk '{print $3}')
         case ${header} in
-            105)
-            isencrypted="no"
-            ;;
-            213)
-            isencrypted="no"
-            ;;
-            255)
-            isencrypted="yes"
-            ;;
-            *)
-            echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
-            ;;
+          105)
+          isencrypted="no"
+          ;;
+          213)
+          isencrypted="no"
+          ;;
+          255)
+          isencrypted="yes"
+          ;;
+          *)
+          echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
+          ;;
         esac
         if [ "${isencrypted}" = "yes" ]; then
           # Uses the extractor to untar PAT file
@@ -727,18 +724,18 @@ function offlinemake() {
       # Extract Files
       header=$(od -bcN2 ${PAT_FILE} | head -1 | awk '{print $3}')
       case ${header} in
-          105)
-          isencrypted="no"
-          ;;
-          213)
-          isencrypted="no"
-          ;;
-          255)
-          isencrypted="yes"
-          ;;
-          *)
-          echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
-          ;;
+        105)
+        isencrypted="no"
+        ;;
+        213)
+        isencrypted="no"
+        ;;
+        255)
+        isencrypted="yes"
+        ;;
+        *)
+        echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
+        ;;
       esac
       if [ "${isencrypted}" = "yes" ]; then
         # Uses the extractor to untar PAT file
@@ -920,12 +917,9 @@ function autopremake() {
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
-    # Disks Mount Option
-  if [ "${USBMOUNT}" = "internal" ]; then
-    MAXDISKS="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
-    writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
-  elif [ "${USBMOUNT}" = "external" ]; then
-    MAXDISKS="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
+  # Disks Mount Option
+  if [ "${USBMOUNT}" = "external" ]; then
+    MAXDISKS="$(readConfigKey "device.maxdisks" "${USER_CONFIG_FILE}")"
     writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
   else
     deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
@@ -968,6 +962,13 @@ function automake() {
       continue
     fi
   done <<<$(readConfigMap "addons" "${USER_CONFIG_FILE}")
+  # Get PAT Data from Config
+  PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
+  PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
+  if [[ -z "${PAT_URL_CONF}" || -z "${PAT_HASH_CONF}" ]]; then
+    PAT_URL_CONF="#"
+    PAT_HASH_CONF="#"
+  fi
   dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
     --infobox "Get PAT Data from Syno..." 3 30
   # Get PAT Data from Syno
@@ -1029,18 +1030,18 @@ function automake() {
       # Extract Files
       header=$(od -bcN2 ${PAT_FILE} | head -1 | awk '{print $3}')
       case ${header} in
-          105)
-          isencrypted="no"
-          ;;
-          213)
-          isencrypted="no"
-          ;;
-          255)
-          isencrypted="yes"
-          ;;
-          *)
-          echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
-          ;;
+        105)
+        isencrypted="no"
+        ;;
+        213)
+        isencrypted="no"
+        ;;
+        255)
+        isencrypted="yes"
+        ;;
+        *)
+        echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
+        ;;
       esac
       if [ "${isencrypted}" = "yes" ]; then
         # Uses the extractor to untar PAT file
@@ -1162,9 +1163,11 @@ else
         fi
         echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
         if [ "${DT}" = "true" ]; then
-          echo "H \"Sort Disks: \Z4${HDDSORT}\Zn \" "                                        >>"${TMP_PATH}/menu"
+          echo "H \"Hotplug: \Z4${HDDSORT}\Zn \" "                                            >>"${TMP_PATH}/menu"
         fi
-        echo "U \"Mount Disks: \Z4${USBMOUNT}\Zn \" "                                         >>"${TMP_PATH}/menu"
+        if [ "${DT}" = "false" ]; then
+          echo "U \"USB Drives as: \Z4${USBMOUNT}\Zn \" "                                     >>"${TMP_PATH}/menu"
+        fi
         echo "c \"IPv6 Support: \Z4${ARCIPV6}\Zn \" "                                         >>"${TMP_PATH}/menu"
         echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
         echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
@@ -1298,14 +1301,7 @@ else
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="H"
         ;;
-      U)
-        if [ "${USBMOUNT}" = "automated" ]; then
-          USBMOUNT="internal"
-        elif [ "${USBMOUNT}" = "internal" ]; then
-          USBMOUNT="external"
-        elif [ "${USBMOUNT}" = "external" ]; then
-          USBMOUNT="automated"
-        fi
+      U) [ "${USBMOUNT}" = "internal" ] && USBMOUNT='external' || USBMOUNT='internal'
         writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
