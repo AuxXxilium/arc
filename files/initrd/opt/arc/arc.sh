@@ -429,7 +429,7 @@ function premake() {
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
   # Disks Mount Option
-  if [[ "${DT} = "false" && "${USBMOUNT}" = "external" ]]; then
+  if [[ "${DT}" = "false" && "${USBMOUNT}" = "external" ]]; then
     MAXDISKS="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
     writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
   else
@@ -918,7 +918,7 @@ function autopremake() {
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
   # Disks Mount Option
-  if [[ "${DT}" = "false" && "${USBMOUNT}" = "external" ]; then
+  if [[ "${DT}" = "false" && "${USBMOUNT}" = "external" ]]; then
     MAXDISKS="$(readConfigKey "device.maxdisks" "${USER_CONFIG_FILE}")"
     writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
   else
