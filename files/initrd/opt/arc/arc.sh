@@ -423,18 +423,10 @@ function premake() {
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   DT="$(readModelKey "${MODEL}" "dt")"
   # Read Config for Arc Settings
-  USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
-  # Disks Mount Option
-  if [ "${USBMOUNT}" = "external" ]; then
-    MAXDISKS="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
-    writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
-  else
-    deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
-  fi
   # eMMC Boot Support
   if [ "${EMMCBOOT}" = "true" ]; then
     writeConfigKey "modules.mmc_block" "" "${USER_CONFIG_FILE}"
@@ -484,7 +476,7 @@ function arcSummary() {
   SUMMARY+="\n>> DSM Version: \Zb${PRODUCTVER}\Zn"
   SUMMARY+="\n>> DSM Platform: \Zb${PLATFORM}\Zn"
   SUMMARY+="\n>> DeviceTree: \Zb${DT}\Zn"
-  SUMMARY+="\n>> Kernel: \Zb${KERNEL}\Zn"
+  [ "${MODEL}" = "SA6400" ] && SUMMARY+="\n>> Kernel: \Zb${KERNEL}\Zn"
   SUMMARY+="\n>> Kernel Version: \Zb${KVER}\Zn"
   SUMMARY+="\n"
   SUMMARY+="\n\Z4> Arc Information\Zn"
@@ -492,7 +484,7 @@ function arcSummary() {
   SUMMARY+="\n>> MacSys: \Zb${MACSYS}\Zn"
   [ -n "${PORTMAP}" ] && SUMMARY+="\n>> Portmap: \Zb${PORTMAP}\Zn"
   [ -n "${DISKMAP}" ] && SUMMARY+="\n>> Diskmap: \Zb${DISKMAP}\Zn"
-  SUMMARY+="\n>> USB Disks as: \Zb${USBMOUNT}\Zn"
+  [ "${DT}" = "false" ] && SUMMARY+="\n>> Mount USB Drives: \Zb${USBMOUNT}\Zn"
   SUMMARY+="\n>> Sort Drives: \Zb${HDDSORT}\Zn"
   SUMMARY+="\n>> IPv6: \Zb${ARCIPV6}\Zn"
   SUMMARY+="\n>> Offline Mode: \Zb${OFFLINE}\Zn"
@@ -503,7 +495,8 @@ function arcSummary() {
   SUMMARY+="\n"
   SUMMARY+="\n\Z4> Device Information\Zn"
   SUMMARY+="\n>> NIC Count: \Zb${NIC}\Zn"
-  SUMMARY+="\n>> Disks Count (incl. USB): \Zb${DRIVES}\Zn"
+  SUMMARY+="\n>> Disks Count: \Zb${DRIVES}\Zn"
+  SUMMARY+="\n>> Disks Count (internal): \Zb${HARDDRIVES}\Zn"
   SUMMARY+="\n>> External Controller: \Zb${EXTERNALCONTROLLER}\Zn"
   SUMMARY+="\n>> Memory Min/Max MB: \Zb${RAMMIN}/${RAMMAX}\Zn"
   dialog --backtitle "$(backtitle)" --colors --title "Config Summary" \
@@ -911,19 +904,11 @@ function autopremake() {
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   DT="$(readModelKey "${MODEL}" "dt")"
   # Read Config for Arc Settings
-  USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
-  # Disks Mount Option
-  if [ "${USBMOUNT}" = "external" ]; then
-    MAXDISKS="$(readConfigKey "device.maxdisks" "${USER_CONFIG_FILE}")"
-    writeConfigKey "synoinfo.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
-  else
-    deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
-  fi
   # eMMC Boot Support
   if [ "${EMMCBOOT}" = "true" ]; then
     writeConfigKey "modules.mmc_block" "" "${USER_CONFIG_FILE}"
@@ -1161,14 +1146,14 @@ else
         if [ "${MODEL}" = "SA6400" ]; then
           echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
         fi
-        echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
         if [ "${DT}" = "true" ]; then
           echo "H \"Hotplug: \Z4${HDDSORT}\Zn \" "                                            >>"${TMP_PATH}/menu"
         fi
         if [ "${DT}" = "false" ]; then
-          echo "U \"USB Drives as: \Z4${USBMOUNT}\Zn \" "                                     >>"${TMP_PATH}/menu"
+          echo "U \"Mount USB Drives: \Z4${USBMOUNT}\Zn \" "                                  >>"${TMP_PATH}/menu"
         fi
         echo "c \"IPv6 Support: \Z4${ARCIPV6}\Zn \" "                                         >>"${TMP_PATH}/menu"
+        echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
         echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
         echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
         echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
@@ -1289,19 +1274,20 @@ else
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="K"
         ;;
-      O) [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
-        writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        NEXT="O"
-        ;;
       H) [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
         writeConfigKey "arc.hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="H"
         ;;
-      U) [ "${USBMOUNT}" = "internal" ] && USBMOUNT='external' || USBMOUNT='internal'
+      U)
+        if [ "${USBMOUNT}" = "force" ]; then
+          USBMOUNT="false"
+        elif [ "${USBMOUNT}" = "false" ]; then
+          USBMOUNT="true"
+        elif [ "${USBMOUNT}" = "true" ]; then
+          USBMOUNT="force"
+        fi
         writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1312,6 +1298,12 @@ else
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="c"
+        ;;
+      O) [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
+        writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        NEXT="O"
         ;;
       E) [ "${EMMCBOOT}" = "true" ] && EMMCBOOT='false' || EMMCBOOT='true'
         if [ "${EMMCBOOT}" = "false" ]; then

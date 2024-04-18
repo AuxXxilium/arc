@@ -63,7 +63,7 @@ initConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
 initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
 initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.usbmount" "external" "${USER_CONFIG_FILE}"
+initConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
 initConfigKey "arc.custom" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
@@ -75,8 +75,8 @@ initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "static" "{}" "${USER_CONFIG_FILE}"
 # Config Update
 USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
-[ "${USBMOUNT}" = "true" ] && writeConfigKey "arc.usbmount" "internal" "${USER_CONFIG_FILE}"
-[ "${USBMOUNT}" = "false" ] && writeConfigKey "arc.usbmount" "external" "${USER_CONFIG_FILE}"
+[ "${USBMOUNT}" = "internal" ] && writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
+[ "${USBMOUNT}" = "external" ] && writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
 
 # Init Network
 ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true

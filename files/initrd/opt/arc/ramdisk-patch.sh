@@ -159,7 +159,7 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol" "acpid"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
-    PARAMS='${HDDSORT}'
+    PARAMS='${HDDSORT} ${USBMOUNT}'
   fi
   installAddon "${ADDON}" "${PLATFORM}" "${KVER}" || exit 1
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
