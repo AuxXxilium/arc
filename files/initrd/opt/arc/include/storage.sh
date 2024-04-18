@@ -110,7 +110,10 @@ function getmap() {
   LASTDRIVE=0
   while read -r LINE; do
     if [[ "${BUS}" != "usb" && ${LINE} -eq 0 && "${LOADER_DISK}" = "/dev/sda" ]]; then
-      MAXDISKS=$((${SATADRIVES} + 1))
+      MAXDISKS="$(readModelKey "${MODEL}" "disks")"
+      if [ ${MAXDISKS} -lt ${DRIVES} ]; then
+        MAXDISKS=${DRIVES}
+      fi
       echo -n "${LINE}>${MAXDISKS}:">>"${TMP_PATH}/remap"
     elif [ ! ${LINE} = ${LASTDRIVE} ]; then
       echo -n "${LINE}>${LASTDRIVE}:">>"${TMP_PATH}/remap"
@@ -131,8 +134,6 @@ function getmap() {
   writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.harddrives" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
-  MAXDISKS=$((${HARDDRIVES} + 1))
-  writeConfigKey "device.maxdisks" "${MAXDISKS}" "${USER_CONFIG_FILE}"
 }
 
 function getmapSelection() {
