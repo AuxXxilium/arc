@@ -77,6 +77,8 @@ initConfigKey "static" "{}" "${USER_CONFIG_FILE}"
 USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
 [ "${USBMOUNT}" = "internal" ] && writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
 [ "${USBMOUNT}" = "external" ] && writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
+MAXDISKS="$(readConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}")"
+[ -n "${MAXDISKS}" ] && deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
 
 # Init Network
 ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
