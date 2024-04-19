@@ -2,11 +2,11 @@
 
 set -e
 
-. scripts/func.sh
-
 # Clean cached Files
 sudo git clean -fdx
 sudo git pull
+
+. scripts/func.sh
 
 # Get extractor, LKM, addons and Modules
 getExtractor "files/p3/extractor"
