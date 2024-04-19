@@ -156,7 +156,7 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol" "acpid"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
-    PARAMS='${HDDSORT} ${USBMOUNT}'
+    PARAMS="${HDDSORT} ${USBMOUNT}"
   fi
   installAddon "${ADDON}" "${PLATFORM}" "${KVER}" || exit 1
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
@@ -229,10 +229,6 @@ if [ "${PLATFORM}" = "broadwellntbap" ]; then
   echo -e "Apply Broadwellntbap Fixes"
   sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' ${RAMDISK_PATH}/usr/syno/share/environments.sh
 fi
-
-#if [ "${PLATFORM}" = "kvmx64" ]; then
-#  sed -i 's/kvmx64/RRING/g' ${RAMDISK_PATH}/etc/synoinfo.conf ${RAMDISK_PATH}/etc/VERSION
-#fi
 
 # Call user patch scripts
 for F in $(ls -1 ${SCRIPTS_PATH}/*.sh 2>/dev/null); do
