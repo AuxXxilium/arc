@@ -50,9 +50,6 @@ RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compres
 PAT_URL="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
 PAT_HASH="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
 
-[ "${PAT_URL:0:1}" = "#" ] && PAT_URL=""
-[ "${PAT_HASH:0:1}" = "#" ] && PAT_URL=""
-
 if [ "${PRODUCTVERDSM}" != "${PRODUCTVER}" ]; then
   # Update new buildnumber
   echo -e "Ramdisk Version ${PRODUCTVER} does not match DSM Version ${PRODUCTVERDSM}!"

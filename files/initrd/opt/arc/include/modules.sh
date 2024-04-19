@@ -50,25 +50,25 @@ function installModules() {
   mkdir -p "${TMP_PATH}/modules"
   local KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
   if [ "${KERNEL}" = "custom" ]; then
-    tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
+    tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" 2>"${LOG_FILE}"
   else
-    tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
+    tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" 2>"${LOG_FILE}"
   fi
   local ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
   for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
     local M=$(basename ${F})
     [ "${ODP}" = "true" ] && [ -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ] && continue
     if echo "${MLIST}" | grep -wq "${M:0:-3}"; then
-      cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}"
+      cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}" 2>"${LOG_FILE}"
     else
-      rm -f "${RAMDISK_PATH}/usr/lib/modules/${M}"
+      rm -f "${RAMDISK_PATH}/usr/lib/modules/${M}" 2>"${LOG_FILE}"
     fi
   done
   mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
   if [ "${KERNEL}" = "custom" ]; then
-    tar -zxf "${CUSTOM_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
+    tar -zxf "${CUSTOM_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
   else
-    tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
+    tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
   fi
   # Clean
   rm -rf "${TMP_PATH}/modules"

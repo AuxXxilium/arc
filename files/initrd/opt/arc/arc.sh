@@ -701,7 +701,7 @@ function offlinemake() {
     mkdir -p "${UPLOAD_PATH}"
     # Get new Files
     dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
-    --msgbox "Upload your DSM .pat File to /tmp/upload.\nUse SSH/SFTP to connect to ${IP}.\nUser: root | Password: arc\nPress OK to continue!" 0 0
+    --msgbox "Upload your DSM .pat File to /tmp/upload.\nUse SSH/SFTP to connect to ${IPCON}\nor use Webfilebrowser: ${IPCON}:7304.\nUser: root | Password: arc\nPress OK to continue!" 0 0
     # Grep PAT_FILE
     PAT_FILE=$(ls ${UPLOAD_PATH}/*.pat)
     if [ ! -f "${PAT_FILE}" ]; then
@@ -710,10 +710,8 @@ function offlinemake() {
       return 1
     else
       # Remove PAT Data for Offline
-      PAT_URL="#"
-      PAT_HASH="#"
-      writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
       # Extract Files
       header=$(od -bcN2 ${PAT_FILE} | head -1 | awk '{print $3}')
       case ${header} in
@@ -1261,10 +1259,10 @@ else
         PLATFORM="$(readModelKey "${MODEL}" "platform")"
         PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
         KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-        if [ "${PLATFORM}" = "epyc7002" ]; then
-          KVER="${PRODUCTVER}-${KVER}"
-        fi
         if [[ -n "${PLATFORM}" && -n "${KVER}" ]]; then
+          if [ "${PLATFORM}" = "epyc7002" ]; then
+            KVER="${PRODUCTVER}-${KVER}"
+          fi
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           while read -r ID DESC; do
             writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
