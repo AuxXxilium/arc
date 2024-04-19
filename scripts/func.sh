@@ -63,7 +63,7 @@ function getLKMs() {
   else
     TAG="$(curl -s "https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest" | grep -oP '"tag_name": "\K(.*)(?=")')"
   fi
-  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${CACHE_FILE}")
+  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms-${TAG}.zip" -o "${CACHE_FILE}")
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
   # Unzip LKMs
