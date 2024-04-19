@@ -40,6 +40,8 @@ jobs:
           PRODUCTVER = ''
           ADDONS = ''
           MACSYS = ''
+          USBMOUNT = ''
+          CUSTOMKERNEL = ''
           FORMAT = ''
           try:
               jsonbody = json.loads(issuebody)
@@ -47,6 +49,8 @@ jobs:
               PRODUCTVER = jsonbody.get('version', '')
               ADDONS = jsonbody.get('addons', '')
               MACSYS = jsonbody.get('macsys', '')
+              USBMOUNT = jsonbody.get('usbmount', '')
+              CUSTOMKERNEL = jsonbody.get('customkernel', '')
               FORMAT = jsonbody.get('format', '')
           except ValueError as e:
               pass
@@ -55,6 +59,8 @@ jobs:
           set_output("PRODUCTVER", PRODUCTVER)
           set_output("ADDONS", ADDONS)
           set_output("MACSYS", MACSYS)
+          set_output("USBMOUNT", USBMOUNT)
+          set_output("CUSTOMKERNEL", CUSTOMKERNEL)
           set_output("FORMAT", FORMAT)
 
       # calculates the version number and push
@@ -143,6 +149,10 @@ jobs:
           writeConfigKey "arc" "{}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "arc.macsys" "${{ env.MACSYS }}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "arc.custom" "true" "${PRESET_CONFIG_FILE}"
+          writeConfigKey "arc.usbmount" "${{ env.USBMOUNT }}" "${PRESET_CONFIG_FILE}"
+          if [ "${{ env.MODEL }}" = "SA6400" ]; then
+            writeConfigKey "arc.kernel" "${{ env.KERNEL }}" "${PRESET_CONFIG_FILE}"
+          fi
           writeConfigKey "addons" "{}" "${PRESET_CONFIG_FILE}"
           if [ -n "${{ env.ADDONS }}" ]; then
             writeConfigKey "addons" "{}" "${PRESET_CONFIG_FILE}"
