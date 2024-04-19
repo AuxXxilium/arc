@@ -209,7 +209,7 @@ function arcUpdate() {
   fi
   dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
     --infobox "Downloading ${TAG}" 0 0
-  STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip")
+  STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms-${TAG}.zip" -o "${TMP_PATH}/rp-lkms.zip")
   if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
     dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
       --infobox "Error downloading Updatefile" 0 0
