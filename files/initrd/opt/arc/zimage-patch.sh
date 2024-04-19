@@ -32,3 +32,5 @@ else
   # rebuild zImage
   ${ARC_PATH}/vmlinux-to-bzImage.sh "${TMP_PATH}/vmlinux-mod" "${MOD_ZIMAGE_FILE}" >"${LOG_FILE}" 2>&1 || dieLog
 fi
+
+sync
