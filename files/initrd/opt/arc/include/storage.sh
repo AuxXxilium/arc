@@ -147,6 +147,7 @@ function getmapSelection() {
     REMAP2="*"
   elif [[ -n "${SATAREMAP}" && "${EXTERNALCONTROLLER}" = "false" ]]; then
     REMAP3="*"
+    REMAP4="*"
   else
     REMAP1="*"
   fi
@@ -156,7 +157,7 @@ function getmapSelection() {
     1 "DiskIdxMap: Active Ports ${REMAP1}" \
     2 "DiskIdxMap: Max Ports ${REMAP2}" \
     3 "SataRemap: Remove blank Ports ${REMAP3}" \
-    4 "AhciRemap: Remove blank Ports (experimental) ${REMAP4}" \
+    4 "AhciRemap: Remove blank Ports (new) ${REMAP4}" \
     5 "I want to set my own Portmap" \
   2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
