@@ -140,6 +140,7 @@ function arcModel() {
         [ -n "${ARCCONF}" ] && ARC="x" || ARC=""
         [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]] && CPU="AMD" || CPU="Intel"
         [[ "${PLATFORM}" = "apollolake" || "${PLATFORM}" = "geminilake" || "${PLATFORM}" = "epyc7002" ]] && IGPUS="x" || IGPUS=""
+        [[ "${DT}" = "false" || "${PLATFORM}" = "epyc7002" ]] && HBAS="x" || HBAS=""
         [ "${DT}" = "false" ] && USBS="x" || USBS=""
         [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DS918+" || "${M}" = "DS1019+" || "${M}" = "DS1621xs+" || "${M}" = "RS1619xs+" ]] && M_2_CACHE="" || M_2_CACHE="x"
         [[ "${DT}" = "true" && "${M}" != "DS220+" && "${M}" != "DS224+" ]] && M_2_STORAGE="x" || M_2_STORAGE=""
@@ -161,12 +162,12 @@ function arcModel() {
         fi
         [ "${DT}" = "true" ] && DTS="x" || DTS=""
         [ "${BETA}" = "true" ] && BETA="x" || BETA=""
-        [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"$(printf "\Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DTS}" "${ARC}" "${IGPUS}" "${USBS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${BETA}")\" ">>"${TMP_PATH}/menu"
+        [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"$(printf "\Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DTS}" "${ARC}" "${IGPUS}" "${USBS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${BETA}")\" ">>"${TMP_PATH}/menu"
       done <<<$(cat "${TMP_PATH}/modellist" | sort -n -k 2)
       dialog --backtitle "$(backtitle)" --colors \
         --cancel-label "Show all" --help-button --help-label "Exit" \
         --extra-button --extra-label "Info" \
-        --menu "Choose Model for Loader (This Chart indicates the original Values, without Addons.)\n $(printf "\Zb%-10s\Zn \Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-4s\Zn" "Model" "Disks" "CPU" "Platform" "DT" "Arc" "iGPU" "USB Mount" "M.2 Cache" "M.2 Volume" "Beta")" 0 110 0 \
+        --menu "Choose Model for Loader (This Chart indicates the original Values, without Addons.)\n $(printf "\Zb%-10s\Zn \Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-4s\Zn" "Model" "Disks" "CPU" "Platform" "DT" "Arc" "iGPU" "USB Mount" "HBA" "M.2 Cache" "M.2 Volume" "Beta")" 0 115 0 \
         --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       RET=$?
       case ${RET} in

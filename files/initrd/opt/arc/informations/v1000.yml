@@ -1,7 +1,6 @@
 - Hardwaresupport for AMD (may work on Intel)
 - Up to 16 Threads
 - Support for SATA Controller
-- Support for HBA Controller
 - No Support for RAID/SCSI Controller
 - USB Storage as External
 - NVMe Cache working

@@ -2,7 +2,6 @@
 - Up to 8 Threads
 - Possible to get i915 (Intel Graphics up to 10th Gen) working
 - Support for SATA Controller
-- Support for HBA Controller
 - No Support for RAID/SCSI Controller
 - USB Storage as External
 - NVMe Cache working

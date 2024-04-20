@@ -1,6 +1,7 @@
 - Hardwaresupport for Intel (may work on AMD)
 - Up to 16 Threads
-- Support for RAID/SCSI/HBA Controller
+- Support for HBA Controller
+- Support for RAID/SCSI Controller
 - USB Storage as Internal or External
 - CPU need FMA3/MOVBE Instructions
 - Some Nvidia Graphics are working. If not, use Community Package.
