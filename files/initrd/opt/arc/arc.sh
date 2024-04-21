@@ -464,7 +464,7 @@ function arcSummary() {
     PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
     DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
   elif [ "${REMAP}" = "remap" ]; then
-    PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
+    PORTREMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
   fi
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
   USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
@@ -492,8 +492,9 @@ function arcSummary() {
   SUMMARY+="\n\Z4> Arc Information\Zn"
   SUMMARY+="\n>> Arc Patch: \Zb${ARCPATCH}\Zn"
   SUMMARY+="\n>> MacSys: \Zb${MACSYS}\Zn"
-  [ -n "${PORTMAP}" ] && SUMMARY+="\n>> Portmap: \Zb${PORTMAP}\Zn"
-  [ -n "${DISKMAP}" ] && SUMMARY+="\n>> Diskmap: \Zb${DISKMAP}\Zn"
+  [ -n "${PORTMAP}" ] && SUMMARY+="\n>> SataPortmap: \Zb${PORTMAP}\Zn"
+  [ -n "${DISKMAP}" ] && SUMMARY+="\n>> DiskIdxMap: \Zb${DISKMAP}\Zn"
+  [ -n "${PORTREMAP}" ] && SUMMARY+="\n>> SataRemap: \Zb${PORTREMAP}\Zn"
   [ "${DT}" = "false" ] && SUMMARY+="\n>> Mount USB Drives: \Zb${USBMOUNT}\Zn"
   SUMMARY+="\n>> Sort Drives: \Zb${HDDSORT}\Zn"
   SUMMARY+="\n>> IPv6: \Zb${ARCIPV6}\Zn"
@@ -504,9 +505,9 @@ function arcSummary() {
   SUMMARY+="\n>> Addons: \Zb${ADDONSINFO}\Zn"
   SUMMARY+="\n"
   SUMMARY+="\n\Z4> Device Information\Zn"
-  SUMMARY+="\n>> NIC Count: \Zb${NIC}\Zn"
-  SUMMARY+="\n>> Disks Count: \Zb${DRIVES}\Zn"
-  SUMMARY+="\n>> Disks Count (internal): \Zb${HARDDRIVES}\Zn"
+  SUMMARY+="\n>> NIC: \Zb${NIC}\Zn"
+  SUMMARY+="\n>> Disks (incl. USB): \Zb${DRIVES}\Zn"
+  SUMMARY+="\n>> Disks (internal): \Zb${HARDDRIVES}\Zn"
   SUMMARY+="\n>> External Controller: \Zb${EXTERNALCONTROLLER}\Zn"
   SUMMARY+="\n>> Memory Min/Max MB: \Zb${RAMMIN}/${RAMMAX}\Zn"
   dialog --backtitle "$(backtitle)" --colors --title "Config Summary" \
