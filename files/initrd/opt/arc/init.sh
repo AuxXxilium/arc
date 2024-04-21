@@ -21,12 +21,12 @@ TITLE="Version:"
 TITLE+=" ${ARC_TITLE}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
-printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
-printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
+printf "\033[1;31m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
+printf "\033[1;31m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 TITLE="Boot:"
 [ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [Legacy]"
 TITLE+=" [${BUS}]"
-printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
+printf "\033[1;31m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
 # Check for Config File
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
@@ -126,8 +126,8 @@ writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
 writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
 
 # Inform user
-echo -e "Loader Disk: \033[1;34m${LOADER_DISK}\033[0m"
-echo -e "Loader Disk Type: \033[1;34m${BUS}\033[0m"
+echo -e "Loader Disk: \033[1;31m${LOADER_DISK}\033[0m"
+echo -e "Loader Disk Type: \033[1;31m${BUS}\033[0m"
 
 # Load keymap name
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
@@ -135,7 +135,7 @@ KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 
 # Loads a keymap if is valid
 if [ -f "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" ]; then
-  echo -e "Loading Keymap: \033[1;34m${LAYOUT}/${KEYMAP}\033[0m"
+  echo -e "Loading Keymap: \033[1;31m${LAYOUT}/${KEYMAP}\033[0m"
   zcat "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" | loadkeys
 fi
 echo
@@ -145,22 +145,22 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
 # Decide if boot automatically
 if grep -q "force_arc" /proc/cmdline; then
-  echo -e "\033[1;34mStarting Config Mode...\033[0m"
+  echo -e "\033[1;31mStarting Config Mode...\033[0m"
 elif grep -q "automated_arc" /proc/cmdline; then
-  echo -e "\033[1;34mStarting Automated Config Mode...\033[0m"
+  echo -e "\033[1;31mStarting Automated Config Mode...\033[0m"
 elif grep -q "update_arc" /proc/cmdline; then
-  echo -e "\033[1;34mStarting Update Mode...\033[0m"
+  echo -e "\033[1;31mStarting Update Mode...\033[0m"
 elif [ "${BUILDDONE}" = "true" ]; then
-  echo -e "\033[1;34mStarting DSM Mode...\033[0m"
+  echo -e "\033[1;31mStarting DSM Mode...\033[0m"
   boot.sh && exit 0
 else
-  echo -e "\033[1;34mStarting Config Mode...\033[0m"
+  echo -e "\033[1;31mStarting Config Mode...\033[0m"
 fi
 echo
 
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+echo -e "\033[1;31mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
 for ETH in ${ETHX}; do
   IP=""
   STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
@@ -183,7 +183,7 @@ for ETH in ${ETHX}; do
     if [ -n "${IP}" ]; then
       SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
       writeConfigKey "ip.${ETH}" "${IP}" "${USER_CONFIG_FILE}"
-      echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
+      echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;31mhttp://${IP}:7681\033[0m to connect to Arc via web."
       ethtool -s ${ETH} wol g 2>/dev/null
       break
     fi
@@ -204,10 +204,10 @@ done
 
 # Inform user
 echo
-echo -e "Call \033[1;34marc.sh\033[0m to configure Arc"
+echo -e "Call \033[1;31marc.sh\033[0m to configure Arc"
 echo
-echo -e "User config is on \033[1;34m${USER_CONFIG_FILE}\033[0m"
-echo -e "Default SSH Root password is \033[1;34marc\033[0m"
+echo -e "User config is on \033[1;31m${USER_CONFIG_FILE}\033[0m"
+echo -e "Default SSH Root password is \033[1;31marc\033[0m"
 echo
 
 mkdir -p "${ADDONS_PATH}"
@@ -218,7 +218,7 @@ mkdir -p "${PATCH_PATH}"
 mkdir -p "${BACKUPDIR}"
 
 # Load Arc Overlay
-echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
+echo -e "\033[1;31mLoading Arc Overlay...\033[0m"
 sleep 2
 
 # Check memory and load Arc
