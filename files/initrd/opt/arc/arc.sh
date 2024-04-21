@@ -1374,12 +1374,12 @@ else
 fi
 
 # Inform user
-echo -e "Call \033[1;31marc.sh\033[0m to configure Loader"
+echo -e "Call \033[1;34marc.sh\033[0m to configure Loader"
 echo
 echo -e "SSH Access:"
-echo -e "IP: \033[1;31m${IPCON}\033[0m"
-echo -e "User: \033[1;31mroot\033[0m"
-echo -e "Password: \033[1;31marc\033[0m"
+echo -e "IP: \033[1;34m${IPCON}\033[0m"
+echo -e "User: \033[1;34mroot\033[0m"
+echo -e "Password: \033[1;34marc\033[0m"
 echo
 echo -e "Web Terminal:"
-echo -e "Address: \033[1;31mhttp://${IPCON}:7681\033[0m"
+echo -e "Address: \033[1;34mhttp://${IPCON}:7681\033[0m"
