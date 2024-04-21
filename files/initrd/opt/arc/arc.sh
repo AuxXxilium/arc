@@ -137,13 +137,22 @@ function arcModel() {
         [[ "${BETA}" = "true" && ${FLGBETA} -eq 0 ]] && continue
         DISKS="${Y}-Bay"
         ARCCONF="$(readModelKey "${M}" "arc.serial")"
-        [ -n "${ARCCONF}" ] && ARC="x" || ARC=""
-        [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]] && CPU="AMD" || CPU="Intel"
-        [[ "${PLATFORM}" = "apollolake" || "${PLATFORM}" = "geminilake" || "${PLATFORM}" = "epyc7002" ]] && IGPUS="x" || IGPUS=""
-        [[ "${DT}" = "false" || "${PLATFORM}" = "epyc7002" ]] && HBAS="x" || HBAS=""
-        [ "${DT}" = "false" ] && USBS="x" || USBS=""
-        [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DS918+" || "${M}" = "DS1019+" || "${M}" = "DS1621xs+" || "${M}" = "RS1619xs+" ]] && M_2_CACHE="" || M_2_CACHE="x"
-        [[ "${DT}" = "true" ] && [ "${M}" != "DS220+" || "${M}" != "DS224+" ]] && M_2_STORAGE="x" || M_2_STORAGE=""
+        ARC=""
+        [ -n "${ARCCONF}" ] && ARC="x"
+        CPU="Intel"
+        [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]] && CPU="AMD"
+        IGPUS=""
+        [[ "${PLATFORM}" = "apollolake" || "${PLATFORM}" = "geminilake" || "${PLATFORM}" = "epyc7002" ]] && IGPUS="x"
+        HBAS="x"
+        [ "${DT}" = "true" ] && HBAS=""
+        [ "${M}" = "SA6400" ] && HBAS="x"
+        USBS=""
+        [ "${DT}" = "false" ] && USBS="x"
+        M_2_CACHE="x"
+        [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DS918+" || "${M}" = "DS1019+" || "${M}" = "DS1621xs+" || "${M}" = "RS1619xs+" ]] && M_2_CACHE=""
+        M_2_STORAGE="x"
+        [ "${DT}" = "false" ] && M_2_STORAGE=""
+        [[ "${M}" = "DS220+" || "${M}" = "DS224+" ]] && M_2_STORAGE=""
         # Check id model is compatible with CPU
         COMPATIBLE=1
         if [ ${RESTRICT} -eq 1 ]; then
@@ -153,21 +162,21 @@ function arcModel() {
               break
             fi
           done
-          if [ "${DT}" = "true" ] && [[ ${SCSICONTROLLER} -gt 0 || ${RAIDCONTROLLER} -gt 0 ]]; then
+          if [ "${DT}" = "true" ] && [[ "${EXTERNALCONTROLLER}" = "true" && ! "${M}" = "SA6400" ]]; then
             COMPATIBLE=0
           fi
-          if [[ ${SATACONTROLLER} -eq 0 && "${EXTERNALCONTROLLER}" = "false" && "${M}" != "SA6400" ]]; then
+          if [[ ${SATACONTROLLER} -eq 0 && "${EXTERNALCONTROLLER}" = "false" && ! "${M}" = "SA6400" ]]; then
             COMPATIBLE=0
           fi
         fi
         [ "${DT}" = "true" ] && DTS="x" || DTS=""
         [ "${BETA}" = "true" ] && BETA="x" || BETA=""
-        [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"$(printf "\Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DTS}" "${ARC}" "${IGPUS}" "${USBS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${BETA}")\" ">>"${TMP_PATH}/menu"
+        [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"$(printf "\Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
       done <<<$(cat "${TMP_PATH}/modellist" | sort -n -k 2)
       dialog --backtitle "$(backtitle)" --colors \
         --cancel-label "Show all" --help-button --help-label "Exit" \
         --extra-button --extra-label "Info" \
-        --menu "Choose Model for Loader (This Chart indicates the original Values, without Addons.)\n $(printf "\Zb%-10s\Zn \Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-4s\Zn" "Model" "Disks" "CPU" "Platform" "DT" "Arc" "iGPU" "USB Mount" "HBA" "M.2 Cache" "M.2 Volume" "Beta")" 0 115 0 \
+        --menu "Choose Model for Loader (This Chart indicates the original Values, without Addons.)\n $(printf "\Zb%-10s\Zn \Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-4s\Zn" "Model" "Disks" "CPU" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Beta")" 0 115 0 \
         --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       RET=$?
       case ${RET} in
