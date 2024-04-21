@@ -164,24 +164,14 @@ function getmapSelection() {
   resp=$(cat "${TMP_PATH}/resp")
   [ -z "${resp}" ] && return 1
   if [ ${resp} -eq 1 ]; then
-    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-      --infobox "Use DiskIdxMap:\nActive Ports!" 4 40
     writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}"
   elif [ ${resp} -eq 2 ]; then
-    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-      --infobox "Use DiskIdxMap:\nMax Ports!" 4 40
     writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}"
   elif [ ${resp} -eq 3 ]; then
-    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-      --infobox "Use SataRemap:\nRemove blank Drives" 4 40
     writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}"
   elif [ ${resp} -eq 4 ]; then
-    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-      --infobox "Use AhciRemap:\nRemove blank Drives" 4 40
     writeConfigKey "arc.remap" "ahci" "${USER_CONFIG_FILE}"
   elif [ ${resp} -eq 5 ]; then
-    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-      --infobox "I want to set my own PortMap!" 4 40
     writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}"
   fi
   # Check Remap for correct config
