@@ -191,32 +191,22 @@ function getmapSelection() {
     writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-      --msgbox "Computed Values:\nSataPortMap: ${SATAPORTMAP}\nDiskIdxMap: ${DISKIDXMAP}" 0 0
   elif [ "${REMAP}" = "maxports" ]; then
     writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAPMAX}" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAPMAX}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-      --msgbox "Computed Values:\nSataPortMap: ${SATAPORTMAPMAX}\nDiskIdxMap: ${DISKIDXMAPMAX}" 0 0
   elif [ "${REMAP}" = "remap" ]; then
     writeConfigKey "cmdline.sata_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-      --msgbox "Computed Values:\nSataRemap: ${SATAREMAP}" 0 0
   elif [ "${REMAP}" = "ahci" ]; then
     writeConfigKey "cmdline.ahci_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
-    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-      --msgbox "Computed Values:\nAhciRemap: ${SATAREMAP}" 0 0
   elif [ "${REMAP}" = "user" ]; then
     deleteConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
-    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-      --msgbox "Usersetting: Set your own Values in Userconfig." 0 0
   fi
 }
 
