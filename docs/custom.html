@@ -32,6 +32,13 @@
         .State--merged {
             background-color: #ff0000;
         }
+        .btn {
+            color: var(--button-default-fgColor-rest, var(--color-btn-text));
+            background-color: var(--button-default-bgColor-rest, var(--color-btn-bg));
+            border-color: var(--button-default-borderColor-rest, var(--color-btn-border));
+            transition: 80ms cubic-bezier(0.33, 1, 0.68, 1);
+            transition-property: color,background-color,box-shadow,border-color;
+        }
     </style>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://polyfill.io/v3/polyfill.min.js"></script>
@@ -135,7 +142,7 @@
 <body class="logged-in env-production page-responsive" style="word-wrap: break-word">
     <div class="application-main left-0 text-left p-3 mx-auto container-xl px-3 px-md-4 px-lg-5 mt-4">
         <pre id="logo">
-            <img src="https://raw.githubusercontent.com/AuxXxilium/arc/main/docs/arc_loader.png" width="200px">
+            <img src="https://raw.githubusercontent.com/AuxXxilium/arc/main/docs/arc_loader.png" width="22%">
         </pre>
         <div class="image" id="products" style="height: 50px; margin-left: 100px;">
             <img src="https://www.synology.com/img/products/detail/SA6400/heading.png" width="20%">
