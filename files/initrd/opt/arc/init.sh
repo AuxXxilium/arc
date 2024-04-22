@@ -147,7 +147,7 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 if grep -q "force_arc" /proc/cmdline; then
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
 elif grep -q "automated_arc" /proc/cmdline; then
-  echo -e "\033[1;34mStarting Automated Config Mode...\033[0m"
+  echo -e "\033[1;34mStarting automated Build Mode...\033[0m"
 elif grep -q "update_arc" /proc/cmdline; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
 elif [ "${BUILDDONE}" = "true" ]; then

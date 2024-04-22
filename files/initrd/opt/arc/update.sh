@@ -5,6 +5,8 @@
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 . ${ARC_PATH}/include/functions.sh
+. ${ARC_PATH}/include/addons.sh
+. ${ARC_PATH}/include/modules.sh
 
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
@@ -224,23 +226,18 @@ function arcUpdate() {
   # Ask for Boot
   dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
     --infobox "Update successfull!" 0 0
+  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-{PRODUCTVER}-custom" >"${PART3_PATH}/automated"
   boot
 }
 
 ###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
-  if [ "${CUSTOM}" = "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "Arc Boot" \
-      --infobox "Rebooting Automated Mode...\nPlease stay patient!" 4 25
-    sleep 2
-    rebootTo automated
-  else
-    dialog --backtitle "$(backtitle)" --title "Arc Boot" \
-      --infobox "Rebooting Config Mode...\nPlease stay patient!" 4 25
-    sleep 2
-    rebootTo config
-  fi
+  dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+    --infobox "Rebooting automated Build Mode...\nPlease stay patient!" 4 25
+  sleep 2
+  rebootTo automated
 }
 
 ###############################################################################
@@ -252,4 +249,5 @@ else
   dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
     --infobox "Offline Mode enabled.\nCan't Update Loader!" 0 0
   sleep 5
+  exec reboot
 fi

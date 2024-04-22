@@ -1074,6 +1074,9 @@ function automake() {
     # Build is done
     writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    if [ "${CUSTOM}" = "false" ]; then
+      rm -f "${PART3_PATH}/automated"
+    fi
     boot && exit 0
   fi
 }
@@ -1082,7 +1085,11 @@ function automake() {
 ###############################################################################
 # Main loop
 if grep -q "automated_arc" /proc/cmdline; then
-  arcAutomated
+  if [ "${CUSTOM}" = "true" ]; then
+    arcAutomated
+  else
+    automake
+  fi
 else
   [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
   while true; do
