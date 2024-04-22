@@ -842,7 +842,7 @@ function arcAutomated() {
   # read model config for dt and aes
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
-  ARCCONF="$(readModelKey "${M}" "arc.serial")"
+  ARCCONF="$(readModelKey "${MODEL}" "arc.serial")"
   [ -n "${ARCCONF}" ] && ARCPATCH="true" || ARCPATCH="false"
   if [ "${ARCPATCH}" = "true" ]; then
     SN="$(readModelKey "${MODEL}" "arc.serial")"
