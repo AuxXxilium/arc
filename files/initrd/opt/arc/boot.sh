@@ -141,7 +141,9 @@ CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
 CMDLINE['root']="/dev/md0"
 
-[ ! "${MODEL}" = "SA6400" ] && CMDLINE['elevator']="elevator"
+if [ ! "${MODEL}" = "SA6400" ]; then
+  CMDLINE['elevator']="elevator"
+fi
 CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 
