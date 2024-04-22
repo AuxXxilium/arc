@@ -238,20 +238,18 @@ function arcVersion() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  if [ "${ARCRECOVERY}" != "true" ]; then
-    # Select Build for DSM
-    ITEMS="$(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r)"
-    dialog --clear --no-items --nocancel --backtitle "$(backtitle)" \
-      --menu "Choose a Version" 7 30 0 ${ITEMS} 2>"${TMP_PATH}/resp"
-    resp=$(cat ${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return 1
-    if [ "${PRODUCTVER}" != "${resp}" ]; then
-      PRODUCTVER="${resp}"
-      writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-      if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
-        # Delete old files
-        rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-      fi
+  # Select Build for DSM
+  ITEMS="$(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r)"
+  dialog --clear --no-items --nocancel --backtitle "$(backtitle)" \
+    --menu "Choose a Version" 7 30 0 ${ITEMS} 2>"${TMP_PATH}/resp"
+  resp=$(cat ${TMP_PATH}/resp)
+  [ -z "${resp}" ] && return 1
+  if [ "${PRODUCTVER}" != "${resp}" ]; then
+    PRODUCTVER="${resp}"
+    writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+    if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
+      # Delete old files
+      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
     fi
   fi
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -288,7 +286,7 @@ function arcPatch() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
   ARCCONF="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${MODEL}.yml")"
-  if [[ "${ARCRECOVERY}" != "true" && -n "${ARCCONF}" ]]; then
+  if [ -n "${ARCCONF}" ]; then
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "Arc Patch"\
       --menu "Do you want to use Syno Services?" 7 50 0 \
@@ -327,7 +325,7 @@ function arcPatch() {
       writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
     fi
     writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
-  elif [[ "${ARCRECOVERY}" != "true" && -z "${ARCCONF}" ]]; then
+  elif [ -z "${ARCCONF}" ]; then
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "Non Arc Patch Model" \
       --menu "Please select an Option?" 8 50 0 \
