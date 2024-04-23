@@ -287,17 +287,11 @@ function getIP() {
 
 ###############################################################################
 # Find and mount the DSM root filesystem
-# (based on pocopico's TCRP code)
 function findAndMountDSMRoot() {
-  [ $(mount | grep -i "${TMP_PATH}/mdX" | wc -l) -gt 0 ] && return 0
-  dsmrootdisk="$(blkid | grep -i linux_raid_member | grep -E "/dev/.*1:" | head -1 | awk -F ":" '{print $1}')"
-  [ -z "${dsmrootdisk}" ] && return 1
-  [ ! -d "${TMP_PATH}/mdX" ] && mkdir -p "${TMP_PATH}/mdX"
-  [ $(mount | grep -i "${TMP_PATH}/mdX" | wc -l) -eq 0 ] && mount -t ext4 "${dsmrootdisk}" "${TMP_PATH}/mdX"
-  if [ $(mount | grep -i "${TMP_PATH}/mdX" | wc -l) -eq 0 ]; then
-    echo "Failed to mount"
-    return 1
-  fi
+  DSMROOTS=""
+  [ -z "${DSMROOTS}" ] && DSMROOTS="$(mdadm --detail --scan 2>/dev/null | grep -E "name=SynologyNAS:0|name=DiskStation:0|name=SynologyNVR:0|name=BeeStation:0" | awk '{print $2}' | uniq)"
+  [ -z "${DSMROOTS}" ] && DSMROOTS="$(lsblk -pno KNAME,PARTN,FSTYPE,FSVER,LABEL | grep -E "sd[a-z]{1,2}1" | grep -w "linux_raid_member" | grep "0.9" | awk '{print $1}')"
+  echo "${DSMROOTS}"
   return 0
 }
 

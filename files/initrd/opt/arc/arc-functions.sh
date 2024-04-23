@@ -428,7 +428,6 @@ function synoinfoMenu() {
   echo "1 \"Add/edit Synoinfo item\""     >"${TMP_PATH}/menu"
   echo "2 \"Delete Synoinfo item(s)\""    >>"${TMP_PATH}/menu"
   echo "3 \"Show Synoinfo entries\""      >>"${TMP_PATH}/menu"
-  echo "4 \"Thermal Shutdown (DT only)\"" >>"${TMP_PATH}/menu"
 
   # menu loop
   while true; do
@@ -505,66 +504,6 @@ function synoinfoMenu() {
         dialog --backtitle "$(backtitle)" --title "Synoinfo entries" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
-      4)
-        MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-        CONFDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        PLATFORM="$(readModelKey "${MODEL}" "platform")"
-        DT="$(readModelKey "${MODEL}" "dt")"
-        if ["${DT}" = "true" ]; then
-          if findAndMountDSMRoot; then
-            if [ -f "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml" ]; then
-              if [ -f "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml.bak" ]; then
-                cp -f "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml.bak" "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml"
-              fi
-              cp -f "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml" "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml.bak"
-              dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" \
-              --inputbox "CPU Temperature: (Default 90 °C)" 0 0 \
-              2>"${TMP_PATH}/resp"
-              RET=$?
-              [ ${RET} -ne 0 ] && break 2
-              CPUTEMP=$(cat "${TMP_PATH}/resp")
-              if [ "${PLATFORM}" = "geminilake" ]; then
-                sed -i 's|<cpu_temperature fan_speed="99%40hz" action="SHUTDOWN">90</cpu_temperature>|<cpu_temperature fan_speed="99%40hz" action="SHUTDOWN">'"${CPUTEMP}"'</cpu_temperature>|g' "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml"
-              elif [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]]; then
-                sed -i 's|<alert_config threshold="2" period="30" alert_temp="85" shutdown_temp="95" name="cpu"/>|<alert_config threshold="2" period="30" alert_temp="85" shutdown_temp="'"${CPUTEMP}"'" name="cpu"/>|g' "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml"
-              fi
-              dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" \
-              --inputbox "Disk Temperature: (Default 61 °C)" 0 0 \
-              2>"${TMP_PATH}/resp"
-              RET=$?
-              [ ${RET} -ne 0 ] && break 2
-              DISKTEMP=$(cat "${TMP_PATH}/resp")
-              if [ "${PLATFORM}" = "geminilake" ]; then
-                sed -i 's|<disk_temperature fan_speed="99%40hz" action="SHUTDOWN">61</disk_temperature>|<disk_temperature fan_speed="99%40hz" action="SHUTDOWN">'"${DISKTEMP}"'</disk_temperature>|g' "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml"
-              elif [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]]; then
-                sed -i 's|<alert_config threshold="2" period="300" alert_temp="58" shutdown_temp="61" name="disk"/>|<alert_config threshold="2" period="300" alert_temp="58" shutdown_temp="'"${DISKTEMP}"'" name="disk"/>|g' "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml"
-              fi
-              dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" \
-              --inputbox "M.2 Temperature: (Default 70 °C)" 0 0 \
-              2>"${TMP_PATH}/resp"
-              RET=$?
-              [ ${RET} -ne 0 ] && break 2
-              M2TEMP=$(cat "${TMP_PATH}/resp")
-              if [ "${PLATFORM}" = "geminilake" ]; then
-                sed -i 's|<m2_temperature fan_speed="99%40hz" action="SHUTDOWN">70</m2_temperature>|<m2_temperature fan_speed="99%40hz" action="SHUTDOWN">'"${M2TEMP}"'</m2_temperature>|g' "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml"
-              elif [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]]; then
-                sed -i 's|<alert_config threshold="2" period="30" alert_temp="68" shutdown_temp="71" name="m2"/>|<alert_config threshold="2" period="30" alert_temp="68" shutdown_temp="'"${M2TEMP}"'" name="m2"/>|g' "${TMP_PATH}/mdX/usr/syno/etc.defaults/scemd.xml"
-              fi
-              dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" --aspect 18 \
-                --msgbox "Change Thermal Shutdown Settings successful!\nCPU: ${CPUTEMP}\nDisk: ${DISKTEMP}\nM.2: ${M2TEMP}" 0 0
-            else
-              dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" --aspect 18 \
-                --msgbox "Change Thermal Shutdown Settings not possible!" 0 0
-            fi
-          else
-            dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" --aspect 18 \
-                --msgbox "Unfortunately Arc couldn't mount the DSM Partition!" 0 0
-          fi
-        else
-          dialog --backtitle "$(backtitle)" --title "Thermal Shutdown" --aspect 18 \
-            --msgbox "Please build and install DSM first!" 0 0
-        fi
-        ;;
     esac
   done
   return
@@ -631,16 +570,21 @@ function backupMenu() {
   NEXT="1"
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
-      1 "Recover from DSM" \
-      2 "Backup Encryption Key" \
-      3 "Restore Encryption Key" \
+      1 "Restore Config from DSM" \
+      2 "Restore Encryption Key from DSM" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     case "$(cat ${TMP_PATH}/resp)" in
       1)
-        dialog --backtitle "$(backtitle)" --title "Try to recover DSM" --aspect 18 \
-          --infobox "Trying to recover a DSM installed system" 0 0
-        if findAndMountDSMRoot; then
+        DSMROOTS="$(findDSMRoot)"
+        if [ -z "${DSMROOTS}" ]; then
+          dialog --backtitle "$(backtitle)" --title "Restore Config" \
+            --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
+          return
+        fi
+        mkdir -p "${TMP_PATH}/mdX"
+        for I in ${DSMROOTS}; do
+          mount -t ext4 "${I}" "${TMP_PATH}/mdX"
           MODEL=""
           PRODUCTVER=""
           if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" ]; then
@@ -654,53 +598,77 @@ function backupMenu() {
               TEXT+="\nSerial: ${SN}"
               ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
               TEXT+="\nArc Patch: ${ARCPATCH}"
-              dialog --backtitle "$(backtitle)" --title "Try to recover DSM" \
+              dialog --backtitle "$(backtitle)" --title "Restore Config" \
                 --aspect 18 --msgbox "${TEXT}" 0 0
               CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
               writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
               BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+              break
             fi
           fi
-          dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
-            --msgbox "Recovery completed!\nBuild Loader and Boot." 0 0
+        done
+        if [ -f "${USER_CONFIG_FILE}" ]; then
+          dialog --backtitle "$(backtitle)" --title "Restore Config" \
+            --aspect 18 --msgbox "Config restore successful!" 0 0
         else
-          dialog --backtitle "$(backtitle)" --title "Try recovery DSM" --aspect 18 \
-            --msgbox "Unfortunately Arc couldn't mount the DSM partition!" 0 0
+          dialog --backtitle "$(backtitle)" --title "Restore Config" \
+            --aspect 18 --msgbox "No Config found!" 0 0
         fi
         ;;
       2)
-        dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
-          --infobox "Backup Encryption Key..." 0 0
-        if [ -f "${PART2_PATH}/machine.key" ]; then
-          if findAndMountDSMRoot; then
-            mkdir -p "${TMP_PATH}/mdX/usr/arc/backup/p2"
-            cp -f "${PART2_PATH}/machine.key" "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key"
-            dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
-              --msgbox "Encryption Key backup successful!" 0 0
-          else
-            dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
-              --msgbox "Unfortunately Arc couldn't mount the DSM Partition for Backup!" 0 0
-          fi
-        else
-          dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" --aspect 18 \
-            --msgbox "No Encryption Key found!" 0 0
+        DSMROOTS="$(findDSMRoot)"
+        if [ -z "${DSMROOTS}" ]; then
+          dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" \
+            --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
+          return
         fi
-        ;;
-      3)
-        dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-          --infobox "Restore Encryption Key..." 0 0
-        if findAndMountDSMRoot; then
+        mkdir -p "${TMP_PATH}/mdX"
+        for I in ${DSMROOTS}; do
+          mount -t ext4 "${I}" "${TMP_PATH}/mdX"
           if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" ]; then
             cp -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" "${PART2_PATH}/machine.key"
             dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
               --msgbox "Encryption Key restore successful!" 0 0
-          else
-            dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-            --msgbox "No Encryption Key found!" 0 0
+            break
           fi
+        done
+        if [ -f "${PART2_PATH}/machine.key" ]; then
+          dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
+            --msgbox "Encryption Key restore successful!" 0 0
         else
           dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-              --msgbox "Unfortunately Arc couldn't mount the DSM Partition for Restore!" 0 0
+            --msgbox "No Encryption Key found!" 0 0
+        fi
+        ;;
+      3)
+        BACKUPKEY="false"
+        DSMROOTS="$(findDSMRoot)"
+        if [ -z "${DSMROOTS}" ]; then
+          dialog --backtitle "$(backtitle)" --title "Backup Encrytion Key" \
+            --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
+          return
+        fi
+        (
+          mkdir -p "${TMP_PATH}/mdX"
+          for I in ${DSMROOTS}; do
+            mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+            [ $? -ne 0 ] && continue
+            if [ -f "${PART2_PATH}/machine.key" ]; then
+              cp -f "${PART2_PATH}/machine.key" "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key"
+              BACKUPKEY="true"
+              sync
+            fi
+            umount "${TMP_PATH}/mdX"
+          done
+          rm -rf "${TMP_PATH}/mdX"
+        ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Backup Encrytion Key" \
+          --progressbox "Backup Encryption Key ..." 20 70
+        if [ "${BACKUPKEY}" = "true" ]; then
+          dialog --backtitle "$(backtitle)" --title "Backup Encrytion Key"  \
+            --msgbox "Encryption Key backup successful!" 0 0
+        else
+          dialog --backtitle "$(backtitle)" --title "Backup Encrytion Key"  \
+            --msgbox "No Encryption Key found!" 0 0
         fi
         ;;
     esac
@@ -1646,7 +1614,7 @@ function staticIPMenu() {
     fi
   done
   dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-  --msgbox "Settings written and enabled.\nThis will be not applied to DSM." 5 50
+    --msgbox "Settings written and enabled.\nThis will be not applied to DSM." 5 50
   return
 }
 
@@ -1657,45 +1625,47 @@ function downgradeMenu() {
   TEXT+="This feature will allow you to downgrade the installation by removing the VERSION file from the first partition of all disks.\n"
   TEXT+="Therefore, please insert all disks before continuing.\n"
   TEXT+="Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?"
-  dialog --backtitle "$(backtitle)" --title "Allow downgrade installation" \
+  dialog --backtitle "$(backtitle)" --title "Allow Downgrade" \
       --yesno "${TEXT}" 0 0
   [ $? -ne 0 ] && return 1
-  if [ -z "$(ls /dev/md/*:0 2>/dev/null)" ]; then # SynologyNAS:0, DiskStation:0, SynologyNVR:0, BeeStation:0
-    dialog --backtitle "$(backtitle)" --title "Allow downgrade installation" \
+  DSMROOTS="$(findDSMRoot)"
+  if [ -z "${DSMROOTS}" ]; then
+    dialog --backtitle "$(backtitle)" --title "Allow Downgrade" \
       --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
-    return 1
+    return
   fi
-  while true; do
+  (
     mkdir -p "${TMP_PATH}/mdX"
-    mount "$(ls /dev/md/*:0 2>/dev/null | head -n 1)" "${TMP_PATH}/mdX"
-    [ $? -ne 0 ] && break
-    [ -f "${TMP_PATH}/mdX/etc/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc/VERSION"
-    [ -f "${TMP_PATH}/mdX/etc.defaults/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc.defaults/VERSION"
-    sync
-    umount "${TMP_PATH}/mdX"
+    for I in ${DSMROOTS}; do
+      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      [ $? -ne 0 ] && continue
+      [ -f "${TMP_PATH}/mdX/etc/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc/VERSION"
+      [ -f "${TMP_PATH}/mdX/etc.defaults/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc.defaults/VERSION"
+      sync
+      umount "${TMP_PATH}/mdX"
+    done
     rm -rf "${TMP_PATH}/mdX"
-    break
-  done 2>&1 | dialog --backtitle "$(backtitle)" --title "Allow downgrade installation" \
-      --progressbox "Removing ..." 20 70
-  TEXT="Remove VERSION file for all disks completed."
-  dialog --backtitle "$(backtitle)" --colors --aspect 18 \
-    --msgbox "${TEXT}" 0 0
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Allow Downgrade" \
+    --progressbox "Removing ..." 20 70
+  dialog --backtitle "$(backtitle)" --title "Allow Downgrade"  \
+    --msgbox "Allow Downgrade Settings completed." 0 0
   return
 }
 
 ###############################################################################
 # Reset DSM password
 function resetPassword() {
-  if [ -z "$(ls /dev/md/*:0 2>/dev/null)" ]; then # SynologyNAS:0, DiskStation:0, SynologyNVR:0, BeeStation:0
-    dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
+  DSMROOTS="$(findDSMRoot)"
+  if [ -z "${DSMROOTS}" ]; then
+    dialog --backtitle "$(backtitle)" --title "Reset Password"  \
       --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
     return
   fi
   rm -f "${TMP_PATH}/menu"
-  while true; do
-    mkdir -p "${TMP_PATH}/mdX"
-    mount "$(ls /dev/md/*:0 2>/dev/null | head -n 1)" "${TMP_PATH}/mdX"
-    [ $? -ne 0 ] && break
+  mkdir -p "${TMP_PATH}/mdX"
+  for I in ${DSMROOTS}; do
+    mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+    [ $? -ne 0 ] && continue
     if [ -f "${TMP_PATH}/mdX/etc/shadow" ]; then
       while read L; do
         U=$(echo "${L}" | awk -F ':' '{if ($2 != "*" && $2 != "!!") print $1;}')
@@ -1707,49 +1677,50 @@ function resetPassword() {
       done <<<$(cat "${TMP_PATH}/mdX/etc/shadow" 2>/dev/null)
     fi
     umount "${TMP_PATH}/mdX"
-    rm -rf "${TMP_PATH}/mdX"
-    break
+    [ -f "${TMP_PATH}/menu" ] && break
   done
+  rm -rf "${TMP_PATH}/mdX"
   if [ ! -f "${TMP_PATH}/menu" ]; then
-    dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
+    dialog --backtitle "$(backtitle)" --title "Reset Password"  \
       --msgbox "All existing users have been disabled. Please try adding new user." 0 0
     return
   fi
-  dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
-    --no-items --menu "Choose a user name" 0 0 0 --file "${TMP_PATH}/menu" \
+  dialog --backtitle "$(backtitle)" --title "Reset Password"  \
+    --no-items --menu  "Choose a User" 0 0 0 --file "${TMP_PATH}/menu" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
   USER="$(cat "${TMP_PATH}/resp" 2>/dev/null | awk '{print $1}')"
   [ -z "${USER}" ] && return
   while true; do
-    dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
-      --inputbox "Type a new password for user ${USER}" 0 70 "${CMDLINE[${NAME}]}" \
+    dialog --backtitle "$(backtitle)" --title "Reset Password"  \
+      --inputbox "$(printf "Type a new password for user '%s'")" "${USER}" 0 70 "${CMDLINE[${NAME}]}" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break 2
     VALUE="$(cat "${TMP_PATH}/resp")"
     [ -n "${VALUE}" ] && break
-    dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
+    dialog --backtitle "$(backtitle)" --title "Reset Password"  \
       --msgbox "Invalid password" 0 0
   done
   NEWPASSWD="$(python -c "from passlib.hash import sha512_crypt;pw=\"${VALUE}\";print(sha512_crypt.using(rounds=5000).hash(pw))")"
-  while true; do
+  (
     mkdir -p "${TMP_PATH}/mdX"
-    mount "$(ls /dev/md/*:0 2>/dev/null | head -n 1)" "${TMP_PATH}/mdX"
-    [ $? -ne 0 ] && break
-    OLDPASSWD="$(cat "${TMP_PATH}/mdX/etc/shadow" 2>/dev/null | grep "^${USER}:" | awk -F ':' '{print $2}')"
-    if [ -n "${NEWPASSWD}" -a -n "${OLDPASSWD}" ]; then
-      sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "${TMP_PATH}/mdX/etc/shadow"
-      sed -i "/^${USER}:/ s/\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\)/\1:\2:\3:\4:\5:\6:\7::\9/" "${TMP_PATH}/mdX/etc/shadow"
-    fi
-    sed -i "s|status=on|status=off|g" "${TMP_PATH}/mdX/usr/syno/etc/packages/SecureSignIn/preference/${USER}/method.config" 2>/dev/null
-    sync
-    umount "${TMP_PATH}/mdX"
+    for I in ${DSMROOTS}; do
+      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      [ $? -ne 0 ] && continue
+      OLDPASSWD="$(cat "${TMP_PATH}/mdX/etc/shadow" 2>/dev/null | grep "^${USER}:" | awk -F ':' '{print $2}')"
+      if [ -n "${NEWPASSWD}" -a -n "${OLDPASSWD}" ]; then
+        sed -i "s|${OLDPASSWD}|${NEWPASSWD}|g" "${TMP_PATH}/mdX/etc/shadow"
+        sed -i "/^${USER}:/ s/\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\):\([^:]*\)/\1:\2:\3:\4:\5:\6:\7::\9/" "${TMP_PATH}/mdX/etc/shadow"
+      fi
+      sed -i "s|status=on|status=off|g" "${TMP_PATH}/mdX/usr/syno/etc/packages/SecureSignIn/preference/${USER}/method.config" 2>/dev/null
+      sync
+      umount "${TMP_PATH}/mdX"
+    done
     rm -rf "${TMP_PATH}/mdX"
-    break
-  done 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Reset Password"  \
     --progressbox "Resetting ..." 20 100
-  dialog --backtitle "$(backtitle)" --colors --title "Reset DSM Password" \
-    --msgbox "Password reset completed." 0 0
+  dialog --backtitle "$(backtitle)" --title "Reset Password"  \
+    --msgbox "Password Reset completed." 0 0
   return
 }
 
@@ -1854,34 +1825,36 @@ function package() {
 ###############################################################################
 # let user format disks from inside arc
 function forcessh() {
-  dialog --backtitle "$(backtitle)" --colors --title "Force SSH" \
-    --yesno "Please insert all disks before continuing.\n" 0 0
-  [ $? -ne 0 ] && return
+  DSMROOTS="$(findDSMRoot)"
+  if [ -z "${DSMROOTS}" ]; then
+    dialog --backtitle "$(backtitle)" --title "Force enable SSH"  \
+      --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
+    return
+  fi
   (
     ONBOOTUP=""
     ONBOOTUP="${ONBOOTUP}synowebapi --exec api=SYNO.Core.Terminal method=set version=3 enable_telnet=true enable_ssh=true ssh_port=22 forbid_console=false\n"
-    ONBOOTUP="${ONBOOTUP}echo \"DELETE FROM task WHERE task_name LIKE ''ARCONBOOTUPARC'';\" | sqlite3 /usr/syno/etc/esynoscheduler/esynoscheduler.db\n"
-    while true; do
-      mkdir -p "${TMP_PATH}/mdX"
-      mount "$(ls /dev/md/*:0 2>/dev/null | head -n 1)" "${TMP_PATH}/mdX"
-      [ $? -ne 0 ] && break
+    ONBOOTUP="${ONBOOTUP}echo \"DELETE FROM task WHERE task_name LIKE ''ARCONBOOTUPARC_SSH'';\" | sqlite3 /usr/syno/etc/esynoscheduler/esynoscheduler.db\n"
+    mkdir -p "${TMP_PATH}/mdX"
+    for I in ${DSMROOTS}; do
+      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      [ $? -ne 0 ] && continue
       if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
         sqlite3 ${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db <<EOF
-DELETE FROM task WHERE task_name LIKE 'ARCONBOOTUPARC';
-INSERT INTO task VALUES('ARCONBOOTUPARC', '', 'bootup', '', 1, 0, 0, 0, '', 0, '$(echo -e ${ONBOOTUP})', 'script', '{}', '', '', '{}', '{}');
+DELETE FROM task WHERE task_name LIKE 'ARCONBOOTUPARC_SSH';
+INSERT INTO task VALUES('ARCONBOOTUPARC_SSH', '', 'bootup', '', 1, 0, 0, 0, '', 0, '$(echo -e ${ONBOOTUP})', 'script', '{}', '', '', '{}', '{}');
 EOF
         sleep 1
         sync
         echo "true" >${TMP_PATH}/isEnable
       fi
       umount "${TMP_PATH}/mdX"
-      rm -rf "${TMP_PATH}/mdX"
-      break
     done
-  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Force SSH" \
-    --progressbox "Enabling ..." 20 100
-  [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Telnet&SSH is enabled." || MSG="Telnet&SSH is not enabled."
-  dialog --backtitle "$(backtitle)" --colors --title "Force SSH" \
+    rm -rf "${TMP_PATH}/mdX"
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Force enable SSH"  \
+    --progressbox "$(TEXT "Enabling ...")" 20 100
+  [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Enable Telnet&SSH successfully." || MSG="Enable Telnet&SSH failed."
+  dialog --backtitle "$(backtitle)" --title "Force enable SSH"  \
     --msgbox "${MSG}" 0 0
   return
 }
