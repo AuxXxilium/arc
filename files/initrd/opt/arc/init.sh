@@ -96,10 +96,10 @@ for ETH in ${ETHX}; do
     if [ ! "${MACA}" = "${MACR}" ]; then
       MAC="${MACA:0:2}:${MACA:2:2}:${MACA:4:2}:${MACA:6:2}:${MACA:8:2}:${MACA:10:2}"
       echo "Setting ${ETH} MAC to ${MAC}"
-      ip link set dev ${ETH} address "${MAC}" >/dev/null 2>&1 &&
-      (/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 &) || true
+      ip link set dev ${ETH} address "${MAC}" >/dev/null 2>&1 || true
       sleep 2
     fi
+    /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
     echo
   fi
   NIC=$((${NIC} + 1))
@@ -183,7 +183,11 @@ for ETH in ${ETHX}; do
     if [ -n "${IP}" ]; then
       SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
       writeConfigKey "ip.${ETH}" "${IP}" "${USER_CONFIG_FILE}"
-      echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
+      if [[ "${IP}" =~ ^169\.254\..* ]]; then
+        echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server detected.)"
+      else
+        echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
+      fi
       ethtool -s ${ETH} wol g 2>/dev/null
       break
     fi
