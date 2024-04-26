@@ -703,6 +703,7 @@ function updateMenu() {
       4 "Update Modules" \
       5 "Update Configs" \
       6 "Update LKMs" \
+      7 "Automated Update Mode" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     case "$(cat ${TMP_PATH}/resp)" in
@@ -999,6 +1000,11 @@ function updateMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
           --msgbox "LKMs updated successful! New Version: ${TAG}" 0 0
+        ;;
+      7)
+        dialog --backtitle "$(backtitle)" --title "Automated Update" --aspect 18 \
+          --msgbox "Loader will reboot to Automated Update Mode.\nPlease wait until progress is finished!" 0 0
+        rebootTo update
         ;;
     esac
   done
