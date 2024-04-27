@@ -55,7 +55,7 @@ terminal-border: "0"
 
 #help bar at the bottom
 + image {
-	top = 100%-56
-	left = 50%-175
+	top = 100%-50
+	left = 50%-200
     file = "help_bar.png"
 }
