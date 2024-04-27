@@ -29,7 +29,7 @@ terminal-border: "0"
 
 # arc logo
 + image {
-	top = 50%-100
+	top = 50%-300
 	left = 50%-420
     file = "arc_logo.png"
 }
@@ -38,7 +38,7 @@ terminal-border: "0"
 + boot_menu {
 	left = 50%-150
 	width = 500
-	top = 50%+200
+	top = 50%
 	height = 400
 
 	item_font = "DejaVu Sans Bold 14"
