@@ -16,7 +16,7 @@ BUS=$(getBus "${LOADER_DISK}")
 # Print Title centralized
 clear
 COLUMNS=${COLUMNS:-50}
-BANNER="$(figlet -c -w "$(((${COLUMNS})))" "ARC LOADER")"
+BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
 TITLE="Version:"
 TITLE+=" ${ARC_TITLE}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
