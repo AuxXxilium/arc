@@ -50,7 +50,7 @@ def makeqr(data, file, location, output):
         qr = qrcode.QRCode(version=1, box_size=10, error_correction=qrcode.constants.ERROR_CORRECT_H, border=4)
         qr.add_data(data)
         qr.make(fit=True)
-        img = qr.make_image(fill_color="white", back_color="black")
+        img = qr.make_image(fill_color="grey", back_color="black")
         img = img.convert("RGBA")
         pixels = img.load()
         for i in range(img.size[0]):
