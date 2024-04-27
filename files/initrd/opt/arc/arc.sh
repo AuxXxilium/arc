@@ -846,12 +846,13 @@ function arcAutomated() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
   ARCCONF="$(readModelKey "${MODEL}" "arc.serial")"
+  ARCPATCHPRE="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   [ -n "${ARCCONF}" ] && ARCPATCH="true" || ARCPATCH="false"
-  if [ "${ARCPATCH}" = "true" ]; then
+  if [[ "${ARCPATCH}" = "true" && "${ARCPATCHPRE}" = "true" ]]; then
     SN="$(readModelKey "${MODEL}" "arc.serial")"
     writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-  elif [ "${ARCPATCH}" = "false" ]; then
+  else
     SN="$(generateSerial "${MODEL}")"
     writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"

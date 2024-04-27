@@ -39,6 +39,7 @@ jobs:
           MODEL = ''
           PRODUCTVER = ''
           ADDONS = ''
+          ARCPATCH = ''
           MACSYS = ''
           USBMOUNT = ''
           CUSTOMKERNEL = ''
@@ -48,6 +49,7 @@ jobs:
               MODEL = jsonbody.get('model', '')
               PRODUCTVER = jsonbody.get('version', '')
               ADDONS = jsonbody.get('addons', '')
+              ARCPATCH = jsonbody.get('patch', '')
               MACSYS = jsonbody.get('macsys', '')
               USBMOUNT = jsonbody.get('usbmount', '')
               CUSTOMKERNEL = jsonbody.get('customkernel', '')
@@ -58,6 +60,7 @@ jobs:
           set_output("MODEL", MODEL)
           set_output("PRODUCTVER", PRODUCTVER)
           set_output("ADDONS", ADDONS)
+          set_output("ARCPATCH", ARCPATCH)
           set_output("MACSYS", MACSYS)
           set_output("USBMOUNT", USBMOUNT)
           set_output("CUSTOMKERNEL", CUSTOMKERNEL)
@@ -147,6 +150,7 @@ jobs:
           writeConfigKey "model" "${{ env.MODEL }}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "productver" "${{ env.PRODUCTVER }}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "arc" "{}" "${PRESET_CONFIG_FILE}"
+          writeConfigKey "arc.patch" "${{ env.ARCPATCH }}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "arc.macsys" "${{ env.MACSYS }}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "arc.custom" "true" "${PRESET_CONFIG_FILE}"
           writeConfigKey "arc.usbmount" "${{ env.USBMOUNT }}" "${PRESET_CONFIG_FILE}"
