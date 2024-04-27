@@ -235,6 +235,17 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
 
   echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
+  DSMLOGO="$(readConfigKey "arc.dsmlogo" "${USER_CONFIG_FILE}")"
+  if [ "${DSMLOGO}" = "true" -a -c "/dev/fb0" ]; then
+    [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
+    [ -n "${IPCON}" ] && URL="http://${IPCON}:5000" || URL="http://find.synology.com/"
+    python ${ARC_PATH}/include/functions.py makeqr -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
+    [ -f "${TMP_PATH}/qrcode_boot.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_boot.png" >/dev/null 2>/dev/null || true
+
+    python ${ARC_PATH}/include/functions.py makeqr -f "${ARC_PATH}/include/qhxg.png" -l "7" -o "${TMP_PATH}/qrcode_qhxg.png"
+    [ -f "${TMP_PATH}/qrcode_qhxg.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_qhxg.png" >/dev/null 2>/dev/null || true
+  fi
+
   # Executes DSM kernel via KEXEC
   KEXECARGS=""
   kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
