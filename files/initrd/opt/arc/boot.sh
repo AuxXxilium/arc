@@ -238,12 +238,13 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   DSMLOGO="$(readConfigKey "arc.dsmlogo" "${USER_CONFIG_FILE}")"
   if [ "${DSMLOGO}" = "true" -a -c "/dev/fb0" ]; then
     [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
-    [ -n "${IPCON}" ] && URL="http://${IPCON}:5000" || URL="http://find.synology.com/"
+    if [ -n "${IPCON}" ]; then
+    URL="http://${IPCON}:5000" || URL="http://find.synology.com/"
     python ${ARC_PATH}/include/functions.py makeqr -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
     [ -f "${TMP_PATH}/qrcode_boot.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_boot.png" >/dev/null 2>/dev/null || true
-
-    python ${ARC_PATH}/include/functions.py makeqr -f "${ARC_PATH}/include/qhxg.png" -l "7" -o "${TMP_PATH}/qrcode_qhxg.png"
-    [ -f "${TMP_PATH}/qrcode_qhxg.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_qhxg.png" >/dev/null 2>/dev/null || true
+  else
+    python ${ARC_PATH}/include/functions.py makeqr -f "${ARC_PATH}/include/syno.png" -l "7" -o "${TMP_PATH}/qrcode_syno.png"
+    [ -f "${TMP_PATH}/qrcode_syno.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_syno.png" >/dev/null 2>/dev/null || true
   fi
 
   # Executes DSM kernel via KEXEC
