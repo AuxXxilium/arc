@@ -1789,7 +1789,7 @@ function formatdisks() {
     [[ "${KNAME}" = /dev/md* ]] && continue
     [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
     echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
-  done <<<$(lsblk -pno KNAME,MODEL,PKNAME,TYPE)
+  done <<<$(lsblk -pno KNAME,MODEL,PKNAME,TYPE | sort)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
       --msgbox "No disk found!" 0 0
@@ -1890,7 +1890,7 @@ function cloneLoader() {
     [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
     [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" || "${KMODEL}" = "${LOADER_DISK}" ]] && continue
     echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
-  done <<<$(lsblk -dpno KNAME,MODEL,PKNAME,TYPE)
+  done <<<$(lsblk -dpno KNAME,MODEL,PKNAME,TYPE | sort)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --msgbox "No disk found!" 0 0
