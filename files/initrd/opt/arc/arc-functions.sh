@@ -2006,7 +2006,7 @@ function greplogs() {
       chmod 644 "/var/www/data/log.tar.gz"
       URL="http://$(getIP)/log.tar.gz"
       dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
-        --msgbox "Please visit ${URL}\nto download the log, and unzip it and back it up in order by file name." 0 0
+        --msgbox "Please visit ${URL}\nto download the logs and unzip it and back it up in order by file name." 0 0
     else
       sz -be -B 536870912 "${TMP_PATH}/log.tar.gz"
       dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
@@ -2033,9 +2033,10 @@ function getbackup() {
     tar -czf "${TMP_PATH}/dsmconfig.tar.gz" -C "${PART1_PATH}" dsmbackup
     if [ -z "${SSH_TTY}" ]; then # web
       mv -f "${TMP_PATH}/dsmconfig.tar.gz" "/var/www/data/dsmconfig.tar.gz"
+      chmod 644 "/var/www/data/dsmconfig.tar.gz"
       URL="http://$(getIP)/dsmconfig.tar.gz"
       dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
-        --msgbox "Please via ${URL} to download the dsmconfig,\nAnd unzip it and back it up in order by file name." 0 0
+        --msgbox "Please via ${URL}\nto download the dsmconfig and unzip it and back it up in order by file name." 0 0
     else
       sz -be -B 536870912 "${TMP_PATH}/dsmconfig.tar.gz"
       dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
