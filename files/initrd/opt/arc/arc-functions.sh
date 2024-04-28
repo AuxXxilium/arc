@@ -2000,7 +2000,7 @@ function editGrubCfg() {
 function greplogs() {
   if [ -d "${PART1_PATH}/logs" ]; then
     rm -f "${TMP_PATH}/log.tar.gz"
-    tar -czf "${PART1_PATH}/log.tar.gz" "${PART1_PATH}" logs
+    tar -czf "${PART1_PATH}/log.tar.gz" "${PART1_PATH}/logs"
     if [ -z "${SSH_TTY}" ]; then # web
       mv -f "${PART1_PATH}/log.tar.gz" "/var/www/data/log.tar.gz"
       chmod 644 "/var/www/data/log.tar.gz"
