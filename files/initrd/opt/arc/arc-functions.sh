@@ -2000,6 +2000,7 @@ function editGrubCfg() {
 function greplogs() {
   if [ -d "${PART1_PATH}/logs" ]; then
     rm -f "${TMP_PATH}/log.tar.gz"
+    rm -f "${PART1_PATH}/log.tar.gz"
     tar -czf "${PART1_PATH}/log.tar.gz" "${PART1_PATH}/logs"
     if [ -z "${SSH_TTY}" ]; then # web
       mv -f "${PART1_PATH}/log.tar.gz" "/var/www/data/log.tar.gz"
@@ -2017,7 +2018,7 @@ function greplogs() {
     MSG+="\Z1No log found!\Zn\n\n"
     MSG+="Please do as follows:\n"
     MSG+=" 1. Add dbgutils in Addons and rebuild.\n"
-    MSG+=" 2. Normal use.\n"
+    MSG+=" 2. Boot to DSM.\n"
     MSG+=" 3. Reboot to Config Mode and use this Option.\n"
     dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
       --msgbox "${MSG}" 0 0
@@ -2047,7 +2048,7 @@ function getbackup() {
     MSG+="\Z1No dsmbackup found!\Zn\n\n"
     MSG+="Please do as follows:\n"
     MSG+=" 1. Add dsmconfigbackup in Addons and rebuild.\n"
-    MSG+=" 2. Normal use.\n"
+    MSG+=" 2. Boot to DSM.\n"
     MSG+=" 3. Reboot to Config Mode and use this Option.\n"
     dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
       --msgbox "${MSG}" 0 0
