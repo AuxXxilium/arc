@@ -69,7 +69,7 @@ function autogetnet() {
       ARCMACNUM=$((${ARCMACNUM} + 1))
       ARCMAC=""
     done
-  elif [ "${ARCPATCH}" = "false" ]; then
+  else
     ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
     MACS=$(generateMacAddress "${MODEL}" ${ETHN})
     N=1
@@ -78,6 +78,7 @@ function autogetnet() {
       writeConfigKey "mac.${ETH}" "${MAC}" "${USER_CONFIG_FILE}"
       N=$((${N} + 1))
     done
+  fi
   writeConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
   MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 }
