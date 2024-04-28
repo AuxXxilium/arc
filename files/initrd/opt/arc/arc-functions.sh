@@ -626,6 +626,20 @@ function backupMenu() {
         if [ -f "${USER_CONFIG_FILE}" ]; then
           dialog --backtitle "$(backtitle)" --title "Restore Config" \
             --aspect 18 --msgbox "Config restore successful!" 0 0
+          # Ask for Build
+          dialog --clear --backtitle "$(backtitle)" \
+            --menu "Config done -> Build now?" 7 50 0 \
+            1 "Yes - Build Arc Loader now" \
+            2 "No - I want to make changes" \
+          2>"${TMP_PATH}/resp"
+          resp=$(cat ${TMP_PATH}/resp)
+          [ -z "${resp}" ] && return 1
+          if [ ${resp} -eq 1 ]; then
+            premake
+          elif [ ${resp} -eq 2 ]; then
+            dialog --clear --no-items --backtitle "$(backtitle)"
+            return 1
+          fi
         else
           dialog --backtitle "$(backtitle)" --title "Restore Config" \
             --aspect 18 --msgbox "No Config found!" 0 0
