@@ -2003,9 +2003,10 @@ function greplogs() {
     tar -czf "${PART1_PATH}/log.tar.gz" "${PART1_PATH}" logs
     if [ -z "${SSH_TTY}" ]; then # web
       mv -f "${PART1_PATH}/log.tar.gz" "/var/www/data/log.tar.gz"
+      chmod 644 "/var/www/data/log.tar.gz"
       URL="http://$(getIP)/log.tar.gz"
       dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
-        --msgbox "Please via ${URL} to download the log,\nAnd unzip it and back it up in order by file name." 0 0
+        --msgbox "Please visit ${URL}\nto download the log, and unzip it and back it up in order by file name." 0 0
     else
       sz -be -B 536870912 "${TMP_PATH}/log.tar.gz"
       dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
