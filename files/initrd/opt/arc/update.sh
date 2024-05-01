@@ -7,6 +7,7 @@
 . ${ARC_PATH}/include/functions.sh
 . ${ARC_PATH}/include/addons.sh
 . ${ARC_PATH}/include/modules.sh
+. ${ARC_PATH}/include/network.sh
 
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
