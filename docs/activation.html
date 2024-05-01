@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en-US" data-color-mode="auto" data-light-theme="light" data-dark-theme="dark"
+    data-a11y-animated-images="system">
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="dns-prefetch" href="https://github.githubassets.com" />
+    <link rel="dns-prefetch" href="https://avatars.githubusercontent.com" />
+    <link rel="dns-prefetch" href="https://github-cloud.s3.amazonaws.com" />
+    <link rel="dns-prefetch" href="https://user-images.githubusercontent.com/" />
+    <link rel="preconnect" href="https://github.githubassets.com" crossorigin />
+    <link rel="preconnect" href="https://avatars.githubusercontent.com" />
+
+    <link crossorigin="anonymous" media="all" rel="stylesheet"
+        href="https://github.githubassets.com/assets/light-0eace2597ca3.css" />
+    <link crossorigin="anonymous" media="all" rel="stylesheet"
+        href="https://github.githubassets.com/assets/dark-a167e256da9c.css" />
+
+    <link crossorigin="anonymous" media="all" rel="stylesheet"
+        href="https://github.githubassets.com/assets/primer-711f412bb361.css" />
+    <link crossorigin="anonymous" media="all" rel="stylesheet"
+        href="https://github.githubassets.com/assets/global-78704364aaba.css" />
+    <style>
+        select,
+        input {
+            width: 400px;
+        }
+        a {
+            color: #f72f2f;
+            text-decoration: none;
+        }
+        .State--merged {
+            background-color: #ff0000;
+        }
+        .btn {
+            color: #ffffff;
+            background-color: #ff0000;
+            border-color: #ffffff;
+            transition: 80ms cubic-bezier(0.33, 1, 0.68, 1);
+            transition-property: color,background-color,border-color;
+        }
+        a:focus-visible, button:focus-visible, [role=button]:focus-visible, input[type=radio]:focus-visible, input[type=checkbox]:focus-visible {
+            outline: 2px solid #ff0000;
+            outline-offset: -2px;
+            box-shadow: none;
+        }
+        a:focus, button:focus, [role=button]:focus, input[type=radio]:focus, input[type=checkbox]:focus {
+            outline: 2px solid #ff0000;
+            outline-offset: -2px;
+            box-shadow: none;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js"></script>
+    <!-- <script src="https://fastly.jsdelivr.net/npm/marked/marked.min.js"></script> -->
+    <script>
+        $('#newUser').click(function() {
+            http_type = $("#http_type").val();
+            ip_server = $("#ip_server").val();
+            port = $("#port").val();
+            username = encodeURI($("#username").val());
+            passwd = encodeURI($("#passwd").val());
+            otp_code = $("#otp_code").val();
+            serialnum = $("#serialnum").val();
+    
+            let url_login = "/webapi/auth.cgi?api=SYNO.API.Auth&version=3&method=login&format=%20cookie&account=";
+            let url_activate = "/webapi/entry.cgi?api=SYNO.ActiveBackup.Activation&method=set&version=1&activated=true&serial_number=";
+    
+            let url_activateGSuite="/webapi/entry.cgi?api=SYNO.ActiveBackupGSuite&method=set_activation&version=1&serial_number=";
+    
+            let url_activateOffice365="/webapi/entry.cgi?api=SYNO.ActiveBackupOffice365&method=set_activation&version=1&serial_number=";
+    
+            let url_pass = "&passwd=";
+            let url_otp  = "&otp_code=";
+    
+            url_start = http_type + ip_server + ":" + port;
+    
+            url4login = url_start + url_login + username + url_pass + passwd + url_otp + otp_code;
+    
+            
+    
+    
+            $("#url4login").val(url4login);
+            console.log(url4login);
+            alert("Press COPY then paste each, in order, into a new browser incognito Window address bar");
+    
+            url4activate = url_start + url_activate + serialnum;
+            url4activateGSuite = url_start + url_activateGSuite + serialnum;
+            url4activateOffice365 = url_start + url_activateOffice365 + serialnum;
+    
+            $("#url4activate").val(url4activate);
+            console.log(url4activate);
+            //alert(url4activate);
+    
+            url4activate = url_start + url_activate + serialnum;
+    
+    
+    
+            $("#url4activateGSuite").val(url4activateGSuite);
+            console.log(url4activateGSuite);
+            //alert(url4activateGSuite);
+            
+            url4activateGSuite = url_start + url_activate + serialnum;
+            
+            $("#url4activateOffice365").val(url4activateOffice365);
+            console.log(url4activateOffice365);
+            //alert(url4activateOffice365);
+        });
+        </script>
+    
+        <script>
+          var clipboard = new ClipboardJS('.btn');
+    
+          clipboard.on('success', function (e) {
+            console.info('Action:', e.action);
+            console.info('Text:', e.text);
+            console.info('Trigger:', e.trigger);
+          });
+    
+          clipboard.on('error', function (e) {
+            console.log(e);
+          });
+        </script>
+    <title>Arc Loader - Activation</title>
+</head>
+
+<body class="logged-in env-production page-responsive" style="word-wrap: break-word">
+    <div class="application-main left-0 text-left p-3 mx-auto container-xl px-3 px-md-4 px-lg-5 mt-4">
+        <pre id="logo">
+            <img src="https://raw.githubusercontent.com/AuxXxilium/arc/main/docs/arc_loader.png" width="22%">
+        </pre>
+        <div class="form-group mt-1 mb-2 ">
+            <div class="form-group-header">
+                <p>&nbsp;</p>
+            </div>
+            <div class="form-group-body">
+                <p>&nbsp;</p>
+            </div>
+        </div>
+        <div class="form-group mt-1 mb-2 ">
+            <div class="form-group-header">
+                <label class="color-fg-default text-mono f6">Activation Steps:</label>
+            </div>
+            <div class="form-group-body">
+                <p class="form-control input-contrast input-sm">Enter all values and click "Get Links". In an incognito tab, paste the "Login Link" first and enter to establish session. Then paste the selected "Activation Link" into same address bar and hit enter to complete the activation. Repeat for any other installed application.</p>
+            </div>
+        </div>
+        <div class="form-group mt-1 mb-2 ">
+            <div class="form-group-header">
+                <label class="color-fg-default text-mono f6">Environment Variables:</label>
+            </div>
+            <div class="form-group-body">
+                <p>HTTP/HTTPS:
+                <select class="form-select form-control select-sm input-contrast" id="http_type" value="">
+                    <option selected="selected" value="http://">http</option>
+                    <option value="https://">https</option>
+                </select></p>
+                <p>DSM IP: <input class="form-control input-contrast input-sm" type="text" id="ip_server" value="192.168.2.1" /></p>
+                <p>Port: <input class="form-control input-contrast input-sm" type="text" id="port" value="5000" /></p>
+                <p>DSM Serial: <input class="form-control input-contrast input-sm" type="text" id="serialnum" value="1920XXX10220" /></p>
+                <p>Username: <input class="form-control input-contrast input-sm" type="text" id="username" value="admin" /></p>
+                <p>Password: <input class="form-control input-contrast input-sm" type="text" id="passwd" value="yourpw" /></p>
+                <p>2FA One Time Code if enabled: <input class="form-control input-contrast input-sm" type="text" id="otp_code" value="" /></p>
+            </div>
+        </div>
+        <div class="form-group mt-1 mb-2 ">
+            <div class="form-group-header">
+                <label class="color-fg-default text-mono f6">Step 2 - Login:</label>
+            </div>
+            <div class="form-group-body">
+                <button
+                class="btn"
+                data-clipboard-action="copy"
+                data-clipboard-target="#url4login"
+                >
+                Copy
+                </button>
+                <input input class="form-control input-contrast input-sm" id="url4login" type="text" value="awaiting link" size="140"/>
+            </div>
+        </div>
+        <div class="form-group mt-1 mb-2 ">
+            <div class="form-group-header">
+                <label class="color-fg-default text-mono f6">Step 3 - Activate:</label>
+            </div>
+            <div class="form-group-body">
+                <p><button
+                class="btn"
+                data-clipboard-action="copy"
+                data-clipboard-target="#url4activate"
+                >
+                Copy for ActiveBackup for Business
+                </button>
+                <input class="form-control input-contrast input-sm" id="url4activate" type="text" value="awaiting link" size="140"/></p>
+                <p><button
+                class="btn"
+                data-clipboard-action="copy"
+                data-clipboard-target="#url4activateGSuite"
+                >
+                Copy for GSuite
+                </button>
+                <input class="form-control input-contrast input-sm" id="url4activateGSuite" type="text" value="awaiting link" size="140"/></p>
+                <p><button
+                class="btn"
+                data-clipboard-action="copy"
+                data-clipboard-target="#url4activateOffice365"
+                >
+                Copy for Office365
+                </button>
+                <input class="form-control input-contrast input-sm" id="url4activateOffice365" type="text" value="awaiting link" size="140"/></p>
+            </div>
+        </div>
+    </div>
+    <footer class="footer width-full container-xl mt-3 text-center color-fg-muted">
+        <a aria-label="AuxXxilium" title="GitHub" class="footer-octicon mr-2" href="https://github.com/AuxXxilium">
+            <img class="avatar rounded-2 avatar-user" src="https://avatars.githubusercontent.com/u/67025065?v=4"
+                width="40" height="40" alt="AuxXxilium" />
+        </a>
+        <span>Copyright © 2024 by <a href="https://github.com/AuxXxilium">AuxXxilium</a><br>&nbsp;</span>
+    </footer>
+</body>
+
+</html>
