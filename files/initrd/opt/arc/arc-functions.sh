@@ -550,9 +550,9 @@ function storagepanelMenu() {
   if [ "${CONFDONE}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "StoragePanel" \
       --aspect 18 --msgbox "Enable custom StoragePanel Addon." 0 0
-    ITEMS="$(echo -e "2_Bay \n4_Bay \n8_Bay \n12_Bay \n16_Bay \n24_Bay \n60_Bay \n")"
+    ITEMS="$(echo -e "RACK_2_Bay \nRACK_4_Bay \nRACK_8_Bay \nRACK_12_Bay \nRACK_16_Bay \nRACK_24_Bay \nRACK_60_Bay \nTOWER_1_Bay \nTOWER_2_Bay \nTOWER_4_Bay \nTOWER_6_Bay \nTOWER_8_Bay \nTOWER_12_Bay \n")"
     dialog --backtitle "$(backtitle)" --title "StoragePanel" \
-      --default-item "24_Bay" --no-items --menu "Choose a Disk Panel" 0 0 0 ${ITEMS} \
+      --default-item "RACK_24_Bay" --no-items --menu "Choose a Disk Panel" 0 0 0 ${ITEMS} \
       2>"${TMP_PATH}/resp"
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
@@ -564,7 +564,7 @@ function storagepanelMenu() {
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     M2PANEL=${resp}
-    STORAGEPANEL="RACK_${STORAGE} ${M2PANEL}"
+    STORAGEPANEL="${STORAGE} ${M2PANEL}"
     writeConfigKey "addons.storagepanel" "${STORAGEPANEL}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
