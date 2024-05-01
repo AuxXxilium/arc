@@ -10,6 +10,7 @@
     <link rel="dns-prefetch" href="https://user-images.githubusercontent.com/" />
     <link rel="preconnect" href="https://github.githubassets.com" crossorigin />
     <link rel="preconnect" href="https://avatars.githubusercontent.com" />
+    <meta name="robots" content="noindex">
 
     <link crossorigin="anonymous" media="all" rel="stylesheet"
         href="https://github.githubassets.com/assets/light-0eace2597ca3.css" />
@@ -50,9 +51,100 @@
             box-shadow: none;
         }
     </style>
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://polyfill.io/v3/polyfill.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.statically.io/gh/zenorocha/clipboard.js/v2.0.10/dist/clipboard.min.js"></script>
     <!-- <script src="https://fastly.jsdelivr.net/npm/marked/marked.min.js"></script> -->
+    <title>Arc Loader - Activation</title>
+</head>
+
+<body class="logged-in env-production page-responsive" style="word-wrap: break-word">
+    <div class="application-main left-0 text-left p-3 mx-auto container-xl px-3 px-md-4 px-lg-5 mt-4">
+        <pre id="logo">
+            <img src="https://raw.githubusercontent.com/AuxXxilium/arc/main/docs/arc_loader.png" width="22%">
+        </pre>
+        <div class="form-group mt-1 mb-2 ">
+            <div class="form-group-header">
+                <label class="color-fg-default text-mono f6">Activation Steps:</label>
+            </div>
+            <div class="form-group-body">
+                <p class="form-control input-contrast input-sm">Enter all values and click "Get Links". In an incognito tab, paste the "Login Link" first and enter to establish session. Then paste the selected "Activation Link" into same address bar and hit enter to complete the activation. Repeat for any other installed application.</p>
+            </div>
+        </div>
+        <div class="form-group mt-1 mb-2 ">
+            <div class="form-group-header">
+                <label class="color-fg-default text-mono f6">Environment Variables:</label>
+            </div>
+            <div class="form-group-body">
+                <p>HTTP/HTTPS:
+                <pre><select class="form-select form-control select-sm input-contrast" id="http_type" value="">
+                    <option selected="selected" value="http://">http</option>
+                    <option value="https://">https</option>
+                </select></pre></p>
+                <p>DSM IP: <pre><input class="form-control input-contrast input-sm" type="text" id="ip_server" value="192.168.2.1" /></pre></p>
+                <p>Port: <pre><input class="form-control input-contrast input-sm" type="text" id="port" value="5000" /></pre></p>
+                <p>DSM Serial: <pre><input class="form-control input-contrast input-sm" type="text" id="serialnum" value="1920XXX10220" /></pre></p>
+                <p>Username: <pre><input class="form-control input-contrast input-sm" type="text" id="username" value="admin" /></pre></p>
+                <p>Password: <pre><input class="form-control input-contrast input-sm" type="text" id="passwd" value="yourpw" /></pre></p>
+                <p>2FA One Time Code (if enabled): <pre><input class="form-control input-contrast input-sm" type="text" id="otp_code" value="" /></pre></p>
+                <p>&nbsp;</p>
+                <p>Generate Links: <pre><input class="form-control input-contrast input-sm" type="button" value="Get Links" id="newUser"></pre></p>
+            </div>
+        </div>
+        <div class="form-group mt-1 mb-2 ">
+            <div class="form-group-header">
+                <label class="color-fg-default text-mono f6">Step 2 - Login:</label>
+            </div>
+            <div class="form-group-body">
+                <button
+                class="btn"
+                data-clipboard-action="copy"
+                data-clipboard-target="#url4login"
+                >
+                Copy
+                </button>
+                <pre><input class="form-control input-contrast input-sm" id="url4login" type="text" value="awaiting link" size="140"/></pre>
+            </div>
+        </div>
+        <div class="form-group mt-1 mb-2 ">
+            <div class="form-group-header">
+                <label class="color-fg-default text-mono f6">Step 3 - Activate:</label>
+            </div>
+            <div class="form-group-body">
+                <p><button
+                class="btn"
+                data-clipboard-action="copy"
+                data-clipboard-target="#url4activate"
+                >
+                Copy for ActiveBackup for Business
+                </button>
+                <pre><input class="form-control input-contrast input-sm" id="url4activate" type="text" value="awaiting link" size="140"/></pre></p>
+                <p><button
+                class="btn"
+                data-clipboard-action="copy"
+                data-clipboard-target="#url4activateGSuite"
+                >
+                Copy for GSuite
+                </button>
+                <pre><input class="form-control input-contrast input-sm" id="url4activateGSuite" type="text" value="awaiting link" size="140"/></pre></p>
+                <p><button
+                class="btn"
+                data-clipboard-action="copy"
+                data-clipboard-target="#url4activateOffice365"
+                >
+                Copy for Office365
+                </button>
+                <pre><input class="form-control input-contrast input-sm" id="url4activateOffice365" type="text" value="awaiting link" size="140"/></pre></p>
+            </div>
+        </div>
+    </div>
+    <footer class="footer width-full container-xl mt-3 text-center color-fg-muted">
+        <a aria-label="AuxXxilium" title="GitHub" class="footer-octicon mr-2" href="https://github.com/AuxXxilium">
+            <img class="avatar rounded-2 avatar-user" src="https://avatars.githubusercontent.com/u/67025065?v=4"
+                width="40" height="40" alt="AuxXxilium" />
+        </a>
+        <span>Copyright © 2024 by <a href="https://github.com/AuxXxilium">AuxXxilium</a><br>&nbsp;</span>
+    </footer>
     <script>
         $('#newUser').click(function() {
             http_type = $("#http_type").val();
@@ -121,104 +213,6 @@
             console.log(e);
           });
         </script>
-    <title>Arc Loader - Activation</title>
-</head>
-
-<body class="logged-in env-production page-responsive" style="word-wrap: break-word">
-    <div class="application-main left-0 text-left p-3 mx-auto container-xl px-3 px-md-4 px-lg-5 mt-4">
-        <pre id="logo">
-            <img src="https://raw.githubusercontent.com/AuxXxilium/arc/main/docs/arc_loader.png" width="22%">
-        </pre>
-        <div class="form-group mt-1 mb-2 ">
-            <div class="form-group-header">
-                <p>&nbsp;</p>
-            </div>
-            <div class="form-group-body">
-                <p>&nbsp;</p>
-            </div>
-        </div>
-        <div class="form-group mt-1 mb-2 ">
-            <div class="form-group-header">
-                <label class="color-fg-default text-mono f6">Activation Steps:</label>
-            </div>
-            <div class="form-group-body">
-                <p class="form-control input-contrast input-sm">Enter all values and click "Get Links". In an incognito tab, paste the "Login Link" first and enter to establish session. Then paste the selected "Activation Link" into same address bar and hit enter to complete the activation. Repeat for any other installed application.</p>
-            </div>
-        </div>
-        <div class="form-group mt-1 mb-2 ">
-            <div class="form-group-header">
-                <label class="color-fg-default text-mono f6">Environment Variables:</label>
-            </div>
-            <div class="form-group-body">
-                <p>HTTP/HTTPS:
-                <pre><select class="form-select form-control select-sm input-contrast" id="http_type" value="">
-                    <option selected="selected" value="http://">http</option>
-                    <option value="https://">https</option>
-                </select></pre></p>
-                <p>DSM IP: <pre><input class="form-control input-contrast input-sm" type="text" id="ip_server" value="192.168.2.1" /></pre></p>
-                <p>Port: <pre><input class="form-control input-contrast input-sm" type="text" id="port" value="5000" /></pre></p>
-                <p>DSM Serial: <pre><input class="form-control input-contrast input-sm" type="text" id="serialnum" value="1920XXX10220" /></pre></p>
-                <p>Username: <pre><input class="form-control input-contrast input-sm" type="text" id="username" value="admin" /></pre></p>
-                <p>Password: <pre><input class="form-control input-contrast input-sm" type="text" id="passwd" value="yourpw" /></pre></p>
-                <p>2FA One Time Code (if enabled): <pre><input class="form-control input-contrast input-sm" type="text" id="otp_code" value="" /></pre></p>
-                <p>&nbsp;</p>
-                <p>Generate Links: <pre><input class="form-control input-contrast input-sm" type="button" value="Get Links" id="newUser"></pre></p>
-            </div>
-        </div>
-        <div class="form-group mt-1 mb-2 ">
-            <div class="form-group-header">
-                <label class="color-fg-default text-mono f6">Step 2 - Login:</label>
-            </div>
-            <div class="form-group-body">
-                <button
-                class="btn"
-                data-clipboard-action="copy"
-                data-clipboard-target="#url4login"
-                >
-                Copy
-                </button>
-                <pre><input input class="form-control input-contrast input-sm" id="url4login" type="text" value="awaiting link" size="140"/></pre>
-            </div>
-        </div>
-        <div class="form-group mt-1 mb-2 ">
-            <div class="form-group-header">
-                <label class="color-fg-default text-mono f6">Step 3 - Activate:</label>
-            </div>
-            <div class="form-group-body">
-                <p><button
-                class="btn"
-                data-clipboard-action="copy"
-                data-clipboard-target="#url4activate"
-                >
-                Copy for ActiveBackup for Business
-                </button>
-                <pre><input class="form-control input-contrast input-sm" id="url4activate" type="text" value="awaiting link" size="140"/></pre></p>
-                <p><button
-                class="btn"
-                data-clipboard-action="copy"
-                data-clipboard-target="#url4activateGSuite"
-                >
-                Copy for GSuite
-                </button>
-                <pre><input class="form-control input-contrast input-sm" id="url4activateGSuite" type="text" value="awaiting link" size="140"/></pre></p>
-                <p><button
-                class="btn"
-                data-clipboard-action="copy"
-                data-clipboard-target="#url4activateOffice365"
-                >
-                Copy for Office365
-                </button>
-                <pre><input class="form-control input-contrast input-sm" id="url4activateOffice365" type="text" value="awaiting link" size="140"/></pre></p>
-            </div>
-        </div>
-    </div>
-    <footer class="footer width-full container-xl mt-3 text-center color-fg-muted">
-        <a aria-label="AuxXxilium" title="GitHub" class="footer-octicon mr-2" href="https://github.com/AuxXxilium">
-            <img class="avatar rounded-2 avatar-user" src="https://avatars.githubusercontent.com/u/67025065?v=4"
-                width="40" height="40" alt="AuxXxilium" />
-        </a>
-        <span>Copyright © 2024 by <a href="https://github.com/AuxXxilium">AuxXxilium</a><br>&nbsp;</span>
-    </footer>
 </body>
 
 </html>
