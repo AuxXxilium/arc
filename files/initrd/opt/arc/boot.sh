@@ -119,7 +119,6 @@ if [ ! "${BUS}" = "usb" ]; then
   CMDLINE['synoboot_satadom']="${DOM}"
   CMDLINE['dom_szmax']="${SIZE}"
 fi
-
 CMDLINE['panic']="${KERNELPANIC:-0}"
 CMDLINE['console']="ttyS0,115200n8"
 #CMDLINE['no_console_suspend']="1"
@@ -131,30 +130,25 @@ if [ "${EMMCBOOT}" = "true" ]; then
 else
   CMDLINE['root']="/dev/md0"
 fi
-
 NIC=0
 for ETH in ${ETHX}; do
   MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
   [ -n "${MAC}" ] && NIC=$((${NIC} + 1)) && CMDLINE["mac${NIC}"]="${MAC}"
 done
 CMDLINE['netif_num']="${NIC}"
-
 if [ "${MACSYS}" = "hardware" ]; then
   CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 elif [ "${MACSYS}" = "custom" ]; then
   CMDLINE['skip_vender_mac_interfaces']="$(seq -s, $((${NIC} + 1)) 7)"
 fi
-
 CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 CMDLINE["HddHotplug"]="1"
 CMDLINE["elevator"]="elevator"
-
 if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ ! "${BUS}" = "mmc" ] && [ ! "${EMMCBOOT}" = "true" ]; then
   [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
   CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
 fi
-
 DT="$(readModelKey "${MODEL}" "dt")"
 PLATFORM="$(readModelKey "${MODEL}" "platform")"
 PLATFORM=${PLATFORM:-"unknown"}
@@ -178,12 +172,10 @@ fi
 if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
   CMDLINE["SASmodel"]="1"
 fi
-
 # Read cmdline
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
 done <<<$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
-
 # Prepare command line
 CMDLINE_LINE=""
 for KEY in ${!CMDLINE[@]}; do
