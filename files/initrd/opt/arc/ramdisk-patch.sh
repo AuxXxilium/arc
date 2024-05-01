@@ -100,7 +100,6 @@ for PE in ${PATCHS[@]}; do
   RET=1
   echo "Patching with ${PE}" >"${LOG_FILE}"
   for PF in $(ls ${PATCH_PATH}/${PE} 2>/dev/null); do
-    echo -n "."
     echo "Patching with ${PF}" >>"${LOG_FILE}"
     (
       cd "${RAMDISK_PATH}"
