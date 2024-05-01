@@ -71,25 +71,38 @@ function arcUpdate() {
   ACTUALVERSION="${ARC_VERSION}"
   TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
   if [[ $? -ne 0 || -z "${TAG}" ]]; then
+    TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-      --infobox "Error checking new Version!" 0 0
-    return 1
+      --infobox "Error checking new Version!\nRetry..." 0 0
+    if [[ $? -ne 0 || -z "${TAG}" ]]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+        --infobox "Error checking new Version!\nAbort!" 0 0
+      sleep 5
+      exec reboot
+    fi
   fi
   dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
     --infobox "Downloading ${TAG}" 0 0
   # Download update file
   STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip")
-  if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+  if [ $? -ne 0 ]; then
+    STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip")
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-      --infobox "Error downloading Updatefile!" 0 0
-    return 1
+      --infobox "Error downloading new Version!\nRetry..." 0 0
+    if [ $? -ne 0 ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+        --infobox "Error downloading new Version!\nAbort!" 0 0
+      sleep 5
+      exec reboot
+    fi
   fi
   unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}"
   rm -f "${TMP_PATH}/update.zip"
   if [ $? -ne 0 ]; then
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
       --infobox "Error extracting Updatefile!" 0 0
-    return 1
+    sleep 5
+    exec reboot
   fi
   # Process complete update
   cp -f "${TMP_PATH}/grub.cfg" "${GRUB_PATH}/grub.cfg"
@@ -99,17 +112,29 @@ function arcUpdate() {
   # Update Addons
   TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
   if [[ $? -ne 0 || -z "${TAG}" ]]; then
-    dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
-      --infobox "Error checking new Version!" 0 0
-    return 1
+    TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+      --infobox "Error checking new Version!\nRetry..." 0 0
+    if [[ $? -ne 0 || -z "${TAG}" ]]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+        --infobox "Error checking new Version!\nAbort!" 0 0
+      sleep 5
+      exec reboot
+    fi
   fi
   dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
     --infobox "Downloading ${TAG}" 0 0
   STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip")
-  if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
-    dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
-      --infobox "Error downloading Updatefile!" 0 0
-    return 1
+  if [ $? -ne 0 ]; then
+    STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip")
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+      --infobox "Error downloading new Version!\nRetry..." 0 0
+    if [ $? -ne 0 ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+        --infobox "Error downloading new Version!\nAbort!" 0 0
+      sleep 5
+      exec reboot
+    fi
   fi
   dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
     --infobox "Extracting" 0 0
@@ -129,17 +154,29 @@ function arcUpdate() {
   # Update Patches
   TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
   if [[ $? -ne 0 || -z "${TAG}" ]]; then
-    dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
-      --infobox "Error checking new Version!" 0 0
-    return 1
+    TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+      --infobox "Error checking new Version!\nRetry..." 0 0
+    if [[ $? -ne 0 || -z "${TAG}" ]]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+        --infobox "Error checking new Version!\nAbort!" 0 0
+      sleep 5
+      exec reboot
+    fi
   fi
   dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
     --infobox "Downloading ${TAG}" 0 0
   STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip")
-  if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
-    dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
-      --infobox "Error downloading Updatefile!" 0 0
-    return 1
+  if [ $? -ne 0 ]; then
+    STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip")
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+      --infobox "Error downloading new Version!\nRetry..." 0 0
+    if [ $? -ne 0 ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+        --infobox "Error downloading new Version!\nAbort!" 0 0
+      sleep 5
+      exec reboot
+    fi
   fi
   dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
     --infobox "Extracting" 0 0
@@ -150,17 +187,29 @@ function arcUpdate() {
   # Update Modules
   TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
   if [[ $? -ne 0 || -z "${TAG}" ]]; then
-    dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
-      --infobox "Error checking new Version!" 0 0
-    return 1
+    TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+      --infobox "Error checking new Version!\nRetry..." 0 0
+    if [[ $? -ne 0 || -z "${TAG}" ]]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+        --infobox "Error checking new Version!\nAbort!" 0 0
+      sleep 5
+      exec reboot
+    fi
   fi
   dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
     --infobox "Downloading ${TAG}" 0 0
   STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
-  if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
-    dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
-      --infobox "Error downloading Updatefile!" 0 0
-    return 1
+  if [ $? -ne 0 ]; then
+    STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+      --infobox "Error downloading new Version!\nRetry..." 0 0
+    if [ $? -ne 0 ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+        --infobox "Error downloading new Version!\nAbort!" 0 0
+      sleep 5
+      exec reboot
+    fi
   fi
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -185,17 +234,29 @@ function arcUpdate() {
   # Update Configs
   TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
   if [[ $? -ne 0 || -z "${TAG}" ]]; then
-    dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
-      --infobox "Error checking new Version!" 0 0
-    return 1
+    TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+      --infobox "Error checking new Version!\nRetry..." 0 0
+    if [[ $? -ne 0 || -z "${TAG}" ]]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+        --infobox "Error checking new Version!\nAbort!" 0 0
+      sleep 5
+      exec reboot
+    fi
   fi
   dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
     --infobox "Downloading ${TAG}" 0 0
   STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")
-  if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
-    dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
-      --infobox "Error downloading Updatefile!" 0 0
-    return 1
+  if [ $? -ne 0 ]; then
+    STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+      --infobox "Error downloading new Version!\nRetry..." 0 0
+    if [ $? -ne 0 ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+        --infobox "Error downloading new Version!\nAbort!" 0 0
+      sleep 5
+      exec reboot
+    fi
   fi
   dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
     --infobox "Extracting" 0 0
@@ -206,17 +267,29 @@ function arcUpdate() {
   # Update LKMs
   TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
   if [[ $? -ne 0 || -z "${TAG}" ]]; then
-    dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
-      --infobox "Error checking new Version!" 0 0
-    return 1
+    TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+      --infobox "Error checking new Version!\nRetry..." 0 0
+    if [[ $? -ne 0 || -z "${TAG}" ]]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+        --infobox "Error checking new Version!\nAbort!" 0 0
+      sleep 5
+      exec reboot
+    fi
   fi
   dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
     --infobox "Downloading ${TAG}" 0 0
   STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms-${TAG}.zip" -o "${TMP_PATH}/rp-lkms.zip")
-  if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
-    dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
-      --infobox "Error downloading Updatefile" 0 0
-    return 1
+  if [ $? -ne 0 ]; then
+    STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms-${TAG}.zip" -o "${TMP_PATH}/rp-lkms.zip")
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+      --infobox "Error downloading new Version!\nRetry..." 0 0
+    if [ $? -ne 0 ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+        --infobox "Error downloading new Version!\nAbort!" 0 0
+      sleep 5
+      exec reboot
+    fi
   fi
   dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
     --infobox "Extracting" 0 0
