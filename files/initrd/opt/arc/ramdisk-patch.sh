@@ -37,6 +37,7 @@ PLATFORM="$(readModelKey "${MODEL}" "platform")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
+RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
 
 # Check if DSM Version changed
 . "${RAMDISK_PATH}/etc/VERSION"
@@ -45,7 +46,6 @@ KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 PRODUCTVERDSM="${majorversion}.${minorversion}"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-RD_COMPRESSED="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].rd-compressed")"
 # Read new PAT Info from Config
 PAT_URL="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
 PAT_HASH="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
@@ -90,10 +90,17 @@ while IFS=': ' read -r KEY VALUE; do
 done <<<$(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 # Patches (diff -Naru OLDFILE NEWFILE > xxx.patch)
-while read -r PE; do
+PATCHS=()
+PATCHS+=("ramdisk-etc-rc-*.patch")
+PATCHS+=("ramdisk-init-script-v${KVER:0:1}-*.patch")
+PATCHS+=("ramdisk-post-init-script-*.patch")
+PATCHS+=("ramdisk-disable-root-pwd-*.patch")
+PATCHS+=("ramdisk-disable-disabled-ports-*.patch")
+for PE in ${PATCHS[@]}; do
   RET=1
   echo "Patching with ${PE}" >"${LOG_FILE}"
   for PF in $(ls ${PATCH_PATH}/${PE} 2>/dev/null); do
+    echo -n "."
     echo "Patching with ${PF}" >>"${LOG_FILE}"
     (
       cd "${RAMDISK_PATH}"
@@ -103,7 +110,7 @@ while read -r PE; do
     [ ${RET} -eq 0 ] && break
   done
   [ ${RET} -ne 0 ] && exit 1
-done <<<$(readModelArray "${MODEL}" "productvers.[${PRODUCTVER}].patch")
+done
 
 # Patch /etc/synoinfo.conf
 # Add serial number to synoinfo.conf, to help to recovery a installed DSM

@@ -242,7 +242,6 @@ function cmdlineMenu() {
   echo "5 \"PCI/IRQ Fix\""                                      >>"${TMP_PATH}/menu"
   echo "6 \"C-State Fix\""                                      >>"${TMP_PATH}/menu"
   echo "7 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
-  echo "8 \"Show Model/Build Cmdline\""                         >>"${TMP_PATH}/menu"
   echo "9 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
   # Loop menu
   while true; do
@@ -406,14 +405,6 @@ function cmdlineMenu() {
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
       8)
-        ITEMS=""
-        while IFS=': ' read -r KEY VALUE; do
-          ITEMS+="${KEY}: ${VALUE}\n"
-        done <<<$(readModelMap "${MODEL}" "productvers.[${PRODUCTVER}].cmdline")
-        dialog --backtitle "$(backtitle)" --title "Model/Version cmdline" \
-          --aspect 18 --msgbox "${ITEMS}" 0 0
-        ;;
-      9)
         rm -f "${TMP_PATH}/opts"
         echo "5 \"Reboot after 5 seconds\"" >>"${TMP_PATH}/opts"
         echo "0 \"No reboot\"" >>"${TMP_PATH}/opts"
