@@ -89,6 +89,7 @@ while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && MODULES["${KEY}"]="${VALUE}"
 done <<<$(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
+KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
 # Patches (diff -Naru OLDFILE NEWFILE > xxx.patch)
 PATCHS=()
 PATCHS+=("ramdisk-etc-rc-*.patch")
@@ -111,6 +112,10 @@ for PE in ${PATCHS[@]}; do
   [ ${RET} -ne 0 ] && exit 1
 done
 
+# Modify KVER for Epyc7002
+if [ "${PLATFORM}" = "epyc7002" ]; then
+  KVER="${PRODUCTVER}-${KVER}"
+fi
 # Patch /etc/synoinfo.conf
 # Add serial number to synoinfo.conf, to help to recovery a installed DSM
 echo "Set synoinfo SN" >"${LOG_FILE}"
