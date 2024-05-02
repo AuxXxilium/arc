@@ -306,7 +306,7 @@ function arcPatch() {
     [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
       # Read Arc Patch from File
-      SN="$(readModelKey "${MODEL}" "arc.serial")"
+      SN="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
       writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 2 ]; then
       # Generate random Serial
@@ -925,7 +925,6 @@ function autopremake() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
   # Read Config for Arc Settings
-  KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
