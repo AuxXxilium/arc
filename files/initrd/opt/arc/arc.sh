@@ -293,7 +293,7 @@ function arcPatch() {
   # Read Model Values
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
-  ARCCONF="$(readConfigKey "${M}.serial" "${S_FILE}" 2>/dev/null)"
+  ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
   if [ -n "${ARCCONF}" ]; then
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "Arc Patch"\
@@ -851,7 +851,7 @@ function arcAutomated() {
   # read model config for dt and aes
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
-  ARCCONF="$(readConfigKey "${M}.serial" "${S_FILE}" 2>/dev/null)"
+  ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
   ARCPATCHPRE="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   [ -n "${ARCCONF}" ] && ARCPATCH="true" || ARCPATCH="false"
   if [[ "${ARCPATCH}" = "true" && "${ARCPATCHPRE}" = "true" ]]; then
