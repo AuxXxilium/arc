@@ -69,7 +69,9 @@ fi
 
 # Modify KVER for Epyc7002
 if [ "${PLATFORM}" = "epyc7002" ]; then
-  KVER="${PRODUCTVER}-${KVER}"
+  KVERP="${PRODUCTVER}-${KVER}"
+else
+  KVERP="${KVER}"
 fi
 
 declare -A SYNOINFO
@@ -89,7 +91,6 @@ while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && MODULES["${KEY}"]="${VALUE}"
 done <<<$(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
-KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
 # Patches (diff -Naru OLDFILE NEWFILE > xxx.patch)
 PATCHS=()
 PATCHS+=("ramdisk-etc-rc-*.patch")
@@ -112,10 +113,6 @@ for PE in ${PATCHS[@]}; do
   [ ${RET} -ne 0 ] && exit 1
 done
 
-# Modify KVER for Epyc7002
-if [ "${PLATFORM}" = "epyc7002" ]; then
-  KVER="${PRODUCTVER}-${KVER}"
-fi
 # Patch /etc/synoinfo.conf
 # Add serial number to synoinfo.conf, to help to recovery a installed DSM
 echo "Set synoinfo SN" >"${LOG_FILE}"
@@ -140,12 +137,12 @@ sed -e "/@@@CONFIG-GENERATED@@@/ {" -e "r ${TMP_PATH}/rp.txt" -e 'd' -e '}' -i "
 rm -f "${TMP_PATH}/rp.txt"
 
 # Extract Modules to Ramdisk
-installModules "${PLATFORM}" "${KVER}" "${!MODULES[@]}" || exit 1
+installModules "${PLATFORM}" "${KVERP}" "${!MODULES[@]}" || exit 1
 
 # Copying fake modprobe
 cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
 # Copying LKM to /usr/lib/modules
-gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVER}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>"${LOG_FILE}" || exit 1
+gzip -dc "${LKM_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>"${LOG_FILE}" || exit 1
 
 # Addons
 echo "Create addons.sh" >"${LOG_FILE}"
@@ -169,14 +166,14 @@ for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" 
   if [ "${ADDON}" = "disks" ]; then
     PARAMS="${HDDSORT} ${USBMOUNT}"
   fi
-  installAddon "${ADDON}" "${PLATFORM}" "${KVER}" || exit 1
+  installAddon "${ADDON}" "${PLATFORM}" || exit 1
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 done
 
 # User Addons
 for ADDON in ${!ADDONS[@]}; do
   PARAMS=${ADDONS[${ADDON}]}
-  installAddon "${ADDON}" "${PLATFORM}" "${KVER}" || exit 1
+  installAddon "${ADDON}" "${PLATFORM}" || exit 1
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 done
 

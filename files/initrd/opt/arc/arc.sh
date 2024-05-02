@@ -67,6 +67,7 @@ ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
 RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
+SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
 ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
@@ -137,7 +138,7 @@ function arcModel() {
         BETA="$(readModelKey "${M}" "beta")"
         [[ "${BETA}" = "true" && ${FLGBETA} -eq 0 ]] && continue
         DISKS="${Y}-Bay"
-        ARCCONF="$(readModelKey "${M}" "arc.serial")"
+        ARCCONF="$(readConfigKey "${M}.serial" "${S_FILE}" 2>/dev/null)"
         ARC=""
         [ -n "${ARCCONF}" ] && ARC="x"
         CPU="Intel"
@@ -258,8 +259,11 @@ function arcVersion() {
   fi
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  # Modify KVER for Epyc7002
   if [ "${PLATFORM}" = "epyc7002" ]; then
-    KVER="${PRODUCTVER}-${KVER}"
+    KVERP="${PRODUCTVER}-${KVER}"
+  else
+    KVERP="${KVER}"
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
     --infobox "Reconfiguring Synoinfo and Modules" 3 40
@@ -272,7 +276,7 @@ function arcVersion() {
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read -r ID DESC; do
     writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-  done <<<$(getAllModules "${PLATFORM}" "${KVER}")
+  done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
   if [ "${ONLYVERSION}" != "true" ]; then
     arcPatch
   else
@@ -289,7 +293,7 @@ function arcPatch() {
   # Read Model Values
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
-  ARCCONF="$(readConfigKey "arc.serial" "${MODEL_CONFIG_PATH}/${MODEL}.yml")"
+  ARCCONF="$(readConfigKey "${M}.serial" "${S_FILE}" 2>/dev/null)"
   if [ -n "${ARCCONF}" ]; then
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "Arc Patch"\
@@ -542,12 +546,8 @@ function make() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   DT="$(readModelKey "${MODEL}" "dt")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  if [ "${PLATFORM}" = "epyc7002" ]; then
-    KVER="${PRODUCTVER}-${KVER}"
-  fi
   # Cleanup
   if [ -d "${UNTAR_PAT_PATH}" ]; then
     rm -rf "${UNTAR_PAT_PATH}"
@@ -556,7 +556,7 @@ function make() {
   # Check if all addon exists
   while IFS=': ' read -r ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
-    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
+    if ! checkAddonExist "${ADDON}" "${PLATFORM}"; then
       dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
         --msgbox "Addon ${ADDON} not found!" 0 0
       return 1
@@ -851,7 +851,7 @@ function arcAutomated() {
   # read model config for dt and aes
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
-  ARCCONF="$(readModelKey "${MODEL}" "arc.serial")"
+  ARCCONF="$(readConfigKey "${M}.serial" "${S_FILE}" 2>/dev/null)"
   ARCPATCHPRE="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   [ -n "${ARCCONF}" ] && ARCPATCH="true" || ARCPATCH="false"
   if [[ "${ARCPATCH}" = "true" && "${ARCPATCHPRE}" = "true" ]]; then
@@ -867,8 +867,11 @@ function arcAutomated() {
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  # Modify KVER for Epyc7002
   if [ "${PLATFORM}" = "epyc7002" ]; then
-    KVER="${PRODUCTVER}-${KVER}"
+    KVERP="${PRODUCTVER}-${KVER}"
+  else
+    KVERP="${KVER}"
   fi
   writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -889,7 +892,7 @@ function arcAutomated() {
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read -r ID DESC; do
     writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-  done <<<$(getAllModules "${PLATFORM}" "${KVER}")
+  done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
   autoarcSettings
 }
 
@@ -920,7 +923,6 @@ function autopremake() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   DT="$(readModelKey "${MODEL}" "dt")"
   # Read Config for Arc Settings
   KVMSUPPORT="$(readConfigKey "arc.kvm" "${USER_CONFIG_FILE}")"
@@ -955,9 +957,6 @@ function automake() {
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   DT="$(readModelKey "${MODEL}" "dt")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  if [ "${PLATFORM}" = "epyc7002" ]; then
-    KVER="${PRODUCTVER}-${KVER}"
-  fi
   # Cleanup
   if [ -d "${UNTAR_PAT_PATH}" ]; then
     rm -rf "${UNTAR_PAT_PATH}"
@@ -966,7 +965,7 @@ function automake() {
   # Check if all addon exists
   while IFS=': ' read -r ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
-    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVER}"; then
+    if ! checkAddonExist "${ADDON}" "${PLATFORM}"; then
       deleteConfigKey "addons.${ADDON}" "${USER_CONFIG_FILE}"
       continue
     fi
@@ -1188,6 +1187,7 @@ else
         echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
         echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
         echo "W \"DSM RD Compression: \Z4${RD_COMPRESSED}\Zn \" "                             >>"${TMP_PATH}/menu"
+        echo "X \"DSM Sata DOM: \Z4${SATADOM}\Zn \" "                                         >>"${TMP_PATH}/menu"
         echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
       fi
     fi
@@ -1295,12 +1295,14 @@ else
         KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
         if [[ -n "${PLATFORM}" && -n "${KVER}" ]]; then
           if [ "${PLATFORM}" = "epyc7002" ]; then
-            KVER="${PRODUCTVER}-${KVER}"
+            KVERP="${PRODUCTVER}-${KVER}"
+          else
+            KVERP="${KVER}"
           fi
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           while read -r ID DESC; do
             writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-          done <<<$(getAllModules "${PLATFORM}" "${KVER}")
+          done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
         fi
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1367,6 +1369,7 @@ else
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="W"
         ;;
+      X) satadomMenu; NEXT="X" ;;
       u) [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
         writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"

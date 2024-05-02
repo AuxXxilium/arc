@@ -18,11 +18,14 @@ if [ "${KERNEL}" = "custom" ]; then
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  # Modify KVER for Epyc7002
   if [ "${PLATFORM}" = "epyc7002" ]; then
-    KVER="${PRODUCTVER}-${KVER}"
+    KVERP="${PRODUCTVER}-${KVER}"
+  else
+    KVERP="${KVER}"
   fi
   # Extract bzImage
-  gzip -dc "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KVER}.gz" >"${MOD_ZIMAGE_FILE}"
+  gzip -dc "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KVERP}.gz" >"${MOD_ZIMAGE_FILE}"
 else
   echo -e "Patching zImage"
   # Extract vmlinux

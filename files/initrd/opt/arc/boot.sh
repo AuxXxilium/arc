@@ -84,11 +84,11 @@ SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
-ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
+ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
 
 declare -A CMDLINE
 
-# Read and Set Cmdline
+# Build Cmdline
 MODELID="$(readModelKey ${MODEL} "id")"
 CMDLINE['syno_hw_version']="${MODELID:-${MODEL}}"
 [ -z "${VID}" ] && VID="0x46f4" # Sanity check
@@ -96,8 +96,6 @@ CMDLINE['syno_hw_version']="${MODELID:-${MODEL}}"
 CMDLINE['vid']="${VID}"
 CMDLINE['pid']="${PID}"
 CMDLINE['sn']="${SN}"
-
-# set fixed cmdline
 if grep -q "force_junior" /proc/cmdline; then
   CMDLINE['force_junior']=""
 fi
@@ -115,8 +113,8 @@ if [ ! "${BUS}" = "usb" ]; then
   SS=$(blockdev --getss ${LOADER_DISK} 2>/dev/null)  # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
   SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
   # Read SATADoM type
-  DOM="$(readModelKey "${MODEL}" "dom")"
-  CMDLINE['synoboot_satadom']="${DOM}"
+  SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
+  CMDLINE['synoboot_satadom']="${SATADOM:-0}"
   CMDLINE['dom_szmax']="${SIZE}"
 fi
 CMDLINE['panic']="${KERNELPANIC:-0}"
@@ -172,10 +170,11 @@ fi
 if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
   CMDLINE["SASmodel"]="1"
 fi
-# Read cmdline
+# Read user cmdline
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
 done <<<$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
+
 # Prepare command line
 CMDLINE_LINE=""
 for KEY in ${!CMDLINE[@]}; do
@@ -199,28 +198,29 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   for ETH in ${ETHX}; do
     IP=""
     DRIVER="$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
+    BUS="$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
     COUNT=0
     while true; do
       IP="$(getIP ${ETH})"
       MSG="DHCP"
       if [ -n "${IP}" ]; then
-        SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
+        SPEED="$(ethtool -i ${ETH} 2>/dev/null | grep Speed: | cut -d' ' -f2)"
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server detected.)"
+          echo -e "\r\033[1;37m${DRIVER}@${BUS} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server detected.)"
         else
-          echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
+          echo -e "\r\033[1;37m${DRIVER}@${BUS} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
         fi
         ethtool -s ${ETH} wol g 2>/dev/null
         [ ! -n "${IPCON}" ] && IPCON="${IP}"
         break
       fi
       if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
-        echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
+        echo -e "\r\033[1;37m${DRIVER}@${BUS}:\033[0m TIMEOUT"
         break
       fi
       sleep 3
       if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
-        echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
+        echo -e "\r\033[1;37m${DRIVER}@${BUS}:\033[0m NOT CONNECTED"
         break
       fi
       COUNT=$((${COUNT} + 3))

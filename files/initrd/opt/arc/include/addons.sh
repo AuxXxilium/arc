@@ -1,23 +1,22 @@
 ###############################################################################
 # Return list of available addons
 # 1 - Platform
-# 2 - Kernel Version
 function availableAddons() {
-  if [[ -z "${1}" || -z "${2}" ]]; then
+  if [ -z "${1}" ]; then
     echo ""
     return 1
   fi
   for D in $(find "${ADDONS_PATH}" -maxdepth 1 -type d 2>/dev/null | sort); do
     [ ! -f "${D}/manifest.yml" ] && continue
     ADDON=$(basename ${D})
-    ACT="$(readConfigKey "${1}" "${D}/manifest.yml")"
-    [ "${ACT}" = false ] && continue
+    AVAILABLE="$(readConfigKey "${1}" "${D}/manifest.yml")"
+    [ "${AVAILABLE}" = false ] && continue
     SYSTEM=$(readConfigKey "system" "${D}/manifest.yml")
     [ "${SYSTEM}" = true ] && continue
     DESC="$(readConfigKey "description" "${D}/manifest.yml")"
     BETA="$(readConfigKey "beta" "${D}/manifest.yml")"
     [ "${BETA}" = true ] && BETA="(Beta) " || BETA=""
-    [ "${ACT}" = true ] && echo -e "${ADDON}\t${BETA}${DESC}"
+    [ "${AVAILABLE}" = true ] && echo -e "${ADDON}\t${BETA}${DESC}"
   done
 }
 
@@ -25,18 +24,13 @@ function availableAddons() {
 # Check if addon exist
 # 1 - Addon id
 # 2 - Platform
-# 3 - Kernel Version
 # Return ERROR if not exists
 function checkAddonExist() {
-  if [[ -z "${1}" || -z "${2}" || -z "${3}" ]]; then
+  if [[ -z "${1}" || -z "${2}" ]]; then
     return 1 # ERROR
   fi
   # First check generic files
   if [ -f "${ADDONS_PATH}/${1}/all.tgz" ]; then
-    return 0 # OK
-  fi
-  # Now check specific platform file
-  if [ -f "${ADDONS_PATH}/${1}/${2}-${3}.tgz" ]; then
     return 0 # OK
   fi
   return 1 # ERROR
@@ -45,8 +39,6 @@ function checkAddonExist() {
 ###############################################################################
 # Install Addon into ramdisk image
 # 1 - Addon id
-# 2 - Platform
-# 3 - Kernel Version
 # Return ERROR if not installed
 function installAddon() {
   if [ -z "${1}" ]; then
@@ -58,11 +50,6 @@ function installAddon() {
   # First check generic files
   if [ -f "${ADDONS_PATH}/${ADDON}/all.tgz" ]; then
     tar -zxf "${ADDONS_PATH}/${ADDON}/all.tgz" -C "${TMP_PATH}/${ADDON}"
-    HAS_FILES=1
-  fi
-  # Now check specific platform files
-  if [ -f "${ADDONS_PATH}/${ADDON}/${2}-${3}.tgz" ]; then
-    tar -zxf "${ADDONS_PATH}/${ADDON}/${2}-${3}.tgz" -C "${TMP_PATH}/${ADDON}"
     HAS_FILES=1
   fi
   # If has files to copy, copy it, else return error

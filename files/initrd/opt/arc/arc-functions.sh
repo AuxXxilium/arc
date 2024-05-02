@@ -38,10 +38,6 @@ function addonSelection() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
-  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
-  if [ "${PLATFORM}" = "epyc7002" ]; then
-    KVER="${PRODUCTVER}-${KVER}"
-  fi
   # read addons from user config
   unset ADDONS
   declare -A ADDONS
@@ -53,7 +49,7 @@ function addonSelection() {
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
-  done <<<$(availableAddons "${PLATFORM}" "${KVER}")
+  done <<<$(availableAddons "${PLATFORM}")
   dialog --backtitle "$(backtitle)" --title "Loader Addons" --aspect 18 \
     --checklist "Select Loader Addons to include.\nPlease read Wiki before choosing anything.\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
@@ -78,8 +74,11 @@ function modulesMenu() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readModelKey "${MODEL}" "platform")"
   KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  # Modify KVER for Epyc7002
   if [ "${PLATFORM}" = "epyc7002" ]; then
-    KVER="${PRODUCTVER}-${KVER}"
+    KVERP="${PRODUCTVER}-${KVER}"
+  else
+    KVERP="${KVER}"
   fi
   dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
     --infobox "Reading modules" 0 0
@@ -114,7 +113,7 @@ function modulesMenu() {
           --infobox "Selecting loaded Modules" 0 0
         KOLIST=""
         for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
-          KOLIST+="$(getdepends "${PLATFORM}" "${KVER}" "${I}") ${I} "
+          KOLIST+="$(getdepends "${PLATFORM}" "${KVERP}" "${I}") ${I} "
         done
         KOLIST=($(echo ${KOLIST} | tr ' ' '\n' | sort -u))
         unset USERMODULES
@@ -136,7 +135,7 @@ function modulesMenu() {
         while read -r ID DESC; do
           USERMODULES["${ID}"]=""
           writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-        done <<<$(getAllModules "${PLATFORM}" "${KVER}")
+        done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -154,7 +153,7 @@ function modulesMenu() {
         while read -r ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
           echo "${ID} ${DESC} ${ACT}" >>"${TMP_PATH}/opts"
-        done <<<$(getAllModules "${PLATFORM}" "${KVER}")
+        done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
         dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
           --checklist "Select Modules to include" 0 0 0 \
           --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
@@ -196,7 +195,7 @@ function modulesMenu() {
         fi
         KONAME=$(basename "$URL")
         if [[ -n "${KONAME}" && "${KONAME##*.}" = "ko" ]]; then
-          addToModules "${PLATFORM}" "${KVER}" "${TMP_UP_PATH}/${USER_FILE}"
+          addToModules "${PLATFORM}" "${KVERP}" "${TMP_UP_PATH}/${USER_FILE}"
           dialog --backtitle "$(backtitle)" --title "Add external Module" --aspect 18 \
             --msgbox "Module ${KONAME} added to ${PLATFORM}-${KVER}" 0 0
           rm -f "${KONAME}"
@@ -214,7 +213,7 @@ function modulesMenu() {
           cp -f "${ARC_PATH}/include/modulelist" "${TMP_PATH}/modulelist.tmp"
         fi
         while true; do
-          DIALOG --title "Edit with caution" \
+          dialog --backtitle "$(backtitle)" --title "Edit with caution" \
             --editbox "${TMP_PATH}/modulelist.tmp" 0 0 2>"${TMP_PATH}/modulelist.user"
           [ $? -ne 0 ] && return
           [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
@@ -222,6 +221,9 @@ function modulesMenu() {
           dos2unix "${USER_UP_PATH}/modulelist"
           break
         done
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
     esac
   done
   return
@@ -904,18 +906,20 @@ function updateMenu() {
           PLATFORM="$(readModelKey "${MODEL}" "platform")"
           KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
           if [ "${PLATFORM}" = "epyc7002" ]; then
-            KVER="${PRODUCTVER}-${KVER}"
+            KVERP="${PRODUCTVER}-${KVER}"
+          else
+            KVERP="${KVER}"
           fi
         fi
         rm -rf "${MODULES_PATH}"
         mkdir -p "${MODULES_PATH}"
         unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}" >/dev/null 2>&1
         # Rebuild modules if model/build is selected
-        if [[ -n "${PLATFORM}" && -n "${KVER}" ]]; then
+        if [[ -n "${PLATFORM}" && -n "${KVERP}" ]]; then
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           while read -r ID DESC; do
             writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-          done <<<$(getAllModules "${PLATFORM}" "${KVER}")
+          done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
         fi
         rm -f "${TMP_PATH}/modules.zip"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -2045,5 +2049,25 @@ function getbackup() {
     dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
       --msgbox "${MSG}" 0 0
   fi
+  return
+}
+
+###############################################################################
+# SataDOM Menu
+function satadomMenu() {
+  rm -f "${TMP_PATH}/opts"
+  echo "0 \"Create SATA node(ARC)\"" >>"${TMP_PATH}/opts"
+  echo "1 \"Native SATA Disk(SYNO)\"" >>"${TMP_PATH}/opts"
+  echo "2 \"Fake SATA DOM(Redpill)\"" >>"${TMP_PATH}/opts"
+  dialog --backtitle "$(backtitle)" --title "Switch SATA DOM" \
+    --default-item "${SATADOM}" --menu  "Choose an Option" 0 0 0 --file "${TMP_PATH}/opts" \
+    2>${TMP_PATH}/resp
+  [ $? -ne 0 ] && return
+  resp=$(cat ${TMP_PATH}/resp 2>/dev/null)
+  [ -z "${resp}" ] && return
+  SATADOM=${resp}
+  writeConfigKey "satadom" "${SATADOM}" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   return
 }

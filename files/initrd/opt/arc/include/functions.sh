@@ -63,7 +63,7 @@ function randomhex() {
 
 ###############################################################################
 # Generate a random letter
-function generateRandomLetter() {
+function genRandomLetter() {
   for i in A B C D E F G H J K L M N P Q R S T V W X Y Z; do
     echo ${i}
   done | sort -R | tail -1
@@ -71,7 +71,7 @@ function generateRandomLetter() {
 
 ###############################################################################
 # Generate a random digit (0-9A-Z)
-function generateRandomValue() {
+function genRandomValue() {
   for i in 0 1 2 3 4 5 6 7 8 9 A B C D E F G H J K L M N P Q R S T V W X Y Z; do
     echo ${i}
   done | sort -R | tail -1
@@ -82,17 +82,21 @@ function generateRandomValue() {
 # 1 - Model
 # Returns serial number
 function generateSerial() {
-  SERIAL="$(readModelArray "${1}" "serial.prefix" | sort -R | tail -1)"
-  SERIAL+=$(readModelKey "${1}" "serial.middle")
-  case "$(readModelKey "${1}" "serial.suffix")" in
+  ID="$(readModelKey "${1}" "id")"
+  PREFIX="$(readConfigArray "${ID}.prefix" "${S_FILE}" 2>/dev/null | sort -R | tail -1)"
+  MIDDLE="$(readConfigArray "${ID}.middle" "${S_FILE}" 2>/dev/null | sort -R | tail -1)"
+  SUFFIX="$(readConfigArray "${ID}.suffix" "${S_FILE}" 2>/dev/null)"
+
+  SERIAL="${SERIAL:-"0000"}${MIDDLE:-"XXX"}"
+  case "${SUFFIX}" in
   numeric)
-    SERIAL+=$(random)
+    SERIAL+="$(random)"
     ;;
   alpha)
-    SERIAL+=$(generateRandomLetter)$(generateRandomValue)$(generateRandomValue)$(generateRandomValue)$(generateRandomValue)$(generateRandomLetter)
+    SERIAL+="$(genRandomLetter)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomLetter)"
     ;;
   esac
-  echo ${SERIAL}
+  echo "${SERIAL}"
 }
 
 ###############################################################################
@@ -101,14 +105,13 @@ function generateSerial() {
 # 2 - number
 # Returns serial number
 function generateMacAddress() {
-  PRE="$(readModelArray "${1}" "serial.macpre")"
-  KEY="$((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256))"
-  SUF="$(printf '%02x%02x%02x' ${KEY})"
+  ID="$(readModelKey "${1}" "id")"
+  MACPRE="$(readConfigArray "${ID}.macpre" "${S_FILE}" 2>/dev/null)"
+  MACSUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
   NUM=${2:-1}
   MACS=""
   for I in $(seq 1 ${NUM}); do
-    MACKEY="$((0x${PRE:-001132})) $(($((0x${SUF})) + ${I}))"
-    MACS+="$(printf '%06x%06x' ${MACKEY})"
+    MACS+="$(printf '%06x%06x' $((0x${MACPRE:-"001132"})) $(($((0x${MACSUF})) + ${I})))"
     [ ${I} -lt ${NUM} ] && MACS+=" "
   done
   echo "${MACS}"
@@ -393,7 +396,7 @@ function livepatch() {
   fi
   if [ ${FAIL} -eq 1 ]; then
     echo
-    echo -e "\033[1;34mPatching DSM Files failed! Please stay patient for Update.\033[0m" 0 0
+    echo -e "Patching DSM Files failed! Please stay patient for Update." 0 0
     sleep 5
     exit 1
   else

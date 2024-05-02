@@ -1,6 +1,6 @@
 # Get Network Config for Loader
 function getnet() {
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
+  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   if [ "${ARCPATCH}" = "true" ]; then
     ARCMACNUM=1
@@ -58,7 +58,7 @@ function getnet() {
 
 # Get Network Config for Loader
 function autogetnet() {
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
+  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   if [ "${ARCPATCH}" = "true" ]; then
     ARCMACNUM=1
@@ -84,7 +84,7 @@ function autogetnet() {
 }
 
 # Get Amount of NIC
-ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
+ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
 # Get actual IP
 for ETH in ${ETHX}; do
   IPCON="$(getIP ${ETH})"
