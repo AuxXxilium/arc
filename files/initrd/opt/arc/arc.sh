@@ -127,18 +127,19 @@ function arcModel() {
     --infobox "Reading Models" 3 20
     echo -n "" >"${TMP_PATH}/modellist"
     while read -r M; do
+      ID=$(readModelKey "${M}" "id")
       Y="$(readModelKey "${M}" "disks")"
-      echo "${M} ${Y}" >>"${TMP_PATH}/modellist"
+      echo "${ID} ${Y}" >>"${TMP_PATH}/modellist"
     done <<<$(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sed 's/.*\///; s/\.yml//')
     while true; do
       echo -n "" >"${TMP_PATH}/menu"
-      while read -r M Y; do
-        PLATFORM=$(readModelKey "${M}" "platform")
-        DT="$(readModelKey "${M}" "dt")"
-        BETA="$(readModelKey "${M}" "beta")"
+      while read -r ID Y; do
+        PLATFORM=$(readModelKey "${ID}" "platform")
+        DT="$(readModelKey "${ID}" "dt")"
+        BETA="$(readModelKey "${ID}" "beta")"
         [[ "${BETA}" = "true" && ${FLGBETA} -eq 0 ]] && continue
         DISKS="${Y}-Bay"
-        ARCCONF="$(readConfigKey "${M}.serial" "${S_FILE}" 2>/dev/null)"
+        ARCCONF="$(readConfigKey "${ID}.serial" "${S_FILE}" 2>/dev/null)"
         ARC=""
         [ -n "${ARCCONF}" ] && ARC="x"
         CPU="Intel"
@@ -147,33 +148,33 @@ function arcModel() {
         [[ "${PLATFORM}" = "apollolake" || "${PLATFORM}" = "geminilake" || "${PLATFORM}" = "epyc7002" ]] && IGPUS="x"
         HBAS="x"
         [ "${DT}" = "true" ] && HBAS=""
-        [ "${M}" = "SA6400" ] && HBAS="x"
+        [ "${ID}" = "SA6400" ] && HBAS="x"
         USBS=""
         [ "${DT}" = "false" ] && USBS="x"
         M_2_CACHE="x"
-        [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DS918+" || "${M}" = "DS1019+" || "${M}" = "DS1621xs+" || "${M}" = "RS1619xs+" ]] && M_2_CACHE=""
+        [[ "${ID}" = "DS220+" ||  "${ID}" = "DS224+" || "${ID}" = "DS918+" || "${ID}" = "DS1019+" || "${ID}" = "DS1621xs+" || "${ID}" = "RS1619xs+" ]] && M_2_CACHE=""
         M_2_STORAGE="x"
         [ "${DT}" = "false" ] && M_2_STORAGE=""
-        [[ "${M}" = "DS220+" || "${M}" = "DS224+" ]] && M_2_STORAGE=""
+        [[ "${ID}" = "DS220+" || "${ID}" = "DS224+" ]] && M_2_STORAGE=""
         # Check id model is compatible with CPU
         COMPATIBLE=1
         if [ ${RESTRICT} -eq 1 ]; then
-          for F in "$(readModelArray "${M}" "flags")"; do
+          for F in "$(readModelArray "${ID}" "flags")"; do
             if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
               COMPATIBLE=0
               break
             fi
           done
-          if [ "${DT}" = "true" ] && [[ "${EXTERNALCONTROLLER}" = "true" && ! "${M}" = "SA6400" ]]; then
+          if [ "${DT}" = "true" ] && [[ "${EXTERNALCONTROLLER}" = "true" && ! "${ID}" = "SA6400" ]]; then
             COMPATIBLE=0
           fi
-          if [[ ${SATACONTROLLER} -eq 0 && "${EXTERNALCONTROLLER}" = "false" && ! "${M}" = "SA6400" ]]; then
+          if [[ ${SATACONTROLLER} -eq 0 && "${EXTERNALCONTROLLER}" = "false" && ! "${ID}" = "SA6400" ]]; then
             COMPATIBLE=0
           fi
         fi
         [ "${DT}" = "true" ] && DTS="x" || DTS=""
         [ "${BETA}" = "true" ] && BETA="x" || BETA=""
-        [ ${COMPATIBLE} -eq 1 ] && echo "${M} \"$(printf "\Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
+        [ ${COMPATIBLE} -eq 1 ] && echo "${ID} \"$(printf "\Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
       done <<<$(cat "${TMP_PATH}/modellist" | sort -n -k 2)
       dialog --backtitle "$(backtitle)" --colors \
         --cancel-label "Show all" --help-button --help-label "Exit" \
