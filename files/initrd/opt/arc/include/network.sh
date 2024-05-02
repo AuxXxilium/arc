@@ -63,11 +63,11 @@ function autogetnet() {
   if [ "${ARCPATCH}" = "true" ]; then
     ARCMACNUM=1
     for ETH in ${ETHX}; do
-      ARCMAC="$(readModelKey "${MODEL}" "arc.mac${ARCMACNUM}")"
+      ARCMAC=""
+      ARCMAC="$(readConfigKey "${MODEL}.mac${ARCMACNUM}" "${S_FILE}")"
       [ -n "${ARCMAC}" ] && writeConfigKey "mac.${ETH}" "${ARCMAC}" "${USER_CONFIG_FILE}"
       [ -z "${ARCMAC}" ] && break
       ARCMACNUM=$((${ARCMACNUM} + 1))
-      ARCMAC=""
     done
   else
     ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
