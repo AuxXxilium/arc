@@ -164,7 +164,7 @@ else
   CMDLINE["syno_hdd_powerup_seq"]="0"
   CMDLINE["vender_format_version"]="2"
 fi
-if echo "epyc7002 apollolake geminilake kvmx64" | grep -wq "${PLATFORM}"; then
+if echo "epyc7002 apollolake geminilake" | grep -wq "${PLATFORM}"; then
   CMDLINE["intel_iommu"]="igfx_off"
 fi
 if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
