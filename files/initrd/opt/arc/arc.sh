@@ -383,12 +383,14 @@ function arcSettings() {
   # Get Network Config for Loader
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
     --infobox "Network Config..." 3 30
+  sleep 2
   getnet
   # Select Portmap for Loader
   getmap
   if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
     dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
       --infobox "Storage Map..." 3 30
+    sleep 2
     getmapSelection
   fi
   # Add Arc Addons
@@ -903,12 +905,14 @@ function autoarcSettings() {
   # Get Network Config for Loader
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
     --infobox "Network Config..." 3 30
+  sleep 2
   autogetnet
   # Select Portmap for Loader
   getmap
   if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
     dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
       --infobox "Storage Map..." 3 30
+    sleep 2
     autogetmapSelection
   fi
   # Config is done
