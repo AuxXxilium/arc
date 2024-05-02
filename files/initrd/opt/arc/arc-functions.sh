@@ -1104,6 +1104,7 @@ function sysinfo() {
     IP=""
     STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
     DRIVER="$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
+    NETBUS="$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
     MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
     MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
     COUNT=0
@@ -1117,16 +1118,16 @@ function sysinfo() {
       fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) \ZbIP: ${IP} | Mac: ${MACR} (${MAC})\Zn"
+        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) \ZbIP: ${IP} | Mac: ${MACR} (${MAC}) @ ${NETBUS}\Zn"
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
-        TEXT+="\n  ${DRIVER} \ZbIP: TIMEOUT | MAC: ${MACR} (${MAC})\Zn"
+        TEXT+="\n  ${DRIVER} \ZbIP: TIMEOUT | MAC: ${MACR} (${MAC}) @ ${NETBUS}\Zn"
         break
       fi
       sleep 3
       if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n  ${DRIVER} \ZbIP: NOT CONNECTED | MAC: ${MACR} (${MAC})\Zn"
+        TEXT+="\n  ${DRIVER} \ZbIP: NOT CONNECTED | MAC: ${MACR} (${MAC}) @ ${NETBUS}\Zn"
         break
       fi
       COUNT=$((${COUNT} + 3))
@@ -1332,6 +1333,7 @@ function fullsysinfo() {
     IP=""
     STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
     DRIVER="$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
+    NETBUS="$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
     MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
     MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
     COUNT=0
@@ -1345,16 +1347,16 @@ function fullsysinfo() {
       fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n${DRIVER} (${SPEED} | ${MSG}) IP: ${IP} | Mac: ${MACR} (${MAC})"
+        TEXT+="\n${DRIVER} (${SPEED} | ${MSG}) IP: ${IP} | Mac: ${MACR} (${MAC}) @ ${NETBUS}"
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
-        TEXT+="\n${DRIVER} IP: TIMEOUT | MAC: ${MACR} (${MAC})"
+        TEXT+="\n${DRIVER} IP: TIMEOUT | MAC: ${MACR} (${MAC}) @ ${NETBUS}"
         break
       fi
       sleep 3
       if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n${DRIVER} IP: NOT CONNECTED | MAC: ${MACR} (${MAC})"
+        TEXT+="\n${DRIVER} IP: NOT CONNECTED | MAC: ${MACR} (${MAC}) @ ${NETBUS}"
         break
       fi
       COUNT=$((${COUNT} + 3))
