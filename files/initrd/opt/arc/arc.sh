@@ -127,9 +127,9 @@ function arcModel() {
     --infobox "Reading Models" 3 20
     echo -n "" >"${TMP_PATH}/modellist"
     while read -r M; do
-      ID=$(readModelKey "${M}" "id")
+      [ "${M}" = "serials" ] && continue
       Y="$(readModelKey "${M}" "disks")"
-      echo "${ID} ${Y}" >>"${TMP_PATH}/modellist"
+      echo "${M} ${Y}" >>"${TMP_PATH}/modellist"
     done <<<$(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sed 's/.*\///; s/\.yml//')
     while true; do
       echo -n "" >"${TMP_PATH}/menu"
