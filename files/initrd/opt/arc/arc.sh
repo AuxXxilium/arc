@@ -371,6 +371,7 @@ function arcPatch() {
   fi
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   if [ "${ONLYPATCH}" = "true" ]; then
+    autogetnet
     return 0
   else
     arcSettings
@@ -1131,15 +1132,15 @@ else
       fi
       if [ "${ARCOPTS}" = "true" ]; then
         echo "= \"\Z4========== Arc ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
-        echo "b \"Addons \" "                                                                 >>"${TMP_PATH}/menu"
-        echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
+        echo "b \"DSM Addons \" "                                                             >>"${TMP_PATH}/menu"
+        echo "d \"DSM Modules \" "                                                            >>"${TMP_PATH}/menu"
         echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
         echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
-        echo "N \"Change Network Config \" "                                                  >>"${TMP_PATH}/menu"
-        echo "S \"Change Storage Map \" "                                                     >>"${TMP_PATH}/menu"
-        echo "P \"Custom StoragePanel \" "                                                    >>"${TMP_PATH}/menu"
+        echo "N \"DSM Network Config \" "                                                     >>"${TMP_PATH}/menu"
+        echo "S \"DSM Storage Map \" "                                                        >>"${TMP_PATH}/menu"
+        echo "P \"DSM StoragePanel \" "                                                       >>"${TMP_PATH}/menu"
         echo "D \"Loader DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
-        echo "R \"Automated: \Z4${CUSTOM}\Zn \" "                                             >>"${TMP_PATH}/menu"
+        echo "R \"Automated Mode: \Z4${CUSTOM}\Zn \" "                                        >>"${TMP_PATH}/menu"
       fi
       if [ "${ADVOPTS}" = "true" ]; then
         echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
@@ -1148,8 +1149,8 @@ else
       fi
       if [ "${ADVOPTS}" = "true" ]; then
         echo "= \"\Z4======== Advanced =======\Zn \" "                                        >>"${TMP_PATH}/menu"
-        echo "j \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
-        echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
+        echo "j \"DSM Cmdline \" "                                                            >>"${TMP_PATH}/menu"
+        echo "k \"DSM Synoinfo \" "                                                           >>"${TMP_PATH}/menu"
         echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
         echo "w \"Reset Loader \" "                                                           >>"${TMP_PATH}/menu"
       fi
@@ -1241,9 +1242,9 @@ else
       b) addonMenu; NEXT="b" ;;
       d) modulesMenu; NEXT="d" ;;
       e) ONLYVERSION="true" && arcVersion; NEXT="e" ;;
+      p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
       N) networkMenu; NEXT="N" ;;
       S) storageMenu; NEXT="S" ;;
-      p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
       P) storagepanelMenu; NEXT="P" ;;
       D) staticIPMenu; NEXT="D" ;;
       R) [ "${CUSTOM}" = "false" ] && CUSTOM='true' || CUSTOM='false'
