@@ -85,7 +85,7 @@ function generateSerial() {
   ID="$(readModelKey "${1}" "id")"
   PREFIX="$(readConfigArray "${ID}.prefix" "${S_FILE}" | sort -R | tail -1)"
   MIDDLE="$(readConfigArray "${ID}.middle" "${S_FILE}" | sort -R | tail -1)"
-  SUFFIX=$(readConfigKey "${ID}.suffix" "${S_FILE}")
+  SUFFIX="$(readConfigKey "${ID}.suffix" "${S_FILE}")"
 
   case "${SUFFIX}" in
   numeric)
