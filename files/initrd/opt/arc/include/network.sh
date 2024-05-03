@@ -79,8 +79,6 @@ function autogetnet() {
       N=$((${N} + 1))
     done
   fi
-  writeConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
-  MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 }
 
 # Get Amount of NIC

@@ -1135,10 +1135,10 @@ else
         echo "b \"DSM Addons \" "                                                             >>"${TMP_PATH}/menu"
         echo "d \"DSM Modules \" "                                                            >>"${TMP_PATH}/menu"
         echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
-        echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
-        echo "N \"DSM Network Config \" "                                                     >>"${TMP_PATH}/menu"
+        echo "N \"DSM Network Mode \" "                                                       >>"${TMP_PATH}/menu"
         echo "S \"DSM Storage Map \" "                                                        >>"${TMP_PATH}/menu"
         echo "P \"DSM StoragePanel \" "                                                       >>"${TMP_PATH}/menu"
+        echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
         echo "D \"Loader DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
         echo "R \"Automated Mode: \Z4${CUSTOM}\Zn \" "                                        >>"${TMP_PATH}/menu"
       fi
@@ -1242,10 +1242,10 @@ else
       b) addonMenu; NEXT="b" ;;
       d) modulesMenu; NEXT="d" ;;
       e) ONLYVERSION="true" && arcVersion; NEXT="e" ;;
-      p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
       N) networkMenu; NEXT="N" ;;
       S) storageMenu; NEXT="S" ;;
       P) storagepanelMenu; NEXT="P" ;;
+      p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
       D) staticIPMenu; NEXT="D" ;;
       R) [ "${CUSTOM}" = "false" ] && CUSTOM='true' || CUSTOM='false'
         writeConfigKey "arc.custom" "${CUSTOM}" "${USER_CONFIG_FILE}"
