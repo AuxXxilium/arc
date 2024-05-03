@@ -211,7 +211,6 @@ jobs:
           name: Images
           path: |
             arc.img.zip
-            # arc_4GB.img.zip
             update.zip
           retention-days: 5
 
