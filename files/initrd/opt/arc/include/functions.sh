@@ -102,7 +102,7 @@ function generateSerial() {
 ###############################################################################
 # Generate a MAC address for a model
 # 1 - Model
-# 2 - number
+# 2 - Amount of MACs to generate
 # Returns serial number
 function generateMacAddress() {
   ID="$(readModelKey "${1}" "id")"
