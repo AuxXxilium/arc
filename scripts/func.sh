@@ -176,6 +176,29 @@ function getPatches() {
   echo "Getting Patches end - ${TAG}"
 }
 
+# Get latest Theme
+# $1 path
+function getTheme() {
+  echo "Getting Theme begin"
+  local DEST_PATH="${1:-theme}"
+  local CACHE_FILE="/tmp/theme.zip"
+  rm -f "${CACHE_FILE}"
+  if [ -n "${THEMETAG}" ]; then
+    TAG="${THEMETAG}"
+  else
+    TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-theme/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  fi
+  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-theme/releases/download/${TAG}/arc-theme-${TAG}.zip" -o "${CACHE_FILE}")
+  echo "TAG=${TAG}; Status=${STATUS}"
+  [ ${STATUS} -ne 200 ] && exit 1
+  # Unzip Modules
+  rm -rf "${DEST_PATH}"
+  mkdir -p "${DEST_PATH}"
+  unzip "${CACHE_FILE}" -d "${DEST_PATH}"
+  rm -f "${CACHE_FILE}"
+  echo "Getting Theme end - ${TAG}"
+}
+
 # Get latest Buildroot
 # $1 TAG
 # $2 path

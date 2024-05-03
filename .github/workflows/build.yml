@@ -50,6 +50,10 @@ on:
         description: "patches version"
         default: ""
         type: string
+      theme_version:
+        description: "theme version"
+        default: ""
+        type: string
 
 jobs:
   build:
@@ -135,6 +139,9 @@ jobs:
           PATCHESTAG="${{ inputs.patches_version }}"
           getPatches "files/p3/patches"
           echo "PATCHESTAG=${TAG}" >> $GITHUB_ENV
+          THEMETAG="${{ inputs.theme_version }}"
+          getTheme "files/p1/boot/grub"
+          echo "THEMETAG=${TAG}" >> $GITHUB_ENV
 
           echo "OK"
 
@@ -224,6 +231,7 @@ jobs:
             Configs: ${{ env.CONFIGSTAG }}
             Modules: ${{ env.MODULESTAG }}
             Patches: ${{ env.PATCHESTAG }}
+            Theme: ${{ env.THEMETAG }}
             LKM: ${{ env.LKMTAG }}
 
             Changelog:

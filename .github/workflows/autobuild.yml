@@ -63,6 +63,7 @@ jobs:
           getModules "files/p3/modules"
           getConfigs "files/p3/configs"
           getPatches "files/p3/patches"
+          getTheme "files/p1/boot/grub"
 
           echo "OK"
 
