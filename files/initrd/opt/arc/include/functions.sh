@@ -96,7 +96,8 @@ function generateSerial() {
     ;;
   esac
   SERIAL="${PREFIX:-"0000"}${MIDDLE:-"XXX"}${SUFFIX:-"123456"}"
-  echo "${SERIAL}"
+  echo ${SERIAL}
+  return 0
 }
 
 ###############################################################################
