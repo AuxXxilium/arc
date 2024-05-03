@@ -75,7 +75,7 @@ function untarAddon() {
   tar -xaf "${1}" -C "${TMP_PATH}/addon" || return
   local ADDON=$(readConfigKey "name" "${TMP_PATH}/addon/manifest.yml")
   [ -z "${ADDON}" ] && return
-  rm -rf "${ADDONS_PATH}/${ADDON:?}"
+  rm -rf "${ADDONS_PATH}/${ADDON}"
   mv -f "${TMP_PATH}/addon" "${ADDONS_PATH}/${ADDON}"
   echo "${ADDON}"
 }
@@ -85,7 +85,7 @@ function untarAddon() {
 function updateAddons() {
   for F in $(ls ${PART3_PATH}/*.addon 2>/dev/null); do
     local ADDON=$(basename "${F}" | sed 's|.addon||')
-    rm -rf "${ADDONS_PATH}/${ADDON:?}"
+    rm -rf "${ADDONS_PATH}/${ADDON}"
     mkdir -p "${ADDONS_PATH}/${ADDON}"
     echo "Installing ${F} to ${ADDONS_PATH}/${ADDON}"
     tar -xaf "${F}" -C "${ADDONS_PATH}/${ADDON}"
