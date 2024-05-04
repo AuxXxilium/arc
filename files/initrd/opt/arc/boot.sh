@@ -84,6 +84,9 @@ SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
+DT="$(readModelKey "${MODEL}" "dt")"
+PLATFORM="$(readModelKey "${MODEL}" "platform")"
+PLATFORM=${PLATFORM:-"unknown"}
 ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
 
 declare -A CMDLINE
@@ -114,7 +117,11 @@ if [ ! "${BUS}" = "usb" ]; then
   SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
   # Read SATADoM type
   SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
-  CMDLINE['synoboot_satadom']="${SATADOM:-0}"
+  if echo "epyc7002" | grep -wq "${PLATFORM}"; then
+    CMDLINE['synoboot_satadom']="-1"
+  else
+    CMDLINE['synoboot_satadom']="${SATADOM:-0}"
+  fi
   CMDLINE['dom_szmax']="${SIZE}"
 fi
 CMDLINE['panic']="${KERNELPANIC:-0}"
@@ -147,9 +154,6 @@ if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ ! "${BUS}" = "mmc" ] && [ ! "${E
   [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
   CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
 fi
-DT="$(readModelKey "${MODEL}" "dt")"
-PLATFORM="$(readModelKey "${MODEL}" "platform")"
-PLATFORM=${PLATFORM:-"unknown"}
 if [ "${DT}" = "true" ]; then
   CMDLINE["vender_format_version"]="2"
   CMDLINE["syno_ttyS0"]="serial,0x3f8"
