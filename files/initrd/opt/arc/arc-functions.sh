@@ -48,6 +48,9 @@ function addonSelection() {
   touch "${TMP_PATH}/opts"
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
+    if [ "${ADDON}" = "cpufreqscaling" ]; then
+      [ -d "/sys/devices/system/cpu/cpu0/cpufreq" ] && continue
+    fi
     echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
   done <<<$(availableAddons "${PLATFORM}")
   dialog --backtitle "$(backtitle)" --title "Loader Addons" --aspect 18 \
