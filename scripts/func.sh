@@ -145,7 +145,7 @@ function getConfigs() {
   STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${CACHE_FILE}")
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
-  # Unzip Modules
+  # Unzip Configs
   rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
   unzip "${CACHE_FILE}" -d "${DEST_PATH}"
@@ -168,7 +168,7 @@ function getPatches() {
   STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${CACHE_FILE}")
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
-  # Unzip Modules
+  # Unzip Patches
   rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
   unzip "${CACHE_FILE}" -d "${DEST_PATH}"
@@ -191,8 +191,7 @@ function getTheme() {
   STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-theme/releases/download/${TAG}/arc-theme-${TAG}.zip" -o "${CACHE_FILE}")
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
-  # Unzip Modules
-  rm -rf "${DEST_PATH}"
+  # Unzip Theme
   mkdir -p "${DEST_PATH}"
   unzip "${CACHE_FILE}" -d "${DEST_PATH}"
   rm -f "${CACHE_FILE}"
