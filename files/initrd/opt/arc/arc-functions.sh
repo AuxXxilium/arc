@@ -99,7 +99,7 @@ function modulesMenu() {
       4 "Deselect all Modules" \
       5 "Choose Modules" \
       6 "Add external module" \
-      7 "Choose Modules to copy to DSM" \
+      7 "Edit Modules copied to DSM" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -216,7 +216,7 @@ function modulesMenu() {
           cp -f "${ARC_PATH}/include/modulelist" "${TMP_PATH}/modulelist.tmp"
         fi
         while true; do
-          dialog --backtitle "$(backtitle)" --title "Edit with caution" \
+          dialog --backtitle "$(backtitle)" --title "Edit Modules copied to DSM" \
             --editbox "${TMP_PATH}/modulelist.tmp" 0 0 2>"${TMP_PATH}/modulelist.user"
           [ $? -ne 0 ] && return
           [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
