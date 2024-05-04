@@ -1,0 +1,148 @@
+#
+# Copyright (C) 2023 AuxXxilium <https://github.com/AuxXxilium> and Ing <https://github.com/wjz304>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+
+name: Build Arc Dev
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          swap-storage: false
+
+      # Install Dependencies
+      - name: Install Dependencies
+        run: |
+          git config --global user.email "info@auxxxilium.tech"
+          git config --global user.name "AuxXxilium"
+          sudo timedatectl set-timezone "Europe/Berlin"
+
+          sudo apt update
+          sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils busybox dialog curl sed 
+          sudo snap install yq
+
+      # calculates the version number and push
+      - name: Calculate Version
+        run: |
+          # Calculate Version
+          VERSION="`date +'%y.%-m'`.dev"
+
+          echo "Version: ${VERSION}"
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
+          if [ -n "${VERSION}" ]; then
+            # Modify Source File
+            echo "${VERSION}" >VERSION
+            echo "${VERSION}" >files/p1/ARC-VERSION
+            sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
+          fi
+
+      # Get extractor, LKM, Addons, Modules and Configs
+      - name: Get extractor, LKM, Addons, Extensions, Modules and Configs
+        run: |
+          . scripts/func.sh
+
+          getExtractor "files/p3/extractor"
+          getLKMs "files/p3/lkms"
+          getAddons "files/p3/addons"
+          getModules "files/p3/modules"
+          getConfigs "files/p3/configs"
+          getPatches "files/p3/patches"
+          getTheme "files/p1/boot/grub"
+
+          echo "OK"
+
+      # Build incremental
+      - name: Build image
+        run: |
+          . scripts/func.sh
+
+          echo "Create Arc Image"
+          IMAGE_FILE="arc.img"
+          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
+          fdisk -l "${IMAGE_FILE}"
+          
+          LOOPX=$(sudo losetup -f)
+          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
+
+          echo "Mounting image file"
+          mkdir -p "/tmp/p1"
+          mkdir -p "/tmp/p3"
+          sudo mount ${LOOPX}p1 "/tmp/p1"
+          sudo mount ${LOOPX}p3 "/tmp/p3"
+
+          echo "Get Buildroot"
+          getBuildroot "2023.08.x" "br"
+          [ ! -f "br/bzImage-arc" ] || [ ! -f "br/initrd-arc" ] && return 1
+          
+          echo "Repack initrd"
+          cp -f "br/bzImage-arc" "files/p3/bzImage-arc"
+          repackInitrd "br/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+
+          echo "Copying files"
+          sudo cp -Rf "files/p1/"* "/tmp/p1"
+          sudo cp -Rf "files/p3/"* "/tmp/p3"
+          sync
+
+          echo "Unmount image file"
+          sudo umount "/tmp/p1"
+          sudo umount "/tmp/p3"
+          rmdir "/tmp/p1"
+          rmdir "/tmp/p3"
+
+          sudo losetup --detach ${LOOPX}
+
+          echo "Image Converter"
+          qemu-img convert -O vmdk arc.img arc-dyn.vmdk
+          qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
+
+      # Zip image and generate checksum
+      - name: Pack
+        run: |
+          if [ -n "${{ env.VERSION }}" ]; then
+            zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
+            zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+          else
+            zip -9 "arc.img.zip" arc.img
+          fi
+          zip -9j update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
+
+      # Upload artifact
+      - name: Upload
+        if: success() && env.VERSION == ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: Images
+          path: |
+            update.zip
+          retention-days: 5
+
+      # Publish a release if is a tag
+      - name: Release
+        if: success() && env.VERSION != ''
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.VERSION }}
+          prerelease: true
+          allowUpdates: true
+          artifacts: |
+            arc-${{ env.VERSION }}.img.zip
+            arc-${{ env.VERSION }}.vmdk-dyn.zip
+            arc-${{ env.VERSION }}.vmdk-flat.zip
+            update.zip
