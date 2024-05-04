@@ -1205,7 +1205,7 @@ else
       echo "= \"\Z4========== Dev ===========\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "v \"Save Modifications to Disk \" "                                               >>"${TMP_PATH}/menu"
       echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
-      echo "B \"Get DSM Config Backup \" "                                                    >>"${TMP_PATH}/menu"
+      echo "B \"Grep DSM Config Backup \" "                                                   >>"${TMP_PATH}/menu"
       echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
       echo "T \"Force enable SSH in DSM \" "                                                  >>"${TMP_PATH}/menu"
       echo "C \"Clone Loaderdisk \" "                                                         >>"${TMP_PATH}/menu"
