@@ -57,12 +57,12 @@ def makeqr(data, file, location, output):
             for j in range(img.size[1]):
                 if pixels[i, j] == (255, 255, 255, 255):
                     pixels[i, j] = (255, 255, 255, 0)
-        
+
         if os.path.exists(os.path.join(WORK_PATH, "logo.png")):
             icon = Image.open(os.path.join(WORK_PATH, "logo.png"))
             icon = icon.convert("RGBA")
             img.paste(icon.resize((int(img.size[0] / 5), int(img.size[1] / 5))), (int((img.size[0] - int(img.size[0] / 5)) / 2), int((img.size[1] - int(img.size[1] / 5)) / 2)))
-    
+
     if file is not None:
         img = Image.open(file)
         # img = img.convert("RGBA")
