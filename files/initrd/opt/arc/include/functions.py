@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright (C) 2022 Ing <https://github.com/wjz304>
-#
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
-#
 
 import os, click
 
@@ -65,12 +58,6 @@ def makeqr(data, file, location, output):
 
     if file is not None:
         img = Image.open(file)
-        # img = img.convert("RGBA")
-        # pixels = img.load()
-        # for i in range(img.size[0]):
-        #     for j in range(img.size[1]):
-        #         if pixels[i, j] == (255, 255, 255, 255):
-        #             pixels[i, j] = (255, 255, 255, 0)
 
     (xres, yres) = (1920, 1080)
     with open(FBDEV, 'rb')as fb:
