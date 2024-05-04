@@ -1272,7 +1272,7 @@ function sysinfo() {
       networkdiag
       ;;
     3) # extra-button
-      fullsysinfos
+      fullsysinfo
       ;;
     255) # ESC
       return 0
