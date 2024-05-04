@@ -188,7 +188,7 @@ function getTheme() {
   else
     TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-theme/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
   fi
-  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-theme/releases/download/${TAG}/arc-theme-${TAG}.zip" -o "${CACHE_FILE}")
+  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-theme/releases/download/${TAG}/arc-theme.zip" -o "${CACHE_FILE}")
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
   # Unzip Theme
