@@ -995,7 +995,7 @@ function updateMenu() {
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
-          TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+          TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
           if [[ $? -ne 0 || -z "${TAG}" ]]; then
             dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
               --msgbox "Error checking new Version!" 0 0
@@ -1010,7 +1010,7 @@ function updateMenu() {
         fi
         dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
-        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms-${TAG}.zip" -o "${TMP_PATH}/rp-lkms.zip")
+        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip")
         if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
             --msgbox "Error downloading Updatefile" 0 0
