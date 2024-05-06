@@ -442,6 +442,7 @@ function synoinfoMenu() {
   echo "1 \"Add/edit Synoinfo item\""     >"${TMP_PATH}/menu"
   echo "2 \"Delete Synoinfo item(s)\""    >>"${TMP_PATH}/menu"
   echo "3 \"Show Synoinfo entries\""      >>"${TMP_PATH}/menu"
+  echo "4 \"Add Trim/Dedup to Synoinfo\"" >>"${TMP_PATH}/menu"
 
   # menu loop
   while true; do
@@ -461,7 +462,7 @@ function synoinfoMenu() {
         LINENUM=$(($(echo -e "${MSG}" | wc -l) + 10))
         while true; do
           dialog --clear --backtitle "$(backtitle)" \
-            --colors --title "User Cmdline" \
+            --colors --title "Synoinfo Entries" \
             --form "${MSG}" ${LINENUM:-16} 70 2 "Name:" 1 1 "" 1 10 55 0 "Value:" 2 1 "" 2 10 55 0 \
             2>"${TMP_PATH}/resp"
           RET=$?
@@ -490,7 +491,7 @@ function synoinfoMenu() {
         ;;
       2)
         if [ ${#SYNOINFO[@]} -eq 0 ]; then
-          dialog --backtitle "$(backtitle)" --msgbox "No synoinfo entries to remove" 0 0
+          dialog --backtitle "$(backtitle)" --msgbox "No Synoinfo Entries to remove" 0 0
           continue
         fi
         ITEMS=""
@@ -515,8 +516,19 @@ function synoinfoMenu() {
         for KEY in ${!SYNOINFO[@]}; do
           ITEMS+="${KEY}: ${SYNOINFO[$KEY]}\n"
         done
-        dialog --backtitle "$(backtitle)" --title "Synoinfo entries" \
+        dialog --backtitle "$(backtitle)" --title "Synoinfo Entries" \
           --aspect 18 --msgbox "${ITEMS}" 0 0
+        ;;
+      4)
+        # Optimized Synoinfo
+        writeConfigKey "synoinfo.support_trim" "yes" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.support_disk_hibernation" "yes" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.support_btrfs_dedupe" "yes" "${USER_CONFIG_FILE}"
+        writeConfigKey "synoinfo.support_tiny_btrfs_dedupe" "yes" "${USER_CONFIG_FILE}"
+        dialog --backtitle "$(backtitle)" --title "Add Trim/Dedup to Synoinfo" --aspect 18 \
+          --msgbox "Synoinfo set successful!" 0 0
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
     esac
   done
