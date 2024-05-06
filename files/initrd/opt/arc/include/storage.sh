@@ -178,11 +178,7 @@ function getmapSelection() {
   REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
   # Write Map to config and show Map to User
   if [ "${REMAP}" = "acports" ]; then
-    if [ ${SATAPORTMAP} -eq 1 ] && [ ! "${MACHINE}" = "NATIVE" ]; then
-      writeConfigKey "cmdline.SataPortMap" "0" "${USER_CONFIG_FILE}"
-    else
-      writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
-    fi
+    writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
   elif [ "${REMAP}" = "maxports" ]; then
@@ -222,11 +218,7 @@ function autogetmapSelection() {
   REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
   # Write Map to config and show Map to User
   if [ "${REMAP}" = "acports" ]; then
-    if [ ${SATAPORTMAP} -eq 1 ] && [ ! "${MACHINE}" = "NATIVE" ]; then
-      writeConfigKey "cmdline.SataPortMap" "0" "${USER_CONFIG_FILE}"
-    else
-      writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
-    fi
+    writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline.DiskIdxMap" "${DISKIDXMAP}" "${USER_CONFIG_FILE}"
     deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
   elif [ "${REMAP}" = "maxports" ]; then
