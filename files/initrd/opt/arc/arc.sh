@@ -1145,14 +1145,7 @@ else
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="H"
         ;;
-      U)
-        if [ "${USBMOUNT}" = "force" ]; then
-          USBMOUNT="false"
-        elif [ "${USBMOUNT}" = "false" ]; then
-          USBMOUNT="true"
-        elif [ "${USBMOUNT}" = "true" ]; then
-          USBMOUNT="force"
-        fi
+      U) [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
         writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
