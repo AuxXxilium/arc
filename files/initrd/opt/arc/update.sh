@@ -29,7 +29,7 @@ LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 if [ -n "${MODEL}" ]; then
-  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
 fi
 
@@ -212,23 +212,27 @@ function arcUpdate() {
     fi
   fi
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   if [[ -n "${MODEL}" && -n "${PRODUCTVER}" ]]; then
-    PLATFORM="$(readModelKey "${MODEL}" "platform")"
-    KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+    PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+    KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
+    # Modify KVER for Epyc7002
     if [ "${PLATFORM}" = "epyc7002" ]; then
-      KVER="${PRODUCTVER}-${KVER}"
+      KVERP="${PRODUCTVER}-${KVER}"
+    else
+      KVERP="${KVER}"
     fi
   fi
   rm -rf "${MODULES_PATH}"
   mkdir -p "${MODULES_PATH}"
   unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}" >/dev/null 2>&1
   # Rebuild modules if model/build is selected
-  if [[ -n "${PLATFORM}" && -n "${KVER}" ]]; then
+  if [[ -n "${PLATFORM}" && -n "${KVERP}" ]]; then
     writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
     while read -r ID DESC; do
       writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-    done <<<$(getAllModules "${PLATFORM}" "${KVER}")
+    done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
   fi
   rm -f "${TMP_PATH}/modules.zip"
   # Update Configs

@@ -49,29 +49,31 @@ KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 if [ -n "${MODEL}" ]; then
-  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
 fi
 
 # Get Arc Data from Config
-DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
+ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
+DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
+EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
+HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
+KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
-HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
-KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
+OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
 SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
-ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
-EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
-OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
 SATACONTROLLER="$(readConfigKey "device.satacontroller" "${USER_CONFIG_FILE}")"
 SCSICONTROLLER="$(readConfigKey "device.sciscontroller" "${USER_CONFIG_FILE}")"
@@ -107,7 +109,7 @@ function backtitle() {
     IPCON="(IP)"
   fi
   BACKTITLE="${ARC_TITLE} | "
-  BACKTITLE+="${MODEL} | "
+  BACKTITLE+="${MODEL}(${PLATFORM}) | "
   BACKTITLE+="${PRODUCTVER} | "
   BACKTITLE+="${IPCON} | "
   BACKTITLE+="Patch: ${ARCPATCH} | "
@@ -242,11 +244,11 @@ function arcModel() {
 function arcVersion() {
   # read model values for arcbuild
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   if [ "${CUSTOM}" = "false" ]; then
     # Select Build for DSM
-    ITEMS="$(readConfigEntriesArray "productvers" "${MODEL_CONFIG_PATH}/${MODEL}.yml" | sort -r)"
+    ITEMS="$(readConfigEntriesArray "platforms.${PLATFORM}.productvers" "${P_FILE}" | sort -r)"
     dialog --clear --no-items --nocancel --backtitle "$(backtitle)" \
       --menu "Choose a Version" 7 30 0 ${ITEMS} 2>"${TMP_PATH}/resp"
     resp=$(cat ${TMP_PATH}/resp)
@@ -266,7 +268,7 @@ function arcVersion() {
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
     fi
   fi
-  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
   # Modify KVER for Epyc7002
   if [ "${PLATFORM}" = "epyc7002" ]; then
     KVERP="${PRODUCTVER}-${KVER}"
@@ -479,9 +481,8 @@ function arcSettings() {
 function premake() {
   # Read Model Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
   DT="$(readModelKey "${MODEL}" "dt")"
   # Read Config for Arc Settings
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
@@ -510,9 +511,9 @@ function premake() {
 function arcSummary() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
-  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
   REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
@@ -587,7 +588,7 @@ function arcSummary() {
 function make() {
   # Read Model Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   DT="$(readModelKey "${MODEL}" "dt")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
@@ -1121,9 +1122,9 @@ else
           ODP="false"
           writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
         fi
-        PLATFORM="$(readModelKey "${MODEL}" "platform")"
+        PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
         PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-        KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+        KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
         if [[ -n "${PLATFORM}" && -n "${KVER}" ]]; then
           if [ "${PLATFORM}" = "epyc7002" ]; then
             KVERP="${PRODUCTVER}-${KVER}"

@@ -39,7 +39,9 @@ if [[ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" || "${RAMDISK_HASH_CUR}" != "${RA
 fi
 
 # Read model/system variables
+PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
@@ -85,9 +87,7 @@ KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
 DT="$(readModelKey "${MODEL}" "dt")"
-PLATFORM="$(readModelKey "${MODEL}" "platform")"
-PLATFORM=${PLATFORM:-"unknown"}
-ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
+KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
 
 declare -A CMDLINE
 
@@ -111,31 +111,54 @@ if [ ${EFI} -eq 1 ]; then
 else
   CMDLINE['noefi']=""
 fi
-if [ ! "${BUS}" = "usb" ]; then
-  SZ=$(blockdev --getsz ${LOADER_DISK} 2>/dev/null)  # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
-  SS=$(blockdev --getss ${LOADER_DISK} 2>/dev/null)  # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
-  SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
-  # Read SATADoM type
-  SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
-  if echo "epyc7002" | grep -wq "${PLATFORM}"; then
-    CMDLINE['synoboot_satadom']="-1"
-  else
-    CMDLINE['synoboot_satadom']="${SATADOM:-0}"
+if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
+  if [ ! "${BUS}" = "usb" ]; then
+    SZ=$(blockdev --getsz ${LOADER_DISK} 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
+    SS=$(blockdev --getss ${LOADER_DISK} 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
+    SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
+    # Read SATADoM type
+    SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
+    CMDLINE['synoboot_satadom']="${SATADOM:-2}"
+    CMDLINE['dom_szmax']="${SIZE}"
   fi
-  CMDLINE['dom_szmax']="${SIZE}"
+  CMDLINE["elevator"]="elevator"
+fi
+if [ "${DT}" = "true" ]; then
+  CMDLINE["syno_ttyS0"]="serial,0x3f8"
+  CMDLINE["syno_ttyS1"]="serial,0x2f8"
+else
+  CMDLINE["SMBusHddDynamicPower"]="1"
+  CMDLINE["syno_hdd_detect"]="0"
+  CMDLINE["syno_hdd_powerup_seq"]="0"
 fi
 CMDLINE['panic']="${KERNELPANIC:-0}"
 CMDLINE['console']="ttyS0,115200n8"
-#CMDLINE['no_console_suspend']="1"
+# CMDLINE['no_console_suspend']="1"
 CMDLINE['consoleblank']="600"
 CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
-if [ "${EMMCBOOT}" = "true" ]; then
-  CMDLINE['root']="/dev/mmcblk0p1"
-else
-  CMDLINE['root']="/dev/md0"
+CMDLINE['root']="/dev/md0"
+CMDLINE['loglevel']="15"
+CMDLINE['log_buf_len']="32M"
+CMDLINE["HddHotplug"]="1"
+CMDLINE["vender_format_version"]="2"
+if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ ! "${BUS}" = "mmc" ] && [ ! "${EMMCBOOT}" = "true" ]; then
+  [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+  CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
 fi
+if [ "${DT}" = "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
+  [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+  CMDLINE['modprobe.blacklist']+="mpt3sas"
+fi
+if echo "epyc7002 apollolake geminilake" | grep -wq "${PLATFORM}"; then
+  CMDLINE["intel_iommu"]="igfx_off"
+fi
+if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
+  CMDLINE["SASmodel"]="1"
+fi
+# Cmdline NIC Settings
 NIC=0
+ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
 for ETH in ${ETHX}; do
   MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
   [ -n "${MAC}" ] && NIC=$((${NIC} + 1)) && CMDLINE["mac${NIC}"]="${MAC}"
@@ -146,34 +169,7 @@ if [ "${MACSYS}" = "hardware" ]; then
 elif [ "${MACSYS}" = "custom" ]; then
   CMDLINE['skip_vender_mac_interfaces']="$(seq -s, $((${NIC} + 1)) 7)"
 fi
-CMDLINE['loglevel']="15"
-CMDLINE['log_buf_len']="32M"
-CMDLINE["HddHotplug"]="1"
-CMDLINE["elevator"]="elevator"
-if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ ! "${BUS}" = "mmc" ] && [ ! "${EMMCBOOT}" = "true" ]; then
-  [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
-  CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
-fi
-if [ "${DT}" = "true" ]; then
-  CMDLINE["vender_format_version"]="2"
-  CMDLINE["syno_ttyS0"]="serial,0x3f8"
-  CMDLINE["syno_ttyS1"]="serial,0x2f8"
-  if ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
-    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
-    CMDLINE['modprobe.blacklist']+="mpt3sas"
-  fi
-else
-  CMDLINE["SMBusHddDynamicPower"]="1"
-  CMDLINE["syno_hdd_detect"]="0"
-  CMDLINE["syno_hdd_powerup_seq"]="0"
-  CMDLINE["vender_format_version"]="2"
-fi
-if echo "epyc7002 apollolake geminilake" | grep -wq "${PLATFORM}"; then
-  CMDLINE["intel_iommu"]="igfx_off"
-fi
-if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
-  CMDLINE["SASmodel"]="1"
-fi
+
 # Read user cmdline
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"

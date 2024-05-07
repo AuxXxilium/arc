@@ -5,9 +5,9 @@
 
 . ${ARC_PATH}/include/functions.sh
 
-MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
 
 # Adapted from: scripts/Makefile.lib
 # Usage: size_append FILE [FILE2] [FILEn]...
@@ -44,7 +44,7 @@ size_le() {
 VMLINUX_MOD=${1}
 ZIMAGE_MOD=${2}
 KVER_MAJOR=${KVER:0:1}
-if [[ ${KVER_MAJOR} -eq 4 || ${KVER_MAJOR} -eq 3 ]]; then
+if [ ${KVER_MAJOR} -eq 4 ]; then
   # Kernel version 4.x or 3.x (bromolow)
   #zImage_head           16494
   #payload(
