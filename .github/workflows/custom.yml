@@ -95,8 +95,8 @@ jobs:
             > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}  
             ----
 
-      # Get extractor, LKM, Addons, Modules and Configs
-      - name: Get extractor, LKM, Addons, Extensions, Modules and Configs
+      # Get extractor, LKM, Addons, Modules, Theme and Configs
+      - name: Get extractor, LKM, Addons, Modules, Theme and Configs
         run: |
           sudo apt update
           sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils busybox dialog curl sed 
@@ -111,6 +111,7 @@ jobs:
           getConfigs "files/p3/configs"
           getPatches "files/p3/patches"
           getTheme "files/p1/boot/grub"
+          getOffline "files/p3/configs"
 
           echo "OK"
 

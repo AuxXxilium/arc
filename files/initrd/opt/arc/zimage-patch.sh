@@ -14,10 +14,9 @@ rm -f "${MOD_ZIMAGE_FILE}"
 KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
 if [ "${KERNEL}" = "custom" ]; then
   echo -e "Using customized zImage"
-  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  PLATFORM="$(readModelKey "${MODEL}" "platform")"
-  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
   # Modify KVER for Epyc7002
   if [ "${PLATFORM}" = "epyc7002" ]; then
     KVERP="${PRODUCTVER}-${KVER}"

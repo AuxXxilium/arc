@@ -6,33 +6,6 @@
 . ${ARC_PATH}/include/addons.sh
 
 ###############################################################################
-# read key value from model config file
-# 1 - Model
-# 2 - Key
-# Return Value
-function readModelKey() {
-  readConfigKey "${2}" "${MODEL_CONFIG_PATH}/${1}.yml"
-}
-
-###############################################################################
-# read Entries as map(key=value) from model config
-# 1 - Model
-# 2 - Path of key
-# Returns map of values
-function readModelMap() {
-  readConfigMap "${2}" "${MODEL_CONFIG_PATH}/${1}.yml"
-}
-
-###############################################################################
-# read an array from model config
-# 1 - Model
-# 2 - Path of key
-# Returns array/map of values
-function readModelArray() {
-  readConfigArray "${2}" "${MODEL_CONFIG_PATH}/${1}.yml"
-}
-
-###############################################################################
 # Just show error message and dies
 function die() {
   echo -e "\033[1;41m$@\033[0m"
@@ -47,6 +20,23 @@ function dieLog() {
   echo -e "\033[0m"
   sleep 3
   exit 1
+}
+
+###############################################################################
+# Check if a item exists into array
+# 1 - Item
+# 2.. - Array
+# Return 0 if exists
+function arrayExistItem() {
+  EXISTS=1
+  ITEM="${1}"
+  shift
+  for i in "$@"; do
+    [ "${i}" = "${ITEM}" ] || continue
+    EXISTS=0
+    break
+  done
+  return ${EXISTS}
 }
 
 ###############################################################################
@@ -82,11 +72,11 @@ function genRandomValue() {
 # 1 - Model
 # Returns serial number
 function generateSerial() {
-  ID="$(readModelKey "${1}" "id")"
-  PREFIX="$(readConfigArray "${ID}.prefix" "${S_FILE}" | sort -R | tail -1)"
-  MIDDLE="$(readConfigArray "${ID}.middle" "${S_FILE}" | sort -R | tail -1)"
-  SUFFIX="$(readConfigKey "${ID}.suffix" "${S_FILE}")"
+  PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}" | sort -R | tail -1)"
+  MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}" | sort -R | tail -1)"
+  SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}")"
 
+  SERIAL="${PREFIX:-"0000"}${MIDDLE:-"XXX"}"
   case "${SUFFIX}" in
   numeric)
     SUFFIX="$(random)"
@@ -95,8 +85,8 @@ function generateSerial() {
     SUFFIX="$(genRandomLetter)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomLetter)"
     ;;
   esac
-  SERIAL="${PREFIX:-"0000"}${MIDDLE:-"XXX"}${SUFFIX:-"123456"}"
-  echo ${SERIAL}
+
+  echo "${SERIAL}"
   return 0
 }
 
@@ -123,24 +113,37 @@ function generateMacAddress() {
 # Validate a serial number for a model
 # 1 - Model
 # 2 - Serial number to test
-# Returns 1 if serial number is valid
+# Returns 1 if serial number is invalid
 function validateSerial() {
-  PREFIX=$(readModelArray "${1}" "serial.prefix")
-  MIDDLE=$(readModelKey "${1}" "serial.middle")
-  S=${2:0:4}
-  P=${2:4:3}
+  PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}" 2>/dev/null)"
+  MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}" 2>/dev/null)"
+  SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}" 2>/dev/null)"
+  P=${2:0:4}
+  M=${2:4:3}
+  S=${2:7}
   L=${#2}
   if [ ${L} -ne 13 ]; then
-    return 0
+    return 1
   fi
-  echo "${PREFIX}" | grep -q "${S}"
-  if [ $? -eq 1 ]; then
-    return 0
+  if ! arrayExistItem ${P} ${PREFIX}; then
+    return 1
   fi
-  if [ "${MIDDLE}" != "${P}" ]; then
-    return 0
+  if ! arrayExistItem ${M} ${MIDDLE}; then
+    return 1
   fi
-  return 1
+  case "${SUFFIX:-"alpha"}" in
+  numeric)
+    if ! echo "${S}" | grep -q "^[0-9]\{6\}$"; then
+      return 1
+    fi
+    ;;
+  alpha)
+    if ! echo "${S}" | grep -q "^[A-Z][0-9][0-9][0-9][0-9][A-Z]$"; then
+      return 1
+    fi
+    ;;
+  esac
+  return 0
 }
 
 ###############################################################################
@@ -418,4 +421,27 @@ function rebootTo() {
   [ ! -f "${ENVFILE}" ] && grub-editenv ${ENVFILE} create
   grub-editenv ${ENVFILE} set next_entry="${1}"
   reboot
+}
+
+###############################################################################
+# Copy DSM files to the boot partition
+# 1 - DSM root path
+function copyDSMFiles() {
+  if [ -f "${1}/VERSION" ] && [ -f "${1}/grub_cksum.syno" ] && [ -f "${1}/GRUB_VER" ] && [ -f "${1}/zImage" ] && [ -f "${1}/rd.gz" ]; then
+    # Remove old model files
+    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/grub_cksum.syno" "${PART2_PATH}/GRUB_VER"
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}"
+    # Remove old build files
+    rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
+    # Copy new model files
+    cp -f "${1}/grub_cksum.syno" "${PART1_PATH}"
+    cp -f "${1}/GRUB_VER" "${PART1_PATH}"
+    cp -f "${1}/grub_cksum.syno" "${PART2_PATH}"
+    cp -f "${1}/GRUB_VER" "${PART2_PATH}"
+    cp -f "${1}/zImage" "${ORI_ZIMAGE_FILE}"
+    cp -f "${1}/rd.gz" "${ORI_RDGZ_FILE}"
+    return 0
+  else
+    return 1
+  fi
 }

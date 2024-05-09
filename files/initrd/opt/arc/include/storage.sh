@@ -120,18 +120,15 @@ function getmap() {
   writeConfigKey "device.harddrives" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
   # Check for Sata Boot
   LASTDRIVE=0
-  while read -r LINE; do
-    if [[ "${BUS}" != "usb" && ${LINE} -eq 0 ]]; then
-      MAXDISKS="$(readModelKey "${MODEL}" "disks")"
-      if [ ${MAXDISKS} -lt ${DRIVES} ]; then
-        MAXDISKS=${DRIVES}
-      fi
-      echo -n "${LINE}>${MAXDISKS}:">>"${TMP_PATH}/remap"
-    elif [ ! ${LINE} = ${LASTDRIVE} ]; then
-      echo -n "${LINE}>${LASTDRIVE}:">>"${TMP_PATH}/remap"
+  while read -r D; do
+    if [[ "${BUS}" != "usb" && ${D} -eq 0 ]]; then
+      MAXDISKS=${DRIVES}
+      echo -n "${D}>${MAXDISKS}:">>"${TMP_PATH}/remap"
+    elif [ ! ${D} = ${LASTDRIVE} ]; then
+      echo -n "${D}>${LASTDRIVE}:">>"${TMP_PATH}/remap"
       LASTDRIVE=$((${LASTDRIVE} + 1))
-    elif [ ${LINE} = ${LASTDRIVE} ]; then
-      LASTDRIVE=$((${LINE} + 1))
+    elif [ ${D} = ${LASTDRIVE} ]; then
+      LASTDRIVE=$((${D} + 1))
     fi
   done <<<$(cat "${TMP_PATH}/ports")
 }

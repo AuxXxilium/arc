@@ -37,7 +37,7 @@ function addonSelection() {
   # read platform and kernel version to check if addon exists
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  PLATFORM="$(readModelKey "${MODEL}" "platform")"
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   # read addons from user config
   unset ADDONS
   declare -A ADDONS
@@ -73,10 +73,9 @@ function addonSelection() {
 ###############################################################################
 # Permit user select the modules to include
 function modulesMenu() {
-  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  PLATFORM="$(readModelKey "${MODEL}" "platform")"
-  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
   # Modify KVER for Epyc7002
   if [ "${PLATFORM}" = "epyc7002" ]; then
     KVERP="${PRODUCTVER}-${KVER}"
@@ -916,11 +915,10 @@ function updateMenu() {
             --msgbox "Error downloading Updatefile!" 0 0
           return 1
         fi
-        MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
         PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-        if [[ -n "${MODEL}" && -n "${PRODUCTVER}" ]]; then
-          PLATFORM="$(readModelKey "${MODEL}" "platform")"
-          KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+        if [ -n "${PRODUCTVER}" ]; then
+          PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+          KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
           if [ "${PLATFORM}" = "epyc7002" ]; then
             KVERP="${PRODUCTVER}-${KVER}"
           else
@@ -1041,7 +1039,7 @@ function updateMenu() {
 # Show Storagemenu to user
 function storageMenu() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  DT="$(readModelKey "${MODEL}" "dt")"
+  DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
   # Get Portmap for Loader
   getmap
   if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
@@ -1077,9 +1075,9 @@ function sysinfo() {
   if [ "${CONFDONE}" = "true" ]; then
     MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-    PLATFORM="$(readModelKey "${MODEL}" "platform")"
-    DT="$(readModelKey "${MODEL}" "dt")"
-    KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+    PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+    DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
+    KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
     REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
@@ -1306,9 +1304,9 @@ function fullsysinfo() {
   if [ "${CONFDONE}" = "true" ]; then
     MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-    PLATFORM="$(readModelKey "${MODEL}" "platform")"
-    DT="$(readModelKey "${MODEL}" "dt")"
-    KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+    PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+    DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
+    KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
     REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"

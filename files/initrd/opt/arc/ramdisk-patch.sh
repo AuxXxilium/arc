@@ -28,44 +28,41 @@ mkdir -p "${RAMDISK_PATH}"
 ) >/dev/null 2>&1
 
 # Read Model Data
+PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-PLATFORM="$(readModelKey "${MODEL}" "platform")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
-
-# Check if DSM Version changed
-. "${RAMDISK_PATH}/etc/VERSION"
-
-# Read DSM Informations
-PRODUCTVERDSM="${majorversion}.${minorversion}"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
 # Read new PAT Info from Config
 PAT_URL="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
 PAT_HASH="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
 
+[ "${PATURL:0:1}" = "#" ] && PATURL=""
+[ "${PATSUM:0:1}" = "#" ] && PATSUM=""
+
+# Check if DSM Version changed
+. "${RAMDISK_PATH}/etc/VERSION"
+
+PRODUCTVERDSM="${majorversion}.${minorversion}"
 if [ "${PRODUCTVERDSM}" != "${PRODUCTVER}" ]; then
   # Update new buildnumber
   echo -e "Ramdisk Version ${PRODUCTVER} does not match DSM Version ${PRODUCTVERDSM}!"
   echo -e "Try to use DSM Version ${PRODUCTVERDSM} for Patch."
   writeConfigKey "productver" "${USER_CONFIG_FILE}"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  KVER="$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}].kver")"
+  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
   PAT_URL=""
   PAT_HASH=""
 fi
 
-# Sanity check
-if [[ -z "${PLATFORM}" || -z "${KVER}" ]]; then
-  echo "ERROR: Configuration for model ${MODEL} and productversion ${PRODUCTVER} not found." >"${LOG_FILE}"
-  exit 1
-fi
+# Read model data
+KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
 
 # Modify KVER for Epyc7002
 if [ "${PLATFORM}" = "epyc7002" ]; then
@@ -74,19 +71,25 @@ else
   KVERP="${KVER}"
 fi
 
+# Sanity check
+if [[ -z "${PLATFORM}" || -z "${KVER}" ]]; then
+  echo "ERROR: Configuration for model ${MODEL} and productversion ${PRODUCTVER} not found." >"${LOG_FILE}"
+  exit 1
+fi
+
 declare -A SYNOINFO
 declare -A ADDONS
 declare -A MODULES
 
-# Read synoinfo from config
+# Read synoinfo and addons from config
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
 done <<<$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
-# Read synoinfo from config
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
 done <<<$(readConfigMap "addons" "${USER_CONFIG_FILE}")
-# Read modules from config
+
+# Read modules from user config
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && MODULES["${KEY}"]="${VALUE}"
 done <<<$(readConfigMap "modules" "${USER_CONFIG_FILE}")
@@ -94,7 +97,7 @@ done <<<$(readConfigMap "modules" "${USER_CONFIG_FILE}")
 # Patches (diff -Naru OLDFILE NEWFILE > xxx.patch)
 PATCHS=()
 PATCHS+=("ramdisk-etc-rc-*.patch")
-PATCHS+=("ramdisk-init-script-v${KVER:0:1}-*.patch")
+PATCHS+=("ramdisk-init-script-*.patch")
 PATCHS+=("ramdisk-post-init-script-*.patch")
 PATCHS+=("ramdisk-disable-root-pwd-*.patch")
 PATCHS+=("ramdisk-disable-disabled-ports-*.patch")
@@ -149,28 +152,29 @@ echo "Create addons.sh" >"${LOG_FILE}"
 mkdir -p "${RAMDISK_PATH}/addons"
 echo "#!/bin/sh" >"${RAMDISK_PATH}/addons/addons.sh"
 echo 'echo "addons.sh called with params ${@}"' >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export LOADERLABEL=ARC" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export LOADERVERSION=${ARC_VERSION}" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export PLATFORM=${PLATFORM}" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export MODEL=${MODEL}" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export MLINK=${PAT_URL}" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export MCHECKSUM=${PAT_HASH}" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export LAYOUT=${LAYOUT}" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export KEYMAP=${KEYMAP}" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export LOADERLABEL=\"ARC\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export LOADERVERSION=\"${ARC_VERSION}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export PLATFORM=\"${PLATFORM}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export PRODUCTVER=\"${PRODUCTVER}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export MODEL=\"${MODEL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export MLINK=\"${PAT_URL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export MCHECKSUM=\"${PAT_HASH}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export LAYOUT=\"${LAYOUT}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export KEYMAP=\"${KEYMAP}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
-# Required addons: "revert" "misc" "eudev" "disks" "localrss" "wol"
 # This order cannot be changed.
-for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol" "acpid"; do
+for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "updatenotify" "wol" "acpid"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
-    PARAMS="${HDDSORT} ${USBMOUNT}"
+    PARAMS=${HDDSORT}
+    [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   fi
   installAddon "${ADDON}" "${PLATFORM}" || exit 1
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 done
 
-# User Addons
+# User addons
 for ADDON in ${!ADDONS[@]}; do
   PARAMS=${ADDONS[${ADDON}]}
   installAddon "${ADDON}" "${PLATFORM}" || exit 1
@@ -197,7 +201,7 @@ fi
 # Backup current loader configs
 BACKUP_PATH="${RAMDISK_PATH}/usr/arc/backup"
 rm -rf "${BACKUP_PATH}"
-for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}"; do
+for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}" "${USER_UP_PATH}" "${SCRIPTS_PATH}"; do
   if [ -f "${F}" ]; then
     FD="$(dirname "${F}")"
     mkdir -p "${FD/\/mnt/${BACKUP_PATH}}"
