@@ -1039,7 +1039,7 @@ function updateMenu() {
 # Show Storagemenu to user
 function storageMenu() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  DT="$(readModelKey "${MODEL}" "dt")"
+  DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
   # Get Portmap for Loader
   getmap
   if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
@@ -1076,7 +1076,7 @@ function sysinfo() {
     MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
     PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-    DT="$(readModelKey "${MODEL}" "dt")"
+    DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
@@ -1305,7 +1305,7 @@ function fullsysinfo() {
     MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
     PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-    DT="$(readModelKey "${MODEL}" "dt")"
+    DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"

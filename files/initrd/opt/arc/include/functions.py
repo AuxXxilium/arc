@@ -14,7 +14,7 @@ WORK_PATH = os.path.abspath(os.path.dirname(__file__))
 @click.group()
 def cli():
     """
-    The CLI is a commands to RR.
+    The CLI is a commands to Arc.
     """
     pass
 
@@ -54,7 +54,7 @@ def makeqr(data, file, location, output):
         qr = qrcode.QRCode(version=1, box_size=10, error_correction=qrcode.constants.ERROR_CORRECT_H, border=4,)
         qr.add_data(data)
         qr.make(fit=True)
-        img = qr.make_image(fill_color="purple", back_color="white")
+        img = qr.make_image(fill_color="grey", back_color="black")
         img = img.convert("RGBA")
         pixels = img.load()
         for i in range(img.size[0]):
@@ -127,6 +127,39 @@ def getmodels(platforms=None):
     models = sorted(models, key=lambda k: (k["arch"], k["name"]))
     print(json.dumps(models, indent=4))
 
+@cli.command()
+@click.option("-p", "--platforms", type=str, help="The platforms of Syno.")
+def getmodelsoffline(platforms=None):
+    """
+    Get Syno Models.
+    """
+    import re, json
+    import requests
+    import fcntl, struct
+
+    if platforms is not None and platforms != "":
+        PS = platforms.lower().replace(",", " ").split()
+    else:
+        PS = []
+
+    models = []
+    with open(os.path.join(WORK_PATH, "offline.json")) as user_file:
+        data = json.load(user_file)
+
+    for I in data["channel"]["item"]:
+        if not I["title"].startswith("DSM"):
+            continue
+        for J in I["model"]:
+            arch = J["mUnique"].split("_")[1]
+            name = J["mLink"].split("/")[-1].split("_")[1].replace("%2B", "+")
+            if len(PS) > 0 and arch.lower() not in PS:
+                continue
+            if any(name == B["name"] for B in models):
+                continue
+            models.append({"name": name, "arch": arch})
+
+    models = sorted(models, key=lambda k: (k["arch"], k["name"]))
+    print(json.dumps(models, indent=4))
 
 if __name__ == "__main__":
     cli()

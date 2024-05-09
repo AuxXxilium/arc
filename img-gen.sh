@@ -16,6 +16,7 @@ getModules "files/p3/modules"
 getConfigs "files/p3/configs"
 getPatches "files/p3/patches"
 getTheme "files/p1/boot/grub"
+getOffline "files/p3/configs"
 
 IMAGE_FILE="arc.img"
 gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"

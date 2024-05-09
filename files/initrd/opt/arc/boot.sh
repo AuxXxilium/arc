@@ -41,7 +41,6 @@ fi
 # Read model/system variables
 PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
@@ -62,11 +61,6 @@ echo -e "CPU: \033[1;37m${CPU}\033[0m"
 echo -e "MEM: \033[1;37m${RAM}\033[0m"
 echo
 
-if [[ ! -f "${MODEL_CONFIG_PATH}/${MODEL}.yml" || -z "$(readModelKey "${MODEL}" "productvers.[${PRODUCTVER}]")" ]]; then
-  echo -e "\033[1;33m*** The current version of Arc does not support booting ${MODEL}-${PRODUCTVER}, please rebuild. ***\033[0m"
-  exit 1
-fi
-
 if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   HASATA=0
   for D in $(lsblk -dpno NAME); do
@@ -86,14 +80,13 @@ SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
-DT="$(readModelKey "${MODEL}" "dt")"
+DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
 
 declare -A CMDLINE
 
 # Build Cmdline
-MODELID="$(readModelKey ${MODEL} "id")"
-CMDLINE['syno_hw_version']="${MODELID:-${MODEL}}"
+CMDLINE['syno_hw_version']="${MODEL}"
 [ -z "${VID}" ] && VID="0x46f4" # Sanity check
 [ -z "${PID}" ] && PID="0x0001" # Sanity check
 CMDLINE['vid']="${VID}"

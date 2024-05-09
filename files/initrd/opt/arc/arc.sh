@@ -38,6 +38,7 @@ if [ "${OFFLINE}" = "false" ]; then
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
   else
     writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
+    cp -f "${PART3_PATH}/configs/offline.json" "${ARC_PATH}/include/offline.json"
     dialog --backtitle "$(backtitle)" --title "Offline Mode" \
         --msgbox "Can't connect to Github.\nSwitch to Offline Mode!" 0 0
   fi
@@ -50,12 +51,12 @@ KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
-PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 if [ -n "${MODEL}" ]; then
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-  DT="$(readModelKey "${MODEL}" "dt")"
+  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 fi
 
 # Get Arc Data from Config
@@ -109,7 +110,7 @@ function backtitle() {
     IPCON="(IP)"
   fi
   BACKTITLE="${ARC_TITLE} | "
-  BACKTITLE+="${MODEL}(${PLATFORM}) | "
+  BACKTITLE+="${MODEL} | "
   BACKTITLE+="${PRODUCTVER} | "
   BACKTITLE+="${IPCON} | "
   BACKTITLE+="Patch: ${ARCPATCH} | "
@@ -122,95 +123,110 @@ function backtitle() {
 ###############################################################################
 # Model Selection
 function arcModel() {
+  dialog --backtitle "$(backtitle)" --title "Model" --title "Model" \
+    --infobox "Reading Models..." 0 0
   # Loop menu
   RESTRICT=1
-  FLGBETA=0
-  dialog --backtitle "$(backtitle)" --title "Model" --aspect 18 \
-    --infobox "Reading Models..." 3 20
-    PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"
+  PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"
+  if [ "${OFFLINE}" = "true" ]; then
+    MJ="$(python include/functions.py getmodelsoffline -p "${PS[*]}")"
+  else
     MJ="$(python include/functions.py getmodels -p "${PS[*]}")"
-    if [[ -z "${MJ}" || "${MJ}" = "[]" ]]; then
-      dialog --backtitle "$(backtitle)" --title "Model" --title "Model" \
-        --msgbox "Failed to get models, please try again!" 0 0
-      return 1
-    fi
-    echo -n "" >"${TMP_PATH}/modellist"
-    echo "${MJ}" | jq -c '.[]' | while read -r item; do
-      name=$(echo "$item" | jq -r '.name')
-      arch=$(echo "$item" | jq -r '.arch')
-      echo "${name} ${arch}" >>"${TMP_PATH}/modellist"
-    done
-    while true; do
-      echo -n "" >"${TMP_PATH}/menu"
-      while read -r M A; do
-        DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
-        FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
-        ARCCONF="$(readConfigKey "${M}.serial" "${S_FILE}" 2>/dev/null)"
-        ARC=""
-        [ -n "${ARCCONF}" ] && ARC="x"
-        CPU="Intel"
-        [[ "${A}" = "r1000" || "${A}" = "v1000" || "${A}" = "epyc7002" ]] && CPU="AMD"
-        IGPUS=""
-        [[ "${A}" = "apollolake" || "${A}" = "geminilake" || "${A}" = "epyc7002" ]] && IGPUS="x"
-        HBAS="x"
-        [ "${DT}" = "true" ] && HBAS=""
-        [ "${M}" = "SA6400" ] && HBAS="x"
-        USBS=""
-        [ "${DT}" = "false" ] && USBS="x"
-        M_2_CACHE="x"
-        [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DS918+" || "${M}" = "DS1019+" || "${M}" = "DS1621xs+" || "${M}" = "RS1619xs+" ]] && M_2_CACHE=""
-        M_2_STORAGE="x"
-        [ "${DT}" = "false" ] && M_2_STORAGE=""
-        [[ "${M}" = "DS220+" || "${M}" = "DS224+" ]] && M_2_STORAGE=""
-        # Check id model is compatible with CPU
-        COMPATIBLE=1
-        if [ ${RESTRICT} -eq 1 ]; then
-          for F in "${FLAGS}"; do if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
+  fi
+  if [[ -z "${MJ}" || "${MJ}" = "[]" ]]; then
+    dialog --backtitle "$(backtitle)" --title "Model" --title "Model" \
+      --msgbox "Failed to get models, please try again!" 0 0
+    return 1
+  fi
+  echo -n "" >"${TMP_PATH}/modellist"
+  echo "${MJ}" | jq -c '.[]' | while read -r item; do
+    name=$(echo "$item" | jq -r '.name')
+    arch=$(echo "$item" | jq -r '.arch')
+    echo "${name} ${arch}" >>"${TMP_PATH}/modellist"
+  done
+  while true; do
+    echo -n "" >"${TMP_PATH}/menu"
+    while read -r M A; do
+      COMPATIBLE=1
+      DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
+      FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
+      ARCCONF="$(readConfigKey "${M}.serial" "${S_FILE}" 2>/dev/null)"
+      ARC=""
+      [ -n "${ARCCONF}" ] && ARC="x"
+      CPU="Intel"
+      [[ "${A}" = "r1000" || "${A}" = "v1000" || "${A}" = "epyc7002" ]] && CPU="AMD"
+      IGPUS=""
+      [[ "${A}" = "apollolake" || "${A}" = "geminilake" || "${A}" = "epyc7002" ]] && IGPUS="x"
+      HBAS="x"
+      [ "${DT}" = "true" ] && HBAS=""
+      [ "${M}" = "SA6400" ] && HBAS="x"
+      USBS=""
+      [ "${DT}" = "false" ] && USBS="x"
+      M_2_CACHE="x"
+      [[ "${M}" = "DS918+" || "${M}" = "DS1019+" || "${M}" = "DS1621xs+" || "${M}" = "RS1619xs+" ]] && M_2_CACHE="+"
+      [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" ]] && M_2_CACHE=""
+      M_2_STORAGE="x"
+      [ "${DT}" = "false" ] && M_2_STORAGE="+"
+      [[ "${M}" = "DS220+" || "${M}" = "DS224+" ]] && M_2_STORAGE=""
+      [ "${DT}" = "true" ] && DTS="x" || DTS=""
+      # Check id model is compatible with CPU
+      if [ ${RESTRICT} -eq 1 ]; then
+        for F in "${FLAGS}"; do
+          if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
             COMPATIBLE=0
             break
-          fi; done
-          if [ "${DT}" = "true" ] && [[ "${EXTERNALCONTROLLER}" = "true" && ! "${M}" = "SA6400" ]]; then
-            COMPATIBLE=0
           fi
-          if [[ ${SATACONTROLLER} -eq 0 && "${EXTERNALCONTROLLER}" = "false" && ! "${M}" = "SA6400" ]]; then
-            COMPATIBLE=0
-          fi
+        done
+        if [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ ! "${A}" = "epyc7002" ]; then
+          COMPATIBLE=0
         fi
-        [ "${DT}" = "true" ] && DTS="x" || DTS=""
-        [ ${COMPATIBLE} -eq 1 ] && echo "${ID} \"$(printf "\Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn" "${CPU}" "${PLATFORM}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}")\" ">>"${TMP_PATH}/menu"
-      done  <<<$(cat "${TMP_PATH}/modellist")
-      dialog --backtitle "$(backtitle)" --colors \
-        --cancel-label "Show all" --help-button --help-label "Exit" \
-        --extra-button --extra-label "Info" \
-        --menu "Choose Model for Loader (This Chart indicates the original Values, without Addons.)\n $(printf "\Zb%-10s\Zn\Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn" "Model" "CPU" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount")" 0 115 0 \
-        --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
-      RET=$?
-      case ${RET} in
-        0) # ok-button
-          resp=$(cat ${TMP_PATH}/resp)
-          [ -z "${resp}" ] && return 1
-          break
-          ;;
-        1) # cancel-button -> Show all Models
-          RESTRICT=0
-          ;;
-        2) # help-button -> Exit
-          return 0
-          break
-          ;;
-        3) # extra-button -> Platform Info
-          dialog --textbox "./informations/${A}.yml" 15 80
-          ;;
-        255) # ESC -> Exit
-          return 1
-          break
-          ;;
-      esac
-    done
-  # read model config for dt and aes
+        if [ ${SATACONTROLLER} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ] && [ ! "${A}" = "epyc7002" ]; then
+          COMPATIBLE=0
+        fi
+        if [ -z "$(grep -w "${M}" "${S_FILE}")" ]; then
+          COMPATIBLE=0
+        fi
+      else
+        [ -z "$(grep -w "${M}" "${S_FILE}")" ] && BETA="x" || BETA=""
+      fi
+      [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${CPU}" "${A}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
+    done  <<<$(cat "${TMP_PATH}/modellist")
+    dialog --backtitle "$(backtitle)" --colors \
+      --cancel-label "Show all" --help-button --help-label "Exit" \
+      --extra-button --extra-label "Info" \
+      --menu "Choose Model for Loader (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "CPU" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Beta")" 0 120 0 \
+      --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
+    RET=$?
+    case ${RET} in
+      0) # ok-button
+        resp=$(cat ${TMP_PATH}/resp)
+        [ -z "${resp}" ] && return 1
+        break
+        ;;
+      1) # cancel-button -> Show all Models
+        RESTRICT=0
+        ;;
+      2) # help-button -> Exit
+        return 0
+        break
+        ;;
+      3) # extra-button -> Platform Info
+        resp=$(cat ${TMP_PATH}/resp)
+        PLATFORM="$(grep -w "${resp}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
+        dialog --backtitle "$(backtitle)" --colors \
+          --title "Platform Info" --textbox "./informations/${PLATFORM}.yml" 15 80
+        ;;
+      255) # ESC -> Exit
+        return 1
+        break
+        ;;
+    esac
+  done
+  # Reset Model Config if changed
   if [ "${MODEL}" != "${resp}" ]; then
-    MODEL="${resp}"
     PRODUCTVER=""
+    PLATFORM="$(grep -w "${resp}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
+    MODEL="${resp}"
     writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
     writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
@@ -221,6 +237,7 @@ function arcModel() {
     writeConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
+    writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
@@ -248,7 +265,9 @@ function arcVersion() {
     # Select Build for DSM
     ITEMS="$(readConfigEntriesArray "platforms.${PLATFORM}.productvers" "${P_FILE}" | sort -r)"
     dialog --clear --no-items --nocancel --backtitle "$(backtitle)" \
-      --menu "Choose a Version" 7 30 0 ${ITEMS} 2>"${TMP_PATH}/resp"
+      --no-items --menu "DSM Version" 7 30 0 ${ITEMS} \
+    2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && return 0
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     if [ "${PRODUCTVER}" != "${resp}" ]; then
@@ -274,13 +293,21 @@ function arcVersion() {
     KVERP="${KVER}"
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
-    --infobox "Reconfiguring Synoinfo and Modules" 3 40
-  # Reset synoinfo
+    --infobox "Reconfiguring Addons, Modules and Synoinfo" 3 50
+  # Reset Synoinfo
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS=': ' read -r KEY VALUE; do
     writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
-  done <<<$(readModelMap "${MODEL}" "synoinfo")
-  # Reset modules
+  done <<<$(readConfigMap "platforms.${PLATFORM}.synoinfo" "${WORK_PATH}/platforms.yml")
+  # Reset Addons
+  writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
+  while IFS=': ' read -r ADDON PARAM; do
+    [ -z "${ADDON}" ] && continue
+    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVERP}"; then
+      deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
+    fi
+  done <<<$(readConfigMap "addons" "${USER_CONFIG_FILE}")
+  # Reset Modules
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read -r ID DESC; do
     writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
@@ -304,13 +331,13 @@ function arcVersion() {
 function arcPatch() {
   # Read Model Values
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  DT="$(readModelKey "${MODEL}" "dt")"
+  DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
   if [ "${CUSTOM}" = "true" ]; then
     ARCPATCHPRE="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     [ -n "${ARCCONF}" ] && ARCPATCH="true" || ARCPATCH="false"
     if [[ "${ARCPATCH}" = "true" && "${ARCPATCHPRE}" = "true" ]]; then
-      SN="$(readModelKey "${MODEL}" "arc.serial")"
+      SN="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
       writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
     else
@@ -481,7 +508,7 @@ function premake() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  DT="$(readModelKey "${MODEL}" "dt")"
+  DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
   # Read Config for Arc Settings
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
@@ -510,7 +537,7 @@ function arcSummary() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-  DT="$(readModelKey "${MODEL}" "dt")"
+  DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
@@ -584,28 +611,19 @@ function arcSummary() {
 ###############################################################################
 # Building Loader Online
 function make() {
+  dialog --backtitle "$(backtitle)" --title "Model" --aspect 18 \
+    --infobox "Reading Models..." 3 20
   # Read Model Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  DT="$(readModelKey "${MODEL}" "dt")"
+  DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   # Cleanup
   if [ -d "${UNTAR_PAT_PATH}" ]; then
     rm -rf "${UNTAR_PAT_PATH}"
   fi
   mkdir -p "${UNTAR_PAT_PATH}"
-  if [ "${CUSTOM}" = "false" ]; then
-    # Check if all addon exists
-    while IFS=': ' read -r ADDON PARAM; do
-      [ -z "${ADDON}" ] && continue
-      if ! checkAddonExist "${ADDON}" "${PLATFORM}"; then
-        dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-          --msgbox "Addon ${ADDON} not found!" 0 0
-        return 1
-      fi
-    done <<<$(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  fi
   # Check for offline Mode
   if [ "${OFFLINE}" = "true" ]; then
     offlinemake
