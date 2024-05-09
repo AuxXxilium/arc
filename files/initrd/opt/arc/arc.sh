@@ -331,7 +331,7 @@ function arcVersion() {
 function arcPatch() {
   # Read Model Values
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
+  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
   if [ "${CUSTOM}" = "true" ]; then
     ARCPATCHPRE="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
@@ -508,7 +508,7 @@ function premake() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
+  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   # Read Config for Arc Settings
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
@@ -537,7 +537,7 @@ function arcSummary() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-  DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
+  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
@@ -617,7 +617,7 @@ function make() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
+  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   # Cleanup
   if [ -d "${UNTAR_PAT_PATH}" ]; then
