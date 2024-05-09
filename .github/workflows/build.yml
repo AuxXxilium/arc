@@ -114,8 +114,8 @@ jobs:
             sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
           fi
 
-      # Get extractor, LKM, Addons, Modules and Configs
-      - name: Get extractor, LKM, Addons, Extensions, Modules and Configs
+      # Get extractor, LKM, Addons, Modules, Theme and Configs
+      - name: Get extractor, LKM, Addons, Modules, Theme and Configs
         run: |
           . scripts/func.sh
 
@@ -138,6 +138,7 @@ jobs:
           THEMETAG="${{ inputs.theme_version }}"
           getTheme "files/p1/boot/grub"
           echo "THEMETAG=${TAG}" >> $GITHUB_ENV
+          getOffline "files/p3/configs"
 
           echo "OK"
 
