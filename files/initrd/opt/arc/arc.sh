@@ -126,62 +126,63 @@ function arcModel() {
   RESTRICT=1
   FLGBETA=0
   dialog --backtitle "$(backtitle)" --title "Model" --aspect 18 \
-    --infobox "Reading Models" 3 20
+    --infobox "Reading Models..." 3 20
+    PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"
+    MJ="$(python include/functions.py getmodels -p "${PS[*]}")"
+    if [[ -z "${MJ}" || "${MJ}" = "[]" ]]; then
+      dialog --backtitle "$(backtitle)" --title "Model" --title "Model" \
+        --msgbox "Failed to get models, please try again!" 0 0
+      return 1
+    fi
     echo -n "" >"${TMP_PATH}/modellist"
-    while read -r M; do
-      [ "${M}" = "serials" ] && continue
-      Y="$(readModelKey "${M}" "disks")"
-      echo "${M} ${Y}" >>"${TMP_PATH}/modellist"
-    done <<<$(find "${MODEL_CONFIG_PATH}" -maxdepth 1 -name \*.yml | sed 's/.*\///; s/\.yml//')
+    echo "${MJ}" | jq -c '.[]' | while read -r item; do
+      name=$(echo "$item" | jq -r '.name')
+      arch=$(echo "$item" | jq -r '.arch')
+      echo "${name} ${arch}" >>"${TMP_PATH}/modellist"
+    done
     while true; do
       echo -n "" >"${TMP_PATH}/menu"
-      while read -r ID Y; do
-        PLATFORM=$(readModelKey "${ID}" "platform")
-        DT="$(readModelKey "${ID}" "dt")"
-        BETA="$(readModelKey "${ID}" "beta")"
-        [[ "${BETA}" = "true" && ${FLGBETA} -eq 0 ]] && continue
-        DISKS="${Y}-Bay"
-        ARCCONF="$(readConfigKey "${ID}.serial" "${S_FILE}" 2>/dev/null)"
+      while read -r M A; do
+        DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
+        FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
+        ARCCONF="$(readConfigKey "${M}.serial" "${S_FILE}" 2>/dev/null)"
         ARC=""
         [ -n "${ARCCONF}" ] && ARC="x"
         CPU="Intel"
-        [[ "${PLATFORM}" = "r1000" || "${PLATFORM}" = "v1000" || "${PLATFORM}" = "epyc7002" ]] && CPU="AMD"
+        [[ "${A}" = "r1000" || "${A}" = "v1000" || "${A}" = "epyc7002" ]] && CPU="AMD"
         IGPUS=""
-        [[ "${PLATFORM}" = "apollolake" || "${PLATFORM}" = "geminilake" || "${PLATFORM}" = "epyc7002" ]] && IGPUS="x"
+        [[ "${A}" = "apollolake" || "${A}" = "geminilake" || "${A}" = "epyc7002" ]] && IGPUS="x"
         HBAS="x"
         [ "${DT}" = "true" ] && HBAS=""
-        [ "${ID}" = "SA6400" ] && HBAS="x"
+        [ "${M}" = "SA6400" ] && HBAS="x"
         USBS=""
         [ "${DT}" = "false" ] && USBS="x"
         M_2_CACHE="x"
-        [[ "${ID}" = "DS220+" ||  "${ID}" = "DS224+" || "${ID}" = "DS918+" || "${ID}" = "DS1019+" || "${ID}" = "DS1621xs+" || "${ID}" = "RS1619xs+" ]] && M_2_CACHE=""
+        [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DS918+" || "${M}" = "DS1019+" || "${M}" = "DS1621xs+" || "${M}" = "RS1619xs+" ]] && M_2_CACHE=""
         M_2_STORAGE="x"
         [ "${DT}" = "false" ] && M_2_STORAGE=""
-        [[ "${ID}" = "DS220+" || "${ID}" = "DS224+" ]] && M_2_STORAGE=""
+        [[ "${M}" = "DS220+" || "${M}" = "DS224+" ]] && M_2_STORAGE=""
         # Check id model is compatible with CPU
         COMPATIBLE=1
         if [ ${RESTRICT} -eq 1 ]; then
-          for F in "$(readModelArray "${ID}" "flags")"; do
-            if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
-              COMPATIBLE=0
-              break
-            fi
-          done
-          if [ "${DT}" = "true" ] && [[ "${EXTERNALCONTROLLER}" = "true" && ! "${ID}" = "SA6400" ]]; then
+          for F in "${FLAGS}"; do if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
+            COMPATIBLE=0
+            break
+          fi; done
+          if [ "${DT}" = "true" ] && [[ "${EXTERNALCONTROLLER}" = "true" && ! "${M}" = "SA6400" ]]; then
             COMPATIBLE=0
           fi
-          if [[ ${SATACONTROLLER} -eq 0 && "${EXTERNALCONTROLLER}" = "false" && ! "${ID}" = "SA6400" ]]; then
+          if [[ ${SATACONTROLLER} -eq 0 && "${EXTERNALCONTROLLER}" = "false" && ! "${M}" = "SA6400" ]]; then
             COMPATIBLE=0
           fi
         fi
         [ "${DT}" = "true" ] && DTS="x" || DTS=""
-        [ "${BETA}" = "true" ] && BETA="x" || BETA=""
-        [ ${COMPATIBLE} -eq 1 ] && echo "${ID} \"$(printf "\Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-4s\Zn" "${DISKS}" "${CPU}" "${PLATFORM}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
-      done <<<$(cat "${TMP_PATH}/modellist" | sort -n -k 2)
+        [ ${COMPATIBLE} -eq 1 ] && echo "${ID} \"$(printf "\Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn" "${CPU}" "${PLATFORM}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}")\" ">>"${TMP_PATH}/menu"
+      done  <<<$(cat "${TMP_PATH}/modellist")
       dialog --backtitle "$(backtitle)" --colors \
         --cancel-label "Show all" --help-button --help-label "Exit" \
         --extra-button --extra-label "Info" \
-        --menu "Choose Model for Loader (This Chart indicates the original Values, without Addons.)\n $(printf "\Zb%-10s\Zn \Zb%-8s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-4s\Zn" "Model" "Disks" "CPU" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Beta")" 0 115 0 \
+        --menu "Choose Model for Loader (This Chart indicates the original Values, without Addons.)\n $(printf "\Zb%-10s\Zn\Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn" "Model" "CPU" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount")" 0 115 0 \
         --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       RET=$?
       case ${RET} in
@@ -191,7 +192,6 @@ function arcModel() {
           break
           ;;
         1) # cancel-button -> Show all Models
-          FLGBETA=1
           RESTRICT=0
           ;;
         2) # help-button -> Exit
@@ -199,9 +199,7 @@ function arcModel() {
           break
           ;;
         3) # extra-button -> Platform Info
-          resp=$(cat ${TMP_PATH}/resp)
-          PLATFORM="$(readModelKey "${resp}" "platform")"
-          dialog --textbox "./informations/${PLATFORM}.yml" 15 80
+          dialog --textbox "./informations/${A}.yml" 15 80
           ;;
         255) # ESC -> Exit
           return 1
