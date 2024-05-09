@@ -298,12 +298,12 @@ function arcVersion() {
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS=': ' read -r KEY VALUE; do
     writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
-  done <<<$(readConfigMap "platforms.${PLATFORM}.synoinfo" "${WORK_PATH}/platforms.yml")
+  done <<<$(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")
   # Reset Addons
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   while IFS=': ' read -r ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
-    if ! checkAddonExist "${ADDON}" "${PLATFORM}" "${KVERP}"; then
+    if ! checkAddonExist "${ADDON}" "${PLATFORM}"; then
       deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
     fi
   done <<<$(readConfigMap "addons" "${USER_CONFIG_FILE}")
@@ -504,11 +504,6 @@ function arcSettings() {
 ###############################################################################
 # Building Loader Online
 function premake() {
-  # Read Model Config
-  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   # Read Config for Arc Settings
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
