@@ -53,8 +53,8 @@ function addonSelection() {
     fi
     echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
   done <<<$(availableAddons "${PLATFORM}")
-  dialog --backtitle "$(backtitle)" --title "Loader Addons" --aspect 18 \
-    --checklist "Select Loader Addons to include.\nPlease read Wiki before choosing anything.\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
+  dialog --backtitle "$(backtitle)" --title "DSM Addons" --aspect 18 \
+    --checklist "Select DSM Addons to include.\nPlease read Wiki before choosing anything.\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
   resp=$(cat ${TMP_PATH}/resp)
@@ -66,8 +66,8 @@ function addonSelection() {
     writeConfigKey "addons.\"${ADDON}\"" "" "${USER_CONFIG_FILE}"
   done
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
-  dialog --backtitle "$(backtitle)" --title "Addons" \
-    --msgbox "Loader Addons selected:\n${ADDONSINFO}" 0 0
+  dialog --backtitle "$(backtitle)" --title "DSM Addons" \
+    --msgbox "DSM Addons selected:\n${ADDONSINFO}" 0 0
 }
 
 ###############################################################################
@@ -1852,7 +1852,7 @@ function formatdisks() {
   ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --progressbox "Formatting ..." 20 100
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
-    --msgbox "Formatting is complete." 0 0
+    --msgbox "Formatting is complete." 3 25
   return
 }
 

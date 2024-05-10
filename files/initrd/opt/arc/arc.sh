@@ -124,7 +124,7 @@ function backtitle() {
 # Model Selection
 function arcModel() {
   dialog --backtitle "$(backtitle)" --title "Model" --title "Model" \
-    --infobox "Reading Models..." 0 0
+    --infobox "Reading Models..." 3 25
   # Loop menu
   RESTRICT=1
   PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"
@@ -183,13 +183,11 @@ function arcModel() {
         if [ ${SATACONTROLLER} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ] && [ ! "${A}" = "epyc7002" ]; then
           COMPATIBLE=0
         fi
-        if [ -z "$(grep -w "${M}" "${S_FILE}")" ]; then
-          COMPATIBLE=0
-        fi
+        [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
       else
         [ -z "$(grep -w "${M}" "${S_FILE}")" ] && BETA="x" || BETA=""
       fi
-      [ ! grep -w "${A}" "${P_FILE}"] && COMPATIBLE=0
+      [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
       [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${CPU}" "${A}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
     done  <<<$(cat "${TMP_PATH}/modellist")
     dialog --backtitle "$(backtitle)" --colors \
@@ -311,10 +309,18 @@ function arcVersion() {
     fi
   done <<<$(readConfigMap "addons" "${USER_CONFIG_FILE}")
   # Reset Modules
+  echo "$(lsmod | awk '{print $1}' | sort)" >>"${TMP_PATH}/lsmod"
+  cp -f "${ARC_PATH}/include/modulelist" "${TMP_PATH}/modulelist.user"
+  echo -e "\n\n# User Modules" >>"${TMP_PATH}/modulelist.user"
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read -r ID DESC; do
     writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
+    if [ -n "$(grep -w "${ID}" "${TMP_PATH}/lsmod")" ] && [ -z "$(grep -w "${ID}" "${TMP_PATH}/modulelist.user")" ]; then
+      echo "N ${ID}.ko" >>"${TMP_PATH}/modulelist.user"
+    fi
   done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
+  [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
+  mv -f "${TMP_PATH}/modulelist.user" "${USER_UP_PATH}/modulelist"
   if [ "${CUSTOM}" = "false" ]; then
     if [ "${ONLYVERSION}" != "true" ]; then
       arcPatch
@@ -440,18 +446,21 @@ function arcSettings() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   # Get Network Config for Loader
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
-    --infobox "Loading Network Config..." 3 40
+    --infobox "Loading Network Config..." 3 30
   sleep 2
   getnet
   # Select Portmap for Loader
   getmap
   if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
     dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
-      --infobox "Loading Storage Map..." 3 40
+      --infobox "Loading Storage Map..." 3 30
     sleep 2
     getmapSelection
   fi
   if [ "${CUSTOM}" = "false" ]; then
+    dialog --backtitle "$(backtitle)" --colors --title "DSM Addons" \
+      --infobox "Loading Addons Table..." 3 30
+    sleep 2
     # Add Arc Addons
     writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
     # Select Addons
