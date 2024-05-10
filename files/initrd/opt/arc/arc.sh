@@ -189,12 +189,13 @@ function arcModel() {
       else
         [ -z "$(grep -w "${M}" "${S_FILE}")" ] && BETA="x" || BETA=""
       fi
+      [ ! grep -w "${A}" "${P_FILE}"] && COMPATIBLE=0
       [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${CPU}" "${A}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
     done  <<<$(cat "${TMP_PATH}/modellist")
     dialog --backtitle "$(backtitle)" --colors \
       --cancel-label "Show all" --help-button --help-label "Exit" \
       --extra-button --extra-label "Info" \
-      --menu "Choose Model for Loader (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "CPU" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Beta")" 0 120 0 \
+      --menu "Choose Model for Loader (x = supported / + = need Addons) | Beta Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "CPU" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Beta")" 0 120 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     RET=$?
     case ${RET} in
@@ -204,7 +205,7 @@ function arcModel() {
         break
         ;;
       1) # cancel-button -> Show all Models
-        RESTRICT=0
+        [ ${RESTRICT} -eq 1 ] && RESTRICT=0 || RESTRICT=1
         ;;
       2) # help-button -> Exit
         return 0
@@ -227,20 +228,22 @@ function arcModel() {
     PRODUCTVER=""
     PLATFORM="$(grep -w "${resp}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
     MODEL="${resp}"
-    writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
-    writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+    MODELID="$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')"
+    writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
-    writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
-    writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
+    writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
+    writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
     writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-    writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
+    writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
+    writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
     if [ "${OFFLINE}" = "false" ]; then
       getLogo "${MODEL}"
     fi
@@ -330,6 +333,7 @@ function arcVersion() {
 # Arc Patch Section
 function arcPatch() {
   # Read Model Values
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
@@ -433,26 +437,19 @@ function arcPatch() {
 ###############################################################################
 # Arc Settings Section
 function arcSettings() {
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   # Get Network Config for Loader
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
-    --infobox "Network Config..." 3 30
+    --infobox "Loading Network Config..." 3 40
   sleep 2
-  if [ "${CUSTOM}" = "true" ]; then
-    autogetnet
-  else
-    getnet
-  fi
+  getnet
   # Select Portmap for Loader
   getmap
   if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
     dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
-      --infobox "Storage Map..." 3 30
+      --infobox "Loading Storage Map..." 3 40
     sleep 2
-    if [ "${CUSTOM}" = "true" ]; then
-      autogetmapSelection
-    else
-      getmapSelection
-    fi
+    getmapSelection
   fi
   if [ "${CUSTOM}" = "false" ]; then
     # Add Arc Addons
@@ -460,7 +457,7 @@ function arcSettings() {
     # Select Addons
     addonSelection
     # Check for DT and HBA/Raid Controller
-    if [ ! "${MODEL}" = "SA6400" ]; then
+    if [ ! "${PLATFORM}" = "eypc7002" ]; then
       if [[ "${DT}" = "true" && "${EXTERNALCONTROLLER}" = "true" ]]; then
         dialog --backtitle "$(backtitle)" --title "Arc Warning" \
           --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental Feature." 0 0
@@ -627,10 +624,6 @@ function make() {
     # Get PAT Data from Config
     PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
-    if [[ -z "${PAT_URL_CONF}" || -z "${PAT_HASH_CONF}" ]]; then
-      PAT_URL_CONF="#"
-      PAT_HASH_CONF="#"
-    fi
     # Get PAT Data from Syno
     while true; do
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \

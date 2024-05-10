@@ -41,6 +41,7 @@ fi
 # Read model/system variables
 PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
@@ -50,7 +51,7 @@ RAM="${RAMTOTAL}GB"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
 
 echo -e "\033[1;37mDSM:\033[0m"
-echo -e "Model: \033[1;37m${MODEL}\033[0m"
+echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
 echo -e "Version: \033[1;37m${PRODUCTVER}\033[0m"
 echo -e "LKM: \033[1;37m${LKM}\033[0m"
 echo -e "Macsys: \033[1;37m${MACSYS}\033[0m"
@@ -86,7 +87,7 @@ KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "
 declare -A CMDLINE
 
 # Build Cmdline
-CMDLINE['syno_hw_version']="${MODEL}"
+CMDLINE['syno_hw_version']="${MODELID:-${MODEL}}"
 [ -z "${VID}" ] && VID="0x46f4" # Sanity check
 [ -z "${PID}" ] && PID="0x0001" # Sanity check
 CMDLINE['vid']="${VID}"

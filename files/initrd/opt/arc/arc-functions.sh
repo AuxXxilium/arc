@@ -616,9 +616,10 @@ function backupMenu() {
             cp -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" "${USER_CONFIG_FILE}"
             sleep 2
             MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+            MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
             PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
             if [[ -n "${MODEL}" && -n "${PRODUCTVER}" ]]; then
-              TEXT="Installation found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
+              TEXT="Installation found:\nModel: ${MODELID:-${MODEL}}\nVersion: ${PRODUCTVER}"
               SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
               TEXT+="\nSerial: ${SN}"
               ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
@@ -1074,6 +1075,7 @@ function sysinfo() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
     MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+    MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
     PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
     DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
@@ -1155,7 +1157,7 @@ function sysinfo() {
   TEXT+="\n\Z4>> Loader\Zn"
   TEXT+="\n   Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n   Config Version: \Zb${CONFIGVER}\Zn"
-  TEXT+="\n\Z4>> DSM ${PRODUCTVER}: ${MODEL}\Zn"
+  TEXT+="\n\Z4>> DSM ${PRODUCTVER}: ${MODELID:-${MODEL}}\Zn"
   TEXT+="\n   Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
   TEXT+="\n   Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
   TEXT+="\n   Arc Patch | Kernelload: \Zb${ARCPATCH} | ${KERNELLOAD}\Zn"
@@ -1303,6 +1305,7 @@ function fullsysinfo() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
     MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+    MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
     PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
     DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
@@ -1389,7 +1392,7 @@ function fullsysinfo() {
   TEXT+="\nConfig | Build: ${CONFDONE} | ${BUILDDONE}"
   TEXT+="\nConfig Version: ${CONFIGVER}"
   TEXT+="\n"
-  TEXT+="\nDSM ${PRODUCTVER}: ${MODEL}"
+  TEXT+="\nDSM ${PRODUCTVER}: ${MODELID:-${MODEL}}"
   TEXT+="\nKernel | LKM: ${KVER} | ${LKM}"
   TEXT+="\nPlatform | DeviceTree: ${PLATFORM} | ${DT}"
   TEXT+="\nArc Patch | Kernelload: ${ARCPATCH} | ${KERNELLOAD}"
