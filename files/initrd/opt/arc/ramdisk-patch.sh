@@ -30,6 +30,7 @@ mkdir -p "${RAMDISK_PATH}"
 # Read Model Data
 PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
@@ -56,7 +57,6 @@ if [ "${PRODUCTVERDSM}" != "${PRODUCTVER}" ]; then
   echo -e "Try to use DSM Version ${PRODUCTVERDSM} for Patch."
   writeConfigKey "productver" "${USER_CONFIG_FILE}"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
   PAT_URL=""
   PAT_HASH=""
 fi
@@ -157,6 +157,7 @@ echo "export LOADERVERSION=\"${ARC_VERSION}\"" >>"${RAMDISK_PATH}/addons/addons.
 echo "export PLATFORM=\"${PLATFORM}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export PRODUCTVER=\"${PRODUCTVER}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MODEL=\"${MODEL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export MODELID=\"${MODELID}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MLINK=\"${PAT_URL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MCHECKSUM=\"${PAT_HASH}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export LAYOUT=\"${LAYOUT}\"" >>"${RAMDISK_PATH}/addons/addons.sh"

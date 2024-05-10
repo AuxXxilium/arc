@@ -39,46 +39,6 @@ function getnet() {
       dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "Invalid MAC" 0 0
     done
   fi
-  # Ask for Macsys
-  dialog --clear --backtitle "$(backtitle)" \
-    --nocancel --title "Macsys Setting" \
-    --menu "Choose an Option\n* Recommended Option" 8 50 0 \
-    1 "Hardware - Use Hardware Mac for DSM *" \
-    2 "Custom - Use Custom/Fake Mac for DSM" \
-  2>"${TMP_PATH}/resp"
-  resp=$(cat "${TMP_PATH}/resp")
-  [ -z "${resp}" ] && return 1
-  if [ ${resp} -eq 1 ]; then
-    writeConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
-  elif [ ${resp} -eq 2 ]; then
-    writeConfigKey "arc.macsys" "custom" "${USER_CONFIG_FILE}"
-  fi
-  MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
-}
-
-# Get Network Config for Loader
-function autogetnet() {
-  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
-  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  if [ "${ARCPATCH}" = "true" ]; then
-    ARCMACNUM=1
-    for ETH in ${ETHX}; do
-      ARCMAC=""
-      ARCMAC="$(readConfigKey "${MODEL}.mac${ARCMACNUM}" "${S_FILE}")"
-      [ -n "${ARCMAC}" ] && writeConfigKey "mac.${ETH}" "${ARCMAC}" "${USER_CONFIG_FILE}"
-      [ -z "${ARCMAC}" ] && break
-      ARCMACNUM=$((${ARCMACNUM} + 1))
-    done
-  else
-    ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
-    MACS=$(generateMacAddress "${MODEL}" ${ETHN})
-    N=1
-    for ETH in ${ETHX}; do
-      MAC=$(echo "${MACS}" | cut -d ' ' -f ${N})
-      writeConfigKey "mac.${ETH}" "${MAC}" "${USER_CONFIG_FILE}"
-      N=$((${N} + 1))
-    done
-  fi
 }
 
 # Get Amount of NIC
