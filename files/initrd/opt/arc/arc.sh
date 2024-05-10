@@ -189,9 +189,7 @@ function arcModel() {
       else
         [ -z "$(grep -w "${M}" "${S_FILE}")" ] && BETA="x" || BETA=""
       fi
-      if [ ${COMPATIBLE} -eq 1 ] && [ -z "$(grep -w "${A}" "${P_FILE}")" ]; then
-        COMPATIBLE=0
-      fi
+      [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
       [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${CPU}" "${A}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
     done  <<<$(cat "${TMP_PATH}/modellist")
     dialog --backtitle "$(backtitle)" --colors \
