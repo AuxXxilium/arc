@@ -333,6 +333,7 @@ function arcVersion() {
 # Arc Patch Section
 function arcPatch() {
   # Read Model Values
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
@@ -436,6 +437,7 @@ function arcPatch() {
 ###############################################################################
 # Arc Settings Section
 function arcSettings() {
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   # Get Network Config for Loader
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
     --infobox "Loading Network Config..." 3 40
@@ -455,7 +457,7 @@ function arcSettings() {
     # Select Addons
     addonSelection
     # Check for DT and HBA/Raid Controller
-    if [ ! "${MODEL}" = "SA6400" ]; then
+    if [ ! "${PLATFORM}" = "eypc7002" ]; then
       if [[ "${DT}" = "true" && "${EXTERNALCONTROLLER}" = "true" ]]; then
         dialog --backtitle "$(backtitle)" --title "Arc Warning" \
           --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental Feature." 0 0
@@ -622,10 +624,6 @@ function make() {
     # Get PAT Data from Config
     PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
-    if [[ -z "${PAT_URL_CONF}" || -z "${PAT_HASH_CONF}" ]]; then
-      PAT_URL_CONF="#"
-      PAT_HASH_CONF="#"
-    fi
     # Get PAT Data from Syno
     while true; do
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
