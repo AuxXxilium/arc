@@ -139,6 +139,7 @@ function getmapSelection() {
   SATAPORTMAP="$(awk '{print $1}' "${TMP_PATH}/drivescon")"
   SATAREMAP="$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
+  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   if [ "${CUSTOM}" = "false" ]; then
     # Show recommended Option to user
     if [[ -n "${SATAREMAP}" && "${EXTERNALCONTROLLER}" = "true" && "${MACHINE}" = "NATIVE" ]]; then
