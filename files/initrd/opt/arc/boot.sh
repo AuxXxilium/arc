@@ -115,7 +115,6 @@ if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
     CMDLINE['synoboot_satadom']="${SATADOM:-2}"
     CMDLINE['dom_szmax']="${SIZE}"
   fi
-  CMDLINE["elevator"]="elevator"
 fi
 if [ "${DT}" = "true" ]; then
   CMDLINE["syno_ttyS0"]="serial,0x3f8"
