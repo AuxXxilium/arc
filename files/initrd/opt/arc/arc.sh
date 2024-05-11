@@ -353,7 +353,7 @@ function arcPatch() {
       writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
     else
-      SN="$(generateSerial "${MODEL}")"
+      SN=$(generateSerial "${MODEL}")
       writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     fi
@@ -374,7 +374,7 @@ function arcPatch() {
         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 2 ]; then
         # Generate random Serial
-        SN="$(generateSerial "${MODEL}")"
+        SN=$(generateSerial "${MODEL}")
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 3 ]; then
         while true; do
@@ -408,7 +408,7 @@ function arcPatch() {
       [ -z "${resp}" ] && return 1
       if [ ${resp} -eq 1 ]; then
         # Generate random Serial
-        SN="$(generateSerial "${MODEL}")"
+        SN=$(generateSerial "${MODEL}")
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 2 ]; then
         while true; do

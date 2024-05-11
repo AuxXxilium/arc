@@ -1,6 +1,7 @@
 # Get Network Config for Loader
 function getnet() {
   ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   if [ "${ARCPATCH}" = "true" ]; then
@@ -14,7 +15,7 @@ function getnet() {
     done
   elif [ "${ARCPATCH}" = "false" ]; then
     ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
-    MACS=$(generateMacAddress "${MODEL}" ${ETHN})
+    MACS=($(generateMacAddress "${MODEL}" ${ETHN}))
     N=1
     for ETH in ${ETHX}; do
       MAC=$(echo "${MACS}" | cut -d ' ' -f ${N})
