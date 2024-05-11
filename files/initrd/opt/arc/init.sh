@@ -101,10 +101,10 @@ for ETH in ${ETHX}; do
       sleep 2
     fi
     /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
-    echo
   fi
   NIC=$((${NIC} + 1))
 done
+echo
 # Write NIC Amount to config
 writeConfigKey "device.nic" "${NIC}" "${USER_CONFIG_FILE}"
 # No network devices

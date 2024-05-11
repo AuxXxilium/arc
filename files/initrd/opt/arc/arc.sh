@@ -448,20 +448,20 @@ function arcSettings() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   # Get Network Config for Loader
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
-    --infobox "Generating Network Config..." 3 30
+    --infobox "Generating Network Config..." 3 35
   sleep 2
   getnet
   # Select Portmap for Loader
   getmap
   if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
     dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
-      --infobox "Generating Storage Map..." 3 30
+      --infobox "Generating Storage Map..." 3 35
     sleep 2
     getmapSelection
   fi
   if [ "${CUSTOM}" = "false" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "DSM Addons" \
-      --infobox "Loading Addons Table..." 3 30
+      --infobox "Loading Addons Table..." 3 35
     # Add Arc Addons
     writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
     # Select Addons
@@ -977,7 +977,6 @@ else
         echo "b \"DSM Addons \" "                                                             >>"${TMP_PATH}/menu"
         echo "d \"DSM Modules \" "                                                            >>"${TMP_PATH}/menu"
         echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
-        echo "N \"DSM Network Mode \" "                                                       >>"${TMP_PATH}/menu"
         echo "S \"DSM Storage Map \" "                                                        >>"${TMP_PATH}/menu"
         echo "P \"DSM StoragePanel \" "                                                       >>"${TMP_PATH}/menu"
         echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
@@ -1020,7 +1019,7 @@ else
         echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
         echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
         echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
-        if [ "${MODEL}" = "SA6400" ]; then
+        if [ "${PLATFORM}" = "epyc7002" ]; then
           echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
         fi
         if [ "${DT}" = "true" ]; then
@@ -1084,7 +1083,6 @@ else
       b) addonMenu; NEXT="b" ;;
       d) modulesMenu; NEXT="d" ;;
       e) ONLYVERSION="true" && arcVersion; NEXT="e" ;;
-      N) networkMenu; NEXT="N" ;;
       S) storageMenu; NEXT="S" ;;
       P) storagepanelMenu; NEXT="P" ;;
       p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
