@@ -321,6 +321,7 @@ function arcVersion() {
   done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
   [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
   mv -f "${TMP_PATH}/modulelist.user" "${USER_UP_PATH}/modulelist"
+  dos2unix "${USER_UP_PATH}/modulelist"
   if [ "${CUSTOM}" = "false" ]; then
     if [ "${ONLYVERSION}" != "true" ]; then
       arcPatch
