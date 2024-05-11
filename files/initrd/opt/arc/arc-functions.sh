@@ -220,7 +220,7 @@ function modulesMenu() {
           [ $? -ne 0 ] && return
           [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
           mv -f "${TMP_PATH}/modulelist.user" "${USER_UP_PATH}/modulelist"
-          dos2unix "${USER_UP_PATH}/modulelist"
+          dos2unix "${USER_UP_PATH}/modulelist" 2>/dev/null
           break
         done
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
