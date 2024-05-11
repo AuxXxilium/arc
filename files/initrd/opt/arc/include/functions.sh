@@ -72,17 +72,17 @@ function genRandomValue() {
 # 1 - Model
 # Returns serial number
 function generateSerial() {
-  PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}" | sort -R | tail -1)"
-  MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}" | sort -R | tail -1)"
-  SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}")"
+  PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}" 2>/dev/null | sort -R | tail -1)"
+  MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}" 2>/dev/null | sort -R | tail -1)"
+  SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}" 2>/dev/null)"
 
   SERIAL="${PREFIX:-"0000"}${MIDDLE:-"XXX"}"
-  case "${SUFFIX}" in
+  case "${SUFFIX:-"alpha"}" in
   numeric)
-    SUFFIX="$(random)"
+    SERIAL+="$(random)"
     ;;
   alpha)
-    SUFFIX="$(genRandomLetter)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomLetter)"
+    SERIAL+="$(genRandomLetter)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomLetter)"
     ;;
   esac
 
@@ -96,8 +96,7 @@ function generateSerial() {
 # 2 - Amount of MACs to generate
 # Returns serial number
 function generateMacAddress() {
-  ID="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  MACPRE="$(readConfigKey "${ID}.macpre" "${S_FILE}")"
+  MACPRE="$(readConfigKey "${1}.macpre" "${S_FILE}")"
   MACSUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
   NUM=${2:-1}
   MACS=""
