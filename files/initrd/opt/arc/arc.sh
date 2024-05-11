@@ -123,7 +123,7 @@ function backtitle() {
 ###############################################################################
 # Model Selection
 function arcModel() {
-  dialog --backtitle "$(backtitle)" --title "Model" --title "Model" \
+  dialog --backtitle "$(backtitle)" --title "DSM Model" \
     --infobox "Reading Models..." 3 25
   # Loop menu
   RESTRICT=1
@@ -152,6 +152,7 @@ function arcModel() {
       FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
       ARCCONF="$(readConfigKey "${M}.serial" "${S_FILE}" 2>/dev/null)"
       ARC=""
+      BETA=""
       [ -n "${ARCCONF}" ] && ARC="x"
       CPU="Intel"
       [[ "${A}" = "r1000" || "${A}" = "v1000" || "${A}" = "epyc7002" ]] && CPU="AMD"
@@ -190,7 +191,7 @@ function arcModel() {
       [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
       [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${CPU}" "${A}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
     done  <<<$(cat "${TMP_PATH}/modellist")
-    dialog --backtitle "$(backtitle)" --colors \
+    dialog --backtitle "$(backtitle)" --title "DSM Model" --colors \
       --cancel-label "Show all" --help-button --help-label "Exit" \
       --extra-button --extra-label "Info" \
       --menu "Choose Model for Loader (x = supported / + = need Addons) | Beta Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "CPU" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Beta")" 0 120 0 \
@@ -265,8 +266,8 @@ function arcVersion() {
   if [ "${CUSTOM}" = "false" ]; then
     # Select Build for DSM
     ITEMS="$(readConfigEntriesArray "platforms.${PLATFORM}.productvers" "${P_FILE}" | sort -r)"
-    dialog --clear --no-items --nocancel --backtitle "$(backtitle)" \
-      --no-items --menu "DSM Version" 7 30 0 ${ITEMS} \
+    dialog --clear --no-items --nocancel --title "DSM Version" --backtitle "$(backtitle)" \
+      --no-items --menu "Choose DSM Version" 7 30 0 ${ITEMS} \
     2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 0
     resp=$(cat ${TMP_PATH}/resp)
@@ -434,7 +435,7 @@ function arcPatch() {
   fi
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   if [ "${ONLYPATCH}" = "true" ]; then
-    autogetnet
+    getnet
     return 0
   else
     arcSettings
@@ -489,8 +490,8 @@ function arcSettings() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${CUSTOM}" = "false" ]; then
     # Ask for Build
-    dialog --clear --backtitle "$(backtitle)" \
-      --menu "Config done -> Build now?" 7 50 0 \
+    dialog --clear --backtitle "$(backtitle)" --title "Config done" \
+      --menu "Build now?" 7 50 0 \
       1 "Yes - Build Arc Loader now" \
       2 "No - I want to make changes" \
     2>"${TMP_PATH}/resp"
@@ -593,7 +594,7 @@ function arcSummary() {
   SUMMARY+="\n>> Disks (internal): \Zb${HARDDRIVES}\Zn"
   SUMMARY+="\n>> External Controller: \Zb${EXTERNALCONTROLLER}\Zn"
   SUMMARY+="\n>> Memory Min/Max MB: \Zb${RAMMIN}/${RAMMAX}\Zn"
-  dialog --backtitle "$(backtitle)" --colors --title "Config Summary" \
+  dialog --backtitle "$(backtitle)" --colors --title "DSM Config Summary" \
     --extra-button --extra-label "Cancel" --msgbox "${SUMMARY}" 0 0
   RET=$?
   case ${RET} in
@@ -775,8 +776,8 @@ function make() {
         boot && exit 0
       else
         # Ask for Boot
-        dialog --clear --backtitle "$(backtitle)" \
-          --menu "Build done. Boot now?" 0 0 0 \
+        dialog --clear --backtitle "$(backtitle)" --title "Build done"\
+          --menu "Boot now?" 0 0 0 \
           1 "Yes - Boot Arc Loader now" \
           2 "No - I want to make changes" \
         2>"${TMP_PATH}/resp"
