@@ -1019,7 +1019,7 @@ else
         echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
         echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
         echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
-        if [ "${MODEL}" = "SA6400" ]; then
+        if [ "${PLATFORM}" = "epyc7002" ]; then
           echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
         fi
         if [ "${DT}" = "true" ]; then
