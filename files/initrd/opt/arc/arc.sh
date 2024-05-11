@@ -321,7 +321,7 @@ function arcVersion() {
   done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
   [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
   mv -f "${TMP_PATH}/modulelist.user" "${USER_UP_PATH}/modulelist"
-  dos2unix "${USER_UP_PATH}/modulelist"
+  dos2unix "${USER_UP_PATH}/modulelist" 2>/dev/null
   if [ "${CUSTOM}" = "false" ]; then
     if [ "${ONLYVERSION}" != "true" ]; then
       arcPatch
@@ -461,7 +461,6 @@ function arcSettings() {
   if [ "${CUSTOM}" = "false" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "DSM Addons" \
       --infobox "Loading Addons Table..." 3 30
-    sleep 2
     # Add Arc Addons
     writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
     # Select Addons
