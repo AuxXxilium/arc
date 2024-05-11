@@ -160,7 +160,7 @@ CMDLINE['netif_num']="${NIC}"
 if [ "${MACSYS}" = "hardware" ]; then
   CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 elif [ "${MACSYS}" = "custom" ]; then
-  CMDLINE['skip_vender_mac_interfaces']="$(seq -s, $((${NIC} + 1)) 7)"
+  CMDLINE['skip_vender_mac_interfaces']="$(seq -s, ${NIC} 7)"
 fi
 
 # Read user cmdline
