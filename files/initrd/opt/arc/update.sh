@@ -30,7 +30,7 @@ KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 if [ -n "${MODEL}" ]; then
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-  DT="$(readModelKey "${MODEL}" "dt")"
+  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
 fi
 
 # Get Arc Data from Config

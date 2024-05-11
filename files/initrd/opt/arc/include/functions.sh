@@ -96,7 +96,7 @@ function generateSerial() {
 # 2 - Amount of MACs to generate
 # Returns serial number
 function generateMacAddress() {
-  ID="$(readModelKey "${1}" "id")"
+  ID="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   MACPRE="$(readConfigKey "${ID}.macpre" "${S_FILE}")"
   MACSUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
   NUM=${2:-1}
