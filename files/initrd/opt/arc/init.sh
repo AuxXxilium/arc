@@ -76,10 +76,6 @@ initConfigKey "satadom" "2" "${USER_CONFIG_FILE}"
 initConfigKey "static" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-# Config Update
-USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
-[ "${USBMOUNT}" = "internal" ] && writeConfigKey "arc.usbmount" "true" "${USER_CONFIG_FILE}"
-[ "${USBMOUNT}" = "external" ] && writeConfigKey "arc.usbmount" "false" "${USER_CONFIG_FILE}"
 
 # Init Network
 ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
