@@ -294,6 +294,13 @@ function arcVersion() {
   else
     KVERP="${KVER}"
   fi
+  if [ "${ONLYVERSION}" = "true" ]; then
+    # Build isn't done
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    ONLYVERSION=""
+    return 0
+  fi
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
     --infobox "Reconfiguring Addons, Modules and Synoinfo" 3 50
   # Reset Synoinfo
@@ -323,18 +330,7 @@ function arcVersion() {
   [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
   mv -f "${TMP_PATH}/modulelist.user" "${USER_UP_PATH}/modulelist"
   dos2unix "${USER_UP_PATH}/modulelist" 2>/dev/null
-  if [ "${CUSTOM}" = "false" ]; then
-    if [ "${ONLYVERSION}" != "true" ]; then
-      arcPatch
-    else
-      # Build isn't done
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      return 0
-    fi
-  else
-    arcPatch
-  fi
+  arcPatch
 }
 
 ###############################################################################
@@ -434,12 +430,7 @@ function arcPatch() {
     fi
   fi
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  if [ "${ONLYPATCH}" = "true" ]; then
-    getnet
-    return 0
-  else
-    arcSettings
-  fi
+  arcSettings
 }
 
 ###############################################################################
@@ -451,6 +442,13 @@ function arcSettings() {
     --infobox "Generating Network Config..." 3 35
   sleep 2
   getnet
+  if [ "${ONLYPATCH}" = "true" ]; then
+    # Build isn't done
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    ONLYPATCH=""
+    return 0
+  fi
   # Select Portmap for Loader
   getmap
   if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then

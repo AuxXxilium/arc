@@ -1852,7 +1852,7 @@ function formatdisks() {
   ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --progressbox "Formatting ..." 20 100
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
-    --msgbox "Formatting is complete." 3 25
+    --msgbox "Formatting is complete." 5 30
   return
 }
 
