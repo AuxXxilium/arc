@@ -794,7 +794,7 @@ function make() {
 # Finish Building Loader
 function arcFinish() {
   # Verify Files exist
-  if [[ -f "${ORI_ZIMAGE_FILE}" && -f "${ORI_RDGZ_FILE}" && -f "${MOD_ZIMAGE_FILE}" && -f "${MOD_RDGZ_FILE}" ]]; then
+  if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     # Build is done
     writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
