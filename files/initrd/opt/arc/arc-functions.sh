@@ -1776,6 +1776,52 @@ function resetPassword() {
 }
 
 ###############################################################################
+# Add new DSM user
+function addNewDSMUser() {
+  DSMROOTS="$(findDSMRoot)"
+  if [ -z "${DSMROOTS}" ]; then
+    dialog --backtitle "$(backtitle)" --title "Add DSM User" \
+      --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
+    return
+  fi
+  MSG="Add to administrators group by default"
+  dialog --backtitle "$(backtitle)" --title "Add DSM User" \
+    --form "${MSG}" 8 60 3 "username:" 1 1 "user" 1 10 50 0 "password:" 2 1 "passwd" 2 10 50 0 \
+    2>"${TMP_PATH}/resp"
+  [ $? -ne 0 ] && return
+  username="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+  password="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+  (
+    ONBOOTUP=""
+    ONBOOTUP="${ONBOOTUP}if synouser --enum local | grep -q ^${username}\$; then synouser --setpw ${username} ${password}; else synouser --add ${username} ${password} arc 0 user@arc.arc 1; fi\n"
+    ONBOOTUP="${ONBOOTUP}synogroup --member administrators ${username}\n"
+    ONBOOTUP="${ONBOOTUP}echo \"DELETE FROM task WHERE task_name LIKE ''ARCONBOOTUPRR_ADDUSER'';\" | sqlite3 /usr/syno/etc/esynoscheduler/esynoscheduler.db\n"
+
+    mkdir -p "${TMP_PATH}/mdX"
+    for I in ${DSMROOTS}; do
+      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      [ $? -ne 0 ] && continue
+      if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
+        sqlite3 ${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db <<EOF
+DELETE FROM task WHERE task_name LIKE 'ARCONBOOTUPRR_ADDUSER';
+INSERT INTO task VALUES('ARCONBOOTUPRR_ADDUSER', '', 'bootup', '', 1, 0, 0, 0, '', 0, '$(echo -e ${ONBOOTUP})', 'script', '{}', '', '', '{}', '{}');
+EOF
+        sleep 1
+        sync
+        echo "true" >${TMP_PATH}/isEnable
+      fi
+      umount "${TMP_PATH}/mdX"
+    done
+    rm -rf "${TMP_PATH}/mdX"
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Add DSM User" \
+    --progressbox "Adding ..." 20 100
+  [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Add DSM User successful." || MSG="Add DSM User failed."
+  dialog --backtitle "$(backtitle)" --title "Add DSM User" \
+    --msgbox "${MSG}" 0 0
+  return
+}
+
+###############################################################################
 # modify bootipwaittime
 function bootipwaittime() {
   ITEMS="$(echo -e "0 \n5 \n10 \n20 \n30 \n60 \n")"

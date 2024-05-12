@@ -1017,6 +1017,7 @@ else
         echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
         echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
         echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
+        echo "N \"Add DSM User \" "                                                           >>"${TMP_PATH}/menu"
         if [ "${PLATFORM}" = "epyc7002" ]; then
           echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
         fi
@@ -1127,6 +1128,7 @@ else
         ;;
       s) downgradeMenu; NEXT="s" ;;
       t) resetPassword; NEXT="t" ;;
+      N) addNewDSMUser; NEXT="N" ;;
       K) [ "${KERNEL}" = "official" ] && KERNEL='custom' || KERNEL='official'
         writeConfigKey "arc.kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
         if [ "${ODP}" = "true" ]; then
