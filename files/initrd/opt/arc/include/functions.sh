@@ -427,26 +427,22 @@ function rebootTo() {
 # Copy DSM files to the boot partition
 # 1 - DSM root path
 function copyDSMFiles() {
-  if [ -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ] || [ ! -f "${MOD_ZIMAGE_FILE}" ] || [ ! -f "${MOD_RDGZ_FILE}" ]; then
-    if [ -f "${1}/grub_cksum.syno" ] && [ -f "${1}/GRUB_VER" ] && [ -f "${1}/zImage" ] && [ -f "${1}/rd.gz" ]; then
-      # Remove old model files
-      rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/grub_cksum.syno" "${PART2_PATH}/GRUB_VER"
-      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}"
-      # Remove old build files
-      rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
-      # Copy new model files
-      cp -f "${1}/grub_cksum.syno" "${PART1_PATH}"
-      cp -f "${1}/GRUB_VER" "${PART1_PATH}"
-      cp -f "${1}/grub_cksum.syno" "${PART2_PATH}"
-      cp -f "${1}/GRUB_VER" "${PART2_PATH}"
-      cp -f "${1}/zImage" "${ORI_ZIMAGE_FILE}"
-      cp -f "${1}/rd.gz" "${ORI_RDGZ_FILE}"
-      return 0
-    else
-      return 1
-    fi
-  else
+  if [ -f "${1}/grub_cksum.syno" ] && [ -f "${1}/GRUB_VER" ] && [ -f "${1}/zImage" ] && [ -f "${1}/rd.gz" ]; then
+    # Remove old model files
+    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/grub_cksum.syno" "${PART2_PATH}/GRUB_VER" >/dev/null
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" >/dev/null
+    # Remove old build files
+    rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
+    # Copy new model files
+    cp -f "${1}/grub_cksum.syno" "${PART1_PATH}"
+    cp -f "${1}/GRUB_VER" "${PART1_PATH}"
+    cp -f "${1}/grub_cksum.syno" "${PART2_PATH}"
+    cp -f "${1}/GRUB_VER" "${PART2_PATH}"
+    cp -f "${1}/zImage" "${ORI_ZIMAGE_FILE}"
+    cp -f "${1}/rd.gz" "${ORI_RDGZ_FILE}"
     return 0
+  else
+    return 1
   fi
 }
 
