@@ -770,15 +770,17 @@ function make() {
     fi
   fi
   # Copy DSM Files to Locations if DSM Files not found
-  if copyDSMFiles "${UNTAR_PAT_PATH}"; then
-    dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
-      --infobox "DSM Copy successful!" 0 0
-    rm -rf "${UNTAR_PAT_PATH}"
-  else
-    dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
-      --infobox "DSM Copy failed!\nExit." 0 0
-    sleep 5
-    return 1
+  if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+    if copyDSMFiles "${UNTAR_PAT_PATH}"; then
+      dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
+        --infobox "DSM Copy successful!" 0 0
+      rm -rf "${UNTAR_PAT_PATH}"
+    else
+      dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
+        --infobox "DSM Copy failed!\nExit." 0 0
+      sleep 5
+      return 1
+    fi
   fi
   (
     livepatch
