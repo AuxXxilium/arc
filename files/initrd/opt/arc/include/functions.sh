@@ -469,11 +469,13 @@ function extractDSMFiles() {
   if [ "${isencrypted}" = "yes" ]; then
     # Uses the extractor to untar PAT file
     LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${1}" "${2}" >"${LOG_FILE}" 2>&1
-    return 0
   else
     # Untar PAT file
     tar -xf "${1}" -C "${2}" >"${LOG_FILE}" 2>&1
-    return 0
   fi
-  return 1
+  if [ -f "${2}/grub_cksum.syno" ] && [ -f "${2}/GRUB_VER" ] && [ -f "${2}/zImage" ] && [ -f "${2}/rd.gz" ]; then
+    return 0
+  else
+    return 1
+  fi
 }
