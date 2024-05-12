@@ -263,6 +263,7 @@ function arcVersion() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   # Check for Custom Build
   if [ "${CUSTOM}" = "false" ]; then
     # Select Build for DSM
@@ -336,7 +337,7 @@ function arcPatch() {
   # Read Model Values
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
+  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
   # Check for Custom Build
   if [ "${CUSTOM}" = "true" ]; then
@@ -435,6 +436,8 @@ function arcPatch() {
 # Arc Settings Section
 function arcSettings() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
+  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   # Get Network Config for Loader
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
     --infobox "Generating Network Config..." 3 35
@@ -510,7 +513,11 @@ function arcSettings() {
 # Building Loader Online
 function premake() {
   # Read Config for Arc Settings
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
+  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
+  USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
@@ -620,13 +627,12 @@ function make() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
+  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   # Cleanup
   if [ -d "${UNTAR_PAT_PATH}" ]; then
     rm -rf "${UNTAR_PAT_PATH}"
   fi
   mkdir -p "${UNTAR_PAT_PATH}"
-  # Check for Offline Mode
-  OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   if [ "${OFFLINE}" = "false" ]; then
     # Get PAT Data from Config
     PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
@@ -788,6 +794,7 @@ function make() {
 function arcFinish() {
   # Verify Files exist
   if [[ -f "${ORI_ZIMAGE_FILE}" && -f "${ORI_RDGZ_FILE}" && -f "${MOD_ZIMAGE_FILE}" && -f "${MOD_RDGZ_FILE}" ]]; then
+    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     # Build is done
     writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1091,6 +1098,17 @@ else
         ;;
       U) [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
         writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
+        if [ "${USBMOUNT}" = true ]; then
+          writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.internalportcfg" "0x3ffffff" "${USER_CONFIG_FILE}"
+        elif [ "${USBMOUNT}" = false ]; then
+          deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
+          deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
+          deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
+          deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
+        fi
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="U"
