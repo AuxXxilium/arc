@@ -1083,11 +1083,13 @@ function sysinfo() {
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
     REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
-    if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
+    if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
       PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
       DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
     elif [ "${REMAP}" = "remap" ]; then
       PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
+    elif [ "${REMAP}" = "ahci" ]; then
+      PORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
     fi
   fi
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
@@ -1319,11 +1321,13 @@ function fullsysinfo() {
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
     REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
-    if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
+    if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
       PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
       DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
     elif [ "${REMAP}" = "remap" ]; then
       PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
+    elif [ "${REMAP}" = "ahci" ]; then
+      PORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
     fi
   fi
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
