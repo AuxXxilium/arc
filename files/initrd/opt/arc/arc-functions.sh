@@ -1083,11 +1083,13 @@ function sysinfo() {
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
     REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
-    if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
+    if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
       PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
       DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
     elif [ "${REMAP}" = "remap" ]; then
       PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
+    elif [ "${REMAP}" = "ahci" ]; then
+      PORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
     fi
   fi
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
@@ -1134,7 +1136,11 @@ function sysinfo() {
       fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) \ZbIP: ${IP} | Mac: ${MACR} (${MAC}) @ ${NETBUS}\Zn"
+        if [[ "${IP}" =~ ^169\.254\..* ]]; then
+          TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}):\Zb LINK LOCAL | Mac: ${MACR} (${MAC})\Zn"
+        else
+          TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}):\Zb ${IP} | Mac: ${MACR} (${MAC})\Zn"
+        fi
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
@@ -1169,13 +1175,15 @@ function sysinfo() {
   TEXT+="\n   MacSys: \Zb${MACSYS}\Zn"
   TEXT+="\n   IPv6: \Zb${ARCIPV6}\Zn"
   TEXT+="\n   Offline Mode: \Zb${OFFLINE}\Zn"
-  TEXT+="\n   Sort Drives: \Zb${HDDSORT}\Zn"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
     TEXT+="\n   SataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
   elif [ "${REMAP}" = "remap" ]; then
     TEXT+="\n   SataRemap: \Zb${PORTMAP}\Zn"
   elif [ "${REMAP}" = "user" ]; then
     TEXT+="\n   PortMap: \Zb"User"\Zn"
+  fi
+  if [ "${DT}" = "true" ]; then
+    TEXT+="\n   Hotplug: \Zb${HDDSORT}\Zn"
   fi
   if [ "${DT}" = "false" ]; then
     TEXT+="\n   Mount USB Drives: \Zb${USBMOUNT}\Zn"
@@ -1313,11 +1321,13 @@ function fullsysinfo() {
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
     REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
-    if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
+    if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
       PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
       DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
     elif [ "${REMAP}" = "remap" ]; then
       PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
+    elif [ "${REMAP}" = "ahci" ]; then
+      PORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
     fi
   fi
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
@@ -1364,7 +1374,11 @@ function fullsysinfo() {
       fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n${DRIVER} (${SPEED} | ${MSG}) IP: ${IP} | Mac: ${MACR} (${MAC}) @ ${NETBUS}"
+        if [[ "${IP}" =~ ^169\.254\..* ]]; then
+          TEXT+="\n${DRIVER} (${SPEED} | ${MSG}): LINK LOCAL | Mac: ${MACR} (${MAC}) @ ${NETBUS}"
+        else
+          TEXT+="\n${DRIVER} (${SPEED} | ${MSG}): ${IP} | Mac: ${MACR} (${MAC}) @ ${NETBUS}"
+        fi
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
@@ -1408,7 +1422,6 @@ function fullsysinfo() {
   TEXT+="\nMacSys: ${MACSYS}"
   TEXT+="\nIPv6: ${ARCIPV6}"
   TEXT+="\nOffline Mode: ${OFFLINE}"
-  TEXT+="\nSort Drives: ${HDDSORT}"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
     TEXT+="\nSataPortMap | DiskIdxMap: ${PORTMAP} | ${DISKMAP}"
   elif [ "${REMAP}" = "remap" ]; then
@@ -1416,8 +1429,11 @@ function fullsysinfo() {
   elif [ "${REMAP}" = "user" ]; then
     TEXT+="\nPortMap: "User""
   fi
+  if [ "${DT}" = "true" ]; then
+    TEXT+="\nHotplug: ${HDDSORT}"
+  fi
   if [ "${DT}" = "false" ]; then
-    TEXT+="\nMount USB Drives: \Zb${USBMOUNT}\Zn"
+    TEXT+="\nMount USB Drives: ${USBMOUNT}"
   fi
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
@@ -1776,6 +1792,52 @@ function resetPassword() {
 }
 
 ###############################################################################
+# Add new DSM user
+function addNewDSMUser() {
+  DSMROOTS="$(findDSMRoot)"
+  if [ -z "${DSMROOTS}" ]; then
+    dialog --backtitle "$(backtitle)" --title "Add DSM User" \
+      --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
+    return
+  fi
+  MSG="Add to administrators group by default"
+  dialog --backtitle "$(backtitle)" --title "Add DSM User" \
+    --form "${MSG}" 8 60 3 "username:" 1 1 "user" 1 10 50 0 "password:" 2 1 "passwd" 2 10 50 0 \
+    2>"${TMP_PATH}/resp"
+  [ $? -ne 0 ] && return
+  username="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+  password="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+  (
+    ONBOOTUP=""
+    ONBOOTUP="${ONBOOTUP}if synouser --enum local | grep -q ^${username}\$; then synouser --setpw ${username} ${password}; else synouser --add ${username} ${password} arc 0 user@arc.arc 1; fi\n"
+    ONBOOTUP="${ONBOOTUP}synogroup --member administrators ${username}\n"
+    ONBOOTUP="${ONBOOTUP}echo \"DELETE FROM task WHERE task_name LIKE ''ARCONBOOTUPRR_ADDUSER'';\" | sqlite3 /usr/syno/etc/esynoscheduler/esynoscheduler.db\n"
+
+    mkdir -p "${TMP_PATH}/mdX"
+    for I in ${DSMROOTS}; do
+      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      [ $? -ne 0 ] && continue
+      if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
+        sqlite3 ${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db <<EOF
+DELETE FROM task WHERE task_name LIKE 'ARCONBOOTUPRR_ADDUSER';
+INSERT INTO task VALUES('ARCONBOOTUPRR_ADDUSER', '', 'bootup', '', 1, 0, 0, 0, '', 0, '$(echo -e ${ONBOOTUP})', 'script', '{}', '', '', '{}', '{}');
+EOF
+        sleep 1
+        sync
+        echo "true" >${TMP_PATH}/isEnable
+      fi
+      umount "${TMP_PATH}/mdX"
+    done
+    rm -rf "${TMP_PATH}/mdX"
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Add DSM User" \
+    --progressbox "Adding ..." 20 100
+  [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Add DSM User successful." || MSG="Add DSM User failed."
+  dialog --backtitle "$(backtitle)" --title "Add DSM User" \
+    --msgbox "${MSG}" 0 0
+  return
+}
+
+###############################################################################
 # modify bootipwaittime
 function bootipwaittime() {
   ITEMS="$(echo -e "0 \n5 \n10 \n20 \n30 \n60 \n")"
@@ -1852,7 +1914,7 @@ function formatdisks() {
   ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
     --progressbox "Formatting ..." 20 100
   dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
-    --msgbox "Formatting is complete." 3 25
+    --msgbox "Formatting is complete." 5 30
   return
 }
 

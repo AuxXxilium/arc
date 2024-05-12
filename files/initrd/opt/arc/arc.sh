@@ -263,6 +263,8 @@ function arcVersion() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+  # Check for Custom Build
   if [ "${CUSTOM}" = "false" ]; then
     # Select Build for DSM
     ITEMS="$(readConfigEntriesArray "platforms.${PLATFORM}.productvers" "${P_FILE}" | sort -r)"
@@ -281,18 +283,6 @@ function arcVersion() {
       fi
     fi
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  else
-    if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
-      # Delete old files
-      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
-    fi
-  fi
-  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
-  # Modify KVER for Epyc7002
-  if [ "${PLATFORM}" = "epyc7002" ]; then
-    KVERP="${PRODUCTVER}-${KVER}"
-  else
-    KVERP="${KVER}"
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
     --infobox "Reconfiguring Addons, Modules and Synoinfo" 3 50
@@ -301,8 +291,7 @@ function arcVersion() {
   while IFS=': ' read -r KEY VALUE; do
     writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
   done <<<$(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")
-  # Reset Addons
-  writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
+  # Check Addons for Platform
   while IFS=': ' read -r ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
     if ! checkAddonExist "${ADDON}" "${PLATFORM}"; then
@@ -310,6 +299,13 @@ function arcVersion() {
     fi
   done <<<$(readConfigMap "addons" "${USER_CONFIG_FILE}")
   # Reset Modules
+  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
+  # Modify KVER for Epyc7002
+  if [ "${PLATFORM}" = "epyc7002" ]; then
+    KVERP="${PRODUCTVER}-${KVER}"
+  else
+    KVERP="${KVER}"
+  fi
   echo "$(lsmod | awk '{print $1}' | sort)" >>"${TMP_PATH}/lsmod"
   cp -f "${ARC_PATH}/include/modulelist" "${TMP_PATH}/modulelist.user"
   echo -e "\n\n# User Modules" >>"${TMP_PATH}/modulelist.user"
@@ -323,15 +319,13 @@ function arcVersion() {
   [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
   mv -f "${TMP_PATH}/modulelist.user" "${USER_UP_PATH}/modulelist"
   dos2unix "${USER_UP_PATH}/modulelist" 2>/dev/null
-  if [ "${CUSTOM}" = "false" ]; then
-    if [ "${ONLYVERSION}" != "true" ]; then
-      arcPatch
-    else
-      # Build isn't done
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      return 0
-    fi
+  # Check for Only Version
+  if [ "${ONLYVERSION}" = "true" ]; then
+    # Build isn't done
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    ONLYVERSION=""
+    return 0
   else
     arcPatch
   fi
@@ -343,8 +337,9 @@ function arcPatch() {
   # Read Model Values
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
+  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
+  # Check for Custom Build
   if [ "${CUSTOM}" = "true" ]; then
     ARCPATCHPRE="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     [ -n "${ARCCONF}" ] && ARCPATCH="true" || ARCPATCH="false"
@@ -434,23 +429,27 @@ function arcPatch() {
     fi
   fi
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  if [ "${ONLYPATCH}" = "true" ]; then
-    getnet
-    return 0
-  else
-    arcSettings
-  fi
+  arcSettings
 }
 
 ###############################################################################
 # Arc Settings Section
 function arcSettings() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
+  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   # Get Network Config for Loader
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
     --infobox "Generating Network Config..." 3 35
   sleep 2
   getnet
+  if [ "${ONLYPATCH}" = "true" ]; then
+    # Build isn't done
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    ONLYPATCH=""
+    return 0
+  fi
   # Select Portmap for Loader
   getmap
   if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
@@ -459,6 +458,7 @@ function arcSettings() {
     sleep 2
     getmapSelection
   fi
+  # Check for Custom Build
   if [ "${CUSTOM}" = "false" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "DSM Addons" \
       --infobox "Loading Addons Table..." 3 35
@@ -488,10 +488,11 @@ function arcSettings() {
   # Config is done
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  # Check for Custom Build
   if [ "${CUSTOM}" = "false" ]; then
     # Ask for Build
     dialog --clear --backtitle "$(backtitle)" --title "Config done" \
-      --menu "Build now?" 7 50 0 \
+      --menu "Build now?" 7 40 0 \
       1 "Yes - Build Arc Loader now" \
       2 "No - I want to make changes" \
     2>"${TMP_PATH}/resp"
@@ -512,7 +513,11 @@ function arcSettings() {
 # Building Loader Online
 function premake() {
   # Read Config for Arc Settings
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
+  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
+  USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
@@ -524,6 +529,7 @@ function premake() {
     deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
     deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
   fi
+  # Check for Custom Build
   if [ "${CUSTOM}" = "true" ]; then
     # Build Loader
     make
@@ -621,17 +627,13 @@ function make() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-  OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   # Cleanup
   if [ -d "${UNTAR_PAT_PATH}" ]; then
     rm -rf "${UNTAR_PAT_PATH}"
   fi
   mkdir -p "${UNTAR_PAT_PATH}"
-  # Check for offline Mode
-  if [ "${OFFLINE}" = "true" ]; then
-    offlinemake
-    return 0
-  else
+  if [ "${OFFLINE}" = "false" ]; then
     # Get PAT Data from Config
     PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
@@ -697,7 +699,7 @@ function make() {
         fi
       fi
     done
-    if [[ "${PAT_HASH}" != "${PAT_HASH_CONF}" || ! -f "${ORI_ZIMAGE_FILE}" || ! -f "${ORI_RDGZ_FILE}" ]]; then
+    if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
       writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
       # Check for existing Files
@@ -718,164 +720,94 @@ function make() {
           sleep 5
           return 1
         fi
-        # Extract Files
-        header=$(od -bcN2 ${PAT_FILE} | head -1 | awk '{print $3}')
-        case ${header} in
-          105)
-          isencrypted="no"
-          ;;
-          213)
-          isencrypted="no"
-          ;;
-          255)
-          isencrypted="yes"
-          ;;
-          *)
-          echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
-          ;;
-        esac
-        if [ "${isencrypted}" = "yes" ]; then
-          # Uses the extractor to untar PAT file
-          LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_FILE}" "${UNTAR_PAT_PATH}"
-        else
-          # Untar PAT file
-          tar -xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
-        fi
-        # Cleanup PAT Download
-        rm -f "${PAT_FILE}"
-      elif [ -f "${DSM_FILE}" ]; then
+      fi
+      if [ -f "${DSM_FILE}" ]; then
         tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
-      elif [ ! -f "${UNTAR_PAT_PATH}/zImage" ]; then
-        dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-          --infobox "ERROR: No DSM Image found!" 0 0
+        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+          --infobox "DSM Extraction successful!" 0 0
+      elif extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
+        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+          --infobox "DSM Extraction successful!" 0 0
+      else
+        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+          --infobox "DSM Extraction failed!\nExit." 0 0
         sleep 5
         return 1
       fi
-      # Copy DSM Files to Locations if DSM Files not found
-      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART1_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART1_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART2_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART2_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/zImage" "${ORI_ZIMAGE_FILE}"
-      cp -f "${UNTAR_PAT_PATH}/rd.gz" "${ORI_RDGZ_FILE}"
-      rm -rf "${UNTAR_PAT_PATH}"
     fi
-    (
-      livepatch
-      sleep 3
-    ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Build Loader" \
-      --progressbox "Doing the Magic..." 20 70
-    if [[ -f "${ORI_ZIMAGE_FILE}" && -f "${ORI_RDGZ_FILE}" && -f "${MOD_ZIMAGE_FILE}" && -f "${MOD_RDGZ_FILE}" ]]; then
-      # Build is done
-      writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      if grep -q "automated_arc" /proc/cmdline; then
-        if [ "${CUSTOM}" = "false" ]; then
-          rm -f "${PART3_PATH}/automated"
-        fi
-        boot && exit 0
+  elif [ "${OFFLINE}" = "true" ]; then
+    if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
+      dialog --backtitle "$(backtitle)" --title "DSM Data" --aspect 18 \
+        --infobox "DSM Model Data found." 0 0
+    else
+      # Check for existing Files
+      mkdir -p "${UPLOAD_PATH}"
+      # Get new Files
+      dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
+      --msgbox "Upload your DSM .pat File to /tmp/upload.\nUse SSH/SFTP to connect to ${IPCON}\nor use Webfilebrowser: ${IPCON}:7304.\nUser: root | Password: arc\nPress OK to continue!" 0 0
+      # Grep PAT_FILE
+      PAT_FILE=$(ls ${UPLOAD_PATH}/*.pat)
+      if [ ! -f "${PAT_FILE}" ]; then
+        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+          --infobox "No DSM Image found!\nExit." 0 0
+        sleep 5
+        return 1
       else
-        # Ask for Boot
-        dialog --clear --backtitle "$(backtitle)" --title "Build done"\
-          --menu "Boot now?" 0 0 0 \
-          1 "Yes - Boot Arc Loader now" \
-          2 "No - I want to make changes" \
-        2>"${TMP_PATH}/resp"
-        resp=$(cat ${TMP_PATH}/resp)
-        [ -z "${resp}" ] && return 1
-        if [ ${resp} -eq 1 ]; then
-          boot && exit 0
-        elif [ ${resp} -eq 2 ]; then
-          return 0
+        # Remove PAT Data for Offline
+        writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
+        # Extract Files
+        if extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
+          dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+            --infobox "DSM Extraction successful!" 0 0
+        else
+          dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+            --infobox "DSM Extraction failed!\nExit." 0 0
+          sleep 5
+          return 1
         fi
       fi
-    else
-      dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-        --infobox "Build failed!\nPlease check your Connection and Diskspace!" 0 0
-      sleep 5
-      return 1
     fi
   fi
-}
-
-###############################################################################
-# Building Loader Offline
-function offlinemake() {
-  if [[ -f "${ORI_ZIMAGE_FILE}" && -f "${ORI_RDGZ_FILE}" && -f "${MOD_ZIMAGE_FILE}" && -f "${MOD_RDGZ_FILE}" ]]; then
-    dialog --backtitle "$(backtitle)" --title "DSM Data" --aspect 18 \
-      --infobox "DSM Model Data found." 0 0
+  # Copy DSM Files to Locations if DSM Files not found
+  if copyDSMFiles "${UNTAR_PAT_PATH}"; then
+    dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
+      --infobox "DSM Copy successful!" 0 0
+    rm -rf "${UNTAR_PAT_PATH}"
   else
-    # Check for existing Files
-    mkdir -p "${UPLOAD_PATH}"
-    # Get new Files
-    dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
-    --msgbox "Upload your DSM .pat File to /tmp/upload.\nUse SSH/SFTP to connect to ${IPCON}\nor use Webfilebrowser: ${IPCON}:7304.\nUser: root | Password: arc\nPress OK to continue!" 0 0
-    # Grep PAT_FILE
-    PAT_FILE=$(ls ${UPLOAD_PATH}/*.pat)
-    if [ ! -f "${PAT_FILE}" ]; then
-      dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-        --infobox "No DSM Image found!\nExit." 0 0
-      sleep 5
-      return 1
-    else
-      # Remove PAT Data for Offline
-      writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
-      # Extract Files
-      header=$(od -bcN2 ${PAT_FILE} | head -1 | awk '{print $3}')
-      case ${header} in
-        105)
-        isencrypted="no"
-        ;;
-        213)
-        isencrypted="no"
-        ;;
-        255)
-        isencrypted="yes"
-        ;;
-        *)
-        echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
-        ;;
-      esac
-      if [ "${isencrypted}" = "yes" ]; then
-        # Uses the extractor to untar PAT file
-        LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_FILE}" "${UNTAR_PAT_PATH}"
-      else
-        # Untar PAT file
-        tar -xf "${PAT_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
-      fi
-      # Cleanup old PAT
-      rm -f "${PAT_FILE}"
-      dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-        --msgbox "DSM Extraction successful!" 0 0
-      # Copy DSM Files to Locations if DSM Files not found
-      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART1_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART1_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/grub_cksum.syno" "${PART2_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/GRUB_VER" "${PART2_PATH}"
-      cp -f "${UNTAR_PAT_PATH}/zImage" "${ORI_ZIMAGE_FILE}"
-      cp -f "${UNTAR_PAT_PATH}/rd.gz" "${ORI_RDGZ_FILE}"
-      rm -rf "${UNTAR_PAT_PATH}"
-    fi
+    dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
+      --infobox "DSM Copy failed!\nExit." 0 0
+    sleep 5
+    return 1
   fi
   (
     livepatch
     sleep 3
   ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Build Loader" \
     --progressbox "Doing the Magic..." 20 70
+  arcFinish
+}
+
+###############################################################################
+# Finish Building Loader
+function arcFinish() {
+  # Verify Files exist
   if [[ -f "${ORI_ZIMAGE_FILE}" && -f "${ORI_RDGZ_FILE}" && -f "${MOD_ZIMAGE_FILE}" && -f "${MOD_RDGZ_FILE}" ]]; then
+    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     # Build is done
     writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    # Check for Automated Mode
     if grep -q "automated_arc" /proc/cmdline; then
+      # Check for Custom Build
       if [ "${CUSTOM}" = "false" ]; then
-        rm -f "${PART3_PATH}/automated"
+        [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated"
       fi
       boot && exit 0
     else
       # Ask for Boot
-      dialog --clear --backtitle "$(backtitle)" \
-        --menu "Build done. Boot now?" 0 0 0 \
+      dialog --clear --backtitle "$(backtitle)" --title "Build done"\
+        --menu "Boot now?" 7 40 0 \
         1 "Yes - Boot Arc Loader now" \
         2 "No - I want to make changes" \
       2>"${TMP_PATH}/resp"
@@ -889,7 +821,7 @@ function offlinemake() {
     fi
   else
     dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-      --infobox "Build failed!\nPlease check your Diskspace!" 0 0
+      --infobox "Build failed!\nPlease check your Connection and Diskspace!" 0 0
     sleep 5
     return 1
   fi
@@ -945,7 +877,9 @@ function boot() {
 ###############################################################################
 ###############################################################################
 # Main loop
+# Check for Automated Mode
 if grep -q "automated_arc" /proc/cmdline; then
+  # Check for Custom Build
   if [ "${CUSTOM}" = "true" ]; then
     arcVersion
   else
@@ -1019,6 +953,7 @@ else
         echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
         echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
         echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
+        echo "N \"Add DSM User \" "                                                           >>"${TMP_PATH}/menu"
         if [ "${PLATFORM}" = "epyc7002" ]; then
           echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
         fi
@@ -1129,6 +1064,7 @@ else
         ;;
       s) downgradeMenu; NEXT="s" ;;
       t) resetPassword; NEXT="t" ;;
+      N) addNewDSMUser; NEXT="N" ;;
       K) [ "${KERNEL}" = "official" ] && KERNEL='custom' || KERNEL='official'
         writeConfigKey "arc.kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
         if [ "${ODP}" = "true" ]; then
@@ -1161,6 +1097,17 @@ else
         ;;
       U) [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
         writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
+        if [ "${USBMOUNT}" = true ]; then
+          writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
+          writeConfigKey "synoinfo.internalportcfg" "0x3ffffff" "${USER_CONFIG_FILE}"
+        elif [ "${USBMOUNT}" = false ]; then
+          deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
+          deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
+          deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
+          deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
+        fi
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="U"
@@ -1230,7 +1177,10 @@ else
       # Loader Settings
       x) backupMenu; NEXT="x" ;;
       9) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
-        OFFLINE="${OFFLINE}"
+        [ -f "${ORI_ZIMAGE_FILE}" ] && rm -f "${ORI_ZIMAGE_FILE}"
+        [ -f "${ORI_RDGZ_FILE}" ] && rm -f "${ORI_RDGZ_FILE}"
+        [ -f "${MOD_ZIMAGE_FILE}" ] && rm -f "${MOD_ZIMAGE_FILE}"
+        [ -f "${MOD_RDGZ_FILE}" ] && rm -f "${MOD_RDGZ_FILE}"
         writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"

@@ -350,6 +350,7 @@ function livepatch() {
     writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
     FAIL=0
   fi
+  OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   if [ "${OFFLINE}" = "false" ]; then
     # Looking for Update
     if [ ${FAIL} -eq 1 ]; then
@@ -426,21 +427,57 @@ function rebootTo() {
 # Copy DSM files to the boot partition
 # 1 - DSM root path
 function copyDSMFiles() {
-  if [ -f "${1}/VERSION" ] && [ -f "${1}/grub_cksum.syno" ] && [ -f "${1}/GRUB_VER" ] && [ -f "${1}/zImage" ] && [ -f "${1}/rd.gz" ]; then
-    # Remove old model files
-    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/grub_cksum.syno" "${PART2_PATH}/GRUB_VER"
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}"
-    # Remove old build files
-    rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
-    # Copy new model files
-    cp -f "${1}/grub_cksum.syno" "${PART1_PATH}"
-    cp -f "${1}/GRUB_VER" "${PART1_PATH}"
-    cp -f "${1}/grub_cksum.syno" "${PART2_PATH}"
-    cp -f "${1}/GRUB_VER" "${PART2_PATH}"
-    cp -f "${1}/zImage" "${ORI_ZIMAGE_FILE}"
-    cp -f "${1}/rd.gz" "${ORI_RDGZ_FILE}"
+  if [ -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ] || [ ! -f "${MOD_ZIMAGE_FILE}" ] || [ ! -f "${MOD_RDGZ_FILE}" ]; then
+    if [ -f "${1}/grub_cksum.syno" ] && [ -f "${1}/GRUB_VER" ] && [ -f "${1}/zImage" ] && [ -f "${1}/rd.gz" ]; then
+      # Remove old model files
+      rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/grub_cksum.syno" "${PART2_PATH}/GRUB_VER"
+      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}"
+      # Remove old build files
+      rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
+      # Copy new model files
+      cp -f "${1}/grub_cksum.syno" "${PART1_PATH}"
+      cp -f "${1}/GRUB_VER" "${PART1_PATH}"
+      cp -f "${1}/grub_cksum.syno" "${PART2_PATH}"
+      cp -f "${1}/GRUB_VER" "${PART2_PATH}"
+      cp -f "${1}/zImage" "${ORI_ZIMAGE_FILE}"
+      cp -f "${1}/rd.gz" "${ORI_RDGZ_FILE}"
+      return 0
+    else
+      return 1
+    fi
+  else
+    return 0
+  fi
+}
+
+###############################################################################
+# Extract DSM files
+# 1 - PAT File
+# 2 - Destination Path
+function extractDSMFiles() {
+  header=$(od -bcN2 ${1} | head -1 | awk '{print $3}')
+  case ${header} in
+    105)
+    isencrypted="no"
+    ;;
+    213)
+    isencrypted="no"
+    ;;
+    255)
+    isencrypted="yes"
+    ;;
+    *)
+    echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
+    ;;
+  esac
+  if [ "${isencrypted}" = "yes" ]; then
+    # Uses the extractor to untar PAT file
+    LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${1}" "${2}" >"${LOG_FILE}" 2>&1
     return 0
   else
-    return 1
+    # Untar PAT file
+    tar -xf "${1}" -C "${2}" >"${LOG_FILE}" 2>&1
+    return 0
   fi
+  return 1
 }
