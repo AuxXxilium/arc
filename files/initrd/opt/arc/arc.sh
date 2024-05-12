@@ -492,7 +492,7 @@ function arcSettings() {
   if [ "${CUSTOM}" = "false" ]; then
     # Ask for Build
     dialog --clear --backtitle "$(backtitle)" --title "Config done" \
-      --menu "Build now?" 5 40 0 \
+      --menu "Build now?" 6 40 0 \
       1 "Yes - Build Arc Loader now" \
       2 "No - I want to make changes" \
     2>"${TMP_PATH}/resp"
@@ -704,36 +704,35 @@ function make() {
       writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
       # Check for existing Files
       DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
-      if [ -f "${DSM_FILE}" ]; then
-        tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
-      else
-        # Get new Files
-        DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODELID/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
-        STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
+      # Get new Files
+      DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODELID/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
+      STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
+      if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+        dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
+          --infobox "No DSM Image found!\nTry Syno Link." 0 0
+        sleep 3
+        # Grep PAT_URL
+        PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
+        STATUS=$(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" --progress-bar)
         if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
           dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-            --infobox "No DSM Image found!\nTry Syno Link." 0 0
-          sleep 3
-          # Grep PAT_URL
-          PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
-          STATUS=$(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" --progress-bar)
-          if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
-            dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-              --infobox "No DSM Image found!\nExit." 0 0
-            sleep 5
-            return 1
-          fi
-          # Extract Files
-          if extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
-            dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-              --infobox "DSM Extraction successful!" 0 0
-          else
-            dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-              --infobox "DSM Extraction failed!\nExit." 0 0
-            sleep 5
-            return 1
-          fi
+            --infobox "No DSM Image found!\nExit." 0 0
+          sleep 5
+          return 1
         fi
+      fi
+      if [ -f "${DSM_FILE}" ]; then
+        tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+          --infobox "DSM Extraction successful!" 0 0
+      elif extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
+        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+          --infobox "DSM Extraction successful!" 0 0
+      else
+        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+          --infobox "DSM Extraction failed!\nExit." 0 0
+        sleep 5
+        return 1
       fi
     fi
   elif [ "${OFFLINE}" = "true" ]; then
@@ -808,7 +807,7 @@ function arcFinish() {
     else
       # Ask for Boot
       dialog --clear --backtitle "$(backtitle)" --title "Build done"\
-        --menu "Boot now?" 5 40 0 \
+        --menu "Boot now?" 6 40 0 \
         1 "Yes - Boot Arc Loader now" \
         2 "No - I want to make changes" \
       2>"${TMP_PATH}/resp"
