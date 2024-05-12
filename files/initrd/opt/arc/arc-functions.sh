@@ -1410,7 +1410,6 @@ function fullsysinfo() {
   TEXT+="\nMacSys: ${MACSYS}"
   TEXT+="\nIPv6: ${ARCIPV6}"
   TEXT+="\nOffline Mode: ${OFFLINE}"
-  TEXT+="\nSort Drives: ${HDDSORT}"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
     TEXT+="\nSataPortMap | DiskIdxMap: ${PORTMAP} | ${DISKMAP}"
   elif [ "${REMAP}" = "remap" ]; then
@@ -1419,10 +1418,10 @@ function fullsysinfo() {
     TEXT+="\nPortMap: "User""
   fi
   if [ "${DT}" = "true" ]; then
-    TEXT+="\nHotplug: \Zb${HDDSORT}\Zn"
+    TEXT+="\nHotplug: ${HDDSORT}"
   fi
   if [ "${DT}" = "false" ]; then
-    TEXT+="\nMount USB Drives: \Zb${USBMOUNT}\Zn"
+    TEXT+="\nMount USB Drives: ${USBMOUNT}"
   fi
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
