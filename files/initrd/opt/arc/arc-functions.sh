@@ -91,7 +91,7 @@ function modulesMenu() {
   done <<<$(readConfigMap "modules" "${USER_CONFIG_FILE}")
   # menu loop
   while true; do
-    dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
+    dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       1 "Show selected Modules" \
       2 "Select loaded Modules" \
       3 "Select all Modules" \
@@ -250,7 +250,7 @@ function cmdlineMenu() {
   # Loop menu
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
-      --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
+      --cancel-label "Exit" --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     case "$(cat ${TMP_PATH}/resp)" in
       1)
@@ -446,7 +446,7 @@ function synoinfoMenu() {
   # menu loop
   while true; do
     dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
-      --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
+      --cancel-label "Exit" --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     case "$(cat ${TMP_PATH}/resp)" in
       1)
@@ -538,7 +538,8 @@ function synoinfoMenu() {
 # Shows available keymaps to user choose one
 function keymapMenu() {
   dialog --backtitle "$(backtitle)" --default-item "${LAYOUT}" --no-items \
-    --menu "Choose a Layout" 0 0 0 "azerty" "bepo" "carpalx" "colemak" \
+    --cancel-label "Exit" --menu "Choose a Layout" 0 0 0 \
+    "azerty" "bepo" "carpalx" "colemak" \
     "dvorak" "fgGIod" "neo" "olpc" "qwerty" "qwertz" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
@@ -720,7 +721,8 @@ function backupMenu() {
 function updateMenu() {
   NEXT="1"
   while true; do
-    dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
+    dialog --backtitle "$(backtitle)" --cancel-label "Exit" \
+      --menu "Choose an Option" 0 0 0 \
       1 "Full-Upgrade Loader" \
       2 "Update Addons" \
       3 "Update Patches" \
