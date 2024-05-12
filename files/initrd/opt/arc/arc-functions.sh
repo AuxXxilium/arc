@@ -1134,7 +1134,11 @@ function sysinfo() {
       fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}) \ZbIP: ${IP} | Mac: ${MACR} (${MAC}) @ ${NETBUS}\Zn"
+        if [[ "${IP}" =~ ^169\.254\..* ]]; then
+          TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}):\Zb LINK LOCAL | Mac: ${MACR} (${MAC})\Zn"
+        else
+          TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}):\Zb ${IP} | Mac: ${MACR} (${MAC})\Zn"
+        fi
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
@@ -1366,7 +1370,11 @@ function fullsysinfo() {
       fi
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
-        TEXT+="\n${DRIVER} (${SPEED} | ${MSG}) IP: ${IP} | Mac: ${MACR} (${MAC}) @ ${NETBUS}"
+        if [[ "${IP}" =~ ^169\.254\..* ]]; then
+          TEXT+="\n${DRIVER} (${SPEED} | ${MSG}): LINK LOCAL | Mac: ${MACR} (${MAC}) @ ${NETBUS}"
+        else
+          TEXT+="\n${DRIVER} (${SPEED} | ${MSG}): ${IP} | Mac: ${MACR} (${MAC}) @ ${NETBUS}"
+        fi
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
