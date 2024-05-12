@@ -249,8 +249,8 @@ function cmdlineMenu() {
   echo "9 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
   # Loop menu
   while true; do
-    dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
-      --cancel-label "Exit" --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
+    dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
+      --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     case "$(cat ${TMP_PATH}/resp)" in
       1)
@@ -445,8 +445,8 @@ function synoinfoMenu() {
 
   # menu loop
   while true; do
-    dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
-      --cancel-label "Exit" --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
+    dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
+      --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     case "$(cat ${TMP_PATH}/resp)" in
       1)
@@ -595,7 +595,7 @@ function storagepanelMenu() {
 function backupMenu() {
   NEXT="1"
   while true; do
-    dialog --backtitle "$(backtitle)" --menu "Choose an Option" 0 0 0 \
+    dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       1 "Restore Config from DSM" \
       2 "Restore Encryption Key from DSM" \
       2>"${TMP_PATH}/resp"
@@ -1608,7 +1608,7 @@ function credits() {
   TEXT+="\n  Website: \Zbhttps://auxxxilium.tech\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4>> Developer:\Zn"
-  TEXT+="\n   Arc Loader: \ZbAuxXxilium\Zn"
+  TEXT+="\n   Arc Loader: \ZbAuxXxilium / Fulcrum\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4>> Based on:\Zn"
   TEXT+="\n   Redpill: \ZbTTG / Pocopico\Zn"
