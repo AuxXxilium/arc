@@ -492,7 +492,7 @@ function arcSettings() {
   if [ "${CUSTOM}" = "false" ]; then
     # Ask for Build
     dialog --clear --backtitle "$(backtitle)" --title "Config done" \
-      --menu "Build now?" 6 40 0 \
+      --menu "Build now?" 7 40 0 \
       1 "Yes - Build Arc Loader now" \
       2 "No - I want to make changes" \
     2>"${TMP_PATH}/resp"
@@ -807,7 +807,7 @@ function arcFinish() {
     else
       # Ask for Boot
       dialog --clear --backtitle "$(backtitle)" --title "Build done"\
-        --menu "Boot now?" 6 40 0 \
+        --menu "Boot now?" 7 40 0 \
         1 "Yes - Boot Arc Loader now" \
         2 "No - I want to make changes" \
       2>"${TMP_PATH}/resp"
@@ -1177,7 +1177,10 @@ else
       # Loader Settings
       x) backupMenu; NEXT="x" ;;
       9) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
-        OFFLINE="${OFFLINE}"
+        [ -f "${ORI_ZIMAGE_FILE}" ] && rm -f "${ORI_ZIMAGE_FILE}"
+        [ -f "${ORI_RDGZ_FILE}" ] && rm -f "${ORI_RDGZ_FILE}"
+        [ -f "${MOD_ZIMAGE_FILE}" ] && rm -f "${MOD_ZIMAGE_FILE}"
+        [ -f "${MOD_RDGZ_FILE}" ] && rm -f "${MOD_RDGZ_FILE}"
         writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
