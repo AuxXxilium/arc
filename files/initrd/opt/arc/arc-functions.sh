@@ -1169,13 +1169,15 @@ function sysinfo() {
   TEXT+="\n   MacSys: \Zb${MACSYS}\Zn"
   TEXT+="\n   IPv6: \Zb${ARCIPV6}\Zn"
   TEXT+="\n   Offline Mode: \Zb${OFFLINE}\Zn"
-  TEXT+="\n   Sort Drives: \Zb${HDDSORT}\Zn"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
     TEXT+="\n   SataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
   elif [ "${REMAP}" = "remap" ]; then
     TEXT+="\n   SataRemap: \Zb${PORTMAP}\Zn"
   elif [ "${REMAP}" = "user" ]; then
     TEXT+="\n   PortMap: \Zb"User"\Zn"
+  fi
+  if [ "${DT}" = "true" ]; then
+    TEXT+="\n   Hotplug: \Zb${HDDSORT}\Zn"
   fi
   if [ "${DT}" = "false" ]; then
     TEXT+="\n   Mount USB Drives: \Zb${USBMOUNT}\Zn"
@@ -1415,6 +1417,9 @@ function fullsysinfo() {
     TEXT+="\nSataRemap: ${PORTMAP}"
   elif [ "${REMAP}" = "user" ]; then
     TEXT+="\nPortMap: "User""
+  fi
+  if [ "${DT}" = "true" ]; then
+    TEXT+="\nHotplug: \Zb${HDDSORT}\Zn"
   fi
   if [ "${DT}" = "false" ]; then
     TEXT+="\nMount USB Drives: \Zb${USBMOUNT}\Zn"
