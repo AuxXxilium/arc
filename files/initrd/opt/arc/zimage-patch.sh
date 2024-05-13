@@ -13,7 +13,7 @@ rm -f "${MOD_ZIMAGE_FILE}"
 
 KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
 if [ "${KERNEL}" = "custom" ]; then
-  echo -e "Using customized zImage"
+  echo -e "Using customized Kernel"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
