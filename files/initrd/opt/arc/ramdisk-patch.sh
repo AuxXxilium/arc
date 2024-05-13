@@ -36,7 +36,6 @@ SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
-USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -168,7 +167,7 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "updatenotify" "wol" "acpid"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
-    PARAMS="${HDDSORT} ${USBMOUNT}"
+    PARAMS=${HDDSORT}
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   fi
   installAddon "${ADDON}" "${PLATFORM}" || exit 1

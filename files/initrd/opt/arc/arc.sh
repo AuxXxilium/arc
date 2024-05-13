@@ -74,7 +74,6 @@ ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
 SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
-USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
 EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
 SATACONTROLLER="$(readConfigKey "device.satacontroller" "${USER_CONFIG_FILE}")"
 SCSICONTROLLER="$(readConfigKey "device.sciscontroller" "${USER_CONFIG_FILE}")"
@@ -517,7 +516,6 @@ function premake() {
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
-  USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
   writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
   writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
@@ -557,7 +555,6 @@ function arcSummary() {
     PORTREMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
   fi
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-  USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
   MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
@@ -585,7 +582,6 @@ function arcSummary() {
   [ -n "${PORTMAP}" ] && SUMMARY+="\n>> SataPortmap: \Zb${PORTMAP}\Zn"
   [ -n "${DISKMAP}" ] && SUMMARY+="\n>> DiskIdxMap: \Zb${DISKMAP}\Zn"
   [ -n "${PORTREMAP}" ] && SUMMARY+="\n>> SataRemap: \Zb${PORTREMAP}\Zn"
-  [ "${DT}" = "false" ] && SUMMARY+="\n>> Mount USB Drives: \Zb${USBMOUNT}\Zn"
   SUMMARY+="\n>> Sort Drives: \Zb${HDDSORT}\Zn"
   SUMMARY+="\n>> IPv6: \Zb${ARCIPV6}\Zn"
   SUMMARY+="\n>> Offline Mode: \Zb${OFFLINE}\Zn"
@@ -962,9 +958,6 @@ else
         if [ "${DT}" = "true" ]; then
           echo "H \"Hotplug: \Z4${HDDSORT}\Zn \" "                                            >>"${TMP_PATH}/menu"
         fi
-        if [ "${DT}" = "false" ]; then
-          echo "U \"Mount USB Drives: \Z4${USBMOUNT}\Zn \" "                                  >>"${TMP_PATH}/menu"
-        fi
         echo "c \"IPv6 Support: \Z4${ARCIPV6}\Zn \" "                                         >>"${TMP_PATH}/menu"
         echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
         echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
@@ -1096,23 +1089,6 @@ else
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="H"
-        ;;
-      U) [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
-        writeConfigKey "arc.usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
-        if [ "${USBMOUNT}" = true ]; then
-          writeConfigKey "synoinfo.maxdisks" "26" "${USER_CONFIG_FILE}"
-          writeConfigKey "synoinfo.usbportcfg" "0x00" "${USER_CONFIG_FILE}"
-          writeConfigKey "synoinfo.esataportcfg" "0x00" "${USER_CONFIG_FILE}"
-          writeConfigKey "synoinfo.internalportcfg" "0x3ffffff" "${USER_CONFIG_FILE}"
-        elif [ "${USBMOUNT}" = false ]; then
-          deleteConfigKey "synoinfo.maxdisks" "${USER_CONFIG_FILE}"
-          deleteConfigKey "synoinfo.usbportcfg" "${USER_CONFIG_FILE}"
-          deleteConfigKey "synoinfo.esataportcfg" "${USER_CONFIG_FILE}"
-          deleteConfigKey "synoinfo.internalportcfg" "${USER_CONFIG_FILE}"
-        fi
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        NEXT="U"
         ;;
       c) [ "${ARCIPV6}" = "true" ] && ARCIPV6='false' || ARCIPV6='true'
         writeConfigKey "arc.ipv6" "${ARCIPV6}" "${USER_CONFIG_FILE}"
