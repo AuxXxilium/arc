@@ -639,24 +639,29 @@ function make() {
         --infobox "Get PAT Data from Syno..." 3 30
       idx=0
       while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
-        PAT_URL="$(curl -m 5 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODELID/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
-        PAT_HASH="$(curl -m 5 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODELID/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
-        PAT_URL=${PAT_URL%%\?*}
-        if [[ -n "${PAT_URL}" && -n "${PAT_HASH}" ]]; then
-          break
+        PAT_DATA=$(curl -skL --connect-timeout 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODELID/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}")
+        if [ "$(echo ${PAT_DATA} | jq -r '.success' 2>/dev/null)" = "true" ]; then
+          if echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].label_ext' 2>/dev/null | grep -q 'pat'; then
+            PAT_URL=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].url')
+            PAT_HASH=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].checksum')
+            PAT_URL=${PAT_URL%%\?*}
+            if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+              break
+            fi
+          fi
         fi
         sleep 3
         idx=$((${idx} + 1))
       done
-      if [[ -z "${PAT_URL}" || -z "${PAT_HASH}" ]]; then
+      if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ] || [ ! echo ${PAT_URL} | grep "https://" ]; then
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
           --infobox "Syno Connection failed,\ntry to get from Github..." 4 30
         idx=0
         while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-          PAT_URL="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODELID/+/%2B}/${PRODUCTVER%%.*}.${PRODUCTVER##*.}/pat_url")"
-          PAT_HASH="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODELID/+/%2B}/${PRODUCTVER%%.*}.${PRODUCTVER##*.}/pat_hash")"
+          PAT_URL="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODELID/+/%2B}/${PRODUCTVER}/pat_url")"
+          PAT_HASH="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODELID/+/%2B}/${PRODUCTVER}/pat_hash")"
           PAT_URL=${PAT_URL%%\?*}
-          if [[ -n "${PAT_URL}" && -n "${PAT_HASH}" ]]; then
+          if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
             break
           fi
           sleep 3
@@ -664,7 +669,7 @@ function make() {
         done
       fi
       if [ "${CUSTOM}" = "false" ]; then
-        if [[ -z "${PAT_URL}" || -z "${PAT_HASH}" ]]; then
+        if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ] || [ ! echo ${PAT_URL} | grep "https://" ]; then
           MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
           PAT_URL=""
           PAT_HASH=""
@@ -680,7 +685,7 @@ function make() {
         PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
         PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
       else
-        if [[ -z "${PAT_URL}" || -z "${PAT_HASH}" ]]; then
+        if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ] || [ ! echo ${PAT_URL} | grep "https://" ]; then
           dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
             --infobox "Could not get PAT Data..." 4 30
           sleep 3
@@ -703,14 +708,14 @@ function make() {
       # Get new Files
       DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODELID/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
       STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
-      if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+      if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
         dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
           --infobox "No DSM Image found!\nTry Syno Link." 0 0
         sleep 3
         # Grep PAT_URL
         PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
         STATUS=$(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" --progress-bar)
-        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
             --infobox "No DSM Image found!\nExit." 0 0
           sleep 5
