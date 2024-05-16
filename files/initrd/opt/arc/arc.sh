@@ -34,7 +34,7 @@ BUS=$(getBus "${LOADER_DISK}")
 # Offline Mode check
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 if [ "${OFFLINE}" = "false" ]; then
-  if ping -c 1 "github.com" &> /dev/null; then
+  if ping -c 1 "github.com" 2> /dev/null; then
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
   else
     writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
