@@ -22,9 +22,9 @@ N nct6683.ko
 N nct6775.ko
 
 # rndis
-N mii.ko
-N cdc_ether.ko
-N rndis_host.ko
+F mii.ko
+F cdc_ether.ko
+F rndis_host.ko
 
 ## i915
 #N dmabuf.ko
