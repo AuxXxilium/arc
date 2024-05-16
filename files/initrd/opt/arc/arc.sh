@@ -305,19 +305,10 @@ function arcVersion() {
   else
     KVERP="${KVER}"
   fi
-  echo "$(lsmod | awk '{print $1}' | sort)" >>"${TMP_PATH}/lsmod"
-  cp -f "${ARC_PATH}/include/modulelist" "${TMP_PATH}/modulelist.user"
-  echo -e "\n\n# User Modules" >>"${TMP_PATH}/modulelist.user"
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read -r ID DESC; do
     writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-    if [ -n "$(grep -w "${ID}" "${TMP_PATH}/lsmod")" ] && [ -z "$(grep -w "${ID}" "${TMP_PATH}/modulelist.user")" ]; then
-      echo "N ${ID}.ko" >>"${TMP_PATH}/modulelist.user"
-    fi
   done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
-  [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
-  mv -f "${TMP_PATH}/modulelist.user" "${USER_UP_PATH}/modulelist"
-  dos2unix "${USER_UP_PATH}/modulelist" 2>/dev/null
   # Check for Only Version
   if [ "${ONLYVERSION}" = "true" ]; then
     # Build isn't done
