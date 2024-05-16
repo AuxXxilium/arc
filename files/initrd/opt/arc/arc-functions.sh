@@ -264,6 +264,9 @@ function cmdlineMenu() {
         MSG+=" * \Z4acpi=force\Zn\n    Force enables ACPI.\n"
         MSG+=" * \Z4i915.enable_guc=2\Zn\n    Enable the GuC firmware on Intel graphics hardware.(value: 1,2 or 3)\n"
         MSG+=" * \Z4i915.max_vfs=7\Zn\n     Set the maximum number of virtual functions (VFs) that can be created for Intel graphics hardware.\n"
+        MSG+=" * \Z4i915.modeset=0\Zn\n    Disable the kernel mode setting (KMS) feature of the i915 driver.\n"
+        MSG+=" * \Z4apparmor.mode=complain\Zn\n    Set the AppArmor security module to complain mode.\n"
+        MSG+=" * \Z4pci=nommconf\Zn\n    Disable the use of Memory-Mapped Configuration for PCI devices(use this parameter cautiously).\n"
         MSG+="\nEnter the Parameter Name and Value you want to add.\n"
         LINENUM=$(($(echo -e "${MSG}" | wc -l) + 10))
         while true; do
