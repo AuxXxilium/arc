@@ -124,7 +124,7 @@
             let formData = new FormData(form);
             var title = "custom";
             var body = {};
-            var _parameters = ["title", "model", "version", "addons", "macsys", "patch", "usbmount", "customkernel", "format"];
+            var _parameters = ["title", "model", "version", "addons", "macsys", "customkernel", "format"];
             for (var key in _parameters) {
                 var name = _parameters[key];
                 if (name == "title") {
@@ -215,35 +215,12 @@
         </div>
         <div class="form-group mt-1 mb-2 ">
             <div class="form-group-header">
-                <label class="color-fg-default text-mono f6">Arc Patch (Choose an Option):</label>
-            </div>
-            <div class="form-group-body">
-                <select class="form-select form-control select-sm input-contrast" id="patch" name="inputs[patch]" value="">
-                    <option selected="selected" value="false">no</option>
-                    <option value="true">yes (if available)</option>
-                </select>
-            </div>
-        </div>
-        <div class="form-group mt-1 mb-2 ">
-            <div class="form-group-header">
                 <label class="color-fg-default text-mono f6">Macsys (Choose an Option):</label>
             </div>
             <div class="form-group-body">
                 <select class="form-select form-control select-sm input-contrast" id="macsys" name="inputs[macsys]" value="">
                     <option selected="selected" value="hardware">use hardware mac</option>
                     <option value="custom">use fake mac</option>
-                </select>
-            </div>
-        </div>
-        <div class="form-group mt-1 mb-2 ">
-            <div class="form-group-header">
-                <label class="color-fg-default text-mono f6">USB Mount as Internal (Only for nonDT Models):</label>
-            </div>
-            <div class="form-group-body">
-                <select class="form-select form-control select-sm input-contrast" id="usbmount" name="inputs[usbmount]" value="">
-                    <option selected="selected" value="false">false</option>
-                    <option value="true">true</option>
-                    <option value="force">force</option>
                 </select>
             </div>
         </div>
