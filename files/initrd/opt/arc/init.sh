@@ -101,7 +101,7 @@ for ETH in ${ETHX}; do
   NIC=$((${NIC} + 1))
 done
 ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
-[ ${NIC} -ne ${ETHN} ] && echo "Warning: NIC mismatch (NICs: ${NIC} | Real: ${ETHN})"
+[ ${NIC} -ne ${ETHN} ] && echo -e "\033[1;31mWarning: NIC mismatch (NICs: ${NIC} | Real: ${ETHN})\033[0m"
 # Write NIC Amount to config
 writeConfigKey "device.nic" "${NIC}" "${USER_CONFIG_FILE}"
 # No network devices
