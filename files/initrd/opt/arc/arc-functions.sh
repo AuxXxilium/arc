@@ -2164,13 +2164,16 @@ function decryptMenu() {
         dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
           --msgbox "Decrypt successful: You can use Arc Patch." 0 0
         mv -f "${S_FILE_ARC}" "${S_FILE}"
+        writeConfigKey "arc.key" "${ARC_KEY}" "${USER_CONFIG_FILE}"
       else
         dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
           --msgbox "Decrypt failed: Wrong Key for this Version." 0 0
+        writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
       fi
     else
       dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
         --msgbox "Decrypt failed: This will not work with the wrong Key." 0 0
+      writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
     fi
   fi
   return
