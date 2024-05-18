@@ -276,7 +276,7 @@ function arcVersion() {
     if [ "${PRODUCTVER}" != "${resp}" ]; then
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-      if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
+      if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
         # Delete old files
         rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
       fi
@@ -333,7 +333,7 @@ function arcPatch() {
   if [ "${CUSTOM}" = "true" ]; then
     ARCPATCHPRE="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     [ -n "${ARCCONF}" ] && ARCPATCH="true" || ARCPATCH="false"
-    if [[ "${ARCPATCH}" = "true" && "${ARCPATCHPRE}" = "true" ]]; then
+    if [ "${ARCPATCH}" = "true" ] && [ "${ARCPATCHPRE}" = "true" ]; then
       SN="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
       writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
@@ -442,7 +442,7 @@ function arcSettings() {
   fi
   # Select Portmap for Loader
   getmap
-  if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
+  if [ "${DT}" = "false" ] && [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
       --infobox "Generating Storage Map..." 3 35
     sleep 2
