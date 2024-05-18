@@ -82,7 +82,7 @@ function generateSerial() {
     SERIAL+="$(random)"
     ;;
   alpha)
-    SERIAL+="$(genRandomLetter)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomLetter)"
+    SERIAL+="$(genRandomLetter)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)"
     ;;
   esac
 
