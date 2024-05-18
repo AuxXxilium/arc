@@ -982,6 +982,7 @@ else
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
     echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
     echo "9 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
+    echo "0 \"Decrypt Arc Config \" "                                                         >>"${TMP_PATH}/menu"
     echo "y \"Choose a Keymap \" "                                                            >>"${TMP_PATH}/menu"
     if [ "${OFFLINE}" = "false" ]; then
       echo "z \"Update \" "                                                                   >>"${TMP_PATH}/menu"
@@ -1160,6 +1161,7 @@ else
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="9"
         ;;
+      0) decryptMenu; NEXT="0" ;;
       y) keymapMenu; NEXT="y" ;;
       z) updateMenu; NEXT="z" ;;
       V) credits; NEXT="V" ;;

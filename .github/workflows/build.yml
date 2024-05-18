@@ -221,6 +221,10 @@ jobs:
           body: |
             ### Notice: ${{ inputs.notice }}
 
+            ### Decryption Key:
+            Decryption Key can be found in my Discord.
+
+            ### Versions:
             Buildroot: ${{ inputs.br_version }}
             Addons: ${{ env.ADDONSTAG }}
             Configs: ${{ env.CONFIGSTAG }}

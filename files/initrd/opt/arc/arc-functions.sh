@@ -15,7 +15,7 @@ function editUserConfig() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
-  if [[ "${MODEL}" != "${OLDMODEL}" || "${PRODUCTVER}" != "${OLDPRODUCTVER}" ]]; then
+  if [ "${MODEL}" != "${OLDMODEL}" ] || [ "${PRODUCTVER}" != "${OLDPRODUCTVER}" ]; then
     # Delete old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   fi
@@ -196,7 +196,7 @@ function modulesMenu() {
           return 1
         fi
         KONAME=$(basename "$URL")
-        if [[ -n "${KONAME}" && "${KONAME##*.}" = "ko" ]]; then
+        if [ -n "${KONAME}" ] && [ "${KONAME##*.}" = "ko" ]; then
           addToModules "${PLATFORM}" "${KVERP}" "${TMP_UP_PATH}/${USER_FILE}"
           dialog --backtitle "$(backtitle)" --title "Add external Module" --aspect 18 \
             --msgbox "Module ${KONAME} added to ${PLATFORM}-${KVER}" 0 0
@@ -622,7 +622,7 @@ function backupMenu() {
             MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
             MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
             PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-            if [[ -n "${MODEL}" && -n "${PRODUCTVER}" ]]; then
+            if [ -n "${MODEL}" ] && [ -n "${PRODUCTVER}" ]; then
               TEXT="Installation found:\nModel: ${MODELID:-${MODEL}}\nVersion: ${PRODUCTVER}"
               SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
               TEXT+="\nSerial: ${SN}"
@@ -750,7 +750,7 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [[ $? -ne 0 || -z "${TAG}" ]]; then
+          if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
             dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
               --msgbox "Error checking new Version!" 0 0
             return 1
@@ -771,7 +771,7 @@ function updateMenu() {
         fi
         # Download update file
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
-        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
             --msgbox "Error downloading Updatefile!" 0 0
           return 1
@@ -808,7 +808,7 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [[ $? -ne 0 || -z "${TAG}" ]]; then
+          if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
             dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
               --msgbox "Error checking new Version!" 0 0
             return 1
@@ -823,7 +823,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip")
-        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
             --msgbox "Error downloading Updatefile!" 0 0
           return 1
@@ -859,7 +859,7 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [[ $? -ne 0 || -z "${TAG}" ]]; then
+          if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
             dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
               --msgbox "Error checking new Version!" 0 0
             return 1
@@ -874,7 +874,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip")
-        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
             --msgbox "Error downloading Updatefile!" 0 0
           return 1
@@ -916,7 +916,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
         STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
-        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
+        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
             --msgbox "Error downloading Updatefile!" 0 0
           return 1
@@ -935,7 +935,7 @@ function updateMenu() {
         mkdir -p "${MODULES_PATH}"
         unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}" >/dev/null 2>&1
         # Rebuild modules if model/build is selected
-        if [[ -n "${PLATFORM}" && -n "${KVERP}" ]]; then
+        if [[-n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           while read -r ID DESC; do
             writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
@@ -1098,7 +1098,6 @@ function sysinfo() {
     fi
   fi
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-  USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
   MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
@@ -1189,9 +1188,6 @@ function sysinfo() {
   fi
   if [ "${DT}" = "true" ]; then
     TEXT+="\n   Hotplug: \Zb${HDDSORT}\Zn"
-  fi
-  if [ "${DT}" = "false" ]; then
-    TEXT+="\n   Mount USB Drives: \Zb${USBMOUNT}\Zn"
   fi
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
@@ -1336,7 +1332,6 @@ function fullsysinfo() {
     fi
   fi
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-  USBMOUNT="$(readConfigKey "arc.usbmount" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
   MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
@@ -1436,9 +1431,6 @@ function fullsysinfo() {
   fi
   if [ "${DT}" = "true" ]; then
     TEXT+="\nHotplug: ${HDDSORT}"
-  fi
-  if [ "${DT}" = "false" ]; then
-    TEXT+="\nMount USB Drives: ${USBMOUNT}"
   fi
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
@@ -1881,8 +1873,8 @@ function formatdisks() {
   rm -f "${TMP_PATH}/opts"
   while read -r KNAME KMODEL PKNAME TYPE; do
     [ -z "${KNAME}" ] && continue
-    [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" || "${KMODEL}" = "${LOADER_DISK}" ]] && continue
-    [[ "${KNAME}" = /dev/md* ]] && continue
+    [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] || [ "${KMODEL}" = "${LOADER_DISK}" ] && continue
+    [ "${KNAME}" = /dev/md* ] && continue
     [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
     echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
   done <<<$(lsblk -pno KNAME,MODEL,PKNAME,TYPE | sort)
@@ -1984,7 +1976,7 @@ function cloneLoader() {
   while read -r KNAME KMODEL PKNAME TYPE; do
     [ -z "${KNAME}" ] && continue
     [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
-    [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" || "${KMODEL}" = "${LOADER_DISK}" ]] && continue
+    [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] || [ "${KMODEL}" = "${LOADER_DISK}" ] && continue
     echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
   done <<<$(lsblk -dpno KNAME,MODEL,PKNAME,TYPE | sort)
   if [ ! -f "${TMP_PATH}/opts" ]; then
@@ -2052,7 +2044,7 @@ function cloneLoader() {
 ###############################################################################
 # let user delete Loader Boot Files
 function resetLoader() {
-  if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
+  if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
     # Clean old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
   fi
@@ -2155,5 +2147,31 @@ function satadomMenu() {
   writeConfigKey "satadom" "${SATADOM}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  return
+}
+
+###############################################################################
+# Decrypt Menu
+function decryptMenu() {
+  if [ -n "${S_FILE_ENC}"]; then
+    dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
+      --inputbox "Key for Decrypt" 0 0 2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && return
+    ARC_KEY=$(cat "${TMP_PATH}/resp")
+    if [ -n "${ARC_KEY}" ]; then
+      openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARC_KEY}" 2>/dev/null
+      if [ -f "${S_FILE_ARC}" ]; then
+        dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
+          --msgbox "Decrypt successful: You can use Arc Patch." 0 0
+        mv -f "${S_FILE_ARC}" "${S_FILE}"
+      else
+        dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
+          --msgbox "Decrypt failed: Wrong Key for this Version." 0 0
+      fi
+    else
+      dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
+        --msgbox "Decrypt failed: This will not work with the wrong Key." 0 0
+    fi
+  fi
   return
 }
