@@ -157,6 +157,8 @@ for ETH in ${ETHX}; do
   MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
   [ -n "${MAC}" ] && NIC=$((${NIC} + 1)) && CMDLINE["mac${NIC}"]="${MAC}"
 done
+ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
+[ ${NIC} -ne ${ETHN} ] && echo -e "\033[1;31mWarning: NIC mismatch (NICs: ${NIC} | Real: ${ETHN})\033[0m"
 CMDLINE['netif_num']="${NIC}"
 if [ "${MACSYS}" = "hardware" ]; then
   CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"

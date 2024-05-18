@@ -16,11 +16,8 @@ function getnet() {
   elif [ "${ARCPATCH}" = "false" ]; then
     ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
     MACS=($(generateMacAddress "${MODEL}" ${ETHN}))
-    N=1
-    for ETH in ${ETHX}; do
-      MAC=$(echo "${MACS}" | cut -d ' ' -f ${N})
-      writeConfigKey "mac.${ETH}" "${MAC}" "${USER_CONFIG_FILE}"
-      N=$((${N} + 1))
+    for I in $(seq 1 ${ETHN}); do
+      writeConfigKey "mac.eth$((${I} - 1))" "${MACS[$((${I} - 1))]}" "${USER_CONFIG_FILE}"
     done
   elif [ "${ARCPATCH}" = "user" ]; then
     # User Mac

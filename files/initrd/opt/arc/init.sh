@@ -100,10 +100,12 @@ for ETH in ${ETHX}; do
   fi
   NIC=$((${NIC} + 1))
 done
-echo
+ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
+[ ${NIC} -ne ${ETHN} ] && echo "Warning: NIC mismatch (NICs: ${NIC} | Real: ${ETHN})"
 # Write NIC Amount to config
 writeConfigKey "device.nic" "${NIC}" "${USER_CONFIG_FILE}"
 # No network devices
+echo
 [ ${NIC} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
 
 # Get the VID/PID if we are in USB
