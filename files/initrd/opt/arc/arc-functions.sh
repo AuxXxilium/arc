@@ -2153,7 +2153,7 @@ function satadomMenu() {
 ###############################################################################
 # Decrypt Menu
 function decryptMenu() {
-  if [ -n "${S_FILE_ENC}"]; then
+  if [ -f "${S_FILE_ENC}" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
       --inputbox "Key for Decrypt" 0 0 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return
