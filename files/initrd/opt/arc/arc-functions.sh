@@ -2176,5 +2176,6 @@ function decryptMenu() {
       writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
     fi
   fi
+  ARC_KEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
   return
 }
