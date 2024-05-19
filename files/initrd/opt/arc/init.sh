@@ -47,6 +47,7 @@ initConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
 initConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
 initConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
+initConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
 initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
@@ -99,10 +100,12 @@ for ETH in ${ETHX}; do
   fi
   NIC=$((${NIC} + 1))
 done
-echo
+ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
+[ ${NIC} -ne ${ETHN} ] && echo -e "\033[1;31mWarning: NIC mismatch (NICs: ${NIC} | Real: ${ETHN})\033[0m"
 # Write NIC Amount to config
 writeConfigKey "device.nic" "${NIC}" "${USER_CONFIG_FILE}"
 # No network devices
+echo
 [ ${NIC} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
 
 # Get the VID/PID if we are in USB

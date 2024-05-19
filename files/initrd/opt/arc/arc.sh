@@ -63,12 +63,14 @@ fi
 ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
+CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
+ARC_KEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
@@ -79,7 +81,6 @@ SATACONTROLLER="$(readConfigKey "device.satacontroller" "${USER_CONFIG_FILE}")"
 SCSICONTROLLER="$(readConfigKey "device.sciscontroller" "${USER_CONFIG_FILE}")"
 RAIDCONTROLLER="$(readConfigKey "device.raidcontroller" "${USER_CONFIG_FILE}")"
 SASCONTROLLER="$(readConfigKey "device.sascontroller" "${USER_CONFIG_FILE}")"
-CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
 
 # Get Config/Build Status
 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -180,7 +181,7 @@ function arcModel() {
         if [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ ! "${A}" = "epyc7002" ]; then
           COMPATIBLE=0
         fi
-        if [ ${SATACONTROLLER} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ] && [ ! "${A}" = "epyc7002" ]; then
+        if [ "${SATACONTROLLER}" = "0" ] && [ "${EXTERNALCONTROLLER}" = "false" ] && [ ! "${A}" = "epyc7002" ]; then
           COMPATIBLE=0
         fi
         [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
@@ -188,13 +189,25 @@ function arcModel() {
         [ -z "$(grep -w "${M}" "${S_FILE}")" ] && BETA="x" || BETA=""
       fi
       [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
-      [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${CPU}" "${A}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
+      if [ -n "${ARC_KEY}" ]; then
+        [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${CPU}" "${A}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
+      else
+        [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${CPU}" "${A}" "${DTS}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
+      fi
     done  <<<$(cat "${TMP_PATH}/modellist")
-    dialog --backtitle "$(backtitle)" --title "DSM Model" --colors \
-      --cancel-label "Show all" --help-button --help-label "Exit" \
-      --extra-button --extra-label "Info" \
-      --menu "Choose Model for Loader (x = supported / + = need Addons) | Beta Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "CPU" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Beta")" 0 120 0 \
-      --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
+    if [ -n "${ARC_KEY}" ]; then
+      dialog --backtitle "$(backtitle)" --title "Arc DSM Model" --colors \
+        --cancel-label "Show all" --help-button --help-label "Exit" \
+        --extra-button --extra-label "Info" \
+        --menu "Supported Models for Loader (x = supported / + = need Addons) | Beta Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "CPU" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Beta")" 0 120 0 \
+        --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
+    else
+      dialog --backtitle "$(backtitle)" --title "DSM Model" --colors \
+        --cancel-label "Show all" --help-button --help-label "Exit" \
+        --extra-button --extra-label "Info" \
+        --menu "Supported Models for Loader (x = supported / + = need Addons) | Beta Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "CPU" "Platform" "DT" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Beta")" 0 120 0 \
+        --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
+    fi
     RET=$?
     case ${RET} in
       0) # ok-button
@@ -276,7 +289,7 @@ function arcVersion() {
     if [ "${PRODUCTVER}" != "${resp}" ]; then
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-      if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
+      if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
         # Delete old files
         rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
       fi
@@ -331,17 +344,9 @@ function arcPatch() {
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
   # Check for Custom Build
   if [ "${CUSTOM}" = "true" ]; then
-    ARCPATCHPRE="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-    [ -n "${ARCCONF}" ] && ARCPATCH="true" || ARCPATCH="false"
-    if [[ "${ARCPATCH}" = "true" && "${ARCPATCHPRE}" = "true" ]]; then
-      SN="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
-      writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-    else
-      SN=$(generateSerial "${MODEL}")
-      writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-    fi
+    SN=$(generateSerial "${MODEL}" false)
+    writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   else
     if [ -n "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
@@ -355,11 +360,11 @@ function arcPatch() {
       [ -z "${resp}" ] && return 1
       if [ ${resp} -eq 1 ]; then
         # Read Arc Patch from File
-        SN="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
+        SN=$(generateSerial "${MODEL}" true)
         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 2 ]; then
         # Generate random Serial
-        SN=$(generateSerial "${MODEL}")
+        SN=$(generateSerial "${MODEL}" false)
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 3 ]; then
         while true; do
@@ -374,9 +379,8 @@ function arcPatch() {
             break
           fi
           # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
-          break
           dialog --backtitle "$(backtitle)" --colors --title "Serial" \
-            --yesno "Invalid Serial, continue?" 0 0
+            --yesno "Serial looks invalid, continue?" 0 0
           [ $? -eq 0 ] && break
         done
         writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
@@ -393,7 +397,7 @@ function arcPatch() {
       [ -z "${resp}" ] && return 1
       if [ ${resp} -eq 1 ]; then
         # Generate random Serial
-        SN=$(generateSerial "${MODEL}")
+        SN=$(generateSerial "${MODEL}" false)
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 2 ]; then
         while true; do
@@ -408,9 +412,8 @@ function arcPatch() {
             break
           fi
           # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
-          break
           dialog --backtitle "$(backtitle)" --colors --title "Serial" \
-            --yesno "Invalid Serial, continue?" 0 0
+            --yesno "Serial looks invalid, continue?" 0 0
           [ $? -eq 0 ] && break
         done
         writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
@@ -442,7 +445,7 @@ function arcSettings() {
   fi
   # Select Portmap for Loader
   getmap
-  if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
+  if [ "${DT}" = "false" ] && [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
       --infobox "Generating Storage Map..." 3 35
     sleep 2
@@ -698,14 +701,14 @@ function make() {
       DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
       # Get new Files
       DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODELID/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
-      STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}")
+      STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null)
       if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
         dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-          --infobox "No DSM Image found!\nTry Syno Link." 0 0
+          --infobox "No DSM Image found!\nTry to get .pat from Syno." 0 0
         sleep 3
         # Grep PAT_URL
         PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
-        STATUS=$(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" --progress-bar)
+        STATUS=$(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" 2>/dev/null)
         if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
           dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
             --infobox "No DSM Image found!\nExit." 0 0
@@ -714,7 +717,7 @@ function make() {
         fi
       fi
       if [ -f "${DSM_FILE}" ]; then
-        tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>&1
+        tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>/dev/null
         dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
           --infobox "DSM Extraction successful!" 0 0
       elif extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
@@ -982,6 +985,7 @@ else
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
     echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
     echo "9 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
+    echo "0 \"Decrypt Arc Config \" "                                                         >>"${TMP_PATH}/menu"
     echo "y \"Choose a Keymap \" "                                                            >>"${TMP_PATH}/menu"
     if [ "${OFFLINE}" = "false" ]; then
       echo "z \"Update \" "                                                                   >>"${TMP_PATH}/menu"
@@ -1160,6 +1164,7 @@ else
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="9"
         ;;
+      0) decryptMenu; NEXT="0" ;;
       y) keymapMenu; NEXT="y" ;;
       z) updateMenu; NEXT="z" ;;
       V) credits; NEXT="V" ;;

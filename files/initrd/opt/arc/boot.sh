@@ -136,10 +136,10 @@ CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 CMDLINE["HddHotplug"]="1"
 CMDLINE["vender_format_version"]="2"
-if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ ! "${BUS}" = "mmc" ] && [ ! "${EMMCBOOT}" = "true" ]; then
-  [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
-  CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
-fi
+#if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ ! "${BUS}" = "mmc" ] && [ ! "${EMMCBOOT}" = "true" ]; then
+#  [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+#  CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
+#fi
 if [ "${DT}" = "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
   [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
   CMDLINE['modprobe.blacklist']+="mpt3sas"
@@ -157,6 +157,8 @@ for ETH in ${ETHX}; do
   MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
   [ -n "${MAC}" ] && NIC=$((${NIC} + 1)) && CMDLINE["mac${NIC}"]="${MAC}"
 done
+ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
+[ ${NIC} -ne ${ETHN} ] && echo -e "\033[1;31mWarning: NIC mismatch (NICs: ${NIC} | Real: ${ETHN})\033[0m"
 CMDLINE['netif_num']="${NIC}"
 if [ "${MACSYS}" = "hardware" ]; then
   CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
