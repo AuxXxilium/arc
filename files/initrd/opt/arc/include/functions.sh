@@ -70,11 +70,16 @@ function genRandomValue() {
 ###############################################################################
 # Generate a random serial number for a model
 # 1 - Model
+# 2 - Arc
 # Returns serial number
 function generateSerial() {
   PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}" 2>/dev/null | sort -R | tail -1)"
   MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}" 2>/dev/null | sort -R | tail -1)"
-  SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}" 2>/dev/null)"
+  if [ "${2}" = "true" ]; then
+    SUFFIX="arc"
+  else
+    SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}" 2>/dev/null)"
+  fi
 
   SERIAL="${PREFIX:-"0000"}${MIDDLE:-"XXX"}"
   case "${SUFFIX:-"alpha"}" in
@@ -83,6 +88,9 @@ function generateSerial() {
     ;;
   alpha)
     SERIAL+="$(genRandomLetter)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)"
+    ;;
+  arc)
+    SERIAL+="$(readConfigKey "${1}.serial" "${S_FILE}" 2>/dev/null)"
     ;;
   esac
 
@@ -94,10 +102,15 @@ function generateSerial() {
 # Generate a MAC address for a model
 # 1 - Model
 # 2 - Amount of MACs to generate
+# 3 - Arc MAC
 # Returns serial number
 function generateMacAddress() {
   MACPRE="$(readConfigKey "${1}.macpre" "${S_FILE}")"
-  MACSUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
+  if [ "${3}" = "true" ]; then
+    MACSUF="$(readConfigKey "${1}.mac" "${S_FILE}" 2>/dev/null)"
+  else
+    MACSUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
+  fi
   NUM=${2:-1}
   MACS=""
   for I in $(seq 1 ${NUM}); do

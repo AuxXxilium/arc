@@ -344,17 +344,9 @@ function arcPatch() {
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
   # Check for Custom Build
   if [ "${CUSTOM}" = "true" ]; then
-    ARCPATCHPRE="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-    [ -n "${ARCCONF}" ] && ARCPATCH="true" || ARCPATCH="false"
-    if [ "${ARCPATCH}" = "true" ] && [ "${ARCPATCHPRE}" = "true" ]; then
-      SN="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
-      writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-    else
-      SN=$(generateSerial "${MODEL}")
-      writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-    fi
+    SN=$(generateSerial "${MODEL}" false)
+    writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   else
     if [ -n "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
@@ -368,11 +360,11 @@ function arcPatch() {
       [ -z "${resp}" ] && return 1
       if [ ${resp} -eq 1 ]; then
         # Read Arc Patch from File
-        SN="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
+        SN=$(generateSerial "${MODEL}" true)
         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 2 ]; then
         # Generate random Serial
-        SN=$(generateSerial "${MODEL}")
+        SN=$(generateSerial "${MODEL}" false)
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 3 ]; then
         while true; do
@@ -387,9 +379,8 @@ function arcPatch() {
             break
           fi
           # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
-          break
           dialog --backtitle "$(backtitle)" --colors --title "Serial" \
-            --yesno "Invalid Serial, continue?" 0 0
+            --yesno "Serial looks invalid, continue?" 0 0
           [ $? -eq 0 ] && break
         done
         writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
@@ -406,7 +397,7 @@ function arcPatch() {
       [ -z "${resp}" ] && return 1
       if [ ${resp} -eq 1 ]; then
         # Generate random Serial
-        SN=$(generateSerial "${MODEL}")
+        SN=$(generateSerial "${MODEL}" false)
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 2 ]; then
         while true; do
@@ -421,9 +412,8 @@ function arcPatch() {
             break
           fi
           # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
-          break
           dialog --backtitle "$(backtitle)" --colors --title "Serial" \
-            --yesno "Invalid Serial, continue?" 0 0
+            --yesno "Serial looks invalid, continue?" 0 0
           [ $? -eq 0 ] && break
         done
         writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
