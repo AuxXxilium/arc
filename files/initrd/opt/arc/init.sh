@@ -51,7 +51,12 @@ initConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
 initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
+if [ -n "${ARCCONF}" ]; then
+  writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
+else
+  writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+fi
 initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
