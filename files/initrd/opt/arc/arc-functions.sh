@@ -2159,20 +2159,19 @@ function decryptMenu() {
     [ $? -ne 0 ] && return
     ARC_KEY=$(cat "${TMP_PATH}/resp")
     if [ -n "${ARC_KEY}" ]; then
-      openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARC_KEY}" 2>/dev/null
-      if [ -f "${S_FILE_ARC}" ]; then
+      if $(openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARC_KEY}" 2>/dev/null); then
         dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-          --msgbox "Decrypt successful: You can use Arc Patch." 0 0
+          --msgbox "Decrypt successful: You can use Arc Patch." 5 50
         mv -f "${S_FILE_ARC}" "${S_FILE}"
         writeConfigKey "arc.key" "${ARC_KEY}" "${USER_CONFIG_FILE}"
       else
         dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-          --msgbox "Decrypt failed: Wrong Key for this Version." 0 0
+          --msgbox "Decrypt failed: Wrong Key for this Version." 5 50
         writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
       fi
     else
       dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-        --msgbox "Decrypt failed: This will not work with the wrong Key." 0 0
+        --msgbox "Decrypt failed: Please enter a Key." 5 50
       writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
     fi
   fi
