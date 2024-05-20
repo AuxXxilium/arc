@@ -2,16 +2,16 @@
 function getmap() {
   # Sata Disks
   SATADRIVES=0
+  # Clean old files
+  [ -f "${TMP_PATH}/drivesmax" ] && rm -f "${TMP_PATH}/drivesmax"
+  touch "${TMP_PATH}/drivesmax"
+  [ -f "${TMP_PATH}/drivescon" ] && rm -f "${TMP_PATH}/drivescon"
+  touch "${TMP_PATH}/drivescon"
+  [ -f "${TMP_PATH}/ports" ] && rm -f "${TMP_PATH}/ports"
+  touch "${TMP_PATH}ports"
+  [ -f "${TMP_PATH}/remap" ] && rm -f "${TMP_PATH}/remap"
+  touch "${TMP_PATH}/remap"
   if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
-    # Clean old files
-    [ -f "${TMP_PATH}/drivesmax" ] && rm -f "${TMP_PATH}/drivesmax"
-    touch "${TMP_PATH}/drivesmax"
-    [ -f "${TMP_PATH}/drivescon" ] && rm -f "${TMP_PATH}/drivescon"
-    touch "${TMP_PATH}/drivescon"
-    [ -f "${TMP_PATH}/ports" ] && rm -f "${TMP_PATH}/ports"
-    touch "${TMP_PATH}ports"
-    [ -f "${TMP_PATH}/remap" ] && rm -f "${TMP_PATH}/remap"
-    touch "${TMP_PATH}/remap"
     let DISKIDXMAPIDX=0
     DISKIDXMAP=""
     let DISKIDXMAPIDXMAX=0
@@ -119,18 +119,20 @@ function getmap() {
   writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.harddrives" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
   # Check for Sata Boot
-  LASTDRIVE=0
-  while read -r D; do
-    if [[ "${BUS}" != "usb" && ${D} -eq 0 ]]; then
-      MAXDISKS=${DRIVES}
-      echo -n "${D}>${MAXDISKS}:">>"${TMP_PATH}/remap"
-    elif [ ! ${D} = ${LASTDRIVE} ]; then
-      echo -n "${D}>${LASTDRIVE}:">>"${TMP_PATH}/remap"
-      LASTDRIVE=$((${LASTDRIVE} + 1))
-    elif [ ${D} = ${LASTDRIVE} ]; then
-      LASTDRIVE=$((${D} + 1))
-    fi
-  done <<<$(cat "${TMP_PATH}/ports")
+  if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
+    LASTDRIVE=0
+    while read -r D; do
+      if [[ "${BUS}" != "usb" && ${D} -eq 0 ]]; then
+        MAXDISKS=${DRIVES}
+        echo -n "${D}>${MAXDISKS}:">>"${TMP_PATH}/remap"
+      elif [ ! ${D} = ${LASTDRIVE} ]; then
+        echo -n "${D}>${LASTDRIVE}:">>"${TMP_PATH}/remap"
+        LASTDRIVE=$((${LASTDRIVE} + 1))
+      elif [ ${D} = ${LASTDRIVE} ]; then
+        LASTDRIVE=$((${D} + 1))
+      fi
+    done <<<$(cat "${TMP_PATH}/ports")
+  fi
 }
 
 function getmapSelection() {

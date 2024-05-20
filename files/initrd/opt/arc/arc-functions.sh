@@ -793,7 +793,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
           --yesno "Arc Upgrade successful. New Version: ${TAG}\nUse Recover from DSM to get your old Config.\nReboot?" 0 0
         [ $? -ne 0 ] && return 1
-        rebootTo config
+        exec reboot
         exit 0
         ;;
       2)
@@ -1048,7 +1048,7 @@ function storageMenu() {
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   # Get Portmap for Loader
   getmap
-  if [[ "${DT}" = "false" && $(lspci -d ::106 | wc -l) -gt 0 ]]; then
+  if [ "${DT}" = "false" ] && [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
     getmapSelection
   fi
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
