@@ -2154,8 +2154,9 @@ function satadomMenu() {
 # Decrypt Menu
 function decryptMenu() {
   if [ -f "${S_FILE_ENC}" ]; then
+    CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
     dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-      --inputbox "Key for Decrypt" 0 0 2>"${TMP_PATH}/resp"
+      --inputbox "Enter Decryption Key for ${CONFIGSVERSION}" 7 40 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return
     ARC_KEY=$(cat "${TMP_PATH}/resp")
     if [ -n "${ARC_KEY}" ]; then
