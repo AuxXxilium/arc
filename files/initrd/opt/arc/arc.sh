@@ -641,8 +641,10 @@ function make() {
             PAT_URL=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].url')
             PAT_HASH=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].checksum')
             PAT_URL=${PAT_URL%%\?*}
-            if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && [ echo ${PAT_URL} | grep "https://" ]; then
-              break
+            if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+              if echo "${PAT_URL}" | grep -q "https://*"; then
+                break
+              fi
             fi
           fi
         fi
@@ -658,19 +660,25 @@ function make() {
           PAT_HASH="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODELID/+/%2B}/${PRODUCTVER}/pat_hash")"
           PAT_URL=${PAT_URL%%\?*}
           if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-            break
+            if echo "${PAT_URL}" | grep -q "https://*"; then
+              break
+            fi
           fi
           sleep 3
           idx=$((${idx} + 1))
         done
       fi
       if [ "${CUSTOM}" = "false" ]; then
-        if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ] || [ ! echo ${PAT_URL} | grep "https://" ]; then
+        if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
           MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
           PAT_URL=""
           PAT_HASH=""
-        else
+        elif echo "${PAT_URL}" | grep -q "https://*"; then
           MSG="Successfully got PAT Data.\nPlease confirm or modify if needed."
+        else
+          MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
+          PAT_URL=""
+          PAT_HASH=""
         fi
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
           --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 7 100 0 \
@@ -681,16 +689,23 @@ function make() {
         PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
         PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
       else
-        if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ] || [ ! echo ${PAT_URL} | grep "https://" ]; then
+        if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
           dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
             --infobox "Could not get PAT Data..." 4 30
-          sleep 3
           PAT_URL=""
           PAT_HASH=""
+          sleep 3
+          break
+        elif echo "${PAT_URL}" | grep -wq "https://"; then
+          dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+            --infobox "Successfully got PAT Data..." 4 30
+          sleep 3
           break
         else
           dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-            --infobox "Successfully got PAT Data..." 4 30
+            --infobox "Could not get PAT Data..." 4 30
+          PAT_URL=""
+          PAT_HASH=""
           sleep 3
           break
         fi
