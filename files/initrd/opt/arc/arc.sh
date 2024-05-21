@@ -642,7 +642,7 @@ function make() {
             PAT_HASH=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].checksum')
             PAT_URL=${PAT_URL%%\?*}
             if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-              if echo "${PAT_URL}" | grep -wq "https://"; then
+              if echo "${PAT_URL}" | grep -q "https://*"; then
                 break
               fi
             fi
@@ -660,7 +660,7 @@ function make() {
           PAT_HASH="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODELID/+/%2B}/${PRODUCTVER}/pat_hash")"
           PAT_URL=${PAT_URL%%\?*}
           if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-            if echo "${PAT_URL}" | grep -wq "https://"; then
+            if echo "${PAT_URL}" | grep -q "https://*"; then
               break
             fi
           fi
@@ -673,7 +673,7 @@ function make() {
           MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
           PAT_URL=""
           PAT_HASH=""
-        elif echo "${PAT_URL}" | grep -wq "https://"; then
+        elif echo "${PAT_URL}" | grep -q "https://*"; then
           MSG="Successfully got PAT Data.\nPlease confirm or modify if needed."
         else
           MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
