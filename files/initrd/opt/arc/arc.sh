@@ -351,10 +351,10 @@ function arcPatch() {
     if [ -n "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
         --nocancel --title "Arc Patch"\
-        --menu "Do you want to use Syno Services?" 7 50 0 \
-        1 "Yes - Install with Arc Patch" \
-        2 "No - Install with random Serial/Mac" \
-        3 "No - Install with my Serial/Mac" \
+        --menu "Please choose an Option." 7 50 0 \
+        1 "Use Arc Patch (only for QC)" \
+        2 "Use random Serial/Mac" \
+        3 "Use my own Serial/Mac" \
       2>"${TMP_PATH}/resp"
       resp=$(cat ${TMP_PATH}/resp)
       [ -z "${resp}" ] && return 1
@@ -389,9 +389,9 @@ function arcPatch() {
     elif [ -z "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
         --nocancel --title "Non Arc Patch Model" \
-        --menu "Please select an Option?" 8 50 0 \
-        1 "Install with random Serial/Mac" \
-        2 "Install with my Serial/Mac" \
+        --menu "Please choose an Option." 8 50 0 \
+        1 "Use random Serial/Mac" \
+        2 "Use my Serial/Mac" \
       2>"${TMP_PATH}/resp"
       resp=$(cat ${TMP_PATH}/resp)
       [ -z "${resp}" ] && return 1
