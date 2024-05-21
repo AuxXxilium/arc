@@ -174,37 +174,40 @@ function modulesMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       6)
-        TEXT=""
-        TEXT+="This function is experimental and dangerous. If you don't know much, please exit.\n"
-        TEXT+="The imported .ko of this function will be implanted into the corresponding arch's modules package, which will affect all models of the arch.\n"
-        TEXT+="This program will not determine the availability of imported modules or even make type judgments, as please double check if it is correct.\n"
-        TEXT+="If you want to remove it, please go to the \"Update Menu\" -> \"Update Modules\" to forcibly update the modules. All imports will be reset.\n"
-        TEXT+="Do you want to continue?"
-        dialog --backtitle "$(backtitle)" --title "Add external Module" \
-            --yesno "${TEXT}" 0 0
-        [ $? -ne 0 ] && return 1
-        dialog --backtitle "$(backtitle)" --aspect 18 --colors --inputbox "Please enter the complete URL to download.\n" 0 0 \
-          2>"${TMP_PATH}/resp"
-        URL=$(cat "${TMP_PATH}/resp")
-        [ -z "${URL}" ] && return 1
-        clear
-        echo "Downloading ${URL}"
-        STATUS=$(curl -kLJO -w "%{http_code}" "${URL}" --progress-bar)
-        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
-          dialog --backtitle "$(backtitle)" --title "Add external Module" --aspect 18 \
-            --msgbox "ERROR: Check internet, URL or cache disk space" 0 0
-          return 1
-        fi
-        KONAME=$(basename "$URL")
-        if [ -n "${KONAME}" ] && [ "${KONAME##*.}" = "ko" ]; then
-          addToModules "${PLATFORM}" "${KVERP}" "${TMP_UP_PATH}/${USER_FILE}"
-          dialog --backtitle "$(backtitle)" --title "Add external Module" --aspect 18 \
-            --msgbox "Module ${KONAME} added to ${PLATFORM}-${KVER}" 0 0
-          rm -f "${KONAME}"
-        else
-          dialog --backtitle "$(backtitle)" --title "Add external Module" --aspect 18 \
-            --msgbox "File format not recognized!" 0 0
-        fi
+        MSG=""
+        MSG+="This function is experimental and dangerous. If you don't know much, please exit.\n"
+        MSG+="The imported .ko of this function will be implanted into the corresponding arch's modules package, which will affect all models of the arch.\n"
+        MSG+="This program will not determine the availability of imported modules or even make type judgments, as please double check if it is correct.\n"
+        MSG+="If you want to remove it, please go to the \"Update Menu\" -> \"Update Modules\" to forcibly update the modules. All imports will be reset.\n"
+        MSG+="Do you want to continue?"
+        dialog --backtitle "$(backtitle)" --title "External Modules" \
+          --yesno "${MSG}" 0 0
+        [ $? -ne 0 ] && return
+        TMP_UP_PATH=${TMP_PATH}/users
+        USER_FILE=""
+        rm -rf ${TMP_UP_PATH}
+        mkdir -p ${TMP_UP_PATH}
+        dialog --backtitle "$(backtitle)" --title "External Modules" \
+          --ok-label "Proceed" --msgbox "Please upload the *.ko file to /tmp/users.\n- Use SFTP at ${IPCON}:22 User: root PW: arc\n- Use Webclient at http://${IPCON}:7304" 7 50
+        for F in $(ls "${TMP_UP_PATH}" 2>/dev/null); do
+          USER_FILE="${F}"
+          if [ -n "${USER_FILE}" ] && [ "${USER_FILE##*.}" = "ko" ]; then
+            KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
+            # Modify KVER for Epyc7002
+            if [ "${PLATFORM}" = "epyc7002" ]; then
+              KVERP="${PRODUCTVER}-${KVER}"
+            else
+              KVERP="${KVER}"
+            fi
+            addToModules "${PLATFORM}" "${KVERP}" "${TMP_UP_PATH}/${USER_FILE}"
+            dialog --backtitle "$(backtitle)" --title "External Modules" \
+              --msgbox "Module: ${USER_FILE}\nadded to ${PLATFORM}-${KVERP}" 7 50
+            rm -f "${TMP_UP_PATH}/${USER_FILE}"
+          else
+            dialog --backtitle "$(backtitle)" --title "External Modules" \
+              --msgbox "Not a valid file, please try again!" 7 50
+          fi
+        done
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
