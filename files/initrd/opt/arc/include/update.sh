@@ -1,23 +1,9 @@
 
-[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-
-CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
-PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-if [ -n "${PRODUCTVER}" ]; then
-  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
-  # Modify KVER for Epyc7002
-  if [ "${PLATFORM}" = "epyc7002" ]; then
-    KVERP="${PRODUCTVER}-${KVER}"
-  else
-    KVERP="${KVER}"
-  fi
-fi
-
 ###############################################################################
 # Update Loader
 function updateLoader() {
   (
+    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     if [ -z "${1}" ]; then
       # Check for new Version
       idx=0
@@ -75,6 +61,7 @@ function updateLoader() {
 # Update Addons
 function updateAddons() {
   (
+    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     if [ -z "${1}" ]; then
       # Check for new Version
       idx=0
@@ -128,6 +115,7 @@ function updateAddons() {
 # Update Patches
 function updatePatches() {
   (
+    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     if [ -z "${1}" ]; then
       # Check for new Version
       idx=0
@@ -181,6 +169,7 @@ function updatePatches() {
 # Update Modules
 function updateModules() {
   (
+    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     if [ -z "${1}" ]; then
       # Check for new Version
       idx=0
@@ -215,6 +204,17 @@ function updateModules() {
     if [ -f "${TMP_PATH}/modules.zip" ]; then
       rm -f "${TMP_PATH}/modules.zip"
       # Rebuild modules if model/build is selected
+      PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+      if [ -n "${PRODUCTVER}" ]; then
+        PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+        KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
+        # Modify KVER for Epyc7002
+        if [ "${PLATFORM}" = "epyc7002" ]; then
+          KVERP="${PRODUCTVER}-${KVER}"
+        else
+          KVERP="${KVER}"
+        fi
+      fi
       if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
         echo "Rebuilding Modules..."
@@ -242,6 +242,7 @@ function updateModules() {
 # Update Configs
 function updateConfigs() {
   (
+    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     if [ -z "${1}" ]; then
       # Check for new Version
       idx=0
@@ -295,6 +296,7 @@ function updateConfigs() {
 # Update LKMs
 function updateLKMs() {
   (
+    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     if [ -z "${1}" ]; then
       # Check for new Version
       idx=0

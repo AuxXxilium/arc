@@ -1,6 +1,4 @@
 
-[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-
 ###############################################################################
 # Permits user edit the user config
 function editUserConfig() {

@@ -4,7 +4,6 @@
 . ${ARC_PATH}/include/consts.sh
 . ${ARC_PATH}/include/configFile.sh
 . ${ARC_PATH}/include/addons.sh
-. ${ARC_PATH}/include/update.sh
 
 ###############################################################################
 # Just show error message and dies
