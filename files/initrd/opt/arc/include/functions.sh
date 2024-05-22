@@ -423,16 +423,12 @@ function livepatch() {
   if ! ${ARC_PATH}/zimage-patch.sh; then
     FAIL=1
   else
-    ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
-    writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
     FAIL=0
   fi
   # Patch Ramdisk
   if ! ${ARC_PATH}/ramdisk-patch.sh; then
     FAIL=1
   else
-    RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
-    writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
     FAIL=0
   fi
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
@@ -447,16 +443,12 @@ function livepatch() {
       if ! ${ARC_PATH}/zimage-patch.sh; then
         FAIL=1
       else
-        ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
-        writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
         FAIL=0
       fi
       # Patch Ramdisk
       if ! ${ARC_PATH}/ramdisk-patch.sh; then
         FAIL=1
       else
-        RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
-        writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
         FAIL=0
       fi
     fi
@@ -467,6 +459,10 @@ function livepatch() {
     sleep 5
     exit 1
   else
+    ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
+    writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
+    RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
+    writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
     echo "DSM Image patched - Ready!"
   fi
 }
