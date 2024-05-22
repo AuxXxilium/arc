@@ -345,62 +345,6 @@ function convert_netmask() {
 }
 
 ###############################################################################
-# Livepatch
-function livepatch() {
-  FAIL=0
-  # Patch zImage
-  if ! ${ARC_PATH}/zimage-patch.sh; then
-    FAIL=1
-  else
-    ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
-    writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
-    FAIL=0
-  fi
-  # Patch Ramdisk
-  if ! ${ARC_PATH}/ramdisk-patch.sh; then
-    FAIL=1
-  else
-    RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
-    writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
-    FAIL=0
-  fi
-  OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  if [ "${OFFLINE}" = "false" ]; then
-    # Looking for Update
-    if [ ${FAIL} -eq 1 ]; then
-      # Update Configs
-      updateConfigs
-      # Update Patches
-      updatePatches
-      # Patch zImage
-      if ! ${ARC_PATH}/zimage-patch.sh; then
-        FAIL=1
-      else
-        ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
-        writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
-        FAIL=0
-      fi
-      # Patch Ramdisk
-      if ! ${ARC_PATH}/ramdisk-patch.sh; then
-        FAIL=1
-      else
-        RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
-        writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
-        FAIL=0
-      fi
-    fi
-  fi
-  if [ ${FAIL} -eq 1 ]; then
-    echo
-    echo -e "Patching DSM Files failed! Please stay patient for Update." 0 0
-    sleep 5
-    exit 1
-  else
-    echo "DSM Image patched - Ready!"
-  fi
-}
-
-###############################################################################
 # Rebooting
 # (based on pocopico's TCRP code)
 function rebootTo() {
