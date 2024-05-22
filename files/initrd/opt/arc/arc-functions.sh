@@ -772,27 +772,29 @@ function updateMenu() {
             --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
           [ $? -ne 0 ] && return 1
         fi
-        # Download update file
-        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
-        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-          dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-            --msgbox "Error downloading Updatefile!" 0 0
-          return 1
-        fi
-        unzip -oq "${TMP_PATH}/arc-${TAG}.img.zip" -d "${TMP_PATH}"
-        rm -f "${TMP_PATH}/arc-${TAG}.img.zip"
-        if [ $? -ne 0 ]; then
-          dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-            --msgbox "Error extracting Updatefile!" 0 0
-          return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-          --infobox "Installing new Loader Image..." 0 0
-        # Process complete update
-        umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
-        dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1) bs=1M conv=fsync
-        # Ask for Boot
-        rm -f "${TMP_PATH}/arc.img"
+        (
+          # Download update file
+          STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
+          if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
+            echo "Error downloading Updatefile!"
+            sleep 5
+            return 1
+          fi
+          unzip -oq "${TMP_PATH}/arc-${TAG}.img.zip" -d "${TMP_PATH}"
+          rm -f "${TMP_PATH}/arc-${TAG}.img.zip"
+          if [ $? -ne 0 ]; then
+            echo "Error extracting Updatefile!"
+            sleep 5
+            return 1
+          fi
+          echo "Installing new Loader Image..."
+          # Process complete update
+          umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
+          dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1) bs=1M conv=fsync
+          # Ask for Boot
+          rm -f "${TMP_PATH}/arc.img"
+        ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Full-Upgrade Loader" \
+          --progressbox "Upgrading ..." 20 70
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
           --yesno "Arc Upgrade successful. New Version: ${TAG}\nUse Recover from DSM to get your old Config.\nReboot?" 0 0
         [ $? -ne 0 ] && return 1
