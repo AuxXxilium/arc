@@ -87,8 +87,13 @@ function arcUpdate() {
 ###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
-  dialog --backtitle "$(backtitle)" --title "Arc Boot" \
-    --infobox "Rebooting automated Build Mode...\nPlease stay patient!" 4 25
+  if [ "${CUSTOM}" = "true" ]; then
+    dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+      --infobox "Rebooting to automated Build Mode...\nPlease stay patient!" 4 30
+  else
+    dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+      --infobox "Rebooting to Config Mode...\nPlease stay patient!" 4 30
+  fi
   sleep 2
   exec reboot
 }
