@@ -6,6 +6,17 @@
 . ${ARC_PATH}/include/modules.sh
 
 CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+if [ -n "${PRODUCTVER}" ]; then
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
+  # Modify KVER for Epyc7002
+  if [ "${PLATFORM}" = "epyc7002" ]; then
+    KVERP="${PRODUCTVER}-${KVER}"
+  else
+    KVERP="${KVER}"
+  fi
+fi
 
 ###############################################################################
 # Update Loader
@@ -207,17 +218,6 @@ function updateModules() {
     unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}" >/dev/null 2>&1
     if [ -f "${TMP_PATH}/modules.zip" ]; then
       rm -f "${TMP_PATH}/modules.zip"
-      PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-      if [ -n "${PRODUCTVER}" ]; then
-        PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-        KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
-        # Modify KVER for Epyc7002
-        if [ "${PLATFORM}" = "epyc7002" ]; then
-          KVERP="${PRODUCTVER}-${KVER}"
-        else
-          KVERP="${KVER}"
-        fi
-      fi
       # Rebuild modules if model/build is selected
       if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
         writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
