@@ -2,9 +2,8 @@
 
 . ${ARC_PATH}/include/consts.sh
 . ${ARC_PATH}/include/configFile.sh
-. ${ARC_PATH}/include/addons.sh
+. ${ARC_PATH}/include/functions.sh
 . ${ARC_PATH}/include/modules.sh
-. ${ARC_PATH}/include/update.sh
 
 CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
 
@@ -58,6 +57,8 @@ function updateLoader() {
       fi
     fi
     [ -f "${TMP_PATH}/update.zip" ] && rm -f "${TMP_PATH}/update.zip"
+    echo "Update done!"
+    sleep 2
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Update Loader" \
     --progressbox "Updating Loader..." 20 70
   return 0
@@ -109,6 +110,8 @@ function updateAddons() {
         exec reboot
       fi
     fi
+    echo "Update done!"
+    sleep 2
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Update Addons" \
     --progressbox "Updating Addons..." 20 70
   return 0
@@ -160,6 +163,8 @@ function updatePatches() {
         exec reboot
       fi
     fi
+    echo "Update done!"
+    sleep 2
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Update Patches" \
     --progressbox "Updating Patches..." 20 70
   return 0
@@ -230,6 +235,8 @@ function updateModules() {
         exec reboot
       fi
     fi
+    echo "Update done!"
+    sleep 2
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Update Modules" \
     --progressbox "Updating Modules..." 20 70
   return 0
@@ -281,6 +288,8 @@ function updateConfigs() {
         exec reboot
       fi
     fi
+    echo "Update done!"
+    sleep 2
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Update Configs" \
     --progressbox "Updating Configs..." 20 70
   return 0
@@ -332,6 +341,8 @@ function updateLKMs() {
         exec reboot
       fi
     fi
+    echo "Update done!"
+    sleep 2
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Update LKMs" \
     --progressbox "Updating LKMs..." 20 70
   return 0
