@@ -731,10 +731,10 @@ function updateMenu() {
       --menu "Choose an Option" 0 0 0 \
       1 "Full-Upgrade Loader" \
       2 "Update Addons" \
-      3 "Update Patches" \
-      4 "Update Modules" \
-      5 "Update Configs" \
-      6 "Update LKMs" \
+      3 "Update Configs" \
+      4 "Update LKMs" \
+      5 "Update Modules" \
+      6 "Update Patches" \
       7 "Automated Update Mode" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
@@ -812,12 +812,7 @@ function updateMenu() {
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
-          TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-            dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
-              --msgbox "Error checking new Version!" 0 0
-            return 1
-          fi
+          TAG=""
         elif [ ${opts} -eq 2 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Addons" \
           --inputbox "Type the Version!" 0 0 \
@@ -825,134 +820,11 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
-          --infobox "Downloading ${TAG}" 0 0
-        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip")
-        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
-            --msgbox "Error downloading Updatefile!" 0 0
-          return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
-          --infobox "Extracting" 0 0
-        rm -rf "${ADDONS_PATH}"
-        mkdir -p "${ADDONS_PATH}"
-        unzip -oq "${TMP_PATH}/addons.zip" -d "${ADDONS_PATH}" >/dev/null 2>&1
-        dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
-          --infobox "Installing new Addons" 0 0
-        for PKG in $(ls ${ADDONS_PATH}/*.addon); do
-          ADDON=$(basename ${PKG} | sed 's|.addon||')
-          rm -rf "${ADDONS_PATH}/${ADDON:?}"
-          mkdir -p "${ADDONS_PATH}/${ADDON}"
-          tar -xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
-          rm -f "${ADDONS_PATH}/${ADDON}.addon"
-        done
-        rm -f "${TMP_PATH}/addons.zip"
+        updateAddons "${TAG}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
-          --msgbox "Addons updated successful! New Version: ${TAG}" 0 0
         ;;
       3)
-        # Ask for Tag
-        dialog --clear --backtitle "$(backtitle)" --title "Update Patches" \
-          --menu "Which Version?" 0 0 0 \
-          1 "Latest" \
-          2 "Select Version" \
-        2>"${TMP_PATH}/opts"
-        opts=$(cat ${TMP_PATH}/opts)
-        [ -z "${opts}" ] && return 1
-        if [ ${opts} -eq 1 ]; then
-          TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-            dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
-              --msgbox "Error checking new Version!" 0 0
-            return 1
-          fi
-        elif [ ${opts} -eq 2 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Patches" \
-          --inputbox "Type the Version!" 0 0 \
-          2>"${TMP_PATH}/input"
-          TAG=$(cat "${TMP_PATH}/input")
-          [ -z "${TAG}" ] && return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
-          --infobox "Downloading ${TAG}" 0 0
-        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip")
-        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
-            --msgbox "Error downloading Updatefile!" 0 0
-          return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
-          --infobox "Extracting" 0 0
-        rm -rf "${PATCH_PATH}"
-        mkdir -p "${PATCH_PATH}"
-        unzip -oq "${TMP_PATH}/patches.zip" -d "${PATCH_PATH}" >/dev/null 2>&1
-        rm -f "${TMP_PATH}/patches.zip"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
-          --msgbox "Patches updated successful! New Version: ${TAG}" 0 0
-        ;;
-      4)
-        # Ask for Tag
-        dialog --clear --backtitle "$(backtitle)" --title "Update Modules" \
-          --menu "Which Version?" 0 0 0 \
-          1 "Latest" \
-          2 "Select Version" \
-        2>"${TMP_PATH}/opts"
-        opts=$(cat ${TMP_PATH}/opts)
-        [ -z "${opts}" ] && return 1
-        if [ ${opts} -eq 1 ]; then
-          TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [[ $? -ne 0 || -z "${TAG}" ]]; then
-            dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
-              --msgbox "Error checking new Version!" 0 0
-            return 1
-          fi
-        elif [ ${opts} -eq 2 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Modules" \
-          --inputbox "Type the Version!" 0 0 \
-          2>"${TMP_PATH}/input"
-          TAG=$(cat "${TMP_PATH}/input")
-          [ -z "${TAG}" ] && return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
-          --infobox "Downloading ${TAG}" 0 0
-        STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
-        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
-            --msgbox "Error downloading Updatefile!" 0 0
-          return 1
-        fi
-        PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-        if [ -n "${PRODUCTVER}" ]; then
-          PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-          KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
-          if [ "${PLATFORM}" = "epyc7002" ]; then
-            KVERP="${PRODUCTVER}-${KVER}"
-          else
-            KVERP="${KVER}"
-          fi
-        fi
-        rm -rf "${MODULES_PATH}"
-        mkdir -p "${MODULES_PATH}"
-        unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}" >/dev/null 2>&1
-        # Rebuild modules if model/build is selected
-        if [[-n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
-          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-          while read -r ID DESC; do
-            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-          done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
-        fi
-        rm -f "${TMP_PATH}/modules.zip"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
-          --msgbox "Modules updated successful. New Version: ${TAG}" 0 0
-        ;;
-      5)
         # Ask for Tag
         dialog --clear --backtitle "$(backtitle)" --title "Update Configs" \
           --menu "Which Version?" 0 0 0 \
@@ -962,12 +834,7 @@ function updateMenu() {
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
-          TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [[ $? -ne 0 || -z "${TAG}" ]]; then
-            dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
-              --msgbox "Error checking new Version!" 0 0
-            return 1
-          fi
+          TAG=""
         elif [ ${opts} -eq 2 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Configs" \
           --inputbox "Type the Version!" 0 0 \
@@ -975,26 +842,11 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
-          --infobox "Downloading ${TAG}" 0 0
-        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")
-        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
-          dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
-            --msgbox "Error downloading Updatefile!" 0 0
-          return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
-          --infobox "Extracting" 0 0
-        rm -rf "${MODEL_CONFIG_PATH}"
-        mkdir -p "${MODEL_CONFIG_PATH}"
-        unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}" >/dev/null 2>&1
-        rm -f "${TMP_PATH}/configs.zip"
+        updateConfigs "${TAG}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
-          --msgbox "Configs updated successful! New Version: ${TAG}" 0 0
         ;;
-      6)
+      4)
         # Ask for Tag
         dialog --clear --backtitle "$(backtitle)" --title "Update LKMs" \
           --menu "Which Version?" 0 0 0 \
@@ -1004,12 +856,7 @@ function updateMenu() {
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
-          TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [[ $? -ne 0 || -z "${TAG}" ]]; then
-            dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
-              --msgbox "Error checking new Version!" 0 0
-            return 1
-          fi
+          TAG=""
         elif [ ${opts} -eq 2 ]; then
           dialog --backtitle "$(backtitle)" --title "Update LKMs" \
           --inputbox "Type the Version!" 0 0 \
@@ -1017,24 +864,53 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
-          --infobox "Downloading ${TAG}" 0 0
-        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip")
-        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
-          dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
-            --msgbox "Error downloading Updatefile" 0 0
-          return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
-          --infobox "Extracting" 0 0
-        rm -rf "${LKM_PATH}"
-        mkdir -p "${LKM_PATH}"
-        unzip -oq "${TMP_PATH}/rp-lkms.zip" -d "${LKM_PATH}" >/dev/null 2>&1
-        rm -f "${TMP_PATH}/rp-lkms.zip"
+        updateLKMs "${TAG}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
-          --msgbox "LKMs updated successful! New Version: ${TAG}" 0 0
+        ;;
+      5)
+        # Ask for Tag
+        dialog --clear --backtitle "$(backtitle)" --title "Update Modules" \
+          --menu "Which Version?" 0 0 0 \
+          1 "Latest" \
+          2 "Select Version" \
+        2>"${TMP_PATH}/opts"
+        opts=$(cat ${TMP_PATH}/opts)
+        [ -z "${opts}" ] && return 1
+        if [ ${opts} -eq 1 ]; then
+          TAG=""
+        elif [ ${opts} -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Update Modules" \
+          --inputbox "Type the Version!" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG=$(cat "${TMP_PATH}/input")
+          [ -z "${TAG}" ] && return 1
+        fi
+        updateModules "${TAG}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
+      6)
+        # Ask for Tag
+        dialog --clear --backtitle "$(backtitle)" --title "Update Patches" \
+          --menu "Which Version?" 0 0 0 \
+          1 "Latest" \
+          2 "Select Version" \
+        2>"${TMP_PATH}/opts"
+        opts=$(cat ${TMP_PATH}/opts)
+        [ -z "${opts}" ] && return 1
+        if [ ${opts} -eq 1 ]; then
+          TAG=""
+        elif [ ${opts} -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Update Patches" \
+          --inputbox "Type the Version!" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG=$(cat "${TMP_PATH}/input")
+          [ -z "${TAG}" ] && return 1
+        fi
+        updatePatches "${TAG}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       7)
         dialog --backtitle "$(backtitle)" --title "Automated Update" --aspect 18 \
