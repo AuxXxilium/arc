@@ -9,6 +9,7 @@
 . ${ARC_PATH}/include/modules.sh
 . ${ARC_PATH}/include/storage.sh
 . ${ARC_PATH}/include/network.sh
+. ${ARC_PATH}/include/update.sh
 . ${ARC_PATH}/arc-functions.sh
 
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
@@ -264,7 +265,7 @@ function arcModel() {
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
       # Delete old files
-      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
     fi
   fi
   arcVersion
@@ -293,7 +294,7 @@ function arcVersion() {
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
       if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
         # Delete old files
-        rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+        rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
       fi
     fi
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -621,9 +622,7 @@ function make() {
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   # Cleanup
-  if [ -d "${UNTAR_PAT_PATH}" ]; then
-    rm -rf "${UNTAR_PAT_PATH}"
-  fi
+  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}" >/dev/null
   mkdir -p "${UNTAR_PAT_PATH}"
   if [ "${OFFLINE}" = "false" ]; then
     # Get PAT Data from Config
@@ -786,7 +785,7 @@ function make() {
     if copyDSMFiles "${UNTAR_PAT_PATH}"; then
       dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
         --infobox "DSM Copy successful!" 0 0
-      rm -rf "${UNTAR_PAT_PATH}"
+      rm -rf "${UNTAR_PAT_PATH}" >/dev/null
     else
       dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
         --infobox "DSM Copy failed!\nExit." 0 0
@@ -815,7 +814,7 @@ function arcFinish() {
     if grep -q "automated_arc" /proc/cmdline; then
       # Check for Custom Build
       if [ "${CUSTOM}" = "false" ]; then
-        [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated"
+        [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
       fi
       boot && exit 0
     else
@@ -1039,7 +1038,7 @@ else
         if [ "${CUSTOM}" = "true" ]; then
           [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-{PRODUCTVER}-custom" >"${PART3_PATH}/automated"
         elif [ "${CUSTOM}" = "false" ]; then
-          [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated"
+          [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
         fi
         NEXT="R"
         ;;
@@ -1172,10 +1171,6 @@ else
       # Loader Settings
       x) backupMenu; NEXT="x" ;;
       9) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
-        [ -f "${ORI_ZIMAGE_FILE}" ] && rm -f "${ORI_ZIMAGE_FILE}"
-        [ -f "${ORI_RDGZ_FILE}" ] && rm -f "${ORI_RDGZ_FILE}"
-        [ -f "${MOD_ZIMAGE_FILE}" ] && rm -f "${MOD_ZIMAGE_FILE}"
-        [ -f "${MOD_RDGZ_FILE}" ] && rm -f "${MOD_RDGZ_FILE}"
         writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"

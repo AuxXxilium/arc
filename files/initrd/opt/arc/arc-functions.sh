@@ -1,3 +1,4 @@
+
 ###############################################################################
 # Permits user edit the user config
 function editUserConfig() {
@@ -17,7 +18,7 @@ function editUserConfig() {
   SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
   if [ "${MODEL}" != "${OLDMODEL}" ] || [ "${PRODUCTVER}" != "${OLDPRODUCTVER}" ]; then
     # Delete old files
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
   fi
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -44,7 +45,7 @@ function addonSelection() {
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
   done <<<$(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  rm -f "${TMP_PATH}/opts"
+  rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
@@ -151,7 +152,7 @@ function modulesMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       5)
-        rm -f "${TMP_PATH}/opts"
+        rm -f "${TMP_PATH}/opts" >/dev/null
         while read -r ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
           echo "${ID} ${DESC} ${ACT}" >>"${TMP_PATH}/opts"
@@ -185,8 +186,8 @@ function modulesMenu() {
         [ $? -ne 0 ] && return
         TMP_UP_PATH=${TMP_PATH}/users
         USER_FILE=""
-        rm -rf ${TMP_UP_PATH}
-        mkdir -p ${TMP_UP_PATH}
+        rm -rf "${TMP_UP_PATH}" >/dev/null
+        mkdir -p "${TMP_UP_PATH}"
         dialog --backtitle "$(backtitle)" --title "External Modules" \
           --ok-label "Proceed" --msgbox "Please upload the *.ko file to /tmp/users.\n- Use SFTP at ${IPCON}:22 User: root PW: arc\n- Use Webclient at http://${IPCON}:7304" 7 50
         for F in $(ls "${TMP_UP_PATH}" 2>/dev/null); do
@@ -202,7 +203,7 @@ function modulesMenu() {
             addToModules "${PLATFORM}" "${KVERP}" "${TMP_UP_PATH}/${USER_FILE}"
             dialog --backtitle "$(backtitle)" --title "External Modules" \
               --msgbox "Module: ${USER_FILE}\nadded to ${PLATFORM}-${KVERP}" 7 50
-            rm -f "${TMP_UP_PATH}/${USER_FILE}"
+            rm -f "${TMP_UP_PATH}/${USER_FILE}" >/dev/null
           else
             dialog --backtitle "$(backtitle)" --title "External Modules" \
               --msgbox "Not a valid file, please try again!" 7 50
@@ -416,7 +417,7 @@ function cmdlineMenu() {
           --aspect 18 --msgbox "${ITEMS}" 0 0
         ;;
       8)
-        rm -f "${TMP_PATH}/opts"
+        rm -f "${TMP_PATH}/opts" >/dev/null
         echo "5 \"Reboot after 5 seconds\"" >>"${TMP_PATH}/opts"
         echo "0 \"No reboot\"" >>"${TMP_PATH}/opts"
         echo "-1 \"Restart immediately\"" >>"${TMP_PATH}/opts"
@@ -707,7 +708,7 @@ function backupMenu() {
             fi
             umount "${TMP_PATH}/mdX"
           done
-          rm -rf "${TMP_PATH}/mdX"
+          rm -rf "${TMP_PATH}/mdX" >/dev/null
         ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Backup Encrytion Key" \
           --progressbox "Backup Encryption Key ..." 20 70
         if [ "${BACKUPKEY}" = "true" ]; then
@@ -731,10 +732,10 @@ function updateMenu() {
       --menu "Choose an Option" 0 0 0 \
       1 "Full-Upgrade Loader" \
       2 "Update Addons" \
-      3 "Update Patches" \
-      4 "Update Modules" \
-      5 "Update Configs" \
-      6 "Update LKMs" \
+      3 "Update Configs" \
+      4 "Update LKMs" \
+      5 "Update Modules" \
+      6 "Update Patches" \
       7 "Automated Update Mode" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
@@ -781,7 +782,7 @@ function updateMenu() {
             return 1
           fi
           unzip -oq "${TMP_PATH}/arc-${TAG}.img.zip" -d "${TMP_PATH}"
-          rm -f "${TMP_PATH}/arc-${TAG}.img.zip"
+          rm -f "${TMP_PATH}/arc-${TAG}.img.zip" >/dev/null
           if [ $? -ne 0 ]; then
             echo "Error extracting Updatefile!"
             sleep 5
@@ -792,7 +793,7 @@ function updateMenu() {
           umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
           dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1) bs=1M conv=fsync
           # Ask for Boot
-          rm -f "${TMP_PATH}/arc.img"
+          rm -f "${TMP_PATH}/arc.img" >/dev/null
         ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Full-Upgrade Loader" \
           --progressbox "Upgrading ..." 20 70
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
@@ -812,12 +813,7 @@ function updateMenu() {
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
-          TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-            dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
-              --msgbox "Error checking new Version!" 0 0
-            return 1
-          fi
+          TAG=""
         elif [ ${opts} -eq 2 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Addons" \
           --inputbox "Type the Version!" 0 0 \
@@ -825,134 +821,11 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
-          --infobox "Downloading ${TAG}" 0 0
-        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip")
-        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
-            --msgbox "Error downloading Updatefile!" 0 0
-          return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
-          --infobox "Extracting" 0 0
-        rm -rf "${ADDONS_PATH}"
-        mkdir -p "${ADDONS_PATH}"
-        unzip -oq "${TMP_PATH}/addons.zip" -d "${ADDONS_PATH}" >/dev/null 2>&1
-        dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
-          --infobox "Installing new Addons" 0 0
-        for PKG in $(ls ${ADDONS_PATH}/*.addon); do
-          ADDON=$(basename ${PKG} | sed 's|.addon||')
-          rm -rf "${ADDONS_PATH}/${ADDON:?}"
-          mkdir -p "${ADDONS_PATH}/${ADDON}"
-          tar -xaf "${PKG}" -C "${ADDONS_PATH}/${ADDON}" >/dev/null 2>&1
-          rm -f "${ADDONS_PATH}/${ADDON}.addon"
-        done
-        rm -f "${TMP_PATH}/addons.zip"
+        updateAddons "${TAG}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Update Addons" --aspect 18 \
-          --msgbox "Addons updated successful! New Version: ${TAG}" 0 0
         ;;
       3)
-        # Ask for Tag
-        dialog --clear --backtitle "$(backtitle)" --title "Update Patches" \
-          --menu "Which Version?" 0 0 0 \
-          1 "Latest" \
-          2 "Select Version" \
-        2>"${TMP_PATH}/opts"
-        opts=$(cat ${TMP_PATH}/opts)
-        [ -z "${opts}" ] && return 1
-        if [ ${opts} -eq 1 ]; then
-          TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-            dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
-              --msgbox "Error checking new Version!" 0 0
-            return 1
-          fi
-        elif [ ${opts} -eq 2 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Patches" \
-          --inputbox "Type the Version!" 0 0 \
-          2>"${TMP_PATH}/input"
-          TAG=$(cat "${TMP_PATH}/input")
-          [ -z "${TAG}" ] && return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
-          --infobox "Downloading ${TAG}" 0 0
-        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip")
-        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
-            --msgbox "Error downloading Updatefile!" 0 0
-          return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
-          --infobox "Extracting" 0 0
-        rm -rf "${PATCH_PATH}"
-        mkdir -p "${PATCH_PATH}"
-        unzip -oq "${TMP_PATH}/patches.zip" -d "${PATCH_PATH}" >/dev/null 2>&1
-        rm -f "${TMP_PATH}/patches.zip"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Update Patches" --aspect 18 \
-          --msgbox "Patches updated successful! New Version: ${TAG}" 0 0
-        ;;
-      4)
-        # Ask for Tag
-        dialog --clear --backtitle "$(backtitle)" --title "Update Modules" \
-          --menu "Which Version?" 0 0 0 \
-          1 "Latest" \
-          2 "Select Version" \
-        2>"${TMP_PATH}/opts"
-        opts=$(cat ${TMP_PATH}/opts)
-        [ -z "${opts}" ] && return 1
-        if [ ${opts} -eq 1 ]; then
-          TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [[ $? -ne 0 || -z "${TAG}" ]]; then
-            dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
-              --msgbox "Error checking new Version!" 0 0
-            return 1
-          fi
-        elif [ ${opts} -eq 2 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Modules" \
-          --inputbox "Type the Version!" 0 0 \
-          2>"${TMP_PATH}/input"
-          TAG=$(cat "${TMP_PATH}/input")
-          [ -z "${TAG}" ] && return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
-          --infobox "Downloading ${TAG}" 0 0
-        STATUS=$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
-        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
-            --msgbox "Error downloading Updatefile!" 0 0
-          return 1
-        fi
-        PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-        if [ -n "${PRODUCTVER}" ]; then
-          PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-          KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
-          if [ "${PLATFORM}" = "epyc7002" ]; then
-            KVERP="${PRODUCTVER}-${KVER}"
-          else
-            KVERP="${KVER}"
-          fi
-        fi
-        rm -rf "${MODULES_PATH}"
-        mkdir -p "${MODULES_PATH}"
-        unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}" >/dev/null 2>&1
-        # Rebuild modules if model/build is selected
-        if [[-n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
-          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-          while read -r ID DESC; do
-            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-          done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
-        fi
-        rm -f "${TMP_PATH}/modules.zip"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Update Modules" --aspect 18 \
-          --msgbox "Modules updated successful. New Version: ${TAG}" 0 0
-        ;;
-      5)
         # Ask for Tag
         dialog --clear --backtitle "$(backtitle)" --title "Update Configs" \
           --menu "Which Version?" 0 0 0 \
@@ -962,12 +835,7 @@ function updateMenu() {
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
-          TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [[ $? -ne 0 || -z "${TAG}" ]]; then
-            dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
-              --msgbox "Error checking new Version!" 0 0
-            return 1
-          fi
+          TAG=""
         elif [ ${opts} -eq 2 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Configs" \
           --inputbox "Type the Version!" 0 0 \
@@ -975,26 +843,11 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
-          --infobox "Downloading ${TAG}" 0 0
-        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")
-        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
-          dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
-            --msgbox "Error downloading Updatefile!" 0 0
-          return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
-          --infobox "Extracting" 0 0
-        rm -rf "${MODEL_CONFIG_PATH}"
-        mkdir -p "${MODEL_CONFIG_PATH}"
-        unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}" >/dev/null 2>&1
-        rm -f "${TMP_PATH}/configs.zip"
+        updateConfigs "${TAG}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Update Configs" --aspect 18 \
-          --msgbox "Configs updated successful! New Version: ${TAG}" 0 0
         ;;
-      6)
+      4)
         # Ask for Tag
         dialog --clear --backtitle "$(backtitle)" --title "Update LKMs" \
           --menu "Which Version?" 0 0 0 \
@@ -1004,12 +857,7 @@ function updateMenu() {
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
-          TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          if [[ $? -ne 0 || -z "${TAG}" ]]; then
-            dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
-              --msgbox "Error checking new Version!" 0 0
-            return 1
-          fi
+          TAG=""
         elif [ ${opts} -eq 2 ]; then
           dialog --backtitle "$(backtitle)" --title "Update LKMs" \
           --inputbox "Type the Version!" 0 0 \
@@ -1017,24 +865,53 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
-          --infobox "Downloading ${TAG}" 0 0
-        STATUS=$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip")
-        if [[ $? -ne 0 || ${STATUS} -ne 200 ]]; then
-          dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
-            --msgbox "Error downloading Updatefile" 0 0
-          return 1
-        fi
-        dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
-          --infobox "Extracting" 0 0
-        rm -rf "${LKM_PATH}"
-        mkdir -p "${LKM_PATH}"
-        unzip -oq "${TMP_PATH}/rp-lkms.zip" -d "${LKM_PATH}" >/dev/null 2>&1
-        rm -f "${TMP_PATH}/rp-lkms.zip"
+        updateLKMs "${TAG}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Update LKMs" --aspect 18 \
-          --msgbox "LKMs updated successful! New Version: ${TAG}" 0 0
+        ;;
+      5)
+        # Ask for Tag
+        dialog --clear --backtitle "$(backtitle)" --title "Update Modules" \
+          --menu "Which Version?" 0 0 0 \
+          1 "Latest" \
+          2 "Select Version" \
+        2>"${TMP_PATH}/opts"
+        opts=$(cat ${TMP_PATH}/opts)
+        [ -z "${opts}" ] && return 1
+        if [ ${opts} -eq 1 ]; then
+          TAG=""
+        elif [ ${opts} -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Update Modules" \
+          --inputbox "Type the Version!" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG=$(cat "${TMP_PATH}/input")
+          [ -z "${TAG}" ] && return 1
+        fi
+        updateModules "${TAG}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
+      6)
+        # Ask for Tag
+        dialog --clear --backtitle "$(backtitle)" --title "Update Patches" \
+          --menu "Which Version?" 0 0 0 \
+          1 "Latest" \
+          2 "Select Version" \
+        2>"${TMP_PATH}/opts"
+        opts=$(cat ${TMP_PATH}/opts)
+        [ -z "${opts}" ] && return 1
+        if [ ${opts} -eq 1 ]; then
+          TAG=""
+        elif [ ${opts} -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Update Patches" \
+          --inputbox "Type the Version!" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG=$(cat "${TMP_PATH}/input")
+          [ -z "${TAG}" ] && return 1
+        fi
+        updatePatches "${TAG}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       7)
         dialog --backtitle "$(backtitle)" --title "Automated Update" --aspect 18 \
@@ -1527,7 +1404,7 @@ function fullsysinfo() {
     done
   fi
   TEXT+="\nDrives total: ${NUMPORTS}"
-  [ -f "${TMP_PATH}/diag" ] && rm -f "${TMP_PATH}/diag"
+  [ -f "${TMP_PATH}/diag" ] && rm -f "${TMP_PATH}/diag" >/dev/null
   echo -e "${TEXT}" >"${TMP_PATH}/diag"
   dialog --backtitle "$(backtitle)" --colors --title "Full Sysinfo" \
     --extra-button --extra-label "Upload" --no-cancel --textbox "${TMP_PATH}/diag" 0 0
@@ -1708,12 +1585,12 @@ function downgradeMenu() {
     for I in ${DSMROOTS}; do
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
-      [ -f "${TMP_PATH}/mdX/etc/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc/VERSION"
-      [ -f "${TMP_PATH}/mdX/etc.defaults/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc.defaults/VERSION"
+      [ -f "${TMP_PATH}/mdX/etc/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc/VERSION" >/dev/null
+      [ -f "${TMP_PATH}/mdX/etc.defaults/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc.defaults/VERSION" >/dev/null
       sync
       umount "${TMP_PATH}/mdX"
     done
-    rm -rf "${TMP_PATH}/mdX"
+    rm -rf "${TMP_PATH}/mdX" >/dev/null
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Allow Downgrade" \
     --progressbox "Removing ..." 20 70
   dialog --backtitle "$(backtitle)" --title "Allow Downgrade"  \
@@ -1730,7 +1607,7 @@ function resetPassword() {
       --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
     return
   fi
-  rm -f "${TMP_PATH}/menu"
+  rm -f "${TMP_PATH}/menu" >/dev/null
   mkdir -p "${TMP_PATH}/mdX"
   for I in ${DSMROOTS}; do
     mount -t ext4 "${I}" "${TMP_PATH}/mdX"
@@ -1748,7 +1625,7 @@ function resetPassword() {
     umount "${TMP_PATH}/mdX"
     [ -f "${TMP_PATH}/menu" ] && break
   done
-  rm -rf "${TMP_PATH}/mdX"
+  rm -rf "${TMP_PATH}/mdX" >/dev/null
   if [ ! -f "${TMP_PATH}/menu" ]; then
     dialog --backtitle "$(backtitle)" --title "Reset Password"  \
       --msgbox "All existing users have been disabled. Please try adding new user." 0 0
@@ -1785,7 +1662,7 @@ function resetPassword() {
       sync
       umount "${TMP_PATH}/mdX"
     done
-    rm -rf "${TMP_PATH}/mdX"
+    rm -rf "${TMP_PATH}/mdX" >/dev/null
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Reset Password"  \
     --progressbox "Resetting ..." 20 100
   dialog --backtitle "$(backtitle)" --title "Reset Password"  \
@@ -1830,7 +1707,7 @@ EOF
       fi
       umount "${TMP_PATH}/mdX"
     done
-    rm -rf "${TMP_PATH}/mdX"
+    rm -rf "${TMP_PATH}/mdX" >/dev/null
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Add DSM User" \
     --progressbox "Adding ..." 20 100
   [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Add DSM User successful." || MSG="Add DSM User failed."
@@ -1863,10 +1740,10 @@ function saveMenu() {
   RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
   mkdir -p "${RDXZ_PATH}"
   (cd "${RDXZ_PATH}"; xz -dc <"${PART3_PATH}/initrd-arc" | cpio -idm) >/dev/null 2>&1 || true
-  rm -rf "${RDXZ_PATH}/opt/arc"
+  rm -rf "${RDXZ_PATH}/opt/arc" >/dev/null
   cp -Rf "$(dirname ${ARC_PATH})" "${RDXZ_PATH}"
   (cd "${RDXZ_PATH}"; find . 2>/dev/null | cpio -o -H newc -R root:root | xz --check=crc32 >"${PART3_PATH}/initrd-arc") || true
-  rm -rf "${RDXZ_PATH}"
+  rm -rf "${RDXZ_PATH}" >/dev/null
   dialog --backtitle "$(backtitle)" --colors --aspect 18 \
     --msgbox "Save to Disk is complete." 0 0
   return
@@ -1875,7 +1752,7 @@ function saveMenu() {
 ###############################################################################
 # let user format disks from inside arc
 function formatdisks() {
-  rm -f "${TMP_PATH}/opts"
+  rm -f "${TMP_PATH}/opts" >/dev/null
   while read -r KNAME KMODEL PKNAME TYPE; do
     [ -z "${KNAME}" ] && continue
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] || [ "${KMODEL}" = "${LOADER_DISK}" ] && continue
@@ -1965,7 +1842,7 @@ EOF
       fi
       umount "${TMP_PATH}/mdX"
     done
-    rm -rf "${TMP_PATH}/mdX"
+    rm -rf "${TMP_PATH}/mdX" >/dev/null
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Force enable SSH"  \
     --progressbox "$(TEXT "Enabling ...")" 20 100
   [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Enable Telnet&SSH successfully." || MSG="Enable Telnet&SSH failed."
@@ -1977,7 +1854,7 @@ EOF
 ###############################################################################
 # Clone Loader Disk
 function cloneLoader() {
-  rm -f "${TMP_PATH}/opts"
+  rm -f "${TMP_PATH}/opts" >/dev/null
   while read -r KNAME KMODEL PKNAME TYPE; do
     [ -z "${KNAME}" ] && continue
     [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
@@ -2012,7 +1889,7 @@ function cloneLoader() {
     [ $? -ne 0 ] && return
   fi
   (
-    rm -rf "${PART3_PATH}/dl"
+    rm -rf "${PART3_PATH}/dl" >/dev/null
     CLEARCACHE=0
 
     gzip -dc "${ARC_PATH}/grub.img.gz" | dd of="${resp}" bs=1M conv=fsync status=progress
@@ -2051,10 +1928,10 @@ function cloneLoader() {
 function resetLoader() {
   if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
     # Clean old files
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
   fi
-  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
-  [ -f "${USER_CONFIG_FILE}" ] && rm -f "${USER_CONFIG_FILE}"
+  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}" >/dev/null
+  [ -f "${USER_CONFIG_FILE}" ] && rm -f "${USER_CONFIG_FILE}" >/dev/null
     dialog --backtitle "$(backtitle)" --title "Reset Loader" --aspect 18 \
     --yesno "Reset successful.\nReboot required!" 0 0
   [ $? -ne 0 ] && return
@@ -2078,8 +1955,7 @@ function editGrubCfg() {
 # Grep Logs from dbgutils
 function greplogs() {
   if [ -d "${PART1_PATH}/logs" ]; then
-    rm -f "${TMP_PATH}/log.tar.gz"
-    rm -f "${PART1_PATH}/log.tar.gz"
+    rm -f "${PART1_PATH}/log.tar.gz" >/dev/null
     tar -czf "${PART1_PATH}/log.tar.gz" "${PART1_PATH}/logs"
     if [ -z "${SSH_TTY}" ]; then # web
       mv -f "${PART1_PATH}/log.tar.gz" "/var/www/data/log.tar.gz"
@@ -2109,7 +1985,7 @@ function greplogs() {
 # Get DSM Config File from dsmbackup
 function getbackup() {
   if [ -d "${PART1_PATH}/dsmbackup" ]; then
-    rm -f "${TMP_PATH}/dsmconfig.tar.gz"
+    rm -f "${TMP_PATH}/dsmconfig.tar.gz" >/dev/null
     tar -czf "${TMP_PATH}/dsmconfig.tar.gz" -C "${PART1_PATH}" dsmbackup
     if [ -z "${SSH_TTY}" ]; then # web
       mv -f "${TMP_PATH}/dsmconfig.tar.gz" "/var/www/data/dsmconfig.tar.gz"
@@ -2138,7 +2014,7 @@ function getbackup() {
 ###############################################################################
 # SataDOM Menu
 function satadomMenu() {
-  rm -f "${TMP_PATH}/opts"
+  rm -f "${TMP_PATH}/opts" >/dev/null
   echo "0 \"Create SATA node(ARC)\"" >>"${TMP_PATH}/opts"
   echo "1 \"Native SATA Disk(SYNO)\"" >>"${TMP_PATH}/opts"
   echo "2 \"Fake SATA DOM(Redpill)\"" >>"${TMP_PATH}/opts"
