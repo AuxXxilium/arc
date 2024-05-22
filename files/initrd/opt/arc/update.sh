@@ -78,7 +78,9 @@ function arcUpdate() {
     --infobox "Update successfull!" 0 0
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-{PRODUCTVER}-custom" >"${PART3_PATH}/automated"
+  if [ "${CUSTOM}" = "true" ] && [ ! -f "${PART3_PATH}/automated" ]; then
+    echo "${ARC_VERSION}-${MODEL}-{PRODUCTVER}-custom" >"${PART3_PATH}/automated"
+  fi
   boot
 }
 

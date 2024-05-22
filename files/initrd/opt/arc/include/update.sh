@@ -158,7 +158,7 @@ function updatePatches() {
     fi
     # Download update file
     echo "Downloading ${TAG}"
-    STATUS="$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip")"
+    STATUS="$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip")"
     rm -rf "${PATCH_PATH}"
     mkdir -p "${PATCH_PATH}"
     echo "Installing new Patches..."
@@ -211,7 +211,7 @@ function updateModules() {
     fi
     # Download update file
     echo "Downloading ${TAG}"
-    STATUS="$(curl -k -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")"
+    STATUS="$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")"
     rm -rf "${MODULES_PATH}"
     mkdir -p "${MODULES_PATH}"
     echo "Installing new Modules..."
@@ -272,7 +272,7 @@ function updateConfigs() {
     fi
     # Download update file
     echo "Downloading ${TAG}"
-    STATUS="$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")"
+    STATUS="$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")"
     rm -rf "${MODEL_CONFIG_PATH}"
     mkdir -p "${MODEL_CONFIG_PATH}"
     echo "Installing new Configs..."
@@ -325,7 +325,7 @@ function updateLKMs() {
     fi
     # Download update file
     echo "Downloading ${TAG}"
-    STATUS="$(curl --insecure -s -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms-${TAG}.zip" -o "${TMP_PATH}/rp-lkms.zip")"
+    STATUS="$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms-${TAG}.zip" -o "${TMP_PATH}/rp-lkms.zip")"
     rm -rf "${LKM_PATH}"
     mkdir -p "${LKM_PATH}"
     echo "Installing new LKMs..."
