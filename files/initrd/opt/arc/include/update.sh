@@ -224,7 +224,7 @@ function updateModules() {
         echo "Rebuilding Modules..."
         while read -r ID DESC; do
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-        done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
+        done <<<"$(getAllModules "${PLATFORM}" "${KVERP}")"
       fi
     else
       echo "Error extracting new Version!"
