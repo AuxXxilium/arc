@@ -64,11 +64,13 @@ initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
 initConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "device.externalcontroller" "false" "${USER_CONFIG_FILE}"
+initConfigKey "gateway" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "ip" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "keymap" "de" "${USER_CONFIG_FILE}"
 initConfigKey "layout" "qwertz" "${USER_CONFIG_FILE}"
 initConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
 initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "nameserver" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "model" "" "${USER_CONFIG_FILE}"
 initConfigKey "modelid" "" "${USER_CONFIG_FILE}"
@@ -172,12 +174,16 @@ for ETH in ${ETHX}; do
   COUNT=0
   while true; do
     ARCIP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
-    if [[ "${STATICIP}" = "true" && -n "${ARCIP}" ]]; then
+    if [ "${STATICIP}" = "true" ] && [ -n "${ARCIP}" ]; then
       NETMASK="$(readConfigKey "netmask.${ETH}" "${USER_CONFIG_FILE}")"
+      GATEWAY="$(readConfigKey "gateway.${ETH}" "${USER_CONFIG_FILE}")"
+      NAMESERVER="$(readConfigKey "nameserver.${ETH}" "${USER_CONFIG_FILE}")"
       IP="${ARCIP}"
       #NETMASK=$(convert_netmask "${NETMASK}")
       [ ! -n "${NETMASK}" ] && NETMASK="16"
       ip addr add ${IP}/${NETMASK} dev ${ETH}
+      ip route add default via ${GATEWAY} dev ${ETH}
+      echo "nameserver ${NAMESERVER}" >> /etc/resolv.conf
       MSG="STATIC"
     else
       IP="$(getIP ${ETH})"
