@@ -1521,11 +1521,17 @@ function staticIPMenu() {
     if [ "${STATIC}" = "true" ]; then
       IPADDR="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
       NETMASK="$(readConfigKey "netmask.${ETH}" "${USER_CONFIG_FILE}")"
+      GATEWAY="$(readConfigKey "gateway.${ETH}" "${USER_CONFIG_FILE}")"
+      NAMESERVER="$(readConfigKey "nameserver.${ETH}" "${USER_CONFIG_FILE}")"
       TEXT+="IP: ${IPADDR}\n"
       TEXT+="NETMASK: ${NETMASK}\n"
+      TEXT+="GATEWAY: ${GATEWAY}\n"
+      TEXT+="NAMESERVER: ${NAMESERVER}\n"
     else
       IPADDR=""
       NETMASK=""
+      GATEWAY=""
+      NAMESERVER=""
     fi
     TEXT+=""
     TEXT+="Do you want to change Config?"
@@ -1543,7 +1549,7 @@ function staticIPMenu() {
       writeConfigKey "static.${ETH}" "false" "${USER_CONFIG_FILE}"
     elif [ ${opts} -eq 2 ]; then
       dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-        --inputbox "Type a Static IP\nLike: 192.168.0.1" 0 0 "${IPADDR}" \
+        --inputbox "Type a Static IP\nLike: 192.168.0.2" 0 0 "${IPADDR}" \
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
       IPADDR=$(cat "${TMP_PATH}/resp")
@@ -1552,11 +1558,25 @@ function staticIPMenu() {
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
       NETMASK=$(cat "${TMP_PATH}/resp")
+      dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
+        --inputbox "Type a Gateway\nLike: 192.168.0.1" 0 0 "${GATEWAY}" \
+        2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && return 1
+      GATEWAY=$(cat "${TMP_PATH}/resp")
+      dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
+        --inputbox "Type a Nameserver\nLike: 8.8.8.8" 0 0 "${NAMESERVER}" \
+        2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && return 1
+      NAMESERVER=$(cat "${TMP_PATH}/resp")
       writeConfigKey "ip.${ETH}" "${IPADDR}" "${USER_CONFIG_FILE}"
       writeConfigKey "netmask.${ETH}" "${NETMASK}" "${USER_CONFIG_FILE}"
+      writeConfigKey "gateway.${ETH}" "${GATEWAY}" "${USER_CONFIG_FILE}"
+      writeConfigKey "nameserver.${ETH}" "${NAMESERVER}" "${USER_CONFIG_FILE}"
       writeConfigKey "static.${ETH}" "true" "${USER_CONFIG_FILE}"
       #NETMASK=$(convert_netmask "${NETMASK}")
       ip addr add ${IPADDR}/${NETMASK} dev ${ETH}
+      ip route add default via ${GATEWAY} dev ${ETH}
+      echo "nameserver ${NAMESERVER}" >> /etc/resolv.conf
     fi
   done
   dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
