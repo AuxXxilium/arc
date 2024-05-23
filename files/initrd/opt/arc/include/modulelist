@@ -13,6 +13,7 @@ N kvm-amd.ko
 N kvm.ko
 
 # sensors
+N hwmon-vid.ko
 N coretemp.ko
 N k10temp.ko
 N it87.ko
