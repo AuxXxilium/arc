@@ -119,7 +119,6 @@ jobs:
         run: |
           . scripts/func.sh
 
-          getExtractor "files/p3/extractor"
           LKMTAG="${{ inputs.lkm_version }}"
           getLKMs "files/p3/lkms"
           echo "LKMTAG=${TAG}" >> $GITHUB_ENV
