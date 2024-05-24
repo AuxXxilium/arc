@@ -463,7 +463,7 @@ function arcSettings() {
     # Select Addons
     addonSelection
     # Check for DT and HBA/Raid Controller
-    if [ ! "${PLATFORM}" = "eypc7002" ]; then
+    if [ ! "${PLATFORM}" = "epyc7002" ]; then
       if [[ "${DT}" = "true" && "${EXTERNALCONTROLLER}" = "true" ]]; then
         dialog --backtitle "$(backtitle)" --title "Arc Warning" \
           --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental Feature." 0 0
