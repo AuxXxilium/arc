@@ -122,7 +122,7 @@ function getmap() {
   if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
     LASTDRIVE=0
     while read -r D; do
-      if [[ "${BUS}" != "usb" && ${D} -eq 0 ]]; then
+      if [ "${BUS}" = "sata" ] && [ ! "${MACHINE}" = "NATIVE" ] && [ ${D} -eq 0 ]; then
         MAXDISKS=${DRIVES}
         echo -n "${D}>${MAXDISKS}:">>"${TMP_PATH}/remap"
       elif [ ! ${D} = ${LASTDRIVE} ]; then
