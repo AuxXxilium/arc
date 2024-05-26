@@ -263,7 +263,7 @@ function arcModel() {
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    if [[ -f "${ORI_ZIMAGE_FILE}" || -f "${ORI_RDGZ_FILE}" || -f "${MOD_ZIMAGE_FILE}" || -f "${MOD_RDGZ_FILE}" ]]; then
+    if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
     fi
@@ -464,7 +464,7 @@ function arcSettings() {
     addonSelection
     # Check for DT and HBA/Raid Controller
     if [ ! "${PLATFORM}" = "epyc7002" ]; then
-      if [[ "${DT}" = "true" && "${EXTERNALCONTROLLER}" = "true" ]]; then
+      if [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
         dialog --backtitle "$(backtitle)" --title "Arc Warning" \
           --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental Feature." 0 0
       fi
@@ -545,7 +545,7 @@ function arcSummary() {
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
   REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
-  if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
+  if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
     PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
     DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
   elif [ "${REMAP}" = "remap" ]; then
@@ -633,8 +633,8 @@ function make() {
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
         --infobox "Get PAT Data from Syno..." 3 30
       idx=0
-      while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
-        PAT_DATA=$(curl -skL --connect-timeout 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODELID/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}")
+      while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
+        PAT_DATA=$(curl -m 5 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODELID/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}")
         if [ "$(echo ${PAT_DATA} | jq -r '.success' 2>/dev/null)" = "true" ]; then
           if echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].label_ext' 2>/dev/null | grep -q 'pat'; then
             PAT_URL=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].url')
@@ -650,7 +650,7 @@ function make() {
         sleep 3
         idx=$((${idx} + 1))
       done
-      if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ] || [ ! echo ${PAT_URL} | grep "https://" ]; then
+      if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ] || [ ! echo "${PAT_URL}" | grep "https://" ]; then
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
           --infobox "Syno Connection failed,\ntry to get from Github..." 4 30
         idx=0
@@ -668,11 +668,7 @@ function make() {
         done
       fi
       if [ "${CUSTOM}" = "false" ]; then
-        if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
-          MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
-          PAT_URL=""
-          PAT_HASH=""
-        elif echo "${PAT_URL}" | grep -q "https://*"; then
+        if echo "${PAT_URL}" | grep -q "https://*"; then
           MSG="Successfully got PAT Data.\nPlease confirm or modify if needed."
         else
           MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
@@ -688,14 +684,7 @@ function make() {
         PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
         PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
       else
-        if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
-          dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-            --infobox "Could not get PAT Data..." 4 30
-          PAT_URL=""
-          PAT_HASH=""
-          sleep 3
-          break
-        elif echo "${PAT_URL}" | grep -wq "https://"; then
+        if echo "${PAT_URL}" | grep -q "https://"; then
           dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
             --infobox "Successfully got PAT Data..." 4 30
           sleep 3
@@ -713,19 +702,16 @@ function make() {
     if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
       writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
-      # Check for existing Files
       DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
       # Get new Files
       DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODELID/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
-      STATUS=$(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null)
-      if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
+      if ! $(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null); then
         dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
           --infobox "No DSM Image found!\nTry to get .pat from Syno." 0 0
         sleep 3
         # Grep PAT_URL
         PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
-        STATUS=$(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" 2>/dev/null)
-        if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
+        if ! $(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" 2>/dev/null); then
           dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
             --infobox "No DSM Image found!\nExit." 0 0
           sleep 5
@@ -736,7 +722,7 @@ function make() {
         tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>/dev/null
         dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
           --infobox "DSM Extraction successful!" 0 0
-      elif extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
+      elif [ -f "${PAT_FILE}" ] && extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
         dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
           --infobox "DSM Extraction successful!" 0 0
       else
@@ -755,28 +741,37 @@ function make() {
       mkdir -p "${UPLOAD_PATH}"
       # Get new Files
       dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
-      --msgbox "Upload your DSM .pat File to /tmp/upload.\nUse SSH/SFTP to connect to ${IPCON}\nor use Webfilebrowser: ${IPCON}:7304.\nUser: root | Password: arc\nPress OK to continue!" 0 0
+      --msgbox "Upload your DSM .pat File now to /tmp/upload.\nUse SSH/SFTP to connect to ${IPCON}\nor use Webfilebrowser: ${IPCON}:7304.\nUser: root | Password: arc\nPress OK to continue!" 0 0
       # Grep PAT_FILE
-      PAT_FILE=$(ls ${UPLOAD_PATH}/*.pat)
-      if [ ! -f "${PAT_FILE}" ]; then
-        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-          --infobox "No DSM Image found!\nExit." 0 0
-        sleep 5
-        return 1
-      else
+      PAT_FILE=$(ls ${UPLOAD_PATH}/*.pat | head -n 1)
+      if [ -f "${PAT_FILE}" ] && [ $(wc -c "${PAT_FILE}" | awk '{print $1}') -gt 300000000 ]; then
+        dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
+          --infobox "DSM Image found!" 0 0
+        sleep 2
         # Remove PAT Data for Offline
-        writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.paturl" "#" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.pathash" "#" "${USER_CONFIG_FILE}"
         # Extract Files
-        if extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
+        if [ -f "${PAT_FILE}" ] && extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
           dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
             --infobox "DSM Extraction successful!" 0 0
+            sleep 2
         else
           dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
             --infobox "DSM Extraction failed!\nExit." 0 0
           sleep 5
           return 1
         fi
+      elif [ ! -f "${PAT_FILE}" ]; then
+        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+          --infobox "No DSM Image found!\nExit." 0 0
+        sleep 5
+        return 1
+      else
+        dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
+          --infobox "Incorrect DSM Image (.pat) found!\nExit." 0 0
+        sleep 5
+        return 1
       fi
     fi
   fi
