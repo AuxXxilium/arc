@@ -705,15 +705,23 @@ function make() {
       DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
       # Get new Files
       DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODELID/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
-      if ! $(curl --insecure -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null); then
+      if curl -k -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null; then
         dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-          --infobox "No DSM Image found!\nTry to get .pat from Syno." 0 0
+          --infobox "DSM Image download successful!" 3 40
+        sleep 3
+      else
+        dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
+          --infobox "No DSM Image found!\nTry to get .pat from Syno." 4 40
         sleep 3
         # Grep PAT_URL
         PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
-        if ! $(curl -k -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" 2>/dev/null); then
+        if curl -k -s -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" 2>/dev/null; then
           dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-            --infobox "No DSM Image found!\nExit." 0 0
+            --infobox "DSM Image download successful!" 3 40
+          sleep 3
+        else
+          dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
+            --infobox "No DSM Image found!\nExit." 4 40
           sleep 5
           return 1
         fi
@@ -721,13 +729,13 @@ function make() {
       if [ -f "${DSM_FILE}" ]; then
         tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>/dev/null
         dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-          --infobox "DSM Extraction successful!" 0 0
+          --infobox "DSM Extraction successful!" 3 40
       elif [ -f "${PAT_FILE}" ] && extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
         dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-          --infobox "DSM Extraction successful!" 0 0
+          --infobox "DSM Extraction successful!" 3 40
       else
         dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-          --infobox "DSM Extraction failed!\nExit." 0 0
+          --infobox "DSM Extraction failed!\nExit." 4 40
         sleep 5
         return 1
       fi
@@ -735,7 +743,7 @@ function make() {
   elif [ "${OFFLINE}" = "true" ]; then
     if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
       dialog --backtitle "$(backtitle)" --title "DSM Data" --aspect 18 \
-        --infobox "DSM Model Data found." 0 0
+        --infobox "DSM Model Data found." 3 40
     else
       # Check for existing Files
       mkdir -p "${UPLOAD_PATH}"
@@ -746,7 +754,7 @@ function make() {
       PAT_FILE=$(ls ${UPLOAD_PATH}/*.pat | head -n 1)
       if [ -f "${PAT_FILE}" ] && [ $(wc -c "${PAT_FILE}" | awk '{print $1}') -gt 300000000 ]; then
         dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
-          --infobox "DSM Image found!" 0 0
+          --infobox "DSM Image found!" 3 40
         sleep 2
         # Remove PAT Data for Offline
         writeConfigKey "arc.paturl" "#" "${USER_CONFIG_FILE}"
@@ -754,22 +762,22 @@ function make() {
         # Extract Files
         if [ -f "${PAT_FILE}" ] && extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
           dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-            --infobox "DSM Extraction successful!" 0 0
+            --infobox "DSM Extraction successful!" 3 40
             sleep 2
         else
           dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-            --infobox "DSM Extraction failed!\nExit." 0 0
+            --infobox "DSM Extraction failed!\nExit." 4 40
           sleep 5
           return 1
         fi
       elif [ ! -f "${PAT_FILE}" ]; then
         dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-          --infobox "No DSM Image found!\nExit." 0 0
+          --infobox "No DSM Image found!\nExit." 4 40
         sleep 5
         return 1
       else
         dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
-          --infobox "Incorrect DSM Image (.pat) found!\nExit." 0 0
+          --infobox "Incorrect DSM Image (.pat) found!\nExit." 4 40
         sleep 5
         return 1
       fi
@@ -779,21 +787,27 @@ function make() {
   if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
     if copyDSMFiles "${UNTAR_PAT_PATH}"; then
       dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
-        --infobox "DSM Copy successful!" 0 0
+        --infobox "DSM Copy successful!" 3 40
       rm -rf "${UNTAR_PAT_PATH}" >/dev/null
     else
       dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
-        --infobox "DSM Copy failed!\nExit." 0 0
+        --infobox "DSM Copy failed!\nExit." 4 40
       sleep 5
       return 1
     fi
   fi
-  (
-    livepatch
-    sleep 3
-  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Build Loader" \
-    --progressbox "Doing the Magic..." 20 70
-  arcFinish
+  if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
+    (
+      livepatch
+      sleep 3
+    ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Build Loader" \
+      --progressbox "Doing the Magic..." 20 70
+    arcFinish
+  else
+    dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
+      --infobox "Could not build Loader!\nExit." 4 40
+    sleep 5
+  fi
 }
 
 ###############################################################################
