@@ -1574,9 +1574,10 @@ function staticIPMenu() {
       writeConfigKey "nameserver.${ETH}" "${NAMESERVER}" "${USER_CONFIG_FILE}"
       writeConfigKey "static.${ETH}" "true" "${USER_CONFIG_FILE}"
       #NETMASK=$(convert_netmask "${NETMASK}")
-      ip addr add ${IPADDR}/${NETMASK} dev ${ETH}
-      ip route add default via ${GATEWAY} dev ${ETH}
-      echo "nameserver ${NAMESERVER}" >> /etc/resolv.conf
+      ip addr add ${IP}/${NETMASK} dev ${ETH} 2>/dev/null || true
+      ip route add default via ${GATEWAY} dev ${ETH} 2>/dev/null || true
+      echo "nameserver ${NAMESERVER}" >>/etc/resolv.conf.head 2>/dev/null || true
+      /etc/init.d/S40network restart 2>/dev/null || true
     fi
   done
   dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
