@@ -9,7 +9,6 @@ sudo git pull
 . scripts/func.sh
 
 # Get extractor, LKM, addons and Modules
-getExtractor "files/p3/extractor"
 getLKMs "files/p3/lkms"
 getAddons "files/p3/addons"
 getModules "files/p3/modules"
