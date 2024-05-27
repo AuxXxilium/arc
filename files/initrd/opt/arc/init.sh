@@ -229,7 +229,6 @@ mkdir -p "${LKM_PATH}"
 mkdir -p "${MODULES_PATH}"
 mkdir -p "${MODEL_CONFIG_PATH}"
 mkdir -p "${PATCH_PATH}"
-mkdir -p "${BACKUPDIR}"
 
 # Load Arc Overlay
 echo -e "\033[1;34mLoading Arc Overlay...\033[0m"

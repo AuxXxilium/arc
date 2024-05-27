@@ -742,16 +742,17 @@ function make() {
     fi
   elif [ "${OFFLINE}" = "true" ]; then
     if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
+      rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
       dialog --backtitle "$(backtitle)" --title "DSM Data" --aspect 18 \
         --infobox "DSM Model Data found." 3 40
     else
       # Check for existing Files
-      mkdir -p "${UPLOAD_PATH}"
+      mkdir -p "${TMP_UP_PATH}"
       # Get new Files
       dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
       --msgbox "Upload your DSM .pat File now to /tmp/upload.\nUse SSH/SFTP to connect to ${IPCON}\nor use Webfilebrowser: ${IPCON}:7304.\nUser: root | Password: arc\nPress OK to continue!" 0 0
       # Grep PAT_FILE
-      PAT_FILE=$(ls ${UPLOAD_PATH}/*.pat | head -n 1)
+      PAT_FILE=$(ls ${TMP_UP_PATH}/*.pat | head -n 1)
       if [ -f "${PAT_FILE}" ] && [ $(wc -c "${PAT_FILE}" | awk '{print $1}') -gt 300000000 ]; then
         dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
           --infobox "DSM Image found!" 3 40

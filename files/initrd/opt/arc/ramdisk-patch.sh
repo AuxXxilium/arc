@@ -71,7 +71,7 @@ else
 fi
 
 # Sanity check
-if [[ -z "${PLATFORM}" || -z "${KVER}" ]]; then
+if [ -z "${PLATFORM}" ] || [ -z "${KVER}" ]; then
   echo "ERROR: Configuration for model ${MODEL} and productversion ${PRODUCTVER} not found." >"${LOG_FILE}"
   exit 1
 fi
@@ -164,11 +164,15 @@ echo "export KEYMAP=\"${KEYMAP}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # This order cannot be changed.
-for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "updatenotify" "wol" "acpid"; do
+for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol" "acpid"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
-    PARAMS=${HDDSORT}
+    PARAMS="${HDDSORT}"
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
+  fi
+  if [ "${ADDON}" = "cpuinfo" ]; then
+    SPEED="$(echo $(grep 'MHz' /proc/cpuinfo 2>/dev/null | head -1 | cut -d: -f2 | cut -d. -f1))"
+    PARAMS="-p ${SPEED}"
   fi
   installAddon "${ADDON}" "${PLATFORM}" || exit 1
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
@@ -198,7 +202,7 @@ else
   cp -f "${ARC_PATH}/include/modulelist" "${RAMDISK_PATH}/addons/modulelist"
 fi
 
-# Backup current loader configs
+# backup current loader configs
 BACKUP_PATH="${RAMDISK_PATH}/usr/arc/backup"
 rm -rf "${BACKUP_PATH}"
 for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}" "${USER_UP_PATH}" "${SCRIPTS_PATH}"; do
