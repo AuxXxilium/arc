@@ -624,6 +624,7 @@ function make() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+  VALID="false"
   # Cleanup
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}" >/dev/null
   mkdir -p "${UNTAR_PAT_PATH}"
@@ -645,15 +646,16 @@ function make() {
             PAT_URL=${PAT_URL%%\?*}
             if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
               if echo "${PAT_URL}" | grep -q "https://*"; then
+                VALID="true"
                 break
               fi
             fi
           fi
         fi
-        sleep 3
+        sleep 2
         idx=$((${idx} + 1))
       done
-      if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ] || [ ! echo "${PAT_URL}" | grep "https://" ]; then
+      if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ] || [ "${VALID}" = "false" ]; then
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
           --infobox "Syno Connection failed,\ntry to get from Github..." 4 30
         idx=0
@@ -663,91 +665,100 @@ function make() {
           PAT_URL=${PAT_URL%%\?*}
           if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
             if echo "${PAT_URL}" | grep -q "https://*"; then
+              VALID="true"
               break
             fi
           fi
-          sleep 3
+          sleep 2
           idx=$((${idx} + 1))
         done
       fi
       if [ "${CUSTOM}" = "false" ]; then
-        if echo "${PAT_URL}" | grep -q "https://*"; then
-          MSG="Successfully got PAT Data.\nPlease confirm or modify if needed."
-        else
+        if [ "${VALID}" = "false" ]; then
           MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
           PAT_URL=""
           PAT_HASH=""
+          dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
+            --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 7 100 0 \
+            2>"${TMP_PATH}/resp"
+          RET=$?
+          [ ${RET} -eq 0 ] && break    # ok-button
+          return 1                     # 1 or 255  # cancel-button or ESC
+          PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+          PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
         fi
-        dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
-          --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 7 100 0 \
-          2>"${TMP_PATH}/resp"
-        RET=$?
-        [ ${RET} -eq 0 ] && break    # ok-button
-        return 1                     # 1 or 255  # cancel-button or ESC
-        PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
-        PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
       else
-        if echo "${PAT_URL}" | grep -q "https://"; then
+        if [ "${VALID}" = "true" ]; then
           dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
             --infobox "Successfully got PAT Data..." 4 30
-          sleep 3
+          sleep 2
           break
         else
           dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
             --infobox "Could not get PAT Data..." 4 30
           PAT_URL=""
           PAT_HASH=""
-          sleep 3
+          sleep 5
           break
         fi
       fi
     done
-    if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-      writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
-      DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
-      # Get new Files
-      DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODELID/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
-      if curl -k -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null; then
-        dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-          --infobox "DSM Image download successful!" 3 40
-        sleep 3
-      else
-        dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-          --infobox "No DSM Image found!\nTry to get .pat from Syno." 4 40
-        sleep 3
-        # Grep PAT_URL
-        PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
-        if curl -k -s -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" 2>/dev/null; then
+    if [ "${VALID}" = "true" ]; then
+      if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+        VALID="false"
+        writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+        DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
+        # Get new Files
+        DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODELID/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
+        if curl -k -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null; then
           dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
             --infobox "DSM Image download successful!" 3 40
-          sleep 3
+          VALID="true"
+          sleep 2
         else
           dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-            --infobox "No DSM Image found!\nExit." 4 40
+            --infobox "No DSM Image found!\nTry to get .pat from Syno." 4 40
+          sleep 2
+          # Grep PAT_URL
+          PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
+          if curl -k -s -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" 2>/dev/null; then
+            dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
+              --infobox "DSM Image download successful!" 3 40
+            VALID="true"
+            sleep 2
+          else
+            dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
+              --infobox "No DSM Image found!\nExit." 4 40
+            sleep 5
+            return 1
+          fi
+        fi
+        if [ -f "${DSM_FILE}" ] && [ "${VALID}" = "true" ]; then
+          tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>/dev/null
+          dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+            --infobox "DSM Extraction successful!" 3 40
+          sleep 2
+        elif [ -f "${PAT_FILE}" ] && [ "${VALID}" = "true" ] && extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
+          dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+            --infobox "DSM Extraction successful!" 3 40
+          sleep 2
+        else
+          dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+            --infobox "DSM Extraction failed!\nExit." 4 40
           sleep 5
           return 1
         fi
       fi
-      if [ -f "${DSM_FILE}" ]; then
-        tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>/dev/null
-        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-          --infobox "DSM Extraction successful!" 3 40
-      elif [ -f "${PAT_FILE}" ] && extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
-        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-          --infobox "DSM Extraction successful!" 3 40
-      else
-        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-          --infobox "DSM Extraction failed!\nExit." 4 40
-        sleep 5
-        return 1
-      fi
     fi
   elif [ "${OFFLINE}" = "true" ]; then
+    VALID="false"
     if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
       rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
+      VALID="true"
       dialog --backtitle "$(backtitle)" --title "DSM Data" --aspect 18 \
         --infobox "DSM Model Data found." 3 40
+      sleep 2
     else
       # Check for existing Files
       mkdir -p "${TMP_UP_PATH}"
@@ -755,7 +766,7 @@ function make() {
       dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
       --msgbox "Upload your DSM .pat File now to /tmp/upload.\nUse SSH/SFTP to connect to ${IPCON}\nor use Webfilebrowser: ${IPCON}:7304.\nUser: root | Password: arc\nPress OK to continue!" 0 0
       # Grep PAT_FILE
-      PAT_FILE=$(ls ${TMP_UP_PATH}/*.pat | head -n 1)
+      PAT_FILE="$(ls ${TMP_UP_PATH}/*.pat | head -n 1)"
       if [ -f "${PAT_FILE}" ] && [ $(wc -c "${PAT_FILE}" | awk '{print $1}') -gt 300000000 ]; then
         dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
           --infobox "DSM Image found!" 3 40
@@ -767,7 +778,8 @@ function make() {
         if [ -f "${PAT_FILE}" ] && extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
           dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
             --infobox "DSM Extraction successful!" 3 40
-            sleep 2
+          VALID="true"
+          sleep 2
         else
           dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
             --infobox "DSM Extraction failed!\nExit." 4 40
@@ -788,19 +800,21 @@ function make() {
     fi
   fi
   # Copy DSM Files to Locations if DSM Files not found
-  if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-    if copyDSMFiles "${UNTAR_PAT_PATH}"; then
-      dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
-        --infobox "DSM Copy successful!" 3 40
-      rm -rf "${UNTAR_PAT_PATH}" >/dev/null
-    else
-      dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
-        --infobox "DSM Copy failed!\nExit." 4 40
-      sleep 5
-      return 1
+  if [ "${VALID}" = "true" ]; then
+    if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+      if copyDSMFiles "${UNTAR_PAT_PATH}"; then
+        dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
+          --infobox "DSM Copy successful!" 3 40
+        sleep 2
+      else
+        dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
+          --infobox "DSM Copy failed!\nExit." 4 40
+        sleep 5
+        return 1
+      fi
     fi
   fi
-  if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
+  if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ "${VALID}" = "true" ]; then
     (
       livepatch
       sleep 3
