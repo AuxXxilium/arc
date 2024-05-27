@@ -115,7 +115,7 @@ function backtitle() {
   BACKTITLE="${ARC_TITLE} | "
   BACKTITLE+="${MODEL} | "
   BACKTITLE+="${PRODUCTVER} | "
-  BACKTITLE+="${IPCON}${OFFLINE} | "
+  BACKTITLE+="${IPCON}${OFF} | "
   BACKTITLE+="Patch: ${ARCPATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
   BACKTITLE+="Build: ${BUILDDONE} | "
