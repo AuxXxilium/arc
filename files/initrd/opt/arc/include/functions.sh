@@ -420,16 +420,16 @@ function extractDSMFiles() {
 function livepatch() {
   FAIL=0
   # Patch zImage
-  if ! ${ARC_PATH}/zimage-patch.sh; then
-    FAIL=1
-  else
+  if ${ARC_PATH}/zimage-patch.sh; then
     FAIL=0
+  else
+    FAIL=1
   fi
   # Patch Ramdisk
-  if ! ${ARC_PATH}/ramdisk-patch.sh; then
-    FAIL=1
-  else
+  if ${ARC_PATH}/ramdisk-patch.sh; then
     FAIL=0
+  else
+    FAIL=1
   fi
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   if [ "${OFFLINE}" = "false" ]; then
@@ -440,22 +440,22 @@ function livepatch() {
       # Update Patches
       updatePatches
       # Patch zImage
-      if ! ${ARC_PATH}/zimage-patch.sh; then
-        FAIL=1
-      else
+      if ${ARC_PATH}/zimage-patch.sh; then
         FAIL=0
+      else
+        FAIL=1
       fi
       # Patch Ramdisk
-      if ! ${ARC_PATH}/ramdisk-patch.sh; then
-        FAIL=1
-      else
+      if ${ARC_PATH}/ramdisk-patch.sh; then
         FAIL=0
+      else
+        FAIL=1
       fi
     fi
   fi
   if [ ${FAIL} -eq 1 ]; then
     echo
-    echo -e "Patching DSM Files failed! Please stay patient for Update." 0 0
+    echo -e "Patching DSM Files failed! Please stay patient for Update."
     sleep 5
     exit 1
   else

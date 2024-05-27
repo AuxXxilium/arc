@@ -34,8 +34,9 @@ BUS=$(getBus "${LOADER_DISK}")
 
 # Offline Mode check
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-if [ "${OFFLINE}" = "false" ]; then
-  if ping -c 1 "github.com" &> /dev/null; then
+CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+if [ "${OFFLINE}" = "false" ] && [ "${CUSTOM}" = "false" ]; then
+  if ping -c 4 "github.com" &> /dev/null; then
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
   else
     writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
@@ -64,7 +65,6 @@ fi
 ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
-CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
@@ -89,7 +89,7 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
 if [ "${OFFLINE}" = "false" ]; then
   # Update Check
-  NEWTAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+  NEWTAG="$(curl -k -m 5 -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
   if [ -z "${NEWTAG}" ]; then
     NEWTAG="${ARC_VERSION}"
   fi
@@ -101,19 +101,22 @@ function backtitle() {
   if [ ! "${NEWTAG}" = "${ARC_VERSION}" ] && [ "${OFFLINE}" = "false" ]; then
     ARC_TITLE="${ARC_TITLE} -> ${NEWTAG}"
   fi
-  if [ ! -n "${MODEL}" ]; then
+  if [ -z "${MODEL}" ]; then
     MODEL="(Model)"
   fi
-  if [ ! -n "${PRODUCTVER}" ]; then
+  if [ -z "${PRODUCTVER}" ]; then
     PRODUCTVER="(Version)"
   fi
-  if [ ! -n "${IPCON}" ]; then
+  if [ -z "${IPCON}" ]; then
     IPCON="(IP)"
+  fi
+  if [ "${OFFLINE}" = "true" ]; then
+    OFF=" (Offline)"
   fi
   BACKTITLE="${ARC_TITLE} | "
   BACKTITLE+="${MODEL} | "
   BACKTITLE+="${PRODUCTVER} | "
-  BACKTITLE+="${IPCON} | "
+  BACKTITLE+="${IPCON}${OFFLINE} | "
   BACKTITLE+="Patch: ${ARCPATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
   BACKTITLE+="Build: ${BUILDDONE} | "
