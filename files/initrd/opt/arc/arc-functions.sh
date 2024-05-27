@@ -634,6 +634,8 @@ function backupMenu() {
               TEXT+="\nArc Patch: ${ARCPATCH}"
               dialog --backtitle "$(backtitle)" --title "Restore Config" \
                 --aspect 18 --msgbox "${TEXT}" 0 0
+              PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+              DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
               CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
               writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
               BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
