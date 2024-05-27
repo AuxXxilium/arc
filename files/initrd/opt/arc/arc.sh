@@ -1005,7 +1005,7 @@ else
       echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
       echo "T \"Force enable SSH in DSM \" "                                                  >>"${TMP_PATH}/menu"
       echo "C \"Clone Loaderdisk \" "                                                         >>"${TMP_PATH}/menu"
-      echo "F \"\Z1Format Sata/NVMe Disk\Zn \" "                                              >>"${TMP_PATH}/menu"
+      echo "F \"\Z1Formate Disk\Zn \" "                                                       >>"${TMP_PATH}/menu"
       echo "G \"Install opkg Package Manager \" "                                             >>"${TMP_PATH}/menu"
     fi
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
