@@ -170,8 +170,8 @@ function arcModel() {
         M_2_CACHE="x"
         [[ "${M}" = "DS918+" || "${M}" = "DS1019+" || "${M}" = "DS1621xs+" || "${M}" = "RS1619xs+" ]] && M_2_CACHE="+"
         [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" ]] && M_2_CACHE=""
-        M_2_STORAGE="x"
-        [ "${DT}" = "false" ] && M_2_STORAGE="+"
+        M_2_STORAGE="+"
+        [ "${DT}" = "false" ] && M_2_STORAGE=""
         [[ "${M}" = "DS220+" || "${M}" = "DS224+" ]] && M_2_STORAGE=""
         [ "${DT}" = "true" ] && DTS="x" || DTS=""
         # Check id model is compatible with CPU
@@ -182,10 +182,10 @@ function arcModel() {
               break
             fi
           done
-          if [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ ! "${A}" = "epyc7002" ]; then
+          if [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ "${A}" != "epyc7002" ]; then
             COMPATIBLE=0
           fi
-          if [ "${SATACONTROLLER}" = "0" ] && [ "${EXTERNALCONTROLLER}" = "false" ] && [ ! "${A}" = "epyc7002" ]; then
+          if [ ${SATACONTROLLER} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ] && [ "${A}" != "epyc7002" ]; then
             COMPATIBLE=0
           fi
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
@@ -483,6 +483,15 @@ function arcSettings() {
         --msgbox "WARN: Your CPU does not have AES Support for Hardwareencryption in DSM." 0 0
     fi
   fi
+  EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
+  # eMMC Boot Support
+  if [ "${EMMCBOOT}" = "true" ]; then
+    writeConfigKey "modules.mmc_block" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modules.mmc_core" "" "${USER_CONFIG_FILE}"
+  else
+    deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
+    deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
+  fi
   # Config is done
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -497,42 +506,20 @@ function arcSettings() {
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
-      premake
+      arcSummary
     elif [ ${resp} -eq 2 ]; then
       dialog --clear --no-items --backtitle "$(backtitle)"
       return 1
     fi
   else
-    premake
-  fi
-}
-
-###############################################################################
-# Building Loader Online
-function premake() {
-  # Read Config for Arc Settings
-  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
-  EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
-  # Memory: Set mem_max_mb to the amount of installed memory to bypass Limitation
-  writeConfigKey "synoinfo.mem_max_mb" "${RAMMAX}" "${USER_CONFIG_FILE}"
-  writeConfigKey "synoinfo.mem_min_mb" "${RAMMIN}" "${USER_CONFIG_FILE}"
-  # eMMC Boot Support
-  if [ "${EMMCBOOT}" = "true" ]; then
-    writeConfigKey "modules.mmc_block" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modules.mmc_core" "" "${USER_CONFIG_FILE}"
-  else
-    deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
-    deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
-  fi
-  # Check for Custom Build
-  if [ "${CUSTOM}" = "true" ]; then
-    # Build Loader
-    make
-  else
-    # Show Config Summary
-    arcSummary
+    # Check for Custom Build
+    if [ "${CUSTOM}" = "true" ]; then
+      # Build Loader
+      make
+    else
+      # Show Config Summary
+      arcSummary
+    fi
   fi
 }
 
@@ -614,8 +601,6 @@ function arcSummary() {
 ###############################################################################
 # Building Loader Online
 function make() {
-  dialog --backtitle "$(backtitle)" --title "Model" --aspect 18 \
-    --infobox "Reading Models..." 3 20
   # Read Model Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
@@ -810,6 +795,8 @@ function make() {
       sleep 3
     ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Build Loader" \
       --progressbox "Doing the Magic..." 20 70
+  fi
+  if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     arcFinish
   else
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
@@ -1021,7 +1008,7 @@ else
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
     echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
     echo "9 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
-    echo "0 \"Decrypt Arc Config \" "                                                         >>"${TMP_PATH}/menu"
+    echo "0 \"Decrypt Arc Patch \" "                                                          >>"${TMP_PATH}/menu"
     echo "y \"Choose a Keymap \" "                                                            >>"${TMP_PATH}/menu"
     if [ "${OFFLINE}" = "false" ]; then
       echo "z \"Update \" "                                                                   >>"${TMP_PATH}/menu"
@@ -1035,7 +1022,7 @@ else
     case "$(cat ${TMP_PATH}/resp)" in
       # Main Section
       1) arcModel; NEXT="2" ;;
-      2) premake; NEXT="3" ;;
+      2) make; NEXT="3" ;;
       3) boot && exit 0 ;;
       # Info Section
       a) sysinfo; NEXT="a" ;;

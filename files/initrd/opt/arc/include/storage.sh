@@ -216,23 +216,23 @@ function getmapSelection() {
 }
 
 # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
-if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
-  SATACONTROLLER=$(lspci -d ::106 | wc -l)
-  writeConfigKey "device.satacontroller" "${SATACONTROLLER}" "${USER_CONFIG_FILE}"
+SATACONTROLLER=$(lspci -d ::106 | wc -l)
+writeConfigKey "device.satacontroller" "${SATACONTROLLER}" "${USER_CONFIG_FILE}"
+if [ ${SATACONTROLLER} -gt 0 ]; then
   writeConfigKey "device.externalcontroller" "false" "${USER_CONFIG_FILE}"
 fi
-if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
-  SASCONTROLLER=$(lspci -d ::107 | wc -l)
-  writeConfigKey "device.sascontroller" "${SASCONTROLLER}" "${USER_CONFIG_FILE}"
+SASCONTROLLER=$(lspci -d ::107 | wc -l)
+writeConfigKey "device.sascontroller" "${SASCONTROLLER}" "${USER_CONFIG_FILE}"
+if [ ${SASCONTROLLER} -gt 0 ]; then
   writeConfigKey "device.externalcontroller" "true" "${USER_CONFIG_FILE}"
 fi
-if [ $(lspci -d ::100 | wc -l) -gt 0 ]; then
-  SCSICONTROLLER=$(lspci -d ::100 | wc -l)
-  writeConfigKey "device.scsicontroller" "${SCSICONTROLLER}" "${USER_CONFIG_FILE}"
+SCSICONTROLLER=$(lspci -d ::100 | wc -l)
+writeConfigKey "device.scsicontroller" "${SCSICONTROLLER}" "${USER_CONFIG_FILE}"
+if [ ${SCSICONTROLLER} -gt 0 ]; then
   writeConfigKey "device.externalcontroller" "true" "${USER_CONFIG_FILE}"
 fi
-if [ $(lspci -d ::104 | wc -l) -gt 0 ]; then
-  RAIDCONTROLLER=$(lspci -d ::104 | wc -l)
-  writeConfigKey "device.raidcontroller" "${RAIDCONTROLLER}" "${USER_CONFIG_FILE}"
+RAIDCONTROLLER=$(lspci -d ::104 | wc -l)
+writeConfigKey "device.raidcontroller" "${RAIDCONTROLLER}" "${USER_CONFIG_FILE}"
+if [ ${RAIDCONTROLLER} -gt 0 ]; then
   writeConfigKey "device.externalcontroller" "true" "${USER_CONFIG_FILE}"
 fi
