@@ -812,38 +812,28 @@ function make() {
 # Finish Building Loader
 function arcFinish() {
   # Verify Files exist
-  if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
-    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
-    # Build is done
-    writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    # Check for Automated Mode
-    if grep -q "automated_arc" /proc/cmdline; then
-      # Check for Custom Build
-      if [ "${CUSTOM}" = "false" ]; then
-        [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
-      fi
+  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+  # Build is done
+  writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  # Check for Automated Mode
+  if [ "${CUSTOM}" = "true" ]; then
+    boot && exit 0
+  elif [ "${CUSTOM}" = "false" ]; then
+    [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
+    # Ask for Boot
+    dialog --clear --backtitle "$(backtitle)" --title "Build done"\
+      --menu "Boot now?" 7 40 0 \
+      1 "Yes - Boot Arc Loader now" \
+      2 "No - I want to make changes" \
+    2>"${TMP_PATH}/resp"
+    resp=$(cat ${TMP_PATH}/resp)
+    [ -z "${resp}" ] && return 1
+    if [ ${resp} -eq 1 ]; then
       boot && exit 0
-    else
-      # Ask for Boot
-      dialog --clear --backtitle "$(backtitle)" --title "Build done"\
-        --menu "Boot now?" 7 40 0 \
-        1 "Yes - Boot Arc Loader now" \
-        2 "No - I want to make changes" \
-      2>"${TMP_PATH}/resp"
-      resp=$(cat ${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return 1
-      if [ ${resp} -eq 1 ]; then
-        boot && exit 0
-      elif [ ${resp} -eq 2 ]; then
-        return 0
-      fi
+    elif [ ${resp} -eq 2 ]; then
+      return 0
     fi
-  else
-    dialog --backtitle "$(backtitle)" --title "Error" --aspect 18 \
-      --infobox "Build failed!\nPlease check your Connection and Diskspace!" 0 0
-    sleep 5
-    return 1
   fi
 }
 
@@ -854,7 +844,7 @@ function juniorboot() {
   [ "${BUILDDONE}" = "false" ] && dialog --backtitle "$(backtitle)" --title "Alert" \
     --yesno "Config changed, please build Loader first." 0 0
   if [ $? -eq 0 ]; then
-    premake
+    make
   fi
   grub-editenv ${GRUB_PATH}/grubenv set next_entry="junior"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
@@ -870,7 +860,7 @@ function recoveryboot() {
   [ "${BUILDDONE}" = "false" ] && dialog --backtitle "$(backtitle)" --title "Alert" \
     --yesno "Config changed, please build Loader first." 0 0
   if [ $? -eq 0 ]; then
-    premake
+    make
   fi
   grub-editenv ${GRUB_PATH}/grubenv set next_entry="recovery"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
@@ -886,7 +876,7 @@ function boot() {
   [ "${BUILDDONE}" = "false" ] && dialog --backtitle "$(backtitle)" --title "Alert" \
     --yesno "Config changed, you need to rebuild the Loader?" 0 0
   if [ $? -eq 0 ]; then
-    premake
+    make
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM...\nPlease stay patient!" 4 25
