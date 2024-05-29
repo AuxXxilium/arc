@@ -82,8 +82,8 @@ function untarAddon() {
 
 ###############################################################################
 # Detect if has new local plugins to install/reinstall
-function updateAddons() {
-  for F in $(ls ${PART3_PATH}/*.addon 2>/dev/null); do
+function updateAddon() {
+  for F in $(ls ${ADDONS_PATH}/*.addon 2>/dev/null); do
     local ADDON=$(basename "${F}" | sed 's|.addon||')
     rm -rf "${ADDONS_PATH}/${ADDON}"
     mkdir -p "${ADDONS_PATH}/${ADDON}"

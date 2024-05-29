@@ -102,13 +102,13 @@ function addToModules() {
   mkdir -p "${TMP_PATH}/modules"
   local KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
   if [ "${KERNEL}" = "custom" ]; then
-    tar -zxf "${CKS_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
+    tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   else
     tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   fi
   cp -f ${KOFILE} ${TMP_PATH}/modules
   if [ "${KERNEL}" = "custom" ]; then
-    tar -zcf "${CKS_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" .
+    tar -zcf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" .
   else
     tar -zcf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" .
   fi

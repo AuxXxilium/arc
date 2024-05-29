@@ -5,6 +5,7 @@
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 . ${ARC_PATH}/include/functions.sh
+. ${ARC_PATH}/include/addons.sh
 . ${ARC_PATH}/include/modules.sh
 . ${ARC_PATH}/include/network.sh
 . ${ARC_PATH}/include/update.sh
@@ -68,6 +69,7 @@ function arcUpdate() {
   # Automatic Update
   updateLoader
   updateAddons
+  updateAddon
   updateConfigs
   updateLKMs
   updateModules
