@@ -279,7 +279,7 @@ function updateLKMs() {
     fi
     # Download update file
     echo "Downloading ${TAG}"
-    STATUS="$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms-${TAG}.zip" -o "${TMP_PATH}/rp-lkms.zip")"
+    STATUS="$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip")"
     rm -rf "${LKM_PATH}"
     mkdir -p "${LKM_PATH}"
     echo "Installing new LKMs..."
@@ -303,6 +303,10 @@ function updateLKMs() {
 function updateFailed() {
   dialog --backtitle "$(backtitle)" --title "Update Failed" \
     --infobox "Update failed!" 0 0
-  sleep 10
-  exec reboot
+  sleep 5
+  local CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+  if [ "${CUSTOM}" = "true" ]; then
+    exec reboot
+  fi
+  exit 1
 }
