@@ -389,15 +389,18 @@ function extractDSMFiles() {
   PAT_PATH="${1}"
   EXT_PATH="${2}"
 
-  header=$(od -bcN2 ${1} | head -1 | awk '{print $3}')
+  header="$(od -bcN2 "${PAT_PATH}" | head -1 | awk '{print $3}')"
   case ${header} in
     105)
+    echo -e "Uncompressed tar"
     isencrypted="no"
     ;;
     213)
+    echo -e "Compressed tar"
     isencrypted="no"
     ;;
     255)
+    echo -e "Encrypted tar"
     isencrypted="yes"
     ;;
     *)
