@@ -610,7 +610,7 @@ function make() {
     PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
     # Get PAT Data
     dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-      --infobox "Get PAT Data from Github..." 3 30
+      --infobox "Get PAT Data from Github..." 3 40
     idx=0
     while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
       PAT_URL="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")"
@@ -627,7 +627,7 @@ function make() {
     done
     if [ "${VALID}" = "false" ]; then
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-        --infobox "Github Data failed,\ntry to get from Syno..." 4 30
+        --infobox "Get Github PAT Data failed,\ntry to get from Syno..." 4 40
       idx=0
       while [ ${idx} -le 5 ]; do # Loop 3 times, if successful, break
         PAT_URL="$(curl -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
@@ -645,6 +645,7 @@ function make() {
     fi
     if [ "${CUSTOM}" = "false" ] && [ "${VALID}" = "false" ]; then
         MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
+        MSG+="You will find these Data at:\nhttps://download.synology.com"
         PAT_URL=""
         PAT_HASH=""
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
