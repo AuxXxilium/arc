@@ -250,7 +250,7 @@ function arcModel() {
       MODEL="${readConfigKey "model" "${USER_CONFIG_FILE}"}"
     fi
     PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
-    MODELID="$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/; s/XS+/xs+/')"
+    MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
     writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
@@ -265,10 +265,8 @@ function arcModel() {
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
-      # Delete old files
-      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
-    fi
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
   fi
   arcVersion
 }
@@ -615,8 +613,8 @@ function make() {
       --infobox "Get PAT Data from Github..." 3 30
     idx=0
     while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-      PAT_URL="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODELID/+/%2B}/${PRODUCTVER}/pat_url")"
-      PAT_HASH="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODELID/+/%2B}/${PRODUCTVER}/pat_hash")"
+      PAT_URL="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")"
+      PAT_HASH="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")"
       PAT_URL=${PAT_URL%%\?*}
       if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
         if echo "${PAT_URL}" | grep -q "https://*"; then
@@ -678,7 +676,7 @@ function make() {
         writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
         DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
         # Get new Files
-        DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODELID/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
+        DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
         if curl -k -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}"; then
           dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
             --infobox "DSM Image download successful!" 3 40

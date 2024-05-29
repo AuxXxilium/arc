@@ -26,7 +26,7 @@ function availableAddons() {
 # 2 - Platform
 # Return ERROR if not exists
 function checkAddonExist() {
-  if [[ -z "${1}" || -z "${2}" ]]; then
+  if [ -z "${1}" ] || [ -z "${2}" ]; then
     return 1 # ERROR
   fi
   # First check generic files

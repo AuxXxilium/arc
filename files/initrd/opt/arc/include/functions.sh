@@ -417,51 +417,54 @@ function extractDSMFiles() {
 ###############################################################################
 # Livepatch
 function livepatch() {
-  FAIL=0
+  VALID=false
   # Patch zImage
   if ${ARC_PATH}/zimage-patch.sh; then
-    FAIL=0
+    VALID=true
   else
-    FAIL=1
+    VALID=false
   fi
-  # Patch Ramdisk
-  if ${ARC_PATH}/ramdisk-patch.sh; then
-    FAIL=0
-  else
-    FAIL=1
+  if [ "${VALID}" = "true" ]; then
+    # Patch Ramdisk
+    if ${ARC_PATH}/ramdisk-patch.sh; then
+      VALID=true
+    else
+      VALID=false
+    fi
   fi
-  local OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  if [ "${OFFLINE}" = "false" ]; then
-    # Looking for Update
-    if [ ${FAIL} -eq 1 ]; then
+  if [ "${VALID}" ="false" ]; then
+    local OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+    if [ "${OFFLINE}" = "false" ]; then
       # Update Configs
       updateConfigs
       # Update Patches
       updatePatches
       # Patch zImage
       if ${ARC_PATH}/zimage-patch.sh; then
-        FAIL=0
+        VALID=true
       else
-        FAIL=1
+        VALID=false
       fi
-      # Patch Ramdisk
-      if ${ARC_PATH}/ramdisk-patch.sh; then
-        FAIL=0
-      else
-        FAIL=1
+      if [ "${VALID}" = "true" ]; then
+        # Patch Ramdisk
+        if ${ARC_PATH}/ramdisk-patch.sh; then
+          VALID=true
+        else
+          VALID=false
+        fi
       fi
     fi
   fi
-  if [ ${FAIL} -eq 1 ]; then
+  if [ "${VALID}" = "false" ]; then
     echo
     echo -e "Patching DSM Files failed! Please stay patient for Update."
     sleep 5
     exit 1
   else
-    ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
-    writeConfigKey "zimage-hash" "${ZIMAGE_HASH_CUR}" "${USER_CONFIG_FILE}"
-    RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
-    writeConfigKey "ramdisk-hash" "${RAMDISK_HASH_CUR}" "${USER_CONFIG_FILE}"
+    ZIMAGE_HASH="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
+    writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
+    RAMDISK_HASH="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
+    writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
     echo "DSM Image patched - Ready!"
   fi
 }

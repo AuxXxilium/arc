@@ -224,7 +224,7 @@ function modulesMenu() {
           [ $? -ne 0 ] && return
           [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
           mv -f "${TMP_PATH}/modulelist.user" "${USER_UP_PATH}/modulelist"
-          dos2unix "${USER_UP_PATH}/modulelist" 2>/dev/null
+          dos2unix "${USER_UP_PATH}/modulelist"
           break
         done
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -1576,10 +1576,10 @@ function staticIPMenu() {
       writeConfigKey "nameserver.${ETH}" "${NAMESERVER}" "${USER_CONFIG_FILE}"
       writeConfigKey "static.${ETH}" "true" "${USER_CONFIG_FILE}"
       #NETMASK=$(convert_netmask "${NETMASK}")
-      ip addr add ${IP}/${NETMASK} dev ${ETH} 2>/dev/null || true
-      ip route add default via ${GATEWAY} dev ${ETH} 2>/dev/null || true
-      echo "nameserver ${NAMESERVER}" >>/etc/resolv.conf.head 2>/dev/null || true
-      /etc/init.d/S40network restart 2>/dev/null || true
+      ip addr add ${IP}/${NETMASK} dev ${ETH}
+      ip route add default via ${GATEWAY} dev ${ETH}
+      echo "nameserver ${NAMESERVER}" >>/etc/resolv.conf.head
+      /etc/init.d/S40network restart
     fi
   done
   dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
@@ -2046,7 +2046,7 @@ function satadomMenu() {
     --default-item "${SATADOM}" --menu  "Choose an Option" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
-  resp=$(cat ${TMP_PATH}/resp 2>/dev/null)
+  resp=$(cat ${TMP_PATH}/resp)
   [ -z "${resp}" ] && return
   SATADOM=${resp}
   writeConfigKey "satadom" "${SATADOM}" "${USER_CONFIG_FILE}"
@@ -2068,9 +2068,11 @@ function decryptMenu() {
       if $(openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARC_KEY}" 2>/dev/null); then
         dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
           --msgbox "Decrypt successful: You can use Arc Patch." 5 50
-        mv -f "${S_FILE_ARC}" "${S_FILE}"
+        mv -f "${S_FILE}" "${S_FILE}.bak"
+        cp -f "${S_FILE_ARC}" "${S_FILE}"
         writeConfigKey "arc.key" "${ARC_KEY}" "${USER_CONFIG_FILE}"
       else
+        mv -f "${S_FILE}.bak" "${S_FILE}"
         dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
           --msgbox "Decrypt failed: Wrong Key for this Version." 5 50
         writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"

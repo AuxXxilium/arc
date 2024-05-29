@@ -20,7 +20,7 @@ echo -e "Patching Ramdisk"
 rm -f "${MOD_RDGZ_FILE}"
 
 # Unzipping ramdisk
-rm -rf "${RAMDISK_PATH}" # Force clean
+rm -rf "${RAMDISK_PATH}"# Force clean
 mkdir -p "${RAMDISK_PATH}"
 (
   cd "${RAMDISK_PATH}"
@@ -167,12 +167,8 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol" "acpid"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
-    PARAMS="${HDDSORT}"
+    PARAMS=${HDDSORT}
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
-  fi
-  if [ "${ADDON}" = "cpuinfo" ]; then
-    SPEED="$(echo $(grep 'MHz' /proc/cpuinfo 2>/dev/null | head -1 | cut -d: -f2 | cut -d. -f1))"
-    PARAMS="-p ${SPEED}"
   fi
   installAddon "${ADDON}" "${PLATFORM}" || exit 1
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1

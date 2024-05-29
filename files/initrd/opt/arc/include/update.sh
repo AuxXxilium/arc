@@ -32,7 +32,7 @@ function updateLoader() {
     echo "Downloading ${TAG}"
     STATUS="$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip")"
     echo "Extract Updatefile..."
-    unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}" >/dev/null 2>&1
+    unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}"
     rm -f "${TMP_PATH}/update.zip"
     echo "Installing new Loader Image..."
     if [ -f "${TMP_PATH}/bzImage-arc" ] && [ -f "${TMP_PATH}/initrd-arc" ]; then
@@ -92,7 +92,7 @@ function updateAddons() {
     rm -rf "${ADDONS_PATH}"
     mkdir -p "${ADDONS_PATH}"
     echo "Installing new Addons..."
-    unzip -oq "${TMP_PATH}/addons.zip" -d "${ADDONS_PATH}" >/dev/null 2>&1
+    unzip -oq "${TMP_PATH}/addons.zip" -d "${ADDONS_PATH}"
     if [ -f "${TMP_PATH}/addons.zip" ]; then
       rm -f "${TMP_PATH}/addons.zip"
     else
@@ -146,7 +146,7 @@ function updatePatches() {
     rm -rf "${PATCH_PATH}"
     mkdir -p "${PATCH_PATH}"
     echo "Installing new Patches..."
-    unzip -oq "${TMP_PATH}/patches.zip" -d "${PATCH_PATH}" >/dev/null 2>&1
+    unzip -oq "${TMP_PATH}/patches.zip" -d "${PATCH_PATH}"
     if [ -f "${TMP_PATH}/patches.zip" ]; then
       rm -f "${TMP_PATH}/patches.zip"
     else
@@ -200,7 +200,7 @@ function updateModules() {
     rm -rf "${MODULES_PATH}"
     mkdir -p "${MODULES_PATH}"
     echo "Installing new Modules..."
-    unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}" >/dev/null 2>&1
+    unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}"
     if [ -f "${TMP_PATH}/modules.zip" ]; then
       rm -f "${TMP_PATH}/modules.zip"
       # Rebuild modules if model/build is selected
@@ -273,7 +273,7 @@ function updateConfigs() {
     rm -rf "${MODEL_CONFIG_PATH}"
     mkdir -p "${MODEL_CONFIG_PATH}"
     echo "Installing new Configs..."
-    unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}" >/dev/null 2>&1
+    unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}"
     if [ -f "${TMP_PATH}/configs.zip" ]; then
       rm -f "${TMP_PATH}/configs.zip"
     else
@@ -327,7 +327,7 @@ function updateLKMs() {
     rm -rf "${LKM_PATH}"
     mkdir -p "${LKM_PATH}"
     echo "Installing new LKMs..."
-    unzip -oq "${TMP_PATH}/rp-lkms.zip" -d "${LKM_PATH}" >/dev/null 2>&1
+    unzip -oq "${TMP_PATH}/rp-lkms.zip" -d "${LKM_PATH}"
     if [ -f "${TMP_PATH}/rp-lkms.zip" ]; then
       rm -f "${TMP_PATH}/rp-lkms.zip"
     else
