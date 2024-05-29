@@ -436,8 +436,10 @@ function livepatch() {
     local OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
     if [ "${OFFLINE}" = "false" ]; then
       # Update Configs
+      echo -e "Updating Configs..."
       updateConfigs
       # Update Patches
+      echo -e "Updating Patches..."
       updatePatches
       # Patch zImage
       if ${ARC_PATH}/zimage-patch.sh; then
