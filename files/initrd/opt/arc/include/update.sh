@@ -26,10 +26,9 @@ function updateLoader() {
     fi
     # Download update file
     echo "Downloading ${TAG}"
-    STATUS="$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip")"
+    STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip")
     echo "Extract Updatefile..."
     unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}"
-    rm -f "${TMP_PATH}/update.zip"
     echo "Installing new Loader Image..."
     if [ -f "${TMP_PATH}/bzImage-arc" ] && [ -f "${TMP_PATH}/initrd-arc" ]; then
       # Process complete update
@@ -76,7 +75,7 @@ function updateAddons() {
     fi
     # Download update file
     echo "Downloading ${TAG}"
-    STATUS="$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip")"
+    STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip")
     rm -rf "${ADDONS_PATH}"
     mkdir -p "${ADDONS_PATH}"
     echo "Installing new Addons..."
@@ -122,7 +121,7 @@ function updatePatches() {
     fi
     # Download update file
     echo "Downloading ${TAG}"
-    STATUS="$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip")"
+    STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip")
     rm -rf "${PATCH_PATH}"
     mkdir -p "${PATCH_PATH}"
     echo "Installing new Patches..."
@@ -168,7 +167,7 @@ function updateModules() {
     fi
     # Download update file
     echo "Downloading ${TAG}"
-    STATUS="$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")"
+    STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip")
     rm -rf "${MODULES_PATH}"
     mkdir -p "${MODULES_PATH}"
     echo "Installing new Modules..."
@@ -233,7 +232,7 @@ function updateConfigs() {
     fi
     # Download update file
     echo "Downloading ${TAG}"
-    STATUS="$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")"
+    STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip")
     rm -rf "${MODEL_CONFIG_PATH}"
     mkdir -p "${MODEL_CONFIG_PATH}"
     echo "Installing new Configs..."
@@ -279,7 +278,7 @@ function updateLKMs() {
     fi
     # Download update file
     echo "Downloading ${TAG}"
-    STATUS="$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip")"
+    STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip")
     rm -rf "${LKM_PATH}"
     mkdir -p "${LKM_PATH}"
     echo "Installing new LKMs..."
