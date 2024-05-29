@@ -301,7 +301,7 @@ function updateLKMs() {
       # Check for new Version
       idx=0
       while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
-        TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/redpill-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
         if [ -n "${TAG}" ]; then
           echo "New Version: ${TAG}"
           break
@@ -323,7 +323,7 @@ function updateLKMs() {
     fi
     # Download update file
     echo "Downloading ${TAG}"
-    STATUS="$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/redpill-lkm/releases/download/${TAG}/rp-lkms-${TAG}.zip" -o "${TMP_PATH}/rp-lkms.zip")"
+    STATUS="$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms-${TAG}.zip" -o "${TMP_PATH}/rp-lkms.zip")"
     rm -rf "${LKM_PATH}"
     mkdir -p "${LKM_PATH}"
     echo "Installing new LKMs..."

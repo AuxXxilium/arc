@@ -465,7 +465,7 @@ function arcSettings() {
     # Select Addons
     addonSelection
     # Check for DT and HBA/Raid Controller
-    if [ ! "${PLATFORM}" = "epyc7002" ]; then
+    if [ "${PLATFORM}" != "epyc7002" ]; then
       if [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
         dialog --backtitle "$(backtitle)" --title "Arc Warning" \
           --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental Feature." 0 0
@@ -512,14 +512,8 @@ function arcSettings() {
       return 1
     fi
   else
-    # Check for Custom Build
-    if [ "${CUSTOM}" = "true" ]; then
-      # Build Loader
-      make
-    else
-      # Show Config Summary
-      arcSummary
-    fi
+    # Build Loader
+    make
   fi
 }
 
@@ -610,15 +604,15 @@ function make() {
   CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   VALID=false
   # Cleanup
-  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}" >/dev/null
+  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   mkdir -p "${UNTAR_PAT_PATH}"
   if [ "${OFFLINE}" = "false" ]; then
     # Get PAT Data from Config
     PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
-    # Get PAT Data from Syno
+    # Get PAT Data
     dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-      --infobox "Get PAT Data from Syno..." 3 30
+      --infobox "Get PAT Data from Github..." 3 30
     idx=0
     while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
       PAT_URL="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODELID/+/%2B}/${PRODUCTVER}/pat_url")"
@@ -630,17 +624,16 @@ function make() {
           break
         fi
       fi
-      sleep 2
+      sleep 3
       idx=$((${idx} + 1))
     done
-    if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ] || [ "${VALID}" = "false" ]; then
+    if [ "${VALID}" = "false" ]; then
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-        --infobox "Syno Connection failed,\ntry to get from Github..." 4 30
+        --infobox "Syno Connection failed,\ntry to get from Syno..." 4 30
       idx=0
-      while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-        PAT_DATA=$(curl -m 5 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODELID/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}")
-        PAT_URL=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].url')
-        PAT_HASH=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].checksum')
+      while [ ${idx} -le 5 ]; do # Loop 3 times, if successful, break
+        PAT_URL="$(curl -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
+        PAT_HASH="$(curl -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
         PAT_URL=${PAT_URL%%\?*}
         if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
           if echo "${PAT_URL}" | grep -q "https://*"; then
@@ -648,7 +641,7 @@ function make() {
             break
           fi
         fi
-        sleep 2
+        sleep 3
         idx=$((${idx} + 1))
       done
     fi
@@ -686,7 +679,7 @@ function make() {
         DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
         # Get new Files
         DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODELID/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
-        if curl -k -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null; then
+        if curl -k -s -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}"; then
           dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
             --infobox "DSM Image download successful!" 3 40
           VALID=true
@@ -697,7 +690,7 @@ function make() {
           sleep 2
           # Grep PAT_URL
           PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
-          if curl -k -s -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}" 2>/dev/null; then
+          if curl -k -s -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}"; then
             dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
               --infobox "DSM Image download successful!" 3 40
             VALID=true
@@ -710,12 +703,13 @@ function make() {
           fi
         fi
         if [ -f "${DSM_FILE}" ] && [ "${VALID}" = "true" ]; then
-          tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}" 2>/dev/null
+          tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" >"${LOG_FILE}"
           dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
             --infobox "DSM Extraction successful!" 3 40
           VALID=true
           sleep 2
-        elif [ -f "${PAT_FILE}" ] && [ "${VALID}" = "true" ] && extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
+        elif [ -f "${PAT_FILE}" ] && [ "${VALID}" = "true" ]; then
+          extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"
           dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
             --infobox "DSM Extraction successful!" 3 40
           VALID=true
@@ -730,7 +724,7 @@ function make() {
     fi
   elif [ "${OFFLINE}" = "true" ]; then
     if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
-      rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
+      rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
       VALID=true
       dialog --backtitle "$(backtitle)" --title "DSM Data" --aspect 18 \
         --infobox "DSM Model Data found." 3 40
@@ -751,7 +745,8 @@ function make() {
         writeConfigKey "arc.paturl" "#" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.pathash" "#" "${USER_CONFIG_FILE}"
         # Extract Files
-        if [ -f "${PAT_FILE}" ] && extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
+        if [ -f "${PAT_FILE}" ]; then
+          extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"
           dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
             --infobox "DSM Extraction successful!" 3 40
           VALID=true
@@ -777,17 +772,7 @@ function make() {
   fi
   # Copy DSM Files to Locations if DSM Files not found
   if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-    if copyDSMFiles "${UNTAR_PAT_PATH}"; then
-      dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
-        --infobox "DSM Copy successful!" 3 40
-      VALID=true
-      sleep 2
-    else
-      dialog --backtitle "$(backtitle)" --title "DSM Copy" --aspect 18 \
-        --infobox "DSM Copy failed!\nExit." 4 40
-      VALID=false
-      sleep 5
-    fi
+    copyDSMFiles "${UNTAR_PAT_PATH}"
   fi
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ "${VALID}" = "true" ]; then
     (
@@ -814,6 +799,7 @@ function arcFinish() {
   # Verify Files exist
   CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   # Build is done
+  rm -f "${LOG_FILE}" >/dev/null
   writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   # Check for Automated Mode
@@ -1050,7 +1036,7 @@ else
       w) resetLoader; NEXT="w" ;;
       # Boot Section
       6) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
-        ARCOPTS="${BOOTOPTS}"
+        BOOTOPTS="${BOOTOPTS}"
         NEXT="6"
         ;;
       m) [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'

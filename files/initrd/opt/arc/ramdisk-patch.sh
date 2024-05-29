@@ -54,7 +54,7 @@ if [ "${PRODUCTVERDSM}" != "${PRODUCTVER}" ]; then
   # Update new buildnumber
   echo -e "Ramdisk Version ${PRODUCTVER} does not match DSM Version ${PRODUCTVERDSM}!"
   echo -e "Try to use DSM Version ${PRODUCTVERDSM} for Patch."
-  writeConfigKey "productver" "${USER_CONFIG_FILE}"
+  writeConfigKey "productver" "${PRODUCTVERDSM}" "${USER_CONFIG_FILE}"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PAT_URL=""
   PAT_HASH=""
@@ -94,13 +94,13 @@ while IFS=': ' read -r KEY VALUE; do
 done <<<$(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 # Patches (diff -Naru OLDFILE NEWFILE > xxx.patch)
-PATCHS=()
-PATCHS+=("ramdisk-etc-rc-*.patch")
-PATCHS+=("ramdisk-init-script-*.patch")
-PATCHS+=("ramdisk-post-init-script-*.patch")
-PATCHS+=("ramdisk-disable-root-pwd-*.patch")
-PATCHS+=("ramdisk-disable-disabled-ports-*.patch")
-for PE in ${PATCHS[@]}; do
+PATCHES=()
+PATCHES+=("ramdisk-etc-rc-*.patch")
+PATCHES+=("ramdisk-init-script-*.patch")
+PATCHES+=("ramdisk-post-init-script-*.patch")
+PATCHES+=("ramdisk-disable-root-pwd-*.patch")
+PATCHES+=("ramdisk-disable-disabled-ports-*.patch")
+for PE in ${PATCHES[@]}; do
   RET=1
   echo "Patching with ${PE}" >"${LOG_FILE}"
   for PF in $(ls ${PATCH_PATH}/${PE} 2>/dev/null); do
