@@ -3,7 +3,7 @@
 # Update Loader
 function updateLoader() {
   (
-    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+    local CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     if [ -z "${1}" ]; then
       # Check for new Version
       idx=0
@@ -19,11 +19,7 @@ function updateLoader() {
       if [ -z "${TAG}" ]; then
         echo "Error checking new Version!"
         sleep 5
-        if [ "${CUSTOM}" = "false" ]; then
-          return 1
-        else
-          exec reboot
-        fi
+        updateFailed
       fi
     else
       TAG="${1}"
@@ -43,11 +39,7 @@ function updateLoader() {
     else
       echo "Error extracting new Version!"
       sleep 5
-      if [ "${CUSTOM}" = "false" ]; then
-        return 1
-      else
-        exec reboot
-      fi
+      updateFailed
     fi
     [ -f "${TMP_PATH}/update.zip" ] && rm -f "${TMP_PATH}/update.zip"
     echo "Update done!"
@@ -61,7 +53,7 @@ function updateLoader() {
 # Update Addons
 function updateAddons() {
   (
-    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+    local CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     if [ -z "${1}" ]; then
       # Check for new Version
       idx=0
@@ -77,11 +69,7 @@ function updateAddons() {
       if [ -z "${TAG}" ]; then
         echo "Error checking new Version!"
         sleep 5
-        if [ "${CUSTOM}" = "false" ]; then
-          return 1
-        else
-          exec reboot
-        fi
+        updateFailed
       fi
     else
       TAG="${1}"
@@ -98,11 +86,7 @@ function updateAddons() {
     else
       echo "Error extracting new Version!"
       sleep 5
-      if [ "${CUSTOM}" = "false" ]; then
-        return 1
-      else
-        exec reboot
-      fi
+      updateFailed
     fi
     echo "Update done!"
     sleep 2
@@ -115,7 +99,7 @@ function updateAddons() {
 # Update Patches
 function updatePatches() {
   (
-    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+    local CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     if [ -z "${1}" ]; then
       # Check for new Version
       idx=0
@@ -131,11 +115,7 @@ function updatePatches() {
       if [ -z "${TAG}" ]; then
         echo "Error checking new Version!"
         sleep 5
-        if [ "${CUSTOM}" = "false" ]; then
-          return 1
-        else
-          exec reboot
-        fi
+        updateFailed
       fi
     else
       TAG="${1}"
@@ -152,11 +132,7 @@ function updatePatches() {
     else
       echo "Error extracting new Version!"
       sleep 5
-      if [ "${CUSTOM}" = "false" ]; then
-        return 1
-      else
-        exec reboot
-      fi
+      updateFailed
     fi
     echo "Update done!"
     sleep 2
@@ -169,7 +145,7 @@ function updatePatches() {
 # Update Modules
 function updateModules() {
   (
-    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+    local CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     if [ -z "${1}" ]; then
       # Check for new Version
       idx=0
@@ -185,11 +161,7 @@ function updateModules() {
       if [ -z "${TAG}" ]; then
         echo "Error checking new Version!"
         sleep 5
-        if [ "${CUSTOM}" = "false" ]; then
-          return 1
-        else
-          exec reboot
-        fi
+        updateFailed
       fi
     else
       TAG="${1}"
@@ -204,10 +176,10 @@ function updateModules() {
     if [ -f "${TMP_PATH}/modules.zip" ]; then
       rm -f "${TMP_PATH}/modules.zip"
       # Rebuild modules if model/build is selected
-      PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+      local PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
       if [ -n "${PRODUCTVER}" ]; then
-        PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-        KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
+        local PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+        local KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
         # Modify KVER for Epyc7002
         if [ "${PLATFORM}" = "epyc7002" ]; then
           KVERP="${PRODUCTVER}-${KVER}"
@@ -220,16 +192,12 @@ function updateModules() {
         echo "Rebuilding Modules..."
         while read -r ID DESC; do
           writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-        done <<<"$(getAllModules "${PLATFORM}" "${KVERP}")"
+        done < <(getAllModules "${PLATFORM}" "${KVERP}")
       fi
     else
       echo "Error extracting new Version!"
       sleep 5
-      if [ "${CUSTOM}" = "false" ]; then
-        return 1
-      else
-        exec reboot
-      fi
+      updateFailed
     fi
     echo "Update done!"
     sleep 2
@@ -242,7 +210,7 @@ function updateModules() {
 # Update Configs
 function updateConfigs() {
   (
-    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+    local CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     if [ -z "${1}" ]; then
       # Check for new Version
       idx=0
@@ -258,11 +226,7 @@ function updateConfigs() {
       if [ -z "${TAG}" ]; then
         echo "Error checking new Version!"
         sleep 5
-        if [ "${CUSTOM}" = "false" ]; then
-          return 1
-        else
-          exec reboot
-        fi
+        updateFailed
       fi
     else
       TAG="${1}"
@@ -279,11 +243,7 @@ function updateConfigs() {
     else
       echo "Error extracting new Version!"
       sleep 5
-      if [ "${CUSTOM}" = "false" ]; then
-        return 1
-      else
-        exec reboot
-      fi
+      updateFailed
     fi
     echo "Update done!"
     sleep 2
@@ -296,7 +256,7 @@ function updateConfigs() {
 # Update LKMs
 function updateLKMs() {
   (
-    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+    local CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     if [ -z "${1}" ]; then
       # Check for new Version
       idx=0
@@ -312,11 +272,7 @@ function updateLKMs() {
       if [ -z "${TAG}" ]; then
         echo "Error checking new Version!"
         sleep 5
-        if [ "${CUSTOM}" = "false" ]; then
-          return 1
-        else
-          exec reboot
-        fi
+        updateFailed
       fi
     else
       TAG="${1}"
@@ -333,15 +289,20 @@ function updateLKMs() {
     else
       echo "Error extracting new Version!"
       sleep 5
-      if [ "${CUSTOM}" = "false" ]; then
-        return 1
-      else
-        exec reboot
-      fi
+      updateFailed
     fi
     echo "Update done!"
     sleep 2
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Update LKMs" \
     --progressbox "Updating LKMs..." 20 70
   return 0
+}
+
+###############################################################################
+# Update Failed
+function updateFailed() {
+  dialog --backtitle "$(backtitle)" --title "Update Failed" \
+    --infobox "Update failed!" 0 0
+  sleep 10
+  exec reboot
 }
