@@ -93,7 +93,8 @@ function boot() {
     dialog --backtitle "$(backtitle)" --title "Arc Boot" \
       --infobox "Rebooting to Config Mode...\nPlease stay patient!" 4 30
   fi
-  sleep 2
+  rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null
+  sleep 3
   exec reboot
 }
 
