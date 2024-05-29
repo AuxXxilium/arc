@@ -385,6 +385,10 @@ function copyDSMFiles() {
 # 1 - PAT File
 # 2 - Destination Path
 function extractDSMFiles() {
+  rm -f "${LOG_FILE}"
+  PAT_PATH="${1}"
+  EXT_PATH="${2}"
+
   header=$(od -bcN2 ${1} | head -1 | awk '{print $3}')
   case ${header} in
     105)
@@ -402,12 +406,13 @@ function extractDSMFiles() {
   esac
   if [ "${isencrypted}" = "yes" ]; then
     # Uses the extractor to untar PAT file
-    LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${1}" "${2}" >"${LOG_FILE}" 2>&1
+    LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_PATH}" "${EXT_PATH}" >"${LOG_FILE}" 2>&1
   else
     # Untar PAT file
-    tar -xf "${1}" -C "${2}" >"${LOG_FILE}" 2>&1
+    tar -xf "${PAT_PATH}" -C "${EXT_PATH}" >"${LOG_FILE}" 2>&1
   fi
-  if [ -f "${2}/grub_cksum.syno" ] && [ -f "${2}/GRUB_VER" ] && [ -f "${2}/zImage" ] && [ -f "${2}/rd.gz" ]; then
+  if [ -f "${EXT_PATH}/grub_cksum.syno" ] && [ -f "${EXT_PATH}/GRUB_VER" ] && [ -f "${EXT_PATH}/zImage" ] && [ -f "${EXT_PATH}/rd.gz" ]; then
+    rm -f "${LOG_FILE}"
     return 0
   else
     return 1
