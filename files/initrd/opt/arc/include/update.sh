@@ -300,12 +300,15 @@ function updateLKMs() {
 ###############################################################################
 # Update Failed
 function updateFailed() {
-  dialog --backtitle "$(backtitle)" --title "Update Failed" \
-    --infobox "Update failed!" 0 0
-  sleep 5
   local CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   if [ "${CUSTOM}" = "true" ]; then
+    dialog --backtitle "$(backtitle)" --title "Update Failed" \
+      --infobox "Update failed!" 0 0
+    sleep 5
     exec reboot
+  else
+    dialog --backtitle "$(backtitle)" --title "Update Failed" \
+      --msgbox "Update failed!" 0 0
+    exit 1
   fi
-  exit 1
 }
