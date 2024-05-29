@@ -44,7 +44,7 @@ function addonSelection() {
   declare -A ADDONS
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
-  done <<<$(readConfigMap "addons" "${USER_CONFIG_FILE}")
+  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
   rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
   while read -r ADDON DESC; do
@@ -53,7 +53,7 @@ function addonSelection() {
       [ ! -d "/sys/devices/system/cpu/cpu0/cpufreq" ] && continue
     fi
     echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
-  done <<<$(availableAddons "${PLATFORM}")
+  done < <(availableAddons "${PLATFORM}")
   dialog --backtitle "$(backtitle)" --title "DSM Addons" --aspect 18 \
     --checklist "Select DSM Addons to include.\nPlease read Wiki before choosing anything.\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
@@ -89,7 +89,7 @@ function modulesMenu() {
   declare -A USERMODULES
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
-  done <<<$(readConfigMap "modules" "${USER_CONFIG_FILE}")
+  done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
   # menu loop
   while true; do
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
@@ -138,7 +138,7 @@ function modulesMenu() {
         while read -r ID DESC; do
           USERMODULES["${ID}"]=""
           writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-        done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
+        done < <(getAllModules "${PLATFORM}" "${KVERP}")
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -156,7 +156,7 @@ function modulesMenu() {
         while read -r ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
           echo "${ID} ${DESC} ${ACT}" >>"${TMP_PATH}/opts"
-        done <<<$(getAllModules "${PLATFORM}" "${KVERP}")
+        done < <(getAllModules "${PLATFORM}" "${KVERP}")
         dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
           --checklist "Select Modules to include" 0 0 0 \
           --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
@@ -242,7 +242,7 @@ function cmdlineMenu() {
   declare -A CMDLINE
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-  done <<<$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
+  done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
   echo "1 \"Add a Cmdline item\""                                >"${TMP_PATH}/menu"
   echo "2 \"Delete Cmdline item(s)\""                           >>"${TMP_PATH}/menu"
   echo "3 \"CPU Fix\""                                          >>"${TMP_PATH}/menu"
@@ -443,7 +443,7 @@ function synoinfoMenu() {
   declare -A SYNOINFO
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
-  done <<<$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
+  done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 
   echo "1 \"Add/edit Synoinfo item\""     >"${TMP_PATH}/menu"
   echo "2 \"Delete Synoinfo item(s)\""    >>"${TMP_PATH}/menu"
@@ -554,7 +554,7 @@ function keymapMenu() {
   OPTIONS=""
   while read -r KM; do
     OPTIONS+="${KM::-7} "
-  done <<<$(cd /usr/share/keymaps/i386/${LAYOUT}; ls *.map.gz)
+  done < <(cd /usr/share/keymaps/i386/${LAYOUT}; ls *.map.gz)
   dialog --backtitle "$(backtitle)" --no-items --default-item "${KEYMAP}" \
     --menu "Choice a keymap" 0 0 0 ${OPTIONS} \
     2>"${TMP_PATH}/resp"
@@ -1643,7 +1643,7 @@ function resetPassword() {
         grep -q "status=on" "${TMP_PATH}/mdX/usr/syno/etc/packages/SecureSignIn/preference/${U}/method.config" 2>/dev/null
         [ $? -eq 0 ] && S="SecureSignIn" || S="            "
         printf "\"%-36s %-10s %-14s\"\n" "${U}" "${E}" "${S}" >>"${TMP_PATH}/menu"
-      done <<<$(cat "${TMP_PATH}/mdX/etc/shadow" 2>/dev/null)
+      done < <(cat "${TMP_PATH}/mdX/etc/shadow" 2>/dev/null)
     fi
     umount "${TMP_PATH}/mdX"
     [ -f "${TMP_PATH}/menu" ] && break
@@ -1783,7 +1783,7 @@ function formatdisks() {
     [ -n "${PKNAME}" ] && PARTITION=" (Partition)" || PARTITION=" (Disk)"
     [ -z "${SIZE}" ] && SIZE="Unknown"
     echo "\"${KNAME}\" \"${SIZE}${PARTITION}\" \"off\"" >>"${TMP_PATH}/opts"
-  done <<<$(lsblk -pno KNAME,SIZE,PKNAME)
+  done < <(lsblk -pno KNAME,SIZE,PKNAME)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
       --msgbox "No disk found!" 0 0
@@ -1884,7 +1884,7 @@ function cloneLoader() {
     [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] || [ "${KMODEL}" = "${LOADER_DISK}" ] && continue
     echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
-  done <<<$(lsblk -dpno KNAME,MODEL,PKNAME,TYPE | sort)
+  done < <(lsblk -dpno KNAME,MODEL,PKNAME,TYPE | sort)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --msgbox "No disk found!" 0 0

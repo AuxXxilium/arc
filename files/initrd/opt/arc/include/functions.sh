@@ -417,22 +417,22 @@ function extractDSMFiles() {
 ###############################################################################
 # Livepatch
 function livepatch() {
-  VALID=false
+  PVALID=false
   # Patch zImage
   if ${ARC_PATH}/zimage-patch.sh; then
-    VALID=true
+    PVALID=true
   else
-    VALID=false
+    PVALID=false
   fi
-  if [ "${VALID}" = "true" ]; then
+  if [ "${PVALID}" = "true" ]; then
     # Patch Ramdisk
     if ${ARC_PATH}/ramdisk-patch.sh; then
-      VALID=true
+      PVALID=true
     else
-      VALID=false
+      PVALID=false
     fi
   fi
-  if [ "${VALID}" ="false" ]; then
+  if [ "${PVALID}" = "false" ]; then
     local OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
     if [ "${OFFLINE}" = "false" ]; then
       # Update Configs
@@ -441,21 +441,21 @@ function livepatch() {
       updatePatches
       # Patch zImage
       if ${ARC_PATH}/zimage-patch.sh; then
-        VALID=true
+        PVALID=true
       else
-        VALID=false
+        PVALID=false
       fi
-      if [ "${VALID}" = "true" ]; then
+      if [ "${PVALID}" = "true" ]; then
         # Patch Ramdisk
         if ${ARC_PATH}/ramdisk-patch.sh; then
-          VALID=true
+          PVALID=true
         else
-          VALID=false
+          PVALID=false
         fi
       fi
     fi
   fi
-  if [ "${VALID}" = "false" ]; then
+  if [ "${PVALID}" = "false" ]; then
     echo
     echo -e "Patching DSM Files failed! Please stay patient for Update."
     sleep 5
