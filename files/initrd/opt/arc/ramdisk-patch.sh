@@ -164,7 +164,7 @@ echo "export KEYMAP=\"${KEYMAP}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # This order cannot be changed.
-for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol" "acpid"; do
+for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     PARAMS=${HDDSORT}

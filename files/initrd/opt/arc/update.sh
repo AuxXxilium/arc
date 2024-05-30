@@ -69,14 +69,14 @@ function arcUpdate() {
   # Automatic Update
   updateLoader
   updateAddons
-  updateAddon
+  updateAddon 2>/dev/null
   updateConfigs
   updateLKMs
   updateModules
   updatePatches
   # Ask for Boot
   dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-    --infobox "Update successfull!" 0 0
+    --infobox "Update successful!" 0 0
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CUSTOM}" = "true" ] && [ ! -f "${PART3_PATH}/automated" ]; then
@@ -91,13 +91,14 @@ function boot() {
   if [ "${CUSTOM}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Boot" \
       --infobox "Rebooting to automated Build Mode...\nPlease stay patient!" 4 30
+    sleep 3
+    rebootTo automated
   else
     dialog --backtitle "$(backtitle)" --title "Arc Boot" \
       --infobox "Rebooting to Config Mode...\nPlease stay patient!" 4 30
+    sleep 3
+    rebootTo config
   fi
-  rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null
-  sleep 3
-  exec reboot
 }
 
 ###############################################################################

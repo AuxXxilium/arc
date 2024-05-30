@@ -190,13 +190,14 @@ jobs:
       - name: Pack
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
-            zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
-            zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
-            zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 arc-${{ env.VERSION }}.img.zip arc.img
+            zip -9 arc-${{ env.VERSION }}.vmdk-dyn.zip arc-dyn.vmdk
+            zip -9 arc-${{ env.VERSION }}.vmdk-flat.zip arc.vmdk arc-flat.vmdk
           else
-            zip -9 "arc.img.zip" arc.img
+            zip -9 arc.img.zip arc.img
           fi
-          zip -9j update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
+          zip -9j update.zip files/p3/bzImage-arc files/p3/initrd-arc files/p1/ARC-VERSION files/p1/boot/grub/grub.cfg
+          sha256sum update.zip >checksum.sha256
 
       # Upload artifact
       - name: Upload
@@ -207,6 +208,7 @@ jobs:
           path: |
             arc.img.zip
             update.zip
+            checksum.sha256
           retention-days: 5
 
       # Publish a release if is a tag
@@ -239,3 +241,4 @@ jobs:
             arc-${{ env.VERSION }}.vmdk-dyn.zip
             arc-${{ env.VERSION }}.vmdk-flat.zip
             update.zip
+            checksum.sha256

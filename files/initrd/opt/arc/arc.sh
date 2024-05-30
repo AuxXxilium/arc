@@ -88,7 +88,7 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
 if [ "${OFFLINE}" = "false" ]; then
   # Update Check
-  NEWTAG="$(curl -k -m 5 -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+  NEWTAG="$(curl -m 5 -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
   if [ -z "${NEWTAG}" ]; then
     NEWTAG="${ARC_VERSION}"
   fi
@@ -247,7 +247,7 @@ function arcModel() {
       writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
       writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
     else
-      MODEL="${readConfigKey "model" "${USER_CONFIG_FILE}"}"
+      MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
     fi
     PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
     MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
@@ -672,7 +672,7 @@ function make() {
         DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
         # Get new Files
         DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
-        if curl -sk -w "%{http_code}" -L "${DSM_URL}" -o "${DSM_FILE}"; then
+        if curl -w "%{http_code}" -skL "${DSM_URL}" -o "${DSM_FILE}"; then
           VALID=true
         else
           dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
@@ -680,7 +680,7 @@ function make() {
           sleep 5
           # Grep PAT_URL
           PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
-          if curl -sk -w "%{http_code}" -L "${PAT_URL}" -o "${PAT_FILE}"; then
+          if curl -w "%{http_code}" -skL "${PAT_URL}" -o "${PAT_FILE}"; then
             VALID=true
           else
             dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
