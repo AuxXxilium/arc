@@ -247,7 +247,7 @@ function arcModel() {
       writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
       writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
     else
-      MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+      MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}") "
     fi
     PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
     MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
