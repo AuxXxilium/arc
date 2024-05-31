@@ -163,7 +163,7 @@ echo "export LAYOUT=\"${LAYOUT}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export KEYMAP=\"${KEYMAP}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
-# This order cannot be changed.
+# System Addons
 for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
@@ -174,11 +174,33 @@ for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "upda
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 done
 
-# User addons
+# User Addons
 for ADDON in ${!ADDONS[@]}; do
-  PARAMS=${ADDONS[${ADDON}]}
-  installAddon "${ADDON}" "${PLATFORM}" || exit 1
-  echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+  if [[ "${ADDON}" == *"hdddb"* ]]; then
+    PARAMS=${ADDONS[${ADDON}]}
+    installAddon "${ADDON}" "${PLATFORM}" || exit 1
+    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+  elif [[ "${ADDON}" == *"deduplication"* ]]; then
+    PARAMS=${ADDONS[${ADDON}]}
+    installAddon "${ADDON}" "${PLATFORM}" || exit 1
+    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+  elif [[ "${ADDON}" == *"cpuinfo"* ]]; then
+    PARAMS=${ADDONS[${ADDON}]}
+    installAddon "${ADDON}" "${PLATFORM}" || exit 1
+    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+  elif [[ "${ADDON}" == *"acpid"* ]]; then
+    PARAMS=${ADDONS[${ADDON}]}
+    installAddon "${ADDON}" "${PLATFORM}" || exit 1
+    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+  elif [[ "${ADDON}" == *"cpufreqscaling"* ]]; then
+    PARAMS=${ADDONS[${ADDON}]}
+    installAddon "${ADDON}" "${PLATFORM}" || exit 1
+    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+  else
+    PARAMS=${ADDONS[${ADDON}]}
+    installAddon "${ADDON}" "${PLATFORM}" || exit 1
+    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+  fi
 done
 
 # Enable Telnet

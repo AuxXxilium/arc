@@ -460,6 +460,7 @@ function arcSettings() {
     dialog --backtitle "$(backtitle)" --colors --title "DSM Addons" \
       --infobox "Loading Addons Table..." 3 35
     # Add Arc Addons
+    writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
     writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
     # Select Addons
     addonSelection
