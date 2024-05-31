@@ -616,7 +616,7 @@ function make() {
     PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
     # Get PAT Data
     dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-      --infobox "Get Github PAT Data failed,\ntry to get from Syno..." 4 40
+      --infobox "Get PAT Data from Syno..." 4 40
     idx=0
     while [ ${idx} -le 5 ]; do # Loop 3 times, if successful, break
       PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
