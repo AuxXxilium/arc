@@ -62,7 +62,7 @@ echo -e "\033[1;37mSystem:\033[0m"
 echo -e "VENDOR: \033[1;37m${VENDOR}\033[0m"
 echo -e "CPU: \033[1;37m${CPU}\033[0m"
 echo -e "MEM: \033[1;37m${RAM}\033[0m"
-echo -e "Boottime: \033[1;37m${BOOTTIME}\033[0m"
+echo -e "TIME: \033[1;37m${BOOTTIME}\033[0m"
 echo
 
 if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
