@@ -668,6 +668,8 @@ function make() {
       fi
     fi
     if [ "${VALID}" = "true" ]; then
+      writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
       if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
         # Get new Files
         DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
