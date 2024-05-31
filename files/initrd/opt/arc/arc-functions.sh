@@ -777,7 +777,12 @@ function updateMenu() {
         fi
         (
           # Download update file
-          if curl --interface ${ARCNIC} -# -skL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip"; then
+          if curl --interface ${ARCNIC} -# -kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
+              [[ $char =~ [0-9] ]] && keep=1 ;
+              [[ $char == % ]] && echo "Download:$progress" && progress="" && keep=0 ;
+              [[ $keep == 1 ]] && progress="$progress$char" ;
+            done
+            ; then
             echo "Downloading Updatefile successful!"
           else
             echo "Error downloading Updatefile!"
@@ -820,7 +825,6 @@ function updateMenu() {
           [ -z "${TAG}" ] && return 1
         fi
         updateAddons "${TAG}"
-        updateAddon
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -2117,5 +2121,6 @@ function setDateTime() {
   [ $? -ne 0 ] && return
   DATE=$(cat ${TMP_PATH}/resp)
   date -s "${DATE} ${TIME}"
+  hwclock -w
   return
 }

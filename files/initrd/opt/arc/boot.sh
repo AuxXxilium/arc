@@ -50,6 +50,7 @@ CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F'
 RAMTOTAL=$(($(free -m | grep -i mem | awk '{print$2}') / 1024 + 1))
 RAM="${RAMTOTAL}GB"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
+BOOTTIME="$(date)"
 
 echo -e "\033[1;37mDSM:\033[0m"
 echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
@@ -61,6 +62,7 @@ echo -e "\033[1;37mSystem:\033[0m"
 echo -e "VENDOR: \033[1;37m${VENDOR}\033[0m"
 echo -e "CPU: \033[1;37m${CPU}\033[0m"
 echo -e "MEM: \033[1;37m${RAM}\033[0m"
+echo -e "Boottime: \033[1;37m${BOOTTIME}\033[0m"
 echo
 
 if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then

@@ -69,7 +69,6 @@ function arcUpdate() {
   # Automatic Update
   updateLoader
   updateAddons
-  updateAddon 2>/dev/null
   updateConfigs
   updateLKMs
   updateModules

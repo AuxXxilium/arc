@@ -20,7 +20,7 @@ echo -e "Patching Ramdisk"
 rm -f "${MOD_RDGZ_FILE}"
 
 # Unzipping ramdisk
-rm -rf "${RAMDISK_PATH}"# Force clean
+rm -rf "${RAMDISK_PATH}"
 mkdir -p "${RAMDISK_PATH}"
 (
   cd "${RAMDISK_PATH}"

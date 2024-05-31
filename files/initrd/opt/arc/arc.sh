@@ -93,6 +93,10 @@ if [ "${OFFLINE}" = "false" ]; then
   if [ -z "${NEWTAG}" ]; then
     NEWTAG="${ARC_VERSION}"
   fi
+  # Timezone
+  REGION="$(curl -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
+  TIMEZONE="$(curl -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
+  ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
 fi
 
 ###############################################################################
@@ -1144,6 +1148,7 @@ else
         ;;
       0) decryptMenu; NEXT="0" ;;
       y) keymapMenu; NEXT="y" ;;
+      Y) setDateTime; NEXT="Y" ;;
       z) updateMenu; NEXT="z" ;;
       V) credits; NEXT="V" ;;
     esac
