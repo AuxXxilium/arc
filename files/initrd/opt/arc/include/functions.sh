@@ -427,20 +427,22 @@ function extractDSMFiles() {
 function livepatch() {
   PVALID=false
   # Patch zImage
+  echo -n "Patching zImage"
   if ${ARC_PATH}/zimage-patch.sh; then
-    echo -e "Successfully patched zImage!"
+    echo -e " - successful!"
     PVALID=true
   else
-    echo -e "Patching zImage failed!"
+    echo -e " - failed!"
     PVALID=false
   fi
   if [ "${PVALID}" = "true" ]; then
     # Patch Ramdisk
+    echo -n "Patching Ramdisk"
     if ${ARC_PATH}/ramdisk-patch.sh; then
-      echo -e "Successfully patched Ramdisk!"
+      echo -e " - successful!"
       PVALID=true
     else
-      echo -e "Patching Ramdisk failed!"
+      echo -e " - failed!"
       PVALID=false
     fi
   fi
@@ -454,20 +456,22 @@ function livepatch() {
       echo -e "Updating Patches..."
       updatePatches
       # Patch zImage
+      echo -n "Patching zImage"
       if ${ARC_PATH}/zimage-patch.sh; then
-        echo -e "Successfully patched zImage!"
+        echo -e " - successful!"
         PVALID=true
       else
-        echo -e "Patching zImage failed!"
+        echo -e " - failed!"
         PVALID=false
       fi
       if [ "${PVALID}" = "true" ]; then
         # Patch Ramdisk
+        echo -n "Patching Ramdisk"
         if ${ARC_PATH}/ramdisk-patch.sh; then
-          echo -e "Successfully patched Ramdisk!"
+          echo -e " - successful!"
           PVALID=true
         else
-          echo -e "Patching Ramdisk failed!"
+          echo -e " - failed!"
           PVALID=false
         fi
       fi

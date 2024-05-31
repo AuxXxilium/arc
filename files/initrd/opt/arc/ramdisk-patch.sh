@@ -14,8 +14,6 @@ if [ ! -f "${ORI_RDGZ_FILE}" ]; then
   exit 1
 fi
 
-echo -e "Patching Ramdisk"
-
 # Remove old rd.gz patched
 rm -f "${MOD_RDGZ_FILE}"
 
