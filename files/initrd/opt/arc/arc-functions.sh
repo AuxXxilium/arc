@@ -755,7 +755,7 @@ function updateMenu() {
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
-          TAG="$(curl --insecure -m 5 -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+          TAG="$(curl --interface ${ARCNIC} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
           if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
             dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
               --msgbox "Error checking new Version!" 0 0
@@ -777,19 +777,15 @@ function updateMenu() {
         fi
         (
           # Download update file
-          STATUS=$(curl --insecure -w "%{http_code}" -L "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip")
-          if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
+          if curl --interface ${ARCNIC} -# -skL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip"; then
+            echo "Downloading Updatefile successful!"
+          else
             echo "Error downloading Updatefile!"
             sleep 5
             return 1
           fi
           unzip -oq "${TMP_PATH}/arc-${TAG}.img.zip" -d "${TMP_PATH}"
           rm -f "${TMP_PATH}/arc-${TAG}.img.zip" >/dev/null
-          if [ $? -ne 0 ]; then
-            echo "Error extracting Updatefile!"
-            sleep 5
-            return 1
-          fi
           echo "Installing new Loader Image..."
           # Process complete update
           umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
