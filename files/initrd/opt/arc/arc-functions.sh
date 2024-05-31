@@ -2087,3 +2087,24 @@ function decryptMenu() {
   ARC_KEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
   return
 }
+
+###############################################################################
+# ArcNIC Menu
+function arcNIC () {
+  rm -f "${TMP_PATH}/opts" >/dev/null
+  touch "${TMP_PATH}/opts"
+  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
+  # Get actual IP
+  for ETH in ${ETHX}; do
+    echo "${ETH}" >>"${TMP_PATH}/opts"
+  done
+  dialog --backtitle "$(backtitle)" --title "Arc NIC" \
+    --default-item "${ARCNIC}" --menu  "Choose a NIC" 0 0 0 --file "${TMP_PATH}/opts" \
+    2>${TMP_PATH}/resp
+  [ $? -ne 0 ] && return
+  resp=$(cat ${TMP_PATH}/resp)
+  [ -z "${resp}" ] && return
+  ARCNIC=${resp}
+  writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
+  return
+}

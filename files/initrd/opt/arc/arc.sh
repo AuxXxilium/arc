@@ -62,6 +62,7 @@ fi
 
 # Get Arc Data from Config
 ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
+ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
@@ -88,7 +89,7 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
 if [ "${OFFLINE}" = "false" ]; then
   # Update Check
-  NEWTAG="$(curl -m 5 -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+  NEWTAG="$(curl --interface ${ARCNIC} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
   if [ -z "${NEWTAG}" ]; then
     NEWTAG="${ARC_VERSION}"
   fi
@@ -613,8 +614,8 @@ function make() {
       --infobox "Get PAT Data from Github..." 3 40
     idx=0
     while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-      PAT_URL="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")"
-      PAT_HASH="$(curl -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")"
+      PAT_URL="$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")"
+      PAT_HASH="$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")"
       PAT_URL=${PAT_URL%%\?*}
       if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
         if echo "${PAT_URL}" | grep -q "https://*"; then
@@ -630,8 +631,8 @@ function make() {
         --infobox "Get Github PAT Data failed,\ntry to get from Syno..." 4 40
       idx=0
       while [ ${idx} -le 5 ]; do # Loop 3 times, if successful, break
-        PAT_URL="$(curl -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
-        PAT_HASH="$(curl -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
+        PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
+        PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
         PAT_URL=${PAT_URL%%\?*}
         if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
           if echo "${PAT_URL}" | grep -q "https://*"; then
@@ -667,12 +668,10 @@ function make() {
     fi
     if [ "${VALID}" = "true" ]; then
       if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-        writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
         DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
         # Get new Files
         DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
-        if curl -w "%{http_code}" -skL "${DSM_URL}" -o "${DSM_FILE}"; then
+        if curl --interface ${ARCNIC} -skL "${DSM_URL}" -o "${DSM_FILE}"; then
           VALID=true
         else
           dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
@@ -680,7 +679,7 @@ function make() {
           sleep 5
           # Grep PAT_URL
           PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
-          if curl -w "%{http_code}" -skL "${PAT_URL}" -o "${PAT_FILE}"; then
+          if curl --interface ${ARCNIC} -skL "${PAT_URL}" -o "${PAT_FILE}"; then
             VALID=true
           else
             dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
@@ -890,6 +889,7 @@ else
         echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
         echo "D \"Loader DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
         echo "R \"Automated Mode: \Z4${CUSTOM}\Zn \" "                                        >>"${TMP_PATH}/menu"
+        echo "M \"Primary NIC: \Z4${ARCNIC}\Zn \" "                                           >>"${TMP_PATH}/menu"
       fi
       if [ "${ADVOPTS}" = "true" ]; then
         echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
@@ -1003,6 +1003,7 @@ else
         fi
         NEXT="R"
         ;;
+      M) arcNIC; NEXT="M" ;;
       # Advanced Section
       5) [ "${ADVOPTS}" = "true" ] && ADVOPTS='false' || ADVOPTS='true'
         ADVOPTS="${ADVOPTS}"

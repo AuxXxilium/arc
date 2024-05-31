@@ -51,12 +51,7 @@ initConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.macsys" "hardware" "${USER_CONFIG_FILE}"
 initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
-ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
-if [ -n "${ARCCONF}" ]; then
-  writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-else
-  writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-fi
+initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
@@ -111,6 +106,7 @@ ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
 [ ${NIC} -ne ${ETHN} ] && echo -e "\033[1;31mWarning: NIC mismatch (NICs: ${NIC} | Real: ${ETHN})\033[0m"
 # Write NIC Amount to config
 writeConfigKey "device.nic" "${NIC}" "${USER_CONFIG_FILE}"
+deleteConfigKey "arc.nic" "${USER_CONFIG_FILE}"
 # No network devices
 echo
 [ ${NIC} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
@@ -158,7 +154,7 @@ elif grep -q "update_arc" /proc/cmdline; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
 elif [ "${BUILDDONE}" = "true" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
-  boot.sh && exit 0
+  boot.sh
 else
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
 fi
@@ -197,6 +193,8 @@ for ETH in ${ETHX}; do
         echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server detected.)"
       else
         echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
+        ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
+        [ -n "${ARCNIC}" ] && writeConfigKey "arc.nic" "${ETH}" "${USER_CONFIG_FILE}"
       fi
       ethtool -s ${ETH} wol g 2>/dev/null
       break
