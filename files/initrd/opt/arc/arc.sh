@@ -875,7 +875,7 @@ else
     echo "= \"\Z4========== Info ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
     echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
     echo "A \"Networkdiag \" "                                                                >>"${TMP_PATH}/menu"
-    echo "= \"\Z4========= System =========\Zn \" "                                           >>"${TMP_PATH}/menu"
+    echo "= \"\Z4========== System ========\Zn \" "                                           >>"${TMP_PATH}/menu"
     if [ "${CONFDONE}" = "true" ]; then
       if [ "${ARCOPTS}" = "true" ]; then
         echo "4 \"\Z1Hide Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
@@ -892,7 +892,6 @@ else
         echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
         echo "D \"Loader DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
         echo "R \"Automated Mode: \Z4${CUSTOM}\Zn \" "                                        >>"${TMP_PATH}/menu"
-        echo "M \"Primary NIC: \Z4${ARCNIC}\Zn \" "                                           >>"${TMP_PATH}/menu"
       fi
       if [ "${ADVOPTS}" = "true" ]; then
         echo "5 \"\Z1Hide Advanced Options\Zn \" "                                            >>"${TMP_PATH}/menu"
@@ -947,12 +946,13 @@ else
       fi
     fi
     if [ "${DEVOPTS}" = "true" ]; then
-      echo "8 \"\Z1Hide Dev Options\Zn \" "                                                   >>"${TMP_PATH}/menu"
+      echo "8 \"\Z1Hide Loader Options\Zn \" "                                                >>"${TMP_PATH}/menu"
     else
-      echo "8 \"\Z1Show Dev Options\Zn \" "                                                   >>"${TMP_PATH}/menu"
+      echo "8 \"\Z1Show Loader Options\Zn \" "                                                >>"${TMP_PATH}/menu"
     fi
     if [ "${DEVOPTS}" = "true" ]; then
-      echo "= \"\Z4========== Dev ===========\Zn \" "                                         >>"${TMP_PATH}/menu"
+      echo "= \"\Z4========= Loader =========\Zn \" "                                         >>"${TMP_PATH}/menu"
+      echo "M \"Primary NIC: \Z4${ARCNIC}\Zn \" "                                             >>"${TMP_PATH}/menu"
       echo "v \"Save Modifications to Disk \" "                                               >>"${TMP_PATH}/menu"
       echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
       echo "B \"Grep DSM Config Backup \" "                                                   >>"${TMP_PATH}/menu"
@@ -1007,7 +1007,6 @@ else
         fi
         NEXT="R"
         ;;
-      M) arcNIC; NEXT="M" ;;
       # Advanced Section
       5) [ "${ADVOPTS}" = "true" ] && ADVOPTS='false' || ADVOPTS='true'
         ADVOPTS="${ADVOPTS}"
@@ -1121,11 +1120,12 @@ else
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="u"
         ;;
-      # Dev Section
+      # Loader Section
       8) [ "${DEVOPTS}" = "true" ] && DEVOPTS='false' || DEVOPTS='true'
         DEVOPTS="${DEVOPTS}"
         NEXT="8"
         ;;
+      M) arcNIC; NEXT="M" ;;
       v) saveMenu; NEXT="v" ;;
       n) editGrubCfg; NEXT="n" ;;
       B) getbackup; NEXT="B" ;;
@@ -1134,7 +1134,7 @@ else
       C) cloneLoader; NEXT="C" ;;
       F) formatdisks; NEXT="F" ;;
       G) package; NEXT="G" ;;
-      # Loader Settings
+      # Misc Settings
       x) backupMenu; NEXT="x" ;;
       9) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
         writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"

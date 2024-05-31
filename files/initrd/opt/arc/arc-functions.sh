@@ -2092,7 +2092,7 @@ function arcNIC () {
   ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
   # Get actual IP
   for ETH in ${ETHX}; do
-    echo "${ETH}" >>"${TMP_PATH}/opts"
+    echo -e "${ETH} \"Use ${ETH} as pirmary NIC\"" >>"${TMP_PATH}/opts"
   done
   dialog --backtitle "$(backtitle)" --title "Arc NIC" \
     --default-item "${ARCNIC}" --menu  "Choose a NIC" 0 0 0 --file "${TMP_PATH}/opts" \
