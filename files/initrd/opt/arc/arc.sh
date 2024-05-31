@@ -34,9 +34,10 @@ BUS=$(getBus "${LOADER_DISK}")
 
 # Offline Mode check
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
 if [ "${OFFLINE}" = "false" ] && [ "${CUSTOM}" = "false" ]; then
-  if ping -c 1 "github.com" &> /dev/null; then
+  if ping -I ${ARCNIC} -c 1 "github.com" &> /dev/null; then
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
   else
     writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
@@ -62,7 +63,6 @@ fi
 
 # Get Arc Data from Config
 ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
-ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
@@ -619,8 +619,8 @@ function make() {
       --infobox "Get Github PAT Data failed,\ntry to get from Syno..." 4 40
     idx=0
     while [ ${idx} -le 5 ]; do # Loop 3 times, if successful, break
-      PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODELID/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
-      PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODELID/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
+      PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
+      PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
       PAT_URL=${PAT_URL%%\?*}
       if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
         if echo "${PAT_URL}" | grep -q "https://*"; then
@@ -636,8 +636,8 @@ function make() {
         --infobox "Get PAT Data from Github..." 3 40
       idx=0
       while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-        PAT_URL="$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODELID/+/%2B}/${PRODUCTVER}/pat_url")"
-        PAT_HASH="$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODELID/+/%2B}/${PRODUCTVER}/pat_hash")"
+        PAT_URL="$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")"
+        PAT_HASH="$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")"
         PAT_URL=${PAT_URL%%\?*}
         if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
           if echo "${PAT_URL}" | grep -q "https://*"; then
@@ -677,7 +677,7 @@ function make() {
       if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
         # Get new Files
         DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
-        DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODELID/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
+        DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
         if curl --interface ${ARCNIC} -skL "${DSM_URL}" -o "${DSM_FILE}"; then
           VALID=true
         else
@@ -869,6 +869,7 @@ else
   [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
+    echo "0 \"Decrypt Arc Patch \" "                                                          >>"${TMP_PATH}/menu"
     echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
     if [ "${CONFDONE}" = "true" ]; then
       echo "2 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
@@ -956,7 +957,6 @@ else
     fi
     if [ "${DEVOPTS}" = "true" ]; then
       echo "= \"\Z4========= Loader =========\Zn \" "                                         >>"${TMP_PATH}/menu"
-      echo "M \"Primary NIC: \Z4${ARCNIC}\Zn \" "                                             >>"${TMP_PATH}/menu"
       echo "v \"Save Modifications to Disk \" "                                               >>"${TMP_PATH}/menu"
       echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
       echo "B \"Grep DSM Config Backup \" "                                                   >>"${TMP_PATH}/menu"
@@ -968,12 +968,11 @@ else
     fi
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
     echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
+    echo "M \"Primary NIC: \Z4${ARCNIC}\Zn \" "                                               >>"${TMP_PATH}/menu"
     echo "9 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
-    echo "0 \"Decrypt Arc Patch \" "                                                          >>"${TMP_PATH}/menu"
     echo "y \"Choose a Keymap \" "                                                            >>"${TMP_PATH}/menu"
-    echo "Y \"Set Time/Date \" "                                                              >>"${TMP_PATH}/menu"
     if [ "${OFFLINE}" = "false" ]; then
-      echo "z \"Update \" "                                                                   >>"${TMP_PATH}/menu"
+      echo "z \"Update Loader\" "                                                             >>"${TMP_PATH}/menu"
     fi
     echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
 
@@ -983,6 +982,7 @@ else
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
       # Main Section
+      0) decryptMenu; NEXT="0" ;;
       1) arcModel; NEXT="2" ;;
       2) make; NEXT="3" ;;
       3) boot && exit 0 ;;
@@ -1129,7 +1129,6 @@ else
         DEVOPTS="${DEVOPTS}"
         NEXT="8"
         ;;
-      M) arcNIC; NEXT="M" ;;
       v) saveMenu; NEXT="v" ;;
       n) editGrubCfg; NEXT="n" ;;
       B) getbackup; NEXT="B" ;;
@@ -1140,15 +1139,14 @@ else
       G) package; NEXT="G" ;;
       # Misc Settings
       x) backupMenu; NEXT="x" ;;
+      M) arcNIC; NEXT="M" ;;
       9) [ "${OFFLINE}" = "true" ] && OFFLINE='false' || OFFLINE='true'
         writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="9"
         ;;
-      0) decryptMenu; NEXT="0" ;;
       y) keymapMenu; NEXT="y" ;;
-      Y) setDateTime; NEXT="Y" ;;
       z) updateMenu; NEXT="z" ;;
       V) credits; NEXT="V" ;;
     esac

@@ -777,12 +777,12 @@ function updateMenu() {
         fi
         (
           # Download update file
-          if curl --interface ${ARCNIC} -# -kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
-              [[ $char =~ [0-9] ]] && keep=1 ;
-              [[ $char == % ]] && echo "Download:$progress" && progress="" && keep=0 ;
-              [[ $keep == 1 ]] && progress="$progress$char" ;
-            done
-            ; then
+          curl --interface ${ARCNIC} -#kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
+            [[ $char =~ [0-9] ]] && keep=1 ;
+            [[ $char == % ]] && echo "Download:$progress" && progress="" && keep=0 ;
+            [[ $keep == 1 ]] && progress="$progress$char" ;
+          done
+          if [ -f "${TMP_PATH}/arc-${TAG}.img.zip" ]; then
             echo "Downloading Updatefile successful!"
           else
             echo "Error downloading Updatefile!"
@@ -2106,21 +2106,5 @@ function arcNIC () {
   [ -z "${resp}" ] && return
   ARCNIC=${resp}
   writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
-  return
-}
-
-###############################################################################
-# Set Time/Date
-function setDateTime() {
-  dialog --backtitle "$(backtitle)" --title "Set Time/Date" \
-    --timebox "Set Time" 0 0 2>${TMP_PATH}/resp
-  [ $? -ne 0 ] && return
-  TIME=$(cat ${TMP_PATH}/resp)
-  dialog --backtitle "$(backtitle)" --title "Set Time/Date" \
-    --calendar "Set Date" 0 0 2>${TMP_PATH}/resp
-  [ $? -ne 0 ] && return
-  DATE=$(cat ${TMP_PATH}/resp)
-  date -s "${DATE} ${TIME}"
-  hwclock -w
   return
 }
