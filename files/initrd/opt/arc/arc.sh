@@ -964,6 +964,7 @@ else
     echo "9 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
     echo "0 \"Decrypt Arc Patch \" "                                                          >>"${TMP_PATH}/menu"
     echo "y \"Choose a Keymap \" "                                                            >>"${TMP_PATH}/menu"
+    echo "Y \"Set Time/Date \" "                                                              >>"${TMP_PATH}/menu"
     if [ "${OFFLINE}" = "false" ]; then
       echo "z \"Update \" "                                                                   >>"${TMP_PATH}/menu"
     fi

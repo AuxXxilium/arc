@@ -2104,3 +2104,18 @@ function arcNIC () {
   writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
   return
 }
+
+###############################################################################
+# Set Time/Date
+function setDateTime() {
+  dialog --backtitle "$(backtitle)" --title "Set Time/Date" \
+    --timebox "Set Time" 0 0 2>${TMP_PATH}/resp
+  [ $? -ne 0 ] && return
+  TIME=$(cat ${TMP_PATH}/resp)
+  dialog --backtitle "$(backtitle)" --title "Set Time/Date" \
+    --calendar "Set Date" 0 0 2>${TMP_PATH}/resp
+  [ $? -ne 0 ] && return
+  DATE=$(cat ${TMP_PATH}/resp)
+  date -s "${DATE} ${TIME}"
+  return
+}
