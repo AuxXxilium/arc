@@ -612,11 +612,11 @@ function make() {
     PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
     # Get PAT Data
     dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-      --infobox "Get PAT Data from Github..." 3 40
+      --infobox "Get Github PAT Data failed,\ntry to get from Syno..." 4 40
     idx=0
-    while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-      PAT_URL="$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")"
-      PAT_HASH="$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")"
+    while [ ${idx} -le 5 ]; do # Loop 3 times, if successful, break
+      PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODELID/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
+      PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODELID/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
       PAT_URL=${PAT_URL%%\?*}
       if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
         if echo "${PAT_URL}" | grep -q "https://*"; then
@@ -629,11 +629,11 @@ function make() {
     done
     if [ "${VALID}" = "false" ]; then
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-        --infobox "Get Github PAT Data failed,\ntry to get from Syno..." 4 40
+        --infobox "Get PAT Data from Github..." 3 40
       idx=0
-      while [ ${idx} -le 5 ]; do # Loop 3 times, if successful, break
-        PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
-        PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
+      while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
+        PAT_URL="$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODELID/+/%2B}/${PRODUCTVER}/pat_url")"
+        PAT_HASH="$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODELID/+/%2B}/${PRODUCTVER}/pat_hash")"
         PAT_URL=${PAT_URL%%\?*}
         if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
           if echo "${PAT_URL}" | grep -q "https://*"; then
@@ -669,9 +669,9 @@ function make() {
     fi
     if [ "${VALID}" = "true" ]; then
       if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-        DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
         # Get new Files
-        DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
+        DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
+        DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODELID/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
         if curl --interface ${ARCNIC} -skL "${DSM_URL}" -o "${DSM_FILE}"; then
           VALID=true
         else
