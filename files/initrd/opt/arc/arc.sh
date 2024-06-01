@@ -301,7 +301,8 @@ function arcVersion() {
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
       if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
         # Delete old files
-        rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
+        rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+        rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
       fi
     fi
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -618,14 +619,14 @@ function make() {
     PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
     # Get PAT Data
     dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-      --infobox "Get PAT Data from Syno..." 4 40
+      --infobox "Get PAT Data from Syno..." 3 30
     idx=0
     while [ ${idx} -le 5 ]; do # Loop 3 times, if successful, break
       PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
       PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
       PAT_URL=${PAT_URL%%\?*}
       if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-        if echo "${PAT_URL}" | grep -q "https://*"; then
+        if (echo "${PAT_URL}" | grep -q "https://*"); then
           VALID=true
           break
         fi
@@ -635,14 +636,14 @@ function make() {
     done
     if [ "${VALID}" = "false" ]; then
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-        --infobox "Get PAT Data from Github..." 3 40
+        --infobox "Get PAT Data from Github..." 3 30
       idx=0
       while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
         PAT_URL="$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")"
         PAT_HASH="$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")"
         PAT_URL=${PAT_URL%%\?*}
         if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-          if echo "${PAT_URL}" | grep -q "https://*"; then
+          if (echo "${PAT_URL}" | grep -q "https://*"); then
             VALID=true
             break
           fi

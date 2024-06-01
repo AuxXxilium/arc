@@ -251,14 +251,14 @@ done
 
 # SA6400 patches
 if [ "${PLATFORM}" = "epyc7002" ]; then
-  echo -e "Apply Epyc7002 Fixes"
+  echo -n " - Apply Epyc7002 Fixes"
   sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
 fi
 
 # Broadwellntbap patches
 if [ "${PLATFORM}" = "broadwellntbap" ]; then
-  echo -e "Apply Broadwellntbap Fixes"
+  echo -n " - Apply Broadwellntbap Fixes"
   sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' ${RAMDISK_PATH}/usr/syno/share/environments.sh
 fi
 
