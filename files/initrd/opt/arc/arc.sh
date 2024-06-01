@@ -97,6 +97,8 @@ if [ "${OFFLINE}" = "false" ]; then
   REGION="$(curl -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
   TIMEZONE="$(curl -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
   ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
+  # NTP
+  ntptime
 fi
 
 ###############################################################################
