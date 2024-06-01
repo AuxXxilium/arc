@@ -957,6 +957,7 @@ function sysinfo() {
   # Check if machine has EFI
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   # Get System Informations
+  DATE="$(date)"
   CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
   VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
   ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
@@ -1005,6 +1006,7 @@ function sysinfo() {
   TEXT+="\n  Vendor: \Zb${VENDOR}\Zn"
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
+  TEXT+="\n  Date: \Zb${DATE}\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${NIC} NIC\Zn"
   for ETH in ${ETHX}; do
@@ -1191,6 +1193,7 @@ function fullsysinfo() {
   # Check if machine has EFI
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   # Get System Informations
+  DATE="$(date)"
   CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
   VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
   ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
@@ -1239,6 +1242,7 @@ function fullsysinfo() {
   TEXT+="\nVendor: ${VENDOR}"
   TEXT+="\nCPU: ${CPU}"
   TEXT+="\nMemory: $((${RAMTOTAL} / 1024))GB"
+  TEXT+="\nDate: ${DATE}"
   TEXT+="\n"
   TEXT+="\nNetwork: ${NIC} NIC"
   for ETH in ${ETHX}; do
