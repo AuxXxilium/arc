@@ -500,7 +500,7 @@ function ntptime() {
     REGION="$(curl -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
     TIMEZONE="$(curl -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
     ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
-    /etc/init.d/S49ntp restart
-    hwclock -w
+    /etc/init.d/S49ntp restart 2&>1 >/dev/null || true
+    hwclock -w 2>/dev/null || true
   fi
 }
