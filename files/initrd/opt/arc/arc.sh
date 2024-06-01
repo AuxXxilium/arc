@@ -699,10 +699,10 @@ function make() {
           fi
         fi
         if [ -f "${DSM_FILE}" ] && [ "${VALID}" = "true" ]; then
-          tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}"
+          tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" 2>/dev/null
           VALID=true
         elif [ -f "${PAT_FILE}" ] && [ "${VALID}" = "true" ]; then
-          extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"
+          extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}" 2>/dev/null
           VALID=true
         else
           dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
@@ -755,7 +755,7 @@ function make() {
   fi
   # Copy DSM Files to Locations if DSM Files not found
   if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-    if copyDSMFiles "${UNTAR_PAT_PATH}"; then
+    if copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null; then
       VALID=true
     else
       VALID=false
