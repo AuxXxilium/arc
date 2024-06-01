@@ -447,7 +447,7 @@ function livepatch() {
     fi
   fi
   if [ "${PVALID}" = "false" ]; then
-    local OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+    OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
     if [ "${OFFLINE}" = "false" ]; then
       # Update Configs
       echo -e "Updating Configs..."
