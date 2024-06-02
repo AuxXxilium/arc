@@ -103,7 +103,7 @@ jobs:
           unzip -o "/tmp/arc.img.zip" -d "/tmp"
 
           echo "Modify Arc Image"
-          IMAGE_FILE="arc.img"
+          IMAGE_FILE="/tmp/arc.img"
           fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
