@@ -135,7 +135,8 @@ jobs:
             done
           fi
           echo "$(cat "${PRESET_CONFIG_FILE}")"
-          sudo echo "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"/tmp/p3/automated"
+          echo "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"/tmp/automated"
+          sudo cp -f "/tmp/automated" "/tmp/p3/automated"
           echo "Copying files"
           sync
 
