@@ -69,13 +69,6 @@ jobs:
           echo "Version: ${VERSION}"
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
-          if [ -n "${VERSION}" ]; then
-            # Modify Source File
-            echo "${VERSION}" >VERSION
-            echo "${VERSION}" >files/p1/ARC-VERSION
-            sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
-          fi
-
       - name: Update Comment Building
         id: comment
         uses: actions-cool/issues-helper@v3
@@ -89,24 +82,12 @@ jobs:
             > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}  
             ----
 
-      # Get extractor, LKM, Addons, Modules, Theme and Configs
-      - name: Get extractor, LKM, Addons, Modules, Theme and Configs
+      # Install dependencies
+      - name: Install Dependencies
         run: |
           sudo apt update
           sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils busybox dialog curl sed 
           sudo snap install yq
-
-          . scripts/func.sh
-
-          getLKMs "files/p3/lkms"
-          getAddons "files/p3/addons"
-          getModules "files/p3/modules"
-          getConfigs "files/p3/configs"
-          getPatches "files/p3/patches"
-          getTheme "files/p1/boot/grub"
-          getOffline "files/p3/configs"
-
-          echo "OK"
 
       # Build incremental
       - name: Build image
@@ -117,9 +98,12 @@ jobs:
             [ "${2}" = "{}" ] && sudo yq eval '.'${1}' = {}' --inplace "${3}" 2>/dev/null || sudo yq eval '.'${1}' = "'"${2}"'"' --inplace "${3}" 2>/dev/null
           }
 
-          echo "Create Arc Image"
+          TAG="$(curl --interface ${ARCNIC} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+          curl --interface ${ARCNIC} -skL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "/tmp/arc.img.zip"
+          unzip -o "/tmp/arc.img.zip" -d "/tmp"
+
+          echo "Modify Arc Image"
           IMAGE_FILE="arc.img"
-          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
@@ -131,16 +115,8 @@ jobs:
           sudo mount ${LOOPX}p1 "/tmp/p1"
           sudo mount ${LOOPX}p3 "/tmp/p3"
 
-          echo "Get Buildroot"
-          getBuildroot "2023.08.x" "br"
-          [ ! -f "br/bzImage-arc" ] || [ ! -f "br/initrd-arc" ] && return 1
-          
-          echo "Repack initrd"
-          cp -f "br/bzImage-arc" "files/p3/bzImage-arc"
-          repackInitrd "br/initrd-arc" "files/initrd" "files/p3/initrd-arc"
-
           echo "Set Custom Config"
-          PRESET_CONFIG_FILE="files/p1/user-config.yml"
+          PRESET_CONFIG_FILE="/tmp/p1/user-config.yml"
           touch "${PRESET_CONFIG_FILE}"
           writeConfigKey "model" "${{ env.MODEL }}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "productver" "${{ env.PRODUCTVER }}" "${PRESET_CONFIG_FILE}"
@@ -153,16 +129,15 @@ jobs:
           writeConfigKey "addons" "{}" "${PRESET_CONFIG_FILE}"
           if [ -n "${{ env.ADDONS }}" ]; then
             writeConfigKey "addons" "{}" "${PRESET_CONFIG_FILE}"
-            for A in $(echo "${{ env.ADDONS }}" | tr ',' ' ' | sed 's/\[//g' | sed 's/\]//g'); do
+            ADDONS="$(echo "${{ env.ADDONS }}" | tr ',' ' ' | sed 's/\[//g' | sed 's/\]//g')"
+            for A in "${ADDONS}"; do
               VALUE=""
               writeConfigKey "addons.\"${A}\"" "${VALUE}" "${PRESET_CONFIG_FILE}"
             done
           fi
           echo "$(cat "${PRESET_CONFIG_FILE}")"
-          echo "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"files/p3/automated"
+          echo "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"/tmp/p3/automated"
           echo "Copying files"
-          sudo cp -Rf "files/p1/"* "/tmp/p1"
-          sudo cp -Rf "files/p3/"* "/tmp/p3"
           sync
 
           echo "Unmount image file"
