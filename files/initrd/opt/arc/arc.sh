@@ -140,9 +140,9 @@ function arcModel() {
     RESTRICT=1
     PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"
     if [ "${OFFLINE}" = "true" ]; then
-      MJ="$(python include/functions.py getmodelsoffline -p "${PS[*]}")"
+      MJ="$(python ${ARC_PATH}/include/functions.py getmodelsoffline -p "${PS[*]}")"
     else
-      MJ="$(python include/functions.py getmodels -p "${PS[*]}")"
+      MJ="$(python ${ARC_PATH}/include/functions.py getmodels -p "${PS[*]}")"
     fi
     if [[ -z "${MJ}" || "${MJ}" = "[]" ]]; then
       dialog --backtitle "$(backtitle)" --title "Model" --title "Model" \
@@ -273,7 +273,6 @@ function arcModel() {
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
-    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
   fi
   arcVersion
 }
@@ -302,7 +301,6 @@ function arcVersion() {
       if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
         # Delete old files
         rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
-        rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
       fi
     fi
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -713,8 +711,8 @@ function make() {
       fi
     fi
   elif [ "${OFFLINE}" = "true" ]; then
-    if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
-      rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
+    if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
+      rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
       VALID=true
     else
       # Check for existing Files
