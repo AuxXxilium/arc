@@ -17,9 +17,7 @@
 # Memory: Check Memory installed
 RAMFREE=$(($(free -m | grep -i mem | awk '{print$2}') / 1024 + 1))
 RAMTOTAL=$((${RAMFREE} * 1024))
-[ -z "${RAMTOTAL}" ] || [ ${RAMTOTAL} -le 0 ] && RAMTOTAL=8192
-RAMMAX=$((${RAMTOTAL} * 2))
-RAMMIN=${RAMTOTAL}
+[ -z "${RAMTOTAL}" ] || [ ${RAMTOTAL} -le 0 ] && RAMTOTAL=8192}
 
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
@@ -580,7 +578,7 @@ function arcSummary() {
   SUMMARY+="\n>> Disks (incl. USB): \Zb${DRIVES}\Zn"
   SUMMARY+="\n>> Disks (internal): \Zb${HARDDRIVES}\Zn"
   SUMMARY+="\n>> External Controller: \Zb${EXTERNALCONTROLLER}\Zn"
-  SUMMARY+="\n>> Memory Min/Max MB: \Zb${RAMMIN}/${RAMMAX}\Zn"
+  SUMMARY+="\n>> Memory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
   dialog --backtitle "$(backtitle)" --colors --title "DSM Config Summary" \
     --extra-button --extra-label "Cancel" --msgbox "${SUMMARY}" 0 0
   RET=$?
