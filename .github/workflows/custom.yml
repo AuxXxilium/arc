@@ -117,7 +117,7 @@ jobs:
 
           echo "Set Custom Config"
           PRESET_CONFIG_FILE="/tmp/p1/user-config.yml"
-          touch "${PRESET_CONFIG_FILE}"
+          sudo touch "${PRESET_CONFIG_FILE}"
           writeConfigKey "model" "${{ env.MODEL }}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "productver" "${{ env.PRODUCTVER }}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "arc" "{}" "${PRESET_CONFIG_FILE}"
