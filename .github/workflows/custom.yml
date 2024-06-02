@@ -129,14 +129,13 @@ jobs:
           writeConfigKey "addons" "{}" "${PRESET_CONFIG_FILE}"
           if [ -n "${{ env.ADDONS }}" ]; then
             writeConfigKey "addons" "{}" "${PRESET_CONFIG_FILE}"
-            ADDONS="$(echo "${{ env.ADDONS }}" | tr ',' ' ' | sed 's/\[//g' | sed 's/\]//g')"
-            for A in "${ADDONS}"; do
+            for A in $(echo "${{ env.ADDONS }}" | tr ',' ' ' | sed 's/\[//g' | sed 's/\]//g'); do
               VALUE=""
               writeConfigKey "addons.\"${A}\"" "${VALUE}" "${PRESET_CONFIG_FILE}"
             done
           fi
           echo "$(cat "${PRESET_CONFIG_FILE}")"
-          echo "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"/tmp/p3/automated"
+          sudo echo "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"/tmp/p3/automated"
           echo "Copying files"
           sync
 
