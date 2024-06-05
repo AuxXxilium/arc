@@ -165,6 +165,7 @@ echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:
 for ETH in ${ETHX}; do
   IP=""
   STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
+  ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
   DRIVER="$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
   COUNT=0
   while true; do
@@ -192,7 +193,7 @@ for ETH in ${ETHX}; do
         echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server detected.)"
       else
         echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
-        writeConfigKey "arc.nic" "${ETH}" "${USER_CONFIG_FILE}"
+        [ -z "${ARCNIC}" ] && writeConfigKey "arc.nic" "${ETH}" "${USER_CONFIG_FILE}"
       fi
       ethtool -s ${ETH} wol g 2>/dev/null
       break
