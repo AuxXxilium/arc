@@ -362,7 +362,6 @@ function arcPatch() {
   # Check for Custom Build
   if [ "${CUSTOM}" = "true" ]; then
     SN=$(generateSerial "${MODEL}" false)
-    writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   else
     if [ -n "${ARCCONF}" ]; then
@@ -402,7 +401,6 @@ function arcPatch() {
         done
         writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
       fi
-      writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
     elif [ -z "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
         --nocancel --title "Non Arc Patch Model" \
@@ -435,9 +433,9 @@ function arcPatch() {
         done
         writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
       fi
-      writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
     fi
   fi
+  writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   arcSettings
 }
