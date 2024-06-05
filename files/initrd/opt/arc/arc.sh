@@ -344,7 +344,7 @@ function arcVersion() {
     # Build isn't done
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    ONLYVERSION=""
+    ONLYVERSION="false"
     return 0
   else
     arcPatch
