@@ -304,12 +304,9 @@ function arcVersion() {
     if [ "${PRODUCTVER}" != "${resp}" ]; then
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-      if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
-        # Delete old files
-        rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
-      fi
+      # Delete old files
+      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
     fi
-    PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
     --infobox "Reconfiguring Addons, Modules and Synoinfo" 3 50
