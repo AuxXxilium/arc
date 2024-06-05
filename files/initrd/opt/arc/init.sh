@@ -106,7 +106,6 @@ ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
 [ ${NIC} -ne ${ETHN} ] && echo -e "\033[1;31mWarning: NIC mismatch (NICs: ${NIC} | Real: ${ETHN})\033[0m"
 # Write NIC Amount to config
 writeConfigKey "device.nic" "${NIC}" "${USER_CONFIG_FILE}"
-deleteConfigKey "arc.nic" "${USER_CONFIG_FILE}"
 # No network devices
 echo
 [ ${NIC} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
@@ -193,8 +192,7 @@ for ETH in ${ETHX}; do
         echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server detected.)"
       else
         echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
-        ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
-        [ -z "${ARCNIC}" ] && writeConfigKey "arc.nic" "${ETH}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.nic" "${ETH}" "${USER_CONFIG_FILE}"
       fi
       ethtool -s ${ETH} wol g 2>/dev/null
       break
