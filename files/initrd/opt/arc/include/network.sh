@@ -2,7 +2,6 @@
 function getnet() {
   ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   if [ "${ARCPATCH}" = "true" ]; then
     ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
