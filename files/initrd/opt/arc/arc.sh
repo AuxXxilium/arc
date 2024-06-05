@@ -132,28 +132,28 @@ function backtitle() {
 ###############################################################################
 # Model Selection
 function arcModel() {
+  dialog --backtitle "$(backtitle)" --title "DSM Model" \
+    --infobox "Reading Models..." 3 25
+  # Loop menu
+  RESTRICT=1
+  PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"
+  if [ "${OFFLINE}" = "true" ]; then
+    MJ="$(python ${ARC_PATH}/include/functions.py getmodelsoffline -p "${PS[*]}")"
+  else
+    MJ="$(python ${ARC_PATH}/include/functions.py getmodels -p "${PS[*]}")"
+  fi
+  if [[ -z "${MJ}" || "${MJ}" = "[]" ]]; then
+    dialog --backtitle "$(backtitle)" --title "Model" --title "Model" \
+      --msgbox "Failed to get models, please try again!" 0 0
+    return 1
+  fi
+  echo -n "" >"${TMP_PATH}/modellist"
+  echo "${MJ}" | jq -c '.[]' | while read -r item; do
+    name=$(echo "$item" | jq -r '.name')
+    arch=$(echo "$item" | jq -r '.arch')
+    echo "${name} ${arch}" >>"${TMP_PATH}/modellist"
+  done
   if [ "${CUSTOM}" = "false" ]; then
-    dialog --backtitle "$(backtitle)" --title "DSM Model" \
-      --infobox "Reading Models..." 3 25
-    # Loop menu
-    RESTRICT=1
-    PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"
-    if [ "${OFFLINE}" = "true" ]; then
-      MJ="$(python ${ARC_PATH}/include/functions.py getmodelsoffline -p "${PS[*]}")"
-    else
-      MJ="$(python ${ARC_PATH}/include/functions.py getmodels -p "${PS[*]}")"
-    fi
-    if [[ -z "${MJ}" || "${MJ}" = "[]" ]]; then
-      dialog --backtitle "$(backtitle)" --title "Model" --title "Model" \
-        --msgbox "Failed to get models, please try again!" 0 0
-      return 1
-    fi
-    echo -n "" >"${TMP_PATH}/modellist"
-    echo "${MJ}" | jq -c '.[]' | while read -r item; do
-      name=$(echo "$item" | jq -r '.name')
-      arch=$(echo "$item" | jq -r '.arch')
-      echo "${name} ${arch}" >>"${TMP_PATH}/modellist"
-    done
     while true; do
       echo -n "" >"${TMP_PATH}/menu"
       while read -r M A; do
@@ -246,14 +246,14 @@ function arcModel() {
     done
   fi
   # Reset Model Config if changed
-  if [ "${MODEL}" != "${resp}" ]; then
+  if [ -z "${resp}" ] || [ "${MODEL}" != "${resp}" ]; then
     if [ "${CUSTOM}" = "false" ]; then
       PRODUCTVER=""
       MODEL="${resp}"
       writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
       writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
     else
-      MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}") "
+      MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
     fi
     PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
     MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
@@ -273,7 +273,6 @@ function arcModel() {
     writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
     writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
-    writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
@@ -284,7 +283,9 @@ function arcModel() {
     HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
     KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
     ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+    if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
+      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+    fi
   fi
   arcVersion
 }
