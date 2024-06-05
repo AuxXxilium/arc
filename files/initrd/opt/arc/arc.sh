@@ -260,6 +260,7 @@ function arcModel() {
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.custom" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.emmcboot" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
@@ -276,8 +277,14 @@ function arcModel() {
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+    ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+    CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+    EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
+    HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
+    KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
+    ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
   fi
   arcVersion
