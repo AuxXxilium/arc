@@ -57,6 +57,7 @@ LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 if [ -n "${MODEL}" ]; then
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
 fi
 
 # Get Arc Data from Config
@@ -901,8 +902,11 @@ else
         echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
         echo "S \"DSM Storage Map \" "                                                        >>"${TMP_PATH}/menu"
         echo "P \"DSM StoragePanel \" "                                                       >>"${TMP_PATH}/menu"
-        echo "p \"Arc Patch Settings \" "                                                     >>"${TMP_PATH}/menu"
+        if [ -n "${ARCCONF}" ]; then
+          echo "p \"Arc Patch Settings \" "                                                   >>"${TMP_PATH}/menu"
+        fi
         echo "D \"Loader DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
+        echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
         echo "R \"Automated Mode: \Z4${CUSTOM}\Zn \" "                                        >>"${TMP_PATH}/menu"
       fi
       if [ "${ADVOPTS}" = "true" ]; then
@@ -943,18 +947,17 @@ else
         echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
         echo "N \"Add DSM User \" "                                                           >>"${TMP_PATH}/menu"
         if [ "${PLATFORM}" = "epyc7002" ]; then
-          echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
+          echo "K \"DSM Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
         fi
         if [ "${DT}" = "true" ]; then
           echo "H \"Hotplug/SortDrives: \Z4${HDDSORT}\Zn \" "                                 >>"${TMP_PATH}/menu"
         fi
-        echo "c \"IPv6 Support: \Z4${ARCIPV6}\Zn \" "                                         >>"${TMP_PATH}/menu"
+        echo "c \"DSM IPv6 Support: \Z4${ARCIPV6}\Zn \" "                                     >>"${TMP_PATH}/menu"
         echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
         echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
-        echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
+        echo "o \"DSM Switch MacSys: \Z4${MACSYS}\Zn \" "                                     >>"${TMP_PATH}/menu"
         echo "W \"DSM RD Compression: \Z4${RD_COMPRESSED}\Zn \" "                             >>"${TMP_PATH}/menu"
         echo "X \"DSM Sata DOM: \Z4${SATADOM}\Zn \" "                                         >>"${TMP_PATH}/menu"
-        echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
       fi
     fi
     if [ "${DEVOPTS}" = "true" ]; then

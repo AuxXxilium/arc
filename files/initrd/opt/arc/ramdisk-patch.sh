@@ -221,7 +221,7 @@ fi
 # backup current loader configs
 BACKUP_PATH="${RAMDISK_PATH}/usr/arc/backup"
 rm -rf "${BACKUP_PATH}"
-for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}" "${USER_UP_PATH}" "${SCRIPTS_PATH}"; do
+for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}" "${USER_UP_PATH}"; do
   if [ -f "${F}" ]; then
     FD="$(dirname "${F}")"
     mkdir -p "${FD/\/mnt/${BACKUP_PATH}}"
@@ -262,12 +262,6 @@ if [ "${PLATFORM}" = "broadwellntbap" ]; then
   sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' ${RAMDISK_PATH}/usr/syno/share/environments.sh
 fi
 
-# Call user patch scripts
-for F in $(ls -1 ${SCRIPTS_PATH}/*.sh 2>/dev/null); do
-  echo "Calling ${F}" >"${LOG_FILE}"
-  . "${F}" >>"${LOG_FILE}" 2>&1 || exit 1
-done
-
 # Reassembly ramdisk
 if [ "${RD_COMPRESSED}" == "true" ]; then
   (cd "${RAMDISK_PATH}" && find . 2>/dev/null | cpio -o -H newc -R root:root | xz -9 --format=lzma >"${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || exit 1
@@ -276,6 +270,3 @@ else
 fi
 
 sync
-
-# Clean
-rm -rf "${RAMDISK_PATH}"
