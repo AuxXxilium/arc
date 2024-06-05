@@ -877,7 +877,9 @@ else
   [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
-    echo "0 \"Decrypt Arc Patch \" "                                                          >>"${TMP_PATH}/menu"
+    if [ -z "${ARCCONF}" ]; then
+      echo "0 \"Decrypt Arc Patch \" "                                                        >>"${TMP_PATH}/menu"
+    fi
     echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
     if [ "${CONFDONE}" = "true" ]; then
       echo "2 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
@@ -947,7 +949,7 @@ else
         echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
         echo "N \"Add DSM User \" "                                                           >>"${TMP_PATH}/menu"
         if [ "${PLATFORM}" = "epyc7002" ]; then
-          echo "K \"DSM Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
+          echo "K \"DSM Kernel: \Z4${KERNEL}\Zn \" "                                          >>"${TMP_PATH}/menu"
         fi
         if [ "${DT}" = "true" ]; then
           echo "H \"Hotplug/SortDrives: \Z4${HDDSORT}\Zn \" "                                 >>"${TMP_PATH}/menu"
