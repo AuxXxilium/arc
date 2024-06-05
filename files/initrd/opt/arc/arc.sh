@@ -17,7 +17,7 @@
 # Memory: Check Memory installed
 RAMFREE=$(($(free -m | grep -i mem | awk '{print$2}') / 1024 + 1))
 RAMTOTAL=$((${RAMFREE} * 1024))
-[ -z "${RAMTOTAL}" ] || [ ${RAMTOTAL} -le 0 ] && RAMTOTAL=8192}
+[ -z "${RAMTOTAL}" ] && RAMTOTAL=8192
 
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
@@ -505,6 +505,8 @@ function arcSettings() {
     deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
     deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
   fi
+  # Max Memory for DSM
+  writeConfigKey "synoinfo.mem_max_mb" "${RAMTOTAL}" "${USER_CONFIG_FILE}"
   # Config is done
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
