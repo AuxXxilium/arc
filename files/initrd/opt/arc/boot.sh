@@ -107,7 +107,7 @@ else
   CMDLINE['noefi']=""
 fi
 if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
-  if [ ! "${BUS}" == "usb" ]; then
+  if [ "${BUS}" != "usb" ]; then
     SZ=$(blockdev --getsz ${LOADER_DISK} 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
     SS=$(blockdev --getss ${LOADER_DISK} 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
     SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
@@ -137,12 +137,12 @@ CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 CMDLINE["HddHotplug"]="1"
 CMDLINE["vender_format_version"]="2"
-#if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ ! "${BUS}" == "mmc" ] && [ ! "${EMMCBOOT}" == "true" ]; then
-#  [ ! "${CMDLINE['modprobe.blacklist']}" == "" ] && CMDLINE['modprobe.blacklist']+=","
+#if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
+#  [ "${CMDLINE['modprobe.blacklist']}" != "" ] && CMDLINE['modprobe.blacklist']+=","
 #  CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
 #fi
 if [ "${DT}" == "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
-  [ ! "${CMDLINE['modprobe.blacklist']}" == "" ] && CMDLINE['modprobe.blacklist']+=","
+  [ "${CMDLINE['modprobe.blacklist']}" != "" ] && CMDLINE['modprobe.blacklist']+=","
   CMDLINE['modprobe.blacklist']+="mpt3sas"
 fi
 if echo "epyc7002 apollolake geminilake" | grep -wq "${PLATFORM}"; then

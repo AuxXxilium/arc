@@ -43,13 +43,13 @@ CUSTOM="${readConfigKey "arc.custom" "${USER_CONFIG_FILE}"}"
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
-  if [ ! -n "${MODEL}" ]; then
+  if [ -z "${MODEL}" ]; then
     MODEL="(Model)"
   fi
-  if [ ! -n "${PRODUCTVER}" ]; then
+  if [ -z "${PRODUCTVER}" ]; then
     PRODUCTVER="(Version)"
   fi
-  if [ ! -n "${IPCON}" ]; then
+  if [ -z "${IPCON}" ]; then
     IPCON="(IP)"
   fi
   BACKTITLE="${ARC_TITLE} | "
