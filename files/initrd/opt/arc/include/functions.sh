@@ -1,4 +1,4 @@
-[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/../" >/dev/null 2>&1 && pwd)"
+[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/../" 2>/dev/null && pwd)"
 
 . ${ARC_PATH}/include/consts.sh
 . ${ARC_PATH}/include/configFile.sh
@@ -435,7 +435,7 @@ function livepatch() {
     echo -e " - failed!"
     PVALID=false
   fi
-  if [ "${PVALID}" = "true" ]; then
+  if [ "${PVALID}" == "true" ]; then
     # Patch Ramdisk
     echo -n "Patching Ramdisk"
     if ${ARC_PATH}/ramdisk-patch.sh; then
@@ -446,12 +446,9 @@ function livepatch() {
       PVALID=false
     fi
   fi
-  if [ "${PVALID}" = "false" ]; then
+  if [ "${PVALID}" == "false" ]; then
     OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
     if [ "${OFFLINE}" = "false" ]; then
-      # Update Configs
-      echo -e "Updating Configs..."
-      updateConfigs
       # Update Patches
       echo -e "Updating Patches..."
       updatePatches
@@ -464,7 +461,7 @@ function livepatch() {
         echo -e " - failed!"
         PVALID=false
       fi
-      if [ "${PVALID}" = "true" ]; then
+      if [ "${PVALID}" == "true" ]; then
         # Patch Ramdisk
         echo -n "Patching Ramdisk"
         if ${ARC_PATH}/ramdisk-patch.sh; then
@@ -477,7 +474,7 @@ function livepatch() {
       fi
     fi
   fi
-  if [ "${PVALID}" = "false" ]; then
+  if [ "${PVALID}" == "false" ]; then
     echo
     echo -e "Patching DSM Files failed! Please stay patient for Update."
     sleep 5
@@ -488,19 +485,5 @@ function livepatch() {
     RAMDISK_HASH="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
     writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
     echo "DSM Image patched - Ready!"
-  fi
-}
-
-###############################################################################
-# Timeserver
-function ntptime() {
-  OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  if [ "${OFFLINE}" = "false" ]; then
-    # Timezone
-    REGION="$(curl -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
-    TIMEZONE="$(curl -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
-    ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
-    /etc/init.d/S49ntp restart 2&>1 >/dev/null || true
-    hwclock -w 2>/dev/null || true
   fi
 }

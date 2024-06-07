@@ -2,7 +2,7 @@
 
 ###############################################################################
 # Overlay Init Section
-[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
 . ${ARC_PATH}/include/functions.sh
 . ${ARC_PATH}/include/addons.sh
@@ -32,11 +32,11 @@ BUS=$(getBus "${LOADER_DISK}")
 
 # Offline Mode check
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
-# Get Amount of NIC
-ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
 ARCNIC=""
 if [ "${OFFLINE}" = "false" ]; then
+  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+  # Get Amount of NIC
+  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
   for ETH in ${ETHX}; do
     if ping -I ${ETH} -c 1 "github.com" &> /dev/null && ping -I ${ETH} -c 1 "synology.com" &> /dev/null; then
       ARCNIC="${ETH}"
@@ -109,13 +109,14 @@ if [ "${OFFLINE}" = "false" ]; then
     NEWTAG="${ARC_VERSION}"
   fi
   # Timezone
-  REGION=$(curl -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f1)
-  TIMEZONE=$(curl -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f2)
+  REGION=$(curl --interface ${ARCNIC} -m 5 -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f1)
+  TIMEZONE=$(curl --interface ${ARCNIC} -m 5 -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f2)
   writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
   writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
   ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
   # NTP
-  ntptime
+  /etc/init.d/S49ntpd restart 2>/dev/null || true
+  hwclock -w 2>/dev/null || true
 fi
 
 ###############################################################################
@@ -302,7 +303,7 @@ function arcModel() {
     KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
     ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
     if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
-      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
     fi
   fi
   arcVersion
@@ -330,7 +331,7 @@ function arcVersion() {
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
       # Delete old files
-      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
     fi
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
@@ -350,7 +351,7 @@ function arcVersion() {
   # Reset Modules
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
   # Modify KVER for Epyc7002
-  if [ "${PLATFORM}" = "epyc7002" ]; then
+  if [ "${PLATFORM}" == "epyc7002" ]; then
     KVERP="${PRODUCTVER}-${KVER}"
   else
     KVERP="${KVER}"
@@ -743,7 +744,7 @@ function make() {
     fi
   elif [ "${OFFLINE}" = "true" ]; then
     if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
-      rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+      rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
       VALID=true
     else
       # Check for existing Files
@@ -972,7 +973,7 @@ else
         echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
         echo "t \"Change DSM Password \" "                                                    >>"${TMP_PATH}/menu"
         echo "N \"Add DSM User \" "                                                           >>"${TMP_PATH}/menu"
-        if [ "${PLATFORM}" = "epyc7002" ]; then
+        if [ "${PLATFORM}" == "epyc7002" ]; then
           echo "K \"DSM Kernel: \Z4${KERNEL}\Zn \" "                                          >>"${TMP_PATH}/menu"
         fi
         if [ "${DT}" = "true" ]; then
@@ -1091,7 +1092,7 @@ else
         PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
         KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
         if [[ -n "${PLATFORM}" && -n "${KVER}" ]]; then
-          if [ "${PLATFORM}" = "epyc7002" ]; then
+          if [ "${PLATFORM}" == "epyc7002" ]; then
             KVERP="${PRODUCTVER}-${KVER}"
           else
             KVERP="${KVER}"

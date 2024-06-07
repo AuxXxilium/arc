@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
 . ${ARC_PATH}/include/functions.sh
 . ${ARC_PATH}/include/addons.sh
@@ -62,7 +62,7 @@ fi
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
 
 # Modify KVER for Epyc7002
-if [ "${PLATFORM}" = "epyc7002" ]; then
+if [ "${PLATFORM}" == "epyc7002" ]; then
   KVERP="${PRODUCTVER}-${KVER}"
 else
   KVERP="${KVER}"
@@ -250,14 +250,14 @@ for ETH in ${ETHX}; do
 done
 
 # SA6400 patches
-if [ "${PLATFORM}" = "epyc7002" ]; then
+if [ "${PLATFORM}" == "epyc7002" ]; then
   echo -n " - Apply Epyc7002 Fixes"
   sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
 fi
 
 # Broadwellntbap patches
-if [ "${PLATFORM}" = "broadwellntbap" ]; then
+if [ "${PLATFORM}" == "broadwellntbap" ]; then
   echo -n " - Apply Broadwellntbap Fixes"
   sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' ${RAMDISK_PATH}/usr/syno/share/environments.sh
 fi
