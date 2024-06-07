@@ -32,17 +32,33 @@ BUS=$(getBus "${LOADER_DISK}")
 
 # Offline Mode check
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
-if [ "${OFFLINE}" = "false" ] && [ "${CUSTOM}" = "false" ]; then
-  if ping -I ${ARCNIC} -c 1 "github.com" &> /dev/null; then
+# Get Amount of NIC
+ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
+ARCNIC=""
+if [ "${OFFLINE}" = "false" ]; then
+  for ETH in ${ETHX}; do
+    if ping -I ${ETH} -c 1 "github.com" &> /dev/null && ping -I ${ETH} -c 1 "synology.com" &> /dev/null; then
+      ARCNIC="${ETH}"
+      break
+    fi
+  done
+  if [ -n "${ARCNIC}" ]; then
+    writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
-  else
+  elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" = "false" ]; then
+    writeConfigKey "arc.nic" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
     cp -f "${PART3_PATH}/configs/offline.json" "${ARC_PATH}/include/offline.json"
-    dialog --backtitle "$(backtitle)" --title "Offline Mode" \
-        --msgbox "Can't connect to Github.\nSwitch to Offline Mode!" 0 0
+    dialog --backtitle "$(backtitle)" --title "Online Check" \
+        --msgbox "No online Connection found.\nSwitch to Offline Mode!" 0 0
+  elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" = "true" ]; then
+    dialog --backtitle "$(backtitle)" --title "Online Check" \
+      --infobox "No online Connection found.\nReboot to try again!" 0 0
+    sleep 5
+    exec reboot
   fi
+  ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 fi
 
 # Get Loader Config
@@ -88,13 +104,15 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
 if [ "${OFFLINE}" = "false" ]; then
   # Update Check
-  NEWTAG="$(curl --interface ${ARCNIC} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+  NEWTAG=$(curl --interface ${ARCNIC} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')
   if [ -z "${NEWTAG}" ]; then
     NEWTAG="${ARC_VERSION}"
   fi
   # Timezone
-  REGION="$(curl -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
-  TIMEZONE="$(curl -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
+  REGION=$(curl -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f1)
+  TIMEZONE=$(curl -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f2)
+  writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
+  writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
   ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
   # NTP
   ntptime
@@ -622,21 +640,23 @@ function make() {
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   mkdir -p "${UNTAR_PAT_PATH}"
   if [ "${OFFLINE}" = "false" ]; then
-    # Get PAT Data from Config
-    PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
-    PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
     # Get PAT Data
     dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
       --infobox "Get PAT Data from Syno..." 3 30
     idx=0
-    while [ ${idx} -le 5 ]; do # Loop 3 times, if successful, break
-      PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
-      PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].checksum')"
-      PAT_URL=${PAT_URL%%\?*}
-      if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-        if (echo "${PAT_URL}" | grep -q "https://*"); then
-          VALID=true
-          break
+    while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
+      PAT_DATA=$(curl --interface ${ARCNIC} -skL -m 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}")
+      if [ "$(echo ${PAT_DATA} | jq -r '.success' 2>/dev/null)" = "true" ]; then
+        if echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].label_ext' 2>/dev/null | grep -q 'pat'; then
+          PAT_URL=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].url')
+          PAT_HASH=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].checksum')
+          PAT_URL=${PAT_URL%%\?*}
+          if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+            if echo "${PAT_URL}" | grep -q "https://"; then
+              VALID=true
+              break
+            fi
+          fi
         fi
       fi
       sleep 3
@@ -647,11 +667,11 @@ function make() {
         --infobox "Get PAT Data from Github..." 3 30
       idx=0
       while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-        PAT_URL="$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")"
-        PAT_HASH="$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")"
+        PAT_URL=$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")
+        PAT_HASH=$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")
         PAT_URL=${PAT_URL%%\?*}
         if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-          if (echo "${PAT_URL}" | grep -q "https://*"); then
+          if echo "${PAT_URL}" | grep -q "https://"; then
             VALID=true
             break
           fi
@@ -676,15 +696,16 @@ function make() {
     else
       if [ "${VALID}" = "false" ]; then
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-          --infobox "Could not get PAT Data..." 4 30
+          --msgbox "Could not get PAT Data..." 4 30
         PAT_URL=""
         PAT_HASH=""
         sleep 5
       fi
     fi
     if [ "${VALID}" = "true" ]; then
-      writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+      # Get PAT Data from Config
+      PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
+      PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
       if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
         # Get new Files
         DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
