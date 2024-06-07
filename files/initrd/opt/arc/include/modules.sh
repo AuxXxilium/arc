@@ -14,7 +14,7 @@ function getAllModules() {
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
   local KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
-  if [ "${KERNEL}" = "custom" ]; then
+  if [ "${KERNEL}" == "custom" ]; then
     tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   else
     tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
@@ -49,7 +49,7 @@ function installModules() {
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
   local KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
-  if [ "${KERNEL}" = "custom" ]; then
+  if [ "${KERNEL}" == "custom" ]; then
     tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" 2>"${LOG_FILE}"
   else
     tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" 2>"${LOG_FILE}"
@@ -61,7 +61,7 @@ function installModules() {
   local ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
   for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
     local M=$(basename ${F})
-    [ "${ODP}" = "true" -a -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ] && continue
+    [ "${ODP}" == "true" -a -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ] && continue
     if echo "${MLIST}" | grep -wq "${M:0:-3}"; then
       cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}" 2>"${LOG_FILE}"
     else
@@ -69,7 +69,7 @@ function installModules() {
     fi
   done
   mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
-  if [ "${KERNEL}" = "custom" ]; then
+  if [ "${KERNEL}" == "custom" ]; then
     tar -zxf "${CUSTOM_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
   else
     tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
@@ -101,13 +101,13 @@ function addToModules() {
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
   local KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
-  if [ "${KERNEL}" = "custom" ]; then
+  if [ "${KERNEL}" == "custom" ]; then
     tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   else
     tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   fi
   cp -f ${KOFILE} ${TMP_PATH}/modules
-  if [ "${KERNEL}" = "custom" ]; then
+  if [ "${KERNEL}" == "custom" ]; then
     tar -zcf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" .
   else
     tar -zcf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" .
@@ -132,13 +132,13 @@ function delToModules() {
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
   local KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
-  if [ "${KERNEL}" = "custom" ]; then
+  if [ "${KERNEL}" == "custom" ]; then
     tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   else
     tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   fi
   rm -f ${TMP_PATH}/modules/${KONAME}
-  if [ "${KERNEL}" = "custom" ]; then
+  if [ "${KERNEL}" == "custom" ]; then
     tar -zcf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" .
   else
     tar -zcf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" .
@@ -174,7 +174,7 @@ function getdepends() {
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
   local KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
-  if [ "${KERNEL}" = "custom" ]; then
+  if [ "${KERNEL}" == "custom" ]; then
     tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   else
     tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"

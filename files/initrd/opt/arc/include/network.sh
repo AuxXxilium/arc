@@ -3,19 +3,19 @@ function getnet() {
   ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  if [ "${ARCPATCH}" = "true" ]; then
+  if [ "${ARCPATCH}" == "true" ]; then
     ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
     MACS=($(generateMacAddress "${MODEL}" ${ETHN} true))
     for I in $(seq 1 ${ETHN}); do
       writeConfigKey "mac.eth$((${I} - 1))" "${MACS[$((${I} - 1))]}" "${USER_CONFIG_FILE}"
     done
-  elif [ "${ARCPATCH}" = "false" ]; then
+  elif [ "${ARCPATCH}" == "false" ]; then
     ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
     MACS=($(generateMacAddress "${MODEL}" ${ETHN} false))
     for I in $(seq 1 ${ETHN}); do
       writeConfigKey "mac.eth$((${I} - 1))" "${MACS[$((${I} - 1))]}" "${USER_CONFIG_FILE}"
     done
-  elif [ "${ARCPATCH}" = "user" ]; then
+  elif [ "${ARCPATCH}" == "user" ]; then
     # User Mac
     RET=1
     for ETH in ${ETHX}; do

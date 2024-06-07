@@ -66,8 +66,8 @@ echo
 if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   HASATA=0
   for D in $(lsblk -dpno NAME); do
-    [ "${D}" = "${LOADER_DISK}" ] && continue
-    if [ "$(getBus "${D}")" = "sata" -o "$(getBus "${D}")" = "scsi" ]; then
+    [ "${D}" == "${LOADER_DISK}" ] && continue
+    if [ "$(getBus "${D}")" == "sata" -o "$(getBus "${D}")" == "scsi" ]; then
       HASATA=1
       break
     fi
@@ -107,7 +107,7 @@ else
   CMDLINE['noefi']=""
 fi
 if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
-  if [ ! "${BUS}" = "usb" ]; then
+  if [ ! "${BUS}" == "usb" ]; then
     SZ=$(blockdev --getsz ${LOADER_DISK} 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
     SS=$(blockdev --getss ${LOADER_DISK} 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
     SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
@@ -118,7 +118,7 @@ if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
   fi
   CMDLINE["elevator"]="elevator"
 fi
-if [ "${DT}" = "true" ]; then
+if [ "${DT}" == "true" ]; then
   CMDLINE["syno_ttyS0"]="serial,0x3f8"
   CMDLINE["syno_ttyS1"]="serial,0x2f8"
 else
@@ -137,12 +137,12 @@ CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 CMDLINE["HddHotplug"]="1"
 CMDLINE["vender_format_version"]="2"
-#if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ ! "${BUS}" = "mmc" ] && [ ! "${EMMCBOOT}" = "true" ]; then
-#  [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+#if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ ! "${BUS}" == "mmc" ] && [ ! "${EMMCBOOT}" == "true" ]; then
+#  [ ! "${CMDLINE['modprobe.blacklist']}" == "" ] && CMDLINE['modprobe.blacklist']+=","
 #  CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
 #fi
-if [ "${DT}" = "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
-  [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+if [ "${DT}" == "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
+  [ ! "${CMDLINE['modprobe.blacklist']}" == "" ] && CMDLINE['modprobe.blacklist']+=","
   CMDLINE['modprobe.blacklist']+="mpt3sas"
 fi
 if echo "epyc7002 apollolake geminilake" | grep -wq "${PLATFORM}"; then
@@ -161,9 +161,9 @@ done
 ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
 [ ${NIC} -ne ${ETHN} ] && echo -e "\033[1;31mWarning: NIC mismatch (NICs: ${NIC} | Real: ${ETHN})\033[0m"
 CMDLINE['netif_num']="${NIC}"
-if [ "${MACSYS}" = "hardware" ]; then
+if [ "${MACSYS}" == "hardware" ]; then
   CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-elif [ "${MACSYS}" = "custom" ]; then
+elif [ "${MACSYS}" == "custom" ]; then
   CMDLINE['skip_vender_mac_interfaces']="$(seq -s, ${NIC} 7)"
 fi
 
@@ -182,14 +182,14 @@ done
 CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
 
 # Boot
-if [ "${DIRECTBOOT}" = "true" ]; then
+if [ "${DIRECTBOOT}" == "true" ]; then
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
   grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
   grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
   echo -e "\033[1;34mReboot with Directboot\033[0m"
   exec reboot
   exit 0
-elif [ "${DIRECTBOOT}" = "false" ]; then
+elif [ "${DIRECTBOOT}" == "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
   for ETH in ${ETHX}; do
@@ -244,7 +244,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
   DSMLOGO="$(readConfigKey "arc.dsmlogo" "${USER_CONFIG_FILE}")"
-  if [ "${DSMLOGO}" = "true" ] && [ -c "/dev/fb0" ]; then
+  if [ "${DSMLOGO}" == "true" ] && [ -c "/dev/fb0" ]; then
     [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
     if [ -n "${IPCON}" ]; then
       URL="http://${IPCON}:5000"
@@ -269,6 +269,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
 
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
-  [ "${KERNELLOAD}" = "kexec" ] && kexec -i -a -e || poweroff
+  [ "${KERNELLOAD}" == "kexec" ] && kexec -i -a -e || poweroff
   exit 0
 fi

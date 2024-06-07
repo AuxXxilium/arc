@@ -91,9 +91,9 @@ for ETH in ${ETHX}; do
     MACR="000000000000"
   fi
   initConfigKey "mac.${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
-  if [ "${MACSYS}" = "custom" ]; then
+  if [ "${MACSYS}" == "custom" ]; then
     MACA="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
-    if [ ! "${MACA}" = "${MACR}" ]; then
+    if [ ! "${MACA}" == "${MACR}" ]; then
       MAC="${MACA:0:2}:${MACA:2:2}:${MACA:4:2}:${MACA:6:2}:${MACA:8:2}:${MACA:10:2}"
       echo "Setting ${ETH} MAC to ${MAC}"
       ip link set dev ${ETH} address "${MAC}" >/dev/null 2>&1 || true
@@ -116,7 +116,7 @@ VID="0x46f4"
 PID="0x0001"
 
 BUSLIST="usb sata scsi nvme mmc"
-if [ "${BUS}" = "usb" ]; then
+if [ "${BUS}" == "usb" ]; then
   VID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_VENDOR_ID | cut -d= -f2)"
   PID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_MODEL_ID | cut -d= -f2)"
 elif ! echo "${BUSLIST}" | grep -wq "${BUS}"; then
@@ -152,7 +152,7 @@ elif grep -q "automated_arc" /proc/cmdline; then
   echo -e "\033[1;34mStarting automated Build Mode...\033[0m"
 elif grep -q "update_arc" /proc/cmdline; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
-elif [ "${BUILDDONE}" = "true" ]; then
+elif [ "${BUILDDONE}" == "true" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
   boot.sh && exit 0
 else
@@ -171,7 +171,7 @@ for ETH in ${ETHX}; do
   COUNT=0
   while true; do
     ARCIP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
-    if [ "${STATICIP}" = "true" ] && [ -n "${ARCIP}" ]; then
+    if [ "${STATICIP}" == "true" ] && [ -n "${ARCIP}" ]; then
       NETMASK="$(readConfigKey "netmask.${ETH}" "${USER_CONFIG_FILE}")"
       GATEWAY="$(readConfigKey "gateway.${ETH}" "${USER_CONFIG_FILE}")"
       NAMESERVER="$(readConfigKey "nameserver.${ETH}" "${USER_CONFIG_FILE}")"

@@ -49,7 +49,7 @@ function addonSelection() {
   touch "${TMP_PATH}/opts"
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
-    if [ "${ADDON}" = "cpufreqscaling" ]; then
+    if [ "${ADDON}" == "cpufreqscaling" ]; then
       [ ! -d "/sys/devices/system/cpu/cpu0/cpufreq" ] && continue
     fi
     echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
@@ -192,7 +192,7 @@ function modulesMenu() {
           --ok-label "Proceed" --msgbox "Please upload the *.ko file to /tmp/users.\n- Use SFTP at ${IPCON}:22 User: root PW: arc\n- Use Webclient at http://${IPCON}:7304" 7 50
         for F in $(ls "${TMP_UP_PATH}" 2>/dev/null); do
           USER_FILE="${F}"
-          if [ -n "${USER_FILE}" ] && [ "${USER_FILE##*.}" = "ko" ]; then
+          if [ -n "${USER_FILE}" ] && [ "${USER_FILE##*.}" == "ko" ]; then
             KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
             # Modify KVER for Epyc7002
             if [ "${PLATFORM}" == "epyc7002" ]; then
@@ -572,7 +572,7 @@ function keymapMenu() {
 # Shows storagepanel menu to user
 function storagepanelMenu() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-  if [ "${CONFDONE}" = "true" ]; then
+  if [ "${CONFDONE}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --title "StoragePanel" \
       --aspect 18 --msgbox "StoragePanel Addon enabled." 0 0
     ITEMS="$(echo -e "RACK_2_Bay \nRACK_4_Bay \nRACK_8_Bay \nRACK_12_Bay \nRACK_16_Bay \nRACK_24_Bay \nRACK_60_Bay \nTOWER_1_Bay \nTOWER_2_Bay \nTOWER_4_Bay \nTOWER_6_Bay \nTOWER_8_Bay \nTOWER_12_Bay \n")"
@@ -713,7 +713,7 @@ function backupMenu() {
           rm -rf "${TMP_PATH}/mdX" >/dev/null
         ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Backup Encrytion Key" \
           --progressbox "Backup Encryption Key ..." 20 70
-        if [ "${BACKUPKEY}" = "true" ]; then
+        if [ "${BACKUPKEY}" == "true" ]; then
           dialog --backtitle "$(backtitle)" --title "Backup Encrytion Key"  \
             --msgbox "Encryption Key backup successful!" 0 0
         else
@@ -770,7 +770,7 @@ function updateMenu() {
         fi
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
           --infobox "Downloading ${TAG}" 0 0
-        if [ "${ACTUALVERSION}" = "${TAG}" ]; then
+        if [ "${ACTUALVERSION}" == "${TAG}" ]; then
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
             --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
           [ $? -ne 0 ] && return 1
@@ -933,7 +933,7 @@ function storageMenu() {
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   # Get Portmap for Loader
   getmap
-  if [ "${DT}" = "false" ] && [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
+  if [ "${DT}" == "false" ] && [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
     getmapSelection
   fi
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -964,7 +964,7 @@ function sysinfo() {
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  if [ "${CONFDONE}" = "true" ]; then
+  if [ "${CONFDONE}" == "true" ]; then
     MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
     MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -974,12 +974,12 @@ function sysinfo() {
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
     REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
-    if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
+    if [ "${REMAP}" == "acports" ] || [ "${REMAP}" == "maxports" ]; then
       PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
       DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
-    elif [ "${REMAP}" = "remap" ]; then
+    elif [ "${REMAP}" == "remap" ]; then
       PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
-    elif [ "${REMAP}" = "ahci" ]; then
+    elif [ "${REMAP}" == "ahci" ]; then
       PORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
     fi
   fi
@@ -1018,7 +1018,7 @@ function sysinfo() {
     MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
     COUNT=0
     while true; do
-      if [ "${STATICIP}" = "true" ]; then
+      if [ "${STATICIP}" == "true" ]; then
         IP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
         MSG="STATIC"
       else
@@ -1066,14 +1066,14 @@ function sysinfo() {
   TEXT+="\n   MacSys: \Zb${MACSYS}\Zn"
   TEXT+="\n   IPv6: \Zb${ARCIPV6}\Zn"
   TEXT+="\n   Offline Mode: \Zb${OFFLINE}\Zn"
-  if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
+  if [[ "${REMAP}" == "acports" || "${REMAP}" == "maxports" ]]; then
     TEXT+="\n   SataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
-  elif [ "${REMAP}" = "remap" ]; then
+  elif [ "${REMAP}" == "remap" ]; then
     TEXT+="\n   SataRemap: \Zb${PORTMAP}\Zn"
-  elif [ "${REMAP}" = "user" ]; then
+  elif [ "${REMAP}" == "user" ]; then
     TEXT+="\n   PortMap: \Zb"User"\Zn"
   fi
-  if [ "${DT}" = "true" ]; then
+  if [ "${DT}" == "true" ]; then
     TEXT+="\n   Hotplug: \Zb${HDDSORT}\Zn"
   fi
   TEXT+="\n"
@@ -1091,8 +1091,8 @@ function sysinfo() {
       PORTS=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       for P in ${PORTS}; do
         if lsscsi -b | grep -v - | grep -q "\[${P}:"; then
-          DUMMY="$([ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ] && echo 1 || echo 2)"
-          if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ]; then
+          DUMMY="$([ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" == "0" ] && echo 1 || echo 2)"
+          if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" == "0" ]; then
             TEXT+="\Z1\Zb$(printf "%02d" ${P})\Zn "
           else
             TEXT+="\Z2\Zb$(printf "%02d" ${P})\Zn "
@@ -1200,7 +1200,7 @@ function fullsysinfo() {
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  if [ "${CONFDONE}" = "true" ]; then
+  if [ "${CONFDONE}" == "true" ]; then
     MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
     MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -1210,12 +1210,12 @@ function fullsysinfo() {
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
     REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
-    if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
+    if [ "${REMAP}" == "acports" ] || [ "${REMAP}" == "maxports" ]; then
       PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
       DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
-    elif [ "${REMAP}" = "remap" ]; then
+    elif [ "${REMAP}" == "remap" ]; then
       PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
-    elif [ "${REMAP}" = "ahci" ]; then
+    elif [ "${REMAP}" == "ahci" ]; then
       PORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
     fi
   fi
@@ -1254,7 +1254,7 @@ function fullsysinfo() {
     MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
     COUNT=0
     while true; do
-      if [ "${STATICIP}" = "true" ]; then
+      if [ "${STATICIP}" == "true" ]; then
         IP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
         MSG="STATIC"
       else
@@ -1311,14 +1311,14 @@ function fullsysinfo() {
   TEXT+="\nMacSys: ${MACSYS}"
   TEXT+="\nIPv6: ${ARCIPV6}"
   TEXT+="\nOffline Mode: ${OFFLINE}"
-  if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
+  if [[ "${REMAP}" == "acports" || "${REMAP}" == "maxports" ]]; then
     TEXT+="\nSataPortMap | DiskIdxMap: ${PORTMAP} | ${DISKMAP}"
-  elif [ "${REMAP}" = "remap" ]; then
+  elif [ "${REMAP}" == "remap" ]; then
     TEXT+="\nSataRemap: ${PORTMAP}"
-  elif [ "${REMAP}" = "user" ]; then
+  elif [ "${REMAP}" == "user" ]; then
     TEXT+="\nPortMap: "User""
   fi
-  if [ "${DT}" = "true" ]; then
+  if [ "${DT}" == "true" ]; then
     TEXT+="\nHotplug: ${HDDSORT}"
   fi
   TEXT+="\n"
@@ -1336,8 +1336,8 @@ function fullsysinfo() {
       PORTS=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       for P in ${PORTS}; do
         if lsscsi -b | grep -v - | grep -q "\[${P}:"; then
-          DUMMY="$([ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ] && echo 1 || echo 2)"
-          if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ]; then
+          DUMMY="$([ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" == "0" ] && echo 1 || echo 2)"
+          if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" == "0" ]; then
             TEXT+=""
           else
             TEXT+="$(printf "%02d" ${P}) "
@@ -1461,7 +1461,7 @@ function networkdiag() {
       MSG+="Connection to ${website} failed.\n"
     fi
   done
-  if [ "${CONFDONE}" = "true" ]; then
+  if [ "${CONFDONE}" == "true" ]; then
     GITHUBAPI="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
     if [[ $? -ne 0 || -z "${GITHUBAPI}" ]]; then
       MSG+="\nGithub API not reachable!"
@@ -1525,7 +1525,7 @@ function staticIPMenu() {
     TEXT+="Actual Settings are:\n"
     TEXT+="\nNIC: ${ETH} (${DRIVER})\n"
     TEXT+="StaticIP: ${STATIC}\n"
-    if [ "${STATIC}" = "true" ]; then
+    if [ "${STATIC}" == "true" ]; then
       IPADDR="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
       NETMASK="$(readConfigKey "netmask.${ETH}" "${USER_CONFIG_FILE}")"
       GATEWAY="$(readConfigKey "gateway.${ETH}" "${USER_CONFIG_FILE}")"
@@ -1738,7 +1738,7 @@ EOF
     rm -rf "${TMP_PATH}/mdX" >/dev/null
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Add DSM User" \
     --progressbox "Adding ..." 20 100
-  [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Add DSM User successful." || MSG="Add DSM User failed."
+  [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" == "true" ] && MSG="Add DSM User successful." || MSG="Add DSM User failed."
   dialog --backtitle "$(backtitle)" --title "Add DSM User" \
     --msgbox "${MSG}" 0 0
   return
@@ -1784,7 +1784,7 @@ function formatdisks() {
   while read KNAME SIZE PKNAME; do
     [ -z "${KNAME}" ] && continue
     [[ "${KNAME}" = /dev/md* ]] && continue
-    [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
+    [[ "${KNAME}" == "${LOADER_DISK}" || "${PKNAME}" == "${LOADER_DISK}" ]] && continue
     [ -n "${PKNAME}" ] && PARTITION=" (Partition)" || PARTITION=" (Disk)"
     [ -z "${SIZE}" ] && SIZE="Unknown"
     echo "\"${KNAME}\" \"${SIZE}${PARTITION}\" \"off\"" >>"${TMP_PATH}/opts"
@@ -1874,7 +1874,7 @@ EOF
     rm -rf "${TMP_PATH}/mdX" >/dev/null
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Force enable SSH"  \
     --progressbox "$(TEXT "Enabling ...")" 20 100
-  [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Enable Telnet&SSH successfully." || MSG="Enable Telnet&SSH failed."
+  [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" == "true" ] && MSG="Enable Telnet&SSH successfully." || MSG="Enable Telnet&SSH failed."
   dialog --backtitle "$(backtitle)" --title "Force enable SSH"  \
     --msgbox "${MSG}" 0 0
   return
@@ -1887,7 +1887,7 @@ function cloneLoader() {
   while read -r KNAME KMODEL PKNAME TYPE; do
     [ -z "${KNAME}" ] && continue
     [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
-    [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] || [ "${KMODEL}" = "${LOADER_DISK}" ] && continue
+    [ "${KNAME}" == "${LOADER_DISK}" ] || [ "${PKNAME}" == "${LOADER_DISK}" ] || [ "${KMODEL}" == "${LOADER_DISK}" ] && continue
     echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
   done < <(lsblk -dpno KNAME,MODEL,PKNAME,TYPE | sort)
   if [ ! -f "${TMP_PATH}/opts" ]; then
