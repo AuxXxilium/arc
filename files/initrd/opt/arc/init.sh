@@ -187,6 +187,10 @@ for ETH in ${ETHX}; do
       writeConfigKey "static.${ETH}" "false" "${USER_CONFIG_FILE}"
       MSG="DHCP"
     fi
+    if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
+      echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
+      break
+    fi
     if [ -n "${IP}" ]; then
       SPEED="$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')"
       writeConfigKey "ip.${ETH}" "${IP}" "${USER_CONFIG_FILE}"
@@ -200,15 +204,9 @@ for ETH in ${ETHX}; do
     fi
     if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
       echo -e echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
-      deleteConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}"
       break
     fi
     sleep 3
-    if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
-      echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
-      deleteConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}"
-      break
-    fi
     COUNT=$((${COUNT} + 3))
   done
 done

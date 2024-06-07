@@ -199,6 +199,10 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
     while true; do
       IP="$(getIP ${ETH})"
       MSG="DHCP"
+      if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
+        echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
+        break
+      fi
       if [ -n "${IP}" ]; then
         SPEED="$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')"
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
@@ -215,10 +219,6 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
         break
       fi
       sleep 3
-      if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
-        echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
-        break
-      fi
       COUNT=$((${COUNT} + 3))
     done
   done
