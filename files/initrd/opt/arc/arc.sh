@@ -115,8 +115,8 @@ if [ "${OFFLINE}" == "false" ]; then
   writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
   ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
   # NTP
-  /etc/init.d/S49ntpd restart 2>/dev/null || true
-  hwclock -w 2>/dev/null || true
+  /etc/init.d/S49ntpd restart > /dev/null 2>&1
+  hwclock -w > /dev/null 2>&1
 fi
 
 ###############################################################################
