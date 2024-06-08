@@ -50,7 +50,7 @@ function getmap() {
   if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::107 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
       SASDRIVES=$((${SASDRIVES} + ${PORTNUM}))
     done
@@ -60,7 +60,7 @@ function getmap() {
   if [ $(lspci -d ::100 | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::100 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort - 2>/dev/null)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
       SCSIDRIVES=$((${SCSIDRIVES} + ${PORTNUM}))
     done
@@ -70,7 +70,7 @@ function getmap() {
   if [ $(lspci -d ::104 | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::104 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
       RAIDDRIVES=$((${RAIDDRIVES} + ${PORTNUM}))
     done
@@ -80,7 +80,7 @@ function getmap() {
   if [[ -d "/sys/class/scsi_host" && $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]]; then
     for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
       [ ${PORTNUM} -eq 0 ] && continue
       USBDRIVES=$((${USBDRIVES} + ${PORTNUM}))
@@ -91,7 +91,7 @@ function getmap() {
   if [[ -d "/sys/class/mmc_host" && $(ls -l /sys/class/mmc_host | grep mmc_host | wc -l) -gt 0 ]]; then
     for PCI in $(lspci -d ::805 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-      PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l)
+      PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l 2>/dev/null)
       [ ${PORTNUM} -eq 0 ] && continue
       MMCDRIVES=$((${MMCDRIVES} + ${PORTNUM}))
     done
@@ -101,7 +101,7 @@ function getmap() {
   if [ $(lspci -d ::108 | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::108 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-      PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
+      PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n 2>/dev/null)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[N:${PORT}:" | wc -l)
       NVMEDRIVES=$((${NVMEDRIVES} + ${PORTNUM}))
     done
