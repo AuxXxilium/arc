@@ -32,22 +32,19 @@ BUS=$(getBus "${LOADER_DISK}")
 
 # Offline Mode check
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-ARCNIC=""
 if [ "${OFFLINE}" == "false" ]; then
   CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   # Get Amount of NIC
   ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
   for ETH in ${ETHX}; do
     if ping -I ${ETH} -c 1 "github.com" > /dev/null 2>&1; then
-      ARCNIC="${ETH}"
+      ARCNIC=${ETH}
       break
     fi
   done
   if [ -n "${ARCNIC}" ]; then
-    writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
   elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" == "false" ]; then
-    writeConfigKey "arc.nic" "eth0" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
     cp -f "${PART3_PATH}/configs/offline.json" "${ARC_PATH}/include/offline.json"
     dialog --backtitle "$(backtitle)" --title "Online Check" \
@@ -58,8 +55,9 @@ if [ "${OFFLINE}" == "false" ]; then
     sleep 5
     exec reboot
   fi
-  ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 fi
+writeConfigKey "arc.nic" "${ARCNIC:-eth0}" "${USER_CONFIG_FILE}"
+ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
