@@ -47,7 +47,7 @@ if [ "${OFFLINE}" == "false" ]; then
     writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
   elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" == "false" ]; then
-    writeConfigKey "arc.nic" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.nic" "eth0" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
     cp -f "${PART3_PATH}/configs/offline.json" "${ARC_PATH}/include/offline.json"
     dialog --backtitle "$(backtitle)" --title "Online Check" \
