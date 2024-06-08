@@ -191,6 +191,7 @@ if [ "${DIRECTBOOT}" == "true" ]; then
   exit 0
 elif [ "${DIRECTBOOT}" == "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
+  [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
   echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
   for ETH in ${ETHX}; do
     IP=""
@@ -223,7 +224,7 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
     done
   done
   # Exec Bootwait to check SSH/Web connection
-  BOOTWAIT=1
+  BOOTWAIT=5
   w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
   while test ${BOOTWAIT} -ge 0; do
