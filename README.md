@@ -7,7 +7,7 @@ Arc is a customized Redpill Loader for DSM 7.x (Xpenology) with enhanced Hardwar
 
 ### Bugreport
 
-- Before you report an issue or bug please read the <a href="https://github.com/AuxXxilium/AuxXxilium/wiki">Wiki</a> and make sure your setting are correct.
+- Before you report an issue or bug please read the <a href="https://auxxxilium.tech/wiki">FAQ & Wiki</a> and make sure your setting are correct.
 - If you have to report an issue or bug:
     - Hardware you use (Networkchip, Sata/HBA/Raid Controller)
     - Screenshot the Systeminfo (Arc - Sysinfo) or use new "Full Sysinfo - Upload" Function and provide the Code!!! <- IMPORTANT
@@ -15,9 +15,9 @@ Arc is a customized Redpill Loader for DSM 7.x (Xpenology) with enhanced Hardwar
 ### Links
 
 - <a href="https://github.com/AuxXxilium">Overview</a>
-- <a href="https://github.com/AuxXxilium/AuxXxilium/wiki">Wiki and Informations</a>
+- <a href="https://auxxxilium.tech/wiki">FAQ & Wiki</a>
 - <a href="https://github.com/AuxXxilium/arc/releases?q=prerelease%3Afalse&expanded=true">Download latest Build</a>
-- <a href="https://auxxxilium.github.io/arc">Build your own</a>
+- <a href="https://auxxxilium.github.io/arc">Customized Build with automated Config</a>
 
 ### Thanks
 For code and ideas based on the work of TTG, pocopico, jumkey, fbelavenuto, wjz304 and others involved in continuing TTG's original redpill-load project.
