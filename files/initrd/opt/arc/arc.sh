@@ -712,6 +712,9 @@ function make() {
       PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
       PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
       if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+        # Write new PAT Data to Config
+        writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
         # Get new Files
         DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
         DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
