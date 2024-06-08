@@ -144,7 +144,7 @@ function getmapSelection() {
   CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   if [ "${CUSTOM}" == "false" ]; then
     # Show recommended Option to user
-    if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" == "true" ] && [ "${MACHINE}" == "NATIVE" ]]; then
+    if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" == "true" ] && [ "${MACHINE}" == "NATIVE" ]; then
       REMAP2="*"
     elif [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" == "false" ]; then
       REMAP3="*"
@@ -176,9 +176,9 @@ function getmapSelection() {
     fi
   else
     # Show recommended Option to user
-    if [[ -n "${SATAREMAP}" && "${EXTERNALCONTROLLER}" == "true" && "${MACHINE}" == "NATIVE" ]]; then
+    if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" == "true" ] && [ "${MACHINE}" == "NATIVE" ]; then
       writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}"
-    elif [[ -n "${SATAREMAP}" && "${EXTERNALCONTROLLER}" == "false" ]]; then
+    elif [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" == "false" ]; then
       writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}"
     else
       writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}"
