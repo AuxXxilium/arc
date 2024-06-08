@@ -52,6 +52,9 @@ function addonSelection() {
     if [ "${ADDON}" == "cpufreqscaling" ]; then
       [ ! -d "/sys/devices/system/cpu/cpu0/cpufreq" ] && continue
     fi
+    if [ "${ADDON}" == "amepatch" ] && [ "${OFFLINE}" == "true" ]; then
+      continue
+    fi
     echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
   done < <(availableAddons "${PLATFORM}")
   dialog --backtitle "$(backtitle)" --title "DSM Addons" --aspect 18 \
