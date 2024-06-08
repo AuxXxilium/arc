@@ -222,6 +222,9 @@ jobs:
           body: |
             ### Notice: ${{ inputs.notice }}
 
+            ### Full Changelog:
+            Can be found in my Discord.
+
             ### Arc Patch Key:
             Decryption Key can be found in my Discord.
 
