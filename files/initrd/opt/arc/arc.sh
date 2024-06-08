@@ -77,6 +77,7 @@ if [ -n "${MODEL}" ]; then
 fi
 
 # Get Arc Data from Config
+ARC_KEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
 ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
@@ -902,7 +903,7 @@ else
   [ "${BUILDDONE}" == "true" ] && NEXT="3" || NEXT="1"
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
-    if [ -z "${ARCCONF}" ]; then
+    if [ -z "${ARC_KEY}" ]; then
       echo "0 \"Decrypt Arc Patch \" "                                                        >>"${TMP_PATH}/menu"
     fi
     echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"

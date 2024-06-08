@@ -605,6 +605,7 @@ function backupMenu() {
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       1 "Restore Config from DSM" \
       2 "Restore Encryption Key from DSM" \
+      3 "Backup Encryption Key to DSM" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     case "$(cat ${TMP_PATH}/resp)" in
@@ -637,6 +638,8 @@ function backupMenu() {
               PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
               DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
               CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+              writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
+              ARC_KEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
               writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
               BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
               break
@@ -1959,6 +1962,7 @@ function resetLoader() {
     # Clean old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
   fi
+  writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}" >/dev/null
   [ -f "${USER_CONFIG_FILE}" ] && rm -f "${USER_CONFIG_FILE}" >/dev/null
     dialog --backtitle "$(backtitle)" --title "Reset Loader" --aspect 18 \
@@ -2089,6 +2093,10 @@ function decryptMenu() {
     fi
   fi
   ARC_KEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  if [ -n "${MODEL}" ]; then
+    ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
+  fi
   return
 }
 
