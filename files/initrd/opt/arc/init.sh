@@ -61,8 +61,8 @@ initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "device.externalcontroller" "false" "${USER_CONFIG_FILE}"
 initConfigKey "gateway" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "ip" "{}" "${USER_CONFIG_FILE}"
-initConfigKey "keymap" "de" "${USER_CONFIG_FILE}"
-initConfigKey "layout" "qwertz" "${USER_CONFIG_FILE}"
+initConfigKey "keymap" "" "${USER_CONFIG_FILE}"
+initConfigKey "layout" "" "${USER_CONFIG_FILE}"
 initConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
 initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "nameserver" "{}" "${USER_CONFIG_FILE}"
@@ -136,9 +136,11 @@ LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 
 # Loads a keymap if is valid
-if [ -f "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" ]; then
-  echo -e "Loading Keymap: \033[1;34m${LAYOUT}/${KEYMAP}\033[0m"
-  zcat "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" | loadkeys
+if [ -n "${LAYOUT}" ] && [ -n "${KEYMAP}" ]; then
+  if [ -f "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" ]; then
+    echo -e "Loading User Keymap: \033[1;34m${LAYOUT}/${KEYMAP}\033[0m"
+    zcat "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" | loadkeys
+  fi
 fi
 echo
 

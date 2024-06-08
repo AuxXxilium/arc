@@ -61,10 +61,6 @@ if [ "${OFFLINE}" == "false" ]; then
   ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 fi
 
-# Get Loader Config
-LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
-KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
@@ -103,6 +99,10 @@ SASCONTROLLER="$(readConfigKey "device.sascontroller" "${USER_CONFIG_FILE}")"
 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
+# Get Loader Config
+LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
+KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+
 if [ "${OFFLINE}" == "false" ]; then
   # Update Check
   NEWTAG=$(curl --interface ${ARCNIC} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')
@@ -110,15 +110,19 @@ if [ "${OFFLINE}" == "false" ]; then
     NEWTAG="${ARC_VERSION}"
   fi
   # Timezone
-  REGION=$(curl --interface ${ARCNIC} -m 5 -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f1)
-  TIMEZONE=$(curl --interface ${ARCNIC} -m 5 -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f2)
-  writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
-  writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
+  GETREGION=$(curl --interface ${ARCNIC} -m 5 -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f1)
+  GETTIMEZONE=$(curl --interface ${ARCNIC} -m 5 -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f2)
+  GETKEYMAP=$(curl --interface ${ARCNIC} -m 5 -v http://ip-api.com/line?fields=countryCode 2>/dev/null | tr '[:upper:]' '[:lower:]')
+  writeConfigKey "time.region" "${GETREGION}" "${USER_CONFIG_FILE}"
+  writeConfigKey "time.timezone" "${GETTIMEZONE}" "${USER_CONFIG_FILE}"
+  [ -z "{KEYMAP}" ] && writeConfigKey "keymap" "${GETKEYMAP}" "${USER_CONFIG_FILE}"
+  KEYMAP=${GETKEYMAP}
   ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
   # NTP
   /etc/init.d/S49ntpd restart > /dev/null 2>&1
   hwclock -w > /dev/null 2>&1
 fi
+loadkeys ${KEYMAP:-en}
 
 ###############################################################################
 # Mounts backtitle dynamically
