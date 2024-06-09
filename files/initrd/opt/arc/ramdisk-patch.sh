@@ -174,31 +174,9 @@ done
 
 # User Addons
 for ADDON in ${!ADDONS[@]}; do
-  if [[ "${ADDON}" == *"hdddb"* ]]; then
-    PARAMS=${ADDONS[${ADDON}]}
-    installAddon "${ADDON}" "${PLATFORM}" || exit 1
-    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
-  elif [[ "${ADDON}" == *"deduplication"* ]]; then
-    PARAMS=${ADDONS[${ADDON}]}
-    installAddon "${ADDON}" "${PLATFORM}" || exit 1
-    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
-  elif [[ "${ADDON}" == *"cpuinfo"* ]]; then
-    PARAMS=${ADDONS[${ADDON}]}
-    installAddon "${ADDON}" "${PLATFORM}" || exit 1
-    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
-  elif [[ "${ADDON}" == *"acpid"* ]]; then
-    PARAMS=${ADDONS[${ADDON}]}
-    installAddon "${ADDON}" "${PLATFORM}" || exit 1
-    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
-  elif [[ "${ADDON}" == *"cpufreqscaling"* ]]; then
-    PARAMS=${ADDONS[${ADDON}]}
-    installAddon "${ADDON}" "${PLATFORM}" || exit 1
-    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
-  else
-    PARAMS=${ADDONS[${ADDON}]}
-    installAddon "${ADDON}" "${PLATFORM}" || exit 1
-    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
-  fi
+  PARAMS=${ADDONS[${ADDON}]}
+  installAddon "${ADDON}" "${PLATFORM}" || exit 1
+  echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 done
 
 # Enable Telnet
