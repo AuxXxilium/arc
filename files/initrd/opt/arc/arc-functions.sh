@@ -808,8 +808,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
           --yesno "Arc Upgrade successful. New Version: ${TAG}\nUse Recover from DSM to get your old Config.\nReboot?" 0 0
         [ $? -ne 0 ] && return 1
-        exec reboot
-        exit 0
+        exec reboot && exit 0
         ;;
       2)
         # Ask for Tag
