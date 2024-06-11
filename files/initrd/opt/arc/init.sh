@@ -82,6 +82,9 @@ initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 
 # Init Network
 ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
+if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
+  _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
+fi
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 # Write Mac to config
 NIC=0
