@@ -47,7 +47,7 @@ PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
-RAMTOTAL=$(($(free -m | grep -i mem | awk '{print$2}') / 1024 + 1))
+RAMTOTAL=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024}' /proc/meminfo 2>/dev/null)
 RAM="${RAMTOTAL}GB"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
 
@@ -225,12 +225,12 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
   done
   # Exec Bootwait to check SSH/Web connection
   BOOTWAIT=5
-  w | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
+  w -h 2>/dev/null | awk '{print $1" "$2" "$3}' >WB
   MSG=""
   while test ${BOOTWAIT} -ge 0; do
     MSG="\033[1;33mAccess SSH/Web will interrupt boot...\033[0m"
     echo -en "\r${MSG}"
-    w | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
+    w -h 2>/dev/null | awk '{print $1" "$2" "$3}' >WC
     if ! diff WB WC >/dev/null 2>&1; then
       echo -en "\r\033[1;33mAccess SSH/Web detected and boot is interrupted.\033[0m\n"
       rm -f WB WC
@@ -262,7 +262,7 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
   KEXECARGS=""
   kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37m"Booting DSM..."\033[0m"
-  for T in $(w | grep -v "TTY" | awk -F' ' '{print $2}'); do
+  for T in $(w -h 2>/dev/null | awk '{print $2}'); do
     [ -w "/dev/${T}" ] && echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\nUse \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
   done
 

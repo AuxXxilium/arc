@@ -15,7 +15,7 @@
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
 # Memory: Check Memory installed
-RAMFREE=$(($(free -m | grep -i mem | awk '{print$2}') / 1024 + 1))
+RAMFREE=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
 RAMTOTAL=$((${RAMFREE} * 1024))
 [ -z "${RAMTOTAL}" ] && RAMTOTAL=8192
 
@@ -640,6 +640,8 @@ function make() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+  PAT_URL=""
+  PAT_HASH=""
   VALID=false
   # Cleanup
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
@@ -688,8 +690,6 @@ function make() {
     if [ "${CUSTOM}" == "false" ] && [ "${VALID}" == "false" ]; then
         MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
         MSG+="You will find these Data at:\nhttps://download.synology.com"
-        PAT_URL=""
-        PAT_HASH=""
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
           --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 7 100 0 \
           2>"${TMP_PATH}/resp"
