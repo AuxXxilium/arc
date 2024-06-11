@@ -600,7 +600,7 @@ function arcSummary() {
   [ -n "${PORTMAP}" ] && SUMMARY+="\n>> SataPortmap: \Zb${PORTMAP}\Zn"
   [ -n "${DISKMAP}" ] && SUMMARY+="\n>> DiskIdxMap: \Zb${DISKMAP}\Zn"
   [ -n "${PORTREMAP}" ] && SUMMARY+="\n>> SataRemap: \Zb${PORTREMAP}\Zn"
-  SUMMARY+="\n>> Sort Drives: \Zb${HDDSORT}\Zn"
+  [ "${DT}" == "true" ] && SUMMARY+="\n>> Sort Drives: \Zb${HDDSORT}\Zn"
   SUMMARY+="\n>> IPv6: \Zb${ARCIPV6}\Zn"
   SUMMARY+="\n>> Offline Mode: \Zb${OFFLINE}\Zn"
   SUMMARY+="\n>> Directboot: \Zb${DIRECTBOOT}\Zn"
