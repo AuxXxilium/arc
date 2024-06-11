@@ -108,12 +108,11 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           resizeImg "arc.img" "+1024M" "arc-2G.img"
+          mv -f "arc-2G.img" "arc.img"
 
           echo "Image Converter"
           qemu-img convert -O vmdk arc.img arc-dyn.vmdk
-          qemu-img convert -O vmdk arc-2G.img arc-2G-dyn.vmdk
           qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
-          qemu-img convert -O vmdk -o adapter_type=lsilogic arc-2G.img -o subformat=monolithicFlat arc-2G.vmdk
 
           echo "Create Arc ova"
           convertova "arc.img" "arc.ova"
@@ -123,11 +122,8 @@ jobs:
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
             zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
-            zip -9 "arc-${{ env.VERSION }}-2G.img.zip" arc-2G.img
             zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
-            zip -9 "arc-${{ env.VERSION }}-2G.vmdk-dyn.zip" arc-2G-dyn.vmdk
             zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            zip -9 "arc-${{ env.VERSION }}-2G.vmdk-flat.zip" arc-2G.vmdk arc-2G-flat.vmdk
             zip -9 "arc-${{ env.VERSION }}.ova.zip" arc.ova
           else
             zip -9 "arc.img.zip" arc.img
