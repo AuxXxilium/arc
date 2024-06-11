@@ -182,21 +182,32 @@ jobs:
 
           sudo losetup --detach ${LOOPX}
 
+          resizeImg "arc.img" "+1024M" "arc-2G.img"
+
           echo "Image Converter"
           qemu-img convert -O vmdk arc.img arc-dyn.vmdk
+          qemu-img convert -O vmdk arc-2G.img arc-2G-dyn.vmdk
           qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
+          qemu-img convert -O vmdk -o adapter_type=lsilogic arc-2G.img -o subformat=monolithicFlat arc-2G.vmdk
+
+          echo "Create Arc ova"
+          convertova "arc.img" "arc.ova"
 
       # Zip image and generate checksum
       - name: Pack
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
-            zip -9 arc-${{ env.VERSION }}.img.zip arc.img
-            zip -9 arc-${{ env.VERSION }}.vmdk-dyn.zip arc-dyn.vmdk
-            zip -9 arc-${{ env.VERSION }}.vmdk-flat.zip arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
+            zip -9 "arc-${{ env.VERSION }}-2G.img.zip" arc-2G.img
+            zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}-2G.vmdk-dyn.zip" arc-2G-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}-2G.vmdk-flat.zip" arc-2G.vmdk arc-2G-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}.ova.zip" arc.ova
           else
-            zip -9 arc.img.zip arc.img
+            zip -9 "arc.img.zip" arc.img
           fi
-          zip -9j update.zip files/p3/bzImage-arc files/p3/initrd-arc files/p1/ARC-VERSION files/p1/boot/grub/grub.cfg
+          zip -9j update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
           sha256sum update.zip >checksum.sha256
 
       # Upload artifact
@@ -240,8 +251,6 @@ jobs:
             Changelog:
               ${{ steps.Changelog.outputs.changelog }}
           artifacts: |
-            arc-${{ env.VERSION }}.img.zip
-            arc-${{ env.VERSION }}.vmdk-dyn.zip
-            arc-${{ env.VERSION }}.vmdk-flat.zip
+            arc-*.zip
             update.zip
             checksum.sha256
