@@ -606,7 +606,7 @@ function backupMenu() {
   NEXT="1"
   while true; do
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
-      1 "Restore Config from DSM" \
+      1 "Restore Arc Config from DSM" \
       2 "Restore Encryption Key from DSM" \
       3 "Backup Encryption Key to DSM" \
       2>"${TMP_PATH}/resp"
@@ -615,7 +615,7 @@ function backupMenu() {
       1)
         DSMROOTS="$(findDSMRoot)"
         if [ -z "${DSMROOTS}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Restore Config" \
+          dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
             --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
           return
         fi
@@ -636,7 +636,7 @@ function backupMenu() {
               TEXT+="\nSerial: ${SN}"
               ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
               TEXT+="\nArc Patch: ${ARCPATCH}"
-              dialog --backtitle "$(backtitle)" --title "Restore Config" \
+              dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
                 --aspect 18 --msgbox "${TEXT}" 0 0
               PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
               DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
@@ -650,7 +650,7 @@ function backupMenu() {
           fi
         done
         if [ -f "${USER_CONFIG_FILE}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Restore Config" \
+          dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
             --aspect 18 --msgbox "Config restore successful!" 0 0
           # Ask for Build
           dialog --clear --backtitle "$(backtitle)" \
@@ -661,13 +661,13 @@ function backupMenu() {
           resp=$(cat ${TMP_PATH}/resp)
           [ -z "${resp}" ] && return 1
           if [ ${resp} -eq 1 ]; then
-            premake
+            arcSummary
           elif [ ${resp} -eq 2 ]; then
             dialog --clear --no-items --backtitle "$(backtitle)"
             return 1
           fi
         else
-          dialog --backtitle "$(backtitle)" --title "Restore Config" \
+          dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
             --aspect 18 --msgbox "No Config found!" 0 0
         fi
         ;;
@@ -1010,7 +1010,7 @@ function sysinfo() {
   TEXT+="\n\Z4> System: ${MACHINE} | ${BOOTSYS}\Zn"
   TEXT+="\n  Vendor: \Zb${VENDOR}\Zn"
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
-  TEXT+="\n  Memory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
+  TEXT+="\n  Memory: \Zb$((${RAMTOTAL}))GB\Zn"
   TEXT+="\n  Date: \Zb${DATE}\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${NIC} NIC\Zn"
@@ -1246,7 +1246,7 @@ function fullsysinfo() {
   TEXT+="\nSystem: ${MACHINE} | ${BOOTSYS}"
   TEXT+="\nVendor: ${VENDOR}"
   TEXT+="\nCPU: ${CPU}"
-  TEXT+="\nMemory: $((${RAMTOTAL} / 1024))GB"
+  TEXT+="\nMemory: ${RAMTOTAL}GB"
   TEXT+="\nDate: ${DATE}"
   TEXT+="\n"
   TEXT+="\nNetwork: ${NIC} NIC"

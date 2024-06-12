@@ -15,45 +15,41 @@
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
 # Memory: Check Memory installed
-RAMTOTAL=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
-[ -z "${RAMTOTAL}" ] && RAMTOTAL=8192
+RAMTOTAL=$(($(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024}' /proc/meminfo 2>/dev/null) + 1))
+[ -z "${RAMTOTAL}" ] && RAMTOTAL=8
 
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
   # Check for Hypervisor
-  MACHINE="$(lscpu | grep Hypervisor | awk '{print $3}')"
+  MACHINE=$(lscpu | grep Hypervisor | awk '{print $3}')
 else
-  MACHINE="NATIVE"
+  MACHINE=NATIVE
 fi
 
 # Get Loader Disk Bus
 BUS=$(getBus "${LOADER_DISK}")
 
 # Offline Mode check
-OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-if [ "${OFFLINE}" == "false" ]; then
-  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
-  # Get Amount of NIC
-  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
-  for ETH in ${ETHX}; do
-    if ping -I ${ETH} -c 1 "github.com" > /dev/null 2>&1; then
-      ARCNIC=${ETH}
-      break
-    fi
-  done
-  if [ -n "${ARCNIC}" ]; then
-    writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
-  elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" == "false" ]; then
-    writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
-    cp -f "${PART3_PATH}/configs/offline.json" "${ARC_PATH}/include/offline.json"
-    dialog --backtitle "$(backtitle)" --title "Online Check" \
-        --msgbox "No online Connection found.\nSwitch to Offline Mode!" 0 0
-  elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" == "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "Online Check" \
-      --infobox "No online Connection found.\nReboot to try again!" 0 0
-    sleep 5
-    exec reboot
+CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
+for ETH in ${ETHX}; do
+  if ping -I ${ETH} -c 1 "github.com" > /dev/null 2>&1; then
+    ARCNIC=${ETH}
+    break
   fi
+done
+if [ -n "${ARCNIC}" ]; then
+  writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
+elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" == "false" ]; then
+  writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
+  cp -f "${PART3_PATH}/configs/offline.json" "${ARC_PATH}/include/offline.json"
+  dialog --backtitle "$(backtitle)" --title "Online Check" \
+      --msgbox "No online Connection found.\nSwitch to Offline Mode!" 0 0
+elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" == "true" ]; then
+  dialog --backtitle "$(backtitle)" --title "Online Check" \
+    --infobox "No online Connection found.\nReboot to try again!" 0 0
+  sleep 5
+  exec reboot
 fi
 writeConfigKey "arc.nic" "${ARCNIC:-eth0}" "${USER_CONFIG_FILE}"
 ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
@@ -528,7 +524,8 @@ function arcSettings() {
     deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
   fi
   # Max Memory for DSM
-  writeConfigKey "synoinfo.mem_max_mb" "${RAMTOTAL}" "${USER_CONFIG_FILE}"
+  RAMCONFIG=$((${RAMTOTAL} * 1024))
+  writeConfigKey "synoinfo.mem_max_mb" "${RAMCONFIG}" "${USER_CONFIG_FILE}"
   # Config is done
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
