@@ -1990,12 +1990,11 @@ function editGrubCfg() {
 # Grep Logs from dbgutils
 function greplogs() {
   if [ -d "${PART1_PATH}/logs" ]; then
-    rm -f "${PART1_PATH}/log.tar.gz" >/dev/null
-    tar -czf "${PART1_PATH}/log.tar.gz" -C "${PART1_PATH}/logs"
+    rm -f "${TMP_PATH}/logs.tar.gz"
+    tar -czf "${TMP_PATH}/logs.tar.gz" -C "${PART1_PATH}" logs
     if [ -z "${SSH_TTY}" ]; then # web
-      mv -f "${PART1_PATH}/log.tar.gz" "/var/www/data/log.tar.gz"
-      chmod 644 "/var/www/data/log.tar.gz"
-      URL="http://$(getIP)/log.tar.gz"
+      mv -f "${TMP_PATH}/logs.tar.gz" "/var/www/data/logs.tar.gz"
+      URL="http://$(getIP)/logs.tar.gz"
       dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
         --msgbox "Please visit ${URL}\nto download the logs and unzip it and back it up in order by file name." 0 0
     else
