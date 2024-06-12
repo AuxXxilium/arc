@@ -212,6 +212,9 @@ function arcModel() {
           if [ ${SATACONTROLLER} -eq 0 ] && [ "${EXTERNALCONTROLLER}" == "false" ] && [ "${A}" != "epyc7002" ]; then
             COMPATIBLE=0
           fi
+          if [ ${SCSICONTROLLER} -gt 0 ] && [ "${A}" = "epyc7002" ]; then
+            COMPATIBLE=0
+          fi
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
         else
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && BETA="x" || BETA=""
