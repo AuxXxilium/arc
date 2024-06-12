@@ -15,8 +15,7 @@
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
 # Memory: Check Memory installed
-RAMFREE=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
-RAMTOTAL=$((${RAMFREE} * 1024))
+RAMTOTAL=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
 [ -z "${RAMTOTAL}" ] && RAMTOTAL=8192
 
 # Check for Hypervisor
