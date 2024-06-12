@@ -84,7 +84,7 @@ RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
 SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
 EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
 SATACONTROLLER="$(readConfigKey "device.satacontroller" "${USER_CONFIG_FILE}")"
-SCSICONTROLLER="$(readConfigKey "device.sciscontroller" "${USER_CONFIG_FILE}")"
+SCSICONTROLLER="$(readConfigKey "device.scsicontroller" "${USER_CONFIG_FILE}")"
 RAIDCONTROLLER="$(readConfigKey "device.raidcontroller" "${USER_CONFIG_FILE}")"
 SASCONTROLLER="$(readConfigKey "device.sascontroller" "${USER_CONFIG_FILE}")"
 
@@ -206,13 +206,13 @@ function arcModel() {
               break
             fi
           done
-          if [ "${DT}" == "true" ] && [ "${EXTERNALCONTROLLER}" == "true" ] && [ "${A}" != "epyc7002" ]; then
+          if [ "${A}" != "epyc7002" ] && [ "${DT}" == "true" ] && [ "${EXTERNALCONTROLLER}" == "true" ]; then
             COMPATIBLE=0
           fi
-          if [ ${SATACONTROLLER} -eq 0 ] && [ "${EXTERNALCONTROLLER}" == "false" ] && [ "${A}" != "epyc7002" ]; then
+          if [ "${A}" != "epyc7002" ] && [ ${SATACONTROLLER} -eq 0 ] && [ "${EXTERNALCONTROLLER}" == "false" ]; then
             COMPATIBLE=0
           fi
-          if [ ${SCSICONTROLLER} -gt 0 ] && [ "${A}" = "epyc7002" ]; then
+          if [ "${A}" = "epyc7002" ] && [ ${SCSICONTROLLER} -ne 0 ]; then
             COMPATIBLE=0
           fi
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
