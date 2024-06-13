@@ -449,6 +449,8 @@ function livepatch() {
   if [ "${PVALID}" == "false" ]; then
     OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
     if [ "${OFFLINE}" == "false" ]; then
+      # Load update functions
+      . ${ARC_PATH}/include/update.sh
       # Update Patches
       echo -e "Updating Patches..."
       updatePatches
