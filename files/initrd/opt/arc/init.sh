@@ -35,7 +35,7 @@ fi
 # Config Init
 initConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
-initConfigKey "arc.bootipwait" "20" "${USER_CONFIG_FILE}"
+initConfigKey "arc.bootipwait" "30" "${USER_CONFIG_FILE}"
 initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.custom" "false" "${USER_CONFIG_FILE}"
@@ -81,7 +81,7 @@ initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 
 # Init Network
-ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
+ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
 if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
   _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
 fi
@@ -89,9 +89,9 @@ MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 # Write Mac to config
 NIC=0
 for ETH in ${ETHX}; do
-  MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
+  MACR=$(cat /sys/class/net/${ETH}/address | sed 's/://g')
   if [ -z "${MACR}" ]; then
-    MACR="000000000000"
+    MACR="9009d012345${NIC}"
   fi
   initConfigKey "mac.${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
   if [ "${MACSYS}" == "custom" ]; then
@@ -147,23 +147,24 @@ if [ -n "${LAYOUT}" ] && [ -n "${KEYMAP}" ]; then
 fi
 echo
 
-# Grep Config Values
-BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-
 # Decide if boot automatically
+BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 if grep -q "force_arc" /proc/cmdline; then
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
 elif grep -q "automated_arc" /proc/cmdline; then
   echo -e "\033[1;34mStarting automated Build Mode...\033[0m"
 elif grep -q "update_arc" /proc/cmdline; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
+elif [ "${BUILDDONE}" == "true" ]; then
+  echo -e "\033[1;34mStarting DSM Mode...\033[0m"
+  boot.sh && exit 0
 else
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
 fi
 echo
 
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
-[ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
+[ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
 echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
 for ETH in ${ETHX}; do
   IP=""
