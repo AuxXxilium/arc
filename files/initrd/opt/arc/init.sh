@@ -224,6 +224,12 @@ echo -e "User config is on \033[1;34m${USER_CONFIG_FILE}\033[0m"
 echo -e "Default SSH Root password is \033[1;34marc\033[0m"
 echo
 
+mkdir -p "${ADDONS_PATH}"
+mkdir -p "${CUSTOM_PATH}"
+mkdir -p "${LKMS_PATH}"
+mkdir -p "${MODEL_CONFIG_PATH}"
+mkdir -p "${MODULES_PATH}"
+mkdir -p "${PATCH_PATH}"
 mkdir -p "${USER_UP_PATH}"
 
 # Load Arc Overlay
