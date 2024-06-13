@@ -855,7 +855,7 @@ function juniorboot() {
   if [ $? -eq 0 ]; then
     make
   fi
-  grub-editenv ${GRUB_PATH}/grubenv set next_entry="junior"
+  grub-editenv ${USER_GRUBENVFILE} set next_entry="junior"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM Reinstall Mode...\nPlease stay patient!" 4 30
   sleep 2
@@ -871,7 +871,7 @@ function recoveryboot() {
   if [ $? -eq 0 ]; then
     make
   fi
-  grub-editenv ${GRUB_PATH}/grubenv set next_entry="recovery"
+  grub-editenv ${USER_GRUBENVFILE} set next_entry="recovery"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM Recovery Mode...\nPlease stay patient!" 4 30
   sleep 2
@@ -885,7 +885,7 @@ function boot() {
   [ "${BUILDDONE}" == "false" ] && dialog --backtitle "$(backtitle)" --title "Alert" \
     --yesno "Config changed, you need to rebuild the Loader?" 0 0
   if [ $? -eq 0 ]; then
-    make
+    arcSummary
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM...\nPlease stay patient!" 4 25
@@ -1074,7 +1074,7 @@ else
         ;;
       i) bootipwaittime; NEXT="i" ;;
       q) [ "${DIRECTBOOT}" == "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
-        grub-editenv "${GRUB_PATH}/grubenv" create
+        grub-editenv ${USER_GRUBENVFILE} create
         writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
         NEXT="q"
         ;;

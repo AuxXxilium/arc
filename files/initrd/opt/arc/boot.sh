@@ -184,10 +184,10 @@ CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
 # Boot
 if [ "${DIRECTBOOT}" == "true" ]; then
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
-  grub-editenv ${GRUB_PATH}/grubenv set dsm_cmdline="${CMDLINE_DIRECT}"
-  grub-editenv ${GRUB_PATH}/grubenv set next_entry="direct"
+  grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
   echo -e "\033[1;34mReboot with Directboot\033[0m"
-  exec reboot
+  grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
+  reboot
   exit 0
 elif [ "${DIRECTBOOT}" == "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"

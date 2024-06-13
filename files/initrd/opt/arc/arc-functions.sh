@@ -1978,9 +1978,9 @@ function resetLoader() {
 function editGrubCfg() {
   while true; do
     dialog --backtitle "$(backtitle)" --title "Edit with caution" \
-      --ok-label "Save" --editbox "${GRUB_PATH}/grub.cfg" 0 0 2>"${TMP_PATH}/usergrub.cfg"
+      --ok-label "Save" --editbox "${USER_GRUB_CONFIG}" 0 0 2>"${TMP_PATH}/usergrub.cfg"
     [ $? -ne 0 ] && return
-    mv -f "${TMP_PATH}/usergrub.cfg" "${GRUB_PATH}/grub.cfg"
+    mv -f "${TMP_PATH}/usergrub.cfg" "${USER_GRUB_CONFIG}"
     break
   done
   return
