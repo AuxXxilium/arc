@@ -169,7 +169,7 @@ for ETH in ${ETHX}; do
   IP=""
   STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
   ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
-  DRIVER="$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
+  DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
   COUNT=0
   while true; do
     ARCIP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
@@ -185,7 +185,7 @@ for ETH in ${ETHX}; do
       /etc/init.d/S40network restart 2>/dev/null || true
       MSG="STATIC"
     else
-      IP="$(getIP ${ETH})"
+      IP=$(getIP ${ETH})
       writeConfigKey "static.${ETH}" "false" "${USER_CONFIG_FILE}"
       MSG="DHCP"
     fi
@@ -194,7 +194,7 @@ for ETH in ${ETHX}; do
       break
     fi
     if [ -n "${IP}" ]; then
-      SPEED="$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')"
+      SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
       writeConfigKey "ip.${ETH}" "${IP}" "${USER_CONFIG_FILE}"
       if [[ "${IP}" =~ ^169\.254\..* ]]; then
         echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server detected.)"
