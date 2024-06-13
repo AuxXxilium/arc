@@ -31,7 +31,7 @@ BUS=$(getBus "${LOADER_DISK}")
 
 # Offline Mode check
 CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
-ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
+ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
 for ETH in ${ETHX}; do
   if ping -I ${ETH} -c 1 "github.com" > /dev/null 2>&1; then
     ARCNIC=${ETH}

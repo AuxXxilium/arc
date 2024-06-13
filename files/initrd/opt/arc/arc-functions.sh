@@ -962,9 +962,9 @@ function sysinfo() {
   # Check if machine has EFI
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   # Get System Informations
-  DATE="$(date)"
-  CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
-  VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
+  DATE=$(date)
+  CPU=$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))
+  VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')
   ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -999,12 +999,12 @@ function sysinfo() {
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
   DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
-  MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
-  MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")"
-  ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")"
-  LKMVERSION="$(cat "${LKMS_PATH}/VERSION")"
-  CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
-  PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")"
+  MODULESINFO=$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')
+  MODULESVERSION=$(cat "${MODULES_PATH}/VERSION")
+  ADDONSVERSION=$(cat "${ADDONS_PATH}/VERSION")
+  LKMVERSION=$(cat "${LKMS_PATH}/VERSION")
+  CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
+  PATCHESVERSION=$(cat "${PATCH_PATH}/VERSION")
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4> System: ${MACHINE} | ${BOOTSYS}\Zn"
@@ -1017,17 +1017,17 @@ function sysinfo() {
   for ETH in ${ETHX}; do
     IP=""
     STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
-    DRIVER="$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
-    NETBUS="$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
+    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    NETBUS=$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | cut -d' ' -f2)
     MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
-    MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
+    MACR=$(cat /sys/class/net/${ETH}/address | sed 's/://g')
     COUNT=0
     while true; do
       if [ "${STATICIP}" == "true" ]; then
         IP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
         MSG="STATIC"
       else
-        IP="$(getIP ${ETH})"
+        IP"$(getIP ${ETH})
         MSG="DHCP"
       fi
       if [ -n "${IP}" ]; then
@@ -1198,9 +1198,9 @@ function fullsysinfo() {
   # Check if machine has EFI
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   # Get System Informations
-  DATE="$(date)"
-  CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
-  VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
+  DATE=$(date)
+  CPU=$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))
+  VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')
   ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -1235,12 +1235,12 @@ function fullsysinfo() {
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
   DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
-  MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
-  MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")"
-  ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")"
-  LKMVERSION="$(cat "${LKMS_PATH}/VERSION")"
-  CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
-  PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")"
+  MODULESINFO=$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')
+  MODULESVERSION=$(cat "${MODULES_PATH}/VERSION")
+  ADDONSVERSION=$(cat "${ADDONS_PATH}/VERSION")
+  LKMVERSION=$(cat "${LKMS_PATH}/VERSION")
+  CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
+  PATCHESVERSION=$(cat "${PATCH_PATH}/VERSION")
   TEXT=""
   # Print System Informations
   TEXT+="\nSystem: ${MACHINE} | ${BOOTSYS}"
@@ -1253,17 +1253,17 @@ function fullsysinfo() {
   for ETH in ${ETHX}; do
     IP=""
     STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
-    DRIVER="$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
-    NETBUS="$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
+    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    NETBUS=$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | cut -d' ' -f2)
     MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
-    MACR="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
+    MACR=$(cat /sys/class/net/${ETH}/address | sed 's/://g')
     COUNT=0
     while true; do
       if [ "${STATICIP}" == "true" ]; then
         IP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
         MSG="STATIC"
       else
-        IP="$(getIP ${ETH})"
+        IP=$(getIP ${ETH})
         MSG="DHCP"
       fi
       if [ -n "${IP}" ]; then
@@ -1289,7 +1289,7 @@ function fullsysinfo() {
   done
   TEXT+="\n"
   TEXT+="\nNIC:\n"
-  TEXT+="$(lspci -d ::200 -nnk)"
+  TEXT+=$(lspci -d ::200 -nnk)
   # Print Config Informations
   TEXT+="\n"
   TEXT+="\nArc: ${ARC_VERSION}"
@@ -1455,7 +1455,7 @@ function networkdiag() {
   done
   gateway=$(route -n | grep 'UG[ \t]' | awk '{print $2}' | head -n 1)
   MSG+="Gateway: ${gateway}\n"
-  dnsserver="$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')"
+  dnsserver=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')
   MSG+="DNS Server: ${dnsserver}\n"
   MSG+="\n"
   websites=("google.com" "github.com" "auxxxilium.tech")
@@ -1467,13 +1467,13 @@ function networkdiag() {
     fi
   done
   if [ "${CONFDONE}" == "true" ]; then
-    GITHUBAPI="$(curl --insecure -s https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+    GITHUBAPI=$(curl --interface ${ARCNIC} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')
     if [[ $? -ne 0 || -z "${GITHUBAPI}" ]]; then
       MSG+="\nGithub API not reachable!"
     else
       MSG+="\nGithub API reachable!"
     fi
-    SYNOAPI="$(curl -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')"
+    SYNOAPI=$(curl --interface ${ARCNIC} -m 5 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')
     if [[ $? -ne 0 || -z "${SYNOAPI}" ]]; then
       MSG+="\nSyno API not reachable!"
     else
