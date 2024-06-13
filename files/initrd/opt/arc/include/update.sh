@@ -332,10 +332,10 @@ function updateLKMs() {
     done
     if [ -f "${TMP_PATH}/rp-lkms.zip" ]; then
       echo "Download successful!"
-      rm -rf "${LKM_PATH}"
-      mkdir -p "${LKM_PATH}"
+      rm -rf "${LKMS_PATH}"
+      mkdir -p "${LKMS_PATH}"
       echo "Installing new LKMs..."
-      unzip -oq "${TMP_PATH}/rp-lkms.zip" -d "${LKM_PATH}"
+      unzip -oq "${TMP_PATH}/rp-lkms.zip" -d "${LKMS_PATH}"
       rm -f "${TMP_PATH}/rp-lkms.zip"
     else
       echo "Error getting new Version!"
