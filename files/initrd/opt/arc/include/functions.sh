@@ -349,12 +349,10 @@ function rebootTo() {
   MODES="config recovery junior automated update"
   [ -z "${1}" ] && exit 1
   if ! echo "${MODES}" | grep -qw "${1}"; then exit 1; fi
-  # echo "Rebooting to ${1} mode"
-  GRUBPATH="$(dirname $(find ${BOOTLOADER_PATH}/ -name grub.cfg | head -1))"
-  ENVFILE="${GRUBPATH}/grubenv"
-  [ ! -f "${ENVFILE}" ] && grub-editenv ${ENVFILE} create
-  grub-editenv ${ENVFILE} set next_entry="${1}"
-  reboot
+  [ ! -f "${USER_GRUBENVFILE}" ] && grub-editenv ${USER_GRUBENVFILE} create
+  echo -e "Rebooting to ${1} mode..."
+  grub-editenv ${USER_GRUBENVFILE} set next_entry="${1}"
+  exec reboot
 }
 
 ###############################################################################
