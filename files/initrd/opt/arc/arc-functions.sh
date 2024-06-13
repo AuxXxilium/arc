@@ -1027,7 +1027,7 @@ function sysinfo() {
         IP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
         MSG="STATIC"
       else
-        IP"$(getIP ${ETH})
+        IP=$(getIP ${ETH})
         MSG="DHCP"
       fi
       if [ -n "${IP}" ]; then
@@ -1460,7 +1460,7 @@ function networkdiag() {
   MSG+="\n"
   websites=("google.com" "github.com" "auxxxilium.tech")
   for website in "${websites[@]}"; do
-    if ping -c 1 "${website}" &> /dev/null; then
+    if ping -I ${ETH} -c 1 "${website}" &> /dev/null; then
       MSG+="Connection to ${website} is successful.\n"
     else
       MSG+="Connection to ${website} failed.\n"

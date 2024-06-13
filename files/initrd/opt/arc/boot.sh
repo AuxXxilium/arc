@@ -46,9 +46,9 @@ PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
-RAMTOTAL=$(($(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024}' /proc/meminfo 2>/dev/null) + 1))
+RAMTOTAL=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024}' /proc/meminfo 2>/dev/null)
 RAM="${RAMTOTAL}GB"
-VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
+VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')
 
 echo -e "\033[1;37mDSM:\033[0m"
 echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"

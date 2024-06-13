@@ -15,7 +15,7 @@
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
 # Memory: Check Memory installed
-RAMTOTAL=$(($(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024}' /proc/meminfo 2>/dev/null) + 1))
+RAMTOTAL=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024}' /proc/meminfo 2>/dev/null)
 [ -z "${RAMTOTAL}" ] && RAMTOTAL=8
 
 # Check for Hypervisor
@@ -612,7 +612,7 @@ function arcSummary() {
   SUMMARY+="\n>> Disks (incl. USB): \Zb${DRIVES}\Zn"
   SUMMARY+="\n>> Disks (internal): \Zb${HARDDRIVES}\Zn"
   SUMMARY+="\n>> External Controller: \Zb${EXTERNALCONTROLLER}\Zn"
-  SUMMARY+="\n>> Memory: \Zb$((${RAMTOTAL} / 1024))GB\Zn"
+  SUMMARY+="\n>> Memory: \Zb${RAMTOTAL}GB\Zn"
   dialog --backtitle "$(backtitle)" --colors --title "DSM Config Summary" \
     --extra-button --extra-label "Cancel" --msgbox "${SUMMARY}" 0 0
   RET=$?
