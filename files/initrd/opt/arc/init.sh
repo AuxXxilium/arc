@@ -157,9 +157,6 @@ elif grep -q "automated_arc" /proc/cmdline; then
   echo -e "\033[1;34mStarting automated Build Mode...\033[0m"
 elif grep -q "update_arc" /proc/cmdline; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
-elif [ "${BUILDDONE}" == "true" ]; then
-  echo -e "\033[1;34mStarting DSM Mode...\033[0m"
-  boot.sh && exit 0
 else
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
 fi
@@ -248,3 +245,5 @@ else
     arc.sh
   fi
 fi
+
+exit 0
