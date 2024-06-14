@@ -85,13 +85,13 @@ KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "
 
 declare -A CMDLINE
 
-# Build Cmdline
+# Automated Cmdline
 CMDLINE['syno_hw_version']="${MODELID:-${MODEL}}"
-[ -z "${VID}" ] && VID="0x46f4" # Sanity check
-[ -z "${PID}" ] && PID="0x0001" # Sanity check
-CMDLINE['vid']="${VID}"
-CMDLINE['pid']="${PID}"
+CMDLINE['vid']="${VID:-"0x46f4"}" # Sanity check
+CMDLINE['pid']="${PID:-"0x0001"}" # Sanity check
 CMDLINE['sn']="${SN}"
+
+# Boot Cmdline
 if grep -q "force_junior" /proc/cmdline; then
   CMDLINE['force_junior']=""
 fi
@@ -104,6 +104,8 @@ if [ ${EFI} -eq 1 ]; then
 else
   CMDLINE['noefi']=""
 fi
+
+# DSM Cmdline
 if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
   if [ "${BUS}" != "usb" ]; then
     SZ=$(blockdev --getsz ${LOADER_DISK} 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
@@ -135,6 +137,7 @@ CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 CMDLINE["HddHotplug"]="1"
 CMDLINE["vender_format_version"]="2"
+
 #if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
 #  [ "${CMDLINE['modprobe.blacklist']}" != "" ] && CMDLINE['modprobe.blacklist']+=","
 #  CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
@@ -149,6 +152,7 @@ fi
 if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
   CMDLINE["SASmodel"]="1"
 fi
+
 # Cmdline NIC Settings
 NIC=0
 ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
@@ -192,6 +196,7 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
   echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+  IPCON=""
   for ETH in ${ETHX}; do
     IP=""
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
@@ -209,9 +214,9 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
           echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server detected.)"
         else
           echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
+          [ ! -n "${IPCON}" ] && IPCON="${IP}"
         fi
         ethtool -s ${ETH} wol g 2>/dev/null
-        [ ! -n "${IPCON}" ] && IPCON="${IP}"
         break
       fi
       if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
