@@ -235,7 +235,6 @@ mkdir -p "${USER_UP_PATH}"
 
 # Load Arc Overlay
 echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
-sleep 2
 
 # Check memory and load Arc
 RAM=$(free -m | grep -i mem | awk '{print$2}')
