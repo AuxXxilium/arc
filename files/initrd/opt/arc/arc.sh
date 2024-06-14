@@ -33,7 +33,7 @@ BUS=$(getBus "${LOADER_DISK}")
 CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
 ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
 for ETH in ${ETHX}; do
-  if ping -I ${ETH} -c 1 "github.com" > /dev/null 2>&1; then
+  if curl --interface ${ETH} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}' > /dev/null 2>&1; then
     ARCNIC=${ETH}
     break
   fi
@@ -482,7 +482,6 @@ function arcSettings() {
     return 0
   fi
   # Select Portmap for Loader
-  getmap
   if [ "${DT}" == "false" ] && [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
       --infobox "Generating Storage Map..." 3 35

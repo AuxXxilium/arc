@@ -1032,19 +1032,19 @@ function sysinfo() {
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}):\Zb LINK LOCAL | Mac: ${MACR} (${MAC})\Zn"
+          TEXT+="\n  ${ETH} -> ${DRIVER} (${SPEED} | ${MSG}):\Zb LINK LOCAL | Mac: ${MACR} (${MAC})\Zn"
         else
-          TEXT+="\n  ${DRIVER} (${SPEED} | ${MSG}):\Zb ${IP} | Mac: ${MACR} (${MAC})\Zn"
+          TEXT+="\n  ${ETH} -> ${DRIVER} (${SPEED} | ${MSG}):\Zb ${IP} | Mac: ${MACR} (${MAC})\Zn"
         fi
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
-        TEXT+="\n  ${DRIVER}\Zb: TIMEOUT | MAC: ${MACR} (${MAC})\Zn"
+        TEXT+="\n  ${ETH} -> ${DRIVER}\Zb: TIMEOUT | MAC: ${MACR} (${MAC})\Zn"
         break
       fi
       sleep 3
       if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n  ${DRIVER}\Zb: NOT CONNECTED | MAC: ${MACR} (${MAC})\Zn"
+        TEXT+="\n  ${ETH} -> ${DRIVER}\Zb: NOT CONNECTED | MAC: ${MACR} (${MAC})\Zn"
         break
       fi
       COUNT=$((${COUNT} + 3))
@@ -1058,13 +1058,14 @@ function sysinfo() {
   TEXT+="\n\Z4>> Loader\Zn"
   TEXT+="\n   Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n   Config Version: \Zb${CONFIGVER}\Zn"
-  TEXT+="\n\Z4>> DSM ${PRODUCTVER}: ${MODELID:-${MODEL}}\Zn"
-  TEXT+="\n   Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
-  TEXT+="\n   Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
-  TEXT+="\n   Arc Patch | Kernelload: \Zb${ARCPATCH} | ${KERNELLOAD}\Zn"
-  TEXT+="\n   Directboot: \Zb${DIRECTBOOT}\Zn"
-  TEXT+="\n\Z4>> Addons | Modules\Zn"
-  TEXT+="\n   Addons selected: \Zb${ADDONSINFO}\Zn"
+  if [ "${CONFDONE}" == "true" ]; then
+    TEXT+="\n\Z4>> DSM ${PRODUCTVER}: ${MODELID:-${MODEL}}\Zn"
+    TEXT+="\n   Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
+    TEXT+="\n   Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
+    TEXT+="\n   Arc Patch | Kernelload: \Zb${ARCPATCH} | ${KERNELLOAD}\Zn"
+    TEXT+="\n   Directboot: \Zb${DIRECTBOOT}\Zn"
+    TEXT+="\n   Addons selected: \Zb${ADDONSINFO}\Zn"
+  fi
   TEXT+="\n   Modules loaded: \Zb${MODULESINFO}\Zn"
   TEXT+="\n\Z4>> Settings\Zn"
   TEXT+="\n   MacSys: \Zb${MACSYS}\Zn"
@@ -1267,19 +1268,19 @@ function fullsysinfo() {
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          TEXT+="\n${DRIVER} (${SPEED} | ${MSG}): LINK LOCAL | Mac: ${MACR} (${MAC}) @ ${NETBUS}"
+          TEXT+="\n${ETH} -> ${DRIVER} (${SPEED} | ${MSG}): LINK LOCAL | Mac: ${MACR} (${MAC}) @ ${NETBUS}"
         else
-          TEXT+="\n${DRIVER} (${SPEED} | ${MSG}): ${IP} | Mac: ${MACR} (${MAC}) @ ${NETBUS}"
+          TEXT+="\n${ETH} -> ${DRIVER} (${SPEED} | ${MSG}): ${IP} | Mac: ${MACR} (${MAC}) @ ${NETBUS}"
         fi
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
-        TEXT+="\n${DRIVER}: TIMEOUT | MAC: ${MACR} (${MAC}) @ ${NETBUS}"
+        TEXT+="\n${ETH} -> ${DRIVER}: TIMEOUT | MAC: ${MACR} (${MAC}) @ ${NETBUS}"
         break
       fi
       sleep 3
       if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n${DRIVER}: NOT CONNECTED | MAC: ${MACR} (${MAC}) @ ${NETBUS}"
+        TEXT+="\n${ETH} -> ${DRIVER}: NOT CONNECTED | MAC: ${MACR} (${MAC}) @ ${NETBUS}"
         break
       fi
       COUNT=$((${COUNT} + 3))
@@ -1297,16 +1298,18 @@ function fullsysinfo() {
   TEXT+="\nLoader"
   TEXT+="\nConfig | Build: ${CONFDONE} | ${BUILDDONE}"
   TEXT+="\nConfig Version: ${CONFIGVER}"
-  TEXT+="\n"
-  TEXT+="\nDSM ${PRODUCTVER}: ${MODELID:-${MODEL}}"
-  TEXT+="\nKernel | LKM: ${KVER} | ${LKM}"
-  TEXT+="\nPlatform | DeviceTree: ${PLATFORM} | ${DT}"
-  TEXT+="\nArc Patch | Kernelload: ${ARCPATCH} | ${KERNELLOAD}"
-  TEXT+="\nDirectboot: ${DIRECTBOOT}"
-  TEXT+="\n"
-  TEXT+="\nAddons selected:"
-  TEXT+="\n${ADDONSINFO}"
-  TEXT+="\n"
+  if [ "${CONFDONE}" == "true" ]; then
+    TEXT+="\n"
+    TEXT+="\nDSM ${PRODUCTVER}: ${MODELID:-${MODEL}}"
+    TEXT+="\nKernel | LKM: ${KVER} | ${LKM}"
+    TEXT+="\nPlatform | DeviceTree: ${PLATFORM} | ${DT}"
+    TEXT+="\nArc Patch | Kernelload: ${ARCPATCH} | ${KERNELLOAD}"
+    TEXT+="\nDirectboot: ${DIRECTBOOT}"
+    TEXT+="\n"
+    TEXT+="\nAddons selected:"
+    TEXT+="\n${ADDONSINFO}"
+    TEXT+="\n"
+  fi
   TEXT+="\nModules loaded:"
   TEXT+="\n${MODULESINFO}"
   TEXT+="\n"
