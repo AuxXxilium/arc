@@ -962,7 +962,6 @@ function sysinfo() {
   # Check if machine has EFI
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   # Get System Informations
-  DATE=$(date)
   CPU=$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')
   ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
@@ -1011,7 +1010,7 @@ function sysinfo() {
   TEXT+="\n  Vendor: \Zb${VENDOR}\Zn"
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL}))GB\Zn"
-  TEXT+="\n  Date: \Zb${DATE}\Zn"
+  TEXT+="\n  Date: \Zb$(date)\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${NIC} NIC\Zn"
   for ETH in ${ETHX}; do
@@ -1040,12 +1039,12 @@ function sysinfo() {
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
-        TEXT+="\n  ${DRIVER} \ZbIP: TIMEOUT | MAC: ${MACR} (${MAC})\Zn"
+        TEXT+="\n  ${DRIVER}\Zb: TIMEOUT | MAC: ${MACR} (${MAC})\Zn"
         break
       fi
       sleep 3
       if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n  ${DRIVER} \ZbIP: NOT CONNECTED | MAC: ${MACR} (${MAC})\Zn"
+        TEXT+="\n  ${DRIVER}\Zb: NOT CONNECTED | MAC: ${MACR} (${MAC})\Zn"
         break
       fi
       COUNT=$((${COUNT} + 3))
@@ -1198,7 +1197,6 @@ function fullsysinfo() {
   # Check if machine has EFI
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   # Get System Informations
-  DATE=$(date)
   CPU=$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')
   ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
@@ -1247,7 +1245,7 @@ function fullsysinfo() {
   TEXT+="\nVendor: ${VENDOR}"
   TEXT+="\nCPU: ${CPU}"
   TEXT+="\nMemory: ${RAMTOTAL}GB"
-  TEXT+="\nDate: ${DATE}"
+  TEXT+="\nDate: $(date)"
   TEXT+="\n"
   TEXT+="\nNetwork: ${NIC} NIC"
   for ETH in ${ETHX}; do
@@ -1276,12 +1274,12 @@ function fullsysinfo() {
         break
       fi
       if [ ${COUNT} -gt 3 ]; then
-        TEXT+="\n${DRIVER} IP: TIMEOUT | MAC: ${MACR} (${MAC}) @ ${NETBUS}"
+        TEXT+="\n${DRIVER}: TIMEOUT | MAC: ${MACR} (${MAC}) @ ${NETBUS}"
         break
       fi
       sleep 3
       if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n${DRIVER} IP: NOT CONNECTED | MAC: ${MACR} (${MAC}) @ ${NETBUS}"
+        TEXT+="\n${DRIVER}: NOT CONNECTED | MAC: ${MACR} (${MAC}) @ ${NETBUS}"
         break
       fi
       COUNT=$((${COUNT} + 3))
@@ -1289,7 +1287,7 @@ function fullsysinfo() {
   done
   TEXT+="\n"
   TEXT+="\nNIC:\n"
-  TEXT+=$(lspci -d ::200 -nnk)
+  TEXT+="$(lspci -d ::200 -nnk)"
   # Print Config Informations
   TEXT+="\n"
   TEXT+="\nArc: ${ARC_VERSION}"
@@ -1443,47 +1441,55 @@ function fullsysinfo() {
 ###############################################################################
 # Shows Networkdiag to user
 function networkdiag() {
-  MSG=""
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
+  (
+  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
   for ETH in ${ETHX}; do
-    MSG+="Interface: ${ETH}\n"
+    echo
+    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    echo -e "Interface: ${ETH} (${DRIVER})"
+    if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
+      echo -e "Link: NOT CONNECTED"
+      continue
+    fi
+    echo -e "Link: CONNECTED"
     addr=$(getIP ${ETH})
     netmask=$(ifconfig ${ETH} | grep inet | grep 255 | awk '{print $4}' | cut -f2 -d':')
-    MSG+="IP Address: ${addr}\n"
-    MSG+="Netmask: ${netmask}\n"
-    MSG+="\n"
-  done
-  gateway=$(route -n | grep 'UG[ \t]' | awk '{print $2}' | head -n 1)
-  MSG+="Gateway: ${gateway}\n"
-  dnsserver=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')
-  MSG+="DNS Server: ${dnsserver}\n"
-  MSG+="\n"
-  websites=("google.com" "github.com" "auxxxilium.tech")
-  for website in "${websites[@]}"; do
-    if ping -I ${ETH} -c 1 "${website}" &> /dev/null; then
-      MSG+="Connection to ${website} is successful.\n"
-    else
-      MSG+="Connection to ${website} failed.\n"
-    fi
-  done
-  if [ "${CONFDONE}" == "true" ]; then
-    GITHUBAPI=$(curl --interface ${ARCNIC} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')
+    echo -e "IP Address: ${addr}"
+    echo -e "Netmask: ${netmask}"
+    echo
+    gateway=$(route -n | grep 'UG[ \t]' | awk '{print $2}' | head -n 1)
+    echo -e "Gateway: ${gateway}"
+    dnsserver=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')
+    echo -e "DNS Server:\n${dnsserver}"
+    echo
+    websites=("google.com" "github.com" "auxxxilium.tech")
+    for website in "${websites[@]}"; do
+      if ping -I ${ETH} -c 1 "${website}" &> /dev/null; then
+        echo -e "Connection to ${website} is successful."
+      else
+        echo -e "Connection to ${website} failed."
+      fi
+    done
+    echo
+    GITHUBAPI=$(curl --interface ${ETH} -m 3 -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')
     if [[ $? -ne 0 || -z "${GITHUBAPI}" ]]; then
-      MSG+="\nGithub API not reachable!"
+      echo -e "Github API not reachable!"
     else
-      MSG+="\nGithub API reachable!"
+      echo -e "Github API reachable!"
     fi
-    SYNOAPI=$(curl --interface ${ARCNIC} -m 5 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')
-    if [[ $? -ne 0 || -z "${SYNOAPI}" ]]; then
-      MSG+="\nSyno API not reachable!"
+    if [ "${CONFDONE}" == "true" ]; then
+      SYNOAPI=$(curl --interface ${ETH} -m 3 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')
+      if [[ $? -ne 0 || -z "${SYNOAPI}" ]]; then
+        echo -e "Syno API not reachable!"
+      else
+        echo -e "Syno API reachable!"
+      fi
     else
-      MSG+="\nSyno API reachable!"
+      echo -e "For Syno API Checks you need to configure Loader first!"
     fi
-  else
-    MSG+="\nFor API Checks you need to configure Loader first!"
-  fi
-  dialog --backtitle "$(backtitle)" --colors --title "Networkdiag" \
-    --msgbox "${MSG}" 0 0
+  done
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Networkdiag" \
+    --programbox "Doing the some Diagnostics..." 50 120
   return
 }
 
@@ -1586,10 +1592,12 @@ function staticIPMenu() {
       writeConfigKey "nameserver.${ETH}" "${NAMESERVER}" "${USER_CONFIG_FILE}"
       writeConfigKey "static.${ETH}" "true" "${USER_CONFIG_FILE}"
       #NETMASK=$(convert_netmask "${NETMASK}")
-      ip addr add ${IP}/${NETMASK} dev ${ETH}
+      /etc/init.d/S41dhcpcd stop >/dev/null 2>&1 || true
+      ip addr add ${IPADDR}/${NETMASK} dev ${ETH}
       ip route add default via ${GATEWAY} dev ${ETH}
       echo "nameserver ${NAMESERVER}" >>/etc/resolv.conf.head
       /etc/init.d/S40network restart
+      IP="${IPADDR}"
     fi
   done
   dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
