@@ -852,6 +852,8 @@ function updateMenu() {
           [ -z "${TAG}" ] && return 1
         fi
         updateConfigs "${TAG}"
+        writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
+        ARC_KEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;

@@ -76,6 +76,7 @@ function arcUpdate() {
   # Ask for Boot
   dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
     --infobox "Update successful!" 0 0
+  writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CUSTOM}" == "true" ] && [ ! -f "${PART3_PATH}/automated" ]; then
