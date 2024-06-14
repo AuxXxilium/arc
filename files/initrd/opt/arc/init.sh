@@ -175,6 +175,7 @@ for ETH in ${ETHX}; do
   while true; do
     ARCIP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
     if [ "${STATICIP}" == "true" ] && [ -n "${ARCIP}" ]; then
+      /etc/init.d/S41dhcpcd stop >/dev/null 2>&1 || true
       NETMASK="$(readConfigKey "netmask.${ETH}" "${USER_CONFIG_FILE}")"
       GATEWAY="$(readConfigKey "gateway.${ETH}" "${USER_CONFIG_FILE}")"
       NAMESERVER="$(readConfigKey "nameserver.${ETH}" "${USER_CONFIG_FILE}")"
