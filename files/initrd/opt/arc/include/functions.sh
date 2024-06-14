@@ -212,7 +212,7 @@ function _sort_netif() {
   ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
   for ETH in ${ETHX}; do
     MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
-    BUS=$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | awk '{print $2}')
+    ETHBUS=$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | awk '{print $2}')
     ETHLIST="${ETHLIST}${BUS} ${MAC} ${ETH}\n"
   done
 
@@ -225,10 +225,10 @@ function _sort_netif() {
       ETHLISTTMPC="${ETHLISTTMPC}$(echo -e "${ETHLIST}" | grep "${MACX}")\n"
     done
 
-    while read -r BUS MAC ETH; do
+    while read -r ETHBUS MAC ETH; do
       [ -z "${MAC}" ] && continue
       if echo "${MACS}" | grep -q "${MAC}"; then continue; fi
-      ETHLISTTMPF="${ETHLISTTMPF}${BUS} ${MAC} ${ETH}\n"
+      ETHLISTTMPF="${ETHLISTTMPF}${ETHBUS} ${MAC} ${ETH}\n"
     done <<EOF
 $(echo -e ${ETHLIST} | sort)
 EOF
