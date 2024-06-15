@@ -601,6 +601,37 @@ function storagepanelMenu() {
 }
 
 ###############################################################################
+# Shows storagepanel menu to user
+function sequentialIOMenu() {
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  if [ "${CONFDONE}" == "true" ]; then
+    while true; do
+        dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "SequentialIO" 0 0 0 \
+          1 "Enable for SSD Cache" \
+          2 "Disable for SSD Cache" \
+          2>"${TMP_PATH}/resp"
+        [ $? -ne 0 ] && break
+        case "$(cat ${TMP_PATH}/resp)" in
+          1)
+            dialog --backtitle "$(backtitle)" --colors --title "SequentialIO" \
+              --msgbox "SequentialIO enabled" 0 0
+            SEQUENTIAL="true"
+            ;;
+          2)
+            dialog --backtitle "$(backtitle)" --colors --title "SequentialIO" \
+              --msgbox "SequentialIO disabled" 0 0
+            SEQUENTIAL="false"
+            ;;
+        esac
+    done
+    writeConfigKey "addons.sequentialio" "${SEQUENTIAL}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  fi
+  return
+}
+
+###############################################################################
 # Shows backup menu to user
 function backupMenu() {
   NEXT="1"
