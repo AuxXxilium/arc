@@ -938,9 +938,7 @@ else
         if [ -n "${ARCCONF}" ]; then
           echo "p \"Arc Patch Settings \" "                                                   >>"${TMP_PATH}/menu"
         fi
-        echo "D \"Loader DHCP/StaticIP \" "                                                   >>"${TMP_PATH}/menu"
         echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
-        echo "R \"Automated Mode: \Z4${CUSTOM}\Zn \" "                                        >>"${TMP_PATH}/menu"
       fi
       if [ "${BOOTOPTS}" == "true" ]; then
         echo "6 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
@@ -970,6 +968,7 @@ else
         echo "s \"Allow Downgrade \" "                                                        >>"${TMP_PATH}/menu"
         echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
         echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
+        echo "T \"Force enable SSH in DSM \" "                                                >>"${TMP_PATH}/menu"
         if [ "${PLATFORM}" == "epyc7002" ]; then
           echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
         fi
@@ -991,14 +990,15 @@ else
     fi
     if [ "${DEVOPTS}" == "true" ]; then
       echo "= \"\Z4========= Loader =========\Zn \" "                                         >>"${TMP_PATH}/menu"
+      echo "R \"Automated Mode: \Z4${CUSTOM}\Zn \" "                                          >>"${TMP_PATH}/menu"
+      echo "D \"Loader DHCP/StaticIP \" "                                                     >>"${TMP_PATH}/menu"
       echo "B \"Grep DSM Config from Backup \" "                                              >>"${TMP_PATH}/menu"
       echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
-      echo "T \"Force enable SSH in DSM \" "                                                  >>"${TMP_PATH}/menu"
-      echo "w \"Reset Loader \" "                                                             >>"${TMP_PATH}/menu"
-      echo "C \"Clone Loader \" "                                                             >>"${TMP_PATH}/menu"
+      echo "w \"Reset Loader to Defaults\" "                                                  >>"${TMP_PATH}/menu"
+      echo "C \"Clone Loader to Disk\" "                                                      >>"${TMP_PATH}/menu"
       echo "F \"\Z1Formate Disk\Zn \" "                                                       >>"${TMP_PATH}/menu"
       echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
-      echo "v \"Save Modifications to Disk \" "                                               >>"${TMP_PATH}/menu"
+      echo "v \"Write Modifications to Disk \" "                                              >>"${TMP_PATH}/menu"
       echo "G \"Install opkg Package Manager \" "                                             >>"${TMP_PATH}/menu"
     fi
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
