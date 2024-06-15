@@ -601,7 +601,7 @@ function storagepanelMenu() {
 }
 
 ###############################################################################
-# Shows storagepanel menu to user
+# Shows sequentialIO menu to user
 function sequentialIOMenu() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" == "true" ]; then
@@ -2115,7 +2115,7 @@ function satadomMenu() {
 # Decrypt Menu
 function decryptMenu() {
   if [ -f "${S_FILE_ENC}" ]; then
-    CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
+    CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
     dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
       --inputbox "Enter Decryption Key for ${CONFIGSVERSION}" 7 40 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return
