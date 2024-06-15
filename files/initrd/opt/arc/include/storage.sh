@@ -8,7 +8,7 @@ function getmap() {
   [ -f "${TMP_PATH}/drivescon" ] && rm -f "${TMP_PATH}/drivescon"
   touch "${TMP_PATH}/drivescon"
   [ -f "${TMP_PATH}/ports" ] && rm -f "${TMP_PATH}/ports"
-  touch "${TMP_PATH}ports"
+  touch "${TMP_PATH}/ports"
   [ -f "${TMP_PATH}/remap" ] && rm -f "${TMP_PATH}/remap"
   touch "${TMP_PATH}/remap"
   if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
