@@ -966,6 +966,7 @@ else
         echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
         echo "j \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
         echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
+        echo "l \"Edit Config \" "                                                            >>"${TMP_PATH}/menu"
         echo "s \"Allow Downgrade \" "                                                        >>"${TMP_PATH}/menu"
         echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
         echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
@@ -990,14 +991,13 @@ else
     fi
     if [ "${DEVOPTS}" == "true" ]; then
       echo "= \"\Z4========= Loader =========\Zn \" "                                         >>"${TMP_PATH}/menu"
-      echo "l \"Edit User Config \" "                                                         >>"${TMP_PATH}/menu"
-      echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
       echo "B \"Grep DSM Config from Backup \" "                                              >>"${TMP_PATH}/menu"
       echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
       echo "T \"Force enable SSH in DSM \" "                                                  >>"${TMP_PATH}/menu"
       echo "w \"Reset Loader \" "                                                             >>"${TMP_PATH}/menu"
       echo "C \"Clone Loader \" "                                                             >>"${TMP_PATH}/menu"
       echo "F \"\Z1Formate Disk\Zn \" "                                                       >>"${TMP_PATH}/menu"
+      echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
       echo "v \"Save Modifications to Disk \" "                                               >>"${TMP_PATH}/menu"
       echo "G \"Install opkg Package Manager \" "                                             >>"${TMP_PATH}/menu"
     fi

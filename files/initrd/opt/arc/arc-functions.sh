@@ -605,6 +605,8 @@ function storagepanelMenu() {
 function sequentialIOMenu() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" == "true" ]; then
+    dialog --backtitle "$(backtitle)" --title "SequentialIO" \
+      --aspect 18 --msgbox "SequentialIO Addon enabled." 0 0
     while true; do
         dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "SequentialIO" 0 0 0 \
           1 "Enable for SSD Cache" \
