@@ -152,13 +152,13 @@ function getmapSelection() {
       REMAP1="*"
     fi
     # Ask for Portmap
-    dialog --backtitle "$(backtitle)" --title "Arc Disks" \
-      --menu "SataPortMap or SataRemap?\n* Recommended Option" 8 60 0 \
+    dialog --backtitle "$(backtitle)" --title "Sata Portmap" \
+      --menu "Choose a Portmap for Sata!?\n* Recommended Option" 8 60 0 \
       1 "DiskIdxMap: Active Ports ${REMAP1}" \
       2 "DiskIdxMap: Max Ports ${REMAP2}" \
       3 "SataRemap: Remove blank Ports ${REMAP3}" \
       4 "AhciRemap: Remove blank Ports (new) ${REMAP4}" \
-      5 "I want to set my own Portmap" \
+      5 "Set my own Portmap in Config" \
     2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     resp=$(cat "${TMP_PATH}/resp")

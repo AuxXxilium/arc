@@ -932,9 +932,11 @@ else
         echo "b \"DSM Addons \" "                                                             >>"${TMP_PATH}/menu"
         echo "d \"DSM Modules \" "                                                            >>"${TMP_PATH}/menu"
         echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
-        echo "S \"DSM Storage Map \" "                                                        >>"${TMP_PATH}/menu"
-        echo "P \"DSM StoragePanel \" "                                                       >>"${TMP_PATH}/menu"
-        echo "Q \"DSM SequentialIO \" "                                                       >>"${TMP_PATH}/menu"
+        if [ ${SATACONTROLLER} -gt 0 ]; then
+          echo "S \"DSM Sata PortMap \" "                                                     >>"${TMP_PATH}/menu"
+        fi
+        echo "P \"DSM StoragePanel Options\" "                                                >>"${TMP_PATH}/menu"
+        echo "Q \"DSM SequentialIO Options\" "                                                >>"${TMP_PATH}/menu"
         if [ -n "${ARCCONF}" ]; then
           echo "p \"Arc Patch Settings \" "                                                   >>"${TMP_PATH}/menu"
         fi
