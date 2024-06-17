@@ -466,7 +466,12 @@ function synoinfoMenu() {
         MSG+=" * \Z4internalportcfg=0x????\Zn\n    Internal(sata) disks mask.\n"
         MSG+=" * \Z4esataportcfg=0x????\Zn\n    Esata disks mask.\n"
         MSG+=" * \Z4usbportcfg=0x????\Zn\n    USB disks mask.\n"
-        MSG+=" * \Z4max_sys_raid_disks=12\Zn\n    Maximum number of system partition(md0) raid disks.\n"
+        MSG+=" * \Z4max_sys_raid_disks=??\Zn\n    Maximum number of system partition(md0) raid disks.\n"
+        MSG+=" * \Z4support_glusterfs=yes\Zn\n    GlusterFS in DSM.\n"
+        MSG+=" * \Z4support_sriov=yes\Zn\n    SR-IOV Support in DSM.\n"
+        MSG+=" * \Z4support_disk_performance_test=yes\Zn\n    Disk Performance Test in DSM.\n"
+        #MSG+=" * \Z4support_diffraid=yes\Zn\n    TO-DO.\n"
+        #MSG+=" * \Z4support_config_swap=yes\Zn\n    TO-DO.\n"
         MSG+="\nEnter the Parameter Name and Value you want to add.\n"
         LINENUM=$(($(echo -e "${MSG}" | wc -l) + 10))
         while true; do
