@@ -1093,8 +1093,7 @@ function sysinfo() {
   # Print Config Informations
   TEXT+="\n"
   TEXT+="\n\Z4> Arc: ${ARC_VERSION}\Zn"
-  TEXT+="\n  Subversion Loader: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | Patches ${PATCHESVERSION}\Zn"
-  TEXT+="\n  Subversion DSM: \ZbModules ${MODULESVERSION} | LKM ${LKMVERSION}\Zn"
+  TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n\Z4>> Loader\Zn"
   TEXT+="\n   Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n   Config Version: \Zb${CONFIGVER}\Zn"
@@ -1332,8 +1331,7 @@ function fullsysinfo() {
   # Print Config Informations
   TEXT+="\n"
   TEXT+="\nArc: ${ARC_VERSION}"
-  TEXT+="\nSubversion Loader: Addons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | Patches ${PATCHESVERSION}"
-  TEXT+="\nSubversion DSM: Modules ${MODULESVERSION} | LKM ${LKMVERSION}"
+  TEXT+="\nSubversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n"
   TEXT+="\nLoader"
   TEXT+="\nConfig | Build: ${CONFDONE} | ${BUILDDONE}"
