@@ -650,7 +650,7 @@ function make() {
   CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   PAT_URL=""
   PAT_HASH=""
-  VALID=false
+  VALID="false"
   # Cleanup
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   mkdir -p "${UNTAR_PAT_PATH}"
@@ -687,7 +687,7 @@ function make() {
         PAT_URL=${PAT_URL%%\?*}
         if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
           if echo "${PAT_URL}" | grep -q "https://"; then
-            VALID=true
+            VALID="true"
             break
           fi
         fi
@@ -706,16 +706,14 @@ function make() {
         return 1                     # 1 or 255  # cancel-button or ESC
         PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
         PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
-    else
-      if [ "${VALID}" == "false" ]; then
+    elif [ "${VALID}" == "false" ]; then
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-          --msgbox "Could not get PAT Data..." 4 30
-        PAT_URL=""
-        PAT_HASH=""
+          --infobox "Could not get PAT Data..." 4 30
+        PAT_URL="#"
+        PAT_HASH="#"
         sleep 5
       fi
-    fi
-    if [ "${VALID}" == "true" ]; then
+    elif [ "${VALID}" == "true" ]; then
       # Get PAT Data from Config
       PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
       PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
@@ -727,7 +725,7 @@ function make() {
         DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
         DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
         if curl --interface ${ARCNIC} -skL "${DSM_URL}" -o "${DSM_FILE}"; then
-          VALID=true
+          VALID="true"
         else
           dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
             --infobox "No DSM Image found!\nTry to get .pat from Syno." 4 40
@@ -735,24 +733,24 @@ function make() {
           # Grep PAT_URL
           PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
           if curl --interface ${ARCNIC} -skL "${PAT_URL}" -o "${PAT_FILE}"; then
-            VALID=true
+            VALID="true"
           else
             dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
               --infobox "No DSM Image found!\nExit." 4 40
-            VALID=false
+            VALID="false"
             sleep 5
           fi
         fi
         if [ -f "${DSM_FILE}" ] && [ "${VALID}" == "true" ]; then
           tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" 2>/dev/null
-          VALID=true
+          VALID="true"
         elif [ -f "${PAT_FILE}" ] && [ "${VALID}" == "true" ]; then
           extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}" 2>/dev/null
-          VALID=true
+          VALID="true"
         else
           dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
             --infobox "DSM Extraction failed!\nExit." 4 40
-          VALID=false
+          VALID="false"
           sleep 5
         fi
       fi
@@ -760,7 +758,7 @@ function make() {
   elif [ "${OFFLINE}" == "true" ]; then
     if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
       rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
-      VALID=true
+      VALID="true"
     else
       # Check for existing Files
       mkdir -p "${TMP_UP_PATH}"
@@ -778,22 +776,22 @@ function make() {
         # Extract Files
         if [ -f "${PAT_FILE}" ]; then
           extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"
-          VALID=true
+          VALID="true"
         else
           dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
             --infobox "DSM Extraction failed!\nExit." 4 40
-          VALID=false
+          VALID="false"
           sleep 5
         fi
       elif [ ! -f "${PAT_FILE}" ]; then
         dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
           --infobox "No DSM Image found!\nExit." 4 40
-        VALID=false
+        VALID="false"
         sleep 5
       else
         dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
           --infobox "Incorrect DSM Image (.pat) found!\nExit." 4 40
-        VALID=false
+        VALID="false"
         sleep 5
       fi
     fi
@@ -801,9 +799,9 @@ function make() {
   # Copy DSM Files to Locations if DSM Files not found
   if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
     if copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null; then
-      VALID=true
+      VALID="true"
     else
-      VALID=false
+      VALID="false"
     fi
   fi
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ "${VALID}" == "true" ]; then
@@ -822,6 +820,7 @@ function make() {
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     sleep 5
+    return 1
   fi
 }
 

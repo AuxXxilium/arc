@@ -423,25 +423,25 @@ function extractDSMFiles() {
 ###############################################################################
 # Livepatch
 function livepatch() {
-  PVALID=false
+  PVALID="false"
   # Patch zImage
   echo -n "Patching zImage"
   if ${ARC_PATH}/zimage-patch.sh; then
     echo -e " - successful!"
-    PVALID=true
+    PVALID="true"
   else
     echo -e " - failed!"
-    PVALID=false
+    PVALID="false"
   fi
   if [ "${PVALID}" == "true" ]; then
     # Patch Ramdisk
     echo -n "Patching Ramdisk"
     if ${ARC_PATH}/ramdisk-patch.sh; then
       echo -e " - successful!"
-      PVALID=true
+      PVALID="true"
     else
       echo -e " - failed!"
-      PVALID=false
+      PVALID="false"
     fi
   fi
   if [ "${PVALID}" == "false" ]; then
@@ -456,20 +456,20 @@ function livepatch() {
       echo -n "Patching zImage"
       if ${ARC_PATH}/zimage-patch.sh; then
         echo -e " - successful!"
-        PVALID=true
+        PVALID="true"
       else
         echo -e " - failed!"
-        PVALID=false
+        PVALID="false"
       fi
       if [ "${PVALID}" == "true" ]; then
         # Patch Ramdisk
         echo -n "Patching Ramdisk"
         if ${ARC_PATH}/ramdisk-patch.sh; then
           echo -e " - successful!"
-          PVALID=true
+          PVALID="true"
         else
           echo -e " - failed!"
-          PVALID=false
+          PVALID="false"
         fi
       fi
     fi
@@ -479,7 +479,7 @@ function livepatch() {
     echo -e "Patching DSM Files failed! Please stay patient for Update."
     sleep 5
     exit 1
-  else
+  elif [ "${PVALID}" == "true" ]; then
     ZIMAGE_HASH="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
     writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
     RAMDISK_HASH="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
