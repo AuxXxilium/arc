@@ -712,7 +712,6 @@ function make() {
         PAT_URL="#"
         PAT_HASH="#"
         sleep 5
-      fi
     elif [ "${VALID}" == "true" ]; then
       # Get PAT Data from Config
       PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
