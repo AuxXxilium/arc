@@ -207,8 +207,7 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
       if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
         echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
         break
-      fi
-      if [ -n "${IP}" ]; then
+      elif [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
           echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server detected.)"
@@ -217,8 +216,7 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
           [ ! -n "${IPCON}" ] && IPCON="${IP}"
         fi
         break
-      fi
-      if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
+      elif [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
         echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
         break
       fi

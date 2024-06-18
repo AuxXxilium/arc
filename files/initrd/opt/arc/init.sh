@@ -196,8 +196,7 @@ for ETH in ${ETHX}; do
     if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
       echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
       break
-    fi
-    if [ -n "${IP}" ]; then
+    elif [ -n "${IP}" ]; then
       SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
       writeConfigKey "ip.${ETH}" "${IP}" "${USER_CONFIG_FILE}"
       if [[ "${IP}" =~ ^169\.254\..* ]]; then
@@ -206,8 +205,7 @@ for ETH in ${ETHX}; do
         echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
       fi
       break
-    fi
-    if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
+    elif [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
       echo -e echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
       break
     fi
