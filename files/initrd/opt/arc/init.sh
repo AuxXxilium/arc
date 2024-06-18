@@ -205,7 +205,6 @@ for ETH in ${ETHX}; do
       else
         echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
       fi
-      ethtool -s ${ETH} wol g 2>/dev/null
       break
     fi
     if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then

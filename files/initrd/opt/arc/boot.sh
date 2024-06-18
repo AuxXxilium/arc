@@ -216,7 +216,6 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
           echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
           [ ! -n "${IPCON}" ] && IPCON="${IP}"
         fi
-        ethtool -s ${ETH} wol g 2>/dev/null
         break
       fi
       if [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
