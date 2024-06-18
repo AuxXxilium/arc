@@ -229,12 +229,12 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
   done
   # Exec Bootwait to check SSH/Web connection
   BOOTWAIT=5
-  w -h 2>/dev/null | awk '{print $1" "$2" "$3}' >WB
+  w -h 2>/dev/null | grep -v tty1 | awk '{print $1" "$2" "$3}' >WB
   MSG=""
   while test ${BOOTWAIT} -ge 0; do
     MSG="\033[1;33mAccess SSH/Web will interrupt boot...\033[0m"
     echo -en "\r${MSG}"
-    w -h 2>/dev/null | awk '{print $1" "$2" "$3}' >WC
+    w -h 2>/dev/null | grep -v tty1 | awk '{print $1" "$2" "$3}' >WC
     if ! diff WB WC >/dev/null 2>&1; then
       echo -en "\r\033[1;33mAccess SSH/Web detected and boot is interrupted.\033[0m\n"
       rm -f WB WC
