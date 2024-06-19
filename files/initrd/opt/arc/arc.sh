@@ -47,11 +47,11 @@ for ETH in ${ETHX}; do
   # Update Check
   NEWTAG=$(curl --interface ${ETH} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
   if [ -n "${NEWTAG}" ]; then
-    NEWTAG="${ARC_VERSION}"
     ARCNIC=${ETH}
     break
   fi
 done
+[ -z "${NEWTAG}" ] && NEWTAG="${ARC_VERSION}"
 if [ -n "${ARCNIC}" ]; then
   writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
 elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" == "false" ]; then
