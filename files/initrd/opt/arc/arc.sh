@@ -25,6 +25,17 @@ if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
 else
   MACHINE=NATIVE
 fi
+# Check for AES and ACPI Support
+if ! grep -q "^flags.*aes.*" /proc/cpuinfo; then
+  AESSYS="false"
+else
+  AESSYS="true"
+fi
+if ! grep -q "^flags.*acpi.*" /proc/cpuinfo; then
+  ACPISYS="false"
+else
+  ACPISYS="true"
+fi
 
 # Get Loader Disk Bus
 BUS=$(getBus "${LOADER_DISK}")
@@ -33,7 +44,10 @@ BUS=$(getBus "${LOADER_DISK}")
 CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
 ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
 for ETH in ${ETHX}; do
-  if curl --interface ${ETH} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}' > /dev/null 2>&1; then
+  # Update Check
+  NEWTAG=$(curl --interface ${ETH} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
+  if [ -n "${NEWTAG}" ]; then
+    NEWTAG="${ARC_VERSION}"
     ARCNIC=${ETH}
     break
   fi
@@ -43,15 +57,16 @@ if [ -n "${ARCNIC}" ]; then
 elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" == "false" ]; then
   writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
   cp -f "${PART3_PATH}/configs/offline.json" "${ARC_PATH}/include/offline.json"
+  ARCNIC="eth99"
   dialog --backtitle "$(backtitle)" --title "Online Check" \
-      --msgbox "No online Connection found.\nSwitch to Offline Mode!" 0 0
+      --msgbox "Could not connect to Github.\nSwitch to Offline Mode!" 0 0
 elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" == "true" ]; then
   dialog --backtitle "$(backtitle)" --title "Online Check" \
-    --infobox "No online Connection found.\nReboot to try again!" 0 0
+    --infobox "Could not connect to Github.\nReboot to try again!" 0 0
   sleep 5
   exec reboot
 fi
-writeConfigKey "arc.nic" "${ARCNIC:-eth0}" "${USER_CONFIG_FILE}"
+writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
 ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 
 # Get DSM Data from Config
@@ -97,15 +112,10 @@ LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 
 if [ "${OFFLINE}" == "false" ]; then
-  # Update Check
-  NEWTAG=$(curl --interface ${ARCNIC} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')
-  if [ -z "${NEWTAG}" ]; then
-    NEWTAG="${ARC_VERSION}"
-  fi
   # Timezone
-  GETREGION=$(curl --interface ${ARCNIC} -m 5 -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f1)
-  GETTIMEZONE=$(curl --interface ${ARCNIC} -m 5 -v http://ip-api.com/line?fields=timezone 2>/dev/null | tr -d '\n' | cut -d '/' -f2)
-  GETKEYMAP=$(curl --interface ${ARCNIC} -m 5 -v http://ip-api.com/line?fields=countryCode 2>/dev/null | tr '[:upper:]' '[:lower:]')
+  GETREGION=$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)
+  GETTIMEZONE=$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)
+  GETKEYMAP=$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')
   writeConfigKey "time.region" "${GETREGION}" "${USER_CONFIG_FILE}"
   writeConfigKey "time.timezone" "${GETTIMEZONE}" "${USER_CONFIG_FILE}"
   [ -z "{KEYMAP}" ] && writeConfigKey "keymap" "${GETKEYMAP}" "${USER_CONFIG_FILE}"
@@ -369,7 +379,7 @@ function arcVersion() {
   while read -r ID DESC; do
     writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
     for MOD in ${KOLIST[@]}; do
-      [ "${MOD}" == "${ID}" ] && echo "N ${ID}.ko" >>"${USER_UP_PATH}/modulelist"
+      [ "${MOD}" == "${ID}" ] && echo "F ${ID}.ko" >>"${USER_UP_PATH}/modulelist"
     done
   done < <(getAllModules "${PLATFORM}" "${KVERP}")
   # Check for Only Version
@@ -521,9 +531,14 @@ function arcSettings() {
         --msgbox "WARN: You have more then 8 Ethernet Ports.\nThere are only 8 supported by DSM." 0 0
     fi
     # Check for AES
-    if ! grep -q "^flags.*aes.*" /proc/cpuinfo; then
+    if [ "${AESSYS}" == "false" ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-        --msgbox "WARN: Your CPU does not have AES Support for Hardwareencryption in DSM." 0 0
+        --msgbox "WARN: Your System doesn't have AES Support for Hardwareencryption in DSM." 0 0
+    fi
+    # Check for ACPI
+    if [ "${ACPISYS}" == "false" ]; then
+      dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+        --msgbox "WARN: Your System doesn't have ACPI Support for CPU Frequency Scaling in DSM." 0 0
     fi
   fi
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
@@ -682,8 +697,8 @@ function make() {
         --infobox "Get PAT Data from Github..." 3 30
       idx=0
       while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-        PAT_URL=$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")
-        PAT_HASH=$(curl --interface ${ARCNIC} -m 5 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")
+        PAT_URL=$(curl --interface ${ARCNIC} -m 10 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")
+        PAT_HASH=$(curl --interface ${ARCNIC} -m 10 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")
         PAT_URL=${PAT_URL%%\?*}
         if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
           if echo "${PAT_URL}" | grep -q "https://"; then

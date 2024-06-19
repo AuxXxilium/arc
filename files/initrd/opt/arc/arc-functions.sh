@@ -50,6 +50,7 @@ function addonSelection() {
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     if [ "${ADDON}" == "cpufreqscaling" ]; then
+      [ "${ACPISYS}" == "false" ] && continue
       [ ! -d "/sys/devices/system/cpu/cpu0/cpufreq" ] && continue
     fi
     if [ "${ADDON}" == "amepatch" ] && [ "${OFFLINE}" == "true" ]; then
@@ -263,6 +264,7 @@ function cmdlineMenu() {
       1)
         MSG=""
         MSG+="Commonly used Parameter:\n"
+        MSG+=" * \Z4SpectreAll_on=\Zn\n    Enable Spectre and Meltdown protection to mitigate the threat of speculative execution vulnerability.\n"
         MSG+=" * \Z4disable_mtrr_trim=\Zn\n    Disables kernel trim any uncacheable memory out.\n"
         MSG+=" * \Z4intel_idle.max_cstate=1\Zn\n    Set the maximum C-state depth allowed by the intel_idle driver.\n"
         MSG+=" * \Z4pcie_port_pm=off\Zn\n    Disable the power management of the PCIe port.\n"
@@ -799,7 +801,7 @@ function updateMenu() {
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
-          TAG="$(curl --interface ${ARCNIC} -m 5 -w "%{http_code}" -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+          TAG="$(curl --interface ${ARCNIC} -m 5 -w "%{http_code}" -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
           if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ] || [ -z "${TAG}" ]; then
             dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
               --msgbox "Error checking new Version!" 0 0
@@ -1050,6 +1052,7 @@ function sysinfo() {
   TEXT+="\n  Vendor: \Zb${VENDOR}\Zn"
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL}))GB\Zn"
+  TEXT+="\n  AES | ACPI: \Zb${AESSYS} | ${ACPISYS}\Zn"
   TEXT+="\n  Date: \Zb$(date)\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${NIC} NIC\Zn"
@@ -1368,6 +1371,7 @@ function staticIPMenu() {
     [ -z "${opts}" ] && return 1
     if [ ${opts} -eq 1 ]; then
       writeConfigKey "static.${ETH}" "false" "${USER_CONFIG_FILE}"
+      /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
     elif [ ${opts} -eq 2 ]; then
       dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
         --inputbox "Type a Static IP\nLike: 192.168.0.2" 0 0 "${IPADDR}" \
@@ -1384,21 +1388,14 @@ function staticIPMenu() {
         2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return 1
       GATEWAY=$(cat "${TMP_PATH}/resp")
-      dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-        --inputbox "Type a Nameserver\nLike: 8.8.8.8" 0 0 "${NAMESERVER}" \
-        2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return 1
-      NAMESERVER=$(cat "${TMP_PATH}/resp")
       writeConfigKey "ip.${ETH}" "${IPADDR}" "${USER_CONFIG_FILE}"
       writeConfigKey "netmask.${ETH}" "${NETMASK}" "${USER_CONFIG_FILE}"
       writeConfigKey "gateway.${ETH}" "${GATEWAY}" "${USER_CONFIG_FILE}"
-      writeConfigKey "nameserver.${ETH}" "${NAMESERVER}" "${USER_CONFIG_FILE}"
       writeConfigKey "static.${ETH}" "true" "${USER_CONFIG_FILE}"
       #NETMASK=$(convert_netmask "${NETMASK}")
       /etc/init.d/S41dhcpcd stop >/dev/null 2>&1 || true
       ip addr add ${IPADDR}/${NETMASK} dev ${ETH}
       ip route add default via ${GATEWAY} dev ${ETH}
-      echo "nameserver ${NAMESERVER}" >>/etc/resolv.conf.head
       /etc/init.d/S40network restart
       IP="${IPADDR}"
     fi

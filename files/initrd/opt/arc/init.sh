@@ -66,7 +66,6 @@ initConfigKey "keymap" "" "${USER_CONFIG_FILE}"
 initConfigKey "layout" "" "${USER_CONFIG_FILE}"
 initConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
 initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
-initConfigKey "nameserver" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "model" "" "${USER_CONFIG_FILE}"
 initConfigKey "modelid" "" "${USER_CONFIG_FILE}"
@@ -92,18 +91,19 @@ NIC=0
 for ETH in ${ETHX}; do
   MACR=$(cat /sys/class/net/${ETH}/address | sed 's/://g')
   if [ -z "${MACR}" ]; then
-    MACR="9009d012345${NIC}"
+    MACR="9009d0123456"
   fi
   initConfigKey "mac.${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
   if [ "${MACSYS}" == "custom" ]; then
     MACA="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
-    if [ "${MACA}" != "${MACR}" ]; then
+    if [ -n "${MACA}" ] && [ "${MACA}" != "${MACR}" ]; then
       MAC="${MACA:0:2}:${MACA:2:2}:${MACA:4:2}:${MACA:6:2}:${MACA:8:2}:${MACA:10:2}"
       echo "Setting ${ETH} MAC to ${MAC}"
-      ip link set dev ${ETH} address "${MAC}" >/dev/null 2>&1 || true
+      ip link set dev ${ETH} address ${MAC} >/dev/null 2>&1 || true
+      STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
+      [ "${STATICIP}" == "false" ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
       sleep 2
     fi
-    /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
   fi
   NIC=$((${NIC} + 1))
 done
@@ -181,9 +181,9 @@ for ETH in ${ETHX}; do
       NETMASK="$(readConfigKey "netmask.${ETH}" "${USER_CONFIG_FILE}")"
       GATEWAY="$(readConfigKey "gateway.${ETH}" "${USER_CONFIG_FILE}")"
       NAMESERVER="$(readConfigKey "nameserver.${ETH}" "${USER_CONFIG_FILE}")"
-      IP="${ARCIP}"
+      IP=${ARCIP}
       #NETMASK=$(convert_netmask "${NETMASK}")
-      ip addr add ${IP}/${NETMASK} dev ${ETH} 2>/dev/null || true
+      ip addr add ${ARCIP}/${NETMASK} dev ${ETH} 2>/dev/null || true
       ip route add default via ${GATEWAY} dev ${ETH} 2>/dev/null || true
       echo "nameserver ${NAMESERVER}" >>/etc/resolv.conf.head 2>/dev/null || true
       /etc/init.d/S40network restart 2>/dev/null || true
@@ -200,17 +200,17 @@ for ETH in ${ETHX}; do
       SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
       writeConfigKey "ip.${ETH}" "${IP}" "${USER_CONFIG_FILE}"
       if [[ "${IP}" =~ ^169\.254\..* ]]; then
-        echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server detected.)"
+        echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server found.)"
       else
         echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web."
       fi
       break
-    elif [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
+    elif [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
       echo -e echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
       break
     fi
-    sleep 3
-    COUNT=$((${COUNT} + 3))
+    sleep 5
+    COUNT=$((${COUNT} + 4))
   done
 done
 

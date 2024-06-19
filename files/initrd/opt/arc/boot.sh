@@ -66,7 +66,7 @@ if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   HASATA=0
   for D in $(lsblk -dpno NAME); do
     [ "${D}" == "${LOADER_DISK}" ] && continue
-    if [ "$(getBus "${D}")" == "sata" -o "$(getBus "${D}")" == "scsi" ]; then
+    if [ "$(getBus "${D}")" == "sata" ] || [ "$(getBus "${D}")" == "scsi" ]; then
       HASATA=1
       break
     fi
@@ -146,7 +146,7 @@ if [ "${DT}" == "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "$
   [ "${CMDLINE['modprobe.blacklist']}" != "" ] && CMDLINE['modprobe.blacklist']+=","
   CMDLINE['modprobe.blacklist']+="mpt3sas"
 fi
-if echo "epyc7002 apollolake geminilake" | grep -wq "${PLATFORM}"; then
+if echo "apollolake geminilake" | grep -wq "${PLATFORM}"; then
   CMDLINE["intel_iommu"]="igfx_off"
 fi
 if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
@@ -195,7 +195,7 @@ if [ "${DIRECTBOOT}" == "true" ]; then
 elif [ "${DIRECTBOOT}" == "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-  echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+  echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for DHCP Connection:\033[0m"
   IPCON=""
   for ETH in ${ETHX}; do
     IP=""
@@ -210,18 +210,18 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
       elif [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server detected.)"
+          echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server found.)"
         else
           echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
           [ ! -n "${IPCON}" ] && IPCON="${IP}"
         fi
         break
-      elif [ ${COUNT} -gt ${BOOTIPWAIT} ]; then
+      elif [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
         echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
         break
       fi
-      sleep 3
-      COUNT=$((${COUNT} + 3))
+      sleep 5
+      COUNT=$((${COUNT} + 4))
     done
   done
   # Exec Bootwait to check SSH/Web connection
@@ -261,8 +261,12 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
 
   # Executes DSM kernel via KEXEC
   KEXECARGS=""
+  if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 4 ] && [ ${EFI} -eq 1 ]; then
+    echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
+    KEXECARGS="--noefi"
+  fi
   kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
-  echo -e "\033[1;37m"Booting DSM..."\033[0m"
+  echo -e "\033[1;37mBooting DSM...\033[0m"
   for T in $(w -h 2>/dev/null | awk '{print $2}'); do
     [ -w "/dev/${T}" ] && echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\nUse \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
   done

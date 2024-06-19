@@ -12,7 +12,7 @@ function updateLoader() {
       # Check for new Version
       idx=0
       while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
-        TAG="$(curl  --interface ${ARCNIC} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        TAG=$(curl  --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
         if [ -n "${TAG}" ]; then
           echo "New Version: ${TAG}"
           break
@@ -68,7 +68,7 @@ function updateAddons() {
       # Check for new Version
       idx=0
       while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
-        TAG="$(curl --interface ${ARCNIC} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        TAG=$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
         if [ -n "${TAG}" ]; then
           echo "New Version: ${TAG}"
           break
@@ -129,7 +129,7 @@ function updatePatches() {
       # Check for new Version
       idx=0
       while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
-        TAG="$(curl --interface ${ARCNIC} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        TAG=$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
         if [ -n "${TAG}" ]; then
           echo "New Version: ${TAG}"
           break
@@ -182,7 +182,7 @@ function updateModules() {
       # Check for new Version
       idx=0
       while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
-        TAG="$(curl --interface ${ARCNIC} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        TAG=$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
         if [ -n "${TAG}" ]; then
           echo "New Version: ${TAG}"
           break
@@ -254,7 +254,7 @@ function updateConfigs() {
       # Check for new Version
       idx=0
       while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
-        TAG="$(curl --interface ${ARCNIC} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        TAG=$(curl --interface ${ARCNIC} -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
         if [ -n "${TAG}" ]; then
           echo "New Version: ${TAG}"
           break
@@ -307,7 +307,7 @@ function updateLKMs() {
       # Check for new Version
       idx=0
       while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
-        TAG="$(curl --interface ${ARCNIC} -m 5 -skL https://api.github.com/repos/AuxXxilium/arc-lkm/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
+        TAG=$(curl --interface ${ARCNIC} -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
         if [ -n "${TAG}" ]; then
           echo "New Version: ${TAG}"
           break
