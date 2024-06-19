@@ -5,6 +5,7 @@ version: "3"
 tasks:
   build-img:
     cmds:
+      - git pull
       - ./img-gen.sh
 
   compile-kpatch:

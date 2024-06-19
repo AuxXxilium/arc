@@ -137,7 +137,7 @@ jobs:
           echo "$(cat "${PRESET_CONFIG_FILE}")"
           echo "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"/tmp/automated"
           sudo cp -f "/tmp/automated" "/tmp/p3/automated"
-          echo "Copying files"
+          echo "Syncing files"
           sync
 
           echo "Unmount image file"
