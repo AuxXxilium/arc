@@ -1944,6 +1944,7 @@ function governorSelection () {
     # Selectable CPU governors
     echo -e "performance \"always run at max frequency\"" >>"${TMP_PATH}/opts"
     [ "${PLATFORM}" == "epyc7002" ] && echo -e "schedutil \"use schedutil to scale frequency\"" >>"${TMP_PATH}/opts"
+    [ "${PLATFORM}" != "epyc7002" ] && echo -e "conservative \"use conservative to scale frequency\"" >>"${TMP_PATH}/opts"
     [ "${PLATFORM}" != "epyc7002" ] && echo -e "ondemand \"use ondemand to scale frequency\"" >>"${TMP_PATH}/opts"
     echo -e "userspace \"use userspace settings to scale frequency\"" >>"${TMP_PATH}/opts"
     dialog --backtitle "$(backtitle)" --title "DSM Frequency Scaling" \

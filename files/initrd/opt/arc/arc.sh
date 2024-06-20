@@ -380,9 +380,12 @@ function arcVersion() {
   while read -r ID DESC; do
     writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
     for MOD in ${KOLIST[@]}; do
-      [ "${MOD}" == "${ID}" ] && echo "F ${ID}.ko" >>"${USER_UP_PATH}/modulelist"
+      [ "${MOD}" == "${ID}" ] && echo "N ${ID}.ko" >>"${USER_UP_PATH}/modulelist"
     done
   done < <(getAllModules "${PLATFORM}" "${KVERP}")
+  [ "${PLATFORM}" != "epyc7002" ] && echo "N cpufreq_gorvenor.ko" >>"${USER_UP_PATH}/modulelist"
+  [ "${PLATFORM}" != "epyc7002" ] && echo "N cpufreq_conservative.ko" >>"${USER_UP_PATH}/modulelist"
+  [ "${PLATFORM}" != "epyc7002" ] && echo "N cpufreq_ondemand.ko" >>"${USER_UP_PATH}/modulelist"
   # Check for Only Version
   if [ "${ONLYVERSION}" == "true" ]; then
     # Build isn't done
