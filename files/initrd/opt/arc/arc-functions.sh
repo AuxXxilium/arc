@@ -49,10 +49,6 @@ function addonSelection() {
   touch "${TMP_PATH}/opts"
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
-    if [ "${ADDON}" == "cpufreqscaling" ]; then
-      [ "${ACPISYS}" == "false" ] && continue
-      [ ! -d "/sys/devices/system/cpu/cpu0/cpufreq" ] && continue
-    fi
     if [ "${ADDON}" == "amepatch" ] && [ "${OFFLINE}" == "true" ]; then
       continue
     fi
@@ -1929,4 +1925,38 @@ function arcNIC () {
   ARCNIC=${resp}
   writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
   return
+}
+
+###############################################################################
+# CPU Governor Menu
+function governorMenu () {
+  governorSelection
+  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  return
+}
+
+function governorSelection () {
+  rm -f "${TMP_PATH}/opts" >/dev/null
+  touch "${TMP_PATH}/opts"
+  CPUFREQSUPPORT=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
+  if [ -n "${CPUFREQSUPPORT}" ]; then
+    # Selectable CPU governors
+    echo -e "performance \"always run at max frequency\"" >>"${TMP_PATH}/opts"
+    [ "${PLATFORM}" == "epyc7002" ] && echo -e "schedutil \"use schedutil to scale frequency\"" >>"${TMP_PATH}/opts"
+    [ "${PLATFORM}" != "epyc7002" ] && echo -e "ondemand \"use ondemand to scale frequency\"" >>"${TMP_PATH}/opts"
+    echo -e "userspace \"use userspace settings to scale frequency\"" >>"${TMP_PATH}/opts"
+    dialog --backtitle "$(backtitle)" --title "DSM Frequency Scaling" \
+      --default-item "performance" --menu  "Choose a Governor" 0 0 0 --file "${TMP_PATH}/opts" \
+      2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    resp=$(cat ${TMP_PATH}/resp)
+    [ -z "${resp}" ] && return
+    CPUGOVERNOR=${resp}
+  else
+    dialog --backtitle "$(backtitle)" --title "DSM Frequency Scaling" \
+      --msgbox "CPU frequency scaling not supported!" 0 0
+    CPUGOVERNOR="performance"
+  fi
+  writeConfigKey "arc.governor" "${CPUGOVERNOR}" "${USER_CONFIG_FILE}"
 }

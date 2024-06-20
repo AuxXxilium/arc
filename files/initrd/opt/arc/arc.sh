@@ -87,6 +87,7 @@ ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
+CPUGOVERNOR="$(readConfigKey "arc.governor" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
@@ -517,6 +518,7 @@ function arcSettings() {
     writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
     # Select Addons
     addonSelection
+    governorSelection
     # Check for DT and HBA/Raid Controller
     if [ "${PLATFORM}" != "epyc7002" ]; then
       if [ "${DT}" == "true" ] && [ "${EXTERNALCONTROLLER}" == "true" ]; then
@@ -954,6 +956,7 @@ else
         echo "= \"\Z4========== Arc ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
         echo "b \"DSM Addons \" "                                                             >>"${TMP_PATH}/menu"
         echo "d \"DSM Modules \" "                                                            >>"${TMP_PATH}/menu"
+        echo "g \"DSM Frequency Scaling \" "                                                  >>"${TMP_PATH}/menu"
         echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
         if [ ${SATACONTROLLER} -gt 0 ]; then
           echo "S \"DSM Sata PortMap \" "                                                     >>"${TMP_PATH}/menu"
@@ -1057,6 +1060,7 @@ else
         ;;
       b) addonMenu; NEXT="b" ;;
       d) modulesMenu; NEXT="d" ;;
+      g) governorMenu; NEXT="g" ;;
       e) ONLYVERSION="true" && arcVersion; NEXT="e" ;;
       S) storageMenu; NEXT="S" ;;
       P) storagepanelMenu; NEXT="P" ;;
