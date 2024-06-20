@@ -107,8 +107,8 @@ jobs:
 
           sudo losetup --detach ${LOOPX}
 
-          resizeImg "arc.img" "+1024M" "arc-2G.img"
-          mv -f "arc-2G.img" "arc.img"
+          #resizeImg "arc.img" "+1024M" "arc-2G.img"
+          #mv -f "arc-2G.img" "arc.img"
 
           echo "Image Converter"
           qemu-img convert -O vmdk arc.img arc-dyn.vmdk
