@@ -495,7 +495,7 @@ function arcSettings() {
   CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   # Get Network Config for Loader
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
-    --infobox "Generating Network Config..." 3 35
+    --infobox "Generating Network Config..." 3 40
   sleep 2
   getnet
   if [ "${ONLYPATCH}" == "true" ]; then
@@ -508,20 +508,23 @@ function arcSettings() {
   # Select Portmap for Loader
   if [ "${DT}" == "false" ] && [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
-      --infobox "Generating Storage Map..." 3 35
+      --infobox "Generating Storage Map..." 3 40
     sleep 2
     getmapSelection
   fi
   # Check for Custom Build
   if [ "${CUSTOM}" == "false" ]; then
+    # Select Governor for DSM
+    dialog --backtitle "$(backtitle)" --colors --title "DSM Frequency Scaling" \
+      --infobox "Generating Governor Table..." 3 40
+    governorSelection
+    # Select Addons
     dialog --backtitle "$(backtitle)" --colors --title "DSM Addons" \
-      --infobox "Loading Addons Table..." 3 35
-    # Add Arc Addons
+      --infobox "Loading Addons Table..." 3 40
     writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
     writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-    # Select Addons
+    writeConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
     addonSelection
-    governorSelection
     # Check for DT and HBA/Raid Controller
     if [ "${PLATFORM}" != "epyc7002" ]; then
       if [ "${DT}" == "true" ] && [ "${EXTERNALCONTROLLER}" == "true" ]; then
