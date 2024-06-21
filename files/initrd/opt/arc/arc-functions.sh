@@ -1957,7 +1957,8 @@ function rebootMenu() {
     poweroff
     exit 0
   elif [ "${REDEST}" == "shell" ]; then
-    break 2
+    clear
+    exit 0
   else
     rebootTo ${REDEST}
     exit 0
