@@ -893,22 +893,6 @@ function juniorboot() {
 }
 
 ###############################################################################
-# Calls boot.sh to boot into DSM Recovery Mode
-function recoveryboot() {
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  [ "${BUILDDONE}" == "false" ] && dialog --backtitle "$(backtitle)" --title "Alert" \
-    --yesno "Config changed, please build Loader first." 0 0
-  if [ $? -eq 0 ]; then
-    make
-  fi
-  grub-editenv ${USER_GRUBENVFILE} set next_entry="recovery"
-  dialog --backtitle "$(backtitle)" --title "Arc Boot" \
-    --infobox "Booting DSM Recovery Mode...\nPlease stay patient!" 4 30
-  sleep 2
-  exec reboot
-}
-
-###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -986,8 +970,6 @@ else
           echo "i \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
         fi
         echo "q \"Directboot: \Z4${DIRECTBOOT}\Zn \" "                                        >>"${TMP_PATH}/menu"
-        echo "J \"Boot DSM Reinstall Mode\" "                                                 >>"${TMP_PATH}/menu"
-        echo "I \"Boot DSM Recovery Mode\" "                                                  >>"${TMP_PATH}/menu"
       fi
       if [ "${DSMOPTS}" == "true" ]; then
         echo "7 \"\Z1Hide DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
@@ -1002,7 +984,7 @@ else
         echo "s \"Allow Downgrade \" "                                                        >>"${TMP_PATH}/menu"
         echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
         echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
-        echo "T \"Force enable SSH in DSM \" "                                                >>"${TMP_PATH}/menu"
+        echo "J \"Reset DSM Network Config \" "                                               >>"${TMP_PATH}/menu"
         if [ "${PLATFORM}" == "epyc7002" ]; then
           echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
         fi
@@ -1015,6 +997,7 @@ else
         echo "o \"Switch MacSys: \Z4${MACSYS}\Zn \" "                                         >>"${TMP_PATH}/menu"
         echo "W \"RD Compression: \Z4${RD_COMPRESSED}\Zn \" "                                 >>"${TMP_PATH}/menu"
         echo "X \"Sata DOM: \Z4${SATADOM}\Zn \" "                                             >>"${TMP_PATH}/menu"
+        echo "T \"Force enable SSH in DSM \" "                                                >>"${TMP_PATH}/menu"
       fi
     fi
     if [ "${DEVOPTS}" == "true" ]; then
@@ -1043,6 +1026,7 @@ else
     if [ "${OFFLINE}" == "false" ]; then
       echo "z \"Update Loader\" "                                                             >>"${TMP_PATH}/menu"
     fi
+    echo "I \"Reboot \" "                                                                     >>"${TMP_PATH}/menu"
     echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
 
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --colors \
@@ -1097,8 +1081,6 @@ else
         writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
         NEXT="q"
         ;;
-      J) juniorboot; NEXT="J" ;;
-      I) recoveryboot; NEXT="I" ;;
       # DSM Section
       7) [ "${DSMOPTS}" == "true" ] && DSMOPTS='false' || DSMOPTS='true'
         DSMOPTS="${DSMOPTS}"
@@ -1109,6 +1091,7 @@ else
       s) downgradeMenu; NEXT="s" ;;
       t) resetPassword; NEXT="t" ;;
       N) addNewDSMUser; NEXT="N" ;;
+      J) resetDSMNetwork; NEXT="J" ;;
       K) [ "${KERNEL}" == "official" ] && KERNEL='custom' || KERNEL='official'
         writeConfigKey "arc.kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
         if [ "${ODP}" == "true" ]; then
@@ -1214,6 +1197,7 @@ else
         ;;
       y) keymapMenu; NEXT="y" ;;
       z) updateMenu; NEXT="z" ;;
+      I) rebootMenu; NEXT="I" ;;
       V) credits; NEXT="V" ;;
     esac
   done
