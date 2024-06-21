@@ -1014,7 +1014,7 @@ else
       echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
       echo "w \"Reset Loader to Defaults\" "                                                  >>"${TMP_PATH}/menu"
       echo "C \"Clone Loader to Disk\" "                                                      >>"${TMP_PATH}/menu"
-      echo "F \"\Z1Formate Disk\Zn \" "                                                       >>"${TMP_PATH}/menu"
+      echo "F \"\Z1Formate Disks\Zn \" "                                                      >>"${TMP_PATH}/menu"
       echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
       echo "v \"Write Modifications to Disk \" "                                              >>"${TMP_PATH}/menu"
       echo "G \"Install opkg Package Manager \" "                                             >>"${TMP_PATH}/menu"
