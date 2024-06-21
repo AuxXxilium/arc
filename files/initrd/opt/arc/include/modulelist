@@ -15,6 +15,7 @@ N kvm.ko
 # sensors
 N coretemp.ko
 N k10temp.ko
+N hwmon-vid.ko
 N it87.ko
 N adt7470.ko
 N adt7475.ko
@@ -22,9 +23,9 @@ N nct6683.ko
 N nct6775.ko
 
 # rndis
-F mii.ko
-F cdc_ether.ko
-F rndis_host.ko
+#F mii.ko
+#F cdc_ether.ko
+#F rndis_host.ko
 
 ## i915
 #N dmabuf.ko

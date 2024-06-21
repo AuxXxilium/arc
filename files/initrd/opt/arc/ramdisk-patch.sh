@@ -31,8 +31,10 @@ MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
-LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
-KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+EXLAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
+EXKEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+[ -z "${EXLAYOUT}" ] && EXLAYOUT="qwerty"
+[ -z "${EXKEYMAP}" ] && EXKEYMAP="en"
 CPUGOVERNOR="$(readConfigKey "arc.governor" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
@@ -158,23 +160,28 @@ echo "export MODEL=\"${MODEL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MODELID=\"${MODELID}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MLINK=\"${PAT_URL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MCHECKSUM=\"${PAT_HASH}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export LAYOUT=\"${LAYOUT}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export KEYMAP=\"${KEYMAP}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export LAYOUT=\"${EXLAYOUT}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export KEYMAP=\"${EXKEYMAP}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
-for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol" "cpufreqscaling"; do
+for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol"; do
   PARAMS=""
   if [ "${ADDON}" == "disks" ]; then
     PARAMS=${HDDSORT:-"false"}
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   fi
-  if [ "${ADDON}" == "cpufreqscaling" ]; then
-    PARAMS=${CPUGOVERNOR:-"performance"}
-  fi
   installAddon "${ADDON}" "${PLATFORM}" || exit 1
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 done
+
+# Check for Hypervisor & add Cpufreqscaling service
+if ! grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
+  [ -n "${CPUGOVERNOR}" ] && PARAMS=${CPUGOVERNOR}
+  [ -z "${CPUGOVERNOR}" ] && PARAMS="performance"
+  installAddon "${ADDON}" "${PLATFORM}" || exit 1
+  echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+fi
 
 # User Addons
 for ADDON in ${!ADDONS[@]}; do
@@ -191,7 +198,7 @@ echo "Modify files" >"${LOG_FILE}"
 [ "2" == "${BUILDNUM:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
 
 # Build modules dependencies
-# ${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
+${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
 
 # Copying modulelist
 if [ -f "${USER_UP_PATH}/modulelist" ]; then

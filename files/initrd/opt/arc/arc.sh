@@ -20,7 +20,6 @@ RAMTOTAL=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024}' /proc/meminfo 2>/
 
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
-  # Check for Hypervisor
   MACHINE=$(lscpu | grep Hypervisor | awk '{print $3}')
 else
   MACHINE=NATIVE
@@ -514,10 +513,12 @@ function arcSettings() {
   fi
   # Check for Custom Build
   if [ "${CUSTOM}" == "false" ]; then
-    # Select Governor for DSM
-    dialog --backtitle "$(backtitle)" --colors --title "DSM Frequency Scaling" \
-      --infobox "Generating Governor Table..." 3 40
-    governorSelection
+    if [ "${MACHINE}" == "NATIVE" ]; then
+      # Select Governor for DSM
+      dialog --backtitle "$(backtitle)" --colors --title "DSM Frequency Scaling" \
+        --infobox "Generating Governor Table..." 3 40
+      governorSelection
+    fi
     # Select Addons
     dialog --backtitle "$(backtitle)" --colors --title "DSM Addons" \
       --infobox "Loading Addons Table..." 3 40
