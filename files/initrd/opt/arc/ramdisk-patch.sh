@@ -177,10 +177,12 @@ done
 
 # Check for Hypervisor & add Cpufreqscaling service
 if ! grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
-  [ -n "${CPUGOVERNOR}" ] && PARAMS=${CPUGOVERNOR}
-  [ -z "${CPUGOVERNOR}" ] && PARAMS="performance"
-  installAddon "${ADDON}" "${PLATFORM}" || exit 1
-  echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+  for ADDON in "cpufreqscaling"; do
+    [ -n "${CPUGOVERNOR}" ] && PARAMS=${CPUGOVERNOR}
+    [ -z "${CPUGOVERNOR}" ] && PARAMS="performance"
+    installAddon "${ADDON}" "${PLATFORM}" || exit 1
+    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+  done
 fi
 
 # User Addons
