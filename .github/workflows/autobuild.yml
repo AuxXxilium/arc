@@ -64,8 +64,7 @@ jobs:
           getPatches "files/p3/patches"
           getTheme "files/p1/boot/grub"
           getOffline "files/p3/configs"
-          br_version="2023.11.x"
-          getBuildroot "${br_version}" "br"
+          getBuildroot "latest" "br"
 
           echo "OK"
 

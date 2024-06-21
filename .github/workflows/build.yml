@@ -139,8 +139,7 @@ jobs:
           echo "THEMETAG=${TAG}" >> $GITHUB_ENV
           getOffline "files/p3/configs"
           echo "Get Buildroot"
-          br_version="2023.11.x"
-          getBuildroot "${br_version}" "br"
+          getBuildroot "latest" "br"
 
           echo "OK"
 
