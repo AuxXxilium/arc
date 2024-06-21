@@ -119,8 +119,8 @@ if [ "${OFFLINE}" == "false" ]; then
   writeConfigKey "time.region" "${GETREGION}" "${USER_CONFIG_FILE}"
   writeConfigKey "time.timezone" "${GETTIMEZONE}" "${USER_CONFIG_FILE}"
   [ -z "{KEYMAP}" ] && writeConfigKey "keymap" "${GETKEYMAP}" "${USER_CONFIG_FILE}"
-  KEYMAP=${GETKEYMAP}
-  ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
+  [ -z "{KEYMAP}" ] && KEYMAP=${GETKEYMAP}
+  ln -fs /usr/share/zoneinfo/${GETREGION}/${GETTIMEZONE} /etc/localtime
   # NTP
   /etc/init.d/S49ntpd restart > /dev/null 2>&1
   hwclock -w > /dev/null 2>&1
