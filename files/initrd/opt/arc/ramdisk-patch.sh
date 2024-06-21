@@ -31,10 +31,8 @@ MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
-EXLAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
-EXKEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-[ -z "${EXLAYOUT}" ] && EXLAYOUT="qwerty"
-[ -z "${EXKEYMAP}" ] && EXKEYMAP="en"
+LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
+KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 CPUGOVERNOR="$(readConfigKey "arc.governor" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
@@ -160,8 +158,8 @@ echo "export MODEL=\"${MODEL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MODELID=\"${MODELID}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MLINK=\"${PAT_URL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MCHECKSUM=\"${PAT_HASH}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export LAYOUT=\"${EXLAYOUT}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export KEYMAP=\"${EXKEYMAP}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export LAYOUT=\"${LAYOUT}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export KEYMAP=\"${KEYMAP}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
@@ -178,8 +176,7 @@ done
 # Check for Hypervisor & add Cpufreqscaling service
 if ! grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
   for ADDON in "cpufreqscaling"; do
-    [ -n "${CPUGOVERNOR}" ] && PARAMS=${CPUGOVERNOR}
-    [ -z "${CPUGOVERNOR}" ] && PARAMS="performance"
+    PARAMS=${CPUGOVERNOR:-"performance"}
     installAddon "${ADDON}" "${PLATFORM}" || exit 1
     echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
   done
