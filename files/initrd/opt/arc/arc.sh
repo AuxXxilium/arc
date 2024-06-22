@@ -40,35 +40,36 @@ fi
 BUS=$(getBus "${LOADER_DISK}")
 
 # Offline Mode check
+ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
+OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
 NEWTAG=$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
-if [ -z "${NEWTAG}" ]; then
+if [ -n "${NEWTAG}" ]; then
+  [ -z "${ARCNIC}" ] && ARCNIC="auto"
+elif [ -z "${NEWTAG}" ]; then
   ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
   for ETH in ${ETHX}; do
     # Update Check
     NEWTAG=$(curl --interface ${ETH} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
     if [ -n "${NEWTAG}" ]; then
-      ARCNIC=${ETH}
+      [ -z "${ARCNIC}" ] && ARCNIC="${ETH}"
       break
     fi
   done
-  [ -z "${NEWTAG}" ] && NEWTAG="${ARC_VERSION}"
   if [ -n "${ARCNIC}" ]; then
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
   elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" == "false" ]; then
     writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
     cp -f "${PART3_PATH}/configs/offline.json" "${ARC_PATH}/include/offline.json"
-    ARCNIC="offline"
+    [ -z "${ARCNIC}" ] && ARCNIC="auto"
     dialog --backtitle "$(backtitle)" --title "Online Check" \
         --msgbox "Could not connect to Github.\nSwitch to Offline Mode!" 0 0
   elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Online Check" \
       --infobox "Could not connect to Github.\nReboot to try again!" 0 0
-    sleep 5
+    sleep 10
     exec reboot
   fi
-else
-  ARCNIC="auto"
 fi
 writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
 ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
@@ -112,36 +113,35 @@ SASCONTROLLER="$(readConfigKey "device.sascontroller" "${USER_CONFIG_FILE}")"
 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
-# Get Loader Config
+# Get Keymap and Timezone Config
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-
 if [ "${OFFLINE}" == "false" ]; then
   # Timezone
   if [ "${ARCNIC}" == "auto" ]; then
-    GETREGION=$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)
-    GETTIMEZONE=$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)
-    GETKEYMAP=$(curl -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')
+    REGION=$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)
+    TIMEZONE=$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)
+    [ -z "${KEYMAP}" ] && KEYMAP=$(curl -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')
   else
-    GETREGION=$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)
-    GETTIMEZONE=$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)
-    GETKEYMAP=$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')
+    REGION=$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)
+    TIMEZONE=$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)
+    [ -z "${KEYMAP}" ] && KEYMAP=$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')
   fi
-  writeConfigKey "time.region" "${GETREGION}" "${USER_CONFIG_FILE}"
-  writeConfigKey "time.timezone" "${GETTIMEZONE}" "${USER_CONFIG_FILE}"
-  [ -z "{KEYMAP}" ] && writeConfigKey "keymap" "${GETKEYMAP}" "${USER_CONFIG_FILE}"
-  [ -z "{KEYMAP}" ] && KEYMAP=${GETKEYMAP}
-  ln -fs /usr/share/zoneinfo/${GETREGION}/${GETTIMEZONE} /etc/localtime
+  writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
+  writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
+  [ -n "${KEYMAP}" ] && writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
+  ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
   # NTP
   /etc/init.d/S49ntpd restart > /dev/null 2>&1
   hwclock -w > /dev/null 2>&1
 fi
-loadkeys ${KEYMAP:-en}
+[ -z "${KEYMAP}" ] && KEYMAP="en"
+loadkeys ${KEYMAP}
 
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
-  if [ "${NEWTAG}" != "${ARC_VERSION}" ] && [ "${OFFLINE}" == "false" ]; then
+  if [ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ] && [ "${OFFLINE}" == "false" ]; then
     ARC_TITLE="${ARC_TITLE} -> ${NEWTAG}"
   fi
   if [ -z "${MODEL}" ]; then
