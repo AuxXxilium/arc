@@ -1960,7 +1960,7 @@ function rebootMenu() {
   echo -e "bios \"BIOS/UEFI\"" >>"${TMP_PATH}/opts"
   echo -e "poweroff \"Shutdown\"" >>"${TMP_PATH}/opts"
   echo -e "shell \"Exit to Shell Cmdline\"" >>"${TMP_PATH}/opts"
-  dialog --backtitle "$(backtitle)" --title "DSM Frequency Scaling" \
+  dialog --backtitle "$(backtitle)" --title "Reboot" \
     --menu  "Choose a Destination" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
