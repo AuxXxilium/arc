@@ -14,7 +14,6 @@
 
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
-  # Check for Hypervisor
   MACHINE="$(lscpu | grep Hypervisor | awk '{print $3}')"
 else
   MACHINE="NATIVE"
@@ -22,6 +21,41 @@ fi
 
 # Get Loader Disk Bus
 BUS=$(getBus "${LOADER_DISK}")
+
+# Offline Mode check
+ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
+OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+NEWTAG=$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
+if [ -n "${NEWTAG}" ]; then
+  [ -z "${ARCNIC}" ] && ARCNIC="auto"
+elif [ -z "${NEWTAG}" ]; then
+  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
+  for ETH in ${ETHX}; do
+    # Update Check
+    NEWTAG=$(curl --interface ${ETH} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
+    if [ -n "${NEWTAG}" ]; then
+      [ -z "${ARCNIC}" ] && ARCNIC="${ETH}"
+      break
+    fi
+  done
+  if [ -n "${ARCNIC}" ]; then
+    writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
+  elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" == "false" ]; then
+    writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
+    cp -f "${PART3_PATH}/configs/offline.json" "${ARC_PATH}/include/offline.json"
+    [ -z "${ARCNIC}" ] && ARCNIC="auto"
+    dialog --backtitle "$(backtitle)" --title "Online Check" \
+        --msgbox "Could not connect to Github.\nSwitch to Offline Mode!" 0 0
+  elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" == "true" ]; then
+    dialog --backtitle "$(backtitle)" --title "Online Check" \
+      --infobox "Could not connect to Github.\nReboot to try again!" 0 0
+    sleep 10
+    exec reboot
+  fi
+fi
+writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
+ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -37,8 +71,6 @@ fi
 # Get Arc Data from Config
 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-CUSTOM="${readConfigKey "arc.custom" "${USER_CONFIG_FILE}"}"
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -79,8 +111,8 @@ function arcUpdate() {
   writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  if [ "${CUSTOM}" == "true" ] && [ ! -f "${PART3_PATH}/automated" ]; then
-    echo "${ARC_VERSION}-${MODEL}-{PRODUCTVER}-custom" >"${PART3_PATH}/automated"
+  if [ ! -f "${PART3_PATH}/automated" ]; then
+    echo "${ARC_VERSION}-${MODEL}-${PRODUCTVER}-custom" >"${PART3_PATH}/automated"
   fi
   boot
 }
@@ -88,7 +120,7 @@ function arcUpdate() {
 ###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
-  if [ "${CUSTOM}" == "true" ]; then
+  if [ "${CONFDONE}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Boot" \
       --infobox "Rebooting to automated Build Mode...\nPlease stay patient!" 4 30
     sleep 3
@@ -107,8 +139,14 @@ function boot() {
 if [ "${OFFLINE}" == "false" ]; then
   arcUpdate
 else
-  dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-    --infobox "Offline Mode enabled.\nCan't Update Loader!" 0 0
-  sleep 5
-  exec reboot
+  if [ "${CUSTOM}" == "true" ]; then
+    dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
+      --infobox "Offline Mode enabled.\nCan't Update Loader!" 0 0
+    sleep 5
+    exec reboot
+  else
+    dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
+      --msgbox "Offline Mode enabled.\nCan't Update Loader!" 0 0
+    exit 1
+  fi
 fi

@@ -179,7 +179,7 @@ function modulesMenu() {
         MSG+="This function is experimental and dangerous. If you don't know much, please exit.\n"
         MSG+="The imported .ko of this function will be implanted into the corresponding arch's modules package, which will affect all models of the arch.\n"
         MSG+="This program will not determine the availability of imported modules or even make type judgments, as please double check if it is correct.\n"
-        MSG+="If you want to remove it, please go to the \"Update Menu\" -> \"Update Modules\" to forcibly update the modules. All imports will be reset.\n"
+        MSG+="If you want to remove it, please go to the \"Update\" -> \"Update Modules\" to forcibly update the modules. All imports will be reset.\n"
         MSG+="Do you want to continue?"
         dialog --backtitle "$(backtitle)" --title "External Modules" \
           --yesno "${MSG}" 0 0
@@ -464,6 +464,7 @@ function synoinfoMenu() {
         MSG+=" * \Z4internalportcfg=0x????\Zn\n    Internal(sata) disks mask.\n"
         MSG+=" * \Z4esataportcfg=0x????\Zn\n    Esata disks mask.\n"
         MSG+=" * \Z4usbportcfg=0x????\Zn\n    USB disks mask.\n"
+        MSG+=" * \Z4SasIdxMap=0\Zn\n    Remove SAS reserved Ports.\n"
         MSG+=" * \Z4max_sys_raid_disks=??\Zn\n    Maximum number of system partition(md0) raid disks.\n"
         MSG+=" * \Z4support_glusterfs=yes\Zn\n    GlusterFS in DSM.\n"
         MSG+=" * \Z4support_sriov=yes\Zn\n    SR-IOV Support in DSM.\n"
@@ -789,6 +790,7 @@ function updateMenu() {
           --infobox "Checking latest version..." 0 0
         ACTUALVERSION="${ARC_VERSION}"
         # Ask for Tag
+        TAG=""
         dialog --clear --backtitle "$(backtitle)" --title "Upgrade Loader" \
           --menu "Which Version?" 0 0 0 \
           1 "Latest" \
@@ -821,18 +823,17 @@ function updateMenu() {
             --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
           [ $? -ne 0 ] && return 1
         fi
-        (
-          # Download update file
+        ( # Download update file
           if [ "${ARCNIC}" == "auto" ]; then
             curl -#kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
               [[ $char =~ [0-9] ]] && keep=1 ;
-              [[ $char == % ]] && echo "Download:$progress" && progress="" && keep=0 ;
+              [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
               [[ $keep == 1 ]] && progress="$progress$char" ;
             done
           else
             curl --interface ${ARCNIC} -#kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
               [[ $char =~ [0-9] ]] && keep=1 ;
-              [[ $char == % ]] && echo "Download:$progress" && progress="" && keep=0 ;
+              [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
               [[ $keep == 1 ]] && progress="$progress$char" ;
             done
           fi
@@ -860,6 +861,7 @@ function updateMenu() {
         ;;
       2)
         # Ask for Tag
+        TAG=""
         dialog --clear --backtitle "$(backtitle)" --title "Update Addons" \
           --menu "Which Version?" 0 0 0 \
           1 "Latest" \
@@ -883,6 +885,7 @@ function updateMenu() {
         ;;
       3)
         # Ask for Tag
+        TAG=""
         dialog --clear --backtitle "$(backtitle)" --title "Update Configs" \
           --menu "Which Version?" 0 0 0 \
           1 "Latest" \
@@ -907,6 +910,7 @@ function updateMenu() {
         ;;
       4)
         # Ask for Tag
+        TAG=""
         dialog --clear --backtitle "$(backtitle)" --title "Update LKMs" \
           --menu "Which Version?" 0 0 0 \
           1 "Latest" \
@@ -929,6 +933,7 @@ function updateMenu() {
         ;;
       5)
         # Ask for Tag
+        TAG=""
         dialog --clear --backtitle "$(backtitle)" --title "Update Modules" \
           --menu "Which Version?" 0 0 0 \
           1 "Latest" \
@@ -951,6 +956,7 @@ function updateMenu() {
         ;;
       6)
         # Ask for Tag
+        TAG=""
         dialog --clear --backtitle "$(backtitle)" --title "Update Patches" \
           --menu "Which Version?" 0 0 0 \
           1 "Latest" \
@@ -973,8 +979,8 @@ function updateMenu() {
         ;;
       7)
         dialog --backtitle "$(backtitle)" --title "Automated Update" --aspect 18 \
-          --msgbox "Loader will reboot to Automated Update Mode.\nPlease wait until progress is finished!" 0 0
-        rebootTo update
+          --msgbox "Loader will proceed Automated Update Mode.\nPlease wait until progress is finished!" 0 0
+        . ${ARC_PATH}/update.sh
         ;;
     esac
   done
@@ -1231,23 +1237,23 @@ function sysinfo() {
     --msgbox "${TEXT}" 0 0
   RET=$?
   case ${RET} in
-  0) # ok-button
-    return 0
-    ;;
-  2) # help-button
-    networkdiag
-    ;;
-  3) # extra-button
-    if [ -f "${TMP_PATH}/diag" ]; then
-      GENHASH="$(cat "${TMP_PATH}/diag" | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)"
-      dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Your Code: ${GENHASH}" 0 0
-    else
-      dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "No Diag File found!" 0 0
-    fi
-    ;;
-  255) # ESC
-    return 0
-    ;;
+    0) # ok-button
+      return 0
+      ;;
+    2) # help-button
+      networkdiag
+      ;;
+    3) # extra-button
+      if [ -f "${TMP_PATH}/diag" ]; then
+        GENHASH="$(cat "${TMP_PATH}/diag" | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)"
+        dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Your Code: ${GENHASH}" 0 0
+      else
+        dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "No Diag File found!" 0 0
+      fi
+      ;;
+    255) # ESC
+      return 0
+      ;;
   esac
   return
 }
