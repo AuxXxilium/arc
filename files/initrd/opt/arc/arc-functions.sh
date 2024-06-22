@@ -259,7 +259,7 @@ function cmdlineMenu() {
     case "$(cat ${TMP_PATH}/resp)" in
       1)
         MSG=""
-        MSG+="Commonly used Parameter:\n"
+        MSG+="Commonly used Parameter (Format: Name=Value):\n"
         MSG+=" * \Z4SpectreAll_on=\Zn\n    Enable Spectre and Meltdown protection to mitigate the threat of speculative execution vulnerability.\n"
         MSG+=" * \Z4disable_mtrr_trim=\Zn\n    Disables kernel trim any uncacheable memory out.\n"
         MSG+=" * \Z4intel_idle.max_cstate=1\Zn\n    Set the maximum C-state depth allowed by the intel_idle driver.\n"
@@ -277,7 +277,7 @@ function cmdlineMenu() {
         while true; do
           dialog --clear --backtitle "$(backtitle)" \
             --colors --title "User Cmdline" \
-            --form "${MSG}" ${LINENUM:-16} 70 2 "Name:" 1 1 "" 1 10 55 0 "Value:" 2 1 "" 2 10 55 0 \
+            --form "${MSG}" ${LINENUM:-16} 80 2 "Name:" 1 1 "" 1 10 55 0 "Value:" 2 1 "" 2 10 55 0 \
             2>"${TMP_PATH}/resp"
           RET=$?
           case ${RET} in
@@ -459,7 +459,7 @@ function synoinfoMenu() {
     case "$(cat ${TMP_PATH}/resp)" in
       1)
         MSG=""
-        MSG+="Commonly used Synoinfo:\n"
+        MSG+="Commonly used Synoinfo (Format: Name=Value):\n"
         MSG+=" * \Z4maxdisks=??\Zn\n    Maximum number of disks supported.\n"
         MSG+=" * \Z4internalportcfg=0x????\Zn\n    Internal(sata) disks mask.\n"
         MSG+=" * \Z4esataportcfg=0x????\Zn\n    Esata disks mask.\n"
@@ -476,7 +476,7 @@ function synoinfoMenu() {
         while true; do
           dialog --clear --backtitle "$(backtitle)" \
             --colors --title "Synoinfo Entries" \
-            --form "${MSG}" ${LINENUM:-16} 70 2 "Name:" 1 1 "" 1 10 55 0 "Value:" 2 1 "" 2 10 55 0 \
+            --form "${MSG}" ${LINENUM:-16} 80 2 "Name:" 1 1 "" 1 10 55 0 "Value:" 2 1 "" 2 10 55 0 \
             2>"${TMP_PATH}/resp"
           RET=$?
           case ${RET} in
