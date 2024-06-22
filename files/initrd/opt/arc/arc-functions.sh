@@ -797,7 +797,11 @@ function updateMenu() {
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
-          TAG="$(curl --interface ${ARCNIC} -m 5 -w "%{http_code}" -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+          if [ "${ARCNIC}" == "auto" ]; then
+            TAG="$(curl -m 5 -w "%{http_code}" -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+          else
+            TAG="$(curl --interface ${ARCNIC} -m 5 -w "%{http_code}" -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+          fi
           if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ] || [ -z "${TAG}" ]; then
             dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
               --msgbox "Error checking new Version!" 0 0
@@ -819,11 +823,19 @@ function updateMenu() {
         fi
         (
           # Download update file
-          curl --interface ${ARCNIC} -#kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
-            [[ $char =~ [0-9] ]] && keep=1 ;
-            [[ $char == % ]] && echo "Download:$progress" && progress="" && keep=0 ;
-            [[ $keep == 1 ]] && progress="$progress$char" ;
-          done
+          if [ "${ARCNIC}" == "auto" ]; then
+            curl -#kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
+              [[ $char =~ [0-9] ]] && keep=1 ;
+              [[ $char == % ]] && echo "Download:$progress" && progress="" && keep=0 ;
+              [[ $keep == 1 ]] && progress="$progress$char" ;
+            done
+          else
+            curl --interface ${ARCNIC} -#kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
+              [[ $char =~ [0-9] ]] && keep=1 ;
+              [[ $char == % ]] && echo "Download:$progress" && progress="" && keep=0 ;
+              [[ $keep == 1 ]] && progress="$progress$char" ;
+            done
+          fi
           if [ -f "${TMP_PATH}/arc-${TAG}.img.zip" ]; then
             echo "Downloading Updatefile successful!"
           else
@@ -1908,10 +1920,12 @@ function decryptMenu() {
 ###############################################################################
 # ArcNIC Menu
 function arcNIC () {
+  ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
+  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
   rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
-  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
-  # Get actual IP
+  echo -e "auto \"Automated\"" >>"${TMP_PATH}/opts"
+  # Get NICs
   for ETH in ${ETHX}; do
     DRIVER="$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
     echo -e "${ETH} \"${DRIVER}\"" >>"${TMP_PATH}/opts"

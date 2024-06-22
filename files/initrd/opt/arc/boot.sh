@@ -152,6 +152,10 @@ fi
 if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
   CMDLINE["SASmodel"]="1"
 fi
+if echo "broadwell broadwellnk" | grep -wq "${PLATFORM}"; then
+  [ "${CMDLINE['modprobe.blacklist']}" != "" ] && CMDLINE['modprobe.blacklist']+=","
+  CMDLINE['modprobe.blacklist']+="mpt2sas"
+fi
 
 # Cmdline NIC Settings
 NIC=0
