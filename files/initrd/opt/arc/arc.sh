@@ -1040,7 +1040,9 @@ else
       echo "F \"\Z1Formate Disks\Zn \" "                                                      >>"${TMP_PATH}/menu"
       echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
       echo "v \"Write Modifications to Disk \" "                                              >>"${TMP_PATH}/menu"
-      echo "G \"Install opkg Package Manager \" "                                             >>"${TMP_PATH}/menu"
+      if [ "${OFFLINE}" == "false" ]; then
+        echo "G \"Install opkg Package Manager \" "                                           >>"${TMP_PATH}/menu"
+      fi
     fi
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
     echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
@@ -1050,7 +1052,7 @@ else
     if [ "${OFFLINE}" == "false" ]; then
       echo "z \"Update\" "                                                                    >>"${TMP_PATH}/menu"
     fi
-    echo "I \"Reboot \" "                                                                     >>"${TMP_PATH}/menu"
+    echo "I \"Restart/Shutdown \" "                                                           >>"${TMP_PATH}/menu"
     echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
 
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --colors \
@@ -1084,7 +1086,7 @@ else
       R) [ "${CUSTOM}" == "false" ] && CUSTOM='true' || CUSTOM='false'
         writeConfigKey "arc.custom" "${CUSTOM}" "${USER_CONFIG_FILE}"
         if [ "${CUSTOM}" == "true" ]; then
-          [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-{PRODUCTVER}-custom" >"${PART3_PATH}/automated"
+          [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-${PRODUCTVER}-custom" >"${PART3_PATH}/automated"
         elif [ "${CUSTOM}" == "false" ]; then
           [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
         fi
