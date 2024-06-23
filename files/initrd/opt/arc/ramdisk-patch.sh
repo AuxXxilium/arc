@@ -173,7 +173,7 @@ for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "upda
 done
 
 # Check for Hypervisor & add Cpufreqscaling service
-if ! grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
+if grep -q "^flags.*acpi.*" /proc/cpuinfo; then
   for ADDON in "cpufreqscaling"; do
     CPUGOVERNOR="$(readConfigKey "arc.governor" "${USER_CONFIG_FILE}")"
     PARAMS=${CPUGOVERNOR:-"performance"}
