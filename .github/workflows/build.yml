@@ -66,12 +66,6 @@ jobs:
           keep-count: 10
           keep-old-minor-releases: false
 
-      - name: Changelog
-        uses: Bullrich/generate-release-changelog@master
-        id: Changelog
-        env:
-          REPO: ${{ github.repository }}
-
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
         with:
@@ -247,9 +241,6 @@ jobs:
             Patches: ${{ env.PATCHESTAG }}
             Theme: ${{ env.THEMETAG }}
             LKM: ${{ env.LKMTAG }}
-
-            Changelog:
-              ${{ steps.Changelog.outputs.changelog }}
           artifacts: |
             arc-*.zip
             update.zip
