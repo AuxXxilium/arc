@@ -134,7 +134,7 @@ jobs:
           getOffline "files/p3/configs"
           echo "Get Buildroot"
           getBuildroot "latest" "br"
-          echo "BR_VERSION=${TAG}" >> $GITHUB_ENV
+          #echo "BR_VERSION=${TAG}" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
@@ -234,7 +234,6 @@ jobs:
             Time: ${{ env.BUILD_TIME }}
 
             ### Versions:
-            Buildroot: ${{ env.BR_VERSION }}
             Addons: ${{ env.ADDONSTAG }}
             Configs: ${{ env.CONFIGSTAG }}
             Modules: ${{ env.MODULESTAG }}
