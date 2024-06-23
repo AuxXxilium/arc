@@ -135,8 +135,10 @@ if [ "${OFFLINE}" == "false" ]; then
   /etc/init.d/S49ntpd restart > /dev/null 2>&1
   hwclock -w > /dev/null 2>&1
 fi
-[ -z "${KEYMAP}" ] && KEYMAP="en"
-loadkeys ${KEYMAP}
+if [ -z "${LAYOUT}"]; then
+  [ -z "${KEYMAP}" ] && KEYMAP="en"
+  loadkeys ${KEYMAP}
+fi
 
 ###############################################################################
 # Mounts backtitle dynamically
