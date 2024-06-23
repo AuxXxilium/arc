@@ -140,6 +140,7 @@ jobs:
           getOffline "files/p3/configs"
           echo "Get Buildroot"
           getBuildroot "latest" "br"
+          echo "BR_VERSION=${TAG}" >> $GITHUB_ENV
 
           echo "OK"
 
@@ -235,7 +236,7 @@ jobs:
             Decryption Key can be found in my Discord.
 
             ### Versions:
-            Buildroot: ${{ inputs.br_version }}
+            Buildroot: ${{ env.BR_VERSION }}
             Addons: ${{ env.ADDONSTAG }}
             Configs: ${{ env.CONFIGSTAG }}
             Modules: ${{ env.MODULESTAG }}
