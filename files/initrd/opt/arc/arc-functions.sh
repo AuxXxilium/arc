@@ -2051,10 +2051,9 @@ function governorSelection () {
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
     CPUGOVERNOR=${resp}
+    writeConfigKey "arc.governor" "${CPUGOVERNOR}" "${USER_CONFIG_FILE}"
   else
     dialog --backtitle "$(backtitle)" --title "DSM Frequency Scaling" \
       --msgbox "CPU frequency scaling not supported!" 0 0
-    CPUGOVERNOR="performance"
   fi
-  writeConfigKey "arc.governor" "${CPUGOVERNOR}" "${USER_CONFIG_FILE}"
 }
