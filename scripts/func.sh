@@ -206,8 +206,8 @@ function getBuildroot() {
   local TAG="${1:-latest}"
   local DEST_PATH="${2:-br}"
 
-  if [ "${1}" = "latest" ]; then
-    TAG=$(curl -s "https://api.github.com/repos/AuxXxilium/arc-buildroot/releases" | jq -r ".[0].tag_name")
+  if [ "${TAG}" = "latest" ]; then
+    TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-buildroot/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
   fi
   [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
   rm -f "${DEST_PATH}/bzImage-arc"
@@ -220,7 +220,7 @@ function getBuildroot() {
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
 
-  echo "Getting Buildroot end"
+  echo "Getting Buildroot end - ${TAG}"
 }
 
 # Get latest Offline
