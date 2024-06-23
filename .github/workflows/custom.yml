@@ -214,7 +214,9 @@ jobs:
           body: |
             Hi @${{ github.event.issue.user.login }}.  
             arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} is ready to download: ${{ env.FIOURL }}
-            > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}  
+            > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            If this will not work, do not use customized Versions!
             ----
 
       - name: Close Issues
