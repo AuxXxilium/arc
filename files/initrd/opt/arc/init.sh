@@ -108,8 +108,8 @@ for ETH in ${ETHX}; do
   fi
   NIC=$((${NIC} + 1))
 done
-/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
-sleep 5
+#/etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
+#sleep 5
 ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
 [ ${NIC} -ne ${ETHN} ] && echo -e "\033[1;31mWarning: NIC mismatch (NICs: ${NIC} | Real: ${ETHN})\033[0m"
 # Write NIC Amount to config
