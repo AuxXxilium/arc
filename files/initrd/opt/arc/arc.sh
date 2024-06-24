@@ -1009,6 +1009,7 @@ else
         echo "s \"Allow Downgrade \" "                                                        >>"${TMP_PATH}/menu"
         echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
         echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
+        echo "D \"StaticIP \" "                                                               >>"${TMP_PATH}/menu"
         echo "J \"Reset DSM Network Config \" "                                               >>"${TMP_PATH}/menu"
         if [ "${PLATFORM}" == "epyc7002" ]; then
           echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
@@ -1032,7 +1033,6 @@ else
     if [ "${DEVOPTS}" == "true" ]; then
       echo "= \"\Z4========= Loader =========\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "R \"Automated Mode: \Z4${CUSTOM}\Zn \" "                                          >>"${TMP_PATH}/menu"
-      echo "D \"Loader DHCP/StaticIP \" "                                                     >>"${TMP_PATH}/menu"
       echo "B \"Grep DSM Config from Backup \" "                                              >>"${TMP_PATH}/menu"
       echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
       echo "w \"Reset Loader to Defaults\" "                                                  >>"${TMP_PATH}/menu"

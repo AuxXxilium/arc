@@ -1355,14 +1355,14 @@ function staticIPMenu() {
 
     MSG="Set to ${ETH}(${MACR}): (Delete if empty)"
     while true; do
-      dialog --backtitle "$(backtitle)" --title "$(TEXT "Advanced")" \
+      dialog --backtitle "$(backtitle)" --title "StaticIP" \
         --form "${MSG}" 10 60 4 "address" 1 1 "${IPRA[0]}" 1 9 36 16 "netmask" 2 1 "${IPRA[1]}" 2 9 36 16 "gateway" 3 1 "${IPRA[2]}" 3 9 36 16 "dns" 4 1 "${IPRA[3]}" 4 9 36 16 \
         2>"${TMP_PATH}/resp"
       RET=$?
       case ${RET} in
       0) # ok-button
-        dialog --backtitle "$(backtitle)" --title "$(TEXT "Advanced")" \
-          --infobox "$(TEXT "Setting IP ...")" 0 0
+        dialog --backtitle "$(backtitle)" --title "StaticIP" \
+          --infobox "Setting IP ..." 0 0
         address="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
         netmask="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
         gateway="$(cat "${TMP_PATH}/resp" | sed -n '3p')"
