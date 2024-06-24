@@ -8,7 +8,7 @@ function editUserConfig() {
     [ $? -ne 0 ] && return 1
     mv -f "${TMP_PATH}/userconfig" "${USER_CONFIG_FILE}"
     ERRORS=$(yq eval "${USER_CONFIG_FILE}" 2>&1)
-    [ $? -eq 0 ] && break
+    [ $? -eq 0 ] && continue || break
     dialog --backtitle "$(backtitle)" --title "Invalid YAML format" --msgbox "${ERRORS}" 0 0
   done
   OLDMODEL="${MODEL}"
@@ -274,7 +274,9 @@ function cmdlineMenu() {
         MSG+=" * \Z4pci=nommconf\Zn\n    Disable the use of Memory-Mapped Configuration for PCI devices(use this parameter cautiously).\n"
         MSG+="\nEnter the Parameter Name and Value you want to add.\n"
         LINENUM=$(($(echo -e "${MSG}" | wc -l) + 10))
+        RET=0
         while true; do
+          [ ${RET} -eq 255 ] && MSG+="Commonly used Parameter (Format: Name=Value):\n"
           dialog --clear --backtitle "$(backtitle)" \
             --colors --title "User Cmdline" \
             --form "${MSG}" ${LINENUM:-16} 80 2 "Name:" 1 1 "" 1 10 55 0 "Value:" 2 1 "" 2 10 55 0 \
@@ -296,7 +298,7 @@ function cmdlineMenu() {
               break
               ;;
             255) # ESC
-              break
+              # break
               ;;
           esac
         done
@@ -473,7 +475,9 @@ function synoinfoMenu() {
         #MSG+=" * \Z4support_config_swap=yes\Zn\n    TO-DO.\n"
         MSG+="\nEnter the Parameter Name and Value you want to add.\n"
         LINENUM=$(($(echo -e "${MSG}" | wc -l) + 10))
+        RET=0
         while true; do
+          [ ${RET} -eq 255 ] && MSG+="Commonly used Synoinfo (Format: Name=Value):\n"
           dialog --clear --backtitle "$(backtitle)" \
             --colors --title "Synoinfo Entries" \
             --form "${MSG}" ${LINENUM:-16} 80 2 "Name:" 1 1 "" 1 10 55 0 "Value:" 2 1 "" 2 10 55 0 \
@@ -486,7 +490,7 @@ function synoinfoMenu() {
               if [ -z "${NAME//\"/}" ]; then
                 dialog --clear --backtitle "$(backtitle)" --title "User Cmdline" \
                   --yesno "Invalid Parameter Name, retry?" 0 0
-                [ $? -eq 0 ] && break
+                [ $? -eq 0 ] && continue || break
               fi
               writeConfigKey "synoinfo.\"${NAME//\"/}\"" "${VALUE}" "${USER_CONFIG_FILE}"
               break
@@ -495,7 +499,7 @@ function synoinfoMenu() {
               break
               ;;
             255) # ESC
-              break
+              # break
               ;;
           esac
         done
@@ -1020,8 +1024,8 @@ function sysinfo() {
   # Get System Informations
   CPU=$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
-  NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
+  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
+  ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" == "true" ]; then
@@ -1046,7 +1050,6 @@ function sysinfo() {
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
-  MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
@@ -1060,6 +1063,7 @@ function sysinfo() {
   LKMVERSION=$(cat "${LKMS_PATH}/VERSION")
   CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
   PATCHESVERSION=$(cat "${PATCH_PATH}/VERSION")
+  TIMEOUT=5
   TEXT=""
   # Print System Informations
   TEXT+="\n\Z4> System: ${MACHINE} | ${BOOTSYS}\Zn"
@@ -1069,42 +1073,36 @@ function sysinfo() {
   TEXT+="\n  AES | ACPI: \Zb${AESSYS} | ${ACPISYS}\Zn"
   TEXT+="\n  Date: \Zb$(date)\Zn"
   TEXT+="\n"
-  TEXT+="\n\Z4> Network: ${NIC} NIC\Zn"
+  TEXT+="\n\Z4> Network: ${ETHN} NIC\Zn"
   for ETH in ${ETHX}; do
-    IP=""
-    STATICIP="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
+    COUNT=0
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     NETBUS=$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | cut -d' ' -f2)
-    MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
-    MACR=$(cat /sys/class/net/${ETH}/address | sed 's/://g')
-    COUNT=0
     while true; do
-      if [ "${STATICIP}" == "true" ]; then
-        IP="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
-        MSG="STATIC"
-      else
-        IP=$(getIP ${ETH})
-        MSG="DHCP"
+      if ! ip link show ${ETH} 2>/dev/null | grep -q 'UP'; then
+        TEXT+="\n${DRIVER}: \ZbDOWN\Zn"
+        break
       fi
+      if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
+        TEXT+="\n${DRIVER}: \ZbNOT CONNECTED\Zn"
+        break
+      fi
+      if [ ${COUNT} -ge ${TIMEOUT} ]; then
+        TEXT+="\n${DRIVER}: \ZbTIMEOUT\Zn"
+        break
+      fi
+      COUNT=$((${COUNT} + 1))
+      IP="$(getIP ${ETH})"
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          TEXT+="\n${ETH} -> ${DRIVER} (${SPEED} | ${MSG}):\Zb LINK LOCAL | Mac: ${MACR} (${MAC})\Zn"
+          TEXT+="${DRIVER} (${SPEED}): \ZbLINK LOCAL (No DHCP server found.)\Zn"
         else
-          TEXT+="\n${ETH} -> ${DRIVER} (${SPEED} | ${MSG}):\Zb ${IP} | Mac: ${MACR} (${MAC})\Zn"
+          TEXT+="${DRIVER} (${SPEED}): \Zb${IP}\Zn"
         fi
         break
       fi
-      if [ ${COUNT} -gt 3 ]; then
-        TEXT+="\n${ETH} -> ${DRIVER}\Zb: TIMEOUT | MAC: ${MACR} (${MAC})\Zn"
-        break
-      fi
-      sleep 3
-      if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
-        TEXT+="\n${ETH} -> ${DRIVER}\Zb: NOT CONNECTED | MAC: ${MACR} (${MAC})\Zn"
-        break
-      fi
-      COUNT=$((${COUNT} + 3))
+      sleep 1
     done
     TEXT+="\n\Zb$(lspci -s ${NETBUS} -nnk)\Zn\n"
   done
@@ -1125,7 +1123,6 @@ function sysinfo() {
   fi
   TEXT+="\n   Modules loaded: \Zb${MODULESINFO}\Zn"
   TEXT+="\n\Z4>> Settings\Zn"
-  TEXT+="\n   MacSys: \Zb${MACSYS}\Zn"
   TEXT+="\n   IPv6: \Zb${ARCIPV6}\Zn"
   TEXT+="\n   Offline Mode: \Zb${OFFLINE}\Zn"
   if [[ "${REMAP}" == "acports" || "${REMAP}" == "maxports" ]]; then
@@ -1271,6 +1268,10 @@ function networkdiag() {
       echo -e "Link: NOT CONNECTED"
       continue
     fi
+    if ! ip link show ${ETH} 2>/dev/null | grep -q 'UP'; then
+      echo -e "Link: DOWN"
+      continue
+    fi
     echo -e "Link: CONNECTED"
     addr=$(getIP ${ETH})
     netmask=$(ifconfig ${ETH} | grep inet | grep 255 | awk '{print $4}' | cut -f2 -d':')
@@ -1346,77 +1347,54 @@ function credits() {
 ###############################################################################
 # allow setting Static IP for Loader
 function staticIPMenu() {
-  # Get Amount of NIC
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
+  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
   for ETH in ${ETHX}; do
-    STATIC="$(readConfigKey "static.${ETH}" "${USER_CONFIG_FILE}")"
-    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-    TEXT=""
-    TEXT+="This Feature allow you to set a StaticIP for the Loader.\n"
-    TEXT+="Actual Settings are:\n"
-    TEXT+="\nNIC: ${ETH} (${DRIVER})\n"
-    TEXT+="StaticIP: ${STATIC}\n"
-    if [ "${STATIC}" == "true" ]; then
-      IPADDR="$(readConfigKey "ip.${ETH}" "${USER_CONFIG_FILE}")"
-      NETMASK="$(readConfigKey "netmask.${ETH}" "${USER_CONFIG_FILE}")"
-      GATEWAY="$(readConfigKey "gateway.${ETH}" "${USER_CONFIG_FILE}")"
-      NAMESERVER="$(readConfigKey "nameserver.${ETH}" "${USER_CONFIG_FILE}")"
-      TEXT+="IP: ${IPADDR}\n"
-      TEXT+="NETMASK: ${NETMASK}\n"
-      TEXT+="GATEWAY: ${GATEWAY}\n"
-      TEXT+="NAMESERVER: ${NAMESERVER}\n"
-    else
-      IPADDR=""
-      NETMASK=""
-      GATEWAY=""
-      NAMESERVER=""
-    fi
-    TEXT+=""
-    TEXT+="Do you want to change Config?"
-    dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-        --yesno "${TEXT}" 0 0
-    [ $? -ne 0 ] && return 1
-    dialog --clear --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-      --menu "DHCP or STATIC?" 0 0 0 \
-        1 "DHCP" \
-        2 "STATIC" \
-      2>"${TMP_PATH}/opts"
-    opts=$(cat ${TMP_PATH}/opts)
-    [ -z "${opts}" ] && return 1
-    if [ ${opts} -eq 1 ]; then
-      writeConfigKey "static.${ETH}" "false" "${USER_CONFIG_FILE}"
-      /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
-    elif [ ${opts} -eq 2 ]; then
-      dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-        --inputbox "Type a Static IP\nLike: 192.168.0.2" 0 0 "${IPADDR}" \
+    MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g')"
+    IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
+    IFS='/' read -r -a IPRA <<<"$IPR"
+
+    MSG="Set to ${ETH}(${MACR}): (Delete if empty)"
+    while true; do
+      dialog --backtitle "$(backtitle)" --title "$(TEXT "Advanced")" \
+        --form "${MSG}" 10 60 4 "address" 1 1 "${IPRA[0]}" 1 9 36 16 "netmask" 2 1 "${IPRA[1]}" 2 9 36 16 "gateway" 3 1 "${IPRA[2]}" 3 9 36 16 "dns" 4 1 "${IPRA[3]}" 4 9 36 16 \
         2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return 1
-      IPADDR=$(cat "${TMP_PATH}/resp")
-      dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-        --inputbox "Type a Netmask\nLike: 24" 0 0 "${NETMASK}" \
-        2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return 1
-      NETMASK=$(cat "${TMP_PATH}/resp")
-      dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-        --inputbox "Type a Gateway\nLike: 192.168.0.1" 0 0 "${GATEWAY}" \
-        2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return 1
-      GATEWAY=$(cat "${TMP_PATH}/resp")
-      writeConfigKey "ip.${ETH}" "${IPADDR}" "${USER_CONFIG_FILE}"
-      writeConfigKey "netmask.${ETH}" "${NETMASK}" "${USER_CONFIG_FILE}"
-      writeConfigKey "gateway.${ETH}" "${GATEWAY}" "${USER_CONFIG_FILE}"
-      writeConfigKey "static.${ETH}" "true" "${USER_CONFIG_FILE}"
-      #NETMASK=$(convert_netmask "${NETMASK}")
-      /etc/init.d/S41dhcpcd stop >/dev/null 2>&1 || true
-      ip addr add ${IPADDR}/${NETMASK} dev ${ETH}
-      ip route add default via ${GATEWAY} dev ${ETH}
-      /etc/init.d/S40network restart
-      IP="${IPADDR}"
-    fi
+      RET=$?
+      case ${RET} in
+      0) # ok-button
+        dialog --backtitle "$(backtitle)" --title "$(TEXT "Advanced")" \
+          --infobox "$(TEXT "Setting IP ...")" 0 0
+        address="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+        netmask="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+        gateway="$(cat "${TMP_PATH}/resp" | sed -n '3p')"
+        dnsname="$(cat "${TMP_PATH}/resp" | sed -n '4p')"
+        if [ -z "${address}" ]; then
+          deleteConfigKey "network.${MACR}" "${USER_CONFIG_FILE}"
+        else
+          ip addr flush dev $ETH
+          ip addr add ${address}/${netmask:-"255.255.255.0"} dev $ETH
+          if [ -n "${gateway}" ]; then
+            ip route add default via ${gateway} dev $ETH
+          fi
+          if [ -n "${dnsname:-${gateway}}" ]; then
+            sed -i "/nameserver ${dnsname:-${gateway}}/d" /etc/resolv.conf
+            echo "nameserver ${dnsname:-${gateway}}" >>/etc/resolv.conf
+          fi
+          writeConfigKey "network.${MACR}" "${address}/${netmask}/${gateway}/${dnsname}" "${USER_CONFIG_FILE}"
+          sleep 1
+        fi
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        break
+        ;;
+      1) # cancel-button
+        break
+        ;;
+      255) # ESC
+        break 2
+        ;;
+      esac
+    done
   done
-  dialog --backtitle "$(backtitle)" --title "DHCP/StaticIP" \
-    --msgbox "Settings written and enabled.\nThis will be not applied to DSM." 5 50
-  return
 }
 
 ###############################################################################
@@ -1544,7 +1522,7 @@ function addNewDSMUser() {
   (
     ONBOOTUP=""
     ONBOOTUP="${ONBOOTUP}if synouser --enum local | grep -q ^${username}\$; then synouser --setpw ${username} ${password}; else synouser --add ${username} ${password} arc 0 user@arc.arc 1; fi\n"
-    ONBOOTUP="${ONBOOTUP}synogroup --member administrators ${username}\n"
+    ONBOOTUP="${ONBOOTUP}synogroup --memberadd administrators ${username}\n"
     ONBOOTUP="${ONBOOTUP}echo \"DELETE FROM task WHERE task_name LIKE ''ARCONBOOTUPRR_ADDUSER'';\" | sqlite3 /usr/syno/etc/esynoscheduler/esynoscheduler.db\n"
 
     mkdir -p "${TMP_PATH}/mdX"
@@ -1606,50 +1584,47 @@ function saveMenu() {
 
 ###############################################################################
 # let user format disks from inside arc
-function formatdisks() {
-  rm -f "${TMP_PATH}/opts" >/dev/null
-  while read KNAME SIZE PKNAME; do
+function formatDisks() {
+  rm -f "${TMP_PATH}/opts"
+  while read -r KNAME ID PKNAME; do
     [ -z "${KNAME}" ] && continue
     [[ "${KNAME}" = /dev/md* ]] && continue
-    [[ "${KNAME}" == "${LOADER_DISK}" || "${PKNAME}" == "${LOADER_DISK}" ]] && continue
-    [ -n "${PKNAME}" ] && PARTITION=" (Partition)" || PARTITION=" (Disk)"
-    [ -z "${SIZE}" ] && SIZE="Unknown"
-    echo "\"${KNAME}\" \"${SIZE}${PARTITION}\" \"off\"" >>"${TMP_PATH}/opts"
-  done < <(lsblk -pno KNAME,SIZE,PKNAME)
+    [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
+    [ -z "${ID}" ] && ID="Unknown"
+    echo "\"${KNAME}\" \"${ID}\" \"off\"" >>"${TMP_PATH}/opts"
+  done < <(lsblk -pno KNAME,ID,PKNAME)
   if [ ! -f "${TMP_PATH}/opts" ]; then
-    dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
+    dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --msgbox "No disk found!" 0 0
-    return 1
+    return
   fi
-  dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
-    --checklist "Select Disk(s)" 0 0 0 --file "${TMP_PATH}/opts" \
+  DIALOG --title "Format Disks" \
+    --checklist "Select Disks" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
-  resp=$(cat ${TMP_PATH}/resp)
-  [ -z "${resp}" ] && return
-  dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
+  RESP=$(cat "${TMP_PATH}/resp")
+  [ -z "${RESP}" ] && return
+  dialog --backtitle "$(backtitle)" --title "Format Disks" \
     --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return
   if [ $(ls /dev/md[0-9]* 2>/dev/null | wc -l) -gt 0 ]; then
-    dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
-      --yesno "Warning:\nThe current HDD(s) are in Raid, do you still want to format them?" 0 0
+    dialog --backtitle "$(backtitle)" --title "Format Disks" \
+      --yesno "Warning:\nThe current hds is in raid, do you still want to format them?" 0 0
     [ $? -ne 0 ] && return
     for I in $(ls /dev/md[0-9]* 2>/dev/null); do
-      mdadm -S "${I}"
+      mdadm -S "${I}" >/dev/null 2>&1
     done
   fi
-  (
-    for I in ${resp}; do
-      if [[ "${I}" = /dev/mmc* ]]; then
-        echo y | mkfs.ext4 -T largefile4 -E nodiscard "${I}"
-      else
-        echo y | mkfs.ext4 -T largefile4 "${I}"
-      fi
-    done
-  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
+  for I in ${RESP}; do
+    if [[ "${I}" = /dev/mmc* ]]; then
+      echo y | mkfs.ext4 -T largefile4 -E nodiscard "${I}"
+    else
+      echo y | mkfs.ext4 -T largefile4 "${I}"
+    fi
+  done 2>&1 | dialog --backtitle "$(backtitle)" --title "Format Disks" \
     --progressbox "Formatting ..." 20 100
-  dialog --backtitle "$(backtitle)" --colors --title "Format Disks" \
-    --msgbox "Formatting is complete." 5 30
+  dialog --backtitle "$(backtitle)" --title "Format Disks" \
+    --msgbox "Formatting is complete." 0 0
   return
 }
 
@@ -1957,7 +1932,9 @@ function rebootMenu() {
   echo -e "update \"Automated Update Mode\"" >>"${TMP_PATH}/opts"
   echo -e "recovery \"Recovery Mode\"" >>"${TMP_PATH}/opts"
   echo -e "junior \"Reinstall Mode\"" >>"${TMP_PATH}/opts"
-  echo -e "bios \"BIOS/UEFI\"" >>"${TMP_PATH}/opts"
+  if efibootmgr | grep -q "^Boot0000"; then
+    echo -e "bios \"BIOS/UEFI\"" >>"${TMP_PATH}/opts"
+  fi
   echo -e "poweroff \"Shutdown\"" >>"${TMP_PATH}/opts"
   echo -e "shell \"Exit to Shell Cmdline\"" >>"${TMP_PATH}/opts"
   echo -e "init \"Restart Loader Init\"" >>"${TMP_PATH}/opts"
@@ -2013,7 +1990,7 @@ function resetDSMNetwork {
     for I in ${DSMROOTS}; do
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
-      rm -f "${TMP_PATH}/mdX/etc/sysconfig/network-scripts/ifcfg-bond"* "${TMP_PATH}/mdX/etc/sysconfig/network-scripts/ifcfg-eth"*
+      rm -f "${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-bond"* "${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-eth"*
       sync
       umount "${TMP_PATH}/mdX"
     done
@@ -2059,4 +2036,100 @@ function governorSelection () {
     dialog --backtitle "$(backtitle)" --title "DSM Frequency Scaling" \
       --msgbox "CPU frequency scaling not supported!" 0 0
   fi
+}
+
+###############################################################################
+# Where the magic happens!
+function dtsMenu() {
+  # Loop menu
+  while true; do
+    [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && CUSTOMDTS="Yes" || CUSTOMDTS="No"
+    dialog --backtitle "$(backtitle)" --title "Custom DTS" \
+      --default-item ${NEXT} --menu "Choose an option" 0 0 0 \
+      % "Custom dts: ${CUSTOMDTS}" \
+      1 "Upload dts file" \
+      2 "Delete dts file" \
+      3 "Edit dts file" \
+      2>${TMP_PATH}/resp
+    [ $? -ne 0 ] && return
+    case "$(cat ${TMP_PATH}/resp)" in
+    %) ;;
+    1)
+      if ! tty 2>/dev/null | grep -q "/dev/pts"; then #if ! tty 2>/dev/null | grep -q "/dev/pts" || [ -z "${SSH_TTY}" ]; then
+        MSG=""
+        MSG+="This feature is only available when accessed via ssh (Requires a terminal that supports ZModem protocol).\n"
+        MSG+="$(printf "Or upload the dts file to %s via DUFS, Will be automatically imported when building." "${USER_UP_PATH}/${MODEL}.dts")"
+        dialog --backtitle "$(backtitle)" --title "Custom DTS" \
+          --msgbox "${MSG}" 0 0
+        return
+      fi
+      dialog --backtitle "$(backtitle)" --title "Custom DTS" \
+        --msgbox "Currently, only dts format files are supported. Please prepare and click to confirm uploading.\n(located in /mnt/p3/users/)" 0 0
+      TMP_UP_PATH="${TMP_PATH}/users"
+      DTC_ERRLOG="/tmp/dtc.log"
+      rm -rf "${TMP_UP_PATH}"
+      mkdir -p "${TMP_UP_PATH}"
+      pushd "${TMP_UP_PATH}"
+      RET=1
+      rz -be
+      for F in $(ls -A 2>/dev/null); do
+        USER_FILE="${TMP_UP_PATH}/${F}"
+        dtc -q -I dts -O dtb "${F}" >"test.dtb" 2>"${DTC_ERRLOG}"
+        RET=$?
+        break
+      done
+      popd
+      if [ ${RET} -ne 0 ] || [ -z "${USER_FILE}" ]; then
+        dialog --backtitle "$(backtitle)" --title "Custom DTS" \
+          --msgbox "Not a valid dts file, please try again!\n\n$(cat "${DTC_ERRLOG}")" 0 0
+      else
+        [ -d "{USER_UP_PATH}" ] || mkdir -p "${USER_UP_PATH}"
+        cp -f "${USER_FILE}" "${USER_UP_PATH}/${MODEL}.dts"
+        dialog --backtitle "$(backtitle)" --title "$(TEXT "Custom DTS")" \
+          --msgbox "A valid dts file, Automatically import at compile time." 0 0
+      fi
+      rm -rf "${DTC_ERRLOG}"
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      ;;
+    2)
+      rm -f "${USER_UP_PATH}/${MODEL}.dts"
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      ;;
+    3)
+      rm -rf "${TMP_PATH}/model.dts"
+      if [ -f "${USER_UP_PATH}/${MODEL}.dts" ]; then
+        cp -f "${USER_UP_PATH}/${MODEL}.dts" "${TMP_PATH}/model.dts"
+      else
+        ODTB="$(ls ${PART2_PATH}/*.dtb 2>/dev/null | head -1)"
+        if [ -f "${ODTB}" ]; then
+          dtc -q -I dtb -O dts "${ODTB}" >"${TMP_PATH}/model.dts"
+        else
+          dialog --backtitle "$(backtitle)" --title "Custom DTS" \
+            --msgbox "No dts file to edit. Please upload first!" 0 0
+          continue
+        fi
+      fi
+      DTC_ERRLOG="/tmp/dtc.log"
+      while true; do
+        dialog --backtitle "$(backtitle)" --title "Edit with caution" \
+          --editbox "${TMP_PATH}/model.dts" 0 0 2>"${TMP_PATH}/modelEdit.dts"
+        [ $? -ne 0 ] && rm -f "${TMP_PATH}/model.dts" "${TMP_PATH}/modelEdit.dts" && return
+        dtc -q -I dts -O dtb "${TMP_PATH}/modelEdit.dts" >"test.dtb" 2>"${DTC_ERRLOG}"
+        if [ $? -ne 0 ]; then
+          dialog --backtitle "$(backtitle)" --title "Custom DTS" \
+            --msgbox "Not a valid dts file, please try again!\n\n$(cat "${DTC_ERRLOG}")" 0 0
+        else
+          mkdir -p "${USER_UP_PATH}"
+          cp -f "${TMP_PATH}/modelEdit.dts" "${USER_UP_PATH}/${MODEL}.dts"
+          rm -r "${TMP_PATH}/model.dts" "${TMP_PATH}/modelEdit.dts"
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          break
+        fi
+      done
+      ;;
+    esac
+  done
 }

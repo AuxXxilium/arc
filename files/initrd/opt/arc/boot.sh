@@ -44,7 +44,6 @@ MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
-MACSYS="$(readConfigKey "arc.macsys" "${USER_CONFIG_FILE}")"
 CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
 RAMTOTAL=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024}' /proc/meminfo 2>/dev/null)
 RAM="${RAMTOTAL}GB"
@@ -54,7 +53,6 @@ echo -e "\033[1;37mDSM:\033[0m"
 echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
 echo -e "Version: \033[1;37m${PRODUCTVER}\033[0m"
 echo -e "LKM: \033[1;37m${LKM}\033[0m"
-echo -e "Macsys: \033[1;37m${MACSYS}\033[0m"
 echo
 echo -e "\033[1;37mSystem:\033[0m"
 echo -e "VENDOR: \033[1;37m${VENDOR}\033[0m"
@@ -133,6 +131,7 @@ CMDLINE['consoleblank']="600"
 CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
 CMDLINE['root']="/dev/md0"
+CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 CMDLINE["HddHotplug"]="1"
@@ -152,26 +151,19 @@ fi
 if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
   CMDLINE["SASmodel"]="1"
 fi
-if echo "broadwell broadwellnk" | grep -wq "${PLATFORM}"; then
-  [ "${CMDLINE['modprobe.blacklist']}" != "" ] && CMDLINE['modprobe.blacklist']+=","
-  CMDLINE['modprobe.blacklist']+="mpt2sas"
-fi
 
 # Cmdline NIC Settings
-NIC=0
-ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
-for ETH in ${ETHX}; do
-  MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
-  [ -n "${MAC}" ] && NIC=$((${NIC} + 1)) && CMDLINE["mac${NIC}"]="${MAC}"
-done
-ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
-[ ${NIC} -ne ${ETHN} ] && echo -e "\033[1;31mWarning: NIC mismatch (NICs: ${NIC} | Real: ${ETHN})\033[0m"
-CMDLINE['netif_num']="${NIC}"
-if [ "${MACSYS}" == "hardware" ]; then
-  CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-elif [ "${MACSYS}" == "custom" ]; then
-  CMDLINE['skip_vender_mac_interfaces']="$(seq -s, ${NIC} 7)"
-fi
+MAC1="$(readConfigKey "mac.eth0" "${USER_CONFIG_FILE}")"
+MAC2="$(readConfigKey "mac.eth1" "${USER_CONFIG_FILE}")"
+CMDLINE['netif_num']="0"
+[[ -z "${MAC1}" && -n "${MAC2}" ]] && MAC1=${MAC2} && MAC2="" # Sanity check
+[ -n "${MAC1}" ] && CMDLINE['mac1']="${MAC1}" && CMDLINE['netif_num']="1"
+[ -n "${MAC2}" ] && CMDLINE['mac2']="${MAC2}" && CMDLINE['netif_num']="2"
+
+# Read user network settings
+while IFS=': ' read -r KEY VALUE; do
+  [ -n "${KEY}" ] && CMDLINE["network.${KEY}"]="${VALUE}"
+done < <(readConfigMap "network" "${USER_CONFIG_FILE}")
 
 # Read user cmdline
 while IFS=': ' read -r KEY VALUE; do
@@ -199,43 +191,46 @@ if [ "${DIRECTBOOT}" == "true" ]; then
 elif [ "${DIRECTBOOT}" == "false" ]; then
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-  echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for DHCP Connection:\033[0m"
-  IPCON=""
+  echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
   for ETH in ${ETHX}; do
-    IP=""
-    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     COUNT=0
+    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     while true; do
-      IP=$(getIP ${ETH})
-      MSG="DHCP"
+      if ! ip link show ${ETH} 2>/dev/null | grep -q 'UP'; then
+        echo -e "\r\033[1;37m${DRIVER}:\033[0m DOWN"
+        break
+      fi
       if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
         echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
         break
-      elif [ -n "${IP}" ]; then
+      fi
+      if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
+        echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
+        break
+      fi
+      COUNT=$((${COUNT} + 1))
+      IP="$(getIP ${ETH})"
+      if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
           echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server found.)"
         else
           echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
-          [ ! -n "${IPCON}" ] && IPCON="${IP}"
+          [ -z "${IPCON}" ] && IPCON="${IP}"
         fi
         break
-      elif [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
-        echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
-        break
       fi
-      sleep 5
-      COUNT=$((${COUNT} + 4))
+      sleep 1
     done
   done
   # Exec Bootwait to check SSH/Web connection
   BOOTWAIT=5
-  w -h 2>/dev/null | grep -v tty1 | awk '{print $1" "$2" "$3}' >WB
+  busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
   while test ${BOOTWAIT} -ge 0; do
     MSG="\033[1;33mAccess SSH/Web will interrupt boot...\033[0m"
     echo -en "\r${MSG}"
-    w -h 2>/dev/null | grep -v tty1 | awk '{print $1" "$2" "$3}' >WC
+    busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
     if ! diff WB WC >/dev/null 2>&1; then
       echo -en "\r\033[1;33mAccess SSH/Web detected and boot is interrupted.\033[0m\n"
       rm -f WB WC
@@ -271,7 +266,7 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
   fi
   kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
   echo -e "\033[1;37mBooting DSM...\033[0m"
-  for T in $(w -h 2>/dev/null | awk '{print $2}'); do
+  for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
     [ -w "/dev/${T}" ] && echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\nUse \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
   done
 
@@ -279,6 +274,6 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
   rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
 
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
-  [ "${KERNELLOAD}" == "kexec" ] && kexec -i -a -e || poweroff
+  [ "${KERNELLOAD}" == "kexec" ] && kexec -a -e || poweroff
   exit 0
 fi
