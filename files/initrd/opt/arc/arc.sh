@@ -1208,7 +1208,7 @@ else
       L) greplogs; NEXT="L" ;;
       T) forcessh; NEXT="T" ;;
       C) cloneLoader; NEXT="C" ;;
-      F) formatdisks; NEXT="F" ;;
+      F) formatDisks; NEXT="F" ;;
       G) package; NEXT="G" ;;
       # Misc Settings
       x) backupMenu; NEXT="x" ;;

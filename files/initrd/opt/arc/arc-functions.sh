@@ -1586,19 +1586,20 @@ function saveMenu() {
 # let user format disks from inside arc
 function formatDisks() {
   rm -f "${TMP_PATH}/opts"
-  while read -r KNAME ID PKNAME; do
+  while read -r KNAME SIZE PKNAME; do
     [ -z "${KNAME}" ] && continue
     [[ "${KNAME}" = /dev/md* ]] && continue
     [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
-    [ -z "${ID}" ] && ID="Unknown"
-    echo "\"${KNAME}\" \"${ID}\" \"off\"" >>"${TMP_PATH}/opts"
-  done < <(lsblk -pno KNAME,ID,PKNAME)
+    [ -n "${PKNAME}" ] && PARTITION=" (Partition)" || PARTITION=" (Disk)"
+    [ -z "${SIZE}" ] && SIZE="Unknown"
+    echo "\"${KNAME}\" \"${SIZE}${PARTITION}\" \"off\"" >>"${TMP_PATH}/opts"
+  done < <(lsblk -pno KNAME,SIZE,PKNAME)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --msgbox "No disk found!" 0 0
     return
   fi
-  DIALOG --title "Format Disks" \
+  dialog --backtitle "$(backtitle)" --title "Format Disks" \
     --checklist "Select Disks" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
