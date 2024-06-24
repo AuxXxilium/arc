@@ -561,6 +561,7 @@ function arcSettings() {
         echo "N cpufreq_conservative.ko" >>"${USER_UP_PATH}/modulelist"
         echo "N cpufreq_ondemand.ko" >>"${USER_UP_PATH}/modulelist"
       fi
+    fi
   fi
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
   # eMMC Boot Support
