@@ -214,9 +214,9 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server found.)"
+          echo -e "\r\033[1;37m${DRIVER} (${SPEED}):\033[0m LINK LOCAL (No DHCP server found.)"
         else
-          echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
+          echo -e "\r\033[1;37m${DRIVER} (${SPEED}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
           [ -z "${IPCON}" ] && IPCON="${IP}"
         fi
         break

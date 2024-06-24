@@ -161,7 +161,7 @@ echo
 
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+echo -e "\033[1;34mDetected ${ETHN} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
 for ETH in ${ETHX}; do
   COUNT=0
   DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
@@ -183,9 +183,9 @@ for ETH in ${ETHX}; do
     if [ -n "${IP}" ]; then
       SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
       if [[ "${IP}" =~ ^169\.254\..* ]]; then
-        echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m LINK LOCAL (No DHCP server found.)"
+        echo -e "\r\033[1;37m${DRIVER} (${SPEED}):\033[0m LINK LOCAL (No DHCP server found.)"
       else
-        echo -e "\r\033[1;37m${DRIVER} (${SPEED} | ${MSG}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web interface."
+        echo -e "\r\033[1;37m${DRIVER} (${SPEED}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web interface."
       fi
       break
     fi
