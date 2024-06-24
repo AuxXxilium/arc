@@ -45,8 +45,7 @@ MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
-RAMTOTAL=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024 + 1}' /proc/meminfo 2>/dev/null)
-RAM="${RAMTOTAL}GB"
+RAMTOTAL=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
 VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')
 
 echo -e "\033[1;37mDSM:\033[0m"
@@ -57,7 +56,7 @@ echo
 echo -e "\033[1;37mSystem:\033[0m"
 echo -e "VENDOR: \033[1;37m${VENDOR}\033[0m"
 echo -e "CPU: \033[1;37m${CPU}\033[0m"
-echo -e "MEM: \033[1;37m${RAM}\033[0m"
+echo -e "MEM: \033[1;37m${RAMTOTAL}MB\033[0m"
 echo
 
 if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
@@ -189,9 +188,11 @@ if [ "${DIRECTBOOT}" == "true" ]; then
   reboot
   exit 0
 elif [ "${DIRECTBOOT}" == "false" ]; then
+  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
+  ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-  echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+  echo -e "\033[1;34mDetected ${ETHN} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
   for ETH in ${ETHX}; do
     COUNT=0
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
