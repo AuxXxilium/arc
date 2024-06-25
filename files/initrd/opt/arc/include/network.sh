@@ -24,7 +24,7 @@ function getnet() {
         --inputbox "Type a custom MAC for ${ETH}.\n Eq. 001132123456" 0 0 "${MAC}"\
         2>"${TMP_PATH}/resp"
       RET=$?
-      [ ${RET} -ne 0 ] && break 2
+      [ ${RET} -ne 0 ] && break
       MAC=$(cat "${TMP_PATH}/resp")
       [ -z "${MAC}" ] && MAC="$(readConfigKey "arc.${ETH}" "${USER_CONFIG_FILE}")"
       [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
