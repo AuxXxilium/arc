@@ -1070,23 +1070,22 @@ function sysinfo() {
   TEXT+="\n\Z4> System: ${MACHINE} | ${BOOTSYS}\Zn"
   TEXT+="\n  Vendor: \Zb${VENDOR}\Zn"
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
-  TEXT+="\n  Memory: \Zb$((${RAMTOTAL}))GB\Zn"
-  TEXT+="\n  AES | ACPI: \Zb${AESSYS} | ${ACPISYS}\Zn"
   if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::300 | awk '{print $1}'); do
-      GPUNAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-      TEXT+="\n  iGPU: \Zb${CPUNAME}\Zn\n"
+      GPUNAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
+      TEXT+="\n  iGPU: \Zb${GPUNAME}\Zn"
     done
-  fi
-  if [ $(lspci -d ::380 | wc -l) -gt 0 ]; then
+  elif [ $(lspci -d ::380 | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::380 | awk '{print $1}'); do
-      GPUNAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
-      TEXT+="\n  GPU: \Zb${CPUNAME}\Zn\n"
+      GPUNAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
+      TEXT+="\n  GPU: \Zb${GPUNAME}\Zn"
     done
   fi
-  TEXT+="\n  Date: \Zb$(date)\Zn"
+  TEXT+="\n  Memory: \Zb$((${RAMTOTAL}))GB\Zn"
+  TEXT+="\n  AES | ACPI: \Zb${AESSYS} | ${ACPISYS}\Zn"
+  TEXT+="\n  Date/Time: \Zb$(date)\Zn"
   TEXT+="\n"
-  TEXT+="\n\Z4> Network: ${ETHN} NIC\Zn"
+  TEXT+="\n\Z4> Network: ${ETHN} NIC\Zn\n"
   for ETH in ${ETHX}; do
     COUNT=0
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
@@ -1117,7 +1116,7 @@ function sysinfo() {
       fi
       sleep 1
     done
-    TEXT+="\n\Zb$(lspci -s ${NETBUS} -nnk)\Zn\n"
+    TEXT+="\n\Zb$(lspci -s ${NETBUS} -nnk | awk '{$1=""}1' | awk '{$1=$1};1')\Zn\n"
   done
   # Print Config Informations
   TEXT+="\n"
@@ -1158,7 +1157,7 @@ function sysinfo() {
   if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
     TEXT+="\n  SATA Controller:\n"
     for PCI in $(lspci -d ::106 | awk '{print $1}'); do
-      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       TEXT+="\Zb  ${NAME}\Zn\n  Ports: "
       PORTS=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       for P in ${PORTS}; do
@@ -1180,7 +1179,7 @@ function sysinfo() {
   if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
     TEXT+="\n  SAS Controller:\n"
     for PCI in $(lspci -d ::107 | awk '{print $1}'); do
-      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
       TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
@@ -1190,7 +1189,7 @@ function sysinfo() {
   if [ $(lspci -d ::104 | wc -l) -gt 0 ]; then
     TEXT+="\n  Raid Controller:\n"
     for PCI in $(lspci -d ::104 | awk '{print $1}'); do
-      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
       TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
@@ -1200,7 +1199,7 @@ function sysinfo() {
   if [ $(lspci -d ::100 | wc -l) -gt 0 ]; then
     TEXT+="\n  SCSI Controller:\n"
     for PCI in $(lspci -d ::100 | awk '{print $1}'); do
-      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
       TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
@@ -1210,7 +1209,7 @@ function sysinfo() {
   if [[ -d "/sys/class/scsi_host" && $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]]; then
     TEXT+="\n  USB Controller:\n"
     for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
-      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
       [ ${PORTNUM} -eq 0 ] && continue
@@ -1221,7 +1220,7 @@ function sysinfo() {
   if [[ -d "/sys/class/mmc_host" && $(ls -l /sys/class/mmc_host | grep mmc_host | wc -l) -gt 0 ]]; then
     TEXT+="\n  MMC Controller:\n"
     for PCI in $(lspci -d ::805 | awk '{print $1}'); do
-      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       PORTNUM=$(ls -l /sys/class/mmc_host | grep "${PCI}" | wc -l)
       PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l)
       [ ${PORTNUM} -eq 0 ] && continue
@@ -1232,7 +1231,7 @@ function sysinfo() {
   if [ $(lspci -d ::108 | wc -l) -gt 0 ]; then
     TEXT+="\n  NVMe Controller:\n"
     for PCI in $(lspci -d ::108 | awk '{print $1}'); do
-      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[N:${PORT}:" | wc -l)
       TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
@@ -1243,7 +1242,7 @@ function sysinfo() {
   [ -f "${TMP_PATH}/diag" ] && rm -f "${TMP_PATH}/diag" >/dev/null
   echo -e "${TEXT}" >"${TMP_PATH}/diag"
   dialog --backtitle "$(backtitle)" --colors --title "Sysinfo" \
-    --help-button --help-label "Networkdiag" --extra-button --extra-label "Upload" \
+    --ok-label "Exit" --help-button --help-label "Networkdiag" --extra-button --extra-label "Upload" \
     --msgbox "${TEXT}" 0 0
   RET=$?
   case ${RET} in
