@@ -24,6 +24,12 @@ if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
 else
   MACHINE=NATIVE
 fi
+# Check CPU Manufacturer
+if [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ]; then
+  CPUM="Intel"
+else
+  CPUM="AMD"
+fi
 # Check for AES and ACPI Support
 if ! grep -q "^flags.*aes.*" /proc/cpuinfo; then
   AESSYS="false"
@@ -206,6 +212,7 @@ function arcModel() {
         [ -n "${ARCCONF}" ] && ARC="x"
         CPU="Intel"
         [[ "${A}" == "r1000" || "${A}" == "v1000" || "${A}" == "epyc7002" ]] && CPU="AMD"
+        [ "${CPU}" == "${CPUM}" ] && CPU="\Z2${CPU}\Zn" || CPU="\Z1${CPU}\Zn"
         IGPUS=""
         [[ "${A}" == "apollolake" || "${A}" == "geminilake" || "${A}" == "epyc7002" ]] && IGPUS="x"
         HBAS="x"
@@ -521,7 +528,7 @@ function arcSettings() {
   fi
   # Check for Custom Build
   if [ "${CUSTOM}" == "false" ]; then
-    if [ "${MACHINE}" == "NATIVE" ]; then
+    if [ "${ACPISYS}" == "true" ]; then
       # Select Governor for DSM
       dialog --backtitle "$(backtitle)" --colors --title "DSM Frequency Scaling" \
         --infobox "Generating Governor Table..." 3 40
@@ -545,17 +552,17 @@ function arcSettings() {
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
     if [ ${DEVICENIC} -gt 8 ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-        --msgbox "WARN: You have more then 8 Ethernet Ports. There are only 8 supported by DSM." 5 90
+        --msgbox "WARN: You have more then 8 Ethernet Ports. Only 8 supported by DSM." 5 80
     fi
     # Check for AES
     if [ "${AESSYS}" == "false" ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-        --msgbox "WARN: Your System doesn't have AES Support for Hardwareencryption in DSM." 5 90
+        --msgbox "WARN: Your System doesn't support Hardwareencryption in DSM. (AES)" 5 80
     fi
     # Check for ACPI
     if [ "${ACPISYS}" == "false" ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-        --msgbox "WARN: Your System doesn't have ACPI Support for CPU Frequency Scaling in DSM." 5 90
+        --msgbox "WARN: Your System doesn't support CPU Frequency Scaling in DSM. (ACPI)" 5 80
     else
       if [ "${PLATFORM}" != "epyc7002" ]; then
         echo "N cpufreq_conservative.ko" >>"${USER_UP_PATH}/modulelist"

@@ -266,6 +266,7 @@ function cmdlineMenu() {
         MSG+=" * \Z4pcie_port_pm=off\Zn\n    Disable the power management of the PCIe port.\n"
         MSG+=" * \Z4pci=realloc=off\Zn\n    Disable reallocating PCI bridge resources.\n"
         MSG+=" * \Z4libata.force=noncq\Zn\n    Disable NCQ for all SATA ports.\n"
+        MSG+=" * \Z4intel_pstate=disable\Zn\n    Switch Intel P-State to ACPI.\n"
         MSG+=" * \Z4acpi=force\Zn\n    Force enables ACPI.\n"
         MSG+=" * \Z4i915.enable_guc=2\Zn\n    Enable the GuC firmware on Intel graphics hardware.(value: 1,2 or 3)\n"
         MSG+=" * \Z4i915.max_vfs=7\Zn\n     Set the maximum number of virtual functions (VFs) that can be created for Intel graphics hardware.\n"
@@ -1071,6 +1072,18 @@ function sysinfo() {
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL}))GB\Zn"
   TEXT+="\n  AES | ACPI: \Zb${AESSYS} | ${ACPISYS}\Zn"
+  if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
+    for PCI in $(lspci -d ::300 | awk '{print $1}'); do
+      GPUNAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      TEXT+="\n  iGPU: \Zb${CPUNAME}\Zn\n"
+    done
+  fi
+  if [ $(lspci -d ::380 | wc -l) -gt 0 ]; then
+    for PCI in $(lspci -d ::380 | awk '{print $1}'); do
+      GPUNAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      TEXT+="\n  GPU: \Zb${CPUNAME}\Zn\n"
+    done
+  fi
   TEXT+="\n  Date: \Zb$(date)\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${ETHN} NIC\Zn"
@@ -2018,7 +2031,7 @@ function governorSelection () {
   rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
   CPUFREQSUPPORT=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
-  if [ -n "${CPUFREQSUPPORT}" ]; then
+  if [ -n "${CPUFREQSUPPORT}" ] || [ "${ACPISYS}" == "true" ]; then
     # Selectable CPU governors
     [ "${PLATFORM}" == "epyc7002" ] && echo -e "schedutil \"use schedutil to scale frequency *\"" >>"${TMP_PATH}/opts"
     [ "${PLATFORM}" != "epyc7002" ] && echo -e "ondemand \"use ondemand to scale frequency *\"" >>"${TMP_PATH}/opts"
