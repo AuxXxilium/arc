@@ -20,9 +20,9 @@ RAMTOTAL=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024}' /proc/meminfo 2>/
 
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
-  MACHINE=$(lscpu | grep Hypervisor | awk '{print $3}')
+  MACHINE="$(lscpu | grep Hypervisor | awk '{print $3}')" # KVM or VMware
 else
-  MACHINE=NATIVE
+  MACHINE="NATIVE"
 fi
 # Check for AES and ACPI Support
 if ! grep -q "^flags.*aes.*" /proc/cpuinfo; then
@@ -97,7 +97,6 @@ HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
-ARC_KEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
@@ -944,12 +943,16 @@ else
     if [ -z "${ARC_KEY}" ]; then
       echo "0 \"Decrypt Arc Patch \" "                                                        >>"${TMP_PATH}/menu"
     fi
-    echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
-    if [ "${CONFDONE}" == "true" ]; then
-      echo "2 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
-    fi
-    if [ "${BUILDDONE}" == "true" ]; then
-      echo "3 \"Boot Loader \" "                                                              >>"${TMP_PATH}/menu"
+    if [ "${ARCPATCH}" == "true" ] && [ -z "ARC_KEY" ]; then
+      echo "# \"Please decrypt first \" "                                                     >>"${TMP_PATH}/menu"
+    else
+      echo "1 \"Choose Model \" "                                                             >>"${TMP_PATH}/menu"
+      if [ "${CONFDONE}" == "true" ]; then
+        echo "2 \"Build Loader \" "                                                           >>"${TMP_PATH}/menu"
+      fi
+      if [ "${BUILDDONE}" == "true" ]; then
+        echo "3 \"Boot Loader \" "                                                            >>"${TMP_PATH}/menu"
+      fi
     fi
     echo "= \"\Z4========== Info ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
     echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"

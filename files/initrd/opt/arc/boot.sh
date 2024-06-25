@@ -151,8 +151,8 @@ if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
 fi
 
 # Cmdline NIC Settings
-MAC1="$(readConfigKey "mac.eth0" "${USER_CONFIG_FILE}")"
-MAC2="$(readConfigKey "mac.eth1" "${USER_CONFIG_FILE}")"
+MAC1="$(readConfigKey "arc.eth0" "${USER_CONFIG_FILE}")"
+MAC2="$(readConfigKey "arc.eth1" "${USER_CONFIG_FILE}")"
 CMDLINE['netif_num']="0"
 [[ -z "${MAC1}" && -n "${MAC2}" ]] && MAC1=${MAC2} && MAC2="" # Sanity check
 [ -n "${MAC1}" ] && CMDLINE['mac1']="${MAC1}" && CMDLINE['netif_num']="1"

@@ -7,13 +7,13 @@ function getnet() {
     ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
     MACS=($(generateMacAddress "${MODEL}" ${ETHN} true))
     for I in $(seq 1 ${ETHN}); do
-      writeConfigKey "mac.eth$((${I} - 1))" "${MACS[$((${I} - 1))]}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.eth$((${I} - 1))" "${MACS[$((${I} - 1))]}" "${USER_CONFIG_FILE}"
     done
   elif [ "${ARCPATCH}" == "false" ]; then
     ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
     MACS=($(generateMacAddress "${MODEL}" ${ETHN} false))
     for I in $(seq 1 ${ETHN}); do
-      writeConfigKey "mac.eth$((${I} - 1))" "${MACS[$((${I} - 1))]}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.eth$((${I} - 1))" "${MACS[$((${I} - 1))]}" "${USER_CONFIG_FILE}"
     done
   elif [ "${ARCPATCH}" == "user" ]; then
     # User Mac
@@ -26,10 +26,10 @@ function getnet() {
       RET=$?
       [ ${RET} -ne 0 ] && break 2
       MAC=$(cat "${TMP_PATH}/resp")
-      [ -z "${MAC}" ] && MAC="$(readConfigKey "mac.${ETH}" "${USER_CONFIG_FILE}")"
+      [ -z "${MAC}" ] && MAC="$(readConfigKey "arc.${ETH}" "${USER_CONFIG_FILE}")"
       [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
       MAC="$(echo "${MAC}" | sed "s/:\|-\| //g")"
-      writeConfigKey "mac.${ETH}" "${MAC}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.${ETH}" "${MAC}" "${USER_CONFIG_FILE}"
       [ ${#MAC} -eq 12 ] && break
       dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "Invalid MAC" 0 0
     done

@@ -64,7 +64,6 @@ initConfigKey "device.externalcontroller" "false" "${USER_CONFIG_FILE}"
 initConfigKey "keymap" "" "${USER_CONFIG_FILE}"
 initConfigKey "layout" "" "${USER_CONFIG_FILE}"
 initConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
-initConfigKey "mac" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "model" "" "${USER_CONFIG_FILE}"
 initConfigKey "modelid" "" "${USER_CONFIG_FILE}"
@@ -102,7 +101,7 @@ for ETH in ${ETHX}; do
     sleep 1
   fi
   [ "${ETH::3}" = "eth" ] && ethtool -s ${ETH} wol g 2>/dev/null || true
-  initConfigKey "mac.${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
+  initConfigKey "arc.${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
 done
 ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
 writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
