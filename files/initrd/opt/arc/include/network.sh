@@ -19,19 +19,24 @@ function getnet() {
     # User Mac
     RET=1
     for ETH in ${ETHX}; do
-      MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
-      dialog --backtitle "$(backtitle)" --title "Mac Setting" \
-        --inputbox "Type a custom MAC for ${ETH}.\n Eq. 001132123456" 0 0 "${MAC}"\
-        2>"${TMP_PATH}/resp"
-      RET=$?
-      [ ${RET} -ne 0 ] && break
-      MAC=$(cat "${TMP_PATH}/resp")
-      [ -z "${MAC}" ] && MAC="$(readConfigKey "arc.${ETH}" "${USER_CONFIG_FILE}")"
-      [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
-      MAC="$(echo "${MAC}" | sed "s/:\|-\| //g")"
-      writeConfigKey "arc.${ETH}" "${MAC}" "${USER_CONFIG_FILE}"
-      [ ${#MAC} -eq 12 ] && break
-      dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "Invalid MAC" 0 0
+      while true; do
+        MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
+        dialog --backtitle "$(backtitle)" --title "Mac Setting" \
+          --inputbox "Type a custom MAC for ${ETH}.\nEq. 001132123456" 0 0 "${MAC}"\
+          2>"${TMP_PATH}/resp"
+        RET=$?
+        [ ${RET} -ne 0 ] && break
+        MAC=$(cat "${TMP_PATH}/resp")
+        [ -z "${MAC}" ] && MAC="$(readConfigKey "arc.${ETH}" "${USER_CONFIG_FILE}")"
+        [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
+        MAC="$(echo "${MAC}" | sed "s/:\|-\| //g")"
+        if [ ${#MAC} -eq 12 ]; then
+          writeConfigKey "arc.${ETH}" "${MAC}" "${USER_CONFIG_FILE}"
+          continue
+        else
+          dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "Invalid MAC" 0 0
+        fi
+      done
     done
   fi
 }

@@ -960,28 +960,25 @@ else
     echo "= \"\Z4========== System ========\Zn \" "                                           >>"${TMP_PATH}/menu"
     if [ "${CONFDONE}" == "true" ]; then
       if [ "${ARCOPTS}" == "true" ]; then
-        echo "4 \"\Z1Hide Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+        echo "4 \"\Z1Hide Arc DSM Options\Zn \" "                                             >>"${TMP_PATH}/menu"
       else
-        echo "4 \"\Z1Show Arc Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+        echo "4 \"\Z1Show Arc DSM Options\Zn \" "                                             >>"${TMP_PATH}/menu"
       fi
       if [ "${ARCOPTS}" == "true" ]; then
-        echo "= \"\Z4========== Arc ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
-        echo "b \"DSM Addons \" "                                                             >>"${TMP_PATH}/menu"
-        echo "d \"DSM Modules \" "                                                            >>"${TMP_PATH}/menu"
-        echo "g \"DSM Frequency Scaling \" "                                                  >>"${TMP_PATH}/menu"
-        echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
+        echo "= \"\Z4======== Arc DSM ========\Zn \" "                                        >>"${TMP_PATH}/menu"
+        echo "e \"Version \" "                                                                >>"${TMP_PATH}/menu"
+        echo "b \"Addons \" "                                                                 >>"${TMP_PATH}/menu"
+        echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
+        echo "g \"Frequency Scaling \" "                                                      >>"${TMP_PATH}/menu"
         if [ "${DT}" == "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
-          echo "S \"DSM Sata PortMap \" "                                                     >>"${TMP_PATH}/menu"
+          echo "S \"Sata PortMap \" "                                                         >>"${TMP_PATH}/menu"
         fi
         if [ "${DT}" == "true" ]; then
-          echo "o \"DSM DTS Map \" "                                                          >>"${TMP_PATH}/menu"
+          echo "o \"DTS Map \" "                                                              >>"${TMP_PATH}/menu"
         fi
-        echo "P \"DSM StoragePanel Options\" "                                                >>"${TMP_PATH}/menu"
-        echo "Q \"DSM SequentialIO Options\" "                                                >>"${TMP_PATH}/menu"
-        if [ -n "${ARCCONF}" ]; then
-          echo "p \"Arc Patch Settings \" "                                                   >>"${TMP_PATH}/menu"
-        fi
-        echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                       >>"${TMP_PATH}/menu"
+        echo "P \"StoragePanel Options\" "                                                    >>"${TMP_PATH}/menu"
+        echo "Q \"SequentialIO Options\" "                                                    >>"${TMP_PATH}/menu"
+        echo "p \"SN/Mac Settings \" "                                                        >>"${TMP_PATH}/menu"
       fi
       if [ "${BOOTOPTS}" == "true" ]; then
         echo "6 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
@@ -991,6 +988,7 @@ else
       if [ "${BOOTOPTS}" == "true" ]; then
         echo "= \"\Z4========== Boot =========\Zn \" "                                        >>"${TMP_PATH}/menu"
         echo "m \"DSM Kernelload: \Z4${KERNELLOAD}\Zn \" "                                    >>"${TMP_PATH}/menu"
+        echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
         if [ "${DIRECTBOOT}" == "false" ]; then
           echo "i \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
         fi
@@ -1017,11 +1015,7 @@ else
         if [ "${DT}" == "true" ]; then
           echo "H \"Hotplug/SortDrives: \Z4${HDDSORT}\Zn \" "                                 >>"${TMP_PATH}/menu"
         fi
-        echo "c \"IPv6 Boot Support: \Z4${ARCIPV6}\Zn \" "                                    >>"${TMP_PATH}/menu"
         echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
-        echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
-        echo "W \"RD Compression: \Z4${RD_COMPRESSED}\Zn \" "                                 >>"${TMP_PATH}/menu"
-        echo "X \"Sata DOM: \Z4${SATADOM}\Zn \" "                                             >>"${TMP_PATH}/menu"
         echo "T \"Force enable SSH in DSM \" "                                                >>"${TMP_PATH}/menu"
       fi
     fi
@@ -1032,13 +1026,17 @@ else
     fi
     if [ "${DEVOPTS}" == "true" ]; then
       echo "= \"\Z4========= Loader =========\Zn \" "                                         >>"${TMP_PATH}/menu"
+      echo "= \"\Z4=== Edit with caution! ===\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "R \"Automated Mode: \Z4${CUSTOM}\Zn \" "                                          >>"${TMP_PATH}/menu"
+      echo "W \"RD Compression: \Z4${RD_COMPRESSED}\Zn \" "                                   >>"${TMP_PATH}/menu"
+      echo "X \"Sata DOM: \Z4${SATADOM}\Zn \" "                                               >>"${TMP_PATH}/menu"
+      echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "B \"Grep DSM Config from Backup \" "                                              >>"${TMP_PATH}/menu"
       echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
       echo "w \"Reset Loader to Defaults\" "                                                  >>"${TMP_PATH}/menu"
       echo "C \"Clone Loader to Disk\" "                                                      >>"${TMP_PATH}/menu"
       echo "F \"\Z1Formate Disks\Zn \" "                                                      >>"${TMP_PATH}/menu"
-      echo "n \"Edit Grub Config \" "                                                         >>"${TMP_PATH}/menu"
+      echo "n \"Grub Bootloader Config \" "                                                   >>"${TMP_PATH}/menu"
       echo "v \"Write Modifications to Disk \" "                                              >>"${TMP_PATH}/menu"
       if [ "${OFFLINE}" == "false" ]; then
         echo "G \"Install opkg Package Manager \" "                                           >>"${TMP_PATH}/menu"
