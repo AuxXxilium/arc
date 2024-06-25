@@ -24,12 +24,6 @@ if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
 else
   MACHINE=NATIVE
 fi
-# Check CPU Manufacturer
-if [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ]; then
-  CPUM="Intel"
-else
-  CPUM="AMD"
-fi
 # Check for AES and ACPI Support
 if ! grep -q "^flags.*aes.*" /proc/cpuinfo; then
   AESSYS="false"
@@ -209,24 +203,17 @@ function arcModel() {
         ARCCONF="$(readConfigKey "${M}.serial" "${S_FILE}" 2>/dev/null)"
         ARC=""
         BETA=""
-        [ -n "${ARCCONF}" ] && ARC="x"
-        CPU="Intel"
-        [[ "${A}" == "r1000" || "${A}" == "v1000" || "${A}" == "epyc7002" ]] && CPU="AMD"
-        [ "${CPU}" == "${CPUM}" ] && CPU="\Z2${CPU}\Zn" || CPU="\Z1${CPU}\Zn"
-        IGPUS=""
-        [[ "${A}" == "apollolake" || "${A}" == "geminilake" || "${A}" == "epyc7002" ]] && IGPUS="x"
-        HBAS="x"
-        [ "${DT}" == "true" ] && HBAS=""
-        [ "${M}" == "SA6400" ] && HBAS="x"
-        USBS=""
-        [ "${DT}" == "false" ] && USBS="x"
-        M_2_CACHE="x"
-        [[ "${M}" == "DS918+" || "${M}" == "DS1019+" || "${M}" == "DS1621xs+" || "${M}" == "RS1619xs+" ]] && M_2_CACHE="+"
-        [[ "${M}" == "DS220+" ||  "${M}" == "DS224+" ]] && M_2_CACHE=""
-        M_2_STORAGE="+"
-        [ "${DT}" == "false" ] && M_2_STORAGE=""
-        [[ "${M}" == "DS220+" || "${M}" == "DS224+" ]] && M_2_STORAGE=""
+        [ -n "${ARCCONF}" ] && ARC="x" || ARC=""
         [ "${DT}" == "true" ] && DTS="x" || DTS=""
+        [[ "${A}" == "r1000" || "${A}" == "v1000" || "${A}" == "epyc7002" ]] && CPU="AMD" || CPU="Intel"
+        [[ "${A}" == "apollolake" || "${A}" == "geminilake" || "${A}" == "epyc7002" ]] && IGPUS="x" || IGPUS=""
+        [ "${DT}" == "true" ] && HBAS="" || HBAS="x"
+        [ "${M}" == "SA6400" ] && HBAS="x"
+        [ "${DT}" == "false" ] && USBS="x" || USBS=""
+        [[ "${M}" == "DS918+" || "${M}" == "DS1019+" || "${M}" == "DS1621xs+" || "${M}" == "RS1619xs+" ]] && M_2_CACHE="+" || M_2_CACHE="x"
+        [[ "${M}" == "DS220+" ||  "${M}" == "DS224+" ]] && M_2_CACHE=""
+        [ "${DT}" == "false" ] && M_2_STORAGE="" || M_2_STORAGE="+"
+        [[ "${M}" == "DS220+" || "${M}" == "DS224+" ]] && M_2_STORAGE=""
         # Check id model is compatible with CPU
         if [ ${RESTRICT} -eq 1 ]; then
           for F in "${FLAGS}"; do
@@ -258,13 +245,13 @@ function arcModel() {
         dialog --backtitle "$(backtitle)" --title "Arc DSM Model" --colors \
           --cancel-label "Show all" --help-button --help-label "Exit" \
           --extra-button --extra-label "Info" \
-          --menu "Supported Models for Loader (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "CPU" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 120 0 \
+          --menu "Supported Models for your Hardware (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "CPU" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 120 0 \
           --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       else
         dialog --backtitle "$(backtitle)" --title "DSM Model" --colors \
           --cancel-label "Show all" --help-button --help-label "Exit" \
           --extra-button --extra-label "Info" \
-          --menu "Supported Models for Loader (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "CPU" "Platform" "DT" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 120 0 \
+          --menu "Supported Models for your Hardware (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "CPU" "Platform" "DT" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 120 0 \
           --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       fi
       RET=$?
