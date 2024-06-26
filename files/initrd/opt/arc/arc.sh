@@ -978,7 +978,7 @@ else
         fi
         echo "P \"StoragePanel Options\" "                                                    >>"${TMP_PATH}/menu"
         echo "Q \"SequentialIO Options\" "                                                    >>"${TMP_PATH}/menu"
-        echo "p \"SN/Mac Settings \" "                                                        >>"${TMP_PATH}/menu"
+        echo "p \"Patch Options (SN/Mac)\" "                                                  >>"${TMP_PATH}/menu"
       fi
       if [ "${BOOTOPTS}" == "true" ]; then
         echo "6 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"

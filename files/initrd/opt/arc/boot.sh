@@ -152,12 +152,15 @@ if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
 fi
 
 # Cmdline NIC Settings
-MAC1="$(readConfigKey "arc.eth0" "${USER_CONFIG_FILE}")"
-MAC2="$(readConfigKey "arc.eth1" "${USER_CONFIG_FILE}")"
-CMDLINE['netif_num']="0"
-[[ -z "${MAC1}" && -n "${MAC2}" ]] && MAC1=${MAC2} && MAC2="" # Sanity check
-[ -n "${MAC1}" ] && CMDLINE['mac1']="${MAC1}" && CMDLINE['netif_num']="1"
-[ -n "${MAC2}" ] && CMDLINE['mac2']="${MAC2}" && CMDLINE['netif_num']="2"
+ETHN=0
+ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
+for ETH in ${ETHX}; do
+  MAC="$(readConfigKey "arc.${ETH}" "${USER_CONFIG_FILE}")"
+  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g')"
+  ETHN=$((${ETHN} + 1))
+  CMDLINE['mac${ETHN}']="${MAC}"
+done
+CMDLINE['netif_num']="${ETHN}"
 
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do
@@ -188,8 +191,6 @@ if [ "${DIRECTBOOT}" == "true" ]; then
   reboot
   exit 0
 elif [ "${DIRECTBOOT}" == "false" ]; then
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
-  ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
   BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
   echo -e "\033[1;34mDetected ${ETHN} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
