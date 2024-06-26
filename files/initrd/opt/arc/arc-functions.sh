@@ -1963,7 +1963,7 @@ function rebootMenu() {
   dialog --backtitle "$(backtitle)" --title "Reboot" \
     --infobox "Reboot to ${REDEST}!" 0 0
   if [ "${REDEST}" == "bios" ]; then
-    efibootmgr -n 0000
+    efibootmgr -n 0000 >/dev/null 2>&1
     reboot
     exit 0
   elif [ "${REDEST}" == "poweroff" ]; then
