@@ -416,8 +416,8 @@ function arcPatch() {
         --nocancel --title "Arc Patch"\
         --menu "Please choose an Option." 7 50 0 \
         1 "Use Arc Patch (only for QC)" \
-        2 "Use random Serial/Mac" \
-        3 "Use my own Serial/Mac" \
+        2 "Use random SN/Mac" \
+        3 "Use my own SN/Mac" \
       2>"${TMP_PATH}/resp"
       resp=$(cat ${TMP_PATH}/resp)
       [ -z "${resp}" ] && return 1
@@ -431,8 +431,8 @@ function arcPatch() {
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 3 ]; then
         while true; do
-          dialog --backtitle "$(backtitle)" --colors --title "Serial" \
-            --inputbox "Please enter a valid Serial " 0 0 "" \
+          dialog --backtitle "$(backtitle)" --colors --title "DSM SN" \
+            --inputbox "Please enter a valid SN!" 7 50 "" \
             2>"${TMP_PATH}/resp"
           [ $? -ne 0 ] && break 2
           SN="$(cat ${TMP_PATH}/resp)"
@@ -442,8 +442,8 @@ function arcPatch() {
             break
           fi
           # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
-          dialog --backtitle "$(backtitle)" --colors --title "Serial" \
-            --yesno "Serial looks invalid, continue?" 0 0
+          dialog --backtitle "$(backtitle)" --colors --title "DSM SN" \
+            --yesno "Serial looks invalid, continue?" 5 50
           [ $? -eq 0 ] && break
         done
         writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"

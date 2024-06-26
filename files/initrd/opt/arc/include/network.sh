@@ -17,24 +17,22 @@ function getnet() {
     done
   elif [ "${ARCPATCH}" == "user" ]; then
     # User Mac
-    RET=1
     for ETH in ${ETHX}; do
       while true; do
         MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
         dialog --backtitle "$(backtitle)" --title "Mac Setting" \
-          --inputbox "Type a custom MAC for ${ETH}.\nEq. 001132123456" 0 0 "${MAC}"\
+          --inputbox "Type a custom MAC for ${ETH} (Eq. 001132123456)." 7 50 "${MAC}"\
           2>"${TMP_PATH}/resp"
-        RET=$?
-        [ ${RET} -ne 0 ] && break
+        [ $? -ne 0 ] && break
         MAC=$(cat "${TMP_PATH}/resp")
         [ -z "${MAC}" ] && MAC="$(readConfigKey "arc.${ETH}" "${USER_CONFIG_FILE}")"
         [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
         MAC="$(echo "${MAC}" | sed "s/:\|-\| //g")"
         if [ ${#MAC} -eq 12 ]; then
           writeConfigKey "arc.${ETH}" "${MAC}" "${USER_CONFIG_FILE}"
-          continue
+          break
         else
-          dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "Invalid MAC" 0 0
+          dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "Invalid MAC - Try again!" 5 50
         fi
       done
     done
