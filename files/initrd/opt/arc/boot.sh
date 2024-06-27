@@ -165,11 +165,9 @@ for ETH in ${ETHX}; do
   MAC="$(readConfigKey "arc.${ETH}" "${USER_CONFIG_FILE}")"
   [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
   ETHN=$((${ETHN} + 1))
-  if [ ${ETHN} -le ${NICPORTS} ]; then
-    CMDLINE['mac${ETHN}']="${MAC}"
-  fi
+  [ ${ETHN} -le ${NICPORTS} ] && CMDLINE['mac${ETHN}']="${MAC}"
 done
-CMDLINE['netif_num']="${NICPORTS}"
+[ ${ETHN} -le ${NICPORTS} ] && CMDLINE['netif_num']="${ETHN}" || CMDLINE['netif_num']="${NICPORTS}"
 
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do
