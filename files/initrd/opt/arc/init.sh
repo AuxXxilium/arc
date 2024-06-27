@@ -84,7 +84,7 @@ if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); 
 fi
 # Read/Write IP/Mac config
 for ETH in ${ETHX}; do
-  MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g')"
+  MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
   IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
   if [ -n "${IPR}" ]; then
     IFS='/' read -r -a IPRA <<<"$IPR"

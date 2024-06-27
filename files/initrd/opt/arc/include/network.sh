@@ -22,13 +22,13 @@ function getnet() {
       while true; do
         MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
         dialog --backtitle "$(backtitle)" --title "Mac Setting" \
-          --inputbox "Type a custom MAC for ${ETH} (Eq. 001132123456)." 7 50 "${MAC}"\
+          --inputbox "Type a custom MAC for ${ETH} (Eq. 001132abc123)." 7 50 "${MAC}"\
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break
         MAC=$(cat "${TMP_PATH}/resp")
         [ -z "${MAC}" ] && MAC="$(readConfigKey "arc.${ETH}" "${USER_CONFIG_FILE}")"
-        [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g')"
-        MAC="$(echo "${MAC}" | sed "s/:\|-\| //g")"
+        [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
+        MAC="$(echo "${MAC}" | sed "s/:\|-\| //g" | tr '[:upper:]' '[:lower:]')"
         if [ ${#MAC} -eq 12 ]; then
           writeConfigKey "arc.${ETH}" "${MAC}" "${USER_CONFIG_FILE}"
           break

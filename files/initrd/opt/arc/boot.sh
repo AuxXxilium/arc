@@ -163,7 +163,7 @@ else
 fi
 for ETH in ${ETHX}; do
   MAC="$(readConfigKey "arc.${ETH}" "${USER_CONFIG_FILE}")"
-  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g')"
+  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
   ETHN=$((${ETHN} + 1))
   if [ ${ETHN} -le ${NICPORTS} ]; then
     CMDLINE['mac${ETHN}']="${MAC}"
