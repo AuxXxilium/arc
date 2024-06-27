@@ -1024,7 +1024,7 @@ else
       echo "C \"Clone Loader to Disk\" "                                                      >>"${TMP_PATH}/menu"
       echo "F \"\Z1Formate Disks\Zn \" "                                                      >>"${TMP_PATH}/menu"
       echo "n \"Grub Bootloader Config \" "                                                   >>"${TMP_PATH}/menu"
-      echo "v \"Write Modifications to Disk \" "                                              >>"${TMP_PATH}/menu"
+      echo "v \"Write Loader Modifications to Disk \" "                                       >>"${TMP_PATH}/menu"
       if [ "${OFFLINE}" == "false" ]; then
         echo "G \"Install opkg Package Manager \" "                                           >>"${TMP_PATH}/menu"
       fi
