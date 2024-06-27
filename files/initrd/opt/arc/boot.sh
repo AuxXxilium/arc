@@ -165,7 +165,7 @@ for ETH in ${ETHX}; do
   MAC="$(readConfigKey "arc.${ETH}" "${USER_CONFIG_FILE}")"
   [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
   ETHN=$((${ETHN} + 1))
-  [ ${ETHN} -le ${NICPORTS} ] && CMDLINE['mac${ETHN}']="${MAC}"
+  [ ${ETHN} -le ${NICPORTS} ] && CMDLINE["mac${ETHN}"]="${MAC}"
 done
 [ ${ETHN} -le ${NICPORTS} ] && CMDLINE['netif_num']="${ETHN}" || CMDLINE['netif_num']="${NICPORTS}"
 
