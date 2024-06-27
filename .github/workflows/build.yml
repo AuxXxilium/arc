@@ -181,8 +181,9 @@ jobs:
           #mv -f "arc-2G.img" "arc.img"
 
           echo "Image Converter"
-          qemu-img convert -O vmdk arc.img arc-dyn.vmdk
-          qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
+          qemu-img convert arc.img -O vmdk -o 'adapter_type=lsilogic,subformat=streamOptimized,compat6' arc-dyn.vmdk
+          qemu-img convert arc.img -O vmdk -o adapter_type=lsilogic -o subformat=monolithicFlat arc.vmdk
+          qemu-img convert arc.img -O vhdx -o subformat=dynamic arc.vhdx
 
           echo "Create Arc ova"
           convertova "arc.img" "arc.ova"
@@ -194,6 +195,7 @@ jobs:
             zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
             zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
             zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}.vhdx.zip" arc.vhdx
             zip -9 "arc-${{ env.VERSION }}.ova.zip" arc.ova
           else
             zip -9 "arc.img.zip" arc.img
