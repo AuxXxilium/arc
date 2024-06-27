@@ -373,18 +373,10 @@ function arcVersion() {
     KVERP="${KVER}"
   fi
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-  cp -f "${ARC_PATH}/include/modulelist" "${USER_UP_PATH}/modulelist"
-  echo -e "\n\n# Arc Modules" >>"${USER_UP_PATH}/modulelist"
-  KOLIST=""
-  for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
-    KOLIST+="$(getdepends "${PLATFORM}" "${KVERP}" "${I}") ${I} "
-  done
-  KOLIST=($(echo ${KOLIST} | tr ' ' '\n' | sort -u))
+  # Rewrite modules
+  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read -r ID DESC; do
     writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-    for MOD in ${KOLIST[@]}; do
-      [ "${MOD}" == "${ID}" ] && echo "N ${ID}.ko" >>"${USER_UP_PATH}/modulelist"
-    done
   done < <(getAllModules "${PLATFORM}" "${KVERP}")
   # Check for Only Version
   if [ "${ONLYVERSION}" == "true" ]; then
