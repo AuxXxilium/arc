@@ -78,10 +78,9 @@ initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 
 # Init Network
-ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
+ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
 if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
   _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
-  /etc/init.d/S41dhcpcd restart
 fi
 # Read/Write IP/Mac config
 for ETH in ${ETHX}; do
@@ -103,7 +102,7 @@ for ETH in ${ETHX}; do
   [ "${ETH::3}" = "eth" ] && ethtool -s ${ETH} wol g 2>/dev/null || true
   initConfigKey "arc.${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
 done
-ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
+ETHN="${#ETHX}"
 writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
 # No network devices
 echo

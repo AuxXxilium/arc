@@ -1025,8 +1025,8 @@ function sysinfo() {
   # Get System Informations
   CPU=$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
-  ETHN=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
+  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
+  ETHN="${#ETHX}"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" == "true" ]; then
@@ -1269,7 +1269,7 @@ function sysinfo() {
 # Shows Networkdiag to user
 function networkdiag() {
   (
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
+  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
   for ETH in ${ETHX}; do
     echo
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
@@ -1357,7 +1357,7 @@ function credits() {
 ###############################################################################
 # allow setting Static IP for Loader
 function staticIPMenu() {
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
+  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
   for ETH in ${ETHX}; do
     MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g')"
     IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"

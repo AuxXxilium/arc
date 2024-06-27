@@ -22,7 +22,7 @@ RAMTOTAL=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024}' /proc/meminfo 2>/
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
   MACHINE="$(lscpu | grep Hypervisor | awk '{print $3}')" # KVM or VMware
 else
-  MACHINE="NATIVE"
+  MACHINE="Native"
 fi
 # Check for AES and ACPI Support
 if ! grep -q "^flags.*aes.*" /proc/cpuinfo; then
@@ -43,14 +43,14 @@ BUS=$(getBus "${LOADER_DISK}")
 ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
-NEWTAG=$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
+NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
 if [ -n "${NEWTAG}" ]; then
   [ -z "${ARCNIC}" ] && ARCNIC="auto"
 elif [ -z "${NEWTAG}" ]; then
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
+  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
   for ETH in ${ETHX}; do
     # Update Check
-    NEWTAG=$(curl --interface ${ETH} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
+    NEWTAG="$(curl --interface ${ETH} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
     if [ -n "${NEWTAG}" ]; then
       [ -z "${ARCNIC}" ] && ARCNIC="${ETH}"
       break
@@ -117,13 +117,13 @@ KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 if [ "${OFFLINE}" == "false" ]; then
   # Timezone
   if [ "${ARCNIC}" == "auto" ]; then
-    REGION=$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)
-    TIMEZONE=$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)
-    [ -z "${KEYMAP}" ] && KEYMAP=$(curl -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')
+    REGION="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
+    TIMEZONE="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
+    [ -z "${KEYMAP}" ] && KEYMAP="$(curl -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
   else
-    REGION=$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)
-    TIMEZONE=$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)
-    [ -z "${KEYMAP}" ] && KEYMAP=$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')
+    REGION="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
+    TIMEZONE="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
+    [ -z "${KEYMAP}" ] && KEYMAP="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
   fi
   writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
   writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
@@ -549,11 +549,6 @@ function arcSettings() {
     if [ "${ACPISYS}" == "false" ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
         --msgbox "WARN: Your System doesn't support CPU Frequency Scaling in DSM. (ACPI)" 5 80
-    else
-      if [ "${PLATFORM}" != "epyc7002" ]; then
-        echo "N cpufreq_conservative.ko" >>"${USER_UP_PATH}/modulelist"
-        echo "N cpufreq_ondemand.ko" >>"${USER_UP_PATH}/modulelist"
-      fi
     fi
   fi
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
@@ -689,9 +684,9 @@ function make() {
     idx=0
     while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
       if [ "${ARCNIC}" == "auto" ]; then
-        PAT_DATA=$(curl -skL -m 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}")
+        PAT_DATA="$(curl -skL -m 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}")"
       else
-        PAT_DATA=$(curl --interface ${ARCNIC} -skL -m 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}")
+        PAT_DATA="$(curl --interface ${ARCNIC} -skL -m 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}")"
       fi
       if [ "$(echo ${PAT_DATA} | jq -r '.success' 2>/dev/null)" == "true" ]; then
         if echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].label_ext' 2>/dev/null | grep -q 'pat'; then
@@ -715,11 +710,11 @@ function make() {
       idx=0
       while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
         if [ "${ARCNIC}" == "auto" ]; then
-          PAT_URL=$(curl -skL -m 10 "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")
-          PAT_HASH=$(curl -skL -m 10 "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")
+          PAT_URL="$(curl -skL -m 10 "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")"
+          PAT_HASH="$(curl -skL -m 10 "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")"
         else
-          PAT_URL=$(curl --interface ${ARCNIC} -m 10 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")
-          PAT_HASH=$(curl --interface ${ARCNIC} -m 10 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")
+          PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")"
+          PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")"
         fi
         PAT_URL=${PAT_URL%%\?*}
         if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then

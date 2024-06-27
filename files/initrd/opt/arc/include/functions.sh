@@ -209,66 +209,39 @@ function _set_conf_kv() {
 # @1 -mac1,mac2,mac3...
 function _sort_netif() {
   ETHLIST=""
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
+  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
   for ETH in ${ETHX}; do
     MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
-    ETHBUS=$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | awk '{print $2}')
+    BUS="$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
     ETHLIST="${ETHLIST}${BUS} ${MAC} ${ETH}\n"
   done
-
+  ETHLISTTMPM=""
+  ETHLISTTMPB="$(echo -e "${ETHLIST}" | sort)"
   if [ -n "${1}" ]; then
-    MACS=$(echo "${1}" | sed 's/://g' | tr '[:upper:]' '[:lower:]' | tr ',' ' ')
-    ETHLISTTMPC=""
-    ETHLISTTMPF=""
-
+    MACS="$(echo "${1}" | sed 's/://g' | tr '[:upper:]' '[:lower:]' | tr ',' ' ')"
     for MACX in ${MACS}; do
-      ETHLISTTMPC="${ETHLISTTMPC}$(echo -e "${ETHLIST}" | grep "${MACX}")\n"
+      ETHLISTTMPM="${ETHLISTTMPM}$(echo -e "${ETHLISTTMPB}" | grep "${MACX}")\n"
+      ETHLISTTMPB="$(echo -e "${ETHLISTTMPB}" | grep -v "${MACX}")\n"
     done
-
-    while read -r ETHBUS MAC ETH; do
-      [ -z "${MAC}" ] && continue
-      if echo "${MACS}" | grep -q "${MAC}"; then continue; fi
-      ETHLISTTMPF="${ETHLISTTMPF}${ETHBUS} ${MAC} ${ETH}\n"
-    done <<EOF
-$(echo -e ${ETHLIST} | sort)
-EOF
-    ETHLIST="${ETHLISTTMPC}${ETHLISTTMPF}"
-  else
-    ETHLIST="$(echo -e "${ETHLIST}" | sort)"
   fi
-  ETHLIST="$(echo -e "${ETHLIST}" | grep -v '^$')"
-
-  echo -e "${ETHLIST}" >${TMP_PATH}/ethlist
-  # cat ${TMP_PATH}/ethlist
-
+  ETHLIST="$(echo -e "${ETHLISTTMPM}${ETHLISTTMPB}" | grep -v '^$')"
+  ETHSEQ="$(echo -e "${ETHLIST}" | awk '{print $3}' | sed 's/eth//g')"
+  ETHNUM="$(echo -e "${ETHLIST}" | wc -l)"
   # sort
-  IDX=0
-  while true; do
-    # cat ${TMP_PATH}/ethlist
-    [ ${IDX} -ge $(wc -l <${TMP_PATH}/ethlist) ] && break
-    ETH=$(cat ${TMP_PATH}/ethlist | sed -n "$((${IDX} + 1))p" | awk '{print $3}')
-    # echo "ETH: ${ETH}"
-    if [ -n "${ETH}" ] && [ "${ETH}" != "eth${IDX}" ]; then
-      # echo "change ${ETH} <=> eth${IDX}"
-      ip link set dev eth${IDX} down
-      ip link set dev ${ETH} down
-      sleep 1
-      ip link set dev eth${IDX} name ethN
-      ip link set dev ${ETH} name eth${IDX}
-      ip link set dev ethN name ${ETH}
-      sleep 1
-      ip link set dev eth${IDX} up
-      ip link set dev ${ETH} up
-      sleep 1
-      sed -i "s/eth${IDX}/ethN/" ${TMP_PATH}/ethlist
-      sed -i "s/${ETH}/eth${IDX}/" ${TMP_PATH}/ethlist
-      sed -i "s/ethN/${ETH}/" ${TMP_PATH}/ethlist
-      sleep 1
-    fi
-    IDX=$((${IDX} + 1))
-  done
-
-  rm -f ${TMP_PATH}/ethlist
+  if [ ! "${ETHSEQ}" = "$(seq 0 $((${ETHNUM:0} - 1)))" ]; then
+    /etc/init.d/S41dhcpcd stop >/dev/null 2>&1
+    /etc/init.d/S40network stop >/dev/null 2>&1
+    for i in $(seq 0 $((${ETHNUM:0} - 1))); do
+      ip link set dev eth${i} name tmp${i}
+    done
+    local I=0
+    for i in ${ETHSEQ}; do
+      ip link set dev tmp${i} name eth${I}
+      I=$((${I} + 1))
+    done
+    /etc/init.d/S40network start >/dev/null 2>&1
+    /etc/init.d/S41dhcpcd start >/dev/null 2>&1
+  fi
   return 0
 }
 

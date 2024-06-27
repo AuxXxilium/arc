@@ -12,6 +12,11 @@ N kvm-intel.ko
 N kvm-amd.ko
 N kvm.ko
 
+# acpi
+N acpi_call.ko
+N cpufreq_conservative.ko
+N cpufreq_ondemand.ko
+
 # sensors
 N coretemp.ko
 N k10temp.ko

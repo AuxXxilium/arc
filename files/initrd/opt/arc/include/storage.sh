@@ -122,7 +122,7 @@ function getmap() {
   if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
     LASTDRIVE=0
     while read -r D; do
-      if [ "${BUS}" == "sata" ] && [ "${MACHINE}" != "NATIVE" ] && [ ${D} -eq 0 ]; then
+      if [ "${BUS}" == "sata" ] && [ "${MACHINE}" != "Native" ] && [ ${D} -eq 0 ]; then
         MAXDISKS=${DRIVES}
         echo -n "${D}>${MAXDISKS}:">>"${TMP_PATH}/remap"
       elif [ ${D} != ${LASTDRIVE} ]; then
@@ -144,7 +144,7 @@ function getmapSelection() {
   CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   if [ "${CUSTOM}" == "false" ]; then
     # Show recommended Option to user
-    if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" == "true" ] && [ "${MACHINE}" == "NATIVE" ]; then
+    if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" == "true" ] && [ "${MACHINE}" == "Native" ]; then
       REMAP2="*"
     elif [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" == "false" ]; then
       REMAP3="*"
@@ -176,7 +176,7 @@ function getmapSelection() {
     fi
   else
     # Show recommended Option to user
-    if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" == "true" ] && [ "${MACHINE}" == "NATIVE" ]; then
+    if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" == "true" ] && [ "${MACHINE}" == "Native" ]; then
       writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}"
     elif [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" == "false" ]; then
       writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}"

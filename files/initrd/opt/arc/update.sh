@@ -16,7 +16,7 @@
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
   MACHINE="$(lscpu | grep Hypervisor | awk '{print $3}')"
 else
-  MACHINE="NATIVE"
+  MACHINE="Native"
 fi
 
 # Get Loader Disk Bus
@@ -30,10 +30,10 @@ NEWTAG=$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" 
 if [ -n "${NEWTAG}" ]; then
   [ -z "${ARCNIC}" ] && ARCNIC="auto"
 elif [ -z "${NEWTAG}" ]; then
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) # real network cards list
+  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
   for ETH in ${ETHX}; do
     # Update Check
-    NEWTAG=$(curl --interface ${ETH} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
+    NEWTAG="$(curl --interface ${ETH} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
     if [ -n "${NEWTAG}" ]; then
       [ -z "${ARCNIC}" ] && ARCNIC="${ETH}"
       break

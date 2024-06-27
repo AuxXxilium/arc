@@ -221,14 +221,9 @@ for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}" "${USER_UP_PATH}"; do
 done
 
 # Network card configuration file
-IPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
-ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
+ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" || true
 for ETH in ${ETHX}; do
-  if [ "${IPV6}" == "true" ]; then
-    echo -e "DEVICE=${ETH}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-${ETH}"
-  else
-    echo -e "DEVICE=${ETH}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=no" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-${ETH}"
-  fi
+  echo -e "DEVICE=${ETH}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-${ETH}"
 done
 
 # SA6400 patches
