@@ -159,7 +159,7 @@ if [ "${ARCPATCH}" == "true" ]; then
   NICPORTS="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
   [ -z "${NICPORTS}" ] && NICPORTS=1
 else
-  NICPORTS=$(ls /sys/class/net/ 2>/dev/null | grep eth | wc -l)
+  NICPORTS="$(echo ${ETHX} | wc -w)"
 fi
 for ETH in ${ETHX}; do
   MAC="$(readConfigKey "arc.${ETH}" "${USER_CONFIG_FILE}")"

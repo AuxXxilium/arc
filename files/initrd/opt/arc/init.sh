@@ -102,7 +102,7 @@ for ETH in ${ETHX}; do
   [ "${ETH::3}" = "eth" ] && ethtool -s ${ETH} wol g 2>/dev/null || true
   initConfigKey "arc.${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
 done
-ETHN="${#ETHX}"
+ETHN="$(echo ${ETHX} | wc -w)"
 writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
 # No network devices
 echo
