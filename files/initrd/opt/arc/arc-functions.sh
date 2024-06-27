@@ -100,6 +100,8 @@ function modulesMenu() {
       5 "Choose Modules" \
       6 "Add external module" \
       7 "Edit Modules copied to DSM" \
+      8 "Copy i915 to DSM" \
+      9 "Copy loaded Modules to DSM" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -193,13 +195,6 @@ function modulesMenu() {
         for F in $(ls "${TMP_UP_PATH}" 2>/dev/null); do
           USER_FILE="${F}"
           if [ -n "${USER_FILE}" ] && [ "${USER_FILE##*.}" == "ko" ]; then
-            KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
-            # Modify KVER for Epyc7002
-            if [ "${PLATFORM}" == "epyc7002" ]; then
-              KVERP="${PRODUCTVER}-${KVER}"
-            else
-              KVERP="${KVER}"
-            fi
             addToModules "${PLATFORM}" "${KVERP}" "${TMP_UP_PATH}/${USER_FILE}"
             dialog --backtitle "$(backtitle)" --title "External Modules" \
               --msgbox "Module: ${USER_FILE}\nadded to ${PLATFORM}-${KVERP}" 7 50
@@ -213,7 +208,7 @@ function modulesMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       7)
-        if [ -f ${USER_UP_PATH}/modulelist ]; then
+        if [ -f "${USER_UP_PATH}/modulelist" ]; then
           cp -f "${USER_UP_PATH}/modulelist" "${TMP_PATH}/modulelist.tmp"
         else
           cp -f "${ARC_PATH}/include/modulelist" "${TMP_PATH}/modulelist.tmp"
@@ -227,6 +222,46 @@ function modulesMenu() {
           dos2unix "${USER_UP_PATH}/modulelist"
           break
         done
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
+      8)
+        if [ -f "${USER_UP_PATH}/modulelist" ]; then
+          cp -f "${USER_UP_PATH}/modulelist" "${TMP_PATH}/modulelist.tmp"
+        else
+          cp -f "${ARC_PATH}/include/modulelist" "${TMP_PATH}/modulelist.tmp"
+        fi
+        sed -i 's/#N /N /g' "${TMP_PATH}/modulelist.tmp"
+        [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
+        mv -f "${TMP_PATH}/modulelist.tmp" "${USER_UP_PATH}/modulelist"
+        dos2unix "${USER_UP_PATH}/modulelist"
+        dialog --backtitle "$(backtitle)" --title "i915 Modules Copy" \
+          --msgbox "i915 Modules will be copied to DSM!" 5 50
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
+      9)
+        if [ -f "${USER_UP_PATH}/modulelist" ]; then
+          cp -f "${USER_UP_PATH}/modulelist" "${TMP_PATH}/modulelist.tmp"
+        else
+          cp -f "${ARC_PATH}/include/modulelist" "${TMP_PATH}/modulelist.tmp"
+        fi
+        echo -e "\n\n# Arc Modules" >>"${TMP_PATH}/modulelist.tmp"
+        KOLIST=""
+        for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
+          KOLIST+="$(getdepends "${PLATFORM}" "${KVERP}" "${I}") ${I} "
+        done
+        KOLIST=($(echo ${KOLIST} | tr ' ' '\n' | sort -u))
+        while read -r ID DESC; do
+          for MOD in ${KOLIST[@]}; do
+            [ "${MOD}" == "${ID}" ] && echo "N ${ID}.ko" >>"${TMP_PATH}/modulelist.tmp"
+          done
+        done < <(getAllModules "${PLATFORM}" "${KVERP}")
+        [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
+        mv -f "${TMP_PATH}/modulelist.tmp" "${USER_UP_PATH}/modulelist"
+        dos2unix "${USER_UP_PATH}/modulelist"
+        dialog --backtitle "$(backtitle)" --title "Loaded Modules Copy" \
+            --msgbox "All loaded Modules will be copied to DSM!" 5 50
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
