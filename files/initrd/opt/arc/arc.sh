@@ -545,7 +545,7 @@ function arcSettings() {
     # Check for CPUFREQ
     if [ "${CPUFREQ}" == "false" ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-        --msgbox "WARN: Your System doesn't support CPU Freqeuency Scaling in DSM." 5 80
+        --msgbox "WARN: Your System doesn't support CPU Frequency Scaling in DSM." 5 80
     fi
   fi
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
