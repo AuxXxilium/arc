@@ -15,7 +15,6 @@ TMP_UP_PATH="${TMP_PATH}/upload"
 USER_GRUB_CONFIG="${PART1_PATH}/boot/grub/grub.cfg"
 USER_GRUBENVFILE="${PART1_PATH}/boot/grub/grubenv"
 USER_CONFIG_FILE="${PART1_PATH}/user-config.yml"
-USER_LOCALE_FILE="${PART1_PATH}/.locale"
 GRUB_PATH="${PART1_PATH}/boot/grub"
 
 ORI_ZIMAGE_FILE="${PART2_PATH}/zImage"
