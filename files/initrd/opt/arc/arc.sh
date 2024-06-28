@@ -35,6 +35,11 @@ if ! grep -q "^flags.*acpi.*" /proc/cpuinfo; then
 else
   ACPISYS="true"
 fi
+if $(ls -ltr /sys/devices/system/cpu/cpufreq/* 2>/dev/null | wc -l) -gt 0; then
+  CPUFREQ="true"
+else
+  CPUFREQ="false"
+fi
 
 # Get Loader Disk Bus
 BUS=$(getBus "${LOADER_DISK}")
@@ -506,7 +511,7 @@ function arcSettings() {
   fi
   # Check for Custom Build
   if [ "${CUSTOM}" == "false" ]; then
-    if [ "${ACPISYS}" == "true" ]; then
+    if [ "${CPUFREQ}" == "true" ]; then
       # Select Governor for DSM
       dialog --backtitle "$(backtitle)" --colors --title "DSM Frequency Scaling" \
         --infobox "Generating Governor Table..." 3 40
@@ -537,10 +542,10 @@ function arcSettings() {
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
         --msgbox "WARN: Your System doesn't support Hardwareencryption in DSM. (AES)" 5 80
     fi
-    # Check for ACPI
-    if [ "${ACPISYS}" == "false" ]; then
+    # Check for CPUFREQ
+    if [ "${CPUFREQ}" == "false" ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-        --msgbox "WARN: Your System doesn't support CPU Frequency Scaling in DSM. (ACPI)" 5 80
+        --msgbox "WARN: Your System doesn't support CPU Freqeuency Scaling in DSM." 5 80
     fi
   fi
   EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"

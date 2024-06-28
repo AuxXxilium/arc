@@ -7,8 +7,8 @@
 
 function compatboot () {
   # Remove old Addons
-  if arrayExistItem "amepatch:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
-    deleteConfigKey "addons.amepatch" "${USER_CONFIG_FILE}"
+  if arrayExistItem "codecpatch:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
+    deleteConfigKey "addons.codecpatch" "${USER_CONFIG_FILE}"
   fi
   return 0
 }
