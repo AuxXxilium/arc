@@ -224,16 +224,11 @@ jobs:
           prerelease: ${{ inputs.prerelease }}
           allowUpdates: true
           body: |
-            ### Notice: ${{ inputs.notice }}
-
-            ### Full Changelog:
-            Can be found in my Discord.
-
-            ### Arc Patch Key:
-            Decryption Key can be found in my Discord.
-
-            ### Build:
-            Time: ${{ env.BUILD_TIME }}
+            ### Information:
+            Notice: ${{ inputs.notice }}
+            Buildtime: ${{ env.BUILD_TIME }}
+            Full Changelog: Can be found in my Discord.
+            Arc Patch Key: Decryption Key can be found in my Discord.
 
             ### Versions:
             Addons: ${{ env.ADDONSTAG }}
