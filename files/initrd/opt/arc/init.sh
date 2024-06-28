@@ -5,6 +5,7 @@ set -e
 
 . ${ARC_PATH}/include/functions.sh
 . ${ARC_PATH}/include/addons.sh
+. ${ARC_PATH}/include/compat.sh
 
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
@@ -76,6 +77,9 @@ initConfigKey "satadom" "2" "${USER_CONFIG_FILE}"
 initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+
+# Check for compatibility
+compatboot
 
 # Init Network
 ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
