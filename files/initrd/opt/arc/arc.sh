@@ -1040,7 +1040,7 @@ else
     echo "9 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
     echo "y \"Choose a Keymap \" "                                                            >>"${TMP_PATH}/menu"
     if [ "${OFFLINE}" == "false" ]; then
-      echo "z \"Update\" "                                                                    >>"${TMP_PATH}/menu"
+      echo "z \"Update Loader\" "                                                             >>"${TMP_PATH}/menu"
     fi
     echo "I \"Restart/Shutdown \" "                                                           >>"${TMP_PATH}/menu"
     echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
