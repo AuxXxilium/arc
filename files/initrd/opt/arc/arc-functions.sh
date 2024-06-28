@@ -51,8 +51,9 @@ function addonSelection() {
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     if [ "${ADDON}" == "amepatch" ] && [ "${OFFLINE}" == "true" ]; then
       continue
+    else
+      echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
     fi
-    echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
   done < <(availableAddons "${PLATFORM}")
   dialog --backtitle "$(backtitle)" --title "DSM Addons" --aspect 18 \
     --checklist "Select DSM Addons to include.\nPlease read Wiki before choosing anything.\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
