@@ -35,7 +35,8 @@ if ! grep -q "^flags.*acpi.*" /proc/cpuinfo; then
 else
   ACPISYS="true"
 fi
-if [ $(ls -ltr /sys/devices/system/cpu/cpufreq/* 2>/dev/null | wc -l) -gt 0 ]; then
+CPUFREQUENCIES=$(ls -ltr /sys/devices/system/cpu/cpufreq/* 2>/dev/null | wc -l)
+if [ ${CPUFREQUENCIES} -gt 0 ]; then
   CPUFREQ="true"
 else
   CPUFREQ="false"
