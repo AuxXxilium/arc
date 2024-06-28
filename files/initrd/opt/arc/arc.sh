@@ -15,8 +15,8 @@
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
 # Memory: Check Memory installed
-RAMTOTAL=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024}' /proc/meminfo 2>/dev/null)
-[ -z "${RAMTOTAL}" ] && RAMTOTAL=8
+RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024}' /proc/meminfo 2>/dev/null)"
+[ -z "${RAMTOTAL}" ] && RAMTOTAL="8"
 
 # Check for Hypervisor
 if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
@@ -558,7 +558,7 @@ function arcSettings() {
     deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
   fi
   # Max Memory for DSM
-  RAMCONFIG=$((${RAMTOTAL} * 1024))
+  RAMCONFIG="$((${RAMTOTAL} * 1024))"
   writeConfigKey "synoinfo.mem_max_mb" "${RAMCONFIG}" "${USER_CONFIG_FILE}"
   # Config is done
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
