@@ -1060,6 +1060,7 @@ function sysinfo() {
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   # Get System Informations
   CPU=$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))
+  SECURE=$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')
   ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
   ETHN="${#ETHX}"
@@ -1119,6 +1120,7 @@ function sysinfo() {
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL}))GB\Zn"
   TEXT+="\n  AES | ACPI: \Zb${AESSYS} | ${ACPISYS}\Zn"
   TEXT+="\n  CPU Scaling: \Zb${CPUFREQ}\Zn"
+  TEXT+="\n  Secure Boot: \Zb${SECURE}\Zn"
   TEXT+="\n  Date/Time: \Zb$(date)\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${ETHN} NIC\Zn\n"
