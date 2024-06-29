@@ -149,10 +149,13 @@ jobs:
 
           if [ "${{ env.FORMAT }}" = "dyn" ]; then
             echo "Image Converter -> dyn"
-            qemu-img convert -O vmdk arc.img arc-dyn.vmdk
+            qemu-img convert arc.img -O vmdk -o adapter_type=lsilogic,compat6 arc-dyn.vmdk
           elif [ "${{ env.FORMAT }}" = "flat" ]; then
             echo "Image Converter -> flat"
-            qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
+            qemu-img convert arc.img -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat,compat6 arc.vmdk
+          elif [ "${{ env.FORMAT }}" = "vhdx" ]; then
+            echo "Image Converter -> vhdx"
+            qemu-img convert arc.img -O vhdx -o subformat=dynamic arc.vhdx
           fi
 
       # Zip image and generate checksum
@@ -175,6 +178,13 @@ jobs:
           elif [ "${{ env.FORMAT }}" = "flat" ]; then
             zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
             UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-flat.zip" "https://file.io")"
+            if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
+              echo "Upload failed"
+              exit 1
+            fi
+          elif [ "${{ env.FORMAT }}" = "vhdx" ]; then
+            zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vhdx.zip" arc.vhdx
+            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vhdx.zip" "https://file.io")"
             if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
               echo "Upload failed"
               exit 1

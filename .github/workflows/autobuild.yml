@@ -110,8 +110,9 @@ jobs:
           #mv -f "arc-2G.img" "arc.img"
 
           echo "Image Converter"
-          qemu-img convert -O vmdk arc.img arc-dyn.vmdk
-          qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
+          qemu-img convert arc.img -O vmdk -o adapter_type=lsilogic,compat6 arc-dyn.vmdk
+          qemu-img convert arc.img -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat,compat6 arc.vmdk
+          qemu-img convert arc.img -O vhdx -o subformat=dynamic arc.vhdx
 
           echo "Create Arc ova"
           convertova "arc.img" "arc.ova"
