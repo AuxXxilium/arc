@@ -203,7 +203,7 @@ function getTheme() {
 # $2 path
 function getBuildroot() {
   echo "Getting Buildroot begin"
-  local TAG="${1:-latest}"
+  TAG="${1:-latest}"
   local DEST_PATH="${2:-br}"
 
   if [ "${TAG}" = "latest" ]; then
