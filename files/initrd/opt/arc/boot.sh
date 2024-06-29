@@ -6,6 +6,28 @@ set -e
 ###############################################################################
 # Boot
 function bootDSM () {
+  . ${ARC_PATH}/include/functions.sh
+
+  # Get Loader Disk Bus
+  BUS=$(getBus "${LOADER_DISK}")
+
+  # Check if machine has EFI
+  [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
+
+  # Print Title centralized
+  clear
+  COLUMNS=${COLUMNS:-50}
+  BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
+  TITLE="Version:"
+  TITLE+=" ${ARC_TITLE}"
+  printf "\033[1;30m%*s\n" ${COLUMNS} ""
+  printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
+  printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
+  printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
+  TITLE="Boot:"
+  [ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
+  TITLE+=" [${BUS}]"
+  printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
   # Check if DSM zImage/Ramdisk is changed, patch it if necessary, update Files if necessary
   ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
   ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
