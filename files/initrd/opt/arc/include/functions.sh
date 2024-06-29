@@ -533,7 +533,7 @@ function systemCheck () {
   # Get Loader Disk Bus
   BUS=$(getBus "${LOADER_DISK}")
   # Memory: Check Memory installed
-  RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 1}' /proc/meminfo 2>/dev/null)"
+  RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
   [ -z "${RAMTOTAL}" ] && RAMTOTAL="8"
   # Check for Hypervisor
   if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
