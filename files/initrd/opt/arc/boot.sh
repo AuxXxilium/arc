@@ -6,14 +6,6 @@ set -e
 ###############################################################################
 # Boot
 function bootDSM () {
-  . ${ARC_PATH}/include/functions.sh
-
-  # Get Loader Disk Bus
-  BUS=$(getBus "${LOADER_DISK}")
-
-  # Check if machine has EFI
-  [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
-
   # Print Title centralized
   clear
   COLUMNS=${COLUMNS:-50}
