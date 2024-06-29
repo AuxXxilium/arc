@@ -5,6 +5,7 @@ set -e
 
 . ${ARC_PATH}/include/functions.sh
 . ${ARC_PATH}/include/addons.sh
+. ${ARC_PATH}/include/boot.sh
 . ${ARC_PATH}/include/compat.sh
 
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
@@ -86,6 +87,7 @@ ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
 if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
   _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
 fi
+/etc/init.d/S41dhcpcd restart >/dev/null 2>&1
 # Read/Write IP/Mac config
 for ETH in ${ETHX}; do
   MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
@@ -155,30 +157,22 @@ elif grep -q "update_arc" /proc/cmdline; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
 elif [ "${BUILDDONE}" == "true" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
-  boot.sh && exit 0
+  bootDSM
 else
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
 fi
 echo
 
-[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
 echo -e "\033[1;34mDetected ${ETHN} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+sleep 2
 for ETH in ${ETHX}; do
   COUNT=0
   DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
   while true; do
     if ! ip link show ${ETH} 2>/dev/null | grep -q 'UP'; then
       echo -e "\r\033[1;37m${DRIVER}:\033[0m DOWN"
-      break
-    fi
-    if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
-      echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
-      break
-    fi
-    if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
-      echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
       break
     fi
     COUNT=$((${COUNT} + 1))
@@ -190,6 +184,14 @@ for ETH in ${ETHX}; do
       else
         echo -e "\r\033[1;37m${DRIVER} (${SPEED}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web interface."
       fi
+      break
+    fi
+    if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
+      echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
+      break
+    fi
+    if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
+      echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
       break
     fi
     sleep 1

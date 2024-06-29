@@ -479,21 +479,15 @@ function ntpCheck() {
     fi
     writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
     writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
-    [ -n "${KEYMAP}" ] && writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
     ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
     # NTP
     /etc/init.d/S49ntpd restart > /dev/null 2>&1
     hwclock -w > /dev/null 2>&1
   fi
   if [ -z "${LAYOUT}"]; then
-    if [ -n "${KEYMAP}" ]; then
-      KEYMAP="$(echo ${KEYMAP} | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]' | tr -d '[:punct:]' | tr -d '[:digit:]')"
-    else
-      KEYMAP="us"
-    fi
-  fi
-  if ! loadkeys ${KEYMAP}; then
-    KEYMAP="us"
+    [ -n "${KEYMAP}" ] && KEYMAP="$(echo ${KEYMAP} | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]' | tr -d '[:punct:]' | tr -d '[:digit:]')"
+    [ -n "${KEYMAP}" ] && writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
+    [ -z "${KEYMAP}" ] && KEYMAP="us"
     loadkeys ${KEYMAP}
   fi
 }
@@ -539,7 +533,7 @@ function systemCheck () {
   # Get Loader Disk Bus
   BUS=$(getBus "${LOADER_DISK}")
   # Memory: Check Memory installed
-  RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024}' /proc/meminfo 2>/dev/null)"
+  RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 1}' /proc/meminfo 2>/dev/null)"
   [ -z "${RAMTOTAL}" ] && RAMTOTAL="8"
   # Check for Hypervisor
   if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then

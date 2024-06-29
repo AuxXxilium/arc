@@ -11,6 +11,7 @@
 . ${ARC_PATH}/include/network.sh
 . ${ARC_PATH}/include/update.sh
 . ${ARC_PATH}/arc-functions.sh
+. ${ARC_PATH}/boot.sh
 
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
@@ -824,11 +825,10 @@ function juniorboot() {
   if [ $? -eq 0 ]; then
     make
   fi
-  grub-editenv ${USER_GRUBENVFILE} set next_entry="junior"
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM Reinstall Mode...\nPlease stay patient!" 4 30
   sleep 2
-  exec reboot
+  rebootTo "junior"
 }
 
 ###############################################################################
@@ -843,7 +843,7 @@ function boot() {
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM...\nPlease stay patient!" 4 25
   sleep 2
-  exec reboot
+  bootDSM
 }
 
 ###############################################################################
