@@ -62,5 +62,6 @@ sudo losetup --detach ${LOOPX}
 #resizeImg "arc.img" "+1024M" "arc-2G.img"
 #mv -f "arc-2G.img" "arc.img"
 
-qemu-img convert -O vmdk arc.img arc-dyn.vmdk
-qemu-img convert -O vmdk -o adapter_type=lsilogic arc.img -o subformat=monolithicFlat arc.vmdk
+qemu-img convert arc.img -O vmdk -o adapter_type=lsilogic,compat6 arc-dyn.vmdk
+qemu-img convert arc.img -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat,compat6 arc.vmdk
+qemu-img convert arc.img -O vhdx -o subformat=dynamic arc.vhdx
