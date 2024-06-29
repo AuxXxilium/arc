@@ -1837,7 +1837,7 @@ function editGrubCfg() {
 function greplogs() {
   if [ -d "${PART1_PATH}/logs" ]; then
     rm -f "${TMP_PATH}/logs.tar.gz"
-    tar -czf "${TMP_PATH}/logs.tar.gz" -C "${PART1_PATH}" logs
+    tar -czf "${TMP_PATH}/logs.tar.gz" -C "${PART1_PATH}/logs"
     if [ -z "${SSH_TTY}" ]; then # web
       mv -f "${TMP_PATH}/logs.tar.gz" "/var/www/data/logs.tar.gz"
       URL="http://$(getIP)/logs.tar.gz"

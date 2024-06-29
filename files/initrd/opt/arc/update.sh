@@ -9,6 +9,7 @@
 . ${ARC_PATH}/include/modules.sh
 . ${ARC_PATH}/include/network.sh
 . ${ARC_PATH}/include/update.sh
+. ${ARC_PATH}/boot.sh
 
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
@@ -118,10 +119,10 @@ else
     dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
       --infobox "Offline Mode enabled.\nCan't Update Loader!" 0 0
     sleep 5
-    exec reboot
+    bootDSM
   else
     dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
       --msgbox "Offline Mode enabled.\nCan't Update Loader!" 0 0
-    exit 1
+    bootDSM
   fi
 fi

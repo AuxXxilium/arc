@@ -5,8 +5,8 @@ set -e
 
 . ${ARC_PATH}/include/functions.sh
 . ${ARC_PATH}/include/addons.sh
-. ${ARC_PATH}/include/boot.sh
 . ${ARC_PATH}/include/compat.sh
+. ${ARC_PATH}/boot.sh
 
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
