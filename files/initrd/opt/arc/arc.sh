@@ -497,7 +497,7 @@ function arcSettings() {
   if [ "${CUSTOM}" == "false" ]; then
     # Ask for Build
     dialog --clear --backtitle "$(backtitle)" --title "Config done" \
-      --menu "Build now?" 7 40 0 \
+      --no-cancel --menu "Build now?" 7 40 0 \
       1 "Yes - Build Arc Loader now" \
       2 "No - I want to make changes" \
     2>"${TMP_PATH}/resp"
@@ -802,7 +802,7 @@ function arcFinish() {
     [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
     # Ask for Boot
     dialog --clear --backtitle "$(backtitle)" --title "Build done"\
-      --menu "Boot now?" 7 40 0 \
+      --no-cancel --menu "Boot now?" 7 40 0 \
       1 "Yes - Boot Arc Loader now" \
       2 "No - I want to make changes" \
     2>"${TMP_PATH}/resp"

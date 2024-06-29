@@ -1,4 +1,3 @@
-
 ###############################################################################
 # Permits user edit the user config
 function editUserConfig() {
@@ -1094,12 +1093,12 @@ function sysinfo() {
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
   DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
-  MODULESINFO=$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')
-  MODULESVERSION=$(cat "${MODULES_PATH}/VERSION")
-  ADDONSVERSION=$(cat "${ADDONS_PATH}/VERSION")
-  LKMVERSION=$(cat "${LKMS_PATH}/VERSION")
-  CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
-  PATCHESVERSION=$(cat "${PATCH_PATH}/VERSION")
+  MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
+  MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")"
+  ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")"
+  LKMVERSION="$(cat "${LKMS_PATH}/VERSION")"
+  CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
+  PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")"
   TIMEOUT=5
   TEXT=""
   # Print System Informations
@@ -1277,29 +1276,47 @@ function sysinfo() {
   TEXT+="\n  Drives total: \Zb${NUMPORTS}\Zn"
   [ -f "${TMP_PATH}/diag" ] && rm -f "${TMP_PATH}/diag" >/dev/null
   echo -e "${TEXT}" >"${TMP_PATH}/diag"
-  dialog --backtitle "$(backtitle)" --colors --title "Sysinfo" \
-    --ok-label "Exit" --help-button --help-label "Networkdiag" --extra-button --extra-label "Upload" \
-    --msgbox "${TEXT}" 0 0
-  RET=$?
-  case ${RET} in
-    0) # ok-button
-      return 0
-      ;;
-    2) # help-button
-      networkdiag
-      ;;
-    3) # extra-button
-      if [ -f "${TMP_PATH}/diag" ]; then
-        GENHASH="$(cat "${TMP_PATH}/diag" | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)"
-        dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Your Code: ${GENHASH}" 0 0
-      else
-        dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "No Diag File found!" 0 0
-      fi
-      ;;
-    255) # ESC
-      return 0
-      ;;
-  esac
+  while true; do
+    dialog --backtitle "$(backtitle)" --colors --ok-label "Exit" --help-button --help-label "Show Cmdline" \
+      --extra-button --extra-label "Upload" --title "Sysinfo" --msgbox "${TEXT}" 0 0
+    RET=$?
+    case ${RET} in
+      0) # ok-button
+        return 0
+        break
+        ;;
+      2) # help-button
+        getCMDline
+        ;;
+      3) # extra-button
+        uploadDiag
+        ;;
+      255) # ESC-button
+        return 0
+        break
+        ;;
+    esac
+  done
+  return
+}
+
+function getCMDline () {
+  if [ -f "${PART1_PATH}/cmdline.yml" ]; then
+    GETCMDLINE=$(cat "${PART1_PATH}/cmdline.yml")
+    dialog --backtitle "$(backtitle)" --title "Sysinfo Cmdline" --msgbox "${GETCMDLINE}" 7 100
+  else
+    dialog --backtitle "$(backtitle)" --title "Sysinfo Cmdline" --msgbox "Cmdline File found!" 0 0
+  fi
+  return
+}
+
+function uploadDiag () {
+  if [ -f "${TMP_PATH}/diag" ]; then
+    GENHASH=$(cat "${TMP_PATH}/diag" | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)
+    dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Your Code: ${GENHASH}" 5 30
+  else
+    dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "No Diag File found!" 0 0
+  fi
   return
 }
 
@@ -1363,7 +1380,7 @@ function networkdiag() {
 }
 
 ###############################################################################
-# Shows Systeminfo to user
+# Shows Credits to user
 function credits() {
   # Print Credits Informations
   TEXT=""

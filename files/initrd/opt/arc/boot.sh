@@ -1,11 +1,8 @@
-#!/usr/bin/env bash
-
-set -e
-[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
-
 ###############################################################################
 # Boot
 function bootDSM () {
+  # Check if machine has EFI
+  [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
   # Print Title centralized
   clear
   COLUMNS=${COLUMNS:-50}
@@ -181,7 +178,7 @@ function bootDSM () {
     [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
   done
   CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
-
+  echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
   # Boot
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
   if [ "${DIRECTBOOT}" == "true" ]; then
