@@ -140,7 +140,14 @@ if [ "${OFFLINE}" == "false" ]; then
   hwclock -w > /dev/null 2>&1
 fi
 if [ -z "${LAYOUT}"]; then
-  [ -z "${KEYMAP}" ] && KEYMAP="en"
+  if [ -n "${KEYMAP}" ]; then
+    KEYMAP="$(echo ${KEYMAP} | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]' | tr -d '[:punct:]' | tr -d '[:digit:]')"
+  else
+    KEYMAP="us"
+  fi
+fi
+if ! loadkeys ${KEYMAP}; then
+  KEYMAP="us"
   loadkeys ${KEYMAP}
 fi
 
