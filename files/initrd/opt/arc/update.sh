@@ -65,7 +65,8 @@ function backtitle() {
   BACKTITLE+="Patch: ${ARCPATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
   BACKTITLE+="Build: ${BUILDDONE} | "
-  BACKTITLE+="${MACHINE}(${BUS})"
+  BACKTITLE+="${MACHINE}(${BUS}) | "
+  BACKTITLE+="KB: ${KEYMAP}"
   echo "${BACKTITLE}"
 }
 
