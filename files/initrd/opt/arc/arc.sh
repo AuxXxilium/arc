@@ -14,36 +14,8 @@
 
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 
-# Memory: Check Memory installed
-RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024}' /proc/meminfo 2>/dev/null)"
-[ -z "${RAMTOTAL}" ] && RAMTOTAL="8"
-
-# Check for Hypervisor
-if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
-  MACHINE="$(lscpu | grep Hypervisor | awk '{print $3}')" # KVM or VMware
-else
-  MACHINE="Native"
-fi
-# Check for AES and ACPI Support
-if ! grep -q "^flags.*aes.*" /proc/cpuinfo; then
-  AESSYS="false"
-else
-  AESSYS="true"
-fi
-if ! grep -q "^flags.*acpi.*" /proc/cpuinfo; then
-  ACPISYS="false"
-else
-  ACPISYS="true"
-fi
-CPUFREQUENCIES=$(ls -ltr /sys/devices/system/cpu/cpufreq/* 2>/dev/null | wc -l)
-if [ ${CPUFREQUENCIES} -gt 0 ]; then
-  CPUFREQ="true"
-else
-  CPUFREQ="false"
-fi
-
-# Get Loader Disk Bus
-BUS=$(getBus "${LOADER_DISK}")
+# Check for System
+systemCheck
 
 # Offline Mode check
 ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
@@ -598,7 +570,7 @@ function arcSummary() {
   SUMMARY+="\n>> Disks (incl. USB): \Zb${DRIVES}\Zn"
   SUMMARY+="\n>> Disks (internal): \Zb${HARDDRIVES}\Zn"
   SUMMARY+="\n>> External Controller: \Zb${EXTERNALCONTROLLER}\Zn"
-  SUMMARY+="\n>> Memory: \Zb${RAMTOTAL}GB\Zn"
+  SUMMARY+="\n>> Memory: \Zb${RAMTOTAL}GB (usable)\Zn"
   dialog --backtitle "$(backtitle)" --colors --title "DSM Config Summary" \
     --extra-button --extra-label "Cancel" --msgbox "${SUMMARY}" 0 0
   RET=$?
@@ -1158,7 +1130,7 @@ else
       x) backupMenu; NEXT="x" ;;
       M) arcNIC; NEXT="M" ;;
       9) [ "${OFFLINE}" == "true" ] && OFFLINE='false' || OFFLINE='true'
-        writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"
+        [ "${OFFLINE}" == "false" ] && offlineCheck
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="9"

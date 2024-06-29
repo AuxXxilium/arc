@@ -532,3 +532,38 @@ function offlineCheck() {
   writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
   ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 }
+
+###############################################################################
+# Check System
+function systemCheck () {
+  # Get Loader Disk Bus
+  BUS=$(getBus "${LOADER_DISK}")
+  # Memory: Check Memory installed
+  RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024 / 1024}' /proc/meminfo 2>/dev/null)"
+  [ -z "${RAMTOTAL}" ] && RAMTOTAL="8"
+  # Check for Hypervisor
+  if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
+    MACHINE="$(lscpu | grep Hypervisor | awk '{print $3}')" # KVM or VMware
+  else
+    MACHINE="Native"
+  fi
+  # Check for AES Support
+  if ! grep -q "^flags.*aes.*" /proc/cpuinfo; then
+    AESSYS="false"
+  else
+    AESSYS="true"
+  fi
+  # Check for ACPI Support
+  if ! grep -q "^flags.*acpi.*" /proc/cpuinfo; then
+    ACPISYS="false"
+  else
+    ACPISYS="true"
+  fi
+  # Check for CPU Frequency Scaling
+  CPUFREQUENCIES=$(ls -ltr /sys/devices/system/cpu/cpufreq/* 2>/dev/null | wc -l)
+  if [ ${CPUFREQUENCIES} -gt 0 ]; then
+    CPUFREQ="true"
+  else
+    CPUFREQ="false"
+  fi
+}
