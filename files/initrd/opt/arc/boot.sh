@@ -68,7 +68,7 @@ function bootDSM () {
   SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
   KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
+  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 
   declare -A CMDLINE
 
@@ -135,11 +135,25 @@ function bootDSM () {
     [ "${CMDLINE['modprobe.blacklist']}" != "" ] && CMDLINE['modprobe.blacklist']+=","
     CMDLINE['modprobe.blacklist']+="mpt3sas"
   fi
+  if true; then
+    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+    CMDLINE['modprobe.blacklist']+="evbug"
+  fi
   if echo "apollolake geminilake" | grep -wq "${PLATFORM}"; then
     CMDLINE["intel_iommu"]="igfx_off"
   fi
   if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
     CMDLINE["SASmodel"]="1"
+  fi
+  # Disable x2apic
+  if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
+    if grep -q "^flags.*x2apic.*" /proc/cpuinfo; then
+      eval $(grep -o "ARC_CMDLINE=.*$" "${USER_GRUB_CONFIG}")
+      [ -z "${ARC_CMDLINE}" ] && ARC_CMDLINE="bzImage-arc"
+      echo "${ARC_CMDLINE}" | grep -q 'nox2apic' || sed -i "s|${ARC_CMDLINE}|${ARC_CMDLINE} nox2apic|" "${USER_GRUB_CONFIG}"
+    fi
+  else
+    grep -q ' nox2apic' "${USER_GRUB_CONFIG}" && sed -i "s| nox2apic||" "${USER_GRUB_CONFIG}"
   fi
 
   # Cmdline NIC Settings

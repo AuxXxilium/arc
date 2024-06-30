@@ -60,7 +60,7 @@ if [ "${PRODUCTVERDSM}" != "${PRODUCTVER}" ]; then
 fi
 
 # Read model data
-KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
+KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 
 # Modify KVER for Epyc7002
 if [ "${PLATFORM}" == "epyc7002" ]; then

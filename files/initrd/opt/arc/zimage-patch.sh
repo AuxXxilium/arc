@@ -16,7 +16,7 @@ if [ "${KERNEL}" == "custom" ]; then
   echo -n " - Using customized Kernel"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
+  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
   # Modify KVER for Epyc7002
   if [ "${PLATFORM}" == "epyc7002" ]; then
     KVERP="${PRODUCTVER}-${KVER}"

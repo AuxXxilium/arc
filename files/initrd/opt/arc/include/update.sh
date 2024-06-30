@@ -273,7 +273,7 @@ function updateModules() {
       local PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
       if [ -n "${PRODUCTVER}" ]; then
         local PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-        local KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.[${PRODUCTVER}].kver" "${P_FILE}")"
+        local KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
         # Modify KVER for Epyc7002
         if [ "${PLATFORM}" = "epyc7002" ]; then
           KVERP="${PRODUCTVER}-${KVER}"

@@ -118,12 +118,12 @@ echo
 VID="0x46f4"
 PID="0x0001"
 
-BUSLIST="usb sata scsi nvme mmc"
+BUSLIST="usb sata scsi nvme mmc xen"
 if [ "${BUS}" == "usb" ]; then
   VID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_VENDOR_ID | cut -d= -f2)"
   PID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_MODEL_ID | cut -d= -f2)"
 elif ! echo "${BUSLIST}" | grep -wq "${BUS}"; then
-  die "Loader disk is not USB or SATA/SCSI/NVME/eMMC DoM"
+  die "Loader disk is not USB or SATA/SCSI/NVME/eMMC/XEN"
 fi
 
 # Save variables to user config file
