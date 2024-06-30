@@ -168,8 +168,7 @@ for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "upda
   if [ "${ADDON}" == "disks" ]; then
     PARAMS=${HDDSORT}
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
-  fi
-  if [ "${ADDON}" == "cpufreqscaling" ]; then
+  elif [ "${ADDON}" == "cpufreqscaling" ]; then
     PARAMS=${CPUGOVERNOR}
   fi
   installAddon "${ADDON}" "${PLATFORM}" || exit 1
@@ -221,9 +220,8 @@ for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}" "${USER_UP_PATH}"; do
 done
 
 # Network card configuration file
-ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" || true
-for ETH in ${ETHX}; do
-  echo -e "DEVICE=${ETH}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-${ETH}"
+for N in $(seq 0 7); do
+  echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
 done
 
 # SA6400 patches
@@ -239,6 +237,13 @@ if [ "${PLATFORM}" == "broadwellntbap" ]; then
   sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' ${RAMDISK_PATH}/usr/syno/share/environments.sh
 fi
 
+# Call user patch scripts
+echo -n "."
+for F in $(ls -1 ${USER_UP_PATH}/*.sh 2>/dev/null); do
+  echo "Calling ${F}" >"${LOG_FILE}"
+  . "${F}" >>"${LOG_FILE}" 2>&1 || exit 1
+done
+
 # Reassembly ramdisk
 if [ "${RD_COMPRESSED}" == "true" ]; then
   (cd "${RAMDISK_PATH}" && find . 2>/dev/null | cpio -o -H newc -R root:root | xz -9 --format=lzma >"${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || exit 1
@@ -247,3 +252,6 @@ else
 fi
 
 sync
+
+# Clean
+rm -rf "${RAMDISK_PATH}"
