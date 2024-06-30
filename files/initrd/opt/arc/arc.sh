@@ -887,15 +887,17 @@ else
       fi
       if [ "${ARCOPTS}" == "true" ]; then
         echo "= \"\Z4======== Arc DSM ========\Zn \" "                                        >>"${TMP_PATH}/menu"
-        echo "e \"Version \" "                                                                >>"${TMP_PATH}/menu"
         echo "b \"Addons \" "                                                                 >>"${TMP_PATH}/menu"
         echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
-        echo "g \"Frequency Scaling \" "                                                      >>"${TMP_PATH}/menu"
+        echo "e \"Version \" "                                                                >>"${TMP_PATH}/menu"
+        if [ "${CPUFREQ}" == "true" ]; then
+          echo "g \"Frequency Scaling \" "                                                    >>"${TMP_PATH}/menu"
+        fi
         if [ "${DT}" == "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
           echo "S \"Sata PortMap \" "                                                         >>"${TMP_PATH}/menu"
         fi
         if [ "${DT}" == "true" ]; then
-          echo "o \"DTS Map \" "                                                              >>"${TMP_PATH}/menu"
+          echo "o \"DTS Map Options\" "                                                       >>"${TMP_PATH}/menu"
         fi
         echo "P \"StoragePanel Options\" "                                                    >>"${TMP_PATH}/menu"
         echo "Q \"SequentialIO Options\" "                                                    >>"${TMP_PATH}/menu"
