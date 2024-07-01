@@ -208,54 +208,53 @@ function arcModel() {
   fi
   # Reset Model Config if changed
   if [ "${MODEL}" != "${resp}" ]; then
-      PRODUCTVER=""
-      MODEL="${resp}"
-      PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
-      MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
-      writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
-      writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
-      writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.emmcboot" "false" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
-      writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
-      writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
-      writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-   elif [ -z "${resp}" ]; then
-      MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-      PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
-      MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
-      writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
-      writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-    fi
-    ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-    EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
-    HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
-    KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
-    ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
-    if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
-      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
-    fi
+    PRODUCTVER=""
+    MODEL="${resp}"
+    PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
+    MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
+    writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
+    writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.emmcboot" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
+    writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
+    writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
+    writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+  elif [ -z "${resp}" ]; then
+    MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+    PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
+    MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
+    writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
+    writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+  fi
+  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
+  HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
+  KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
+  ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
+  if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
   fi
   arcVersion
 }

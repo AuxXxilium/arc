@@ -1281,7 +1281,7 @@ function sysinfo() {
 function getCMDline () {
   if [ -f "${PART1_PATH}/cmdline.yml" ]; then
     GETCMDLINE=$(cat "${PART1_PATH}/cmdline.yml")
-    dialog --backtitle "$(backtitle)" --title "Sysinfo Cmdline" --msgbox "${GETCMDLINE}" 7 100
+    dialog --backtitle "$(backtitle)" --title "Sysinfo Cmdline" --msgbox "${GETCMDLINE}" 10 100
   else
     dialog --backtitle "$(backtitle)" --title "Sysinfo Cmdline" --msgbox "Cmdline File found!" 0 0
   fi
