@@ -190,7 +190,7 @@ function arcModel() {
           [ ${RESTRICT} -eq 1 ] && RESTRICT=0 || RESTRICT=1
           ;;
         2) # help-button -> Exit
-          return 0
+          return 1
           break
           ;;
         3) # extra-button -> Platform Info
