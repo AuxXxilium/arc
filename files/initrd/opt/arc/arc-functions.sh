@@ -290,7 +290,7 @@ function cmdlineMenu() {
   while true; do
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
+    [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
       1)
         MSG=""
@@ -687,7 +687,7 @@ function backupMenu() {
       2 "Restore Encryption Key from DSM" \
       3 "Backup Encryption Key to DSM" \
       2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
+    [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
       1)
         DSMROOTS="$(findDSMRoot)"
@@ -823,7 +823,7 @@ function updateMenu() {
       6 "Update Patches" \
       7 "Automated Update Mode" \
       2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
+    [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
       1)
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
@@ -1931,7 +1931,7 @@ function satadomMenu() {
 # Decrypt Menu
 function decryptMenu() {
   if [ -f "${S_FILE_ENC}" ]; then
-    CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
+    CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
     cp -f "${S_FILE}" "${S_FILE}.bak"
     dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
       --inputbox "Enter Decryption Key for ${CONFIGSVERSION}" 7 40 2>"${TMP_PATH}/resp"
