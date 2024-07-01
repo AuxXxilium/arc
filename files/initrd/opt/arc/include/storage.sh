@@ -156,8 +156,8 @@ function getmapSelection() {
       --menu "Choose a Portmap for Sata!?\n* Recommended Option" 8 60 0 \
       1 "DiskIdxMap: Active Ports ${REMAP1}" \
       2 "DiskIdxMap: Max Ports ${REMAP2}" \
-      3 "SataRemap: Remove blank Ports ${REMAP3}" \
-      4 "AhciRemap: Remove blank Ports (new) ${REMAP4}" \
+      3 "SataRemap: Remove empty Ports ${REMAP3}" \
+      4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
       5 "Set my own Portmap in Config" \
     2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
