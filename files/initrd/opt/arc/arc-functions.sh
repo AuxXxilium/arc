@@ -2076,14 +2076,6 @@ function governorSelection () {
     [ "${PLATFORM}" != "epyc7002" ] && CPUGOVERNOR="ondemand"
   fi
   writeConfigKey "arc.governor" "${CPUGOVERNOR}" "${USER_CONFIG_FILE}"
-  if [ "${CUSTOM}" == "false" ]; then
-    dialog --backtitle "$(backtitle)" --title "CPU Frequency Scaling" \
-      --msgbox "CPU frequency scaling not supported!" 0 0
-  else
-    dialog --backtitle "$(backtitle)" --title "CPU Frequency Scaling" \
-      --infobox "CPU frequency scaling not supported!" 0 0
-    sleep 5
-  fi
 }
 
 ###############################################################################
