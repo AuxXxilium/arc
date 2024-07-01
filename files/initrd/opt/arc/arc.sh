@@ -37,7 +37,6 @@ fi
 
 # Get Arc Data from Config
 ARC_KEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
-ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
@@ -535,7 +534,6 @@ function arcSummary() {
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  ARCIPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
@@ -559,7 +557,6 @@ function arcSummary() {
   [ -n "${DISKMAP}" ] && SUMMARY+="\n>> DiskIdxMap: \Zb${DISKMAP}\Zn"
   [ -n "${PORTREMAP}" ] && SUMMARY+="\n>> SataRemap: \Zb${PORTREMAP}\Zn"
   [ "${DT}" == "true" ] && SUMMARY+="\n>> Sort Drives: \Zb${HDDSORT}\Zn"
-  SUMMARY+="\n>> IPv6: \Zb${ARCIPV6}\Zn"
   SUMMARY+="\n>> Offline Mode: \Zb${OFFLINE}\Zn"
   SUMMARY+="\n>> Directboot: \Zb${DIRECTBOOT}\Zn"
   SUMMARY+="\n>> eMMC Boot: \Zb${EMMCBOOT}\Zn"
@@ -897,11 +894,11 @@ else
           echo "S \"Sata PortMap \" "                                                         >>"${TMP_PATH}/menu"
         fi
         if [ "${DT}" == "true" ]; then
-          echo "o \"DTS Map Options\" "                                                       >>"${TMP_PATH}/menu"
+          echo "o \"DTS Map Options \" "                                                      >>"${TMP_PATH}/menu"
         fi
-        echo "P \"StoragePanel Options\" "                                                    >>"${TMP_PATH}/menu"
-        echo "Q \"SequentialIO Options\" "                                                    >>"${TMP_PATH}/menu"
-        echo "p \"Patch Options (SN/Mac)\" "                                                  >>"${TMP_PATH}/menu"
+        echo "P \"StoragePanel Options \" "                                                   >>"${TMP_PATH}/menu"
+        echo "Q \"SequentialIO Options \" "                                                   >>"${TMP_PATH}/menu"
+        echo "p \"Patch Options (SN/Mac) \" "                                                 >>"${TMP_PATH}/menu"
       fi
       if [ "${BOOTOPTS}" == "true" ]; then
         echo "6 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
@@ -956,9 +953,9 @@ else
       echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "B \"Grep DSM Config from Backup \" "                                              >>"${TMP_PATH}/menu"
       echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
-      echo "w \"Reset Loader to Defaults\" "                                                  >>"${TMP_PATH}/menu"
-      echo "C \"Clone Loader to Disk\" "                                                      >>"${TMP_PATH}/menu"
-      echo "F \"\Z1Formate Disks\Zn \" "                                                      >>"${TMP_PATH}/menu"
+      echo "w \"Reset Loader to Defaults \" "                                                 >>"${TMP_PATH}/menu"
+      echo "C \"Clone Loader to Disk \" "                                                     >>"${TMP_PATH}/menu"
+      echo "F \"\Z1Formate Disks \Zn \" "                                                     >>"${TMP_PATH}/menu"
       echo "n \"Grub Bootloader Config \" "                                                   >>"${TMP_PATH}/menu"
       echo "v \"Write Loader Modifications to Disk \" "                                       >>"${TMP_PATH}/menu"
       if [ "${OFFLINE}" == "false" ]; then
@@ -971,7 +968,7 @@ else
     echo "9 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
     echo "y \"Choose a Keymap \" "                                                            >>"${TMP_PATH}/menu"
     if [ "${OFFLINE}" == "false" ]; then
-      echo "z \"Update Loader\" "                                                             >>"${TMP_PATH}/menu"
+      echo "z \"Update Loader \" "                                                            >>"${TMP_PATH}/menu"
     fi
     echo "I \"Restart/Shutdown \" "                                                           >>"${TMP_PATH}/menu"
     echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
@@ -1069,12 +1066,6 @@ else
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="H"
-        ;;
-      c) [ "${ARCIPV6}" == "true" ] && ARCIPV6='false' || ARCIPV6='true'
-        writeConfigKey "arc.ipv6" "${ARCIPV6}" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        NEXT="c"
         ;;
       O) [ "${ODP}" == "false" ] && ODP='true' || ODP='false'
         writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
