@@ -207,8 +207,7 @@ function arcModel() {
     done
   fi
   # Reset Model Config if changed
-  if [ -z "${resp}" ] || [ "${MODEL}" != "${resp}" ]; then
-    if [ "${CUSTOM}" == "false" ]; then
+  if [ "${MODEL}" != "${resp}" ]; then
       PRODUCTVER=""
       MODEL="${resp}"
       PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
@@ -233,7 +232,7 @@ function arcModel() {
       writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
       writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
       writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-    else
+   elif [ -z "${resp}" ]; then
       MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
       PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
       MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
