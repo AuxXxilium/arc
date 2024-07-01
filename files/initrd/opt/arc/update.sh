@@ -32,9 +32,6 @@ offlineCheck
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
-KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 if [ -n "${MODEL}" ]; then
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
@@ -96,6 +93,7 @@ function arcUpdate() {
 ###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Boot" \
       --infobox "Rebooting to automated Build Mode...\nPlease stay patient!" 4 30

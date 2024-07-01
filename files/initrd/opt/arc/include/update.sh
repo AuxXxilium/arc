@@ -3,10 +3,9 @@
 . ${ARC_PATH}/include/functions.sh
 
 ###############################################################################
-# Update Loader
-function updateLoader() {
+# Upgrade Loader
+function upgradeLoader () {
   (
-    local CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
     TAG=""
     if [ -z "${1}" ]; then
@@ -14,9 +13,9 @@ function updateLoader() {
       idx=0
       while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
         if [ "${ARCNIC}" == "auto" ]; then
-          TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+          TAG="$(curl -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
         else
-          TAG="$(curl  --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+          TAG="$(curl  --interface ${ARCNIC} -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
         fi
         if [ -n "${TAG}" ]; then
           echo "New Version: ${TAG}"
@@ -31,7 +30,73 @@ function updateLoader() {
         updateFailed
       fi
     else
-      TAG=${1}
+      TAG="${1}"
+    fi
+    # Download update file
+    echo "Downloading ${TAG}"
+    if [ "${ARCNIC}" == "auto" ]; then
+      curl -#kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
+        [[ $char =~ [0-9] ]] && keep=1 ;
+        [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+        [[ $keep == 1 ]] && progress="$progress$char" ;
+      done
+    else
+      curl --interface ${ARCNIC} -#kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
+        [[ $char =~ [0-9] ]] && keep=1 ;
+        [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+        [[ $keep == 1 ]] && progress="$progress$char" ;
+      done
+    fi
+    if [ -f "${TMP_PATH}/arc-${TAG}.img.zip" ]; then
+      echo "Downloading Upgradefile successful!"
+    else
+      echo "Error downloading Upgradefile!"
+      sleep 5
+      return 1
+    fi
+    unzip -oq "${TMP_PATH}/arc-${TAG}.img.zip" -d "${TMP_PATH}"
+    rm -f "${TMP_PATH}/arc-${TAG}.img.zip" >/dev/null
+    echo "Installing new Loader Image..."
+    # Process complete update
+    umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
+    dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1) bs=1M conv=fsync
+    # Ask for Boot
+    rm -f "${TMP_PATH}/arc.img" >/dev/null
+    echo "Upgrade done! -> Rebooting..."
+    sleep 2
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
+    --progressbox "Upgrading Loader..." 20 70
+}
+
+###############################################################################
+# Update Loader
+function updateLoader() {
+  (
+    local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
+    TAG=""
+    if [ -z "${1}" ]; then
+      # Check for new Version
+      idx=0
+      while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
+        if [ "${ARCNIC}" == "auto" ]; then
+          TAG="$(curl -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        else
+          TAG="$(curl  --interface ${ARCNIC} -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        fi
+        if [ -n "${TAG}" ]; then
+          echo "New Version: ${TAG}"
+          break
+        fi
+        sleep 3
+        idx=$((${idx} + 1))
+      done
+      if [ -z "${TAG}" ]; then
+        echo "Error checking new Version!"
+        sleep 5
+        updateFailed
+      fi
+    else
+      TAG="${1}"
     fi
     # Download update file
     echo "Downloading ${TAG}"
@@ -76,7 +141,6 @@ function updateLoader() {
 # Update Addons
 function updateAddons() {
   (
-    local CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
     TAG=""
     if [ -z "${1}" ]; then
@@ -84,9 +148,9 @@ function updateAddons() {
       idx=0
       while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
         if [ "${ARCNIC}" == "auto" ]; then
-          TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+          TAG="$(curl -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
         else
-          TAG="$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+          TAG="$(curl --interface ${ARCNIC} -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
         fi
         if [ -n "${TAG}" ]; then
           echo "New Version: ${TAG}"
@@ -101,7 +165,7 @@ function updateAddons() {
         updateFailed
       fi
     else
-      TAG=${1}
+      TAG="${1}"
     fi
     # Download update file
     echo "Downloading ${TAG}"
@@ -136,7 +200,7 @@ function updateAddons() {
         rm -f "${F}"
       done
     else
-      echo "Error getting new Version!"
+      echo "Error extracting new Version!"
       sleep 5
       updateFailed
     fi
@@ -151,7 +215,6 @@ function updateAddons() {
 # Update Patches
 function updatePatches() {
   (
-    local CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
     TAG=""
     if [ -z "${1}" ]; then
@@ -159,9 +222,9 @@ function updatePatches() {
       idx=0
       while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
         if [ "${ARCNIC}" == "auto" ]; then
-          TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+          TAG="$(curl -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
         else
-          TAG="$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+          TAG="$(curl --interface ${ARCNIC} -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
         fi
         if [ -n "${TAG}" ]; then
           echo "New Version: ${TAG}"
@@ -176,7 +239,7 @@ function updatePatches() {
         updateFailed
       fi
     else
-      TAG=${1}
+      TAG="${1}"
     fi
     # Download update file
     echo "Downloading ${TAG}"
@@ -218,7 +281,6 @@ function updatePatches() {
 # Update Modules
 function updateModules() {
   (
-    local CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
     TAG=""
     if [ -z "${1}" ]; then
@@ -243,7 +305,7 @@ function updateModules() {
         updateFailed
       fi
     else
-      TAG=${1}
+      TAG="${1}"
     fi
     # Download update file
     echo "Downloading ${TAG}"
@@ -289,7 +351,7 @@ function updateModules() {
         done < <(getAllModules "${PLATFORM}" "${KVERP}")
       fi
     else
-      echo "Error getting new Version!"
+      echo "Error extracting new Version!"
       sleep 5
       updateFailed
     fi
@@ -304,7 +366,6 @@ function updateModules() {
 # Update Configs
 function updateConfigs() {
   (
-    local CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
     TAG=""
     if [ -z "${1}" ]; then
@@ -329,7 +390,7 @@ function updateConfigs() {
         updateFailed
       fi
     else
-      TAG=${1}
+      TAG="${1}"
     fi
     # Download update file
     echo "Downloading ${TAG}"
@@ -356,7 +417,7 @@ function updateConfigs() {
       unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}"
       rm -f "${TMP_PATH}/configs.zip"
     else
-      echo "Error getting new Version!"
+      echo "Error extracting new Version!"
       sleep 5
       updateFailed
     fi
@@ -371,7 +432,6 @@ function updateConfigs() {
 # Update LKMs
 function updateLKMs() {
   (
-    local CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
     local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
     TAG=""
     if [ -z "${1}" ]; then
@@ -396,7 +456,7 @@ function updateLKMs() {
         updateFailed
       fi
     else
-      TAG=${1}
+      TAG="${1}"
     fi
     # Download update file
     echo "Downloading ${TAG}"
@@ -421,7 +481,7 @@ function updateLKMs() {
       unzip -oq "${TMP_PATH}/rp-lkms.zip" -d "${LKMS_PATH}"
       rm -f "${TMP_PATH}/rp-lkms.zip"
     else
-      echo "Error getting new Version!"
+      echo "Error extracting new Version!"
       sleep 5
       updateFailed
     fi

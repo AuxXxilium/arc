@@ -737,6 +737,8 @@ function backupMenu() {
           2>"${TMP_PATH}/resp"
           resp=$(cat ${TMP_PATH}/resp)
           [ -z "${resp}" ] && return 1
+          # Check for compatibility
+          compatboot
           if [ ${resp} -eq 1 ]; then
             arcSummary
           elif [ ${resp} -eq 2 ]; then
@@ -815,20 +817,23 @@ function updateMenu() {
   while true; do
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" \
       --menu "Choose an Option" 0 0 0 \
-      1 "Full-Upgrade Loader" \
-      2 "Update Addons" \
-      3 "Update Configs" \
-      4 "Update LKMs" \
-      5 "Update Modules" \
-      6 "Update Patches" \
-      7 "Automated Update Mode" \
+      1 "Automated Update Mode" \
+      2 "Full-Upgrade Loader (reflash)" \
+      3 "Update Loader" \
+      4 "Update Addons" \
+      5 "Update Configs" \
+      6 "Update LKMs" \
+      7 "Update Modules" \
+      8 "Update Patches" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
       1)
-        dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-          --infobox "Checking latest version..." 0 0
-        ACTUALVERSION="${ARC_VERSION}"
+        dialog --backtitle "$(backtitle)" --title "Automated Update" --aspect 18 \
+          --msgbox "Loader will proceed Automated Update Mode.\nPlease wait until progress is finished!" 0 0
+        . ${ARC_PATH}/update.sh
+        ;;
+      2)
         # Ask for Tag
         TAG=""
         dialog --clear --backtitle "$(backtitle)" --title "Upgrade Loader" \
@@ -836,19 +841,11 @@ function updateMenu() {
           1 "Latest" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
+        [ $? -ne 0 ] && continue
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
-          if [ "${ARCNIC}" == "auto" ]; then
-            TAG="$(curl -m 5 -w "%{http_code}" -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
-          else
-            TAG="$(curl --interface ${ARCNIC} -m 5 -w "%{http_code}" -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
-          fi
-          if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ] || [ -z "${TAG}" ]; then
-            dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-              --msgbox "Error checking new Version!" 0 0
-            return 1
-          fi
+          TAG=""
         elif [ ${opts} -eq 2 ]; then
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
           --inputbox "Type the Version!" 0 0 \
@@ -856,50 +853,36 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-          --infobox "Downloading ${TAG}" 0 0
-        if [ "${ACTUALVERSION}" == "${TAG}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-            --yesno "No new version. Actual version is ${ACTUALVERSION}\nForce update?" 0 0
-          [ $? -ne 0 ] && return 1
-        fi
-        ( # Download update file
-          if [ "${ARCNIC}" == "auto" ]; then
-            curl -#kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
-              [[ $char =~ [0-9] ]] && keep=1 ;
-              [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
-              [[ $keep == 1 ]] && progress="$progress$char" ;
-            done
-          else
-            curl --interface ${ARCNIC} -#kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
-              [[ $char =~ [0-9] ]] && keep=1 ;
-              [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
-              [[ $keep == 1 ]] && progress="$progress$char" ;
-            done
-          fi
-          if [ -f "${TMP_PATH}/arc-${TAG}.img.zip" ]; then
-            echo "Downloading Updatefile successful!"
-          else
-            echo "Error downloading Updatefile!"
-            sleep 5
-            return 1
-          fi
-          unzip -oq "${TMP_PATH}/arc-${TAG}.img.zip" -d "${TMP_PATH}"
-          rm -f "${TMP_PATH}/arc-${TAG}.img.zip" >/dev/null
-          echo "Installing new Loader Image..."
-          # Process complete update
-          umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
-          dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1) bs=1M conv=fsync
-          # Ask for Boot
-          rm -f "${TMP_PATH}/arc.img" >/dev/null
-        ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Full-Upgrade Loader" \
-          --progressbox "Upgrading ..." 20 70
-        dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-          --yesno "Arc Upgrade successful. New Version: ${TAG}\nUse Recover from DSM to get your old Config.\nReboot?" 0 0
-        [ $? -ne 0 ] && return 1
+        upgradeLoader "${TAG}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         exec reboot && exit 0
         ;;
-      2)
+      3)
+        # Ask for Tag
+        TAG=""
+        dialog --clear --backtitle "$(backtitle)" --title "Update Loader" \
+          --menu "Which Version?" 0 0 0 \
+          1 "Latest" \
+          2 "Select Version" \
+        2>"${TMP_PATH}/opts"
+        [ $? -ne 0 ] && continue
+        opts=$(cat ${TMP_PATH}/opts)
+        [ -z "${opts}" ] && return 1
+        if [ ${opts} -eq 1 ]; then
+          TAG=""
+        elif [ ${opts} -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Update Loader" \
+          --inputbox "Type the Version!" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG=$(cat "${TMP_PATH}/input")
+          [ -z "${TAG}" ] && return 1
+        fi
+        updateLoader "${TAG}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
+      4)
         # Ask for Tag
         TAG=""
         dialog --clear --backtitle "$(backtitle)" --title "Update Addons" \
@@ -923,7 +906,7 @@ function updateMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      3)
+      5)
         # Ask for Tag
         TAG=""
         dialog --clear --backtitle "$(backtitle)" --title "Update Configs" \
@@ -948,7 +931,7 @@ function updateMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      4)
+      6)
         # Ask for Tag
         TAG=""
         dialog --clear --backtitle "$(backtitle)" --title "Update LKMs" \
@@ -971,7 +954,7 @@ function updateMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      5)
+      7)
         # Ask for Tag
         TAG=""
         dialog --clear --backtitle "$(backtitle)" --title "Update Modules" \
@@ -994,7 +977,7 @@ function updateMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
-      6)
+      8)
         # Ask for Tag
         TAG=""
         dialog --clear --backtitle "$(backtitle)" --title "Update Patches" \
@@ -1016,11 +999,6 @@ function updateMenu() {
         updatePatches "${TAG}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      7)
-        dialog --backtitle "$(backtitle)" --title "Automated Update" --aspect 18 \
-          --msgbox "Loader will proceed Automated Update Mode.\nPlease wait until progress is finished!" 0 0
-        . ${ARC_PATH}/update.sh
         ;;
     esac
   done
@@ -2078,7 +2056,7 @@ function governorMenu () {
 function governorSelection () {
   rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
-  if [ "${CPUFREQ}" == "true" ]; then
+  if [ "${CUSTOM}" == "false" ]; then
     # Selectable CPU governors
     [ "${PLATFORM}" == "epyc7002" ] && echo -e "schedutil \"use schedutil to scale frequency *\"" >>"${TMP_PATH}/opts"
     [ "${PLATFORM}" != "epyc7002" ] && echo -e "ondemand \"use ondemand to scale frequency *\"" >>"${TMP_PATH}/opts"
@@ -2086,17 +2064,26 @@ function governorSelection () {
     echo -e "performance \"always run at max frequency\"" >>"${TMP_PATH}/opts"
     echo -e "powersave \"always run at lowest frequency\"" >>"${TMP_PATH}/opts"
     echo -e "userspace \"use userspace settings to scale frequency\"" >>"${TMP_PATH}/opts"
-    dialog --backtitle "$(backtitle)" --title "DSM Frequency Scaling" \
+    dialog --backtitle "$(backtitle)" --title "CPU Frequency Scaling" \
       --menu  "Choose a Governor\n* Recommended Option" 0 0 0 --file "${TMP_PATH}/opts" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && return
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return
     CPUGOVERNOR=${resp}
-    writeConfigKey "arc.governor" "${CPUGOVERNOR}" "${USER_CONFIG_FILE}"
   else
-    dialog --backtitle "$(backtitle)" --title "DSM Frequency Scaling" \
+    [ "${PLATFORM}" == "epyc7002" ] && CPUGOVERNOR="schedutil"
+    [ "${PLATFORM}" != "epyc7002" ] && CPUGOVERNOR="ondemand"
+  fi
+  writeConfigKey "arc.governor" "${CPUGOVERNOR}" "${USER_CONFIG_FILE}"
+else
+  if [ "${CUSTOM}" == "false" ]; then
+    dialog --backtitle "$(backtitle)" --title "CPU Frequency Scaling" \
       --msgbox "CPU frequency scaling not supported!" 0 0
+  else
+    dialog --backtitle "$(backtitle)" --title "CPU Frequency Scaling" \
+      --infobox "CPU frequency scaling not supported!" 0 0
+    sleep 5
   fi
 }
 

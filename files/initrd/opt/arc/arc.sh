@@ -6,6 +6,7 @@
 
 . ${ARC_PATH}/include/functions.sh
 . ${ARC_PATH}/include/addons.sh
+. ${ARC_PATH}/include/compat.sh
 . ${ARC_PATH}/include/modules.sh
 . ${ARC_PATH}/include/storage.sh
 . ${ARC_PATH}/include/network.sh
@@ -209,32 +210,42 @@ function arcModel() {
     if [ "${CUSTOM}" == "false" ]; then
       PRODUCTVER=""
       MODEL="${resp}"
+      PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
+      MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
       writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
       writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
+      writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.emmcboot" "false" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
+      writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
+      writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
+      writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
     else
       MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+      PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
+      MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
+      writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
+      writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
     fi
-    PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
-    MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
-    writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.emmcboot" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
-    writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
-    writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-    writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
-    writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
-    writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -296,7 +307,6 @@ function arcVersion() {
   else
     KVERP="${KVER}"
   fi
-  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   # Rewrite modules
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   cp -f "${ARC_PATH}/include/modulelist" "${USER_UP_PATH}/modulelist"
@@ -333,10 +343,11 @@ function arcPatch() {
   CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
   # Check for Custom Build
-  if [ "${CUSTOM}" == "true" ]; then
+  SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
+  if [ "${CUSTOM}" == "true" ] && [ -z "${SN}" ]; then
     SN=$(generateSerial "${MODEL}" false)
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-  else
+  elif [ "${CUSTOM}" == "false" ]; then
     if [ -n "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
         --nocancel --title "Arc Patch"\
@@ -438,14 +449,15 @@ function arcSettings() {
     sleep 2
     getmapSelection
   fi
+  # Check for CPU Frequency Scaling
+  if [ "${CPUFREQ}" == "true" ]; then
+    # Select Governor for DSM
+    dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
+      --infobox "Generating Governor Table..." 3 40
+    governorSelection
+  fi
   # Check for Custom Build
   if [ "${CUSTOM}" == "false" ]; then
-    if [ "${CPUFREQ}" == "true" ]; then
-      # Select Governor for DSM
-      dialog --backtitle "$(backtitle)" --colors --title "DSM Frequency Scaling" \
-        --infobox "Generating Governor Table..." 3 40
-      governorSelection
-    fi
     # Select Addons
     dialog --backtitle "$(backtitle)" --colors --title "DSM Addons" \
       --infobox "Loading Addons Table..." 3 40
@@ -714,7 +726,7 @@ function make() {
         fi
       fi
     fi
-  elif [ "${OFFLINE}" == "true" ]; then
+  elif [ "${OFFLINE}" == "true" ] && [ "${CUSTOM}" ==  "false" ]; then
     if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
       rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
       VALID="true"
@@ -754,13 +766,20 @@ function make() {
         sleep 5
       fi
     fi
+  else
+    dialog --backtitle "$(backtitle)" --title "Arc Build" --aspect 18 \
+      --infobox "Can't build Custom Loader while Offline!\nExit." 4 40
+    VALID="false"
+    sleep 5
   fi
   # Copy DSM Files to Locations if DSM Files not found
-  if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-    if copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null; then
-      VALID="true"
-    else
-      VALID="false"
+  if [ "${VALID}" == "true" ]; then
+    if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+      if copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null; then
+        VALID="true"
+      else
+        VALID="false"
+      fi
     fi
   fi
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ "${VALID}" == "true" ]; then
@@ -771,6 +790,8 @@ function make() {
       --progressbox "Doing the Magic..." 20 70
   fi
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
+    writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     arcFinish
   else
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
@@ -788,13 +809,11 @@ function make() {
 function arcFinish() {
   # Verify Files exist
   CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
-  # Build is done
   rm -f "${LOG_FILE}" >/dev/null
-  writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   # Check for Automated Mode
   if [ "${CUSTOM}" == "true" ]; then
-    boot && exit 0
+    [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-${PRODUCTVER}-custom" >"${PART3_PATH}/automated"
+    boot
   elif [ "${CUSTOM}" == "false" ]; then
     [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
     # Ask for Boot
@@ -806,7 +825,7 @@ function arcFinish() {
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
-      boot && exit 0
+      boot
     elif [ ${resp} -eq 2 ]; then
       return 0
     fi
@@ -982,7 +1001,7 @@ else
       0) decryptMenu; NEXT="0" ;;
       1) arcModel; NEXT="2" ;;
       2) make; NEXT="3" ;;
-      3) boot && exit 0 ;;
+      3) boot; NEXT="3" ;;
       # Info Section
       a) sysinfo; NEXT="a" ;;
       A) networkdiag; NEXT="A" ;;
