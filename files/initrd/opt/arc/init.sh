@@ -90,7 +90,7 @@ ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
 if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
   _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
 fi
-[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
+/etc/init.d/S41dhcpcd restart >/dev/null 2>&1
 # Read/Write IP/Mac config
 for ETH in ${ETHX}; do
   MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
