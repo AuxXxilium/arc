@@ -69,7 +69,7 @@ ntpCheck
 # Mounts backtitle dynamically
 function backtitle() {
   if [ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ] && [ "${OFFLINE}" == "false" ]; then
-    ARC_TITLE="${ARC_TITLE} -> ${NEWTAG}"
+    ARC_TITLE="${ARC_TITLE} > ${NEWTAG}"
   fi
   if [ -z "${MODEL}" ]; then
     MODEL="(Model)"
