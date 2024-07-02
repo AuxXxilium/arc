@@ -1135,11 +1135,11 @@ else
         NEXT="8"
         ;;
       c) [ "${IPV6}" == "true" ] && IPV6='false' || IPV6='true'
-        if "{$IPV6}" == "true"; then
-          writeConfigKey "arc.ipv6" "true" "${USER_CONFIG_FILE}"
+        if "${IPV6}" == "true"; then
+          writeConfigKey "arc.ipv6" "${IPV6}" "${USER_CONFIG_FILE}"
           sed -i 's/ipv6.disable=1/ipv6.disable=0/g' "${GRUB_CONFIG_FILE}"
-        elif "{$IPV6}" == "false"; then
-          writeConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
+        elif "${IPV6}" == "false"; then
+          writeConfigKey "arc.ipv6" "${IPV6}" "${USER_CONFIG_FILE}"
           sed -i 's/ipv6.disable=0/ipv6.disable=1/g' "${GRUB_CONFIG_FILE}"
         fi
         rebootTo "config"
