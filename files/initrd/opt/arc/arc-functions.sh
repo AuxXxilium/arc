@@ -2056,7 +2056,7 @@ function governorMenu () {
 function governorSelection () {
   rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
-  if [ "${CUSTOM}" == "false" ]; then
+  if [ "${AUTOMATED}" == "false" ]; then
     # Selectable CPU governors
     [ "${PLATFORM}" == "epyc7002" ] && echo -e "schedutil \"use schedutil to scale frequency *\"" >>"${TMP_PATH}/opts"
     [ "${PLATFORM}" != "epyc7002" ] && echo -e "ondemand \"use ondemand to scale frequency *\"" >>"${TMP_PATH}/opts"

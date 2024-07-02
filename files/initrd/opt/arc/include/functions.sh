@@ -512,13 +512,13 @@ function offlineCheck() {
     done
     if [ -n "${ARCNIC}" ]; then
       writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
-    elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" == "false" ]; then
+    elif [ -z "${ARCNIC}" ] && [ "${AUTOMATED}" == "false" ]; then
       writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
       cp -f "${PART3_PATH}/configs/offline.json" "${ARC_PATH}/include/offline.json"
       [ -z "${ARCNIC}" ] && ARCNIC="auto"
       dialog --backtitle "$(backtitle)" --title "Online Check" \
           --msgbox "Could not connect to Github.\nSwitch to Offline Mode!" 0 0
-    elif [ -z "${ARCNIC}" ] && [ "${CUSTOM}" == "true" ]; then
+    elif [ -z "${ARCNIC}" ] && [ "${AUTOMATED}" == "true" ]; then
       dialog --backtitle "$(backtitle)" --title "Online Check" \
         --infobox "Could not connect to Github.\nReboot to try again!" 0 0
       sleep 10

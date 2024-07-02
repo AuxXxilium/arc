@@ -22,7 +22,7 @@ systemCheck
 # Offline Mode check
 ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
 offlineCheck
 
 # Get DSM Data from Config
@@ -118,7 +118,7 @@ function arcModel() {
     arch=$(echo "$item" | jq -r '.arch')
     echo "${name} ${arch}" >>"${TMP_PATH}/modellist"
   done
-  if [ "${CUSTOM}" == "false" ]; then
+  if [ "${AUTOMATED}" == "false" ]; then
     while true; do
       echo -n "" >"${TMP_PATH}/menu"
       while read -r M A; do
@@ -267,9 +267,9 @@ function arcVersion() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+  AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
   # Check for Custom Build
-  if [ "${CUSTOM}" == "false" ]; then
+  if [ "${AUTOMATED}" == "false" ]; then
     # Select Build for DSM
     ITEMS="$(readConfigEntriesArray "platforms.${PLATFORM}.productvers" "${P_FILE}" | sort -r)"
     dialog --clear --no-items --nocancel --title "DSM Version" --backtitle "$(backtitle)" \
@@ -340,14 +340,14 @@ function arcPatch() {
   # Read Model Values
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+  AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
   # Check for Custom Build
   SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
-  if [ "${CUSTOM}" == "true" ] && [ -z "${SN}" ]; then
+  if [ "${AUTOMATED}" == "true" ] && [ -z "${SN}" ]; then
     SN=$(generateSerial "${MODEL}" false)
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-  elif [ "${CUSTOM}" == "false" ]; then
+  elif [ "${AUTOMATED}" == "false" ]; then
     if [ -n "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
         --nocancel --title "Arc Patch"\
@@ -429,7 +429,7 @@ function arcPatch() {
 function arcSettings() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+  AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
   # Get Network Config for Loader
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
     --infobox "Generating Network Config..." 3 40
@@ -457,7 +457,7 @@ function arcSettings() {
     governorSelection
   fi
   # Check for Custom Build
-  if [ "${CUSTOM}" == "false" ]; then
+  if [ "${AUTOMATED}" == "false" ]; then
     # Select Addons
     dialog --backtitle "$(backtitle)" --colors --title "DSM Addons" \
       --infobox "Loading Addons Table..." 3 40
@@ -505,7 +505,7 @@ function arcSettings() {
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   # Check for Custom Build
-  if [ "${CUSTOM}" == "false" ]; then
+  if [ "${AUTOMATED}" == "false" ]; then
     # Ask for Build
     dialog --clear --backtitle "$(backtitle)" --title "Config done" \
       --no-cancel --menu "Build now?" 7 40 0 \
@@ -608,7 +608,7 @@ function make() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+  AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
   PAT_URL=""
   PAT_HASH=""
   VALID="false"
@@ -665,7 +665,7 @@ function make() {
         idx=$((${idx} + 1))
       done
     fi
-    if [ "${CUSTOM}" == "false" ] && [ "${VALID}" == "false" ]; then
+    if [ "${AUTOMATED}" == "false" ] && [ "${VALID}" == "false" ]; then
         MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
         MSG+="You will find these Data at:\nhttps://download.synology.com"
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
@@ -728,7 +728,7 @@ function make() {
         fi
       fi
     fi
-  elif [ "${OFFLINE}" == "true" ] && [ "${CUSTOM}" ==  "false" ]; then
+  elif [ "${OFFLINE}" == "true" ] && [ "${AUTOMATED}" ==  "false" ]; then
     if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
       rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
       VALID="true"
@@ -810,13 +810,15 @@ function make() {
 # Finish Building Loader
 function arcFinish() {
   # Verify Files exist
-  CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+  AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
   rm -f "${LOG_FILE}" >/dev/null
   # Check for Automated Mode
-  if [ "${CUSTOM}" == "true" ]; then
+  if grep -q "automated_arc" /proc/cmdline; then
+    boot
+  elif [ "${AUTOMATED}" == "true" ]; then
     [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-${PRODUCTVER}-custom" >"${PART3_PATH}/automated"
     boot
-  elif [ "${CUSTOM}" == "false" ]; then
+  elif [ "${AUTOMATED}" == "false" ]; then
     [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
     # Ask for Boot
     dialog --clear --backtitle "$(backtitle)" --title "Build done"\
@@ -870,7 +872,7 @@ function boot() {
 # Check for Automated Mode
 if grep -q "automated_arc" /proc/cmdline; then
   # Check for Custom Build
-  if [ "${CUSTOM}" == "true" ]; then
+  if [ "${AUTOMATED}" == "true" ]; then
     arcModel
   else
     make
@@ -968,7 +970,7 @@ else
     if [ "${DEVOPTS}" == "true" ]; then
       echo "= \"\Z4========= Loader =========\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "= \"\Z4=== Edit with caution! ===\Zn \" "                                         >>"${TMP_PATH}/menu"
-      echo "R \"Automated Mode: \Z4${CUSTOM}\Zn \" "                                          >>"${TMP_PATH}/menu"
+      echo "R \"Automated Mode: \Z4${AUTOMATED}\Zn \" "                                          >>"${TMP_PATH}/menu"
       echo "W \"RD Compression: \Z4${RD_COMPRESSED}\Zn \" "                                   >>"${TMP_PATH}/menu"
       echo "X \"Sata DOM: \Z4${SATADOM}\Zn \" "                                               >>"${TMP_PATH}/menu"
       echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                         >>"${TMP_PATH}/menu"
@@ -1023,11 +1025,11 @@ else
       Q) sequentialIOMenu; NEXT="Q" ;;
       p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
       D) staticIPMenu; NEXT="D" ;;
-      R) [ "${CUSTOM}" == "false" ] && CUSTOM='true' || CUSTOM='false'
-        writeConfigKey "arc.custom" "${CUSTOM}" "${USER_CONFIG_FILE}"
-        if [ "${CUSTOM}" == "true" ]; then
+      R) [ "${AUTOMATED}" == "false" ] && AUTOMATED='true' || AUTOMATED='false'
+        writeConfigKey "arc.custom" "${AUTOMATED}" "${USER_CONFIG_FILE}"
+        if [ "${AUTOMATED}" == "true" ]; then
           [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-${PRODUCTVER}-custom" >"${PART3_PATH}/automated"
-        elif [ "${CUSTOM}" == "false" ]; then
+        elif [ "${AUTOMATED}" == "false" ]; then
           [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
         fi
         NEXT="R"

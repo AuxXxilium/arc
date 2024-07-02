@@ -26,7 +26,7 @@ BUS=$(getBus "${LOADER_DISK}")
 # Offline Mode check
 ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-CUSTOM="$(readConfigKey "arc.custom" "${USER_CONFIG_FILE}")"
+AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
 offlineCheck
 
 # Get DSM Data from Config
@@ -113,7 +113,7 @@ function boot() {
 if [ "${OFFLINE}" == "false" ]; then
   arcUpdate
 else
-  if [ "${CUSTOM}" == "true" ]; then
+  if [ "${AUTOMATED}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
       --infobox "Offline Mode enabled.\nCan't Update Loader!" 0 0
     sleep 5

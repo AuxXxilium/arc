@@ -41,7 +41,6 @@ initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc.bootipwait" "30" "${USER_CONFIG_FILE}"
 initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.custom" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.dsmlogo" "true" "${USER_CONFIG_FILE}"
 initConfigKey "arc.emmcboot" "false" "${USER_CONFIG_FILE}"
@@ -78,7 +77,11 @@ initConfigKey "satadom" "2" "${USER_CONFIG_FILE}"
 initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-
+if grep -q "automated_arc" /proc/cmdline; then
+  writeConfigKey "arc.automated" "true" "${USER_CONFIG_FILE}"
+else
+  writeConfigKey "arc.automated" "false" "${USER_CONFIG_FILE}"
+fi
 # Check for compatibility
 compatboot
 
