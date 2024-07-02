@@ -44,6 +44,7 @@ DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
 CPUGOVERNOR="$(readConfigKey "arc.governor" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
+IPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
@@ -962,18 +963,19 @@ else
         echo "T \"Force enable SSH in DSM \" "                                                >>"${TMP_PATH}/menu"
       fi
     fi
-    if [ "${DEVOPTS}" == "true" ]; then
+    if [ "${LOADEROPTS}" == "true" ]; then
       echo "8 \"\Z1Hide Loader Options\Zn \" "                                                >>"${TMP_PATH}/menu"
     else
       echo "8 \"\Z1Show Loader Options\Zn \" "                                                >>"${TMP_PATH}/menu"
     fi
-    if [ "${DEVOPTS}" == "true" ]; then
+    if [ "${LOADEROPTS}" == "true" ]; then
       echo "= \"\Z4========= Loader =========\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "= \"\Z4=== Edit with caution! ===\Zn \" "                                         >>"${TMP_PATH}/menu"
-      echo "R \"Automated Mode: \Z4${AUTOMATED}\Zn \" "                                          >>"${TMP_PATH}/menu"
+      echo "R \"Automated Mode: \Z4${AUTOMATED}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "W \"RD Compression: \Z4${RD_COMPRESSED}\Zn \" "                                   >>"${TMP_PATH}/menu"
       echo "X \"Sata DOM: \Z4${SATADOM}\Zn \" "                                               >>"${TMP_PATH}/menu"
-      echo "u \"Switch LKM version: \Z4${LKM}\Zn \" "                                         >>"${TMP_PATH}/menu"
+      echo "u \"Switch LKM Version: \Z4${LKM}\Zn \" "                                         >>"${TMP_PATH}/menu"
+      echo "c \"Switch IPv6 Support: \Z4${IPV6}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "B \"Grep DSM Config from Backup \" "                                              >>"${TMP_PATH}/menu"
       echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
       echo "w \"Reset Loader to Defaults \" "                                                 >>"${TMP_PATH}/menu"
@@ -1128,9 +1130,20 @@ else
         NEXT="u"
         ;;
       # Loader Section
-      8) [ "${DEVOPTS}" == "true" ] && DEVOPTS='false' || DEVOPTS='true'
-        DEVOPTS="${DEVOPTS}"
+      8) [ "${LOADEROPTS}" == "true" ] && LOADEROPTS='false' || LOADEROPTS='true'
+        LOADEROPTS="${LOADEROPTS}"
         NEXT="8"
+        ;;
+      c) [ "${IPV6}" == "true" ] && IPV6='false' || IPV6='true'
+        if "{$IPV6}" == "true"; then
+          writeConfigKey "arc.ipv6" "true" "${USER_CONFIG_FILE}"
+          sed -i 's/ipv6.disable=1/ipv6.disable=0/g' "${GRUB_CONFIG_FILE}"
+        elif "{$IPV6}" == "false"; then
+          writeConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
+          sed -i 's/ipv6.disable=0/ipv6.disable=1/g' "${GRUB_CONFIG_FILE}"
+        fi
+        rebootTo "config"
+        NEXT="c"
         ;;
       l) editUserConfig; NEXT="l" ;;
       w) resetLoader; NEXT="w" ;;
