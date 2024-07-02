@@ -110,7 +110,7 @@ function arcModel() {
   fi
   if [[ -z "${MJ}" || "${MJ}" == "[]" ]]; then
     dialog --backtitle "$(backtitle)" --title "Model" --title "Model" \
-      --msgbox "Failed to get models, please try again!" 0 0
+      --msgbox "Failed to get models, please try again!" 3 50
     return 1
   fi
   echo -n "" >"${TMP_PATH}/modellist"
@@ -136,7 +136,7 @@ function arcModel() {
         [ "${A}" == "epyc7002" ] && IGPUS="up to 14th" 
         [ "${DT}" == "true" ] && HBAS="" || HBAS="x"
         [ "${M}" == "SA6400" ] && HBAS="x"
-        [ "${DT}" == "false" ] && USBS="x" || USBS=""
+        [ "${DT}" == "false" ] && USBS="int/ext" || USBS="ext"
         [[ "${M}" == "DS918+" || "${M}" == "DS1019+" || "${M}" == "DS1621xs+" || "${M}" == "RS1619xs+" ]] && M_2_CACHE="+" || M_2_CACHE="x"
         [[ "${M}" == "DS220+" ||  "${M}" == "DS224+" ]] && M_2_CACHE=""
         [ "${DT}" == "false" ] && M_2_STORAGE="" || M_2_STORAGE="+"
@@ -172,13 +172,13 @@ function arcModel() {
         dialog --backtitle "$(backtitle)" --title "Arc DSM Model" --colors \
           --cancel-label "Show all" --help-button --help-label "Exit" \
           --extra-button --extra-label "Info" \
-          --menu "Supported Models for your Hardware (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "iGPU/i915" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 112 0 \
+          --menu "Supported Models for your Hardware (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "iGPU/i915" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 115 0 \
           --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       else
         dialog --backtitle "$(backtitle)" --title "DSM Model" --colors \
           --cancel-label "Show all" --help-button --help-label "Exit" \
           --extra-button --extra-label "Info" \
-          --menu "Supported Models for your Hardware (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "iGPU/i915" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 112 0 \
+          --menu "Supported Models for your Hardware (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "iGPU/i915" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 115 0 \
           --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       fi
       RET=$?
