@@ -227,8 +227,7 @@ jobs:
             ### Information:
             Notice: ${{ inputs.notice }}
             Buildtime: ${{ env.BUILD_TIME }}
-            Full Changelog: Can be found in my Discord.
-            Arc Patch Key: Decryption Key can be found in my Discord.
+            Full Changelog and Arc Patch (Decryption Key) can be found in my Discord.
 
             ### Versions:
             Addons: ${{ env.ADDONSTAG }}
