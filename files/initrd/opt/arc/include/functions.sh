@@ -506,6 +506,7 @@ function offlineCheck() {
     elif [ -z "${NEWTAG}" ] && [ ${CNT} -ge 3 ]; then
       break
     fi
+  done
   if [ -n "${NEWTAG}" ]; then
     [ -z "${ARCNIC}" ] && ARCNIC="auto"
   elif [ -z "${NEWTAG}" ]; then
