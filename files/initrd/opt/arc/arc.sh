@@ -217,7 +217,6 @@ function arcModel() {
     writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
     writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
     writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
-    writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.emmcboot" "false" "${USER_CONFIG_FILE}"
@@ -232,7 +231,6 @@ function arcModel() {
     writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
     writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
   elif [ -z "${resp}" ]; then
     MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -667,8 +665,9 @@ function make() {
       done
     fi
     if [ "${AUTOMATED}" == "false" ] && [ "${VALID}" == "false" ]; then
-        MSG="Failed to get PAT Data.\nPlease manually fill in the URL and Hash of PAT."
-        MSG+="You will find these Data at:\nhttps://download.synology.com"
+        MSG="Failed to get PAT Data.\n"
+        MSG+="Please manually fill in the URL and Hash of PAT.\n"
+        MSG+="You will find these Data at: https://download.synology.com"
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
           --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 7 100 0 \
           2>"${TMP_PATH}/resp"
@@ -737,8 +736,14 @@ function make() {
       # Check for existing Files
       mkdir -p "${TMP_UP_PATH}"
       # Get new Files
+      MSG=""
+      MSG+="Upload your DSM .pat File now to /tmp/upload.\n"
+      MSG+="You will find these Files at: https://download.synology.com\n"
+      MSG+="Use Webfilebrowser: ${IPCON}:7304 or SSH/SFTP to connect to ${IPCON}\n"
+      MSG+="User: root | Password: arc\n"
+      MSG+="Press OK to continue!"
       dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
-      --msgbox "Upload your DSM .pat File now to /tmp/upload.\nUse Webfilebrowser: ${IPCON}:7304\nor SSH/SFTP to connect to ${IPCON}.\nUser: root | Password: arc\nPress OK to continue!" 0 0
+      --msgbox "${MSG}" 9 80
       # Grep PAT_FILE
       PAT_FILE=$(ls ${TMP_UP_PATH}/*.pat | head -n 1)
       if [ -f "${PAT_FILE}" ] && [ $(wc -c "${PAT_FILE}" | awk '{print $1}') -gt 300000000 ]; then
