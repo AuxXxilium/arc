@@ -238,7 +238,6 @@ if [ "${PLATFORM}" == "broadwellntbap" ]; then
 fi
 
 # Call user patch scripts
-echo -n "."
 for F in $(ls -1 ${USER_UP_PATH}/*.sh 2>/dev/null); do
   echo "Calling ${F}" >"${LOG_FILE}"
   . "${F}" >>"${LOG_FILE}" 2>&1 || exit 1
