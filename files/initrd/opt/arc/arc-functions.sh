@@ -1136,29 +1136,29 @@ function sysinfo() {
   # Print Config Informations
   TEXT+="\n\Z4> Arc: ${ARC_VERSION}\Zn"
   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
-  TEXT+="\n\Z4>> Loader\Zn"
-  TEXT+="\n   Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
-  TEXT+="\n   Config Version: \Zb${CONFIGVER}\Zn"
+  TEXT+="\n\Z4> Loader\Zn"
+  TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
+  TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"
   if [ "${CONFDONE}" == "true" ]; then
-    TEXT+="\n\Z4>> DSM ${PRODUCTVER}: ${MODELID:-${MODEL}}\Zn"
-    TEXT+="\n   Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
-    TEXT+="\n   Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
-    TEXT+="\n   Arc Patch | Kernelload: \Zb${ARCPATCH} | ${KERNELLOAD}\Zn"
-    TEXT+="\n   Directboot: \Zb${DIRECTBOOT}\Zn"
-    TEXT+="\n   Addons selected: \Zb${ADDONSINFO}\Zn"
+    TEXT+="\n\Z4> DSM ${PRODUCTVER}: ${MODELID:-${MODEL}}\Zn"
+    TEXT+="\n  Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
+    TEXT+="\n  Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
+    TEXT+="\n  Arc Patch | Kernelload: \Zb${ARCPATCH} | ${KERNELLOAD}\Zn"
+    TEXT+="\n  Directboot: \Zb${DIRECTBOOT}\Zn"
+    TEXT+="\n  Addons selected: \Zb${ADDONSINFO}\Zn"
   fi
-  TEXT+="\n   Modules loaded: \Zb${MODULESINFO}\Zn"
-  TEXT+="\n\Z4>> Settings\Zn"
-  TEXT+="\n   Offline Mode: \Zb${OFFLINE}\Zn"
+  TEXT+="\n  Modules loaded: \Zb${MODULESINFO}\Zn"
+  TEXT+="\n\Z4> Settings\Zn"
+  TEXT+="\n  Offline Mode: \Zb${OFFLINE}\Zn"
   if [[ "${REMAP}" == "acports" || "${REMAP}" == "maxports" ]]; then
-    TEXT+="\n   SataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
+    TEXT+="\n  SataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
   elif [ "${REMAP}" == "remap" ]; then
-    TEXT+="\n   SataRemap: \Zb${PORTMAP}\Zn"
+    TEXT+="\n  SataRemap: \Zb${PORTMAP}\Zn"
   elif [ "${REMAP}" == "user" ]; then
-    TEXT+="\n   PortMap: \Zb"User"\Zn"
+    TEXT+="\n  PortMap: \Zb"User"\Zn"
   fi
   if [ "${DT}" == "true" ]; then
-    TEXT+="\n   Hotplug: \Zb${HDDSORT}\Zn"
+    TEXT+="\n  Hotplug: \Zb${HDDSORT}\Zn"
   fi
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
