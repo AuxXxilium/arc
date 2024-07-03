@@ -146,18 +146,26 @@ function bootDSM () {
     CMDLINE["SASmodel"]="1"
   fi
   # Disable x2apic
-  if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
-    if grep -q "^flags.*x2apic.*" /proc/cpuinfo; then
-      eval $(grep -o "ARC_CMDLINE=.*$" "${USER_GRUB_CONFIG}")
-      [ -z "${ARC_CMDLINE}" ] && ARC_CMDLINE="bzImage-arc"
-      echo "${ARC_CMDLINE}" | grep -q 'nox2apic' || sed -i "s|${ARC_CMDLINE}|${ARC_CMDLINE} nox2apic|" "${USER_GRUB_CONFIG}"
+  if grep -q "^flags.*x2apic.*" /proc/cpuinfo; then
+    eval $(grep -o "ARC_CMDLINE=.*$" "${USER_GRUB_CONFIG}")
+    if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
+      if ! echo "${ARC_CMDLINE}" | grep -q 'nox2apic'; then
+        sed -i "s/${ARC_CMDLINE}/${ARC_CMDLINE} nox2apic/g" "${USER_GRUB_CONFIG}"
+        echo -e "\033[1;33mWarning: x2apic detected but not supported by ${PLATFORM} -> rebooting to disabling x2apic.\033[0m"
+        exec reboot
+        sleep 3
+      fi
+    else
+      if echo "${ARC_CMDLINE}" | grep -q 'nox2apic'; then
+        sed -i "s/ nox2apic//g" "${USER_GRUB_CONFIG}"
+        echo -e "\033[1;33mWarning: x2apic detected and supported by ${PLATFORM} -> rebooting to enable x2apic.\033[0m"
+        exec reboot
+        sleep 3
+      fi
     fi
-  else
-    grep -q ' nox2apic' "${USER_GRUB_CONFIG}" && sed -i "s| nox2apic||" "${USER_GRUB_CONFIG}"
   fi
 
   # Cmdline NIC Settings
-  NIC=0
   ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   if [ "${ARCPATCH}" == "true" ]; then
@@ -166,11 +174,13 @@ function bootDSM () {
   else
     ETHN="$(echo ${ETHX} | wc -w)"
   fi
+  NIC=0
   for ETH in ${ETHX}; do
     MAC="$(readConfigKey "arc.${ETH}" "${USER_CONFIG_FILE}")"
     [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
     NIC=$((${NIC} + 1))
     [ ${NIC} -le ${ETHN} ] && CMDLINE["mac${NIC}"]="${MAC}"
+    [ ${NIC} -eq ${ETHN} ] && break
   done
   CMDLINE['netif_num']="${NIC}"
 
@@ -204,9 +214,10 @@ function bootDSM () {
     exit 0
   elif [ "${DIRECTBOOT}" == "false" ]; then
     BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
+    ETHN="$(echo ${ETHX} | wc -w)"
     [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
     IPCON=""
-    echo -e "\033[1;34mDetected ${ETHN} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+    echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
     sleep 3
     for ETH in ${ETHX}; do
       COUNT=0
