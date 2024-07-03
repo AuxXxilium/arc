@@ -157,22 +157,22 @@ function bootDSM () {
   fi
 
   # Cmdline NIC Settings
-  ETHN=0
+  NIC=0
   ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   if [ "${ARCPATCH}" == "true" ]; then
-    NICPORTS="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
-    [ -z "${NICPORTS}" ] && NICPORTS=1
+    ETHN="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
+    [ -z "${ETHN}" ] && ETHN=1
   else
-    NICPORTS="$(echo ${ETHX} | wc -w)"
+    ETHN="$(echo ${ETHX} | wc -w)"
   fi
   for ETH in ${ETHX}; do
     MAC="$(readConfigKey "arc.${ETH}" "${USER_CONFIG_FILE}")"
     [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
-    ETHN=$((${ETHN} + 1))
-    [ ${ETHN} -le ${NICPORTS} ] && CMDLINE["mac${ETHN}"]="${MAC}"
+    NIC=$((${NIC} + 1))
+    [ ${NIC} -le ${ETHN} ] && CMDLINE["mac${NIC}"]="${MAC}"
   done
-  [ ${ETHN} -le ${NICPORTS} ] && CMDLINE['netif_num']="${ETHN}" || CMDLINE['netif_num']="${NICPORTS}"
+  CMDLINE['netif_num']="${NIC}"
 
   # Read user network settings
   while IFS=': ' read -r KEY VALUE; do
