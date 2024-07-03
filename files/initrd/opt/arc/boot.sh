@@ -200,14 +200,14 @@ function bootDSM () {
     grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
     echo -e "\033[1;34mReboot with Directboot\033[0m"
     grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
-    reboot
+    exec reboot
     exit 0
   elif [ "${DIRECTBOOT}" == "false" ]; then
     BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
     [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
     IPCON=""
     echo -e "\033[1;34mDetected ${ETHN} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
-    sleep 2
+    sleep 3
     for ETH in ${ETHX}; do
       COUNT=0
       DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
