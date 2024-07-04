@@ -11,23 +11,14 @@
 . ${ARC_PATH}/include/update.sh
 . ${ARC_PATH}/boot.sh
 
-[ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
-
-# Check for Hypervisor
-if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
-  MACHINE="$(lscpu | grep Hypervisor | awk '{print $3}')"
-else
-  MACHINE="Native"
-fi
-
-# Get Loader Disk Bus
-BUS=$(getBus "${LOADER_DISK}")
+# Check for System
+systemCheck
 
 # Offline Mode check
+offlineCheck
 ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
-offlineCheck
 
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -113,14 +104,8 @@ function boot() {
 if [ "${OFFLINE}" == "false" ]; then
   arcUpdate
 else
-  if [ "${AUTOMATED}" == "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-      --infobox "Offline Mode enabled.\nCan't Update Loader!" 0 0
-    sleep 5
-    bootDSM
-  else
-    dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-      --msgbox "Offline Mode enabled.\nCan't Update Loader!" 0 0
-    bootDSM
-  fi
+  dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+    --infobox "Offline Mode enabled.\nCan't Update Loader!" 0 0
+  sleep 5
+  bootDSM
 fi

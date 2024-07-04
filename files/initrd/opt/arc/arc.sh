@@ -14,16 +14,14 @@
 . ${ARC_PATH}/arc-functions.sh
 . ${ARC_PATH}/boot.sh
 
-[ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
-
 # Check for System
 systemCheck
 
 # Offline Mode check
+offlineCheck
 ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
-offlineCheck
 
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
