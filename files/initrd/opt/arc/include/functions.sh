@@ -503,7 +503,7 @@ function offlineCheck() {
     NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
     CNT=$((${CNT} + 1))
     if [ -n "${NEWTAG}" ]; then
-      [ -z "${ARCNIC}" ] && ARCNIC="auto"
+      ARCNIC="auto"
       break
     elif [ ${CNT} -ge 3 ]; then
       ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
@@ -511,7 +511,7 @@ function offlineCheck() {
         # Update Check
         NEWTAG="$(curl --interface ${ETH} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
         if [ -n "${NEWTAG}" ]; then
-          [ -z "${ARCNIC}" ] && ARCNIC="${ETH}"
+          ARCNIC="${ETH}"
           break 2
         fi
       done
@@ -525,13 +525,14 @@ function offlineCheck() {
       --msgbox "Could not connect to Github.\nSwitch to Offline Mode!" 0 0
     writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
     cp -f "${PART3_PATH}/configs/offline.json" "${ARC_PATH}/include/offline.json"
-    [ -z "${ARCNIC}" ] && ARCNIC="auto"
+    ARCNIC="offline"
   elif [ -z "${ARCNIC}" ] && [ "${AUTOMATED}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Online Check" \
       --msgbox "Could not connect to Github.\nSwitch to Offline Mode!\nDisable Automated Mode!" 0 0
     writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.automated" "false" "${USER_CONFIG_FILE}"
     [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
+    ARCNIC="offline"
   fi
   writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
 }
