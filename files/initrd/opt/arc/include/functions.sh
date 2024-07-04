@@ -504,6 +504,7 @@ function offlineCheck() {
     CNT=$((${CNT} + 1))
     if [ -n "${NEWTAG}" ]; then
       [ -z "${ARCNIC}" ] && ARCNIC="auto"
+      break
     elif [ ${CNT} -ge 3 ]; then
       ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
       for ETH in ${ETHX}; do
@@ -514,8 +515,8 @@ function offlineCheck() {
           break 2
         fi
       done
+      break
     fi
-    break
   done
   if [ -n "${ARCNIC}" ]; then
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
