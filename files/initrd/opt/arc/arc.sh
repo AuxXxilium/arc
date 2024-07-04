@@ -207,7 +207,20 @@ function arcModel() {
     done
   fi
   # Reset Model Config if changed
-  if [ "${MODEL}" != "${resp}" ]; then
+  if [ -z "${resp}" ] && [ -n "${MODEL}" ]; then
+    MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+    PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
+    MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
+    writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
+    writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+  elif [ "${MODEL}" != "${resp}" ]; then
     PRODUCTVER=""
     MODEL="${resp}"
     PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
@@ -226,19 +239,6 @@ function arcModel() {
     writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
-    writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
-    writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-  elif [ -z "${resp}" ]; then
-    MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-    PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
-    MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
     writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
     writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
@@ -615,7 +615,7 @@ function make() {
   if [ "${OFFLINE}" == "false" ]; then
     # Get PAT Data
     dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-      --infobox "Get PAT Data from Syno..." 3 30
+      --infobox "Get PAT Data from Syno..." 3 40
     idx=0
     while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
       if [ "${ARCNIC}" == "auto" ]; then
@@ -641,7 +641,7 @@ function make() {
     done
     if [ "${VALID}" == "false" ]; then
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-        --infobox "Get PAT Data from Github..." 3 30
+        --infobox "Get PAT Data from Github..." 3 40
       idx=0
       while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
         if [ "${ARCNIC}" == "auto" ]; then
