@@ -1140,17 +1140,15 @@ else
       c) [ "${IPV6}" == "true" ] && IPV6='false' || IPV6='true'
         if [ "${IPV6}" == "true" ]; then
           writeConfigKey "arc.ipv6" "true" "${USER_CONFIG_FILE}"
-          eval $(grep -o "ARC_CMDLINE=.*$" "${USER_GRUB_CONFIG}")
-          if echo "${ARC_CMDLINE}" | grep -q 'ipv6.disable=1'; then
-            sed -i 's/ ipv6.disable=1//g' "${USER_GRUB_CONFIG}"
+          if cat "${USER_GRUB_CONFIG}" | grep -q 'ipv6.disable=1'; then
+            sed -i 's/ipv6.disable=1/ipv6.disable=0/g' "${USER_GRUB_CONFIG}"
             dialog --backtitle "$(backtitle)" --title "Arc Boot" \
               --infobox "Rebooting with IPv6 Support!" 4 30
           fi
         elif [ "${IPV6}" == "false" ]; then
           writeConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
-          eval $(grep -o "ARC_CMDLINE=.*$" "${USER_GRUB_CONFIG}")
-          if ! echo "${ARC_CMDLINE}" | grep -q 'ipv6.disable=1'; then
-            sed -i 's/${ARC_CMDLINE}/${ARC_CMDLINE} ipv6.disable=1/g' "${GRUB_CONFIG_FILE}"
+          if cat "${USER_GRUB_CONFIG}" | grep -q 'ipv6.disable=0'; then
+            sed -i 's/ipv6.disable=0/ipv6.disable=1/g' "${GRUB_CONFIG_FILE}"
             dialog --backtitle "$(backtitle)" --title "Arc Boot" \
               --infobox "Rebooting without IPv6 Support!" 4 30
           fi
