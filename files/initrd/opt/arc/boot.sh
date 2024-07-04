@@ -218,7 +218,7 @@ function bootDSM () {
   elif [ "${DIRECTBOOT}" == "false" ]; then
     BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
     ETHN="$(echo ${ETHX} | wc -w)"
-    [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
+    [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
     IPCON=""
     echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
     sleep 3

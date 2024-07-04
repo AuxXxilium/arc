@@ -1567,7 +1567,7 @@ function addNewDSMUser() {
     ONBOOTUP=""
     ONBOOTUP="${ONBOOTUP}if synouser --enum local | grep -q ^${username}\$; then synouser --setpw ${username} ${password}; else synouser --add ${username} ${password} arc 0 user@arc.arc 1; fi\n"
     ONBOOTUP="${ONBOOTUP}synogroup --memberadd administrators ${username}\n"
-    ONBOOTUP="${ONBOOTUP}echo \"DELETE FROM task WHERE task_name LIKE ''ARCONBOOTUPRR_ADDUSER'';\" | sqlite3 /usr/syno/etc/esynoscheduler/esynoscheduler.db\n"
+    ONBOOTUP="${ONBOOTUP}echo \"DELETE FROM task WHERE task_name LIKE ''ARCONBOOTUPARC_ADDUSER'';\" | sqlite3 /usr/syno/etc/esynoscheduler/esynoscheduler.db\n"
 
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
@@ -1575,8 +1575,8 @@ function addNewDSMUser() {
       [ $? -ne 0 ] && continue
       if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
         sqlite3 ${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db <<EOF
-DELETE FROM task WHERE task_name LIKE 'ARCONBOOTUPRR_ADDUSER';
-INSERT INTO task VALUES('ARCONBOOTUPRR_ADDUSER', '', 'bootup', '', 1, 0, 0, 0, '', 0, '$(echo -e ${ONBOOTUP})', 'script', '{}', '', '', '{}', '{}');
+DELETE FROM task WHERE task_name LIKE 'ARCONBOOTUPARC_ADDUSER';
+INSERT INTO task VALUES('ARCONBOOTUPARC_ADDUSER', '', 'bootup', '', 1, 0, 0, 0, '', 0, '$(echo -e ${ONBOOTUP})', 'script', '{}', '', '', '{}', '{}');
 EOF
         sleep 1
         sync

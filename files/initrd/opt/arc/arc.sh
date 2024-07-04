@@ -854,7 +854,7 @@ function juniorboot() {
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM Reinstall Mode...\nPlease stay patient!" 4 30
   sleep 2
-  rebootTo "junior"
+  rebootTo junior
 }
 
 ###############################################################################
@@ -1158,7 +1158,7 @@ else
           fi
         fi
         sleep 3
-        rebootTo "config"
+        rebootTo config
         NEXT="c"
         ;;
       l) editUserConfig; NEXT="l" ;;

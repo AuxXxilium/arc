@@ -166,7 +166,7 @@ fi
 echo
 
 BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
-[ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
+[ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
 echo -e "\033[1;34mDetected ${ETHN} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
 sleep 3
 for ETH in ${ETHX}; do
