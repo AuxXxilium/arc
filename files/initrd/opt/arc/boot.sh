@@ -2,6 +2,7 @@
 # Boot
 function bootDSM () {
   # Get Loader Disk Bus
+  [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
   BUS=$(getBus "${LOADER_DISK}")
   # Check if machine has EFI
   [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
@@ -152,17 +153,17 @@ function bootDSM () {
     eval $(grep -o "ARC_CMDLINE=.*$" "${USER_GRUB_CONFIG}")
     if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
       if ! echo "${ARC_CMDLINE}" | grep -q 'nox2apic'; then
-        sed -i "s/${ARC_CMDLINE}/${ARC_CMDLINE} nox2apic/g" "${USER_GRUB_CONFIG}"
+        sed -i 's/${ARC_CMDLINE}/${ARC_CMDLINE} nox2apic/g' "${USER_GRUB_CONFIG}"
         echo -e "\033[1;33mWarning: x2apic detected but not supported by ${PLATFORM} -> rebooting to disabling x2apic.\033[0m"
-        exec reboot
         sleep 3
+        exec reboot
       fi
     else
       if echo "${ARC_CMDLINE}" | grep -q 'nox2apic'; then
-        sed -i "s/ nox2apic//g" "${USER_GRUB_CONFIG}"
+        sed -i 's/ nox2apic//g' "${USER_GRUB_CONFIG}"
         echo -e "\033[1;33mWarning: x2apic detected and supported by ${PLATFORM} -> rebooting to enable x2apic.\033[0m"
-        exec reboot
         sleep 3
+        exec reboot
       fi
     fi
   fi

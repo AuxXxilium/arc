@@ -501,7 +501,7 @@ function offlineCheck() {
     CNT=$((${CNT} + 1))
     if [ -n "${NEWTAG}" ]; then
       break
-    elif [ -z "${NEWTAG}" ] && [ ${CNT} -ge 3 ]; then
+    elif [ ${CNT} -ge 3 ]; then
       break
     fi
   done

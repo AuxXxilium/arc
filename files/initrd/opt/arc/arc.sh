@@ -68,7 +68,7 @@ ntpCheck
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
-  if [ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ] && [ "${OFFLINE}" == "false" ]; then
+  if [ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ]; then
     ARC_TITLE="${ARC_TITLE} > ${NEWTAG}"
   fi
   if [ -z "${MODEL}" ]; then
@@ -1033,7 +1033,7 @@ else
       p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
       D) staticIPMenu; NEXT="D" ;;
       R) [ "${AUTOMATED}" == "false" ] && AUTOMATED='true' || AUTOMATED='false'
-        writeConfigKey "arc.custom" "${AUTOMATED}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.automated" "${AUTOMATED}" "${USER_CONFIG_FILE}"
         if [ "${AUTOMATED}" == "true" ]; then
           [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-${PRODUCTVER}-custom" >"${PART3_PATH}/automated"
         elif [ "${AUTOMATED}" == "false" ]; then
@@ -1140,16 +1140,22 @@ else
         NEXT="8"
         ;;
       c) [ "${IPV6}" == "true" ] && IPV6='false' || IPV6='true'
-        if "${IPV6}" == "true"; then
-          writeConfigKey "arc.ipv6" "${IPV6}" "${USER_CONFIG_FILE}"
-          sed -i 's/ipv6.disable=1/ipv6.disable=0/g' "${GRUB_CONFIG_FILE}"
-          dialog --backtitle "$(backtitle)" --title "Arc Boot" \
-            --infobox "Rebooting with IPv6 Support!" 4 30
-        elif "${IPV6}" == "false"; then
-          writeConfigKey "arc.ipv6" "${IPV6}" "${USER_CONFIG_FILE}"
-          sed -i 's/ipv6.disable=0/ipv6.disable=1/g' "${GRUB_CONFIG_FILE}"
-          dialog --backtitle "$(backtitle)" --title "Arc Boot" \
-            --infobox "Rebooting without IPv6 Support!" 4 30
+        if [ "${IPV6}" == "true" ]; then
+          writeConfigKey "arc.ipv6" "true" "${USER_CONFIG_FILE}"
+          eval $(grep -o "ARC_CMDLINE=.*$" "${USER_GRUB_CONFIG}")
+          if echo "${ARC_CMDLINE}" | grep -q 'ipv6.disable=1'; then
+            sed -i 's/ ipv6.disable=1//g' "${USER_GRUB_CONFIG}"
+            dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+              --infobox "Rebooting with IPv6 Support!" 4 30
+          fi
+        elif [ "${IPV6}" == "false" ]; then
+          writeConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
+          eval $(grep -o "ARC_CMDLINE=.*$" "${USER_GRUB_CONFIG}")
+          if ! echo "${ARC_CMDLINE}" | grep -q 'ipv6.disable=1'; then
+            sed -i 's/${ARC_CMDLINE}/${ARC_CMDLINE} ipv6.disable=1/g' "${GRUB_CONFIG_FILE}"
+            dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+              --infobox "Rebooting without IPv6 Support!" 4 30
+          fi
         fi
         sleep 3
         rebootTo "config"
