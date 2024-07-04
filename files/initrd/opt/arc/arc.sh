@@ -1000,7 +1000,7 @@ else
     if [ "${OFFLINE}" == "false" ]; then
       echo "z \"Update Loader \" "                                                            >>"${TMP_PATH}/menu"
     fi
-    echo "I \"Restart/Shutdown \" "                                                           >>"${TMP_PATH}/menu"
+    echo "I \"Power Menu \" "                                                                 >>"${TMP_PATH}/menu"
     echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
 
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --colors \
