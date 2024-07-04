@@ -1080,7 +1080,7 @@ function sysinfo() {
   TIMEOUT=5
   TEXT=""
   # Print System Informations
-  TEXT+="\n\Z4> System: ${MACHINE} | ${BOOTSYS}\Zn"
+  TEXT+="\n\Z4> System: ${MACHINE} | ${BOOTSYS} | ${BUS}\Zn"
   TEXT+="\n  Vendor: \Zb${VENDOR}\Zn"
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
   if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
@@ -1098,6 +1098,7 @@ function sysinfo() {
   TEXT+="\n  AES | ACPI: \Zb${AESSYS} | ${ACPISYS}\Zn"
   TEXT+="\n  CPU Scaling: \Zb${CPUFREQ}\Zn"
   TEXT+="\n  Secure Boot: \Zb${SECURE}\Zn"
+  TEXT+="\n  Bootdisk: \Zb${LOADER_DISK}\Zn"
   TEXT+="\n  Date/Time: \Zb$(date)\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${ETHN} NIC\Zn\n"
