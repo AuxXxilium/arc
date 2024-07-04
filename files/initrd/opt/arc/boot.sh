@@ -226,8 +226,8 @@ function bootDSM () {
       COUNT=0
       DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
       while true; do
-        if ! ip link show ${ETH} 2>/dev/null | grep -q 'UP'; then
-          echo -e "\r\033[1;37m${DRIVER}:\033[0m DOWN"
+        if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
+          echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
           break
         fi
         COUNT=$((${COUNT} + 1))
@@ -242,8 +242,8 @@ function bootDSM () {
           fi
           break
         fi
-        if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
-          echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
+        if ! ip link show ${ETH} 2>/dev/null | grep -q 'UP'; then
+          echo -e "\r\033[1;37m${DRIVER}:\033[0m DOWN"
           break
         fi
         if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
