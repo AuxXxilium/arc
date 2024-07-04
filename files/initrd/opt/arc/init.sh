@@ -120,17 +120,17 @@ echo
 VID="0x46f4"
 PID="0x0001"
 
-# Inform user and check bus
-echo -e "Loader Disk: \033[1;34m${LOADER_DISK}\033[0m"
-echo -e "Loader Disk Type: \033[1;34m${BUS}\033[0m"
-
 BUSLIST="usb sata scsi nvme mmc xen"
 if [ "${BUS}" == "usb" ]; then
   VID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_VENDOR_ID | cut -d= -f2)"
   PID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_MODEL_ID | cut -d= -f2)"
 elif ! echo "${BUSLIST}" | grep -wq "${BUS}"; then
-  die "Loader Disk ${BUS} is not USB or SATA/SCSI/NVME/eMMC"
+  die "Loader Disk (${BUS}) is not USB or SATA/SCSI/NVME/eMMC"
 fi
+
+# Inform user and check bus
+echo -e "Loader Disk: \033[1;34m${LOADER_DISK}\033[0m"
+echo -e "Loader Disk Type: \033[1;34m${BUS}\033[0m"
 
 # Save variables to user config file
 writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
