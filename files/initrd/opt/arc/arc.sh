@@ -1144,6 +1144,8 @@ else
             sed -i 's/ipv6.disable=1/ipv6.disable=0/g' "${USER_GRUB_CONFIG}"
             dialog --backtitle "$(backtitle)" --title "Arc Boot" \
               --infobox "Rebooting with IPv6 Support!" 4 30
+            sleep 3
+            rebootTo config
           fi
         elif [ "${IPV6}" == "false" ]; then
           writeConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
@@ -1151,10 +1153,10 @@ else
             sed -i 's/ipv6.disable=0/ipv6.disable=1/g' "${GRUB_CONFIG_FILE}"
             dialog --backtitle "$(backtitle)" --title "Arc Boot" \
               --infobox "Rebooting without IPv6 Support!" 4 30
+            sleep 3
+            rebootTo config
           fi
         fi
-        sleep 3
-        rebootTo config
         NEXT="c"
         ;;
       l) editUserConfig; NEXT="l" ;;
