@@ -1070,6 +1070,8 @@ else
       J) resetDSMNetwork; NEXT="J" ;;
       K) [ "${KERNEL}" == "official" ] && KERNEL='custom' || KERNEL='official'
         writeConfigKey "arc.kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
+        dialog --backtitle "$(backtitle)" --title "DSM Kernel" \
+          --infobox "Switching to Custom Kernel! Stay patient..." 4 50
         if [ "${ODP}" == "true" ]; then
           ODP="false"
           writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
