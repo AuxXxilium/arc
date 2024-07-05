@@ -97,7 +97,7 @@ function bootDSM () {
 
   # DSM Cmdline
   if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
-    if [ "${BUS}" != "usb" ]; then
+    if [ ! "${BUS}" = "usb" ]; then
       SZ=$(blockdev --getsz ${LOADER_DISK} 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
       SS=$(blockdev --getss ${LOADER_DISK} 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
       SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
@@ -108,7 +108,7 @@ function bootDSM () {
     fi
     CMDLINE["elevator"]="elevator"
   fi
-  if [ "${DT}" == "true" ]; then
+  if [ "${DT}" = "true" ]; then
     CMDLINE["syno_ttyS0"]="serial,0x3f8"
     CMDLINE["syno_ttyS1"]="serial,0x2f8"
   else
@@ -116,18 +116,20 @@ function bootDSM () {
     CMDLINE["syno_hdd_detect"]="0"
     CMDLINE["syno_hdd_powerup_seq"]="0"
   fi
-  CMDLINE['panic']="${KERNELPANIC:-0}"
-  CMDLINE['console']="ttyS0,115200n8"
-  # CMDLINE['no_console_suspend']="1"
-  CMDLINE['consoleblank']="600"
-  CMDLINE['earlyprintk']=""
-  CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
-  CMDLINE['root']="/dev/md0"
-  CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-  CMDLINE['loglevel']="15"
-  CMDLINE['log_buf_len']="32M"
   CMDLINE["HddHotplug"]="1"
   CMDLINE["vender_format_version"]="2"
+  CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
+
+  CMDLINE['earlyprintk']=""
+  CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
+  CMDLINE['console']="ttyS0,115200n8"
+  CMDLINE['consoleblank']="600"
+  # CMDLINE['no_console_suspend']="1"
+  CMDLINE['root']="/dev/md0"
+  CMDLINE['rootwait']=""
+  CMDLINE['loglevel']="15"
+  CMDLINE['log_buf_len']="32M"
+  CMDLINE['panic']="${KERNELPANIC:-0}"
   [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="disable"
 
   #if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
@@ -147,25 +149,6 @@ function bootDSM () {
   fi
   if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
     CMDLINE["SASmodel"]="1"
-  fi
-  # Disable x2apic
-  if grep -q "^flags.*x2apic.*" /proc/cpuinfo; then
-    eval $(grep -o "ARC_CMDLINE=.*$" "${USER_GRUB_CONFIG}")
-    if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
-      if ! echo "${ARC_CMDLINE}" | grep -q 'nox2apic'; then
-        sed -i 's/${ARC_CMDLINE}/${ARC_CMDLINE} nox2apic/g' "${USER_GRUB_CONFIG}"
-        echo -e "\033[1;33mWarning: x2apic detected but not supported by ${PLATFORM} -> rebooting to disabling x2apic.\033[0m"
-        sleep 3
-        exec reboot
-      fi
-    else
-      if echo "${ARC_CMDLINE}" | grep -q 'nox2apic'; then
-        sed -i 's/ nox2apic//g' "${USER_GRUB_CONFIG}"
-        echo -e "\033[1;33mWarning: x2apic detected and supported by ${PLATFORM} -> rebooting to enable x2apic.\033[0m"
-        sleep 3
-        exec reboot
-      fi
-    fi
   fi
 
   # Cmdline NIC Settings
@@ -206,16 +189,27 @@ function bootDSM () {
   done
   CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
   echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
+
+  # Save command line to grubenv
+  if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
+    if grep -q "^flags.*x2apic.*" /proc/cpuinfo; then
+      checkCmdline "arc_cmdline" "nox2apic" || addCmdline "arc_cmdline" "nox2apic"
+    fi
+  else
+    checkCmdline "arc_cmdline" "nox2apic" && delCmdline "arc_cmdline" "nox2apic"
+  fi
   # Boot
   DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
   if [ "${DIRECTBOOT}" == "true" ]; then
     CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
     grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
-    echo -e "\033[1;34mReboot with Directboot\033[0m"
     grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
+    echo -e "\033[1;34mReboot with Directboot\033[0m"
     exec reboot
     exit 0
   elif [ "${DIRECTBOOT}" == "false" ]; then
+    grub-editenv ${USER_GRUBENVFILE} unset dsm_cmdline
+    grub-editenv ${USER_GRUBENVFILE} unset next_entry
     BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
     ETHN="$(echo ${ETHX} | wc -w)"
     [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30

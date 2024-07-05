@@ -101,7 +101,7 @@ function modulesMenu() {
       6 "Add external module" \
       7 "Edit Modules copied to DSM" \
       8 "Copy i915 to DSM" \
-      9 "Copy loaded Modules to DSM" \
+      9 "Force-copy loaded Modules to DSM" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -254,7 +254,7 @@ function modulesMenu() {
         KOLIST=($(echo ${KOLIST} | tr ' ' '\n' | sort -u))
         while read -r ID DESC; do
           for MOD in ${KOLIST[@]}; do
-            [ "${MOD}" == "${ID}" ] && echo "N ${ID}.ko" >>"${TMP_PATH}/modulelist.tmp"
+            [ "${MOD}" == "${ID}" ] && echo "F ${ID}.ko" >>"${TMP_PATH}/modulelist.tmp"
           done
         done < <(getAllModules "${PLATFORM}" "${KVERP}")
         [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
@@ -493,7 +493,7 @@ function synoinfoMenu() {
   while true; do
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
+    [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
       1)
         MSG=""
@@ -2092,7 +2092,7 @@ function dtsMenu() {
       2 "Delete dts file" \
       3 "Edit dts file" \
       2>${TMP_PATH}/resp
-    [ $? -ne 0 ] && return
+    [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
     %) ;;
     1)

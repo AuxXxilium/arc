@@ -250,12 +250,14 @@ function _sort_netif() {
 # 1 - device path
 function getBus() {
   BUS=""
+  # xvd
+  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | grep -q "xen" && echo "xen")
   # usb/ata(sata/ide)/scsi
   [ -z "${BUS}" ] && BUS=$(udevadm info --query property --name "${1}" 2>/dev/null | grep ID_BUS | cut -d= -f2 | sed 's/ata/sata/')
   # usb/sata(sata/ide)/nvme
   [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,TRAN 2>/dev/null | grep "${1} " | awk '{print $2}') #Spaces are intentional
   # usb/scsi(sata/ide)/virtio(scsi/virtio)/mmc/nvme
-  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | awk -F':' '{print $(NF-1)}' | sed 's/_host//') #Spaces are intentional
+  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | awk '{print $2}' | awk -F':' '{print $(NF-1)}' | sed 's/_host//') # Spaces are intentional
   echo "${BUS}"
   return 0
 }
@@ -316,6 +318,47 @@ function convert_netmask() {
 }
 
 ###############################################################################
+# check Cmdline
+# 1 - key name
+# 2 - key string
+function checkCmdline() {
+  return $(grub-editenv ${USER_GRUBENVFILE} list 2>/dev/null | grep "^${1}=" | cut -d'=' -f2- | grep -q "${2}")
+}
+
+###############################################################################
+# get logo of model
+# 1 - key name
+# 2 - key string
+function setCmdline() {
+  [ -z "${1}" ] && return 1
+  if [ -n "${2}" ]; then
+    grub-editenv ${USER_GRUBENVFILE} set "${1}=${2}"
+  else
+    grub-editenv ${USER_GRUBENVFILE} unset "${1}"
+  fi
+}
+
+###############################################################################
+# get logo of model
+# check Cmdline
+# 1 - key name
+# 2 - key string
+function addCmdline() {
+  local CMDLINE="$(grub-editenv ${USER_GRUBENVFILE} list 2>/dev/null | grep "^${1}=" | cut -d'=' -f2-)"
+  [ -n "${CMDLINE}" ] && CMDLINE="${CMDLINE} ${2}" || CMDLINE="${2}"
+  setCmdline "${1}" "${CMDLINE}"
+}
+
+###############################################################################
+# get logo of model
+# 1 - model
+function delCmdline() {
+  local CMDLINE="$(grub-editenv ${USER_GRUBENVFILE} list 2>/dev/null | grep "^${1}=" | cut -d'=' -f2-)"
+  CMDLINE="$(echo "${CMDLINE}" | sed "s/ *${2}//; s/^[[:space:]]*//;s/[[:space:]]*$//")"
+  setCmdline "${1}" "${CMDLINE}"
+}
+
+###############################################################################
 # Rebooting
 # (based on pocopico's TCRP code)
 function rebootTo() {
@@ -323,7 +366,7 @@ function rebootTo() {
   [ -z "${1}" ] && exit 1
   if ! echo "${MODES}" | grep -qw "${1}"; then exit 1; fi
   [ ! -f "${USER_GRUBENVFILE}" ] && grub-editenv ${USER_GRUBENVFILE} create
-  echo -e "Rebooting to ${1} mode..."
+  # echo -e "Rebooting to ${1} mode..."
   grub-editenv ${USER_GRUBENVFILE} set next_entry="${1}"
   exec reboot
 }

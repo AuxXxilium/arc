@@ -986,6 +986,7 @@ else
       echo "w \"Reset Loader to Defaults \" "                                                 >>"${TMP_PATH}/menu"
       echo "C \"Clone Loader to Disk \" "                                                     >>"${TMP_PATH}/menu"
       echo "F \"\Z1Formate Disks \Zn \" "                                                     >>"${TMP_PATH}/menu"
+      echo "h \"Screentimeout \" "                                                            >>"${TMP_PATH}/menu"
       echo "n \"Grub Bootloader Config \" "                                                   >>"${TMP_PATH}/menu"
       echo "v \"Write Loader Modifications to Disk \" "                                       >>"${TMP_PATH}/menu"
       if [ "${OFFLINE}" == "false" ]; then
@@ -1171,6 +1172,17 @@ else
       C) cloneLoader; NEXT="C" ;;
       F) formatDisks; NEXT="F" ;;
       G) package; NEXT="G" ;;
+      h) dialog --backtitle "$(backtitle)" --title "Screen Timeout" \
+        --yesno "Modifying this item requires a reboot, continue?" 0 0
+      RET=$?
+      [ ${RET} -ne 0 ] && continue
+      checkCmdline "arc_cmdline" "nomodeset" && delCmdline "arc_cmdline" "nomodeset" || addCmdline "arc_cmdline" "nomodeset"
+      dialog --backtitle "$(backtitle)" --title "Screen Timeout" \
+        --infobox "Reboot to Arc Config Mode" 0 0
+      rebootTo config
+      exit 0
+      NEXT="h"
+      ;;
       # Misc Settings
       x) backupMenu; NEXT="x" ;;
       M) arcNIC; NEXT="M" ;;
