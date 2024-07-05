@@ -914,6 +914,7 @@ else
         echo "b \"Addons \" "                                                                 >>"${TMP_PATH}/menu"
         echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
         echo "e \"Version \" "                                                                >>"${TMP_PATH}/menu"
+        echo "p \"Patch Options (SN/Mac) \" "                                                 >>"${TMP_PATH}/menu"
         if [ "${CPUFREQ}" == "true" ]; then
           echo "g \"Frequency Scaling \" "                                                    >>"${TMP_PATH}/menu"
         fi
@@ -923,9 +924,12 @@ else
         if [ "${DT}" == "true" ]; then
           echo "o \"DTS Map Options \" "                                                      >>"${TMP_PATH}/menu"
         fi
-        echo "P \"StoragePanel Options \" "                                                   >>"${TMP_PATH}/menu"
-        echo "Q \"SequentialIO Options \" "                                                   >>"${TMP_PATH}/menu"
-        echo "p \"Patch Options (SN/Mac) \" "                                                 >>"${TMP_PATH}/menu"
+        if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "storagepanel"; then
+          echo "P \"StoragePanel Options \" "                                                 >>"${TMP_PATH}/menu"
+        fi
+        if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sequentialio"; then
+          echo "Q \"SequentialIO Options \" "                                                 >>"${TMP_PATH}/menu"
+        fi
       fi
       if [ "${BOOTOPTS}" == "true" ]; then
         echo "6 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
@@ -986,7 +990,7 @@ else
       echo "w \"Reset Loader to Defaults \" "                                                 >>"${TMP_PATH}/menu"
       echo "C \"Clone Loader to Disk \" "                                                     >>"${TMP_PATH}/menu"
       echo "F \"\Z1Formate Disks \Zn \" "                                                     >>"${TMP_PATH}/menu"
-      echo "h \"Screentimeout \" "                                                            >>"${TMP_PATH}/menu"
+      echo "h \"Screen Timeout \" "                                                           >>"${TMP_PATH}/menu"
       echo "n \"Grub Bootloader Config \" "                                                   >>"${TMP_PATH}/menu"
       echo "v \"Write Loader Modifications to Disk \" "                                       >>"${TMP_PATH}/menu"
       if [ "${OFFLINE}" == "false" ]; then

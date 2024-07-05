@@ -620,24 +620,25 @@ function keymapMenu() {
 function storagepanelMenu() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" == "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "StoragePanel" \
-      --aspect 18 --msgbox "StoragePanel Addon enabled." 0 0
-    ITEMS="$(echo -e "RACK_2_Bay \nRACK_4_Bay \nRACK_8_Bay \nRACK_12_Bay \nRACK_16_Bay \nRACK_24_Bay \nRACK_60_Bay \nTOWER_1_Bay \nTOWER_2_Bay \nTOWER_4_Bay \nTOWER_6_Bay \nTOWER_8_Bay \nTOWER_12_Bay \n")"
-    dialog --backtitle "$(backtitle)" --title "StoragePanel" \
-      --default-item "RACK_24_Bay" --no-items --menu "Choose a Disk Panel" 0 0 0 ${ITEMS} \
-      2>"${TMP_PATH}/resp"
-    resp=$(cat ${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return 1
-    STORAGE=${resp}
-    ITEMS="$(echo -e "1X2 \n1X4 \n1X8 \n")"
-    dialog --backtitle "$(backtitle)" --title "StoragePanel" \
-      --default-item "1X8" --no-items --menu "Choose a M.2 Panel" 0 0 0 ${ITEMS} \
-      2>"${TMP_PATH}/resp"
-    resp=$(cat ${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return 1
-    M2PANEL=${resp}
-    STORAGEPANEL="${STORAGE} ${M2PANEL}"
-    writeConfigKey "addons.storagepanel" "${STORAGEPANEL}" "${USER_CONFIG_FILE}"
+    while true; do
+      ITEMS="$(echo -e "RACK_2_Bay \nRACK_4_Bay \nRACK_8_Bay \nRACK_12_Bay \nRACK_16_Bay \nRACK_24_Bay \nRACK_60_Bay \nTOWER_1_Bay \nTOWER_2_Bay \nTOWER_4_Bay \nTOWER_6_Bay \nTOWER_8_Bay \nTOWER_12_Bay \n")"
+      dialog --backtitle "$(backtitle)" --title "StoragePanel" \
+        --default-item "RACK_24_Bay" --no-items --menu "Choose a Disk Panel" 0 0 0 ${ITEMS} \
+        2>"${TMP_PATH}/resp"
+      resp=$(cat ${TMP_PATH}/resp)
+      [ -z "${resp}" ] && break
+      STORAGE=${resp}
+      ITEMS="$(echo -e "1X2 \n1X4 \n1X8 \n")"
+      dialog --backtitle "$(backtitle)" --title "StoragePanel" \
+        --default-item "1X8" --no-items --menu "Choose a M.2 Panel" 0 0 0 ${ITEMS} \
+        2>"${TMP_PATH}/resp"
+      resp=$(cat ${TMP_PATH}/resp)
+      [ -z "${resp}" ] && break
+      M2PANEL=${resp}
+      STORAGEPANEL="${STORAGE} ${M2PANEL}"
+      writeConfigKey "addons.storagepanel" "${STORAGEPANEL}" "${USER_CONFIG_FILE}"
+      break
+    done
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   fi
@@ -649,8 +650,6 @@ function storagepanelMenu() {
 function sequentialIOMenu() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" == "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "SequentialIO" \
-      --aspect 18 --msgbox "SequentialIO Addon enabled." 0 0
     while true; do
         dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "SequentialIO" 0 0 0 \
           1 "Enable for SSD Cache" \
@@ -669,8 +668,9 @@ function sequentialIOMenu() {
             SEQUENTIAL="false"
             ;;
         esac
+        writeConfigKey "addons.sequentialio" "${SEQUENTIAL}" "${USER_CONFIG_FILE}"
+        break
     done
-    writeConfigKey "addons.sequentialio" "${SEQUENTIAL}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   fi
