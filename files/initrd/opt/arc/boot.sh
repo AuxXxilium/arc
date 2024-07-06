@@ -97,7 +97,7 @@ function bootDSM () {
 
   # DSM Cmdline
   if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
-    if [ ! "${BUS}" = "usb" ]; then
+    if [ "${BUS}" != "usb" ]; then
       SZ=$(blockdev --getsz ${LOADER_DISK} 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
       SS=$(blockdev --getss ${LOADER_DISK} 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
       SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
@@ -108,7 +108,7 @@ function bootDSM () {
     fi
     CMDLINE["elevator"]="elevator"
   fi
-  if [ "${DT}" = "true" ]; then
+  if [ "${DT}" == "true" ]; then
     CMDLINE["syno_ttyS0"]="serial,0x3f8"
     CMDLINE["syno_ttyS1"]="serial,0x2f8"
   else
