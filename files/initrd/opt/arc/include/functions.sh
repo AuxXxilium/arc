@@ -539,9 +539,8 @@ function ntpCheck() {
 # Offline Check
 function offlineCheck() {
   CNT=0
-  ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
+  ARCNIC=""
   AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
-  OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   while true; do
     NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
     CNT=$((${CNT} + 1))
@@ -562,22 +561,25 @@ function offlineCheck() {
     fi
   done
   if [ -n "${ARCNIC}" ]; then
-    writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
+    OFFLINE="false"
   elif [ -z "${ARCNIC}" ] && [ "${AUTOMATED}" == "false" ]; then
     dialog --backtitle "$(backtitle)" --title "Online Check" \
       --msgbox "Could not connect to Github.\nSwitch to Offline Mode!" 0 0
-    writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
     cp -f "${PART3_PATH}/configs/offline.json" "${ARC_PATH}/include/offline.json"
     ARCNIC="offline"
+    OFFLINE="true"
   elif [ -z "${ARCNIC}" ] && [ "${AUTOMATED}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Online Check" \
       --msgbox "Could not connect to Github.\nSwitch to Offline Mode!\nDisable Automated Mode!" 0 0
-    writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.automated" "false" "${USER_CONFIG_FILE}"
     [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
     ARCNIC="offline"
+    OFFLINE="true"
   fi
   writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"
+  ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
+  OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 }
 
 ###############################################################################
