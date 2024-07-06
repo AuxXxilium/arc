@@ -1193,9 +1193,9 @@ else
       x) backupMenu; NEXT="x" ;;
       M) arcNIC; NEXT="M" ;;
       9) [ "${OFFLINE}" == "true" ] && OFFLINE='false' || OFFLINE='true'
-        [ "${OFFLINE}" == "false" ] && offlineCheck
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        offlineCheck "${OFFLINE}"
+        ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
+        OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
         NEXT="9"
         ;;
       y) keymapMenu; NEXT="y" ;;
