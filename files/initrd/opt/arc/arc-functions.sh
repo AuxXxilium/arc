@@ -281,8 +281,7 @@ function cmdlineMenu() {
   echo "4 \"RAM Fix\""                                          >>"${TMP_PATH}/menu"
   echo "5 \"PCI/IRQ Fix\""                                      >>"${TMP_PATH}/menu"
   echo "6 \"C-State Fix\""                                      >>"${TMP_PATH}/menu"
-  echo "7 \"Show user Cmdline\""                                >>"${TMP_PATH}/menu"
-  echo "8 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
+  echo "7 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
@@ -296,7 +295,6 @@ function cmdlineMenu() {
         MSG+=" * \Z4pcie_port_pm=off\Zn\n    Disable the power management of the PCIe port.\n"
         MSG+=" * \Z4pci=realloc=off\Zn\n    Disable reallocating PCI bridge resources.\n"
         MSG+=" * \Z4libata.force=noncq\Zn\n    Disable NCQ for all SATA ports.\n"
-        MSG+=" * \Z4intel_pstate=disable\Zn\n    Switch Intel P-State to ACPI.\n"
         MSG+=" * \Z4acpi=force\Zn\n    Force enables ACPI.\n"
         MSG+=" * \Z4i915.enable_guc=2\Zn\n    Enable the GuC firmware on Intel graphics hardware.(value: 1,2 or 3)\n"
         MSG+=" * \Z4i915.max_vfs=7\Zn\n     Set the maximum number of virtual functions (VFs) that can be created for Intel graphics hardware.\n"
@@ -458,14 +456,6 @@ function cmdlineMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       7)
-        ITEMS=""
-        for KEY in ${!CMDLINE[@]}; do
-          ITEMS+="${KEY}: ${CMDLINE[$KEY]}\n"
-        done
-        dialog --backtitle "$(backtitle)" --title "User cmdline" \
-          --aspect 18 --msgbox "${ITEMS}" 0 0
-        ;;
-      8)
         while true; do
           rm -f "${TMP_PATH}/opts" >/dev/null
           echo "5 \"Reboot after 5 seconds\"" >>"${TMP_PATH}/opts"
