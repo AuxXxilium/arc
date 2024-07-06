@@ -83,13 +83,6 @@ function modulesMenu() {
   else
     KVERP="${KVER}"
   fi
-  dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
-    --infobox "Reading modules" 0 0
-  unset USERMODULES
-  declare -A USERMODULES
-  while IFS=': ' read -r KEY VALUE; do
-    [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
-  done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
   # menu loop
   while true; do
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
@@ -106,6 +99,13 @@ function modulesMenu() {
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
       1)
+        dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
+          --infobox "Reading modules" 0 0
+        unset USERMODULES
+        declare -A USERMODULES
+        while IFS=': ' read -r KEY VALUE; do
+          [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
+        done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
         ITEMS=""
         for KEY in ${!USERMODULES[@]}; do
           ITEMS+="${KEY}: ${USERMODULES[$KEY]}\n"
@@ -273,11 +273,6 @@ function modulesMenu() {
 ###############################################################################
 # Let user edit cmdline
 function cmdlineMenu() {
-  unset CMDLINE
-  declare -A CMDLINE
-  while IFS=': ' read -r KEY VALUE; do
-    [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-  done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
   # Loop menu
   while true; do
   echo "1 \"Add a Cmdline item\""                                >"${TMP_PATH}/menu"
@@ -343,6 +338,11 @@ function cmdlineMenu() {
         ;;
       2)
         while true; do
+          unset CMDLINE
+          declare -A CMDLINE
+          while IFS=': ' read -r KEY VALUE; do
+            [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
+          done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
           if [ ${#CMDLINE[@]} -eq 0 ]; then
             dialog --backtitle "$(backtitle)" --msgbox "No user cmdline to remove" 0 0
             continue
@@ -491,12 +491,6 @@ function cmdlineMenu() {
 ###############################################################################
 # let user configure synoinfo entries
 function synoinfoMenu() {
-  # Read synoinfo from user config
-  unset SYNOINFO
-  declare -A SYNOINFO
-  while IFS=': ' read KEY VALUE; do
-    [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
-  done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
   # menu loop
   while true; do
     echo "1 \"Add/edit Synoinfo item\""     >"${TMP_PATH}/menu"
