@@ -141,7 +141,7 @@ function bootDSM () {
     CMDLINE['modprobe.blacklist']+="mpt3sas"
   fi
   if true; then
-    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+    [ "${CMDLINE['modprobe.blacklist']}" != "" ] && CMDLINE['modprobe.blacklist']+=","
     CMDLINE['modprobe.blacklist']+="evbug"
   fi
   if echo "apollolake geminilake" | grep -wq "${PLATFORM}"; then
