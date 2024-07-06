@@ -477,20 +477,17 @@ function cmdlineMenu() {
 ###############################################################################
 # let user configure synoinfo entries
 function synoinfoMenu() {
-  # read synoinfo from user config
+  # Read synoinfo from user config
   unset SYNOINFO
   declare -A SYNOINFO
-  while IFS=': ' read -r KEY VALUE; do
+  while IFS=': ' read KEY VALUE; do
     [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
   done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
-
-  echo "1 \"Add/edit Synoinfo item\""     >"${TMP_PATH}/menu"
-  echo "2 \"Delete Synoinfo item(s)\""    >>"${TMP_PATH}/menu"
-  echo "3 \"Show Synoinfo entries\""      >>"${TMP_PATH}/menu"
-  echo "4 \"Add Trim/Dedup to Synoinfo\"" >>"${TMP_PATH}/menu"
-
   # menu loop
   while true; do
+    echo "1 \"Add/edit Synoinfo item\""     >"${TMP_PATH}/menu"
+    echo "2 \"Delete Synoinfo item(s)\""    >>"${TMP_PATH}/menu"
+    echo "3 \"Add Trim/Dedup to Synoinfo\"" >>"${TMP_PATH}/menu"
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
@@ -543,36 +540,35 @@ function synoinfoMenu() {
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       2)
+        # Read synoinfo from user config
+        unset SYNOINFO
+        declare -A SYNOINFO
+        while IFS=': ' read KEY VALUE; do
+          [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
+        done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
         if [ ${#SYNOINFO[@]} -eq 0 ]; then
-          dialog --backtitle "$(backtitle)" --msgbox "No Synoinfo Entries to remove" 0 0
+          dialog --backtitle "$(backtitle)" --title "Synoinfo" \
+            --msgbox "No synoinfo entries to remove" 0 0
           continue
         fi
-        ITEMS=""
-        for I in "${!SYNOINFO[@]}"; do
-          [ -z "${SYNOINFO[${I}]}" ] && ITEMS+="${I} \"\" off " || ITEMS+="${I} ${SYNOINFO[${I}]} off "
+        rm -f "${TMP_PATH}/opts"
+        for I in ${!SYNOINFO[@]}; do
+          echo "\"${I}\" \"${SYNOINFO[${I}]}\" \"off\"" >>"${TMP_PATH}/opts"
         done
-        dialog --backtitle "$(backtitle)" \
-          --checklist "Select synoinfo entry to remove" 0 0 0 ${ITEMS} \
+        dialog --backtitle "$(backtitle)" --title "Synoinfo" \
+          --checklist "Select synoinfo entry to remove" 0 0 0 --file "${TMP_PATH}/opts" \
           2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && return 1
-        resp=$(cat ${TMP_PATH}/resp)
-        [ -z "${resp}" ] && return 1
-        for I in ${resp}; do
-          unset 'SYNOINFO[${I}]'
+        [ $? -ne 0 ] && continue
+        RESP=$(cat "${TMP_PATH}/resp")
+        [ -z "${RESP}" ] && continue
+        for I in ${RESP}; do
+          unset SYNOINFO[${I}]
           deleteConfigKey "synoinfo.\"${I}\"" "${USER_CONFIG_FILE}"
         done
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       3)
-        ITEMS=""
-        for KEY in ${!SYNOINFO[@]}; do
-          ITEMS+="${KEY}: ${SYNOINFO[$KEY]}\n"
-        done
-        dialog --backtitle "$(backtitle)" --title "Synoinfo Entries" \
-          --aspect 18 --msgbox "${ITEMS}" 0 0
-        ;;
-      4)
         # Optimized Synoinfo
         writeConfigKey "synoinfo.support_trim" "yes" "${USER_CONFIG_FILE}"
         writeConfigKey "synoinfo.support_disk_hibernation" "yes" "${USER_CONFIG_FILE}"
