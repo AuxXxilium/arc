@@ -385,9 +385,9 @@ function cmdlineMenu() {
             dialog --backtitle "$(backtitle)" --title "CPU Fix" \
               --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
           fi
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         done
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       4)
         while true; do
@@ -409,9 +409,9 @@ function cmdlineMenu() {
             dialog --backtitle "$(backtitle)" --title "RAM Fix" \
               --aspect 18 --msgbox "Fix removed from Cmdline" 0 0
           fi
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         done
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       5)
         while true; do
@@ -431,9 +431,9 @@ function cmdlineMenu() {
             dialog --backtitle "$(backtitle)" --title "PCI/IRQ Fix" \
               --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
           fi
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         done
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       6)
         while true; do
@@ -453,9 +453,9 @@ function cmdlineMenu() {
             dialog --backtitle "$(backtitle)" --title "C-State Fix" \
               --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
           fi
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         done
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
       7)
         ITEMS=""
@@ -479,9 +479,9 @@ function cmdlineMenu() {
           [ -z "${resp}" ] && break
           KERNELPANIC=${resp}
           writeConfigKey "arc.kernelpanic" "${KERNELPANIC}" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         done
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
     esac
   done
