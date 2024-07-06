@@ -620,4 +620,6 @@ function systemCheck () {
   else
     CPUFREQ="false"
   fi
+  # Screen Timeout
+  checkCmdline "arc_cmdline" "nomodeset" && SCREENOFF="false" || SCREENOFF="true"
 }
