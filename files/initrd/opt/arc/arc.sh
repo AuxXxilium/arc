@@ -18,7 +18,7 @@
 systemCheck
 
 # Offline Mode check
-offlineCheck
+offlineCheck "false"
 ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
