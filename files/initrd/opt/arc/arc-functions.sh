@@ -1161,7 +1161,7 @@ function sysinfo() {
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
   TEXT+="\n\Z4> Storage\Zn"
-  TEXT+="\n  External Controller: \Zb${EXTERNALCONTROLLER}\Zn"
+  TEXT+="\n  Additional Controller: \Zb${EXTERNALCONTROLLER}\Zn"
   TEXT+="\n  Drives | Harddrives: \Zb${DRIVES} | ${HARDDRIVES}\Zn"
   # Get Information for Sata Controller
   NUMPORTS=0
