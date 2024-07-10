@@ -1734,8 +1734,7 @@ function cloneLoader() {
     [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
     [ -z "${SIZE}" ] && SIZE="Unknown"
     printf "\"%s\" \"%-6s %-4s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" >>"${TMP_PATH}/opts"
-  done < <(lsblk -pno KNAME,SIZE,TYPE,PKNAME)
-  done < <(lsblk -dpno KNAME,MODEL,PKNAME,TYPE | sort)
+  done < <(lsblk -dpno KNAME,SIZE,TYPE,PKNAME | sort)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --msgbox "No disk found!" 0 0
