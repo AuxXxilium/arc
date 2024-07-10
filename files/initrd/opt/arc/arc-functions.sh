@@ -1728,11 +1728,13 @@ EOF
 # Clone Loader Disk
 function cloneLoader() {
   rm -f "${TMP_PATH}/opts" >/dev/null
-  while read -r KNAME KMODEL PKNAME TYPE; do
+  while read -r KNAME SIZE TYPE PKNAME; do
     [ -z "${KNAME}" ] && continue
-    [ -z "${KMODEL}" ] && KMODEL="${TYPE}"
-    [ "${KNAME}" == "${LOADER_DISK}" ] || [ "${PKNAME}" == "${LOADER_DISK}" ] || [ "${KMODEL}" == "${LOADER_DISK}" ] && continue
-    echo "\"${KNAME}\" \"${KMODEL}\" \"off\"" >>"${TMP_PATH}/opts"
+    [[ "${KNAME}" = /dev/md* ]] && continue
+    [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
+    [ -z "${SIZE}" ] && SIZE="Unknown"
+    printf "\"%s\" \"%-6s %-4s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" >>"${TMP_PATH}/opts"
+  done < <(lsblk -pno KNAME,SIZE,TYPE,PKNAME)
   done < <(lsblk -dpno KNAME,MODEL,PKNAME,TYPE | sort)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
