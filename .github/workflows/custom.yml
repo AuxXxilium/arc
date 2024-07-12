@@ -119,7 +119,7 @@ jobs:
           writeConfigKey "model" "${{ env.MODEL }}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "productver" "${{ env.PRODUCTVER }}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "arc" "{}" "${PRESET_CONFIG_FILE}"
-          writeConfigKey "arc.custom" "true" "${PRESET_CONFIG_FILE}"
+          writeConfigKey "custom" "true" "${PRESET_CONFIG_FILE}"
           if [ "${{ env.MODEL }}" = "SA6400" ]; then
             writeConfigKey "arc.kernel" "${{ env.KERNEL }}" "${PRESET_CONFIG_FILE}"
           fi
