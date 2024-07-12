@@ -13,7 +13,7 @@ function getAllModules() {
   # Unzip modules for temporary folder
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
-  local KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
+  local KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
   if [ "${KERNEL}" == "custom" ]; then
     tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   else
@@ -48,7 +48,7 @@ function installModules() {
   # Unzip modules for temporary folder
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
-  local KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
+  local KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
   if [ "${KERNEL}" == "custom" ]; then
     tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules" 2>"${LOG_FILE}"
   else
@@ -100,7 +100,7 @@ function addToModules() {
   # Unzip modules for temporary folder
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
-  local KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
+  local KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
   if [ "${KERNEL}" == "custom" ]; then
     tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   else
@@ -131,7 +131,7 @@ function delToModules() {
   # Unzip modules for temporary folder
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
-  local KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
+  local KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
   if [ "${KERNEL}" == "custom" ]; then
     tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   else
@@ -173,7 +173,7 @@ function getdepends() {
   # Unzip modules for temporary folder
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
-  local KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
+  local KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
   if [ "${KERNEL}" == "custom" ]; then
     tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVER}.tgz" -C "${TMP_PATH}/modules"
   else

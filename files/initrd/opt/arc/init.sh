@@ -37,33 +37,34 @@ fi
 # Config Init
 initConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
-initConfigKey "arc.bootipwait" "30" "${USER_CONFIG_FILE}"
 initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.directboot" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.dsmlogo" "true" "${USER_CONFIG_FILE}"
-initConfigKey "arc.emmcboot" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.governor" "performance" "${USER_CONFIG_FILE}"
-initConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
-initConfigKey "arc.kernelload" "power" "${USER_CONFIG_FILE}"
-initConfigKey "arc.kernelpanic" "5" "${USER_CONFIG_FILE}"
 initConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.nic" "" "${USER_CONFIG_FILE}"
-initConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
-initConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
-initConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
+initConfigKey "bootipwait" "30" "${USER_CONFIG_FILE}"
+initConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
+initConfigKey "dsmlogo" "true" "${USER_CONFIG_FILE}"
+initConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
+initConfigKey "governor" "performance" "${USER_CONFIG_FILE}"
+initConfigKey "hddsort" "false" "${USER_CONFIG_FILE}"
+initConfigKey "kernel" "official" "${USER_CONFIG_FILE}"
+initConfigKey "kernelload" "power" "${USER_CONFIG_FILE}"
+initConfigKey "kernelpanic" "5" "${USER_CONFIG_FILE}"
+initConfigKey "odp" "false" "${USER_CONFIG_FILE}"
+initConfigKey "pathash" "" "${USER_CONFIG_FILE}"
+initConfigKey "paturl" "" "${USER_CONFIG_FILE}"
+initConfigKey "sn" "" "${USER_CONFIG_FILE}"
 initConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "device.externalcontroller" "false" "${USER_CONFIG_FILE}"
 initConfigKey "keymap" "" "${USER_CONFIG_FILE}"
 initConfigKey "layout" "" "${USER_CONFIG_FILE}"
 initConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
+initConfigKey "modblacklist" "evbug,cdc_ether" "${USER_CONFIG_FILE}"
 initConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "model" "" "${USER_CONFIG_FILE}"
 initConfigKey "modelid" "" "${USER_CONFIG_FILE}"
@@ -77,9 +78,9 @@ initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 if grep -q "automated_arc" /proc/cmdline; then
-  writeConfigKey "arc.automated" "true" "${USER_CONFIG_FILE}"
+  writeConfigKey "automated" "true" "${USER_CONFIG_FILE}"
 else
-  writeConfigKey "arc.automated" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "automated" "false" "${USER_CONFIG_FILE}"
 fi
 # Check for compatibility
 compatboot
@@ -108,7 +109,7 @@ for ETH in ${ETHX}; do
     sleep 1
   fi
   [ "${ETH::3}" = "eth" ] && ethtool -s ${ETH} wol g 2>/dev/null || true
-  initConfigKey "arc.${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
+  initConfigKey "${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
 done
 ETHN="$(echo ${ETHX} | wc -w)"
 writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
@@ -160,12 +161,13 @@ elif grep -q "update_arc" /proc/cmdline; then
 elif [ "${BUILDDONE}" == "true" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
   bootDSM
+  exit 0
 else
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
 fi
 echo
 
-BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
+BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
 echo -e "\033[1;34mDetected ${ETHN} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
 sleep 3

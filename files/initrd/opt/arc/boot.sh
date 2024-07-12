@@ -68,10 +68,12 @@ function bootDSM () {
   # Read necessary variables
   VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
   PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
-  SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
-  KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
+  SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
+  KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+  EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
+  MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 
   declare -A CMDLINE
 
@@ -130,15 +132,20 @@ function bootDSM () {
   CMDLINE['loglevel']="15"
   CMDLINE['log_buf_len']="32M"
   CMDLINE['panic']="${KERNELPANIC:-0}"
+  CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
   [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="disable"
 
   #if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
-  #  [ "${CMDLINE['modprobe.blacklist']}" != "" ] && CMDLINE['modprobe.blacklist']+=","
-  #  CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
-  #fi
+  #   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "sdhci"; then
+  #     [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+  #     CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
+  #   fi
+  # fi
   if [ "${DT}" == "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
-    [ "${CMDLINE['modprobe.blacklist']}" != "" ] && CMDLINE['modprobe.blacklist']+=","
-    CMDLINE['modprobe.blacklist']+="mpt3sas"
+    if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
+      [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+      CMDLINE['modprobe.blacklist']+="mpt3sas"
+    fi
   fi
   if true; then
     [ "${CMDLINE['modprobe.blacklist']}" != "" ] && CMDLINE['modprobe.blacklist']+=","
@@ -162,7 +169,7 @@ function bootDSM () {
   fi
   NIC=0
   for ETH in ${ETHX}; do
-    MAC="$(readConfigKey "arc.${ETH}" "${USER_CONFIG_FILE}")"
+    MAC="$(readConfigKey "${ETH}" "${USER_CONFIG_FILE}")"
     [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
     NIC=$((${NIC} + 1))
     [ ${NIC} -le ${ETHN} ] && CMDLINE["mac${NIC}"]="${MAC}"
@@ -199,7 +206,7 @@ function bootDSM () {
     checkCmdline "arc_cmdline" "nox2apic" && delCmdline "arc_cmdline" "nox2apic"
   fi
   # Boot
-  DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
+  DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   if [ "${DIRECTBOOT}" == "true" ]; then
     CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
     grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
@@ -210,7 +217,7 @@ function bootDSM () {
   elif [ "${DIRECTBOOT}" == "false" ]; then
     grub-editenv ${USER_GRUBENVFILE} unset dsm_cmdline
     grub-editenv ${USER_GRUBENVFILE} unset next_entry
-    BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
+    BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
     ETHN="$(echo ${ETHX} | wc -w)"
     [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
     IPCON=""
@@ -268,7 +275,7 @@ function bootDSM () {
 
     echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
-    DSMLOGO="$(readConfigKey "arc.dsmlogo" "${USER_CONFIG_FILE}")"
+    DSMLOGO="$(readConfigKey "dsmlogo" "${USER_CONFIG_FILE}")"
     if [ "${DSMLOGO}" == "true" ] && [ -c "/dev/fb0" ]; then
       [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
       if [ -n "${IPCON}" ]; then
@@ -298,7 +305,7 @@ function bootDSM () {
     # Clear logs for dbgutils addons
     rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
 
-    KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
+    KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
     [ "${KERNELLOAD}" == "kexec" ] && kexec -a -e || poweroff
     exit 0
   fi

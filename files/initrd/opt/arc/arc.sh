@@ -21,7 +21,7 @@ systemCheck
 offlineCheck "false"
 ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
+AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
 
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -37,16 +37,16 @@ fi
 # Get Arc Data from Config
 ARC_KEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-BOOTIPWAIT="$(readConfigKey "arc.bootipwait" "${USER_CONFIG_FILE}")"
-DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
-CPUGOVERNOR="$(readConfigKey "arc.governor" "${USER_CONFIG_FILE}")"
-HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
-IPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
-KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
-KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
-KERNELPANIC="$(readConfigKey "arc.kernelpanic" "${USER_CONFIG_FILE}")"
-ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
+BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
+DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
+EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
+CPUGOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
+HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
+IPV6="$(readConfigKey "ipv6" "${USER_CONFIG_FILE}")"
+KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
+KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
+KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
+ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
 SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
@@ -213,8 +213,8 @@ function arcModel() {
     MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "paturl" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "pathash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
     writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
     writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
@@ -230,15 +230,15 @@ function arcModel() {
     writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.emmcboot" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.hddsort" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.kernel" "official" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.odp" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "hddsort" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "kernel" "official" "${USER_CONFIG_FILE}"
+    writeConfigKey "odp" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.paturl" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.pathash" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "paturl" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "pathash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.sn" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
     writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
     writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
@@ -247,10 +247,10 @@ function arcModel() {
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-  EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
-  HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
-  KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
-  ODP="$(readConfigKey "arc.odp" "${USER_CONFIG_FILE}")"
+  EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
+  HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
+  KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
+  ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
   if [ "${MODEL}" != "${resp}" ] || [ -z "${resp}" ]; then
     if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
@@ -267,7 +267,7 @@ function arcVersion() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
+  AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   # Check for Custom Build
   if [ "${AUTOMATED}" == "false" ]; then
     # Select Build for DSM
@@ -331,10 +331,10 @@ function arcPatch() {
   # Read Model Values
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
+  AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
   # Check for Custom Build
-  SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
+  SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
   if [ "${AUTOMATED}" == "true" ] && [ -z "${SN}" ]; then
     SN=$(generateSerial "${MODEL}" false)
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
@@ -410,7 +410,7 @@ function arcPatch() {
       fi
     fi
   fi
-  writeConfigKey "arc.sn" "${SN}" "${USER_CONFIG_FILE}"
+  writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   arcSettings
 }
@@ -420,7 +420,7 @@ function arcPatch() {
 function arcSettings() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-  AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
+  AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   # Get Network Config for Loader
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
     --infobox "Generating Network Config..." 3 40
@@ -480,7 +480,7 @@ function arcSettings() {
         --msgbox "WARN: Your System doesn't support CPU Frequency Scaling in DSM." 5 80
     fi
   fi
-  EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
+  EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
   # eMMC Boot Support
   if [ "${EMMCBOOT}" == "true" ]; then
     writeConfigKey "modules.mmc_block" "" "${USER_CONFIG_FILE}"
@@ -534,17 +534,17 @@ function arcSummary() {
   elif [ "${REMAP}" == "remap" ]; then
     PORTREMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
   fi
-  DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
-  KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
+  DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
+  KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
+  HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
   NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
   DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
-  EMMCBOOT="$(readConfigKey "arc.emmcboot" "${USER_CONFIG_FILE}")"
+  EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  KERNEL="$(readConfigKey "arc.kernel" "${USER_CONFIG_FILE}")"
+  KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
   # Print Summary
   SUMMARY="\Z4> DSM Information\Zn"
   SUMMARY+="\n>> DSM Model: \Zb${MODEL}\Zn"
@@ -599,7 +599,7 @@ function make() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-  AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
+  AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   PAT_URL=""
   PAT_HASH=""
   VALID="false"
@@ -676,12 +676,12 @@ function make() {
         sleep 5
     elif [ "${VALID}" == "true" ]; then
       # Get PAT Data from Config
-      PAT_URL_CONF="$(readConfigKey "arc.paturl" "${USER_CONFIG_FILE}")"
-      PAT_HASH_CONF="$(readConfigKey "arc.pathash" "${USER_CONFIG_FILE}")"
+      PAT_URL_CONF="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
+      PAT_HASH_CONF="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
       if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
         # Write new PAT Data to Config
-        writeConfigKey "arc.paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+        writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+        writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
         # Get new Files
         DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
         DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
@@ -742,8 +742,8 @@ function make() {
         dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
           --infobox "DSM Image found!" 3 40
         # Remove PAT Data for Offline
-        writeConfigKey "arc.paturl" "#" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.pathash" "#" "${USER_CONFIG_FILE}"
+        writeConfigKey "paturl" "#" "${USER_CONFIG_FILE}"
+        writeConfigKey "pathash" "#" "${USER_CONFIG_FILE}"
         # Extract Files
         if [ -f "${PAT_FILE}" ]; then
           extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"
@@ -808,7 +808,7 @@ function make() {
 # Finish Building Loader
 function arcFinish() {
   # Verify Files exist
-  AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
+  AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   rm -f "${LOG_FILE}" >/dev/null
   # Check for Automated Mode
   if grep -q "automated_arc" /proc/cmdline; then
@@ -1032,7 +1032,7 @@ else
       p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
       D) staticIPMenu; NEXT="D" ;;
       R) [ "${AUTOMATED}" == "false" ] && AUTOMATED='true' || AUTOMATED='false'
-        writeConfigKey "arc.automated" "${AUTOMATED}" "${USER_CONFIG_FILE}"
+        writeConfigKey "automated" "${AUTOMATED}" "${USER_CONFIG_FILE}"
         if [ "${AUTOMATED}" == "true" ]; then
           [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-${PRODUCTVER}-custom" >"${PART3_PATH}/automated"
         elif [ "${AUTOMATED}" == "false" ]; then
@@ -1046,13 +1046,13 @@ else
         NEXT="6"
         ;;
       m) [ "${KERNELLOAD}" == "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
-        writeConfigKey "arc.kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
+        writeConfigKey "kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
         NEXT="m"
         ;;
       i) bootipwaittime; NEXT="i" ;;
       q) [ "${DIRECTBOOT}" == "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
         grub-editenv ${USER_GRUBENVFILE} create
-        writeConfigKey "arc.directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
+        writeConfigKey "directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
         NEXT="q"
         ;;
       # DSM Section
@@ -1067,12 +1067,12 @@ else
       N) addNewDSMUser; NEXT="N" ;;
       J) resetDSMNetwork; NEXT="J" ;;
       K) [ "${KERNEL}" == "official" ] && KERNEL='custom' || KERNEL='official'
-        writeConfigKey "arc.kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
+        writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
         dialog --backtitle "$(backtitle)" --title "DSM Kernel" \
           --infobox "Switching to Custom Kernel! Stay patient..." 4 50
         if [ "${ODP}" == "true" ]; then
           ODP="false"
-          writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
+          writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
         fi
         PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
         PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -1093,26 +1093,26 @@ else
         NEXT="K"
         ;;
       H) [ "${HDDSORT}" == "true" ] && HDDSORT='false' || HDDSORT='true'
-        writeConfigKey "arc.hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
+        writeConfigKey "hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="H"
         ;;
       O) [ "${ODP}" == "false" ] && ODP='true' || ODP='false'
-        writeConfigKey "arc.odp" "${ODP}" "${USER_CONFIG_FILE}"
+        writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="O"
         ;;
       E) [ "${EMMCBOOT}" == "true" ] && EMMCBOOT='false' || EMMCBOOT='true'
         if [ "${EMMCBOOT}" == "false" ]; then
-          writeConfigKey "arc.emmcboot" "false" "${USER_CONFIG_FILE}"
+          writeConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
           deleteConfigKey "synoinfo.disk_swap" "${USER_CONFIG_FILE}"
           deleteConfigKey "synoinfo.supportraid" "${USER_CONFIG_FILE}"
           deleteConfigKey "synoinfo.support_emmc_boot" "${USER_CONFIG_FILE}"
           deleteConfigKey "synoinfo.support_install_only_dev" "${USER_CONFIG_FILE}"
         elif [ "${EMMCBOOT}" == "true" ]; then
-          writeConfigKey "arc.emmcboot" "true" "${USER_CONFIG_FILE}"
+          writeConfigKey "emmcboot" "true" "${USER_CONFIG_FILE}"
           writeConfigKey "synoinfo.disk_swap" "no" "${USER_CONFIG_FILE}"
           writeConfigKey "synoinfo.supportraid" "no" "${USER_CONFIG_FILE}"
           writeConfigKey "synoinfo.support_emmc_boot" "yes" "${USER_CONFIG_FILE}"

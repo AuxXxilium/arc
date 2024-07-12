@@ -539,7 +539,7 @@ function ntpCheck() {
 # Offline Check
 function offlineCheck() {
   CNT=0
-  AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
+  AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   local ARCNIC=""
   local OFFLINE="${1}"
   if [ "${OFFLINE}" == "true" ]; then
@@ -576,7 +576,7 @@ function offlineCheck() {
     elif [ -z "${ARCNIC}" ] && [ "${AUTOMATED}" == "true" ]; then
       dialog --backtitle "$(backtitle)" --title "Online Check" \
         --msgbox "Could not connect to Github.\nSwitch to Offline Mode!\nDisable Automated Mode!" 0 0
-      writeConfigKey "arc.automated" "false" "${USER_CONFIG_FILE}"
+      writeConfigKey "automated" "false" "${USER_CONFIG_FILE}"
       [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
       ARCNIC="offline"
       OFFLINE="true"

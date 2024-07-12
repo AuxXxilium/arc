@@ -468,7 +468,7 @@ function updateLKMs() {
 ###############################################################################
 # Update Failed
 function updateFailed() {
-  local AUTOMATED="$(readConfigKey "arc.automated" "${USER_CONFIG_FILE}")"
+  local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   if [ "${AUTOMATED}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Failed" \
       --infobox "Update failed!" 0 0

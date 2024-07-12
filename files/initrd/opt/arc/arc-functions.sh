@@ -14,7 +14,7 @@ function editUserConfig() {
   OLDPRODUCTVER="${PRODUCTVER}"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
+  SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
   if [ "${MODEL}" != "${OLDMODEL}" ] || [ "${PRODUCTVER}" != "${OLDPRODUCTVER}" ]; then
     # Delete old files
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
@@ -93,8 +93,8 @@ function modulesMenu() {
       5 "Choose Modules" \
       6 "Add external module" \
       7 "Edit Modules copied to DSM" \
-      8 "Copy i915 to DSM" \
-      9 "Force-copy loaded Modules to DSM" \
+      8 "Force-copy loaded Modules to DSM" \
+      9 "Blacklist Modules to prevent loading in DSM" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -231,21 +231,6 @@ function modulesMenu() {
         else
           cp -f "${ARC_PATH}/include/modulelist" "${TMP_PATH}/modulelist.tmp"
         fi
-        sed -i 's/#N /N /g' "${TMP_PATH}/modulelist.tmp"
-        [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
-        mv -f "${TMP_PATH}/modulelist.tmp" "${USER_UP_PATH}/modulelist"
-        dos2unix "${USER_UP_PATH}/modulelist"
-        dialog --backtitle "$(backtitle)" --title "i915 Modules Copy" \
-          --msgbox "i915 Modules will be copied to DSM!" 5 50
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      9)
-        if [ -f "${USER_UP_PATH}/modulelist" ]; then
-          cp -f "${USER_UP_PATH}/modulelist" "${TMP_PATH}/modulelist.tmp"
-        else
-          cp -f "${ARC_PATH}/include/modulelist" "${TMP_PATH}/modulelist.tmp"
-        fi
         echo -e "\n\n# Arc Modules" >>"${TMP_PATH}/modulelist.tmp"
         KOLIST=""
         for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
@@ -262,6 +247,29 @@ function modulesMenu() {
         dos2unix "${USER_UP_PATH}/modulelist"
         dialog --backtitle "$(backtitle)" --title "Loaded Modules Copy" \
             --msgbox "All loaded Modules will be copied to DSM!" 5 50
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
+      9)
+        MSG=""
+        MSG+="The blacklist is used to prevent the kernel from loading specific modules.\n"
+        MSG+="The blacklist is a list of module names separated by ','.\n"
+        MSG+="For example: \Z4evbug,cdc_ether\Zn\n"
+        while true; do
+          modblacklist="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
+          dialog --backtitle "$(backtitle)" --title "Blacklist Modules" \
+            --inputbox "${MSG}" 12 70 "${modblacklist}" \
+            2>${TMP_PATH}/resp
+          [ $? -ne 0 ] && break
+          VALUE="$(cat "${TMP_PATH}/resp")"
+          if [[ ${VALUE} = *" "* ]]; then
+            dialog --backtitle "$(backtitle)" --title  "Blacklist Module" \
+              --yesno "Invalid list, No spaces should appear, retry?" 0 0
+            [ $? -eq 0 ] && continue || break
+          fi
+          writeConfigKey "modblacklist" "${VALUE}" "${USER_CONFIG_FILE}"
+          break
+        done
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -468,7 +476,7 @@ function cmdlineMenu() {
           resp=$(cat ${TMP_PATH}/resp)
           [ -z "${resp}" ] && break
           KERNELPANIC=${resp}
-          writeConfigKey "arc.kernelpanic" "${KERNELPANIC}" "${USER_CONFIG_FILE}"
+          writeConfigKey "kernelpanic" "${KERNELPANIC}" "${USER_CONFIG_FILE}"
         done
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -706,7 +714,7 @@ function backupMenu() {
             PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
             if [ -n "${MODEL}" ] && [ -n "${PRODUCTVER}" ]; then
               TEXT="Installation found:\nModel: ${MODELID:-${MODEL}}\nVersion: ${PRODUCTVER}"
-              SN="$(readConfigKey "arc.sn" "${USER_CONFIG_FILE}")"
+              SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
               TEXT+="\nSerial: ${SN}"
               ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
               TEXT+="\nArc Patch: ${ARCPATCH}"
@@ -1059,12 +1067,12 @@ function sysinfo() {
       PORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
     fi
   fi
-  DIRECTBOOT="$(readConfigKey "arc.directboot" "${USER_CONFIG_FILE}")"
+  DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
-  KERNELLOAD="$(readConfigKey "arc.kernelload" "${USER_CONFIG_FILE}")"
+  KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
-  HDDSORT="$(readConfigKey "arc.hddsort" "${USER_CONFIG_FILE}")"
+  HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
   DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
@@ -1601,7 +1609,7 @@ function bootipwaittime() {
   resp=$(cat ${TMP_PATH}/resp)
   [ -z "${resp}" ] && return 1
   BOOTIPWAIT=${resp}
-  writeConfigKey "arc.bootipwait" "${BOOTIPWAIT}" "${USER_CONFIG_FILE}"
+  writeConfigKey "bootipwait" "${BOOTIPWAIT}" "${USER_CONFIG_FILE}"
 }
 
 ###############################################################################
@@ -2074,7 +2082,7 @@ function governorSelection () {
     [ "${PLATFORM}" == "epyc7002" ] && CPUGOVERNOR="schedutil"
     [ "${PLATFORM}" != "epyc7002" ] && CPUGOVERNOR="ondemand"
   fi
-  writeConfigKey "arc.governor" "${CPUGOVERNOR}" "${USER_CONFIG_FILE}"
+  writeConfigKey "governor" "${CPUGOVERNOR}" "${USER_CONFIG_FILE}"
 }
 
 ###############################################################################
