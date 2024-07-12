@@ -343,7 +343,7 @@ function arcPatch() {
       dialog --clear --backtitle "$(backtitle)" \
         --nocancel --title "Arc Patch"\
         --menu "Please choose an Option." 7 50 0 \
-        1 "Use Arc Patch (only for QC)" \
+        1 "Use Arc Patch (QC, Push Notify and AME)" \
         2 "Use random SN/Mac" \
         3 "Use my own SN/Mac" \
       2>"${TMP_PATH}/resp"
