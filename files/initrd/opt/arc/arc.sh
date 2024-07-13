@@ -807,17 +807,10 @@ function make() {
 ###############################################################################
 # Finish Building Loader
 function arcFinish() {
-  # Verify Files exist
-  AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   rm -f "${LOG_FILE}" >/dev/null
-  # Check for Automated Mode
-  if grep -q "automated_arc" /proc/cmdline; then
+  if [ "${AUTOMATED}" == "true" ]; then
     boot
-  elif [ "${AUTOMATED}" == "true" ]; then
-    [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-${PRODUCTVER}-custom" >"${PART3_PATH}/automated"
-    boot
-  elif [ "${AUTOMATED}" == "false" ]; then
-    [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
+  else
     # Ask for Boot
     dialog --clear --backtitle "$(backtitle)" --title "Build done"\
       --no-cancel --menu "Boot now?" 7 40 0 \
@@ -868,9 +861,9 @@ function boot() {
 ###############################################################################
 # Main loop
 # Check for Automated Mode
-if grep -q "automated_arc" /proc/cmdline; then
+if [ "${AUTOMATED}" == "true" ]; then
   # Check for Custom Build
-  if [ "${AUTOMATED}" == "true" ]; then
+  if [ "${BUILDDONE}" == "false" ]; then
     arcModel
   else
     make
@@ -972,9 +965,6 @@ else
     if [ "${LOADEROPTS}" == "true" ]; then
       echo "= \"\Z4========= Loader =========\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "= \"\Z4=== Edit with caution! ===\Zn \" "                                         >>"${TMP_PATH}/menu"
-      if [ "${OFFLINE}" == "false" ]; then
-        echo "R \"Automated Mode: \Z4${AUTOMATED}\Zn \" "                                     >>"${TMP_PATH}/menu"
-      fi
       echo "W \"RD Compression: \Z4${RD_COMPRESSED}\Zn \" "                                   >>"${TMP_PATH}/menu"
       echo "X \"Sata DOM: \Z4${SATADOM}\Zn \" "                                               >>"${TMP_PATH}/menu"
       echo "u \"Switch LKM Version: \Z4${LKM}\Zn \" "                                         >>"${TMP_PATH}/menu"
@@ -1031,15 +1021,6 @@ else
       Q) sequentialIOMenu; NEXT="Q" ;;
       p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
       D) staticIPMenu; NEXT="D" ;;
-      R) [ "${AUTOMATED}" == "false" ] && AUTOMATED='true' || AUTOMATED='false'
-        writeConfigKey "automated" "${AUTOMATED}" "${USER_CONFIG_FILE}"
-        if [ "${AUTOMATED}" == "true" ]; then
-          [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-${PRODUCTVER}-custom" >"${PART3_PATH}/automated"
-        elif [ "${AUTOMATED}" == "false" ]; then
-          [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
-        fi
-        NEXT="R"
-        ;;
       # Boot Section
       6) [ "${BOOTOPTS}" == "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
         BOOTOPTS="${BOOTOPTS}"
