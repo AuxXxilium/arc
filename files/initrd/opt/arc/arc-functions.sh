@@ -1921,7 +1921,7 @@ function decryptMenu() {
     dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
       --inputbox "Enter Decryption Key for ${CONFIGSVERSION}" 7 40 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return
-    ARC_KEY=$(cat "${TMP_PATH}/resp")
+    ARC_KEY=$(cat "${TMP_PATH}/resp" | tr '[:lower:]' '[:upper:]')
     if openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARC_KEY}" 2>/dev/null; then
       dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
         --msgbox "Decrypt successful: You can use Arc Patch." 5 50
