@@ -243,6 +243,10 @@ function arcModel() {
     writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+    if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
+      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
+      rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
+    fi
   fi
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -251,12 +255,6 @@ function arcModel() {
   HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
   ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
-  if [ "${MODEL}" != "${resp}" ] || [ -z "${resp}" ]; then
-    if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
-      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
-      rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
-    fi
-  fi
   arcVersion
 }
 
@@ -336,8 +334,13 @@ function arcPatch() {
   # Check for Custom Build
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
   if [ "${AUTOMATED}" == "true" ] && [ -z "${SN}" ]; then
-    SN=$(generateSerial "${MODEL}" false)
-    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+    if [ -n "${ARCCONF}" ]; then
+      SN=$(generateSerial "${MODEL}" true)
+      writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
+    else
+      SN=$(generateSerial "${MODEL}" false)
+      writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+    fi
   elif [ "${AUTOMATED}" == "false" ]; then
     if [ -n "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
@@ -863,7 +866,7 @@ function boot() {
 # Check for Automated Mode
 if [ "${AUTOMATED}" == "true" ]; then
   # Check for Custom Build
-  if [ "${BUILDDONE}" == "false" ]; then
+  if [ "${BUILDDONE}" == "false" ] || [ "${MODEL}" != "${MODELID}" ]; then
     arcModel
   else
     make
