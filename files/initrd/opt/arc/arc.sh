@@ -573,9 +573,9 @@ function arcSummary() {
   SUMMARY+="\n>> AES | ACPI: \Zb${AESSYS} | ${ACPISYS}\Zn"
   SUMMARY+="\n>> CPU Scaling: \Zb${CPUFREQ}\Zn"
   SUMMARY+="\n>> NIC: \Zb${NIC}\Zn"
-  SUMMARY+="\n>> Disks (incl. USB): \Zb${DRIVES}\Zn"
-  SUMMARY+="\n>> Disks (internal): \Zb${HARDDRIVES}\Zn"
-  SUMMARY+="\n>> External Controller: \Zb${EXTERNALCONTROLLER}\Zn"
+  SUMMARY+="\n>> Total Disks: \Zb${DRIVES}\Zn"
+  SUMMARY+="\n>> Internal Disks: \Zb${HARDDRIVES}\Zn"
+  SUMMARY+="\n>> Additional Controller: \Zb${EXTERNALCONTROLLER}\Zn"
   SUMMARY+="\n>> Memory: \Zb${RAMTOTAL}GB\Zn"
   dialog --backtitle "$(backtitle)" --colors --title "DSM Config Summary" \
     --extra-button --extra-label "Cancel" --msgbox "${SUMMARY}" 0 0

@@ -1169,7 +1169,7 @@ function sysinfo() {
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
   TEXT+="\n\Z4> Storage\Zn"
   TEXT+="\n  Additional Controller: \Zb${EXTERNALCONTROLLER}\Zn"
-  TEXT+="\n  Drives | Harddrives: \Zb${DRIVES} | ${HARDDRIVES}\Zn"
+  TEXT+="\n  Disks | Internal: \Zb${DRIVES} | ${HARDDRIVES}\Zn"
   TEXT+="\n"
   # Get Information for Sata Controller
   NUMPORTS=0
@@ -1192,7 +1192,7 @@ function sysinfo() {
           TEXT+="\Zb$(printf "%02d" ${P})\Zn "
         fi
       done
-      TEXT+="\n  Ports with color \Z1\Zbred\Zn as DUMMY, color \Z2\Zbgreen\Zn has drive connected.\n"
+      TEXT+="\n  Ports with color \Z1\Zbred\Zn as DUMMY, color \Z2\Zbgreen\Zn has a Disk connected.\n"
     done
   fi
   if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
@@ -1201,7 +1201,7 @@ function sysinfo() {
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
-      TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
+      TEXT+="\Zb  ${NAME}\Zn\n  Disks: ${PORTNUM}\n"
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
     done
   fi
@@ -1211,7 +1211,7 @@ function sysinfo() {
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
-      TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
+      TEXT+="\Zb  ${NAME}\Zn\n  Disks: ${PORTNUM}\n"
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
     done
   fi
@@ -1221,7 +1221,7 @@ function sysinfo() {
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
-      TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
+      TEXT+="\Zb  ${NAME}\Zn\n  Disks: ${PORTNUM}\n"
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
     done
   fi
@@ -1232,7 +1232,7 @@ function sysinfo() {
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
       [ ${PORTNUM} -eq 0 ] && continue
-      TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
+      TEXT+="\Zb  ${NAME}\Zn\n  Disks: ${PORTNUM}\n"
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
     done
   fi
@@ -1243,7 +1243,7 @@ function sysinfo() {
       PORTNUM=$(ls -l /sys/class/mmc_host | grep "${PCI}" | wc -l)
       PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l)
       [ ${PORTNUM} -eq 0 ] && continue
-      TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
+      TEXT+="\Zb  ${NAME}\Zn\n  Disks: ${PORTNUM}\n"
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
     done
   fi
@@ -1253,11 +1253,11 @@ function sysinfo() {
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[N:${PORT}:" | wc -l)
-      TEXT+="\Zb  ${NAME}\Zn\n  Drives: ${PORTNUM}\n"
+      TEXT+="\Zb  ${NAME}\Zn\n  Disks: ${PORTNUM}\n"
       NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
     done
   fi
-  TEXT+="\n  Drives total: \Zb${NUMPORTS}\Zn"
+  TEXT+="\n  Total Disks: \Zb${NUMPORTS}\Zn"
   [ -f "${TMP_PATH}/diag" ] && rm -f "${TMP_PATH}/diag" >/dev/null
   echo -e "${TEXT}" >"${TMP_PATH}/diag"
   while true; do
