@@ -197,14 +197,6 @@ function bootDSM () {
   CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
   echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
-  # Save command line to grubenv
-  if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
-    if grep -q "^flags.*x2apic.*" /proc/cpuinfo; then
-      checkCmdline "arc_cmdline" "nox2apic" || addCmdline "arc_cmdline" "nox2apic"
-    fi
-  else
-    checkCmdline "arc_cmdline" "nox2apic" && delCmdline "arc_cmdline" "nox2apic"
-  fi
   # Boot
   DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   if [ "${DIRECTBOOT}" == "true" ]; then
