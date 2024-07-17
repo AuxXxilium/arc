@@ -163,7 +163,7 @@ jobs:
           . scripts/func.sh
 
           echo "${VERSION}s" >files/p1/ARC-VERSION
-          TAG="24.7.0" # Stable Buildroot Version
+          TAG="24.07.0" # Stable Buildroot Version
           echo "BR_STABLE_VERSION=${TAG}" >> $GITHUB_ENV
           getBuildroot "${TAG}" "stable_br"
 
