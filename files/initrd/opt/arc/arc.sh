@@ -615,10 +615,11 @@ function make() {
       --infobox "Get PAT Data from Syno..." 3 40
     idx=0
     while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
+      local URL="https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}"
       if [ "${ARCNIC}" == "auto" ]; then
-        PAT_DATA="$(curl -skL -m 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}")"
+        PAT_DATA="$(curl -skL -m 10 "${URL}")"
       else
-        PAT_DATA="$(curl --interface ${ARCNIC} -skL -m 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}")"
+        PAT_DATA="$(curl --interface ${ARCNIC} -skL -m 10 "${URL}")"
       fi
       if [ "$(echo ${PAT_DATA} | jq -r '.success' 2>/dev/null)" == "true" ]; then
         if echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].label_ext' 2>/dev/null | grep -q 'pat'; then
@@ -641,12 +642,14 @@ function make() {
         --infobox "Get PAT Data from Github..." 3 40
       idx=0
       while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
+        URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url"
+        HASH="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash"
         if [ "${ARCNIC}" == "auto" ]; then
-          PAT_URL="$(curl -skL -m 10 "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")"
-          PAT_HASH="$(curl -skL -m 10 "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")"
+          PAT_URL="$(curl -skL -m 10 "${URL}")"
+          PAT_HASH="$(curl -skL -m 10 "${HASH}")"
         else
-          PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url")"
-          PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash")"
+          PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "${URL}")"
+          PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "$HASH")"
         fi
         PAT_URL=${PAT_URL%%\?*}
         if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
