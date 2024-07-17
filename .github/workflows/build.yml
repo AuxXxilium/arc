@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "format %y.%-m.$i or auto"
+        description: "format %y.%m.$d or auto"
         required: false
         type: string
       notice:
@@ -26,29 +26,9 @@ on:
         description: "clean"
         default: false
         type: boolean
-      addons_version:
-        description: "addons version"
-        default: ""
-        type: string
-      configs_version:
-        description: "configs version"
-        default: ""
-        type: string
-      modules_version:
-        description: "modules version"
-        default: ""
-        type: string
-      lkm_version:
-        description: "lkm version"
-        default: ""
-        type: string
-      patches_version:
-        description: "patches version"
-        default: ""
-        type: string
-      theme_version:
-        description: "theme version"
-        default: ""
+      update_version:
+        description: "update min version"
+        default: "24.07.12"
         type: string
 
 jobs:
@@ -91,10 +71,10 @@ jobs:
             VERSION="${{ inputs.version }}"
           else
             LATEST_TAG="$(curl -skL "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r ".tag_name" 2>/dev/null)"
-            if [[ -n "${LATEST_TAG}" && "`echo ${LATEST_TAG} | cut -d '.' -f 1,2`" = "`date +'%y.%-m.%-d'`" ]]; then  # format %y.%-m.$i
+            if [[ -n "${LATEST_TAG}" && "`echo ${LATEST_TAG} | cut -d '.' -f 1,2`" = "`date +'%y.%m.%d'`" ]]; then
               VERSION="`echo ${LATEST_TAG} | awk -F '.' '{$3=$3+1}1' OFS='.'`"
             else
-              VERSION="`date +'%y.%-m.%-d'`"
+              VERSION="`date +'%y.%m.%d'`"
             fi
           fi
           
@@ -113,26 +93,19 @@ jobs:
         run: |
           . scripts/func.sh
 
-          LKMTAG="${{ inputs.lkm_version }}"
           getLKMs "files/p3/lkms"
           echo "LKMTAG=${TAG}" >> $GITHUB_ENV
-          ADDONSTAG="${{ inputs.addons_version }}"
           getAddons "files/p3/addons"
           echo "ADDONSTAG=${TAG}" >> $GITHUB_ENV
-          MODULESTAG="${{ inputs.modules_version }}"
           getModules "files/p3/modules"
           echo "MODULESTAG=${TAG}" >> $GITHUB_ENV
-          CONFIGSTAG="${{ inputs.configs_version }}"
           getConfigs "files/p3/configs"
           echo "CONFIGSTAG=${TAG}" >> $GITHUB_ENV
-          PATCHESTAG="${{ inputs.patches_version }}"
           getPatches "files/p3/patches"
           echo "PATCHESTAG=${TAG}" >> $GITHUB_ENV
-          THEMETAG="${{ inputs.theme_version }}"
           getTheme "files/p1/boot/grub"
           echo "THEMETAG=${TAG}" >> $GITHUB_ENV
           getOffline "files/p3/configs"
-          echo "Get Buildroot"
           getBuildroot "latest" "br"
           echo "BR_VERSION=${TAG}" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
@@ -140,7 +113,7 @@ jobs:
           echo "OK"
 
       # Build incremental
-      - name: Build Image
+      - name: Build Image New
         run: |
           . scripts/func.sh
 
@@ -177,43 +150,85 @@ jobs:
 
           sudo losetup --detach ${LOOPX}
 
-          #resizeImg "arc.img" "+1024M" "arc-2G.img"
-          #mv -f "arc-2G.img" "arc.img"
-
           echo "Image Converter"
-          qemu-img convert arc.img -O vmdk -o adapter_type=lsilogic,compat6 arc-dyn.vmdk
-          qemu-img convert arc.img -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat,compat6 arc.vmdk
-          qemu-img convert arc.img -O vhdx -o subformat=dynamic arc.vhdx
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,compat6 arc-dyn.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat,compat6 arc.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
 
           echo "Create Arc ova"
           convertova "arc.img" "arc.ova"
+
+      # Build incremental
+      - name: Build Image Stable
+        run: |
+          . scripts/func.sh
+
+          echo "${VERSION}s" >files/p1/ARC-VERSION
+          TAG="24.7.0" # Stable Buildroot Version
+          echo "BR_STABLE_VERSION=${TAG}" >> $GITHUB_ENV
+          getBuildroot "${TAG}" "stable_br"
+
+          echo "Create Arc Image"
+          IMAGE_FILE="arc-sbase.img"
+          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
+          fdisk -l "${IMAGE_FILE}"
+          
+          LOOPX=$(sudo losetup -f)
+          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
+
+          echo "Mounting Image File"
+          mkdir -p "/tmp/p1"
+          mkdir -p "/tmp/p3"
+          sudo mount ${LOOPX}p1 "/tmp/p1"
+          sudo mount ${LOOPX}p3 "/tmp/p3"
+
+          [ ! -f "stable_br/bzImage-arc" ] || [ ! -f "stable_br/initrd-arc" ] && return 1
+          
+          echo "Repack initrd"
+          cp -f "stable_br/bzImage-arc" "files/p3/bzImage-arc"
+          repackInitrd "stable_br/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+
+          echo "Copying files"
+          sudo cp -Rf "files/p1/"* "/tmp/p1"
+          sudo cp -Rf "files/p3/"* "/tmp/p3"
+          sync
+
+          echo "Unmount image file"
+          sudo umount "/tmp/p1"
+          sudo umount "/tmp/p3"
+          rmdir "/tmp/p1"
+          rmdir "/tmp/p3"
+
+          sudo losetup --detach ${LOOPX}
+
+          echo "Image Converter"
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,compat6 arc-sbase-dyn.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat,compat6 arc-sbase.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc-sbase.vhdx
+
+          echo "Create Arc ova"
+          convertova "${IMAGE_FILE}" "arc-sbase.ova"
 
       # Zip image and generate checksum
       - name: Pack
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
+            # NBase
             zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
             zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
             zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
             zip -9 "arc-${{ env.VERSION }}.vhdx.zip" arc.vhdx
             zip -9 "arc-${{ env.VERSION }}.ova.zip" arc.ova
-          else
-            zip -9 "arc.img.zip" arc.img
+            # SBase
+            zip -9 "arc-sbase-${{ env.VERSION }}.img.zip" arc-sbase.img
+            zip -9 "arc-sbase-${{ env.VERSION }}.vmdk-dyn.zip" arc-sbase-dyn.vmdk
+            zip -9 "arc-sbase-${{ env.VERSION }}.vmdk-flat.zip" arc-sbase.vmdk arc-sbase-flat.vmdk
+            zip -9 "arc-sbase-${{ env.VERSION }}.vhdx.zip" arc-sbase.vhdx
+            zip -9 "arc-sbase-${{ env.VERSION }}.ova.zip" arc-sbase.ova
           fi
           zip -9j update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
           sha256sum update.zip >checksum.sha256
-
-      # Upload artifact
-      - name: Upload
-        if: success() && env.VERSION == ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: Images
-          path: |
-            arc.img.zip
-            update.zip
-            checksum.sha256
-          retention-days: 5
+          echo "${{ inputs.update_version }}" >check.update
 
       # Publish a release if is a tag
       - name: Release
@@ -227,6 +242,9 @@ jobs:
             ### Information:
             Notice: ${{ inputs.notice }}
             Buildtime: ${{ env.BUILD_TIME }}
+            Versions:
+              arc-${{ env.VERSION }} includes the latest Buildroot. (Latest Hardware Support)
+              arc-sbase-${{ env.VERSION }} includes the stable Buildroot. (Better Compatibility)
             Full Changelog and Arc Patch (Decryption Key) can be found in my Discord.
 
             ### Versions:
@@ -236,8 +254,9 @@ jobs:
             Patches: ${{ env.PATCHESTAG }}
             Theme: ${{ env.THEMETAG }}
             LKM: ${{ env.LKMTAG }}
-            Buildroot: ${{ env.BR_VERSION }}
+            Buildroot: ${{ env.BR_VERSION }} | Stable: ${{ env.BR_STABLE_VERSION }}
           artifacts: |
             arc-*.zip
             update.zip
             checksum.sha256
+            check.update
