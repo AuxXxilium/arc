@@ -18,7 +18,7 @@ As internal: no
 As external: yes
 
 - Intel iGPU
-up to the 10th generation
+2nd - 9th Gen (Addon required)
 
 - Nvidia GPU
 Community Package required *
