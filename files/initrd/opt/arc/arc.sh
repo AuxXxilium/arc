@@ -130,7 +130,7 @@ function arcModel() {
         [ -n "${ARCCONF}" ] && ARC="x" || ARC=""
         [ "${DT}" == "true" ] && DTS="x" || DTS=""
         IGPUS=""
-        [[ "${A}" == "apollolake" || "${A}" == "geminilake" ]] && IGPUS="up to 10th"
+        [[ "${A}" == "apollolake" || "${A}" == "geminilake" ]] && IGPUS="up to 9th"
         [ "${A}" == "epyc7002" ] && IGPUS="up to 14th" 
         [ "${DT}" == "true" ] && HBAS="" || HBAS="x"
         [ "${M}" == "SA6400" ] && HBAS="x"
@@ -170,13 +170,13 @@ function arcModel() {
         dialog --backtitle "$(backtitle)" --title "Arc DSM Model" --colors \
           --cancel-label "Show all" --help-button --help-label "Exit" \
           --extra-button --extra-label "Info" \
-          --menu "Supported Models for your Hardware (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "iGPU/i915" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 115 0 \
+          --menu "Supported Models for your Hardware (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 115 0 \
           --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       else
         dialog --backtitle "$(backtitle)" --title "DSM Model" --colors \
           --cancel-label "Show all" --help-button --help-label "Exit" \
           --extra-button --extra-label "Info" \
-          --menu "Supported Models for your Hardware (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "iGPU/i915" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 115 0 \
+          --menu "Supported Models for your Hardware (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 115 0 \
           --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       fi
       RET=$?
