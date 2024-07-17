@@ -1,8 +1,29 @@
-- Hardwaresupport for Intel (may work on AMD eq. HP Microserver Gen7)
-- Up to 16 Threads
-- Support for HBA Controller
-- Support for RAID/SCSI Controller
-- USB Storage as Internal or External
-- Support for SATA Controller
-- NVMe Cache working
-- No Devicetree - nonDT
+- CPU
+Intel: yes
+AMD: yes
+Note: Not every model runs on every hardware!
+Up to 16 threads
+
+- Cache
+SSD Cache: yes
+
+- Additional controllers
+HBA Controller: yes
+Raid controller: yes
+SCSI controller: yes
+Note: Partially incorrect smart values
+
+- USB storage
+As internal: yes
+As external: yes
+
+- Intel iGPU
+Unsupported
+
+- Nvidia GPU
+Community Package required *
+
+- NVMe
+Cache: yes (sometimes addon required)
+Storage: Addon required
+System (NVMe only): no
