@@ -105,8 +105,6 @@ jobs:
           getTheme "files/p1/boot/grub"
           echo "THEMETAG=${TAG}" >> $GITHUB_ENV
           getOffline "files/p3/configs"
-          getBuildroot "latest" "br"
-          echo "BR_VERSION=${TAG}" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
@@ -115,6 +113,9 @@ jobs:
       - name: Build Image New
         run: |
           . scripts/func.sh
+
+          getBuildroot "latest" "br"
+          echo "BR_VERSION=${TAG}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -156,6 +157,10 @@ jobs:
 
           echo "Create Arc ova"
           convertova "arc.img" "arc.ova"
+
+          zip -9 update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
+          sha256sum update.zip >checksum.sha256
+          rm -f "files/p3/bzImage-arc" "files/p3/initrd-arc"
 
       # Build incremental
       - name: Build Image Stable
@@ -208,6 +213,10 @@ jobs:
           echo "Create Arc ova"
           convertova "${IMAGE_FILE}" "arc-sbase.ova"
 
+          zip -9 update-sbase.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
+          sha256sum update-sbase.zip >checksum-sbase.sha256
+          rm -f "files/p3/bzImage-arc" "files/p3/initrd-arc"
+
       # Zip image and generate checksum
       - name: Pack
         run: |
@@ -225,8 +234,6 @@ jobs:
             zip -9 "arc-sbase-${{ env.VERSION }}.vhdx.zip" arc-sbase.vhdx
             zip -9 "arc-sbase-${{ env.VERSION }}.ova.zip" arc-sbase.ova
           fi
-          zip -9j update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
-          sha256sum update.zip >checksum.sha256
           echo "${{ inputs.update_version }}" >check.update
 
       # Publish a release if is a tag
@@ -258,5 +265,7 @@ jobs:
           artifacts: |
             arc-*.zip
             update.zip
+            update-sbase.zip
             checksum.sha256
+            checksum-sbase.sha256
             check.update

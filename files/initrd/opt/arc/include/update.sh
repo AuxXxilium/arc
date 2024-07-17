@@ -7,15 +7,14 @@
 function upgradeLoader () {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
   local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
-  TAG=""
   if [ -z "${1}" ]; then
     # Check for new Version
     idx=0
     while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
       if [ "${ARCNIC}" == "auto" ]; then
-        TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       else
-        TAG="$(curl  --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        local TAG="$(curl  --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       fi
       if [ -n "${TAG}" ]; then
         break
@@ -24,13 +23,14 @@ function upgradeLoader () {
       idx=$((${idx} + 1))
     done
   else
-    TAG="${1}"
+    local TAG="${1}"
   fi
   if [ -n "${TAG}" ]; then
     curl -skL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/check.update" -o "${TMP_PATH}/check.update"
     if [ -f "${TMP_PATH}/check.update" ]; then
-      UPDATE=$(cat "${TMP_PATH}/check.update" | sed -e 's/\.//g' )
-      ARC_VERSION=$(cat "${PART1_PATH}/ARC-VERSION" | sed -e 's/\.//g' )
+      local UPDATE=$(cat "${TMP_PATH}/check.update" | sed -e 's/\.//g' )
+      local ARC_VERSION=$(cat "${PART1_PATH}/ARC-VERSION" | sed -e 's/\.//g' )
+      local ARC_STABLE=$(echo "${ARC_VERSION}" | grep s | wc -l)
       if [ ${ARC_VERSION} -lt ${UPDATE} ]; then
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
           --yesno "Current Config not compatible to new Version!\nDo not restore Config!\nDo you want to upgrade?" 0 0
@@ -44,14 +44,19 @@ function upgradeLoader () {
     (
       # Download update file
       echo "Downloading ${TAG}"
+      if [ ${ARC_STABLE} -eq 0 ]; then
+        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip"
+      elif [ ${ARC_STABLE} -eq 1 ]; then
+        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-sbase-${TAG}.img.zip"
+      fi
       if [ "${ARCNIC}" == "auto" ]; then
-        curl -#kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl -#kL "${URL}" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
       else
-        curl --interface ${ARCNIC} -#kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
@@ -85,15 +90,14 @@ function upgradeLoader () {
 function updateLoader() {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
   local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
-  TAG=""
   if [ -z "${1}" ]; then
     # Check for new Version
     idx=0
     while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
       if [ "${ARCNIC}" == "auto" ]; then
-        TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       else
-        TAG="$(curl  --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        local TAG="$(curl  --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       fi
       if [ -n "${TAG}" ]; then
         break
@@ -102,13 +106,14 @@ function updateLoader() {
       idx=$((${idx} + 1))
     done
   else
-    TAG="${1}"
+    local TAG="${1}"
   fi
   if [ -n "${TAG}" ]; then
     curl -skL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/check.update" -o "${TMP_PATH}/check.update"
     if [ -f "${TMP_PATH}/check.update" ]; then
-      UPDATE_VERSION=$(cat "${TMP_PATH}/check.update" | sed -e 's/\.//g' )
-      ARC_VERSION=$(cat "${PART1_PATH}/ARC-VERSION" | sed -e 's/\.//g' )
+      local UPDATE_VERSION=$(cat "${TMP_PATH}/check.update" | sed -e 's/\.//g' )
+      local ARC_VERSION=$(cat "${PART1_PATH}/ARC-VERSION" | sed -e 's/\.//g' )
+      local ARC_STABLE=$(echo "${ARC_VERSION}" | grep s | wc -l)
       if [ ${ARC_VERSION} -lt ${UPDATE_VERSION} ] && [ "${AUTOMATED}" == "false" ]; then
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
           --yesno "Config is not compatible to new Version!\nPlease reconfigure Loader after Update!\nDo you want to update?" 0 0
@@ -127,20 +132,27 @@ function updateLoader() {
     (
       # Download update file
       echo "Downloading ${TAG}"
+      if [ ${ARC_STABLE} -eq 0 ]; then
+        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip"
+        local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum.sha256"
+      elif [ ${ARC_STABLE} -eq 1 ]; then
+        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-sbase.zip"
+        local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum-sbase.sha256"
+      fi
       if [ "${ARCNIC}" == "auto" ]; then
-        curl -#kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl -#kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
-        curl -skL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum.sha256" -o "${TMP_PATH}/checksum.sha256"
+        curl -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       else
-        curl --interface ${ARCNIC} -#kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip" -o "${TMP_PATH}/update.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
-        curl --interface ${ARCNIC} -skL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum.sha256" -o "${TMP_PATH}/checksum.sha256"
+        curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       fi
       if [ "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" = "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
         echo "Download successful!"
@@ -169,15 +181,14 @@ function updateLoader() {
 # Update Addons
 function updateAddons() {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
-  TAG=""
   if [ -z "${1}" ]; then
     # Check for new Version
     idx=0
     while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
       if [ "${ARCNIC}" == "auto" ]; then
-        TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       else
-        TAG="$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        local TAG="$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       fi
       if [ -n "${TAG}" ]; then
         break
@@ -186,26 +197,28 @@ function updateAddons() {
       idx=$((${idx} + 1))
     done
   else
-    TAG="${1}"
+    local TAG="${1}"
   fi
   if [ -n "${TAG}" ]; then
     (
       # Download update file
       echo "Downloading ${TAG}"
+      local URL="https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip"
+      local SHA="https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/checksum.sha256"
       if [ "${ARCNIC}" == "auto" ]; then
-        curl -#kL "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl -#kL "${URL}" -o "${TMP_PATH}/addons.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
-        curl -skL "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/checksum.sha256" -o "${TMP_PATH}/checksum.sha256"
+        curl -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       else
-        curl --interface ${ARCNIC} -#kL "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${TMP_PATH}/addons.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/addons.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
-        curl --interface ${ARCNIC} -skL "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/checksum.sha256" -o "${TMP_PATH}/checksum.sha256"
+        curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       fi
       if [ "$(sha256sum "${TMP_PATH}/addons.zip" | awk '{print $1}')" = "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
         echo "Download successful!"
@@ -239,15 +252,14 @@ function updateAddons() {
 # Update Patches
 function updatePatches() {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
-  TAG=""
   if [ -z "${1}" ]; then
     # Check for new Version
     idx=0
     while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
       if [ "${ARCNIC}" == "auto" ]; then
-        TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       else
-        TAG="$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        local TAG="$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       fi
       if [ -n "${TAG}" ]; then
         break
@@ -256,26 +268,28 @@ function updatePatches() {
       idx=$((${idx} + 1))
     done
   else
-    TAG="${1}"
+    local TAG="${1}"
   fi
   if [ -n "${TAG}" ]; then
     (
       # Download update file
+      local URL="https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip"
+      local SHA="https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/checksum.sha256"
       echo "Downloading ${TAG}"
       if [ "${ARCNIC}" == "auto" ]; then
-        curl -#kL "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl -#kL "${URL}" -o "${TMP_PATH}/patches.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
-        curl -skL "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/checksum.sha256" -o "${TMP_PATH}/checksum.sha256"
+        curl -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       else
-        curl --interface ${ARCNIC} -#kL "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${TMP_PATH}/patches.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/patches.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
-        curl --interface ${ARCNIC} -skL "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/checksum.sha256" -o "${TMP_PATH}/checksum.sha256"
+        curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       fi
       if [ "$(sha256sum "${TMP_PATH}/patches.zip" | awk '{print $1}')" = "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
         echo "Download successful!"
@@ -301,15 +315,14 @@ function updatePatches() {
 # Update Modules
 function updateModules() {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
-  TAG=""
   if [ -z "${1}" ]; then
     # Check for new Version
     idx=0
     while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
       if [ "${ARCNIC}" == "auto" ]; then
-        TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       else
-        TAG="$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        local TAG="$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       fi
       if [ -n "${TAG}" ]; then
         break
@@ -318,26 +331,28 @@ function updateModules() {
       idx=$((${idx} + 1))
     done
   else
-    TAG="${1}"
+    local TAG="${1}"
   fi
   if [ -n "${TAG}" ]; then
     (
       # Download update file
+      local URL="https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip"
+      local SHA="https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/checksum.sha256"
       echo "Downloading ${TAG}"
       if [ "${ARCNIC}" == "auto" ]; then
-        curl -#kL "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl -#kL "${URL}" -o "${TMP_PATH}/modules.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
-        curl -skL "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/checksum.sha256" -o "${TMP_PATH}/checksum.sha256"
+        curl -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       else
-        curl --interface ${ARCNIC} -#kL "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${TMP_PATH}/modules.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/modules.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
-        curl --interface ${ARCNIC} -skL "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/checksum.sha256" -o "${TMP_PATH}/checksum.sha256"
+        curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       fi
       if [ "$(sha256sum "${TMP_PATH}/modules.zip" | awk '{print $1}')" = "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
         echo "Download successful!"
@@ -347,10 +362,10 @@ function updateModules() {
         unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}"
         rm -f "${TMP_PATH}/modules.zip"
         # Rebuild modules if model/build is selected
-        local PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+        PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
         if [ -n "${PRODUCTVER}" ]; then
-          local PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-          local KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+          PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+          KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
           # Modify KVER for Epyc7002
           if [ "${PLATFORM}" = "epyc7002" ]; then
             KVERP="${PRODUCTVER}-${KVER}"
@@ -382,15 +397,14 @@ function updateModules() {
 # Update Configs
 function updateConfigs() {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
-  TAG=""
   if [ -z "${1}" ]; then
     # Check for new Version
     idx=0
     while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
       if [ "${ARCNIC}" == "auto" ]; then
-        TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       else
-        TAG="$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        local TAG="$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       fi
       if [ -n "${TAG}" ]; then
         break
@@ -399,26 +413,28 @@ function updateConfigs() {
       idx=$((${idx} + 1))
     done
   else
-    TAG="${1}"
+    local TAG="${1}"
   fi
   if [ -n "${TAG}" ]; then
     (
       # Download update file
+      local URL="https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip"
+      local SHA="https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/checksum.sha256"
       echo "Downloading ${TAG}"
       if [ "${ARCNIC}" == "auto" ]; then
-        curl -#kL "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl -#kL "${URL}" -o "${TMP_PATH}/configs.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
-        curl -skL "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/checksum.sha256" -o "${TMP_PATH}/checksum.sha256"
+        curl -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       else
-        curl --interface ${ARCNIC} -#kL "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${TMP_PATH}/configs.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/configs.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
-        curl --interface ${ARCNIC} -skL "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/checksum.sha256" -o "${TMP_PATH}/checksum.sha256"
+        curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       fi
       if [ "$(sha256sum "${TMP_PATH}/configs.zip" | awk '{print $1}')" = "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
         echo "Download successful!"
@@ -444,15 +460,14 @@ function updateConfigs() {
 # Update LKMs
 function updateLKMs() {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
-  TAG=""
   if [ -z "${1}" ]; then
     # Check for new Version
     idx=0
     while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
       if [ "${ARCNIC}" == "auto" ]; then
-        TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       else
-        TAG="$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        local TAG="$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       fi
       if [ -n "${TAG}" ]; then
         break
@@ -461,20 +476,21 @@ function updateLKMs() {
       idx=$((${idx} + 1))
     done
   else
-    TAG="${1}"
+    local TAG="${1}"
   fi
   if [ -n "${TAG}" ]; then
     (
       # Download update file
+      local URL="https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip"
       echo "Downloading ${TAG}"
       if [ "${ARCNIC}" == "auto" ]; then
-        curl -#kL "https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl -#kL "${URL}" -o "${TMP_PATH}/rp-lkms.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
       else
-        curl --interface ${ARCNIC} -#kL "https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/rp-lkms.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
