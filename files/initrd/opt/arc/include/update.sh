@@ -30,7 +30,6 @@ function upgradeLoader () {
     if [ -f "${TMP_PATH}/check.update" ]; then
       local UPDATE=$(cat "${TMP_PATH}/check.update" | sed -e 's/\.//g' )
       local ARC_VERSION=$(cat "${PART1_PATH}/ARC-VERSION" | sed -e 's/\.//g' )
-      local ARC_STABLE=$(echo "${ARC_VERSION}" | grep s | wc -l)
       if [ ${ARC_VERSION} -lt ${UPDATE} ]; then
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
           --yesno "Current Config not compatible to new Version!\nDo not restore Config!\nDo you want to upgrade?" 0 0
@@ -44,11 +43,7 @@ function upgradeLoader () {
     (
       # Download update file
       echo "Downloading ${TAG}"
-      if [ ${ARC_STABLE} -eq 0 ]; then
-        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip"
-      elif [ ${ARC_STABLE} -eq 1 ]; then
-        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-sbase-${TAG}.img.zip"
-      fi
+      local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip"
       if [ "${ARCNIC}" == "auto" ]; then
         curl -#kL "${URL}" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
@@ -113,7 +108,6 @@ function updateLoader() {
     if [ -f "${TMP_PATH}/check.update" ]; then
       local UPDATE_VERSION=$(cat "${TMP_PATH}/check.update" | sed -e 's/\.//g' )
       local ARC_VERSION=$(cat "${PART1_PATH}/ARC-VERSION" | sed -e 's/\.//g' )
-      local ARC_STABLE=$(echo "${ARC_VERSION}" | grep s | wc -l)
       if [ ${ARC_VERSION} -lt ${UPDATE_VERSION} ] && [ "${AUTOMATED}" == "false" ]; then
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
           --yesno "Config is not compatible to new Version!\nPlease reconfigure Loader after Update!\nDo you want to update?" 0 0
@@ -132,13 +126,8 @@ function updateLoader() {
     (
       # Download update file
       echo "Downloading ${TAG}"
-      if [ ${ARC_STABLE} -eq 0 ]; then
-        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip"
-        local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum.sha256"
-      elif [ ${ARC_STABLE} -eq 1 ]; then
-        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-sbase.zip"
-        local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum-sbase.sha256"
-      fi
+      local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip"
+      local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum.sha256"
       if [ "${ARCNIC}" == "auto" ]; then
         curl -#kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
