@@ -105,6 +105,8 @@ jobs:
           getTheme "files/p1/boot/grub"
           echo "THEMETAG=${TAG}" >> $GITHUB_ENV
           getOffline "files/p3/configs"
+          getBuildroot "latest" "br"
+          echo "BR_VERSION=${TAG}" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
@@ -113,9 +115,6 @@ jobs:
       - name: Build Image New
         run: |
           . scripts/func.sh
-
-          getBuildroot "latest" "br"
-          echo "BR_VERSION=${TAG}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -162,61 +161,6 @@ jobs:
           sha256sum update.zip >checksum.sha256
           rm -f "files/p3/bzImage-arc" "files/p3/initrd-arc"
 
-      # Build incremental
-      - name: Build Image Stable
-        run: |
-          . scripts/func.sh
-
-          echo "${VERSION}s" >files/p1/ARC-VERSION
-          TAG="24.07.0" # Stable Buildroot Version
-          echo "BR_STABLE_VERSION=${TAG}" >> $GITHUB_ENV
-          getBuildroot "${TAG}" "stable_br"
-
-          echo "Create Arc Image"
-          IMAGE_FILE="arc-sbase.img"
-          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
-          fdisk -l "${IMAGE_FILE}"
-          
-          LOOPX=$(sudo losetup -f)
-          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
-
-          echo "Mounting Image File"
-          mkdir -p "/tmp/p1"
-          mkdir -p "/tmp/p3"
-          sudo mount ${LOOPX}p1 "/tmp/p1"
-          sudo mount ${LOOPX}p3 "/tmp/p3"
-
-          [ ! -f "stable_br/bzImage-arc" ] || [ ! -f "stable_br/initrd-arc" ] && return 1
-          
-          echo "Repack initrd"
-          cp -f "stable_br/bzImage-arc" "files/p3/bzImage-arc"
-          repackInitrd "stable_br/initrd-arc" "files/initrd" "files/p3/initrd-arc"
-
-          echo "Copying files"
-          sudo cp -Rf "files/p1/"* "/tmp/p1"
-          sudo cp -Rf "files/p3/"* "/tmp/p3"
-          sync
-
-          echo "Unmount image file"
-          sudo umount "/tmp/p1"
-          sudo umount "/tmp/p3"
-          rmdir "/tmp/p1"
-          rmdir "/tmp/p3"
-
-          sudo losetup --detach ${LOOPX}
-
-          echo "Image Converter"
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,compat6 arc-sbase-dyn.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat,compat6 arc-sbase.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc-sbase.vhdx
-
-          echo "Create Arc ova"
-          convertova "${IMAGE_FILE}" "arc-sbase.ova"
-
-          zip -9 update-sbase.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
-          sha256sum update-sbase.zip >checksum-sbase.sha256
-          rm -f "files/p3/bzImage-arc" "files/p3/initrd-arc"
-
       # Zip image and generate checksum
       - name: Pack
         run: |
@@ -227,12 +171,6 @@ jobs:
             zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
             zip -9 "arc-${{ env.VERSION }}.vhdx.zip" arc.vhdx
             zip -9 "arc-${{ env.VERSION }}.ova.zip" arc.ova
-            # SBase
-            zip -9 "arc-sbase-${{ env.VERSION }}.img.zip" arc-sbase.img
-            zip -9 "arc-sbase-${{ env.VERSION }}.vmdk-dyn.zip" arc-sbase-dyn.vmdk
-            zip -9 "arc-sbase-${{ env.VERSION }}.vmdk-flat.zip" arc-sbase.vmdk arc-sbase-flat.vmdk
-            zip -9 "arc-sbase-${{ env.VERSION }}.vhdx.zip" arc-sbase.vhdx
-            zip -9 "arc-sbase-${{ env.VERSION }}.ova.zip" arc-sbase.ova
           fi
           echo "${{ inputs.update_version }}" >check.update
 
@@ -249,9 +187,6 @@ jobs:
             ### Information:
             Notice: ${{ inputs.notice }}
             Buildtime: ${{ env.BUILD_TIME }}
-            Versions:
-              arc-${{ env.VERSION }} includes the latest Buildroot. (Latest Hardware Support)
-              arc-sbase-${{ env.VERSION }} includes the stable Buildroot. (Better Compatibility)
             Full Changelog and Arc Patch (Decryption Key) can be found in my Discord.
 
             ### Versions:
@@ -261,11 +196,9 @@ jobs:
             Patches: ${{ env.PATCHESTAG }}
             Theme: ${{ env.THEMETAG }}
             LKM: ${{ env.LKMTAG }}
-            Buildroot: ${{ env.BR_VERSION }} | Stable: ${{ env.BR_STABLE_VERSION }}
+            Buildroot: ${{ env.BR_VERSION }}
           artifacts: |
             arc-*.zip
             update.zip
-            update-sbase.zip
             checksum.sha256
-            checksum-sbase.sha256
             check.update
