@@ -975,7 +975,6 @@ else
       echo "X \"Sata DOM: \Z4${SATADOM}\Zn \" "                                               >>"${TMP_PATH}/menu"
       echo "u \"Switch LKM Version: \Z4${LKM}\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "c \"Switch IPv6 Support: \Z4${IPV6}\Zn \" "                                       >>"${TMP_PATH}/menu"
-      echo "h \"Screen off: \Z4${SCREENOFF}\Zn  \" "                                          >>"${TMP_PATH}/menu"
       echo "B \"Grep DSM Config from Backup \" "                                              >>"${TMP_PATH}/menu"
       echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
       echo "w \"Reset Loader to Defaults \" "                                                 >>"${TMP_PATH}/menu"
@@ -1159,17 +1158,6 @@ else
       C) cloneLoader; NEXT="C" ;;
       F) formatDisks; NEXT="F" ;;
       G) package; NEXT="G" ;;
-      h) dialog --backtitle "$(backtitle)" --title "Screen off" \
-        --yesno "Modifying this item requires a reboot, continue?" 0 0
-      RET=$?
-      [ ${RET} -ne 0 ] && continue
-      checkCmdline "arc_cmdline" "nomodeset" && delCmdline "arc_cmdline" "nomodeset" || addCmdline "arc_cmdline" "nomodeset"
-      dialog --backtitle "$(backtitle)" --title "Screen off" \
-        --infobox "Reboot to Arc Config Mode" 0 0
-      rebootTo config
-      exit 0
-      NEXT="h"
-      ;;
       # Misc Settings
       x) backupMenu; NEXT="x" ;;
       M) arcNIC; NEXT="M" ;;
