@@ -197,7 +197,7 @@ function arcModel() {
           resp=$(cat ${TMP_PATH}/resp)
           PLATFORM="$(grep -w "${resp}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
           dialog --backtitle "$(backtitle)" --colors \
-            --title "Platform Info" --textbox "./informations/${PLATFORM}.yml" 15 80
+            --title "Platform Info" --textbox "./informations/${PLATFORM}.yml" 70 80
           ;;
         255) # ESC -> Exit
           return 1
