@@ -4,7 +4,6 @@ set -e
 
 # Clean cached Files
 sudo git clean -fdx
-sudo git pull
 
 . scripts/func.sh
 
