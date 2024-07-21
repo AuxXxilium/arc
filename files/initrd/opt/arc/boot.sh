@@ -160,20 +160,15 @@ function bootDSM () {
 
   # Cmdline NIC Settings
   ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
-  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  if [ "${ARCPATCH}" == "true" ]; then
-    ETHN="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
-    [ -z "${ETHN}" ] && ETHN=1
-  else
-    ETHN="$(echo ${ETHX} | wc -w)"
-  fi
+  ETHN="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
+  [ -z "${ETHN}" ] && ETHN="$(echo ${ETHX} | wc -w)"
   NIC=0
   for ETH in ${ETHX}; do
     MAC="$(readConfigKey "${ETH}" "${USER_CONFIG_FILE}")"
     [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
     NIC=$((${NIC} + 1))
     [ ${NIC} -le ${ETHN} ] && CMDLINE["mac${NIC}"]="${MAC}"
-    [ ${NIC} -eq ${ETHN} ] && break
+    [ ${NIC} -ge ${ETHN} ] && break
   done
   CMDLINE['netif_num']="${NIC}"
 
