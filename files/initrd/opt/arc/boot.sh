@@ -223,7 +223,8 @@ function bootDSM () {
     [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
     IPCON=""
     if [ "${ARCPATCH}" == "true" ]; then
-      echo -e "\033[1;37mUsing ${NIC} NIC for Arc Patch.\033[0m"
+      echo -e "\033[1;34mUsing ${NIC} NIC for Arc Patch.\033[0m"
+      echo
     fi
     echo -e "\033[1;34mDetected ${ETHN} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
     sleep 3
