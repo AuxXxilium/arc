@@ -877,19 +877,15 @@ else
   [ "${BUILDDONE}" == "true" ] && NEXT="3" || NEXT="1"
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
-    if [ "${ARCPATCH}" == "true" ] && [ -z "ARC_KEY" ]; then
-      echo "0 \"Decrypt Arc Patch \" "                                                        >>"${TMP_PATH}/menu"
-    else
-      if [ -z "${ARC_KEY}" ]; then
-        echo "0 \"Decrypt Arc Patch \" "                                                      >>"${TMP_PATH}/menu"
-      fi
-      echo "1 \"Choose Model \" "                                                             >>"${TMP_PATH}/menu"
-      if [ "${CONFDONE}" == "true" ]; then
-        echo "2 \"Build Loader \" "                                                           >>"${TMP_PATH}/menu"
-      fi
-      if [ "${BUILDDONE}" == "true" ]; then
-        echo "3 \"Boot Loader \" "                                                            >>"${TMP_PATH}/menu"
-      fi
+    if [ -z "${ARC_KEY}" ]; then
+      echo "0 \"Decrypt Arc Patch \" "                                                      >>"${TMP_PATH}/menu"
+    fi
+    echo "1 \"Choose Model \" "                                                             >>"${TMP_PATH}/menu"
+    if [ "${CONFDONE}" == "true" ]; then
+      echo "2 \"Build Loader \" "                                                           >>"${TMP_PATH}/menu"
+    fi
+    if [ "${BUILDDONE}" == "true" ]; then
+      echo "3 \"Boot Loader \" "                                                            >>"${TMP_PATH}/menu"
     fi
     echo "= \"\Z4========== Info ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
     echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
