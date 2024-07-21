@@ -462,14 +462,19 @@ function arcSettings() {
     if [ "${PLATFORM}" != "epyc7002" ]; then
       if [ "${DT}" == "true" ] && [ "${EXTERNALCONTROLLER}" == "true" ]; then
         dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-          --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model. This is still an experimental." 5 90
+          --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental." 6 80
       fi
     fi
     # Check for more then 8 Ethernet Ports
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
+    MODELNIC="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
     if [ ${DEVICENIC} -gt 8 ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-        --msgbox "WARN: You have more then 8 Ethernet Ports. Only 8 supported by DSM." 5 80
+        --msgbox "WARN: You have more NIC (${DEVICENIC}) then 8 NIC.\nOnly 8 supported by DSM." 6 80
+    fi
+    if [ ${DEVICENIC} -gt ${MODELNIC} ] && [ "${ARCPATCH}" == "true" ]; then
+      dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+        --msgbox "WARN: You have more NIC (${DEVICENIC}) than supported by Model (${MODELNIC}).\nOnly ${MODELNIC} are used by Arc Patch." 6 80
     fi
     # Check for AES
     if [ "${AESSYS}" == "false" ]; then
