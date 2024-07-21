@@ -157,9 +157,9 @@ jobs:
           echo "Create Arc ova"
           convertova "arc.img" "arc.ova"
 
-          zip -9 update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
+          # Zip update and generate checksum
+          zip -9j update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
           sha256sum update.zip >checksum.sha256
-          rm -f "files/p3/bzImage-arc" "files/p3/initrd-arc"
 
       # Zip image and generate checksum
       - name: Pack
