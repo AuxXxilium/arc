@@ -6,6 +6,19 @@ function bootDSM () {
   BUS=$(getBus "${LOADER_DISK}")
   # Check if machine has EFI
   [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
+
+  # Proc open nvidia driver when booting
+  NVPCI_ADDR=$(lspci -nd 10de: | grep -e 0300 -e 0302 | awk '{print $1}')
+  if [ -n "${NVPCI_ADDR}" ]; then
+    modprobe -r nouveau || true
+    NVDEV_PATH=$(find /sys/devices -name *${NVPCI_ADDR} | grep  -v supplier)
+    for DEV_PATH in ${NVDEV_PATH}
+    do
+      if [ -e ${DEV_PATH}/reset ]; then
+            echo 1 > ${DEV_PATH}/reset || true
+      fi
+    done
+  fi
   # Print Title centralized
   clear
   COLUMNS=${COLUMNS:-50}
@@ -126,8 +139,8 @@ function bootDSM () {
   CMDLINE['earlyprintk']=""
   CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
   CMDLINE['console']="ttyS0,115200n8"
-  # CMDLINE['consoleblank']="600"
-  # CMDLINE['no_console_suspend']="1"
+  CMDLINE['consoleblank']="600"
+  CMDLINE['no_console_suspend']="1"
   CMDLINE['root']="/dev/md0"
   CMDLINE['rootwait']=""
   CMDLINE['loglevel']="15"
