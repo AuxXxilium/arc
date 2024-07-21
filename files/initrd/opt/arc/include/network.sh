@@ -6,13 +6,13 @@ function getnet() {
   NICPORTS="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
   if [ "${ARCPATCH}" == "true" ]; then
     ETHN="$(echo ${ETHX} | wc -w)"
-    MACS=($(generateMacAddress "${MODEL}" ${ETHN} true))
+    MACS=($(generateMacAddress "${MODEL}" "${ETHN}" true))
     for I in $(seq 1 ${ETHN}); do
       writeConfigKey "eth$((${I} - 1))" "${MACS[$((${I} - 1))]}" "${USER_CONFIG_FILE}"
     done
   elif [ "${ARCPATCH}" == "false" ]; then
     ETHN="$(echo ${ETHX} | wc -w)"
-    MACS=($(generateMacAddress "${MODEL}" ${ETHN} false))
+    MACS=($(generateMacAddress "${MODEL}" "${ETHN}" false))
     for I in $(seq 1 ${ETHN}); do
       writeConfigKey "eth$((${I} - 1))" "${MACS[$((${I} - 1))]}" "${USER_CONFIG_FILE}"
     done
