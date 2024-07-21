@@ -74,6 +74,7 @@ function bootDSM () {
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
   EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
   MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
+  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
   declare -A CMDLINE
 
@@ -125,7 +126,7 @@ function bootDSM () {
   CMDLINE['earlyprintk']=""
   CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
   CMDLINE['console']="ttyS0,115200n8"
-  CMDLINE['consoleblank']="600"
+  # CMDLINE['consoleblank']="600"
   # CMDLINE['no_console_suspend']="1"
   CMDLINE['root']="/dev/md0"
   CMDLINE['rootwait']=""
@@ -160,15 +161,16 @@ function bootDSM () {
 
   # Cmdline NIC Settings
   ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
-  ETHN="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
-  [ -z "${ETHN}" ] && ETHN="$(echo ${ETHX} | wc -w)"
+  ETHM="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
+  ETHN="$(echo ${ETHX} | wc -w)"
+  [ -z "${ETHM}" ] && ETHM="${ETHN}"
   NIC=0
   for ETH in ${ETHX}; do
     MAC="$(readConfigKey "${ETH}" "${USER_CONFIG_FILE}")"
     [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
     NIC=$((${NIC} + 1))
-    [ ${NIC} -le ${ETHN} ] && CMDLINE["mac${NIC}"]="${MAC}"
-    [ ${NIC} -ge ${ETHN} ] && break
+    [ ${NIC} -le ${ETHM} ] && CMDLINE["mac${NIC}"]="${MAC}"
+    [ ${NIC} -ge ${ETHM} ] && break
   done
   CMDLINE['netif_num']="${NIC}"
 
@@ -205,10 +207,12 @@ function bootDSM () {
     grub-editenv ${USER_GRUBENVFILE} unset dsm_cmdline
     grub-editenv ${USER_GRUBENVFILE} unset next_entry
     BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
-    ETHN="$(echo ${ETHX} | wc -w)"
     [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
     IPCON=""
-    echo -e "\033[1;34mDetected ${NIC} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+    if [ "${ARCPATCH}" == "true" ]; then
+      echo -e "\033[1;37mUsing ${NIC} NIC for Arc Patch.\033[0m"
+    fi
+    echo -e "\033[1;34mDetected ${ETHN} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
     sleep 3
     for ETH in ${ETHX}; do
       COUNT=0
