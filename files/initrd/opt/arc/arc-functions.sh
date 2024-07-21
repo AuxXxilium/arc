@@ -38,6 +38,7 @@ function addonSelection() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   # read addons from user config
   unset ADDONS
   declare -A ADDONS
@@ -48,7 +49,7 @@ function addonSelection() {
   touch "${TMP_PATH}/opts"
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
-    if [ "${ADDON}" == "amepatch" ] && [ "${OFFLINE}" == "true" ]; then
+    if [ "${ADDON}" == "amepatch" ] && [ "${ARCPATCH}" == "false" ]; then
       continue
     else
       echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
