@@ -1067,6 +1067,8 @@ function sysinfo() {
     elif [ "${REMAP}" == "ahci" ]; then
       PORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
     fi
+    USERCMDLINEINFO="$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
+    USERSYNOINFO="$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
   fi
   DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
@@ -1154,6 +1156,11 @@ function sysinfo() {
     TEXT+="\n  Addons selected: \Zb${ADDONSINFO}\Zn"
   fi
   TEXT+="\n  Modules loaded: \Zb${MODULESINFO}\Zn"
+  if [ "${CONFDONE}" == "true" ]; then
+    TEXT+="\n  User Cmdline: \Zb${USERCMDLINEINFO}\Zn"
+    TEXT+="\n  User Synoinfo: \Zb${USERSYNOINFO}\Zn"
+  fi
+  TEXT+="\n"
   TEXT+="\n\Z4> Settings\Zn"
   TEXT+="\n  Offline Mode: \Zb${OFFLINE}\Zn"
   if [[ "${REMAP}" == "acports" || "${REMAP}" == "maxports" ]]; then
