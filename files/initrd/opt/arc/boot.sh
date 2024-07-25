@@ -11,11 +11,10 @@ function bootDSM () {
   NVPCI_ADDR=$(lspci -nd 10de: | grep -e 0300 -e 0302 | awk '{print $1}')
   if [ -n "${NVPCI_ADDR}" ]; then
     modprobe -r nouveau || true
-    NVDEV_PATH=$(find /sys/devices -name *${NVPCI_ADDR} | grep  -v supplier)
-    for DEV_PATH in ${NVDEV_PATH}
-    do
+    NVDEV_PATH=$(find /sys/devices -name *${NVPCI_ADDR} | grep -v supplier)
+    for DEV_PATH in ${NVDEV_PATH}; do
       if [ -e ${DEV_PATH}/reset ]; then
-            echo 1 > ${DEV_PATH}/reset || true
+        echo 1 > ${DEV_PATH}/reset || true
       fi
     done
   fi
@@ -161,10 +160,8 @@ function bootDSM () {
       CMDLINE['modprobe.blacklist']+="mpt3sas"
     fi
   fi
-  if true; then
-    [ "${CMDLINE['modprobe.blacklist']}" != "" ] && CMDLINE['modprobe.blacklist']+=","
-    CMDLINE['modprobe.blacklist']+="evbug"
-  fi
+  CMDLINE['kvm.ignore_msrs']="1"
+  CMDLINE['kvm.report_ignored_msrs']="0"
   if echo "apollolake geminilake" | grep -wq "${PLATFORM}"; then
     CMDLINE["intel_iommu"]="igfx_off"
   fi
