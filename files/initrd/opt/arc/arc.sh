@@ -883,14 +883,14 @@ else
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
     if [ -z "${ARC_KEY}" ]; then
-      echo "0 \"Decrypt Arc Patch \" "                                                      >>"${TMP_PATH}/menu"
+      echo "0 \"Decrypt Arc Patch \" "                                                        >>"${TMP_PATH}/menu"
     fi
-    echo "1 \"Choose Model \" "                                                             >>"${TMP_PATH}/menu"
+    echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
     if [ "${CONFDONE}" == "true" ]; then
-      echo "2 \"Build Loader \" "                                                           >>"${TMP_PATH}/menu"
+      echo "2 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
     fi
     if [ "${BUILDDONE}" == "true" ]; then
-      echo "3 \"Boot Loader \" "                                                            >>"${TMP_PATH}/menu"
+      echo "3 \"Boot Loader \" "                                                              >>"${TMP_PATH}/menu"
     fi
     echo "= \"\Z4========== Info ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
     echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
@@ -991,7 +991,7 @@ else
     echo "9 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
     echo "y \"Choose a Keymap \" "                                                            >>"${TMP_PATH}/menu"
     if [ "${OFFLINE}" == "false" ]; then
-      echo "z \"Update Loader \" "                                                            >>"${TMP_PATH}/menu"
+      echo "z \"Update Menu \" "                                                              >>"${TMP_PATH}/menu"
     fi
     echo "I \"Power Menu \" "                                                                 >>"${TMP_PATH}/menu"
     echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
