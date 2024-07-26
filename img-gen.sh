@@ -63,7 +63,7 @@ qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monoli
 qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc-x.vhdx
 
 # Sbase
-IMAGE_FILE="arc.img"
+IMAGE_FILE="arc-s.img"
 gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
 fdisk -l "${IMAGE_FILE}"
 
