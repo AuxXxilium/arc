@@ -7,6 +7,7 @@
 function upgradeLoader () {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
   local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
+  local ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   if [ -z "${1}" ]; then
     # Check for new Version
     idx=0
@@ -43,35 +44,35 @@ function upgradeLoader () {
     (
       # Download update file
       echo "Downloading ${TAG}"
-      local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip"
+      local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${ARCBRANCH}-${TAG}.img.zip"
       if [ "${ARCNIC}" == "auto" ]; then
-        curl -#kL "${URL}" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl -#kL "${URL}" -o "${TMP_PATH}/arc-${ARCBRANCH}-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
       else
-        curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/arc-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/arc-${ARCBRANCH}-${TAG}.img.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
       fi
-      if [ -f "${TMP_PATH}/arc-${TAG}.img.zip" ]; then
+      if [ -f "${TMP_PATH}/arc-${ARCBRANCH}-${TAG}.img.zip" ]; then
         echo "Downloading Upgradefile successful!"
       else
         echo "Error downloading Upgradefile!"
         sleep 5
         return 1
       fi
-      unzip -oq "${TMP_PATH}/arc-${TAG}.img.zip" -d "${TMP_PATH}"
-      rm -f "${TMP_PATH}/arc-${TAG}.img.zip" >/dev/null
+      unzip -oq "${TMP_PATH}/arc-${ARCBRANCH}-${TAG}.img.zip" -d "${TMP_PATH}"
+      rm -f "${TMP_PATH}/arc-${ARCBRANCH}-${TAG}.img.zip" >/dev/null
       echo "Installing new Loader Image..."
       # Process complete update
       umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
-      dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1) bs=1M conv=fsync
+      dd if="${TMP_PATH}/arc-${ARCBRANCH}.img" of=$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1) bs=1M conv=fsync
       # Ask for Boot
-      rm -f "${TMP_PATH}/arc.img" >/dev/null
+      rm -f "${TMP_PATH}/arc-${ARCBRANCH}.img" >/dev/null
       echo "Upgrade done! -> Rebooting..."
       sleep 2
     ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
@@ -85,6 +86,7 @@ function upgradeLoader () {
 function updateLoader() {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
   local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
+  local ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   if [ -z "${1}" ]; then
     # Check for new Version
     idx=0
@@ -126,38 +128,37 @@ function updateLoader() {
     (
       # Download update file
       echo "Downloading ${TAG}"
-      local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip"
-      local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum.sha256"
+      local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${ARCBRANCH}.zip"
+      local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum-${ARCBRANCH}.sha256"
       if [ "${ARCNIC}" == "auto" ]; then
-        curl -#kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl -#kL "${URL}" -o "${TMP_PATH}/update-${ARCBRANCH}.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
-        curl -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
+        curl -skL "${SHA}" -o "${TMP_PATH}/checksum-${ARCBRANCH}.sha256"
       else
-        curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/update-${ARCBRANCH}.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
-        curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
+        curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum-${ARCBRANCH}.sha256"
       fi
-      if [ "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" = "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
+      if [ "$(sha256sum "${TMP_PATH}/update-${ARCBRANCH}.zip" | awk '{print $1}')" = "$(cat ${TMP_PATH}/checksum-${ARCBRANCH}.sha256 | awk '{print $1}')" ]; then
         echo "Download successful!"
-        unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}"
+        unzip -oq "${TMP_PATH}/update-${ARCBRANCH}.zip" -d "${TMP_PATH}"
         echo "Installing new Loader Image..."
         mv -f "${TMP_PATH}/grub.cfg" "${USER_GRUB_CONFIG}"
         mv -f "${TMP_PATH}/ARC-VERSION" "${PART1_PATH}/ARC-VERSION"
         mv -f "${TMP_PATH}/bzImage-arc" "${ARC_BZIMAGE_FILE}"
         mv -f "${TMP_PATH}/initrd-arc" "${ARC_RAMDISK_FILE}"
-        rm -f "${TMP_PATH}/update.zip"
+        rm -f "${TMP_PATH}/update-${ARCBRANCH}.zip"
       else
         echo "Error getting new Version!"
         sleep 5
         updateFailed
       fi
-      [ -f "${TMP_PATH}/update.zip" ] && rm -f "${TMP_PATH}/update.zip"
       echo "Update done!"
       sleep 2
     ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Update Loader" \

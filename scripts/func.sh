@@ -204,7 +204,7 @@ function getTheme() {
 function getBuildroot() {
   echo "Getting Buildroot begin"
   TAG="${1:-latest}"
-  local DEST_PATH="${2:-br}"
+  local DEST_PATH="${2:-brx}"
 
   if [ "${TAG}" = "latest" ]; then
     TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-buildroot/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"

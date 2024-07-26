@@ -82,6 +82,7 @@ if grep -q "automated_arc" /proc/cmdline; then
 else
   writeConfigKey "automated" "false" "${USER_CONFIG_FILE}"
 fi
+[ echo "${ARC_VERSION}" | grep -q "s" ] && writeConfigKey "arc.branch" "s" "${USER_CONFIG_FILE}" || writeConfigKey "arc.branch" "x" "${USER_CONFIG_FILE}"
 [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
 # Check for compatibility
 compatboot
@@ -110,6 +111,7 @@ for ETH in ${ETHX}; do
     sleep 1
   fi
   [ "${ETH::3}" = "eth" ] && ethtool -s ${ETH} wol g 2>/dev/null || true
+  [ "${ETH::3}" = "eth" ] && ethtool -K ${ETH} rxhash off 2>/dev/null || true
   initConfigKey "${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
 done
 ETHN="$(echo ${ETHX} | wc -w)"
