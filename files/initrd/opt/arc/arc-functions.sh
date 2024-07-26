@@ -1017,11 +1017,10 @@ function updateMenu() {
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
-          ARCBRANCH="x"
+          writeConfigKey "arc.branch" "" "${USER_CONFIG_FILE}"
         elif [ ${opts} -eq 2 ]; then
-          ARCBRANCH="s"
+          writeConfigKey "arc.branch" "s" "${USER_CONFIG_FILE}"
         fi
-        writeConfigKey "arc.branch" "${ARCBRANCH}" "${USER_CONFIG_FILE}"
         ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
         dialog --backtitle "$(backtitle)" --title "Switch Buildroot" --aspect 18 \
           --msgbox "Updates are using ${ARCBRANCH} Branch!" 0 0
