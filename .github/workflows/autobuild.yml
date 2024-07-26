@@ -235,7 +235,7 @@ jobs:
               X Version: ${{ env.BR_XVERSION }}
               S Version: ${{ env.BR_SVERSION }}
           artifacts: |
-            arcx-*.zip
+            arc-*.zip
             update-x.zip
             update-s.zip
             checksum-x.sha256
