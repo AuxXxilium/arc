@@ -79,13 +79,13 @@ jobs:
 
           if [ -n "${VERSION}" ]; then
             # Modify Source File
-            echo "${VERSION}x" >VERSION
-            echo "${VERSION}x" >files/p1/ARC-VERSION
-            sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}x'"/' -i files/initrd/opt/arc/include/consts.sh
+            echo "${VERSION}" >VERSION
+            echo "${VERSION}" >files/p1/ARC-VERSION
+            sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
           fi
 
           echo "Create Arc Image"
-          IMAGE_FILE="arc-x.img"
+          IMAGE_FILE="arc.img"
           gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
@@ -118,16 +118,16 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           echo "Image Converter"
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-x-dyn.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc-x.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc-x.vhdx
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
 
           echo "Create Arc ova"
-          convertova "${IMAGE_FILE}" "arc-x.ova"
+          convertova "${IMAGE_FILE}" "arc.ova"
 
           # Zip update and generate checksum
-          zip -9j update-x.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
-          sha256sum update-x.zip >checksum-x.sha256
+          zip -9j update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
+          sha256sum update.zip >checksum.sha256
 
        # Build incremental
       - name: Build Image S
@@ -136,9 +136,9 @@ jobs:
 
           if [ -n "${VERSION}" ]; then
             # Modify Source File
-            echo "${VERSION}s" >VERSION
-            echo "${VERSION}s" >files/p1/ARC-VERSION
-            sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}s'"/' -i files/initrd/opt/arc/include/consts.sh
+            echo "s-${VERSION}" >VERSION
+            echo "s-${VERSION}" >files/p1/ARC-VERSION
+            sed 's/^ARC_VERSION=.*/ARC_VERSION="'s-${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
           fi
 
           echo "Create Arc Image"
@@ -191,11 +191,11 @@ jobs:
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
             # XBase
-            zip -9 "arc-x-${{ env.VERSION }}.img.zip" arc-x.img
-            zip -9 "arc-x-${{ env.VERSION }}.vmdk-dyn.zip" arc-x-dyn.vmdk
-            zip -9 "arc-x-${{ env.VERSION }}.vmdk-flat.zip" arc-x.vmdk arc-x-flat.vmdk
-            zip -9 "arc-x-${{ env.VERSION }}.vhdx.zip" arc-x.vhdx
-            zip -9 "arc-x-${{ env.VERSION }}.ova.zip" arc-x.ova
+            zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
+            zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}.vhdx.zip" arc.vhdx
+            zip -9 "arc-${{ env.VERSION }}.ova.zip" arc.ova
             # SBase
             zip -9 "arc-s-${{ env.VERSION }}.img.zip" arc-s.img
             zip -9 "arc-s-${{ env.VERSION }}.vmdk-dyn.zip" arc-s-dyn.vmdk
@@ -217,12 +217,12 @@ jobs:
           body: |
             ### Information:
             Notice: ${{ inputs.notice }}
-            Buildtime: ${{ env.BUILD_TIME }}
+            Release: ${{ env.BUILD_TIME }}
             
             - Full Changelog and Arc Patch (Decryption Key) can be found in my Discord.
             - Version:
-              - X Version: Latest Buildroot System (incl. Hyper-V and XEN (still in testing))
-              - S Version: Stable Buildroot System (For the most Systems)
+              - without "s": Latest Buildroot System (incl. Hyper-V and XEN (still in testing))
+              - with "s": Stable Buildroot System (For the most Systems)
 
             ### Versions:
             Addons: ${{ env.ADDONSTAG }}
@@ -231,13 +231,11 @@ jobs:
             Patches: ${{ env.PATCHESTAG }}
             Theme: ${{ env.THEMETAG }}
             LKM: ${{ env.LKMTAG }}
-            Buildroot:
-              X Version: ${{ env.BR_XVERSION }}
-              S Version: ${{ env.BR_SVERSION }}
+            Buildroot: ${{ env.BR_XVERSION }} | Buildroot S: ${{ env.BR_SVERSION }}
           artifacts: |
             arc-*.zip
-            update-x.zip
+            update.zip
             update-s.zip
-            checksum-x.sha256
+            checksum.sha256
             checksum-s.sha256
             check.update
