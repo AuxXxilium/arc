@@ -140,29 +140,29 @@ function updateLoader() {
         local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum.sha256"
       fi
       if [ "${ARCNIC}" == "auto" ]; then
-        curl -#kL "${URL}" -o "${TMP_PATH}/update-${ARCBRANCH}.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl -#kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
-        curl -skL "${SHA}" -o "${TMP_PATH}/checksum-${ARCBRANCH}.sha256"
+        curl -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       else
-        curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/update-${ARCBRANCH}.zip" 2>&1 | while IFS= read -r -n1 char; do
+        curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
           [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
-        curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum-${ARCBRANCH}.sha256"
+        curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       fi
-      if [ "$(sha256sum "${TMP_PATH}/update-${ARCBRANCH}.zip" | awk '{print $1}')" = "$(cat ${TMP_PATH}/checksum-${ARCBRANCH}.sha256 | awk '{print $1}')" ]; then
+      if [ "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" = "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
         echo "Download successful!"
-        unzip -oq "${TMP_PATH}/update-${ARCBRANCH}.zip" -d "${TMP_PATH}"
+        unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}"
         echo "Installing new Loader Image..."
         mv -f "${TMP_PATH}/grub.cfg" "${USER_GRUB_CONFIG}"
         mv -f "${TMP_PATH}/ARC-VERSION" "${PART1_PATH}/ARC-VERSION"
         mv -f "${TMP_PATH}/bzImage-arc" "${ARC_BZIMAGE_FILE}"
         mv -f "${TMP_PATH}/initrd-arc" "${ARC_RAMDISK_FILE}"
-        rm -f "${TMP_PATH}/update-${ARCBRANCH}.zip"
+        rm -f "${TMP_PATH}/update.zip"
       else
         echo "Error getting new Version!"
         sleep 5
