@@ -168,36 +168,20 @@ jobs:
         run: |
           if [ "${{ env.FORMAT }}" = "img" ]; then
             zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.img.zip" arc.img
-            UPLOAD=$(curl -X 'POST' "https://filebin.net/arc/${{ env.KEY }}" -H 'accept: application/json' -H 'Content-Type: application/octet-stream' --data-binary "@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.img.zip")
-            if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
-              echo "Upload failed"
-              exit 1
-            fi
+            curl -X 'POST' "https://filebin.net/arc/${{ env.KEY }}" -H 'accept: application/json' -H 'Content-Type: application/octet-stream' --data-binary "@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.img.zip"
           elif [ "${{ env.FORMAT }}" = "dyn" ]; then
             zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
-            UPLOAD=$(curl -X 'POST' "https://filebin.net/arc/${{ env.KEY }}" -H 'accept: application/json' -H 'Content-Type: application/octet-stream' --data-binary "@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-dyn.zip")
-            if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
-              echo "Upload failed"
-              exit 1
-            fi
+            curl -X 'POST' "https://filebin.net/arc/${{ env.KEY }}" -H 'accept: application/json' -H 'Content-Type: application/octet-stream' --data-binary "@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-dyn.zip"
           elif [ "${{ env.FORMAT }}" = "flat" ]; then
             zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            UPLOAD=$(curl -X 'POST' "https://filebin.net/arc/${{ env.KEY }}" -H 'accept: application/json' -H 'Content-Type: application/octet-stream' --data-binary "@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-flat.zip")
-            if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
-              echo "Upload failed"
-              exit 1
-            fi
+            curl -X 'POST' "https://filebin.net/arc/${{ env.KEY }}" -H 'accept: application/json' -H 'Content-Type: application/octet-stream' --data-binary "@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-flat.zip"
           elif [ "${{ env.FORMAT }}" = "vhdx" ]; then
             zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vhdx.zip" arc.vhdx
-            UPLOAD=$(curl -X 'POST' "https://filebin.net/arc/${{ env.KEY }}" -H 'accept: application/json' -H 'Content-Type: application/octet-stream' --data-binary "@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vhdx.zip")
-            if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
-              echo "Upload failed"
-              exit 1
-            fi
+            curl -X 'POST' "https://filebin.net/arc/${{ env.KEY }}" -H 'accept: application/json' -H 'Content-Type: application/octet-stream' --data-binary "@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vhdx.zip"
           fi
 
           EMAIL=$(curl -s -H "Authorization: token ${{ secrets.ACTION }}" "https://api.github.com/users/${{ github.event.issue.user.login }}" | jq -r '.email')
-          FIOURL="$(echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+')"
+          FIOURL="https://filebin.net/arc/${{ env.KEY }}"
           echo "EMAIL=${EMAIL}" >> $GITHUB_ENV
           echo "FIOURL=${FIOURL}" >> $GITHUB_ENV
 
