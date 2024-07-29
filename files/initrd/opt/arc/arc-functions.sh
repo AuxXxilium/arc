@@ -1956,21 +1956,17 @@ function decryptMenu() {
         --msgbox "Decrypt successful: You can use Arc Patch." 5 50
       cp -f "${S_FILE_ARC}" "${S_FILE}"
       writeConfigKey "arc.key" "${ARC_KEY}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-      CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     else
       cp -f "${S_FILE}.bak" "${S_FILE}"
       dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
         --msgbox "Decrypt failed: Wrong Key for this Version." 5 50
       writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-      CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     fi
   fi
+  writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   ARC_KEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
   return
 }
