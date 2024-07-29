@@ -74,7 +74,11 @@ function upgradeLoader () {
       echo "Installing new Loader Image..."
       # Process complete update
       umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
-      dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1) bs=1M conv=fsync
+      if [ -n "${ARCBRANCH}" ]; then
+        dd if="${TMP_PATH}/arc-${ARCBRANCH}.img" of=$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1) bs=1M conv=fsync
+      else
+        dd if="${TMP_PATH}/arc.img" of=$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1) bs=1M conv=fsync
+      fi
       # Ask for Boot
       rm -f "${TMP_PATH}/arc.img" >/dev/null
       echo "Upgrade done! -> Rebooting..."
