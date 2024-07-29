@@ -161,31 +161,30 @@ jobs:
       # Zip image and generate checksum
       - name: Pack
         run: |
-          URL="curl -k -X 'POST' "https://file.io" -H 'accept: application/json' -H 'Authorization: Bearer ${{ secrets.TOKEN }}' -H 'Content-Type: multipart/form-data' -F 'maxDownloads=1' -F 'autoDelete=true'"
           if [ "${{ env.FORMAT }}" = "img" ]; then
             zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.img.zip" arc.img
-            UPLOAD=$(${URL} -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.img.zip")
+            UPLOAD=$(curl -k -X 'POST' "https://file.io" -H 'accept: application/json' -H 'Authorization: Bearer ${{ secrets.TOKEN }}' -H 'Content-Type: multipart/form-data' -F 'maxDownloads=1' -F 'autoDelete=true' -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.img.zip")
             if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
               echo "Upload failed"
               exit 1
             fi
           elif [ "${{ env.FORMAT }}" = "dyn" ]; then
             zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
-            UPLOAD=$(${URL} -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-dyn.zip")
+            UPLOAD=$(curl -k -X 'POST' "https://file.io" -H 'accept: application/json' -H 'Authorization: Bearer ${{ secrets.TOKEN }}' -H 'Content-Type: multipart/form-data' -F 'maxDownloads=1' -F 'autoDelete=true' -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-dyn.zip")
             if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
               echo "Upload failed"
               exit 1
             fi
           elif [ "${{ env.FORMAT }}" = "flat" ]; then
             zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            UPLOAD=$(${URL} -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-flat.zip")
+            UPLOAD=$(curl -k -X 'POST' "https://file.io" -H 'accept: application/json' -H 'Authorization: Bearer ${{ secrets.TOKEN }}' -H 'Content-Type: multipart/form-data' -F 'maxDownloads=1' -F 'autoDelete=true' -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-flat.zip")
             if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
               echo "Upload failed"
               exit 1
             fi
           elif [ "${{ env.FORMAT }}" = "vhdx" ]; then
             zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vhdx.zip" arc.vhdx
-            UPLOAD=$(${URL} -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vhdx.zip")
+            UPLOAD=$(curl -k -X 'POST' "https://file.io" -H 'accept: application/json' -H 'Authorization: Bearer ${{ secrets.TOKEN }}' -H 'Content-Type: multipart/form-data' -F 'maxDownloads=1' -F 'autoDelete=true' -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vhdx.zip")
             if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
               echo "Upload failed"
               exit 1
