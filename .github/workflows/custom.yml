@@ -65,7 +65,7 @@ jobs:
           VERSION="`date +'%y.%-m.%-d'`-custom"
 
           # Calculate Hash
-          . /scripts/random.sh
+          . scripts/random.sh
           KEY="$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)"
           echo "KEY=${KEY}" >> $GITHUB_ENV
 
