@@ -1118,7 +1118,7 @@ function sysinfo() {
     TEXT+="\n\Zb$(lspci -s ${NETBUS} -nnk | awk '{$1=""}1' | awk '{$1=$1};1')\Zn\n"
   done
   # Print Config Informations
-  TEXT+="\n\Z4> Arc: ${ARC_VERSION} | Branch: ${ARCBRANCH}\Zn"
+  TEXT+="\n\Z4> Arc: ${ARC_VERSION} | Branch: ${ARCBRANCH:-x}\Zn"
   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"
