@@ -10,6 +10,7 @@ set -e
 
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
+checkBootLoader || die "The loader is corrupted, please rewrite it!"
 BUS=$(getBus "${LOADER_DISK}")
 
 # Check if machine has EFI
