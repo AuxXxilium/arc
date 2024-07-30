@@ -192,6 +192,13 @@ echo "Modify files" >"${LOG_FILE}"
 # Build modules dependencies
 # ${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
 
+# Copying modulelist
+if [ -f "${USER_UP_PATH}/modulelist" ]; then
+  cp -f "${USER_UP_PATH}/modulelist" "${RAMDISK_PATH}/addons/modulelist"
+else
+  cp -f "${ARC_PATH}/include/modulelist" "${RAMDISK_PATH}/addons/modulelist"
+fi
+
 # backup current loader configs
 BACKUP_PATH="${RAMDISK_PATH}/usr/arc/backup"
 rm -rf "${BACKUP_PATH}"
