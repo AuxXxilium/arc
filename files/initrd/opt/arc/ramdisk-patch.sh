@@ -153,7 +153,7 @@ echo 'echo "addons.sh called with params ${@}"' >>"${RAMDISK_PATH}/addons/addons
 echo "export LOADERLABEL=\"ARC\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export LOADERVERSION=\"${ARC_VERSION}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export PLATFORM=\"${PLATFORM}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export PRODUCTVERL=\"${PRODUCTVER}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export PRODUCTVER=\"${PRODUCTVER}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MODEL=\"${MODEL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MODELID=\"${MODELID}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MLINK=\"${PAT_URL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
@@ -166,10 +166,10 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol" "mountloader" "powersched" "cpufreqscaling"; do
   PARAMS=""
   if [ "${ADDON}" == "disks" ]; then
-    PARAMS=${HDDSORT:-"false"}
+    PARAMS=${HDDSORT}
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   elif [ "${ADDON}" == "cpufreqscaling" ]; then
-    PARAMS=${CPUGOVERNOR:-"performance"}
+    PARAMS=${CPUGOVERNOR}
   fi
   installAddon "${ADDON}" "${PLATFORM}" || exit 1
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
@@ -187,17 +187,10 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 
 echo "Modify files" >"${LOG_FILE}"
 # Remove function from scripts
-[ "2" == "${BUILDNUM:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
+[ "2" == "${PRODUCTVER:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
 
 # Build modules dependencies
 # ${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
-
-# Copying modulelist
-if [ -f "${USER_UP_PATH}/modulelist" ]; then
-  cp -f "${USER_UP_PATH}/modulelist" "${RAMDISK_PATH}/addons/modulelist"
-else
-  cp -f "${ARC_PATH}/include/modulelist" "${RAMDISK_PATH}/addons/modulelist"
-fi
 
 # backup current loader configs
 BACKUP_PATH="${RAMDISK_PATH}/usr/arc/backup"
