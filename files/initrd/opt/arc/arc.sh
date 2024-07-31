@@ -868,6 +868,7 @@ function boot() {
     --infobox "Booting DSM...\nPlease stay patient!" 4 25
   sleep 2
   bootDSM
+  exit 0
 }
 
 ###############################################################################
