@@ -1800,29 +1800,70 @@ function editGrubCfg() {
 ###############################################################################
 # Grep Logs from dbgutils
 function greplogs() {
-  if [ -d "${PART1_PATH}/logs" ]; then
-    rm -f "${TMP_PATH}/logs.tar.gz"
-    tar -czf "${TMP_PATH}/logs.tar.gz" -C "${PART1_PATH}/logs"
-    if [ -z "${SSH_TTY}" ]; then # web
-      mv -f "${TMP_PATH}/logs.tar.gz" "/var/www/data/logs.tar.gz"
-      URL="http://$(getIP)/logs.tar.gz"
-      dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
-        --msgbox "Please visit ${URL}\nto download the logs and unzip it and back it up in order by file name." 0 0
-    else
-      sz -be -B 536870912 "${TMP_PATH}/log.tar.gz"
-      dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
-        --msgbox "Please unzip it and back it up in order by file name." 0 0
-    fi
-  else
-    MSG=""
-    MSG+="\Z1No log found!\Zn\n\n"
-    MSG+="Please do as follows:\n"
-    MSG+=" 1. Add dbgutils in Addons and rebuild.\n"
-    MSG+=" 2. Boot to DSM.\n"
-    MSG+=" 3. Reboot to Config Mode and use this Option.\n"
-    dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
-      --msgbox "${MSG}" 0 0
+  MSG=""
+  SYSLOG=0
+  DSMROOTS="$(findDSMRoot)"
+  if [ -n "${DSMROOTS}" ]; then
+    mkdir -p "${TMP_PATH}/mdX"
+    for I in ${DSMROOTS}; do
+      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      [ $? -ne 0 ] && continue
+      mkdir -p "${TMP_PATH}/logs/md0/log"
+      cp -rf ${TMP_PATH}/mdX/.log.junior "${TMP_PATH}/logs/md0"
+      cp -rf ${TMP_PATH}/mdX/var/log/messages ${TMP_PATH}/mdX/var/log/*.log "${TMP_PATH}/logs/md0/log"
+      SYSLOG=1
+      umount "${TMP_PATH}/mdX"
+    done
+    rm -rf "${TMP_PATH}/mdX"
   fi
+  if [ ${SYSLOG} -eq 1 ]; then
+    MSG+="System logs found!\n"
+  else
+    MSG+="Can't find system logs!\n"
+  fi
+
+  PSTORE=0
+  if [ -n "$(ls /sys/fs/pstore)" ]; then
+    mkdir -p "${TMP_PATH}/logs/pstore"
+    cp -rf /sys/fs/pstore/* "${TMP_PATH}/logs/pstore"
+    zlib-flate -uncompress </sys/fs/pstore/*.z >"${TMP_PATH}/logs/pstore/ps.log" 2>/dev/null
+    PSTORE=1
+  fi
+  if [ ${PSTORE} -eq 1 ]; then
+    MSG+="Pstore logs found!\n"
+  else
+    MSG+="Can't find pstore logs!\n"
+  fi
+
+  ADDONS=0
+  if [ -d "${PART1_PATH}/logs" ]; then
+    mkdir -p "${TMP_PATH}/logs/addons"
+    cp -rf "${PART1_PATH}/logs"/* "${TMP_PATH}/logs/addons"
+    ADDONS=1
+  fi
+  if [ ${ADDONS} -eq 1 ]; then
+    MSG+="Addons logs found!\n"
+  else
+    MSG+="Can't find Addon logs!\n"
+    MSG+="Please do as follows:\n"
+    MSG+="1. Add dbgutils in addons and rebuild.\n"
+    MSG+="2. Wait 10 minutes after booting.\n"
+    MSG+="3. Reboot into Arc and go to this option.\n"
+  fi
+
+  rm -f "${TMP_PATH}/logs.tar.gz"
+  tar -czf "${TMP_PATH}/logs.tar.gz" -C "${TMP_PATH}" logs
+
+  if [ -z "${SSH_TTY}" ]; then # web
+    mv -f "${TMP_PATH}/logs.tar.gz" "/var/www/data/logs.tar.gz"
+    URL="http://$(getIP)/logs.tar.gz"
+    MSG+="Please visit ${URL} to download the logs,\nAnd go to Github or Discord to create an issue and upload the logs."
+  else
+    sz -be -B 536870912 "${TMP_PATH}/logs.tar.gz"
+    MSG+="Please go to Github or Discord to create an issue and upload the logs."
+  fi
+  dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
+    --msgbox "${MSG}" 0 0
   return
 }
 
