@@ -500,8 +500,8 @@ function arcSettings() {
     deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
   fi
   # Max Memory for DSM
-  RAMCONFIG="$((${RAMTOTAL} * 1024))"
-  writeConfigKey "synoinfo.mem_max_mb" "${RAMCONFIG}" "${USER_CONFIG_FILE}"
+  #RAMCONFIG="$((${RAMTOTAL} * 1024))"
+  #writeConfigKey "synoinfo.mem_max_mb" "${RAMCONFIG}" "${USER_CONFIG_FILE}"
   # Config is done
   writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
