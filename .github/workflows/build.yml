@@ -77,6 +77,13 @@ jobs:
             VERSION="`date +'%y.%m.%d'`"
           fi
           
+          if [ -n "${VERSION}" ]; then
+            # Modify Source File
+            echo "${VERSION}" >VERSION
+            echo "${VERSION}" >files/p1/ARC-VERSION
+            sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
+          fi
+
           echo "Version: ${VERSION}"
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
@@ -98,10 +105,8 @@ jobs:
           getTheme "files/p1/boot/grub"
           echo "THEMETAG=${TAG}" >> $GITHUB_ENV
           getOffline "files/p3/configs"
-          getBuildroot "latest" "brx"
-          echo "BR_XVERSION=${TAG}" >> $GITHUB_ENV
-          getBuildroot "stable" "brs"
-          echo "BR_SVERSION=${TAG}" >> $GITHUB_ENV
+          getBuildroot "latest" "br"
+          echo "BR_VERSION=${TAG}" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
@@ -110,13 +115,6 @@ jobs:
       - name: Build Image X
         run: |
           . scripts/func.sh
-
-          if [ -n "${VERSION}" ]; then
-            # Modify Source File
-            echo "${VERSION}" >VERSION
-            echo "${VERSION}" >files/p1/ARC-VERSION
-            sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
-          fi
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -132,11 +130,11 @@ jobs:
           sudo mount ${LOOPX}p1 "/tmp/p1"
           sudo mount ${LOOPX}p3 "/tmp/p3"
 
-          [ ! -f "brx/bzImage-arc" ] || [ ! -f "brx/initrd-arc" ] && return 1
+          [ ! -f "br/bzImage-arc" ] || [ ! -f "br/initrd-arc" ] && return 1
           
           echo "Repack initrd"
-          cp -f "brx/bzImage-arc" "files/p3/bzImage-arc"
-          repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+          cp -f "br/bzImage-arc" "files/p3/bzImage-arc"
+          repackInitrd "br/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
           sudo cp -Rf "files/p1/"* "/tmp/p1"
@@ -163,63 +161,6 @@ jobs:
           zip -9j update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
           sha256sum update.zip >checksum.sha256
 
-       # Build incremental
-      - name: Build Image S
-        run: |
-          . scripts/func.sh
-
-          if [ -n "${VERSION}" ]; then
-            # Modify Source File
-            echo "s-${VERSION}" >VERSION
-            echo "s-${VERSION}" >files/p1/ARC-VERSION
-            sed 's/^ARC_VERSION=.*/ARC_VERSION="'s-${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
-          fi
-
-          echo "Create Arc Image"
-          IMAGE_FILE="arc-s.img"
-          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
-          fdisk -l "${IMAGE_FILE}"
-          
-          LOOPX=$(sudo losetup -f)
-          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
-
-          echo "Mounting Image File"
-          mkdir -p "/tmp/p1"
-          mkdir -p "/tmp/p3"
-          sudo mount ${LOOPX}p1 "/tmp/p1"
-          sudo mount ${LOOPX}p3 "/tmp/p3"
-
-          [ ! -f "brs/bzImage-arc" ] || [ ! -f "brs/initrd-arc" ] && return 1
-          
-          echo "Repack initrd"
-          cp -f "brs/bzImage-arc" "files/p3/bzImage-arc"
-          repackInitrd "brs/initrd-arc" "files/initrd" "files/p3/initrd-arc"
-
-          echo "Copying files"
-          sudo cp -Rf "files/p1/"* "/tmp/p1"
-          sudo cp -Rf "files/p3/"* "/tmp/p3"
-          sync
-
-          echo "Unmount image file"
-          sudo umount "/tmp/p1"
-          sudo umount "/tmp/p3"
-          rmdir "/tmp/p1"
-          rmdir "/tmp/p3"
-
-          sudo losetup --detach ${LOOPX}
-
-          echo "Image Converter"
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-s-dyn.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc-s.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc-s.vhdx
-
-          echo "Create Arc ova"
-          convertova "${IMAGE_FILE}" "arc-s.ova"
-
-          # Zip update and generate checksum
-          zip -9j update-s.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
-          sha256sum update-s.zip >checksum-s.sha256
-
       # Zip image and generate checksum
       - name: Pack
         run: |
@@ -230,12 +171,6 @@ jobs:
             zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
             zip -9 "arc-${{ env.VERSION }}.vhdx.zip" arc.vhdx
             zip -9 "arc-${{ env.VERSION }}.ova.zip" arc.ova
-            # SBase
-            zip -9 "arc-s-${{ env.VERSION }}.img.zip" arc-s.img
-            zip -9 "arc-s-${{ env.VERSION }}.vmdk-dyn.zip" arc-s-dyn.vmdk
-            zip -9 "arc-s-${{ env.VERSION }}.vmdk-flat.zip" arc-s.vmdk arc-s-flat.vmdk
-            zip -9 "arc-s-${{ env.VERSION }}.vhdx.zip" arc-s.vhdx
-            zip -9 "arc-s-${{ env.VERSION }}.ova.zip" arc-s.ova
           fi
           echo "${{ inputs.update_version }}" >check.update
 
@@ -254,9 +189,6 @@ jobs:
             Release: ${{ env.BUILD_TIME }}
             
             - Full Changelog and Arc Patch (Decryption Key) can be found in my Discord.
-            - Version:
-              - without "s": Latest Buildroot System (incl. Hyper-V and XEN (still in testing))
-              - with "s": Stable Buildroot System (For the most Systems)
 
             ### Versions:
             Addons: ${{ env.ADDONSTAG }}
@@ -265,11 +197,9 @@ jobs:
             Patches: ${{ env.PATCHESTAG }}
             Theme: ${{ env.THEMETAG }}
             LKM: ${{ env.LKMTAG }}
-            Buildroot: ${{ env.BR_XVERSION }} | Buildroot S: ${{ env.BR_SVERSION }}
+            Buildroot: ${{ env.BR_XVERSION }}
           artifacts: |
             arc-*.zip
             update.zip
-            update-s.zip
             checksum.sha256
-            checksum-s.sha256
             check.update
