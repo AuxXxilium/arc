@@ -201,7 +201,6 @@ function bootDSM () {
     grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
     echo -e "\033[1;34mReboot with Directboot\033[0m"
     exec reboot
-    exit 0
   elif [ "${DIRECTBOOT}" == "false" ]; then
     grub-editenv ${USER_GRUBENVFILE} unset dsm_cmdline
     grub-editenv ${USER_GRUBENVFILE} unset next_entry
@@ -310,6 +309,6 @@ function bootDSM () {
     # Boot to DSM
     KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
     [ "${KERNELLOAD}" == "kexec" ] && kexec -a -e || poweroff
-    exit 0
   fi
+  exit 0
 }
