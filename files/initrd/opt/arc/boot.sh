@@ -265,6 +265,18 @@ function bootDSM () {
 
     echo -e "\033[1;37mLoading DSM kernel...\033[0m"
 
+    DSMLOGO="$(readConfigKey "dsmlogo" "${USER_CONFIG_FILE}")"
+    if [ "${DSMLOGO}" == "true" ] && [ -c "/dev/fb0" ]; then
+      [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
+      if [ -n "${IPCON}" ]; then
+        URL="http://${IPCON}:5000"
+      else
+        URL="http://find.synology.com/"
+      fi
+      python ${ARC_PATH}/include/functions.py makeqr -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
+      [ -f "${TMP_PATH}/qrcode_boot.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_boot.png" >/dev/null 2>/dev/null || true
+    fi
+
     # Executes DSM kernel via KEXEC
     KEXECARGS=""
     if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 4 ] && [ ${EFI} -eq 1 ]; then
@@ -272,6 +284,15 @@ function bootDSM () {
       KEXECARGS="--noefi"
     fi
     kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
+
+    for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
+      if [ -n "${IPCON}" ]; then
+        [ -w "/dev/${T}" ] && echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\nUse \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
+      else
+        [ -w "/dev/${T}" ] && echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\nUse \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
+      fi
+    done
+
     # Clear logs for dbgutils addons
     rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
 
@@ -286,26 +307,6 @@ function bootDSM () {
     done
 
     echo -e "\033[1;37mBooting DSM...\033[0m"
-    for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
-      if [ -n "${IPCON}" ]; then
-        [ -w "/dev/${T}" ] && echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\nUse \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
-      else
-        [ -w "/dev/${T}" ] && echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\nUse \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
-      fi
-    done
-
-    DSMLOGO="$(readConfigKey "dsmlogo" "${USER_CONFIG_FILE}")"
-    if [ "${DSMLOGO}" == "true" ] && [ -c "/dev/fb0" ]; then
-      [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
-      if [ -n "${IPCON}" ]; then
-        URL="http://${IPCON}:5000"
-      else
-        URL="http://find.synology.com/"
-      fi
-      python ${ARC_PATH}/include/functions.py makeqr -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
-      [ -f "${TMP_PATH}/qrcode_boot.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_boot.png" >/dev/null 2>/dev/null || true
-    fi
-
     # Boot to DSM
     KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
     [ "${KERNELLOAD}" == "kexec" ] && kexec -a -e || poweroff
