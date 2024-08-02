@@ -311,5 +311,4 @@ function bootDSM () {
     KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
     [ "${KERNELLOAD}" == "kexec" ] && kexec -a -e || poweroff
   fi
-  exit 0
 }
