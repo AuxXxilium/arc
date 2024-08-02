@@ -58,20 +58,28 @@ jobs:
           . scripts/func.sh
 
           getLKMs "files/p3/lkms"
+          echo "LKMTAG=${TAG}" >> $GITHUB_ENV
           getAddons "files/p3/addons"
+          echo "ADDONSTAG=${TAG}" >> $GITHUB_ENV
           getModules "files/p3/modules"
+          echo "MODULESTAG=${TAG}" >> $GITHUB_ENV
           getConfigs "files/p3/configs"
+          echo "CONFIGSTAG=${TAG}" >> $GITHUB_ENV
           getPatches "files/p3/patches"
+          echo "PATCHESTAG=${TAG}" >> $GITHUB_ENV
+          getCustom "files/p3/custom"
+          echo "CUSTOMTAG=${TAG}" >> $GITHUB_ENV
           getTheme "files/p1/boot/grub"
+          echo "THEMETAG=${TAG}" >> $GITHUB_ENV
           getOffline "files/p3/configs"
           getBuildroot "latest" "br"
-          echo "BR_XVERSION=${TAG}" >> $GITHUB_ENV
+          echo "BR_VERSION=${TAG}" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
 
       # Build incremental
-      - name: Build Image X
+      - name: Build Image
         run: |
           . scripts/func.sh
 
@@ -161,6 +169,7 @@ jobs:
             Configs: ${{ env.CONFIGSTAG }}
             Modules: ${{ env.MODULESTAG }}
             Patches: ${{ env.PATCHESTAG }}
+            Custom: ${{ env.CUSTOMTAG }}
             Theme: ${{ env.THEMETAG }}
             LKM: ${{ env.LKMTAG }}
             Buildroot: ${{ env.BR_XVERSION }}

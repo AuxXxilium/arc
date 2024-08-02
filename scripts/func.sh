@@ -176,6 +176,29 @@ function getPatches() {
   echo "Getting Patches end - ${TAG}"
 }
 
+# Get latest Custom
+# $1 path
+function getCustom() {
+  echo "Getting Custom begin"
+  local DEST_PATH="${1:-custom}"
+  local CACHE_FILE="/tmp/custom.zip"
+  rm -f "${CACHE_FILE}"
+  if [ -n "${CUSTOMTAG}" ]; then
+    TAG="${CUSTOMTAG}"
+  else
+    TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-custom/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  fi
+  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/custom.zip" -o "${CACHE_FILE}")
+  echo "TAG=${TAG}; Status=${STATUS}"
+  [ ${STATUS} -ne 200 ] && exit 1
+  # Unzip Custom
+  rm -rf "${DEST_PATH}"
+  mkdir -p "${DEST_PATH}"
+  unzip "${CACHE_FILE}" -d "${DEST_PATH}"
+  rm -f "${CACHE_FILE}"
+  echo "Getting Custom end - ${TAG}"
+}
+
 # Get latest Theme
 # $1 path
 function getTheme() {

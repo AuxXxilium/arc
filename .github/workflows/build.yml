@@ -102,6 +102,8 @@ jobs:
           echo "CONFIGSTAG=${TAG}" >> $GITHUB_ENV
           getPatches "files/p3/patches"
           echo "PATCHESTAG=${TAG}" >> $GITHUB_ENV
+          getCustom "files/p3/custom"
+          echo "CUSTOMTAG=${TAG}" >> $GITHUB_ENV
           getTheme "files/p1/boot/grub"
           echo "THEMETAG=${TAG}" >> $GITHUB_ENV
           getOffline "files/p3/configs"
@@ -112,7 +114,7 @@ jobs:
           echo "OK"
 
       # Build incremental
-      - name: Build Image X
+      - name: Build Image
         run: |
           . scripts/func.sh
 
@@ -195,6 +197,7 @@ jobs:
             Configs: ${{ env.CONFIGSTAG }}
             Modules: ${{ env.MODULESTAG }}
             Patches: ${{ env.PATCHESTAG }}
+            Custom: ${{ env.CUSTOMTAG }}
             Theme: ${{ env.THEMETAG }}
             LKM: ${{ env.LKMTAG }}
             Buildroot: ${{ env.BR_XVERSION }}
