@@ -69,6 +69,7 @@ function arcUpdate() {
   updateLKMs
   updateModules
   updatePatches
+  updateCustom
   # Ask for Boot
   dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
     --infobox "Update successful!" 0 0

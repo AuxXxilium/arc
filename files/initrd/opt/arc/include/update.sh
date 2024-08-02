@@ -300,6 +300,69 @@ function updatePatches() {
 }
 
 ###############################################################################
+# Update Custom
+function updateCustom() {
+  local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
+  if [ -z "${1}" ]; then
+    # Check for new Version
+    idx=0
+    while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
+      if [ "${ARCNIC}" == "auto" ]; then
+        local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-custom/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+      else
+        local TAG="$(curl --interface ${ARCNIC} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-custom/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+      fi
+      if [ -n "${TAG}" ]; then
+        break
+      fi
+      sleep 3
+      idx=$((${idx} + 1))
+    done
+  else
+    local TAG="${1}"
+  fi
+  if [ -n "${TAG}" ]; then
+    (
+      # Download update file
+      local URL="https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/custom.zip"
+      local SHA="https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/checksum.sha256"
+      echo "Downloading ${TAG}"
+      if [ "${ARCNIC}" == "auto" ]; then
+        curl -#kL "${URL}" -o "${TMP_PATH}/custom.zip" 2>&1 | while IFS= read -r -n1 char; do
+          [[ $char =~ [0-9] ]] && keep=1 ;
+          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $keep == 1 ]] && progress="$progress$char" ;
+        done
+        curl -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
+      else
+        curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/custom.zip" 2>&1 | while IFS= read -r -n1 char; do
+          [[ $char =~ [0-9] ]] && keep=1 ;
+          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $keep == 1 ]] && progress="$progress$char" ;
+        done
+        curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
+      fi
+      if [ "$(sha256sum "${TMP_PATH}/custom.zip" | awk '{print $1}')" = "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
+        echo "Download successful!"
+        rm -rf "${CUSTOM_PATH}"
+        mkdir -p "${CUSTOM_PATH}"
+        echo "Installing new Custom Kernel..."
+        unzip -oq "${TMP_PATH}/custom.zip" -d "${CUSTOM_PATH}"
+        rm -f "${TMP_PATH}/custom.zip"
+      else
+        echo "Error extracting new Version!"
+        sleep 5
+        updateFailed
+      fi
+      echo "Update done!"
+      sleep 2
+    ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Update Custom" \
+      --progressbox "Updating Custom..." 20 70
+  fi
+  return 0
+}
+
+###############################################################################
 # Update Modules
 function updateModules() {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"

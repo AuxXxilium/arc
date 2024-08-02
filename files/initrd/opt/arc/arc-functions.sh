@@ -831,6 +831,7 @@ function updateMenu() {
       6 "Update LKMs" \
       7 "Update Modules" \
       8 "Update Patches" \
+      9 "Update Custom Kernel" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -1003,6 +1004,29 @@ function updateMenu() {
           [ -z "${TAG}" ] && return 1
         fi
         updatePatches "${TAG}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
+      9)
+        # Ask for Tag
+        TAG=""
+        dialog --clear --backtitle "$(backtitle)" --title "Update Custom Kernel" \
+          --menu "Which Version?" 0 0 0 \
+          1 "Latest" \
+          2 "Select Version" \
+        2>"${TMP_PATH}/opts"
+        opts=$(cat ${TMP_PATH}/opts)
+        [ -z "${opts}" ] && return 1
+        if [ ${opts} -eq 1 ]; then
+          TAG=""
+        elif [ ${opts} -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Update Custom Kernel" \
+          --inputbox "Type the Version!" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG=$(cat "${TMP_PATH}/input")
+          [ -z "${TAG}" ] && return 1
+        fi
+        updateCustom "${TAG}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
