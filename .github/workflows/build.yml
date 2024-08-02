@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "format %y.%m.$d or auto"
+        description: "version"
         required: false
         type: string
       notice:
@@ -65,6 +65,8 @@ jobs:
           sudo apt update
           sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils busybox dialog curl sed 
           sudo snap install yq
+
+          df -h
 
       # calculates the version number and push
       - name: Calculate Version
