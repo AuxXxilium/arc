@@ -216,7 +216,6 @@ jobs:
           echo "Image Converter"
           qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-s-dyn.vmdk
           qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc-s.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc-s.vhdx
 
           echo "Create Arc ova"
           convertova "${IMAGE_FILE}" "arc-s.ova"
@@ -239,7 +238,6 @@ jobs:
             zip -9 "arc-${{ env.VERSION }}-s.img.zip" arc-s.img
             zip -9 "arc-${{ env.VERSION }}-s.vmdk-dyn.zip" arc-s-dyn.vmdk
             zip -9 "arc-${{ env.VERSION }}-s.vmdk-flat.zip" arc-s.vmdk arc-s-flat.vmdk
-            zip -9 "arc-${{ env.VERSION }}-s.vhdx.zip" arc-s.vhdx
             zip -9 "arc-${{ env.VERSION }}-s.ova.zip" arc-s.ova
           fi
           echo "${{ inputs.update_version }}" >check.update
