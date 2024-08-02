@@ -832,6 +832,7 @@ function updateMenu() {
       7 "Update Modules" \
       8 "Update Patches" \
       9 "Update Custom Kernel" \
+      0 "Switch Buildroot" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -1030,6 +1031,26 @@ function updateMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
+      0)
+        # Ask for Arc Branch
+        dialog --clear --backtitle "$(backtitle)" --title "Switch Buildroot" \
+          --menu "Which Branch?" 0 0 0 \
+          1 "x - latest" \
+          2 "s - stable" \
+        2>"${TMP_PATH}/opts"
+        opts=$(cat ${TMP_PATH}/opts)
+        [ -z "${opts}" ] && return 1
+        if [ ${opts} -eq 1 ]; then
+          writeConfigKey "arc.branch" "" "${USER_CONFIG_FILE}"
+        elif [ ${opts} -eq 2 ]; then
+          writeConfigKey "arc.branch" "s" "${USER_CONFIG_FILE}"
+        fi
+        ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "$(backtitle)" --title "Switch Buildroot" --aspect 18 \
+          --msgbox "Updates are using ${ARCBRANCH} Branch.\nYou need to Update the Loader now!" 0 0
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ;;
     esac
   done
   return
@@ -1071,6 +1092,7 @@ function sysinfo() {
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')
   ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
   ETHN="$(echo ${ETHX} | wc -w)"
+  ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" == "true" ]; then
@@ -1167,7 +1189,7 @@ function sysinfo() {
     TEXT+="\n\Zb$(lspci -s ${NETBUS} -nnk | awk '{$1=""}1' | awk '{$1=$1};1')\Zn\n"
   done
   # Print Config Informations
-  TEXT+="\n\Z4> Arc: ${ARC_VERSION}\Zn"
+  TEXT+="\n\Z4> Arc: ${ARC_VERSION} | Branch: ${ARCBRANCH:-x}\Zn"
   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"

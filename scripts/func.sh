@@ -234,12 +234,20 @@ function getBuildroot() {
   fi
   [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
   rm -f "${DEST_PATH}/bzImage-arc"
-  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-buildroot/releases/download/${TAG}/bzImage" -o "${DEST_PATH}/bzImage-arc")
+  if [ "${TAG}" = "latest-s" ]; then
+    STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-buildroot/releases/download/${TAG}-s/bzImage" -o "${DEST_PATH}/bzImage-arc")
+  else
+    STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-buildroot/releases/download/${TAG}/bzImage" -o "${DEST_PATH}/bzImage-arc")
+  fi
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
 
   rm -f "${DEST_PATH}/initrd-arc"
-  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-buildroot/releases/download/${TAG}/rootfs.cpio.xz" -o "${DEST_PATH}/initrd-arc")
+  if [ "${TAG}" = "latest-s" ]; then
+    STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-buildroot/releases/download/${TAG}-s/rootfs.cpio.xz" -o "${DEST_PATH}/initrd-arc")
+  else
+    STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-buildroot/releases/download/${TAG}/rootfs.cpio.xz" -o "${DEST_PATH}/initrd-arc")
+  fi
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
 
