@@ -37,6 +37,7 @@ fi
 # Get Arc Data from Config
 ARC_KEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+ARCDYN="$(readConfigKey "arc.dynamic" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
@@ -64,9 +65,21 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 # Get Keymap and Timezone Config
 ntpCheck
 
+# Check for Dynamic Mode
+if [ "${ARCDYN}" == "true" ]; then
+  curl -skL "https://github.com/AuxXxilium/arc/archive/refs/heads/main.zip" -o "${TMP_PATH}/main.zip"
+  unzip -o "${TMP_PATH}/main.zip" -d "${TMP_PATH}/arcdyn" 2>/dev/null
+  cp -rf "${TMP_PATH}/arcdyn/files/initrd/opt/arc" "${ARC_PATH}"
+  rm -rf "${TMP_PATH}/arcdyn"
+  init.sh
+fi
+
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
+  if [ "${ARCDYN}" == "true" ]; then
+    ARC_TITLE="${ARC_TITLE}D"
+  fi
   if [ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ]; then
     ARC_TITLE="${ARC_TITLE} > ${NEWTAG}"
   fi
@@ -984,6 +997,9 @@ else
       echo "C \"Clone Loader to Disk \" "                                                     >>"${TMP_PATH}/menu"
       echo "v \"Write Loader Modifications to Disk \" "                                       >>"${TMP_PATH}/menu"
       echo "n \"Grub Bootloader Config \" "                                                   >>"${TMP_PATH}/menu"
+      if [ "${OFFLINE}" == "false" ]; then
+        echo "Y \"Arc dynamic Loading: \Z4${ARCDYN}\Zn \" "                                   >>"${TMP_PATH}/menu"
+      fi
       echo "F \"\Z1Formate Disks \Zn \" "                                                     >>"${TMP_PATH}/menu"
       if [ "${OFFLINE}" == "false" ]; then
         echo "G \"Install opkg Package Manager \" "                                           >>"${TMP_PATH}/menu"
@@ -1137,6 +1153,17 @@ else
       L) greplogs; NEXT="L" ;;
       T) forcessh; NEXT="T" ;;
       C) cloneLoader; NEXT="C" ;;
+      Y) [ "${ARCDYN}" == "false" ] && ARCDYN='true' || ARCDYN='false'
+        writeConfigKey "arc.dynamic" "${ARCDYN}" "${USER_CONFIG_FILE}"
+        if [ "${ARCDYN}" == "true" ]; then
+          curl -skL "https://github.com/AuxXxilium/arc/archive/refs/heads/main.zip" -o "${TMP_PATH}/main.zip"
+          unzip -o "${TMP_PATH}/main.zip" -d "${TMP_PATH}/arcdyn" 2>/dev/null
+          cp -rf "${TMP_PATH}/arcdyn/files/initrd/opt/arc" "${ARC_PATH}"
+          rm -rf "${TMP_PATH}/arcdyn"
+          init.sh
+        fi
+        NEXT="Y"
+        ;;
       F) formatDisks; NEXT="F" ;;
       G) package; NEXT="G" ;;
       # Misc Settings
