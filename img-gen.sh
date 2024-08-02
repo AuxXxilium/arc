@@ -17,7 +17,7 @@ getCustom "files/p3/custom"
 getTheme "files/p1/boot/grub"
 getOffline "files/p3/configs"
 getBuildroot "latest" "brx"
-getBuildroot "stable" "brs"
+getBuildroot "latest-s" "brs"
 
 # Xbase
 IMAGE_FILE="arc.img"

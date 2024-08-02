@@ -230,8 +230,8 @@ jobs:
             
             - Full Changelog and Arc Patch (Decryption Key) can be found in my Discord.
             - Version:
-              - without "s": Latest Buildroot System (incl. new Hardware / Hyper-V and XEN (still in testing))
-              - with "s": Stable Buildroot System (For the most Systems)
+              - without "-s": Latest Buildroot System (More Hardware supported / Hyper-V and XEN (still in testing))
+              - with "-s": Stable Buildroot System (Less Hardware supported / faster Boot)
 
             ### Versions:
             Addons: ${{ env.ADDONSTAG }}
