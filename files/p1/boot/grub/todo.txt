@@ -1,5 +1,5 @@
 Check:
 
-numa=off        [KNL, ARM64, PPC, RISCV, SPARC, X86, EARLY]
-                Disable NUMA, Only set up a single NUMA node
-                spanning all memory.
+- numa=off
+- pcie_aspm=off
+- intremap=off (old -> working?)
