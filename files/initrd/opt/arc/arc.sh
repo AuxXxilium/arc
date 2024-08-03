@@ -1150,6 +1150,7 @@ else
       C) cloneLoader; NEXT="C" ;;
       Y) [ "${ARCDYN}" == "false" ] && ARCDYN='true' || ARCDYN='false'
         writeConfigKey "arc.dynamic" "${ARCDYN}" "${USER_CONFIG_FILE}"
+        rm -f "${TMP_PATH}/dynamic" >/dev/null 2>&1 || true
         dynCheck
         NEXT="Y"
         ;;

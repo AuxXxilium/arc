@@ -2092,7 +2092,7 @@ function rebootMenu() {
   echo -e "network \"Arc - Restart Network Service\"" >>"${TMP_PATH}/opts"
   echo -e "recovery \"DSM - Recovery Mode\"" >>"${TMP_PATH}/opts"
   echo -e "junior \"DSM - Reinstall Mode\"" >>"${TMP_PATH}/opts"
-  if efibootmgr | grep -q "^Boot0000"; then
+  if efibootmgr | grep -q "^Boot0000" 2>/dev/null; then
     echo -e "bios \"System - BIOS/UEFI\"" >>"${TMP_PATH}/opts"
   fi
   echo -e "poweroff \"System - Shutdown\"" >>"${TMP_PATH}/opts"
