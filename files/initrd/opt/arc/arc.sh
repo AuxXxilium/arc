@@ -66,15 +66,7 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ntpCheck
 
 # Check for Dynamic Mode
-if [ "${ARCDYN}" == "true" ] && [ "${OFFLINE}" == "false" ] && [ ! -f "${PART1_PATH}/dynamic" ]; then
-  curl -skL "https://github.com/AuxXxilium/arc/archive/refs/heads/main.zip" -o "${TMP_PATH}/main.zip"
-  unzip -o "${TMP_PATH}/main.zip" -d "${TMP_PATH}" 2>/dev/null
-  cp -rf "${TMP_PATH}/arc-main/files/initrd/opt" "${ARC_PATH}"
-  rm -rf "${TMP_PATH}/arc-main"
-  rm -f "${TMP_PATH}/main.zip"
-  echo "true" >"${PART1_PATH}/dynamic"
-  init.sh
-fi
+dynCheck
 
 ###############################################################################
 # Mounts backtitle dynamically
@@ -1158,17 +1150,7 @@ else
       C) cloneLoader; NEXT="C" ;;
       Y) [ "${ARCDYN}" == "false" ] && ARCDYN='true' || ARCDYN='false'
         writeConfigKey "arc.dynamic" "${ARCDYN}" "${USER_CONFIG_FILE}"
-        if [ "${ARCDYN}" == "true" ]; then
-          curl -skL "https://github.com/AuxXxilium/arc/archive/refs/heads/main.zip" -o "${TMP_PATH}/main.zip"
-          unzip -o "${TMP_PATH}/main.zip" -d "${TMP_PATH}" 2>/dev/null
-          cp -rf "${TMP_PATH}/arc-main/files/initrd/opt" "${ARC_PATH}"
-          rm -rf "${TMP_PATH}/arc-main"
-          rm -f "${TMP_PATH}/main.zip"
-          echo "true" >"${PART1_PATH}/dynamic"
-          init.sh
-        else
-          rm -f "${PART1_PATH}/dynamic"
-        fi
+        dynCheck
         NEXT="Y"
         ;;
       F) formatDisks; NEXT="F" ;;

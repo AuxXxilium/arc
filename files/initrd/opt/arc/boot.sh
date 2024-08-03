@@ -7,6 +7,9 @@ function bootDSM () {
   # Check if machine has EFI
   [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
 
+  # Cleanup Dynamic Mode
+  [ -f "${PART1_PATH}/dynamic" ] && rm -f "${PART1_PATH}/dynamic" >/dev/null 2>&1 || true
+
   # Print Title centralized
   clear
   COLUMNS=${COLUMNS:-50}
