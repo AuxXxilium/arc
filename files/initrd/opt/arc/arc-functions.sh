@@ -898,7 +898,7 @@ function updateMenu() {
         # Ask for Tag
         TAG=""
         NEWVER="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
-        OLDVER="$(cat ${ADDONS_PATH}/VERSION)""
+        OLDVER="$(cat ${ADDONS_PATH}/VERSION)"
         dialog --clear --backtitle "$(backtitle)" --title "Update Addons" \
           --menu "Current: ${OLDVER} -> Which Version?" 0 0 0 \
           1 "Latest ${NEWVER}" \
