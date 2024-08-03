@@ -296,19 +296,20 @@ function bootDSM () {
     # Clear logs for dbgutils addons
     rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
 
-    # Unload all network interfaces
-    for D in $(readlink /sys/class/net/*/device/driver); do rmmod -f "$(basename ${D})" 2>/dev/null || true; done
+    KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
+    if [ "${KERNELLOAD}" == "kexec" ]; then
+      # Unload all network interfaces
+      for D in $(readlink /sys/class/net/*/device/driver); do rmmod -f "$(basename ${D})" 2>/dev/null || true; done
 
-    # Unload all graphics drivers
-    # for D in $(readlink /sys/class/drm/*/device/driver); do rmmod -f "$(basename ${D})" 2>/dev/null || true; done
-    for D in $(lsmod | grep -E '^(nouveau|amdgpu|radeon|i915)' | awk '{print $1}'); do rmmod -f "${D}" 2>/dev/null || true; done
-    for I in $(find /sys/devices -name uevent -exec bash -c 'cat {} 2>/dev/null | grep -Eq "PCI_CLASS=0?30[0|1|2]00" && dirname {}' \;); do
-      [ -e ${I}/reset ] && cat ${I}/vendor >/dev/null | grep -iq 0x10de && echo 1 >${I}/reset || true # Proc open nvidia driver when booting
-    done
-
+      # Unload all graphics drivers
+      # for D in $(readlink /sys/class/drm/*/device/driver); do rmmod -f "$(basename ${D})" 2>/dev/null || true; done
+      for D in $(lsmod | grep -E '^(nouveau|amdgpu|radeon|i915)' | awk '{print $1}'); do rmmod -f "${D}" 2>/dev/null || true; done
+      for I in $(find /sys/devices -name uevent -exec bash -c 'cat {} 2>/dev/null | grep -Eq "PCI_CLASS=0?30[0|1|2]00" && dirname {}' \;); do
+        [ -e ${I}/reset ] && cat ${I}/vendor >/dev/null | grep -iq 0x10de && echo 1 >${I}/reset || true # Proc open nvidia driver when booting
+      done
+    fi
     echo -e "\033[1;37mBooting DSM...\033[0m"
     # Boot to DSM
-    KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
     [ "${KERNELLOAD}" == "kexec" ] && kexec -a -e || poweroff
   fi
 }
