@@ -16,7 +16,7 @@ getPatches "files/p3/patches"
 getCustom "files/p3/custom"
 getTheme "files/p1/boot/grub"
 getOffline "files/p3/configs"
-getBuildroots "latest-s" "brs"
+getBuildroots "latest" "brs"
 
 # Sbase
 IMAGE_FILE="arc-s.img"
