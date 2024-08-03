@@ -66,11 +66,12 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ntpCheck
 
 # Check for Dynamic Mode
-if [ "${ARCDYN}" == "true" ]; then
+if [ "${ARCDYN}" == "true" ] && [ "${OFFLINE}" == "false" ] && [ ! -f "${PART1_PATH}/dynamic" ]; then
   curl -skL "https://github.com/AuxXxilium/arc/archive/refs/heads/main.zip" -o "${TMP_PATH}/main.zip"
-  unzip -o "${TMP_PATH}/main.zip" -d "${TMP_PATH}/arcdyn" 2>/dev/null
-  cp -rf "${TMP_PATH}/arcdyn/files/initrd/opt/arc" "${ARC_PATH}"
-  rm -rf "${TMP_PATH}/arcdyn"
+  unzip -o "${TMP_PATH}/main.zip" -d "${TMP_PATH}" 2>/dev/null
+  cp -rf "${TMP_PATH}/arc-main/files/initrd/opt/arc" "${ARC_PATH}"
+  rm -rf "${TMP_PATH}/arc-main"
+  echo "true" >"${PART1_PATH}/dynamic"
   init.sh
 fi
 
@@ -78,10 +79,11 @@ fi
 # Mounts backtitle dynamically
 function backtitle() {
   if [ "${ARCDYN}" == "true" ]; then
-    ARC_TITLE="${ARC_TITLE}D"
-  fi
-  if [ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ]; then
-    ARC_TITLE="${ARC_TITLE} > ${NEWTAG}"
+    ARC_TITLE="Dynamic"
+  else
+    if [ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ]; then
+      ARC_TITLE="${ARC_TITLE} > ${NEWTAG}"
+    fi
   fi
   if [ -z "${MODEL}" ]; then
     MODEL="(Model)"
@@ -1157,10 +1159,13 @@ else
         writeConfigKey "arc.dynamic" "${ARCDYN}" "${USER_CONFIG_FILE}"
         if [ "${ARCDYN}" == "true" ]; then
           curl -skL "https://github.com/AuxXxilium/arc/archive/refs/heads/main.zip" -o "${TMP_PATH}/main.zip"
-          unzip -o "${TMP_PATH}/main.zip" -d "${TMP_PATH}/arcdyn" 2>/dev/null
-          cp -rf "${TMP_PATH}/arcdyn/files/initrd/opt/arc" "${ARC_PATH}"
-          rm -rf "${TMP_PATH}/arcdyn"
+          unzip -o "${TMP_PATH}/main.zip" -d "${TMP_PATH}" 2>/dev/null
+          cp -rf "${TMP_PATH}/arc-main/files/initrd/opt/arc" "${ARC_PATH}"
+          rm -rf "${TMP_PATH}/arc-main"
+          echo "true" >"${PART1_PATH}/dynamic"
           init.sh
+        else
+          rm -f "${PART1_PATH}/dynamic"
         fi
         NEXT="Y"
         ;;
