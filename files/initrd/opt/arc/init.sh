@@ -86,7 +86,6 @@ else
 fi
 [ $(echo "${ARC_VERSION}" | grep -q "s" | wc -l) -gt 0 ] && writeConfigKey "arc.branch" "s" "${USER_CONFIG_FILE}" || writeConfigKey "arc.branch" "" "${USER_CONFIG_FILE}"
 [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1 || true
-[ -f "${PART1_PATH}/dynamic" ] && rm -f "${PART1_PATH}/dynamic" >/dev/null 2>&1 || true
 # Check for compatibility
 compatboot
 
