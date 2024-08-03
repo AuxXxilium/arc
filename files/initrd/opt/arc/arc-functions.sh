@@ -844,9 +844,11 @@ function updateMenu() {
       2)
         # Ask for Tag
         TAG=""
+        NEWVER="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        OLDVER="$(cat ${PART1_PATH}/ARC-VERSION)"
         dialog --clear --backtitle "$(backtitle)" --title "Upgrade Loader" \
-          --menu "Which Version?" 0 0 0 \
-          1 "Latest" \
+          --menu "Current: ${OLDVER} -> Which Version?" 0 0 0 \
+          1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && continue
@@ -869,9 +871,11 @@ function updateMenu() {
       3)
         # Ask for Tag
         TAG=""
+        NEWVER="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        OLDVER="$(cat ${PART1_PATH}/ARC-VERSION)"
         dialog --clear --backtitle "$(backtitle)" --title "Update Loader" \
-          --menu "Which Version?" 0 0 0 \
-          1 "Latest" \
+          --menu "Current: ${OLDVER} -> Which Version?" 0 0 0 \
+          1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && continue
@@ -893,9 +897,11 @@ function updateMenu() {
       4)
         # Ask for Tag
         TAG=""
+        NEWVER="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        OLDVER="$(cat ${ADDONS_PATH}/VERSION)""
         dialog --clear --backtitle "$(backtitle)" --title "Update Addons" \
-          --menu "Which Version?" 0 0 0 \
-          1 "Latest" \
+          --menu "Current: ${OLDVER} -> Which Version?" 0 0 0 \
+          1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && continue
@@ -917,9 +923,11 @@ function updateMenu() {
       5)
         # Ask for Tag
         TAG=""
+        NEWVER="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        OLDVER="$(cat ${MODEL_CONFIG_PATH}/VERSION)"
         dialog --clear --backtitle "$(backtitle)" --title "Update Configs" \
-          --menu "Which Version?" 0 0 0 \
-          1 "Latest" \
+          --menu "Current: ${OLDVER} -> Which Version?" 0 0 0 \
+          1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
         opts=$(cat ${TMP_PATH}/opts)
@@ -942,9 +950,11 @@ function updateMenu() {
       6)
         # Ask for Tag
         TAG=""
+        NEWVER="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        OLDVER="$(cat ${LKMS_PATH}/VERSION)"
         dialog --clear --backtitle "$(backtitle)" --title "Update LKMs" \
-          --menu "Which Version?" 0 0 0 \
-          1 "Latest" \
+          --menu "Current: ${OLDVER} -> Which Version?" 0 0 0 \
+          1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
         opts=$(cat ${TMP_PATH}/opts)
@@ -965,9 +975,11 @@ function updateMenu() {
       7)
         # Ask for Tag
         TAG=""
+        NEWVER="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        OLDVER="$(cat ${MODULES_PATH}/VERSION)"
         dialog --clear --backtitle "$(backtitle)" --title "Update Modules" \
-          --menu "Which Version?" 0 0 0 \
-          1 "Latest" \
+          --menu "Current: ${OLDVER} -> Which Version?" 0 0 0 \
+          1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
         opts=$(cat ${TMP_PATH}/opts)
@@ -988,10 +1000,13 @@ function updateMenu() {
       8)
         # Ask for Tag
         TAG=""
+        NEWVER="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        OLDVER="$(cat ${PATCH_PATH}/VERSION)"
         dialog --clear --backtitle "$(backtitle)" --title "Update Patches" \
-          --menu "Which Version?" 0 0 0 \
-          1 "Latest" \
+          --menu "Current: ${OLDVER} -> Which Version?" 0 0 0 \
+          1 "Latest ${NEWVER}" \
           2 "Select Version" \
+        2>"${TMP_PATH}/opts"
         2>"${TMP_PATH}/opts"
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
@@ -1011,9 +1026,11 @@ function updateMenu() {
       9)
         # Ask for Tag
         TAG=""
-        dialog --clear --backtitle "$(backtitle)" --title "Update Custom Kernel" \
-          --menu "Which Version?" 0 0 0 \
-          1 "Latest" \
+        NEWVER="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-custom/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        OLDVER="$(cat ${CUSTOM_PATH}/VERSION)"
+        dialog --clear --backtitle "$(backtitle)" --title "Update Custom" \
+          --menu "Current: ${OLDVER} -> Which Version?" 0 0 0 \
+          1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
         opts=$(cat ${TMP_PATH}/opts)
