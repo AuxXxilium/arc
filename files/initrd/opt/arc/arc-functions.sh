@@ -2086,17 +2086,17 @@ function rebootMenu() {
   rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
   # Selectable Reboot Options
-  echo -e "config \"Arc - Config Mode\"" >>"${TMP_PATH}/opts"
-  echo -e "update \"Arc - Automated Update Mode\"" >>"${TMP_PATH}/opts"
-  echo -e "init \"Arc - Restart Loader Init\"" >>"${TMP_PATH}/opts"
-  echo -e "network \"Arc - Restart Network Service\"" >>"${TMP_PATH}/opts"
-  echo -e "recovery \"DSM - Recovery Mode\"" >>"${TMP_PATH}/opts"
-  echo -e "junior \"DSM - Reinstall Mode\"" >>"${TMP_PATH}/opts"
+  echo -e "config \"Arc: Config Mode\"" >>"${TMP_PATH}/opts"
+  echo -e "update \"Arc: Automated Update Mode\"" >>"${TMP_PATH}/opts"
+  echo -e "init \"Arc: Restart Loader Init\"" >>"${TMP_PATH}/opts"
+  echo -e "network \"Arc: Restart Network Service\"" >>"${TMP_PATH}/opts"
+  echo -e "recovery \"DSM: Recovery Mode\"" >>"${TMP_PATH}/opts"
+  echo -e "junior \"DSM: Reinstall Mode\"" >>"${TMP_PATH}/opts"
   if efibootmgr 2>/dev/null | grep -q "^Boot0000"; then
-    echo -e "bios \"System - BIOS/UEFI\"" >>"${TMP_PATH}/opts"
+    echo -e "bios \"System: BIOS/UEFI\"" >>"${TMP_PATH}/opts"
   fi
-  echo -e "poweroff \"System - Shutdown\"" >>"${TMP_PATH}/opts"
-  echo -e "shell \"Exit to Shell Cmdline\"" >>"${TMP_PATH}/opts"
+  echo -e "poweroff \"System: Shutdown\"" >>"${TMP_PATH}/opts"
+  echo -e "shell \"System: Shell Cmdline\"" >>"${TMP_PATH}/opts"
   dialog --backtitle "$(backtitle)" --title "Power Menu" \
     --menu  "Choose a Destination" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
