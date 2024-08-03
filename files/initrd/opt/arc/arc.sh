@@ -69,7 +69,7 @@ ntpCheck
 if [ "${ARCDYN}" == "true" ] && [ "${OFFLINE}" == "false" ] && [ ! -f "${PART1_PATH}/dynamic" ]; then
   curl -skL "https://github.com/AuxXxilium/arc/archive/refs/heads/main.zip" -o "${TMP_PATH}/main.zip"
   unzip -o "${TMP_PATH}/main.zip" -d "${TMP_PATH}" 2>/dev/null
-  cp -rf "${TMP_PATH}/arc-main/files/initrd/opt/arc" "${ARC_PATH}"
+  cp -rf "${TMP_PATH}/arc-main/files/initrd/opt" "${ARC_PATH}"
   rm -rf "${TMP_PATH}/arc-main"
   rm -f "${TMP_PATH}/main.zip"
   echo "true" >"${PART1_PATH}/dynamic"
@@ -1161,7 +1161,7 @@ else
         if [ "${ARCDYN}" == "true" ]; then
           curl -skL "https://github.com/AuxXxilium/arc/archive/refs/heads/main.zip" -o "${TMP_PATH}/main.zip"
           unzip -o "${TMP_PATH}/main.zip" -d "${TMP_PATH}" 2>/dev/null
-          cp -rf "${TMP_PATH}/arc-main/files/initrd/opt/arc" "${ARC_PATH}"
+          cp -rf "${TMP_PATH}/arc-main/files/initrd/opt" "${ARC_PATH}"
           rm -rf "${TMP_PATH}/arc-main"
           rm -f "${TMP_PATH}/main.zip"
           echo "true" >"${PART1_PATH}/dynamic"
