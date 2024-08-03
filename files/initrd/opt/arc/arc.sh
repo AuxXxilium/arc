@@ -72,7 +72,7 @@ dynCheck
 # Mounts backtitle dynamically
 function backtitle() {
   if [ "${ARCDYN}" == "true" ]; then
-    ARC_TITLE="Dynamic"
+    ARC_TITLE="Dynamic-Dev"
   else
     if [ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ]; then
       ARC_TITLE="${ARC_TITLE} > ${NEWTAG}"
@@ -993,7 +993,7 @@ else
       echo "v \"Write Loader Modifications to Disk \" "                                       >>"${TMP_PATH}/menu"
       echo "n \"Grub Bootloader Config \" "                                                   >>"${TMP_PATH}/menu"
       if [ "${OFFLINE}" == "false" ]; then
-        echo "Y \"Arc dynamic Loading: \Z4${ARCDYN}\Zn \" "                                   >>"${TMP_PATH}/menu"
+        echo "Y \"Arc Dev Mode: \Z4${ARCDYN}\Zn \" "                                          >>"${TMP_PATH}/menu"
       fi
       echo "F \"\Z1Formate Disks \Zn \" "                                                     >>"${TMP_PATH}/menu"
       if [ "${OFFLINE}" == "false" ]; then
