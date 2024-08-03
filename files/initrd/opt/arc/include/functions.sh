@@ -652,9 +652,11 @@ function dynCheck () {
   if [ "${ARCDYN}" == "true" ] && [ "${OFFLINE}" == "false" ] && [ ! -f "${TMP_PATH}/dynamic" ]; then
     curl -skL "https://github.com/AuxXxilium/arc/archive/refs/heads/dev.zip" -o "${TMP_PATH}/dev.zip"
     unzip -qq -o "${TMP_PATH}/dev.zip" -d "${TMP_PATH}" 2>/dev/null
-    cp -rf "${TMP_PATH}/arc-dev/files/initrd/opt/arc/"* "/opt/arc"
+    cp -rf "${TMP_PATH}/arc-dev/files/initrd/opt/arc/"* "${ARC_PATH}"
     rm -rf "${TMP_PATH}/arc-dev"
     rm -f "${TMP_PATH}/dev.zip"
+    VERSION="Dynamic-Dev"
+    sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i ${ARC_PATH}/include/consts.sh
     echo "true" >"${TMP_PATH}/dynamic"
     clear
     exec init.sh

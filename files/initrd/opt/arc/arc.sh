@@ -71,12 +71,8 @@ dynCheck
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
-  if [ "${ARCDYN}" == "true" ]; then
-    ARC_TITLE="Dynamic-Dev"
-  else
-    if [ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ]; then
-      ARC_TITLE="${ARC_TITLE} > ${NEWTAG}"
-    fi
+  if [ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ]; then
+    ARC_TITLE="${ARC_TITLE} > ${NEWTAG}"
   fi
   if [ -z "${MODEL}" ]; then
     MODEL="(Model)"
