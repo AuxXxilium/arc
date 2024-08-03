@@ -45,7 +45,7 @@ function upgradeLoader () {
       # Download update file
       echo "Downloading ${TAG}"
       if [ -n "${ARCBRANCH}" ]; then
-        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${ARCBRANCH}-${TAG}.img.zip"
+        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}-${ARCBRANCH}.img.zip"
       else
         local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip"
       fi
