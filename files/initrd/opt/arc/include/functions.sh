@@ -656,7 +656,7 @@ function dynCheck () {
     rm -rf "${TMP_PATH}/arc-dev"
     rm -f "${TMP_PATH}/dev.zip"
     echo "true" >"${TMP_PATH}/dynamic"
-    init.sh
+    exec init.sh
   elif [ "${ARCDYN}" == "false" ] || [ "${OFFLINE}" == "true" ]; then
     [ -f "${TMP_PATH}/dynamic" ] && rm -f "${TMP_PATH}/dynamic" >/dev/null 2>&1 || true
   fi
