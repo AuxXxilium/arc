@@ -1128,7 +1128,7 @@ function sysinfo() {
     elif [ "${REMAP}" == "remap" ]; then
       PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
     elif [ "${REMAP}" == "ahci" ]; then
-      PORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
+      AHCIPORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
     fi
     USERCMDLINEINFO="$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
     USERSYNOINFO="$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
@@ -1230,8 +1230,14 @@ function sysinfo() {
     TEXT+="\n  SataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
   elif [ "${REMAP}" == "remap" ]; then
     TEXT+="\n  SataRemap: \Zb${PORTMAP}\Zn"
+  elif [ "${REMAP}" == "ahci" ]; then
+    TEXT+="\n  AhciRemap: \Zb${AHCIPORTMAP}\Zn"
   elif [ "${REMAP}" == "user" ]; then
     TEXT+="\n  PortMap: \Zb"User"\Zn"
+    [ -n "${PORTMAP}" ] && TEXT+="\n  SataPortmap: \Zb${PORTMAP}\Zn"
+    [ -n "${DISKMAP}" ] && TEXT+="\n  DiskIdxMap: \Zb${DISKMAP}\Zn"
+    [ -n "${PORTREMAP}" ] && TEXT+="\n  SataRemap: \Zb${PORTREMAP}\Zn"
+    [ -n "${AHCIPORTREMAP}" ] && TEXT+="\n  AhciRemap: \Zb${AHCIPORTREMAP}\Zn"
   fi
   if [ "${DT}" == "true" ]; then
     TEXT+="\n  Hotplug: \Zb${HDDSORT}\Zn"
