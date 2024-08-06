@@ -7,7 +7,7 @@
 function upgradeLoader () {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
   local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
-  local ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
+  local ARCBRANCH="-$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   if [ -z "${1}" ]; then
     # Check for new Version
     idx=0
@@ -44,11 +44,7 @@ function upgradeLoader () {
     (
       # Download update file
       echo "Downloading ${TAG}"
-      if [ -n "${ARCBRANCH}" ]; then
-        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}-${ARCBRANCH}.img.zip"
-      else
-        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip"
-      fi
+      local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}${ARCBRANCH}.img.zip"
       if [ "${ARCNIC}" == "auto" ]; then
         curl -#kL "${URL}" -o "${TMP_PATH}/arc.img.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
@@ -94,7 +90,7 @@ function upgradeLoader () {
 function updateLoader() {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
   local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
-  local ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
+  local ARCBRANCH="-$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   if [ -z "${1}" ]; then
     # Check for new Version
     idx=0
@@ -136,12 +132,8 @@ function updateLoader() {
     (
       # Download update file
       echo "Downloading ${TAG}"
-      if [ -n "${ARCBRANCH}" ]; then
-        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${ARCBRANCH}.zip"
-        local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum-${ARCBRANCH}.sha256"
-      else
-        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip"
-        local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum.sha256"
+      local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update${ARCBRANCH}.zip"
+      local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum${ARCBRANCH}.sha256"
       fi
       if [ "${ARCNIC}" == "auto" ]; then
         curl -#kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&1 | while IFS= read -r -n1 char; do

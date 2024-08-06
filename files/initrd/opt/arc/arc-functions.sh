@@ -819,6 +819,7 @@ function backupMenu() {
 ###############################################################################
 # Shows update menu to user
 function updateMenu() {
+  ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   NEXT="1"
   while true; do
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" \
@@ -832,7 +833,7 @@ function updateMenu() {
       7 "Update Modules" \
       8 "Update Patches" \
       9 "Update Custom Kernel" \
-      0 "Switch Buildroot" \
+      0 "Switch Branch ${ARCBRANCH}" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -1052,19 +1053,19 @@ function updateMenu() {
         # Ask for Arc Branch
         dialog --clear --backtitle "$(backtitle)" --title "Switch Buildsystem" \
           --menu "Which Branch?" 7 50 0 \
-          1 "x - latest Buildsystem" \
-          2 "s - stable Buildsystem" \
+          1 "Stable Buildsystem" \
+          2 "Next Buildsystem (latest)" \
         2>"${TMP_PATH}/opts"
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           writeConfigKey "arc.branch" "" "${USER_CONFIG_FILE}"
         elif [ ${opts} -eq 2 ]; then
-          writeConfigKey "arc.branch" "s" "${USER_CONFIG_FILE}"
+          writeConfigKey "arc.branch" "next" "${USER_CONFIG_FILE}"
         fi
         ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
         dialog --backtitle "$(backtitle)" --title "Switch Buildsystem" --aspect 18 \
-          --msgbox "Updates are using ${ARCBRANCH} Branch.\nYou need to Update the Loader now!" 0 0
+          --msgbox "Using ${ARCBRANCH} Buildsystem, now.\nUpdate the Loader to apply the changes!" 7 50
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -1206,7 +1207,8 @@ function sysinfo() {
     TEXT+="\n\Zb$(lspci -s ${NETBUS} -nnk | awk '{$1=""}1' | awk '{$1=$1};1')\Zn\n"
   done
   # Print Config Informations
-  TEXT+="\n\Z4> Arc: ${ARC_VERSION} | Branch: ${ARCBRANCH:-x}\Zn"
+  TEXT+="\n\Z4> Arc: ${ARC_VERSION}\Zn"
+  [ -n "${ARCBRANCH}" ] && TEXT+="\n  Branch: \Zb${ARCBRANCH}\Zn"
   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"

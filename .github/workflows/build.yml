@@ -102,9 +102,9 @@ jobs:
           getTheme "files/p1/boot/grub"
           echo "THEMETAG=${TAG}" >> $GITHUB_ENV
           getBuildrootx "latest" "brx"
-          echo "BR_XVERSION=${TAG}" >> $GITHUB_ENV
+          echo "BRX_VERSION=${TAG}" >> $GITHUB_ENV
           getBuildroots "latest" "brs"
-          echo "BR_SVERSION=${TAG}" >> $GITHUB_ENV
+          echo "BRS_VERSION=${TAG}" >> $GITHUB_ENV
           getOffline "files/p3/configs"
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
@@ -119,11 +119,12 @@ jobs:
             # Modify Source File
             echo "${VERSION}" >VERSION
             echo "${VERSION}" >files/p1/ARC-VERSION
+            echo "next" >files/p1/ARC-BRANCH
             sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
           fi
 
           echo "Create Arc Image"
-          IMAGE_FILE="arc.img"
+          IMAGE_FILE="arc-next.img"
           gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
@@ -156,16 +157,16 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           echo "Image Converter"
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-next-dyn.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc-next.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc-next.vhdx
 
           echo "Create Arc ova"
-          convertova "${IMAGE_FILE}" "arc.ova"
+          convertova "${IMAGE_FILE}" "arc-next.ova"
 
           # Zip update and generate checksum
-          zip -9j update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
-          sha256sum update.zip >checksum.sha256
+          zip -9j update-next.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
+          sha256sum update-next.zip >checksum-next.sha256
 
        # Build incremental
       - name: Build Image S
@@ -173,15 +174,15 @@ jobs:
           . scripts/func.sh
 
           if [ -n "${VERSION}" ]; then
-            VERSION="${VERSION}-s"
             # Modify Source File
             echo "${VERSION}" >VERSION
             echo "${VERSION}" >files/p1/ARC-VERSION
+            echo "stable" >files/p1/ARC-BRANCH
             sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
           fi
 
           echo "Create Arc Image"
-          IMAGE_FILE="arc-s.img"
+          IMAGE_FILE="arc.img"
           gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
@@ -214,31 +215,31 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           echo "Image Converter"
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-s-dyn.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc-s.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
 
           echo "Create Arc ova"
-          convertova "${IMAGE_FILE}" "arc-s.ova"
+          convertova "${IMAGE_FILE}" "arc.ova"
 
           # Zip update and generate checksum
-          zip -9j update-s.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
-          sha256sum update-s.zip >checksum-s.sha256
+          zip -9j update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
+          sha256sum update.zip >checksum.sha256
 
       # Zip image and generate checksum
       - name: Pack
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
             # XBase
+            zip -9 "arc-${{ env.VERSION }}-next.img.zip" arc.img
+            zip -9 "arc-${{ env.VERSION }}-next.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}-next.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}-next.vhdx.zip" arc.vhdx
+            zip -9 "arc-${{ env.VERSION }}-next.ova.zip" arc.ova
+            # SBase
             zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
             zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
             zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            zip -9 "arc-${{ env.VERSION }}.vhdx.zip" arc.vhdx
             zip -9 "arc-${{ env.VERSION }}.ova.zip" arc.ova
-            # SBase
-            zip -9 "arc-${{ env.VERSION }}-s.img.zip" arc-s.img
-            zip -9 "arc-${{ env.VERSION }}-s.vmdk-dyn.zip" arc-s-dyn.vmdk
-            zip -9 "arc-${{ env.VERSION }}-s.vmdk-flat.zip" arc-s.vmdk arc-s-flat.vmdk
-            zip -9 "arc-${{ env.VERSION }}-s.ova.zip" arc-s.ova
           fi
           echo "${{ inputs.update_version }}" >check.update
 
@@ -254,12 +255,13 @@ jobs:
           body: |
             ### Information:
             Notice: ${{ inputs.notice }}
-            Release: ${{ env.BUILD_TIME }}
             
             - Full Changelog and Arc Patch (Decryption Key) can be found in my Discord.
             - Version:
-              - without "-s": Latest Buildroot System (More Hardware supported / Hyper-V and XEN (still in testing))
-              - with "-s": Stable Buildroot System (Less Hardware supported / faster Boot)
+              - arc: Stable Buildroot System (Less Hardware supported / faster Boot)
+              - arc-next: Latest Buildroot System (More Hardware supported / Hyper-V and XEN (still in testing))
+
+            Release: ${{ env.BUILD_TIME }}
 
             ### Versions:
             Addons: ${{ env.ADDONSTAG }}
@@ -269,11 +271,11 @@ jobs:
             Custom: ${{ env.CUSTOMTAG }}
             Theme: ${{ env.THEMETAG }}
             LKM: ${{ env.LKMTAG }}
-            Buildroot: ${{ env.BR_XVERSION }} | Buildroot S: ${{ env.BR_SVERSION }}
+            Buildroot: ${{ env.BRS_VERSION }} | Buildroot Next: ${{ env.BRX_VERSION }}
           artifacts: |
             arc-*.zip
             update.zip
-            update-s.zip
+            update-next.zip
             checksum.sha256
-            checksum-s.sha256
+            checksum-next.sha256
             check.update
