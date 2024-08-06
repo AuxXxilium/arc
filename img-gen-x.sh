@@ -19,7 +19,7 @@ getOffline "files/p3/configs"
 getBuildrootx "latest" "brx"
 
 # Xbase
-IMAGE_FILE="arc.img"
+IMAGE_FILE="arc-next.img"
 gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
 fdisk -l "${IMAGE_FILE}"
 
@@ -58,6 +58,6 @@ rmdir "/tmp/p3"
 
 sudo losetup --detach ${LOOPX}
 
-qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
-qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
-qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
+qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-next-dyn.vmdk
+qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc-next.vmdk
+qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc-next.vhdx
