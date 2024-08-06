@@ -1216,7 +1216,8 @@ function sysinfo() {
     TEXT+="\n\Z4> DSM ${PRODUCTVER}: ${MODELID:-${MODEL}}\Zn"
     TEXT+="\n  Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
     TEXT+="\n  Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
-    TEXT+="\n  Arc Patch | Kernelload: \Zb${ARCPATCH} | ${KERNELLOAD}\Zn"
+    TEXT+="\n  Arc Patch: \Zb${ARCPATCH}\Zn"
+    TEXT+="\n  Kernelload: \Zb${KERNELLOAD}\Zn"
     TEXT+="\n  Directboot: \Zb${DIRECTBOOT}\Zn"
     TEXT+="\n  Addons selected: \Zb${ADDONSINFO}\Zn"
   fi
