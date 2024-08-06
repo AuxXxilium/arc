@@ -1222,7 +1222,7 @@ function sysinfo() {
   fi
   TEXT+="\n  Modules loaded: \Zb${MODULESINFO}\Zn"
   if [ "${CONFDONE}" == "true" ]; then
-    TEXT+="\n  User Cmdline: \Zb${USERCMDLINEINFO}\Zn"
+    [ -n "${USERCMDLINEINFO}" ] && TEXT+="\n  User Cmdline: \Zb${USERCMDLINEINFO}\Zn"
     TEXT+="\n  User Synoinfo: \Zb${USERSYNOINFO}\Zn"
   fi
   TEXT+="\n"
