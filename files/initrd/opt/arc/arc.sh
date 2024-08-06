@@ -65,6 +65,8 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 # Get Keymap and Timezone Config
 ntpCheck
 
+KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+
 # Check for Dynamic Mode
 dynCheck
 

@@ -93,7 +93,7 @@ function generateSerial() {
     SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}" 2>/dev/null)"
   fi
 
-  SERIAL="${PREFIX:-"0000"}${MIDDLE:-"XXX"}"
+  local SERIAL="${PREFIX:-"0000"}${MIDDLE:-"XXX"}"
   case "${SUFFIX:-"alpha"}" in
   numeric)
     SERIAL+="$(random)"
@@ -124,7 +124,7 @@ function generateMacAddress() {
     MACSUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
   fi
   NUM=${2:-1}
-  MACS=""
+  local MACS=""
   for I in $(seq 1 ${NUM}); do
     MACS+="$(printf '%06x%06x' $((0x${MACPRE:-"001132"})) $(($((0x${MACSUF})) + ${I})))"
     [ ${I} -lt ${NUM} ] && MACS+=" "
@@ -221,25 +221,25 @@ function _set_conf_kv() {
 # sort netif name
 # @1 -mac1,mac2,mac3...
 function _sort_netif() {
-  ETHLIST=""
-  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
+  local ETHLIST=""
+  local ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
   for ETH in ${ETHX}; do
-    MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
-    ETHBUS="$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
+    local MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
+    local ETHBUS="$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
     ETHLIST="${ETHLIST}${ETHBUS} ${MAC} ${ETH}\n"
   done
-  ETHLISTTMPM=""
-  ETHLISTTMPB="$(echo -e "${ETHLIST}" | sort)"
+  local ETHLISTTMPM=""
+  local ETHLISTTMPB="$(echo -e "${ETHLIST}" | sort)"
   if [ -n "${1}" ]; then
-    MACS="$(echo "${1}" | sed 's/://g' | tr '[:upper:]' '[:lower:]' | tr ',' ' ')"
+    local MACS="$(echo "${1}" | sed 's/://g' | tr '[:upper:]' '[:lower:]' | tr ',' ' ')"
     for MACX in ${MACS}; do
       ETHLISTTMPM="${ETHLISTTMPM}$(echo -e "${ETHLISTTMPB}" | grep "${MACX}")\n"
       ETHLISTTMPB="$(echo -e "${ETHLISTTMPB}" | grep -v "${MACX}")\n"
     done
   fi
-  ETHLIST="$(echo -e "${ETHLISTTMPM}${ETHLISTTMPB}" | grep -v '^$')"
-  ETHSEQ="$(echo -e "${ETHLIST}" | awk '{print $3}' | sed 's/eth//g')"
-  ETHNUM="$(echo -e "${ETHLIST}" | wc -l)"
+  local ETHLIST="$(echo -e "${ETHLISTTMPM}${ETHLISTTMPB}" | grep -v '^$')"
+  local ETHSEQ="$(echo -e "${ETHLIST}" | awk '{print $3}' | sed 's/eth//g')"
+  local ETHNUM="$(echo -e "${ETHLIST}" | wc -l)"
   # sort
   if [ ! "${ETHSEQ}" = "$(seq 0 $((${ETHNUM:0} - 1)))" ]; then
     /etc/init.d/S41dhcpcd stop >/dev/null 2>&1
@@ -262,15 +262,12 @@ function _sort_netif() {
 # get bus of disk
 # 1 - device path
 function getBus() {
-  BUS=""
-  # xvd
-  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | grep -q "xen" && echo "xen")
-  # usb/ata(sata/ide)/scsi
-  [ -z "${BUS}" ] && BUS=$(udevadm info --query property --name "${1}" 2>/dev/null | grep ID_BUS | cut -d= -f2 | sed 's/ata/sata/')
-  # usb/sata(sata/ide)/nvme
-  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,TRAN 2>/dev/null | grep "${1} " | awk '{print $2}') #Spaces are intentional
-  # usb/scsi(sata/ide)/virtio(scsi/virtio)/mmc/nvme
-  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | awk '{print $2}' | awk -F':' '{print $(NF-1)}' | sed 's/_host//') # Spaces are intentional
+  local BUS=""
+  # usb/ata(ide)/sata/sas/virtio/mmc/nvme
+  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,TRAN 2>/dev/null | grep "${1} " | awk '{print $2}' | sed 's/^ata$/ide/') #Spaces are intentional
+  # usb/scsi(ide/sata/sas)/virtio/mmc/nvme/vmbus/xen(xvd)
+  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | awk '{print $2}' | awk -F':' '{print $(NF-1)}' | sed 's/_host//' | sed 's/^.*xen.*$/xen/') # Spaces are intentional
+  [ -z "${BUS}" ] && BUS="unknown"
   echo "${BUS}"
   return 0
 }
@@ -279,7 +276,7 @@ function getBus() {
 # get IP
 # 1 - ethN
 function getIP() {
-  IP=""
+  local IP=""
   MACR="$(cat /sys/class/net/${1}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
   IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
   if [ -n "${IPR}" ]; then
@@ -302,7 +299,7 @@ function getIP() {
 # get logo of model
 # 1 - model
 function getLogo() {
-  MODEL="${1}"
+  local MODEL="${1}"
   rm -f "${PART3_PATH}/logo.png"
   STATUS=$(curl -skL -m 10 -w "%{http_code}" "https://www.synology.com/api/products/getPhoto?product=${MODEL/+/%2B}&type=img_s&sort=0" -o "${PART3_PATH}/logo.png")
   if [ $? -ne 0 -o ${STATUS:-0} -ne 200 -o ! -f "${PART3_PATH}/logo.png" ]; then
@@ -318,7 +315,7 @@ function getLogo() {
 ###############################################################################
 # Find and mount the DSM root filesystem
 function findDSMRoot() {
-  DSMROOTS=""
+  local DSMROOTS=""
   [ -z "${DSMROOTS}" ] && DSMROOTS="$(mdadm --detail --scan 2>/dev/null | grep -E "name=SynologyNAS:0|name=DiskStation:0|name=SynologyNVR:0|name=BeeStation:0" | awk '{print $2}' | uniq)"
   [ -z "${DSMROOTS}" ] && DSMROOTS="$(lsblk -pno KNAME,PARTN,FSTYPE,FSVER,LABEL | grep -E "sd[a-z]{1,2}1" | grep -w "linux_raid_member" | grep "0.9" | awk '{print $1}')"
   echo "${DSMROOTS}"
@@ -382,7 +379,7 @@ function delCmdline() {
 # Rebooting
 # (based on pocopico's TCRP code)
 function rebootTo() {
-  MODES="config recovery junior automated update"
+  local MODES="config recovery junior automated update bios memtest"
   [ -z "${1}" ] && exit 1
   if ! echo "${MODES}" | grep -qw "${1}"; then exit 1; fi
   [ ! -f "${USER_GRUBENVFILE}" ] && grub-editenv ${USER_GRUBENVFILE} create
@@ -527,17 +524,17 @@ function livepatch() {
 ###############################################################################
 # Check NTP and Keyboard Layout
 function ntpCheck() {
-  LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
-  KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+  local LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
+  local KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
   if [ "${OFFLINE}" == "false" ]; then
     # Timezone
     if [ "${ARCNIC}" == "auto" ]; then
-      REGION="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
-      TIMEZONE="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
+      local REGION="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
+      local TIMEZONE="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
       [ -z "${KEYMAP}" ] && KEYMAP="$(curl -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
     else
-      REGION="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
-      TIMEZONE="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
+      local REGION="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
+      local TIMEZONE="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
       [ -z "${KEYMAP}" ] && KEYMAP="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
     fi
     writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"

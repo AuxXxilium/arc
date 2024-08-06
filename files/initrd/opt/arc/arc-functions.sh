@@ -1722,7 +1722,7 @@ function formatDisks() {
     [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
     [ -z "${SIZE}" ] && SIZE="Unknown"
     printf "\"%s\" \"%-6s %-4s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" >>"${TMP_PATH}/opts"
-  done < <(lsblk -pno KNAME,SIZE,TYPE,PKNAME)
+  done < <(lsblk -Jpno KNAME,SIZE,TYPE,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.id) \(.size) \(.type) \(.pkname)"' 2>/dev/null)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --msgbox "No disk found!" 0 0
@@ -1823,7 +1823,7 @@ function cloneLoader() {
     [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
     [ -z "${SIZE}" ] && SIZE="Unknown"
     printf "\"%s\" \"%-6s %-4s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" >>"${TMP_PATH}/opts"
-  done < <(lsblk -dpno KNAME,SIZE,TYPE,PKNAME | sort)
+  done < <(lsblk -Jpno KNAME,SIZE,TYPE,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.id) \(.size) \(.type) \(.pkname)"' 2>/dev/null)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --msgbox "No disk found!" 0 0
@@ -2101,9 +2101,7 @@ function rebootMenu() {
   echo -e "network \"Arc: Restart Network Service\"" >>"${TMP_PATH}/opts"
   echo -e "recovery \"DSM: Recovery Mode\"" >>"${TMP_PATH}/opts"
   echo -e "junior \"DSM: Reinstall Mode\"" >>"${TMP_PATH}/opts"
-  if efibootmgr 2>/dev/null | grep -q "^Boot0000"; then
-    echo -e "bios \"System: BIOS/UEFI\"" >>"${TMP_PATH}/opts"
-  fi
+  echo -e "bios \"System: BIOS/UEFI\"" >>"${TMP_PATH}/opts"
   echo -e "poweroff \"System: Shutdown\"" >>"${TMP_PATH}/opts"
   echo -e "shell \"System: Shell Cmdline\"" >>"${TMP_PATH}/opts"
   dialog --backtitle "$(backtitle)" --title "Power Menu" \
@@ -2114,20 +2112,18 @@ function rebootMenu() {
   [ -z "${resp}" ] && return
   REDEST=${resp}
   dialog --backtitle "$(backtitle)" --title "Power Menu" \
-    --infobox "${REDEST} selected ...!" 0 0
-  if [ "${REDEST}" == "bios" ]; then
-    efibootmgr -n 0000 >/dev/null 2>&1
-    reboot
-    exit 0
-  elif [ "${REDEST}" == "poweroff" ]; then
+    --infobox "${REDEST} selected ...!" 5 30
+  if [ "${REDEST}" == "poweroff" ]; then
     poweroff
     exit 0
   elif [ "${REDEST}" == "shell" ]; then
     clear
     exit 0
   elif [ "${REDEST}" == "init" ]; then
+    clear
     init.sh
   elif [ "${REDEST}" == "network" ]; then
+    clear
     /etc/init.d/S41dhcpcd restart
     arc.sh
   else

@@ -134,6 +134,9 @@ function bootDSM () {
   CMDLINE['loglevel']="15"
   CMDLINE['log_buf_len']="32M"
   CMDLINE['panic']="${KERNELPANIC:-0}"
+  CMDLINE['pcie_aspm']="off"
+  CMDLINE['nox2apic']=""
+  CMDLINE['nomodeset']=""
   CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
   [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="disable"
 
