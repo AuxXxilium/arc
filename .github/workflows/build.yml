@@ -230,11 +230,11 @@ jobs:
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
             # XBase
-            zip -9 "arc-${{ env.VERSION }}-next.img.zip" arc.img
-            zip -9 "arc-${{ env.VERSION }}-next.vmdk-dyn.zip" arc-dyn.vmdk
-            zip -9 "arc-${{ env.VERSION }}-next.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            zip -9 "arc-${{ env.VERSION }}-next.vhdx.zip" arc.vhdx
-            zip -9 "arc-${{ env.VERSION }}-next.ova.zip" arc.ova
+            zip -9 "arc-${{ env.VERSION }}-next.img.zip" arc-next.img
+            zip -9 "arc-${{ env.VERSION }}-next.vmdk-dyn.zip" arc-next-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}-next.vmdk-flat.zip" arc-next.vmdk arc-next-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}-next.vhdx.zip" arc-next.vhdx
+            zip -9 "arc-${{ env.VERSION }}-next.ova.zip" arc-next.ova
             # SBase
             zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
             zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
