@@ -134,7 +134,6 @@ function updateLoader() {
       echo "Downloading ${TAG}"
       local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update${ARCBRANCH}.zip"
       local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum${ARCBRANCH}.sha256"
-      fi
       if [ "${ARCNIC}" == "auto" ]; then
         curl -#kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
