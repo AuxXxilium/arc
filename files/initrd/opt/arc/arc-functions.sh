@@ -1716,12 +1716,13 @@ function saveMenu() {
 # let user format disks from inside arc
 function formatDisks() {
   rm -f "${TMP_PATH}/opts"
-  while read -r KNAME SIZE TYPE PKNAME; do
+  while read -r KNAME ID SIZE TYPE PKNAME; do
     [ -z "${KNAME}" ] && continue
     [[ "${KNAME}" = /dev/md* ]] && continue
     [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
     [ -z "${SIZE}" ] && SIZE="Unknown"
-    printf "\"%s\" \"%-6s %-4s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" >>"${TMP_PATH}/opts"
+    [ -z "${ID}" ] && ID="Unknown"
+    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" >>"${TMP_PATH}/opts"
   done < <(lsblk -Jpno KNAME,SIZE,TYPE,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.id) \(.size) \(.type) \(.pkname)"' 2>/dev/null)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
@@ -1817,12 +1818,14 @@ EOF
 # Clone Loader Disk
 function cloneLoader() {
   rm -f "${TMP_PATH}/opts" >/dev/null
-  while read -r KNAME SIZE TYPE PKNAME; do
+  while read -r KNAME ID SIZE TYPE PKNAME; do
     [ -z "${KNAME}" ] && continue
+    [ "${TYPE}" != "disk" ] && continue
     [[ "${KNAME}" = /dev/md* ]] && continue
     [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
     [ -z "${SIZE}" ] && SIZE="Unknown"
-    printf "\"%s\" \"%-6s %-4s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" >>"${TMP_PATH}/opts"
+    [ -z "${ID}" ] && ID="Unknown"
+    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" >>"${TMP_PATH}/opts"
   done < <(lsblk -Jpno KNAME,SIZE,TYPE,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.id) \(.size) \(.type) \(.pkname)"' 2>/dev/null)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
