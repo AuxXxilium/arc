@@ -7,7 +7,9 @@
 function upgradeLoader () {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
   local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
-  local ARCBRANCH="-$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
+  local ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
+  rm -f "${TMP_PATH}/check.update"
+  rm -f "${TMP_PATH}/arc.img.zip"
   if [ -z "${1}" ]; then
     # Check for new Version
     idx=0
@@ -40,11 +42,17 @@ function upgradeLoader () {
           return 1
         fi
       fi
+    else
+      updateFaileddialog
     fi
     (
       # Download update file
       echo "Downloading ${TAG}"
-      local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}${ARCBRANCH}.img.zip"
+      if [ -n "${ARCBRANCH}" ]; then
+        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}-${ARCBRANCH}.img.zip"
+      else
+        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip"
+      fi
       if [ "${ARCNIC}" == "auto" ]; then
         curl -#kL "${URL}" -o "${TMP_PATH}/arc.img.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
@@ -90,7 +98,10 @@ function upgradeLoader () {
 function updateLoader() {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
   local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
-  local ARCBRANCH="-$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
+  local ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
+  rm -f "${TMP_PATH}/check.update"
+  rm -f "${TMP_PATH}/checksum.sha256"
+  rm -f "${TMP_PATH}/update.zip"
   if [ -z "${1}" ]; then
     # Check for new Version
     idx=0
@@ -126,14 +137,21 @@ function updateLoader() {
         dialog --backtitle "$(backtitle)" --title "Update Loader" \
           --infobox "Config is not compatible to new Version!\nUpdate not possible!\nPlease reflash Loader." 0 0
         sleep 5
-        updateFailed
+        updateFaileddialog
       fi
+    else
+      updateFaileddialog
     fi
     (
       # Download update file
       echo "Downloading ${TAG}"
-      local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update${ARCBRANCH}.zip"
-      local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum${ARCBRANCH}.sha256"
+      if [ -n "${ARCBRANCH}" ]; then
+        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${ARCBRANCH}.zip"
+        local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum-${ARCBRANCH}.sha256"
+      else
+        local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update.zip"
+        local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum.sha256"
+      fi
       if [ "${ARCNIC}" == "auto" ]; then
         curl -#kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
@@ -578,10 +596,24 @@ function updateLKMs() {
 function updateFailed() {
   local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   if [ "${AUTOMATED}" = "true" ]; then
+    echo "Update failed!"
+    sleep 5
+    exec reboot
+    exit 1
+  else
+    echo "Update failed!"
+    exit 1
+  fi
+}
+
+function updateFaileddialog() {
+  local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
+  if [ "${AUTOMATED}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Failed" \
       --infobox "Update failed!" 0 0
     sleep 5
     exec reboot
+    exit 1
   else
     dialog --backtitle "$(backtitle)" --title "Update Failed" \
       --msgbox "Update failed!" 0 0
