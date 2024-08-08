@@ -833,7 +833,7 @@ function updateMenu() {
       7 "Update Modules" \
       8 "Update Patches" \
       9 "Update Custom Kernel" \
-      0 "Switch Branch ${ARCBRANCH}" \
+      0 "Branch: (${ARCBRANCH:-"stable"})" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
