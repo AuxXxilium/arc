@@ -256,12 +256,10 @@ jobs:
             ### Information:
             Notice: ${{ inputs.notice }}
             
-            - Full Changelog and Arc Patch (Decryption Key) can be found in my Discord.
             - Version:
               - arc: Stable Buildroot System (Less Hardware supported / faster Boot)
               - arc-next: Latest Buildroot System (More Hardware supported / Hyper-V and XEN (still in testing))
-
-            Release: ${{ env.BUILD_TIME }}
+            - Full Changelog and Arc Patch (Decryption Key) can be found in my Discord.
 
             ### Versions:
             Addons: ${{ env.ADDONSTAG }}
@@ -272,6 +270,7 @@ jobs:
             Theme: ${{ env.THEMETAG }}
             LKM: ${{ env.LKMTAG }}
             Buildroot: ${{ env.BRS_VERSION }} | Buildroot Next: ${{ env.BRX_VERSION }}
+            Release: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
             update.zip
