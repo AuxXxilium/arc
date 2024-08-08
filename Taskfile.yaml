@@ -16,8 +16,7 @@ tasks:
   build-img-all:
     cmds:
       - git pull
-      - ./img-gen.sh
-      - ./img-gen-x.sh
+      - ./img-gen-all.sh
 
   compile-kpatch:
     dir: kpatch
