@@ -1716,14 +1716,14 @@ function saveMenu() {
 # let user format disks from inside arc
 function formatDisks() {
   rm -f "${TMP_PATH}/opts"
-  while read -r KNAME ID SIZE TYPE PKNAME; do
+  while read -r KNAME SIZE TYPE PKNAME; do
     [ -z "${KNAME}" ] && continue
+    [ "${KNAME}" = "N/A" ] && continue
     [[ "${KNAME}" = /dev/md* ]] && continue
     [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
     [ -z "${SIZE}" ] && SIZE="Unknown"
-    [ -z "${ID}" ] && ID="Unknown"
     printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" >>"${TMP_PATH}/opts"
-  done < <(lsblk -Jpno KNAME,SIZE,TYPE,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.id) \(.size) \(.type) \(.pkname)"' 2>/dev/null)
+  done < <(lsblk -Jpno KNAME,SIZE,TYPE,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.pkname)"' 2>/dev/null)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --msgbox "No disk found!" 0 0
@@ -1818,15 +1818,15 @@ EOF
 # Clone Loader Disk
 function cloneLoader() {
   rm -f "${TMP_PATH}/opts" >/dev/null
-  while read -r KNAME ID SIZE TYPE PKNAME; do
+  while read -r KNAME SIZE TYPE PKNAME; do
     [ -z "${KNAME}" ] && continue
+    [ "${KNAME}" = "N/A" ] && continue
     [ "${TYPE}" != "disk" ] && continue
     [[ "${KNAME}" = /dev/md* ]] && continue
     [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
     [ -z "${SIZE}" ] && SIZE="Unknown"
-    [ -z "${ID}" ] && ID="Unknown"
     printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" >>"${TMP_PATH}/opts"
-  done < <(lsblk -Jpno KNAME,SIZE,TYPE,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.id) \(.size) \(.type) \(.pkname)"' 2>/dev/null)
+  done < <(lsblk -Jpno KNAME,SIZE,TYPE,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.pkname)"' 2>/dev/null)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --msgbox "No disk found!" 0 0
@@ -1947,7 +1947,7 @@ function greplogs() {
   if [ -n "$(ls /sys/fs/pstore 2>/dev/null)" ]; then
     mkdir -p "${TMP_PATH}/logs/pstore"
     cp -rf /sys/fs/pstore/* "${TMP_PATH}/logs/pstore"
-    zlib-flate -uncompress </sys/fs/pstore/*.z >"${TMP_PATH}/logs/pstore/ps.log" 2>/dev/null
+    [ -n "$(ls /sys/fs/pstore/*.z 2>/dev/null)" ] && zlib-flate -uncompress </sys/fs/pstore/*.z >"${TMP_PATH}/logs/pstore/ps.log" 2>/dev/null
     PSTORE=1
   fi
   if [ ${PSTORE} -eq 1 ]; then

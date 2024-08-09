@@ -1,6 +1,13 @@
 ###############################################################################
 # Boot
 function bootDSM () {
+  # Clear logs for dbgutils addons
+  rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
+  rm -rf /sys/fs/pstore/* >/dev/null 2>&1 || true
+
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  [ "${BUILDDONE}" = "false" ] && die "Loader build not completed!"
+
   # Get Loader Disk Bus
   [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
   BUS=$(getBus "${LOADER_DISK}")
@@ -135,8 +142,6 @@ function bootDSM () {
   CMDLINE['log_buf_len']="32M"
   CMDLINE['panic']="${KERNELPANIC:-0}"
   CMDLINE['pcie_aspm']="off"
-  CMDLINE['nox2apic']=""
-  CMDLINE['nomodeset']=""
   CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
   [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="disable"
 
@@ -207,6 +212,7 @@ function bootDSM () {
   elif [ "${DIRECTBOOT}" == "false" ]; then
     grub-editenv ${USER_GRUBENVFILE} unset dsm_cmdline
     grub-editenv ${USER_GRUBENVFILE} unset next_entry
+    KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
     BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
     [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
     IPCON=""
@@ -281,10 +287,10 @@ function bootDSM () {
     fi
 
     # Executes DSM kernel via KEXEC
-    KEXECARGS=""
+    KEXECARGS="-a"
     if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 4 ] && [ ${EFI} -eq 1 ]; then
       echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
-      KEXECARGS="--noefi"
+      KEXECARGS+=" --noefi"
     fi
     kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
 
@@ -296,23 +302,8 @@ function bootDSM () {
       fi
     done
 
-    # Clear logs for dbgutils addons
-    rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
-
-    KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
-    if [ "${KERNELLOAD}" == "kexec" ]; then
-      # Unload all network interfaces
-      for D in $(readlink /sys/class/net/*/device/driver); do rmmod -f "$(basename ${D})" 2>/dev/null || true; done
-
-      # Unload all graphics drivers
-      # for D in $(readlink /sys/class/drm/*/device/driver); do rmmod -f "$(basename ${D})" 2>/dev/null || true; done
-      for D in $(lsmod | grep -E '^(nouveau|amdgpu|radeon|i915)' | awk '{print $1}'); do rmmod -f "${D}" 2>/dev/null || true; done
-      for I in $(find /sys/devices -name uevent -exec bash -c 'cat {} 2>/dev/null | grep -Eq "PCI_CLASS=0?30[0|1|2]00" && dirname {}' \;); do
-        [ -e ${I}/reset ] && cat ${I}/vendor >/dev/null | grep -iq 0x10de && echo 1 >${I}/reset || true # Proc open nvidia driver when booting
-      done
-    fi
     echo -e "\033[1;37mBooting DSM...\033[0m"
     # Boot to DSM
-    [ "${KERNELLOAD}" == "kexec" ] && kexec -a -e || poweroff
+    [ "${KERNELLOAD}" == "kexec" ] && kexec -e || poweroff
   fi
 }
