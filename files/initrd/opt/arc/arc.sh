@@ -463,9 +463,9 @@ function arcSettings() {
     # Select Addons
     dialog --backtitle "$(backtitle)" --colors --title "DSM Addons" \
       --infobox "Loading Addons Table..." 3 40
-    writeConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
+    initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
+    initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+    initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
     addonSelection
     # Check for DT and HBA/Raid Controller
     if [ "${PLATFORM}" != "epyc7002" ]; then
