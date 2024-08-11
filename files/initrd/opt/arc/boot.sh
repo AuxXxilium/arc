@@ -1,3 +1,8 @@
+#!/usr/bin/env bash
+
+# Overlay Init Section
+[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+
 ###############################################################################
 # Boot
 function bootDSM () {
@@ -65,7 +70,7 @@ function bootDSM () {
     HASATA=0
     for D in $(lsblk -dpno NAME); do
       [ "${D}" == "${LOADER_DISK}" ] && continue
-      if echo "sata sas scsi" | grep -qw "$(getBus "${D}")"; then
+      if echo "sata sas scsi virtio" | grep -qw "$(getBus "${D}")"; then
         HASATA=1
         break
       fi
