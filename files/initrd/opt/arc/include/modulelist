@@ -17,6 +17,9 @@ N acpi_call.ko
 N cpufreq_conservative.ko
 N cpufreq_ondemand.ko
 
+# misc
+N check_signature.ko
+
 # sensors
 N coretemp.ko
 N k10temp.ko

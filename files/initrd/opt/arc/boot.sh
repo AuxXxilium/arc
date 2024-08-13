@@ -161,6 +161,8 @@ function bootDSM () {
       [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
       CMDLINE['modprobe.blacklist']+="mpt3sas"
     fi
+  else
+    CMDLINE['scsi_mod.scan']="sync"
   fi
   # CMDLINE['kvm.ignore_msrs']="1"
   # CMDLINE['kvm.report_ignored_msrs']="0"

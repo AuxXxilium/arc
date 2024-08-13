@@ -324,6 +324,8 @@ function cmdlineMenu() {
             0) # ok-button
               NAME="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
               VALUE="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+              [[ "${NAME}" = *= ]] && NAME="${NAME%?}"
+              [[ "${VALUE}" = =* ]] && VALUE="${VALUE#*=}"
               if [ -z "${NAME//\"/}" ]; then
                 dialog --clear --backtitle "$(backtitle)" --title "User Cmdline" \
                   --yesno "Invalid Parameter Name, retry?" 0 0
@@ -527,6 +529,8 @@ function synoinfoMenu() {
             0) # ok-button
               NAME="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
               VALUE="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+              [[ "${NAME}" = *= ]] && NAME="${NAME%?}"
+              [[ "${VALUE}" = =* ]] && VALUE="${VALUE#*=}"
               if [ -z "${NAME//\"/}" ]; then
                 dialog --clear --backtitle "$(backtitle)" --title "User Cmdline" \
                   --yesno "Invalid Parameter Name, retry?" 0 0
