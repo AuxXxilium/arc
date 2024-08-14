@@ -2090,7 +2090,7 @@ function decryptMenu() {
       CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
       cp -f "${S_FILE}" "${S_FILE}.bak"
       dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-        --inputbox "Enter Decryption Key for ${CONFIGSVERSION}" 7 40 2>"${TMP_PATH}/resp"
+        --inputbox "Enter Decryption Key for ${CONFIGSVERSION}\nKey is available in my Discord." 8 40 2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return
       ARC_KEY=$(cat "${TMP_PATH}/resp" | tr '[:lower:]' '[:upper:]')
       if openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARC_KEY}" 2>/dev/null; then
