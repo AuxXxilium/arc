@@ -2045,30 +2045,75 @@ function satadomMenu() {
 ###############################################################################
 # Decrypt Menu
 function decryptMenu() {
-  if [ -f "${S_FILE_ENC}" ]; then
-    CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
-    cp -f "${S_FILE}" "${S_FILE}.bak"
-    dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-      --inputbox "Enter Decryption Key for ${CONFIGSVERSION}" 7 40 2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return
-    ARC_KEY=$(cat "${TMP_PATH}/resp" | tr '[:lower:]' '[:upper:]')
-    if openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARC_KEY}" 2>/dev/null; then
-      dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-        --msgbox "Decrypt successful: You can use Arc Patch." 5 50
-      cp -f "${S_FILE_ARC}" "${S_FILE}"
-      writeConfigKey "arc.key" "${ARC_KEY}" "${USER_CONFIG_FILE}"
+  OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+  if [ "${OFFLINE}" = "false" ]; then
+    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+    if [ -n "${TAG}" ]; then
+      (
+        # Download update file
+        local URL="https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/arc-configs.zip"
+        echo "Downloading ${TAG}"
+        if [ "${ARCNIC}" == "auto" ]; then
+          curl -#kL "${URL}" -o "${TMP_PATH}/configs.zip" 2>&1 | while IFS= read -r -n1 char; do
+            [[ $char =~ [0-9] ]] && keep=1 ;
+            [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+            [[ $keep == 1 ]] && progress="$progress$char" ;
+          done
+        else
+          curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/configs.zip" 2>&1 | while IFS= read -r -n1 char; do
+            [[ $char =~ [0-9] ]] && keep=1 ;
+            [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+            [[ $keep == 1 ]] && progress="$progress$char" ;
+          done
+        fi
+        if [ -f "${TMP_PATH}/configs.zip" ]; then
+          echo "Download successful!"
+          rm -rf "${MODEL_CONFIG_PATH}"
+          mkdir -p "${MODEL_CONFIG_PATH}"
+          echo "Installing new Configs..."
+          unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}"
+          rm -f "${TMP_PATH}/configs.zip"
+          echo "Installation done!"
+          sleep 2
+        else
+          echo "Error extracting new Version!"
+          sleep 5
+        fi
+      ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Arc Decrypt" \
+        --progressbox "Installing Arc Patch Configs..." 20 70
     else
-      cp -f "${S_FILE}.bak" "${S_FILE}"
       dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-        --msgbox "Decrypt failed: Wrong Key for this Version." 5 50
-      writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
+        --msgbox "Can't connect to Github.\nCheck your Network!" 6 50
+      return
     fi
+    if [ -f "${S_FILE_ENC}" ]; then
+      CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
+      cp -f "${S_FILE}" "${S_FILE}.bak"
+      dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
+        --inputbox "Enter Decryption Key for ${CONFIGSVERSION}" 7 40 2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && return
+      ARC_KEY=$(cat "${TMP_PATH}/resp" | tr '[:lower:]' '[:upper:]')
+      if openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARC_KEY}" 2>/dev/null; then
+        dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
+          --msgbox "Decrypt successful: You can use Arc Patch." 5 50
+        cp -f "${S_FILE_ARC}" "${S_FILE}"
+        writeConfigKey "arc.key" "${ARC_KEY}" "${USER_CONFIG_FILE}"
+      else
+        cp -f "${S_FILE}.bak" "${S_FILE}"
+        dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
+          --msgbox "Decrypt failed: Wrong Key for this Version." 5 50
+        writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
+      fi
+    fi
+    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    ARC_KEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
+  else
+    dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
+      --msgbox "Not available in offline Mode!" 5 50
   fi
-  writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  ARC_KEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
   return
 }
 
