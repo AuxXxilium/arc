@@ -47,7 +47,8 @@ jobs:
         uses: Nats-ji/delete-old-releases@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          keep-count: 0
+          keep-count: 10
+          remove-tags: true
           keep-old-minor-releases: false
 
       - name: Free Disk Space (Ubuntu)
