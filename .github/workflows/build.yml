@@ -42,14 +42,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@main
 
-      - name: Clean Old
+      - name: Delete releases and workflows runs
         if: inputs.clean == true
-        uses: Nats-ji/delete-old-releases@v1
+        uses: ophub/delete-releases-workflows@main
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          keep-count: 10
-          remove-tags: true
-          keep-old-minor-releases: false
+          delete_releases: true
+          releases_keep_latest: 1
+          delete_workflows: true
+          workflows_keep_day: 1
+          delete_tags: true
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
