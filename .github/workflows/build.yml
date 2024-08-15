@@ -262,7 +262,7 @@ jobs:
             - Version:
               - arc: Stable Buildroot System (Less Hardware supported / faster Boot)
               - arc-next: Latest Buildroot System (More Hardware supported (still in testing))
-            - Full Changelog and Arc Patch (Decryption Key) can be found in my Discord.
+            - Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
 
             ### Versions:
             Addons: ${{ env.ADDONSTAG }}
