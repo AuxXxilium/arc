@@ -157,7 +157,13 @@ function bootDSM () {
       CMDLINE['modprobe.blacklist']+="mpt3sas"
     fi
   else
-    CMDLINE['scsi_mod.scan']="sync"
+    # Check for Hypervisor
+    if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
+      PVSCSI="$(lsmod | grep "vmw_pvscsi" 2>/dev/null)" # KVM or VMware
+      if [ -z "${PVSCSI}" ]; then
+        CMDLINE['scsi_mod.scan']="sync" # Don't sync if not running on Hypervisor
+      fi
+    fi
   fi
   # CMDLINE['kvm.ignore_msrs']="1"
   # CMDLINE['kvm.report_ignored_msrs']="0"
