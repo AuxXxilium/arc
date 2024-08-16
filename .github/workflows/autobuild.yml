@@ -75,6 +75,63 @@ jobs:
 
           echo "OK"
 
+       # Build incremental
+      - name: Build Image S
+        run: |
+          . scripts/func.sh
+
+          if [ -n "${VERSION}" ]; then
+            # Modify Source File
+            echo "${VERSION}" >VERSION
+            echo "${VERSION}" >files/p1/ARC-VERSION
+            echo "stable" >files/p1/ARC-BRANCH
+            sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
+          fi
+
+          echo "Create Arc Image"
+          IMAGE_FILE="arc.img"
+          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
+          fdisk -l "${IMAGE_FILE}"
+          
+          LOOPX=$(sudo losetup -f)
+          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
+
+          echo "Mounting Image File"
+          mkdir -p "/tmp/p1"
+          mkdir -p "/tmp/p3"
+          sudo mount ${LOOPX}p1 "/tmp/p1"
+          sudo mount ${LOOPX}p3 "/tmp/p3"
+
+          [ ! -f "brs/bzImage-arc" ] || [ ! -f "brs/initrd-arc" ] && return 1
+          
+          echo "Repack initrd"
+          cp -f "brs/bzImage-arc" "files/p3/bzImage-arc"
+          repackInitrd "brs/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+
+          echo "Copying files"
+          sudo cp -Rf "files/p1/"* "/tmp/p1"
+          sudo cp -Rf "files/p3/"* "/tmp/p3"
+          sync
+
+          echo "Unmount image file"
+          sudo umount "/tmp/p1"
+          sudo umount "/tmp/p3"
+          rmdir "/tmp/p1"
+          rmdir "/tmp/p3"
+
+          sudo losetup --detach ${LOOPX}
+
+          echo "Image Converter"
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
+
+          echo "Create Arc ova"
+          convertova "${IMAGE_FILE}" "arc.ova"
+
+          # Zip update and generate checksum
+          zip -9j update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
+          sha256sum update.zip >checksum.sha256
+
       # Build incremental
       - name: Build Image X
         run: |
@@ -132,63 +189,6 @@ jobs:
           # Zip update and generate checksum
           zip -9j update-next.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
           sha256sum update-next.zip >checksum-next.sha256
-
-       # Build incremental
-      - name: Build Image S
-        run: |
-          . scripts/func.sh
-
-          if [ -n "${VERSION}" ]; then
-            # Modify Source File
-            echo "${VERSION}" >VERSION
-            echo "${VERSION}" >files/p1/ARC-VERSION
-            echo "stable" >files/p1/ARC-BRANCH
-            sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
-          fi
-
-          echo "Create Arc Image"
-          IMAGE_FILE="arc.img"
-          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
-          fdisk -l "${IMAGE_FILE}"
-          
-          LOOPX=$(sudo losetup -f)
-          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
-
-          echo "Mounting Image File"
-          mkdir -p "/tmp/p1"
-          mkdir -p "/tmp/p3"
-          sudo mount ${LOOPX}p1 "/tmp/p1"
-          sudo mount ${LOOPX}p3 "/tmp/p3"
-
-          [ ! -f "brs/bzImage-arc" ] || [ ! -f "brs/initrd-arc" ] && return 1
-          
-          echo "Repack initrd"
-          cp -f "brs/bzImage-arc" "files/p3/bzImage-arc"
-          repackInitrd "brs/initrd-arc" "files/initrd" "files/p3/initrd-arc"
-
-          echo "Copying files"
-          sudo cp -Rf "files/p1/"* "/tmp/p1"
-          sudo cp -Rf "files/p3/"* "/tmp/p3"
-          sync
-
-          echo "Unmount image file"
-          sudo umount "/tmp/p1"
-          sudo umount "/tmp/p3"
-          rmdir "/tmp/p1"
-          rmdir "/tmp/p3"
-
-          sudo losetup --detach ${LOOPX}
-
-          echo "Image Converter"
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
-
-          echo "Create Arc ova"
-          convertova "${IMAGE_FILE}" "arc.ova"
-
-          # Zip update and generate checksum
-          zip -9j update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
-          sha256sum update.zip >checksum.sha256
 
       # Zip image and generate checksum
       - name: Pack
