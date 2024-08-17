@@ -49,7 +49,7 @@ function addonSelection() {
   touch "${TMP_PATH}/opts"
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
-    if [ "${ADDON}" == "amepatch" ] && [ "${ARCPATCH}" == "false" ]; then
+    if [[ "${ADDON}" == "amepatch" || "${ADDON}" == "surveillancepatch" ]] && [ "${ARCPATCH}" == "false" ]; then
       continue
     else
       echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
@@ -2048,11 +2048,15 @@ function decryptMenu() {
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   if [ "${OFFLINE}" = "false" ]; then
     local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
-    if [ -n "${TAG}" ]; then
+    dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
+      --inputbox "Enter Decryption Key for ${TAG}\nKey is available in my Discord." 8 40 2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && return
+    ARC_KEY=$(cat "${TMP_PATH}/resp")
+    if [ -n "${TAG}" ] && [ -n "${ARC_KEY}"]; then
       (
         # Download update file
         local URL="https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/arc-configs.zip"
-        echo "Downloading ${TAG}"
+        echo "Downloading Arc Configs ${TAG}"
         if [ "${ARCNIC}" == "auto" ]; then
           curl -#kL "${URL}" -o "${TMP_PATH}/configs.zip" 2>&1 | while IFS= read -r -n1 char; do
             [[ $char =~ [0-9] ]] && keep=1 ;
@@ -2066,6 +2070,22 @@ function decryptMenu() {
             [[ $keep == 1 ]] && progress="$progress$char" ;
           done
         fi
+#        # Download update file
+#        local URL="https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/arc-addons.zip"
+#        echo "Downloading Arc Addons ${TAG}"
+#        if [ "${ARCNIC}" == "auto" ]; then
+#          curl -#kL "${URL}" -o "${TMP_PATH}/addons.enc" 2>&1 | while IFS= read -r -n1 char; do
+#            [[ $char =~ [0-9] ]] && keep=1 ;
+#            [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+#            [[ $keep == 1 ]] && progress="$progress$char" ;
+#          done
+#        else
+#          curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/addons.enc" 2>&1 | while IFS= read -r -n1 char; do
+#            [[ $char =~ [0-9] ]] && keep=1 ;
+#            [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+#           [[ $keep == 1 ]] && progress="$progress$char" ;
+#          done
+#        fi
         if [ -f "${TMP_PATH}/configs.zip" ]; then
           echo "Download successful!"
           rm -rf "${MODEL_CONFIG_PATH}"
@@ -2079,31 +2099,49 @@ function decryptMenu() {
           echo "Error extracting new Version!"
           sleep 5
         fi
+        if [ -f "${S_FILE_ENC}" ]; then
+          cp -f "${S_FILE}" "${S_FILE}.bak"
+          if openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARC_KEY}" 2>/dev/null; then
+            dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
+              --msgbox "Decrypt successful: You can use Arc Patch." 5 50
+            cp -f "${S_FILE_ARC}" "${S_FILE}"
+            writeConfigKey "arc.key" "${ARC_KEY}" "${USER_CONFIG_FILE}"
+          else
+            cp -f "${S_FILE}.bak" "${S_FILE}"
+            dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
+              --msgbox "Decrypt failed: Wrong Key for this Version." 5 50
+            writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
+          fi
+        fi
+#        if [ -f "${TMP_PATH}/addons.enc" ]; then
+#          if openssl enc -in "${TMP_PATH}/addons.enc" -out "${TMP_PATH}/addons.zip" -d -aes-256-cbc -k "${ARC_KEY}" 2>/dev/null; then
+#            echo "Installing new Addons..."
+#            unzip -oq "${TMP_PATH}/addons.zip" -d "${ADDONS_PATH}"
+#            rm -f "${TMP_PATH}/addons.zip"
+#            for F in $(ls ${ADDONS_PATH}/*.addon 2>/dev/null); do
+#              ADDON=$(basename "${F}" | sed 's|.addon||')
+#              rm -rf "${ADDONS_PATH}/${ADDON}"
+#              mkdir -p "${ADDONS_PATH}/${ADDON}"
+#              echo "Installing ${F} to ${ADDONS_PATH}/${ADDON}"
+#              tar -xaf "${F}" -C "${ADDONS_PATH}/${ADDON}"
+#              rm -f "${F}"
+#            done
+#            echo "Update done!"
+#          else
+#            echo "Decrypt failed: Wrong Key for this Version." 5 50
+#            return
+#          fi
+#        else
+#          echo "Error extracting new Version!"
+#          sleep 5
+#          return
+#        fi
       ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Arc Decrypt" \
         --progressbox "Installing Arc Patch Configs..." 20 70
     else
       dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
         --msgbox "Can't connect to Github.\nCheck your Network!" 6 50
       return
-    fi
-    if [ -f "${S_FILE_ENC}" ]; then
-      CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
-      cp -f "${S_FILE}" "${S_FILE}.bak"
-      dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-        --inputbox "Enter Decryption Key for ${CONFIGSVERSION}\nKey is available in my Discord." 8 40 2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return
-      ARC_KEY=$(cat "${TMP_PATH}/resp")
-      if openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARC_KEY}" 2>/dev/null; then
-        dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-          --msgbox "Decrypt successful: You can use Arc Patch." 5 50
-        cp -f "${S_FILE_ARC}" "${S_FILE}"
-        writeConfigKey "arc.key" "${ARC_KEY}" "${USER_CONFIG_FILE}"
-      else
-        cp -f "${S_FILE}.bak" "${S_FILE}"
-        dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-          --msgbox "Decrypt failed: Wrong Key for this Version." 5 50
-        writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
-      fi
     fi
     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
