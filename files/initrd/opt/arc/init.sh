@@ -6,7 +6,6 @@ set -e
 . ${ARC_PATH}/include/functions.sh
 . ${ARC_PATH}/include/addons.sh
 . ${ARC_PATH}/include/compat.sh
-. ${ARC_PATH}/boot.sh
 
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
@@ -166,7 +165,7 @@ elif grep -q "update_arc" /proc/cmdline; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
 elif [ "${BUILDDONE}" == "true" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
-  bootDSM
+  . ${ARC_PATH}/boot.sh
   exit 0
 else
   echo -e "\033[1;34mStarting Config Mode...\033[0m"

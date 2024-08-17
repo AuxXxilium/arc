@@ -888,7 +888,7 @@ function boot() {
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM...\nPlease stay patient!" 4 25
   sleep 2
-  bootDSM
+  . ${ARC_PATH}/boot.sh
   exit 0
 }
 

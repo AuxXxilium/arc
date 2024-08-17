@@ -108,5 +108,5 @@ else
   dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
     --infobox "Offline Mode enabled.\nCan't Update Loader!" 0 0
   sleep 5
-  bootDSM
+  . ${ARC_PATH}/boot.sh
 fi
