@@ -9,7 +9,6 @@
 . ${ARC_PATH}/include/modules.sh
 . ${ARC_PATH}/include/network.sh
 . ${ARC_PATH}/include/update.sh
-. ${ARC_PATH}/boot.sh
 
 # Check for System
 systemCheck
