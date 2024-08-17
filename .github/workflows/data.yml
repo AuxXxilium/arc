@@ -58,8 +58,6 @@ jobs:
           
           unzip arc-${TAG}.img.zip -d "arc"
 
-          export TERM=xterm
-
           sudo ./localbuild.sh create arc/ws arc/arc.img
           if [ $? -ne 0 ]; then
             echo "create failed"
