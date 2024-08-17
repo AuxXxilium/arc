@@ -57,6 +57,7 @@ VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
 
 echo -e "\033[1;37mDSM:\033[0m"
 echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
+echo -e "Platform: \033[1;37m${PLATFORM}\033[0m"
 echo -e "Version: \033[1;37m${PRODUCTVER}\033[0m"
 echo -e "LKM: \033[1;37m${LKM}\033[0m"
 echo
@@ -162,12 +163,10 @@ if [ "${DT}" == "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "$
     CMDLINE['modprobe.blacklist']+="mpt3sas"
   fi
 else
-  # Check for Hypervisor
-  if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
-    PVSCSI="$(lsmod | grep "vmw_pvscsi" 2>/dev/null)" # KVM or VMware
-    if [ -z "${PVSCSI}" ]; then
-      CMDLINE['scsi_mod.scan']="sync" # Don't sync if not running on Hypervisor
-    fi
+  # Check for PVSCSI
+  PVSCSI="$(lsmod | grep vmw_pvscsi | wc -l)" # KVM or VMware
+  if [ ${PVSCSI} -eq 0 ]; then
+    CMDLINE['scsi_mod.scan']="sync" # Don't sync if not running on Hypervisor
   fi
 fi
 # CMDLINE['kvm.ignore_msrs']="1"
