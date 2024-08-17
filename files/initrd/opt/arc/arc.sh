@@ -698,9 +698,10 @@ function make() {
     if [ "${AUTOMATED}" == "false" ] && [ "${VALID}" == "false" ]; then
         MSG="Failed to get PAT Data.\n"
         MSG+="Please manually fill in the URL and Hash of PAT.\n"
-        MSG+="You will find these Data at: https://download.synology.com"
+        MSG+="You will find these Data at:\n"
+        MSG+="https://auxxxilium.tech/wiki/arc-loader-arc-loader/url-hash-liste"
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
-          --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 7 100 0 \
+          --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 8 100 0 \
           2>"${TMP_PATH}/resp"
         RET=$?
         [ ${RET} -eq 0 ]             # ok-button

@@ -32,7 +32,7 @@ on:
         type: boolean
       update_version:
         description: "update min version"
-        default: "24.08.14"
+        default: "24.08.18"
         type: string
 
 jobs:
