@@ -292,7 +292,7 @@ function arcVersion() {
     fi
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
-    --infobox "Reconfiguring Addons, Modules and Synoinfo" 3 50
+    --infobox "Reconfiguring Addons, Cmdline, Modules and Synoinfo" 3 60
   # Reset Synoinfo
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS=': ' read -r KEY VALUE; do
@@ -313,11 +313,13 @@ function arcVersion() {
   else
     KVERP="${KVER}"
   fi
-  # Rewrite modules
-  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-  while read -r ID DESC; do
-    writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-  done < <(getAllModules "${PLATFORM}" "${KVERP}")
+  if [ "${AUTOMATED}" == "false" ]; then
+    # Rewrite modules
+    writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+    while read -r ID DESC; do
+      writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
+    done < <(getAllModules "${PLATFORM}" "${KVERP}")
+  fi
   # Check for Only Version
   if [ "${ONLYVERSION}" == "true" ]; then
     # Build isn't done
