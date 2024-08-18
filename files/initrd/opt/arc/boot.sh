@@ -162,12 +162,6 @@ if [ "${DT}" == "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "$
     [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
     CMDLINE['modprobe.blacklist']+="mpt3sas"
   fi
-else
-  # Check for PVSCSI
-  PVSCSI="$(lsmod | grep vmw_pvscsi | wc -l)" # KVM or VMware
-  if [ ${PVSCSI} -eq 0 ]; then
-    CMDLINE['scsi_mod.scan']="sync" # Don't sync if not running on Hypervisor
-  fi
 fi
 # CMDLINE['kvm.ignore_msrs']="1"
 # CMDLINE['kvm.report_ignored_msrs']="0"
