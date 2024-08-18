@@ -67,9 +67,9 @@ jobs:
       - name: Get data
         run: |
           pip install -r scripts/requirements.txt
-          python scripts/func.py getmodels -w "arc/ws" -j "docs/models.json" -x "docs/models.xlsx"
-          python scripts/func.py getaddons -w "arc/ws" -j "docs/addons.json" -x "docs/addons.xlsx"
-          python scripts/func.py getmodules -w "arc/ws" -j "docs/modules.json" -x "docs/modules.xlsx"
+          python scripts/func.py getmodels -w "arc/ws" -j "docs/models.json"
+          python scripts/func.py getaddons -w "arc/ws" -j "docs/addons.json"
+          python scripts/func.py getmodules -w "arc/ws" -j "docs/modules.json"
 
       - name: Upload to Artifacts
         if: success()
