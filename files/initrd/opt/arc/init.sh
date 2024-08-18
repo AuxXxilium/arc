@@ -84,7 +84,7 @@ if grep -q "automated_arc" /proc/cmdline; then
 else
   writeConfigKey "automated" "false" "${USER_CONFIG_FILE}"
 fi
-[ -f "${PART1_PATH}/ARC-BRANCH" ] && initConfigKey "arc.branch" "next" "${USER_CONFIG_FILE}" || initConfigKey "arc.branch" "" "${USER_CONFIG_FILE}"
+[ -f "${PART1_PATH}/ARC-BRANCH" ] && writeConfigKey "arc.branch" "next" "${USER_CONFIG_FILE}" || writeConfigKey "arc.branch" "" "${USER_CONFIG_FILE}"
 [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1 || true
 # Check for compatibility
 compatboot

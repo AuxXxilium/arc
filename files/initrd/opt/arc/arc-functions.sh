@@ -1064,8 +1064,10 @@ function updateMenu() {
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           writeConfigKey "arc.branch" "" "${USER_CONFIG_FILE}"
+          rm -f "${PART1_PATH}/ARC-BRANCH"
         elif [ ${opts} -eq 2 ]; then
           writeConfigKey "arc.branch" "next" "${USER_CONFIG_FILE}"
+          echo "next" >"${PART1_PATH}/ARC-BRANCH"
         fi
         ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
         dialog --backtitle "$(backtitle)" --title "Switch Buildsystem" --aspect 18 \
