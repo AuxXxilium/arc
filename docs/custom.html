@@ -22,32 +22,27 @@
         href="https://github.githubassets.com/assets/global-78704364aaba.css" />
     <style>
         select,
-        input {
-            width: 400px;
+        .input-style {
+            width: 100%;
+        }
+        .textarea-style {
+            width: 100%;
         }
         a {
-            color: #f72f2f;
+            color: #ff0000;
             text-decoration: none;
         }
         .State--merged {
             background-color: #ff0000;
         }
-        .btn {
-            color: #ffffff;
-            background-color: #ff0000;
-            border-color: #ffffff;
-            transition: 80ms cubic-bezier(0.33, 1, 0.68, 1);
-            transition-property: color,background-color,border-color;
+        .btn-primary {
+            background-color: #333333;
         }
-        a:focus-visible, button:focus-visible, [role=button]:focus-visible, input[type=radio]:focus-visible, input[type=checkbox]:focus-visible {
-            outline: 2px solid #ff0000;
-            outline-offset: -2px;
-            box-shadow: none;
+        .btn-primary:disabled {
+            background-color: #111111;
         }
-        a:focus, button:focus, [role=button]:focus, input[type=radio]:focus, input[type=checkbox]:focus {
-            outline: 2px solid #ff0000;
-            outline-offset: -2px;
-            box-shadow: none;
+        .btn:disabled {
+            background-color: #111111;
         }
     </style>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
@@ -56,6 +51,10 @@
     <script type="application/javascript">
 
         var repo = "AuxXxilium/arc"
+
+        var _models = {};
+        var _addons = {};
+        var _modules = {};
 
         function httpGetAsync(theUrl, callback) {
             let xmlHttpReq = new XMLHttpRequest();
@@ -73,14 +72,26 @@
 
         function init() {
             httpGetAsync("https://raw.githubusercontent.com/AuxXxilium/arc/page/docs/models.json", function (result) {
-                _modules = JSON.parse(result);
-                $("#model").on("change", changeModel);
-                setModels();
+                _models = JSON.parse(result);
+                httpGetAsync("https://raw.githubusercontent.com/AuxXxilium/arc/page/docs/addons.json", function (result) {
+                    _addons = JSON.parse(result);
+                    httpGetAsync("https://raw.githubusercontent.com/AuxXxilium/arc/page/docs/modules.json", function (result) {
+                        _modules = JSON.parse(result);
+                        $("#model").on("change", changeModel);
+                        $("#version").on("change", changeVersion);
+                        $("#kernel").on("change", changeKernel);
+                        $('#addons').val("acpid");
+                        setModels();
+                    });
+                });
             });
         }
 
         function setModels() {
-            var models = Object.keys(_modules).sort();
+            var models = [];
+            for (var P in _models) {
+                models = models.concat(_models[P]["models"]);
+            }
             $("#model")[0].options.length = 0;
             for (var i = 0; i < models.length; i++) {
                 var model = models[i];
@@ -88,35 +99,120 @@
             }
             changeModel();
         }
-
         function changeModel() {
             model = $("#model").val();
-            var versions = _modules[model];
+            var versions = [];
+            for (var P in _models) {
+                if (_models[P]["models"].includes(model)) {
+                    versions = Object.keys(_models[P]["productvers"]).reverse();
+                    break;
+                }
+            }
             $("#version")[0].options.length = 0;
             for (var i = 0; i < versions.length; i++) {
                 var version = versions[i];
                 $("#version").append(`<option value="${version}">${version}</option>`);
             }
             changeproductsimage();
-            changeAddons();
+            changeVersion();
         }
 
         function changeproductsimage() {
+            //var model = $("#model").val().replace("#","").replace("+","plus");
+            //$('#products').html(`<img src="https://www.synology.cn/img/products/detail/${model}/heading.png" width="20%">`);
             var model = $("#model").val().replace("#", "").replace("+", "%2B");
-            $('#products').html(`<img src="https://www.synology.com/api/products/getPhoto?product=${model}&type=img_s&sort=0" width="20%">`);
+            $('#products').html(`<img src="https://www.synology.com/api/products/getPhoto?product=${model}&type=img_s&sort=0" width="30%">`);
         }
 
-        function changeAddons() {
+        function changeVersion() {
+            createAddonsBtn();
+            createModulesBtn();
+            changeKernel();
+        }
+        function createAddonsBtn() {
+            var language = $("#language").val();
+            var extstr = $('#addons').val().split(",");
+            var idx = 1;
+            var html = `<div class="form-group-body" id="addons_btns">`;
+            for (var ext in _addons) {
+                var dispar = "";
+                if (_addons[ext]["system"] == true) {
+                    dispar = "disabled";
+                }
+                var par = "";
+                if (extstr.includes(ext)) {
+                    par = "btn-danger";
+                }
+                html += `<button type="button" class="btn btn-primary btn-sm mt-2 ${par}" id="btn_${ext}" ${par} ${dispar} onclick="return onclickext('addons', '${ext}')" autofocus="" title="${_addons[ext]["description"]}">${ext}</button>&nbsp;`;
+                //if (idx++ % 10 == 0) html += "<br />";
+            }
+            html += `</div>`;
+            $('#addons_btns').html(html);
+        }
+
+        function createModulesBtn() {
             var model = $("#model").val();
-            httpGetAsync("https://raw.githubusercontent.com/AuxXxilium/arc/page/docs/addons.json", function (result) {
-                var addons = JSON.parse(result);
-                var selectedAddons = addons[model];
-                $("#addons")[0].options.length = 0;
-                for (var i = 0; i < selectedAddons.length; i++) {
-                    var addon = selectedAddons[i];
-                    $("#addons").append(`<option value="${addon}">${addon}</option>`);
+            var version = $("#version").val();
+            var platform = "";
+            for (var P in _models) {
+                if (_models[P]["models"].includes(model)) {
+                    platform = P + "-" + _models[P]["productvers"][version];
+                    break;
+                }
+            }
+            var extstr = [];
+            var idx = 1;
+            var html = `<div class="form-group-body" id="modules_btns">`;
+            for (var ext in _modules[platform]) {
+                extstr.push(ext);
+                var par = "btn-danger";
+                html += `<button type="button" class="btn btn-primary btn-sm mt-2 ${par}" id="btn_${ext}" ${par} onclick="return onclickext('modules', '${ext}')" autofocus="" title="${_modules[platform][ext]["description"]}">${ext}</button>&nbsp;`;
+                //if (idx++ % 10 == 0) html += "<br />";
+            }
+            html += `</div>`;
+            $('#modules_btns').html(html);
+            if (extstr.length > 0) {
+                $('#modules').val(extstr.join(","));
+            }
+        }
+
+        function changeKernel() {
+            var model = $("#model").val();
+            var version = $("#version").val();
+            var kernel = $("#kernel").val();
+            if (model == "SA6400" && version == "7.2") {
+                $("#kernel_item").show();
+                if (kernel == "custom") {
+                    $('#modules_item').hide();
+                } else {
+                    $('#modules_item').show();
+                }
+            } else {
+                $('#modules_item').show();
+                $("#kernel_item").hide();
+            }
+        }
+
+        function onclickext(type, ext) {
+            var btnobj = $("#btn_" + ext);
+            var extstr = $('#' + type).val().split(",");
+            if (btnobj.hasClass("btn-danger")) {
+                extstr.map((val, i) => {
+                    if (val === ext) {
+                        extstr.splice(i, 1);
+                    }
+                });
+                btnobj.removeClass("btn-danger");
+            } else {
+                btnobj.addClass("btn-danger");
+                extstr.push(ext);
+            }
+            extstr.map((val, i) => {
+                if (val === "") {
+                    extstr.splice(i, 1);
                 }
             });
+            $('#' + type).val(extstr.join(","));
         }
 
         function createIssues() {
@@ -124,9 +220,10 @@
             let formData = new FormData(form);
             var title = "custom";
             var body = {};
-            var _parameters = ["title", "model", "version", "addons", "customkernel", "format"];
+            var _parameters = ["title", "format", "model", "version", "kernel", "addons", "modules"];
             for (var key in _parameters) {
                 var name = _parameters[key];
+                if ($("#" + name).is(":hidden")) { continue; }
                 if (name == "title") {
                     if ($("#" + name).val()) {
                         title += " " + $("#" + name).val();
@@ -152,10 +249,10 @@
 <body class="logged-in env-production page-responsive" style="word-wrap: break-word">
     <div class="application-main left-0 text-left p-3 mx-auto container-xl px-3 px-md-4 px-lg-5 mt-4">
         <pre id="logo">
-            <img src="https://raw.githubusercontent.com/AuxXxilium/arc/page/docs/arc_loader.png" width="22%">
+            <img src="https://raw.githubusercontent.com/AuxXxilium/arc/page/docs/arc_loader.png" width="60%" style="margin-left: 100px; margin-right: 100px;">
         </pre>
-        <div class="image" id="products" style="height: 50px; margin-left: 100px;">
-            <img src="https://www.synology.com/img/products/detail/SA6400/heading.png" width="20%">
+        <div class="image" id="products" style="height: 70px; margin-left: 35%;">
+            <img src="https://www.synology.com/img/products/detail/SA6400/heading.png" width="30%">
         </div>
         <div class="form-group mt-1 mb-2 ">
             <div class="form-group-header">
@@ -164,78 +261,105 @@
             <div class="form-group-body">
                 <p>&nbsp;</p>
             </div>
-        </div>
-        <div class="form-group mt-1 mb-2 ">
-            <div class="form-group-header">
-                <label class="color-fg-default text-mono f6">Notice:</label>
-            </div>
             <div class="form-group-body">
-                <p class="form-control input-contrast input-sm">You should only use custom Builds, if you don't have physical access to the destination device. Custom builds are not stable everytime and have limited features!<br /><br />
-                To get full features and options, use <a href="https://github.com/AuxXxilium/arc">Arc Loader</a>.<br />
-                Please check the <a href="https://auxxxilium.tech/wiki" target="_blank">Wiki</a> before you start a build.</p>
-                <p class="form-control input-contrast input-sm">Build is based on <img alt="GitHub Release" src="https://img.shields.io/github/v/release/AuxXxilium/arc?display_name=release&style=flat-square">.</p>
+                <p>&nbsp;</p>
             </div>
         </div>
         <div class="form-group mt-1 mb-2 ">
             <div class="form-group-header">
-                <label class="color-fg-default text-mono f6">Title:</label>
+                <label class="color-fg-default text-mono f4">Build is based on <img alt="GitHub Release" src="https://img.shields.io/github/v/release/AuxXxilium/arc?display_name=release&style=flat-square"></label>
             </div>
             <div class="form-group-body">
-                <input class="form-control input-contrast input-sm" type="text" id="title" name="inputs[title]" value="" />
+                <label class="color-fg-default text-mono f4">You should only use custom Builds, if you don't have physical access to the destination device.<br />
+                Custom builds are not stable everytime and have limited features!<br />
+                To get full features and options, use <a href="https://github.com/AuxXxilium/arc">Arc Loader</a>. Please check the <a href="https://auxxxilium.tech/wiki" target="_blank">Wiki</a> before you start a build.</label>
+            </div>
+            <div class="form-group-body">
+                <p>&nbsp;</p>
             </div>
         </div>
-        <div class="form-group mt-1 mb-2 ">
+        <div class="form-group mt-1 mb-2" id="title_item">
             <div class="form-group-header">
-                <label class="color-fg-default text-mono f6">Model (Choose DSM Model):</label>
+                <label class="color-fg-default text-mono f5">Title:</label>
             </div>
             <div class="form-group-body">
-                <select class="form-select form-control select-sm input-contrast" id="model" name="inputs[model]" value="">
+                <input class="form-control input-contrast input-sm" type="text" id="title" name="inputs[title]"
+                    value="" />
+            </div>
+        </div>
+        <div class="form-group mt-1 mb-2" id="format_item">
+            <div class="form-group-header">
+                <label class="color-fg-default text-mono f5">Format:</label>
+            </div>
+            <div class="form-group-body">
+                <select class="form-select form-control select-sm input-contrast" id="format" name="inputs[format]"
+                    value="">
+                    <option selected="selected" value="img">img</option>
+                    <option value="dyn">vmdk-dyn</option>
+                    <option value="flat">vmdk-flat</option>
+                    <option value="vhdx">vhdx</option>
+                    <option value="ova">ova</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group mt-1 mb-2" id="model_item">
+            <div class="form-group-header">
+                <label class="color-fg-default text-mono f5">Model:</label>
+            </div>
+            <div class="form-group-body">
+                <select class="form-select form-control select-sm input-contrast" id="model" name="inputs[model]"
+                    value="">
                     <option selected="selected" value="SA6400">SA6400</option>
                 </select>
             </div>
         </div>
-        <div class="form-group mt-1 mb-2 ">
+        <div class="form-group mt-1 mb-2" id="version_item">
             <div class="form-group-header">
-                <label class="color-fg-default text-mono f6">Version (Choose DSM Version):</label>
+                <label class="color-fg-default text-mono f5">Version:</label>
             </div>
             <div class="form-group-body">
-                <select class="form-select form-control select-sm input-contrast" id="version" name="inputs[version]" value="">
+                <select class="form-select form-control select-sm input-contrast" id="version" name="inputs[version]"
+                    value="">
                     <option selected="selected" value="7.2">7.2</option>
                 </select>
             </div>
         </div>
-        <div class="form-group mt-1 mb-2 ">
+        <div class="form-group mt-1 mb-2" id="kernel_item">
             <div class="form-group-header">
-                <label class="color-fg-default text-mono f6">Activate Addons (Select only needed Addons!!!):<br />Multi-Selection: Ctrl + Left Click</label>
+                <label class="color-fg-default text-mono f5">Kernel: (only "custom" supports Hyper-V)</label>
             </div>
             <div class="form-group-body">
-                <select class="form-select form-control select-sm input-contrast" id="addons" name="inputs[addons]" value="" multiple>
-                    <option selected="selected" value="acpid">acpid</option>
-                </select>
-            </div>
-        </div>
-        <div class="form-group mt-1 mb-2 ">
-            <div class="form-group-header">
-                <label class="color-fg-default text-mono f6">Switch Kernel (Only for SA6400):</label>
-            </div>
-            <div class="form-group-body">
-                <select class="form-select form-control select-sm input-contrast" id="customkernel" name="inputs[customkernel]" value="">
+                <select class="form-select form-control select-sm input-contrast" id="kernel" name="inputs[kernel]"
+                    value="">
                     <option selected="selected" value="official">official</option>
                     <option value="custom">custom</option>
                 </select>
             </div>
         </div>
-        <div class="form-group mt-1 mb-2 ">
+        <div class="form-group mt-1 mb-2" id="addons_item">
             <div class="form-group-header">
-                <label class="color-fg-default text-mono f6">Format (Choose Format for Output File):</label>
+                <label class="color-fg-default text-mono f5">Addons:</label>
             </div>
             <div class="form-group-body">
-                <select class="form-select form-control select-sm input-contrast" id="format" name="inputs[format]" value="">
-                    <option selected="selected" value="img">img</option>
-                    <option value="dyn">vmdk-dyn</option>
-                    <option value="flat">vmdk-flat</option>
-                </select>
+                <textarea class="textarea-style input-contrast input-sm" type="text" id="addons" name="inputs[addons]"
+                    disabled></textarea>
+                <div class="form-group-body" id="addons_btns">
+                </div>
             </div>
+        </div>
+        <div class="form-group mt-1 mb-2" id="modules_item">
+            <div class="form-group-header">
+                <label class="color-fg-default text-mono f5">Modules:</label>
+            </div>
+            <div class="form-group-body">
+                <textarea class="textarea-style input-contrast input-sm" type="text" id="modules" name="inputs[modules]"
+                    disabled></textarea>
+                <div class="form-group-body" id="modules_btns">
+                </div>
+            </div>
+        </div>
+        <div class="form-group-body">
+            <p>&nbsp;</p>
         </div>
         <div data-replace-remote-form-target="" class="workflow-dispatch">
             <form id="inputs">

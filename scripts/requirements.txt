@@ -1,0 +1,4 @@
+click
+kmodule
+requests
+openpyxl

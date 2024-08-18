@@ -1,39 +1,166 @@
-{"DS2419+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DVA3221":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel"],
-"SA3400":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"RS4021xs+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS923+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS3622xs+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"SA6400":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmesystem","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS2422+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"RS1221+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS1522+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"HD6500":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"FS6400":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS1520+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","i915","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS918+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","i915","lsiutil","multismb3","nvmecahce","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS1823xs+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"SA3600":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS1819+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS224+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","i915","lsiutil","multismb3","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS718+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DVA1622":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","i915","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel"],
-"DS1821+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS220+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"FS2500":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"RS2423+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"RS1619xs+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecahce","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"SA3610":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS1621+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS1621xs+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"SA3410":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS720+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","i915","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"RS3621xs+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"RS2423RP+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS1019+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","i915","lsiutil","multismb3","nvmecache","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DVA3219":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel"],
-"DS3617xs":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS723+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS920+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","i915","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"DS423+":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","i915","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"],
-"RS3618xs":["acpid","addincards","amepatch","bootwait","cpuinfo","dbgutils","deduplication","dsmconfigbackup","expands","hdddb","lsiutil","multismb3","nvmecache","nvmevolume","photosfacepatch","powersched","reboottoloader","sanmanager-repair","sorfnetif","storagepanel","surveillancepatch"]}
+{
+    "acpid": {
+        "system": false,
+        "description": "Daemon for delivering ACPI events (Powerbutton, etc.)"
+    },
+    "addincards": {
+        "system": false,
+        "description": "Remove the Modelrestrictions for official Addin Cards."
+    },
+    "bootwait": {
+        "system": false,
+        "description": "Boot process waits until boot device (`/dev/synoboot`) and PCIe Device are available."
+    },
+    "codecpatch": {
+        "system": false,
+        "description": "Codec Patches for DSM (Do not use with AME Patch)"
+    },
+    "console": {
+        "system": false,
+        "description": "Give a onscreen console via framebuffer"
+    },
+    "cpufreqscaling": {
+        "system": true,
+        "description": "Enable CPU Freqscaling for DSM"
+    },
+    "cpuinfo": {
+        "system": false,
+        "description": "Add real CPU Information to DSM System"
+    },
+    "dbgutils": {
+        "system": false,
+        "description": "Binaries to facilitate debug in the junior mode"
+    },
+    "deduplication": {
+        "system": false,
+        "description": "Force enable Deduplication (Only for SSD)"
+    },
+    "disks": {
+        "system": true,
+        "description": "Config disks related setting"
+    },
+    "dsmconfigbackup": {
+        "system": false,
+        "description": "Automatically backup Systemconfig Settings to the Bootloader Disk(/mnt/p1/dsmbackup) at Shutdown."
+    },
+    "eudev": {
+        "system": true,
+        "description": "eudev + kmod will assist with auto module loading"
+    },
+    "expands": {
+        "system": false,
+        "description": "Expanded miscellaneous, updated usb.map, ca-certificates.crt, etc."
+    },
+    "hdddb": {
+        "system": false,
+        "description": "Add Disks to DSM compatibility DiskDB and bypass Memory Limitation"
+    },
+    "hostspatch": {
+        "system": false,
+        "description": "Prevent DSM from calling Home"
+    },
+    "i915": {
+        "system": false,
+        "description": "Automatically replace the device ID of i915 module. (Intel 2nd - 9th Gen)"
+    },
+    "ledcontrol": {
+        "system": false,
+        "description": "Add Ugreen Ledcontrol to DSM"
+    },
+    "localrss": {
+        "system": true,
+        "description": "rss for bootloader pat"
+    },
+    "lsiutil": {
+        "system": false,
+        "description": "A tool for working with some LSI RAID controllers"
+    },
+    "misc": {
+        "system": true,
+        "description": "Miscellaneous functions"
+    },
+    "mountloader": {
+        "system": true,
+        "description": "Add a script to mount/unmount loader disk in the DSM scheduled task."
+    },
+    "multismb3": {
+        "system": false,
+        "description": "Adds Support for Multichannel SMB3"
+    },
+    "notify": {
+        "system": true,
+        "description": "Add Arc Notifications."
+    },
+    "nvmecache": {
+        "system": false,
+        "description": "Enable M.2 as Cache (for DS918+ RS1619xs+ DS1019+ DS1621xs+)"
+    },
+    "nvmesystem": {
+        "system": false,
+        "description": "Enable DSM installation to NVMe M.2 SSDs. (Only use if you have only NVMe M.2 SSDs installed)"
+    },
+    "nvmevolume": {
+        "system": false,
+        "description": "Enable M.2 as Volume (for non supported Models)"
+    },
+    "photosfacepatch": {
+        "system": false,
+        "description": "Face Patch for Syno Photos"
+    },
+    "powersched": {
+        "system": true,
+        "description": "Utility to configure RTC according to DSM power schedule"
+    },
+    "reboottoloader": {
+        "system": false,
+        "description": "Add ability to reboot to Loader from Inside DSM."
+    },
+    "redpill": {
+        "system": true,
+        "description": "Delay redpill."
+    },
+    "remotefs": {
+        "system": false,
+        "description": "Allow remote NFS/CIFS shared folder be used in VideoStation, AudioStation and Photos etc."
+    },
+    "revert": {
+        "system": true,
+        "description": "Revert all Modifications"
+    },
+    "rndis": {
+        "system": false,
+        "description": "Android USB Network Adapter."
+    },
+    "sanmanager-repair": {
+        "system": false,
+        "description": "Repair SAN Manager in DSM (Only use if you have a broken SAN Manager)"
+    },
+    "sensors": {
+        "system": false,
+        "description": "Install sensors package to monitor temperature of CPU and other components."
+    },
+    "sequentialio": {
+        "system": false,
+        "description": "Enables sequential I/O for your SSD caches (Can cause overheating)"
+    },
+    "setrootpw": {
+        "system": false,
+        "description": "Set root password and enable ssh/sftp. Please modify PW=\"\" to the desired password in DSM Task Scheduler and run the task."
+    },
+    "sortnetif": {
+        "system": false,
+        "description": "Sort network interface name."
+    },
+    "storagepanel": {
+        "system": false,
+        "description": "Automated Storagepanel selection (Modify in Arc Options - DSM Storagepanel)"
+    },
+    "updatenotify": {
+        "system": true,
+        "description": "Arc Update Notifications."
+    },
+    "wol": {
+        "system": true,
+        "description": "Force enable the Wake-on-lan on all nic"
+    }
+}
