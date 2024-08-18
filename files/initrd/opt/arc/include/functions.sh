@@ -609,7 +609,7 @@ function offlineCheck() {
   writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"
   local BLOCK="$(curl -m 10 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
-  if [ "${BLOCK}" == "ua" ] || [ "${BLOCK}" == "tw" ]; then
+  if [ "${BLOCK}" == "ua" ]; then
     dialog --backtitle "$(backtitle)" --title "Blocked Country" \
       --infobox "You are located in a blocked Country and not authorized to use this Loader!" 5 80
     rm -rf "${CONFIG_PATH}"
