@@ -39,15 +39,17 @@ jobs:
           MODEL = ''
           PRODUCTVER = ''
           ADDONS = ''
+          MODULES = ''
           MACSYS = ''
-          CUSTOMKERNEL = ''
+          KERNEL = ''
           FORMAT = ''
           try:
               jsonbody = json.loads(issuebody)
               MODEL = jsonbody.get('model', '')
               PRODUCTVER = jsonbody.get('version', '')
               ADDONS = jsonbody.get('addons', '')
-              CUSTOMKERNEL = jsonbody.get('customkernel', '')
+              MODULES = jsonbody.get('modules', '')
+              KERNEL = jsonbody.get('kernel', '')
               FORMAT = jsonbody.get('format', '')
           except ValueError as e:
               pass
@@ -55,7 +57,8 @@ jobs:
           set_output("MODEL", MODEL)
           set_output("PRODUCTVER", PRODUCTVER)
           set_output("ADDONS", ADDONS)
-          set_output("CUSTOMKERNEL", CUSTOMKERNEL)
+          set_output("MODULES", MODULES)
+          set_output("KERNEL", KERNEL)
           set_output("FORMAT", FORMAT)
 
       # calculates the version number and push
@@ -125,10 +128,16 @@ jobs:
           fi
           writeConfigKey "addons" "{}" "${PRESET_CONFIG_FILE}"
           if [ -n "${{ env.ADDONS }}" ]; then
-            writeConfigKey "addons" "{}" "${PRESET_CONFIG_FILE}"
             for A in $(echo "${{ env.ADDONS }}" | tr ',' ' ' | sed 's/\[//g' | sed 's/\]//g'); do
               VALUE=""
               writeConfigKey "addons.\"${A}\"" "${VALUE}" "${PRESET_CONFIG_FILE}"
+            done
+          fi
+          writeConfigKey "modules" "{}" "${PRESET_CONFIG_FILE}"
+          if [ -n "${{ env.MODULES }}" ]; then
+            for M in $(echo "${{ env.MODULES }}" | tr ',' ' ' | sed 's/\[//g' | sed 's/\]//g'); do
+              VALUE=""
+              writeConfigKey "MODULES.\"${M}\"" "${VALUE}" "${PRESET_CONFIG_FILE}"
             done
           fi
           echo "$(cat "${PRESET_CONFIG_FILE}")"
@@ -156,6 +165,9 @@ jobs:
           elif [ "${{ env.FORMAT }}" = "vhdx" ]; then
             echo "Image Converter -> vhdx"
             qemu-img convert arc.img -O vhdx -o subformat=dynamic arc.vhdx
+          elif [ "${{ env.FORMAT }}" = "ova" ]; then
+            echo "Image Converter -> ova"
+            convertova "arc.img" "arc.ova"
           fi
 
       # Zip image and generate checksum
@@ -185,6 +197,13 @@ jobs:
           elif [ "${{ env.FORMAT }}" = "vhdx" ]; then
             zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vhdx.zip" arc.vhdx
             UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vhdx.zip" "https://file.io")"
+            if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
+              echo "Upload failed"
+              exit 1
+            fi
+          elif [ "${{ env.FORMAT }}" = "ova" ]; then
+            zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.ova.zip" arc.ova
+            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.ova.zip" "https://file.io")"
             if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
               echo "Upload failed"
               exit 1
