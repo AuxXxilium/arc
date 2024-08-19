@@ -375,16 +375,12 @@ function arcPatch() {
             --inputbox "Please enter a valid SN!" 7 50 "" \
             2>"${TMP_PATH}/resp"
           [ $? -ne 0 ] && break 2
-          SN="$(cat ${TMP_PATH}/resp)"
+          SN="$(cat ${TMP_PATH}/resp | tr '[:lower:]' '[:upper:]')"
           if [ -z "${SN}" ]; then
             return
-          elif [ $(validateSerial ${MODEL} ${SN}) -eq 1 ]; then
+          else
             break
           fi
-          # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
-          dialog --backtitle "$(backtitle)" --colors --title "DSM SN" \
-            --yesno "SN looks invalid, continue?" 5 50
-          [ $? -eq 0 ] && break
         done
         writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
       fi
@@ -407,16 +403,12 @@ function arcPatch() {
             --inputbox "Please enter a SN " 7 50 "" \
             2>"${TMP_PATH}/resp"
           [ $? -ne 0 ] && break 2
-          SN="$(cat ${TMP_PATH}/resp)"
+          SN="$(cat ${TMP_PATH}/resp | tr '[:lower:]' '[:upper:]')"
           if [ -z "${SN}" ]; then
             return
-          elif [ $(validateSerial ${MODEL} ${SN}) -eq 1 ]; then
+          else
             break
           fi
-          # At present, the SN rules are not complete, and many SNs are not truly invalid, so not provide tips now.
-          dialog --backtitle "$(backtitle)" --colors --title "DSM SN" \
-            --yesno "SN looks invalid, continue?" 5 50
-          [ $? -eq 0 ] && break
         done
         writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
       fi
