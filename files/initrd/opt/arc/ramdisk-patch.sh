@@ -38,6 +38,8 @@ CPUGOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
+SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
 ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
 # Read new PAT Info from Config
 PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
@@ -49,16 +51,21 @@ PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
 # Check if DSM Version changed
 . "${RAMDISK_PATH}/etc/VERSION"
 
-PRODUCTVERDSM="${majorversion}.${minorversion}"
-if [ "${PRODUCTVERDSM}" != "${PRODUCTVER}" ]; then
-  # Update new buildnumber
-  echo -e "Ramdisk Version ${PRODUCTVER} does not match DSM Version ${PRODUCTVERDSM}!"
-  echo -e "Try to use DSM Version ${PRODUCTVERDSM} for Patch."
-  writeConfigKey "productver" "${PRODUCTVERDSM}" "${USER_CONFIG_FILE}"
-  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+if [[ -n "${PRODUCTVER}" && -n "${BUILDNUM}" && -n "${SMALLNUM}" ]] &&
+  ([ ! "${PRODUCTVER}" = "${majorversion}.${minorversion}" ] || [ ! "${BUILDNUM}" = "${buildnumber}" ] || [ ! "${SMALLNUM}" = "${smallfixnumber}" ]); then
+  OLDVER="${PRODUCTVER}(${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))"
+  NEWVER="${majorversion}.${minorversion}(${buildnumber}$([ ${smallfixnumber:-0} -ne 0 ] && echo "u${smallfixnumber}"))"
+  [ "${OLDVER}" != "{NEWVER}" ] && echo -e "Ramdisk Version ${OLDVER} does not match DSM Version ${NEWVER}!"
+  echo -e "Try to use DSM Version ${NEWVER} for Patch."
   PAT_URL=""
   PAT_HASH=""
 fi
+PRODUCTVER=${majorversion}.${minorversion}
+BUILDNUM=${buildnumber}
+SMALLNUM=${smallfixnumber}
+writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+writeConfigKey "buildnum" "${BUILDNUM}" "${USER_CONFIG_FILE}"
+writeConfigKey "smallnum" "${SMALLNUM}" "${USER_CONFIG_FILE}"
 
 # Read model data
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
@@ -157,6 +164,7 @@ echo "export LOADERVERSION=\"${ARC_VERSION}\"" >>"${RAMDISK_PATH}/addons/addons.
 echo "export LOADERBRANCH=\"${ARCBRANCH}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export PLATFORM=\"${PLATFORM}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export PRODUCTVER=\"${PRODUCTVER}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export PRODUCTVERL=\"${PRODUCTVERL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MODEL=\"${MODEL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MODELID=\"${MODELID}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 echo "export MLINK=\"${PAT_URL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
