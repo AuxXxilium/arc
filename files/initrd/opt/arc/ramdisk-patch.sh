@@ -52,10 +52,10 @@ PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
 . "${RAMDISK_PATH}/etc/VERSION"
 
 if [[ -n "${PRODUCTVER}" && -n "${BUILDNUM}" && -n "${SMALLNUM}" ]] &&
-  ([ ! "${PRODUCTVER}" = "${majorversion}.${minorversion}" ] || [ ! "${BUILDNUM}" = "${buildnumber}" ] || [ ! "${SMALLNUM}" = "${smallfixnumber}" ]); then
+  ([ "${PRODUCTVER}" != "${majorversion}.${minorversion}" ] || [ "${BUILDNUM}" != "${buildnumber}" ] || [ "${SMALLNUM}" != "${smallfixnumber}" ]); then
   OLDVER="${PRODUCTVER}(${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))"
   NEWVER="${majorversion}.${minorversion}(${buildnumber}$([ ${smallfixnumber:-0} -ne 0 ] && echo "u${smallfixnumber}"))"
-  [ "${OLDVER}" != "{NEWVER}" ] && echo -e "Ramdisk Version ${OLDVER} does not match DSM Version ${NEWVER}!"
+  [ "${OLDVER}" != "${NEWVER}" ] && echo -e "Ramdisk Version ${OLDVER} does not match DSM Version ${NEWVER}!"
   echo -e "Try to use DSM Version ${NEWVER} for Patch."
   PAT_URL=""
   PAT_HASH=""
