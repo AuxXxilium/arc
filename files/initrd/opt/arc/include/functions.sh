@@ -549,7 +549,7 @@ function ntpCheck() {
     /etc/init.d/S49ntpd restart > /dev/null 2>&1
     hwclock -w > /dev/null 2>&1
   fi
-  if [ -z "${LAYOUT}"]; then
+  if [ -z "${LAYOUT}" ]; then
     [ -n "${KEYMAP}" ] && KEYMAP="$(echo ${KEYMAP} | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]' | tr -d '[:punct:]' | tr -d '[:digit:]')"
     [ -n "${KEYMAP}" ] && writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
     [ -z "${KEYMAP}" ] && KEYMAP="us"
