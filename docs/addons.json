@@ -7,6 +7,10 @@
         "system": false,
         "description": "Remove the Modelrestrictions for official Addin Cards."
     },
+    "amepatch": {
+        "system": false,
+        "description": "Dynamic Licensepatch for AME (depends on Arc Patch)"
+    },
     "bootwait": {
         "system": false,
         "description": "Boot process waits until boot device (`/dev/synoboot`) and PCIe Device are available."
@@ -150,6 +154,10 @@
     "sortnetif": {
         "system": false,
         "description": "Sort network interface name."
+    },
+    "sspatch": {
+        "system": false,
+        "description": "Dynamic 50 License Patch for SS 9.2.0-11289 (Non DVA)"
     },
     "storagepanel": {
         "system": false,

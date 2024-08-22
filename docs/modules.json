@@ -37,7 +37,7 @@
             "depends": ""
         },
         "adt7475": {
-            "description": "adt7475 driver",
+            "description": "adt7475 driver (Compiled by RR for DSM)",
             "depends": "hwmon-vid"
         },
         "aic94xx": {
@@ -105,7 +105,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -289,11 +289,11 @@
             "depends": "usbcore,ehci-hcd"
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -349,7 +349,7 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i40e": {
@@ -401,7 +401,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -1095,7 +1095,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -1135,7 +1135,7 @@
             "depends": "usbnet,usbcore"
         },
         "cdrom": {
-            "description": "",
+            "description": "Uniform CD-ROM driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "cfbcopyarea": {
@@ -1163,11 +1163,11 @@
             "depends": "usbserial,usbcore"
         },
         "cls_fw": {
-            "description": "",
+            "description": "Classifier for fwmark (Compiled by RR for DSM)",
             "depends": ""
         },
         "cls_u32": {
-            "description": "",
+            "description": "U32 classifier (Compiled by RR for DSM)",
             "depends": ""
         },
         "cn": {
@@ -1287,7 +1287,7 @@
             "depends": "cfbimgblt,cfbcopyarea,cfbfillrect,fb"
         },
         "efivarfs": {
-            "description": "EFI Variable Filesystem",
+            "description": "EFI Variable Filesystem (Compiled by RR for DSM)",
             "depends": ""
         },
         "ehci-hcd": {
@@ -1299,11 +1299,11 @@
             "depends": "usbcore,ehci-hcd"
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -1363,7 +1363,7 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i40e": {
@@ -1415,7 +1415,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -1667,7 +1667,7 @@
             "depends": ""
         },
         "ntfs": {
-            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc.",
+            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc. (Compiled by RR for DSM)",
             "depends": ""
         },
         "p8022": {
@@ -1811,15 +1811,15 @@
             "depends": "rtsx_usb,mmc_core"
         },
         "sch_htb": {
-            "description": "",
+            "description": "Hierarchical Token Bucket (HTB) Qdisc (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_netem": {
-            "description": "",
+            "description": "Network Emulator (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_sfq": {
-            "description": "",
+            "description": "Stochastic Fairness Queueing discipline (Compiled by RR for DSM)",
             "depends": ""
         },
         "scsi_transport_sas": {
@@ -2101,7 +2101,7 @@
             "depends": ""
         },
         "adt7475": {
-            "description": "adt7475 driver",
+            "description": "adt7475 driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "aic94xx": {
@@ -2165,7 +2165,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -2329,11 +2329,11 @@
             "depends": "usbcore"
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -2349,7 +2349,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -2385,7 +2385,7 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i40e": {
@@ -2433,7 +2433,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -3103,7 +3103,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -3143,7 +3143,7 @@
             "depends": "usbnet,usbcore"
         },
         "cdrom": {
-            "description": "",
+            "description": "Uniform CD-ROM driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "cfbcopyarea": {
@@ -3171,11 +3171,11 @@
             "depends": "usbserial,usbcore"
         },
         "cls_fw": {
-            "description": "",
+            "description": "Classifier for fwmark (Compiled by RR for DSM)",
             "depends": ""
         },
         "cls_u32": {
-            "description": "",
+            "description": "U32 classifier (Compiled by RR for DSM)",
             "depends": ""
         },
         "cn": {
@@ -3279,7 +3279,7 @@
             "depends": ""
         },
         "efivarfs": {
-            "description": "EFI Variable Filesystem",
+            "description": "EFI Variable Filesystem (Compiled by RR for DSM)",
             "depends": ""
         },
         "etxhci-hcd": {
@@ -3287,11 +3287,11 @@
             "depends": "usbcore"
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -3307,7 +3307,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -3347,7 +3347,7 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i40e": {
@@ -3395,7 +3395,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -3647,7 +3647,7 @@
             "depends": ""
         },
         "ntfs": {
-            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc.",
+            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc. (Compiled by RR for DSM)",
             "depends": ""
         },
         "p8022": {
@@ -3787,15 +3787,15 @@
             "depends": "rtsx_usb,mmc_core"
         },
         "sch_htb": {
-            "description": "",
+            "description": "Hierarchical Token Bucket (HTB) Qdisc (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_netem": {
-            "description": "",
+            "description": "Network Emulator (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_sfq": {
-            "description": "",
+            "description": "Stochastic Fairness Queueing discipline (Compiled by RR for DSM)",
             "depends": ""
         },
         "scsi_transport_fc": {
@@ -4061,7 +4061,7 @@
             "depends": ""
         },
         "adt7475": {
-            "description": "adt7475 driver",
+            "description": "adt7475 driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "aic94xx": {
@@ -4125,7 +4125,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -4289,11 +4289,11 @@
             "depends": "usbcore"
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -4309,7 +4309,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -4345,7 +4345,7 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i40e": {
@@ -4393,7 +4393,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -5063,7 +5063,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -5103,7 +5103,7 @@
             "depends": "usbnet,usbcore"
         },
         "cdrom": {
-            "description": "",
+            "description": "Uniform CD-ROM driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "cfbcopyarea": {
@@ -5131,11 +5131,11 @@
             "depends": "usbserial,usbcore"
         },
         "cls_fw": {
-            "description": "",
+            "description": "Classifier for fwmark (Compiled by RR for DSM)",
             "depends": ""
         },
         "cls_u32": {
-            "description": "",
+            "description": "U32 classifier (Compiled by RR for DSM)",
             "depends": ""
         },
         "cn": {
@@ -5239,7 +5239,7 @@
             "depends": ""
         },
         "efivarfs": {
-            "description": "EFI Variable Filesystem",
+            "description": "EFI Variable Filesystem (Compiled by RR for DSM)",
             "depends": ""
         },
         "etxhci-hcd": {
@@ -5247,11 +5247,11 @@
             "depends": "usbcore"
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -5267,7 +5267,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -5307,7 +5307,7 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i40e": {
@@ -5355,7 +5355,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -5607,7 +5607,7 @@
             "depends": ""
         },
         "ntfs": {
-            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc.",
+            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc. (Compiled by RR for DSM)",
             "depends": ""
         },
         "p8022": {
@@ -5747,15 +5747,15 @@
             "depends": "rtsx_usb,mmc_core"
         },
         "sch_htb": {
-            "description": "",
+            "description": "Hierarchical Token Bucket (HTB) Qdisc (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_netem": {
-            "description": "",
+            "description": "Network Emulator (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_sfq": {
-            "description": "",
+            "description": "Stochastic Fairness Queueing discipline (Compiled by RR for DSM)",
             "depends": ""
         },
         "scsi_transport_fc": {
@@ -6021,7 +6021,7 @@
             "depends": ""
         },
         "adt7475": {
-            "description": "adt7475 driver",
+            "description": "adt7475 driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "aic94xx": {
@@ -6085,7 +6085,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -6249,11 +6249,11 @@
             "depends": "usbcore"
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -6269,7 +6269,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -6305,7 +6305,7 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i40e": {
@@ -6353,7 +6353,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -7011,7 +7011,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -7051,7 +7051,7 @@
             "depends": "usbnet,usbcore"
         },
         "cdrom": {
-            "description": "",
+            "description": "Uniform CD-ROM driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "cfbcopyarea": {
@@ -7079,11 +7079,11 @@
             "depends": "usbserial,usbcore"
         },
         "cls_fw": {
-            "description": "",
+            "description": "Classifier for fwmark (Compiled by RR for DSM)",
             "depends": ""
         },
         "cls_u32": {
-            "description": "",
+            "description": "U32 classifier (Compiled by RR for DSM)",
             "depends": ""
         },
         "cn": {
@@ -7187,7 +7187,7 @@
             "depends": ""
         },
         "efivarfs": {
-            "description": "EFI Variable Filesystem",
+            "description": "EFI Variable Filesystem (Compiled by RR for DSM)",
             "depends": ""
         },
         "etxhci-hcd": {
@@ -7195,11 +7195,11 @@
             "depends": "usbcore"
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -7215,7 +7215,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -7255,7 +7255,7 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i40e": {
@@ -7303,7 +7303,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -7555,7 +7555,7 @@
             "depends": ""
         },
         "ntfs": {
-            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc.",
+            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc. (Compiled by RR for DSM)",
             "depends": ""
         },
         "p8022": {
@@ -7695,15 +7695,15 @@
             "depends": "rtsx_usb,mmc_core"
         },
         "sch_htb": {
-            "description": "",
+            "description": "Hierarchical Token Bucket (HTB) Qdisc (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_netem": {
-            "description": "",
+            "description": "Network Emulator (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_sfq": {
-            "description": "",
+            "description": "Stochastic Fairness Queueing discipline (Compiled by RR for DSM)",
             "depends": ""
         },
         "scsi_transport_fc": {
@@ -7957,7 +7957,7 @@
             "depends": ""
         },
         "adt7475": {
-            "description": "adt7475 driver",
+            "description": "adt7475 driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "aic94xx": {
@@ -8021,7 +8021,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -8193,11 +8193,11 @@
             "depends": "usbcore"
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -8213,7 +8213,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -8249,11 +8249,11 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i2c-i801": {
-            "description": "I801 SMBus driver",
+            "description": "I801 SMBus driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "i40e": {
@@ -8301,7 +8301,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -8955,7 +8955,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -8995,7 +8995,7 @@
             "depends": "usbnet,usbcore"
         },
         "cdrom": {
-            "description": "",
+            "description": "Uniform CD-ROM driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "cfbcopyarea": {
@@ -9023,11 +9023,11 @@
             "depends": "usbserial,usbcore"
         },
         "cls_fw": {
-            "description": "",
+            "description": "Classifier for fwmark (Compiled by RR for DSM)",
             "depends": ""
         },
         "cls_u32": {
-            "description": "",
+            "description": "U32 classifier (Compiled by RR for DSM)",
             "depends": ""
         },
         "cn": {
@@ -9131,7 +9131,7 @@
             "depends": ""
         },
         "efivarfs": {
-            "description": "EFI Variable Filesystem",
+            "description": "EFI Variable Filesystem (Compiled by RR for DSM)",
             "depends": ""
         },
         "ehci-hcd": {
@@ -9147,11 +9147,11 @@
             "depends": "usbcore"
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -9167,7 +9167,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -9207,11 +9207,11 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i2c-i801": {
-            "description": "I801 SMBus driver",
+            "description": "I801 SMBus driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "i40e": {
@@ -9259,7 +9259,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -9511,7 +9511,7 @@
             "depends": ""
         },
         "ntfs": {
-            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc.",
+            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc. (Compiled by RR for DSM)",
             "depends": ""
         },
         "p8022": {
@@ -9651,15 +9651,15 @@
             "depends": "rtsx_usb,mmc_core"
         },
         "sch_htb": {
-            "description": "",
+            "description": "Hierarchical Token Bucket (HTB) Qdisc (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_netem": {
-            "description": "",
+            "description": "Network Emulator (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_sfq": {
-            "description": "",
+            "description": "Stochastic Fairness Queueing discipline (Compiled by RR for DSM)",
             "depends": ""
         },
         "scsi_transport_fc": {
@@ -9917,7 +9917,7 @@
             "depends": ""
         },
         "adt7475": {
-            "description": "adt7475 driver",
+            "description": "adt7475 driver (Compiled by RR for DSM)",
             "depends": "hwmon-vid"
         },
         "aic94xx": {
@@ -9977,7 +9977,7 @@
             "depends": "libphy"
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -10137,11 +10137,11 @@
             "depends": ""
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -10157,7 +10157,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -10197,7 +10197,7 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i40e": {
@@ -10245,7 +10245,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -10907,7 +10907,7 @@
             "depends": "libphy"
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -10947,7 +10947,7 @@
             "depends": "usbnet,usbcore"
         },
         "cdrom": {
-            "description": "",
+            "description": "Uniform CD-ROM driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "cfbcopyarea": {
@@ -10975,11 +10975,11 @@
             "depends": "usbserial,usbcore"
         },
         "cls_fw": {
-            "description": "",
+            "description": "Classifier for fwmark (Compiled by RR for DSM)",
             "depends": ""
         },
         "cls_u32": {
-            "description": "",
+            "description": "U32 classifier (Compiled by RR for DSM)",
             "depends": ""
         },
         "cn": {
@@ -11083,15 +11083,15 @@
             "depends": ""
         },
         "efivarfs": {
-            "description": "EFI Variable Filesystem",
+            "description": "EFI Variable Filesystem (Compiled by RR for DSM)",
             "depends": ""
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -11107,7 +11107,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -11151,7 +11151,7 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i40e": {
@@ -11199,7 +11199,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -11451,7 +11451,7 @@
             "depends": ""
         },
         "ntfs": {
-            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc.",
+            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc. (Compiled by RR for DSM)",
             "depends": ""
         },
         "p8022": {
@@ -11591,15 +11591,15 @@
             "depends": "rtsx_usb,mmc_core"
         },
         "sch_htb": {
-            "description": "",
+            "description": "Hierarchical Token Bucket (HTB) Qdisc (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_netem": {
-            "description": "",
+            "description": "Network Emulator (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_sfq": {
-            "description": "",
+            "description": "Stochastic Fairness Queueing discipline (Compiled by RR for DSM)",
             "depends": ""
         },
         "scsi_transport_sas": {
@@ -11997,7 +11997,7 @@
             "depends": "usbserial,usbcore"
         },
         "check_signature": {
-            "description": "check_signature find BIOS signatures",
+            "description": "check_signature find BIOS signatures (Compiled by RR for DSM)",
             "depends": ""
         },
         "cls_fw": {
@@ -12109,11 +12109,11 @@
             "depends": "usbcore,ehci-hcd"
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -12133,7 +12133,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -12173,11 +12173,11 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i2c-i801": {
-            "description": "I801 SMBus driver",
+            "description": "I801 SMBus driver (Compiled by RR for DSM)",
             "depends": "check_signature,i2c-smbus"
         },
         "i2c-smbus": {
@@ -12221,7 +12221,7 @@
             "depends": "ib_core"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -12301,7 +12301,7 @@
             "depends": "x_tables"
         },
         "ip_vs": {
-            "description": "",
+            "description": "IP Virtual Server (Compiled by RR for DSM)",
             "depends": "nf_conntrack,nf_defrag_ipv6,ipv6"
         },
         "ip_vs_rr": {
@@ -12889,7 +12889,7 @@
             "depends": "regmap-i2c"
         },
         "ts_bm": {
-            "description": "",
+            "description": "Boyer-Moore string matching algorithm (Compiled by RR for DSM)",
             "depends": "textsearch"
         },
         "ttm": {
@@ -13291,7 +13291,7 @@
             "depends": "usbserial,usbcore"
         },
         "check_signature": {
-            "description": "check_signature find BIOS signatures",
+            "description": "check_signature find BIOS signatures (Compiled by RR for DSM)",
             "depends": ""
         },
         "cls_fw": {
@@ -13403,11 +13403,11 @@
             "depends": "usbcore,ehci-hcd"
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -13427,7 +13427,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -13471,11 +13471,11 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i2c-i801": {
-            "description": "I801 SMBus driver",
+            "description": "I801 SMBus driver (Compiled by RR for DSM)",
             "depends": "check_signature,i2c-smbus"
         },
         "i2c-smbus": {
@@ -13519,7 +13519,7 @@
             "depends": "ib_core"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -13599,7 +13599,7 @@
             "depends": "x_tables"
         },
         "ip_vs": {
-            "description": "",
+            "description": "IP Virtual Server (Compiled by RR for DSM)",
             "depends": "nf_conntrack,nf_defrag_ipv6,ipv6"
         },
         "ip_vs_rr": {
@@ -14191,7 +14191,7 @@
             "depends": "regmap-i2c"
         },
         "ts_bm": {
-            "description": "",
+            "description": "Boyer-Moore string matching algorithm (Compiled by RR for DSM)",
             "depends": "textsearch"
         },
         "ttm": {
@@ -14454,7 +14454,7 @@
             "depends": ""
         },
         "adt7475": {
-            "description": "adt7475 driver",
+            "description": "adt7475 driver (Compiled by RR for DSM)",
             "depends": "hwmon-vid"
         },
         "aic94xx": {
@@ -14518,7 +14518,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -14754,7 +14754,7 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i40e": {
@@ -14802,7 +14802,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -15492,7 +15492,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -15532,7 +15532,7 @@
             "depends": "usbnet,usbcore"
         },
         "cdrom": {
-            "description": "",
+            "description": "Uniform CD-ROM driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "cfbcopyarea": {
@@ -15560,11 +15560,11 @@
             "depends": "usbserial,usbcore"
         },
         "cls_fw": {
-            "description": "",
+            "description": "Classifier for fwmark (Compiled by RR for DSM)",
             "depends": ""
         },
         "cls_u32": {
-            "description": "",
+            "description": "U32 classifier (Compiled by RR for DSM)",
             "depends": ""
         },
         "cn": {
@@ -15684,7 +15684,7 @@
             "depends": "cfbimgblt,cfbcopyarea,cfbfillrect,fb"
         },
         "efivarfs": {
-            "description": "EFI Variable Filesystem",
+            "description": "EFI Variable Filesystem (Compiled by RR for DSM)",
             "depends": ""
         },
         "ehci-hcd": {
@@ -15752,7 +15752,7 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i40e": {
@@ -15800,7 +15800,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -16052,7 +16052,7 @@
             "depends": ""
         },
         "ntfs": {
-            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc.",
+            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc. (Compiled by RR for DSM)",
             "depends": ""
         },
         "p8022": {
@@ -16196,15 +16196,15 @@
             "depends": "rtsx_usb,mmc_core"
         },
         "sch_htb": {
-            "description": "",
+            "description": "Hierarchical Token Bucket (HTB) Qdisc (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_netem": {
-            "description": "",
+            "description": "Network Emulator (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_sfq": {
-            "description": "",
+            "description": "Stochastic Fairness Queueing discipline (Compiled by RR for DSM)",
             "depends": ""
         },
         "scsi_transport_sas": {
@@ -16486,7 +16486,7 @@
             "depends": ""
         },
         "adt7475": {
-            "description": "adt7475 driver",
+            "description": "adt7475 driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "aic94xx": {
@@ -16550,7 +16550,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -16710,11 +16710,11 @@
             "depends": ""
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -16730,7 +16730,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -16766,7 +16766,7 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i2c-asm2824": {
@@ -16818,7 +16818,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -17472,7 +17472,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -17512,7 +17512,7 @@
             "depends": "usbnet,usbcore"
         },
         "cdrom": {
-            "description": "",
+            "description": "Uniform CD-ROM driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "cfbcopyarea": {
@@ -17540,11 +17540,11 @@
             "depends": "usbserial,usbcore"
         },
         "cls_fw": {
-            "description": "",
+            "description": "Classifier for fwmark (Compiled by RR for DSM)",
             "depends": ""
         },
         "cls_u32": {
-            "description": "",
+            "description": "U32 classifier (Compiled by RR for DSM)",
             "depends": ""
         },
         "cn": {
@@ -17648,15 +17648,15 @@
             "depends": ""
         },
         "efivarfs": {
-            "description": "EFI Variable Filesystem",
+            "description": "EFI Variable Filesystem (Compiled by RR for DSM)",
             "depends": ""
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -17672,7 +17672,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -17712,7 +17712,7 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i2c-asm2824": {
@@ -17764,7 +17764,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -18016,7 +18016,7 @@
             "depends": ""
         },
         "ntfs": {
-            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc.",
+            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc. (Compiled by RR for DSM)",
             "depends": ""
         },
         "p8022": {
@@ -18156,15 +18156,15 @@
             "depends": "rtsx_usb,mmc_core"
         },
         "sch_htb": {
-            "description": "",
+            "description": "Hierarchical Token Bucket (HTB) Qdisc (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_netem": {
-            "description": "",
+            "description": "Network Emulator (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_sfq": {
-            "description": "",
+            "description": "Stochastic Fairness Queueing discipline (Compiled by RR for DSM)",
             "depends": ""
         },
         "scsi_transport_fc": {
@@ -18482,7 +18482,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -18654,11 +18654,11 @@
             "depends": "usbcore"
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -18674,7 +18674,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -18714,11 +18714,11 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i2c-i801": {
-            "description": "I801 SMBus driver",
+            "description": "I801 SMBus driver (Compiled by RR for DSM)",
             "depends": "check_signature"
         },
         "i2c-smbus": {
@@ -18770,7 +18770,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -19436,7 +19436,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -19476,7 +19476,7 @@
             "depends": "usbnet,usbcore"
         },
         "cdrom": {
-            "description": "",
+            "description": "Uniform CD-ROM driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "cfbcopyarea": {
@@ -19508,11 +19508,11 @@
             "depends": ""
         },
         "cls_fw": {
-            "description": "",
+            "description": "Classifier for fwmark (Compiled by RR for DSM)",
             "depends": ""
         },
         "cls_u32": {
-            "description": "",
+            "description": "U32 classifier (Compiled by RR for DSM)",
             "depends": ""
         },
         "cn": {
@@ -19620,7 +19620,7 @@
             "depends": ""
         },
         "efivarfs": {
-            "description": "EFI Variable Filesystem",
+            "description": "EFI Variable Filesystem (Compiled by RR for DSM)",
             "depends": ""
         },
         "etxhci-hcd": {
@@ -19628,11 +19628,11 @@
             "depends": "usbcore"
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -19648,7 +19648,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -19692,11 +19692,11 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i2c-i801": {
-            "description": "I801 SMBus driver",
+            "description": "I801 SMBus driver (Compiled by RR for DSM)",
             "depends": "check_signature"
         },
         "i2c-smbus": {
@@ -19748,7 +19748,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -20000,7 +20000,7 @@
             "depends": ""
         },
         "ntfs": {
-            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc.",
+            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc. (Compiled by RR for DSM)",
             "depends": ""
         },
         "p8022": {
@@ -20144,15 +20144,15 @@
             "depends": "rtsx_usb,mmc_core"
         },
         "sch_htb": {
-            "description": "",
+            "description": "Hierarchical Token Bucket (HTB) Qdisc (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_netem": {
-            "description": "",
+            "description": "Network Emulator (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_sfq": {
-            "description": "",
+            "description": "Stochastic Fairness Queueing discipline (Compiled by RR for DSM)",
             "depends": ""
         },
         "scsi_transport_sas": {
@@ -20414,7 +20414,7 @@
             "depends": ""
         },
         "adt7475": {
-            "description": "adt7475 driver",
+            "description": "adt7475 driver (Compiled by RR for DSM)",
             "depends": "hwmon-vid"
         },
         "aic94xx": {
@@ -20478,7 +20478,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -20650,11 +20650,11 @@
             "depends": "usbcore"
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -20670,7 +20670,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -20710,11 +20710,11 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i2c-i801": {
-            "description": "I801 SMBus driver",
+            "description": "I801 SMBus driver (Compiled by RR for DSM)",
             "depends": "check_signature"
         },
         "i2c-smbus": {
@@ -20766,7 +20766,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -21444,7 +21444,7 @@
             "depends": ""
         },
         "bitblit": {
-            "description": "Bit Blitting Operation",
+            "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
         },
         "bnx2": {
@@ -21484,7 +21484,7 @@
             "depends": "usbnet"
         },
         "cdrom": {
-            "description": "",
+            "description": "Uniform CD-ROM driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "cfbcopyarea": {
@@ -21516,11 +21516,11 @@
             "depends": ""
         },
         "cls_fw": {
-            "description": "",
+            "description": "Classifier for fwmark (Compiled by RR for DSM)",
             "depends": ""
         },
         "cls_u32": {
-            "description": "",
+            "description": "U32 classifier (Compiled by RR for DSM)",
             "depends": ""
         },
         "cn": {
@@ -21628,7 +21628,7 @@
             "depends": ""
         },
         "efivarfs": {
-            "description": "EFI Variable Filesystem",
+            "description": "EFI Variable Filesystem (Compiled by RR for DSM)",
             "depends": ""
         },
         "etxhci-hcd": {
@@ -21636,11 +21636,11 @@
             "depends": ""
         },
         "evbug": {
-            "description": "Input driver event debug module",
+            "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
         },
         "evdev": {
-            "description": "Input driver event char devices",
+            "description": "Input driver event char devices (Compiled by RR for DSM)",
             "depends": ""
         },
         "exfat": {
@@ -21656,7 +21656,7 @@
             "depends": ""
         },
         "fb": {
-            "description": "Deferred IO for framebuffers",
+            "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
         "fb_sys_fops": {
@@ -21700,11 +21700,11 @@
             "depends": ""
         },
         "i2c-algo-bit": {
-            "description": "I2C-Bus bit-banging algorithm",
+            "description": "I2C-Bus bit-banging algorithm (Compiled by RR for DSM)",
             "depends": ""
         },
         "i2c-i801": {
-            "description": "I801 SMBus driver",
+            "description": "I801 SMBus driver (Compiled by RR for DSM)",
             "depends": "check_signature"
         },
         "i2c-smbus": {
@@ -21756,7 +21756,7 @@
             "depends": "vxlan,auxiliary"
         },
         "ide-core": {
-            "description": "",
+            "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
         },
         "ide-gd_mod": {
@@ -22012,7 +22012,7 @@
             "depends": ""
         },
         "ntfs": {
-            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc.",
+            "description": "NTFS 1.2/3.x driver - Copyright (c) 2001-2014 Anton Altaparmakov and Tuxera Inc. (Compiled by RR for DSM)",
             "depends": ""
         },
         "p8022": {
@@ -22156,15 +22156,15 @@
             "depends": "rtsx_usb,mmc_core"
         },
         "sch_htb": {
-            "description": "",
+            "description": "Hierarchical Token Bucket (HTB) Qdisc (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_netem": {
-            "description": "",
+            "description": "Network Emulator (Compiled by RR for DSM)",
             "depends": ""
         },
         "sch_sfq": {
-            "description": "",
+            "description": "Stochastic Fairness Queueing discipline (Compiled by RR for DSM)",
             "depends": ""
         },
         "scsi_transport_fc": {
