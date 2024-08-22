@@ -34,7 +34,7 @@ if [ -n "${MODEL}" ]; then
 fi
 
 # Get Arc Data from Config
-ARC_KEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
+ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 ARCDYN="$(readConfigKey "arc.dynamic" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
@@ -165,13 +165,13 @@ function arcModel() {
         fi
         [ -n "$(grep -w "${M}" "${S_FILE}")" ] && BETA="Arc" || BETA="Syno"
         [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
-        if [ -n "${ARC_KEY}" ]; then
+        if [ -n "${ARCKEY}" ]; then
           [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
         else
           [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-15s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${DTS}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
         fi
       done < <(cat "${TMP_PATH}/modellist")
-      if [ -n "${ARC_KEY}" ]; then
+      if [ -n "${ARCKEY}" ]; then
         dialog --backtitle "$(backtitle)" --title "Arc DSM Model" --colors \
           --cancel-label "Show all" --help-button --help-label "Exit" \
           --extra-button --extra-label "Info" \
@@ -910,7 +910,7 @@ else
   [ "${BUILDDONE}" == "true" ] && NEXT="3" || NEXT="1"
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
-    if [ -z "${ARC_KEY}" ] && [ "${OFFLINE}" = "false" ]; then
+    if [ -z "${ARCKEY}" ] && [ "${OFFLINE}" = "false" ]; then
       echo "0 \"Install Arc Patch Configs\" "                                                 >>"${TMP_PATH}/menu"
     fi
     echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
@@ -950,6 +950,9 @@ else
         fi
         if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sequentialio"; then
           echo "Q \"SequentialIO Options \" "                                                 >>"${TMP_PATH}/menu"
+        fi
+        if [ -n "${ARCKEY}" ]; then
+          echo "r \"Reset Arc Patch \" "                                                      >>"${TMP_PATH}/menu"
         fi
       fi
       if [ "${BOOTOPTS}" == "true" ]; then
@@ -1056,6 +1059,7 @@ else
       Q) sequentialIOMenu; NEXT="Q" ;;
       p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
       D) staticIPMenu; NEXT="D" ;;
+      r) resetArcPatch; NEXT="r" ;;
       # Boot Section
       6) [ "${BOOTOPTS}" == "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
         BOOTOPTS="${BOOTOPTS}"
