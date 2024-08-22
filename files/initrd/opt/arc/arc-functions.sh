@@ -513,6 +513,7 @@ function synoinfoMenu() {
         MSG+=" * \Z4support_glusterfs=yes\Zn\n    GlusterFS in DSM.\n"
         MSG+=" * \Z4support_sriov=yes\Zn\n    SR-IOV Support in DSM.\n"
         MSG+=" * \Z4support_disk_performance_test=yes\Zn\n    Disk Performance Test in DSM.\n"
+        MSG+=" * \Z4support_ssd_cache=yes\Zn\n    Enable SSD Cache for unsupported Device.\n"
         #MSG+=" * \Z4support_diffraid=yes\Zn\n    TO-DO.\n"
         #MSG+=" * \Z4support_config_swap=yes\Zn\n    TO-DO.\n"
         MSG+="\nEnter the Parameter Name and Value you want to add.\n"
