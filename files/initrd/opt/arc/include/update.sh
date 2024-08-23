@@ -44,7 +44,7 @@ function upgradeLoader () {
     (
       # Download update file
       echo "Downloading ${TAG}"
-      if [ -n "${ARCBRANCH}" ]; then
+      if [ "${ARCBRANCH}" != "stable" ]; then
         local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}-${ARCBRANCH}.img.zip"
       else
         local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip"
@@ -141,7 +141,7 @@ function updateLoader() {
     (
       # Download update file
       echo "Downloading ${TAG}"
-      if [ -n "${ARCBRANCH}" ]; then
+      if [ "${ARCBRANCH}" != "stable" ]; then
         local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${ARCBRANCH}.zip"
         local SHA="https://github.com/AuxXxilium/arc/releases/download/${TAG}/checksum-${ARCBRANCH}.sha256"
       else

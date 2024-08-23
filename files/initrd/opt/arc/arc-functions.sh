@@ -837,7 +837,7 @@ function updateMenu() {
       7 "Update Modules" \
       8 "Update Patches" \
       9 "Update Custom Kernel" \
-      0 "Branch: (${ARCBRANCH:-"stable"})" \
+      0 "Branch: ${ARCBRANCH}" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -1065,11 +1065,9 @@ function updateMenu() {
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
-          writeConfigKey "arc.branch" "" "${USER_CONFIG_FILE}"
-          rm -f "${PART1_PATH}/ARC-BRANCH"
+          writeConfigKey "arc.branch" "stable" "${USER_CONFIG_FILE}"
         elif [ ${opts} -eq 2 ]; then
           writeConfigKey "arc.branch" "next" "${USER_CONFIG_FILE}"
-          echo "next" >"${PART1_PATH}/ARC-BRANCH"
         fi
         ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
         dialog --backtitle "$(backtitle)" --title "Switch Buildsystem" --aspect 18 \
@@ -1216,7 +1214,7 @@ function sysinfo() {
   done
   # Print Config Informations
   TEXT+="\n\Z4> Arc: ${ARC_VERSION}\Zn"
-  [ -n "${ARCBRANCH}" ] && TEXT+="\n  Branch: \Zb${ARCBRANCH}\Zn"
+  TEXT+="\n  Branch: \Zb${ARCBRANCH}\Zn"
   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"
