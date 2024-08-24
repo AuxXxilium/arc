@@ -528,7 +528,7 @@ function arcSettings() {
 }
 
 ###############################################################################
-# Calls boot.sh to boot into DSM Recovery
+# Show Summary of Config
 function arcSummary() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -951,6 +951,9 @@ else
         if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sequentialio"; then
           echo "Q \"SequentialIO Options \" "                                                 >>"${TMP_PATH}/menu"
         fi
+        if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "arcdns"; then
+          echo "R \"ArcDNS Options \" "                                                       >>"${TMP_PATH}/menu"
+        fi
         if [ -n "${ARCKEY}" ]; then
           echo "r \"Reset Arc Patch \" "                                                      >>"${TMP_PATH}/menu"
         fi
@@ -1057,6 +1060,7 @@ else
       o) dtsMenu; NEXT="o" ;;
       P) storagepanelMenu; NEXT="P" ;;
       Q) sequentialIOMenu; NEXT="Q" ;;
+      Q) arcDNSMenu; NEXT="Q" ;;
       p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
       D) staticIPMenu; NEXT="D" ;;
       r) resetArcPatch; NEXT="r" ;;

@@ -41,6 +41,7 @@ PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
 SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
 ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
+ARCDNS="$(readConfigKey "arc.dns" "${USER_CONFIG_FILE}")"
 # Read new PAT Info from Config
 PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
 PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
@@ -179,6 +180,8 @@ for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "upda
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   elif [ "${ADDON}" == "cpufreqscaling" ]; then
     PARAMS=${CPUGOVERNOR}
+  elif [ "${ADDON}" == "arcdns" ]; then
+    PARAMS=${ARCDNS}
   fi
   installAddon "${ADDON}" "${PLATFORM}" || exit 1
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
