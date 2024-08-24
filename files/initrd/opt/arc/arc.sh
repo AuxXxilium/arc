@@ -1060,7 +1060,7 @@ else
       o) dtsMenu; NEXT="o" ;;
       P) storagepanelMenu; NEXT="P" ;;
       Q) sequentialIOMenu; NEXT="Q" ;;
-      Q) arcDNSMenu; NEXT="Q" ;;
+      R) arcDNSMenu; NEXT="R" ;;
       p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
       D) staticIPMenu; NEXT="D" ;;
       r) resetArcPatch; NEXT="r" ;;
