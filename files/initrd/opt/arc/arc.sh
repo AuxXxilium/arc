@@ -528,7 +528,7 @@ function arcSettings() {
 }
 
 ###############################################################################
-# Calls boot.sh to boot into DSM Recovery
+# Show Summary of Config
 function arcSummary() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -951,6 +951,9 @@ else
         if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sequentialio"; then
           echo "Q \"SequentialIO Options \" "                                                 >>"${TMP_PATH}/menu"
         fi
+        if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "arcdns"; then
+          echo "R \"ArcDNS Options \" "                                                       >>"${TMP_PATH}/menu"
+        fi
         if [ -n "${ARCKEY}" ]; then
           echo "r \"Reset Arc Patch \" "                                                      >>"${TMP_PATH}/menu"
         fi
@@ -1053,12 +1056,12 @@ else
       d) modulesMenu; NEXT="d" ;;
       g) governorMenu; NEXT="g" ;;
       e) ONLYVERSION="true" && arcVersion; NEXT="e" ;;
+      p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
       S) storageMenu; NEXT="S" ;;
       o) dtsMenu; NEXT="o" ;;
       P) storagepanelMenu; NEXT="P" ;;
       Q) sequentialIOMenu; NEXT="Q" ;;
-      p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
-      D) staticIPMenu; NEXT="D" ;;
+      R) arcDNSMenu; NEXT="R" ;;
       r) resetArcPatch; NEXT="r" ;;
       # Boot Section
       6) [ "${BOOTOPTS}" == "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
@@ -1085,6 +1088,7 @@ else
       s) downgradeMenu; NEXT="s" ;;
       t) resetPassword; NEXT="t" ;;
       N) addNewDSMUser; NEXT="N" ;;
+      D) staticIPMenu; NEXT="D" ;;
       J) resetDSMNetwork; NEXT="J" ;;
       K) [ "${KERNEL}" == "official" ] && KERNEL='custom' || KERNEL='official'
         writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"

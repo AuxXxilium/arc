@@ -49,7 +49,7 @@ function addonSelection() {
   touch "${TMP_PATH}/opts"
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
-    if [ "${ADDON}" == "amepatch" ] && [ "${ARCPATCH}" == "false" ]; then
+    if [[ "${ADDON}" == "amepatch" || "${ADDON}" == "sspatch" || "${ADDON}" == "arcdns" ]] && [ "${ARCPATCH}" == "false" ]; then
       continue
     else
       echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
@@ -688,6 +688,43 @@ function sequentialIOMenu() {
 }
 
 ###############################################################################
+# Shows arcDNS menu to user
+function arcDNSMenu() {
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  if [ "${CONFDONE}" == "true" ]; then
+    while true; do
+      ARCDNS="$(readConfigKey "addons.arcdns" "${USER_CONFIG_FILE}")"
+      domain="$(echo ${ARCDNS} | cut -d'/' -f1)"
+      token="$(echo ${ARCDNS} | cut -d'/' -f2)"
+      MSG="Register your Subdomain at arcdns.tech\n"
+      MSG+="Enter the Values from ArcDNS below:\n"
+      dialog --backtitle "$(backtitle)" --title "Add DSM User" \
+        --form "${MSG}" 8 60 3 "Domain:" 1 1 "${domain:-domain}" 1 10 50 0 "Token:" 2 1 "${token:-token}" 2 10 50 0 \
+        2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && break
+      domain="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+      token="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+      if [ -z "${domain}" ] || [ -z "${token}" ] || [ "${domain}" = "domain" ] || [ "${token}" = "token" ]; then
+        dialog --backtitle "$(backtitle)" --title "ArcDNS" \
+          --infobox "Invalid Domain or Token, retry!" 0 0
+        deleteConfigKey "addons.arcdns" "${USER_CONFIG_FILE}"
+        sleep 3
+        continue
+      else
+        ARCDNS="${domain}/${token}"
+        dialog --backtitle "$(backtitle)" --colors --title "ArcDNS" \
+          --msgbox "ArcDNS set successful!" 0 0
+        writeConfigKey "addons.arcdns" "${ARCDNS}" "${USER_CONFIG_FILE}"
+        break
+      fi
+    done
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  fi
+  return
+}
+
+###############################################################################
 # Shows backup menu to user
 function backupMenu() {
   NEXT="1"
@@ -837,7 +874,7 @@ function updateMenu() {
       7 "Update Modules" \
       8 "Update Patches" \
       9 "Update Custom Kernel" \
-      0 "Branch: (${ARCBRANCH:-"stable"})" \
+      0 "Branch: ${ARCBRANCH}" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -1065,11 +1102,9 @@ function updateMenu() {
         opts=$(cat ${TMP_PATH}/opts)
         [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
-          writeConfigKey "arc.branch" "" "${USER_CONFIG_FILE}"
-          rm -f "${PART1_PATH}/ARC-BRANCH"
+          writeConfigKey "arc.branch" "stable" "${USER_CONFIG_FILE}"
         elif [ ${opts} -eq 2 ]; then
           writeConfigKey "arc.branch" "next" "${USER_CONFIG_FILE}"
-          echo "next" >"${PART1_PATH}/ARC-BRANCH"
         fi
         ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
         dialog --backtitle "$(backtitle)" --title "Switch Buildsystem" --aspect 18 \
@@ -1216,7 +1251,7 @@ function sysinfo() {
   done
   # Print Config Informations
   TEXT+="\n\Z4> Arc: ${ARC_VERSION}\Zn"
-  [ -n "${ARCBRANCH}" ] && TEXT+="\n  Branch: \Zb${ARCBRANCH}\Zn"
+  TEXT+="\n  Branch: \Zb${ARCBRANCH}\Zn"
   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"
