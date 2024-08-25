@@ -40,7 +40,6 @@ ARCDYN="$(readConfigKey "arc.dynamic" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
-CPUGOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
 IPV6="$(readConfigKey "ipv6" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
@@ -444,6 +443,14 @@ function arcSettings() {
       --infobox "Generating Storage Map..." 3 40
     sleep 2
     getmapSelection
+  fi
+  # Check for CPU Frequency Scaling
+  if [ "${CPUFREQ}" == "true" ]; then
+    # Select Governor for DSM
+    initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
+    dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
+      --infobox "Generating Governor Table..." 3 40
+    governorSelection
   fi
   # Check for Custom Build
   if [ "${AUTOMATED}" == "false" ]; then

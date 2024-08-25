@@ -176,9 +176,6 @@ for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "upda
     HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
     PARAMS=${HDDSORT}
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
-  elif [ "${ADDON}" == "cpufreqscaling" ]; then
-    CPUGOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
-    PARAMS=${CPUGOVERNOR}
   fi
   installAddon "${ADDON}" "${PLATFORM}" || exit 1
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
