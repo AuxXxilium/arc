@@ -874,7 +874,7 @@ function updateMenu() {
       7 "Update Modules" \
       8 "Update Patches" \
       9 "Update Custom Kernel" \
-      0 "Branch: ${ARCBRANCH}" \
+      0 "Buildroot Branch: ${ARCBRANCH}" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -1107,10 +1107,10 @@ function updateMenu() {
       0)
         # Ask for Arc Branch
         ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
-        dialog --clear --backtitle "$(backtitle)" --title "Switch Buildsystem" \
+        dialog --clear --backtitle "$(backtitle)" --title "Switch Buildroot" \
           --menu "Current: ${ARCBRANCH} -> Which Branch?" 7 50 0 \
-          1 "Stable Buildsystem" \
-          2 "Next Buildsystem (latest)" \
+          1 "Stable Buildroot" \
+          2 "Next Buildroot (latest)" \
         2>"${TMP_PATH}/opts"
         opts=$(cat ${TMP_PATH}/opts)
         if [ ${opts} -eq 1 ]; then
@@ -1119,8 +1119,8 @@ function updateMenu() {
           writeConfigKey "arc.branch" "next" "${USER_CONFIG_FILE}"
         fi
         ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Switch Buildsystem" --aspect 18 \
-          --msgbox "Using ${ARCBRANCH} Buildsystem, now.\nUpdate the Loader to apply the changes!" 7 50
+        dialog --backtitle "$(backtitle)" --title "Switch Buildroot" --aspect 18 \
+          --msgbox "Using ${ARCBRANCH} Buildroot, now.\nUpdate the Loader to apply the changes!" 7 50
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
