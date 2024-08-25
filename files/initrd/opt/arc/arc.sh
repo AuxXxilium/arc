@@ -619,9 +619,10 @@ function arcSummary() {
 # Building Loader Online
 function make() {
   # Check for Arc Patch
-  ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
+  ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   if [ -z "${ARCCONF}" ]; then
     deleteConfigKey "addons.amepatch" "${USER_CONFIG_FILE}"
+    deleteConfigKey "addons.arcdns" "${USER_CONFIG_FILE}"
     deleteConfigKey "addons.sspatch" "${USER_CONFIG_FILE}"
   fi
   # Read Model Config
@@ -635,6 +636,8 @@ function make() {
   PAT_HASH=""
   VALID="false"
   # Cleanup
+  [ -f "${MOD_ZIMAGE_FILE}" ] && rm -f "${MOD_ZIMAGE_FILE}"
+  [ -f "${MOD_RDGZ_FILE}" ] && rm -f "${MOD_RDGZ_FILE}"
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   mkdir -p "${UNTAR_PAT_PATH}"
   if [ "${OFFLINE}" == "false" ]; then
