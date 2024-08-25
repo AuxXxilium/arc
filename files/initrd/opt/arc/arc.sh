@@ -40,7 +40,6 @@ ARCDYN="$(readConfigKey "arc.dynamic" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
-CPUGOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
 IPV6="$(readConfigKey "ipv6" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
@@ -445,13 +444,6 @@ function arcSettings() {
     sleep 2
     getmapSelection
   fi
-  # Check for CPU Frequency Scaling
-  if [ "${CPUFREQ}" == "true" ]; then
-    # Select Governor for DSM
-    dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
-      --infobox "Generating Governor Table..." 3 40
-    governorSelection
-  fi
   # Check for Custom Build
   if [ "${AUTOMATED}" == "false" ]; then
     # Select Addons
@@ -461,6 +453,16 @@ function arcSettings() {
     initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
     addonSelection
+    # Check for CPU Frequency Scaling
+    if [ "${CPUFREQ}" == "true" ]; then
+      # Select Governor for DSM
+      initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
+      dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
+        --infobox "Generating Governor Table..." 3 40
+      governorSelection
+    else
+      deleteConfigKey "addons.cpufreqscaling" "${USER_CONFIG_FILE}"
+    fi
     # Check for DT and HBA/Raid Controller
     if [ "${PLATFORM}" != "epyc7002" ]; then
       if [ "${DT}" == "true" ] && [ "${EXTERNALCONTROLLER}" == "true" ]; then
@@ -939,14 +941,14 @@ else
         echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
         echo "e \"Version \" "                                                                >>"${TMP_PATH}/menu"
         echo "p \"Patch Options (SN/Mac) \" "                                                 >>"${TMP_PATH}/menu"
-        if [ "${CPUFREQ}" == "true" ]; then
-          echo "g \"Frequency Scaling \" "                                                    >>"${TMP_PATH}/menu"
-        fi
         if [ "${DT}" == "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
           echo "S \"Sata PortMap \" "                                                         >>"${TMP_PATH}/menu"
         fi
         if [ "${DT}" == "true" ]; then
           echo "o \"DTS Map Options \" "                                                      >>"${TMP_PATH}/menu"
+        fi
+        if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
+          echo "g \"Frequency Scaling Governor\" "                                            >>"${TMP_PATH}/menu"
         fi
         if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "storagepanel"; then
           echo "P \"StoragePanel Options \" "                                                 >>"${TMP_PATH}/menu"

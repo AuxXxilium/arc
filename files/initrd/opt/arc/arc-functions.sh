@@ -51,6 +51,8 @@ function addonSelection() {
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     if [[ "${ADDON}" == "amepatch" || "${ADDON}" == "sspatch" || "${ADDON}" == "arcdns" ]] && [ "${ARCPATCH}" == "false" ]; then
       continue
+    elif [ "${ADDON}" == "cpufreqscaling" ] && [ "${CPUFREQ}" == "false" ]; then
+      continue
     else
       echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
     fi
@@ -2288,7 +2290,6 @@ function governorSelection () {
     [ "${PLATFORM}" != "epyc7002" ] && echo -e "conservative \"use conservative to scale frequency\"" >>"${TMP_PATH}/opts"
     echo -e "performance \"always run at max frequency\"" >>"${TMP_PATH}/opts"
     echo -e "powersave \"always run at lowest frequency\"" >>"${TMP_PATH}/opts"
-    echo -e "userspace \"use userspace settings to scale frequency\"" >>"${TMP_PATH}/opts"
     dialog --backtitle "$(backtitle)" --title "CPU Frequency Scaling" \
       --menu  "Choose a Governor\n* Recommended Option" 0 0 0 --file "${TMP_PATH}/opts" \
       2>${TMP_PATH}/resp
@@ -2300,7 +2301,8 @@ function governorSelection () {
     [ "${PLATFORM}" == "epyc7002" ] && CPUGOVERNOR="schedutil"
     [ "${PLATFORM}" != "epyc7002" ] && CPUGOVERNOR="ondemand"
   fi
-  writeConfigKey "governor" "${CPUGOVERNOR}" "${USER_CONFIG_FILE}"
+  writeConfigKey "addons.cpufreqscaling" "${CPUGOVERNOR}" "${USER_CONFIG_FILE}"
+  CPUGOVERNOR="$(readConfigKey "addons.cpufreqscaling" "${USER_CONFIG_FILE}")"
 }
 
 ###############################################################################

@@ -12,14 +12,8 @@ N kvm-intel.ko
 N kvm-amd.ko
 N kvm.ko
 
-# acpi / cpufreq
+# acpi
 N acpi_call.ko
-N acpi-cpufreq.ko
-N cpufreq_conservative.ko
-N cpufreq_ondemand.ko
-N cpufreq_powersave.ko
-N cpufreq_performance.ko
-N cpufreq_userspace.ko
 
 # misc
 N check_signature.ko
