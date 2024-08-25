@@ -2193,7 +2193,7 @@ function rebootMenu() {
   [ -z "${resp}" ] && return
   REDEST=${resp}
   dialog --backtitle "$(backtitle)" --title "Power Menu" \
-    --infobox "${REDEST} selected ...!" 5 30
+    --infobox "Option: ${REDEST} selected ...!" 3 50
   if [ "${REDEST}" == "poweroff" ]; then
     poweroff
     exit 0
