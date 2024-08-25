@@ -454,7 +454,7 @@ function arcSettings() {
     initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
     addonSelection
     # Check for CPU Frequency Scaling
-    if [ "${CPUFREQ}" == "true" ]; then
+    if [ "${CPUFREQ}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
       # Select Governor for DSM
       initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
       dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
