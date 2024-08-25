@@ -172,7 +172,7 @@ echo "export KEYMAP=\"${KEYMAP}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
-for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol" "mountloader" "powersched" "cpufreqscaling"; do
+for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol" "mountloader"; do
   PARAMS=""
   if [ "${ADDON}" == "disks" ]; then
     PARAMS=${HDDSORT}

@@ -445,13 +445,6 @@ function arcSettings() {
     sleep 2
     getmapSelection
   fi
-  # Check for CPU Frequency Scaling
-  if [ "${CPUFREQ}" == "true" ]; then
-    # Select Governor for DSM
-    dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
-      --infobox "Generating Governor Table..." 3 40
-    governorSelection
-  fi
   # Check for Custom Build
   if [ "${AUTOMATED}" == "false" ]; then
     # Select Addons
@@ -940,7 +933,7 @@ else
         echo "e \"Version \" "                                                                >>"${TMP_PATH}/menu"
         echo "p \"Patch Options (SN/Mac) \" "                                                 >>"${TMP_PATH}/menu"
         if [ "${CPUFREQ}" == "true" ]; then
-          echo "g \"Frequency Scaling \" "                                                    >>"${TMP_PATH}/menu"
+          echo "g \"Frequency Scaling Governor\" "                                            >>"${TMP_PATH}/menu"
         fi
         if [ "${DT}" == "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
           echo "S \"Sata PortMap \" "                                                         >>"${TMP_PATH}/menu"

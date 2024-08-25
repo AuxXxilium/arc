@@ -2301,6 +2301,7 @@ function governorSelection () {
     [ "${PLATFORM}" != "epyc7002" ] && CPUGOVERNOR="ondemand"
   fi
   writeConfigKey "governor" "${CPUGOVERNOR}" "${USER_CONFIG_FILE}"
+  CPUGOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
 }
 
 ###############################################################################
