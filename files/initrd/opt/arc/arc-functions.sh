@@ -874,7 +874,7 @@ function updateMenu() {
       7 "Update Modules" \
       8 "Update Patches" \
       9 "Update Custom Kernel" \
-      0 "Branch: ${ARCBRANCH}" \
+      0 "Buildroot Branch: ${ARCBRANCH}" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -895,7 +895,6 @@ function updateMenu() {
         2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && continue
         opts=$(cat ${TMP_PATH}/opts)
-        [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG=""
         elif [ ${opts} -eq 2 ]; then
@@ -905,10 +904,11 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        upgradeLoader "${TAG}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        exec reboot && exit 0
+        if upgradeLoader "${TAG}"; then
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          exec reboot && exit 0
+        fi
         ;;
       3)
         # Ask for Tag
@@ -922,7 +922,6 @@ function updateMenu() {
         2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && continue
         opts=$(cat ${TMP_PATH}/opts)
-        [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG=""
         elif [ ${opts} -eq 2 ]; then
@@ -932,9 +931,23 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        updateLoader "${TAG}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        if updateLoader "${TAG}"; then
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          # Ask for Reboot
+          dialog --clear --backtitle "$(backtitle)" --title "Update done"\
+            --no-cancel --menu "Reboot now?" 7 40 0 \
+            1 "Yes - Reboot Arc Loader now" \
+            2 "No - I want to update more" \
+          2>"${TMP_PATH}/resp"
+          resp=$(cat ${TMP_PATH}/resp)
+          [ -z "${resp}" ] && return 1
+          if [ ${resp} -eq 1 ]; then
+            rebootTo config
+          elif [ ${resp} -eq 2 ]; then
+            return 0
+          fi
+        fi
         ;;
       4)
         # Ask for Tag
@@ -948,7 +961,6 @@ function updateMenu() {
         2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && continue
         opts=$(cat ${TMP_PATH}/opts)
-        [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG=""
         elif [ ${opts} -eq 2 ]; then
@@ -958,9 +970,10 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        updateAddons "${TAG}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        if updateAddons "${TAG}"; then
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        fi
         ;;
       5)
         # Ask for Tag
@@ -973,7 +986,6 @@ function updateMenu() {
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
         opts=$(cat ${TMP_PATH}/opts)
-        [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG=""
         elif [ ${opts} -eq 2 ]; then
@@ -983,13 +995,14 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        updateConfigs "${TAG}"
-        writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
-        ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
-        writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-        ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        if updateConfigs "${TAG}"; then
+          writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
+          ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
+          writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+          ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        fi
         ;;
       6)
         # Ask for Tag
@@ -1002,7 +1015,6 @@ function updateMenu() {
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
         opts=$(cat ${TMP_PATH}/opts)
-        [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG=""
         elif [ ${opts} -eq 2 ]; then
@@ -1012,9 +1024,10 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        updateLKMs "${TAG}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        if updateLKMs "${TAG}"; then
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        fi
         ;;
       7)
         # Ask for Tag
@@ -1027,7 +1040,6 @@ function updateMenu() {
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
         opts=$(cat ${TMP_PATH}/opts)
-        [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG=""
         elif [ ${opts} -eq 2 ]; then
@@ -1037,9 +1049,10 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        updateModules "${TAG}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        if updateModules "${TAG}"; then
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        fi
         ;;
       8)
         # Ask for Tag
@@ -1051,9 +1064,7 @@ function updateMenu() {
           1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
-        2>"${TMP_PATH}/opts"
         opts=$(cat ${TMP_PATH}/opts)
-        [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG=""
         elif [ ${opts} -eq 2 ]; then
@@ -1063,9 +1074,10 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        updatePatches "${TAG}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        if updatePatches "${TAG}"; then
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        fi
         ;;
       9)
         # Ask for Tag
@@ -1078,7 +1090,6 @@ function updateMenu() {
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
         opts=$(cat ${TMP_PATH}/opts)
-        [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           TAG=""
         elif [ ${opts} -eq 2 ]; then
@@ -1088,27 +1099,28 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        updateCustom "${TAG}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        if updateCustom "${TAG}"; then
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        fi
         ;;
       0)
         # Ask for Arc Branch
-        dialog --clear --backtitle "$(backtitle)" --title "Switch Buildsystem" \
-          --menu "Which Branch?" 7 50 0 \
-          1 "Stable Buildsystem" \
-          2 "Next Buildsystem (latest)" \
+        ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
+        dialog --clear --backtitle "$(backtitle)" --title "Switch Buildroot" \
+          --menu "Current: ${ARCBRANCH} -> Which Branch?" 7 50 0 \
+          1 "Stable Buildroot" \
+          2 "Next Buildroot (latest)" \
         2>"${TMP_PATH}/opts"
         opts=$(cat ${TMP_PATH}/opts)
-        [ -z "${opts}" ] && return 1
         if [ ${opts} -eq 1 ]; then
           writeConfigKey "arc.branch" "stable" "${USER_CONFIG_FILE}"
         elif [ ${opts} -eq 2 ]; then
           writeConfigKey "arc.branch" "next" "${USER_CONFIG_FILE}"
         fi
         ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Switch Buildsystem" --aspect 18 \
-          --msgbox "Using ${ARCBRANCH} Buildsystem, now.\nUpdate the Loader to apply the changes!" 7 50
+        dialog --backtitle "$(backtitle)" --title "Switch Buildroot" --aspect 18 \
+          --msgbox "Using ${ARCBRANCH} Buildroot, now.\nUpdate the Loader to apply the changes!" 7 50
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -2203,7 +2215,7 @@ function rebootMenu() {
   [ -z "${resp}" ] && return
   REDEST=${resp}
   dialog --backtitle "$(backtitle)" --title "Power Menu" \
-    --infobox "${REDEST} selected ...!" 5 30
+    --infobox "Option: ${REDEST} selected ...!" 3 50
   if [ "${REDEST}" == "poweroff" ]; then
     poweroff
     exit 0
