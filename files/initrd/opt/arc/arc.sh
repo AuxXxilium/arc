@@ -444,14 +444,6 @@ function arcSettings() {
     sleep 2
     getmapSelection
   fi
-  # Check for CPU Frequency Scaling
-  if [ "${CPUFREQ}" == "true" ]; then
-    # Select Governor for DSM
-    initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
-    dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
-      --infobox "Generating Governor Table..." 3 40
-    governorSelection
-  fi
   # Check for Custom Build
   if [ "${AUTOMATED}" == "false" ]; then
     # Select Addons
@@ -461,6 +453,16 @@ function arcSettings() {
     initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
     addonSelection
+    # Check for CPU Frequency Scaling
+    if [ "${CPUFREQ}" == "true" ]; then
+      # Select Governor for DSM
+      initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
+      dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
+        --infobox "Generating Governor Table..." 3 40
+      governorSelection
+    else
+      deleteConfigKey "addons.cpufreqscaling" "${USER_CONFIG_FILE}"
+    fi
     # Check for DT and HBA/Raid Controller
     if [ "${PLATFORM}" != "epyc7002" ]; then
       if [ "${DT}" == "true" ] && [ "${EXTERNALCONTROLLER}" == "true" ]; then
