@@ -933,6 +933,19 @@ function updateMenu() {
         updateLoader "${TAG}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        # Ask for Reboot
+        dialog --clear --backtitle "$(backtitle)" --title "Update done"\
+          --no-cancel --menu "Reboot now?" 7 40 0 \
+          1 "Yes - Reboot Arc Loader now" \
+          2 "No - I want to update more" \
+        2>"${TMP_PATH}/resp"
+        resp=$(cat ${TMP_PATH}/resp)
+        [ -z "${resp}" ] && return 1
+        if [ ${resp} -eq 1 ]; then
+          rebootTo config
+        elif [ ${resp} -eq 2 ]; then
+          return 0
+        fi
         ;;
       4)
         # Ask for Tag
