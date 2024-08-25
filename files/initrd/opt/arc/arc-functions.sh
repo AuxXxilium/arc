@@ -1106,8 +1106,9 @@ function updateMenu() {
         ;;
       0)
         # Ask for Arc Branch
+        ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
         dialog --clear --backtitle "$(backtitle)" --title "Switch Buildsystem" \
-          --menu "Which Branch?" 7 50 0 \
+          --menu "Current: ${ARCBRANCH} -> Which Branch?" 7 50 0 \
           1 "Stable Buildsystem" \
           2 "Next Buildsystem (latest)" \
         2>"${TMP_PATH}/opts"
