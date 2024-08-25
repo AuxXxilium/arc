@@ -33,8 +33,6 @@ LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
-CPUGOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -175,9 +173,11 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol" "mountloader"; do
   PARAMS=""
   if [ "${ADDON}" == "disks" ]; then
+    HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
     PARAMS=${HDDSORT}
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   elif [ "${ADDON}" == "cpufreqscaling" ]; then
+    CPUGOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
     PARAMS=${CPUGOVERNOR}
   fi
   installAddon "${ADDON}" "${PLATFORM}" || exit 1

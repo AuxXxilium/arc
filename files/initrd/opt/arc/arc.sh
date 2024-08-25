@@ -932,14 +932,14 @@ else
         echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
         echo "e \"Version \" "                                                                >>"${TMP_PATH}/menu"
         echo "p \"Patch Options (SN/Mac) \" "                                                 >>"${TMP_PATH}/menu"
-        if [ "${CPUFREQ}" == "true" ]; then
-          echo "g \"Frequency Scaling Governor\" "                                            >>"${TMP_PATH}/menu"
-        fi
         if [ "${DT}" == "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
           echo "S \"Sata PortMap \" "                                                         >>"${TMP_PATH}/menu"
         fi
         if [ "${DT}" == "true" ]; then
           echo "o \"DTS Map Options \" "                                                      >>"${TMP_PATH}/menu"
+        fi
+        if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
+          echo "g \"Frequency Scaling Governor\" "                                            >>"${TMP_PATH}/menu"
         fi
         if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "storagepanel"; then
           echo "P \"StoragePanel Options \" "                                                 >>"${TMP_PATH}/menu"
