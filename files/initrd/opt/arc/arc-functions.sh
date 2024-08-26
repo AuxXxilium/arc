@@ -1,6 +1,8 @@
 ###############################################################################
 # Permits user edit the user config
 function editUserConfig() {
+  OLDMODEL="${MODEL}"
+  OLDPRODUCTVER="${PRODUCTVER}"
   while true; do
     dialog --backtitle "$(backtitle)" --title "Edit with caution" \
       --ok-label "Save" --editbox "${USER_CONFIG_FILE}" 0 0 2>"${TMP_PATH}/userconfig"
@@ -10,8 +12,6 @@ function editUserConfig() {
     [ $? -eq 0 ] && break || continue
     dialog --backtitle "$(backtitle)" --title "Invalid YAML format" --msgbox "${ERRORS}" 0 0
   done
-  OLDMODEL="${MODEL}"
-  OLDPRODUCTVER="${PRODUCTVER}"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
@@ -37,6 +37,7 @@ function addonSelection() {
   # read platform and kernel version to check if addon exists
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   # read addons from user config
@@ -50,6 +51,8 @@ function addonSelection() {
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     if [[ "${ADDON}" == "amepatch" || "${ADDON}" == "sspatch" || "${ADDON}" == "arcdns" ]] && [ "${ARCPATCH}" == "false" ]; then
+      continue
+    elif [[ "${ADDON}" == "codecpatch" || "${ADDON}" == "sspatch" ]] && [ "${NANOVER}" == "2" ]; then
       continue
     elif [ "${ADDON}" == "cpufreqscaling" ] && [ "${CPUFREQ}" == "false" ]; then
       continue
@@ -71,7 +74,7 @@ function addonSelection() {
   done
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --title "DSM Addons" \
-    --msgbox "DSM Addons selected:\n${ADDONSINFO}" 0 0
+    --msgbox "DSM Addons selected:\n${ADDONSINFO}" 7 50
 }
 
 ###############################################################################
@@ -2121,7 +2124,6 @@ function decryptMenu() {
         fi
         if [ -f "${TMP_PATH}/configs.zip" ]; then
           echo "Download successful!"
-          rm -rf "${MODEL_CONFIG_PATH}"
           mkdir -p "${MODEL_CONFIG_PATH}"
           echo "Installing new Configs..."
           unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}"

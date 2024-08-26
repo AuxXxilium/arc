@@ -88,7 +88,11 @@ function backtitle() {
   fi
   BACKTITLE="${ARC_TITLE} | "
   BACKTITLE+="${MODEL} | "
-  BACKTITLE+="${PRODUCTVER} | "
+  if [ -n "${NANOVER}" ]; then
+    BACKTITLE+="${PRODUCTVER}.${NANOVER} | "
+  else
+    BACKTITLE+="${PRODUCTVER} | "
+  fi
   BACKTITLE+="${IPCON}${OFF} | "
   BACKTITLE+="Patch: ${ARCPATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
@@ -283,9 +287,29 @@ function arcVersion() {
     [ $? -ne 0 ] && return 0
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
-    if [ "${PRODUCTVER}" != "${resp}" ]; then
+    if [ "${resp}" == "7.2" ]; then
+      dialog --backtitle "$(backtitle)" --title "DSM Version" \
+      --menu "Choose a DSM Version?\n* Recommended Option" 8 40 0 \
+        1 "DSM 7.2.1 (Stable) *" \
+        2 "DSM 7.2.2 (Experimental)" \
+      2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && return 1
+      resp=$(cat ${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return 1
+      if [ ${resp} -eq 1 ]; then
+        resp="7.2"
+        respnano="1"
+      elif [ ${resp} -eq 2 ]; then
+        resp="7.2"
+        respnano="2"
+      fi
+    fi
+    if [ "${PRODUCTVER}" != "${resp}" ] || [ "${NANOVER}" != "${respnano}" ]; then
+      writeConfigKey "confdone" "false" "${USER_CONFIG_FILE}"
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+      NANOVER="${respnano}"
+      writeConfigKey "nanover" "${NANOVER}" "${USER_CONFIG_FILE}"
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
       rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
@@ -430,6 +454,7 @@ function arcSettings() {
     --infobox "Generating Network Config..." 3 40
   sleep 2
   getnet
+  [ $? -ne 0 ] && return 1
   if [ "${ONLYPATCH}" == "true" ]; then
     # Build isn't done
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -443,6 +468,7 @@ function arcSettings() {
       --infobox "Generating Storage Map..." 3 40
     sleep 2
     getmapSelection
+    [ $? -ne 0 ] && return 1
   fi
   # Check for Custom Build
   if [ "${AUTOMATED}" == "false" ]; then
@@ -453,6 +479,7 @@ function arcSettings() {
     initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
     addonSelection
+    [ $? -ne 0 ] && return 1
     # Check for CPU Frequency Scaling
     if [ "${CPUFREQ}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
       # Select Governor for DSM
@@ -460,6 +487,7 @@ function arcSettings() {
       dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
         --infobox "Generating Governor Table..." 3 40
       governorSelection
+      [ $? -ne 0 ] && return 1
     else
       deleteConfigKey "addons.cpufreqscaling" "${USER_CONFIG_FILE}"
     fi
@@ -467,7 +495,7 @@ function arcSettings() {
     if [ "${PLATFORM}" != "epyc7002" ]; then
       if [ "${DT}" == "true" ] && [ "${EXTERNALCONTROLLER}" == "true" ]; then
         dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-          --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental." 6 80
+          --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental." 6 70
       fi
     fi
     # Check for more then 8 Ethernet Ports
@@ -475,7 +503,7 @@ function arcSettings() {
     MODELNIC="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
     if [ ${DEVICENIC} -gt 8 ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-        --msgbox "WARN: You have more NIC (${DEVICENIC}) then 8 NIC.\nOnly 8 supported by DSM." 6 80
+        --msgbox "WARN: You have more NIC (${DEVICENIC}) then 8 NIC.\nOnly 8 supported by DSM." 6 60
     fi
     if [ ${DEVICENIC} -gt ${MODELNIC} ] && [ "${ARCPATCH}" == "true" ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
@@ -484,12 +512,12 @@ function arcSettings() {
     # Check for AES
     if [ "${AESSYS}" == "false" ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-        --msgbox "WARN: Your System doesn't support Hardwareencryption in DSM. (AES)" 5 80
+        --msgbox "WARN: Your System doesn't support Hardwareencryption in DSM. (AES)" 5 70
     fi
     # Check for CPUFREQ
     if [ "${CPUFREQ}" == "false" ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-        --msgbox "WARN: Your System doesn't support CPU Frequency Scaling in DSM." 5 80
+        --msgbox "WARN: Your System doesn't support CPU Frequency Scaling in DSM." 5 70
     fi
   fi
   EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
@@ -632,6 +660,7 @@ function make() {
   MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   PAT_URL=""
@@ -643,57 +672,66 @@ function make() {
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   mkdir -p "${UNTAR_PAT_PATH}"
   if [ "${OFFLINE}" == "false" ]; then
-    # Get PAT Data
-    dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-      --infobox "Get PAT Data from Syno..." 3 40
-    idx=0
-    while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-      local URL="https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}"
-      if [ "${ARCNIC}" == "auto" ]; then
-        PAT_DATA="$(curl -skL -m 10 "${URL}")"
-      else
-        PAT_DATA="$(curl --interface ${ARCNIC} -skL -m 10 "${URL}")"
-      fi
-      if [ "$(echo ${PAT_DATA} | jq -r '.success' 2>/dev/null)" == "true" ]; then
-        if echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].label_ext' 2>/dev/null | grep -q 'pat'; then
-          PAT_URL=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].url')
-          PAT_HASH=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].checksum')
-          PAT_URL=${PAT_URL%%\?*}
-          if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-            if echo "${PAT_URL}" | grep -q "https://"; then
-              VALID=true
-              break
-            fi
-          fi
-        fi
-      fi
-      sleep 3
-      idx=$((${idx} + 1))
-    done
-    if [ "${VALID}" == "false" ]; then
+    if [ "${NANOVER}" == "1" ]; then
+      # Get PAT Data
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-        --infobox "Get PAT Data from Github..." 3 40
+        --infobox "Get PAT Data from Local File..." 3 40
+      PAT_URL="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}.${NANOVER}\".url" "${D_FILE}")"
+      PAT_HASH="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}.${NANOVER}\".hash" "${D_FILE}")"
+      VALID="true"
+    else
+      # Get PAT Data
+      dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+        --infobox "Get PAT Data from Syno..." 3 40
       idx=0
       while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-        URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url"
-        HASH="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash"
+        local URL="https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}"
         if [ "${ARCNIC}" == "auto" ]; then
-          PAT_URL="$(curl -skL -m 10 "${URL}")"
-          PAT_HASH="$(curl -skL -m 10 "${HASH}")"
+          PAT_DATA="$(curl -skL -m 10 "${URL}")"
         else
-          PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "${URL}")"
-          PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "$HASH")"
+          PAT_DATA="$(curl --interface ${ARCNIC} -skL -m 10 "${URL}")"
         fi
-        PAT_URL=${PAT_URL%%\?*}
-        if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-          if echo "${PAT_URL}" | grep -q "https://"; then
-            VALID="true"
-            break
+        if [ "$(echo ${PAT_DATA} | jq -r '.success' 2>/dev/null)" == "true" ]; then
+          if echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].label_ext' 2>/dev/null | grep -q 'pat'; then
+            PAT_URL=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].url')
+            PAT_HASH=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].checksum')
+            PAT_URL=${PAT_URL%%\?*}
+            if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+              if echo "${PAT_URL}" | grep -q "https://"; then
+                VALID=true
+                break
+              fi
+            fi
           fi
         fi
         sleep 3
         idx=$((${idx} + 1))
       done
+      if [ "${VALID}" == "false" ]; then
+        dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+          --infobox "Get PAT Data from Github..." 3 40
+        idx=0
+        while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
+          URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url"
+          HASH="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash"
+          if [ "${ARCNIC}" == "auto" ]; then
+            PAT_URL="$(curl -skL -m 10 "${URL}")"
+            PAT_HASH="$(curl -skL -m 10 "${HASH}")"
+          else
+            PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "${URL}")"
+            PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "$HASH")"
+          fi
+          PAT_URL=${PAT_URL%%\?*}
+          if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+            if echo "${PAT_URL}" | grep -q "https://"; then
+              VALID="true"
+              break
+            fi
+          fi
+          sleep 3
+          idx=$((${idx} + 1))
+        done
+      fi
     fi
     if [ "${AUTOMATED}" == "false" ] && [ "${VALID}" == "false" ]; then
         MSG="Failed to get PAT Data.\n"
@@ -912,6 +950,8 @@ if [ "${AUTOMATED}" == "true" ]; then
     make
   fi
 else
+  dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+    --msgbox "WARN: Be aware of using DSM 7.2.2 is not stable,\nsome Addons are only available for DSM 7.2.1." 6 55
   [ "${BUILDDONE}" == "true" ] && NEXT="3" || NEXT="1"
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
@@ -992,7 +1032,7 @@ else
         echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
         echo "D \"StaticIP \" "                                                               >>"${TMP_PATH}/menu"
         echo "J \"Reset DSM Network Config \" "                                               >>"${TMP_PATH}/menu"
-        if [ "${PLATFORM}" == "epyc7002" ]; then
+        if [ "${PLATFORM}" == "epyc7002" ] && [ "${NANOVER}" == "1"]; then
           echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
         fi
         if [ "${DT}" == "true" ]; then
