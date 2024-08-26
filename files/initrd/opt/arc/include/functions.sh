@@ -589,23 +589,22 @@ function offlineCheck() {
     done
     if [ -n "${ARCNIC}" ]; then
       OFFLINE="false"
-    elif [ -z "${ARCNIC}" ] && [ "${AUTOMATED}" == "false" ]; then
-      dialog --backtitle "$(backtitle)" --title "Online Check" \
-        --infobox "Could not connect to Github.\nSwitch to Offline Mode!" 0 0
+    elif [ -z "${ARCNIC}" ]; then
+      if [ "${AUTOMATED}" == "false" ]; then
+        dialog --backtitle "$(backtitle)" --title "Online Check" \
+          --infobox "Could not connect to Github.\nSwitch to Offline Mode!" 0 0
+      else
+        dialog --backtitle "$(backtitle)" --title "Online Check" \
+          --infobox "Could not connect to Github.\nSwitch to Offline Mode!\nDisable Automated Mode!" 0 0
+      fi
       sleep 5
       cp -f "${PART3_PATH}/configs/offline.json" "${ARC_PATH}/include/offline.json"
-      ARCNIC="offline"
-      OFFLINE="true"
-    elif [ -z "${ARCNIC}" ] && [ "${AUTOMATED}" == "true" ]; then
-      dialog --backtitle "$(backtitle)" --title "Online Check" \
-        --infobox "Could not connect to Github.\nSwitch to Offline Mode!\nDisable Automated Mode!" 0 0
-      sleep 5
-      writeConfigKey "automated" "false" "${USER_CONFIG_FILE}"
-      [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null
+      AUTOMATED="false"
       ARCNIC="offline"
       OFFLINE="true"
     fi
   fi
+  writeConfigKey "automated" "${AUTOMATED}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"
 }
