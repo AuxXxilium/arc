@@ -63,7 +63,7 @@ echo -e "\033[1;37mDSM:\033[0m"
 echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
 echo -e "Platform: \033[1;37m${PLATFORM}\033[0m"
 if [ -n "${NANOVER}" ]; then
-  echo -e "Version: \033[1;37m${PRODUCTVER}.${NANOVER}$(${BUILDNUM}([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))\033[0m"
+  echo -e "Version: \033[1;37m${PRODUCTVER}.${NANOVER}(${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))\033[0m"
 else
   echo -e "Version: \033[1;37m${PRODUCTVER}(${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))\033[0m"
 fi
