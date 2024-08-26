@@ -284,9 +284,16 @@ function arcVersion() {
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     if [ "${PRODUCTVER}" != "${resp}" ]; then
-      [ "${PRODUCTVER}" == "7.2.2" ] && PRODUCTVER="7.2"
+      if [ "${PRODUCTVER}" == "7.2.2" ]; then
+        PRODUCTVER="7.2"
+        HOTFIX="2"
+      elif [ "${PRODUCTVER}" == "7.2.1" ]; then
+        PRODUCTVER="7.2"
+        HOTFIX="1"
+      fi
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+      writeConfigKey "hotfix" "${HOTFIX}" "${USER_CONFIG_FILE}"
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
       rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
@@ -633,6 +640,7 @@ function make() {
   MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  HOTFIX="$(readConfigKey "hotfix" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   PAT_URL=""
@@ -644,14 +652,14 @@ function make() {
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   mkdir -p "${UNTAR_PAT_PATH}"
   if [ "${OFFLINE}" == "false" ]; then
-    if [ "${PRODUCTVER}" == "7.2.1" ]; then
+    if [ "${HOTFIX}" == "1" ]; then
       # Get PAT Data
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
         --infobox "Get PAT Data from Local File..." 3 40
-      PAT_URL="$(readConfigKey "${MODEL}.${PRODUCTVER}.url" "${D_FILE}")"
-      PAT_HASH="$(readConfigKey "${MODEL}.${PRODUCTVER}.hash" "${D_FILE}")"
+      PAT_URL="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}\".url" "${D_FILE}")"
+      PAT_HASH="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}\".hash" "${D_FILE}")"
+      VALID="true"
     else
-      [ "${PRODUCTVER}" == "7.2.2" ] && PRODUCTVER="7.2"
       # Get PAT Data
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
         --infobox "Get PAT Data from Syno..." 3 40
