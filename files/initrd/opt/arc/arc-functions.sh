@@ -2127,7 +2127,6 @@ function decryptMenu() {
         fi
         if [ -f "${TMP_PATH}/configs.zip" ]; then
           echo "Download successful!"
-          rm -rf "${MODEL_CONFIG_PATH}"
           mkdir -p "${MODEL_CONFIG_PATH}"
           echo "Installing new Configs..."
           unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}"
