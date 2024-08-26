@@ -1,6 +1,8 @@
 ###############################################################################
 # Permits user edit the user config
 function editUserConfig() {
+  OLDMODEL="${MODEL}"
+  OLDPRODUCTVER="${PRODUCTVER}"
   while true; do
     dialog --backtitle "$(backtitle)" --title "Edit with caution" \
       --ok-label "Save" --editbox "${USER_CONFIG_FILE}" 0 0 2>"${TMP_PATH}/userconfig"
@@ -10,8 +12,6 @@ function editUserConfig() {
     [ $? -eq 0 ] && break || continue
     dialog --backtitle "$(backtitle)" --title "Invalid YAML format" --msgbox "${ERRORS}" 0 0
   done
-  OLDMODEL="${MODEL}"
-  OLDPRODUCTVER="${PRODUCTVER}"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
@@ -72,9 +72,9 @@ function addonSelection() {
   done
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
   if [ "${NANOVER}" == "2" ]; then
-    ADDONSINFO+="\nWarning: DSM 7.2.2 isn't supported by all Addons!"
+    ADDONSINFO+="\n\nWARN: DSM 7.2.2 isn't supported by app-specific Addons!"
     dialog --backtitle "$(backtitle)" --title "DSM Addons" \
-      --msgbox "DSM Addons selected:\n${ADDONSINFO}" 10 50
+      --msgbox "DSM Addons selected:\n${ADDONSINFO}" 10 60
   else
     dialog --backtitle "$(backtitle)" --title "DSM Addons" \
       --msgbox "DSM Addons selected:\n${ADDONSINFO}" 7 50

@@ -287,17 +287,28 @@ function arcVersion() {
     [ $? -ne 0 ] && return 0
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
-    if [ "${PRODUCTVER}" != "${resp}" ]; then
+    if [ "${resp}" == "7.2" ]; then
+      dialog --backtitle "$(backtitle)" --title "DSM Version" \
+      --menu "Choose a DSM Version?\n* Recommended Option" 8 40 0 \
+        1 "DSM 7.2.1 (Stable) *" \
+        2 "DSM 7.2.2 (Experimental)" \
+      2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && return 1
+      resp=$(cat ${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return 1
+      if [ ${resp} -eq 1 ]; then
+        resp="7.2"
+        respnano="1"
+      elif [ ${resp} -eq 2 ]; then
+        resp="7.2"
+        respnano="2"
+      fi
+    fi
+    if [ "${PRODUCTVER}" != "${resp}" ] || [ "${NANOVER}" != "${respnano}" ]; then
       writeConfigKey "confdone" "false" "${USER_CONFIG_FILE}"
       PRODUCTVER="${resp}"
-      if [ "${PRODUCTVER}" == "7.2.2" ]; then
-        PRODUCTVER="7.2"
-        NANOVER="2"
-      elif [ "${PRODUCTVER}" == "7.2.1" ]; then
-        PRODUCTVER="7.2"
-        NANOVER="1"
-      fi
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+      NANOVER="${respnano}"
       writeConfigKey "nanover" "${NANOVER}" "${USER_CONFIG_FILE}"
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
@@ -665,8 +676,8 @@ function make() {
       # Get PAT Data
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
         --infobox "Get PAT Data from Local File..." 3 40
-      PAT_URL="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}\".url" "${D_FILE}")"
-      PAT_HASH="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}\".hash" "${D_FILE}")"
+      PAT_URL="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}.${NANOVER}\".url" "${D_FILE}")"
+      PAT_HASH="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}.${NANOVER}\".hash" "${D_FILE}")"
       VALID="true"
     else
       # Get PAT Data
