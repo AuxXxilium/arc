@@ -37,6 +37,7 @@ function addonSelection() {
   # read platform and kernel version to check if addon exists
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   # read addons from user config
@@ -70,7 +71,7 @@ function addonSelection() {
     writeConfigKey "addons.\"${ADDON}\"" "" "${USER_CONFIG_FILE}"
   done
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
-  if [ "${PRODUCTVER}" == "7.2" ]; then
+  if [ "${NANOVER}" == "2" ]; then
     ADDONSINFO+="\n\n\Z1Warning: \ZnDSM 7.2.2 isn't supported by all Addons!"
     dialog --backtitle "$(backtitle)" --title "DSM Addons" \
       --msgbox "DSM Addons selected:\n\n${ADDONSINFO}" 9 50

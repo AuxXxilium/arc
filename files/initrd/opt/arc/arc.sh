@@ -88,7 +88,11 @@ function backtitle() {
   fi
   BACKTITLE="${ARC_TITLE} | "
   BACKTITLE+="${MODEL} | "
-  BACKTITLE+="${PRODUCTVER} | "
+  if [ -n "${NANOVER}" ]; then
+    BACKTITLE+="${PRODUCTVER}.${NANOVER} | "
+  else
+    BACKTITLE+="${PRODUCTVER} | "
+  fi
   BACKTITLE+="${IPCON}${OFF} | "
   BACKTITLE+="Patch: ${ARCPATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
@@ -284,16 +288,17 @@ function arcVersion() {
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     if [ "${PRODUCTVER}" != "${resp}" ]; then
+      writeConfigKey "confdone" "false" "${USER_CONFIG_FILE}"
+      PRODUCTVER="${resp}"
       if [ "${PRODUCTVER}" == "7.2.2" ]; then
         PRODUCTVER="7.2"
-        HOTFIX="2"
+        NANOVER="2"
       elif [ "${PRODUCTVER}" == "7.2.1" ]; then
         PRODUCTVER="7.2"
-        HOTFIX="1"
+        NANOVER="1"
       fi
-      PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-      writeConfigKey "hotfix" "${HOTFIX}" "${USER_CONFIG_FILE}"
+      writeConfigKey "nanover" "${NANOVER}" "${USER_CONFIG_FILE}"
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
       rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
@@ -438,6 +443,7 @@ function arcSettings() {
     --infobox "Generating Network Config..." 3 40
   sleep 2
   getnet
+  [ $? -ne 0 ] && return 1
   if [ "${ONLYPATCH}" == "true" ]; then
     # Build isn't done
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -451,6 +457,7 @@ function arcSettings() {
       --infobox "Generating Storage Map..." 3 40
     sleep 2
     getmapSelection
+    [ $? -ne 0 ] && return 1
   fi
   # Check for Custom Build
   if [ "${AUTOMATED}" == "false" ]; then
@@ -461,6 +468,7 @@ function arcSettings() {
     initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
     addonSelection
+    [ $? -ne 0 ] && return 1
     # Check for CPU Frequency Scaling
     if [ "${CPUFREQ}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
       # Select Governor for DSM
@@ -468,6 +476,7 @@ function arcSettings() {
       dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
         --infobox "Generating Governor Table..." 3 40
       governorSelection
+      [ $? -ne 0 ] && return 1
     else
       deleteConfigKey "addons.cpufreqscaling" "${USER_CONFIG_FILE}"
     fi
@@ -640,7 +649,7 @@ function make() {
   MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  HOTFIX="$(readConfigKey "hotfix" "${USER_CONFIG_FILE}")"
+  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   PAT_URL=""
@@ -652,7 +661,7 @@ function make() {
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   mkdir -p "${UNTAR_PAT_PATH}"
   if [ "${OFFLINE}" == "false" ]; then
-    if [ "${HOTFIX}" == "1" ]; then
+    if [ "${NANOVER}" == "1" ]; then
       # Get PAT Data
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
         --infobox "Get PAT Data from Local File..." 3 40
