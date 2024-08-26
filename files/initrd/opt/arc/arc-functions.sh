@@ -52,6 +52,8 @@ function addonSelection() {
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     if [[ "${ADDON}" == "amepatch" || "${ADDON}" == "sspatch" || "${ADDON}" == "arcdns" ]] && [ "${ARCPATCH}" == "false" ]; then
       continue
+    elif [[ "${ADDON}" == "amepatch" || "${ADDON}" == "sspatch" || "${ADDON}" == "photosfacepatch" || "${ADDON}" == "remotefs" ]] && [ "${NANOVER}" == "2" ]; then
+      continue
     elif [ "${ADDON}" == "cpufreqscaling" ] && [ "${CPUFREQ}" == "false" ]; then
       continue
     else
@@ -71,14 +73,8 @@ function addonSelection() {
     writeConfigKey "addons.\"${ADDON}\"" "" "${USER_CONFIG_FILE}"
   done
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
-  if [ "${NANOVER}" == "2" ]; then
-    ADDONSINFO+="\n\nWARN: DSM 7.2.2 isn't supported by app-specific Addons!"
-    dialog --backtitle "$(backtitle)" --title "DSM Addons" \
-      --msgbox "DSM Addons selected:\n${ADDONSINFO}" 10 60
-  else
-    dialog --backtitle "$(backtitle)" --title "DSM Addons" \
-      --msgbox "DSM Addons selected:\n${ADDONSINFO}" 7 50
-  fi
+  dialog --backtitle "$(backtitle)" --title "DSM Addons" \
+    --msgbox "DSM Addons selected:\n${ADDONSINFO}" 7 50
 }
 
 ###############################################################################

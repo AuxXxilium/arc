@@ -1032,7 +1032,7 @@ else
         echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
         echo "D \"StaticIP \" "                                                               >>"${TMP_PATH}/menu"
         echo "J \"Reset DSM Network Config \" "                                               >>"${TMP_PATH}/menu"
-        if [ "${PLATFORM}" == "epyc7002" ]; then
+        if [ "${PLATFORM}" == "epyc7002" ] && [ "${NANOVER}" == "1"]; then
           echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
         fi
         if [ "${DT}" == "true" ]; then
