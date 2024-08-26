@@ -72,12 +72,12 @@ function addonSelection() {
   done
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
   if [ "${NANOVER}" == "2" ]; then
-    ADDONSINFO+="\n\n\Z1Warning: \ZnDSM 7.2.2 isn't supported by all Addons!"
+    ADDONSINFO+="\nWarning: DSM 7.2.2 isn't supported by all Addons!"
     dialog --backtitle "$(backtitle)" --title "DSM Addons" \
-      --msgbox "DSM Addons selected:\n\n${ADDONSINFO}" 9 50
+      --msgbox "DSM Addons selected:\n${ADDONSINFO}" 10 50
   else
     dialog --backtitle "$(backtitle)" --title "DSM Addons" \
-      --msgbox "DSM Addons selected:\n\n${ADDONSINFO}" 6 50
+      --msgbox "DSM Addons selected:\n${ADDONSINFO}" 7 50
   fi
 }
 
