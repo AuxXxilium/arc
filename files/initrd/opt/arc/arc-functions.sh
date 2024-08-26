@@ -52,7 +52,7 @@ function addonSelection() {
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     if [[ "${ADDON}" == "amepatch" || "${ADDON}" == "sspatch" || "${ADDON}" == "arcdns" ]] && [ "${ARCPATCH}" == "false" ]; then
       continue
-    elif [[ "${ADDON}" == "amepatch" || "${ADDON}" == "sspatch" || "${ADDON}" == "photosfacepatch" || "${ADDON}" == "remotefs" ]] && [ "${NANOVER}" == "2" ]; then
+    elif [[ "${ADDON}" == "codecpatch" || "${ADDON}" == "sspatch" ]] && [ "${NANOVER}" == "2" ]; then
       continue
     elif [ "${ADDON}" == "cpufreqscaling" ] && [ "${CPUFREQ}" == "false" ]; then
       continue

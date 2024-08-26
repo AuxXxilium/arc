@@ -951,7 +951,7 @@ if [ "${AUTOMATED}" == "true" ]; then
   fi
 else
   dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-    --msgbox "WARN: Be aware of using DSM 7.2.2 is not stable,\nall Addons and Patches are written for 7.2.1." 6 55
+    --msgbox "WARN: Be aware of using DSM 7.2.2 is not stable,\nsome Addons are only available for DSM 7.2.1." 6 55
   [ "${BUILDDONE}" == "true" ] && NEXT="3" || NEXT="1"
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
