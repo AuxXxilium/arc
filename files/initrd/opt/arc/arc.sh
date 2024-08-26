@@ -284,6 +284,7 @@ function arcVersion() {
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     if [ "${PRODUCTVER}" != "${resp}" ]; then
+      [ "${PRODUCTVER}" == "7.2.2" ] && PRODUCTVER="7.2"
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
       # Delete old files
@@ -643,57 +644,66 @@ function make() {
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   mkdir -p "${UNTAR_PAT_PATH}"
   if [ "${OFFLINE}" == "false" ]; then
-    # Get PAT Data
-    dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-      --infobox "Get PAT Data from Syno..." 3 40
-    idx=0
-    while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-      local URL="https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}"
-      if [ "${ARCNIC}" == "auto" ]; then
-        PAT_DATA="$(curl -skL -m 10 "${URL}")"
-      else
-        PAT_DATA="$(curl --interface ${ARCNIC} -skL -m 10 "${URL}")"
-      fi
-      if [ "$(echo ${PAT_DATA} | jq -r '.success' 2>/dev/null)" == "true" ]; then
-        if echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].label_ext' 2>/dev/null | grep -q 'pat'; then
-          PAT_URL=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].url')
-          PAT_HASH=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].checksum')
-          PAT_URL=${PAT_URL%%\?*}
-          if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-            if echo "${PAT_URL}" | grep -q "https://"; then
-              VALID=true
-              break
-            fi
-          fi
-        fi
-      fi
-      sleep 3
-      idx=$((${idx} + 1))
-    done
-    if [ "${VALID}" == "false" ]; then
+    if [ "${PRODUCTVER}" == "7.2.1" ]; then
+      # Get PAT Data
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-        --infobox "Get PAT Data from Github..." 3 40
+        --infobox "Get PAT Data from Local File..." 3 40
+      PAT_URL="$(readConfigKey "${MODEL}.${PRODUCTVER}.url" "${D_FILE}")"
+      PAT_HASH="$(readConfigKey "${MODEL}.${PRODUCTVER}.hash" "${D_FILE}")"
+    else
+      [ "${PRODUCTVER}" == "7.2.2" ] && PRODUCTVER="7.2"
+      # Get PAT Data
+      dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+        --infobox "Get PAT Data from Syno..." 3 40
       idx=0
       while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-        URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url"
-        HASH="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash"
+        local URL="https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}"
         if [ "${ARCNIC}" == "auto" ]; then
-          PAT_URL="$(curl -skL -m 10 "${URL}")"
-          PAT_HASH="$(curl -skL -m 10 "${HASH}")"
+          PAT_DATA="$(curl -skL -m 10 "${URL}")"
         else
-          PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "${URL}")"
-          PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "$HASH")"
+          PAT_DATA="$(curl --interface ${ARCNIC} -skL -m 10 "${URL}")"
         fi
-        PAT_URL=${PAT_URL%%\?*}
-        if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-          if echo "${PAT_URL}" | grep -q "https://"; then
-            VALID="true"
-            break
+        if [ "$(echo ${PAT_DATA} | jq -r '.success' 2>/dev/null)" == "true" ]; then
+          if echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].label_ext' 2>/dev/null | grep -q 'pat'; then
+            PAT_URL=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].url')
+            PAT_HASH=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].checksum')
+            PAT_URL=${PAT_URL%%\?*}
+            if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+              if echo "${PAT_URL}" | grep -q "https://"; then
+                VALID=true
+                break
+              fi
+            fi
           fi
         fi
         sleep 3
         idx=$((${idx} + 1))
       done
+      if [ "${VALID}" == "false" ]; then
+        dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+          --infobox "Get PAT Data from Github..." 3 40
+        idx=0
+        while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
+          URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url"
+          HASH="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash"
+          if [ "${ARCNIC}" == "auto" ]; then
+            PAT_URL="$(curl -skL -m 10 "${URL}")"
+            PAT_HASH="$(curl -skL -m 10 "${HASH}")"
+          else
+            PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "${URL}")"
+            PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "$HASH")"
+          fi
+          PAT_URL=${PAT_URL%%\?*}
+          if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+            if echo "${PAT_URL}" | grep -q "https://"; then
+              VALID="true"
+              break
+            fi
+          fi
+          sleep 3
+          idx=$((${idx} + 1))
+        done
+      fi
     fi
     if [ "${AUTOMATED}" == "false" ] && [ "${VALID}" == "false" ]; then
         MSG="Failed to get PAT Data.\n"
@@ -912,6 +922,8 @@ if [ "${AUTOMATED}" == "true" ]; then
     make
   fi
 else
+  dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+    --msgbox "WARN: Be aware of using DSM 7.2.2 is not stable,\nall Addons and Patches are written for 7.2.1." 7 70
   [ "${BUILDDONE}" == "true" ] && NEXT="3" || NEXT="1"
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"

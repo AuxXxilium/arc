@@ -70,8 +70,11 @@ function addonSelection() {
     writeConfigKey "addons.\"${ADDON}\"" "" "${USER_CONFIG_FILE}"
   done
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
+  if [ "${PRODUCTVER}" == "7.2" ]; then
+    ADDONSINFO+="\n\n\Z1Warning: \ZnDSM 7.2.2 isn't supported by all Addons!"
+  fi
   dialog --backtitle "$(backtitle)" --title "DSM Addons" \
-    --msgbox "DSM Addons selected:\n${ADDONSINFO}" 0 0
+    --msgbox "DSM Addons selected:\n${ADDONSINFO}" 8 50
 }
 
 ###############################################################################
