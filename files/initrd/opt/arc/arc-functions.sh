@@ -2188,6 +2188,7 @@ function arcNIC () {
 ###############################################################################
 # Reboot Menu
 function rebootMenu() {
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
   # Selectable Reboot Options
@@ -2195,8 +2196,10 @@ function rebootMenu() {
   echo -e "update \"Arc: Automated Update Mode\"" >>"${TMP_PATH}/opts"
   echo -e "init \"Arc: Restart Loader Init\"" >>"${TMP_PATH}/opts"
   echo -e "network \"Arc: Restart Network Service\"" >>"${TMP_PATH}/opts"
-  echo -e "recovery \"DSM: Recovery Mode\"" >>"${TMP_PATH}/opts"
-  echo -e "junior \"DSM: Reinstall Mode\"" >>"${TMP_PATH}/opts"
+  if [ "${BUILDONE}" == "true" ]; then
+    echo -e "recovery \"DSM: Recovery Mode\"" >>"${TMP_PATH}/opts"
+    echo -e "junior \"DSM: Reinstall Mode\"" >>"${TMP_PATH}/opts"
+  fi
   echo -e "bios \"System: BIOS/UEFI\"" >>"${TMP_PATH}/opts"
   echo -e "poweroff \"System: Shutdown\"" >>"${TMP_PATH}/opts"
   echo -e "shell \"System: Shell Cmdline\"" >>"${TMP_PATH}/opts"

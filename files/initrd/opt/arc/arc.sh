@@ -293,7 +293,6 @@ function arcVersion() {
       [ -z "${opt}" ] && return 1
     fi
     if [ "${PRODUCTVER}" != "${resp}" ] || [ "${NANOVER}" != "${opt}" ]; then
-      writeConfigKey "confdone" "false" "${USER_CONFIG_FILE}"
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
       NANOVER="${opt}"
@@ -305,6 +304,8 @@ function arcVersion() {
       writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
       writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
       writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+      CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
       CHANGED=true
     fi
     if [ "${CHANGED}" == "true" ]; then
@@ -884,10 +885,6 @@ function make() {
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
     writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
-    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-    writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     arcFinish
   else
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
@@ -904,6 +901,8 @@ function make() {
 # Finish Building Loader
 function arcFinish() {
   rm -f "${LOG_FILE}" >/dev/null
+  writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${AUTOMATED}" == "true" ]; then
     boot
   else
@@ -1015,6 +1014,7 @@ else
         if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "arcdns"; then
           echo "R \"ArcDNS Options \" "                                                       >>"${TMP_PATH}/menu"
         fi
+        echo "D \"StaticIP \" "                                                               >>"${TMP_PATH}/menu"
         if [ -n "${ARCKEY}" ]; then
           echo "r \"Reset Arc Patch \" "                                                      >>"${TMP_PATH}/menu"
         fi
@@ -1046,7 +1046,6 @@ else
         echo "s \"Allow Downgrade \" "                                                        >>"${TMP_PATH}/menu"
         echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
         echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
-        echo "D \"StaticIP \" "                                                               >>"${TMP_PATH}/menu"
         echo "J \"Reset DSM Network Config \" "                                               >>"${TMP_PATH}/menu"
         if [ "${PLATFORM}" == "epyc7002" ] && [ "${NANOVER}" == "1"]; then
           echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
@@ -1082,16 +1081,16 @@ else
       if [ "${OFFLINE}" == "false" ]; then
         echo "G \"Install opkg Package Manager \" "                                           >>"${TMP_PATH}/menu"
       fi
+      echo "y \"Choose a Keymap for Loader\" "                                                >>"${TMP_PATH}/menu"
     fi
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
-    echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
+    echo "x \"Config Backup/Restore/Recovery \" "                                             >>"${TMP_PATH}/menu"
     echo "M \"Primary NIC: \Z4${ARCNIC}\Zn \" "                                               >>"${TMP_PATH}/menu"
     echo "9 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
-    echo "y \"Choose a Keymap \" "                                                            >>"${TMP_PATH}/menu"
     if [ "${OFFLINE}" == "false" ]; then
-      echo "z \"Update Menu \" "                                                              >>"${TMP_PATH}/menu"
+      echo "z \"Loader Update Menu \" "                                                       >>"${TMP_PATH}/menu"
     fi
-    echo "I \"Power Menu \" "                                                                 >>"${TMP_PATH}/menu"
+    echo "I \"Power/Service Menu \" "                                                         >>"${TMP_PATH}/menu"
     echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
 
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --colors \
