@@ -266,6 +266,7 @@ function arcModel() {
 # Arc Version Section
 function arcVersion() {
   # read model values for arcbuild
+  CHANGED=false
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -304,7 +305,9 @@ function arcVersion() {
       writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
       writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
       writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-      # Delete old files
+      CHANGED=true
+    fi
+    if [ "${CHANGED}" == "true" ]; then
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
       rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
     fi
