@@ -40,23 +40,10 @@ ntpCheck
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
-  if [ -z "${MODEL}" ]; then
-    MODEL="(Model)"
-  fi
-  if [ -z "${PRODUCTVER}" ]; then
-    PRODUCTVER="(Version)"
-  fi
-  if [ -z "${IPCON}" ]; then
-    IPCON="(IP)"
-  fi
-  BACKTITLE="${ARC_TITLE} | "
-  BACKTITLE+="${MODEL} | "
-  if [ -n "${NANOVER}" ]; then
-    BACKTITLE+="${PRODUCTVER}.${NANOVER} | "
-  else
-    BACKTITLE+="${PRODUCTVER} | "
-  fi
-  BACKTITLE+="${IPCON} | "
+  BACKTITLE="${ARC_TITLE}$([ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ] && echo " > ${NEWTAG}") | "
+  BACKTITLE+="${MODEL:-(Model)} | "
+  BACKTITLE+="${PRODUCTVER:-(Version)}$([ -n "${NANOVER}" ] && echo ".${NANOVER}") | "
+  BACKTITLE+="${IPCON:-(IP)}${OFF} | "
   BACKTITLE+="Patch: ${ARCPATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
   BACKTITLE+="Build: ${BUILDDONE} | "
@@ -71,7 +58,7 @@ function arcUpdate() {
   # Automatic Update
   updateLoader
   updateAddons
-  [ -z "${ARCKEY}" ] && updateConfigs
+  updateConfigs
   updateLKMs
   updateModules
   updatePatches

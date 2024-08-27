@@ -72,29 +72,13 @@ dynCheck
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
-  if [ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ]; then
-    ARC_TITLE="${ARC_TITLE} > ${NEWTAG}"
-  fi
-  if [ -z "${MODEL}" ]; then
-    MODEL="(Model)"
-  fi
-  if [ -z "${PRODUCTVER}" ]; then
-    PRODUCTVER="(Version)"
-  fi
-  if [ -z "${IPCON}" ]; then
-    IPCON="(IP)"
-  fi
   if [ "${OFFLINE}" == "true" ]; then
     OFF=" (Offline)"
   fi
-  BACKTITLE="${ARC_TITLE} | "
-  BACKTITLE+="${MODEL} | "
-  if [ -n "${NANOVER}" ]; then
-    BACKTITLE+="${PRODUCTVER}.${NANOVER} | "
-  else
-    BACKTITLE+="${PRODUCTVER} | "
-  fi
-  BACKTITLE+="${IPCON}${OFF} | "
+  BACKTITLE="${ARC_TITLE}$([ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ] && echo " > ${NEWTAG}") | "
+  BACKTITLE+="${MODEL:-(Model)} | "
+  BACKTITLE+="${PRODUCTVER:-(Version)}$([ -n "${NANOVER}" ] && echo ".${NANOVER}") | "
+  BACKTITLE+="${IPCON:-(IP)}${OFF} | "
   BACKTITLE+="Patch: ${ARCPATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
   BACKTITLE+="Build: ${BUILDDONE} | "
@@ -667,21 +651,24 @@ function make() {
   [ -f "${MOD_RDGZ_FILE}" ] && rm -f "${MOD_RDGZ_FILE}"
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   mkdir -p "${UNTAR_PAT_PATH}"
-  if [ "${OFFLINE}" == "false" ]; then
-    # Get PAT Data
-    dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-      --infobox "Get PAT Data from Local File..." 3 40
-    [ -n "${NANOVER}" ] && DSMVER="${PRODUCTVER}.${NANOVER}" || DSMVER="${PRODUCTVER}"
-    PAT_URL="$(readConfigKey "${MODEL}.\"${DSMVER}\".url" "${D_FILE}")"
-    PAT_HASH="$(readConfigKey "${MODEL}.\"${DSMVER}\".hash" "${D_FILE}")"
-    if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-      if echo "${PAT_URL}" | grep -q "https://"; then
-        if curl --output /dev/null --silent --head --fail "${PAT_URL}"; then
-          VALID=true
-        fi
-      fi
+  # Get PAT Data
+  dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+    --infobox "Get PAT Data from Local File..." 3 40
+  [ -n "${NANOVER}" ] && DSMVER="${PRODUCTVER}.${NANOVER}" || DSMVER="${PRODUCTVER}"
+  PAT_URL="$(readConfigKey "${MODEL}.\"${DSMVER}\".url" "${D_FILE}")"
+  PAT_HASH="$(readConfigKey "${MODEL}.\"${DSMVER}\".hash" "${D_FILE}")"
+  if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+    if echo "${PAT_URL}" | grep -q "https://"; then
+      VALID=true
     fi
-    if [ "${VALID}" == "false" ]; then
+  fi
+  sleep 2
+  if [ "${OFFLINE}" == "false" ]; then
+    URLCHECK="$(curl --head -skL -m 10 "${PAT_URL}" | head -n 1)"
+    if echo "${URLCHECK}" | grep -q 404; then
+      VALID=false
+    fi
+    if [ "${VALID}" == "false" ] && [ ${NANOVER} -ne 1 ]; then
       # Get PAT Data
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
         --infobox "Get PAT Data from Syno..." 3 40
@@ -701,7 +688,12 @@ function make() {
             if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
               if echo "${PAT_URL}" | grep -q "https://"; then
                 VALID=true
-                break
+                URLCHECK="$(curl --head -skL -m 10 "${PAT_URL}" | head -n 1)"
+                if echo "${URLCHECK}" | grep -q 404; then
+                  VALID=false
+                else
+                  break
+                fi
               fi
             fi
           fi
@@ -710,7 +702,7 @@ function make() {
         idx=$((${idx} + 1))
       done
     fi
-    if [ "${VALID}" == "false" ]; then
+    if [ "${VALID}" == "false" ] && [ ${NANOVER} -ne 1 ]; then
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
         --infobox "Get PAT Data from Github..." 3 40
       idx=0
@@ -727,8 +719,13 @@ function make() {
         PAT_URL=${PAT_URL%%\?*}
         if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
           if echo "${PAT_URL}" | grep -q "https://"; then
-            VALID="true"
-            break
+            VALID=true
+            URLCHECK="$(curl --head -skL -m 10 "${PAT_URL}" | head -n 1)"
+            if echo "${URLCHECK}" | grep -q 404; then
+              VALID=false
+            else
+              break
+            fi
           fi
         fi
         sleep 3
@@ -738,17 +735,16 @@ function make() {
     if [ "${AUTOMATED}" == "false" ] && [ "${VALID}" == "false" ]; then
         MSG="Failed to get PAT Data.\n"
         MSG+="Please manually fill in the URL and Hash of PAT.\n"
-        MSG+="You will find these Data at:\n"
-        MSG+="https://auxxxilium.tech/wiki/arc-loader-arc-loader/url-hash-liste"
+        MSG+="You will find these Data at: https://auxxxilium.tech/wiki/arc-loader-arc-loader/url-hash-liste"
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
-          --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 8 100 0 \
+          --form "${MSG}" 11 120 2 "URL" 1 1 "${PAT_URL}" 1 8 110 0 "HASH" 2 1 "${PAT_HASH}" 2 8 110 0 \
           2>"${TMP_PATH}/resp"
         RET=$?
         [ ${RET} -eq 0 ]             # ok-button
         return 1                     # 1 or 255  # cancel-button or ESC
         PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
         PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
-    elif [ "${VALID}" == "false" ]; then
+    elif [ "${AUTOMATED}" == "true" ] && [ "${VALID}" == "false" ]; then
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
           --infobox "Could not get PAT Data..." 4 30
         PAT_URL="#"
@@ -822,8 +818,8 @@ function make() {
         dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
           --infobox "DSM Image found!" 3 40
         # Remove PAT Data for Offline
-        writeConfigKey "paturl" "#" "${USER_CONFIG_FILE}"
-        writeConfigKey "pathash" "#" "${USER_CONFIG_FILE}"
+        [ -z "${PAT_URL}" ] && writeConfigKey "paturl" "#" "${USER_CONFIG_FILE}"
+        [ -z "${PAT_HASH}" ] && writeConfigKey "pathash" "#" "${USER_CONFIG_FILE}"
         # Extract Files
         if [ -f "${PAT_FILE}" ]; then
           extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"
