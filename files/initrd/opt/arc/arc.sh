@@ -42,7 +42,6 @@ BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
-IPV6="$(readConfigKey "ipv6" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
@@ -148,6 +147,11 @@ function arcModel() {
             COMPATIBLE=0
           fi
           if [ "${A}" = "epyc7002" ] && [[ ${SCSICONTROLLER} -ne 0 || ${RAIDCONTROLLER} -ne 0 ]]; then
+            COMPATIBLE=0
+          fi
+          if [ "${A}" != "epyc7002" ] && [ ${NVMEDRIVES} -gt 0 ] && [ "${BUS}" == "usb" ] && [ ${SATADRIVES} -eq 0 ] && [ "${EXTERNALCONTROLLER}" == "false" ]; then
+            COMPATIBLE=0
+          elif [ "${A}" != "epyc7002" ] && [ ${NVMEDRIVES} -gt 0 ] && [ "${BUS}" == "sata" ] && [ ${SATADRIVES} -eq 1 ] && [ "${EXTERNALCONTROLLER}" == "false" ]; then
             COMPATIBLE=0
           fi
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
@@ -420,7 +424,7 @@ function arcPatch() {
       elif [ ${resp} -eq 2 ]; then
         while true; do
           dialog --backtitle "$(backtitle)" --colors --title "DSM SN" \
-            --inputbox "Please enter a SN " 7 50 "" \
+            --inputbox "Please enter a valid SN!" 7 50 "" \
             2>"${TMP_PATH}/resp"
           [ $? -ne 0 ] && break 2
           SN="$(cat ${TMP_PATH}/resp | tr '[:lower:]' '[:upper:]')"
@@ -971,7 +975,7 @@ else
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
     if [ -z "${ARCKEY}" ] && [ "${OFFLINE}" = "false" ]; then
-      echo "0 \"Install Arc Patch Configs\" "                                                 >>"${TMP_PATH}/menu"
+      echo "0 \"Enable Arc Patch\" "                                                          >>"${TMP_PATH}/menu"
     fi
     echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
     if [ "${CONFDONE}" == "true" ]; then
