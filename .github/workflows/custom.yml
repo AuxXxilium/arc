@@ -48,7 +48,6 @@ jobs:
               MODEL = jsonbody.get('model', '')
               PRODUCTVER = jsonbody.get('version', '')
               ADDONS = jsonbody.get('addons', '')
-              MODULES = jsonbody.get('modules', '')
               KERNEL = jsonbody.get('kernel', '')
               FORMAT = jsonbody.get('format', '')
           except ValueError as e:
@@ -57,7 +56,6 @@ jobs:
           set_output("MODEL", MODEL)
           set_output("PRODUCTVER", PRODUCTVER)
           set_output("ADDONS", ADDONS)
-          set_output("MODULES", MODULES)
           set_output("KERNEL", KERNEL)
           set_output("FORMAT", FORMAT)
 
@@ -131,13 +129,6 @@ jobs:
             for A in $(echo "${{ env.ADDONS }}" | tr ',' ' ' | sed 's/\[//g' | sed 's/\]//g'); do
               VALUE=""
               writeConfigKey "addons.\"${A}\"" "${VALUE}" "${PRESET_CONFIG_FILE}"
-            done
-          fi
-          writeConfigKey "modules" "{}" "${PRESET_CONFIG_FILE}"
-          if [ -n "${{ env.MODULES }}" ]; then
-            for M in $(echo "${{ env.MODULES }}" | tr ',' ' ' | sed 's/\[//g' | sed 's/\]//g'); do
-              VALUE=""
-              writeConfigKey "MODULES.\"${M}\"" "${VALUE}" "${PRESET_CONFIG_FILE}"
             done
           fi
           echo "$(cat "${PRESET_CONFIG_FILE}")"
