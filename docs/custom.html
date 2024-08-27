@@ -54,7 +54,6 @@
 
         var _models = {};
         var _addons = {};
-        var _modules = {};
 
         function httpGetAsync(theUrl, callback) {
             let xmlHttpReq = new XMLHttpRequest();
@@ -75,14 +74,11 @@
                 _models = JSON.parse(result);
                 httpGetAsync("https://raw.githubusercontent.com/AuxXxilium/arc/page/docs/addons.json", function (result) {
                     _addons = JSON.parse(result);
-                    httpGetAsync("https://raw.githubusercontent.com/AuxXxilium/arc/page/docs/modules.json", function (result) {
-                        _modules = JSON.parse(result);
-                        $("#model").on("change", changeModel);
-                        $("#version").on("change", changeVersion);
-                        $("#kernel").on("change", changeKernel);
-                        $('#addons').val("acpid");
-                        setModels();
-                    });
+                    $("#model").on("change", changeModel);
+                    $("#version").on("change", changeVersion);
+                    $("#kernel").on("change", changeKernel);
+                    $('#addons').val("acpid");
+                    setModels();
                 });
             });
         }
@@ -126,7 +122,6 @@
 
         function changeVersion() {
             createAddonsBtn();
-            createModulesBtn();
             changeKernel();
         }
         function createAddonsBtn() {
@@ -150,45 +145,13 @@
             $('#addons_btns').html(html);
         }
 
-        function createModulesBtn() {
-            var model = $("#model").val();
-            var version = $("#version").val();
-            var platform = "";
-            for (var P in _models) {
-                if (_models[P]["models"].includes(model)) {
-                    platform = P + "-" + _models[P]["productvers"][version];
-                    break;
-                }
-            }
-            var extstr = [];
-            var idx = 1;
-            var html = `<div class="form-group-body" id="modules_btns">`;
-            for (var ext in _modules[platform]) {
-                extstr.push(ext);
-                var par = "btn-danger";
-                html += `<button type="button" class="btn btn-primary btn-sm mt-2 ${par}" id="btn_${ext}" ${par} onclick="return onclickext('modules', '${ext}')" autofocus="" title="${_modules[platform][ext]["description"]}">${ext}</button>&nbsp;`;
-                //if (idx++ % 10 == 0) html += "<br />";
-            }
-            html += `</div>`;
-            $('#modules_btns').html(html);
-            if (extstr.length > 0) {
-                $('#modules').val(extstr.join(","));
-            }
-        }
-
         function changeKernel() {
             var model = $("#model").val();
             var version = $("#version").val();
             var kernel = $("#kernel").val();
             if (model == "SA6400" && version == "7.2") {
                 $("#kernel_item").show();
-                if (kernel == "custom") {
-                    $('#modules_item').hide();
-                } else {
-                    $('#modules_item').show();
-                }
             } else {
-                $('#modules_item').show();
                 $("#kernel_item").hide();
             }
         }
@@ -220,7 +183,7 @@
             let formData = new FormData(form);
             var title = "custom";
             var body = {};
-            var _parameters = ["title", "format", "model", "version", "kernel", "addons", "modules"];
+            var _parameters = ["title", "format", "model", "version", "kernel", "addons"];
             for (var key in _parameters) {
                 var name = _parameters[key];
                 if ($("#" + name).is(":hidden")) { continue; }
@@ -344,17 +307,6 @@
                 <textarea class="textarea-style input-contrast input-sm" type="text" id="addons" name="inputs[addons]"
                     disabled></textarea>
                 <div class="form-group-body" id="addons_btns">
-                </div>
-            </div>
-        </div>
-        <div class="form-group mt-1 mb-2" id="modules_item">
-            <div class="form-group-header">
-                <label class="color-fg-default text-mono f5">Modules:</label>
-            </div>
-            <div class="form-group-body">
-                <textarea class="textarea-style input-contrast input-sm" type="text" id="modules" name="inputs[modules]"
-                    disabled></textarea>
-                <div class="form-group-body" id="modules_btns">
                 </div>
             </div>
         </div>
