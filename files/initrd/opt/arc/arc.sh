@@ -884,6 +884,8 @@ function make() {
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
     writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
+    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     arcFinish
