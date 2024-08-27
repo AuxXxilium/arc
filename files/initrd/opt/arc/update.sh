@@ -22,15 +22,17 @@ ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
 
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 if [ -n "${MODEL}" ]; then
-  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
+  ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
 fi
 
-# Get Config/Build Status
+# Get Config Status
 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
 # Get Keymap and Timezone Config
 ntpCheck
@@ -49,7 +51,11 @@ function backtitle() {
   fi
   BACKTITLE="${ARC_TITLE} | "
   BACKTITLE+="${MODEL} | "
-  BACKTITLE+="${PRODUCTVER} | "
+  if [ -n "${NANOVER}" ]; then
+    BACKTITLE+="${PRODUCTVER}.${NANOVER} | "
+  else
+    BACKTITLE+="${PRODUCTVER} | "
+  fi
   BACKTITLE+="${IPCON} | "
   BACKTITLE+="Patch: ${ARCPATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
@@ -73,8 +79,6 @@ function arcUpdate() {
   # Ask for Boot
   dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
     --infobox "Update successful!" 0 0
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" == "true" ] && [ ! -f "${PART3_PATH}/automated" ]; then
     echo "${ARC_VERSION}-${MODEL}-${PRODUCTVER}-custom" >"${PART3_PATH}/automated"
   fi

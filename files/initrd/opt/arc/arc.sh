@@ -30,6 +30,7 @@ LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 if [ -n "${MODEL}" ]; then
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
 fi
 
