@@ -277,6 +277,7 @@ function arcVersion() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
   AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   # Check for Custom Build
   if [ "${AUTOMATED}" == "false" ]; then
@@ -291,25 +292,18 @@ function arcVersion() {
     if [ "${resp}" == "7.2" ]; then
       dialog --backtitle "$(backtitle)" --title "DSM Version" \
       --menu "Choose a DSM Version?\n* Recommended Option" 8 40 0 \
-        1 "DSM 7.2.1 (Stable) *" \
-        2 "DSM 7.2.2 (Experimental)" \
-      2>"${TMP_PATH}/resp"
+        1 "DSM ${resp}.1 (Stable) *" \
+        2 "DSM ${resp}.2 (Experimental)" \
+      2>"${TMP_PATH}/opt"
       [ $? -ne 0 ] && return 1
-      resp=$(cat ${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return 1
-      if [ ${resp} -eq 1 ]; then
-        resp="7.2"
-        respnano="1"
-      elif [ ${resp} -eq 2 ]; then
-        resp="7.2"
-        respnano="2"
-      fi
+      opt=$(cat ${TMP_PATH}/opt)
+      [ -z "${opt}" ] && return 1
     fi
-    if [ "${PRODUCTVER}" != "${resp}" ] || [ "${NANOVER}" != "${respnano}" ]; then
+    if [ "${PRODUCTVER}" != "${resp}" ] || [ "${NANOVER}" != "${opt}" ]; then
       writeConfigKey "confdone" "false" "${USER_CONFIG_FILE}"
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-      NANOVER="${respnano}"
+      NANOVER="${opt}"
       writeConfigKey "nanover" "${NANOVER}" "${USER_CONFIG_FILE}"
       # Delete old files
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
@@ -563,6 +557,8 @@ function arcSettings() {
 function arcSummary() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
+  [ -n "${NANOVER}" ] && DSMVER="${PRODUCTVER}.${NANOVER}" || DSMVER="${PRODUCTVER}"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
@@ -603,7 +599,7 @@ function arcSummary() {
   # Print Summary
   SUMMARY="\Z4> DSM Information\Zn"
   SUMMARY+="\n>> DSM Model: \Zb${MODEL}\Zn"
-  SUMMARY+="\n>> DSM Version: \Zb${PRODUCTVER}\Zn"
+  SUMMARY+="\n>> DSM Version: \Zb${DSMVER}\Zn"
   SUMMARY+="\n>> DSM Platform: \Zb${PLATFORM}\Zn"
   SUMMARY+="\n>> DeviceTree: \Zb${DT}\Zn"
   [ "${MODEL}" == "SA6400" ] && SUMMARY+="\n>> Kernel: \Zb${KERNEL}\Zn"
@@ -658,7 +654,6 @@ function make() {
   fi
   # Read Model Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
@@ -673,14 +668,20 @@ function make() {
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   mkdir -p "${UNTAR_PAT_PATH}"
   if [ "${OFFLINE}" == "false" ]; then
-    if [ "${NANOVER}" == "1" ]; then
-      # Get PAT Data
-      dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-        --infobox "Get PAT Data from Local File..." 3 40
-      PAT_URL="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}.${NANOVER}\".url" "${D_FILE}")"
-      PAT_HASH="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}.${NANOVER}\".hash" "${D_FILE}")"
-      VALID="true"
-    else
+    # Get PAT Data
+    dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+      --infobox "Get PAT Data from Local File..." 3 40
+    [ -n "${NANOVER}" ] && DSMVER="${PRODUCTVER}.${NANOVER}" || DSMVER="${PRODUCTVER}"
+    PAT_URL="$(readConfigKey "${MODEL}.\"${DSMVER}\".url" "${D_FILE}")"
+    PAT_HASH="$(readConfigKey "${MODEL}.\"${DSMVER}\".hash" "${D_FILE}")"
+    if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+      if echo "${PAT_URL}" | grep -q "https://"; then
+        if curl --output /dev/null --silent --head --fail "${PAT_URL}"; then
+          VALID=true
+        fi
+      fi
+    fi
+    if [ "${VALID}" == "false" ]; then
       # Get PAT Data
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
         --infobox "Get PAT Data from Syno..." 3 40
@@ -708,31 +709,31 @@ function make() {
         sleep 3
         idx=$((${idx} + 1))
       done
-      if [ "${VALID}" == "false" ]; then
-        dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-          --infobox "Get PAT Data from Github..." 3 40
-        idx=0
-        while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-          URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url"
-          HASH="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash"
-          if [ "${ARCNIC}" == "auto" ]; then
-            PAT_URL="$(curl -skL -m 10 "${URL}")"
-            PAT_HASH="$(curl -skL -m 10 "${HASH}")"
-          else
-            PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "${URL}")"
-            PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "$HASH")"
+    fi
+    if [ "${VALID}" == "false" ]; then
+      dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+        --infobox "Get PAT Data from Github..." 3 40
+      idx=0
+      while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
+        URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url"
+        HASH="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash"
+        if [ "${ARCNIC}" == "auto" ]; then
+          PAT_URL="$(curl -skL -m 10 "${URL}")"
+          PAT_HASH="$(curl -skL -m 10 "${HASH}")"
+        else
+          PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "${URL}")"
+          PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "$HASH")"
+        fi
+        PAT_URL=${PAT_URL%%\?*}
+        if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+          if echo "${PAT_URL}" | grep -q "https://"; then
+            VALID="true"
+            break
           fi
-          PAT_URL=${PAT_URL%%\?*}
-          if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-            if echo "${PAT_URL}" | grep -q "https://"; then
-              VALID="true"
-              break
-            fi
-          fi
-          sleep 3
-          idx=$((${idx} + 1))
-        done
-      fi
+        fi
+        sleep 3
+        idx=$((${idx} + 1))
+      done
     fi
     if [ "${AUTOMATED}" == "false" ] && [ "${VALID}" == "false" ]; then
         MSG="Failed to get PAT Data.\n"
