@@ -501,7 +501,6 @@ function synoinfoMenu() {
   while true; do
     echo "1 \"Add/edit Synoinfo item\""     >"${TMP_PATH}/menu"
     echo "2 \"Delete Synoinfo item(s)\""    >>"${TMP_PATH}/menu"
-    echo "3 \"Add Trim/Dedup to Synoinfo\"" >>"${TMP_PATH}/menu"
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
@@ -582,16 +581,6 @@ function synoinfoMenu() {
           unset SYNOINFO[${I}]
           deleteConfigKey "synoinfo.\"${I}\"" "${USER_CONFIG_FILE}"
         done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      3)
-        # Optimized Synoinfo
-        writeConfigKey "synoinfo.support_trim" "yes" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.support_disk_hibernation" "yes" "${USER_CONFIG_FILE}"
-        writeConfigKey "synoinfo.support_btrfs_dedupe" "yes" "${USER_CONFIG_FILE}"
-        dialog --backtitle "$(backtitle)" --title "Add Trim/Dedup to Synoinfo" --aspect 18 \
-          --msgbox "Synoinfo set successful!" 0 0
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
@@ -2135,7 +2124,7 @@ function decryptMenu() {
           sleep 5
         fi
       ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Arc Decrypt" \
-        --progressbox "Installing Arc Patch Configs..." 20 70
+        --progressbox "Installing Arc Patch Configs..." 20 50
     else
       dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
         --msgbox "Can't connect to Github.\nCheck your Network!" 6 50
@@ -2145,7 +2134,7 @@ function decryptMenu() {
       CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
       cp -f "${S_FILE}" "${S_FILE}.bak"
       dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-        --inputbox "Enter Decryption Key for ${CONFIGSVERSION}\nKey is available in my Discord." 8 40 2>"${TMP_PATH}/resp"
+        --inputbox "Enter Decryption Key for ${CONFIGSVERSION}\nKey is available in my Discord." 8 50 2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return
       ARCKEY=$(cat "${TMP_PATH}/resp")
       if openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARCKEY}" 2>/dev/null; then
@@ -2199,6 +2188,7 @@ function arcNIC () {
 ###############################################################################
 # Reboot Menu
 function rebootMenu() {
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
   # Selectable Reboot Options
@@ -2206,8 +2196,10 @@ function rebootMenu() {
   echo -e "update \"Arc: Automated Update Mode\"" >>"${TMP_PATH}/opts"
   echo -e "init \"Arc: Restart Loader Init\"" >>"${TMP_PATH}/opts"
   echo -e "network \"Arc: Restart Network Service\"" >>"${TMP_PATH}/opts"
-  echo -e "recovery \"DSM: Recovery Mode\"" >>"${TMP_PATH}/opts"
-  echo -e "junior \"DSM: Reinstall Mode\"" >>"${TMP_PATH}/opts"
+  if [ "${BUILDONE}" == "true" ]; then
+    echo -e "recovery \"DSM: Recovery Mode\"" >>"${TMP_PATH}/opts"
+    echo -e "junior \"DSM: Reinstall Mode\"" >>"${TMP_PATH}/opts"
+  fi
   echo -e "bios \"System: BIOS/UEFI\"" >>"${TMP_PATH}/opts"
   echo -e "poweroff \"System: Shutdown\"" >>"${TMP_PATH}/opts"
   echo -e "shell \"System: Shell Cmdline\"" >>"${TMP_PATH}/opts"

@@ -30,6 +30,7 @@ LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 if [ -n "${MODEL}" ]; then
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
 fi
 
@@ -71,29 +72,13 @@ dynCheck
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
-  if [ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ]; then
-    ARC_TITLE="${ARC_TITLE} > ${NEWTAG}"
-  fi
-  if [ -z "${MODEL}" ]; then
-    MODEL="(Model)"
-  fi
-  if [ -z "${PRODUCTVER}" ]; then
-    PRODUCTVER="(Version)"
-  fi
-  if [ -z "${IPCON}" ]; then
-    IPCON="(IP)"
-  fi
   if [ "${OFFLINE}" == "true" ]; then
     OFF=" (Offline)"
   fi
-  BACKTITLE="${ARC_TITLE} | "
-  BACKTITLE+="${MODEL} | "
-  if [ -n "${NANOVER}" ]; then
-    BACKTITLE+="${PRODUCTVER}.${NANOVER} | "
-  else
-    BACKTITLE+="${PRODUCTVER} | "
-  fi
-  BACKTITLE+="${IPCON}${OFF} | "
+  BACKTITLE="${ARC_TITLE}$([ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ] && echo " > ${NEWTAG}") | "
+  BACKTITLE+="${MODEL:-(Model)} | "
+  BACKTITLE+="${PRODUCTVER:-(Version)}$([ -n "${NANOVER}" ] && echo ".${NANOVER}") | "
+  BACKTITLE+="${IPCON:-(IP)}${OFF} | "
   BACKTITLE+="Patch: ${ARCPATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
   BACKTITLE+="Build: ${BUILDDONE} | "
@@ -105,6 +90,7 @@ function backtitle() {
 ###############################################################################
 # Model Selection
 function arcModel() {
+  CHANGED=false
   dialog --backtitle "$(backtitle)" --title "DSM Model" \
     --infobox "Reading Models..." 3 25
   # Loop menu
@@ -221,44 +207,51 @@ function arcModel() {
     MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
+    writeConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "hddsort" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
     writeConfigKey "paturl" "" "${USER_CONFIG_FILE}"
     writeConfigKey "pathash" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
     writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
     writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+    CHANGED=true
   elif [ "${MODEL}" != "${resp}" ]; then
     PRODUCTVER=""
     MODEL="${resp}"
     PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
-    writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
-    writeConfigKey "modelid" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
     writeConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "hddsort" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "kernel" "official" "${USER_CONFIG_FILE}"
+    writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
+    writeConfigKey "modelid" "" "${USER_CONFIG_FILE}"
     writeConfigKey "odp" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "paturl" "" "${USER_CONFIG_FILE}"
     writeConfigKey "pathash" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
     writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
+    writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
     writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-    if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
-      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
-      rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
-    fi
+    CHANGED=true
   fi
-  # Reset Cmdline
-  writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
+  if [ "${CHANGED}" == "true" ]; then
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
+    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
+  fi
+  # Read Platform Data
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -273,9 +266,11 @@ function arcModel() {
 # Arc Version Section
 function arcVersion() {
   # read model values for arcbuild
+  CHANGED=false
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
   AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   # Check for Custom Build
   if [ "${AUTOMATED}" == "false" ]; then
@@ -290,27 +285,30 @@ function arcVersion() {
     if [ "${resp}" == "7.2" ]; then
       dialog --backtitle "$(backtitle)" --title "DSM Version" \
       --menu "Choose a DSM Version?\n* Recommended Option" 8 40 0 \
-        1 "DSM 7.2.1 (Stable) *" \
-        2 "DSM 7.2.2 (Experimental)" \
-      2>"${TMP_PATH}/resp"
+        1 "DSM ${resp}.1 (Stable) *" \
+        2 "DSM ${resp}.2 (Experimental)" \
+      2>"${TMP_PATH}/opt"
       [ $? -ne 0 ] && return 1
-      resp=$(cat ${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return 1
-      if [ ${resp} -eq 1 ]; then
-        resp="7.2"
-        respnano="1"
-      elif [ ${resp} -eq 2 ]; then
-        resp="7.2"
-        respnano="2"
-      fi
+      opt=$(cat ${TMP_PATH}/opt)
+      [ -z "${opt}" ] && return 1
     fi
-    if [ "${PRODUCTVER}" != "${resp}" ] || [ "${NANOVER}" != "${respnano}" ]; then
-      writeConfigKey "confdone" "false" "${USER_CONFIG_FILE}"
+    if [ "${PRODUCTVER}" != "${resp}" ] || [ "${NANOVER}" != "${opt}" ]; then
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-      NANOVER="${respnano}"
+      NANOVER="${opt}"
       writeConfigKey "nanover" "${NANOVER}" "${USER_CONFIG_FILE}"
-      # Delete old files
+      # Reset Config if changed
+      writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "paturl" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "pathash" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+      CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+      CHANGED=true
+    fi
+    if [ "${CHANGED}" == "true" ]; then
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
       rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
     fi
@@ -337,13 +335,11 @@ function arcVersion() {
   else
     KVERP="${KVER}"
   fi
-  if [ "${AUTOMATED}" == "false" ]; then
-    # Rewrite modules
-    writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-    while read -r ID DESC; do
-      writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-    done < <(getAllModules "${PLATFORM}" "${KVERP}")
-  fi
+  # Rewrite modules
+  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+  while read -r ID DESC; do
+    writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
+  done < <(getAllModules "${PLATFORM}" "${KVERP}")
   # Check for Only Version
   if [ "${ONLYVERSION}" == "true" ]; then
     # Build isn't done
@@ -562,6 +558,8 @@ function arcSettings() {
 function arcSummary() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
+  [ -n "${NANOVER}" ] && DSMVER="${PRODUCTVER}.${NANOVER}" || DSMVER="${PRODUCTVER}"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
@@ -602,7 +600,7 @@ function arcSummary() {
   # Print Summary
   SUMMARY="\Z4> DSM Information\Zn"
   SUMMARY+="\n>> DSM Model: \Zb${MODEL}\Zn"
-  SUMMARY+="\n>> DSM Version: \Zb${PRODUCTVER}\Zn"
+  SUMMARY+="\n>> DSM Version: \Zb${DSMVER}\Zn"
   SUMMARY+="\n>> DSM Platform: \Zb${PLATFORM}\Zn"
   SUMMARY+="\n>> DeviceTree: \Zb${DT}\Zn"
   [ "${MODEL}" == "SA6400" ] && SUMMARY+="\n>> Kernel: \Zb${KERNEL}\Zn"
@@ -657,7 +655,6 @@ function make() {
   fi
   # Read Model Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
@@ -671,15 +668,24 @@ function make() {
   [ -f "${MOD_RDGZ_FILE}" ] && rm -f "${MOD_RDGZ_FILE}"
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   mkdir -p "${UNTAR_PAT_PATH}"
+  # Get PAT Data
+  dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+    --infobox "Get PAT Data from Local File..." 3 40
+  [ -n "${NANOVER}" ] && DSMVER="${PRODUCTVER}.${NANOVER}" || DSMVER="${PRODUCTVER}"
+  PAT_URL="$(readConfigKey "${MODEL}.\"${DSMVER}\".url" "${D_FILE}")"
+  PAT_HASH="$(readConfigKey "${MODEL}.\"${DSMVER}\".hash" "${D_FILE}")"
+  if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+    if echo "${PAT_URL}" | grep -q "https://"; then
+      VALID=true
+    fi
+  fi
+  sleep 2
   if [ "${OFFLINE}" == "false" ]; then
-    if [ "${NANOVER}" == "1" ]; then
-      # Get PAT Data
-      dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-        --infobox "Get PAT Data from Local File..." 3 40
-      PAT_URL="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}.${NANOVER}\".url" "${D_FILE}")"
-      PAT_HASH="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}.${NANOVER}\".hash" "${D_FILE}")"
-      VALID="true"
-    else
+    URLCHECK="$(curl --head -skL -m 10 "${PAT_URL}" | head -n 1)"
+    if echo "${URLCHECK}" | grep -q 404; then
+      VALID=false
+    fi
+    if [ "${VALID}" == "false" ] && [ ${NANOVER} -ne 1 ]; then
       # Get PAT Data
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
         --infobox "Get PAT Data from Syno..." 3 40
@@ -699,7 +705,12 @@ function make() {
             if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
               if echo "${PAT_URL}" | grep -q "https://"; then
                 VALID=true
-                break
+                URLCHECK="$(curl --head -skL -m 10 "${PAT_URL}" | head -n 1)"
+                if echo "${URLCHECK}" | grep -q 404; then
+                  VALID=false
+                else
+                  break
+                fi
               fi
             fi
           fi
@@ -707,46 +718,50 @@ function make() {
         sleep 3
         idx=$((${idx} + 1))
       done
-      if [ "${VALID}" == "false" ]; then
-        dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-          --infobox "Get PAT Data from Github..." 3 40
-        idx=0
-        while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-          URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url"
-          HASH="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash"
-          if [ "${ARCNIC}" == "auto" ]; then
-            PAT_URL="$(curl -skL -m 10 "${URL}")"
-            PAT_HASH="$(curl -skL -m 10 "${HASH}")"
-          else
-            PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "${URL}")"
-            PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "$HASH")"
-          fi
-          PAT_URL=${PAT_URL%%\?*}
-          if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-            if echo "${PAT_URL}" | grep -q "https://"; then
-              VALID="true"
+    fi
+    if [ "${VALID}" == "false" ] && [ ${NANOVER} -ne 1 ]; then
+      dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+        --infobox "Get PAT Data from Github..." 3 40
+      idx=0
+      while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
+        URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url"
+        HASH="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash"
+        if [ "${ARCNIC}" == "auto" ]; then
+          PAT_URL="$(curl -skL -m 10 "${URL}")"
+          PAT_HASH="$(curl -skL -m 10 "${HASH}")"
+        else
+          PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "${URL}")"
+          PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "$HASH")"
+        fi
+        PAT_URL=${PAT_URL%%\?*}
+        if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+          if echo "${PAT_URL}" | grep -q "https://"; then
+            VALID=true
+            URLCHECK="$(curl --head -skL -m 10 "${PAT_URL}" | head -n 1)"
+            if echo "${URLCHECK}" | grep -q 404; then
+              VALID=false
+            else
               break
             fi
           fi
-          sleep 3
-          idx=$((${idx} + 1))
-        done
-      fi
+        fi
+        sleep 3
+        idx=$((${idx} + 1))
+      done
     fi
     if [ "${AUTOMATED}" == "false" ] && [ "${VALID}" == "false" ]; then
         MSG="Failed to get PAT Data.\n"
         MSG+="Please manually fill in the URL and Hash of PAT.\n"
-        MSG+="You will find these Data at:\n"
-        MSG+="https://auxxxilium.tech/wiki/arc-loader-arc-loader/url-hash-liste"
+        MSG+="You will find these Data at: https://auxxxilium.tech/wiki/arc-loader-arc-loader/url-hash-liste"
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
-          --form "${MSG}" 10 110 2 "URL" 1 1 "${PAT_URL}" 1 7 100 0 "HASH" 2 1 "${PAT_HASH}" 2 8 100 0 \
+          --form "${MSG}" 11 120 2 "URL" 1 1 "${PAT_URL}" 1 8 110 0 "HASH" 2 1 "${PAT_HASH}" 2 8 110 0 \
           2>"${TMP_PATH}/resp"
         RET=$?
         [ ${RET} -eq 0 ]             # ok-button
         return 1                     # 1 or 255  # cancel-button or ESC
         PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
         PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
-    elif [ "${VALID}" == "false" ]; then
+    elif [ "${AUTOMATED}" == "true" ] && [ "${VALID}" == "false" ]; then
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
           --infobox "Could not get PAT Data..." 4 30
         PAT_URL="#"
@@ -820,8 +835,8 @@ function make() {
         dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
           --infobox "DSM Image found!" 3 40
         # Remove PAT Data for Offline
-        writeConfigKey "paturl" "#" "${USER_CONFIG_FILE}"
-        writeConfigKey "pathash" "#" "${USER_CONFIG_FILE}"
+        [ -z "${PAT_URL}" ] && writeConfigKey "paturl" "#" "${USER_CONFIG_FILE}"
+        [ -z "${PAT_HASH}" ] && writeConfigKey "pathash" "#" "${USER_CONFIG_FILE}"
         # Extract Files
         if [ -f "${PAT_FILE}" ]; then
           extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"
@@ -870,8 +885,6 @@ function make() {
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
     writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     arcFinish
   else
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
@@ -888,6 +901,8 @@ function make() {
 # Finish Building Loader
 function arcFinish() {
   rm -f "${LOG_FILE}" >/dev/null
+  writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${AUTOMATED}" == "true" ]; then
     boot
   else
@@ -999,6 +1014,7 @@ else
         if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "arcdns"; then
           echo "R \"ArcDNS Options \" "                                                       >>"${TMP_PATH}/menu"
         fi
+        echo "D \"StaticIP \" "                                                               >>"${TMP_PATH}/menu"
         if [ -n "${ARCKEY}" ]; then
           echo "r \"Reset Arc Patch \" "                                                      >>"${TMP_PATH}/menu"
         fi
@@ -1030,7 +1046,6 @@ else
         echo "s \"Allow Downgrade \" "                                                        >>"${TMP_PATH}/menu"
         echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
         echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
-        echo "D \"StaticIP \" "                                                               >>"${TMP_PATH}/menu"
         echo "J \"Reset DSM Network Config \" "                                               >>"${TMP_PATH}/menu"
         if [ "${PLATFORM}" == "epyc7002" ] && [ "${NANOVER}" == "1"]; then
           echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
@@ -1066,16 +1081,16 @@ else
       if [ "${OFFLINE}" == "false" ]; then
         echo "G \"Install opkg Package Manager \" "                                           >>"${TMP_PATH}/menu"
       fi
+      echo "y \"Choose a Keymap for Loader\" "                                                >>"${TMP_PATH}/menu"
     fi
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
-    echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
+    echo "x \"Config Backup/Restore/Recovery \" "                                             >>"${TMP_PATH}/menu"
     echo "M \"Primary NIC: \Z4${ARCNIC}\Zn \" "                                               >>"${TMP_PATH}/menu"
     echo "9 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
-    echo "y \"Choose a Keymap \" "                                                            >>"${TMP_PATH}/menu"
     if [ "${OFFLINE}" == "false" ]; then
-      echo "z \"Update Menu \" "                                                              >>"${TMP_PATH}/menu"
+      echo "z \"Loader Update Menu \" "                                                       >>"${TMP_PATH}/menu"
     fi
-    echo "I \"Power Menu \" "                                                                 >>"${TMP_PATH}/menu"
+    echo "I \"Power/Service Menu \" "                                                         >>"${TMP_PATH}/menu"
     echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
 
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --colors \

@@ -472,6 +472,7 @@ function updateModules() {
 # Update Configs
 function updateConfigs() {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
+  local ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
   if [ -z "${1}" ]; then
     # Check for new Version
     idx=0
@@ -512,8 +513,10 @@ function updateConfigs() {
         echo "Download successful!"
         mkdir -p "${MODEL_CONFIG_PATH}"
         echo "Installing new Configs..."
+        [ -n "${ARCKEY}" ] && cp -f "${S_FILE}" "${TMP_PATH}/serials.yml"
         unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}"
         rm -f "${TMP_PATH}/configs.zip"
+        [ -n "${ARCKEY}" ] && cp -f "${TMP_PATH}/serials.yml" "${S_FILE}"
         echo "Update done!"
         sleep 2
       else
