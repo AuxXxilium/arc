@@ -334,13 +334,11 @@ function arcVersion() {
   else
     KVERP="${KVER}"
   fi
-  if [ "${AUTOMATED}" == "false" ]; then
-    # Rewrite modules
-    writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-    while read -r ID DESC; do
-      writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-    done < <(getAllModules "${PLATFORM}" "${KVERP}")
-  fi
+  # Rewrite modules
+  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+  while read -r ID DESC; do
+    writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
+  done < <(getAllModules "${PLATFORM}" "${KVERP}")
   # Check for Only Version
   if [ "${ONLYVERSION}" == "true" ]; then
     # Build isn't done
