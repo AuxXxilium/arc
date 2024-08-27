@@ -2124,7 +2124,7 @@ function decryptMenu() {
           sleep 5
         fi
       ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Arc Decrypt" \
-        --progressbox "Installing Arc Patch Configs..." 20 70
+        --progressbox "Installing Arc Patch Configs..." 20 50
     else
       dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
         --msgbox "Can't connect to Github.\nCheck your Network!" 6 50
@@ -2134,7 +2134,7 @@ function decryptMenu() {
       CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
       cp -f "${S_FILE}" "${S_FILE}.bak"
       dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-        --inputbox "Enter Decryption Key for ${CONFIGSVERSION}\nKey is available in my Discord." 8 40 2>"${TMP_PATH}/resp"
+        --inputbox "Enter Decryption Key for ${CONFIGSVERSION}\nKey is available in my Discord." 8 50 2>"${TMP_PATH}/resp"
       [ $? -ne 0 ] && return
       ARCKEY=$(cat "${TMP_PATH}/resp")
       if openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARCKEY}" 2>/dev/null; then
