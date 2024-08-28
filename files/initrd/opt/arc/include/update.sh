@@ -442,11 +442,7 @@ function updateModules() {
           PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
           KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
           # Modify KVER for Epyc7002
-          if [ "${PLATFORM}" = "epyc7002" ]; then
-            KVERP="${PRODUCTVER}-${KVER}"
-          else
-            KVERP="${KVER}"
-          fi
+          [ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
         fi
         if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
