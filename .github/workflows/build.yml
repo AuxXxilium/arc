@@ -66,7 +66,8 @@ jobs:
           sudo timedatectl set-timezone "Europe/Berlin"
 
           sudo apt update
-          sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils busybox dialog curl sed 
+          sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils busybox dialog curl sed
+          sudo pip install bs4
           sudo snap install yq
 
           df -h

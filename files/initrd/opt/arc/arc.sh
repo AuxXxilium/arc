@@ -655,7 +655,7 @@ function make() {
   if [ "${OFFLINE}" == "false" ]; then
     while true; do
       PJ="$(python ${ARC_PATH}/include/functions.py getpats4mv -m "${MODEL}" -v "${PRODUCTVER}")"
-      if [ -z "${PJ}" || "${PJ}" = "{}" ]; then
+      if [ -z "${PJ}" ] || [ "${PJ}" = "{}" ]; then
         MSG="Unable to connect to Synology API, Please check the network and try again!"
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
           --yes-label "Retry" \
@@ -671,7 +671,7 @@ function make() {
         [ ${RET} -ne 0 ] && return
         PV=$(cat ${TMP_PATH}/resp)
         PAT_URL=$(echo "${PJ}" | jq -r ".\"${PV}\".url")
-        PAT_SUM=$(echo "${PJ}" | jq -r ".\"${PV}\".sum")
+        PAT_HASH=$(echo "${PJ}" | jq -r ".\"${PV}\".sum")
         URLVER="$(echo "${PV}" | cut -d'.' -f1,2)"
         [ "${PRODUCTVER}" != "${URLVER}" ] && PRODUCTVER="${URLVER}"
         writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
