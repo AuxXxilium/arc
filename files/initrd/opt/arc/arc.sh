@@ -674,6 +674,7 @@ function make() {
         PAT_SUM=$(echo "${PJ}" | jq -r ".\"${PV}\".sum")
         URLVER="$(echo "${PV}" | cut -d'.' -f1,2)"
         [ "${PRODUCTVER}" != "${URLVER}" ] && PRODUCTVER="${URLVER}"
+        writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
       fi
       URLCHECK="$(curl --head -skL -m 10 "${PAT_URL}" | head -n 1)"
       if echo "${URLCHECK}" | grep -q 404; then
