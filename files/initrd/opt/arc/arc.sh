@@ -94,11 +94,7 @@ function arcModel() {
   # Loop menu
   RESTRICT=1
   PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"
-  if [ "${OFFLINE}" == "true" ]; then
-    MJ="$(python ${ARC_PATH}/include/functions.py getmodelsoffline -p "${PS[*]}")"
-  else
-    MJ="$(python ${ARC_PATH}/include/functions.py getmodels -p "${PS[*]}")"
-  fi
+  [ "${OFFLINE}" == "true" ] && MJ="$(python ${ARC_PATH}/include/functions.py getmodelsoffline -p "${PS[*]}")" || MJ="$(python ${ARC_PATH}/include/functions.py getmodels -p "${PS[*]}")"
   if [[ -z "${MJ}" || "${MJ}" == "[]" ]]; then
     dialog --backtitle "$(backtitle)" --title "Model" --title "Model" \
       --msgbox "Failed to get models, please try again!" 3 50
@@ -268,10 +264,11 @@ function arcModel() {
 ###############################################################################
 # Arc Version Section
 function arcVersion() {
-  # read model values for arcbuild
+  # Read Model Config
   CHANGED=false
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   # Check for Custom Build
@@ -303,38 +300,218 @@ function arcVersion() {
       rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
     fi
   fi
-  dialog --backtitle "$(backtitle)" --title "Arc Config" \
-    --infobox "Reconfiguring Addons, Cmdline, Modules and Synoinfo" 3 60
-  # Reset Synoinfo
-  writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
-  while IFS=': ' read -r KEY VALUE; do
-    writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
-  done < <(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")
-  # Check Addons for Platform
-  while IFS=': ' read -r ADDON PARAM; do
-    [ -z "${ADDON}" ] && continue
-    if ! checkAddonExist "${ADDON}" "${PLATFORM}"; then
-      deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
+  PAT_URL=""
+  PAT_HASH=""
+  URLVER=""
+  # Cleanup
+  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
+  mkdir -p "${UNTAR_PAT_PATH}"
+  if [ "${OFFLINE}" == "false" ] && [ "${AUTOMATED}" == "false" ]; then
+    while true; do
+      PJ="$(python ${ARC_PATH}/include/functions.py getpats4mv -m "${MODEL}" -v "${PRODUCTVER}")"
+      if [[ -z "${PJ}" || "${PJ}" = "{}" ]]; then
+        MSG="Unable to connect to Synology API, Please check the network and try again!"
+        dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
+          --yes-label "Retry" \
+          --yesno "${MSG}" 0 0
+        [ $? -eq 0 ] && continue # yes-button
+        return 1
+      else
+        PVS="$(echo "${PJ}" | jq -r 'keys | sort | reverse | join(" ")')"
+        dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
+          --no-items --menu "Choose a Product Version" 0 0 0 ${PVS} \
+          2>${TMP_PATH}/resp
+        RET=$?
+        [ ${RET} -ne 0 ] && return
+        PV=$(cat ${TMP_PATH}/resp)
+        PAT_URL=$(echo "${PJ}" | jq -r ".\"${PV}\".url")
+        PAT_HASH=$(echo "${PJ}" | jq -r ".\"${PV}\".sum")
+        URLVER="$(echo "${PV}" | cut -d'.' -f1,2)"
+        [ "${PRODUCTVER}" != "${URLVER}" ] && PRODUCTVER="${URLVER}"
+        writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+        [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && break
+      fi
+    done
+  elif [ "${OFFLINE}" == "false" ] && [ "${AUTOMATED}" == "true" ]; then
+    # Get PAT Data
+    dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
+      --infobox "Get PAT Data from Local File..." 3 40
+    NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
+    [ -n "${NANOVER}" ] && DSMVER="${PRODUCTVER}.${NANOVER}" || DSMVER="${PRODUCTVER}"
+    PAT_URL="$(readConfigKey "${MODEL}.\"${DSMVER}\".url" "${D_FILE}")"
+    PAT_HASH="$(readConfigKey "${MODEL}.\"${DSMVER}\".hash" "${D_FILE}")"
+    sleep 2
+    # To-DO: add to custom build
+  fi
+  if [ -z "${PAT_URL}" ] && [ -z "${PAT_HASH}" ] && [ "${AUTOMATED}" == "false" ]; then
+    MSG="Failed to get PAT Data.\n"
+    MSG+="Please manually fill in the URL and Hash of PAT.\n"
+    MSG+="You will find these Data at: https://auxxxilium.tech/wiki/arc-loader-arc-loader/url-hash-liste"
+    dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
+      --form "${MSG}" 11 120 2 "URL" 1 1 "${PAT_URL}" 1 8 110 0 "HASH" 2 1 "${PAT_HASH}" 2 8 110 0 \
+      2>"${TMP_PATH}/resp"
+    RET=$?
+    [ ${RET} -eq 0 ]             # ok-button
+    return 1                     # 1 or 255  # cancel-button or ESC
+    PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+    PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+  elif [ -z "${PAT_URL}" ] && [ -z "${PAT_HASH}" ] && [ "${AUTOMATED}" == "true" ]; then
+    dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
+      --infobox "Could not get PAT Data..." 4 30
+    PAT_URL="#"
+    PAT_HASH="#"
+    sleep 5
+  fi
+  # Check PAT URL
+  if [ "${OFFLINE}" == "false" ]; then
+    dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
+      --infobox "Check PAT Data..." 3 40
+    URLCHECK="$(curl --head -skL -m 10 "${PAT_URL}" | head -n 1)"
+    if echo "${URLCHECK}" | grep -q 404; then
+      VALID="false"
+    else
+      sleep 2
+      # Get PAT Data from Config
+      PAT_URL_CONF="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
+      PAT_HASH_CONF="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
+      dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
+        --infobox "Try to get DSM Image..." 3 40
+      if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ "${PAT_URL}" != "${PAT_URL_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+        # Write new PAT Data to Config
+        writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+        writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+        # Get new Files
+        DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
+        DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
+        if curl -skL "${DSM_URL}" -o "${DSM_FILE}"; then
+          VALID="true"
+        elif curl --interface ${ARCNIC} -skL "${DSM_URL}" -o "${DSM_FILE}"; then
+          VALID="true"
+        else
+          dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
+            --infobox "No DSM Image found!\nTry to get .pat from Syno." 4 40
+          sleep 5
+          # Grep PAT_URL
+          PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
+          if curl -skL "${PAT_URL}" -o "${PAT_FILE}"; then
+            VALID="true"
+          elif curl --interface ${ARCNIC} -skL "${PAT_URL}" -o "${PAT_FILE}"; then
+            VALID="true"
+          else
+            dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
+              --infobox "No DSM Image found!\nExit." 4 40
+            VALID="false"
+            sleep 5
+          fi
+        fi
+        if [ -f "${DSM_FILE}" ] && [ "${VALID}" == "true" ]; then
+          tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" 2>/dev/null
+          VALID="true"
+        elif [ -f "${PAT_FILE}" ] && [ "${VALID}" == "true" ]; then
+          extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}" 2>/dev/null
+          VALID="true"
+        else
+          dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+            --infobox "DSM Extraction failed!\nExit." 4 40
+          VALID="false"
+          sleep 5
+        fi
+      fi
     fi
-  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  # Reset Modules
-  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-  # Modify KVER for Epyc7002
-  [ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
-  # Rewrite modules
-  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-  while read -r ID DESC; do
-    writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-  done < <(getAllModules "${PLATFORM}" "${KVERP}")
-  # Check for Only Version
-  if [ "${ONLYVERSION}" == "true" ]; then
-    # Build isn't done
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    ONLYVERSION="false"
-    return 0
+  elif [ "${OFFLINE}" == "true" ] && [ "${AUTOMATED}" ==  "false" ]; then
+    if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
+      rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
+      VALID="true"
+    else
+      # Check for existing Files
+      mkdir -p "${USER_UP_PATH}"
+      # Get new Files
+      MSG=""
+      MSG+="Upload your DSM .pat File now to /tmp/upload.\n"
+      MSG+="You will find these Files at: https://download.synology.com\n"
+      MSG+="Use Webfilebrowser: ${IPCON}:7304 or SSH/SFTP to connect to ${IPCON}\n"
+      MSG+="User: root | Password: arc\n"
+      MSG+="Press OK to continue!"
+      dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
+        --msgbox "${MSG}" 9 80
+      # Grep PAT_FILE
+      PAT_FILE=$(ls ${USER_UP_PATH}/*.pat | head -n 1)
+      if [ -f "${PAT_FILE}" ] && [ $(wc -c "${PAT_FILE}" | awk '{print $1}') -gt 300000000 ]; then
+        dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
+          --infobox "DSM Image found!" 3 40
+        # Remove PAT Data for Offline
+        [ -z "${PAT_URL}" ] && writeConfigKey "paturl" "#" "${USER_CONFIG_FILE}"
+        [ -z "${PAT_HASH}" ] && writeConfigKey "pathash" "#" "${USER_CONFIG_FILE}"
+        # Extract Files
+        if extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"; then
+          VALID="true"
+        else
+          dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+            --infobox "DSM Extraction failed!\nExit." 4 40
+          VALID="false"
+          sleep 5
+        fi
+      elif [ ! -f "${PAT_FILE}" ]; then
+        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+          --infobox "No DSM Image found!\nExit." 4 40
+        VALID="false"
+        sleep 5
+      else
+        dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
+          --infobox "Incorrect DSM Image (.pat) found!\nExit." 4 40
+        VALID="false"
+        sleep 5
+      fi
+    fi
   else
-    arcPatch
+    dialog --backtitle "$(backtitle)" --title "Arc Build" --aspect 18 \
+      --infobox "Can't build Custom Loader while Offline!\nExit." 4 40
+    VALID="false"
+    sleep 5
+  fi
+  # Copy DSM Files to Locations if DSM Files not found
+  if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+    [ "${VALID}" == "true" ] && copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null
+  fi
+  if [ "${VALID}" == "true" ] && [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
+    dialog --backtitle "$(backtitle)" --title "Arc Config" \
+      --infobox "Reconfiguring Addons, Cmdline, Modules and Synoinfo" 3 60
+    # Reset Synoinfo
+    writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
+    while IFS=': ' read -r KEY VALUE; do
+      writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
+    done < <(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")
+    # Check Addons for Platform
+    while IFS=': ' read -r ADDON PARAM; do
+      [ -z "${ADDON}" ] && continue
+      if ! checkAddonExist "${ADDON}" "${PLATFORM}"; then
+        deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
+      fi
+    done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+    # Reset Modules
+    KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+    # Modify KVER for Epyc7002
+    [ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+    # Rewrite modules
+    writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+    while read -r ID DESC; do
+      writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
+    done < <(getAllModules "${PLATFORM}" "${KVERP}")
+    # Check for Only Version
+    if [ "${ONLYVERSION}" == "true" ]; then
+      # Build isn't done
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      ONLYVERSION="false"
+      return 0
+    else
+      arcPatch
+    fi
+  else
+    dialog --backtitle "$(backtitle)" --title "Arc Config" --aspect 18 \
+      --infobox "Arc Config failed!\nExit." 4 40
+    sleep 5
+    return 1
   fi
 }
 
@@ -643,175 +820,8 @@ function make() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
-  PAT_URL=""
-  PAT_HASH=""
-  URLVER=""
-  VALID="false"
-  # Cleanup
-  [ -f "${MOD_ZIMAGE_FILE}" ] && rm -f "${MOD_ZIMAGE_FILE}"
-  [ -f "${MOD_RDGZ_FILE}" ] && rm -f "${MOD_RDGZ_FILE}"
-  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
-  mkdir -p "${UNTAR_PAT_PATH}"
-  if [ "${OFFLINE}" == "false" ]; then
-    while true; do
-      PJ="$(python ${ARC_PATH}/include/functions.py getpats4mv -m "${MODEL}" -v "${PRODUCTVER}")"
-      if [ -z "${PJ}" ] || [ "${PJ}" = "{}" ]; then
-        MSG="Unable to connect to Synology API, Please check the network and try again!"
-        dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-          --yes-label "Retry" \
-          --yesno "${MSG}" 0 0
-        [ $? -eq 0 ] && continue # yes-button
-        return 1
-      else
-        PVS="$(echo "${PJ}" | jq -r 'keys | sort | reverse | join(" ")')"
-        dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-          --no-items --menu "Choose a Product Version" 0 0 0 ${PVS} \
-          2>${TMP_PATH}/resp
-        RET=$?
-        [ ${RET} -ne 0 ] && return
-        PV=$(cat ${TMP_PATH}/resp)
-        PAT_URL=$(echo "${PJ}" | jq -r ".\"${PV}\".url")
-        PAT_HASH=$(echo "${PJ}" | jq -r ".\"${PV}\".sum")
-        URLVER="$(echo "${PV}" | cut -d'.' -f1,2)"
-        [ "${PRODUCTVER}" != "${URLVER}" ] && PRODUCTVER="${URLVER}"
-        writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-      fi
-      URLCHECK="$(curl --head -skL -m 10 "${PAT_URL}" | head -n 1)"
-      if echo "${URLCHECK}" | grep -q 404; then
-        VALID=false
-        continue
-      else
-        VALID=true
-        break
-      fi
-    done
-    if [ "${AUTOMATED}" == "false" ] && [ "${VALID}" == "false" ]; then
-        MSG="Failed to get PAT Data.\n"
-        MSG+="Please manually fill in the URL and Hash of PAT.\n"
-        MSG+="You will find these Data at: https://auxxxilium.tech/wiki/arc-loader-arc-loader/url-hash-liste"
-        dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
-          --form "${MSG}" 11 120 2 "URL" 1 1 "${PAT_URL}" 1 8 110 0 "HASH" 2 1 "${PAT_HASH}" 2 8 110 0 \
-          2>"${TMP_PATH}/resp"
-        RET=$?
-        [ ${RET} -eq 0 ]             # ok-button
-        return 1                     # 1 or 255  # cancel-button or ESC
-        PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
-        PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
-    elif [ "${AUTOMATED}" == "true" ] && [ "${VALID}" == "false" ]; then
-        dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-          --infobox "Could not get PAT Data..." 4 30
-        PAT_URL="#"
-        PAT_HASH="#"
-        sleep 5
-    elif [ "${VALID}" == "true" ]; then
-      # Get PAT Data from Config
-      PAT_URL_CONF="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
-      PAT_HASH_CONF="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
-      if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-        # Write new PAT Data to Config
-        writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
-        writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
-        # Get new Files
-        DSM_FILE="${UNTAR_PAT_PATH}/${PAT_HASH}.tar"
-        DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
-        if curl -skL "${DSM_URL}" -o "${DSM_FILE}"; then
-          VALID="true"
-        elif curl --interface ${ARCNIC} -skL "${DSM_URL}" -o "${DSM_FILE}"; then
-          VALID="true"
-        else
-          dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-            --infobox "No DSM Image found!\nTry to get .pat from Syno." 4 40
-          sleep 5
-          # Grep PAT_URL
-          PAT_FILE="${TMP_PATH}/${PAT_HASH}.pat"
-          if curl -skL "${DSM_URL}" -o "${DSM_FILE}"; then
-            VALID="true"
-          elif curl --interface ${ARCNIC} -skL "${DSM_URL}" -o "${DSM_FILE}"; then
-            VALID="true"
-          else
-            dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
-              --infobox "No DSM Image found!\nExit." 4 40
-            VALID="false"
-            sleep 5
-          fi
-        fi
-        if [ -f "${DSM_FILE}" ] && [ "${VALID}" == "true" ]; then
-          tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" 2>/dev/null
-          VALID="true"
-        elif [ -f "${PAT_FILE}" ] && [ "${VALID}" == "true" ]; then
-          extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}" 2>/dev/null
-          VALID="true"
-        else
-          dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-            --infobox "DSM Extraction failed!\nExit." 4 40
-          VALID="false"
-          sleep 5
-        fi
-      fi
-    fi
-  elif [ "${OFFLINE}" == "true" ] && [ "${AUTOMATED}" ==  "false" ]; then
-    if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
-      rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
-      VALID="true"
-    else
-      # Check for existing Files
-      mkdir -p "${TMP_UP_PATH}"
-      # Get new Files
-      MSG=""
-      MSG+="Upload your DSM .pat File now to /tmp/upload.\n"
-      MSG+="You will find these Files at: https://download.synology.com\n"
-      MSG+="Use Webfilebrowser: ${IPCON}:7304 or SSH/SFTP to connect to ${IPCON}\n"
-      MSG+="User: root | Password: arc\n"
-      MSG+="Press OK to continue!"
-      dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
-      --msgbox "${MSG}" 9 80
-      # Grep PAT_FILE
-      PAT_FILE=$(ls ${TMP_UP_PATH}/*.pat | head -n 1)
-      if [ -f "${PAT_FILE}" ] && [ $(wc -c "${PAT_FILE}" | awk '{print $1}') -gt 300000000 ]; then
-        dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
-          --infobox "DSM Image found!" 3 40
-        # Remove PAT Data for Offline
-        [ -z "${PAT_URL}" ] && writeConfigKey "paturl" "#" "${USER_CONFIG_FILE}"
-        [ -z "${PAT_HASH}" ] && writeConfigKey "pathash" "#" "${USER_CONFIG_FILE}"
-        # Extract Files
-        if [ -f "${PAT_FILE}" ]; then
-          extractDSMFiles "${PAT_FILE}" "${UNTAR_PAT_PATH}"
-          VALID="true"
-        else
-          dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-            --infobox "DSM Extraction failed!\nExit." 4 40
-          VALID="false"
-          sleep 5
-        fi
-      elif [ ! -f "${PAT_FILE}" ]; then
-        dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
-          --infobox "No DSM Image found!\nExit." 4 40
-        VALID="false"
-        sleep 5
-      else
-        dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
-          --infobox "Incorrect DSM Image (.pat) found!\nExit." 4 40
-        VALID="false"
-        sleep 5
-      fi
-    fi
-  else
-    dialog --backtitle "$(backtitle)" --title "Arc Build" --aspect 18 \
-      --infobox "Can't build Custom Loader while Offline!\nExit." 4 40
-    VALID="false"
-    sleep 5
-  fi
-  # Copy DSM Files to Locations if DSM Files not found
-  if [ "${VALID}" == "true" ]; then
-    if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-      if copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null; then
-        VALID="true"
-      else
-        VALID="false"
-      fi
-    fi
-  fi
-  if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ "${VALID}" == "true" ]; then
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ "${CONFDONE}" == "true" ]; then
     (
       livepatch
       sleep 3
