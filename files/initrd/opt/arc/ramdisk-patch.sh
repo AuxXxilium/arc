@@ -67,11 +67,7 @@ writeConfigKey "smallnum" "${SMALLNUM}" "${USER_CONFIG_FILE}"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 
 # Modify KVER for Epyc7002
-if [ "${PLATFORM}" == "epyc7002" ]; then
-  KVERP="${PRODUCTVER}-${KVER}"
-else
-  KVERP="${KVER}"
-fi
+[ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
 
 # Sanity check
 if [ -z "${PLATFORM}" ] || [ -z "${KVER}" ]; then

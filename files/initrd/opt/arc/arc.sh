@@ -30,7 +30,6 @@ LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 if [ -n "${MODEL}" ]; then
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
 fi
 
@@ -76,7 +75,7 @@ function backtitle() {
   fi
   BACKTITLE="${ARC_TITLE}$([ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ] && echo " > ${NEWTAG}") | "
   BACKTITLE+="${MODEL:-(Model)} | "
-  BACKTITLE+="${PRODUCTVER:-(Version)}$([ -n "${NANOVER}" ] && echo ".${NANOVER}") | "
+  BACKTITLE+="${PRODUCTVER:-(Version)} | "
   BACKTITLE+="${IPCON:-(IP)}${OFF} | "
   BACKTITLE+="Patch: ${ARCPATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
@@ -274,7 +273,6 @@ function arcVersion() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
   AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   # Check for Custom Build
   if [ "${AUTOMATED}" == "false" ]; then
@@ -286,21 +284,9 @@ function arcVersion() {
     [ $? -ne 0 ] && return 0
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
-    if [ "${resp}" == "7.2" ]; then
-      dialog --backtitle "$(backtitle)" --title "DSM Version" \
-      --menu "Choose a DSM Version?\n* Recommended Option" 8 40 0 \
-        1 "DSM ${resp}.1 (Stable) *" \
-        2 "DSM ${resp}.2 (Experimental)" \
-      2>"${TMP_PATH}/opt"
-      [ $? -ne 0 ] && return 1
-      opt=$(cat ${TMP_PATH}/opt)
-      [ -z "${opt}" ] && return 1
-    fi
-    if [ "${PRODUCTVER}" != "${resp}" ] || [ "${NANOVER}" != "${opt}" ]; then
+    if [ "${PRODUCTVER}" != "${resp}" ]; then
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-      NANOVER="${opt}"
-      writeConfigKey "nanover" "${NANOVER}" "${USER_CONFIG_FILE}"
       # Reset Config if changed
       writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
       writeConfigKey "paturl" "" "${USER_CONFIG_FILE}"
@@ -334,11 +320,7 @@ function arcVersion() {
   # Reset Modules
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
   # Modify KVER for Epyc7002
-  if [ "${PLATFORM}" == "epyc7002" ]; then
-    KVERP="${PRODUCTVER}-${KVER}"
-  else
-    KVERP="${KVER}"
-  fi
+  [ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
   # Rewrite modules
   writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
   while read -r ID DESC; do
@@ -562,8 +544,6 @@ function arcSettings() {
 function arcSummary() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
-  [ -n "${NANOVER}" ] && DSMVER="${PRODUCTVER}.${NANOVER}" || DSMVER="${PRODUCTVER}"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
@@ -604,7 +584,7 @@ function arcSummary() {
   # Print Summary
   SUMMARY="\Z4> DSM Information\Zn"
   SUMMARY+="\n>> DSM Model: \Zb${MODEL}\Zn"
-  SUMMARY+="\n>> DSM Version: \Zb${DSMVER}\Zn"
+  SUMMARY+="\n>> DSM Version: \Zb${PRODUCTVER}\Zn"
   SUMMARY+="\n>> DSM Platform: \Zb${PLATFORM}\Zn"
   SUMMARY+="\n>> DeviceTree: \Zb${DT}\Zn"
   [ "${MODEL}" == "SA6400" ] && SUMMARY+="\n>> Kernel: \Zb${KERNEL}\Zn"
@@ -661,98 +641,49 @@ function make() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   PAT_URL=""
   PAT_HASH=""
+  URLVER=""
   VALID="false"
   # Cleanup
   [ -f "${MOD_ZIMAGE_FILE}" ] && rm -f "${MOD_ZIMAGE_FILE}"
   [ -f "${MOD_RDGZ_FILE}" ] && rm -f "${MOD_RDGZ_FILE}"
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   mkdir -p "${UNTAR_PAT_PATH}"
-  # Get PAT Data
-  dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-    --infobox "Get PAT Data from Local File..." 3 40
-  [ -n "${NANOVER}" ] && DSMVER="${PRODUCTVER}.${NANOVER}" || DSMVER="${PRODUCTVER}"
-  PAT_URL="$(readConfigKey "${MODEL}.\"${DSMVER}\".url" "${D_FILE}")"
-  PAT_HASH="$(readConfigKey "${MODEL}.\"${DSMVER}\".hash" "${D_FILE}")"
-  if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-    if echo "${PAT_URL}" | grep -q "https://"; then
-      VALID=true
-    fi
-  fi
-  sleep 2
   if [ "${OFFLINE}" == "false" ]; then
-    URLCHECK="$(curl --head -skL -m 10 "${PAT_URL}" | head -n 1)"
-    if echo "${URLCHECK}" | grep -q 404; then
-      VALID=false
-    fi
-    if [ "${VALID}" == "false" ] && [ ${NANOVER} -ne 1 ]; then
-      # Get PAT Data
-      dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-        --infobox "Get PAT Data from Syno..." 3 40
-      idx=0
-      while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-        local URL="https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}"
-        if [ "${ARCNIC}" == "auto" ]; then
-          PAT_DATA="$(curl -skL -m 10 "${URL}")"
-        else
-          PAT_DATA="$(curl --interface ${ARCNIC} -skL -m 10 "${URL}")"
-        fi
-        if [ "$(echo ${PAT_DATA} | jq -r '.success' 2>/dev/null)" == "true" ]; then
-          if echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].label_ext' 2>/dev/null | grep -q 'pat'; then
-            PAT_URL=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].url')
-            PAT_HASH=$(echo ${PAT_DATA} | jq -r '.info.system.detail[0].items[0].files[0].checksum')
-            PAT_URL=${PAT_URL%%\?*}
-            if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-              if echo "${PAT_URL}" | grep -q "https://"; then
-                VALID=true
-                URLCHECK="$(curl --head -skL -m 10 "${PAT_URL}" | head -n 1)"
-                if echo "${URLCHECK}" | grep -q 404; then
-                  VALID=false
-                else
-                  break
-                fi
-              fi
-            fi
-          fi
-        fi
-        sleep 3
-        idx=$((${idx} + 1))
-      done
-    fi
-    if [ "${VALID}" == "false" ] && [ ${NANOVER} -ne 1 ]; then
-      dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
-        --infobox "Get PAT Data from Github..." 3 40
-      idx=0
-      while [ ${idx} -le 3 ]; do # Loop 3 times, if successful, break
-        URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_url"
-        HASH="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/dsm/${MODEL/+/%2B}/${PRODUCTVER}/pat_hash"
-        if [ "${ARCNIC}" == "auto" ]; then
-          PAT_URL="$(curl -skL -m 10 "${URL}")"
-          PAT_HASH="$(curl -skL -m 10 "${HASH}")"
-        else
-          PAT_URL="$(curl --interface ${ARCNIC} -m 10 -skL "${URL}")"
-          PAT_HASH="$(curl --interface ${ARCNIC} -m 10 -skL "$HASH")"
-        fi
-        PAT_URL=${PAT_URL%%\?*}
-        if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-          if echo "${PAT_URL}" | grep -q "https://"; then
-            VALID=true
-            URLCHECK="$(curl --head -skL -m 10 "${PAT_URL}" | head -n 1)"
-            if echo "${URLCHECK}" | grep -q 404; then
-              VALID=false
-            else
-              break
-            fi
-          fi
-        fi
-        sleep 3
-        idx=$((${idx} + 1))
-      done
-    fi
+    while true; do
+      PJ="$(python ${ARC_PATH}/include/functions.py getpats4mv -m "${MODEL}" -v "${PRODUCTVER}")"
+      if [ -z "${PJ}" || "${PJ}" = "{}" ]; then
+        MSG="Unable to connect to Synology API, Please check the network and try again!"
+        dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+          --yes-label "Retry" \
+          --yesno "${MSG}" 0 0
+        [ $? -eq 0 ] && continue # yes-button
+        return 1
+      else
+        PVS="$(echo "${PJ}" | jq -r 'keys | sort | reverse | join(" ")')"
+        dialog --backtitle "$(backtitle)" --colors --title "Arc Build" \
+          --no-items --menu "Choose a Product Version" 0 0 0 ${PVS} \
+          2>${TMP_PATH}/resp
+        RET=$?
+        [ ${RET} -ne 0 ] && return
+        PV=$(cat ${TMP_PATH}/resp)
+        PAT_URL=$(echo "${PJ}" | jq -r ".\"${PV}\".url")
+        PAT_SUM=$(echo "${PJ}" | jq -r ".\"${PV}\".sum")
+        URLVER="$(echo "${PV}" | cut -d'.' -f1,2)"
+        [ "${PRODUCTVER}" != "${URLVER}" ] && PRODUCTVER="${URLVER}"
+      fi
+      URLCHECK="$(curl --head -skL -m 10 "${PAT_URL}" | head -n 1)"
+      if echo "${URLCHECK}" | grep -q 404; then
+        VALID=false
+        continue
+      else
+        VALID=true
+        break
+      fi
+    done
     if [ "${AUTOMATED}" == "false" ] && [ "${VALID}" == "false" ]; then
         MSG="Failed to get PAT Data.\n"
         MSG+="Please manually fill in the URL and Hash of PAT.\n"
@@ -1051,7 +982,7 @@ else
         echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
         echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
         echo "J \"Reset DSM Network Config \" "                                               >>"${TMP_PATH}/menu"
-        if [ "${PLATFORM}" == "epyc7002" ] && [ "${NANOVER}" == "1"]; then
+        if [ "${PLATFORM}" == "epyc7002" ]; then
           echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
         fi
         if [ "${DT}" == "true" ]; then
@@ -1166,11 +1097,7 @@ else
         PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
         KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
         if [ -n "${PLATFORM}" ] && [ -n "${KVER}" ]; then
-          if [ "${PLATFORM}" == "epyc7002" ]; then
-            KVERP="${PRODUCTVER}-${KVER}"
-          else
-            KVERP="${KVER}"
-          fi
+          [ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           while read -r ID DESC; do
             writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"

@@ -37,7 +37,6 @@ function addonSelection() {
   # read platform and kernel version to check if addon exists
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  NANOVER="$(readConfigKey "nanover" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   # read addons from user config
@@ -51,8 +50,6 @@ function addonSelection() {
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     if [[ "${ADDON}" == "amepatch" || "${ADDON}" == "sspatch" || "${ADDON}" == "arcdns" ]] && [ "${ARCPATCH}" == "false" ]; then
-      continue
-    elif [[ "${ADDON}" == "codecpatch" || "${ADDON}" == "sspatch" ]] && [ "${NANOVER}" == "2" ]; then
       continue
     elif [ "${ADDON}" == "cpufreqscaling" ] && [ "${CPUFREQ}" == "false" ]; then
       continue
@@ -84,11 +81,7 @@ function modulesMenu() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
   # Modify KVER for Epyc7002
-  if [ "${PLATFORM}" == "epyc7002" ]; then
-    KVERP="${PRODUCTVER}-${KVER}"
-  else
-    KVERP="${KVER}"
-  fi
+  [ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
   # menu loop
   while true; do
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
