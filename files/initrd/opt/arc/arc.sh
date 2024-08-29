@@ -403,7 +403,7 @@ function arcVersion() {
       mkdir -p "${USER_UP_PATH}"
       # Get new Files
       MSG=""
-      MSG+="Upload your DSM .pat File now to /tmp/upload.\n"
+      MSG+="Upload your DSM .pat File now to ${USER_UP_PATH}.\n"
       MSG+="You will find these Files at: https://download.synology.com\n"
       MSG+="Use Webfilebrowser: ${IPCON}:7304 or SSH/SFTP to connect to ${IPCON}\n"
       MSG+="User: root | Password: arc\n"
