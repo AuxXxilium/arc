@@ -39,8 +39,6 @@ jobs:
           MODEL = ''
           PRODUCTVER = ''
           ADDONS = ''
-          MODULES = ''
-          MACSYS = ''
           KERNEL = ''
           FORMAT = ''
           try:
@@ -97,9 +95,15 @@ jobs:
             [ "${2}" = "{}" ] && sudo yq eval '.'${1}' = {}' --inplace "${3}" 2>/dev/null || sudo yq eval '.'${1}' = "'"${2}"'"' --inplace "${3}" 2>/dev/null
           }
 
+          function readConfigKey() {
+            RESULT=$(yq eval '.'${1}' | explode(.)' "${2}" 2>/dev/null)
+            [ "${RESULT}" == "null" ] && echo "" || echo "${RESULT}"
+          }
+
           TAG="$(curl -m 5 -kL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
           curl -kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "/tmp/arc.img.zip"
           unzip -o "/tmp/arc.img.zip" -d "/tmp"
+          curl -kL "https://raw.githubusercontent.com/AuxXxilium/arc/page/docs/pats.json" -o "/tmp/pats.json"
 
           echo "Modify Arc Image"
           IMAGE_FILE="/tmp/arc.img"
@@ -115,12 +119,17 @@ jobs:
           sudo mount ${LOOPX}p3 "/tmp/p3"
 
           echo "Set Custom Config"
+          PATS_CONFIG_FILE="/tmp/pats.json"
           PRESET_CONFIG_FILE="/tmp/p1/user-config.yml"
           sudo touch "${PRESET_CONFIG_FILE}"
-          writeConfigKey "model" "${{ env.MODEL }}" "${PRESET_CONFIG_FILE}"
-          writeConfigKey "productver" "${{ env.PRODUCTVER }}" "${PRESET_CONFIG_FILE}"
-          writeConfigKey "arc" "{}" "${PRESET_CONFIG_FILE}"
-          writeConfigKey "automated" "true" "${PRESET_CONFIG_FILE}"
+          MODEL="${{ env.MODEL }}"
+          writeConfigKey "model" "${MODEL}" "${PRESET_CONFIG_FILE}"
+          PRODUCTVER="${{ env.PRODUCTVER }}"
+          PAT_URL="$(readConfigKey "\"${MODEL}\".\"${PATVER}\".url" "${PATS_CONFIG_FILE}")"
+          PAT_HASH="$(readConfigKey "\"${MODEL}\".\"${PATVER}\".sum" "${PATS_CONFIG_FILE}")"
+          writeConfigKey "productver" "${PRODUCTVER:0:3}" "${PRESET_CONFIG_FILE}"
+          writeConfigKey "paturl" "${PAT_URL}" "${PRESET_CONFIG_FILE}"
+          writeConfigKey "pathash" "${PAT_HASH}" "${PRESET_CONFIG_FILE}"
           if [ "${{ env.MODEL }}" = "SA6400" ]; then
             writeConfigKey "kernel" "${{ env.KERNEL }}" "${PRESET_CONFIG_FILE}"
           fi
@@ -131,9 +140,15 @@ jobs:
               writeConfigKey "addons.\"${A}\"" "${VALUE}" "${PRESET_CONFIG_FILE}"
             done
           fi
+          writeConfigKey "arc" "{}" "${PRESET_CONFIG_FILE}"
+          writeConfigKey "automated" "true" "${PRESET_CONFIG_FILE}"
           echo "$(cat "${PRESET_CONFIG_FILE}")"
           sudo echo "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}" >"/tmp/automated"
           sudo mv -f "/tmp/automated" "/tmp/p3/automated"
+          DSM_FILE="${PAT_HASH}.tar"
+          DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
+          sudo curl -skL "${DSM_URL}" -o "/tmp/${DSM_FILE}"
+          sudo mv -f "/tmp/${DSM_FILE}" "/tmp/p3/${DSM_FILE}"
           echo "Syncing files"
           sync
 
