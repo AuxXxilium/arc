@@ -2189,7 +2189,7 @@ function rebootMenu() {
   echo -e "update \"Arc: Automated Update Mode\"" >>"${TMP_PATH}/opts"
   echo -e "init \"Arc: Restart Loader Init\"" >>"${TMP_PATH}/opts"
   echo -e "network \"Arc: Restart Network Service\"" >>"${TMP_PATH}/opts"
-  if [ "${BUILDONE}" == "true" ]; then
+  if [ "${BUILDDONE}" == "true" ]; then
     echo -e "recovery \"DSM: Recovery Mode\"" >>"${TMP_PATH}/opts"
     echo -e "junior \"DSM: Reinstall Mode\"" >>"${TMP_PATH}/opts"
   fi

@@ -70,6 +70,7 @@ jobs:
           python scripts/func.py getmodels -w "arc/ws" -j "docs/models.json"
           python scripts/func.py getaddons -w "arc/ws" -j "docs/addons.json"
           python scripts/func.py getmodules -w "arc/ws" -j "docs/modules.json"
+          python scripts/func.py getpats -w "arc/ws" -j "docs/pats.json"
 
       - name: Upload to Artifacts
         if: success()
