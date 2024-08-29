@@ -30,8 +30,8 @@ def getmodels(workpath, jsonpath):
         for P in P_platforms:
             productvers = {}
             for V in P_platforms[P]["productvers"]:
-                if P == "epyc7002":
-                    productvers[V] = P_platforms[P]["productvers"][V].get("productver", "") + "-" + P_platforms[P]["productvers"][V].get("kver", "")
+                if P_platforms[P]["productvers"][V].get("kpre", "") != "":
+                    productvers[V] = (P_platforms[P]["productvers"][V].get("kpre", "") + "-" + P_platforms[P]["productvers"][V].get("kver", ""))
                 else:
                     productvers[V] = P_platforms[P]["productvers"][V].get("kver", "")
             models[P] = {"productvers": productvers, "models": []}
