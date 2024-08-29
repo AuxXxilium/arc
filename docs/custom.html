@@ -54,6 +54,7 @@
 
         var _models = {};
         var _addons = {};
+        var _pats = {};
 
         function httpGetAsync(theUrl, callback) {
             let xmlHttpReq = new XMLHttpRequest();
@@ -72,13 +73,16 @@
         function init() {
             httpGetAsync("https://raw.githubusercontent.com/AuxXxilium/arc/page/docs/models.json", function (result) {
                 _models = JSON.parse(result);
-                httpGetAsync("https://raw.githubusercontent.com/AuxXxilium/arc/page/docs/addons.json", function (result) {
-                    _addons = JSON.parse(result);
-                    $("#model").on("change", changeModel);
-                    $("#version").on("change", changeVersion);
-                    $("#kernel").on("change", changeKernel);
-                    $('#addons').val("acpid");
-                    setModels();
+                httpGetAsync("https://raw.githubusercontent.com/AuxXxilium/arc/page/docs/pats.json", function (result) {
+                    _pats = JSON.parse(result);
+                    httpGetAsync("https://raw.githubusercontent.com/AuxXxilium/arc/page/docs/addons.json", function (result) {
+                        _addons = JSON.parse(result);
+                        $("#model").on("change", changeModel);
+                        $("#version").on("change", changeVersion);
+                        $("#kernel").on("change", changeKernel);
+                        $('#addons').val("acpid,mountloader,powersched,reboottoloader");
+                        setModels();
+                    });
                 });
             });
         }
@@ -98,11 +102,9 @@
         function changeModel() {
             model = $("#model").val();
             var versions = [];
-            for (var P in _models) {
-                if (_models[P]["models"].includes(model)) {
-                    versions = Object.keys(_models[P]["productvers"]).reverse();
-                    break;
-                }
+            if (model in _pats) {
+                versions = Object.keys(_pats[model]);
+                versions.sort((a, b) => b.localeCompare(a))
             }
             $("#version")[0].options.length = 0;
             for (var i = 0; i < versions.length; i++) {
@@ -125,7 +127,6 @@
             changeKernel();
         }
         function createAddonsBtn() {
-            var language = $("#language").val();
             var extstr = $('#addons').val().split(",");
             var idx = 1;
             var html = `<div class="form-group-body" id="addons_btns">`;
@@ -147,7 +148,7 @@
 
         function changeKernel() {
             var model = $("#model").val();
-            var version = $("#version").val();
+            var version = $("#version").val().split(".").slice(0, 2).join(".");
             var kernel = $("#kernel").val();
             if (model == "SA6400" && version == "7.2") {
                 $("#kernel_item").show();
