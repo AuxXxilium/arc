@@ -11,6 +11,10 @@
         "system": false,
         "description": "Dynamic Licensepatch for AME (depends on Arc Patch)"
     },
+    "arcdns": {
+        "system": false,
+        "description": "Dynamic DNS client for arcdns.tech - Modify in Arc DSM Options"
+    },
     "bootwait": {
         "system": false,
         "description": "Boot process waits until boot device (`/dev/synoboot`) and PCIe Device are available."
@@ -24,8 +28,8 @@
         "description": "Give a onscreen console via framebuffer"
     },
     "cpufreqscaling": {
-        "system": true,
-        "description": "Enable CPU Freqscaling for DSM"
+        "system": false,
+        "description": "Enable CPU Freqscaling for DSM - Modify in Arc DSM Options"
     },
     "cpuinfo": {
         "system": false,
@@ -112,7 +116,7 @@
         "description": "Face Patch for Syno Photos"
     },
     "powersched": {
-        "system": true,
+        "system": false,
         "description": "Utility to configure RTC according to DSM power schedule"
     },
     "reboottoloader": {
@@ -145,7 +149,7 @@
     },
     "sequentialio": {
         "system": false,
-        "description": "Enables sequential I/O for your SSD caches (Can cause overheating)"
+        "description": "Enables sequential I/O for SSD caches (Can cause overheating) - Modify in Arc DSM Options"
     },
     "setrootpw": {
         "system": false,
@@ -161,7 +165,7 @@
     },
     "storagepanel": {
         "system": false,
-        "description": "Automated Storagepanel selection (Modify in Arc Options - DSM Storagepanel)"
+        "description": "Automated Storagepanel selection - Modify in Arc DSM Options"
     },
     "updatenotify": {
         "system": true,
