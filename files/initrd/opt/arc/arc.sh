@@ -299,6 +299,8 @@ function arcVersion() {
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
       rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
     fi
+    dialog --backtitle "$(backtitle)" --title "DSM Version" \
+    --infobox "Reading DSM Build..." 3 25
     PAT_URL=""
     PAT_HASH=""
     URLVER=""
@@ -317,7 +319,7 @@ function arcVersion() {
       else
         PVS="$(echo "${PJ}" | jq -r 'keys | sort | reverse | join(" ")')"
         dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
-          --no-items --menu "Choose a Product Version" 0 0 0 ${PVS} \
+          --no-items --menu "Choose a DSM Build" 0 0 0 ${PVS} \
           2>${TMP_PATH}/resp
         RET=$?
         [ ${RET} -ne 0 ] && return
@@ -362,7 +364,7 @@ function arcVersion() {
   fi
   sleep 2
   DSM_FILE="${USER_UP_PATH}/${PAT_HASH}.tar"
-  if [ ! -f "${DSM_FILE}" ] && && [ "${OFFLINE}" == "false" ] && [ "${VALID}" == "true" ]; then
+  if [ ! -f "${DSM_FILE}" ] && [ "${OFFLINE}" == "false" ] && [ "${VALID}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
       --infobox "Try to get DSM Image..." 3 40
     if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ "${PAT_URL}" != "${PAT_URL_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
