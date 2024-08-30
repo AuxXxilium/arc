@@ -326,7 +326,7 @@ function arcVersion() {
         URLVER="$(echo "${PV}" | cut -d'.' -f1,2)"
         [ "${PRODUCTVER}" != "${URLVER}" ] && PRODUCTVER="${URLVER}"
         writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-        [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && break
+        [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true" && break
       fi
     done
     if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
@@ -341,8 +341,8 @@ function arcVersion() {
       return 1                     # 1 or 255  # cancel-button or ESC
       PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
       PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+      [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true"
     fi
-    VALID="true"
   elif [ "${AUTOMATED}" == "true" ]; then
     PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
@@ -359,6 +359,7 @@ function arcVersion() {
     fi
   fi
   sleep 2
+  mkdir -p "${USER_UP_PATH}"
   DSM_FILE="${USER_UP_PATH}/${PAT_HASH}.tar"
   if [ ! -f "${DSM_FILE}" ] && [ "${OFFLINE}" == "false" ] && [ "${VALID}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \

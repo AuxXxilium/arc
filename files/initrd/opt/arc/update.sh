@@ -32,6 +32,7 @@ fi
 
 # Get Config Status
 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
 # Get Keymap and Timezone Config
 ntpCheck
@@ -65,19 +66,17 @@ function arcUpdate() {
   # Ask for Boot
   dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
     --infobox "Update successful!" 0 0
-  if [ "${CONFDONE}" == "true" ] && [ ! -f "${PART3_PATH}/automated" ]; then
-    echo "${ARC_VERSION}-${MODEL}-${PRODUCTVER}-custom" >"${PART3_PATH}/automated"
-  fi
   boot
 }
 
 ###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
-  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-  if [ "${CONFDONE}" == "true" ]; then
+  BUILDDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  if [ "${BUILDDONE}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Boot" \
       --infobox "Rebooting to automated Build Mode...\nPlease stay patient!" 4 30
+    [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-${PRODUCTVER}" >"${PART3_PATH}/automated"
     sleep 3
     rebootTo automated
   else
