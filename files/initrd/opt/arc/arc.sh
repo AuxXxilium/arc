@@ -314,9 +314,20 @@ function arcVersion() {
         [ $? -eq 0 ] && continue # yes-button
         return 1
       else
-        PVS="$(echo "${PJ}" | jq -r 'keys | sort | reverse | join(" ")')"
+        PVS="$(echo "${PJ}" | jq -r 'keys | sort | reverse | join("\n")')"
+        touch "${TMP_PATH}/versions"
+        while IFS= read -r line; do
+          VERSION="${line}"
+          CHECK_URL=$(echo "${PJ}" | jq -r ".\"${VERSION}\".url")
+          if curl --head -skL -m 5 "${CHECK_URL}" | head -n 1 | grep -q "404\|403"; then
+            continue
+          else
+            echo "${VERSION}" >>"${TMP_PATH}/versions"
+          fi
+        done < <(echo "${PVS}")
+        DSMPVS="$(cat ${TMP_PATH}/versions)"
         dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
-          --no-items --menu "Choose a DSM Build" 0 0 0 ${PVS} \
+          --no-items --menu "Choose a DSM Build" 0 0 0 ${DSMPVS} \
           2>${TMP_PATH}/resp
         RET=$?
         [ ${RET} -ne 0 ] && return
