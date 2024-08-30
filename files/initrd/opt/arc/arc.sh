@@ -304,9 +304,6 @@ function arcVersion() {
     PAT_URL=""
     PAT_HASH=""
     URLVER=""
-    # Cleanup
-    [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
-    mkdir -p "${UNTAR_PAT_PATH}"
     while true; do
       PJ="$(python ${ARC_PATH}/include/functions.py getpats4mv -m "${MODEL}" -v "${PRODUCTVER}")"
       if [[ -z "${PJ}" || "${PJ}" = "{}" ]]; then
@@ -355,8 +352,7 @@ function arcVersion() {
   if [ "${OFFLINE}" == "false" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
       --infobox "Check PAT Data..." 3 40
-    URLCHECK="$(curl --head -skL -m 10 "${PAT_URL}" | head -n 1)"
-    if echo "${URLCHECK}" | grep -q 404; then
+    if curl --head -skL -m 10 "${PAT_URL}" | head -n 1 | grep -q 404; then
       VALID="false"
     else
       VALID="true"
@@ -433,6 +429,9 @@ function arcVersion() {
       sleep 5
     fi
   fi
+  # Cleanup
+  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
+  mkdir -p "${UNTAR_PAT_PATH}"
   if [ -f "${DSM_FILE}" ] && [ "${VALID}" == "true" ]; then
     tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" 2>/dev/null
     VALID="true"
