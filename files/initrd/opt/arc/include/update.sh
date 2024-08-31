@@ -52,13 +52,13 @@ function upgradeLoader () {
       if [ "${ARCNIC}" == "auto" ]; then
         curl -#kL "${URL}" -o "${TMP_PATH}/arc.img.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
       else
         curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/arc.img.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
       fi
@@ -155,14 +155,14 @@ function updateLoader() {
       if [ "${ARCNIC}" == "auto" ]; then
         curl -#kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
         curl -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       else
         curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
         curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
@@ -220,14 +220,14 @@ function updateAddons() {
       if [ "${ARCNIC}" == "auto" ]; then
         curl -#kL "${URL}" -o "${TMP_PATH}/addons.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
         curl -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       else
         curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/addons.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
         curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
@@ -291,14 +291,14 @@ function updatePatches() {
       if [ "${ARCNIC}" == "auto" ]; then
         curl -#kL "${URL}" -o "${TMP_PATH}/patches.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
         curl -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       else
         curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/patches.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
         curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
@@ -354,14 +354,14 @@ function updateCustom() {
       if [ "${ARCNIC}" == "auto" ]; then
         curl -#kL "${URL}" -o "${TMP_PATH}/custom.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
         curl -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       else
         curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/custom.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
         curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
@@ -417,14 +417,14 @@ function updateModules() {
       if [ "${ARCNIC}" == "auto" ]; then
         curl -#kL "${URL}" -o "${TMP_PATH}/modules.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
         curl -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       else
         curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/modules.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
         curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
@@ -495,13 +495,13 @@ function updateConfigs() {
       if [ "${ARCNIC}" == "auto" ]; then
         curl -#kL "${URL}" -o "${TMP_PATH}/configs.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
       else
         curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/configs.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
       fi
@@ -557,13 +557,13 @@ function updateLKMs() {
       if [ "${ARCNIC}" == "auto" ]; then
         curl -#kL "${URL}" -o "${TMP_PATH}/rp-lkms.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
       else
         curl --interface ${ARCNIC} -#kL "${URL}" -o "${TMP_PATH}/rp-lkms.zip" 2>&1 | while IFS= read -r -n1 char; do
           [[ $char =~ [0-9] ]] && keep=1 ;
-          [[ $char == % ]] && echo "Download: $progress%" && progress="" && keep=0 ;
+          [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
           [[ $keep == 1 ]] && progress="$progress$char" ;
         done
       fi

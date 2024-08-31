@@ -217,7 +217,6 @@ function arcModel() {
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
     writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-    CHANGED="true"
   elif [ "${MODEL}" != "${resp}" ]; then
     PRODUCTVER=""
     MODEL="${resp}"
@@ -241,11 +240,6 @@ function arcModel() {
     writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
     writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
     writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-    CHANGED="true"
-  fi
-  if [ "${CHANGED}" == "true" ]; then
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
-    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
   fi
   # Read Platform Data
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
@@ -293,20 +287,12 @@ function arcVersion() {
       writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
       CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-      CHANGED="true"
-    fi
-    if [ "${CHANGED}" == "true" ]; then
-      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
-      rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
     fi
     dialog --backtitle "$(backtitle)" --title "DSM Version" \
     --infobox "Reading DSM Build..." 3 25
     PAT_URL=""
     PAT_HASH=""
     URLVER=""
-    # Cleanup
-    [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
-    mkdir -p "${UNTAR_PAT_PATH}"
     while true; do
       PJ="$(python ${ARC_PATH}/include/functions.py getpats4mv -m "${MODEL}" -v "${PRODUCTVER}")"
       if [[ -z "${PJ}" || "${PJ}" = "{}" ]]; then
@@ -317,9 +303,20 @@ function arcVersion() {
         [ $? -eq 0 ] && continue # yes-button
         return 1
       else
-        PVS="$(echo "${PJ}" | jq -r 'keys | sort | reverse | join(" ")')"
+        PVS="$(echo "${PJ}" | jq -r 'keys | sort | reverse | join("\n")')"
+        [ -f "${TMP_PATH}/versions" ] && rm -f "${TMP_PATH}/versions" >/dev/null 2>&1 && touch "${TMP_PATH}/versions"
+        while IFS= read -r line; do
+          VERSION="${line}"
+          CHECK_URL=$(echo "${PJ}" | jq -r ".\"${VERSION}\".url")
+          if curl --head -skL -m 5 "${CHECK_URL}" | head -n 1 | grep -q "404\|403"; then
+            continue
+          else
+            echo "${VERSION}" >>"${TMP_PATH}/versions"
+          fi
+        done < <(echo "${PVS}")
+        DSMPVS="$(cat ${TMP_PATH}/versions)"
         dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
-          --no-items --menu "Choose a DSM Build" 0 0 0 ${PVS} \
+          --no-items --menu "Choose a DSM Build" 0 0 0 ${DSMPVS} \
           2>${TMP_PATH}/resp
         RET=$?
         [ ${RET} -ne 0 ] && return
@@ -329,7 +326,7 @@ function arcVersion() {
         URLVER="$(echo "${PV}" | cut -d'.' -f1,2)"
         [ "${PRODUCTVER}" != "${URLVER}" ] && PRODUCTVER="${URLVER}"
         writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-        [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && break
+        [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true" && break
       fi
     done
     if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
@@ -344,8 +341,8 @@ function arcVersion() {
       return 1                     # 1 or 255  # cancel-button or ESC
       PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
       PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+      [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true"
     fi
-    VALID="true"
   elif [ "${AUTOMATED}" == "true" ]; then
     PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
@@ -355,19 +352,25 @@ function arcVersion() {
   if [ "${OFFLINE}" == "false" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
       --infobox "Check PAT Data..." 3 40
-    URLCHECK="$(curl --head -skL -m 10 "${PAT_URL}" | head -n 1)"
-    if echo "${URLCHECK}" | grep -q 404; then
+    if curl --head -skL -m 10 "${PAT_URL}" | head -n 1 | grep -q 404; then
       VALID="false"
     else
       VALID="true"
     fi
   fi
   sleep 2
+  # Cleanup
+  mkdir -p "${USER_UP_PATH}"
   DSM_FILE="${USER_UP_PATH}/${PAT_HASH}.tar"
+  if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ "${PAT_URL}" != "${PAT_URL_CONF}" ]; then
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
+    rm -f "${USER_UP_PATH}/${PAT_HASH_CONF}.tar" >/dev/null 2>&1 || true
+  fi
   if [ ! -f "${DSM_FILE}" ] && [ "${OFFLINE}" == "false" ] && [ "${VALID}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
       --infobox "Try to get DSM Image..." 3 40
-    if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ "${PAT_URL}" != "${PAT_URL_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+    if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
       # Write new PAT Data to Config
       writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
       writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
@@ -398,7 +401,7 @@ function arcVersion() {
   elif [ ! -f "${DSM_FILE}" ] && [ "${OFFLINE}" == "true" ] && [ "${AUTOMATED}" == "false" ]; then
     PAT_FILE=$(ls ${USER_UP_PATH}/*.pat | head -n 1)
     if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
-      rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
+      rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
       VALID="true"
     elif [ ! -f "${PAT_FILE}" ]; then
       # Check for existing Files
@@ -433,6 +436,9 @@ function arcVersion() {
       sleep 5
     fi
   fi
+  # Cleanup
+  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
+  mkdir -p "${UNTAR_PAT_PATH}"
   if [ -f "${DSM_FILE}" ] && [ "${VALID}" == "true" ]; then
     tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" 2>/dev/null
     VALID="true"
@@ -822,7 +828,7 @@ function make() {
 ###############################################################################
 # Finish Building Loader
 function arcFinish() {
-  rm -f "${LOG_FILE}" >/dev/null
+  rm -f "${LOG_FILE}" >/dev/null 2>&1 || true
   writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${AUTOMATED}" == "true" ]; then
