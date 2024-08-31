@@ -363,6 +363,9 @@ function arcVersion() {
   mkdir -p "${USER_UP_PATH}"
   DSM_FILE="${USER_UP_PATH}/${PAT_HASH}.tar"
   if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ "${PAT_URL}" != "${PAT_URL_CONF}" ]; then
+    # Write new PAT Data to Config
+    writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+    writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
     rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
     rm -f "${USER_UP_PATH}/${PAT_HASH_CONF}.tar" >/dev/null 2>&1 || true
@@ -371,9 +374,6 @@ function arcVersion() {
     dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
       --infobox "Try to get DSM Image..." 3 40
     if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-      # Write new PAT Data to Config
-      writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
-      writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
       # Get new Files
       DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
       if curl -skL "${DSM_URL}" -o "${DSM_FILE}"; then
