@@ -217,7 +217,6 @@ function arcModel() {
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
     writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-    CHANGED="true"
   elif [ "${MODEL}" != "${resp}" ]; then
     PRODUCTVER=""
     MODEL="${resp}"
@@ -241,11 +240,6 @@ function arcModel() {
     writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
     writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
     writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-    CHANGED="true"
-  fi
-  if [ "${CHANGED}" == "true" ]; then
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
-    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
   fi
   # Read Platform Data
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
@@ -293,11 +287,6 @@ function arcVersion() {
       writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
       CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-      CHANGED="true"
-    fi
-    if [ "${CHANGED}" == "true" ]; then
-      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
-      rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
     fi
     dialog --backtitle "$(backtitle)" --title "DSM Version" \
     --infobox "Reading DSM Build..." 3 25
@@ -315,7 +304,7 @@ function arcVersion() {
         return 1
       else
         PVS="$(echo "${PJ}" | jq -r 'keys | sort | reverse | join("\n")')"
-        touch "${TMP_PATH}/versions"
+        [ -f "${TMP_PATH}/versions" ] && rm -f "${TMP_PATH}/versions" && touch "${TMP_PATH}/versions"
         while IFS= read -r line; do
           VERSION="${line}"
           CHECK_URL=$(echo "${PJ}" | jq -r ".\"${VERSION}\".url")
@@ -370,12 +359,17 @@ function arcVersion() {
     fi
   fi
   sleep 2
+  # Cleanup
+  if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ "${PAT_URL}" != "${PAT_URL_CONF}" ]; then
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
+    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
+  fi
   mkdir -p "${USER_UP_PATH}"
   DSM_FILE="${USER_UP_PATH}/${PAT_HASH}.tar"
   if [ ! -f "${DSM_FILE}" ] && [ "${OFFLINE}" == "false" ] && [ "${VALID}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
       --infobox "Try to get DSM Image..." 3 40
-    if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ "${PAT_URL}" != "${PAT_URL_CONF}" ] || [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+    if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
       # Write new PAT Data to Config
       writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
       writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
