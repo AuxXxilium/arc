@@ -304,7 +304,7 @@ function arcVersion() {
         return 1
       else
         PVS="$(echo "${PJ}" | jq -r 'keys | sort | reverse | join("\n")')"
-        [ -f "${TMP_PATH}/versions" ] && rm -f "${TMP_PATH}/versions" && touch "${TMP_PATH}/versions"
+        [ -f "${TMP_PATH}/versions" ] && rm -f "${TMP_PATH}/versions" >/dev/null 2>&1 && touch "${TMP_PATH}/versions"
         while IFS= read -r line; do
           VERSION="${line}"
           CHECK_URL=$(echo "${PJ}" | jq -r ".\"${VERSION}\".url")
@@ -360,12 +360,13 @@ function arcVersion() {
   fi
   sleep 2
   # Cleanup
-  if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ "${PAT_URL}" != "${PAT_URL_CONF}" ]; then
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
-    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
-  fi
   mkdir -p "${USER_UP_PATH}"
   DSM_FILE="${USER_UP_PATH}/${PAT_HASH}.tar"
+  if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ "${PAT_URL}" != "${PAT_URL_CONF}" ]; then
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
+    rm -f "${USER_UP_PATH}/${PAT_HASH_CONF}.tar" >/dev/null 2>&1 || true
+  fi
   if [ ! -f "${DSM_FILE}" ] && [ "${OFFLINE}" == "false" ] && [ "${VALID}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
       --infobox "Try to get DSM Image..." 3 40
@@ -400,7 +401,7 @@ function arcVersion() {
   elif [ ! -f "${DSM_FILE}" ] && [ "${OFFLINE}" == "true" ] && [ "${AUTOMATED}" == "false" ]; then
     PAT_FILE=$(ls ${USER_UP_PATH}/*.pat | head -n 1)
     if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
-      rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" 2>/dev/null || true
+      rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
       VALID="true"
     elif [ ! -f "${PAT_FILE}" ]; then
       # Check for existing Files
@@ -827,7 +828,7 @@ function make() {
 ###############################################################################
 # Finish Building Loader
 function arcFinish() {
-  rm -f "${LOG_FILE}" >/dev/null
+  rm -f "${LOG_FILE}" >/dev/null 2>&1 || true
   writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${AUTOMATED}" == "true" ]; then
