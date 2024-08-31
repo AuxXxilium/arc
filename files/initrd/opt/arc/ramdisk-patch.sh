@@ -148,6 +148,7 @@ gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/u
 
 # Addons
 echo "Create addons.sh" >"${LOG_FILE}"
+rm -rf "${RAMDISK_PATH}/addons" >/dev/null 2>&1 || true
 mkdir -p "${RAMDISK_PATH}/addons"
 echo "#!/bin/sh" >"${RAMDISK_PATH}/addons/addons.sh"
 echo 'echo "addons.sh called with params ${@}"' >>"${RAMDISK_PATH}/addons/addons.sh"
