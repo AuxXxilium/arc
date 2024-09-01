@@ -55,8 +55,14 @@ function backtitle() {
 ###############################################################################
 # Auto Update Loader
 function arcUpdate() {
+  if echo "${ARC_VERSION}" | grep -q "dev"; then
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+      --infobox "Development Version detected." 0 0
+    sleep 2
+    DEV="true"
+  fi
   # Automatic Update
-  updateLoader
+  [ "${DEV}" == "true" ] && updateLoader "${ARC_VERSION}" || updateLoader
   updateAddons
   updateConfigs
   updateLKMs
