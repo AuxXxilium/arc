@@ -83,7 +83,8 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt update
-          sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils busybox dialog curl sed 
+          sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils busybox dialog curl sed
+          sudo pip install -r scripts/requirements.txt
           sudo snap install yq
 
       # Build incremental
@@ -95,15 +96,9 @@ jobs:
             [ "${2}" = "{}" ] && sudo yq eval '.'${1}' = {}' --inplace "${3}" 2>/dev/null || sudo yq eval '.'${1}' = "'"${2}"'"' --inplace "${3}" 2>/dev/null
           }
 
-          function readConfigKey() {
-            RESULT=$(yq eval '.'${1}' | explode(.)' "${2}" 2>/dev/null)
-            [ "${RESULT}" == "null" ] && echo "" || echo "${RESULT}"
-          }
-
           TAG="$(curl -m 5 -kL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
           curl -kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "/tmp/arc.img.zip"
           unzip -o "/tmp/arc.img.zip" -d "/tmp"
-          curl -kL "https://raw.githubusercontent.com/AuxXxilium/arc/page/docs/pats.json" -o "/tmp/pats.json"
 
           echo "Modify Arc Image"
           IMAGE_FILE="/tmp/arc.img"
@@ -125,12 +120,9 @@ jobs:
           MODEL="${{ env.MODEL }}"
           writeConfigKey "model" "${MODEL}" "${PRESET_CONFIG_FILE}"
           PRODUCTVER="${{ env.PRODUCTVER }}"
-          PAT_URL="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}\".\"url\"" "${PATS_CONFIG_FILE}")"
-          PAT_HASH="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}\".\"sum\"" "${PATS_CONFIG_FILE}")"
-          echo "model: ${MODEL}"
-          echo "productver: ${PRODUCTVER}"
-          echo "paturl: ${PAT_URL}"
-          echo "pathash: ${PAT_HASH}"
+          PJ="$(python scripts/functions.py getpats4mv -m "${MODEL}" -v "${PRODUCTVER:0:3}")"
+          PAT_URL=$(echo "${PJ}" | jq -r ".\"${PRODUCTVER}\".url")
+          PAT_HASH=$(echo "${PJ}" | jq -r ".\"${PRODUCTVER}\".sum")
           writeConfigKey "productver" "${PRODUCTVER:0:3}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "paturl" "${PAT_URL}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "pathash" "${PAT_HASH}" "${PRESET_CONFIG_FILE}"
