@@ -334,7 +334,7 @@ function arcVersion() {
       MSG+="Please manually fill in the URL and Hash of PAT.\n"
       MSG+="You will find these Data at: https://auxxxilium.tech/wiki/arc-loader-arc-loader/url-hash-liste"
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
-        --form "${MSG}" 11 120 2 "URL" 1 1 "${PAT_URL}" 1 8 110 0 "HASH" 2 1 "${PAT_HASH}" 2 8 110 0 \
+        --form "${MSG}" 11 120 2 "Url" 1 1 "${PAT_URL}" 1 8 110 0 "Hash" 2 1 "${PAT_HASH}" 2 8 110 0 \
         2>"${TMP_PATH}/resp"
       RET=$?
       [ ${RET} -eq 0 ]             # ok-button
@@ -893,8 +893,6 @@ if [ "${AUTOMATED}" == "true" ]; then
     make
   fi
 else
-  dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-    --msgbox "WARN: Be aware of using DSM 7.2.2 is not stable,\nsome Addons are only available for DSM 7.2.1." 6 55
   [ "${BUILDDONE}" == "true" ] && NEXT="3" || NEXT="1"
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
@@ -923,7 +921,7 @@ else
         echo "b \"Addons \" "                                                                 >>"${TMP_PATH}/menu"
         echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
         echo "e \"Version \" "                                                                >>"${TMP_PATH}/menu"
-        echo "p \"Patch Options (SN/Mac) \" "                                                 >>"${TMP_PATH}/menu"
+        echo "p \"SN/Mac Options \" "                                                         >>"${TMP_PATH}/menu"
         if [ "${DT}" == "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
           echo "S \"Sata PortMap \" "                                                         >>"${TMP_PATH}/menu"
         fi
@@ -943,9 +941,6 @@ else
           echo "R \"ArcDNS Options \" "                                                       >>"${TMP_PATH}/menu"
         fi
         echo "D \"StaticIP \" "                                                               >>"${TMP_PATH}/menu"
-        if [ -n "${ARCKEY}" ]; then
-          echo "r \"Reset Arc Patch \" "                                                      >>"${TMP_PATH}/menu"
-        fi
       fi
       if [ "${BOOTOPTS}" == "true" ]; then
         echo "6 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
@@ -993,6 +988,7 @@ else
     if [ "${LOADEROPTS}" == "true" ]; then
       echo "= \"\Z4========= Loader =========\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "= \"\Z1=== Edit with caution! ===\Zn \" "                                         >>"${TMP_PATH}/menu"
+      echo "M \"Primary NIC: \Z4${ARCNIC}\Zn \" "                                             >>"${TMP_PATH}/menu"
       echo "W \"RD Compression: \Z4${RD_COMPRESSED}\Zn \" "                                   >>"${TMP_PATH}/menu"
       echo "X \"Sata DOM: \Z4${SATADOM}\Zn \" "                                               >>"${TMP_PATH}/menu"
       echo "u \"Switch LKM Version: \Z4${LKM}\Zn \" "                                         >>"${TMP_PATH}/menu"
@@ -1013,7 +1009,6 @@ else
     fi
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
     echo "x \"Config Backup/Restore/Recovery \" "                                             >>"${TMP_PATH}/menu"
-    echo "M \"Primary NIC: \Z4${ARCNIC}\Zn \" "                                               >>"${TMP_PATH}/menu"
     echo "9 \"Offline Mode: \Z4${OFFLINE}\Zn \" "                                             >>"${TMP_PATH}/menu"
     if [ "${OFFLINE}" == "false" ]; then
       echo "z \"Loader Update Menu \" "                                                       >>"${TMP_PATH}/menu"
