@@ -921,7 +921,7 @@ else
         echo "b \"Addons \" "                                                                 >>"${TMP_PATH}/menu"
         echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
         echo "e \"Version \" "                                                                >>"${TMP_PATH}/menu"
-        echo "p \"Patch Options (SN/Mac) \" "                                                 >>"${TMP_PATH}/menu"
+        echo "p \"SN/Mac Options \" "                                                         >>"${TMP_PATH}/menu"
         if [ "${DT}" == "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
           echo "S \"Sata PortMap \" "                                                         >>"${TMP_PATH}/menu"
         fi
@@ -941,9 +941,6 @@ else
           echo "R \"ArcDNS Options \" "                                                       >>"${TMP_PATH}/menu"
         fi
         echo "D \"StaticIP \" "                                                               >>"${TMP_PATH}/menu"
-        if [ -n "${ARCKEY}" ]; then
-          echo "r \"Reset Arc Patch \" "                                                      >>"${TMP_PATH}/menu"
-        fi
       fi
       if [ "${BOOTOPTS}" == "true" ]; then
         echo "6 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
