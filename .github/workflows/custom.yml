@@ -142,6 +142,7 @@ jobs:
           DSM_FILE="${PAT_HASH}.tar"
           DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER:0:3}/${PAT_HASH}.tar"
           sudo curl -skL "${DSM_URL}" -o "/tmp/${DSM_FILE}"
+          [ -f "/tmp/${DSM_FILE}" ] && echo "dsm: download successful" || echo "dsm: file not found" && exit 1
           sudo mkdir -p "/tmp/p3/users"
           sudo mv -f "/tmp/${DSM_FILE}" "/tmp/p3/users/${DSM_FILE}"
           echo "Syncing files"
@@ -246,14 +247,6 @@ jobs:
             If this will not work, do not use customized Versions!
             ----
 
-      - name: Close Issues
-        if: success()
-        uses: actions-cool/issues-helper@v3
-        with:
-          actions: 'close-issue'
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.issue.number }}
-
       - name: Update Comment Fail
         if: failure()
         uses: actions-cool/issues-helper@v3
@@ -270,6 +263,13 @@ jobs:
             If this will not work, do not use customized Versions!
             ----
 
+      - name: Close Issues
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'close-issue'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+  
   comment:
     if: github.event.label.name == 'bug'
     runs-on: ubuntu-latest
