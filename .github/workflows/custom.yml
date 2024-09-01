@@ -142,7 +142,7 @@ jobs:
           DSM_FILE="${PAT_HASH}.tar"
           DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER:0:3}/${PAT_HASH}.tar"
           sudo curl -skL "${DSM_URL}" -o "/tmp/${DSM_FILE}"
-          [ -f "/tmp/${DSM_FILE}" ] && echo "dsm: download successful" || echo "dsm: file not found" && exit 1
+          [ -f "/tmp/${DSM_FILE}" ] && echo "dsm: download successful" || exit 1
           sudo mkdir -p "/tmp/p3/users"
           sudo mv -f "/tmp/${DSM_FILE}" "/tmp/p3/users/${DSM_FILE}"
           echo "Syncing files"
@@ -264,6 +264,7 @@ jobs:
             ----
 
       - name: Close Issues
+        if: success()
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'close-issue'
