@@ -80,7 +80,7 @@
                         $("#model").on("change", changeModel);
                         $("#version").on("change", changeVersion);
                         $("#kernel").on("change", changeKernel);
-                        $('#addons').val("acpid,mountloader,powersched,reboottoloader");
+                        $('#addons').val("acpid,cpuinfo,powersched");
                         setModels();
                     });
                 });
@@ -268,7 +268,7 @@
         </div>
         <div class="form-group mt-1 mb-2" id="model_item">
             <div class="form-group-header">
-                <label class="color-fg-default text-mono f5">Model:</label>
+                <label class="color-fg-default text-mono f5">Model: <a href="https://auxxxilium.tech/wiki/arc-loader-arc-loader/modell-plattform-auswaehlen/" target="_blank">More Information</a></label>
             </div>
             <div class="form-group-body">
                 <select class="form-select form-control select-sm input-contrast" id="model" name="inputs[model]"
@@ -302,7 +302,7 @@
         </div>
         <div class="form-group mt-1 mb-2" id="addons_item">
             <div class="form-group-header">
-                <label class="color-fg-default text-mono f5">Addons:</label>
+                <label class="color-fg-default text-mono f5">Addons: <a href="https://auxxxilium.tech/wiki/arc-loader-arc-loader/addons/" target="_blank">More Information</a></label>
             </div>
             <div class="form-group-body">
                 <textarea class="textarea-style input-contrast input-sm" type="text" id="addons" name="inputs[addons]"
@@ -316,8 +316,8 @@
         </div>
         <div data-replace-remote-form-target="" class="workflow-dispatch">
             <form id="inputs">
-                <button type="button" class="btn State--merged" autofocus="">
-                    Disbled because of DSM Update
+                <button type="button" class="btn State--merged" onclick="return createIssues()" autofocus="">
+                    Start Build
                 </button>
             </form>
         </div>
