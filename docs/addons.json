@@ -7,6 +7,10 @@
         "system": false,
         "description": "Remove the Modelrestrictions for official Addin Cards."
     },
+    "allowdowngrade": {
+        "system": false,
+        "description": "Allow Downgrade for AME, SS and VideoStation on 7.2.2"
+    },
     "amepatch": {
         "system": false,
         "description": "Dynamic Licensepatch for AME (depends on Arc Patch)"
@@ -161,7 +165,7 @@
     },
     "sspatch": {
         "system": false,
-        "description": "Dynamic 50 License Patch for SS 9.2.0-11289 (Non DVA)"
+        "description": "Dynamic License Patch for SS 9.2.0-11289 (Not for DVA 32xx)"
     },
     "storagepanel": {
         "system": false,
@@ -170,6 +174,14 @@
     "updatenotify": {
         "system": true,
         "description": "Arc Update Notifications."
+    },
+    "ups": {
+        "system": false,
+        "description": "Force UPS to shut down in standby mode."
+    },
+    "videostation": {
+        "system": false,
+        "description": "Force downgrade Video Station and AME to DSM 7.2.1 Versions on DSM 7.2.2"
     },
     "wol": {
         "system": true,
