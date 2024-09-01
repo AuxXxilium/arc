@@ -334,7 +334,7 @@ function arcVersion() {
       MSG+="Please manually fill in the URL and Hash of PAT.\n"
       MSG+="You will find these Data at: https://auxxxilium.tech/wiki/arc-loader-arc-loader/url-hash-liste"
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
-        --form "${MSG}" 11 120 2 "URL" 1 1 "${PAT_URL}" 1 8 110 0 "HASH" 2 1 "${PAT_HASH}" 2 8 110 0 \
+        --form "${MSG}" 11 120 2 "Url" 1 1 "${PAT_URL}" 1 8 110 0 "Hash" 2 1 "${PAT_HASH}" 2 8 110 0 \
         2>"${TMP_PATH}/resp"
       RET=$?
       [ ${RET} -eq 0 ]             # ok-button
