@@ -127,6 +127,10 @@ jobs:
           PRODUCTVER="${{ env.PRODUCTVER }}"
           PAT_URL="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}\".\"url\"" "${PATS_CONFIG_FILE}")"
           PAT_HASH="$(readConfigKey "\"${MODEL}\".\"${PRODUCTVER}\".\"sum\"" "${PATS_CONFIG_FILE}")"
+          echo "model: ${MODEL}"
+          echo "productver: ${PRODUCTVER}"
+          echo "paturl: ${PAT_URL}"
+          echo "pathash: ${PAT_HASH}"
           writeConfigKey "productver" "${PRODUCTVER:0:3}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "paturl" "${PAT_URL}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "pathash" "${PAT_HASH}" "${PRESET_CONFIG_FILE}"
@@ -140,7 +144,6 @@ jobs:
               writeConfigKey "addons.\"${A}\"" "${VALUE}" "${PRESET_CONFIG_FILE}"
             done
           fi
-          writeConfigKey "arc" "{}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "automated" "true" "${PRESET_CONFIG_FILE}"
           echo "$(cat "${PRESET_CONFIG_FILE}")"
           sudo echo "arc-${MODEL}-${PRODUCTVER:0:3}-${TAG}" >"/tmp/automated"
