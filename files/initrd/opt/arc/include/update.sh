@@ -167,19 +167,26 @@ function updateLoader() {
         done
         curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       fi
-      if [ "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" = "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
+      if [ -f "${TMP_PATH}/update.zip" ]; then
         echo "Download successful!"
-        unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}"
-        echo "Installing new Loader Image..."
-        mv -f "${TMP_PATH}/grub.cfg" "${USER_GRUB_CONFIG}"
-        mv -f "${TMP_PATH}/ARC-VERSION" "${PART1_PATH}/ARC-VERSION"
-        mv -f "${TMP_PATH}/bzImage-arc" "${ARC_BZIMAGE_FILE}"
-        mv -f "${TMP_PATH}/initrd-arc" "${ARC_RAMDISK_FILE}"
-        rm -f "${TMP_PATH}/update.zip"
-        echo "Update done!"
-        sleep 2
+        if [ "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" == "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
+          echo "Download successful!"
+          unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}"
+          echo "Installing new Loader Image..."
+          mv -f "${TMP_PATH}/grub.cfg" "${USER_GRUB_CONFIG}"
+          mv -f "${TMP_PATH}/ARC-VERSION" "${PART1_PATH}/ARC-VERSION"
+          mv -f "${TMP_PATH}/bzImage-arc" "${ARC_BZIMAGE_FILE}"
+          mv -f "${TMP_PATH}/initrd-arc" "${ARC_RAMDISK_FILE}"
+          rm -f "${TMP_PATH}/update.zip"
+          echo "Update done!"
+          sleep 2
+        else
+          echo "Checksum mismatch!"
+          sleep 5
+          updateFailed
+        fi
       else
-        echo "Error getting new Version!"
+        echo "Error downloading new Version!"
         sleep 5
         updateFailed
       fi
@@ -232,25 +239,32 @@ function updateAddons() {
         done
         curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       fi
-      if [ "$(sha256sum "${TMP_PATH}/addons.zip" | awk '{print $1}')" = "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
+      if [ -f "${TMP_PATH}/addons.zip" ]; then
         echo "Download successful!"
-        rm -rf "${ADDONS_PATH}"
-        mkdir -p "${ADDONS_PATH}"
-        echo "Installing new Addons..."
-        unzip -oq "${TMP_PATH}/addons.zip" -d "${ADDONS_PATH}"
-        rm -f "${TMP_PATH}/addons.zip"
-        for F in $(ls ${ADDONS_PATH}/*.addon 2>/dev/null); do
-          ADDON=$(basename "${F}" | sed 's|.addon||')
-          rm -rf "${ADDONS_PATH}/${ADDON}"
-          mkdir -p "${ADDONS_PATH}/${ADDON}"
-          echo "Installing ${F} to ${ADDONS_PATH}/${ADDON}"
-          tar -xaf "${F}" -C "${ADDONS_PATH}/${ADDON}"
-          rm -f "${F}"
-        done
-        echo "Update done!"
-        sleep 2
+        if [ "$(sha256sum "${TMP_PATH}/addons.zip" | awk '{print $1}')" == "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
+          echo "Download successful!"
+          rm -rf "${ADDONS_PATH}"
+          mkdir -p "${ADDONS_PATH}"
+          echo "Installing new Addons..."
+          unzip -oq "${TMP_PATH}/addons.zip" -d "${ADDONS_PATH}"
+          rm -f "${TMP_PATH}/addons.zip"
+          for F in $(ls ${ADDONS_PATH}/*.addon 2>/dev/null); do
+            ADDON=$(basename "${F}" | sed 's|.addon||')
+            rm -rf "${ADDONS_PATH}/${ADDON}"
+            mkdir -p "${ADDONS_PATH}/${ADDON}"
+            echo "Installing ${F} to ${ADDONS_PATH}/${ADDON}"
+            tar -xaf "${F}" -C "${ADDONS_PATH}/${ADDON}"
+            rm -f "${F}"
+          done
+          echo "Update done!"
+          sleep 2
+        else
+          echo "Checksum mismatch!"
+          sleep 5
+          updateFailed
+        fi
       else
-        echo "Error extracting new Version!"
+        echo "Error downloading new Version!"
         sleep 5
         updateFailed
       fi
@@ -303,17 +317,24 @@ function updatePatches() {
         done
         curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       fi
-      if [ "$(sha256sum "${TMP_PATH}/patches.zip" | awk '{print $1}')" = "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
+      if [ -f "${TMP_PATH}/patches.zip" ]; then
         echo "Download successful!"
-        rm -rf "${PATCH_PATH}"
-        mkdir -p "${PATCH_PATH}"
-        echo "Installing new Patches..."
-        unzip -oq "${TMP_PATH}/patches.zip" -d "${PATCH_PATH}"
-        rm -f "${TMP_PATH}/patches.zip"
-        echo "Update done!"
-        sleep 2
+        if [ "$(sha256sum "${TMP_PATH}/patches.zip" | awk '{print $1}')" == "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
+          echo "Download successful!"
+          rm -rf "${PATCH_PATH}"
+          mkdir -p "${PATCH_PATH}"
+          echo "Installing new Patches..."
+          unzip -oq "${TMP_PATH}/patches.zip" -d "${PATCH_PATH}"
+          rm -f "${TMP_PATH}/patches.zip"
+          echo "Update done!"
+          sleep 2
+        else
+          echo "Checksum mismatch!"
+          sleep 5
+          updateFailed
+        fi
       else
-        echo "Error extracting new Version!"
+        echo "Error downloading new Version!"
         sleep 5
         updateFailed
       fi
@@ -366,17 +387,24 @@ function updateCustom() {
         done
         curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       fi
-      if [ "$(sha256sum "${TMP_PATH}/custom.zip" | awk '{print $1}')" = "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
+      if [ -f "${TMP_PATH}/custom.zip" ]; then
         echo "Download successful!"
-        rm -rf "${CUSTOM_PATH}"
-        mkdir -p "${CUSTOM_PATH}"
-        echo "Installing new Custom Kernel..."
-        unzip -oq "${TMP_PATH}/custom.zip" -d "${CUSTOM_PATH}"
-        rm -f "${TMP_PATH}/custom.zip"
-        echo "Update done!"
-        sleep 2
+        if [ "$(sha256sum "${TMP_PATH}/custom.zip" | awk '{print $1}')" == "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
+          echo "Download successful!"
+          rm -rf "${CUSTOM_PATH}"
+          mkdir -p "${CUSTOM_PATH}"
+          echo "Installing new Custom Kernel..."
+          unzip -oq "${TMP_PATH}/custom.zip" -d "${CUSTOM_PATH}"
+          rm -f "${TMP_PATH}/custom.zip"
+          echo "Update done!"
+          sleep 2
+        else
+          echo "Checksum mismatch!"
+          sleep 5
+          updateFailed
+        fi
       else
-        echo "Error extracting new Version!"
+        echo "Error downloading new Version!"
         sleep 5
         updateFailed
       fi
@@ -429,32 +457,39 @@ function updateModules() {
         done
         curl --interface ${ARCNIC} -skL "${SHA}" -o "${TMP_PATH}/checksum.sha256"
       fi
-      if [ "$(sha256sum "${TMP_PATH}/modules.zip" | awk '{print $1}')" = "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
+      if [ -f "${TMP_PATH}/modules.zip" ]; then
         echo "Download successful!"
-        rm -rf "${MODULES_PATH}"
-        mkdir -p "${MODULES_PATH}"
-        echo "Installing new Modules..."
-        unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}"
-        rm -f "${TMP_PATH}/modules.zip"
-        # Rebuild modules if model/build is selected
-        PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-        if [ -n "${PRODUCTVER}" ]; then
-          PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-          KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-          # Modify KVER for Epyc7002
-          [ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+        if [ "$(sha256sum "${TMP_PATH}/modules.zip" | awk '{print $1}')" == "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
+          echo "Download successful!"
+          rm -rf "${MODULES_PATH}"
+          mkdir -p "${MODULES_PATH}"
+          echo "Installing new Modules..."
+          unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}"
+          rm -f "${TMP_PATH}/modules.zip"
+          # Rebuild modules if model/build is selected
+          PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+          if [ -n "${PRODUCTVER}" ]; then
+            PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+            KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+            # Modify KVER for Epyc7002
+            [ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+          fi
+          if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+            writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+            echo "Rebuilding Modules..."
+            while read -r ID DESC; do
+              writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+            done < <(getAllModules "${PLATFORM}" "${KVERP}")
+          fi
+          echo "Update done!"
+          sleep 2
+        else
+          echo "Checksum mismatch!"
+          sleep 5
+          updateFailed
         fi
-        if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
-          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-          echo "Rebuilding Modules..."
-          while read -r ID DESC; do
-            writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-          done < <(getAllModules "${PLATFORM}" "${KVERP}")
-        fi
-        echo "Update done!"
-        sleep 2
       else
-        echo "Error extracting new Version!"
+        echo "Error downloading new Version!"
         sleep 5
         updateFailed
       fi
@@ -516,7 +551,7 @@ function updateConfigs() {
         echo "Update done!"
         sleep 2
       else
-        echo "Error extracting new Version!"
+        echo "Error downloading new Version!"
         sleep 5
         updateFailed
       fi
@@ -577,7 +612,7 @@ function updateLKMs() {
         echo "Update done!"
         sleep 2
       else
-        echo "Error extracting new Version!"
+        echo "Error downloading new Version!"
         sleep 5
         updateFailed
       fi
