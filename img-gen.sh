@@ -36,7 +36,7 @@ sudo mount ${LOOPX}p3 "/tmp/p3"
 
 [[ ! -f "brs/bzImage-arc" || ! -f "brs/initrd-arc" ]] && return 1
 
-VERSION=$(date +'%y.%-m.dev')
+VERSION=$(date +'%y.%m.dev')
 echo "${VERSION}" >files/p1/ARC-VERSION
 echo "${VERSION}" >VERSION
 echo "stable" >files/p1/ARC-BRANCH
