@@ -880,7 +880,7 @@ function updateMenu() {
           1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
-        [ $? -ne 0 ] && continue
+        [ $? -ne 0 ] && break
         opts=$(cat ${TMP_PATH}/opts)
         if [ ${opts} -eq 1 ]; then
           TAG=""
@@ -907,7 +907,7 @@ function updateMenu() {
           1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
-        [ $? -ne 0 ] && continue
+        [ $? -ne 0 ] && break
         opts=$(cat ${TMP_PATH}/opts)
         if [ ${opts} -eq 1 ]; then
           TAG=""
@@ -946,7 +946,7 @@ function updateMenu() {
           1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
-        [ $? -ne 0 ] && continue
+        [ $? -ne 0 ] && break
         opts=$(cat ${TMP_PATH}/opts)
         if [ ${opts} -eq 1 ]; then
           TAG=""
@@ -972,6 +972,7 @@ function updateMenu() {
           1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
+        [ $? -ne 0 ] && break
         opts=$(cat ${TMP_PATH}/opts)
         if [ ${opts} -eq 1 ]; then
           TAG=""
@@ -1001,6 +1002,7 @@ function updateMenu() {
           1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
+        [ $? -ne 0 ] && break
         opts=$(cat ${TMP_PATH}/opts)
         if [ ${opts} -eq 1 ]; then
           TAG=""
@@ -1026,6 +1028,7 @@ function updateMenu() {
           1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
+        [ $? -ne 0 ] && break
         opts=$(cat ${TMP_PATH}/opts)
         if [ ${opts} -eq 1 ]; then
           TAG=""
@@ -1051,6 +1054,7 @@ function updateMenu() {
           1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
+        [ $? -ne 0 ] && break
         opts=$(cat ${TMP_PATH}/opts)
         if [ ${opts} -eq 1 ]; then
           TAG=""
@@ -1076,6 +1080,7 @@ function updateMenu() {
           1 "Latest ${NEWVER}" \
           2 "Select Version" \
         2>"${TMP_PATH}/opts"
+        [ $? -ne 0 ] && break
         opts=$(cat ${TMP_PATH}/opts)
         if [ ${opts} -eq 1 ]; then
           TAG=""
@@ -1099,6 +1104,7 @@ function updateMenu() {
           1 "Stable Buildroot" \
           2 "Next Buildroot (latest)" \
         2>"${TMP_PATH}/opts"
+        [ $? -ne 0 ] && break
         opts=$(cat ${TMP_PATH}/opts)
         if [ ${opts} -eq 1 ]; then
           writeConfigKey "arc.branch" "stable" "${USER_CONFIG_FILE}"
