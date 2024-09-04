@@ -678,28 +678,34 @@ function arcSettings() {
   # Max Memory for DSM
   RAMCONFIG="$((${RAMTOTAL} * 1024))"
   writeConfigKey "synoinfo.mem_max_mb" "${RAMCONFIG}" "${USER_CONFIG_FILE}"
-  # Config is done
-  writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
-  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-  # Check for Custom Build
-  if [ "${AUTOMATED}" == "false" ]; then
-    # Ask for Build
-    dialog --clear --backtitle "$(backtitle)" --title "Config done" \
-      --no-cancel --menu "Build now?" 7 40 0 \
-      1 "Yes - Build Arc Loader now" \
-      2 "No - I want to make changes" \
-    2>"${TMP_PATH}/resp"
-    resp=$(cat ${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return 1
-    if [ ${resp} -eq 1 ]; then
-      arcSummary
-    elif [ ${resp} -eq 2 ]; then
-      dialog --clear --no-items --backtitle "$(backtitle)"
-      return 1
+  if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
+    # Config is done
+    writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
+    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+    # Check for Custom Build
+    if [ "${AUTOMATED}" == "false" ]; then
+      # Ask for Build
+      dialog --clear --backtitle "$(backtitle)" --title "Config done" \
+        --no-cancel --menu "Build now?" 7 40 0 \
+        1 "Yes - Build Arc Loader now" \
+        2 "No - I want to make changes" \
+      2>"${TMP_PATH}/resp"
+      resp=$(cat ${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return 1
+      if [ ${resp} -eq 1 ]; then
+        arcSummary
+      elif [ ${resp} -eq 2 ]; then
+        dialog --clear --no-items --backtitle "$(backtitle)"
+        return 1
+      fi
+    else
+      # Build Loader
+      make
     fi
   else
-    # Build Loader
-    make
+    dialog --backtitle "$(backtitle)" --title "Config failed" \
+      --msgbox "ERROR: Config failed!\nExit." 5 40
+    return 1
   fi
 }
 
