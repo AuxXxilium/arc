@@ -417,6 +417,7 @@ function arcVersion() {
         --msgbox "${MSG}" 9 80
     fi
     # Grep PAT_FILE
+    PAT_FILE=$(ls ${USER_UP_PATH}/*.pat | head -n 1)
     if [ -f "${PAT_FILE}" ] && [ $(wc -c "${PAT_FILE}" | awk '{print $1}') -gt 300000000 ]; then
       dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
         --infobox "DSM Image found!" 3 40
