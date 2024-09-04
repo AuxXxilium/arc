@@ -456,6 +456,8 @@ function arcVersion() {
   if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
     [ "${VALID}" == "true" ] && copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null
   fi
+  # Cleanup
+  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   if [ "${VALID}" == "true" ] && [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Config" \
       --infobox "Reconfiguring Addons, Cmdline, Modules and Synoinfo" 3 60
@@ -493,6 +495,8 @@ function arcVersion() {
   else
     dialog --backtitle "$(backtitle)" --title "Arc Config" --aspect 18 \
       --infobox "Arc Config failed!\nExit." 4 40
+    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     sleep 5
     return 1
   fi
