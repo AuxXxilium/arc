@@ -417,6 +417,7 @@ function arcVersion() {
         --msgbox "${MSG}" 9 80
     fi
     # Grep PAT_FILE
+    PAT_FILE=$(ls ${USER_UP_PATH}/*.pat | head -n 1)
     if [ -f "${PAT_FILE}" ] && [ $(wc -c "${PAT_FILE}" | awk '{print $1}') -gt 300000000 ]; then
       dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
         --infobox "DSM Image found!" 3 40
@@ -455,6 +456,8 @@ function arcVersion() {
   if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
     [ "${VALID}" == "true" ] && copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null
   fi
+  # Cleanup
+  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   if [ "${VALID}" == "true" ] && [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Config" \
       --infobox "Reconfiguring Addons, Cmdline, Modules and Synoinfo" 3 60
@@ -492,6 +495,8 @@ function arcVersion() {
   else
     dialog --backtitle "$(backtitle)" --title "Arc Config" --aspect 18 \
       --infobox "Arc Config failed!\nExit." 4 40
+    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     sleep 5
     return 1
   fi
@@ -673,28 +678,34 @@ function arcSettings() {
   # Max Memory for DSM
   RAMCONFIG="$((${RAMTOTAL} * 1024))"
   writeConfigKey "synoinfo.mem_max_mb" "${RAMCONFIG}" "${USER_CONFIG_FILE}"
-  # Config is done
-  writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
-  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-  # Check for Custom Build
-  if [ "${AUTOMATED}" == "false" ]; then
-    # Ask for Build
-    dialog --clear --backtitle "$(backtitle)" --title "Config done" \
-      --no-cancel --menu "Build now?" 7 40 0 \
-      1 "Yes - Build Arc Loader now" \
-      2 "No - I want to make changes" \
-    2>"${TMP_PATH}/resp"
-    resp=$(cat ${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return 1
-    if [ ${resp} -eq 1 ]; then
-      arcSummary
-    elif [ ${resp} -eq 2 ]; then
-      dialog --clear --no-items --backtitle "$(backtitle)"
-      return 1
+  if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
+    # Config is done
+    writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
+    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+    # Check for Custom Build
+    if [ "${AUTOMATED}" == "false" ]; then
+      # Ask for Build
+      dialog --clear --backtitle "$(backtitle)" --title "Config done" \
+        --no-cancel --menu "Build now?" 7 40 0 \
+        1 "Yes - Build Arc Loader now" \
+        2 "No - I want to make changes" \
+      2>"${TMP_PATH}/resp"
+      resp=$(cat ${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return 1
+      if [ ${resp} -eq 1 ]; then
+        arcSummary
+      elif [ ${resp} -eq 2 ]; then
+        dialog --clear --no-items --backtitle "$(backtitle)"
+        return 1
+      fi
+    else
+      # Build Loader
+      make
     fi
   else
-    # Build Loader
-    make
+    dialog --backtitle "$(backtitle)" --title "Config failed" \
+      --msgbox "ERROR: Config failed!\nExit." 5 40
+    return 1
   fi
 }
 
