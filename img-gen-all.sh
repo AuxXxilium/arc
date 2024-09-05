@@ -15,7 +15,7 @@ getConfigs "files/p3/configs"
 getPatches "files/p3/patches"
 getCustom "files/p3/custom"
 getTheme "files/p1/boot/grub"
-getOffline "files/p3/configs"
+getOffline "files/p3/offline"
 getBuildroots "latest" "brs"
 getBuildrootx "latest" "brx"
 
