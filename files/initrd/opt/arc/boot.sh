@@ -19,6 +19,8 @@ ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
 BUS=$(getBus "${LOADER_DISK}")
 # Check if machine has EFI
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
+# NTP Check
+localtime
 
 # Print Title centralized
 clear
@@ -68,6 +70,7 @@ echo -e "\033[1;37mSystem:\033[0m"
 echo -e "Vendor: \033[1;37m${VENDOR}\033[0m"
 echo -e "CPU: \033[1;37m${CPU}\033[0m"
 echo -e "Memory: \033[1;37m${RAMTOTAL}GB\033[0m"
+echo -e "Time OS | Bios: \033[1;37m$(date "+%F %H:%M:%S") | $(hwclock | cut -d. -f1)\033[0m"
 echo
 
 if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then

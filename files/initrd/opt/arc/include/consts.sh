@@ -18,7 +18,6 @@ GRUB_PATH="${PART1_PATH}/boot/grub"
 
 ORI_ZIMAGE_FILE="${PART2_PATH}/zImage"
 ORI_RDGZ_FILE="${PART2_PATH}/rd.gz"
-
 ARC_BZIMAGE_FILE="${PART3_PATH}/bzImage-arc"
 ARC_RAMDISK_FILE="${PART3_PATH}/initrd-arc"
 MOD_ZIMAGE_FILE="${PART3_PATH}/zImage-dsm"
@@ -37,7 +36,6 @@ S_FILE="${MODEL_CONFIG_PATH}/serials.yml"
 S_FILE_ARC="${MODEL_CONFIG_PATH}/arc_serials.yml"
 S_FILE_ENC="${MODEL_CONFIG_PATH}/arc_serials.enc"
 P_FILE="${MODEL_CONFIG_PATH}/platforms.yml"
-D_FILE="${MODEL_CONFIG_PATH}/data.yml"
 
 EXTRACTOR_PATH="${PART3_PATH}/extractor"
 EXTRACTOR_BIN="syno_extract_system_patch"

@@ -148,7 +148,6 @@ gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/u
 
 # Addons
 echo "Create addons.sh" >"${LOG_FILE}"
-rm -rf "${RAMDISK_PATH}/addons" >/dev/null 2>&1 || true
 mkdir -p "${RAMDISK_PATH}/addons"
 echo "#!/bin/sh" >"${RAMDISK_PATH}/addons/addons.sh"
 echo 'echo "addons.sh called with params ${@}"' >>"${RAMDISK_PATH}/addons/addons.sh"
@@ -167,7 +166,7 @@ echo "export KEYMAP=\"${KEYMAP}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
-for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "updatenotify" "wol" "mountloader"; do
+for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
   PARAMS=""
   if [ "${ADDON}" == "disks" ]; then
     HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"

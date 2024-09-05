@@ -70,7 +70,7 @@ jobs:
           echo "BRX_VERSION=${TAG}" >> $GITHUB_ENV
           getBuildroots "latest" "brs"
           echo "BRS_VERSION=${TAG}" >> $GITHUB_ENV
-          getOffline "files/p3/configs"
+          getOffline "files/p3/offline"
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
@@ -129,7 +129,7 @@ jobs:
           convertova "${IMAGE_FILE}" "arc.ova"
 
           # Zip update and generate checksum
-          zip -9j update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
+          zip -9j update.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/ARC-BRANCH" "files/p1/boot/grub/grub.cfg" "files/p3/offline/offline.json"
           sha256sum update.zip >checksum.sha256
 
       # Build incremental
@@ -187,7 +187,7 @@ jobs:
           convertova "${IMAGE_FILE}" "arc-next.ova"
 
           # Zip update and generate checksum
-          zip -9j update-next.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/boot/grub/grub.cfg"
+          zip -9j update-next.zip "files/p3/bzImage-arc" "files/p3/initrd-arc" "files/p1/ARC-VERSION" "files/p1/ARC-BRANCH" "files/p1/boot/grub/grub.cfg" "files/p3/offline/offline.json"
           sha256sum update-next.zip >checksum-next.sha256
 
       # Zip image and generate checksum

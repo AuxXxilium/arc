@@ -175,6 +175,7 @@ function updateLoader() {
           echo "Installing new Loader Image..."
           mv -f "${TMP_PATH}/grub.cfg" "${USER_GRUB_CONFIG}"
           mv -f "${TMP_PATH}/ARC-VERSION" "${PART1_PATH}/ARC-VERSION"
+          mv -f "${TMP_PATH}/ARC-BRANCH" "${PART1_PATH}/ARC-BRANCH"
           mv -f "${TMP_PATH}/bzImage-arc" "${ARC_BZIMAGE_FILE}"
           mv -f "${TMP_PATH}/initrd-arc" "${ARC_RAMDISK_FILE}"
           rm -f "${TMP_PATH}/update.zip"

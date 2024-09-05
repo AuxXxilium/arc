@@ -533,21 +533,28 @@ function ntpCheck() {
   local KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
   if [ "${OFFLINE}" == "false" ]; then
     # Timezone
-    if [ "${ARCNIC}" == "auto" ]; then
-      local REGION="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
-      local TIMEZONE="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
-      [ -z "${KEYMAP}" ] && KEYMAP="$(curl -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
-    else
-      local REGION="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
-      local TIMEZONE="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
-      [ -z "${KEYMAP}" ] && KEYMAP="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+    local REGION="$(readConfigKey "time.region" "${USER_CONFIG_FILE}")"
+    local TIMEZONE="$(readConfigKey "time.timezone" "${USER_CONFIG_FILE}")"
+    if [ -z "${REGION}" ] || [ -z "${TIMEZONE}" ]; then
+      if [ "${ARCNIC}" == "auto" ]; then
+        local REGION="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
+        local TIMEZONE="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
+        [ -z "${KEYMAP}" ] && KEYMAP="$(curl -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+      else
+        local REGION="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
+        local TIMEZONE="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
+        [ -z "${KEYMAP}" ] && KEYMAP="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+      fi
+      writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
+      writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
     fi
-    writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
-    writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
-    ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
-    # NTP
-    /etc/init.d/S49ntpd restart > /dev/null 2>&1
-    hwclock -w > /dev/null 2>&1
+    if [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ]; then
+      ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
+      TZ="${REGION}/${TIMEZONE}"
+      # NTP
+      /etc/init.d/S49ntpd restart > /dev/null 2>&1
+      #hwclock --systohc > /dev/null 2>&1
+    fi
   fi
   if [ -z "${LAYOUT}" ]; then
     [ -n "${KEYMAP}" ] && KEYMAP="$(echo ${KEYMAP} | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]' | tr -d '[:punct:]' | tr -d '[:digit:]')"
@@ -561,7 +568,6 @@ function ntpCheck() {
 # Offline Check
 function offlineCheck() {
   CNT=0
-  AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   local ARCNIC=""
   local OFFLINE="${1}"
   if [ "${OFFLINE}" == "true" ]; then
@@ -590,21 +596,14 @@ function offlineCheck() {
     if [ -n "${ARCNIC}" ]; then
       OFFLINE="false"
     elif [ -z "${ARCNIC}" ]; then
-      if [ "${AUTOMATED}" == "false" ]; then
-        dialog --backtitle "$(backtitle)" --title "Online Check" \
-          --infobox "Could not connect to Github.\nSwitch to Offline Mode!" 0 0
-      else
-        dialog --backtitle "$(backtitle)" --title "Online Check" \
-          --infobox "Could not connect to Github.\nSwitch to Offline Mode!\nDisable Automated Mode!" 0 0
-      fi
+      dialog --backtitle "$(backtitle)" --title "Online Check" \
+        --infobox "Could not connect to Github.\nSwitch to Offline Mode!" 0 0
       sleep 5
-      cp -f "${PART3_PATH}/configs/offline.json" "${ARC_PATH}/include/offline.json"
-      AUTOMATED="false"
       ARCNIC="offline"
       OFFLINE="true"
     fi
   fi
-  writeConfigKey "automated" "${AUTOMATED}" "${USER_CONFIG_FILE}"
+  [ "${OFFLINE}" == "true" ] && cp -f "${PART3_PATH}/offline/offline.json" "${ARC_PATH}/include/offline.json"
   writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"
 }
