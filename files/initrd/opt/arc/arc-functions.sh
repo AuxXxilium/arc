@@ -1268,6 +1268,8 @@ function sysinfo() {
     TEXT+="\n  Kernelload: \Zb${KERNELLOAD}\Zn"
     TEXT+="\n  Directboot: \Zb${DIRECTBOOT}\Zn"
     TEXT+="\n  Addons selected: \Zb${ADDONSINFO}\Zn"
+  else
+    TEXT+="\n  Config not completed!\n"
   fi
   TEXT+="\n  Modules loaded: \Zb${MODULESINFO}\Zn"
   if [ "${CONFDONE}" == "true" ]; then

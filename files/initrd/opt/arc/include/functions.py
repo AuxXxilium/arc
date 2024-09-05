@@ -351,7 +351,7 @@ def getmodelsoffline(platforms=None):
         PS = []
 
     models = []
-    with open(os.path.join('/mnt/p3/configs', "offline.json")) as user_file:
+    with open(os.path.join('/mnt/p3/offline', "offline.json")) as user_file:
         data = json.load(user_file)
 
     for I in data["channel"]["item"]:
