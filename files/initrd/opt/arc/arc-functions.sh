@@ -718,8 +718,8 @@ function backupMenu() {
   while true; do
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       1 "Restore Arc Config from DSM" \
-      2 "Restore Encryption Key from DSM" \
-      3 "Backup Encryption Key to DSM" \
+      2 "Restore HW Encryption Key from DSM" \
+      3 "Backup HW Encryption Key to DSM" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
