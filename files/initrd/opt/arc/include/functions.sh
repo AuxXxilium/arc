@@ -550,7 +550,6 @@ function ntpCheck() {
     fi
     if [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ]; then
       ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
-      TZ="${REGION}/${TIMEZONE}"
       # NTP
       /etc/init.d/S49ntpd restart > /dev/null 2>&1
       #hwclock --systohc > /dev/null 2>&1

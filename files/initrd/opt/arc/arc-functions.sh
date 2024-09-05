@@ -850,18 +850,18 @@ function updateMenu() {
   ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   NEXT="1"
   while true; do
-    dialog --backtitle "$(backtitle)" --cancel-label "Exit" \
+    dialog --backtitle "$(backtitle)" --colors --cancel-label "Exit" \
       --menu "Choose an Option" 0 0 0 \
+      0 "Buildroot Branch: \Z1${ARCBRANCH}\Zn" \
       1 "Automated Update Mode" \
-      2 "Full-Upgrade Loader (reflash)" \
-      3 "Update Loader" \
-      4 "Update Addons" \
-      5 "Update Configs" \
-      6 "Update LKMs" \
-      7 "Update Modules" \
-      8 "Update Patches" \
-      9 "Update Custom Kernel" \
-      0 "Buildroot Branch: ${ARCBRANCH}" \
+      2 "Full-Upgrade Loader \Z1(reflash)\Zn" \
+      3 "\Z4Advanced:\Zn Update Loader" \
+      4 "\Z4Advanced:\Zn Update Addons" \
+      5 "\Z4Advanced:\Zn Update Configs" \
+      6 "\Z4Advanced:\Zn Update LKMs" \
+      7 "\Z4Advanced:\Zn Update Modules" \
+      8 "\Z4Advanced:\Zn Update Patches" \
+      9 "\Z4Advanced:\Zn Update Custom Kernel" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -1219,7 +1219,7 @@ function sysinfo() {
   TEXT+="\n  CPU Scaling: \Zb${CPUFREQ}\Zn"
   TEXT+="\n  Secure Boot: \Zb${SECURE}\Zn"
   TEXT+="\n  Bootdisk: \Zb${LOADER_DISK}\Zn"
-  TEXT+="\n  Time OS | Bios: \Zb$(date "+%F %H:%M:%S") | $(hwclock | cut -d. -f1)\Zn"
+  TEXT+="\n  Time OS | Bios: \Zb$(TZ="${REGION}/${TIMEZONE}" && date "+%F %H:%M:%S") | $(hwclock | cut -d. -f1)\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${ETHN} NIC\Zn\n"
   for ETH in ${ETHX}; do
@@ -1269,6 +1269,7 @@ function sysinfo() {
     TEXT+="\n  Directboot: \Zb${DIRECTBOOT}\Zn"
     TEXT+="\n  Addons selected: \Zb${ADDONSINFO}\Zn"
   else
+    TEXT+="\n"
     TEXT+="\n  Config not completed!\n"
   fi
   TEXT+="\n  Modules loaded: \Zb${MODULESINFO}\Zn"
