@@ -37,7 +37,6 @@ S_FILE="${MODEL_CONFIG_PATH}/serials.yml"
 S_FILE_ARC="${MODEL_CONFIG_PATH}/arc_serials.yml"
 S_FILE_ENC="${MODEL_CONFIG_PATH}/arc_serials.enc"
 P_FILE="${MODEL_CONFIG_PATH}/platforms.yml"
-D_FILE="${MODEL_CONFIG_PATH}/data.yml"
 
 EXTRACTOR_PATH="${PART3_PATH}/extractor"
 EXTRACTOR_BIN="syno_extract_system_patch"
