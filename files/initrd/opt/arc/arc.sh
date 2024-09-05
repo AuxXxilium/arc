@@ -984,8 +984,8 @@ else
       echo "B \"Grep DSM Config from Backup \" "                                              >>"${TMP_PATH}/menu"
       echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
       echo "w \"Reset Loader to Defaults \" "                                                 >>"${TMP_PATH}/menu"
-      echo "C \"Clone Loader to Disk \" "                                                     >>"${TMP_PATH}/menu"
-      echo "v \"Write Loader Modifications to Disk \" "                                       >>"${TMP_PATH}/menu"
+      echo "C \"Clone Loader to another Disk \" "                                             >>"${TMP_PATH}/menu"
+      echo "v \"Save Loader Modifications to Disk \" "                                        >>"${TMP_PATH}/menu"
       echo "n \"Grub Bootloader Config \" "                                                   >>"${TMP_PATH}/menu"
       if [ "${OFFLINE}" == "false" ]; then
         echo "Y \"Arc Dev Mode: \Z4${ARCDYN}\Zn \" "                                          >>"${TMP_PATH}/menu"
