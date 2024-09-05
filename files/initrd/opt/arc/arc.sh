@@ -415,9 +415,9 @@ function arcVersion() {
       MSG+="Press OK to continue!"
       dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
         --msgbox "${MSG}" 9 80
+      # Grep PAT_FILE
+      PAT_FILE=$(ls ${USER_UP_PATH}/*.pat | head -n 1)
     fi
-    # Grep PAT_FILE
-    PAT_FILE=$(ls ${USER_UP_PATH}/*.pat | head -n 1)
     if [ -f "${PAT_FILE}" ] && [ $(wc -c "${PAT_FILE}" | awk '{print $1}') -gt 300000000 ]; then
       dialog --backtitle "$(backtitle)" --title "DSM Upload" --aspect 18 \
         --infobox "DSM Image found!" 3 40
@@ -452,10 +452,8 @@ function arcVersion() {
     VALID="false"
     sleep 5
   fi
-  # Copy DSM Files to Locations if DSM Files not found
-  if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-    [ "${VALID}" == "true" ] && copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null
-  fi
+  # Copy DSM Files to Locations
+  [ "${VALID}" == "true" ] && copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null
   # Cleanup
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   if [ "${VALID}" == "true" ] && [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
