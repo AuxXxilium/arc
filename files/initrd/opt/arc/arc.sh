@@ -212,7 +212,6 @@ function arcModel() {
     writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "hddsort" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
     writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
@@ -1175,6 +1174,7 @@ else
         offlineCheck "${OFFLINE}"
         ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
         OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+        . ${ARC_PATH}/include/network.sh
         NEXT="9"
         ;;
       y) keymapMenu; NEXT="y" ;;
