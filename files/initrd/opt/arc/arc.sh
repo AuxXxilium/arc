@@ -332,7 +332,7 @@ function arcVersion() {
     fi
     MSG="Model and Version selected!\nDo you want to try Automated Mode for Config?"
     dialog --backtitle "$(backtitle)" --colors --title "Automated Mode" \
-      --yesno "${MSG}" 0 0
+      --yesno "${MSG}" 6 50
     if [ $? -eq 0 ]; then
       AUTOMATED="true"
     else
@@ -612,9 +612,6 @@ function arcSettings() {
     # Select Addons
     dialog --backtitle "$(backtitle)" --colors --title "DSM Addons" \
       --infobox "Loading Addons Table..." 3 40
-    initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
-    initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-    initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
     addonSelection
     [ $? -ne 0 ] && return 1
   fi
