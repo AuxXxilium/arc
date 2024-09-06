@@ -529,20 +529,20 @@ function livepatch() {
 ###############################################################################
 # Check NTP and Keyboard Layout
 function ntpCheck() {
-  local LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
-  local KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+  LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
+  KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
   if [ "${OFFLINE}" == "false" ]; then
     # Timezone
-    local REGION="$(readConfigKey "time.region" "${USER_CONFIG_FILE}")"
-    local TIMEZONE="$(readConfigKey "time.timezone" "${USER_CONFIG_FILE}")"
+    REGION="$(readConfigKey "time.region" "${USER_CONFIG_FILE}")"
+    TIMEZONE="$(readConfigKey "time.timezone" "${USER_CONFIG_FILE}")"
     if [ -z "${REGION}" ] || [ -z "${TIMEZONE}" ]; then
       if [ "${ARCNIC}" == "auto" ]; then
-        local REGION="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
-        local TIMEZONE="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
+        REGION="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
+        TIMEZONE="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
         [ -z "${KEYMAP}" ] && KEYMAP="$(curl -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
       else
-        local REGION="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
-        local TIMEZONE="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
+        REGION="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
+        TIMEZONE="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
         [ -z "${KEYMAP}" ] && KEYMAP="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
       fi
       writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
