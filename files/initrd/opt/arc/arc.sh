@@ -517,11 +517,11 @@ function arcPatch() {
       [ -z "${resp}" ] && return 1
       if [ ${resp} -eq 1 ]; then
         # Read Arc Patch from File
-        SN=$(generateSerial "${MODEL}" "true")
+        SN=$(generateSerial "${MODEL}" "true" | tr '[:lower:]' '[:upper:]')
         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 2 ]; then
         # Generate random Serial
-        SN=$(generateSerial "${MODEL}" "false")
+        SN=$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 3 ]; then
         while true; do
@@ -549,7 +549,7 @@ function arcPatch() {
       [ -z "${resp}" ] && return 1
       if [ ${resp} -eq 1 ]; then
         # Generate random Serial
-        SN=$(generateSerial "${MODEL}" "false")
+        SN=$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 2 ]; then
         while true; do
@@ -608,16 +608,23 @@ function arcSettings() {
     initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
     addonSelection
     [ $? -ne 0 ] && return 1
-    # Check for CPU Frequency Scaling & Governor
-    if [ "${CPUFREQ}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
-      initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
-      dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
-        --infobox "Generating Governor Table..." 3 40
-      governorSelection
-      [ $? -ne 0 ] && return 1
+  fi
+  # Check for CPU Frequency Scaling & Governor
+  if [ "${AUTOMATED}" == "false" ] && [ "${CPUFREQ}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
+    dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
+      --infobox "Generating Governor Table..." 3 40
+    governorSelection
+    [ $? -ne 0 ] && return 1
+  elif [ "${AUTOMATED}" == "true" ] && [ "${CPUFREQ}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
+    if [ "${PLATFORM}" == "epyc7002" ]; then
+      writeConfigKey "addons.cpufreqscaling" "schedutil" "${USER_CONFIG_FILE}"
     else
-      deleteConfigKey "addons.cpufreqscaling" "${USER_CONFIG_FILE}"
+      writeConfigKey "addons.cpufreqscaling" "ondemand" "${USER_CONFIG_FILE}"
     fi
+  else
+    deleteConfigKey "addons.cpufreqscaling" "${USER_CONFIG_FILE}"
+  fi
+  if [ "${AUTOMATED}" == "false" ]; then
     # Check for DT and HBA/Raid Controller
     if [ "${PLATFORM}" != "epyc7002" ]; then
       if [ "${DT}" == "true" ] && [ "${EXTERNALCONTROLLER}" == "true" ]; then
