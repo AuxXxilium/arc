@@ -330,6 +330,15 @@ function arcVersion() {
         [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true"
       fi
     fi
+    MSG="Model and Version selected!\nDo you want to try Automated Mode for Config?"
+    dialog --backtitle "$(backtitle)" --colors --title "Automated Mode" \
+      --yesno "${MSG}" 0 0
+    if [ $? -eq 0 ]; then
+      AUTOMATED="true"
+    else
+      AUTOMATED="false"
+    fi
+    writeConfigKey "automated" "${AUTOMATED}" "${USER_CONFIG_FILE}"
   elif [ "${AUTOMATED}" == "true" ]; then
     PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
@@ -507,7 +516,7 @@ function arcPatch() {
   elif [ "${AUTOMATED}" == "false" ]; then
     if [ -n "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
-        --nocancel --title "Arc Patch"\
+        --nocancel --title "SN/Mac Options"\
         --menu "Please choose an Option." 7 50 0 \
         1 "Use Arc Patch (QC, Push Notify and more)" \
         2 "Use random SN/Mac" \
@@ -540,7 +549,7 @@ function arcPatch() {
       fi
     elif [ -z "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
-        --nocancel --title "Non Arc Patch Model" \
+        --nocancel --title "SN/Mac Options" \
         --menu "Please choose an Option." 8 50 0 \
         1 "Use random SN/Mac" \
         2 "Use my SN/Mac" \
