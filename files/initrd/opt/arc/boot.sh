@@ -57,6 +57,9 @@ LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
 RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
+KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+REGION="$(readConfigKey "time.region" "${USER_CONFIG_FILE}")"
+TIMEZONE="$(readConfigKey "time.timezone" "${USER_CONFIG_FILE}")"
 
 echo -e "\033[1;37mDSM:\033[0m"
 echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
@@ -68,6 +71,10 @@ echo -e "\033[1;37mSystem:\033[0m"
 echo -e "Vendor: \033[1;37m${VENDOR}\033[0m"
 echo -e "CPU: \033[1;37m${CPU}\033[0m"
 echo -e "Memory: \033[1;37m${RAMTOTAL}GB\033[0m"
+echo
+echo -e "\033[1;37mLocation:\033[0m"
+echo -e "Keymap: \033[1;37m${KEYMAP}\033[0m"
+echo -e "Timezone: \033[1;37m${REGION}/${TIMEZONE}\033[0m"
 echo -e "Time OS | Bios: \033[1;37m$(TZ="${REGION}/${TIMEZONE}" && date "+%F %H:%M:%S") | $(hwclock | cut -d. -f1)\033[0m"
 echo
 
