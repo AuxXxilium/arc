@@ -517,7 +517,7 @@ function arcPatch() {
     if [ -n "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
         --nocancel --title "SN/Mac Options"\
-        --menu "Please choose an Option." 7 50 0 \
+        --menu "Please choose an Option." 7 60 0 \
         1 "Use Arc Patch (QC, Push Notify and more)" \
         2 "Use random SN/Mac" \
         3 "Use my own SN/Mac" \
@@ -939,9 +939,6 @@ else
         if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sequentialio"; then
           echo "Q \"SequentialIO Options \" "                                                 >>"${TMP_PATH}/menu"
         fi
-        if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "arcdns"; then
-          echo "R \"ArcDNS Options \" "                                                       >>"${TMP_PATH}/menu"
-        fi
         echo "D \"StaticIP \" "                                                               >>"${TMP_PATH}/menu"
       fi
       if [ "${BOOTOPTS}" == "true" ]; then
@@ -1046,7 +1043,6 @@ else
       o) dtsMenu; NEXT="o" ;;
       P) storagepanelMenu; NEXT="P" ;;
       Q) sequentialIOMenu; NEXT="Q" ;;
-      R) arcDNSMenu; NEXT="R" ;;
       r) resetArcPatch; NEXT="r" ;;
       # Boot Section
       6) [ "${BOOTOPTS}" == "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
