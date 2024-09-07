@@ -46,6 +46,9 @@ if [ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" ] || [ "${RAMDISK_HASH_CUR}" != "$
   echo
 fi
 
+# Clock Setting
+hwclock --hctosys > /dev/null 2>&1
+
 # Read model/system variables
 PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -75,7 +78,7 @@ echo
 echo -e "\033[1;37mLocation:\033[0m"
 echo -e "Keymap: \033[1;37m${KEYMAP}\033[0m"
 echo -e "Timezone: \033[1;37m${REGION}/${TIMEZONE}\033[0m"
-echo -e "Time OS | Bios: \033[1;37m$(TZ="${REGION}/${TIMEZONE}" && date "+%F %H:%M:%S") | $(hwclock | cut -d. -f1)\033[0m"
+echo -e "Time: \033[1;37m$(TZ="${REGION}/${TIMEZONE}" && date "+%F %H:%M:%S")\033[0m"
 echo
 
 if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
