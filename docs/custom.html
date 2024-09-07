@@ -133,7 +133,7 @@
             var html = `<div class="form-group-body" id="addons_btns">`;
             var selectedModel = $("#model").val();
             var platform = null;
-        
+
             // Parse models.json to get the platform for the selected model
             $.getJSON('models.json', function(modelsData) {
                 for (var key in modelsData) {
@@ -142,12 +142,17 @@
                         break;
                     }
                 }
-        
+
                 // Parse addons.json to generate buttons
                 $.getJSON('addons.json', function(addonsData) {
                     for (var ext in addonsData) {
+                        // Skip system addons
+                        if (addonsData[ext]["system"] == true) {
+                            continue;
+                        }
+
                         var dispar = "";
-                        if (addonsData[ext]["system"] == true || !addonsData[ext][platform]) {
+                        if (!addonsData[ext][platform]) {
                             dispar = "disabled";
                         }
                         var par = "";
