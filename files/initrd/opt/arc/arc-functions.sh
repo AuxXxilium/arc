@@ -1183,7 +1183,7 @@ function sysinfo() {
   TEXT+="\n  Secure Boot: \Zb${SECURE}\Zn"
   TEXT+="\n  Bootdisk: \Zb${LOADER_DISK}\Zn"
   [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ] && TEXT+="\n  Timezone: \Zb${REGION}/${TIMEZONE}\Zn"
-  TEXT+="\n  Time OS | Bios: \Zb$(TZ="${REGION}/${TIMEZONE}" && date "+%F %H:%M:%S") | $(hwclock | cut -d. -f1)\Zn"
+  TEXT+="\n  Time OS: \Zb$(TZ="${REGION}/${TIMEZONE}" && date "+%F %H:%M:%S")\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${ETHN} NIC\Zn\n"
   for ETH in ${ETHX}; do
