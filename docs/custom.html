@@ -114,36 +114,52 @@
             changeproductsimage();
             changeVersion();
         }
-
+        
         function changeproductsimage() {
             //var model = $("#model").val().replace("#","").replace("+","plus");
             //$('#products').html(`<img src="https://www.synology.cn/img/products/detail/${model}/heading.png" width="20%">`);
             var model = $("#model").val().replace("#", "").replace("+", "%2B");
             $('#products').html(`<img src="https://www.synology.com/api/products/getPhoto?product=${model}&type=img_s&sort=0" width="30%">`);
         }
-
+        
         function changeVersion() {
             createAddonsBtn();
             changeKernel();
         }
+        
         function createAddonsBtn() {
             var extstr = $('#addons').val().split(",");
             var idx = 1;
             var html = `<div class="form-group-body" id="addons_btns">`;
-            for (var ext in _addons) {
-                var dispar = "";
-                if (_addons[ext]["system"] == true) {
-                    dispar = "disabled";
+            var selectedModel = $("#model").val();
+            var platform = null;
+        
+            // Parse models.json to get the platform for the selected model
+            $.getJSON('models.json', function(modelsData) {
+                for (var key in modelsData) {
+                    if (modelsData[key].models.includes(selectedModel)) {
+                        platform = key;
+                        break;
+                    }
                 }
-                var par = "";
-                if (extstr.includes(ext)) {
-                    par = "btn-danger";
-                }
-                html += `<button type="button" class="btn btn-primary btn-sm mt-2 ${par}" id="btn_${ext}" ${par} ${dispar} onclick="return onclickext('addons', '${ext}')" autofocus="" title="${_addons[ext]["description"]}">${ext}</button>&nbsp;`;
-                //if (idx++ % 10 == 0) html += "<br />";
-            }
-            html += `</div>`;
-            $('#addons_btns').html(html);
+        
+                // Parse addons.json to generate buttons
+                $.getJSON('addons.json', function(addonsData) {
+                    for (var ext in addonsData) {
+                        var dispar = "";
+                        if (addonsData[ext]["system"] == true || !addonsData[ext][platform]) {
+                            dispar = "disabled";
+                        }
+                        var par = "";
+                        if (extstr.includes(ext)) {
+                            par = "btn-danger";
+                        }
+                        html += `<button type="button" class="btn btn-primary btn-sm mt-2 ${par}" id="btn_${ext}" ${par} ${dispar} onclick="return onclickext('addons', '${ext}')" autofocus="" title="${addonsData[ext]["description"]}">${ext}</button>&nbsp;`;
+                    }
+                    html += `</div>`;
+                    $('#addons_btns').html(html);
+                });
+            });
         }
 
         function changeKernel() {
