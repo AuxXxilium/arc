@@ -6,7 +6,8 @@
 # See /LICENSE for more information.
 #
 
-import os, sys, glob, json, yaml, click, shutil, tarfile, kmodule, requests
+import os, sys, glob, json, click, shutil, tarfile, kmodule, requests
+import yaml
 from openpyxl import Workbook
 
 
@@ -173,7 +174,18 @@ def getaddons(workpath, jsonpath):
             A_name = A_data.get("name", "")
             A_system = A_data.get("system", False)
             A_description = A_data.get("description", "")
-            addons[A_name] = {"system": A_system, "description": A_description}
+            A_apollolake = A_data.get("apollolake", "")
+            A_broadwell = A_data.get("broadwell", "")
+            A_broadwellnk = A_data.get("broadwellnk", "")
+            A_broadwellnkv2 = A_data.get("broadwellnkv2", "")
+            A_broadwellntbap = A_data.get("broadwellntbap", "")
+            A_denverton = A_data.get("denverton", "")
+            A_geminilake = A_data.get("geminilake", "")
+            A_purley = A_data.get("purley", "")
+            A_v1000 = A_data.get("v1000", "")
+            A_r1000 = A_data.get("r1000", "")
+            A_epyc7002 = A_data.get("epyc7002", "")
+            addons[A_name] = {"system": A_system, "description": A_description, "apollolake": A_apollolake, "broadwell": A_broadwell, "broadwellnk": A_broadwellnk, "broadwellnkv2": A_broadwellnkv2, "broadwellntbap": A_broadwellntbap, "denverton": A_denverton, "geminilake": A_geminilake, "purley": A_purley, "v1000": A_v1000, "r1000": A_r1000, "epyc7002": A_epyc7002}
     if jsonpath:
         with open(jsonpath, "w") as f:
             json.dump(addons, f, indent=4, ensure_ascii=False)
