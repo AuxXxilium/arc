@@ -558,7 +558,6 @@ function updateConfigs() {
       fi
     ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Update Configs" \
       --progressbox "Updating Configs..." 20 70
-    writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
   fi
   return 0
 }

@@ -505,7 +505,7 @@ function arcPatch() {
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
   # Check for Custom Build
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-  if [ "${AUTOMATED}" == "true" ] && [ -z "${SN}" ]; then
+  if [ "${AUTOMATED}" == "true" ]; then
     if [ -n "${ARCCONF}" ]; then
       SN=$(generateSerial "${MODEL}" "true")
       writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
