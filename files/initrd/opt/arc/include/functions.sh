@@ -529,30 +529,28 @@ function livepatch() {
 ###############################################################################
 # Check NTP and Keyboard Layout
 function ntpCheck() {
-  local LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
-  local KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+  LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
+  KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
   if [ "${OFFLINE}" == "false" ]; then
     # Timezone
-    local REGION="$(readConfigKey "time.region" "${USER_CONFIG_FILE}")"
-    local TIMEZONE="$(readConfigKey "time.timezone" "${USER_CONFIG_FILE}")"
+    REGION="$(readConfigKey "time.region" "${USER_CONFIG_FILE}")"
+    TIMEZONE="$(readConfigKey "time.timezone" "${USER_CONFIG_FILE}")"
     if [ -z "${REGION}" ] || [ -z "${TIMEZONE}" ]; then
       if [ "${ARCNIC}" == "auto" ]; then
-        local REGION="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
-        local TIMEZONE="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
+        REGION="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
+        TIMEZONE="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
         [ -z "${KEYMAP}" ] && KEYMAP="$(curl -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
       else
-        local REGION="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
-        local TIMEZONE="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
+        REGION="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
+        TIMEZONE="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
         [ -z "${KEYMAP}" ] && KEYMAP="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
       fi
       writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
       writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
     fi
     if [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ]; then
-      ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
-      # NTP
-      /etc/init.d/S49ntpd restart > /dev/null 2>&1
-      #hwclock --systohc > /dev/null 2>&1
+      ln -sf "/usr/share/zoneinfo/right/${REGION}/${TIMEZONE}" /etc/localtime
+      hwclock --systohc
     fi
   fi
   if [ -z "${LAYOUT}" ]; then

@@ -330,6 +330,15 @@ function arcVersion() {
         [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true"
       fi
     fi
+    MSG="Model and Version selected!\nDo you want to try Automated Mode for Config?"
+    dialog --backtitle "$(backtitle)" --colors --title "Automated Mode" \
+      --yesno "${MSG}" 6 50
+    if [ $? -eq 0 ]; then
+      AUTOMATED="true"
+    else
+      AUTOMATED="false"
+    fi
+    writeConfigKey "automated" "${AUTOMATED}" "${USER_CONFIG_FILE}"
   elif [ "${AUTOMATED}" == "true" ]; then
     PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
@@ -493,10 +502,10 @@ function arcPatch() {
   # Read Model Values
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
+  ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   # Check for Custom Build
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-  if [ "${AUTOMATED}" == "true" ] && [ -z "${SN}" ]; then
+  if [ "${AUTOMATED}" == "true" ]; then
     if [ -n "${ARCCONF}" ]; then
       SN=$(generateSerial "${MODEL}" "true")
       writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
@@ -507,8 +516,8 @@ function arcPatch() {
   elif [ "${AUTOMATED}" == "false" ]; then
     if [ -n "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
-        --nocancel --title "Arc Patch"\
-        --menu "Please choose an Option." 7 50 0 \
+        --nocancel --title "SN/Mac Options"\
+        --menu "Please choose an Option." 7 60 0 \
         1 "Use Arc Patch (QC, Push Notify and more)" \
         2 "Use random SN/Mac" \
         3 "Use my own SN/Mac" \
@@ -517,11 +526,11 @@ function arcPatch() {
       [ -z "${resp}" ] && return 1
       if [ ${resp} -eq 1 ]; then
         # Read Arc Patch from File
-        SN=$(generateSerial "${MODEL}" "true")
+        SN=$(generateSerial "${MODEL}" "true" | tr '[:lower:]' '[:upper:]')
         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 2 ]; then
         # Generate random Serial
-        SN=$(generateSerial "${MODEL}" "false")
+        SN=$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 3 ]; then
         while true; do
@@ -540,7 +549,7 @@ function arcPatch() {
       fi
     elif [ -z "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
-        --nocancel --title "Non Arc Patch Model" \
+        --nocancel --title "SN/Mac Options" \
         --menu "Please choose an Option." 8 50 0 \
         1 "Use random SN/Mac" \
         2 "Use my SN/Mac" \
@@ -549,7 +558,7 @@ function arcPatch() {
       [ -z "${resp}" ] && return 1
       if [ ${resp} -eq 1 ]; then
         # Generate random Serial
-        SN=$(generateSerial "${MODEL}" "false")
+        SN=$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 2 ]; then
         while true; do
@@ -603,21 +612,25 @@ function arcSettings() {
     # Select Addons
     dialog --backtitle "$(backtitle)" --colors --title "DSM Addons" \
       --infobox "Loading Addons Table..." 3 40
-    initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
-    initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-    initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
     addonSelection
     [ $? -ne 0 ] && return 1
-    # Check for CPU Frequency Scaling & Governor
-    if [ "${CPUFREQ}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
-      initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
-      dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
-        --infobox "Generating Governor Table..." 3 40
-      governorSelection
-      [ $? -ne 0 ] && return 1
+  fi
+  # Check for CPU Frequency Scaling & Governor
+  if [ "${AUTOMATED}" == "false" ] && [ "${CPUFREQ}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
+    dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
+      --infobox "Generating Governor Table..." 3 40
+    governorSelection
+    [ $? -ne 0 ] && return 1
+  elif [ "${AUTOMATED}" == "true" ] && [ "${CPUFREQ}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
+    if [ "${PLATFORM}" == "epyc7002" ]; then
+      writeConfigKey "addons.cpufreqscaling" "schedutil" "${USER_CONFIG_FILE}"
     else
-      deleteConfigKey "addons.cpufreqscaling" "${USER_CONFIG_FILE}"
+      writeConfigKey "addons.cpufreqscaling" "ondemand" "${USER_CONFIG_FILE}"
     fi
+  else
+    deleteConfigKey "addons.cpufreqscaling" "${USER_CONFIG_FILE}"
+  fi
+  if [ "${AUTOMATED}" == "false" ]; then
     # Check for DT and HBA/Raid Controller
     if [ "${PLATFORM}" != "epyc7002" ]; then
       if [ "${DT}" == "true" ] && [ "${EXTERNALCONTROLLER}" == "true" ]; then
@@ -865,6 +878,7 @@ function boot() {
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM...\nPlease stay patient!" 4 25
+  hwclock --systohc
   sleep 2
   . ${ARC_PATH}/boot.sh
   exit 0
@@ -925,9 +939,6 @@ else
         fi
         if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sequentialio"; then
           echo "Q \"SequentialIO Options \" "                                                 >>"${TMP_PATH}/menu"
-        fi
-        if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "arcdns"; then
-          echo "R \"ArcDNS Options \" "                                                       >>"${TMP_PATH}/menu"
         fi
         echo "D \"StaticIP \" "                                                               >>"${TMP_PATH}/menu"
       fi
@@ -1033,7 +1044,6 @@ else
       o) dtsMenu; NEXT="o" ;;
       P) storagepanelMenu; NEXT="P" ;;
       Q) sequentialIOMenu; NEXT="Q" ;;
-      R) arcDNSMenu; NEXT="R" ;;
       r) resetArcPatch; NEXT="r" ;;
       # Boot Section
       6) [ "${BOOTOPTS}" == "true" ] && BOOTOPTS='false' || BOOTOPTS='true'

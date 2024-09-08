@@ -675,51 +675,14 @@ function sequentialIOMenu() {
 }
 
 ###############################################################################
-# Shows arcDNS menu to user
-function arcDNSMenu() {
-  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-  if [ "${CONFDONE}" == "true" ]; then
-    while true; do
-      ARCDNS="$(readConfigKey "addons.arcdns" "${USER_CONFIG_FILE}")"
-      domain="$(echo ${ARCDNS} | cut -d'/' -f1)"
-      token="$(echo ${ARCDNS} | cut -d'/' -f2)"
-      MSG="Register your Subdomain at arcdns.tech\n"
-      MSG+="Enter the Values from ArcDNS below:\n"
-      dialog --backtitle "$(backtitle)" --title "Add DSM User" \
-        --form "${MSG}" 8 60 3 "Domain:" 1 1 "${domain:-domain}" 1 10 50 0 "Token:" 2 1 "${token:-token}" 2 10 50 0 \
-        2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && break
-      domain="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
-      token="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
-      if [ -z "${domain}" ] || [ -z "${token}" ] || [ "${domain}" = "domain" ] || [ "${token}" = "token" ]; then
-        dialog --backtitle "$(backtitle)" --title "ArcDNS" \
-          --infobox "Invalid Domain or Token, retry!" 0 0
-        deleteConfigKey "addons.arcdns" "${USER_CONFIG_FILE}"
-        sleep 3
-        continue
-      else
-        ARCDNS="${domain}/${token}"
-        dialog --backtitle "$(backtitle)" --colors --title "ArcDNS" \
-          --msgbox "ArcDNS set successful!" 0 0
-        writeConfigKey "addons.arcdns" "${ARCDNS}" "${USER_CONFIG_FILE}"
-        break
-      fi
-    done
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  fi
-  return
-}
-
-###############################################################################
 # Shows backup menu to user
 function backupMenu() {
   NEXT="1"
   while true; do
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       1 "Restore Arc Config from DSM" \
-      2 "Restore Encryption Key from DSM" \
-      3 "Backup Encryption Key to DSM" \
+      2 "Restore HW Encryption Key from DSM" \
+      3 "Backup HW Encryption Key to DSM" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -1182,6 +1145,7 @@ function sysinfo() {
     USERCMDLINEINFO="$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
     USERSYNOINFO="$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
   fi
+  [ "${BUILDDONE}" == "true" ] && BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
   DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
@@ -1219,7 +1183,8 @@ function sysinfo() {
   TEXT+="\n  CPU Scaling: \Zb${CPUFREQ}\Zn"
   TEXT+="\n  Secure Boot: \Zb${SECURE}\Zn"
   TEXT+="\n  Bootdisk: \Zb${LOADER_DISK}\Zn"
-  TEXT+="\n  Time OS | Bios: \Zb$(TZ="${REGION}/${TIMEZONE}" && date "+%F %H:%M:%S") | $(hwclock | cut -d. -f1)\Zn"
+  [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ] && TEXT+="\n  Timezone: \Zb${REGION}/${TIMEZONE}\Zn"
+  TEXT+="\n  Time: \Zb$(date "+%F %H:%M:%S")\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${ETHN} NIC\Zn\n"
   for ETH in ${ETHX}; do
@@ -1261,7 +1226,7 @@ function sysinfo() {
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"
   if [ "${CONFDONE}" == "true" ]; then
-    TEXT+="\n\Z4> DSM ${PRODUCTVER}: ${MODELID:-${MODEL}}\Zn"
+    TEXT+="\n\Z4> DSM ${PRODUCTVER} (${BUILDNUM}): ${MODELID:-${MODEL}}\Zn"
     TEXT+="\n  Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
     TEXT+="\n  Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
     TEXT+="\n  Arc Patch: \Zb${ARCPATCH}\Zn"
@@ -2151,8 +2116,12 @@ function decryptMenu() {
         writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
       fi
     fi
-    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+    SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
+    ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
+    if [ "${SN}" != "${ARCCONF}" ]; then
+      writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+      CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+    fi
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
