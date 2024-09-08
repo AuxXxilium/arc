@@ -532,6 +532,8 @@ function ntpCheck() {
   LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
   KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
   if [ "${OFFLINE}" == "false" ]; then
+    # NTP
+    /etc/init.d/S49ntpd restart > /dev/null 2>&1
     # Timezone
     REGION="$(readConfigKey "time.region" "${USER_CONFIG_FILE}")"
     TIMEZONE="$(readConfigKey "time.timezone" "${USER_CONFIG_FILE}")"
@@ -549,10 +551,8 @@ function ntpCheck() {
       writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
     fi
     if [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ]; then
-      ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
-      # NTP
-      /etc/init.d/S49ntpd restart > /dev/null 2>&1
-      #hwclock --systohc
+      ln -sf "/usr/share/zoneinfo/right/${REGION}/${TIMEZONE}" /etc/localtime
+      hwclock --systohc
     fi
   fi
   if [ -z "${LAYOUT}" ]; then

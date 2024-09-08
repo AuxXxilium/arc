@@ -1145,6 +1145,7 @@ function sysinfo() {
     USERCMDLINEINFO="$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
     USERSYNOINFO="$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
   fi
+  [ "${BUILDDONE}" == "true" ] && BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
   DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
@@ -1183,7 +1184,7 @@ function sysinfo() {
   TEXT+="\n  Secure Boot: \Zb${SECURE}\Zn"
   TEXT+="\n  Bootdisk: \Zb${LOADER_DISK}\Zn"
   [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ] && TEXT+="\n  Timezone: \Zb${REGION}/${TIMEZONE}\Zn"
-  TEXT+="\n  Time OS: \Zb$(TZ="${REGION}/${TIMEZONE}" && date "+%F %H:%M:%S")\Zn"
+  TEXT+="\n  Time: \Zb$(date "+%F %H:%M:%S")\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${ETHN} NIC\Zn\n"
   for ETH in ${ETHX}; do
@@ -1225,7 +1226,7 @@ function sysinfo() {
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"
   if [ "${CONFDONE}" == "true" ]; then
-    TEXT+="\n\Z4> DSM ${PRODUCTVER}: ${MODELID:-${MODEL}}\Zn"
+    TEXT+="\n\Z4> DSM ${PRODUCTVER} (${BUILDNUM}): ${MODELID:-${MODEL}}\Zn"
     TEXT+="\n  Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
     TEXT+="\n  Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
     TEXT+="\n  Arc Patch: \Zb${ARCPATCH}\Zn"
