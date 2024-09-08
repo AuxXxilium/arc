@@ -878,6 +878,7 @@ function boot() {
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM...\nPlease stay patient!" 4 25
+  hwclock --systohc
   sleep 2
   . ${ARC_PATH}/boot.sh
   exit 0

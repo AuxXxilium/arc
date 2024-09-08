@@ -552,7 +552,7 @@ function ntpCheck() {
       ln -fs /usr/share/zoneinfo/${REGION}/${TIMEZONE} /etc/localtime
       # NTP
       /etc/init.d/S49ntpd restart > /dev/null 2>&1
-      hwclock --systohc
+      #hwclock --systohc
     fi
   fi
   if [ -z "${LAYOUT}" ]; then
