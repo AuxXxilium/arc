@@ -213,6 +213,9 @@ for ETH in ${ETHX}; do
   done
 done
 
+# NTP
+/etc/init.d/S49ntpd restart > /dev/null 2>&1
+
 # Inform user
 echo
 echo -e "Call \033[1;34marc.sh\033[0m to configure Arc"
