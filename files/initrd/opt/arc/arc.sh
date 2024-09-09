@@ -940,7 +940,6 @@ else
         if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sequentialio"; then
           echo "Q \"SequentialIO Options \" "                                                 >>"${TMP_PATH}/menu"
         fi
-        echo "D \"StaticIP \" "                                                               >>"${TMP_PATH}/menu"
       fi
       if [ "${BOOTOPTS}" == "true" ]; then
         echo "6 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
@@ -1006,6 +1005,7 @@ else
         echo "G \"Install opkg Package Manager \" "                                           >>"${TMP_PATH}/menu"
       fi
       echo "y \"Choose a Keymap for Loader\" "                                                >>"${TMP_PATH}/menu"
+      echo "D \"StaticIP \" "                                                                 >>"${TMP_PATH}/menu"
     fi
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
     echo "x \"Config Backup/Restore/Recovery \" "                                             >>"${TMP_PATH}/menu"
