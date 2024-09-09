@@ -880,7 +880,7 @@ function boot() {
     --infobox "Booting DSM...\nPlease stay patient!" 4 25
   hwclock --systohc
   sleep 2
-  . ${ARC_PATH}/boot.sh
+  exec reboot
   exit 0
 }
 

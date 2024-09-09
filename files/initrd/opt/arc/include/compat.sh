@@ -2,11 +2,6 @@
 # Compatibility boot
 
 function compatboot () {
-  # Locale
-  KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-  if [ -n "${KEYMAP}" ]; then
-    export LC_ALL="${KEYMAP}.UTF-8"
-  fi
   # Timezone
   TIMEZONE="$(readConfigKey "time.timezone" "${USER_CONFIG_FILE}")"
   REGION="$(readConfigKey "time.region" "${USER_CONFIG_FILE}")"
@@ -15,5 +10,4 @@ function compatboot () {
   fi
   # Check for compatibility
   deleteConfigKey "nanover" "${USER_CONFIG_FILE}"
-  return 0
 }
