@@ -330,7 +330,7 @@ function arcVersion() {
         [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true"
       fi
     fi
-    MSG="Do you want to try Automated Mode for Config?\nIf yes, Loader will configure, build and boot DSM."
+    MSG="Do you want to try Automated Mode?\nIf yes, Loader will configure, build and boot DSM."
     dialog --backtitle "$(backtitle)" --colors --title "Automated Mode" \
       --yesno "${MSG}" 6 55
     if [ $? -eq 0 ]; then
