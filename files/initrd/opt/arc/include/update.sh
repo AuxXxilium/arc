@@ -220,6 +220,27 @@ function updateAddons() {
     local TAG="${1}"
   fi
   if [ -n "${TAG}" ]; then
+    curl -skL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/check.update" -o "${TMP_PATH}/check.update"
+    if [ -f "${TMP_PATH}/check.update" ]; then
+      local UPDATE_VERSION=$(cat "${TMP_PATH}/check.update" | sed -e 's/\.//g' )
+      local ARC_VERSION=$(cat "${PART1_PATH}/ARC-VERSION" | sed -e 's/\.//g' )
+      if [ ${ARC_VERSION} -lt ${UPDATE_VERSION} ] && [ "${AUTOMATED}" == "false" ]; then
+        dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
+          --yesno "Config is not compatible to new Version!\nPlease reconfigure Loader after Update!\nDo you want to update?" 0 0
+        if [ $? -eq 0 ]; then
+          rm -f "${TMP_PATH}/check.update"
+        else
+          return 1
+        fi
+      elif [ ${ARC_VERSION} -lt ${UPDATE_VERSION} ] && [ "${AUTOMATED}" == "true" ]; then
+        dialog --backtitle "$(backtitle)" --title "Update Loader" \
+          --infobox "Config is not compatible to new Version!\nUpdate not possible!\nPlease reflash Loader." 0 0
+        sleep 5
+        updateFaileddialog
+      fi
+    else
+      updateFaileddialog
+    fi
     (
       # Download update file
       echo "Downloading ${TAG}"
