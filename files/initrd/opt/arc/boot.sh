@@ -47,7 +47,7 @@ if [ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" ] || [ "${RAMDISK_HASH_CUR}" != "$
 fi
 
 # Clock Setting
-hwclock --hctosys > /dev/null 2>&1
+hwclock --hctosys > /dev/null 2>&1 || true
 
 # Read model/system variables
 PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
