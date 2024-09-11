@@ -376,7 +376,8 @@ function arcVersion() {
         VALID="true"
       elif curl --interface ${ARCNIC} -skL "${DSM_URL}" -o "${DSM_FILE}"; then
         VALID="true"
-      else
+      fi
+      if [ ! -f "${DSM_FILE}" ]; then
         dialog --backtitle "$(backtitle)" --title "DSM Download" --aspect 18 \
           --infobox "No DSM Image found!\nTry to get .pat from Syno." 4 40
         sleep 5
