@@ -31,7 +31,7 @@
     },
     "allowdowngrade": {
         "system": false,
-        "description": "Allow Downgrade for AME, SS and VideoStation on 7.2.2",
+        "description": "Allow Downgrade for AME, SS and VideoStation with DSM 7.2.2",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
@@ -46,7 +46,7 @@
     },
     "amepatch": {
         "system": false,
-        "description": "Dynamic Licensepatch for AME - Force download HEVC Codec (Don't use with codecpatch - Depends on Arc Patch)",
+        "description": "Dynamic Licensepatch for AME - Force download HEVC Codec (Don't use with codecpatch)",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
@@ -61,7 +61,7 @@
     },
     "arcdns": {
         "system": false,
-        "description": "Dynamic DNS client for arcdns.tech - Modify in Arc DSM Options",
+        "description": "Dynamic DNS client for arcdns.tech - Modify in DSM DynDNS Settings",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
@@ -91,7 +91,7 @@
     },
     "codecpatch": {
         "system": false,
-        "description": "Enables transcoding for DSM without a valid serial number - Force download AAC + HEVC Codec (Don't use with amepatch)",
+        "description": "Enables transcoding for DSM - Force download AAC + HEVC Codec (Don't use with amepatch)",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
@@ -242,21 +242,6 @@
     "hdddb": {
         "system": false,
         "description": "Add Disks to DSM compatibility DiskDB and bypass Memory Limitation",
-        "apollolake": true,
-        "broadwell": true,
-        "broadwellnk": true,
-        "broadwellnkv2": true,
-        "broadwellntbap": true,
-        "denverton": true,
-        "geminilake": true,
-        "purley": true,
-        "v1000": true,
-        "r1000": true,
-        "epyc7002": true
-    },
-    "hostspatch": {
-        "system": false,
-        "description": "Prevent DSM from calling Home",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
@@ -436,7 +421,7 @@
     },
     "photosfacepatch": {
         "system": false,
-        "description": "Face Patch for Syno Photos",
+        "description": "Face Detection Patch for Syno Photos (Best with iGPU)",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
@@ -616,7 +601,7 @@
     },
     "sspatch": {
         "system": false,
-        "description": "Dynamic License Patch for SS 9.2.0-11289 (Not for DVA 32xx)",
+        "description": "Dynamic License Patch for SS 9.2.0-11289 (Not for DVA 3219)",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
