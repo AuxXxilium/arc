@@ -1494,7 +1494,7 @@ function credits() {
 function staticIPMenu() {
   ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
   for ETH in ${ETHX}; do
-    MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g')"
+    MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
     IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
     IFS='/' read -r -a IPRA <<<"$IPR"
 
