@@ -1119,7 +1119,7 @@ function sysinfo() {
   CPU=$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))
   SECURE=$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')
-  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
+  ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
   ETHN="$(echo ${ETHX} | wc -w)"
   ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -1404,7 +1404,7 @@ function uploadDiag () {
 # Shows Networkdiag to user
 function networkdiag() {
   (
-  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
+  ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
   for ETH in ${ETHX}; do
     echo
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
@@ -1492,7 +1492,7 @@ function credits() {
 ###############################################################################
 # allow setting Static IP for Loader
 function staticIPMenu() {
-  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
+  ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
   for ETH in ${ETHX}; do
     MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
     IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
@@ -1507,7 +1507,7 @@ function staticIPMenu() {
       case ${RET} in
       0) # ok-button
         dialog --backtitle "$(backtitle)" --title "StaticIP" \
-          --infobox "Setting IP ..." 0 0
+          --infobox "Setting IP ..." 3 25
         address="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
         netmask="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
         gateway="$(cat "${TMP_PATH}/resp" | sed -n '3p')"
@@ -1515,18 +1515,7 @@ function staticIPMenu() {
         if [ -z "${address}" ]; then
           deleteConfigKey "network.${MACR}" "${USER_CONFIG_FILE}"
         else
-          ip addr flush dev $ETH
-          ip addr add ${address}/${netmask:-"255.255.255.0"} dev $ETH
-          if [ -n "${gateway}" ]; then
-            ip route add default via ${gateway} dev $ETH
-          fi
-          if [ -n "${dnsname:-${gateway}}" ]; then
-            sed -i "/nameserver ${dnsname:-${gateway}}/d" /etc/resolv.conf
-            echo "nameserver ${dnsname:-${gateway}}" >>/etc/resolv.conf
-          fi
           writeConfigKey "network.${MACR}" "${address}/${netmask}/${gateway}/${dnsname}" "${USER_CONFIG_FILE}"
-          IP="$(getIP)"
-          sleep 1
         fi
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1540,6 +1529,28 @@ function staticIPMenu() {
         ;;
       esac
     done
+    sleep 1
+  done
+  IPCON=""
+  dialog --backtitle "$(backtitle)" --title "StaticIP" \
+          --infobox "Restart Network ..." 3 25
+  for ETH in ${ETHX}; do
+    MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
+    IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
+    if [ -n "${IPR}" ]; then
+      IFS='/' read -r -a IPRA <<<"$IPR"
+      ip addr flush dev ${ETH}
+      ip addr add ${IPRA[0]}/${IPRA[1]:-"255.255.255.0"} dev ${ETH}
+      [ -z "${IPCON}" ] && IPCON="${IPRA[0]}"
+      if [ -n "${IPRA[2]}" ]; then
+        ip route add default via ${IPRA[2]} dev ${ETH}
+      fi
+      if [ -n "${IPRA[3]:-${IPRA[2]}}" ]; then
+        sed -i "/nameserver ${IPRA[3]:-${IPRA[2]}}/d" /etc/resolv.conf
+        echo "nameserver ${IPRA[3]:-${IPRA[2]}}" >>/etc/resolv.conf
+      fi
+      sleep 1
+    fi
   done
 }
 
@@ -2136,7 +2147,7 @@ function decryptMenu() {
 # ArcNIC Menu
 function arcNIC () {
   ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
-  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
+  ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)" # real network cards list
   rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
   echo -e "auto \"Automated\"" >>"${TMP_PATH}/opts"
