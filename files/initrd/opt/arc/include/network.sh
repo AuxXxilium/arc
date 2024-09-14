@@ -1,6 +1,6 @@
 # Get Network Config for Loader
 function getnet() {
-  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
+  ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   NICPORTS="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
@@ -41,7 +41,7 @@ function getnet() {
 }
 
 # Get Amount of NIC
-ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
+ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
 # Get actual IP
 for ETH in ${ETHX}; do
   IPCON=$(getIP ${ETH})
