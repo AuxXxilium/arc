@@ -1006,7 +1006,7 @@ else
         echo "G \"Install opkg Package Manager \" "                                           >>"${TMP_PATH}/menu"
       fi
       echo "y \"Choose a Keymap for Loader\" "                                                >>"${TMP_PATH}/menu"
-      echo "D \"StaticIP \" "                                                                 >>"${TMP_PATH}/menu"
+      echo "D \"StaticIP for Loader/DSM\" "                                                   >>"${TMP_PATH}/menu"
     fi
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
     echo "x \"Config Backup/Restore/Recovery \" "                                             >>"${TMP_PATH}/menu"

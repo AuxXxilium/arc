@@ -183,14 +183,14 @@ if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
 fi
 
 # Cmdline NIC Settings
-ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
+ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
 ETHM="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
 ETHN="$(echo ${ETHX} | wc -w)"
 [ -z "${ETHM}" ] && ETHM="${ETHN}"
 NIC=0
 for ETH in ${ETHX}; do
   MAC="$(readConfigKey "${ETH}" "${USER_CONFIG_FILE}")"
-  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
+  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
   NIC=$((${NIC} + 1))
   [ ${NIC} -le ${ETHM} ] && CMDLINE["mac${NIC}"]="${MAC}"
   [ ${NIC} -ge ${ETHM} ] && break

@@ -96,7 +96,7 @@ fi
 compatboot
 
 # Init Network
-ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
+ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
 if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
   _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
 fi
@@ -107,10 +107,10 @@ for ETH in ${ETHX}; do
   IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
   if [ -n "${IPR}" ]; then
     IFS='/' read -r -a IPRA <<<"$IPR"
-    ip addr flush dev $ETH
-    ip addr add ${IPRA[0]}/${IPRA[1]:-"255.255.255.0"} dev $ETH
+    ip addr flush dev ${ETH}
+    ip addr add ${IPRA[0]}/${IPRA[1]:-"255.255.255.0"} dev ${ETH}
     if [ -n "${IPRA[2]}" ]; then
-      ip route add default via ${IPRA[2]} dev $ETH
+      ip route add default via ${IPRA[2]} dev ${ETH}
     fi
     if [ -n "${IPRA[3]:-${IPRA[2]}}" ]; then
       sed -i "/nameserver ${IPRA[3]:-${IPRA[2]}}/d" /etc/resolv.conf
