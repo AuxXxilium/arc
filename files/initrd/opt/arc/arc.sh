@@ -101,8 +101,8 @@ function arcModel() {
   fi
   echo -n "" >"${TMP_PATH}/modellist"
   echo "${MJ}" | jq -c '.[]' | while read -r item; do
-    name=$(echo "$item" | jq -r '.name')
-    arch=$(echo "$item" | jq -r '.arch')
+    name=$(echo "${item}" | jq -r '.name')
+    arch=$(echo "${item}" | jq -r '.arch')
     echo "${name} ${arch}" >>"${TMP_PATH}/modellist"
   done
   if [ "${AUTOMATED}" == "false" ]; then

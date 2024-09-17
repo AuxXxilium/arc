@@ -106,7 +106,7 @@ for ETH in ${ETHX}; do
   MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
   IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
   if [ -n "${IPR}" ]; then
-    IFS='/' read -r -a IPRA <<<"$IPR"
+    IFS='/' read -r -a IPRA <<<"${IPR}"
     ip addr flush dev ${ETH}
     ip addr add ${IPRA[0]}/${IPRA[1]:-"255.255.255.0"} dev ${ETH}
     if [ -n "${IPRA[2]}" ]; then
