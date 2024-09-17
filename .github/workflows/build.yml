@@ -53,11 +53,6 @@ jobs:
           delete_tags: true
           gh_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          swap-storage: false
-
       # Install Dependencies
       - name: Install Dependencies
         run: |
