@@ -20,11 +20,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@main
 
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          swap-storage: false
-
       # Install Dependencies
       - name: Install Dependencies
         run: |
