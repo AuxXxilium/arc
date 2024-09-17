@@ -106,7 +106,7 @@ for ETH in ${ETHX}; do
   MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
   IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
   if [ -n "${IPR}" ]; then
-    IFS='/' read -r -a IPRA <<<"$IPR"
+    IFS='/' read -r -a IPRA <<<"${IPR}"
     ip addr flush dev ${ETH}
     ip addr add ${IPRA[0]}/${IPRA[1]:-"255.255.255.0"} dev ${ETH}
     if [ -n "${IPRA[2]}" ]; then
@@ -118,8 +118,8 @@ for ETH in ${ETHX}; do
     fi
     sleep 1
   fi
-  [ "${ETH::3}" = "eth" ] && ethtool -s ${ETH} wol g 2>/dev/null || true
-  # [ "${ETH::3}" = "eth" ] && ethtool -K ${ETH} rxhash off 2>/dev/null || true
+  [ "${ETH::3}" == "eth" ] && ethtool -s ${ETH} wol g 2>/dev/null || true
+  # [ "${ETH::3}" == "eth" ] && ethtool -K ${ETH} rxhash off 2>/dev/null || true
   initConfigKey "${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
 done
 ETHN="$(echo ${ETHX} | wc -w)"

@@ -101,8 +101,8 @@ function arcModel() {
   fi
   echo -n "" >"${TMP_PATH}/modellist"
   echo "${MJ}" | jq -c '.[]' | while read -r item; do
-    name=$(echo "$item" | jq -r '.name')
-    arch=$(echo "$item" | jq -r '.arch')
+    name=$(echo "${item}" | jq -r '.name')
+    arch=$(echo "${item}" | jq -r '.arch')
     echo "${name} ${arch}" >>"${TMP_PATH}/modellist"
   done
   if [ "${AUTOMATED}" == "false" ]; then
@@ -140,7 +140,7 @@ function arcModel() {
           if [ "${A}" != "epyc7002" ] && [ ${SATACONTROLLER} -eq 0 ] && [ "${EXTERNALCONTROLLER}" == "false" ]; then
             COMPATIBLE=0
           fi
-          if [ "${A}" = "epyc7002" ] && [[ ${SCSICONTROLLER} -ne 0 || ${RAIDCONTROLLER} -ne 0 ]]; then
+          if [ "${A}" == "epyc7002" ] && [[ ${SCSICONTROLLER} -ne 0 || ${RAIDCONTROLLER} -ne 0 ]]; then
             COMPATIBLE=0
           fi
           if [ "${A}" != "epyc7002" ] && [ ${NVMEDRIVES} -gt 0 ] && [ "${BUS}" == "usb" ] && [ ${SATADRIVES} -eq 0 ] && [ "${EXTERNALCONTROLLER}" == "false" ]; then
@@ -281,7 +281,7 @@ function arcVersion() {
       URLVER=""
       while true; do
         PJ="$(python ${ARC_PATH}/include/functions.py getpats4mv -m "${MODEL}" -v "${PRODUCTVER}")"
-        if [[ -z "${PJ}" || "${PJ}" = "{}" ]]; then
+        if [[ -z "${PJ}" || "${PJ}" == "{}" ]]; then
           MSG="Unable to connect to Synology API, Please check the network and try again!"
           dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
             --yes-label "Retry" \
@@ -900,7 +900,7 @@ else
   [ "${BUILDDONE}" == "true" ] && NEXT="3" || NEXT="1"
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
-    if [ -z "${ARCKEY}" ] && [ "${OFFLINE}" = "false" ]; then
+    if [ -z "${ARCKEY}" ] && [ "${OFFLINE}" == "false" ]; then
       echo "0 \"Enable Arc Patch\" "                                                          >>"${TMP_PATH}/menu"
     fi
     echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"

@@ -1496,7 +1496,7 @@ function staticIPMenu() {
   for ETH in ${ETHX}; do
     MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
     IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
-    IFS='/' read -r -a IPRA <<<"$IPR"
+    IFS='/' read -r -a IPRA <<<"${IPR}"
 
     MSG="$(printf "Set to %s: (Delete if empty)" "${ETH}(${MACR})")"
     while true; do
@@ -1538,7 +1538,7 @@ function staticIPMenu() {
     MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
     IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
     if [ -n "${IPR}" ]; then
-      IFS='/' read -r -a IPRA <<<"$IPR"
+      IFS='/' read -r -a IPRA <<<"${IPR}"
       ip addr flush dev ${ETH}
       ip addr add ${IPRA[0]}/${IPRA[1]:-"255.255.255.0"} dev ${ETH}
       [ -z "${IPCON}" ] && IPCON="${IPRA[0]}"
@@ -1745,9 +1745,9 @@ function formatDisks() {
   rm -f "${TMP_PATH}/opts"
   while read -r KNAME SIZE TYPE PKNAME; do
     [ -z "${KNAME}" ] && continue
-    [ "${KNAME}" = "N/A" ] && continue
-    [[ "${KNAME}" = /dev/md* ]] && continue
-    [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
+    [ "${KNAME}" == "N/A" ] && continue
+    [[ "${KNAME}" == /dev/md* ]] && continue
+    [[ "${KNAME}" == "${LOADER_DISK}" || "${PKNAME}" == "${LOADER_DISK}" ]] && continue
     [ -z "${SIZE}" ] && SIZE="Unknown"
     printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" >>"${TMP_PATH}/opts"
   done < <(lsblk -Jpno KNAME,SIZE,TYPE,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.pkname)"' 2>/dev/null)
@@ -1847,10 +1847,10 @@ function cloneLoader() {
   rm -f "${TMP_PATH}/opts" >/dev/null
   while read -r KNAME SIZE TYPE PKNAME; do
     [ -z "${KNAME}" ] && continue
-    [ "${KNAME}" = "N/A" ] && continue
+    [ "${KNAME}" == "N/A" ] && continue
     [ "${TYPE}" != "disk" ] && continue
-    [[ "${KNAME}" = /dev/md* ]] && continue
-    [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
+    [[ "${KNAME}" == /dev/md* ]] && continue
+    [[ "${KNAME}" == "${LOADER_DISK}" || "${PKNAME}" == "${LOADER_DISK}" ]] && continue
     [ -z "${SIZE}" ] && SIZE="Unknown"
     printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" >>"${TMP_PATH}/opts"
   done < <(lsblk -Jpno KNAME,SIZE,TYPE,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.pkname)"' 2>/dev/null)
@@ -2069,7 +2069,7 @@ function satadomMenu() {
 # Decrypt Menu
 function decryptMenu() {
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  if [ "${OFFLINE}" = "false" ]; then
+  if [ "${OFFLINE}" == "false" ]; then
     local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
     if [ -n "${TAG}" ]; then
       (

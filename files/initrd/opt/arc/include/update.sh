@@ -647,7 +647,7 @@ function updateLKMs() {
 # Update Failed
 function updateFailed() {
   local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
-  if [ "${AUTOMATED}" = "true" ]; then
+  if [ "${AUTOMATED}" == "true" ]; then
     echo "Update failed!"
     sleep 5
     exec reboot
@@ -660,7 +660,7 @@ function updateFailed() {
 
 function updateFaileddialog() {
   local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
-  if [ "${AUTOMATED}" = "true" ]; then
+  if [ "${AUTOMATED}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Failed" \
       --infobox "Update failed!" 0 0
     sleep 5
