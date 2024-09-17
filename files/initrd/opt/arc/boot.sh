@@ -11,7 +11,7 @@ rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
 rm -rf /sys/fs/pstore/* >/dev/null 2>&1 || true
 
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-[ "${BUILDDONE}" = "false" ] && die "Loader build not completed!"
+[ "${BUILDDONE}" == "false" ] && die "Loader build not completed!"
 ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
 
 # Get Loader Disk Bus
@@ -86,7 +86,7 @@ if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
       break
     fi
   done
-  [ ${HASATA} = "0" ] && echo -e "\033[1;31m*** Please insert at least one Sata/SAS/SCSI Disk for System installation, except for the Bootloader Disk. ***\033[0m"
+  [ ${HASATA} -eq 0 ] && echo -e "\033[1;31m*** Please insert at least one Sata/SAS/SCSI Disk for System installation, except for the Bootloader Disk. ***\033[0m"
 fi
 
 # Read necessary variables
@@ -163,13 +163,13 @@ CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 
 #if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
 #   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "sdhci"; then
-#     [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+#     [ ! "${CMDLINE['modprobe.blacklist']}" == "" ] && CMDLINE['modprobe.blacklist']+=","
 #     CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
 #   fi
 # fi
 if [ "${DT}" == "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
-    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+    [ ! "${CMDLINE['modprobe.blacklist']}" == "" ] && CMDLINE['modprobe.blacklist']+=","
     CMDLINE['modprobe.blacklist']+="mpt3sas"
   fi
 fi
