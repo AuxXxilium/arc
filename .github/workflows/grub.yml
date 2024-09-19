@@ -35,13 +35,6 @@ jobs:
         run: |
           . scripts/grub.sh "grub-2.12" "i386-pc i386-efi x86_64-efi"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: grub
-          path: |
-            grub.img.gz
-
       - name: Check and Push
         if: success() && inputs.push == true
         run: |
