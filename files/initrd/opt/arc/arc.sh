@@ -617,12 +617,12 @@ function arcSettings() {
     [ $? -ne 0 ] && return 1
   fi
   # Check for CPU Frequency Scaling & Governor
-  if [ "${AUTOMATED}" == "false" ] && [ "${CPUFREQ}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
+  if [ "${AUTOMATED}" == "false" ] && [ "${CPUFREQ}" == "true" ] && [ "${ACPISYS}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
     dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
       --infobox "Generating Governor Table..." 3 40
     governorSelection
     [ $? -ne 0 ] && return 1
-  elif [ "${AUTOMATED}" == "true" ] && [ "${CPUFREQ}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
+  elif [ "${AUTOMATED}" == "true" ] && [ "${CPUFREQ}" == "true" ] && [ "${ACPISYS}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
     if [ "${PLATFORM}" == "epyc7002" ]; then
       writeConfigKey "addons.cpufreqscaling" "schedutil" "${USER_CONFIG_FILE}"
     else
@@ -656,7 +656,7 @@ function arcSettings() {
         --msgbox "WARN: Your System doesn't support Hardwareencryption in DSM. (AES)" 5 70
     fi
     # Check for CPUFREQ
-    if [ "${CPUFREQ}" == "false" ]; then
+    if [[ "${CPUFREQ}" == "false" || "${ACPISYS}" == "false" ]]; then
       dialog --backtitle "$(backtitle)" --title "Arc Warning" \
         --msgbox "WARN: Your System doesn't support CPU Frequency Scaling in DSM." 5 70
     fi
@@ -767,8 +767,8 @@ function arcSummary() {
   SUMMARY+="\n>> Addons: \Zb${ADDONSINFO}\Zn"
   SUMMARY+="\n"
   SUMMARY+="\n\Z4> Device Information\Zn"
-  SUMMARY+="\n>> AES | ACPI: \Zb${AESSYS} | ${ACPISYS}\Zn"
-  SUMMARY+="\n>> CPU Scaling: \Zb${CPUFREQ}\Zn"
+  SUMMARY+="\n>> AES: \Zb${AESSYS}\Zn"
+  SUMMARY+="\n>> CPU FreqScaling | ACPI: \Zb${CPUFREQ} | ${ACPISYS}\Zn"
   SUMMARY+="\n>> NIC: \Zb${NIC}\Zn"
   SUMMARY+="\n>> Total Disks: \Zb${DRIVES}\Zn"
   SUMMARY+="\n>> Internal Disks: \Zb${HARDDRIVES}\Zn"

@@ -51,7 +51,7 @@ function addonSelection() {
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     if [[ "${ADDON}" == "amepatch" || "${ADDON}" == "sspatch" || "${ADDON}" == "arcdns" ]] && [ -z "${ARCCONF}" ]; then
       continue
-    elif [ "${ADDON}" == "cpufreqscaling" ] && [ "${CPUFREQ}" == "false" ]; then
+    elif [ "${ADDON}" == "cpufreqscaling" ] && [[ "${CPUFREQ}" == "false" || "${ACPISYS}" == "false" ]] ; then
       continue
     else
       echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
