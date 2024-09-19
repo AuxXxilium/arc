@@ -41,6 +41,7 @@ BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
+USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
@@ -975,6 +976,8 @@ else
         fi
         if [ "${DT}" == "true" ]; then
           echo "H \"Hotplug/SortDrives: \Z4${HDDSORT}\Zn \" "                                 >>"${TMP_PATH}/menu"
+        else
+          echo "h \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                         >>"${TMP_PATH}/menu"
         fi
         echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
         echo "T \"Force enable SSH in DSM \" "                                                >>"${TMP_PATH}/menu"
@@ -1100,6 +1103,14 @@ else
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="H"
+        ;;
+      h) [ "${USBMOUNT}" == "true" ] && USBMOUNT='false' || USBMOUNT='auto'
+        [ "${USBMOUNT}" == "false" ] && USBMOUNT='auto' || USBMOUNT='true'
+        [ "${USBMOUNT}" == "auto" ] && USBMOUNT='true' || USBMOUNT='false'
+        writeConfigKey "usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        NEXT="h"
         ;;
       O) [ "${ODP}" == "false" ] && ODP='true' || ODP='false'
         writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"

@@ -1152,6 +1152,7 @@ function sysinfo() {
   OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
+  USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
   DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
@@ -1260,6 +1261,8 @@ function sysinfo() {
   fi
   if [ "${DT}" == "true" ]; then
     TEXT+="\n  Hotplug: \Zb${HDDSORT}\Zn"
+  else
+    TEXT+="\n  USB Mount: \Zb${USBMOUNT}\Zn"
   fi
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
