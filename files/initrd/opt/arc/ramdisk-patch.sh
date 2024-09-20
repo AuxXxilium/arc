@@ -170,7 +170,8 @@ for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol"
   PARAMS=""
   if [ "${ADDON}" == "disks" ]; then
     HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
-    PARAMS=${HDDSORT}
+    USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
+    PARAMS="${HDDSORT} ${USBMOUNT}"
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   fi
   installAddon "${ADDON}" "${PLATFORM}" || exit 1
