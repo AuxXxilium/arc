@@ -550,7 +550,7 @@ function ntpCheck() {
     fi
     if [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ]; then
       ln -sf "/usr/share/zoneinfo/right/${REGION}/${TIMEZONE}" /etc/localtime
-      hwclock --systohc
+      #hwclock --systohc
     fi
   fi
   if [ -z "${LAYOUT}" ]; then
