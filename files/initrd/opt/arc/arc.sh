@@ -203,6 +203,7 @@ function arcModel() {
   if [ "${AUTOMATED}" == "false" ] && [ "${MODEL}" != "${resp}" ]; then
     MODEL="${resp}"
     PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
+    writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
     writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
