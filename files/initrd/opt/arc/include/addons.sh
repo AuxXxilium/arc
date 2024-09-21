@@ -15,8 +15,15 @@ function availableAddons() {
     [ "${SYSTEM}" = true ] && continue
     DESC="$(readConfigKey "description" "${D}/manifest.yml")"
     BETA="$(readConfigKey "beta" "${D}/manifest.yml")"
+    TARGET="$(readConfigKey "target" "${D}/manifest.yml")"
     [ "${BETA}" = true ] && BETA="(Beta) " || BETA=""
-    [ "${AVAILABLE}" = true ] && echo -e "${ADDON}\t${BETA}${DESC}"
+    if [ "${TARGET}" == "app" ]; then
+      [ "${AVAILABLE}" = true ] && echo -e "${ADDON}\t\Z4${BETA}${DESC}\Zn"
+    elif [ "${TARGET}" == "system" ]; then
+      [ "${AVAILABLE}" = true ] && echo -e "${ADDON}\t\Z1${BETA}${DESC}\Zn"
+    else
+      [ "${AVAILABLE}" = true ] && echo -e "${ADDON}\t${BETA}${DESC}"
+    fi
   done
 }
 

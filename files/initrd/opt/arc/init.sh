@@ -84,9 +84,6 @@ if grep -q "automated_arc" /proc/cmdline; then
   writeConfigKey "automated" "true" "${USER_CONFIG_FILE}"
 else
   writeConfigKey "automated" "false" "${USER_CONFIG_FILE}"
-  initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
-  initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-  initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
 fi
 [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1 || true
 if [ -f "${PART1_PATH}/ARC-BRANCH" ]; then
