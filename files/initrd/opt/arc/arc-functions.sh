@@ -41,6 +41,7 @@ function addonSelection() {
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   ADDONS="$(readConfigKey "addons" "${USER_CONFIG_FILE}")"
   DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
+  PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   if [ "${ADDONS}" = "{}" ]; then
     initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
@@ -61,10 +62,10 @@ function addonSelection() {
       initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
     fi
-    if grep -q "i915" lsmod; then
+    if echo "$(lsmod)" 2>/dev/null | grep -q "i915" && [[ "${PLATFORM}" == "apollolake" || "${PLATFORM}" == "geminilake" ]]; then
       initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
     fi
-    if grep -q "7.2.2" $(readConfigKey "paturl" "${USER_CONFIG_FILE}"); then
+    if echo "${PAT_URL}" 2>/dev/null | grep -q "7.2.2"; then
       initConfigKey "addons.allowdowngrade" "" "${USER_CONFIG_FILE}"
     fi
     if [ ${DEVICENIC} -gt 1 ]; then

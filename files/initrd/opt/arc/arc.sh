@@ -898,7 +898,7 @@ if [ "${AUTOMATED}" == "true" ]; then
     make
   fi
 else
-  [ "${BUILDDONE}" == "true" ] && NEXT="3" || NEXT="1"
+  [ "${BUILDDONE}" == "true" ] && NEXT="3" || [ "${CONFDONE}" == "true" ] && NEXT="2" || NEXT="1"
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
     if [ -z "${ARCKEY}" ] && [ "${OFFLINE}" == "false" ]; then
