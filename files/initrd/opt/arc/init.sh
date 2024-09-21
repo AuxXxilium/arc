@@ -80,7 +80,7 @@ initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "usbmount" "auto" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-if grep -q "automated_arc" /proc/cmdline; then
+if cat /proc/cmdline | grep -q "automated_arc"; then
   writeConfigKey "automated" "true" "${USER_CONFIG_FILE}"
 else
   writeConfigKey "automated" "false" "${USER_CONFIG_FILE}"

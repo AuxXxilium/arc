@@ -923,10 +923,10 @@ else
       fi
       if [ "${ARCOPTS}" == "true" ]; then
         echo "= \"\Z4======== Arc DSM ========\Zn \" "                                        >>"${TMP_PATH}/menu"
-        echo "b \"Addons \" "                                                                 >>"${TMP_PATH}/menu"
-        echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
-        echo "e \"Version \" "                                                                >>"${TMP_PATH}/menu"
-        echo "p \"SN/Mac Options \" "                                                         >>"${TMP_PATH}/menu"
+        echo "b \"DSM Addons \" "                                                             >>"${TMP_PATH}/menu"
+        echo "d \"DSM Modules \" "                                                            >>"${TMP_PATH}/menu"
+        echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
+        echo "p \"DSM SN/Mac Options \" "                                                     >>"${TMP_PATH}/menu"
         if [ "${DT}" == "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
           echo "S \"Sata PortMap \" "                                                         >>"${TMP_PATH}/menu"
         fi
@@ -964,10 +964,10 @@ else
       fi
       if [ "${DSMOPTS}" == "true" ]; then
         echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
-        echo "j \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
-        echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
-        echo "l \"Edit Config \" "                                                            >>"${TMP_PATH}/menu"
-        echo "s \"Allow Downgrade \" "                                                        >>"${TMP_PATH}/menu"
+        echo "j \"DSM Cmdline \" "                                                            >>"${TMP_PATH}/menu"
+        echo "k \"DSM Synoinfo \" "                                                           >>"${TMP_PATH}/menu"
+        echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
+        echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
         echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
         echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
         echo "J \"Reset DSM Network Config \" "                                               >>"${TMP_PATH}/menu"
