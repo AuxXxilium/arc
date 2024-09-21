@@ -39,43 +39,6 @@ function addonSelection() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
-  ADDONS="$(readConfigKey "addons" "${USER_CONFIG_FILE}")"
-  DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
-  PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
-  if [ "${ADDONS}" = "{}" ]; then
-    initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
-    initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-    initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
-    initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
-    if [ ${NVMEDRIVES} -gt 0 ]; then
-      if [ "${PLATFORM}" == "epyc7002" ] && [ ${SATADRIVES} -eq 0 ]; then
-        initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
-      elif [ "${MODEL}" == "DS918+" ] || [ "${MODEL}" == "DS1019+" ] || [ "${MODEL}" == "DS1621xs+" ] || [ "${MODEL}" == "RS1619xs+" ]; then
-        initConfigKey "addons.nvmecache" "" "${USER_CONFIG_FILE}"
-      fi
-      initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
-    fi
-    if [ "${CPUFREQ}" == "true" ] && [ "${ACPISYS}" == "true" ]; then
-      initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
-    fi
-    if [ "${MACHINE}" == "Native" ]; then
-      initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
-      initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
-    fi
-    if echo "$(lsmod)" 2>/dev/null | grep -q "i915" && [[ "${PLATFORM}" == "apollolake" || "${PLATFORM}" == "geminilake" ]]; then
-      initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
-    fi
-    if echo "${PAT_URL}" 2>/dev/null | grep -q "7.2.2"; then
-      initConfigKey "addons.allowdowngrade" "" "${USER_CONFIG_FILE}"
-    fi
-    if [ ${DEVICENIC} -gt 1 ]; then
-      initConfigKey "addons.multismb3" "" "${USER_CONFIG_FILE}"
-      initConfigKey "addons.sortnetif" "" "${USER_CONFIG_FILE}"
-    fi
-    if [ "${ARCCONF}" == "true" ]; then
-      initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
-    fi
-  fi
   # read addons from user config
   unset ADDONS
   declare -A ADDONS
@@ -95,7 +58,7 @@ function addonSelection() {
     fi
   done < <(availableAddons "${PLATFORM}")
   dialog --backtitle "$(backtitle)" --title "DSM Addons" --colors --aspect 18 \
-    --checklist "Select DSM Addons to include.\nAddons: \Z1System Addon\Zn \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
+    --checklist "Select DSM Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
   resp=$(cat ${TMP_PATH}/resp)

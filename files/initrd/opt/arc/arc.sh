@@ -466,6 +466,44 @@ function arcVersion() {
       writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
     done < <(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")
     # Check Addons for Platform
+    ADDONS="$(readConfigKey "addons" "${USER_CONFIG_FILE}")"
+    DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
+    ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
+    PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
+    if [ "${ADDONS}" = "{}" ]; then
+      initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
+      initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+      initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
+      initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
+      if [ ${NVMEDRIVES} -gt 0 ]; then
+        if [ "${PLATFORM}" == "epyc7002" ] && [ ${SATADRIVES} -eq 0 ]; then
+          initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
+        elif [ "${MODEL}" == "DS918+" ] || [ "${MODEL}" == "DS1019+" ] || [ "${MODEL}" == "DS1621xs+" ] || [ "${MODEL}" == "RS1619xs+" ]; then
+          initConfigKey "addons.nvmecache" "" "${USER_CONFIG_FILE}"
+        fi
+        initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
+      fi
+      if [ "${CPUFREQ}" == "true" ] && [ "${ACPISYS}" == "true" ]; then
+        initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
+      fi
+      if [ "${MACHINE}" == "Native" ]; then
+        initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
+        initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
+      fi
+      if echo "$(lsmod)" 2>/dev/null | grep -q "i915" && [[ "${PLATFORM}" == "apollolake" || "${PLATFORM}" == "geminilake" ]]; then
+        initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
+      fi
+      if echo "${PAT_URL}" 2>/dev/null | grep -q "7.2.2"; then
+        initConfigKey "addons.allowdowngrade" "" "${USER_CONFIG_FILE}"
+      fi
+      if [ ${DEVICENIC} -gt 1 ]; then
+        initConfigKey "addons.multismb3" "" "${USER_CONFIG_FILE}"
+        initConfigKey "addons.sortnetif" "" "${USER_CONFIG_FILE}"
+      fi
+      if [ -n "${ARCCONF}" ]; then
+        initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
+      fi
+    fi
     while IFS=': ' read -r ADDON PARAM; do
       [ -z "${ADDON}" ] && continue
       if ! checkAddonExist "${ADDON}" "${PLATFORM}"; then
