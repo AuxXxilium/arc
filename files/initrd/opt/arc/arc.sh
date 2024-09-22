@@ -203,6 +203,7 @@ function arcModel() {
   if [ "${AUTOMATED}" == "false" ] && [ "${MODEL}" != "${resp}" ]; then
     MODEL="${resp}"
     PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
+    writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
     writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
@@ -466,6 +467,44 @@ function arcVersion() {
       writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
     done < <(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")
     # Check Addons for Platform
+    ADDONS="$(readConfigKey "addons" "${USER_CONFIG_FILE}")"
+    DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
+    ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
+    PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
+    if [ "${ADDONS}" = "{}" ]; then
+      initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
+      initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+      initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
+      initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
+      if [ ${NVMEDRIVES} -gt 0 ]; then
+        if [ "${PLATFORM}" == "epyc7002" ] && [ ${SATADRIVES} -eq 0 ]; then
+          initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
+        elif [ "${MODEL}" == "DS918+" ] || [ "${MODEL}" == "DS1019+" ] || [ "${MODEL}" == "DS1621xs+" ] || [ "${MODEL}" == "RS1619xs+" ]; then
+          initConfigKey "addons.nvmecache" "" "${USER_CONFIG_FILE}"
+        fi
+        initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
+      fi
+      if [ "${CPUFREQ}" == "true" ] && [ "${ACPISYS}" == "true" ]; then
+        initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
+      fi
+      if [ "${MACHINE}" == "Native" ]; then
+        initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
+        initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
+      fi
+      if echo "$(lsmod)" 2>/dev/null | grep -q "i915" && [[ "${PLATFORM}" == "apollolake" || "${PLATFORM}" == "geminilake" ]]; then
+        initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
+      fi
+      if echo "${PAT_URL}" 2>/dev/null | grep -q "7.2.2"; then
+        initConfigKey "addons.allowdowngrade" "" "${USER_CONFIG_FILE}"
+      fi
+      if [ ${DEVICENIC} -gt 1 ]; then
+        initConfigKey "addons.multismb3" "" "${USER_CONFIG_FILE}"
+        initConfigKey "addons.sortnetif" "" "${USER_CONFIG_FILE}"
+      fi
+      if [ -n "${ARCCONF}" ]; then
+        initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
+      fi
+    fi
     while IFS=': ' read -r ADDON PARAM; do
       [ -z "${ADDON}" ] && continue
       if ! checkAddonExist "${ADDON}" "${PLATFORM}"; then
@@ -898,7 +937,7 @@ if [ "${AUTOMATED}" == "true" ]; then
     make
   fi
 else
-  [ "${BUILDDONE}" == "true" ] && NEXT="3" || NEXT="1"
+  [ "${BUILDDONE}" == "true" ] && NEXT="3" || [ "${CONFDONE}" == "true" ] && NEXT="2" || NEXT="1"
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
     if [ -z "${ARCKEY}" ] && [ "${OFFLINE}" == "false" ]; then
@@ -923,10 +962,10 @@ else
       fi
       if [ "${ARCOPTS}" == "true" ]; then
         echo "= \"\Z4======== Arc DSM ========\Zn \" "                                        >>"${TMP_PATH}/menu"
-        echo "b \"Addons \" "                                                                 >>"${TMP_PATH}/menu"
-        echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
-        echo "e \"Version \" "                                                                >>"${TMP_PATH}/menu"
-        echo "p \"SN/Mac Options \" "                                                         >>"${TMP_PATH}/menu"
+        echo "b \"DSM Addons \" "                                                             >>"${TMP_PATH}/menu"
+        echo "d \"DSM Modules \" "                                                            >>"${TMP_PATH}/menu"
+        echo "e \"DSM Version \" "                                                            >>"${TMP_PATH}/menu"
+        echo "p \"DSM SN/Mac Options \" "                                                     >>"${TMP_PATH}/menu"
         if [ "${DT}" == "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
           echo "S \"Sata PortMap \" "                                                         >>"${TMP_PATH}/menu"
         fi
@@ -964,10 +1003,10 @@ else
       fi
       if [ "${DSMOPTS}" == "true" ]; then
         echo "= \"\Z4========== DSM ==========\Zn \" "                                        >>"${TMP_PATH}/menu"
-        echo "j \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
-        echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
-        echo "l \"Edit Config \" "                                                            >>"${TMP_PATH}/menu"
-        echo "s \"Allow Downgrade \" "                                                        >>"${TMP_PATH}/menu"
+        echo "j \"DSM Cmdline \" "                                                            >>"${TMP_PATH}/menu"
+        echo "k \"DSM Synoinfo \" "                                                           >>"${TMP_PATH}/menu"
+        echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
+        echo "s \"Allow DSM Downgrade \" "                                                    >>"${TMP_PATH}/menu"
         echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
         echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
         echo "J \"Reset DSM Network Config \" "                                               >>"${TMP_PATH}/menu"
