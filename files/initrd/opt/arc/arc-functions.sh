@@ -71,7 +71,7 @@ function addonSelection() {
   done
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --title "DSM Addons" \
-    --msgbox "DSM Addons selected:\n${ADDONSINFO}" 7 50
+    --msgbox "DSM Addons selected:\n${ADDONSINFO}" 7 70
 }
 
 ###############################################################################

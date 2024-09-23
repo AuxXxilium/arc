@@ -477,7 +477,7 @@ function arcVersion() {
       initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
       if [ ${NVMEDRIVES} -gt 0 ]; then
-        if [ "${PLATFORM}" == "epyc7002" ] && [ ${SATADRIVES} -eq 0 ]; then
+        if [ "${PLATFORM}" == "epyc7002" ] && [ ${SATADRIVES} -eq 0 ] && [ ${SASDRIVES} -eq 0 ]; then
           initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
         elif [ "${MODEL}" == "DS918+" ] || [ "${MODEL}" == "DS1019+" ] || [ "${MODEL}" == "DS1621xs+" ] || [ "${MODEL}" == "RS1619xs+" ]; then
           initConfigKey "addons.nvmecache" "" "${USER_CONFIG_FILE}"
