@@ -134,7 +134,7 @@ function updateLoader() {
           return 1
         fi
       elif [ ${ARC_VERSION} -lt ${UPDATE_VERSION} ] && [ "${AUTOMATED}" == "true" ]; then
-        dialog --backtitle "$(backtitle)" --title "Update Loader" \
+        dialog --backtitle "$(backtitle)" --title "Full-Update Loader" \
           --infobox "Config is not compatible to new Version!\nUpdate not possible!\nPlease reflash Loader." 0 0
         sleep 5
         updateFaileddialog
@@ -171,13 +171,11 @@ function updateLoader() {
         echo "Download successful!"
         if [ "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" == "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
           echo "Download successful!"
-          unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}"
+          unzip -oq "${TMP_PATH}/update.zip" -d "${PART3_PATH}"
           echo "Installing new Loader Image..."
-          cp -f "${TMP_PATH}/grub.cfg" "${USER_GRUB_CONFIG}"
-          cp -f "${TMP_PATH}/ARC-VERSION" "${PART1_PATH}/ARC-VERSION"
-          cp -f "${TMP_PATH}/ARC-BRANCH" "${PART1_PATH}/ARC-BRANCH"
-          cp -f "${TMP_PATH}/bzImage-arc" "${ARC_BZIMAGE_FILE}"
-          cp -f "${TMP_PATH}/initrd-arc" "${ARC_RAMDISK_FILE}"
+          mv -f "${PART3_PATH}/grub.cfg" "${USER_GRUB_CONFIG}"
+          mv -f "${PART3_PATH}/ARC-VERSION" "${PART1_PATH}/ARC-VERSION"
+          mv -f "${PART3_PATH}/ARC-BRANCH" "${PART1_PATH}/ARC-BRANCH"
           rm -f "${TMP_PATH}/update.zip"
           echo "Update done!"
           sleep 2
@@ -191,7 +189,7 @@ function updateLoader() {
         sleep 5
         updateFailed
       fi
-    ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Update Loader" \
+    ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Full-Update Loader" \
       --progressbox "Updating Loader..." 20 70
   fi
   return 0
