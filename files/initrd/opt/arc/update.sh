@@ -62,7 +62,7 @@ function arcUpdate() {
   fi
   FAILED="false"
   if echo "${ARC_VERSION}" | grep -q "dev"; then
-    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+    dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
       --infobox "Development Version detected." 0 0
     sleep 2
     DEV="true"
@@ -70,31 +70,19 @@ function arcUpdate() {
   # Automatic Update
   [ "${DEV}" == "true" ] && updateLoader "${ARC_VERSION}" || updateLoader
   [ $? -ne 0 ] && FAILED="true"
-  [ "${FAILED}" == "false" ] && updateAddons || true
-  [ $? -ne 0 ] && FAILED="true"
-  [ "${FAILED}" == "false" ] && updateConfigs || true
-  [ $? -ne 0 ] && FAILED="true"
-  [ "${FAILED}" == "false" ] && updateLKMs || true
-  [ $? -ne 0 ] && FAILED="true"
-  [ "${FAILED}" == "false" ] && updateModules || true
-  [ $? -ne 0 ] && FAILED="true"
-  [ "${FAILED}" == "false" ] && updatePatches || true
-  [ $? -ne 0 ] && FAILED="true"
-  [ "${FAILED}" == "false" ] && updateCustom || true
-  [ $? -ne 0 ] && FAILED="true"
   if [ "${FAILED}" == "true" ] && [ "${UPDATEMODE}" == "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+    dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
       --infobox "Update failed!\nPlease try again later." 0 0
     sleep 3
     exec reboot
   elif [ "${FAILED}" == "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+    dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
       --infobox "Update failed!\nRebooting to Config Mode..." 0 0
     sleep 3
     rebootTo config
   fi
   # Ask for Boot
-  dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+  dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
     --infobox "Update successful!" 0 0
   boot
 }
@@ -123,7 +111,7 @@ function boot() {
 if [ "${OFFLINE}" == "false" ]; then
   arcUpdate
 else
-  dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+  dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
     --infobox "Offline Mode enabled.\nCan't Update Loader!" 0 0
   sleep 5
   exec reboot

@@ -817,8 +817,8 @@ function updateMenu() {
       --menu "Choose an Option" 0 0 0 \
       0 "Buildroot Branch: \Z1${ARCBRANCH}\Zn" \
       1 "Automated Update Mode" \
-      2 "Full-Upgrade Loader \Z1(reflash)\Zn" \
-      3 "\Z4Advanced:\Zn Update Loader" \
+      2 "Full-Update Loader \Z1(update)\Zn" \
+      3 "Full-Upgrade Loader \Z1(reflash)\Zn" \
       4 "\Z4Advanced:\Zn Update Addons" \
       5 "\Z4Advanced:\Zn Update Configs" \
       6 "\Z4Advanced:\Zn Update LKMs" \
@@ -834,6 +834,33 @@ function updateMenu() {
         . ${ARC_PATH}/update.sh
         ;;
       2)
+        # Ask for Tag
+        TAG=""
+        NEWVER="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        OLDVER="$(cat ${PART1_PATH}/ARC-VERSION)"
+        dialog --clear --backtitle "$(backtitle)" --title "Full-Update Loader" \
+          --menu "Current: ${OLDVER} -> Which Version?" 7 50 0 \
+          1 "Latest ${NEWVER}" \
+          2 "Select Version" \
+        2>"${TMP_PATH}/opts"
+        [ $? -ne 0 ] && break
+        opts=$(cat ${TMP_PATH}/opts)
+        if [ ${opts} -eq 1 ]; then
+          TAG=""
+        elif [ ${opts} -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Full-Update Loader" \
+          --inputbox "Type the Version!" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG=$(cat "${TMP_PATH}/input")
+          [ -z "${TAG}" ] && return 1
+        fi
+        if updateLoader "${TAG}"; then
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          exec reboot && exit 0
+        fi
+        ;;
+      3)
         # Ask for Tag
         TAG=""
         NEWVER="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
@@ -858,45 +885,6 @@ function updateMenu() {
           writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
           BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           exec reboot && exit 0
-        fi
-        ;;
-      3)
-        # Ask for Tag
-        TAG=""
-        NEWVER="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
-        OLDVER="$(cat ${PART1_PATH}/ARC-VERSION)"
-        dialog --clear --backtitle "$(backtitle)" --title "Update Loader" \
-          --menu "Current: ${OLDVER} -> Which Version?" 7 50 0 \
-          1 "Latest ${NEWVER}" \
-          2 "Select Version" \
-        2>"${TMP_PATH}/opts"
-        [ $? -ne 0 ] && break
-        opts=$(cat ${TMP_PATH}/opts)
-        if [ ${opts} -eq 1 ]; then
-          TAG=""
-        elif [ ${opts} -eq 2 ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Loader" \
-          --inputbox "Type the Version!" 0 0 \
-          2>"${TMP_PATH}/input"
-          TAG=$(cat "${TMP_PATH}/input")
-          [ -z "${TAG}" ] && return 1
-        fi
-        if updateLoader "${TAG}"; then
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-          # Ask for Reboot
-          dialog --clear --backtitle "$(backtitle)" --title "Update done"\
-            --no-cancel --menu "Reboot now?" 7 40 0 \
-            1 "Yes - Reboot Arc Loader now" \
-            2 "No - I want to update more" \
-          2>"${TMP_PATH}/resp"
-          resp=$(cat ${TMP_PATH}/resp)
-          [ -z "${resp}" ] && return 1
-          if [ ${resp} -eq 1 ]; then
-            rebootTo config
-          elif [ ${resp} -eq 2 ]; then
-            return 0
-          fi
         fi
         ;;
       4)
