@@ -168,8 +168,8 @@ jobs:
           cd files/p3
           zip -9 update.zip -r .
           sha256sum update.zip >checksum.sha256
-          mv update.zip ../
-          mv checksum.sha256 ../
+          mv update.zip ../../
+          mv checksum.sha256 ../../
           cd -
 
       # Build incremental
@@ -233,8 +233,8 @@ jobs:
           cd files/p3
           zip -9 update-next.zip -r .
           sha256sum update-next.zip >checksum-next.sha256
-          mv update-next.zip ../
-          mv checksum-next.sha256 ../
+          mv update-next.zip ../../
+          mv checksum-next.sha256 ../../
           cd -
 
       # Zip image and generate checksum
@@ -285,8 +285,8 @@ jobs:
             Release: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
-            files/update.zip
-            files/update-next.zip
-            files/checksum.sha256
-            files/checksum-next.sha256
+            update.zip
+            update-next.zip
+            checksum.sha256
+            checksum-next.sha256
             check.update
