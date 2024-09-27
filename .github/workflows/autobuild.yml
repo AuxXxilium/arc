@@ -124,7 +124,10 @@ jobs:
           convertova "${IMAGE_FILE}" "arc.ova"
 
           # Zip update and generate checksum
-          zip -9j update.zip "files/p3/"* "files/p1/ARC-VERSION" "files/p1/ARC-BRANCH" "files/p1/boot/grub/grub.cfg"
+          cp -f files/p1/ARC-VERSION files/p3/ARC-VERSION
+          cp -f files/p1/ARC-BRANCH files/p3/ARC-BRANCH
+          cp -f files/p1/boot/grub/grub.cfg files/p3/grub.cfg
+          zip -9j update.zip -r "files/p3"
           sha256sum update.zip >checksum.sha256
 
       # Build incremental
@@ -182,7 +185,10 @@ jobs:
           convertova "${IMAGE_FILE}" "arc-next.ova"
 
           # Zip update and generate checksum
-          zip -9j update-next.zip "files/p3/"* "files/p1/ARC-VERSION" "files/p1/ARC-BRANCH" "files/p1/boot/grub/grub.cfg"
+          cp -f files/p1/ARC-VERSION files/p3/ARC-VERSION
+          cp -f files/p1/ARC-BRANCH files/p3/ARC-BRANCH
+          cp -f files/p1/boot/grub/grub.cfg files/p3/grub.cfg
+          zip -9j update-next.zip -r "files/p3"
           sha256sum update-next.zip >checksum-next.sha256
 
       # Zip image and generate checksum
