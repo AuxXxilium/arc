@@ -9,7 +9,7 @@
 function checkBootLoader() {
   while read KNAME RO; do
     [ -z "${KNAME}" ] && continue
-    [ "${RO}" = "0" ] && continue
+    [ "${RO}" == "0" ] && continue
     hdparm -r0 "${KNAME}" >/dev/null 2>&1 || true
   done <<<$(lsblk -pno KNAME,RO 2>/dev/null)
   [ ! -w "${PART1_PATH}" ] && return 1
@@ -246,7 +246,7 @@ function _sort_netif() {
   local ETHSEQ="$(echo -e "${ETHLIST}" | awk '{print $3}' | sed 's/eth//g')"
   local ETHNUM="$(echo -e "${ETHLIST}" | wc -l)"
   # sort
-  if [ ! "${ETHSEQ}" = "$(seq 0 $((${ETHNUM:0} - 1)))" ]; then
+  if [ ! "${ETHSEQ}" == "$(seq 0 $((${ETHNUM:0} - 1)))" ]; then
     /etc/init.d/S41dhcpcd stop >/dev/null 2>&1
     /etc/init.d/S40network stop >/dev/null 2>&1
     for i in $(seq 0 $((${ETHNUM:0} - 1))); do

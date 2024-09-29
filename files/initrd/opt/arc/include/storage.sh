@@ -142,7 +142,7 @@ function getmapSelection() {
   SATAREMAP="$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
-  if [ "${ARCMODE}" = "config" ]; then
+  if [ "${ARCMODE}" == "config" ]; then
     # Show recommended Option to user
     if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" == "true" ] && [ "${MACHINE}" == "Native" ]; then
       REMAP2="*"

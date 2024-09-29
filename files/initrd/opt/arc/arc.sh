@@ -107,7 +107,7 @@ function arcModel() {
     arch=$(echo "${item}" | jq -r '.arch')
     echo "${name} ${arch}" >>"${TMP_PATH}/modellist"
   done
-  if [ "${ARCMODE}" = "config" ]; then
+  if [ "${ARCMODE}" == "config" ]; then
     while true; do
       echo -n "" >"${TMP_PATH}/menu"
       while read -r M A; do
@@ -201,7 +201,7 @@ function arcModel() {
     done
   fi
   # Reset Model Config if changed
-  if [ "${ARCMODE}" = "config" ] && [ "${MODEL}" != "${resp}" ]; then
+  if [ "${ARCMODE}" == "config" ] && [ "${MODEL}" != "${resp}" ]; then
     MODEL="${resp}"
     PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
     writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
@@ -251,7 +251,7 @@ function arcVersion() {
   PAT_URL_CONF="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH_CONF="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
   # Check for Custom Build
-  if [ "${ARCMODE}" = "config" ]; then
+  if [ "${ARCMODE}" == "config" ] && [ "${ARCRESTORE}" != "true" ]; then
     # Select Build for DSM
     ITEMS="$(readConfigEntriesArray "platforms.${PLATFORM}.productvers" "${P_FILE}" | sort -r)"
     dialog --clear --no-items --nocancel --title "DSM Version" --backtitle "$(backtitle)" \
@@ -342,7 +342,7 @@ function arcVersion() {
       ARCMODE="config"
     fi
     writeConfigKey "arc.mode" "${ARCMODE}" "${USER_CONFIG_FILE}"
-  elif [ "${ARCMODE}" = "automated" ]; then
+  elif [ "${ARCMODE}" == "automated" ] || [ "${ARCRESTORE}" == "true" ]; then
     PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
     VALID="true"
@@ -398,7 +398,7 @@ function arcVersion() {
         fi
       fi
     fi
-  elif [ ! -f "${DSM_FILE}" ] && [ "${OFFLINE}" == "true" ] && [ "${ARCMODE}" = "config" ]; then
+  elif [ ! -f "${DSM_FILE}" ] && [ "${OFFLINE}" == "true" ] && [ "${ARCMODE}" == "config" ]; then
     PAT_FILE=$(ls ${USER_UP_PATH}/*.pat | head -n 1)
     if [ ! -f "${PAT_FILE}" ]; then
       mkdir -p "${USER_UP_PATH}"
@@ -473,7 +473,7 @@ function arcVersion() {
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
     ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
     PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
-    if [ "${ADDONS}" = "{}" ]; then
+    if [ "${ADDONS}" == "{}" ]; then
       initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
@@ -548,7 +548,7 @@ function arcPatch() {
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   # Check for Custom Build
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-  if [ "${ARCMODE}" = "automated" ]; then
+  if [ "${ARCMODE}" == "automated" ]; then
     if [ -n "${ARCCONF}" ]; then
       SN=$(generateSerial "${MODEL}" "true")
       writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
@@ -556,7 +556,7 @@ function arcPatch() {
       SN=$(generateSerial "${MODEL}" "false")
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     fi
-  elif [ "${ARCMODE}" = "config" ]; then
+  elif [ "${ARCMODE}" == "config" ]; then
     if [ -n "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
         --nocancel --title "SN/Mac Options"\
@@ -651,7 +651,7 @@ function arcSettings() {
     [ $? -ne 0 ] && return 1
   fi
   # Check for Custom Build
-  if [ "${ARCMODE}" = "config" ]; then
+  if [ "${ARCMODE}" == "config" ]; then
     # Select Addons
     dialog --backtitle "$(backtitle)" --colors --title "DSM Addons" \
       --infobox "Loading Addons Table..." 3 40
@@ -659,12 +659,12 @@ function arcSettings() {
     [ $? -ne 0 ] && return 1
   fi
   # Check for CPU Frequency Scaling & Governor
-  if [ "${ARCMODE}" = "config" ] && [ "${CPUFREQ}" == "true" ] && [ "${ACPISYS}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
+  if [ "${ARCMODE}" == "config" ] && [ "${CPUFREQ}" == "true" ] && [ "${ACPISYS}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
     dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
       --infobox "Generating Governor Table..." 3 40
     governorSelection
     [ $? -ne 0 ] && return 1
-  elif [ "${ARCMODE}" = "automated" ] && [ "${CPUFREQ}" == "true" ] && [ "${ACPISYS}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
+  elif [ "${ARCMODE}" == "automated" ] && [ "${CPUFREQ}" == "true" ] && [ "${ACPISYS}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
     if [ "${PLATFORM}" == "epyc7002" ]; then
       writeConfigKey "addons.cpufreqscaling" "schedutil" "${USER_CONFIG_FILE}"
     else
@@ -673,7 +673,7 @@ function arcSettings() {
   else
     deleteConfigKey "addons.cpufreqscaling" "${USER_CONFIG_FILE}"
   fi
-  if [ "${ARCMODE}" = "config" ]; then
+  if [ "${ARCMODE}" == "config" ]; then
     # Check for DT and HBA/Raid Controller
     if [ "${PLATFORM}" != "epyc7002" ]; then
       if [ "${DT}" == "true" ] && [ "${EXTERNALCONTROLLER}" == "true" ]; then
@@ -720,7 +720,7 @@ function arcSettings() {
     writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     # Check for Custom Build
-    if [ "${ARCMODE}" = "config" ]; then
+    if [ "${ARCMODE}" == "config" ]; then
       # Ask for Build
       dialog --clear --backtitle "$(backtitle)" --title "Config done" \
         --no-cancel --menu "Build now?" 7 40 0 \
@@ -878,7 +878,7 @@ function arcFinish() {
   if [ -n "${MODELID}" ]; then
     writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    if [ "${ARCMODE}" = "automated" ]; then
+    if [ "${ARCMODE}" == "automated" ]; then
       boot
     else
       # Ask for Boot
@@ -982,7 +982,7 @@ function updateboot() {
 ###############################################################################
 # Main loop
 # Check for Arc Mode
-if [ "${ARCMODE}" = "update" ]; then
+if [ "${ARCMODE}" == "update" ]; then
   UPDATEMODE="true"
   # Check for Offline Mode
   if [ "${OFFLINE}" == "false" ]; then
@@ -993,7 +993,7 @@ if [ "${ARCMODE}" = "update" ]; then
     sleep 5
     exec reboot
   fi
-elif [ "${ARCMODE}" = "automated" ]; then
+elif [ "${ARCMODE}" == "automated" ]; then
   # Check for Custom Build
   if [ "${BUILDDONE}" == "false" ] || [ "${MODEL}" != "${MODELID}" ]; then
     arcModel
