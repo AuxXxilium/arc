@@ -1586,7 +1586,7 @@ function downgradeMenu() {
 function resetPassword() {
   DSMROOTS="$(findDSMRoot)"
   if [ -z "${DSMROOTS}" ]; then
-    dialog --backtitle "$(backtitle)" --title "Reset Password"  \
+    dialog --backtitle "$(backtitle)" --title "Reset Password" \
       --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
     return
   fi
@@ -1610,24 +1610,24 @@ function resetPassword() {
   done
   rm -rf "${TMP_PATH}/mdX" >/dev/null
   if [ ! -f "${TMP_PATH}/menu" ]; then
-    dialog --backtitle "$(backtitle)" --title "Reset Password"  \
+    dialog --backtitle "$(backtitle)" --title "Reset Password" \
       --msgbox "All existing users have been disabled. Please try adding new user." 0 0
     return
   fi
-  dialog --backtitle "$(backtitle)" --title "Reset Password"  \
+  dialog --backtitle "$(backtitle)" --title "Reset Password" \
     --no-items --menu  "Choose a User" 0 0 0 --file "${TMP_PATH}/menu" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
   USER="$(cat "${TMP_PATH}/resp" 2>/dev/null | awk '{print $1}')"
   [ -z "${USER}" ] && return
   while true; do
-    dialog --backtitle "$(backtitle)" --title "Reset Password"  \
-      --inputbox "$(printf "Type a new password for user '%s'")" "${USER}" 0 70 "${CMDLINE[${NAME}]}" \
-      2>${TMP_PATH}/resp
+    dialog --backtitle "$(backtitle)" --title "Reset Password" \
+      --inputbox "Type a new password for user ${USER}" 0 70 \
+    2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break 2
     VALUE="$(cat "${TMP_PATH}/resp")"
     [ -n "${VALUE}" ] && break
-    dialog --backtitle "$(backtitle)" --title "Reset Password"  \
+    dialog --backtitle "$(backtitle)" --title "Reset Password" \
       --msgbox "Invalid password" 0 0
   done
   NEWPASSWD="$(python -c "from passlib.hash import sha512_crypt;pw=\"${VALUE}\";print(sha512_crypt.using(rounds=5000).hash(pw))")"
@@ -1646,9 +1646,9 @@ function resetPassword() {
       umount "${TMP_PATH}/mdX"
     done
     rm -rf "${TMP_PATH}/mdX" >/dev/null
-  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Reset Password"  \
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Reset Password" \
     --progressbox "Resetting ..." 20 100
-  dialog --backtitle "$(backtitle)" --title "Reset Password"  \
+  dialog --backtitle "$(backtitle)" --title "Reset Password" \
     --msgbox "Password Reset completed." 0 0
   return
 }
