@@ -51,6 +51,8 @@ function addonSelection() {
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     if [[ "${ADDON}" == "amepatch" || "${ADDON}" == "sspatch" || "${ADDON}" == "arcdns" ]] && [ -z "${ARCCONF}" ]; then
       continue
+    elif [ "${ADDON}" == "codecpatch" ] && [ -n "${ARCCONF}" ]; then
+      continue
     elif [ "${ADDON}" == "cpufreqscaling" ] && [[ "${CPUFREQ}" == "false" || "${ACPISYS}" == "false" ]] ; then
       continue
     else
@@ -724,27 +726,24 @@ function backupMenu() {
           fi
         done
         if [ -f "${USER_CONFIG_FILE}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
-            --aspect 18 --msgbox "Config restore successful!" 0 0
-          # Ask for Build
-          dialog --clear --backtitle "$(backtitle)" \
-            --menu "Config done -> Build now?" 7 50 0 \
-            1 "Yes - Build Arc Loader now" \
-            2 "No - I want to make changes" \
-          2>"${TMP_PATH}/resp"
-          resp=$(cat ${TMP_PATH}/resp)
-          [ -z "${resp}" ] && return 1
-          # Check for compatibility
-          compatboot
-          if [ ${resp} -eq 1 ]; then
-            arcSummary
-          elif [ ${resp} -eq 2 ]; then
-            dialog --clear --no-items --backtitle "$(backtitle)"
-            return 1
+          PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+          if [ -n "${PRODUCTVER}" ]; then
+            PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+            KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+            # Modify KVER for Epyc7002
+            [ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
           fi
-        else
+          if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+            writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+            while read -r ID DESC; do
+              writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+            done < <(getAllModules "${PLATFORM}" "${KVERP}")
+          fi
           dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
-            --aspect 18 --msgbox "No Config found!" 0 0
+            --aspect 18 --msgbox "Config restore successful!\nDownloading necessary files..." 0 0
+          sleep 2
+          ARCRESTORE="true"
+          arcVersion
         fi
         ;;
       2)
@@ -831,7 +830,7 @@ function updateMenu() {
       1)
         dialog --backtitle "$(backtitle)" --title "Automated Update" --aspect 18 \
           --msgbox "Loader will proceed Automated Update Mode.\nPlease wait until progress is finished!" 0 0
-        . ${ARC_PATH}/update.sh
+        arcUpdate
         ;;
       2)
         # Ask for Tag
@@ -1158,12 +1157,12 @@ function sysinfo() {
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
   if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::300 | awk '{print $1}'); do
-      GPUNAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
+      GPUNAME=$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       TEXT+="\n  iGPU: \Zb${GPUNAME}\Zn"
     done
   elif [ $(lspci -d ::380 | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::380 | awk '{print $1}'); do
-      GPUNAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
+      GPUNAME=$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       TEXT+="\n  GPU: \Zb${GPUNAME}\Zn"
     done
   fi
@@ -1584,7 +1583,7 @@ function downgradeMenu() {
 function resetPassword() {
   DSMROOTS="$(findDSMRoot)"
   if [ -z "${DSMROOTS}" ]; then
-    dialog --backtitle "$(backtitle)" --title "Reset Password"  \
+    dialog --backtitle "$(backtitle)" --title "Reset Password" \
       --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
     return
   fi
@@ -1608,24 +1607,24 @@ function resetPassword() {
   done
   rm -rf "${TMP_PATH}/mdX" >/dev/null
   if [ ! -f "${TMP_PATH}/menu" ]; then
-    dialog --backtitle "$(backtitle)" --title "Reset Password"  \
+    dialog --backtitle "$(backtitle)" --title "Reset Password" \
       --msgbox "All existing users have been disabled. Please try adding new user." 0 0
     return
   fi
-  dialog --backtitle "$(backtitle)" --title "Reset Password"  \
+  dialog --backtitle "$(backtitle)" --title "Reset Password" \
     --no-items --menu  "Choose a User" 0 0 0 --file "${TMP_PATH}/menu" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
   USER="$(cat "${TMP_PATH}/resp" 2>/dev/null | awk '{print $1}')"
   [ -z "${USER}" ] && return
   while true; do
-    dialog --backtitle "$(backtitle)" --title "Reset Password"  \
-      --inputbox "$(printf "Type a new password for user '%s'")" "${USER}" 0 70 "${CMDLINE[${NAME}]}" \
-      2>${TMP_PATH}/resp
+    dialog --backtitle "$(backtitle)" --title "Reset Password" \
+      --inputbox "Type a new password for user ${USER}" 0 70 \
+    2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break 2
     VALUE="$(cat "${TMP_PATH}/resp")"
     [ -n "${VALUE}" ] && break
-    dialog --backtitle "$(backtitle)" --title "Reset Password"  \
+    dialog --backtitle "$(backtitle)" --title "Reset Password" \
       --msgbox "Invalid password" 0 0
   done
   NEWPASSWD="$(python -c "from passlib.hash import sha512_crypt;pw=\"${VALUE}\";print(sha512_crypt.using(rounds=5000).hash(pw))")"
@@ -1644,9 +1643,9 @@ function resetPassword() {
       umount "${TMP_PATH}/mdX"
     done
     rm -rf "${TMP_PATH}/mdX" >/dev/null
-  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Reset Password"  \
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Reset Password" \
     --progressbox "Resetting ..." 20 100
-  dialog --backtitle "$(backtitle)" --title "Reset Password"  \
+  dialog --backtitle "$(backtitle)" --title "Reset Password" \
     --msgbox "Password Reset completed." 0 0
   return
 }
@@ -2250,7 +2249,7 @@ function governorMenu () {
 function governorSelection () {
   rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
-  if [ "${AUTOMATED}" == "false" ]; then
+  if [ "${ARCMODE}" == "config" ]; then
     # Selectable CPU governors
     [ "${PLATFORM}" == "epyc7002" ] && echo -e "schedutil \"use schedutil to scale frequency *\"" >>"${TMP_PATH}/opts"
     [ "${PLATFORM}" != "epyc7002" ] && echo -e "ondemand \"use ondemand to scale frequency *\"" >>"${TMP_PATH}/opts"

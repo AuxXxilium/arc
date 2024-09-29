@@ -20,7 +20,7 @@ systemCheck
 offlineCheck "false"
 ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
+ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
 
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -37,6 +37,7 @@ fi
 ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 ARCDYN="$(readConfigKey "arc.dynamic" "${USER_CONFIG_FILE}")"
+IPV6="$(readConfigKey "arc.ipv6" "${USER_CONFIG_FILE}")"
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
@@ -106,7 +107,7 @@ function arcModel() {
     arch=$(echo "${item}" | jq -r '.arch')
     echo "${name} ${arch}" >>"${TMP_PATH}/modellist"
   done
-  if [ "${AUTOMATED}" == "false" ]; then
+  if [ "${ARCMODE}" == "config" ]; then
     while true; do
       echo -n "" >"${TMP_PATH}/menu"
       while read -r M A; do
@@ -200,7 +201,7 @@ function arcModel() {
     done
   fi
   # Reset Model Config if changed
-  if [ "${AUTOMATED}" == "false" ] && [ "${MODEL}" != "${resp}" ]; then
+  if [ "${ARCMODE}" == "config" ] && [ "${MODEL}" != "${resp}" ]; then
     MODEL="${resp}"
     PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
     writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
@@ -250,7 +251,7 @@ function arcVersion() {
   PAT_URL_CONF="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH_CONF="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
   # Check for Custom Build
-  if [ "${AUTOMATED}" == "false" ]; then
+  if [ "${ARCMODE}" == "config" ] && [ "${ARCRESTORE}" != "true" ]; then
     # Select Build for DSM
     ITEMS="$(readConfigEntriesArray "platforms.${PLATFORM}.productvers" "${P_FILE}" | sort -r)"
     dialog --clear --no-items --nocancel --title "DSM Version" --backtitle "$(backtitle)" \
@@ -336,12 +337,12 @@ function arcVersion() {
     dialog --backtitle "$(backtitle)" --colors --title "Automated Mode" \
       --yesno "${MSG}" 6 55
     if [ $? -eq 0 ]; then
-      AUTOMATED="true"
+      ARCMODE="automated"
     else
-      AUTOMATED="false"
+      ARCMODE="config"
     fi
-    writeConfigKey "automated" "${AUTOMATED}" "${USER_CONFIG_FILE}"
-  elif [ "${AUTOMATED}" == "true" ]; then
+    writeConfigKey "arc.mode" "${ARCMODE}" "${USER_CONFIG_FILE}"
+  elif [ "${ARCMODE}" == "automated" ] || [ "${ARCRESTORE}" == "true" ]; then
     PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
     VALID="true"
@@ -397,7 +398,7 @@ function arcVersion() {
         fi
       fi
     fi
-  elif [ ! -f "${DSM_FILE}" ] && [ "${OFFLINE}" == "true" ] && [ "${AUTOMATED}" == "false" ]; then
+  elif [ ! -f "${DSM_FILE}" ] && [ "${OFFLINE}" == "true" ] && [ "${ARCMODE}" == "config" ]; then
     PAT_FILE=$(ls ${USER_UP_PATH}/*.pat | head -n 1)
     if [ ! -f "${PAT_FILE}" ]; then
       mkdir -p "${USER_UP_PATH}"
@@ -457,6 +458,7 @@ function arcVersion() {
   fi
   # Cleanup
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
+  [ "${ARCRESTORE}" == "true" ] && return 0 && ARCRESTORE="false" || true
   # Change Config if Files are valid
   if [ "${VALID}" == "true" ] && [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Config" \
@@ -471,7 +473,7 @@ function arcVersion() {
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
     ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
     PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
-    if [ "${ADDONS}" = "{}" ]; then
+    if [ "${ADDONS}" == "{}" ]; then
       initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
@@ -546,7 +548,7 @@ function arcPatch() {
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   # Check for Custom Build
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-  if [ "${AUTOMATED}" == "true" ]; then
+  if [ "${ARCMODE}" == "automated" ]; then
     if [ -n "${ARCCONF}" ]; then
       SN=$(generateSerial "${MODEL}" "true")
       writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
@@ -554,7 +556,7 @@ function arcPatch() {
       SN=$(generateSerial "${MODEL}" "false")
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     fi
-  elif [ "${AUTOMATED}" == "false" ]; then
+  elif [ "${ARCMODE}" == "config" ]; then
     if [ -n "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
         --nocancel --title "SN/Mac Options"\
@@ -649,7 +651,7 @@ function arcSettings() {
     [ $? -ne 0 ] && return 1
   fi
   # Check for Custom Build
-  if [ "${AUTOMATED}" == "false" ]; then
+  if [ "${ARCMODE}" == "config" ]; then
     # Select Addons
     dialog --backtitle "$(backtitle)" --colors --title "DSM Addons" \
       --infobox "Loading Addons Table..." 3 40
@@ -657,12 +659,12 @@ function arcSettings() {
     [ $? -ne 0 ] && return 1
   fi
   # Check for CPU Frequency Scaling & Governor
-  if [ "${AUTOMATED}" == "false" ] && [ "${CPUFREQ}" == "true" ] && [ "${ACPISYS}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
+  if [ "${ARCMODE}" == "config" ] && [ "${CPUFREQ}" == "true" ] && [ "${ACPISYS}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
     dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
       --infobox "Generating Governor Table..." 3 40
     governorSelection
     [ $? -ne 0 ] && return 1
-  elif [ "${AUTOMATED}" == "true" ] && [ "${CPUFREQ}" == "true" ] && [ "${ACPISYS}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
+  elif [ "${ARCMODE}" == "automated" ] && [ "${CPUFREQ}" == "true" ] && [ "${ACPISYS}" == "true" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
     if [ "${PLATFORM}" == "epyc7002" ]; then
       writeConfigKey "addons.cpufreqscaling" "schedutil" "${USER_CONFIG_FILE}"
     else
@@ -671,7 +673,7 @@ function arcSettings() {
   else
     deleteConfigKey "addons.cpufreqscaling" "${USER_CONFIG_FILE}"
   fi
-  if [ "${AUTOMATED}" == "false" ]; then
+  if [ "${ARCMODE}" == "config" ]; then
     # Check for DT and HBA/Raid Controller
     if [ "${PLATFORM}" != "epyc7002" ]; then
       if [ "${DT}" == "true" ] && [ "${EXTERNALCONTROLLER}" == "true" ]; then
@@ -718,7 +720,7 @@ function arcSettings() {
     writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     # Check for Custom Build
-    if [ "${AUTOMATED}" == "false" ]; then
+    if [ "${ARCMODE}" == "config" ]; then
       # Ask for Build
       dialog --clear --backtitle "$(backtitle)" --title "Config done" \
         --no-cancel --menu "Build now?" 7 40 0 \
@@ -872,25 +874,59 @@ function make() {
 # Finish Building Loader
 function arcFinish() {
   rm -f "${LOG_FILE}" >/dev/null 2>&1 || true
-  writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  if [ "${AUTOMATED}" == "true" ]; then
-    boot
-  else
-    # Ask for Boot
-    dialog --clear --backtitle "$(backtitle)" --title "Build done"\
-      --no-cancel --menu "Boot now?" 7 40 0 \
-      1 "Yes - Boot Arc Loader now" \
-      2 "No - I want to make changes" \
-    2>"${TMP_PATH}/resp"
-    resp=$(cat ${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return 1
-    if [ ${resp} -eq 1 ]; then
+  MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
+  if [ -n "${MODELID}" ]; then
+    writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    if [ "${ARCMODE}" == "automated" ]; then
       boot
-    elif [ ${resp} -eq 2 ]; then
-      return 0
+    else
+      # Ask for Boot
+      dialog --clear --backtitle "$(backtitle)" --title "Build done"\
+        --no-cancel --menu "Boot now?" 7 40 0 \
+        1 "Yes - Boot Arc Loader now" \
+        2 "No - I want to make changes" \
+      2>"${TMP_PATH}/resp"
+      resp=$(cat ${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return 1
+      if [ ${resp} -eq 1 ]; then
+        boot
+      elif [ ${resp} -eq 2 ]; then
+        return 0
+      fi
     fi
   fi
+}
+
+###############################################################################
+# Loading Update Mode
+function arcUpdate() {
+  FAILED="false"
+  if echo "${ARC_VERSION}" | grep -q "dev"; then
+    dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
+      --infobox "Development Version detected." 0 0
+    sleep 3
+    DEV="true"
+  fi
+  # Automatic Update
+  [ "${DEV}" == "true" ] && updateLoader "${ARC_VERSION}" || updateLoader
+  [ $? -ne 0 ] && FAILED="true"
+  if [ "${FAILED}" == "true" ] && [ "${UPDATEMODE}" == "true" ]; then
+    dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
+      --infobox "Update failed!\nPlease try again later." 0 0
+    sleep 3
+    exec reboot
+  elif [ "${FAILED}" == "true" ]; then
+    dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
+      --infobox "Update failed!\nRebooting to Config Mode..." 0 0
+    sleep 3
+    rebootTo config
+  fi
+  # Ask for Boot
+  dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
+    --infobox "Update successful!" 0 0
+  sleep 3
+  updateboot
 }
 
 ###############################################################################
@@ -904,7 +940,7 @@ function juniorboot() {
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM Reinstall Mode...\nPlease stay patient!" 4 30
-  sleep 2
+  sleep 3
   rebootTo junior
 }
 
@@ -919,17 +955,45 @@ function boot() {
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM...\nPlease stay patient!" 4 25
-  hwclock --systohc
   sleep 2
   exec reboot
   exit 0
 }
 
 ###############################################################################
+# Calls boot.sh to boot into automated Mode
+function updateboot() {
+  BUILDDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  if [ "${BUILDDONE}" == "true" ]; then
+    dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+      --infobox "Rebooting to automated Build Mode...\nPlease stay patient!" 4 30
+    [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-${PRODUCTVER}" >"${PART3_PATH}/automated"
+    sleep 3
+    rebootTo automated
+  else
+    dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+      --infobox "Rebooting to Config Mode...\nPlease stay patient!" 4 30
+    sleep 3
+    rebootTo config
+  fi
+}
+
+###############################################################################
 ###############################################################################
 # Main loop
-# Check for Automated Mode
-if [ "${AUTOMATED}" == "true" ]; then
+# Check for Arc Mode
+if [ "${ARCMODE}" == "update" ]; then
+  UPDATEMODE="true"
+  # Check for Offline Mode
+  if [ "${OFFLINE}" == "false" ]; then
+    arcUpdate
+  else
+    dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
+      --infobox "Offline Mode enabled.\nCan't Update Loader!" 0 0
+    sleep 5
+    exec reboot
+  fi
+elif [ "${ARCMODE}" == "automated" ]; then
   # Check for Custom Build
   if [ "${BUILDDONE}" == "false" ] || [ "${MODEL}" != "${MODELID}" ]; then
     arcModel
@@ -1033,7 +1097,8 @@ else
       echo "M \"Primary NIC: \Z4${ARCNIC}\Zn \" "                                             >>"${TMP_PATH}/menu"
       echo "W \"RD Compression: \Z4${RD_COMPRESSED}\Zn \" "                                   >>"${TMP_PATH}/menu"
       echo "X \"Sata DOM: \Z4${SATADOM}\Zn \" "                                               >>"${TMP_PATH}/menu"
-      echo "u \"Switch LKM Version: \Z4${LKM}\Zn \" "                                         >>"${TMP_PATH}/menu"
+      echo "u \"LKM Version: \Z4${LKM}\Zn \" "                                                >>"${TMP_PATH}/menu"
+      echo "c \"IPv6 Support: \Z4${IPV6}\Zn \" "                                              >>"${TMP_PATH}/menu"
       echo "B \"Grep DSM Config from Backup \" "                                              >>"${TMP_PATH}/menu"
       echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
       echo "w \"Reset Loader to Defaults \" "                                                 >>"${TMP_PATH}/menu"
@@ -1196,6 +1261,28 @@ else
       8) [ "${LOADEROPTS}" == "true" ] && LOADEROPTS='false' || LOADEROPTS='true'
         LOADEROPTS="${LOADEROPTS}"
         NEXT="8"
+        ;;
+      c) [ "${IPV6}" == "true" ] && IPV6='false' || IPV6='true'
+        if [ "${IPV6}" == "true" ]; then
+          writeConfigKey "arc.ipv6" "true" "${USER_CONFIG_FILE}"
+          if cat "${USER_GRUB_CONFIG}" | grep -q 'ipv6.disable=1'; then
+            sed -i 's/ipv6.disable=1/ipv6.disable=0/g' "${USER_GRUB_CONFIG}"
+            dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+              --infobox "Rebooting with IPv6 Support!" 4 30
+            sleep 3
+            rebootTo config
+          fi
+        elif [ "${IPV6}" == "false" ]; then
+          writeConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
+          if cat "${USER_GRUB_CONFIG}" | grep -q 'ipv6.disable=0'; then
+            sed -i 's/ipv6.disable=0/ipv6.disable=1/g' "${GRUB_CONFIG_FILE}"
+            dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+              --infobox "Rebooting without IPv6 Support!" 4 30
+            sleep 3
+            rebootTo config
+          fi
+        fi
+        NEXT="c"
         ;;
       l) editUserConfig; NEXT="l" ;;
       w) resetLoader; NEXT="w" ;;

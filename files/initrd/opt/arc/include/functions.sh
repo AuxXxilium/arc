@@ -9,7 +9,7 @@
 function checkBootLoader() {
   while read KNAME RO; do
     [ -z "${KNAME}" ] && continue
-    [ "${RO}" = "0" ] && continue
+    [ "${RO}" == "0" ] && continue
     hdparm -r0 "${KNAME}" >/dev/null 2>&1 || true
   done <<<$(lsblk -pno KNAME,RO 2>/dev/null)
   [ ! -w "${PART1_PATH}" ] && return 1
@@ -246,7 +246,7 @@ function _sort_netif() {
   local ETHSEQ="$(echo -e "${ETHLIST}" | awk '{print $3}' | sed 's/eth//g')"
   local ETHNUM="$(echo -e "${ETHLIST}" | wc -l)"
   # sort
-  if [ ! "${ETHSEQ}" = "$(seq 0 $((${ETHNUM:0} - 1)))" ]; then
+  if [ ! "${ETHSEQ}" == "$(seq 0 $((${ETHNUM:0} - 1)))" ]; then
     /etc/init.d/S41dhcpcd stop >/dev/null 2>&1
     /etc/init.d/S40network stop >/dev/null 2>&1
     for i in $(seq 0 $((${ETHNUM:0} - 1))); do
@@ -634,20 +634,26 @@ function systemCheck () {
   fi
   # Check for CPU Frequency Scaling
   CPUFREQUENCIES=$(ls -ltr /sys/devices/system/cpu/cpufreq/* 2>/dev/null | wc -l)
-  if [ ${CPUFREQUENCIES} -gt 0 ]; then
+  if [ ${CPUFREQUENCIES} -gt 0 ] && [ "${ACPISYS}" == "true" ]; then
     CPUFREQ="true"
   else
     CPUFREQ="false"
   fi
   # Check for ARCKEY
   ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
-  if openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARCKEY}" 2>/dev/null; then
-    cp -f "${S_FILE_ARC}" "${S_FILE}"
-    writeConfigKey "arc.key" "${ARCKEY}" "${USER_CONFIG_FILE}"
-  else
-    [ -f "${S_FILE}.bak" ] && cp -f "${S_FILE}" "${S_FILE}.bak"
-    writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  if [ -n "${MODEL}" ]; then
+    ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
+  fi
+  if [ -z "${ARCCONF}" ] && [ -n "${ARCKEY}" ]; then
+    if openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARCKEY}" 2>/dev/null; then
+      cp -f "${S_FILE_ARC}" "${S_FILE}"
+      writeConfigKey "arc.key" "${ARCKEY}" "${USER_CONFIG_FILE}"
+    else
+      [ -f "${S_FILE}.bak" ] && cp -f "${S_FILE}" "${S_FILE}.bak"
+      writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+    fi
   fi
 }
 
