@@ -874,7 +874,7 @@ function make() {
 function arcFinish() {
   rm -f "${LOG_FILE}" >/dev/null 2>&1 || true
   MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
-  if [ -z "${MODELID}" ]; then
+  if [ -n "${MODELID}" ]; then
     writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     if [ "${ARCMODE}" = "automated" ]; then
