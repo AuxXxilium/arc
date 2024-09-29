@@ -1093,6 +1093,7 @@ else
       echo "W \"RD Compression: \Z4${RD_COMPRESSED}\Zn \" "                                   >>"${TMP_PATH}/menu"
       echo "X \"Sata DOM: \Z4${SATADOM}\Zn \" "                                               >>"${TMP_PATH}/menu"
       echo "u \"Switch LKM Version: \Z4${LKM}\Zn \" "                                         >>"${TMP_PATH}/menu"
+      echo "c \"Switch IPv6 Support: \Z4${IPV6}\Zn \" "                                       >>"${TMP_PATH}/menu"
       echo "B \"Grep DSM Config from Backup \" "                                              >>"${TMP_PATH}/menu"
       echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
       echo "w \"Reset Loader to Defaults \" "                                                 >>"${TMP_PATH}/menu"
@@ -1255,6 +1256,28 @@ else
       8) [ "${LOADEROPTS}" == "true" ] && LOADEROPTS='false' || LOADEROPTS='true'
         LOADEROPTS="${LOADEROPTS}"
         NEXT="8"
+        ;;
+      c) [ "${IPV6}" == "true" ] && IPV6='false' || IPV6='true'
+        if [ "${IPV6}" == "true" ]; then
+          writeConfigKey "arc.ipv6" "true" "${USER_CONFIG_FILE}"
+          if cat "${USER_GRUB_CONFIG}" | grep -q 'ipv6.disable=1'; then
+            sed -i 's/ipv6.disable=1/ipv6.disable=0/g' "${USER_GRUB_CONFIG}"
+            dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+              --infobox "Rebooting with IPv6 Support!" 4 30
+            sleep 3
+            rebootTo config
+          fi
+        elif [ "${IPV6}" == "false" ]; then
+          writeConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}"
+          if cat "${USER_GRUB_CONFIG}" | grep -q 'ipv6.disable=0'; then
+            sed -i 's/ipv6.disable=0/ipv6.disable=1/g' "${GRUB_CONFIG_FILE}"
+            dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+              --infobox "Rebooting without IPv6 Support!" 4 30
+            sleep 3
+            rebootTo config
+          fi
+        fi
+        NEXT="c"
         ;;
       l) editUserConfig; NEXT="l" ;;
       w) resetLoader; NEXT="w" ;;
