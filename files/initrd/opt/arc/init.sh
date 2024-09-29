@@ -166,14 +166,14 @@ echo
 
 # Decide if boot automatically
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-MODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
-if [ "${MODE}" == "config" ]; then
+ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
+if [ "${ARCMODE}" = "config" ]; then
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
-elif [ "${MODE}" == "automated" ]; then
+elif [ "${ARCMODE}" = "automated" ]; then
   echo -e "\033[1;34mStarting automated Build Mode...\033[0m"
-elif [ "${MODE}" == "update" ]; then
+elif [ "${ARCMODE}" = "update" ]; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
-elif [ "${BUILDDONE}" == "true" ]; then
+elif [ "${BUILDDONE}" == "true" ] && [ "${ARCMODE}" = "dsm" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
   boot.sh
   exit 0
