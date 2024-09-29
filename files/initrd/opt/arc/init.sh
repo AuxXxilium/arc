@@ -41,6 +41,7 @@ initConfigKey "arc.branch" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.dynamic" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}" 
 initConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.nic" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
@@ -80,10 +81,14 @@ initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "usbmount" "auto" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-if cat /proc/cmdline | grep -q "automated_arc"; then
-  writeConfigKey "automated" "true" "${USER_CONFIG_FILE}"
+if grep -q "automated_arc" /proc/cmdline; then
+  writeConfigKey "arc.mode" "automated" "${USER_CONFIG_FILE}"
+elif grep -q "update_arc" /proc/cmdline; then
+  writeConfigKey "arc.mode" "update" "${USER_CONFIG_FILE}"
+elif grep -q "force_arc" /proc/cmdline; then
+  writeConfigKey "arc.mode" "config" "${USER_CONFIG_FILE}"
 else
-  writeConfigKey "automated" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.mode" "dsm" "${USER_CONFIG_FILE}"
 fi
 [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1 || true
 if [ -f "${PART1_PATH}/ARC-BRANCH" ]; then
@@ -161,11 +166,12 @@ echo
 
 # Decide if boot automatically
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-if grep -q "force_arc" /proc/cmdline; then
+MODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
+if [ "${MODE}" == "config" ]; then
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
-elif grep -q "automated_arc" /proc/cmdline; then
+elif [ "${MODE}" == "automated" ]; then
   echo -e "\033[1;34mStarting automated Build Mode...\033[0m"
-elif grep -q "update_arc" /proc/cmdline; then
+elif [ "${MODE}" == "update" ]; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
 elif [ "${BUILDDONE}" == "true" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"

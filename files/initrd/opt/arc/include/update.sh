@@ -2,7 +2,6 @@
 # Upgrade Loader
 function upgradeLoader () {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
-  local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
   local ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   rm -f "${TMP_PATH}/check.update"
   rm -f "${TMP_PATH}/arc.img.zip"
@@ -97,7 +96,7 @@ function upgradeLoader () {
 # Update Loader
 function updateLoader() {
   local ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
-  local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
+  local MODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
   local ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   rm -f "${TMP_PATH}/check.update"
   rm -f "${TMP_PATH}/checksum.sha256"
@@ -125,7 +124,7 @@ function updateLoader() {
     if [ -f "${TMP_PATH}/check.update" ]; then
       local UPDATE_VERSION=$(cat "${TMP_PATH}/check.update" | sed -e 's/\.//g' )
       local ARC_VERSION=$(cat "${PART1_PATH}/ARC-VERSION" | sed -e 's/\.//g' )
-      if [ ${ARC_VERSION} -lt ${UPDATE_VERSION} ] && [ "${AUTOMATED}" == "false" ]; then
+      if [ ${ARC_VERSION} -lt ${UPDATE_VERSION} ] && [ "${MODE}" == "config" ]; then
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
           --yesno "Config is not compatible to new Version!\nPlease reconfigure Loader after Update!\nDo you want to update?" 0 0
         if [ $? -eq 0 ]; then
@@ -133,7 +132,7 @@ function updateLoader() {
         else
           return 1
         fi
-      elif [ ${ARC_VERSION} -lt ${UPDATE_VERSION} ] && [ "${AUTOMATED}" == "true" ]; then
+      elif [ ${ARC_VERSION} -lt ${UPDATE_VERSION} ] && [ "${MODE}" == "automated" ]; then
         dialog --backtitle "$(backtitle)" --title "Full-Update Loader" \
           --infobox "Config is not compatible to new Version!\nUpdate not possible!\nPlease reflash Loader." 0 0
         sleep 5
@@ -171,13 +170,15 @@ function updateLoader() {
         echo "Download successful!"
         if [ "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" == "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
           echo "Download successful!"
-          unzip -oq "${TMP_PATH}/update.zip" -d "${PART3_PATH}"
+          echo "Backup Arc Config File..."
+          cp -f "${S_FILE_ARC}" "/tmp/arc_serials.yml"
           echo "Cleaning up..."
           rm -rf "${ADDONS_PATH}"
           mkdir -p "${ADDONS_PATH}"
           rm -rf "${MODULES_PATH}"
           mkdir -p "${MODULES_PATH}"
           echo "Installing new Loader Image..."
+          unzip -oq "${TMP_PATH}/update.zip" -d "${PART3_PATH}"
           mv -f "${PART3_PATH}/grub.cfg" "${USER_GRUB_CONFIG}"
           mv -f "${PART3_PATH}/ARC-VERSION" "${PART1_PATH}/ARC-VERSION"
           mv -f "${PART3_PATH}/ARC-BRANCH" "${PART1_PATH}/ARC-BRANCH"
@@ -196,6 +197,8 @@ function updateLoader() {
               writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
             done < <(getAllModules "${PLATFORM}" "${KVERP}")
           fi
+          echo "Restore Arc Config File..."
+          cp -f "/tmp/arc_serials.yml" "${S_FILE_ARC}"
           echo "Update done!"
           sleep 2
         else
@@ -642,8 +645,8 @@ function updateLKMs() {
 ###############################################################################
 # Update Failed
 function updateFailed() {
-  local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
-  if [ "${AUTOMATED}" == "true" ]; then
+  local MODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
+  if [ "${MODE}" == "automated" ]; then
     echo "Update failed!"
     sleep 5
     exec reboot
@@ -655,8 +658,8 @@ function updateFailed() {
 }
 
 function updateFaileddialog() {
-  local AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
-  if [ "${AUTOMATED}" == "true" ]; then
+  local MODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
+  if [ "${MODE}" == "automated" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Failed" \
       --infobox "Update failed!" 0 0
     sleep 5
