@@ -68,12 +68,20 @@
             "description": "AT and PS/2 keyboard driver",
             "depends": ""
         },
+        "atl1": {
+            "description": "Atheros L1 Gigabit Ethernet Driver",
+            "depends": "mii"
+        },
         "atl1c": {
             "description": "Qualcomm Atheros 100/1000M Ethernet Network Driver",
             "depends": ""
         },
         "atl1e": {
             "description": "Atheros 1000M Ethernet Network Driver",
+            "depends": ""
+        },
+        "atl2": {
+            "description": "Atheros Fast Ethernet Network Driver",
             "depends": ""
         },
         "atlantic": {
@@ -224,6 +232,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -288,6 +328,10 @@
             "description": "EHCI PCI platform driver",
             "depends": "usbcore,ehci-hcd"
         },
+        "etxhci-hcd": {
+            "description": "'eXtensible' Host Controller (xHC) Driver",
+            "depends": "usbcore"
+        },
         "evbug": {
             "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
@@ -312,6 +356,10 @@
             "description": "Framebuffer base",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -319,6 +367,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,font,bitblit"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -331,6 +395,14 @@
         "ftdi_sio": {
             "description": "USB FTDI Serial Converters Driver",
             "depends": "usbserial,usbcore"
+        },
+        "generic_bl": {
+            "description": "Generic Backlight Driver",
+            "depends": "backlight"
+        },
+        "hid-generic": {
+            "description": "HID generic driver",
+            "depends": "hid"
         },
         "hpilo": {
             "description": "hpilo (Compiled by RR for DSM)",
@@ -483,6 +555,10 @@
         "kvm": {
             "description": "",
             "depends": "irqbypass"
+        },
+        "lcd": {
+            "description": "LCD Lowlevel Control Abstraction",
+            "depends": ""
         },
         "libiscsi": {
             "description": "iSCSI library functions",
@@ -1058,12 +1134,20 @@
             "description": "AT and PS/2 keyboard driver",
             "depends": ""
         },
+        "atl1": {
+            "description": "Atheros L1 Gigabit Ethernet Driver",
+            "depends": "mii"
+        },
         "atl1c": {
             "description": "Qualcomm Atheros 100/1000M Ethernet Network Driver",
             "depends": ""
         },
         "atl1e": {
             "description": "Atheros 1000M Ethernet Network Driver",
+            "depends": ""
+        },
+        "atl2": {
+            "description": "Atheros Fast Ethernet Network Driver",
             "depends": ""
         },
         "atlantic": {
@@ -1097,6 +1181,10 @@
         "bitblit": {
             "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
+        },
+        "bna": {
+            "description": "QLogic BR-series 10G PCIe Ethernet driver",
+            "depends": ""
         },
         "bnx2": {
             "description": "QLogic BCM5706/5708/5709/5716 Driver",
@@ -1230,6 +1318,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -1322,6 +1442,10 @@
             "description": "Framebuffer base",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -1329,6 +1453,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,bitblit,font"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -1345,6 +1485,10 @@
         "gasket": {
             "description": "Google Gasket driver framework",
             "depends": ""
+        },
+        "generic_bl": {
+            "description": "Generic Backlight Driver",
+            "depends": "backlight"
         },
         "hpilo": {
             "description": "hpilo (Compiled by RR for DSM)",
@@ -1486,6 +1630,10 @@
             "description": "JMicron JMC2x0 PCI Express Ethernet driver (Compiled by RR for DSM)",
             "depends": "mii"
         },
+        "k10temp": {
+            "description": "AMD Family 10h+ CPU core temperature monitor",
+            "depends": "amd_nb"
+        },
         "kvm-amd": {
             "description": "KVM AMD SVM Processor Support (Compiled by RR for DSM)",
             "depends": "kvm"
@@ -1497,6 +1645,10 @@
         "kvm": {
             "description": "",
             "depends": "irqbypass"
+        },
+        "lcd": {
+            "description": "LCD Lowlevel Control Abstraction",
+            "depends": ""
         },
         "lib80211": {
             "description": "common routines for IEEE802.11 drivers",
@@ -2132,6 +2284,10 @@
             "description": "AT and PS/2 keyboard driver",
             "depends": ""
         },
+        "atl1": {
+            "description": "Atheros L1 Gigabit Ethernet Driver",
+            "depends": "mii"
+        },
         "atl1c": {
             "description": "Qualcomm Atheros 100/1000M Ethernet Network Driver",
             "depends": ""
@@ -2140,7 +2296,15 @@
             "description": "Atheros 1000M Ethernet Network Driver",
             "depends": ""
         },
+        "atl2": {
+            "description": "Atheros Fast Ethernet Network Driver",
+            "depends": ""
+        },
         "atlantic": {
+            "description": "Marvell (Aquantia) Corporation(R) Network Driver",
+            "depends": "crc-itu-t"
+        },
+        "atlantic_v2": {
             "description": "Marvell (Aquantia) Corporation(R) Network Driver",
             "depends": "crc-itu-t"
         },
@@ -2284,6 +2448,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -2324,6 +2520,10 @@
             "description": "EEPROM 93cx6 chip driver",
             "depends": ""
         },
+        "efifb": {
+            "description": "",
+            "depends": "cfbimgblt,cfbcopyarea,cfbfillrect,fb"
+        },
         "etxhci-hcd": {
             "description": "'eXtensible' Host Controller (xHC) Driver",
             "depends": "usbcore"
@@ -2352,6 +2552,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -2359,6 +2563,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,font,bitblit"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -2371,6 +2591,14 @@
         "ftdi_sio": {
             "description": "USB FTDI Serial Converters Driver",
             "depends": "usbserial,usbcore"
+        },
+        "generic_bl": {
+            "description": "Generic Backlight Driver",
+            "depends": "backlight"
+        },
+        "hid-generic": {
+            "description": "HID generic driver",
+            "depends": "hid"
         },
         "hpilo": {
             "description": "hpilo (Compiled by RR for DSM)",
@@ -2511,6 +2739,10 @@
         "kvm": {
             "description": "",
             "depends": "irqbypass"
+        },
+        "lcd": {
+            "description": "LCD Lowlevel Control Abstraction",
+            "depends": ""
         },
         "libfc": {
             "description": "libfc",
@@ -3070,12 +3302,20 @@
             "description": "AT and PS/2 keyboard driver",
             "depends": ""
         },
+        "atl1": {
+            "description": "Atheros L1 Gigabit Ethernet Driver",
+            "depends": "mii"
+        },
         "atl1c": {
             "description": "Qualcomm Atheros 100/1000M Ethernet Network Driver",
             "depends": ""
         },
         "atl1e": {
             "description": "Atheros 1000M Ethernet Network Driver",
+            "depends": ""
+        },
+        "atl2": {
+            "description": "Atheros Fast Ethernet Network Driver",
             "depends": ""
         },
         "atlantic": {
@@ -3105,6 +3345,10 @@
         "bitblit": {
             "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
+        },
+        "bna": {
+            "description": "QLogic BR-series 10G PCIe Ethernet driver",
+            "depends": ""
         },
         "bnx2": {
             "description": "QLogic BCM5706/5708/5709/5716 Driver",
@@ -3238,6 +3482,42 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dca": {
+            "description": "",
+            "depends": ""
+        },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -3278,6 +3558,10 @@
             "description": "EEPROM 93cx6 chip driver",
             "depends": ""
         },
+        "efifb": {
+            "description": "",
+            "depends": "cfbimgblt,cfbcopyarea,cfbfillrect,fb"
+        },
         "efivarfs": {
             "description": "EFI Variable Filesystem (Compiled by RR for DSM)",
             "depends": ""
@@ -3310,6 +3594,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -3317,6 +3605,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,bitblit,font"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -3333,6 +3637,10 @@
         "gasket": {
             "description": "Google Gasket driver framework",
             "depends": ""
+        },
+        "generic_bl": {
+            "description": "Generic Backlight Driver",
+            "depends": "backlight"
         },
         "hpilo": {
             "description": "hpilo (Compiled by RR for DSM)",
@@ -3462,6 +3770,10 @@
             "description": "JMicron JMC2x0 PCI Express Ethernet driver (Compiled by RR for DSM)",
             "depends": "mii"
         },
+        "k10temp": {
+            "description": "AMD Family 10h+ CPU core temperature monitor",
+            "depends": "amd_nb"
+        },
         "kvm-amd": {
             "description": "KVM AMD SVM Processor Support (Compiled by RR for DSM)",
             "depends": "kvm"
@@ -3473,6 +3785,10 @@
         "kvm": {
             "description": "",
             "depends": "irqbypass"
+        },
+        "lcd": {
+            "description": "LCD Lowlevel Control Abstraction",
+            "depends": ""
         },
         "lib80211": {
             "description": "common routines for IEEE802.11 drivers",
@@ -4092,6 +4408,10 @@
             "description": "AT and PS/2 keyboard driver",
             "depends": ""
         },
+        "atl1": {
+            "description": "Atheros L1 Gigabit Ethernet Driver",
+            "depends": "mii"
+        },
         "atl1c": {
             "description": "Qualcomm Atheros 100/1000M Ethernet Network Driver",
             "depends": ""
@@ -4100,7 +4420,15 @@
             "description": "Atheros 1000M Ethernet Network Driver",
             "depends": ""
         },
+        "atl2": {
+            "description": "Atheros Fast Ethernet Network Driver",
+            "depends": ""
+        },
         "atlantic": {
+            "description": "Marvell (Aquantia) Corporation(R) Network Driver",
+            "depends": "crc-itu-t"
+        },
+        "atlantic_v2": {
             "description": "Marvell (Aquantia) Corporation(R) Network Driver",
             "depends": "crc-itu-t"
         },
@@ -4244,6 +4572,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -4284,6 +4644,18 @@
             "description": "EEPROM 93cx6 chip driver",
             "depends": ""
         },
+        "efifb": {
+            "description": "",
+            "depends": "cfbimgblt,cfbcopyarea,cfbfillrect,fb"
+        },
+        "ehci-hcd": {
+            "description": "USB 2.0 'Enhanced' Host Controller (EHCI) Driver",
+            "depends": "usbcore"
+        },
+        "ehci-pci": {
+            "description": "EHCI PCI platform driver",
+            "depends": "usbcore,ehci-hcd"
+        },
         "etxhci-hcd": {
             "description": "'eXtensible' Host Controller (xHC) Driver",
             "depends": "usbcore"
@@ -4312,6 +4684,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -4319,6 +4695,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,font,bitblit"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -4331,6 +4723,14 @@
         "ftdi_sio": {
             "description": "USB FTDI Serial Converters Driver",
             "depends": "usbserial,usbcore"
+        },
+        "generic_bl": {
+            "description": "Generic Backlight Driver",
+            "depends": "backlight"
+        },
+        "hid-generic": {
+            "description": "HID generic driver",
+            "depends": "hid"
         },
         "hpilo": {
             "description": "hpilo (Compiled by RR for DSM)",
@@ -4471,6 +4871,10 @@
         "kvm": {
             "description": "",
             "depends": "irqbypass"
+        },
+        "lcd": {
+            "description": "LCD Lowlevel Control Abstraction",
+            "depends": ""
         },
         "libfc": {
             "description": "libfc",
@@ -5030,12 +5434,20 @@
             "description": "AT and PS/2 keyboard driver",
             "depends": ""
         },
+        "atl1": {
+            "description": "Atheros L1 Gigabit Ethernet Driver",
+            "depends": "mii"
+        },
         "atl1c": {
             "description": "Qualcomm Atheros 100/1000M Ethernet Network Driver",
             "depends": ""
         },
         "atl1e": {
             "description": "Atheros 1000M Ethernet Network Driver",
+            "depends": ""
+        },
+        "atl2": {
+            "description": "Atheros Fast Ethernet Network Driver",
             "depends": ""
         },
         "atlantic": {
@@ -5065,6 +5477,10 @@
         "bitblit": {
             "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
+        },
+        "bna": {
+            "description": "QLogic BR-series 10G PCIe Ethernet driver",
+            "depends": ""
         },
         "bnx2": {
             "description": "QLogic BCM5706/5708/5709/5716 Driver",
@@ -5198,6 +5614,42 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dca": {
+            "description": "",
+            "depends": ""
+        },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -5238,6 +5690,10 @@
             "description": "EEPROM 93cx6 chip driver",
             "depends": ""
         },
+        "efifb": {
+            "description": "",
+            "depends": "cfbimgblt,cfbcopyarea,cfbfillrect,fb"
+        },
         "efivarfs": {
             "description": "EFI Variable Filesystem (Compiled by RR for DSM)",
             "depends": ""
@@ -5270,6 +5726,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -5277,6 +5737,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,bitblit,font"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -5293,6 +5769,10 @@
         "gasket": {
             "description": "Google Gasket driver framework",
             "depends": ""
+        },
+        "generic_bl": {
+            "description": "Generic Backlight Driver",
+            "depends": "backlight"
         },
         "hpilo": {
             "description": "hpilo (Compiled by RR for DSM)",
@@ -5422,6 +5902,10 @@
             "description": "JMicron JMC2x0 PCI Express Ethernet driver (Compiled by RR for DSM)",
             "depends": "mii"
         },
+        "k10temp": {
+            "description": "AMD Family 10h+ CPU core temperature monitor",
+            "depends": "amd_nb"
+        },
         "kvm-amd": {
             "description": "KVM AMD SVM Processor Support (Compiled by RR for DSM)",
             "depends": "kvm"
@@ -5433,6 +5917,10 @@
         "kvm": {
             "description": "",
             "depends": "irqbypass"
+        },
+        "lcd": {
+            "description": "LCD Lowlevel Control Abstraction",
+            "depends": ""
         },
         "lib80211": {
             "description": "common routines for IEEE802.11 drivers",
@@ -6204,6 +6692,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -6272,6 +6792,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -6279,6 +6803,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,font,bitblit"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -7146,6 +7686,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -7218,6 +7790,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -7225,6 +7801,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,bitblit,font"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -7369,6 +7961,10 @@
         "jme": {
             "description": "JMicron JMC2x0 PCI Express Ethernet driver (Compiled by RR for DSM)",
             "depends": "mii"
+        },
+        "k10temp": {
+            "description": "AMD Family 10h+ CPU core temperature monitor",
+            "depends": "amd_nb"
         },
         "kvm-amd": {
             "description": "KVM AMD SVM Processor Support (Compiled by RR for DSM)",
@@ -8140,6 +8736,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -8216,6 +8844,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -8223,6 +8855,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,font,bitblit"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -9090,6 +9738,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -9170,6 +9850,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -9177,6 +9861,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,bitblit,font"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -9325,6 +10025,10 @@
         "jme": {
             "description": "JMicron JMC2x0 PCI Express Ethernet driver (Compiled by RR for DSM)",
             "depends": "mii"
+        },
+        "k10temp": {
+            "description": "AMD Family 10h+ CPU core temperature monitor",
+            "depends": "amd_nb"
         },
         "kvm-amd": {
             "description": "KVM AMD SVM Processor Support (Compiled by RR for DSM)",
@@ -9948,6 +10652,10 @@
             "description": "AT and PS/2 keyboard driver",
             "depends": ""
         },
+        "atl1": {
+            "description": "Atheros L1 Gigabit Ethernet Driver",
+            "depends": "mii"
+        },
         "atl1c": {
             "description": "Qualcomm Atheros 100/1000M Ethernet Network Driver",
             "depends": ""
@@ -9956,7 +10664,15 @@
             "description": "Atheros 1000M Ethernet Network Driver",
             "depends": ""
         },
+        "atl2": {
+            "description": "Atheros Fast Ethernet Network Driver",
+            "depends": ""
+        },
         "atlantic": {
+            "description": "Marvell (Aquantia) Corporation(R) Network Driver",
+            "depends": "crc-itu-t"
+        },
+        "atlantic_v2": {
             "description": "Marvell (Aquantia) Corporation(R) Network Driver",
             "depends": "crc-itu-t"
         },
@@ -10096,6 +10812,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -10136,6 +10884,22 @@
             "description": "EEPROM 93cx6 chip driver",
             "depends": ""
         },
+        "efifb": {
+            "description": "",
+            "depends": "cfbimgblt,cfbcopyarea,cfbfillrect,fb"
+        },
+        "ehci-hcd": {
+            "description": "USB 2.0 'Enhanced' Host Controller (EHCI) Driver",
+            "depends": "usbcore"
+        },
+        "ehci-pci": {
+            "description": "EHCI PCI platform driver",
+            "depends": "usbcore,ehci-hcd"
+        },
+        "etxhci-hcd": {
+            "description": "'eXtensible' Host Controller (xHC) Driver",
+            "depends": "usbcore"
+        },
         "evbug": {
             "description": "Input driver event debug module (Compiled by RR for DSM)",
             "depends": ""
@@ -10160,6 +10924,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -10167,6 +10935,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,font,bitblit"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -10179,6 +10963,14 @@
         "ftdi_sio": {
             "description": "USB FTDI Serial Converters Driver",
             "depends": "usbserial,usbcore"
+        },
+        "generic_bl": {
+            "description": "Generic Backlight Driver",
+            "depends": "backlight"
+        },
+        "hid-generic": {
+            "description": "HID generic driver",
+            "depends": "hid"
         },
         "hpilo": {
             "description": "hpilo (Compiled by RR for DSM)",
@@ -10323,6 +11115,10 @@
         "kvm": {
             "description": "",
             "depends": "irqbypass"
+        },
+        "lcd": {
+            "description": "LCD Lowlevel Control Abstraction",
+            "depends": ""
         },
         "libiscsi": {
             "description": "iSCSI library functions",
@@ -10878,12 +11674,20 @@
             "description": "AT and PS/2 keyboard driver",
             "depends": ""
         },
+        "atl1": {
+            "description": "Atheros L1 Gigabit Ethernet Driver",
+            "depends": "mii"
+        },
         "atl1c": {
             "description": "Qualcomm Atheros 100/1000M Ethernet Network Driver",
             "depends": ""
         },
         "atl1e": {
             "description": "Atheros 1000M Ethernet Network Driver",
+            "depends": ""
+        },
+        "atl2": {
+            "description": "Atheros Fast Ethernet Network Driver",
             "depends": ""
         },
         "atlantic": {
@@ -10909,6 +11713,10 @@
         "bitblit": {
             "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
+        },
+        "bna": {
+            "description": "QLogic BR-series 10G PCIe Ethernet driver",
+            "depends": ""
         },
         "bnx2": {
             "description": "QLogic BCM5706/5708/5709/5716 Driver",
@@ -11042,6 +11850,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -11082,6 +11922,10 @@
             "description": "EEPROM 93cx6 chip driver",
             "depends": ""
         },
+        "efifb": {
+            "description": "",
+            "depends": "cfbimgblt,cfbcopyarea,cfbfillrect,fb"
+        },
         "efivarfs": {
             "description": "EFI Variable Filesystem (Compiled by RR for DSM)",
             "depends": ""
@@ -11110,6 +11954,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -11117,6 +11965,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,bitblit,font"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -11133,6 +11997,10 @@
         "gasket": {
             "description": "Google Gasket driver framework",
             "depends": ""
+        },
+        "generic_bl": {
+            "description": "Generic Backlight Driver",
+            "depends": "backlight"
         },
         "hpilo": {
             "description": "hpilo (Compiled by RR for DSM)",
@@ -11266,6 +12134,10 @@
             "description": "JMicron JMC2x0 PCI Express Ethernet driver (Compiled by RR for DSM)",
             "depends": "mii"
         },
+        "k10temp": {
+            "description": "AMD Family 10h+ CPU core temperature monitor",
+            "depends": "amd_nb"
+        },
         "kvm-amd": {
             "description": "KVM AMD SVM Processor Support (Compiled by RR for DSM)",
             "depends": "kvm"
@@ -11277,6 +12149,10 @@
         "kvm": {
             "description": "",
             "depends": "irqbypass"
+        },
+        "lcd": {
+            "description": "LCD Lowlevel Control Abstraction",
+            "depends": ""
         },
         "lib80211": {
             "description": "common routines for IEEE802.11 drivers",
@@ -12048,6 +12924,38 @@
             "description": "CRC8 (by Williams, Ross N.) function",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -12220,6 +13128,10 @@
             "description": "InfiniBand userspace verbs access",
             "depends": "ib_core"
         },
+        "ice": {
+            "description": "Intel(R) Ethernet Connection E800 Series Linux Driver",
+            "depends": "intel_auxiliary"
+        },
         "ide-core": {
             "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
             "depends": ""
@@ -12339,6 +13251,10 @@
         "iw_cm": {
             "description": "iWARP CM",
             "depends": "ib_core"
+        },
+        "ixgb": {
+            "description": "Intel(R) PRO/10GbE Network Driver",
+            "depends": ""
         },
         "ixgbe": {
             "description": "Intel(R) 10GbE PCI Express Linux Network Driver",
@@ -13342,6 +14258,38 @@
             "description": "CRC8 (by Williams, Ross N.) function",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -13517,6 +14465,10 @@
         "ib_uverbs": {
             "description": "InfiniBand userspace verbs access",
             "depends": "ib_core"
+        },
+        "ice": {
+            "description": "Intel(R) Ethernet Connection E800 Series Linux Driver",
+            "depends": "intel_auxiliary"
         },
         "ide-core": {
             "description": "IDE/ATAPI driver (Compiled by RR for DSM)",
@@ -14481,12 +15433,20 @@
             "description": "SCSI low-level driver for Intel PIIX/ICH ATA controllers",
             "depends": ""
         },
+        "atl1": {
+            "description": "Atheros L1 Gigabit Ethernet Driver",
+            "depends": "mii"
+        },
         "atl1c": {
             "description": "Qualcomm Atheros 100/1000M Ethernet Network Driver",
             "depends": ""
         },
         "atl1e": {
             "description": "Atheros 1000M Ethernet Network Driver",
+            "depends": ""
+        },
+        "atl2": {
+            "description": "Atheros Fast Ethernet Network Driver",
             "depends": ""
         },
         "atlantic": {
@@ -14637,6 +15597,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -14701,6 +15693,10 @@
             "description": "EHCI PCI platform driver",
             "depends": "usbcore,ehci-hcd"
         },
+        "etxhci-hcd": {
+            "description": "'eXtensible' Host Controller (xHC) Driver",
+            "depends": "usbcore"
+        },
         "exfat": {
             "description": "exFAT filesystem support",
             "depends": ""
@@ -14717,6 +15713,10 @@
             "description": "Framebuffer base",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -14724,6 +15724,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,font,bitblit"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -14736,6 +15752,14 @@
         "ftdi_sio": {
             "description": "USB FTDI Serial Converters Driver",
             "depends": "usbserial,usbcore"
+        },
+        "generic_bl": {
+            "description": "Generic Backlight Driver",
+            "depends": "backlight"
+        },
+        "hid-generic": {
+            "description": "HID generic driver",
+            "depends": "hid"
         },
         "hpilo": {
             "description": "hpilo (Compiled by RR for DSM)",
@@ -14884,6 +15908,10 @@
         "kvm": {
             "description": "",
             "depends": "irqbypass"
+        },
+        "lcd": {
+            "description": "LCD Lowlevel Control Abstraction",
+            "depends": ""
         },
         "libiscsi": {
             "description": "iSCSI library functions",
@@ -15455,12 +16483,20 @@
             "description": "SCSI low-level driver for Intel PIIX/ICH ATA controllers",
             "depends": ""
         },
+        "atl1": {
+            "description": "Atheros L1 Gigabit Ethernet Driver",
+            "depends": "mii"
+        },
         "atl1c": {
             "description": "Qualcomm Atheros 100/1000M Ethernet Network Driver",
             "depends": ""
         },
         "atl1e": {
             "description": "Atheros 1000M Ethernet Network Driver",
+            "depends": ""
+        },
+        "atl2": {
+            "description": "Atheros Fast Ethernet Network Driver",
             "depends": ""
         },
         "atlantic": {
@@ -15494,6 +16530,10 @@
         "bitblit": {
             "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
+        },
+        "bna": {
+            "description": "QLogic BR-series 10G PCIe Ethernet driver",
+            "depends": ""
         },
         "bnx2": {
             "description": "QLogic BCM5706/5708/5709/5716 Driver",
@@ -15627,6 +16667,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -15711,6 +16783,10 @@
             "description": "Framebuffer base",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -15718,6 +16794,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,bitblit,font"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -15734,6 +16826,10 @@
         "gasket": {
             "description": "Google Gasket driver framework",
             "depends": ""
+        },
+        "generic_bl": {
+            "description": "Generic Backlight Driver",
+            "depends": "backlight"
         },
         "hpilo": {
             "description": "hpilo (Compiled by RR for DSM)",
@@ -15871,6 +16967,10 @@
             "description": "JMicron JMC2x0 PCI Express Ethernet driver (Compiled by RR for DSM)",
             "depends": "mii"
         },
+        "k10temp": {
+            "description": "AMD Family 10h+ CPU core temperature monitor",
+            "depends": "amd_nb"
+        },
         "kvm-amd": {
             "description": "KVM AMD SVM Processor Support (Compiled by RR for DSM)",
             "depends": "kvm"
@@ -15882,6 +16982,10 @@
         "kvm": {
             "description": "",
             "depends": "irqbypass"
+        },
+        "lcd": {
+            "description": "LCD Lowlevel Control Abstraction",
+            "depends": ""
         },
         "lib80211": {
             "description": "common routines for IEEE802.11 drivers",
@@ -16669,6 +17773,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -16733,6 +17869,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -16740,6 +17880,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,font,bitblit"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -17607,6 +18763,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -17675,6 +18863,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -17682,6 +18874,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,bitblit,font"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -17830,6 +19038,10 @@
         "jme": {
             "description": "JMicron JMC2x0 PCI Express Ethernet driver (Compiled by RR for DSM)",
             "depends": "mii"
+        },
+        "k10temp": {
+            "description": "AMD Family 10h+ CPU core temperature monitor",
+            "depends": "amd_nb"
         },
         "kvm-amd": {
             "description": "KVM AMD SVM Processor Support (Compiled by RR for DSM)",
@@ -18449,6 +19661,10 @@
             "description": "AT and PS/2 keyboard driver",
             "depends": ""
         },
+        "atl1": {
+            "description": "Atheros L1 Gigabit Ethernet Driver",
+            "depends": "mii"
+        },
         "atl1c": {
             "description": "Qualcomm Atheros 100/1000M Ethernet Network Driver",
             "depends": ""
@@ -18457,7 +19673,15 @@
             "description": "Atheros 1000M Ethernet Network Driver",
             "depends": ""
         },
+        "atl2": {
+            "description": "Atheros Fast Ethernet Network Driver",
+            "depends": ""
+        },
         "atlantic": {
+            "description": "Marvell (Aquantia) Corporation(R) Network Driver",
+            "depends": "crc-itu-t"
+        },
+        "atlantic_v2": {
             "description": "Marvell (Aquantia) Corporation(R) Network Driver",
             "depends": "crc-itu-t"
         },
@@ -18609,6 +19833,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -18649,6 +19905,18 @@
             "description": "EEPROM 93cx6 chip driver",
             "depends": ""
         },
+        "efifb": {
+            "description": "",
+            "depends": "cfbimgblt,cfbcopyarea,cfbfillrect,fb"
+        },
+        "ehci-hcd": {
+            "description": "USB 2.0 'Enhanced' Host Controller (EHCI) Driver",
+            "depends": "usbcore"
+        },
+        "ehci-pci": {
+            "description": "EHCI PCI platform driver",
+            "depends": "usbcore,ehci-hcd"
+        },
         "etxhci-hcd": {
             "description": "'eXtensible' Host Controller (xHC) Driver",
             "depends": "usbcore"
@@ -18677,6 +19945,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -18684,6 +19956,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,font,bitblit"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -18696,6 +19984,14 @@
         "ftdi_sio": {
             "description": "USB FTDI Serial Converters Driver",
             "depends": "usbserial,usbcore"
+        },
+        "generic_bl": {
+            "description": "Generic Backlight Driver",
+            "depends": "backlight"
+        },
+        "hid-generic": {
+            "description": "HID generic driver",
+            "depends": "hid"
         },
         "hpilo": {
             "description": "hpilo (Compiled by RR for DSM)",
@@ -18848,6 +20144,10 @@
         "kvm": {
             "description": "",
             "depends": "irqbypass"
+        },
+        "lcd": {
+            "description": "LCD Lowlevel Control Abstraction",
+            "depends": ""
         },
         "libiscsi": {
             "description": "iSCSI library functions",
@@ -19403,12 +20703,20 @@
             "description": "AT and PS/2 keyboard driver",
             "depends": ""
         },
+        "atl1": {
+            "description": "Atheros L1 Gigabit Ethernet Driver",
+            "depends": "mii"
+        },
         "atl1c": {
             "description": "Qualcomm Atheros 100/1000M Ethernet Network Driver",
             "depends": ""
         },
         "atl1e": {
             "description": "Atheros 1000M Ethernet Network Driver",
+            "depends": ""
+        },
+        "atl2": {
+            "description": "Atheros Fast Ethernet Network Driver",
             "depends": ""
         },
         "atlantic": {
@@ -19438,6 +20746,10 @@
         "bitblit": {
             "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
+        },
+        "bna": {
+            "description": "QLogic BR-series 10G PCIe Ethernet driver",
+            "depends": ""
         },
         "bnx2": {
             "description": "QLogic BCM5706/5708/5709/5716 Driver",
@@ -19579,6 +20891,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -19619,6 +20963,10 @@
             "description": "EEPROM 93cx6 chip driver",
             "depends": ""
         },
+        "efifb": {
+            "description": "",
+            "depends": "cfbimgblt,cfbcopyarea,cfbfillrect,fb"
+        },
         "efivarfs": {
             "description": "EFI Variable Filesystem (Compiled by RR for DSM)",
             "depends": ""
@@ -19651,6 +20999,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -19658,6 +21010,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,bitblit,font"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -19674,6 +21042,10 @@
         "gasket": {
             "description": "Google Gasket driver framework",
             "depends": ""
+        },
+        "generic_bl": {
+            "description": "Generic Backlight Driver",
+            "depends": "backlight"
         },
         "hpilo": {
             "description": "hpilo (Compiled by RR for DSM)",
@@ -19826,6 +21198,10 @@
         "kvm": {
             "description": "",
             "depends": "irqbypass"
+        },
+        "lcd": {
+            "description": "LCD Lowlevel Control Abstraction",
+            "depends": ""
         },
         "lib80211": {
             "description": "common routines for IEEE802.11 drivers",
@@ -20445,6 +21821,10 @@
             "description": "AT and PS/2 keyboard driver",
             "depends": ""
         },
+        "atl1": {
+            "description": "Atheros L1 Gigabit Ethernet Driver",
+            "depends": "mii"
+        },
         "atl1c": {
             "description": "Qualcomm Atheros 100/1000M Ethernet Network Driver",
             "depends": ""
@@ -20453,7 +21833,15 @@
             "description": "Atheros 1000M Ethernet Network Driver",
             "depends": ""
         },
+        "atl2": {
+            "description": "Atheros Fast Ethernet Network Driver",
+            "depends": ""
+        },
         "atlantic": {
+            "description": "Marvell (Aquantia) Corporation(R) Network Driver",
+            "depends": "crc-itu-t"
+        },
+        "atlantic_v2": {
             "description": "Marvell (Aquantia) Corporation(R) Network Driver",
             "depends": "crc-itu-t"
         },
@@ -20605,6 +21993,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,usbcore,mii"
@@ -20645,6 +22065,18 @@
             "description": "EEPROM 93cx6 chip driver",
             "depends": ""
         },
+        "efifb": {
+            "description": "",
+            "depends": "cfbimgblt,cfbcopyarea,cfbfillrect,fb"
+        },
+        "ehci-hcd": {
+            "description": "USB 2.0 'Enhanced' Host Controller (EHCI) Driver",
+            "depends": "usbcore"
+        },
+        "ehci-pci": {
+            "description": "EHCI PCI platform driver",
+            "depends": "usbcore,ehci-hcd"
+        },
         "etxhci-hcd": {
             "description": "'eXtensible' Host Controller (xHC) Driver",
             "depends": "usbcore"
@@ -20673,6 +22105,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -20680,6 +22116,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,font,bitblit"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -20692,6 +22144,14 @@
         "ftdi_sio": {
             "description": "USB FTDI Serial Converters Driver",
             "depends": "usbserial,usbcore"
+        },
+        "generic_bl": {
+            "description": "Generic Backlight Driver",
+            "depends": "backlight"
+        },
+        "hid-generic": {
+            "description": "HID generic driver",
+            "depends": "hid"
         },
         "hpilo": {
             "description": "hpilo (Compiled by RR for DSM)",
@@ -20844,6 +22304,10 @@
         "kvm": {
             "description": "",
             "depends": "irqbypass"
+        },
+        "lcd": {
+            "description": "LCD Lowlevel Control Abstraction",
+            "depends": ""
         },
         "libfc": {
             "description": "libfc",
@@ -21411,12 +22875,20 @@
             "description": "AT and PS/2 keyboard driver",
             "depends": ""
         },
+        "atl1": {
+            "description": "Atheros L1 Gigabit Ethernet Driver",
+            "depends": "mii"
+        },
         "atl1c": {
             "description": "Qualcomm Atheros 100/1000M Ethernet Network Driver",
             "depends": ""
         },
         "atl1e": {
             "description": "Atheros 1000M Ethernet Network Driver",
+            "depends": ""
+        },
+        "atl2": {
+            "description": "Atheros Fast Ethernet Network Driver",
             "depends": ""
         },
         "atlantic": {
@@ -21446,6 +22918,10 @@
         "bitblit": {
             "description": "Bit Blitting Operation (Compiled by RR for DSM)",
             "depends": "fb,softcursor"
+        },
+        "bna": {
+            "description": "QLogic BR-series 10G PCIe Ethernet driver",
+            "depends": ""
         },
         "bnx2": {
             "description": "QLogic BCM5706/5708/5709/5716 Driver",
@@ -21587,6 +23063,38 @@
             "description": "Chelsio T4/T5/T6 Virtual Function (VF) Network Driver",
             "depends": ""
         },
+        "dm-log": {
+            "description": "device-mapper dirty region log",
+            "depends": "dm-mod"
+        },
+        "dm-mirror": {
+            "description": "device-mapper mirror target",
+            "depends": "dm-region-hash,dm-mod,dm-log"
+        },
+        "dm-mod": {
+            "description": "device-mapper driver",
+            "depends": ""
+        },
+        "dm-multipath": {
+            "description": "device-mapper multipath target",
+            "depends": "dm-mod"
+        },
+        "dm-queue-length": {
+            "description": "device-mapper path selector to balance the number of in-flight I/Os",
+            "depends": "dm-multipath"
+        },
+        "dm-region-hash": {
+            "description": "device-mapper region hash",
+            "depends": "dm-log"
+        },
+        "dm-round-robin": {
+            "description": "device-mapper round-robin multipath path selector",
+            "depends": "dm-multipath"
+        },
+        "dm-service-time": {
+            "description": "device-mapper throughput oriented path selector",
+            "depends": "dm-multipath"
+        },
         "dm9601": {
             "description": "Davicom DM96xx USB 10/100 ethernet devices",
             "depends": "usbnet,mii"
@@ -21627,6 +23135,10 @@
             "description": "EEPROM 93cx6 chip driver",
             "depends": ""
         },
+        "efifb": {
+            "description": "",
+            "depends": "cfbimgblt,cfbcopyarea,cfbfillrect,fb"
+        },
         "efivarfs": {
             "description": "EFI Variable Filesystem (Compiled by RR for DSM)",
             "depends": ""
@@ -21659,6 +23171,10 @@
             "description": "Deferred IO for framebuffers (Compiled by RR for DSM)",
             "depends": "fbdev"
         },
+        "fb_defio": {
+            "description": "Deferred IO for framebuffers",
+            "depends": ""
+        },
         "fb_sys_fops": {
             "description": "Generic file read (fb in system RAM)",
             "depends": ""
@@ -21666,6 +23182,22 @@
         "fbcon": {
             "description": "Framebuffer Console support (Compiled by RR for DSM)",
             "depends": "fb,fbdev,bitblit,font"
+        },
+        "fbcon_ccw": {
+            "description": "Console Rotation (270 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_cw": {
+            "description": "Console Rotation (90 degrees) Support",
+            "depends": "fb,softcursor"
+        },
+        "fbcon_rotate": {
+            "description": "Console Rotation Support",
+            "depends": "fbcon_ud,fbcon_ccw,fbcon_cw"
+        },
+        "fbcon_ud": {
+            "description": "Console Rotation (180 degrees) Support",
+            "depends": "fb,softcursor"
         },
         "fbdev": {
             "description": "Framebuffer console primary device detection (Compiled by RR for DSM)",
@@ -21682,6 +23214,10 @@
         "gasket": {
             "description": "Google Gasket driver framework",
             "depends": ""
+        },
+        "generic_bl": {
+            "description": "Generic Backlight Driver",
+            "depends": "backlight"
         },
         "hpilo": {
             "description": "hpilo (Compiled by RR for DSM)",
@@ -21834,6 +23370,10 @@
         "kvm": {
             "description": "",
             "depends": "irqbypass"
+        },
+        "lcd": {
+            "description": "LCD Lowlevel Control Abstraction",
+            "depends": ""
         },
         "lib80211": {
             "description": "common routines for IEEE802.11 drivers",

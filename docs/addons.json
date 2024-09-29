@@ -481,7 +481,7 @@
     },
     "remotefs": {
         "system": false,
-        "description": "Allow remote NFS/CIFS shared folder be used in VideoStation, AudioStation and PhotosStation",
+        "description": "Allow remote NFS/CIFS shared folder be used in VideoStation, AudioStation and PhotoStation",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
@@ -586,7 +586,7 @@
     },
     "sortnetif": {
         "system": false,
-        "description": "Sort network interface names",
+        "description": "Sort network interface names | empty: sorted by busid; mac1,mac2,...: sorted by macs sequence",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
