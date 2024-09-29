@@ -1157,12 +1157,12 @@ function sysinfo() {
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
   if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::300 | awk '{print $1}'); do
-      GPUNAME=$(sudo lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
+      GPUNAME=$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       TEXT+="\n  iGPU: \Zb${GPUNAME}\Zn"
     done
   elif [ $(lspci -d ::380 | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::380 | awk '{print $1}'); do
-      GPUNAME=$(sudo lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
+      GPUNAME=$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       TEXT+="\n  GPU: \Zb${GPUNAME}\Zn"
     done
   fi
