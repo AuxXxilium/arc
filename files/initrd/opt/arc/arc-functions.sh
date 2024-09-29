@@ -682,7 +682,7 @@ function backupMenu() {
   NEXT="1"
   while true; do
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
-      1 "Restore and Build Arc Config from DSM" \
+      1 "Restore Arc Config from DSM" \
       2 "Restore HW Encryption Key from DSM" \
       3 "Backup HW Encryption Key to DSM" \
       2>"${TMP_PATH}/resp"
@@ -740,10 +740,10 @@ function backupMenu() {
             done < <(getAllModules "${PLATFORM}" "${KVERP}")
           fi
           dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
-            --aspect 18 --msgbox "Config restore successful!\nBuild now..." 0 0
+            --aspect 18 --msgbox "Config restore successful!\nDownloading necessary files..." 0 0
           sleep 2
           ARCMODE="automated"
-          writeConfigKey "arc.mode" "${ARCMODE}" "${USER_CONFIG_FILE}"
+          ARCRESTORE="true"
           arcVersion
         fi
         ;;

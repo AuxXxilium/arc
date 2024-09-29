@@ -458,6 +458,7 @@ function arcVersion() {
   fi
   # Cleanup
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
+  [ "${ARCRESTORE}" == "true" ] && return 0 && ARCRESTORE="false" || true
   # Change Config if Files are valid
   if [ "${VALID}" == "true" ] && [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Config" \
