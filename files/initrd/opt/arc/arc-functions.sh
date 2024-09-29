@@ -726,28 +726,25 @@ function backupMenu() {
           fi
         done
         if [ -f "${USER_CONFIG_FILE}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
-            --aspect 18 --msgbox "Config restore successful!" 0 0
-          # Ask for Build
-          dialog --clear --backtitle "$(backtitle)" \
-            --menu "Config done -> Build now?" 7 50 0 \
-            1 "Yes - Build Arc Loader now" \
-            2 "No - I want to make changes" \
-          2>"${TMP_PATH}/resp"
-          resp=$(cat ${TMP_PATH}/resp)
-          [ -z "${resp}" ] && return 1
-          # Check for compatibility
-          compatboot
-          if [ ${resp} -eq 1 ]; then
-            ARCMODE="automated"
-            arcVersion
-          elif [ ${resp} -eq 2 ]; then
-            dialog --clear --no-items --backtitle "$(backtitle)"
-            return 1
+          PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+          if [ -n "${PRODUCTVER}" ]; then
+            PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+            KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+            # Modify KVER for Epyc7002
+            [ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
           fi
-        else
+          if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+            writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+            while read -r ID DESC; do
+              writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+            done < <(getAllModules "${PLATFORM}" "${KVERP}")
+          fi
           dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
-            --aspect 18 --msgbox "No Config found!" 0 0
+            --aspect 18 --msgbox "Config restore successful!\nBuild now..." 0 0
+          sleep 2
+          ARCMODE="automated"
+          writeConfigKey "arc.mode" "${ARCMODE}" "${USER_CONFIG_FILE}"
+          arcVersion
         fi
         ;;
       2)
