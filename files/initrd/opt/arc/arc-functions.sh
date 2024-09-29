@@ -682,7 +682,7 @@ function backupMenu() {
   NEXT="1"
   while true; do
     dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
-      1 "Restore Arc Config from DSM" \
+      1 "Restore and Build Arc Config from DSM" \
       2 "Restore HW Encryption Key from DSM" \
       3 "Backup HW Encryption Key to DSM" \
       2>"${TMP_PATH}/resp"
@@ -739,7 +739,8 @@ function backupMenu() {
           # Check for compatibility
           compatboot
           if [ ${resp} -eq 1 ]; then
-            arcSummary
+            ARCMODE="automated"
+            arcVersion
           elif [ ${resp} -eq 2 ]; then
             dialog --clear --no-items --backtitle "$(backtitle)"
             return 1
