@@ -341,7 +341,7 @@ function arcVersion() {
     else
       ARCMODE="config"
     fi
-    writeConfigKey "arc.mode" "automated" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.mode" "${ARCMODE}" "${USER_CONFIG_FILE}"
   elif [ "${ARCMODE}" = "automated" ]; then
     PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
     PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
