@@ -172,11 +172,30 @@ function updateLoader() {
         if [ "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" == "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
           echo "Download successful!"
           unzip -oq "${TMP_PATH}/update.zip" -d "${PART3_PATH}"
+          echo "Cleaning up..."
+          rm -rf "${ADDONS_PATH}"
+          mkdir -p "${ADDONS_PATH}"
+          rm -rf "${MODULES_PATH}"
+          mkdir -p "${MODULES_PATH}"
           echo "Installing new Loader Image..."
           mv -f "${PART3_PATH}/grub.cfg" "${USER_GRUB_CONFIG}"
           mv -f "${PART3_PATH}/ARC-VERSION" "${PART1_PATH}/ARC-VERSION"
           mv -f "${PART3_PATH}/ARC-BRANCH" "${PART1_PATH}/ARC-BRANCH"
           rm -f "${TMP_PATH}/update.zip"
+          # Rebuild modules if model/build is selected
+          local PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+          if [ -n "${PRODUCTVER}" ]; then
+            local PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+            local KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+            # Modify KVER for Epyc7002
+            [ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+          fi
+          if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+            writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+            while read -r ID DESC; do
+              writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
+            done < <(getAllModules "${PLATFORM}" "${KVERP}")
+          fi
           echo "Update done!"
           sleep 2
         else

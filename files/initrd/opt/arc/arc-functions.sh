@@ -833,7 +833,7 @@ function updateMenu() {
       1)
         dialog --backtitle "$(backtitle)" --title "Automated Update" --aspect 18 \
           --msgbox "Loader will proceed Automated Update Mode.\nPlease wait until progress is finished!" 0 0
-        . ${ARC_PATH}/update.sh
+        arcUpdate
         ;;
       2)
         # Ask for Tag

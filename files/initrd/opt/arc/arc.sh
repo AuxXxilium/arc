@@ -21,6 +21,7 @@ offlineCheck "false"
 ARCNIC="$(readConfigKey "arc.nic" "${USER_CONFIG_FILE}")"
 OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 AUTOMATED="$(readConfigKey "automated" "${USER_CONFIG_FILE}")"
+UPDATEMODE="false"
 
 # Get DSM Data from Config
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -894,6 +895,36 @@ function arcFinish() {
 }
 
 ###############################################################################
+# Loading Update Mode
+function arcUpdate() {
+  FAILED="false"
+  if echo "${ARC_VERSION}" | grep -q "dev"; then
+    dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
+      --infobox "Development Version detected." 0 0
+    sleep 2
+    DEV="true"
+  fi
+  # Automatic Update
+  [ "${DEV}" == "true" ] && updateLoader "${ARC_VERSION}" || updateLoader
+  [ $? -ne 0 ] && FAILED="true"
+  if [ "${FAILED}" == "true" ] && [ "${UPDATEMODE}" == "true" ]; then
+    dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
+      --infobox "Update failed!\nPlease try again later." 0 0
+    sleep 3
+    exec reboot
+  elif [ "${FAILED}" == "true" ]; then
+    dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
+      --infobox "Update failed!\nRebooting to Config Mode..." 0 0
+    sleep 3
+    rebootTo config
+  fi
+  # Ask for Boot
+  dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
+    --infobox "Update successful!" 0 0
+  updateboot
+}
+
+###############################################################################
 # Calls boot.sh to boot into DSM Reinstall Mode
 function juniorboot() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -919,17 +950,45 @@ function boot() {
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM...\nPlease stay patient!" 4 25
-  hwclock --systohc
   sleep 2
   exec reboot
   exit 0
 }
 
 ###############################################################################
+# Calls boot.sh to boot into automated Mode
+function updateboot() {
+  BUILDDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  if [ "${BUILDDONE}" == "true" ]; then
+    dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+      --infobox "Rebooting to automated Build Mode...\nPlease stay patient!" 4 30
+    [ ! -f "${PART3_PATH}/automated" ] && echo "${ARC_VERSION}-${MODEL}-${PRODUCTVER}" >"${PART3_PATH}/automated"
+    sleep 3
+    rebootTo automated
+  else
+    dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+      --infobox "Rebooting to Config Mode...\nPlease stay patient!" 4 30
+    sleep 3
+    rebootTo config
+  fi
+}
+
+###############################################################################
 ###############################################################################
 # Main loop
-# Check for Automated Mode
-if [ "${AUTOMATED}" == "true" ]; then
+# Check for Arc Mode
+if grep -q "update_arc" /proc/cmdline; then
+  UPDATEMODE="true"
+  # Check for Offline Mode
+  if [ "${OFFLINE}" == "false" ]; then
+    arcUpdate
+  else
+    dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
+      --infobox "Offline Mode enabled.\nCan't Update Loader!" 0 0
+    sleep 5
+    exec reboot
+  fi
+elif grep -q "automated_arc" /proc/cmdline; then
   # Check for Custom Build
   if [ "${BUILDDONE}" == "false" ] || [ "${MODEL}" != "${MODELID}" ]; then
     arcModel
