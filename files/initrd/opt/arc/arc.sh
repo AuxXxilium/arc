@@ -873,23 +873,26 @@ function make() {
 # Finish Building Loader
 function arcFinish() {
   rm -f "${LOG_FILE}" >/dev/null 2>&1 || true
-  writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  if [ "${MODE}" == "automated" ]; then
-    boot
-  else
-    # Ask for Boot
-    dialog --clear --backtitle "$(backtitle)" --title "Build done"\
-      --no-cancel --menu "Boot now?" 7 40 0 \
-      1 "Yes - Boot Arc Loader now" \
-      2 "No - I want to make changes" \
-    2>"${TMP_PATH}/resp"
-    resp=$(cat ${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return 1
-    if [ ${resp} -eq 1 ]; then
+  MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
+  if [ -z "${MODELID}" ]; then
+    writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    if [ "${MODE}" == "automated" ]; then
       boot
-    elif [ ${resp} -eq 2 ]; then
-      return 0
+    else
+      # Ask for Boot
+      dialog --clear --backtitle "$(backtitle)" --title "Build done"\
+        --no-cancel --menu "Boot now?" 7 40 0 \
+        1 "Yes - Boot Arc Loader now" \
+        2 "No - I want to make changes" \
+      2>"${TMP_PATH}/resp"
+      resp=$(cat ${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return 1
+      if [ ${resp} -eq 1 ]; then
+        boot
+      elif [ ${resp} -eq 2 ]; then
+        return 0
+      fi
     fi
   fi
 }
