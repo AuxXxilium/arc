@@ -901,7 +901,7 @@ function arcUpdate() {
   if echo "${ARC_VERSION}" | grep -q "dev"; then
     dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
       --infobox "Development Version detected." 0 0
-    sleep 2
+    sleep 3
     DEV="true"
   fi
   # Automatic Update
@@ -921,6 +921,7 @@ function arcUpdate() {
   # Ask for Boot
   dialog --backtitle "$(backtitle)" --title "Full-Update Loader" --aspect 18 \
     --infobox "Update successful!" 0 0
+  sleep 3
   updateboot
 }
 
@@ -935,7 +936,7 @@ function juniorboot() {
   fi
   dialog --backtitle "$(backtitle)" --title "Arc Boot" \
     --infobox "Booting DSM Reinstall Mode...\nPlease stay patient!" 4 30
-  sleep 2
+  sleep 3
   rebootTo junior
 }
 
