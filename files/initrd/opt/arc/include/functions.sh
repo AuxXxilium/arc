@@ -100,15 +100,15 @@ function generateSerial() {
 
   local SERIAL="${PREFIX:-"0000"}${MIDDLE:-"XXX"}"
   case "${SUFFIX:-"alpha"}" in
-  numeric)
-    SERIAL+="$(random)"
-    ;;
-  alpha)
-    SERIAL+="$(genRandomLetter)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)"
-    ;;
-  arc)
-    SERIAL+="$(readConfigKey "${1}.serial" "${S_FILE}" 2>/dev/null)"
-    ;;
+    numeric)
+      SERIAL+="$(random)"
+      ;;
+    alpha)
+      SERIAL+="$(genRandomLetter)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)"
+      ;;
+    arc)
+      SERIAL+="$(readConfigKey "${1}.serial" "${S_FILE}" 2>/dev/null)"
+      ;;
   esac
 
   echo "${SERIAL}"
@@ -161,16 +161,16 @@ function validateSerial() {
     return 1
   fi
   case "${SUFFIX:-"alpha"}" in
-  numeric)
-    if ! echo "${S}" | grep -q "^[0-9]\{6\}$"; then
-      return 1
-    fi
-    ;;
-  alpha)
-    if ! echo "${S}" | grep -q "^[A-Z][0-9][0-9][0-9][0-9][A-Z]$"; then
-      return 1
-    fi
-    ;;
+    numeric)
+      if ! echo "${S}" | grep -q "^[0-9]\{6\}$"; then
+        return 1
+      fi
+      ;;
+    alpha)
+      if ! echo "${S}" | grep -q "^[A-Z][0-9][0-9][0-9][0-9][A-Z]$"; then
+        return 1
+      fi
+      ;;
   esac
   return 0
 }

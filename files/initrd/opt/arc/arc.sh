@@ -550,14 +550,46 @@ function arcPatch() {
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
   if [ "${ARCMODE}" == "automated" ]; then
     if [ -n "${ARCCONF}" ]; then
-      SN=$(generateSerial "${MODEL}" "true")
+      SN=$(generateSerial "${MODEL}" "true" | tr '[:lower:]' '[:upper:]')
       writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
     else
-      SN=$(generateSerial "${MODEL}" "false")
+      SN=$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     fi
   elif [ "${ARCMODE}" == "config" ]; then
-    if [ -n "${ARCCONF}" ]; then
+    CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION" | sed -e 's/\.//g' | sed 's/[^0-9]*//g' )"
+    LOADERVERSION="$(echo "${ARC_VERSION}" | sed -e 's/\.//g' | sed 's/[^0-9]*//g' )"
+    CONFHASHFILE="$(sha256sum "${S_FILE}" | awk '{print $1}')"
+    CONFHASH="$(readConfigKey "arc.confhash" "${USER_CONFIG_FILE}")"
+    if [ ${CONFIGSVERSION} -lt ${LOADERVERSION} ] || [ "${CONFHASH}" != "${CONFHASHFILE}" ] || [ -z "${ARCCONF}" ]; then
+      dialog --clear --backtitle "$(backtitle)" \
+        --nocancel --title "SN/Mac Options" \
+        --menu "Please choose an Option." 8 50 0 \
+        1 "Use random SN/Mac" \
+        2 "Use my SN/Mac" \
+      2>"${TMP_PATH}/resp"
+      resp=$(cat ${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return 1
+      if [ ${resp} -eq 1 ]; then
+        # Generate random Serial
+        SN=$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')
+        writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+      elif [ ${resp} -eq 2 ]; then
+        while true; do
+          dialog --backtitle "$(backtitle)" --colors --title "DSM SN" \
+            --inputbox "Please enter a valid SN!" 7 50 "" \
+            2>"${TMP_PATH}/resp"
+          [ $? -ne 0 ] && break 2
+          SN="$(cat ${TMP_PATH}/resp | tr '[:lower:]' '[:upper:]')"
+          if [ -z "${SN}" ]; then
+            return
+          else
+            break
+          fi
+        done
+        writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
+      fi
+    elif [ -n "${ARCCONF}" ]; then
       dialog --clear --backtitle "$(backtitle)" \
         --nocancel --title "SN/Mac Options"\
         --menu "Please choose an Option." 7 60 0 \
@@ -576,34 +608,6 @@ function arcPatch() {
         SN=$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 3 ]; then
-        while true; do
-          dialog --backtitle "$(backtitle)" --colors --title "DSM SN" \
-            --inputbox "Please enter a valid SN!" 7 50 "" \
-            2>"${TMP_PATH}/resp"
-          [ $? -ne 0 ] && break 2
-          SN="$(cat ${TMP_PATH}/resp | tr '[:lower:]' '[:upper:]')"
-          if [ -z "${SN}" ]; then
-            return
-          else
-            break
-          fi
-        done
-        writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
-      fi
-    elif [ -z "${ARCCONF}" ]; then
-      dialog --clear --backtitle "$(backtitle)" \
-        --nocancel --title "SN/Mac Options" \
-        --menu "Please choose an Option." 8 50 0 \
-        1 "Use random SN/Mac" \
-        2 "Use my SN/Mac" \
-      2>"${TMP_PATH}/resp"
-      resp=$(cat ${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return 1
-      if [ ${resp} -eq 1 ]; then
-        # Generate random Serial
-        SN=$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')
-        writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-      elif [ ${resp} -eq 2 ]; then
         while true; do
           dialog --backtitle "$(backtitle)" --colors --title "DSM SN" \
             --inputbox "Please enter a valid SN!" 7 50 "" \
@@ -712,9 +716,6 @@ function arcSettings() {
     deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
     deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
   fi
-  # Max Memory for DSM
-  RAMCONFIG="$((${RAMTOTAL} * 1024))"
-  writeConfigKey "synoinfo.mem_max_mb" "${RAMCONFIG}" "${USER_CONFIG_FILE}"
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -n "${PLATFORM}" ] && [ -n "${KVER}" ]; then
     # Config is done
     writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
@@ -837,11 +838,16 @@ function arcSummary() {
 function make() {
   # Check for Arc Patch
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
-  if [ -z "${ARCCONF}" ]; then
+  CONFHASHFILE="$(sha256sum "${S_FILE}" | awk '{print $1}')"
+  CONFHASH="$(readConfigKey "arc.confhash" "${USER_CONFIG_FILE}")"
+  if [ -z "${ARCCONF}" ] || [ "${CONFHASH}" != "${CONFHASHFILE}" ]; then
     deleteConfigKey "addons.amepatch" "${USER_CONFIG_FILE}"
     deleteConfigKey "addons.arcdns" "${USER_CONFIG_FILE}"
     deleteConfigKey "addons.sspatch" "${USER_CONFIG_FILE}"
   fi
+  # Max Memory for DSM
+  RAMCONFIG="$((${RAMTOTAL} * 1024))"
+  writeConfigKey "synoinfo.mem_max_mb" "${RAMCONFIG}" "${USER_CONFIG_FILE}"
   # Read Model Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
