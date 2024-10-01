@@ -12,6 +12,18 @@ set -e
 checkBootLoader || die "The loader is corrupted, please rewrite it!"
 BUS=$(getBus "${LOADER_DISK}")
 
+# Sanity Check
+CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION" | sed -e 's/\.//g' | sed 's/[^0-9]*//g' )"
+LOADERVERSION="$(echo "${ARC_VERSION}" | sed -e 's/\.//g' | sed 's/[^0-9]*//g' )"
+CONFHASHFILE="$(sha256sum "${S_FILE}" | awk '{print $1}')"
+CONFHASH="$(readConfigKey "arc.confhash" "${USER_CONFIG_FILE}")"
+[ -z "${CONFHASH}" ] && CONFHASH="${CONFHASHFILE}"
+if [ ${CONFIGSVERSION} -lt ${LOADERVERSION} ] || [ "${CONFHASH}" != "${CONFHASHFILE}" ]; then
+  echo -e "Pirated Version of Arc Loader detected!!! Files can't be verified."
+  sleep 3
+  exec poweroff
+fi
+
 # Check if machine has EFI
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
 
@@ -40,6 +52,7 @@ initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc.branch" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.confhash" "${CONFHASHFILE}" "${USER_CONFIG_FILE}"
 initConfigKey "arc.dynamic" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}" 
 initConfigKey "arc.key" "" "${USER_CONFIG_FILE}"

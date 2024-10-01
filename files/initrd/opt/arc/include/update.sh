@@ -85,6 +85,7 @@ function upgradeLoader () {
         fi
       fi
       echo "Upgrade done! -> Rebooting..."
+      deleteConfigKey "arc.confhash" "${USER_CONFIG_FILE}"
       sleep 2
     ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
       --progressbox "Upgrading Loader..." 20 70
@@ -171,7 +172,7 @@ function updateLoader() {
         if [ "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" == "$(cat ${TMP_PATH}/checksum.sha256 | awk '{print $1}')" ]; then
           echo "Download successful!"
           echo "Backup Arc Config File..."
-          cp -f "${S_FILE_ARC}" "/tmp/arc_serials.yml"
+          cp -f "${S_FILE}" "/tmp/serials.yml"
           echo "Cleaning up..."
           rm -rf "${ADDONS_PATH}"
           mkdir -p "${ADDONS_PATH}"
@@ -198,7 +199,9 @@ function updateLoader() {
             done < <(getAllModules "${PLATFORM}" "${KVERP}")
           fi
           echo "Restore Arc Config File..."
-          cp -f "/tmp/arc_serials.yml" "${S_FILE_ARC}"
+          cp -f "/tmp/serials.yml" "${S_FILE}"
+          CONFHASHFILE="$(sha256sum "${S_FILE}" | awk '{print $1}')"
+          writeConfigKey "arc.confhash" "${CONFHASHFILE}" "${USER_CONFIG_FILE}"
           echo "Update done!"
           sleep 2
         else
@@ -569,6 +572,8 @@ function updateConfigs() {
         unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}"
         rm -f "${TMP_PATH}/configs.zip"
         [ -n "${ARCKEY}" ] && cp -f "${TMP_PATH}/serials.yml" "${S_FILE}"
+        CONFHASHFILE="$(sha256sum "${S_FILE}" | awk '{print $1}')"
+        writeConfigKey "arc.confhash" "${CONFHASHFILE}" "${USER_CONFIG_FILE}"
         echo "Update done!"
         sleep 2
       else

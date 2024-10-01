@@ -2117,12 +2117,10 @@ function decryptMenu() {
         writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
       fi
     fi
-    SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-    ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
-    if [ "${SN}" != "${ARCCONF}" ]; then
-      writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-      CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-    fi
+    CONFHASHFILE="$(sha256sum "${S_FILE}" | awk '{print $1}')"
+    writeConfigKey "arc.confhash" "${CONFHASHFILE}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
