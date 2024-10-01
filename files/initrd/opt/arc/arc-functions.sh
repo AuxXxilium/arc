@@ -739,6 +739,8 @@ function backupMenu() {
               writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
             done < <(getAllModules "${PLATFORM}" "${KVERP}")
           fi
+          CONFHASHFILE="$(sha256sum "${S_FILE}" | awk '{print $1}')"
+          writeConfigKey "arc.confhash" "${CONFHASHFILE}" "${USER_CONFIG_FILE}"
           dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
             --aspect 18 --msgbox "Config restore successful!\nDownloading necessary files..." 0 0
           sleep 2
