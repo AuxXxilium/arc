@@ -716,9 +716,6 @@ function arcSettings() {
     deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
     deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
   fi
-  # Max Memory for DSM
-  RAMCONFIG="$((${RAMTOTAL} * 1024))"
-  writeConfigKey "synoinfo.mem_max_mb" "${RAMCONFIG}" "${USER_CONFIG_FILE}"
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -n "${PLATFORM}" ] && [ -n "${KVER}" ]; then
     # Config is done
     writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
@@ -841,11 +838,16 @@ function arcSummary() {
 function make() {
   # Check for Arc Patch
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
-  if [ -z "${ARCCONF}" ]; then
+  CONFHASHFILE="$(sha256sum "${S_FILE}" | awk '{print $1}')"
+  CONFHASH="$(readConfigKey "arc.confhash" "${USER_CONFIG_FILE}")"
+  if [ -z "${ARCCONF}" ] || [ "${CONFHASH}" != "${CONFHASHFILE}" ]; then
     deleteConfigKey "addons.amepatch" "${USER_CONFIG_FILE}"
     deleteConfigKey "addons.arcdns" "${USER_CONFIG_FILE}"
     deleteConfigKey "addons.sspatch" "${USER_CONFIG_FILE}"
   fi
+  # Max Memory for DSM
+  RAMCONFIG="$((${RAMTOTAL} * 1024))"
+  writeConfigKey "synoinfo.mem_max_mb" "${RAMCONFIG}" "${USER_CONFIG_FILE}"
   # Read Model Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
