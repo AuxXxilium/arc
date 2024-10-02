@@ -13,8 +13,8 @@ checkBootLoader || die "The loader is corrupted, please rewrite it!"
 BUS=$(getBus "${LOADER_DISK}")
 
 # Sanity Check
-CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION" | sed -e 's/\.//g' | sed 's/[^0-9]*//g' )"
-LOADERVERSION="$(echo "${ARC_VERSION}" | sed -e 's/\.//g' | sed 's/[^0-9]*//g' )"
+CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION" | sed -e 's/\.//g' | sed 's/[^0-9]*//g')"
+LOADERVERSION="$(echo "${ARC_VERSION}" | sed -e 's/\.//g' | sed 's/[^0-9]*//g')"
 CONFHASHFILE="$(sha256sum "${S_FILE}" | awk '{print $1}')"
 CONFHASH="$(readConfigKey "arc.confhash" "${USER_CONFIG_FILE}")"
 [ -z "${CONFHASH}" ] && CONFHASH="${CONFHASHFILE}"
