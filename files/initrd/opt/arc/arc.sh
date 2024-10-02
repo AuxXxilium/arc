@@ -501,7 +501,6 @@ function arcVersion() {
       fi
       if [ ${DEVICENIC} -gt 1 ]; then
         initConfigKey "addons.multismb3" "" "${USER_CONFIG_FILE}"
-        initConfigKey "addons.sortnetif" "" "${USER_CONFIG_FILE}"
       fi
       if [ -n "${ARCCONF}" ]; then
         initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
