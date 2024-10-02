@@ -556,8 +556,8 @@ function arcPatch() {
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     fi
   elif [ "${ARCMODE}" == "config" ]; then
-    CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION" | sed -e 's/\.//g' | sed 's/[^0-9]*//g' )"
-    LOADERVERSION="$(echo "${ARC_VERSION}" | sed -e 's/\.//g' | sed 's/[^0-9]*//g' )"
+    CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION" | sed -e 's/\.//g' | sed 's/[^0-9]*//g')"
+    LOADERVERSION="$(echo "${ARC_VERSION}" | sed -e 's/\.//g' | sed 's/[^0-9]*//g')"
     CONFHASHFILE="$(sha256sum "${S_FILE}" | awk '{print $1}')"
     CONFHASH="$(readConfigKey "arc.confhash" "${USER_CONFIG_FILE}")"
     if [ ${CONFIGSVERSION} -lt ${LOADERVERSION} ] || [ "${CONFHASH}" != "${CONFHASHFILE}" ] || [ -z "${ARCCONF}" ]; then
@@ -571,7 +571,7 @@ function arcPatch() {
       [ -z "${resp}" ] && return 1
       if [ ${resp} -eq 1 ]; then
         # Generate random Serial
-        SN=$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')
+        SN="$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')"
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 2 ]; then
         while true; do
@@ -600,11 +600,11 @@ function arcPatch() {
       [ -z "${resp}" ] && return 1
       if [ ${resp} -eq 1 ]; then
         # Read Arc Patch from File
-        SN=$(generateSerial "${MODEL}" "true" | tr '[:lower:]' '[:upper:]')
+        SN="$(generateSerial "${MODEL}" "true" | tr '[:lower:]' '[:upper:]')"
         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 2 ]; then
         # Generate random Serial
-        SN=$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')
+        SN="$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')"
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       elif [ ${resp} -eq 3 ]; then
         while true; do
