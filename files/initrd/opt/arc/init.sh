@@ -253,7 +253,7 @@ if [ ${RAM} -le 3500 ]; then
   echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n"
   echo -e "\033[1;31mUse arc to proceed. Not recommended!\033[0m"
 else
-  arc
+  arc.sh
 fi
 
 exit 0
