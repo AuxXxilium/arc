@@ -1,28 +1,14 @@
 #!/usr/bin/env bash
 
 set -e
-[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+[[ -z "${ARC_BASE_PATH}" || ! -d "${ARC_BASE_PATH}/include" ]] && ARC_BASE_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
-. ${ARC_PATH}/include/functions.sh
-. ${ARC_PATH}/include/addons.sh
-. ${ARC_PATH}/include/compat.sh
+. ${ARC_BASE_PATH}/include/base_functions.sh
 
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 checkBootLoader || die "The loader is corrupted, please rewrite it!"
 BUS=$(getBus "${LOADER_DISK}")
-
-# Sanity Check
-CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION" | sed -e 's/\.//g' | sed 's/[^0-9]*//g')"
-LOADERVERSION="$(echo "${ARC_VERSION}" | sed -e 's/\.//g' | sed 's/[^0-9]*//g')"
-CONFHASHFILE="$(sha256sum "${S_FILE}" | awk '{print $1}')"
-CONFHASH="$(readConfigKey "arc.confhash" "${USER_CONFIG_FILE}")"
-[ -z "${CONFHASH}" ] && CONFHASH="${CONFHASHFILE}"
-if [ ${CONFIGSVERSION} -lt ${LOADERVERSION} ] || [ "${CONFHASH}" != "${CONFHASHFILE}" ]; then
-  echo -e "Pirated Version of Arc Loader detected!!! Files can't be verified."
-  sleep 3
-  exec poweroff
-fi
 
 # Check if machine has EFI
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
@@ -31,8 +17,8 @@ fi
 clear
 COLUMNS=${COLUMNS:-50}
 BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
-TITLE="Version:"
-TITLE+=" ${ARC_TITLE}"
+TITLE="Base Version:"
+TITLE+=" ${ARC_BASE_TITLE}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
@@ -108,15 +94,10 @@ if [ -f "${PART1_PATH}/ARC-BRANCH" ]; then
   ARCBRANCH=$(cat "${PART1_PATH}/ARC-BRANCH") && writeConfigKey "arc.branch" "${ARCBRANCH}" "${USER_CONFIG_FILE}"
   rm -f "${PART1_PATH}/ARC-BRANCH" >/dev/null 2>&1 || true
 fi
-# Check for compatibility
-compatboot
 
 # Init Network
-ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
-if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
-  _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
-fi
 [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
+ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
 # Read/Write IP/Mac config
 for ETH in ${ETHX}; do
   MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
@@ -143,6 +124,8 @@ writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
 # No network devices
 echo
 [ ${ETHN} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
+# NTP
+/etc/init.d/S49ntpd restart > /dev/null 2>&1 || true
 
 # Get the VID/PID if we are in USB
 VID="0x46f4"
@@ -188,6 +171,7 @@ elif [ "${ARCMODE}" = "update" ]; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
 elif [ "${BUILDDONE}" == "true" ] && [ "${ARCMODE}" = "dsm" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
+  ln -sf "${SYSTEM_PATH}" "${ARC_BASE_PATH}"
   boot.sh
   exit 0
 else
@@ -198,6 +182,7 @@ echo
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
 echo -e "\033[1;34mDetected ${ETHN} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+IPCON=""
 sleep 3
 for ETH in ${ETHX}; do
   COUNT=0
@@ -215,6 +200,7 @@ for ETH in ${ETHX}; do
         echo -e "\r\033[1;37m${DRIVER} (${SPEED}):\033[0m LINK LOCAL (No DHCP server found.)"
       else
         echo -e "\r\033[1;37m${DRIVER} (${SPEED}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web interface."
+        [ -z "${IPCON}" ] && IPCON="${IP}"
       fi
       break
     fi
@@ -230,17 +216,7 @@ for ETH in ${ETHX}; do
   done
 done
 
-# NTP
-/etc/init.d/S49ntpd restart > /dev/null 2>&1
-
-# Inform user
-echo
-echo -e "Call \033[1;34marc.sh\033[0m to configure Arc"
-echo
-echo -e "User config is on \033[1;34m${USER_CONFIG_FILE}\033[0m"
-echo -e "Default SSH Root password is \033[1;34marc\033[0m"
-echo
-
+mkdir -p "${SYSTEM_PATH}"
 mkdir -p "${ADDONS_PATH}"
 mkdir -p "${CUSTOM_PATH}"
 mkdir -p "${LKMS_PATH}"
@@ -248,6 +224,21 @@ mkdir -p "${MODEL_CONFIG_PATH}"
 mkdir -p "${MODULES_PATH}"
 mkdir -p "${PATCH_PATH}"
 mkdir -p "${USER_UP_PATH}"
+
+# Download Arc System Files
+if [ -n "${IPCON}" ]; then
+  echo -e "\033[1;34mDownloading Arc System Files...\033[0m"
+  getArcSystem "${SYSTEM_PATH}"
+  [ -f "${SYSTEM_PATH}/arc.sh" ] && ln -sf "${SYSTEM_PATH}" "${ARC_BASE_PATH}" || echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m" && sleep 5 && exit 1
+elif [ -z "${IPCON}" ] && [ -f "${SYSTEM_PATH}/arc.sh" ]; then
+  echo -e "\033[1;34mUsing old Arc System Files...\033[0m"
+  ln -sf "${SYSTEM_PATH}" "${ARC_BASE_PATH}"
+else
+  echo -e "\033[1;31mNo Network Connection found!\033[0m"
+  echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m"
+  sleep 5
+  exit 1
+fi
 
 # Load Arc Overlay
 echo -e "\033[1;34mLoading Arc Overlay...\033[0m"

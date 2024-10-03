@@ -8,14 +8,7 @@ sudo git clean -fdx
 . scripts/func.sh
 
 # Get extractor, LKM, addons and Modules
-getLKMs "files/p3/lkms"
-getAddons "files/p3/addons"
-getModules "files/p3/modules"
-getConfigs "files/p3/configs"
-getPatches "files/p3/patches"
-getCustom "files/p3/custom"
 getTheme "files/p1/boot/grub"
-getOffline "files/p3/offline"
 getBuildroots "latest" "brs"
 getBuildrootx "latest" "brx"
 
@@ -38,10 +31,10 @@ sudo mount ${LOOPX}p3 "/tmp/p3"
 [[ ! -f "brs/bzImage-arc" || ! -f "brs/initrd-arc" ]] && return 1
 
 VERSION=$(date +'%y.%m.dev')
-echo "${VERSION}" >files/p1/ARC-VERSION
+echo "${VERSION}" >files/p1/ARC-BASE-VERSION
 echo "${VERSION}" >VERSION
 echo "stable" >files/p1/ARC-BRANCH
-sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
+sed 's/^ARC_BASE_VERSION=.*/ARC_BASE_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/base_consts.sh
 
 echo "Repack initrd"
 cp -f "brs/bzImage-arc" "files/p3/bzImage-arc"
@@ -83,10 +76,10 @@ sudo mount ${LOOPX}p3 "/tmp/p3"
 [[ ! -f "brx/bzImage-arc" || ! -f "brx/initrd-arc" ]] && return 1
 
 VERSION=$(date +'%y.%m.dev')
-echo "${VERSION}" >files/p1/ARC-VERSION
+echo "${VERSION}" >files/p1/ARC-BASE-VERSION
 echo "${VERSION}" >VERSION
 echo "next" >files/p1/ARC-BRANCH
-sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
+sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/base_consts.sh
 
 echo "Repack initrd"
 cp -f "brx/bzImage-arc" "files/p3/bzImage-arc"

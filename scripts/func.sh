@@ -1,54 +1,55 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2023 AuxXxilium <https://github.com/AuxXxilium> and Ing <https://github.com/wjz304>
+# Copyright (C) 2023 AuxXxilium <https://github.com/AuxXxilium>
 # 
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
 #
 
-# Get Extractor
+# Get latest Arc
 # $1 path
-function getExtractor() {
-  echo "Getting syno extractor begin"
-  local DEST_PATH="${1:-extractor}"
-  local CACHE_DIR="/tmp/pat"
-  rm -rf "${CACHE_DIR}"
-  mkdir -p "${CACHE_DIR}"
-  # Download pat file
-  # global.synologydownload.com, global.download.synology.com, cndl.synology.cn
-  local PAT_URL="https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_DS3622xs%2B_42218.pat"
-  local PAT_FILE="DSM_DS3622xs+_42218.pat"
-  local STATUS=$(curl -# -w "%{http_code}" -L "${PAT_URL}" -o "${CACHE_DIR}/${PAT_FILE}")
-  if [ $? -ne 0 ] || [ ${STATUS} -ne 200 ]; then
-    echo "[E] DSM_DS3622xs%2B_42218.pat download error!"
-    rm -rf ${CACHE_DIR}
-    exit 1
+function getArcSystem() {
+  echo "Getting ArcSystem begin"
+  local DEST_PATH="${1:-arc}"
+  local CACHE_FILE="/tmp/arc.zip"
+  rm -f "${CACHE_FILE}"
+  if [ -n "${ARCTAG}" ]; then
+    TAG="${ARCTAG}"
+  else
+    TAG="$(curl -s "https://api.github.com/repos/AuxXxilium/arc-e-system/releases/latest" | grep -oP '"tag_name": "\K(.*)(?=")')"
   fi
-
-  mkdir -p "${CACHE_DIR}/ramdisk"
-  tar -C "${CACHE_DIR}/ramdisk/" -xf "${CACHE_DIR}/${PAT_FILE}" rd.gz 2>&1
-  if [ $? -ne 0 ]; then
-    echo "[E] extractor rd.gz error!"
-    rm -rf ${CACHE_DIR}
-    exit 1
-  fi
-  (
-    cd "${CACHE_DIR}/ramdisk"
-    xz -dc <rd.gz | cpio -idm
-  ) >/dev/null 2>&1 || true
-
+  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-e-system/releases/download/${TAG}/arc.zip" -o "${CACHE_FILE}")
+  echo "TAG=${TAG}; Status=${STATUS}"
+  [ ${STATUS} -ne 200 ] && exit 1
+  # Unzip LKMs
   rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
+  unzip "${CACHE_FILE}" -d "${DEST_PATH}"
+  rm -f "${CACHE_FILE}"
+  echo "Getting ArcSystem end - ${TAG}"
+}
 
-  # Copy only necessary files
-  for f in libcurl.so.4 libmbedcrypto.so.5 libmbedtls.so.13 libmbedx509.so.1 libmsgpackc.so.2 libsodium.so libsynocodesign-ng-virtual-junior-wins.so.7; do
-    cp -f "${CACHE_DIR}/ramdisk/usr/lib/${f}" "${DEST_PATH}"
-  done
-  cp -f "${CACHE_DIR}/ramdisk/usr/syno/bin/scemd" "${DEST_PATH}/syno_extract_system_patch"
-
-  # Clean up
-  rm -rf ${CACHE_DIR}
-  echo "Getting syno extractor end"
+# Get latest Arc
+# $1 path
+function getArcBase() {
+  echo "Getting ArcBase begin"
+  local DEST_PATH="${1:-base}"
+  local CACHE_FILE="/tmp/base.zip"
+  rm -f "${CACHE_FILE}"
+  if [ -n "${BASETAG}" ]; then
+    TAG="${BASETAG}"
+  else
+    TAG="$(curl -s "https://api.github.com/repos/AuxXxilium/arc-e/releases/latest" | grep -oP '"tag_name": "\K(.*)(?=")')"
+  fi
+  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-e/releases/download/${TAG}/base.zip" -o "${CACHE_FILE}")
+  echo "TAG=${TAG}; Status=${STATUS}"
+  [ ${STATUS} -ne 200 ] && exit 1
+  # Unzip LKMs
+  rm -rf "${DEST_PATH}"
+  mkdir -p "${DEST_PATH}"
+  unzip "${CACHE_FILE}" -d "${DEST_PATH}"
+  rm -f "${CACHE_FILE}"
+  echo "Getting ArcBase end - ${TAG}"
 }
 
 # Get latest LKMs
