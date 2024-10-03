@@ -132,15 +132,15 @@ function rebootTo() {
 ###############################################################################
 # Arc Files Download
 function getArcSystem() {
-  local DEST_PATH="${1:-arc}"
-  local CACHE_FILE="/tmp/arc.zip"
+  local DEST_PATH="${1:-system}"
+  local CACHE_FILE="/tmp/system.zip"
   rm -f "${CACHE_FILE}"
   local TAG="$(curl -s "https://api.github.com/repos/AuxXxilium/arc-e-system/releases/latest" | grep -oP '"tag_name": "\K(.*)(?=")')"
-  local STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-e-system/releases/download/${TAG}/arc.zip" -o "${CACHE_FILE}")
+  local STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-e-system/releases/download/${TAG}/system-${TAG}.zip" -o "${CACHE_FILE}")
   [ ${STATUS} -ne 200 ] && exit 1
   # Unzip LKMs
   rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
-  unzip "${CACHE_FILE}" -d "${DEST_PATH}"
+  unzip "${CACHE_FILE}" -d "${PART3_PATH}"
   rm -f "${CACHE_FILE}"
 }
