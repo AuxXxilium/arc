@@ -169,9 +169,12 @@ elif [ "${ARCMODE}" == "update" ]; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
 elif [ "${BUILDDONE}" == "true" ] && [ "${ARCMODE}" == "dsm" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
-  cp -Rf "${SYSTEM_PATH}"/* "${ARC_PATH}"
-  boot.sh
-  exit 0
+  if [ -f "${SYSTEM_PATH}/boot.sh" ]; then
+    boot.sh
+    exit 0
+  else
+    echo -e "\033[1;31mError: Can't find Arc System Files...\033[0m"
+  fi
 else
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
 fi
@@ -228,10 +231,9 @@ echo
 if [ -n "${IPCON}" ]; then
   echo -e "\033[1;34mDownloading Arc System Files...\033[0m"
   getArcSystem "${SYSTEM_PATH}"
-  [ -f "${SYSTEM_PATH}/arc.sh" ] && cp -Rf "${SYSTEM_PATH}"/* "${ARC_PATH}" || echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m"
+  [ ! -f "${SYSTEM_PATH}/arc.sh" ] && echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m" || true
 elif [ -z "${IPCON}" ] && [ -f "${SYSTEM_PATH}/arc.sh" ]; then
   echo -e "\033[1;34mUsing old Arc System Files...\033[0m"
-  cp -Rf "${SYSTEM_PATH}"/* "${ARC_PATH}"
 else
   echo -e "\033[1;31mNo Network Connection found!\033[0m"
   echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m"
