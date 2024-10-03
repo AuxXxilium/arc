@@ -136,12 +136,12 @@ function getArcSystem() {
   local CACHE_FILE="/tmp/system.zip"
   rm -f "${CACHE_FILE}"
   local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-e-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-  local STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-e-system/releases/download/${TAG}/system-${TAG}.zip" -o "${CACHE_FILE}")
+  local STATUS=$(curl -w "%{http_code}" -skL "https://github.com/AuxXxilium/arc-e-system/releases/download/${TAG}/system-${TAG}.zip" -o "${CACHE_FILE}")
   [ ${STATUS} -ne 200 ] && return 1
   # Unzip LKMs
   rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
-  unzip "${CACHE_FILE}" -d "${PART3_PATH}"
+  unzip "${CACHE_FILE}" -d "${PART3_PATH}" >/dev/null 2>&1
   [ -f "${PART3_PATH}/system/grub.cfg" ] && cp -f "${PART3_PATH}/system/grub.cfg" "${USER_GRUB_CONFIG}"
   rm -f "${CACHE_FILE}"
   return 0

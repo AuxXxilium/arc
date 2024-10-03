@@ -17,7 +17,7 @@ BUS=$(getBus "${LOADER_DISK}")
 clear
 COLUMNS=${COLUMNS:-50}
 BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
-TITLE="Base Version:"
+TITLE="Version:"
 TITLE+=" ${ARC_BASE_TITLE}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
@@ -169,7 +169,7 @@ elif [ "${ARCMODE}" == "update" ]; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
 elif [ "${BUILDDONE}" == "true" ] && [ "${ARCMODE}" == "dsm" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
-  ln -sf "${SYSTEM_PATH}" "${ARC_BASE_PATH}"
+  cp -Rf "${SYSTEM_PATH}"/* "${ARC_BASE_PATH}"
   boot.sh
   exit 0
 else
@@ -223,14 +223,15 @@ mkdir -p "${MODULES_PATH}"
 mkdir -p "${PATCH_PATH}"
 mkdir -p "${USER_UP_PATH}"
 
+echo
 # Download Arc System Files
 if [ -n "${IPCON}" ]; then
   echo -e "\033[1;34mDownloading Arc System Files...\033[0m"
   getArcSystem "${SYSTEM_PATH}"
-  [ -f "${SYSTEM_PATH}/arc.sh" ] && ln -sf "${SYSTEM_PATH}" "${ARC_BASE_PATH}" || echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m" && sleep 5 && exit 1
+  [ -f "${SYSTEM_PATH}/arc.sh" ] && cp -Rf "${SYSTEM_PATH}"/* "${ARC_BASE_PATH}" || echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m"
 elif [ -z "${IPCON}" ] && [ -f "${SYSTEM_PATH}/arc.sh" ]; then
   echo -e "\033[1;34mUsing old Arc System Files...\033[0m"
-  ln -sf "${SYSTEM_PATH}" "${ARC_BASE_PATH}"
+  cp -Rf "${SYSTEM_PATH}"/* "${ARC_BASE_PATH}"
 else
   echo -e "\033[1;31mNo Network Connection found!\033[0m"
   echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m"
@@ -238,6 +239,7 @@ else
   poweroff
 fi
 
+echo
 # Load Arc Overlay
 echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
 

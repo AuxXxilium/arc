@@ -1,5 +1,5 @@
 ARC_BASE_VERSION="24.1.1"
-ARC_BASE_TITLE="Arc Base ${ARC_VERSION}"
+ARC_BASE_TITLE="Arc Base ${ARC_BASE_VERSION}"
 
 # Define paths
 PART1_PATH="/mnt/p1"
