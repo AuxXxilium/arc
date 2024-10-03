@@ -135,7 +135,7 @@ function getArcSystem() {
   local DEST_PATH="${1:-system}"
   local CACHE_FILE="/tmp/system.zip"
   rm -f "${CACHE_FILE}"
-  local TAG="$(curl -s "https://api.github.com/repos/AuxXxilium/arc-e-system/releases/latest" | grep -oP '"tag_name": "\K(.*)(?=")')"
+  local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-e-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
   local STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-e-system/releases/download/${TAG}/system-${TAG}.zip" -o "${CACHE_FILE}")
   [ ${STATUS} -ne 200 ] && exit 1
   # Unzip LKMs
