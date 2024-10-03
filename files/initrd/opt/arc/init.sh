@@ -42,8 +42,6 @@ initConfigKey "arc.confhash" "${CONFHASHFILE}" "${USER_CONFIG_FILE}"
 initConfigKey "arc.dynamic" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.ipv6" "false" "${USER_CONFIG_FILE}" 
 initConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
-initConfigKey "arc.nic" "" "${USER_CONFIG_FILE}"
-initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
 initConfigKey "bootipwait" "30" "${USER_CONFIG_FILE}"
@@ -236,8 +234,8 @@ elif [ -z "${IPCON}" ] && [ -f "${SYSTEM_PATH}/arc.sh" ]; then
 else
   echo -e "\033[1;31mNo Network Connection found!\033[0m"
   echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m"
-  sleep 5
-  exit 1
+  sleep 10
+  poweroff
 fi
 
 # Load Arc Overlay
