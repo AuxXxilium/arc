@@ -170,6 +170,7 @@ elif [ "${ARCMODE}" == "update" ]; then
 elif [ "${BUILDDONE}" == "true" ] && [ "${ARCMODE}" == "dsm" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
   if [ -f "${SYSTEM_PATH}/boot.sh" ]; then
+    mount --bind "${SYSTEM_PATH}" "/opt/arc"
     boot.sh
     exit 0
   else
@@ -231,9 +232,10 @@ echo
 if [ -n "${IPCON}" ]; then
   echo -e "\033[1;34mDownloading Arc System Files...\033[0m"
   getArcSystem "${SYSTEM_PATH}"
-  [ ! -f "${SYSTEM_PATH}/arc.sh" ] && echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m" || true
+  [ ! -f "${SYSTEM_PATH}/arc.sh" ] && echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m" || mount --bind "${SYSTEM_PATH}" "/opt/arc"
 elif [ -z "${IPCON}" ] && [ -f "${SYSTEM_PATH}/arc.sh" ]; then
   echo -e "\033[1;34mUsing old Arc System Files...\033[0m"
+  mount --bind "${SYSTEM_PATH}" "/opt/arc"
 else
   echo -e "\033[1;31mNo Network Connection found!\033[0m"
   echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m"
@@ -249,9 +251,9 @@ echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
 RAM=$(free -m | grep -i mem | awk '{print$2}')
 if [ ${RAM} -le 3500 ]; then
   echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n"
-  echo -e "\033[1;31mUse arc.sh to proceed. Not recommended!\033[0m"
+  echo -e "\033[1;31mUse arc to proceed. Not recommended!\033[0m"
 else
-  arc.sh
+  arc
 fi
 
 exit 0
