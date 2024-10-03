@@ -13,7 +13,7 @@ getBuildrootx "latest" "brx"
 
 # Xbase
 IMAGE_FILE="arc-next.img"
-gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
+gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
 fdisk -l "${IMAGE_FILE}"
 
 LOOPX=$(sudo losetup -f)

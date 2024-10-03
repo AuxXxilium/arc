@@ -73,7 +73,7 @@ jobs:
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
-          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
+          gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
@@ -126,7 +126,7 @@ jobs:
 
           echo "Create Arc Image"
           IMAGE_FILE="arc-next.img"
-          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
+          gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
@@ -178,7 +178,6 @@ jobs:
             zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
             zip -9 "arc-${{ env.VERSION }}.ova.zip" arc.ova
           fi
-          echo "24.01.01" >check.update
 
       # Publish a release if is a tag
       - name: Release

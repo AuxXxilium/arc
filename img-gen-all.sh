@@ -14,7 +14,7 @@ getBuildrootx "latest" "brx"
 
 # Sbase
 IMAGE_FILE="arc.img"
-gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
+gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
 fdisk -l "${IMAGE_FILE}"
 
 LOOPX=$(sudo losetup -f)
@@ -59,7 +59,7 @@ qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
 
 # Xbase
 IMAGE_FILE="arc-next.img"
-gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
+gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
 fdisk -l "${IMAGE_FILE}"
 
 LOOPX=$(sudo losetup -f)
