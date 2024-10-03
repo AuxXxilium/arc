@@ -1,7 +1,7 @@
-[[ -z "${ARC_BASE_PATH}" || ! -d "${ARC_BASE_PATH}/include" ]] && ARC_BASE_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/../" 2>/dev/null && pwd)"
+[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/../" 2>/dev/null && pwd)"
 
-. ${ARC_BASE_PATH}/include/base_consts.sh
-. ${ARC_BASE_PATH}/include/base_configFile.sh
+. ${ARC_PATH}/include/base_consts.sh
+. ${ARC_PATH}/include/base_configFile.sh
 
 ###############################################################################
 # Check loader disk

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 set -e
-[[ -z "${ARC_BASE_PATH}" || ! -d "${ARC_BASE_PATH}/include" ]] && ARC_BASE_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
-. ${ARC_BASE_PATH}/include/base_functions.sh
+. ${ARC_PATH}/include/base_functions.sh
 
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
@@ -169,7 +169,7 @@ elif [ "${ARCMODE}" == "update" ]; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
 elif [ "${BUILDDONE}" == "true" ] && [ "${ARCMODE}" == "dsm" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
-  cp -Rf "${SYSTEM_PATH}"/* "${ARC_BASE_PATH}"
+  cp -Rf "${SYSTEM_PATH}"/* "${ARC_PATH}"
   boot.sh
   exit 0
 else
@@ -228,10 +228,10 @@ echo
 if [ -n "${IPCON}" ]; then
   echo -e "\033[1;34mDownloading Arc System Files...\033[0m"
   getArcSystem "${SYSTEM_PATH}"
-  [ -f "${SYSTEM_PATH}/arc.sh" ] && cp -Rf "${SYSTEM_PATH}"/* "${ARC_BASE_PATH}" || echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m"
+  [ -f "${SYSTEM_PATH}/arc.sh" ] && cp -Rf "${SYSTEM_PATH}"/* "${ARC_PATH}" || echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m"
 elif [ -z "${IPCON}" ] && [ -f "${SYSTEM_PATH}/arc.sh" ]; then
   echo -e "\033[1;34mUsing old Arc System Files...\033[0m"
-  cp -Rf "${SYSTEM_PATH}"/* "${ARC_BASE_PATH}"
+  cp -Rf "${SYSTEM_PATH}"/* "${ARC_PATH}"
 else
   echo -e "\033[1;31mNo Network Connection found!\033[0m"
   echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m"
