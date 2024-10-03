@@ -163,7 +163,7 @@ jobs:
           qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc-next.vhdx
 
           echo "Create Arc ova"
-          convertova "${IMAGE_FILE}" "arc.ova"
+          convertova "${IMAGE_FILE}" "arc-next.ova"
 
       # Zip image and generate checksum
       - name: Pack
