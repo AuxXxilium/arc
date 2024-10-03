@@ -162,6 +162,9 @@ jobs:
           qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc-next.vmdk
           qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc-next.vhdx
 
+          echo "Create Arc ova"
+          convertova "${IMAGE_FILE}" "arc.ova"
+
       # Zip image and generate checksum
       - name: Pack
         run: |
