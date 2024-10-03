@@ -5,7 +5,7 @@
 # See /LICENSE for more information.
 #
 
-name: Build Arc Dev
+name: Build Arc Base Dev
 
 on:
   workflow_dispatch:
@@ -47,18 +47,6 @@ jobs:
         run: |
           . scripts/func.sh
 
-          getLKMs "files/p3/lkms"
-          echo "LKMTAG=${TAG}" >> $GITHUB_ENV
-          getAddons "files/p3/addons"
-          echo "ADDONSTAG=${TAG}" >> $GITHUB_ENV
-          getModules "files/p3/modules"
-          echo "MODULESTAG=${TAG}" >> $GITHUB_ENV
-          getConfigs "files/p3/configs"
-          echo "CONFIGSTAG=${TAG}" >> $GITHUB_ENV
-          getPatches "files/p3/patches"
-          echo "PATCHESTAG=${TAG}" >> $GITHUB_ENV
-          getCustom "files/p3/custom"
-          echo "CUSTOMTAG=${TAG}" >> $GITHUB_ENV
           getTheme "files/p1/boot/grub"
           echo "THEMETAG=${TAG}" >> $GITHUB_ENV
           getBuildrootx "latest" "brx"
@@ -78,9 +66,9 @@ jobs:
           if [ -n "${VERSION}" ]; then
             # Modify Source File
             echo "${VERSION}" >VERSION
-            echo "${VERSION}" >files/p1/ARC-VERSION
+            echo "${VERSION}" >files/p1/ARC-BASE-VERSION
             echo "stable" >files/p1/ARC-BRANCH
-            sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
+            sed 's/^ARC_BASE_VERSION=.*/ARC_BASE_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/base_consts.sh
           fi
 
           echo "Create Arc Image"
@@ -123,17 +111,6 @@ jobs:
           echo "Create Arc ova"
           convertova "${IMAGE_FILE}" "arc.ova"
 
-          # Zip update and generate checksum
-          cp -f files/p1/ARC-VERSION files/p3/ARC-VERSION
-          cp -f files/p1/ARC-BRANCH files/p3/ARC-BRANCH
-          cp -f files/p1/boot/grub/grub.cfg files/p3/grub.cfg
-          cd files/p3
-          zip -9 update.zip -r .
-          sha256sum update.zip >checksum.sha256
-          mv update.zip ../../
-          mv checksum.sha256 ../../
-          cd -
-
       # Build incremental
       - name: Build Image X
         run: |
@@ -142,9 +119,9 @@ jobs:
           if [ -n "${VERSION}" ]; then
             # Modify Source File
             echo "${VERSION}" >VERSION
-            echo "${VERSION}" >files/p1/ARC-VERSION
+            echo "${VERSION}" >files/p1/ARC-BASE-VERSION
             echo "next" >files/p1/ARC-BRANCH
-            sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
+            sed 's/^ARC_BASE_VERSION=.*/ARC_BASE_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/base_consts.sh
           fi
 
           echo "Create Arc Image"
@@ -185,19 +162,6 @@ jobs:
           qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc-next.vmdk
           qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc-next.vhdx
 
-          echo "Create Arc ova"
-          convertova "${IMAGE_FILE}" "arc-next.ova"
-          # Zip update and generate checksum
-          cp -f files/p1/ARC-VERSION files/p3/ARC-VERSION
-          cp -f files/p1/ARC-BRANCH files/p3/ARC-BRANCH
-          cp -f files/p1/boot/grub/grub.cfg files/p3/grub.cfg
-          cd files/p3
-          zip -9 update-next.zip -r .
-          sha256sum update-next.zip >checksum-next.sha256
-          mv update-next.zip ../../
-          mv checksum-next.sha256 ../../
-          cd -
-
       # Zip image and generate checksum
       - name: Pack
         run: |
@@ -235,19 +199,7 @@ jobs:
             - Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
 
             ### Versions:
-            Addons: ${{ env.ADDONSTAG }}
-            Configs: ${{ env.CONFIGSTAG }}
-            Modules: ${{ env.MODULESTAG }}
-            Patches: ${{ env.PATCHESTAG }}
-            Custom: ${{ env.CUSTOMTAG }}
-            Theme: ${{ env.THEMETAG }}
-            LKM: ${{ env.LKMTAG }}
             Buildroot: ${{ env.BRS_VERSION }} | Buildroot Next: ${{ env.BRX_VERSION }}
             Release: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
-            update.zip
-            update-next.zip
-            checksum.sha256
-            checksum-next.sha256
-            check.update
