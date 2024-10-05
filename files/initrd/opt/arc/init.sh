@@ -166,7 +166,7 @@ echo
 
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
-echo -e "\033[1;34mDetected ${ETHN} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+echo -e "\033[1;34mDetected ${ETHN} NIC\033[0m"
 IPCON=""
 sleep 3
 for ETH in ${ETHX}; do
@@ -174,7 +174,7 @@ for ETH in ${ETHX}; do
   DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
   while true; do
     if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
-      echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
+      echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
       break
     fi
     COUNT=$((${COUNT} + 1))
@@ -182,24 +182,25 @@ for ETH in ${ETHX}; do
     if [ -n "${IP}" ]; then
       SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
       if [[ "${IP}" =~ ^169\.254\..* ]]; then
-        echo -e "\r\033[1;37m${DRIVER} (${SPEED}):\033[0m LINK LOCAL (No DHCP server found.)"
+        echo -e "\r${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
       else
-        echo -e "\r\033[1;37m${DRIVER} (${SPEED}):\033[0m Access \033[1;34mhttp://${IP}:7681\033[0m to connect to Arc via web interface."
+        echo -e "\r${DRIVER} (${SPEED}): \033[1;37m${IP}\033[0m"
         [ -z "${IPCON}" ] && IPCON="${IP}"
       fi
       break
     fi
     if ! ip link show ${ETH} 2>/dev/null | grep -q 'UP'; then
-      echo -e "\r\033[1;37m${DRIVER}:\033[0m DOWN"
+      echo -e "\r${DRIVER}: \033[1;37mDOWN\033[0m"
       break
     fi
     if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
-      echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
+      echo -e "\r${DRIVER}: \033[1;37mTIMEOUT\033[0m"
       break
     fi
     sleep 1
   done
 done
+echo -e "Use local Output or \033[1;34mhttp://${IPCON}:7681\033[0m to configure Loader."
 
 mkdir -p "${SYSTEM_PATH}"
 mkdir -p "${ADDONS_PATH}"
