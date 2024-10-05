@@ -136,23 +136,11 @@ fi
 # Inform user and check bus
 echo -e "Loader Disk: \033[1;34m${LOADER_DISK}\033[0m"
 echo -e "Loader Disk Type: \033[1;34m${BUS}\033[0m"
+echo
 
 # Save variables to user config file
 writeConfigKey "vid" ${VID} "${USER_CONFIG_FILE}"
 writeConfigKey "pid" ${PID} "${USER_CONFIG_FILE}"
-
-# Load keymap name
-LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
-KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-
-# Loads a keymap if is valid
-if [ -n "${LAYOUT}" ] && [ -n "${KEYMAP}" ]; then
-  if [ -f "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" ]; then
-    echo -e "Loading User Keymap: \033[1;34m${LAYOUT}/${KEYMAP}\033[0m"
-    zcat "/usr/share/keymaps/i386/${LAYOUT}/${KEYMAP}.map.gz" | loadkeys
-  fi
-fi
-echo
 
 # Decide if boot automatically
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -226,8 +214,6 @@ mkdir -p "${USER_UP_PATH}"
 echo
 # Download Arc System Files
 if [ -n "${IPCON}" ]; then
-  # NTP
-  /etc/init.d/S49ntpd restart > /dev/null 2>&1 || true
   echo -e "\033[1;34mDownloading Arc System Files...\033[0m"
   getArcSystem "${SYSTEM_PATH}"
   [ ! -f "${SYSTEM_PATH}/arc.sh" ] && echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m" || mount --bind "${SYSTEM_PATH}" "/opt/arc"
