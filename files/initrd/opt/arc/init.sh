@@ -120,8 +120,6 @@ writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
 # No network devices
 echo
 [ ${ETHN} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
-# NTP
-/etc/init.d/S49ntpd restart > /dev/null 2>&1 || true
 
 # Get the VID/PID if we are in USB
 VID="0x46f4"
@@ -228,6 +226,8 @@ mkdir -p "${USER_UP_PATH}"
 echo
 # Download Arc System Files
 if [ -n "${IPCON}" ]; then
+  # NTP
+  /etc/init.d/S49ntpd restart > /dev/null 2>&1 || true
   echo -e "\033[1;34mDownloading Arc System Files...\033[0m"
   getArcSystem "${SYSTEM_PATH}"
   [ ! -f "${SYSTEM_PATH}/arc.sh" ] && echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m" || mount --bind "${SYSTEM_PATH}" "/opt/arc"
