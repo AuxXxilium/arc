@@ -16,9 +16,9 @@ function getArcSystem() {
   if [ -n "${ARCTAG}" ]; then
     TAG="${ARCTAG}"
   else
-    TAG="$(curl -s "https://api.github.com/repos/AuxXxilium/arc-e-system/releases/latest" | grep -oP '"tag_name": "\K(.*)(?=")')"
+    TAG="$(curl -s "https://api.github.com/repos/AuxXxilium/arc-system/releases/latest" | grep -oP '"tag_name": "\K(.*)(?=")')"
   fi
-  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-e-system/releases/download/${TAG}/arc.zip" -o "${CACHE_FILE}")
+  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-system/releases/download/${TAG}/arc.zip" -o "${CACHE_FILE}")
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
   # Unzip LKMs
@@ -27,29 +27,6 @@ function getArcSystem() {
   unzip "${CACHE_FILE}" -d "${DEST_PATH}"
   rm -f "${CACHE_FILE}"
   echo "Getting ArcSystem end - ${TAG}"
-}
-
-# Get latest Arc
-# $1 path
-function getArcBase() {
-  echo "Getting ArcBase begin"
-  local DEST_PATH="${1:-base}"
-  local CACHE_FILE="/tmp/base.zip"
-  rm -f "${CACHE_FILE}"
-  if [ -n "${BASETAG}" ]; then
-    TAG="${BASETAG}"
-  else
-    TAG="$(curl -s "https://api.github.com/repos/AuxXxilium/arc-e/releases/latest" | grep -oP '"tag_name": "\K(.*)(?=")')"
-  fi
-  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-e/releases/download/${TAG}/base.zip" -o "${CACHE_FILE}")
-  echo "TAG=${TAG}; Status=${STATUS}"
-  [ ${STATUS} -ne 200 ] && exit 1
-  # Unzip LKMs
-  rm -rf "${DEST_PATH}"
-  mkdir -p "${DEST_PATH}"
-  unzip "${CACHE_FILE}" -d "${DEST_PATH}"
-  rm -f "${CACHE_FILE}"
-  echo "Getting ArcBase end - ${TAG}"
 }
 
 # Get latest LKMs
@@ -116,6 +93,7 @@ function getModules() {
   local PLATFORM="${2}"
   local KVERP="${3}"
   local CACHE_FILE="/tmp/${PLATFORM}-${KVERP}.modules"
+  local CACHE_FILE_FIRMWARE="/tmp/firmware.modules"
   rm -f "${CACHE_FILE}"
   if [ -n "${MODULESTAG}" ]; then
     TAG="${MODULESTAG}"
@@ -125,11 +103,15 @@ function getModules() {
   STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/${PLATFORM}-${KVERP}.modules" -o "${CACHE_FILE}")
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
+  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/firmware.modules" -o "${CACHE_FILE_FIRMWARE}")
+  echo "TAG=${TAG}; Status=${STATUS}"
+  [ ${STATUS} -ne 200 ] && exit 1
   # Unzip Modules
   rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
   cp -f "${CACHE_FILE}" "${DEST_PATH}"
-  rm -f "${CACHE_FILE}"
+  cp -f "${CACHE_FILE_FIRMWARE}" "${DEST_PATH}"
+  rm -f "${CACHE_FILE}" "${CACHE_FILE_FIRMWARE}"
   echo "Getting Modules end - ${TAG}"
 }
 
