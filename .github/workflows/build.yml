@@ -77,7 +77,7 @@ jobs:
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
       # Get extractor, LKM, Addons, Modules, Theme and Configs
-      - name: Get extractor, LKM, Addons, Modules, Theme and Configs
+      - name: Get Buildroot
         run: |
           . scripts/func.sh
 
