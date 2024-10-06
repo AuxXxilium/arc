@@ -130,7 +130,7 @@ echo
 
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
-echo -e "\033[1;34mDetected ${ETHN} NIC:\033[0m"
+echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
 IPCON=""
 echo
 sleep 3
