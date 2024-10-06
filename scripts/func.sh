@@ -113,20 +113,22 @@ function getAddons() {
 function getModules() {
   echo "Getting Modules begin"
   local DEST_PATH="${1:-modules}"
-  local CACHE_FILE="/tmp/modules.zip"
+  local PLATFORM="${2}"
+  local KVERP="${3}"
+  local CACHE_FILE="/tmp/${PLATFORM}-${KVERP}.modules"
   rm -f "${CACHE_FILE}"
   if [ -n "${MODULESTAG}" ]; then
     TAG="${MODULESTAG}"
   else
     TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
   fi
-  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${CACHE_FILE}")
+  STATUS=$(curl -w "%{http_code}" -L "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/${PLATFORM}-${KVERP}.modules" -o "${CACHE_FILE}")
   echo "TAG=${TAG}; Status=${STATUS}"
   [ ${STATUS} -ne 200 ] && exit 1
   # Unzip Modules
   rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
-  unzip "${CACHE_FILE}" -d "${DEST_PATH}"
+  cp -f "${CACHE_FILE}" "${DEST_PATH}"
   rm -f "${CACHE_FILE}"
   echo "Getting Modules end - ${TAG}"
 }
