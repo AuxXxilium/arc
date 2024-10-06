@@ -32,50 +32,10 @@ printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
 fi
-# Config Init
-initConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
-initConfigKey "arc.branch" "" "${USER_CONFIG_FILE}"
-initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.dynamic" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
-initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
-initConfigKey "bootipwait" "30" "${USER_CONFIG_FILE}"
-initConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
-initConfigKey "dsmlogo" "true" "${USER_CONFIG_FILE}"
-initConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
-initConfigKey "hddsort" "false" "${USER_CONFIG_FILE}"
-initConfigKey "kernel" "official" "${USER_CONFIG_FILE}"
-initConfigKey "kernelload" "power" "${USER_CONFIG_FILE}"
-initConfigKey "kernelpanic" "5" "${USER_CONFIG_FILE}"
-initConfigKey "odp" "false" "${USER_CONFIG_FILE}"
-initConfigKey "pathash" "" "${USER_CONFIG_FILE}"
-initConfigKey "paturl" "" "${USER_CONFIG_FILE}"
-initConfigKey "sn" "" "${USER_CONFIG_FILE}"
-initConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
-initConfigKey "device.externalcontroller" "false" "${USER_CONFIG_FILE}"
-initConfigKey "keymap" "" "${USER_CONFIG_FILE}"
-initConfigKey "layout" "" "${USER_CONFIG_FILE}"
-initConfigKey "lkm" "prod" "${USER_CONFIG_FILE}"
-initConfigKey "modblacklist" "evbug,cdc_ether" "${USER_CONFIG_FILE}"
-initConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-initConfigKey "model" "" "${USER_CONFIG_FILE}"
-initConfigKey "modelid" "" "${USER_CONFIG_FILE}"
 initConfigKey "network" "{}" "${USER_CONFIG_FILE}"
-initConfigKey "platform" "" "${USER_CONFIG_FILE}"
-initConfigKey "productver" "" "${USER_CONFIG_FILE}"
-initConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
-initConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
-initConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
-initConfigKey "rd-compressed" "false" "${USER_CONFIG_FILE}"
-initConfigKey "satadom" "2" "${USER_CONFIG_FILE}"
-initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
-initConfigKey "usbmount" "auto" "${USER_CONFIG_FILE}"
-initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 if grep -q "automated_arc" /proc/cmdline; then
   writeConfigKey "arc.mode" "automated" "${USER_CONFIG_FILE}"
 elif grep -q "update_arc" /proc/cmdline; then
@@ -90,8 +50,6 @@ if [ -f "${PART1_PATH}/ARC-BRANCH" ]; then
   ARCBRANCH=$(cat "${PART1_PATH}/ARC-BRANCH") && writeConfigKey "arc.branch" "${ARCBRANCH}" "${USER_CONFIG_FILE}"
 fi
 
-# Init Network
-[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
 ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
 # Read/Write IP/Mac config
 for ETH in ${ETHX}; do
@@ -164,6 +122,8 @@ else
 fi
 echo
 
+[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
+sleep 1
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
 echo -e "\033[1;34mDetected ${ETHN} NIC\033[0m"
@@ -202,24 +162,16 @@ for ETH in ${ETHX}; do
 done
 echo -e "Use local Output or \033[1;34mhttp://${IPCON}:7681\033[0m to configure Loader."
 
-mkdir -p "${SYSTEM_PATH}"
-mkdir -p "${ADDONS_PATH}"
-mkdir -p "${CUSTOM_PATH}"
-mkdir -p "${LKMS_PATH}"
-mkdir -p "${MODEL_CONFIG_PATH}"
-mkdir -p "${MODULES_PATH}"
-mkdir -p "${PATCH_PATH}"
-mkdir -p "${USER_UP_PATH}"
-
 echo
 # Download Arc System Files
-if [ -n "${IPCON}" ]; then
+mkdir -p "${SYSTEM_PATH}"
+if [[ -z "${IPCON}" || "${ARCMODE}" == "automated" ]] && [ -f "${SYSTEM_PATH}/arc.sh" ]; then
+  echo -e "\033[1;34mUsing preloaded Arc System Files...\033[0m"
+  mount --bind "${SYSTEM_PATH}" "/opt/arc"
+elif [ -n "${IPCON}" ]; then
   echo -e "\033[1;34mDownloading Arc System Files...\033[0m"
   getArcSystem "${SYSTEM_PATH}"
   [ ! -f "${SYSTEM_PATH}/arc.sh" ] && echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m" || mount --bind "${SYSTEM_PATH}" "/opt/arc"
-elif [ -z "${IPCON}" ] && [ -f "${SYSTEM_PATH}/arc.sh" ]; then
-  echo -e "\033[1;34mUsing old Arc System Files...\033[0m"
-  mount --bind "${SYSTEM_PATH}" "/opt/arc"
 else
   echo -e "\033[1;31mNo Network Connection found!\033[0m"
   echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m"
