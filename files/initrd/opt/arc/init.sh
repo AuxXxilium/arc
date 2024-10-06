@@ -77,6 +77,8 @@ writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
 # No network devices
 echo
 [ ${ETHN} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
+[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
+sleep 1
 
 # Get the VID/PID if we are in USB
 VID="0x46f4"
@@ -122,8 +124,6 @@ else
 fi
 echo
 
-[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
-sleep 1
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
 echo -e "\033[1;34mDetected ${ETHN} NIC:\033[0m"
@@ -146,7 +146,7 @@ for ETH in ${ETHX}; do
         echo -e "\r${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
       else
         echo -e "\r${DRIVER} (${SPEED}): \033[1;37m${IP}\033[0m"
-        [ -z "${IPCON}" ] && IPCON="${IP}"
+        [ -z "${IPCON}" ] && IPCON="${IP}" && ONNIC="${ETH}"
       fi
       break
     fi
@@ -171,7 +171,7 @@ if [[ -z "${IPCON}" || "${ARCMODE}" == "automated" ]] && [ -f "${SYSTEM_PATH}/ar
 elif [ -n "${IPCON}" ]; then
   echo -e "\033[1;34mDownloading Arc System Files...\033[0m"
   getArcSystem "${SYSTEM_PATH}"
-  [ ! -f "${SYSTEM_PATH}/arc.sh" ] && echo -e "\033[1;31mError: Can't get updated Arc System Files...\033[0m" || mount --bind "${SYSTEM_PATH}" "/opt/arc"
+  [ ! -f "${SYSTEM_PATH}/arc.sh" ] && echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m" || mount --bind "${SYSTEM_PATH}" "/opt/arc"
 else
   echo -e "\033[1;31mNo Network Connection found!\033[0m\n\033[1;31mError: Can't get Arc System Files...\033[0m"
   sleep 10

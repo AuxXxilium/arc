@@ -135,7 +135,14 @@ function getArcSystem() {
   local DEST_PATH="${1:-system}"
   local CACHE_FILE="/tmp/system.zip"
   rm -f "${CACHE_FILE}"
-  local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+  if curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1; then
+    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+  elif curl -m 10 --interface "${ONNIC}" -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1; then
+    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+  else
+    echo -e "Failed to get the latest version of Arc System. Check your network connection."
+    return 1
+  fi
   local STATUS=$(curl -w "%{http_code}" -skL "https://github.com/AuxXxilium/arc-system/releases/download/${TAG}/system-${TAG}.zip" -o "${CACHE_FILE}")
   [ ${STATUS} -ne 200 ] && return 1
   # Unzip LKMs
