@@ -128,6 +128,7 @@ BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
 echo -e "\033[1;34mDetected ${ETHN} NIC:\033[0m"
 IPCON=""
+echo
 sleep 3
 for ETH in ${ETHX}; do
   COUNT=0
@@ -179,7 +180,6 @@ else
   poweroff
 fi
 
-echo
 # Load Arc Overlay
 echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
 
