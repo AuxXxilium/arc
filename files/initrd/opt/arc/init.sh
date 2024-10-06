@@ -161,8 +161,6 @@ for ETH in ${ETHX}; do
     sleep 1
   done
 done
-echo
-echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}:7681\033[0m to configure Loader."
 
 echo
 # Download Arc System Files
@@ -182,6 +180,8 @@ fi
 
 # Load Arc Overlay
 echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
+echo
+echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}:7681\033[0m to configure Loader."
 
 # Check memory and load Arc
 RAM=$(free -m | grep -i mem | awk '{print$2}')
