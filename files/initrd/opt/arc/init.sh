@@ -126,7 +126,7 @@ echo
 sleep 1
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
-echo -e "\033[1;34mDetected ${ETHN} NIC\033[0m"
+echo -e "\033[1;34mDetected ${ETHN} NIC:\033[0m"
 IPCON=""
 sleep 3
 for ETH in ${ETHX}; do
@@ -160,7 +160,8 @@ for ETH in ${ETHX}; do
     sleep 1
   done
 done
-echo -e "Use local Output or \033[1;34mhttp://${IPCON}:7681\033[0m to configure Loader."
+echo
+echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}:7681\033[0m to configure Loader."
 
 echo
 # Download Arc System Files
@@ -171,10 +172,9 @@ if [[ -z "${IPCON}" || "${ARCMODE}" == "automated" ]] && [ -f "${SYSTEM_PATH}/ar
 elif [ -n "${IPCON}" ]; then
   echo -e "\033[1;34mDownloading Arc System Files...\033[0m"
   getArcSystem "${SYSTEM_PATH}"
-  [ ! -f "${SYSTEM_PATH}/arc.sh" ] && echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m" || mount --bind "${SYSTEM_PATH}" "/opt/arc"
+  [ ! -f "${SYSTEM_PATH}/arc.sh" ] && echo -e "\033[1;31mError: Can't get updated Arc System Files...\033[0m" || mount --bind "${SYSTEM_PATH}" "/opt/arc"
 else
-  echo -e "\033[1;31mNo Network Connection found!\033[0m"
-  echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m"
+  echo -e "\033[1;31mNo Network Connection found!\033[0m\n\033[1;31mError: Can't get Arc System Files...\033[0m"
   sleep 10
   poweroff
 fi
@@ -186,8 +186,7 @@ echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
 # Check memory and load Arc
 RAM=$(free -m | grep -i mem | awk '{print$2}')
 if [ ${RAM} -le 3500 ]; then
-  echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n"
-  echo -e "\033[1;31mUse arc to proceed. Not recommended!\033[0m"
+  echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n\033[1;31mUse arc.sh to proceed. Not recommended!\033[0m"
 else
   arc.sh
 fi
