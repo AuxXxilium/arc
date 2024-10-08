@@ -14,7 +14,7 @@ BUS=$(getBus "${LOADER_DISK}")
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
 
 if [ -f "${PART1_PATH}/ARC-BRANCH" ]; then
-  ARCBRANCH=$(cat "${PART1_PATH}/ARC-BRANCH")
+  ARCBRANCH="$(cat "${PART1_PATH}/ARC-BRANCH")"
 fi
 
 # Print Title centralized
