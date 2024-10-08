@@ -174,11 +174,13 @@ jobs:
             zip -9 "arc-${{ env.VERSION }}-next.vmdk-flat.zip" arc-next.vmdk arc-next-flat.vmdk
             zip -9 "arc-${{ env.VERSION }}-next.vhdx.zip" arc-next.vhdx
             zip -9 "arc-${{ env.VERSION }}-next.ova.zip" arc-next.ova
+            zip -9j "update-${{ env.VERSION }}-next.zip" brx/bzImage-arc brx/initrd-arc
             # SBase
             zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
             zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
             zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
             zip -9 "arc-${{ env.VERSION }}.ova.zip" arc.ova
+            zip -9j "update-${{ env.VERSION }}-stable.zip" brs/bzImage-arc brs/initrd-arc
           fi
 
       # Publish a release if is a tag
