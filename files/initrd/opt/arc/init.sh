@@ -14,7 +14,7 @@ BUS=$(getBus "${LOADER_DISK}")
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
 
 if [ -f "${PART1_PATH}/ARC-BRANCH" ]; then
-  ARC_BRANCH="$(cat "${PART1_PATH}/ARC-BRANCH")"
+  ARC_BRANCH=$(cat "${PART1_PATH}/ARC-BRANCH")
 fi
 
 # Print Title centralized
@@ -174,7 +174,7 @@ if [[ -z "${IPCON}" || "${ARCMODE}" == "automated" ]] && [ -f "${SYSTEM_PATH}/ar
   mount --bind "${SYSTEM_PATH}" "/opt/arc"
 elif [ -n "${IPCON}" ]; then
   echo -e "\033[1;34mDownloading Arc System Files...\033[0m"
-  getArcSystem "${SYSTEM_PATH}"
+  getArcSystem
   [ ! -f "${SYSTEM_PATH}/arc.sh" ] && echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m" || mount --bind "${SYSTEM_PATH}" "/opt/arc"
 else
   echo -e "\033[1;31mNo Network Connection found!\033[0m\n\033[1;31mError: Can't get Arc System Files...\033[0m"
