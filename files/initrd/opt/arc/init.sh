@@ -14,7 +14,7 @@ BUS=$(getBus "${LOADER_DISK}")
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
 
 if [ -f "${PART1_PATH}/ARC-BRANCH" ]; then
-  ARCBRANCH="$(cat "${PART1_PATH}/ARC-BRANCH")"
+  ARC_BRANCH="$(cat "${PART1_PATH}/ARC-BRANCH")"
 fi
 
 # Print Title centralized
@@ -51,10 +51,12 @@ else
 fi
 [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1 || true
 if [ -n "${ARCBRANCH}" ]; then
-  writeConfigKey "arc.branch" "${ARCBRANCH}" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.branch" "${ARC_BRANCH}" "${USER_CONFIG_FILE}"
 fi
 
 ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
+[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
+sleep 1
 # Read/Write IP/Mac config
 for ETH in ${ETHX}; do
   MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
@@ -81,8 +83,6 @@ writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
 # No network devices
 echo
 [ ${ETHN} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
-[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
-sleep 1
 
 # Get the VID/PID if we are in USB
 VID="0x46f4"
@@ -178,8 +178,7 @@ elif [ -n "${IPCON}" ]; then
   [ ! -f "${SYSTEM_PATH}/arc.sh" ] && echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m" || mount --bind "${SYSTEM_PATH}" "/opt/arc"
 else
   echo -e "\033[1;31mNo Network Connection found!\033[0m\n\033[1;31mError: Can't get Arc System Files...\033[0m"
-  sleep 10
-  poweroff
+  exit 1
 fi
 
 # Load Arc Overlay
