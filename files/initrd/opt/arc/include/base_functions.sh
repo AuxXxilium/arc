@@ -147,6 +147,7 @@ function getArcSystem() {
     fi
   fi
   if curl -skL "https://github.com/AuxXxilium/arc-system/releases/download/${TAG}/system-${TAG}.zip" -o "${CACHE_FILE}"; then
+    echo "${TAG}" >"${PART1_PATH}/ARC-VERSION"
     # Unzip LKMs
     rm -rf "${DEST_PATH}"
     mkdir -p "${DEST_PATH}"
