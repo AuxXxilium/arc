@@ -134,17 +134,14 @@ function rebootTo() {
 function getArcSystem() {
   local DEST_PATH="${PART3_PATH}/system"
   local CACHE_FILE="/tmp/system.zip"
+  local DEV="${1}"
   rm -f "${CACHE_FILE}"
-  if curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1; then
-    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-  fi
-  if [ -z "${TAG}" ]; then
-    if curl -m 10 --interface "${ONNIC}" -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1; then
-      local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-    else
-      echo -e "Failed to get the latest version of Arc System. Check your network connection."
-      return 1
+  if [ -n "${DEV}" ]; then
+    if curl -m 10 --interface "${DEV}" -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1; then
+      local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
     fi
+  elif curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1; then
+    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
   fi
   if curl -skL "https://github.com/AuxXxilium/arc-system/releases/download/${TAG}/system-${TAG}.zip" -o "${CACHE_FILE}"; then
     echo "${TAG}" >"${PART1_PATH}/ARC-VERSION"

@@ -174,7 +174,11 @@ if [[ -z "${IPCON}" || "${ARCMODE}" == "automated" ]] && [ -f "${SYSTEM_PATH}/ar
   mount --bind "${SYSTEM_PATH}" "/opt/arc"
 elif [ -n "${IPCON}" ]; then
   echo -e "\033[1;34mDownloading Arc System Files...\033[0m"
-  getArcSystem
+  if echo "${ARC_BASE_TITLE}" | grep -q "dev"; then
+    getArcSystem "dev"
+  else
+    getArcSystem
+  fi
   [ ! -f "${SYSTEM_PATH}/arc.sh" ] && echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m" || mount --bind "${SYSTEM_PATH}" "/opt/arc"
 else
   echo -e "\033[1;31mNo Network Connection found!\033[0m\n\033[1;31mError: Can't get Arc System Files...\033[0m"
