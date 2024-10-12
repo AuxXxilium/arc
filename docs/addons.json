@@ -104,21 +104,6 @@
         "r1000": true,
         "epyc7002": true
     },
-    "console": {
-        "system": false,
-        "description": "Give a onscreen console via framebuffer",
-        "apollolake": true,
-        "broadwell": false,
-        "broadwellnk": false,
-        "broadwellnkv2": false,
-        "broadwellntbap": false,
-        "denverton": false,
-        "geminilake": true,
-        "purley": false,
-        "v1000": false,
-        "r1000": false,
-        "epyc7002": true
-    },
     "cpufreqscaling": {
         "system": false,
         "description": "Enable CPU Freqscaling for DSM - Modify in Arc DSM Options",
@@ -332,21 +317,6 @@
     "mountloader": {
         "system": true,
         "description": "Add a script to mount/unmount loader disk in the DSM scheduled task",
-        "apollolake": true,
-        "broadwell": true,
-        "broadwellnk": true,
-        "broadwellnkv2": true,
-        "broadwellntbap": true,
-        "denverton": true,
-        "geminilake": true,
-        "purley": true,
-        "v1000": true,
-        "r1000": true,
-        "epyc7002": true
-    },
-    "multismb3": {
-        "system": false,
-        "description": "Adds Support for Multichannel SMB3",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
@@ -647,21 +617,6 @@
     "ups": {
         "system": false,
         "description": "Force UPS to shut down in Standby mode",
-        "apollolake": true,
-        "broadwell": true,
-        "broadwellnk": true,
-        "broadwellnkv2": true,
-        "broadwellntbap": true,
-        "denverton": true,
-        "geminilake": true,
-        "purley": true,
-        "v1000": true,
-        "r1000": true,
-        "epyc7002": true
-    },
-    "videostation": {
-        "system": false,
-        "description": "Force downgrade Video Station and AME to DSM 7.2.1 Versions on DSM 7.2.2",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
