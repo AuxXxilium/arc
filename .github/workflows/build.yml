@@ -85,8 +85,8 @@ jobs:
           echo "THEMETAG=${TAG}" >> $GITHUB_ENV
           getBuildrootx "latest" "brx"
           echo "BRX_VERSION=${TAG}" >> $GITHUB_ENV
-          getBuildroots "latest" "brs"
-          echo "BRS_VERSION=${TAG}" >> $GITHUB_ENV
+          #getBuildroots "latest" "brs"
+          #echo "BRS_VERSION=${TAG}" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
@@ -106,59 +106,6 @@ jobs:
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
-          gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
-          fdisk -l "${IMAGE_FILE}"
-          
-          LOOPX=$(sudo losetup -f)
-          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
-
-          echo "Mounting Image File"
-          mkdir -p "/tmp/p1"
-          mkdir -p "/tmp/p3"
-          sudo mount ${LOOPX}p1 "/tmp/p1"
-          sudo mount ${LOOPX}p3 "/tmp/p3"
-
-          [ ! -f "brs/bzImage-arc" ] || [ ! -f "brs/initrd-arc" ] && return 1
-          
-          echo "Repack initrd"
-          cp -f "brs/bzImage-arc" "files/p3/bzImage-arc"
-          repackInitrd "brs/initrd-arc" "files/initrd" "files/p3/initrd-arc"
-
-          echo "Copying files"
-          sudo cp -Rf "files/p1/"* "/tmp/p1"
-          sudo cp -Rf "files/p3/"* "/tmp/p3"
-          sync
-
-          echo "Unmount image file"
-          sudo umount "/tmp/p1"
-          sudo umount "/tmp/p3"
-          rmdir "/tmp/p1"
-          rmdir "/tmp/p3"
-
-          sudo losetup --detach ${LOOPX}
-
-          echo "Image Converter"
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
-
-          echo "Create Arc ova"
-          convertova "${IMAGE_FILE}" "arc.ova"
-
-      # Build incremental
-      - name: Build Image X
-        run: |
-          . scripts/func.sh
-
-          if [ -n "${VERSION}" ]; then
-            # Modify Source File
-            echo "${VERSION}" >VERSION
-            echo "${VERSION}" >files/p1/ARC-BASE-VERSION
-            echo "next" >files/p1/ARC-BRANCH
-            sed 's/^ARC_BASE_VERSION=.*/ARC_BASE_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/base_consts.sh
-          fi
-
-          echo "Create Arc Image"
-          IMAGE_FILE="arc-next.img"
           gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
@@ -191,30 +138,23 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           echo "Image Converter"
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-next-dyn.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc-next.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc-next.vhdx
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
 
           echo "Create Arc ova"
-          convertova "${IMAGE_FILE}" "arc-next.ova"
+          convertova "${IMAGE_FILE}" "arc.ova"
 
       # Zip image and generate checksum
       - name: Pack
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
-            # XBase
-            zip -9 "arc-${{ env.VERSION }}-next.img.zip" arc-next.img
-            zip -9 "arc-${{ env.VERSION }}-next.vmdk-dyn.zip" arc-next-dyn.vmdk
-            zip -9 "arc-${{ env.VERSION }}-next.vmdk-flat.zip" arc-next.vmdk arc-next-flat.vmdk
-            zip -9 "arc-${{ env.VERSION }}-next.vhdx.zip" arc-next.vhdx
-            zip -9 "arc-${{ env.VERSION }}-next.ova.zip" arc-next.ova
-            zip -9j "update-${{ env.VERSION }}-next.zip" brx/bzImage-arc brx/initrd-arc
-            # SBase
             zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
             zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
             zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}.vhdx.zip" arc.vhdx
             zip -9 "arc-${{ env.VERSION }}.ova.zip" arc.ova
-            zip -9j "update-${{ env.VERSION }}-stable.zip" brs/bzImage-arc brs/initrd-arc
+            zip -9j "update-${{ env.VERSION }}-stable.zip" brx/bzImage-arc brx/initrd-arc
           fi
 
       # Publish a release if is a tag
@@ -230,13 +170,10 @@ jobs:
             ### Information:
             Notice: ${{ inputs.notice }}
             
-            - Version:
-              - arc: Stable Buildroot System (Less Hardware supported / faster Boot)
-              - arc-next: Latest Buildroot System (More Hardware supported (still in testing))
-            - Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
+            Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
 
             ### Versions:
-            Buildroot: ${{ env.BRS_VERSION }} | Buildroot Next: ${{ env.BRX_VERSION }}
+            Buildroot: ${{ env.BRX_VERSION }}
             Release: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
