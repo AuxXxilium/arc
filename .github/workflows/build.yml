@@ -154,7 +154,7 @@ jobs:
             zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
             zip -9 "arc-${{ env.VERSION }}.vhdx.zip" arc.vhdx
             zip -9 "arc-${{ env.VERSION }}.ova.zip" arc.ova
-            zip -9j "update-${{ env.VERSION }}-stable.zip" brx/bzImage-arc brx/initrd-arc
+            zip -9j "update-${{ env.VERSION }}.zip" brx/bzImage-arc brx/initrd-arc
           fi
 
       # Publish a release if is a tag
