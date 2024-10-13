@@ -372,7 +372,7 @@ function convertova() {
 
   # Create VM configuration
   cat <<_EOF_ >"OVA_${VMNAME}/${VMNAME}.vmx"
-.encoding = "GBK"
+.encoding = "UTF-8"
 config.version = "8"
 virtualHW.version = "21"
 displayName = "${VMNAME}"
