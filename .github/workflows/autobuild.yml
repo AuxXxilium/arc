@@ -67,7 +67,6 @@ jobs:
             echo "${VERSION}" >VERSION
             echo "${VERSION}" >files/p1/ARC-BASE-VERSION
             echo "stable" >files/p1/ARC-BRANCH
-            sed 's/^ARC_BASE_VERSION=.*/ARC_BASE_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/base_consts.sh
           fi
 
           echo "Create Arc Image"
