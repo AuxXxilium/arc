@@ -181,6 +181,7 @@ function rebootTo() {
   local MODES="config recovery junior automated update bios memtest"
   [ -z "${1}" ] && exit 1
   if ! echo "${MODES}" | grep -qw "${1}"; then exit 1; fi
+  [ "${1}" == "automated" ] && echo "arc-${ARC_BASE_VERSION}" >"${PART3_PATH}/automated"
   [ ! -f "${USER_GRUBENVFILE}" ] && grub-editenv ${USER_GRUBENVFILE} create
   # echo -e "Rebooting to ${1} mode..."
   grub-editenv ${USER_GRUBENVFILE} set next_entry="${1}"
