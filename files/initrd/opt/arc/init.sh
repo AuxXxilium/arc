@@ -173,7 +173,8 @@ echo
 ARCAUTOUPDATE="$(readConfigKey "arc.autoupdate" "${USER_CONFIG_FILE}")"
 if [ "${ARCAUTOUPDATE}" == "true" ]; then
   if echo "${ARC_BASE_TITLE}" | grep -v "dev"; then
-    TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+    TAG="$(curl -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+    [ -z "${TAG}" ] && TAG="${ARC_BASE_VERSION}"
     if [ "${TAG}" != "${ARC_BASE_VERSION}" ]; then
       echo -e "\033[1;34mNew Base Image found...\033[0m"
       updateLoader
