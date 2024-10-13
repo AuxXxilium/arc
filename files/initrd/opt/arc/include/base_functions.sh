@@ -190,8 +190,6 @@ function rebootTo() {
 ###############################################################################
 # Arc Base File download
 function updateLoader() {
-  local ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
-  # Check for new Version
   idx=0
   while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
     local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
@@ -203,29 +201,32 @@ function updateLoader() {
   done
   if [ -n "${TAG}" ]; then
     (
-      # Download update file
       echo "Downloading ${TAG}"
-      local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}-${ARCBRANCH}.zip"
+      local URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}.zip"
       curl -#kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&1 | while IFS= read -r -n1 char; do
         [[ $char =~ [0-9] ]] && keep=1 ;
         [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
         [[ $keep == 1 ]] && progress="$progress$char" ;
       done
       if [ -f "${TMP_PATH}/update.zip" ]; then
-        echo "Downloading Base Image successful!"
+        echo -e "Downloading Base Image successful!\nUpdating Base Image..."
+        if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}"; then
+          cp -f "${TMP_PATH}/bzImage-arc" "${PART3_PATH}/bzImage-arc"
+          cp -f "${TMP_PATH}/initrd-arc" "${PART3_PATH}/initrd-arc"
+          rm -f "${TMP_PATH}/update.zip" >/dev/null
+          echo "${TAG}" > "${PART1_PATH}/ARC-BASE-VERSION"
+          echo "Successful! -> Rebooting..."
+          sleep 2
+        else
+          echo "Failed to unpack Base Image."
+          return 1
+        fi
       else
-        updateFailed
+        echo "Failed to download Base Image."
+        return 1
       fi
-      echo "Updating Base Image..."
-      unzip -oq "${TMP_PATH}/update.zip" -d "${PART3_PATH}"
-      rm -f "${TMP_PATH}/update.zip" >/dev/null
-      echo "${TAG}" > "${PART1_PATH}/ARC-BASE-VERSION"
-      # Process complete update
-      echo "Successful! -> Rebooting..."
-      deleteConfigKey "arc.confhash" "${USER_CONFIG_FILE}"
-      sleep 2
     ) 2>&1 | dialog --backtitle "$(backtitle)" --title "System" \
-      --progressbox "Installing System Update..." 20 70
+      --progressbox "Installing Base Image..." 20 70
   fi
   return 0
 }

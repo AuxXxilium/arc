@@ -37,6 +37,7 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
   touch "${USER_CONFIG_FILE}"
 fi
 initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "arc.autoupdate" "true" "${USER_CONFIG_FILE}"
 initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "network" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
@@ -166,8 +167,20 @@ for ETH in ${ETHX}; do
     sleep 1
   done
 done
-
 echo
+
+# Check for Base Version
+ARCAUTOUPDATE="$(readConfigKey "arc.autoupdate" "${USER_CONFIG_FILE}")"
+if [ "${ARCAUTOUPDATE}" == "true" ]; then
+  if echo "${ARC_BASE_TITLE}" | grep -v "dev"; then
+    TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+    if [ "${TAG}" != "${ARC_BASE_VERSION}" ]; then
+      echo -e "\033[1;34mNew Base Image found...\033[0m"
+      updateLoader
+      rebootTo "${ARCMODE}"
+    fi
+  fi
+fi
 # Download Arc System Files
 mkdir -p "${SYSTEM_PATH}"
 if [[ -z "${IPCON}" || "${ARCMODE}" == "automated" ]] && [ -f "${SYSTEM_PATH}/arc.sh" ]; then
@@ -177,7 +190,7 @@ elif [ -n "${IPCON}" ]; then
   echo -e "\033[1;34mDownloading Arc System Files...\033[0m"
   if echo "${ARC_BASE_TITLE}" | grep -q "dev"; then
     getArcSystem "dev"
-  else
+  elif [ "${ARCAUTOUPDATE}" == "true" ]; then
     getArcSystem
   fi
   [ ! -f "${SYSTEM_PATH}/arc.sh" ] && echo -e "\033[1;31mError: Can't get Arc System Files...\033[0m" || mount --bind "${SYSTEM_PATH}" "/opt/arc"
