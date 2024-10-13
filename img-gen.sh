@@ -13,7 +13,7 @@ getBuildrootx "latest" "brx"
 
 # Sbase
 IMAGE_FILE="arc.img"
-gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
+gzip -dc "files/p3/image/grub.img.gz" >"${IMAGE_FILE}"
 fdisk -l "${IMAGE_FILE}"
 
 LOOPX=$(sudo losetup -f)
