@@ -33,7 +33,6 @@ VERSION=$(date +'%y.%m.dev')
 echo "${VERSION}" >files/p1/ARC-BASE-VERSION
 echo "${VERSION}" >VERSION
 echo "stable" >files/p1/ARC-BRANCH
-sed 's/^ARC_BASE_VERSION=.*/ARC_BASE_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/base_consts.sh
 
 echo "Repack initrd"
 cp -f "brx/bzImage-arc" "files/p3/bzImage-arc"
