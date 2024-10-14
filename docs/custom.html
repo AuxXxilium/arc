@@ -226,8 +226,22 @@
             window.location.href = `https://github.com/${repo}/issues/new?assignees=&labels=custom&projects=&template=custom_build.md&title=${title}&body=${body}`;
 
         }
-    </script>
 
+        $.ajax({
+            //your server url
+            url: "https://file.io",
+            type: "post",
+            data: "onlinecheck",
+            success: function(){
+                //function if server's online
+                document.getElementById("divstatus").innerHTML = "<form id=\"inputs\"><button type=\"button\" class=\"btn State--merged\" onclick=\"return createIssues()\" autofocus=\"\">Start Build</button></form>";
+            },
+            error:function(){
+                //function if server's offline
+                document.getElementById("divstatus").innerHTML = "<form id=\"inputs\"><button type=\"button\" class=\"btn State--merged\" autofocus=\"\">Server is offline</button></form>";
+            }
+        });
+    </script>
     <title>Arc Loader - Custom</title>
 </head>
 
@@ -334,12 +348,7 @@
         <div class="form-group-body">
             <p>&nbsp;</p>
         </div>
-        <div data-replace-remote-form-target="" class="workflow-dispatch">
-            <form id="inputs">
-                <button type="button" class="btn State--merged" onclick="return createIssues()" autofocus="">
-                    Start Build
-                </button>
-            </form>
+        <div data-replace-remote-form-target="" class="workflow-dispatch" id="divstatus">
         </div>
     </div>
     <footer class="footer width-full container-xl mt-3 text-center color-fg-muted">
