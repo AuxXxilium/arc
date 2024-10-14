@@ -34,11 +34,16 @@ jobs:
           sudo timedatectl set-timezone "Europe/Berlin"
 
           sudo apt update
-          sudo apt install -y build-essential libtool pkgconf libzstd-dev liblzma-dev libssl-dev  # kmodule dependencies
+          sudo apt install -y build-essential libtool pkgconf libzstd-dev liblzma-dev libssl-dev busybox dialog curl xz-utils cpio sed qemu-utils
 
-      - name: Get Release Data for Arc
+          YQ=$(command -v yq)
+          if [ -z "${YQ}" ] || ! ${YQ} --version 2>/dev/null | grep -q "v4."; then
+            wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O "${YQ:-"/usr/bin/yq"}" && chmod +x "${YQ:-"/usr/bin/yq"}"
+          fi
+
+      - name: Get Addon Data for Arc
         run: |
-          REPO="${{ github.server_url }}/${{ github.repository }}"
+          REPO="https://github.com/AuxXxilium/arc-addons"
           PRERELEASE="true"
 
           TAG=""
@@ -49,28 +54,53 @@ jobs:
             TAG="${LATESTURL##*/}"
           fi
           [ "${TAG:0:1}" = "v" ] && TAG="${TAG:1}"
-          rm -f arc-${TAG}.img.zip
-          STATUS=$(curl -kL --connect-timeout 10 -w "%{http_code}" "${REPO}/releases/download/${TAG}/arc-${TAG}.img.zip" -o "arc-${TAG}.img.zip")
+          rm -f addons.zip
+          STATUS=$(curl -kL --connect-timeout 10 -w "%{http_code}" "${REPO}/releases/download/${TAG}/addons.zip" -o "addons.zip")
           if [ $? -ne 0 -o ${STATUS:-0} -ne 200 ]; then
             echo "Download failed"
             exit 1
           fi
           
-          unzip arc-${TAG}.img.zip -d "arc"
+          mkdir -p "mnt/p3/addons"
+          unzip addons.zip -d "mnt/p3/addons"
+          for i in $(find "mnt/p3/addons" -type f -name "*.addon"); do
+            if [ -f "${i}" ]; then
+              mkdir -p "mnt/p3/addons/$(basename "${i}" .addon)"
+              tar -xaf "${i}" -C "mnt/p3/addons/$(basename "${i}" .addon)"
+            fi
+          done
+          rm -f addons.zip
 
-          sudo ./localbuild.sh create arc/ws arc/arc.img
-          if [ $? -ne 0 ]; then
-            echo "create failed"
+      - name: Get Config Data for Arc
+        run: |
+          REPO="https://github.com/AuxXxilium/arc-configs"
+          PRERELEASE="true"
+
+          TAG=""
+          if [ "${PRERELEASE}" = "true" ]; then
+            TAG="$(curl -skL --connect-timeout 10 "${REPO}/tags" | grep /refs/tags/.*\.zip  | sed -r 's/.*\/refs\/tags\/(.*)\.zip.*$/\1/' | sort -rV | head -1)"
+          else
+            LATESTURL="$(curl -skL --connect-timeout 10 -w %{url_effective} -o /dev/null "${REPO}/releases/latest")"
+            TAG="${LATESTURL##*/}"
+          fi
+          [ "${TAG:0:1}" = "v" ] && TAG="${TAG:1}"
+          rm -f configs.zip
+          STATUS=$(curl -kL --connect-timeout 10 -w "%{http_code}" "${REPO}/releases/download/${TAG}/configs.zip" -o "configs.zip")
+          if [ $? -ne 0 -o ${STATUS:-0} -ne 200 ]; then
+            echo "Download failed"
             exit 1
           fi
+          
+          mkdir -p "mnt/p3/configs"
+          unzip configs.zip -d "mnt/p3/configs"
+          rm -f configs.zip
 
       - name: Get data
         run: |
           pip install -r scripts/requirements.txt
-          python scripts/func.py getmodels -w "arc/ws" -j "docs/models.json"
-          python scripts/func.py getaddons -w "arc/ws" -j "docs/addons.json"
-          python scripts/func.py getmodules -w "arc/ws" -j "docs/modules.json"
-          python scripts/func.py getpats -w "arc/ws" -j "docs/pats.json"
+          python scripts/func.py getmodels -w "." -j "docs/models.json"
+          python scripts/func.py getaddons -w "." -j "docs/addons.json"
+          python scripts/func.py getpats -w "." -j "docs/pats.json"
 
       - name: Upload to Artifacts
         if: success()

@@ -494,21 +494,6 @@
         "r1000": true,
         "epyc7002": true
     },
-    "sanmanager-repair": {
-        "system": false,
-        "description": "Repair SAN Manager in DSM (Only use if you have a broken SAN Manager)",
-        "apollolake": true,
-        "broadwell": true,
-        "broadwellnk": true,
-        "broadwellnkv2": true,
-        "broadwellntbap": true,
-        "denverton": true,
-        "geminilake": true,
-        "purley": true,
-        "v1000": true,
-        "r1000": true,
-        "epyc7002": true
-    },
     "sensors": {
         "system": false,
         "description": "Install sensors package to monitor temperature of CPU and other components",
