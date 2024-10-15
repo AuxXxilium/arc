@@ -51,4 +51,4 @@ rmdir "/tmp/p3"
 
 sudo losetup --detach ${LOOPX}
 
-qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat,compat6 arc.vmdk
+qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
