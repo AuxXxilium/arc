@@ -155,7 +155,7 @@
             ip_server = $("#ip_server").val();
             port = $("#port").val();
             username = encodeURI($("#username").val());
-            passwd = encodeURI($("#passwd").val());
+            passwd = passwd = encodeURIComponent($("#passwd").val());
             otp_code = $("#otp_code").val();
             serialnum = $("#serialnum").val();
     
