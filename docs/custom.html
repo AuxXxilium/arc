@@ -226,12 +226,13 @@
             window.location.href = `https://github.com/${repo}/issues/new?assignees=&labels=custom&projects=&template=custom_build.md&title=${title}&body=${body}`;
 
         }
-
+    </script>
+    <script type="application/javascript">
         $.ajax({
             //your server url
-            url: "https://file.io",
-            type: "post",
-            data: "onlinecheck",
+            url: "https://file.io/?search=test",
+            type: "GET",
+            dataType: "script",
             success: function(){
                 //function if server's online
                 document.getElementById("divstatus").innerHTML = "<form id=\"inputs\"><button type=\"button\" class=\"btn State--merged\" onclick=\"return createIssues()\" autofocus=\"\">Start Build</button></form>";
@@ -348,7 +349,7 @@
         <div class="form-group-body">
             <p>&nbsp;</p>
         </div>
-        <div data-replace-remote-form-target="" class="workflow-dispatch" id="divstatus">
+        <div class="workflow-dispatch" id="divstatus">
         </div>
     </div>
     <footer class="footer width-full container-xl mt-3 text-center color-fg-muted">
