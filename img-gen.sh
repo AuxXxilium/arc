@@ -40,7 +40,7 @@ sudo mount ${LOOPX}p3 "/tmp/p3"
 VERSION=$(date +'%y.%m.dev')
 echo "${VERSION}" >files/p1/ARC-BASE-VERSION
 echo "${VERSION}" >VERSION
-echo "stable" >files/p1/ARC-BRANCH
+echo "dev" >files/p1/ARC-BRANCH
 
 echo "Repack initrd"
 cp -f "brx/bzImage-arc" "files/p3/bzImage-arc"
