@@ -171,7 +171,6 @@ function getTheme() {
   TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-theme/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
   if curl -skL "https://github.com/AuxXxilium/arc-theme/releases/download/${TAG}/arc-theme.zip" -o "${CACHE_FILE}"; then
     # Unzip Theme
-    rm -rf "${DEST_PATH}"
     mkdir -p "${DEST_PATH}"
     unzip "${CACHE_FILE}" -d "${DEST_PATH}"
     rm -f "${CACHE_FILE}"
