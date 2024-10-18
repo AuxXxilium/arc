@@ -105,7 +105,7 @@ function getConfigs() {
   local CACHE_FILE="/tmp/configs.zip"
   rm -f "${CACHE_FILE}"
   TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
-  ig curl -skL "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${CACHE_FILE}"; then
+  if curl -skL "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${CACHE_FILE}"; then
     # Unzip Configs
     rm -rf "${DEST_PATH}"
     mkdir -p "${DEST_PATH}"
