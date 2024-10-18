@@ -5,7 +5,7 @@
 # See /LICENSE for more information.
 #
 
-name: Build Arc Base
+name: Build Arc Image
 
 on:
   workflow_dispatch:
@@ -75,33 +75,107 @@ jobs:
           
           echo "Version: ${VERSION}"
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          if [ -n "${VERSION}" ]; then
+            echo "${VERSION}" >VERSION
+            echo "${VERSION}" >files/p1/ARC-BASE-VERSION
+          fi
 
       # Get extractor, LKM, Addons, Modules, Theme and Configs
-      - name: Get Buildroot
+      - name: Get Dependencies for Minimal Image
         run: |
           . scripts/func.sh
 
+          echo "Get Dependencies"
           getTheme "files/p1/boot/grub"
-          echo "THEMETAG=${TAG}" >> $GITHUB_ENV
-          getBuildrootx "latest" "brx"
-          echo "BRX_VERSION=${TAG}" >> $GITHUB_ENV
-          #getBuildroots "latest" "brs"
-          #echo "BRS_VERSION=${TAG}" >> $GITHUB_ENV
+          getBuildrootx "brx"
+
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
 
        # Build incremental
-      - name: Build Image
+      - name: Build Minimal Image
         run: |
           . scripts/func.sh
 
-          if [ -n "${VERSION}" ]; then
-            # Modify Source File
-            echo "${VERSION}" >VERSION
-            echo "${VERSION}" >files/p1/ARC-BASE-VERSION
-            echo "stable" >files/p1/ARC-BRANCH
+          echo "minimal" >files/p1/ARC-BRANCH
+
+          echo "Create Arc Image"
+          IMAGE_FILE="arc.img"
+          gzip -dc "files/p3/image/grub.img.gz" >"${IMAGE_FILE}"
+          fdisk -l "${IMAGE_FILE}"
+          
+          LOOPX=$(sudo losetup -f)
+          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
+
+          echo "Mounting Image File"
+          mkdir -p "/tmp/p1"
+          mkdir -p "/tmp/p3"
+          sudo mount ${LOOPX}p1 "/tmp/p1"
+          sudo mount ${LOOPX}p3 "/tmp/p3"
+
+          [ ! -f "brx/bzImage-arc" ] || [ ! -f "brx/initrd-arc" ] && return 1
+          
+          echo "Repack initrd"
+          cp -f "brx/bzImage-arc" "files/p3/bzImage-arc"
+          cp -f "brx/initrd-arc" "files/p3/initrd-arc"
+          # repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+
+          echo "Copying files"
+          sudo cp -Rf "files/p1/"* "/tmp/p1"
+          sudo cp -Rf "files/p3/"* "/tmp/p3"
+          sync
+
+          echo "Unmount image file"
+          sudo umount "/tmp/p1"
+          sudo umount "/tmp/p3"
+          rmdir "/tmp/p1"
+          rmdir "/tmp/p3"
+
+          sudo losetup --detach ${LOOPX}
+
+          echo "Image Converter"
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
+
+      # Zip image and generate checksum
+      - name: Pack Minimal Image
+        run: |
+          if [ -n "${{ env.VERSION }}" ]; then
+            zip -9 "arc-${{ env.VERSION }}-minimal.img.zip" arc.img
+            zip -9 "arc-${{ env.VERSION }}-minimal.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}-minimal.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}-minimal.vhdx.zip" arc.vhdx
+            zip -9j "update-${{ env.VERSION }}-minimal.zip" files/p3/bzImage-arc files/p3/initrd-arc
           fi
+
+      # Get extractor, LKM, Addons, Modules, Theme and Configs
+      - name: Get Dependencies for Full Image
+        run: |
+          . scripts/func.sh
+
+          echo "Get Dependencies"
+          getArcSystem "files/p3"
+          getAddons "files/p3/addons"
+          getModules "files/p3/modules"
+          getConfigs "files/p3/configs"
+          getPatches "files/p3/patches"
+          getCustome "files/p3/custom"
+          getOffline "files/p3/configs"
+          getTheme "files/p1/boot/grub"
+          getBuildrootx "brx"
+
+          echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
+
+          echo "OK"
+
+       # Build incremental
+      - name: Build Full Image
+        run: |
+          . scripts/func.sh
+
+          echo "full" >files/p1/ARC-BRANCH
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -146,15 +220,96 @@ jobs:
           convertova "${IMAGE_FILE}" "arc.ova"
 
       # Zip image and generate checksum
-      - name: Pack
+      - name: Pack Full Image
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
-            zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
-            zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
-            zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            zip -9 "arc-${{ env.VERSION }}.vhdx.zip" arc.vhdx
-            zip -9 "arc-${{ env.VERSION }}.ova.zip" arc.ova
-            zip -9j "update-${{ env.VERSION }}.zip" files/p3/bzImage-arc files/p3/initrd-arc
+            zip -9 "arc-${{ env.VERSION }}-full.img.zip" arc.img
+            zip -9 "arc-${{ env.VERSION }}-full.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}-full.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}-full.vhdx.zip" arc.vhdx
+            zip -9 "arc-${{ env.VERSION }}-full.ova.zip" arc.ova
+            zip -9j "update-${{ env.VERSION }}-full.zip" files/p3/*
+          fi
+
+      # Get extractor, LKM, Addons, Modules, Theme and Configs
+      - name: Get Dependencies for Stable Image
+        run: |
+          . scripts/func.sh
+
+          echo "Get Dependencies"
+          getArcSystem "files/p3"
+          getAddons "files/p3/addons"
+          getModules "files/p3/modules"
+          getConfigs "files/p3/configs"
+          getPatches "files/p3/patches"
+          getCustome "files/p3/custom"
+          getOffline "files/p3/configs"
+          getTheme "files/p1/boot/grub"
+          getBuildroots "brs"
+
+          echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
+
+          echo "OK"
+
+       # Build incremental
+      - name: Build Stable Image
+        run: |
+          . scripts/func.sh
+
+          echo "stable" >files/p1/ARC-BRANCH
+
+          echo "Create Arc Image"
+          IMAGE_FILE="arc-stable.img"
+          gzip -dc "files/p3/image/grub.img.gz" >"${IMAGE_FILE}"
+          fdisk -l "${IMAGE_FILE}"
+          
+          LOOPX=$(sudo losetup -f)
+          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
+
+          echo "Mounting Image File"
+          mkdir -p "/tmp/p1"
+          mkdir -p "/tmp/p3"
+          sudo mount ${LOOPX}p1 "/tmp/p1"
+          sudo mount ${LOOPX}p3 "/tmp/p3"
+
+          [ ! -f "brs/bzImage-arc" ] || [ ! -f "brs/initrd-arc" ] && return 1
+          
+          echo "Repack initrd"
+          cp -f "brs/bzImage-arc" "files/p3/bzImage-arc"
+          cp -f "brs/initrd-arc" "files/p3/initrd-arc"
+          # repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+
+          echo "Copying files"
+          sudo cp -Rf "files/p1/"* "/tmp/p1"
+          sudo cp -Rf "files/p3/"* "/tmp/p3"
+          sync
+
+          echo "Unmount image file"
+          sudo umount "/tmp/p1"
+          sudo umount "/tmp/p3"
+          rmdir "/tmp/p1"
+          rmdir "/tmp/p3"
+
+          sudo losetup --detach ${LOOPX}
+
+          echo "Image Converter"
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-stable-dyn.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc-stable.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc-stable.vhdx
+
+          echo "Create Arc ova"
+          convertova "${IMAGE_FILE}" "arc-stable.ova"
+
+      # Zip image and generate checksum
+      - name: Pack Stable Image
+        run: |
+          if [ -n "${{ env.VERSION }}" ]; then
+            zip -9 "arc-${{ env.VERSION }}-stable.img.zip" arc-stable.img
+            zip -9 "arc-${{ env.VERSION }}-stable.vmdk-dyn.zip" arc-stable-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}-stable.vmdk-flat.zip" arc-stable.vmdk arc-stable-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}-stable.vhdx.zip" arc-stable.vhdx
+            zip -9 "arc-${{ env.VERSION }}-stable.ova.zip" arc-stable.ova
+            zip -9j "update-${{ env.VERSION }}-stable.zip" files/p3/*
           fi
 
       # Publish a release if is a tag
@@ -173,8 +328,12 @@ jobs:
             Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
 
             ### Versions:
-            Buildroot: ${{ env.BRX_VERSION }}
-            Release: ${{ env.BUILD_TIME }}
+              - minimal: Minimal Image (only Bootimage, all dependencies will be loaded from the Internet, more features/hardware support)
+              - full: Full Image (Full Image, all dependencies are included, DSM files will be loaded from the Internet, more features/hardware support)
+              - stable: Stable Image (Full Image, all dependencies are included, DSM files will be loaded from the Internet, less features/hardware support)
+
+            ### Release
+            ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
             update-*.zip

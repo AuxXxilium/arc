@@ -8,8 +8,16 @@ sudo git clean -fdx
 . scripts/func.sh
 
 # Get extractor, LKM, addons and Modules
+echo "Get Dependencies"
+getArcSystem "files/p3"
+getAddons "files/p3/addons"
+getModules "files/p3/modules"
+getConfigs "files/p3/configs"
+getPatches "files/p3/patches"
+getCustome "files/p3/custom"
 getTheme "files/p1/boot/grub"
-getBuildrootx "latest" "brx"
+getOffline "files/p3/configs"
+getBuildrootx "brx"
 
 # Sbase
 IMAGE_FILE="arc.img"

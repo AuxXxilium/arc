@@ -47,12 +47,17 @@ jobs:
         run: |
           . scripts/func.sh
 
+          echo "Get Dependencies"
+          getArcSystem "files/p3"
+          getAddons "files/p3/addons"
+          getModules "files/p3/modules"
+          getConfigs "files/p3/configs"
+          getPatches "files/p3/patches"
+          getCustome "files/p3/custom"
+          getOffline "files/p3/configs"
           getTheme "files/p1/boot/grub"
-          echo "THEMETAG=${TAG}" >> $GITHUB_ENV
-          getBuildrootx "latest" "brx"
-          echo "BRX_VERSION=${TAG}" >> $GITHUB_ENV
-          #getBuildroots "latest" "brs"
-          #echo "BRS_VERSION=${TAG}" >> $GITHUB_ENV
+          getBuildrootx "brx"
+
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
@@ -66,7 +71,7 @@ jobs:
             # Modify Source File
             echo "${VERSION}" >VERSION
             echo "${VERSION}" >files/p1/ARC-BASE-VERSION
-            echo "stable" >files/p1/ARC-BRANCH
+            echo "dev" >files/p1/ARC-BRANCH
           fi
 
           echo "Create Arc Image"
@@ -108,9 +113,6 @@ jobs:
           qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
           qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
 
-          echo "Create Arc ova"
-          convertova "${IMAGE_FILE}" "arc.ova"
-
       # Zip image and generate checksum
       - name: Pack
         run: |
@@ -119,8 +121,7 @@ jobs:
             zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
             zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
             zip -9 "arc-${{ env.VERSION }}.vhdx.zip" arc.vhdx
-            zip -9 "arc-${{ env.VERSION }}.ova.zip" arc.ova
-            zip -9j "update-${{ env.VERSION }}.zip" files/p3/bzImage-arc files/p3/initrd-arc
+            zip -9j "update-${{ env.VERSION }}.zip" files/p1/* files/p3/*
           fi
 
       # Publish a release if is a tag
@@ -138,9 +139,8 @@ jobs:
             
             Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
 
-            ### Versions:
-            Buildroot: ${{ env.BRX_VERSION }}
-            Release: ${{ env.BUILD_TIME }}
+            ### Release
+            ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
             update-*.zip
