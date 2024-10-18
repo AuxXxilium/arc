@@ -60,6 +60,7 @@ function getAddons() {
     # Unzip Addons
     rm -rf "${CACHE_DIR}"
     mkdir -p "${CACHE_DIR}"
+    mkdir -p "${DEST_PATH}"
     unzip "${CACHE_FILE}" -d "${CACHE_DIR}"
     echo "Installing Addons to ${DEST_PATH}"
     [ -f /tmp/addons/VERSION ] && cp -f /tmp/addons/VERSION ${DEST_PATH}/
