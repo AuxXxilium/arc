@@ -14,7 +14,7 @@ function getArcSystem() {
   local CACHE_FILE="/tmp/system.zip"
   rm -f "${CACHE_FILE}"
   TAG="$(curl -s "https://api.github.com/repos/AuxXxilium/arc-system/releases/latest" | grep -oP '"tag_name": "\K(.*)(?=")')"
-  if curl -skL "https://github.com/AuxXxilium/arc-system/releases/download/${TAG}/arc.zip" -o "${CACHE_FILE}"; then
+  if curl -skL "https://github.com/AuxXxilium/arc-system/releases/download/${TAG}/system-${TAG}.zip" -o "${CACHE_FILE}"; then
     # Unzip LKMs
     rm -rf "${DEST_PATH}"
     mkdir -p "${DEST_PATH}"
