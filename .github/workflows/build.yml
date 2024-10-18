@@ -242,7 +242,7 @@ jobs:
           getModules "files/p3/modules"
           getConfigs "files/p3/configs"
           getPatches "files/p3/patches"
-          getCustome "files/p3/custom"
+          getCustom "files/p3/custom"
           getOffline "files/p3/configs"
           getTheme "files/p1/boot/grub"
           getBuildroots "brs"
