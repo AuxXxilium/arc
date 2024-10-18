@@ -167,19 +167,18 @@ function getTheme() {
   local DEST_PATH="${1}"
   local CACHE_FILE="/tmp/theme.zip"
   rm -f "${CACHE_FILE}"
-  if [ -n "${THEMETAG}" ]; then
-    TAG="${THEMETAG}"
+  TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-theme/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  if curl -skL "https://github.com/AuxXxilium/arc-theme/releases/download/${TAG}/arc-theme.zip" -o "${CACHE_FILE}"; then
+    # Unzip Theme
+    rm -rf "${DEST_PATH}"
+    mkdir -p "${DEST_PATH}"
+    unzip "${CACHE_FILE}" -d "${DEST_PATH}"
+    rm -f "${CACHE_FILE}"
+    echo "Getting Theme end - ${TAG}"
   else
-    TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-theme/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+    echo "Failed to get Theme"
+    exit 1
   fi
-  STATUS=$(curl -skL "https://github.com/AuxXxilium/arc-theme/releases/download/${TAG}/arc-theme.zip" -o "${CACHE_FILE}")
-  echo "TAG=${TAG}; Status=${STATUS}"
-  [ ${STATUS} -ne 200 ] && exit 1
-  # Unzip Theme
-  mkdir -p "${DEST_PATH}"
-  unzip "${CACHE_FILE}" -d "${DEST_PATH}"
-  rm -f "${CACHE_FILE}"
-  echo "Getting Theme end - ${TAG}"
 }
 
 # Get latest Buildroot-X
@@ -188,7 +187,6 @@ function getBuildrootx() {
   echo "Getting Buildroot-X begin"
   local DEST_PATH="${1}"
 
-  if [ "${TAG}" = "latest" ]; then
   TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-buildroot-x/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
   [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
   echo "Getting Kernel"
@@ -215,7 +213,6 @@ function getBuildroots() {
   echo "Getting Buildroot-S begin"
   local DEST_PATH="${1}"
 
-  if [ "${TAG}" = "latest" ]; then
   TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-buildroot-s/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
   [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
   echo "Getting Kernel"
