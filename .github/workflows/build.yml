@@ -162,7 +162,7 @@ jobs:
             zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
             zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vhdx.zip" arc.vhdx
             zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.ova.zip" arc.ova
-            zip -9j "update-${{ env.VERSION }}-${{ env.ARCBRANCH }}.zip" files/p3/*
+            (cd files && zip -r ../update-${{ env.VERSION }}-${{ env.ARCBRANCH }}.zip .)
           fi
 
       # Cleanup
@@ -230,7 +230,7 @@ jobs:
             zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
             zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vhdx.zip" arc.vhdx
             zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.ova.zip" arc.ova
-            zip -9j "update-${{ env.VERSION }}-${{ env.ARCBRANCH }}.zip" files/p3/*
+            (cd files && zip -r ../update-${{ env.VERSION }}-${{ env.ARCBRANCH }}.zip .)
           fi
 
       # Publish a release if is a tag
