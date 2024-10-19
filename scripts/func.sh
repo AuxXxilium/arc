@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2023 AuxXxilium <https://github.com/AuxXxilium>
+# Copyright (C) 2024 AuxXxilium <https://github.com/AuxXxilium>
 # 
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
@@ -11,9 +11,14 @@
 function getArcSystem() {
   echo "Getting ArcSystem begin"
   local DEST_PATH="${1}"
+  local RELEASE="${2}"
   local CACHE_FILE="/tmp/system.zip"
   rm -f "${CACHE_FILE}"
-  TAG="$(curl -s "https://api.github.com/repos/AuxXxilium/arc-system/releases/latest" | grep -oP '"tag_name": "\K(.*)(?=")')"
+  if [ "${RELEASE}" = "dev" ]; then
+    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
+  else
+    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+  fi
   if curl -skL "https://github.com/AuxXxilium/arc-system/releases/download/${TAG}/system-${TAG}.zip" -o "${CACHE_FILE}"; then
     # Unzip LKMs
     rm -rf "${DEST_PATH}"
@@ -90,7 +95,7 @@ function getModules() {
     # Unzip Modules
     rm -rf "${DEST_PATH}"
     mkdir -p "${DEST_PATH}"
-    unzip -oq "${CACHE_FILE}" -d "${DEST_PATH}"
+    unzip "${CACHE_FILE}" -d "${DEST_PATH}"
     echo "Getting Modules end - ${TAG}"
   else
     echo "Failed to get Modules"

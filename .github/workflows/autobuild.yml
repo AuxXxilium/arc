@@ -48,7 +48,7 @@ jobs:
           . scripts/func.sh
 
           echo "Get Dependencies"
-          getArcSystem "files/p3"
+          getArcSystem "files/p3" "dev"
           getAddons "files/p3/addons"
           getModules "files/p3/modules"
           getConfigs "files/p3/configs"
@@ -117,11 +117,11 @@ jobs:
       - name: Pack
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
-            zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
-            zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
-            zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            zip -9 "arc-${{ env.VERSION }}.vhdx.zip" arc.vhdx
-            zip -9j "update-${{ env.VERSION }}.zip" files/p1/* files/p3/*
+            zip -9 "arc-${{ env.VERSION }}-dev.img.zip" arc.img
+            zip -9 "arc-${{ env.VERSION }}-dev.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}-dev.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}-dev.vhdx.zip" arc.vhdx
+            zip -9j "update-${{ env.VERSION }}-dev.zip" files/p3/*
           fi
 
       # Publish a release if is a tag

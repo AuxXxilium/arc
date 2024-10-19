@@ -9,7 +9,7 @@ sudo git clean -fdx
 
 # Get extractor, LKM, addons and Modules
 echo "Get Dependencies"
-getArcSystem "files/p3"
+getArcSystem "files/p3" "dev"
 getAddons "files/p3/addons"
 getModules "files/p3/modules"
 getConfigs "files/p3/configs"
