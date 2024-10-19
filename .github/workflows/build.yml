@@ -78,6 +78,7 @@ jobs:
           if [ -n "${VERSION}" ]; then
             echo "${VERSION}" >VERSION
             echo "${VERSION}" >files/p1/ARC-BASE-VERSION
+            echo "${VERSION}" >files/p1/ARC-VERSION
           fi
 
       # Get extractor, LKM, Addons, Modules, Theme and Configs

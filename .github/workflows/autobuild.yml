@@ -71,6 +71,7 @@ jobs:
             # Modify Source File
             echo "${VERSION}" >VERSION
             echo "${VERSION}" >files/p1/ARC-BASE-VERSION
+            echo "${VERSION}" >files/p1/ARC-VERSION
             echo "dev" >files/p1/ARC-BRANCH
           fi
 
