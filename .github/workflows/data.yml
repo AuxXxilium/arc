@@ -55,7 +55,7 @@ jobs:
           fi
           [ "${TAG:0:1}" = "v" ] && TAG="${TAG:1}"
           rm -f addons.zip
-          STATUS=$(curl -kL --connect-timeout 10 -w "%{http_code}" "${REPO}/releases/download/${TAG}/addons.zip" -o "addons.zip")
+          STATUS=$(curl -kL --connect-timeout 10 -w "%{http_code}" "${REPO}/releases/download/${TAG}/addons-${TAG}.zip" -o "addons.zip")
           if [ $? -ne 0 -o ${STATUS:-0} -ne 200 ]; then
             echo "Download failed"
             exit 1
@@ -85,7 +85,7 @@ jobs:
           fi
           [ "${TAG:0:1}" = "v" ] && TAG="${TAG:1}"
           rm -f configs.zip
-          STATUS=$(curl -kL --connect-timeout 10 -w "%{http_code}" "${REPO}/releases/download/${TAG}/configs.zip" -o "configs.zip")
+          STATUS=$(curl -kL --connect-timeout 10 -w "%{http_code}" "${REPO}/releases/download/${TAG}/configs-${TAG}.zip" -o "configs.zip")
           if [ $? -ne 0 -o ${STATUS:-0} -ne 200 ]; then
             echo "Download failed"
             exit 1
