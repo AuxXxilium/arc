@@ -61,7 +61,7 @@ function getAddons() {
   local CACHE_DIR="/tmp/addons"
   local CACHE_FILE="/tmp/addons.zip"
   TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
-  if curl -skL "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons.zip" -o "${CACHE_FILE}"; then
+  if curl -skL "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons-${TAG}.zip" -o "${CACHE_FILE}"; then
     # Unzip Addons
     rm -rf "${CACHE_DIR}"
     mkdir -p "${CACHE_DIR}"
@@ -91,7 +91,7 @@ function getModules() {
   local CACHE_FILE="/tmp/modules.zip"
   rm -f "${CACHE_FILE}"
   TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
-  if curl -skL "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules.zip" -o "${CACHE_FILE}"; then
+  if curl -skL "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules-${TAG}.zip" -o "${CACHE_FILE}"; then
     # Unzip Modules
     rm -rf "${DEST_PATH}"
     mkdir -p "${DEST_PATH}"
@@ -111,7 +111,7 @@ function getConfigs() {
   local CACHE_FILE="/tmp/configs.zip"
   rm -f "${CACHE_FILE}"
   TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
-  if curl -skL "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs.zip" -o "${CACHE_FILE}"; then
+  if curl -skL "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs-${TAG}.zip" -o "${CACHE_FILE}"; then
     # Unzip Configs
     rm -rf "${DEST_PATH}"
     mkdir -p "${DEST_PATH}"
@@ -132,7 +132,7 @@ function getPatches() {
   local CACHE_FILE="/tmp/patches.zip"
   rm -f "${CACHE_FILE}"
   TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
-  if curl -skL "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches.zip" -o "${CACHE_FILE}"; then
+  if curl -skL "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches-${TAG}.zip" -o "${CACHE_FILE}"; then
     # Unzip Patches
     rm -rf "${DEST_PATH}"
     mkdir -p "${DEST_PATH}"
@@ -153,7 +153,7 @@ function getCustom() {
   local CACHE_FILE="/tmp/custom.zip"
   rm -f "${CACHE_FILE}"
   TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-custom/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
-  if curl -skL "https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/custom.zip" -o "${CACHE_FILE}"; then
+  if curl -skL "https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/custom-${TAG}.zip" -o "${CACHE_FILE}"; then
     # Unzip Custom
     rm -rf "${DEST_PATH}"
     mkdir -p "${DEST_PATH}"
@@ -174,7 +174,7 @@ function getTheme() {
   local CACHE_FILE="/tmp/theme.zip"
   rm -f "${CACHE_FILE}"
   TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-theme/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
-  if curl -skL "https://github.com/AuxXxilium/arc-theme/releases/download/${TAG}/arc-theme.zip" -o "${CACHE_FILE}"; then
+  if curl -skL "https://github.com/AuxXxilium/arc-theme/releases/download/${TAG}/arc-theme-${TAG}.zip" -o "${CACHE_FILE}"; then
     # Unzip Theme
     mkdir -p "${DEST_PATH}"
     unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
