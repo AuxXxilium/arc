@@ -103,11 +103,13 @@ jobs:
           echo "OK"
 
        # Build incremental
-      - name: Build Full Image
+      - name: Build Next Image
         run: |
           . scripts/func.sh
 
-          echo "next" >files/p1/ARC-BRANCH
+          ARCBRANCH="next"
+          echo "${ARCBRANCH}" >files/p1/ARC-BRANCH
+          echo "ARCBRANCH=${ARCBRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -152,15 +154,15 @@ jobs:
           convertova "${IMAGE_FILE}" "arc.ova"
 
       # Zip image and generate checksum
-      - name: Pack Full Image
+      - name: Pack Next Image
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
-            zip -9 "arc-${{ env.VERSION }}-next.img.zip" arc.img
-            zip -9 "arc-${{ env.VERSION }}-next.vmdk-dyn.zip" arc-dyn.vmdk
-            zip -9 "arc-${{ env.VERSION }}-next.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            zip -9 "arc-${{ env.VERSION }}-next.vhdx.zip" arc.vhdx
-            zip -9 "arc-${{ env.VERSION }}-next.ova.zip" arc.ova
-            zip -9j "update-${{ env.VERSION }}-next.zip" files/p3/*
+            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.img.zip" arc.img
+            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vhdx.zip" arc.vhdx
+            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.ova.zip" arc.ova
+            zip -9j "update-${{ env.VERSION }}-${{ env.ARCBRANCH }}.zip" files/p3/*
           fi
 
       # Cleanup
@@ -173,7 +175,9 @@ jobs:
         run: |
           . scripts/func.sh
 
-          echo "stable" >files/p1/ARC-BRANCH
+          ARCBRANCH="stable"
+          echo "${ARCBRANCH}" >files/p1/ARC-BRANCH
+          echo "ARCBRANCH=${ARCBRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -221,12 +225,12 @@ jobs:
       - name: Pack Stable Image
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
-            zip -9 "arc-${{ env.VERSION }}-stable.img.zip" arc.img
-            zip -9 "arc-${{ env.VERSION }}-stable.vmdk-dyn.zip" arc-dyn.vmdk
-            zip -9 "arc-${{ env.VERSION }}-stable.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            zip -9 "arc-${{ env.VERSION }}-stable.vhdx.zip" arc.vhdx
-            zip -9 "arc-${{ env.VERSION }}-stable.ova.zip" arc.ova
-            zip -9j "update-${{ env.VERSION }}-stable.zip" files/p3/*
+            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.img.zip" arc.img
+            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vhdx.zip" arc.vhdx
+            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.ova.zip" arc.ova
+            zip -9j "update-${{ env.VERSION }}-${{ env.ARCBRANCH }}.zip" files/p3/*
           fi
 
       # Publish a release if is a tag

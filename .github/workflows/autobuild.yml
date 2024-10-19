@@ -72,7 +72,9 @@ jobs:
             echo "${VERSION}" >VERSION
             echo "${VERSION}" >files/p1/ARC-BASE-VERSION
             echo "${VERSION}" >files/p1/ARC-VERSION
-            echo "dev" >files/p1/ARC-BRANCH
+            ARCBRANCH="dev"
+            echo "${ARCBRANCH}" >files/p1/ARC-BRANCH
+            echo "ARCBRANCH=${ARCBRANCH}" >> $GITHUB_ENV
           fi
 
           echo "Create Arc Image"
@@ -118,11 +120,11 @@ jobs:
       - name: Pack
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
-            zip -9 "arc-${{ env.VERSION }}-dev.img.zip" arc.img
-            zip -9 "arc-${{ env.VERSION }}-dev.vmdk-dyn.zip" arc-dyn.vmdk
-            zip -9 "arc-${{ env.VERSION }}-dev.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            zip -9 "arc-${{ env.VERSION }}-dev.vhdx.zip" arc.vhdx
-            zip -9j "update-${{ env.VERSION }}-dev.zip" files/p3/*
+            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.img.zip" arc.img
+            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vhdx.zip" arc.vhdx
+            zip -9j "update-${{ env.VERSION }}-${{ env.ARCBRANCH }}.zip" files/p3/*
           fi
 
       # Publish a release if is a tag
