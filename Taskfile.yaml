@@ -3,18 +3,18 @@
 version: "3"
 
 tasks:
-  build-img:
+  build-img-n:
     cmds:
       - git pull
-      - ./img-gen.sh
+      - ./img-gen-n.sh
 
-  build-img2:
+  build-img-s:
     cmds:
       - git pull
-      - ./img-gen2.sh
+      - ./img-gen-s.sh
 
   compile-kpatch:
     dir: kpatch
     cmds:
       - make clean all
-      - mv kpatch ../files/board/arc/overlayfs/opt/arc/
+      - mv kpatch ../files/p3/system/
