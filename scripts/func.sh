@@ -23,7 +23,7 @@ function getArcSystem() {
     # Unzip LKMs
     rm -rf "${DEST_PATH}"
     mkdir -p "${DEST_PATH}"
-    unzip "${CACHE_FILE}" -d "${DEST_PATH}"
+    unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
     rm -f "${CACHE_FILE}"
     echo "Getting ArcSystem end - ${TAG}"
   else
@@ -44,7 +44,7 @@ function getLKMs() {
     # Unzip LKMs
     rm -rf "${DEST_PATH}"
     mkdir -p "${DEST_PATH}"
-    unzip "${CACHE_FILE}" -d "${DEST_PATH}"
+    unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
     rm -f "${CACHE_FILE}"
     echo "Getting LKMs end - ${TAG}"
   else
@@ -66,7 +66,7 @@ function getAddons() {
     rm -rf "${CACHE_DIR}"
     mkdir -p "${CACHE_DIR}"
     mkdir -p "${DEST_PATH}"
-    unzip "${CACHE_FILE}" -d "${CACHE_DIR}"
+    unzip -o "${CACHE_FILE}" -d "${CACHE_DIR}"
     echo "Installing Addons to ${DEST_PATH}"
     [ -f /tmp/addons/VERSION ] && cp -f /tmp/addons/VERSION ${DEST_PATH}/
     for PKG in $(ls ${CACHE_DIR}/*.addon); do
@@ -95,7 +95,7 @@ function getModules() {
     # Unzip Modules
     rm -rf "${DEST_PATH}"
     mkdir -p "${DEST_PATH}"
-    unzip "${CACHE_FILE}" -d "${DEST_PATH}"
+    unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
     echo "Getting Modules end - ${TAG}"
   else
     echo "Failed to get Modules"
@@ -115,7 +115,7 @@ function getConfigs() {
     # Unzip Configs
     rm -rf "${DEST_PATH}"
     mkdir -p "${DEST_PATH}"
-    unzip "${CACHE_FILE}" -d "${DEST_PATH}"
+    unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
     rm -f "${CACHE_FILE}"
     echo "Getting Configs end - ${TAG}"
   else
@@ -136,7 +136,7 @@ function getPatches() {
     # Unzip Patches
     rm -rf "${DEST_PATH}"
     mkdir -p "${DEST_PATH}"
-    unzip "${CACHE_FILE}" -d "${DEST_PATH}"
+    unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
     rm -f "${CACHE_FILE}"
     echo "Getting Patches end - ${TAG}"
   else
@@ -157,7 +157,7 @@ function getCustom() {
     # Unzip Custom
     rm -rf "${DEST_PATH}"
     mkdir -p "${DEST_PATH}"
-    unzip "${CACHE_FILE}" -d "${DEST_PATH}"
+    unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
     rm -f "${CACHE_FILE}"
     echo "Getting Custom end - ${TAG}"
   else
@@ -177,7 +177,7 @@ function getTheme() {
   if curl -skL "https://github.com/AuxXxilium/arc-theme/releases/download/${TAG}/arc-theme.zip" -o "${CACHE_FILE}"; then
     # Unzip Theme
     mkdir -p "${DEST_PATH}"
-    unzip "${CACHE_FILE}" -d "${DEST_PATH}"
+    unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
     rm -f "${CACHE_FILE}"
     echo "Getting Theme end - ${TAG}"
   else
