@@ -82,7 +82,7 @@ jobs:
           fi
 
       # Get extractor, LKM, Addons, Modules, Theme and Configs
-      - name: Get Dependencies for Full Image
+      - name: Get Dependencies for all Image
         run: |
           . scripts/func.sh
 
@@ -92,7 +92,7 @@ jobs:
           getModules "files/p3/modules"
           getConfigs "files/p3/configs"
           getPatches "files/p3/patches"
-          getCustome "files/p3/custom"
+          getCustom "files/p3/custom"
           getOffline "files/p3/configs"
           getLKMs "files/p3/lkms"
           getTheme "files/p1/boot/grub"
