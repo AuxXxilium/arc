@@ -8,7 +8,6 @@ tasks:
       - git pull
       - ./img-gen.sh
 
-tasks:
   build-img2:
     cmds:
       - git pull
