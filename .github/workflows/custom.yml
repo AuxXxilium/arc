@@ -23,7 +23,6 @@ jobs:
         run: |
           git config --global user.email "info@auxxxilium.tech"
           git config --global user.name "AuxXxilium"
-          sudo timedatectl set-timezone "Europe/Berlin"
 
       - name: Check Custom
         shell: python
@@ -110,10 +109,12 @@ jobs:
           mkdir -p "/tmp/p3"
           sudo mount ${LOOPX}p1 "/tmp/p1"
           sudo mount ${LOOPX}p3 "/tmp/p3"
-
+          
+          mkdir -p "/tmp/files/p1"
+          mkdir -p "/tmp/files/p3"
           echo "Set Custom Config"
-          PRESET_CONFIG_FILE="/tmp/p1/user-config.yml"
-          sudo touch "${PRESET_CONFIG_FILE}"
+          PRESET_CONFIG_FILE="/tmp/files/p1/user-config.yml"
+          touch "${PRESET_CONFIG_FILE}"
           MODEL="${{ env.MODEL }}"
           writeConfigKey "model" "${MODEL}" "${PRESET_CONFIG_FILE}"
           PRODUCTVER="${{ env.PRODUCTVER }}"
@@ -135,17 +136,17 @@ jobs:
           fi
           echo "Config File"
           echo "$(cat "${PRESET_CONFIG_FILE}")"
-          sudo echo "arc-${MODEL}-${PRODUCTVER:0:3}-${TAG}" >"/tmp/p3/automated"
+          echo "arc-${MODEL}-${PRODUCTVER:0:3}-${TAG}" >"/tmp/files/p3/automated"
           echo "Download DSM Files"
           DSM_FILE="${PAT_HASH}.tar"
           DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER:0:3}/${PAT_HASH}.tar"
-          sudo mkdir -p "/tmp/p3/users"
-          sudo curl -skL "${DSM_URL}" -o "/tmp/p3/users/${DSM_FILE}"
-          [ -f "/tmp/p3/users/${DSM_FILE}" ] && echo "dsm: download successful" || exit 1
-          echo "Get Offline"
-          sudo getOffline "/tmp/p3/system/include"
+          mkdir -p "/tmp/files/p3/users"
+          curl -skL "${DSM_URL}" -o "/tmp/files/p3/users/${DSM_FILE}"
+          [ -f "/tmp/files/p3/users/${DSM_FILE}" ] && echo "dsm: download successful" || exit 1
+          sudo cp -rf "/tmp/files/p1" "/tmp"
+          sudo cp -rf "/tmp/files/p3" "/tmp"
           echo "Syncing files"
-          sync
+          sudo sync
 
           echo "Unmount image file"
           sudo umount "/tmp/p1"
@@ -268,7 +269,6 @@ jobs:
         run: |
           git config --global user.email "info@auxxxilium.tech"
           git config --global user.name "AuxXxilium"
-          sudo timedatectl set-timezone "Europe/Berlin"
 
       - name: Check Issues
         run: |
