@@ -23,7 +23,7 @@ jobs:
         run: |
           git config --global user.email "info@auxxxilium.tech"
           git config --global user.name "AuxXxilium"
-          sudo timedatectl set-timezone "Europe/Berlin"
+          timedatectl set-timezone "Europe/Berlin"
 
       - name: Check Custom
         shell: python
@@ -103,17 +103,19 @@ jobs:
           fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
-          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
+          losetup -P "${LOOPX}" "${IMAGE_FILE}"
 
           echo "Mounting image file"
           mkdir -p "/tmp/p1"
           mkdir -p "/tmp/p3"
-          sudo mount ${LOOPX}p1 "/tmp/p1"
-          sudo mount ${LOOPX}p3 "/tmp/p3"
-
+          mount ${LOOPX}p1 "/tmp/p1"
+          mount ${LOOPX}p3 "/tmp/p3"
+          
+          mkdir -p "/tmp/files/p1"
+          mkdir -p "/tmp/files/p3"
           echo "Set Custom Config"
-          PRESET_CONFIG_FILE="/tmp/p1/user-config.yml"
-          sudo touch "${PRESET_CONFIG_FILE}"
+          PRESET_CONFIG_FILE="/tmp/files/p1/user-config.yml"
+          touch "${PRESET_CONFIG_FILE}"
           MODEL="${{ env.MODEL }}"
           writeConfigKey "model" "${MODEL}" "${PRESET_CONFIG_FILE}"
           PRODUCTVER="${{ env.PRODUCTVER }}"
@@ -135,25 +137,27 @@ jobs:
           fi
           echo "Config File"
           echo "$(cat "${PRESET_CONFIG_FILE}")"
-          sudo echo "arc-${MODEL}-${PRODUCTVER:0:3}-${TAG}" >"/tmp/p3/automated"
+          echo "arc-${MODEL}-${PRODUCTVER:0:3}-${TAG}" >"/tmp/files/p3/automated"
           echo "Download DSM Files"
           DSM_FILE="${PAT_HASH}.tar"
           DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER:0:3}/${PAT_HASH}.tar"
-          sudo mkdir -p "/tmp/p3/users"
-          sudo curl -skL "${DSM_URL}" -o "/tmp/p3/users/${DSM_FILE}"
-          [ -f "/tmp/p3/users/${DSM_FILE}" ] && echo "dsm: download successful" || exit 1
+          mkdir -p "/tmp/files/p3/users"
+          curl -skL "${DSM_URL}" -o "/tmp/files/p3/users/${DSM_FILE}"
+          [ -f "/tmp/files/p3/users/${DSM_FILE}" ] && echo "dsm: download successful" || exit 1
           echo "Get Offline"
-          sudo getOffline "/tmp/p3/system/include"
+          getOffline "/tmp/files/p3/system/include"
+          cp -rf "/tmp/files/p1" "/tmp/p1"
+          cp -rf "/tmp/files/p3" "/tmp/p3"
           echo "Syncing files"
           sync
 
           echo "Unmount image file"
-          sudo umount "/tmp/p1"
-          sudo umount "/tmp/p3"
+          umount "/tmp/p1"
+          umount "/tmp/p3"
           rmdir "/tmp/p1"
           rmdir "/tmp/p3"
 
-          sudo losetup --detach ${LOOPX}
+          losetup --detach ${LOOPX}
 
           cp -f "${IMAGE_FILE}" "arc.img"
 
@@ -268,7 +272,7 @@ jobs:
         run: |
           git config --global user.email "info@auxxxilium.tech"
           git config --global user.name "AuxXxilium"
-          sudo timedatectl set-timezone "Europe/Berlin"
+          timedatectl set-timezone "Europe/Berlin"
 
       - name: Check Issues
         run: |
