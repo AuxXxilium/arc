@@ -58,13 +58,14 @@ jobs:
           getLKMs "files/p3/lkms"
           getTheme "files/p1/boot/grub"
           getBuildrootx "brx"
+          getBuildroots "brs"
 
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
 
        # Build incremental
-      - name: Build Image
+      - name: Build Next Image
         run: |
           . scripts/func.sh
 
@@ -119,11 +120,79 @@ jobs:
       - name: Pack
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
-            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.img.zip" arc.img
-            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vmdk-dyn.zip" arc-dyn.vmdk
-            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            zip -9 "arc-${{ env.VERSION }}-${{ env.ARCBRANCH }}.vhdx.zip" arc.vhdx
-            (cd files && zip -r ../update-${{ env.VERSION }}-${{ env.ARCBRANCH }}.zip .)
+            zip -9 "arc-${{ env.VERSION }}-next.img.zip" arc.img
+            zip -9 "arc-${{ env.VERSION }}-next.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}-next.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}-next.vhdx.zip" arc.vhdx
+            (cd files && zip -r ../update-${{ env.VERSION }}-next.zip .)
+          fi
+
+      # Cleanup
+      - name: Cleanup
+        run: |
+          rm -rf "arc.img" "arc.ova" "arc.vmdk" "arc-dyn.vmdk" "arc.vhdx" "arc-flat.vmdk"
+
+       # Build incremental
+      - name: Build Stable Image
+        run: |
+          . scripts/func.sh
+
+          ARCBRANCH="dev"
+          echo "${ARCBRANCH}" >files/p1/ARC-BRANCH
+          echo "ARCBRANCH=${ARCBRANCH}" >> $GITHUB_ENV
+
+          echo "Create Arc Image"
+          IMAGE_FILE="arc.img"
+          gzip -dc "files/p3/image/grub.img.gz" >"${IMAGE_FILE}"
+          fdisk -l "${IMAGE_FILE}"
+          
+          LOOPX=$(sudo losetup -f)
+          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
+
+          echo "Mounting Image File"
+          mkdir -p "/tmp/p1"
+          mkdir -p "/tmp/p3"
+          sudo mount ${LOOPX}p1 "/tmp/p1"
+          sudo mount ${LOOPX}p3 "/tmp/p3"
+
+          [ ! -f "brs/bzImage-arc" ] || [ ! -f "brs/initrd-arc" ] && return 1
+          
+          echo "Repack initrd"
+          cp -f "brs/bzImage-arc" "files/p3/bzImage-arc"
+          cp -f "brs/initrd-arc" "files/p3/initrd-arc"
+          # repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+
+          echo "Copying files"
+          sudo cp -Rf "files/p1/"* "/tmp/p1"
+          sudo cp -Rf "files/p3/"* "/tmp/p3"
+          sync
+
+          echo "Unmount image file"
+          sudo umount "/tmp/p1"
+          sudo umount "/tmp/p3"
+          rmdir "/tmp/p1"
+          rmdir "/tmp/p3"
+
+          sudo losetup --detach ${LOOPX}
+
+          echo "Image Converter"
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
+
+          echo "Create Arc ova"
+          convertova "${IMAGE_FILE}" "arc.ova"
+
+      # Zip image and generate checksum
+      - name: Pack Stable Image
+        run: |
+          if [ -n "${{ env.VERSION }}" ]; then
+            zip -9 "arc-${{ env.VERSION }}-stable.img.zip" arc.img
+            zip -9 "arc-${{ env.VERSION }}-stable.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}-stable.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}-stable.vhdx.zip" arc.vhdx
+            zip -9 "arc-${{ env.VERSION }}-stable.ova.zip" arc.ova
+            (cd files && zip -r ../update-${{ env.VERSION }}-stable.zip .)
           fi
 
       # Publish a release if is a tag
