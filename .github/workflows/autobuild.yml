@@ -68,15 +68,13 @@ jobs:
         run: |
           . scripts/func.sh
 
-          if [ -n "${VERSION}" ]; then
-            # Modify Source File
-            echo "${VERSION}" >VERSION
-            echo "${VERSION}" >files/p1/ARC-BASE-VERSION
-            echo "${VERSION}" >files/p1/ARC-VERSION
-            ARCBRANCH="dev"
-            echo "${ARCBRANCH}" >files/p1/ARC-BRANCH
-            echo "ARCBRANCH=${ARCBRANCH}" >> $GITHUB_ENV
-          fi
+          # Modify Source File
+          echo "${VERSION}" >VERSION
+          echo "${VERSION}" >files/p1/ARC-BASE-VERSION
+          echo "${VERSION}" >files/p1/ARC-VERSION
+          ARCBRANCH="dev"
+          echo "${ARCBRANCH}" >files/p1/ARC-BRANCH
+          echo "ARCBRANCH=${ARCBRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
