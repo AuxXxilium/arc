@@ -5,17 +5,14 @@
 # See /LICENSE for more information.
 #
 
-name: Build Arc Base Dev
+name: Build Arc Image Dev
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - dev
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout
         uses: actions/checkout@main
