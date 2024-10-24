@@ -53,7 +53,7 @@ jobs:
           getConfigs "files/p3/configs"
           getPatches "files/p3/patches"
           getCustom "files/p3/custom"
-          getOffline "files/p3/system/include"
+          getOffline "files/initrd/opt/arc/include"
           getLKMs "files/p3/lkms"
           getTheme "files/p1/boot/grub"
           getBuildrootx "brx"
