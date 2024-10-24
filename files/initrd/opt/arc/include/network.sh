@@ -6,14 +6,16 @@ function getnet() {
   NICPORTS="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
   if [ "${ARCPATCH}" == "true" ]; then
     ETHN="$(echo ${ETHX} | wc -w)"
-    MACS=($(generateMacAddress "${MODEL}" "${ETHN}" "true" | tr '[:lower:]' '[:upper:]'))
+    MACS=($(generateMacAddress "${MODEL}" "${ETHN}" "true" | tr '[:upper:]' '[:lower:]'))
     for I in $(seq 1 ${ETHN}); do
+      eval MAC${I}="${MACS[$((${I} - 1))]}"
       writeConfigKey "eth$((${I} - 1))" "${MACS[$((${I} - 1))]}" "${USER_CONFIG_FILE}"
     done
   elif [ "${ARCPATCH}" == "false" ]; then
     ETHN="$(echo ${ETHX} | wc -w)"
-    MACS=($(generateMacAddress "${MODEL}" "${ETHN}" "false" | tr '[:lower:]' '[:upper:]'))
+    MACS=($(generateMacAddress "${MODEL}" "${ETHN}" "false" | tr '[:upper:]' '[:lower:]'))
     for I in $(seq 1 ${ETHN}); do
+      eval MAC${I}="${MACS[$((${I} - 1))]}"
       writeConfigKey "eth$((${I} - 1))" "${MACS[$((${I} - 1))]}" "${USER_CONFIG_FILE}"
     done
   elif [ "${ARCPATCH}" == "user" ]; then
@@ -27,8 +29,8 @@ function getnet() {
         [ $? -ne 0 ] && break
         MAC=$(cat "${TMP_PATH}/resp")
         [ -z "${MAC}" ] && MAC="$(readConfigKey "${ETH}" "${USER_CONFIG_FILE}")"
-        [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
-        MAC="$(echo "${MAC}" | sed "s/:\|-\| //g" | tr '[:lower:]' '[:upper:]')"
+        [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g')"
+        MAC="$(echo "${MAC}" | tr '[:upper:]' '[:lower:]')"
         if [ ${#MAC} -eq 12 ]; then
           writeConfigKey "${ETH}" "${MAC}" "${USER_CONFIG_FILE}"
           break

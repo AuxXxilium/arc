@@ -7,10 +7,10 @@
 # eg: N i915.ko
 
 # kvm
-F irqbypass.ko
-F kvm-intel.ko
-F kvm-amd.ko
-F kvm.ko
+N irqbypass.ko
+N kvm-intel.ko
+N kvm-amd.ko
+N kvm.ko
 
 # acpi
 N acpi_call.ko
@@ -29,10 +29,18 @@ N nct6683.ko
 N nct6775.ko
 
 # rndis
-F mii.ko
-F cdc_ether.ko
-F rndis_host.ko
-F r8152.ko
+N mii.ko
+N cdc_ether.ko
+N rndis_host.ko
+N r8152.ko
+
+# iwlwifi
+N libarc4.ko
+N cfg80211.ko
+N mac80211.ko
+N iwlwifi.ko
+N iwlmvm.ko
+N iwldvm.ko
 
 ## i915
 #N dmabuf.ko

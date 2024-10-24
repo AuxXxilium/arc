@@ -387,6 +387,7 @@ function rebootTo() {
   local MODES="config recovery junior automated update bios memtest"
   [ -z "${1}" ] && exit 1
   if ! echo "${MODES}" | grep -qw "${1}"; then exit 1; fi
+  [ "${1}" == "automated" ] && echo "arc-${MODEL}-${PRODUCTVER}-${ARC_VERSION}" >"${PART3_PATH}/automated"
   [ ! -f "${USER_GRUBENVFILE}" ] && grub-editenv ${USER_GRUBENVFILE} create
   # echo -e "Rebooting to ${1} mode..."
   grub-editenv ${USER_GRUBENVFILE} set next_entry="${1}"
@@ -398,10 +399,8 @@ function rebootTo() {
 # 1 - DSM root path
 function copyDSMFiles() {
   if [ -f "${1}/grub_cksum.syno" ] && [ -f "${1}/GRUB_VER" ] && [ -f "${1}/zImage" ] && [ -f "${1}/rd.gz" ]; then
-    # Remove old model files
-    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/grub_cksum.syno" "${PART2_PATH}/GRUB_VER"
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}"
-    # Remove old build files
+    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/grub_cksum.syno" "${PART2_PATH}/GRUB_VER" >/dev/null
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" >/dev/null
     rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
     # Copy new model files
     cp -f "${1}/grub_cksum.syno" "${PART1_PATH}"
@@ -483,36 +482,6 @@ function livepatch() {
     fi
   fi
   if [ "${PVALID}" == "false" ]; then
-    OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-    if [ "${OFFLINE}" == "false" ]; then
-      # Load update functions
-      . ${ARC_PATH}/include/update.sh
-      # Update Patches
-      echo -e "Updating Patches..."
-      updatePatches
-      # Patch zImage
-      echo -n "Patching zImage"
-      if ${ARC_PATH}/zimage-patch.sh; then
-        echo -e " - successful!"
-        PVALID="true"
-      else
-        echo -e " - failed!"
-        PVALID="false"
-      fi
-      if [ "${PVALID}" == "true" ]; then
-        # Patch Ramdisk
-        echo -n "Patching Ramdisk"
-        if ${ARC_PATH}/ramdisk-patch.sh; then
-          echo -e " - successful!"
-          PVALID="true"
-        else
-          echo -e " - failed!"
-          PVALID="false"
-        fi
-      fi
-    fi
-  fi
-  if [ "${PVALID}" == "false" ]; then
     echo
     echo -e "Patching DSM Files failed! Please stay patient for Update."
     sleep 5
@@ -531,27 +500,17 @@ function livepatch() {
 function ntpCheck() {
   LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
   KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-  if [ "${OFFLINE}" == "false" ]; then
-    # Timezone
-    REGION="$(readConfigKey "time.region" "${USER_CONFIG_FILE}")"
-    TIMEZONE="$(readConfigKey "time.timezone" "${USER_CONFIG_FILE}")"
-    if [ -z "${REGION}" ] || [ -z "${TIMEZONE}" ]; then
-      if [ "${ARCNIC}" == "auto" ]; then
-        REGION="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
-        TIMEZONE="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
-        [ -z "${KEYMAP}" ] && KEYMAP="$(curl -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
-      else
-        REGION="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
-        TIMEZONE="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
-        [ -z "${KEYMAP}" ] && KEYMAP="$(curl --interface ${ARCNIC} -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
-      fi
-      writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
-      writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
-    fi
-    if [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ]; then
-      ln -sf "/usr/share/zoneinfo/right/${REGION}/${TIMEZONE}" /etc/localtime
-      #hwclock --systohc
-    fi
+  REGION="$(readConfigKey "time.region" "${USER_CONFIG_FILE}")"
+  TIMEZONE="$(readConfigKey "time.timezone" "${USER_CONFIG_FILE}")"
+  if [ -z "${REGION}" ] || [ -z "${TIMEZONE}" ]; then
+    REGION="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
+    TIMEZONE="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
+    [ -z "${KEYMAP}" ] && KEYMAP="$(curl -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+    writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
+    writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
+  fi
+  if [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ]; then
+    ln -sf "/usr/share/zoneinfo/${REGION}/${TIMEZONE}" /etc/localtime
   fi
   if [ -z "${LAYOUT}" ]; then
     [ -n "${KEYMAP}" ] && KEYMAP="$(echo ${KEYMAP} | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]' | tr -d '[:punct:]' | tr -d '[:digit:]')"
@@ -559,50 +518,20 @@ function ntpCheck() {
     [ -z "${KEYMAP}" ] && KEYMAP="us"
     loadkeys ${KEYMAP}
   fi
-}
-
-###############################################################################
-# Offline Check
-function offlineCheck() {
-  CNT=0
-  local ARCNIC=""
-  local OFFLINE="${1}"
-  if [ "${OFFLINE}" == "true" ]; then
-    ARCNIC="offline"
-    OFFLINE="true"
-  elif [ "${OFFLINE}" == "false" ]; then
-    while true; do
-      NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
-      CNT=$((${CNT} + 1))
-      if [ -n "${NEWTAG}" ]; then
-        ARCNIC="auto"
-        break
-      elif [ ${CNT} -ge 3 ]; then
-        ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
-        for ETH in ${ETHX}; do
-          # Update Check
-          NEWTAG="$(curl --interface ${ETH} -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
-          if [ -n "${NEWTAG}" ]; then
-            ARCNIC="${ETH}"
-            break 2
-          fi
-        done
-        break
-      fi
-    done
-    if [ -n "${ARCNIC}" ]; then
-      OFFLINE="false"
-    elif [ -z "${ARCNIC}" ]; then
-      dialog --backtitle "$(backtitle)" --title "Online Check" \
-        --infobox "Could not connect to Github.\nSwitch to Offline Mode!" 0 0
-      sleep 5
-      ARCNIC="offline"
-      OFFLINE="true"
-    fi
+  if [ "${KEYMAP}" == "ua" ] || [ "${REGION}" == "Kyiv" ]; then
+    poweroff
   fi
-  [ "${OFFLINE}" == "true" ] && cp -f "${PART3_PATH}/offline/offline.json" "${ARC_PATH}/include/offline.json"
-  writeConfigKey "arc.nic" "${ARCNIC}" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.offline" "${OFFLINE}" "${USER_CONFIG_FILE}"
+  while true; do
+    NEWTAG="$(curl -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+    CNT=$((${CNT} + 1))
+    if [ -n "${NEWTAG}" ]; then
+      writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
+      break
+    elif [ ${CNT} -ge 3 ]; then
+      writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
+      break
+    fi
+  done
 }
 
 ###############################################################################
@@ -634,46 +563,9 @@ function systemCheck () {
   fi
   # Check for CPU Frequency Scaling
   CPUFREQUENCIES=$(ls -ltr /sys/devices/system/cpu/cpufreq/* 2>/dev/null | wc -l)
-  if [ ${CPUFREQUENCIES} -gt 0 ] && [ "${ACPISYS}" == "true" ]; then
+  if [ ${CPUFREQUENCIES} -gt 1 ] && [ "${ACPISYS}" == "true" ]; then
     CPUFREQ="true"
   else
     CPUFREQ="false"
-  fi
-  # Check for ARCKEY
-  ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
-  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  if [ -n "${MODEL}" ]; then
-    ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
-  fi
-  if [ -z "${ARCCONF}" ] && [ -n "${ARCKEY}" ]; then
-    if openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARCKEY}" 2>/dev/null; then
-      cp -f "${S_FILE_ARC}" "${S_FILE}"
-      writeConfigKey "arc.key" "${ARCKEY}" "${USER_CONFIG_FILE}"
-    else
-      [ -f "${S_FILE}.bak" ] && cp -f "${S_FILE}" "${S_FILE}.bak"
-      writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-    fi
-  fi
-}
-
-###############################################################################
-# Check Dynamic Mode
-function dynCheck () {
-  ARCDYN="$(readConfigKey "arc.dynamic" "${USER_CONFIG_FILE}")"
-  OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  if [ "${ARCDYN}" == "true" ] && [ "${OFFLINE}" == "false" ] && [ ! -f "${TMP_PATH}/dynamic" ]; then
-    curl -skL "https://github.com/AuxXxilium/arc/archive/refs/heads/dev.zip" -o "${TMP_PATH}/dev.zip"
-    unzip -qq -o "${TMP_PATH}/dev.zip" -d "${TMP_PATH}" 2>/dev/null
-    cp -rf "${TMP_PATH}/arc-dev/files/initrd/opt/arc/"* "${ARC_PATH}"
-    rm -rf "${TMP_PATH}/arc-dev"
-    rm -f "${TMP_PATH}/dev.zip"
-    VERSION="Dynamic-Dev"
-    sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i ${ARC_PATH}/include/consts.sh
-    echo "true" >"${TMP_PATH}/dynamic"
-    clear
-    exec init.sh
-  elif [ "${ARCDYN}" == "false" ] || [ "${OFFLINE}" == "true" ]; then
-    [ -f "${TMP_PATH}/dynamic" ] && rm -f "${TMP_PATH}/dynamic" >/dev/null 2>&1 || true
   fi
 }

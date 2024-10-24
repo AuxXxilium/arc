@@ -180,7 +180,7 @@ done
 # User Addons
 for ADDON in ${!ADDONS[@]}; do
   PARAMS=${ADDONS[${ADDON}]}
-  installAddon "${ADDON}" "${PLATFORM}" || exit 1
+  installAddon "${ADDON}" "${PLATFORM}" || echo "Addon ${ADDON} not found"
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 done
 

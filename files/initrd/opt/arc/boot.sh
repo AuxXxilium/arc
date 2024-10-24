@@ -12,7 +12,7 @@ rm -rf /sys/fs/pstore/* >/dev/null 2>&1 || true
 
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 [ "${BUILDDONE}" == "false" ] && die "Loader build not completed!"
-ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
+ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
 
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
@@ -25,7 +25,8 @@ clear
 COLUMNS=${COLUMNS:-50}
 BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
 TITLE="Version:"
-TITLE+=" ${ARC_TITLE} | ${ARCBRANCH}"
+TITLE+=" ${ARC_VERSION}"
+[ -n "${ARC_BRANCH}" ] && TITLE+=" | Branch: ${ARC_BRANCH}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
@@ -39,7 +40,6 @@ ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
 ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
 RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
 RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
-OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 if [ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" ] || [ "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]; then
   echo -e "\033[1;31mDSM zImage/Ramdisk changed!\033[0m"
   livepatch
@@ -56,10 +56,7 @@ SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
 RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
-VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | sed 's/\[.*\] DMI: //i')"
-KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-REGION="$(readConfigKey "time.region" "${USER_CONFIG_FILE}")"
-TIMEZONE="$(readConfigKey "time.timezone" "${USER_CONFIG_FILE}")"
+VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')"
 
 echo -e "\033[1;37mDSM:\033[0m"
 echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
@@ -71,10 +68,6 @@ echo -e "\033[1;37mSystem:\033[0m"
 echo -e "Vendor: \033[1;37m${VENDOR}\033[0m"
 echo -e "CPU: \033[1;37m${CPU}\033[0m"
 echo -e "Memory: \033[1;37m${RAMTOTAL}GB\033[0m"
-echo
-echo -e "\033[1;37mLocation:\033[0m"
-echo -e "Keymap: \033[1;37m${KEYMAP}\033[0m"
-echo -e "Timezone: \033[1;37m${REGION}/${TIMEZONE}\033[0m"
 echo
 
 if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
@@ -159,7 +152,7 @@ CMDLINE['log_buf_len']="32M"
 CMDLINE['panic']="${KERNELPANIC:-0}"
 CMDLINE['pcie_aspm']="off"
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
-[ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="disable"
+#[ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="disable"
 
 #if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
 #   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "sdhci"; then
@@ -190,7 +183,7 @@ ETHN="$(echo ${ETHX} | wc -w)"
 NIC=0
 for ETH in ${ETHX}; do
   MAC="$(readConfigKey "${ETH}" "${USER_CONFIG_FILE}")"
-  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
+  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | tr '[:lower:]' '[:upper:]')"
   NIC=$((${NIC} + 1))
   [ ${NIC} -le ${ETHM} ] && CMDLINE["mac${NIC}"]="${MAC}"
   [ ${NIC} -ge ${ETHM} ] && break
@@ -233,17 +226,18 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
   IPCON=""
   if [ "${ARCPATCH}" == "true" ]; then
-    echo -e "\033[1;34mUsing ${NIC} NIC for Arc Patch.\033[0m"
-    echo
+    echo -e "\033[1;37mDetected ${ETHN} NIC\033[0m | \033[1;34mUsing ${NIC} NIC for Arc Patch:\033[0m"
+  else
+    echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
   fi
-  echo -e "\033[1;34mDetected ${ETHN} NIC.\033[0m \033[1;37mWaiting for Connection:\033[0m"
+  echo
   sleep 3
   for ETH in ${ETHX}; do
     COUNT=0
     DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     while true; do
       if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
-        echo -e "\r\033[1;37m${DRIVER}:\033[0m NOT CONNECTED"
+        echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
         break
       fi
       COUNT=$((${COUNT} + 1))
@@ -251,19 +245,19 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          echo -e "\r\033[1;37m${DRIVER} (${SPEED}):\033[0m LINK LOCAL (No DHCP server found.)"
+          echo -e "\r${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
         else
-          echo -e "\r\033[1;37m${DRIVER} (${SPEED}):\033[0m Access \033[1;34mhttp://${IP}:5000\033[0m to connect to DSM via web."
+          echo -e "\r${DRIVER} (${SPEED}): \033[1;37m${IP}\033[0m"
           [ -z "${IPCON}" ] && IPCON="${IP}"
         fi
         break
       fi
       if ! ip link show ${ETH} 2>/dev/null | grep -q 'UP'; then
-        echo -e "\r\033[1;37m${DRIVER}:\033[0m DOWN"
+        echo -e "\r${DRIVER}: \033[1;37mDOWN\033[0m"
         break
       fi
       if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
-        echo -e "\r\033[1;37m${DRIVER}:\033[0m TIMEOUT"
+        echo -e "\r${DRIVER}: \033[1;37mTIMEOUT\033[0m"
         break
       fi
       sleep 1
@@ -288,8 +282,6 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
   rm -f WB WC
   echo -en "\r$(printf "%$((${#MSG} * 2))s" " ")\n"
 
-  echo -e "\033[1;37mLoading DSM kernel...\033[0m"
-
   DSMLOGO="$(readConfigKey "dsmlogo" "${USER_CONFIG_FILE}")"
   if [ "${DSMLOGO}" == "true" ] && [ -c "/dev/fb0" ]; then
     [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
@@ -302,6 +294,15 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
     [ -f "${TMP_PATH}/qrcode_boot.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_boot.png" >/dev/null 2>/dev/null || true
   fi
 
+  for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
+    if [ -n "${IPCON}" ]; then
+      [ -w "/dev/${T}" ] && echo -e "Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\n" >"/dev/${T}" 2>/dev/null || true
+    else
+      [ -w "/dev/${T}" ] && echo -e "Try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes.\nNo IP found. \033[0m\n" >"/dev/${T}" 2>/dev/null || true
+    fi
+  done
+
+  echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
   # Executes DSM kernel via KEXEC
   KEXECARGS="-a"
   if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 4 ] && [ ${EFI} -eq 1 ]; then
@@ -310,16 +311,7 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
   fi
   kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
 
-  for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
-    if [ -n "${IPCON}" ]; then
-      [ -w "/dev/${T}" ] && echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\nUse \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
-    else
-      [ -w "/dev/${T}" ] && echo -e "\n\033[1;37mThis interface will not be operational. Wait a few minutes.\nNo IP found. \033[0m\nTry \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n" >"/dev/${T}" 2>/dev/null || true
-    fi
-  done
-
   echo -e "\033[1;37mBooting DSM...\033[0m"
   # Boot to DSM
-  [ "${KERNELLOAD}" == "kexec" ] && kexec -e || poweroff
+  [ "${KERNELLOAD}" == "kexec" ] && exec kexec -e || exec poweroff
 fi
-exit 0
