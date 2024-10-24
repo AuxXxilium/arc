@@ -125,7 +125,7 @@ jobs:
       # Cleanup
       - name: Cleanup
         run: |
-          rm -rf "arc.img" "arc.ova" "arc.vmdk" "arc-dyn.vmdk" "arc.vhdx" "arc-flat.vmdk"
+          rm -rf "arc.img" "arc.vmdk" "arc-dyn.vmdk" "arc.vhdx" "arc-flat.vmdk"
 
        # Build incremental
       - name: Build Stable Image
@@ -175,9 +175,6 @@ jobs:
           qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
           qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
 
-          echo "Create Arc ova"
-          convertova "${IMAGE_FILE}" "arc.ova"
-
       # Zip image and generate checksum
       - name: Pack Stable Image
         run: |
@@ -186,7 +183,6 @@ jobs:
             zip -9 "arc-${{ env.VERSION }}-stable.vmdk-dyn.zip" arc-dyn.vmdk
             zip -9 "arc-${{ env.VERSION }}-stable.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
             zip -9 "arc-${{ env.VERSION }}-stable.vhdx.zip" arc.vhdx
-            zip -9 "arc-${{ env.VERSION }}-stable.ova.zip" arc.ova
             (cd files && zip -r ../update-${{ env.VERSION }}-stable.zip .)
           fi
 
