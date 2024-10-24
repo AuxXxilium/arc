@@ -1,11 +1,11 @@
 #
-# Copyright (C) 2023 AuxXxilium <https://github.com/AuxXxilium>
+# Copyright (C) 2024 AuxXxilium <https://github.com/AuxXxilium>
 #
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
 #
 
-name: Build Arc Dev
+name: Build Arc Base Dev
 
 on:
   workflow_dispatch:
@@ -43,49 +43,41 @@ jobs:
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
       # Get extractor, LKM, Addons, Modules, Theme and Configs
-      - name: Get extractor, LKM, Addons, Modules, Theme and Configs
+      - name: Get Buildroot
         run: |
           . scripts/func.sh
 
-          getLKMs "files/p3/lkms"
-          echo "LKMTAG=${TAG}" >> $GITHUB_ENV
+          echo "Get Dependencies"
           getAddons "files/p3/addons"
-          echo "ADDONSTAG=${TAG}" >> $GITHUB_ENV
           getModules "files/p3/modules"
-          echo "MODULESTAG=${TAG}" >> $GITHUB_ENV
           getConfigs "files/p3/configs"
-          echo "CONFIGSTAG=${TAG}" >> $GITHUB_ENV
           getPatches "files/p3/patches"
-          echo "PATCHESTAG=${TAG}" >> $GITHUB_ENV
           getCustom "files/p3/custom"
-          echo "CUSTOMTAG=${TAG}" >> $GITHUB_ENV
+          getOffline "files/p3/system/include"
+          getLKMs "files/p3/lkms"
           getTheme "files/p1/boot/grub"
-          echo "THEMETAG=${TAG}" >> $GITHUB_ENV
-          getBuildrootx "latest" "brx"
-          echo "BRX_VERSION=${TAG}" >> $GITHUB_ENV
-          getBuildroots "latest" "brs"
-          echo "BRS_VERSION=${TAG}" >> $GITHUB_ENV
-          getOffline "files/p3/offline"
+          getBuildrootx "brx"
+          getBuildroots "brs"
+
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
 
        # Build incremental
-      - name: Build Image S
+      - name: Build Next Image
         run: |
           . scripts/func.sh
 
-          if [ -n "${VERSION}" ]; then
-            # Modify Source File
-            echo "${VERSION}" >VERSION
-            echo "${VERSION}" >files/p1/ARC-VERSION
-            echo "stable" >files/p1/ARC-BRANCH
-            sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
-          fi
+          # Modify Source File
+          echo "${VERSION}" >VERSION
+          echo "${VERSION}" >files/p1/ARC-VERSION
+          ARCBRANCH="dev"
+          echo "${ARCBRANCH}" >files/p1/ARC-BRANCH
+          echo "ARCBRANCH=${ARCBRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
-          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
+          gzip -dc "files/p3/image/grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
@@ -97,11 +89,12 @@ jobs:
           sudo mount ${LOOPX}p1 "/tmp/p1"
           sudo mount ${LOOPX}p3 "/tmp/p3"
 
-          [ ! -f "brs/bzImage-arc" ] || [ ! -f "brs/initrd-arc" ] && return 1
+          [ ! -f "brx/bzImage-arc" ] || [ ! -f "brx/initrd-arc" ] && return 1
           
           echo "Repack initrd"
-          cp -f "brs/bzImage-arc" "files/p3/bzImage-arc"
-          repackInitrd "brs/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+          cp -f "brx/bzImage-arc" "files/p3/bzImage-arc"
+          cp -f "brx/initrd-arc" "files/p3/initrd-arc"
+          repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
           sudo cp -Rf "files/p1/"* "/tmp/p1"
@@ -119,37 +112,36 @@ jobs:
           echo "Image Converter"
           qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
           qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
 
-          echo "Create Arc ova"
-          convertova "${IMAGE_FILE}" "arc.ova"
+      # Zip image and generate checksum
+      - name: Pack
+        run: |
+          if [ -n "${{ env.VERSION }}" ]; then
+            zip -9 "arc-${{ env.VERSION }}-next.img.zip" arc.img
+            zip -9 "arc-${{ env.VERSION }}-next.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}-next.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}-next.vhdx.zip" arc.vhdx
+            (cd files && zip -r ../update-${{ env.VERSION }}-next.zip .)
+          fi
 
-          # Zip update and generate checksum
-          cp -f files/p1/ARC-VERSION files/p3/ARC-VERSION
-          cp -f files/p1/ARC-BRANCH files/p3/ARC-BRANCH
-          cp -f files/p1/boot/grub/grub.cfg files/p3/grub.cfg
-          cd files/p3
-          zip -9 update.zip -r .
-          sha256sum update.zip >checksum.sha256
-          mv update.zip ../../
-          mv checksum.sha256 ../../
-          cd -
+      # Cleanup
+      - name: Cleanup
+        run: |
+          rm -rf "arc.img" "arc.ova" "arc.vmdk" "arc-dyn.vmdk" "arc.vhdx" "arc-flat.vmdk"
 
-      # Build incremental
-      - name: Build Image X
+       # Build incremental
+      - name: Build Stable Image
         run: |
           . scripts/func.sh
 
-          if [ -n "${VERSION}" ]; then
-            # Modify Source File
-            echo "${VERSION}" >VERSION
-            echo "${VERSION}" >files/p1/ARC-VERSION
-            echo "next" >files/p1/ARC-BRANCH
-            sed 's/^ARC_VERSION=.*/ARC_VERSION="'${VERSION}'"/' -i files/initrd/opt/arc/include/consts.sh
-          fi
+          ARCBRANCH="dev"
+          echo "${ARCBRANCH}" >files/p1/ARC-BRANCH
+          echo "ARCBRANCH=${ARCBRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
-          IMAGE_FILE="arc-next.img"
-          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
+          IMAGE_FILE="arc.img"
+          gzip -dc "files/p3/image/grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
@@ -161,11 +153,12 @@ jobs:
           sudo mount ${LOOPX}p1 "/tmp/p1"
           sudo mount ${LOOPX}p3 "/tmp/p3"
 
-          [ ! -f "brx/bzImage-arc" ] || [ ! -f "brx/initrd-arc" ] && return 1
+          [ ! -f "brs/bzImage-arc" ] || [ ! -f "brs/initrd-arc" ] && return 1
           
           echo "Repack initrd"
-          cp -f "brx/bzImage-arc" "files/p3/bzImage-arc"
-          repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+          cp -f "brs/bzImage-arc" "files/p3/bzImage-arc"
+          cp -f "brs/initrd-arc" "files/p3/initrd-arc"
+          # repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
           sudo cp -Rf "files/p1/"* "/tmp/p1"
@@ -181,40 +174,24 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           echo "Image Converter"
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-next-dyn.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc-next.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc-next.vhdx
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
+          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
 
           echo "Create Arc ova"
-          convertova "${IMAGE_FILE}" "arc-next.ova"
-          # Zip update and generate checksum
-          cp -f files/p1/ARC-VERSION files/p3/ARC-VERSION
-          cp -f files/p1/ARC-BRANCH files/p3/ARC-BRANCH
-          cp -f files/p1/boot/grub/grub.cfg files/p3/grub.cfg
-          cd files/p3
-          zip -9 update-next.zip -r .
-          sha256sum update-next.zip >checksum-next.sha256
-          mv update-next.zip ../../
-          mv checksum-next.sha256 ../../
-          cd -
+          convertova "${IMAGE_FILE}" "arc.ova"
 
       # Zip image and generate checksum
-      - name: Pack
+      - name: Pack Stable Image
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
-            # XBase
-            zip -9 "arc-${{ env.VERSION }}-next.img.zip" arc-next.img
-            zip -9 "arc-${{ env.VERSION }}-next.vmdk-dyn.zip" arc-next-dyn.vmdk
-            zip -9 "arc-${{ env.VERSION }}-next.vmdk-flat.zip" arc-next.vmdk arc-next-flat.vmdk
-            zip -9 "arc-${{ env.VERSION }}-next.vhdx.zip" arc-next.vhdx
-            zip -9 "arc-${{ env.VERSION }}-next.ova.zip" arc-next.ova
-            # SBase
-            zip -9 "arc-${{ env.VERSION }}.img.zip" arc.img
-            zip -9 "arc-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
-            zip -9 "arc-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            zip -9 "arc-${{ env.VERSION }}.ova.zip" arc.ova
+            zip -9 "arc-${{ env.VERSION }}-stable.img.zip" arc.img
+            zip -9 "arc-${{ env.VERSION }}-stable.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.VERSION }}-stable.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.VERSION }}-stable.vhdx.zip" arc.vhdx
+            zip -9 "arc-${{ env.VERSION }}-stable.ova.zip" arc.ova
+            (cd files && zip -r ../update-${{ env.VERSION }}-stable.zip .)
           fi
-          echo "24.01.01" >check.update
 
       # Publish a release if is a tag
       - name: Release
@@ -229,25 +206,10 @@ jobs:
             ### Information:
             Notice: Development Build
             
-            - Version:
-              - arc: Stable Buildroot System (Less Hardware supported / faster Boot)
-              - arc-next: Latest Buildroot System (More Hardware supported (still in testing))
-            - Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
+            Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
 
-            ### Versions:
-            Addons: ${{ env.ADDONSTAG }}
-            Configs: ${{ env.CONFIGSTAG }}
-            Modules: ${{ env.MODULESTAG }}
-            Patches: ${{ env.PATCHESTAG }}
-            Custom: ${{ env.CUSTOMTAG }}
-            Theme: ${{ env.THEMETAG }}
-            LKM: ${{ env.LKMTAG }}
-            Buildroot: ${{ env.BRS_VERSION }} | Buildroot Next: ${{ env.BRX_VERSION }}
-            Release: ${{ env.BUILD_TIME }}
+            ### Release
+            ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
-            update.zip
-            update-next.zip
-            checksum.sha256
-            checksum-next.sha256
-            check.update
+            update-*.zip
