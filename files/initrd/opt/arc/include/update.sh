@@ -31,6 +31,7 @@ function updateLoader() {
         echo -e "Downloading ${TAG}-${ARC_BRANCH} Loader successful!\nUpdating ${ARC_BRANCH} Loader..."
         if unzip -oq "${TMP_PATH}/update.zip" -d "/mnt"; then
           echo "Successful!"
+          echo "${TAG}" > "${PART1_PATH}/VERSION"
           sleep 2
         else
           updateFailed
