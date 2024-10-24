@@ -74,7 +74,7 @@ jobs:
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
-          gzip -dc "files/p3/image/grub.img.gz" >"${IMAGE_FILE}"
+          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
@@ -112,7 +112,7 @@ jobs:
           qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
 
       # Zip image and generate checksum
-      - name: Pack
+      - name: Pack Next Image
         run: |
           if [ -n "${{ env.VERSION }}" ]; then
             zip -9 "arc-${{ env.VERSION }}-next.img.zip" arc.img
@@ -138,7 +138,7 @@ jobs:
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
-          gzip -dc "files/p3/image/grub.img.gz" >"${IMAGE_FILE}"
+          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
