@@ -205,7 +205,7 @@
             let formData = new FormData(form);
             var title = "custom";
             var body = {};
-            var _parameters = ["title", "format", "model", "version", "kernel", "addons"];
+            var _parameters = ["title", "branch", "format", "model", "version", "kernel", "addons"];
             for (var key in _parameters) {
                 var name = _parameters[key];
                 if ($("#" + name).is(":hidden")) { continue; }
@@ -285,6 +285,18 @@
             <div class="form-group-body">
                 <input class="form-control input-contrast input-sm" type="text" id="title" name="inputs[title]"
                     value="" />
+            </div>
+        </div>
+        <div class="form-group mt-1 mb-2" id="format_item">
+            <div class="form-group-header">
+                <label class="color-fg-default text-mono f5">Branch:</label>
+            </div>
+            <div class="form-group-body">
+                <select class="form-select form-control select-sm input-contrast" id="branch" name="inputs[branch]"
+                    value="">
+                    <option selected="selected" value="stable">stable</option>
+                    <option value="next">next</option>
+                </select>
             </div>
         </div>
         <div class="form-group mt-1 mb-2" id="format_item">
