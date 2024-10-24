@@ -1,5 +1,0 @@
-Check:
-
-- numa=off
-- pcie_aspm=off
-- intremap=off (old -> working?)
