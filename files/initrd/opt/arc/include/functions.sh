@@ -236,11 +236,11 @@ function _sort_netif() {
     ETHLIST="${ETHLIST}${BUS} ${MAC} ${ETH}\n"
   done
   local ETHLISTTMPB="$(echo -e "${ETHLIST}" | sort)"
-  local ETHLIST="$(echo -e "${ETHLISTTMPM}" | grep -v '^$')"
+  local ETHLIST="$(echo -e "${ETHLISTTMPB}" | grep -v '^$')"
   local ETHSEQ="$(echo -e "${ETHLIST}" | awk '{print $3}' | sed 's/eth//g')"
   local ETHNUM="$(echo -e "${ETHLIST}" | wc -l)"
 
-  # echo "${ETHSEQ}"
+  # echo "${ETHSEQ}" >"/tmp/ethseq"
   # sort
   if [ ! "${ETHSEQ}" = "$(seq 0 $((${ETHNUM:0} - 1)))" ]; then
     /etc/init.d/S41dhcpcd stop >/dev/null 2>&1
