@@ -649,7 +649,7 @@ function arcSummary() {
   if [ "${DT}" == "false" ] && [ "${REMAP}" == "user" ]; then
     if [ -z "${PORTMAP}" ] && [ -z "${DISKMAP}"] && [ -z "${PORTREMAP}" ] && [ -z "${AHCIPORTREMAP}" ]; then
       dialog --backtitle "$(backtitle)" --title "Arc Error" \
-        --msgbox "ERROR: You selected Portmap: User and didn't set any values. -> Can't build Loader!\nGo need to go Cmdline Options and add your Values." 6 80
+        --msgbox "ERROR: You selected Portmap: User and not set any values. -> Can't build Loader!\nGo need to go Cmdline Options and add your Values." 6 80
       return 1
     fi
   fi
