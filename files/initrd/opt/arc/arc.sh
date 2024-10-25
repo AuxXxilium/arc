@@ -60,7 +60,7 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
-  BACKTITLE="${ARC_TITLE}$([ -n "${NEWTAG}" ] && [ "${NEWTAG}" != "${ARC_VERSION}" ] && echo " > ${NEWTAG}") | "
+  BACKTITLE="${ARC_TITLE}$([ -n "${NEWTAG}" ] && [[ "$(echo ${ARC_VERSION} | tr -d '.')" -lt "$(echo ${NEWTAG} | tr -d '.')" ]] && echo " > ${NEWTAG}") | "
   BACKTITLE+="${MODEL:-(Model)} | "
   BACKTITLE+="${PRODUCTVER:-(Version)} | "
   BACKTITLE+="${IPCON:-(IP)} | "
