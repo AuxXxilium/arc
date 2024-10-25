@@ -1209,7 +1209,7 @@ function networkdiag() {
       fi
     done
     echo
-    GITHUBAPI=$(curl --interface ${ETH} -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)
+    GITHUBAPI=$(curl --interface ${ETH} -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 2>/dev/null)
     if [[ $? -ne 0 || -z "${GITHUBAPI}" ]]; then
       echo -e "Github API not reachable!"
     else

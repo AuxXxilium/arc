@@ -93,7 +93,7 @@ fi
 # Read/Write IP/Mac to config
 ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
 for ETH in ${ETHX}; do
-  MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
+  MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
   IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
   if [ -n "${IPR}" ]; then
     IFS='/' read -r -a IPRA <<<"${IPR}"

@@ -436,10 +436,10 @@ function arcPatch() {
   # Check for Custom Build
   if [ "${ARCMODE}" == "automated" ]; then
     if [ -n "${ARCCONF}" ]; then
-      SN=$(generateSerial "${MODEL}" "true" | tr '[:lower:]' '[:upper:]')
+      SN=$(generateSerial "${MODEL}" "true")
       writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
     else
-      SN=$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')
+      SN=$(generateSerial "${MODEL}" "false")
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     fi
   elif [ "${ARCMODE}" == "config" ]; then
@@ -456,16 +456,16 @@ function arcPatch() {
       [ -z "${ARCCONF}" ] && decryptMenu || true
       if [ -n "${ARCCONF}" ]; then
         # Read Arc Patch from File
-        SN="$(generateSerial "${MODEL}" "true" | tr '[:lower:]' '[:upper:]')"
+        SN="$(generateSerial "${MODEL}" "true")"
         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
       else
         # Read Arc Patch from File
-        SN="$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')"
+        SN="$(generateSerial "${MODEL}" "false")"
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       fi
     elif [ ${resp} -eq 2 ]; then
       # Generate random Serial
-      SN="$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')"
+      SN="$(generateSerial "${MODEL}" "false")"
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 3 ]; then
       while true; do
@@ -473,7 +473,7 @@ function arcPatch() {
           --inputbox "Please enter a valid SN!" 7 50 "" \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break 2
-        SN="$(cat ${TMP_PATH}/resp | tr '[:lower:]' '[:upper:]')"
+        SN="$(cat ${TMP_PATH}/resp)"
         if [ -z "${SN}" ]; then
           return
         else
@@ -709,10 +709,10 @@ function make() {
   BOOTMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
   if [ "${BOOTMODE}" != "automated" ] && [[ "${ARCPATCH}" != "true" || -z "${ARCCONF}" ]]; then
     if ! curl -skL "https://auxxxilium.tech/check.yml" -o "${TMP_PATH}/check.yml" 2>/dev/null; then
-      SN=$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')
+      SN=$(generateSerial "${MODEL}" "false")
     else
       if grep -q "${SN}" "${TMP_PATH}/check.yml"; then
-        SN=$(generateSerial "${MODEL}" "false" | tr '[:lower:]' '[:upper:]')
+        SN=$(generateSerial "${MODEL}" "false")
       fi
     fi
     writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"

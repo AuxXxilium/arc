@@ -111,6 +111,7 @@ function generateSerial() {
       ;;
   esac
 
+  SERIAL="$(echo "${SERIAL}" | tr '[:lower:]' '[:upper:]')"
   echo "${SERIAL}"
   return 0
 }
@@ -134,6 +135,8 @@ function generateMacAddress() {
     MACS+="$(printf '%06x%06x' $((0x${MACPRE:-"001132"})) $(($((0x${MACSUF})) + ${I})))"
     [ ${I} -lt ${NUM} ] && MACS+=" "
   done
+
+  MACS="$(echo "${MACS}" | tr '[:lower:]' '[:upper:]')"
   echo "${MACS}"
   return 0
 }
@@ -284,7 +287,7 @@ function getBus() {
 # 1 - ethN
 function getIP() {
   local IP=""
-  MACR="$(cat /sys/class/net/${1}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
+  MACR="$(cat /sys/class/net/${1}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
   IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
   if [ -n "${IPR}" ]; then
     IFS='/' read -r -a IPRA <<<"${IPR}"
