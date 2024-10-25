@@ -72,14 +72,6 @@ function addonSelection() {
     writeConfigKey "addons.\"${ADDON}\"" "" "${USER_CONFIG_FILE}"
   done
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
-  if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sortnetif"; then
-    MACLIST=""
-    for ETH in ${ETHX}; do
-      MAC="$(cat /sys/class/net/${ETH}/address | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
-      MACLIST="${MACLIST} ${MAC}"
-    done
-    writeConfigKey "addons.sortnetif" "${MACLIST// /,}" "${USER_CONFIG_FILE}"  
-  fi
   dialog --backtitle "$(backtitle)" --title "DSM Addons" \
     --msgbox "DSM Addons selected:\n${ADDONSINFO}" 7 70
 }
