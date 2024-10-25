@@ -205,7 +205,6 @@ mkdir -p "${LKMS_PATH}"
 mkdir -p "${MODEL_CONFIG_PATH}"
 mkdir -p "${MODULES_PATH}"
 mkdir -p "${PATCH_PATH}"
-mkdir -p "${SYSTEM_PATH}"
 mkdir -p "${USER_UP_PATH}"
 
 # Load Arc Overlay
