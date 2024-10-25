@@ -80,7 +80,6 @@ if [ "${DISKINFO}" == "true" ]; then
   echo -e "Disks: \033[1;37m$(lsblk -dpno NAME | grep -v "${LOADER_DISK}" | wc -l)\033[0m"
 fi
 
-
 if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   HASATA=0
   for D in $(lsblk -dpno NAME); do

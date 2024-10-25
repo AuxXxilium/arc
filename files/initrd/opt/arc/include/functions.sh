@@ -226,26 +226,17 @@ function _set_conf_kv() {
 }
 
 ###############################################################################
-# sort netif name
-# @1 -mac1,mac2,mac3...
+# sort netif busid
 function _sort_netif() {
   local ETHLIST=""
   local ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
   for ETH in ${ETHX}; do
-    local MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g; s/.*/\L&/' | tr '[:lower:]' '[:upper:]')"
+    local MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g; s/.*/\L&/')"
     local BUS="$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
     ETHLIST="${ETHLIST}${BUS} ${MAC} ${ETH}\n"
   done
-  local ETHLISTTMPM=""
   local ETHLISTTMPB="$(echo -e "${ETHLIST}" | sort)"
-  if [ -n "${1}" ]; then
-    local MACS="$(echo "${1}" | sed 's/://g; s/,/ /g; s/.*/\L&/' | tr '[:lower:]' '[:upper:]')"
-    for MACX in ${MACS}; do
-      ETHLISTTMPM="${ETHLISTTMPM}$(echo -e "${ETHLISTTMPB}" | grep "${MACX}")\n"
-      ETHLISTTMPB="$(echo -e "${ETHLISTTMPB}" | grep -v "${MACX}")\n"
-    done
-  fi
-  local ETHLIST="$(echo -e "${ETHLISTTMPM}${ETHLISTTMPB}" | grep -v '^$')"
+  local ETHLIST="$(echo -e "${ETHLISTTMPM}" | grep -v '^$')"
   local ETHSEQ="$(echo -e "${ETHLIST}" | awk '{print $3}' | sed 's/eth//g')"
   local ETHNUM="$(echo -e "${ETHLIST}" | wc -l)"
 
