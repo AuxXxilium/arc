@@ -1676,19 +1676,6 @@ function greplogs() {
     MSG+="Can't find system logs!\n"
   fi
 
-  PSTORE=0
-  if [ -n "$(ls /sys/fs/pstore 2>/dev/null)" ]; then
-    mkdir -p "${TMP_PATH}/logs/pstore"
-    cp -rf /sys/fs/pstore/* "${TMP_PATH}/logs/pstore"
-    [ -n "$(ls /sys/fs/pstore/*.z 2>/dev/null)" ] && zlib-flate -uncompress </sys/fs/pstore/*.z >"${TMP_PATH}/logs/pstore/ps.log" 2>/dev/null
-    PSTORE=1
-  fi
-  if [ ${PSTORE} -eq 1 ]; then
-    MSG+="Pstore logs found!\n"
-  else
-    MSG+="Can't find pstore logs!\n"
-  fi
-
   ADDONS=0
   if [ -d "${PART1_PATH}/logs" ]; then
     mkdir -p "${TMP_PATH}/logs/addons"
