@@ -44,7 +44,7 @@ echo "dev" >files/p1/ARC-BRANCH
 
 echo "Repack initrd"
 cp -f "brs/bzImage-arc" "files/p3/bzImage-arc"
-cp -f "brs/initrd-arc" "files/p3/initrd-arc"
+#cp -f "brs/initrd-arc" "files/p3/initrd-arc"
 repackInitrd "brs/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
 echo "Copying files"
