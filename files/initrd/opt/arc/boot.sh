@@ -8,7 +8,6 @@ set -e
 
 # Clear logs for dbgutils addons
 rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
-rm -rf /sys/fs/pstore/* >/dev/null 2>&1 || true
 
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 [ "${BUILDDONE}" == "false" ] && die "Loader build not completed!"
@@ -57,18 +56,30 @@ LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
 RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')"
+DSMINFO="$(readConfigKey "boot.dsminfo" "${USER_CONFIG_FILE}")"
+SYSTEMINFO="$(readConfigKey "boot.systeminfo" "${USER_CONFIG_FILE}")"
+DISKINFO="$(readConfigKey "boot.diskinfo" "${USER_CONFIG_FILE}")"
 
-echo -e "\033[1;37mDSM:\033[0m"
-echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
-echo -e "Platform: \033[1;37m${PLATFORM}\033[0m"
-echo -e "Version: \033[1;37m${PRODUCTVER} (${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))\033[0m"
-echo -e "LKM: \033[1;37m${LKM}\033[0m"
-echo
-echo -e "\033[1;37mSystem:\033[0m"
-echo -e "Vendor: \033[1;37m${VENDOR}\033[0m"
-echo -e "CPU: \033[1;37m${CPU}\033[0m"
-echo -e "Memory: \033[1;37m${RAMTOTAL}GB\033[0m"
-echo
+if [ "${DSMINFO}" == "true" ]; then
+  echo -e "\033[1;37mDSM:\033[0m"
+  echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
+  echo -e "Platform: \033[1;37m${PLATFORM}\033[0m"
+  echo -e "Version: \033[1;37m${PRODUCTVER} (${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))\033[0m"
+  echo -e "LKM: \033[1;37m${LKM}\033[0m"
+  echo
+fi
+if [ "${SYSTEMINFO}" == "true" ]; then
+  echo -e "\033[1;37mSystem:\033[0m"
+  echo -e "Vendor: \033[1;37m${VENDOR}\033[0m"
+  echo -e "CPU: \033[1;37m${CPU}\033[0m"
+  echo -e "Memory: \033[1;37m${RAMTOTAL}GB\033[0m"
+  echo
+fi
+if [ "${DISKINFO}" == "true" ]; then
+  echo -e "\033[1;37mDisks:\033[0m"
+  echo -e "Disks: \033[1;37m$(lsblk -dpno NAME | grep -v "${LOADER_DISK}" | wc -l)\033[0m"
+fi
+
 
 if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   HASATA=0
@@ -282,7 +293,7 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
   rm -f WB WC
   echo -en "\r$(printf "%$((${#MSG} * 2))s" " ")\n"
 
-  DSMLOGO="$(readConfigKey "dsmlogo" "${USER_CONFIG_FILE}")"
+  DSMLOGO="$(readConfigKey "boot.dsmlogo" "${USER_CONFIG_FILE}")"
   if [ "${DSMLOGO}" == "true" ] && [ -c "/dev/fb0" ]; then
     [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
     if [ -n "${IPCON}" ]; then

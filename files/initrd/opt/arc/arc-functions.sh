@@ -68,7 +68,7 @@ function addonSelection() {
   declare -A ADDONS
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   for ADDON in ${resp}; do
-    USERADDONS["${ADDON}"]=""
+    ADDONS["${ADDON}"]=""
     writeConfigKey "addons.\"${ADDON}\"" "" "${USER_CONFIG_FILE}"
   done
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
@@ -2104,4 +2104,35 @@ function genHardwareID() {
     exit 1
   fi
   return
+}
+
+###############################################################################
+# Bootsreen Menu
+function bootScreen () {
+  rm -f "${TMP_PATH}/boot" "${TMP_PATH}/opts" "${TMP_PATH}/resp" >/dev/null
+  unset BOOTSCREENS
+  declare -A BOOTSCREENS
+  while IFS=': ' read -r KEY VALUE; do
+    [ -n "${KEY}" ] && BOOTSCREENS["${KEY}"]="${VALUE}"
+  done < <(readConfigMap "boot" "${USER_CONFIG_FILE}")
+  echo -e "dsminfo" >"${TMP_PATH}/boot"
+  echo -e "systeminfo" >>"${TMP_PATH}/boot"
+  echo -e "diskinfo" >>"${TMP_PATH}/boot"
+  echo -e "dsmlogo" >>"${TMP_PATH}/boot"
+  while read -r BOOTSCREEN; do
+    arrayExistItem "${BOOTSCREEN}" "${!BOOTSCREENS[@]}" && ACT="on" || ACT="off"
+    echo -e "${BOOTSCREEN} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
+  done < <(cat "${TMP_PATH}/boot")
+  dialog --backtitle "$(backtitle)" --title "Bootscreen" --colors --aspect 18 \
+    --checklist "Select Bootscreen Informations\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
+    --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
+  [ $? -ne 0 ] && return 1
+  resp=$(cat ${TMP_PATH}/resp)
+  unset BOOTSCREENS
+  declare -A BOOTSCREENS
+  writeConfigKey "boot" "{}" "${USER_CONFIG_FILE}"
+  for BOOTSCREEN in ${resp}; do
+    BOOTSCREENS["${BOOTSCREEN}"]=""
+    writeConfigKey "boot.\"${BOOTSCREEN}\"" "true" "${USER_CONFIG_FILE}"
+  done
 }

@@ -945,7 +945,8 @@ else
     if [ "${LOADEROPTS}" == "true" ]; then
       echo "= \"\Z4========= Loader =========\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "= \"\Z1=== Edit with caution! ===\Zn \" "                                         >>"${TMP_PATH}/menu"
-      echo "D \"StaticIP for Loader/DSM\" "                                                   >>"${TMP_PATH}/menu"
+      echo "D \"StaticIP for Loader/DSM \" "                                                  >>"${TMP_PATH}/menu"
+      echo "f \"Bootscreen Options \" "                                                       >>"${TMP_PATH}/menu"
       echo "W \"RD Compression: \Z4${RD_COMPRESSED}\Zn \" "                                   >>"${TMP_PATH}/menu"
       echo "X \"Sata DOM: \Z4${SATADOM}\Zn \" "                                               >>"${TMP_PATH}/menu"
       echo "u \"LKM Version: \Z4${LKM}\Zn \" "                                                >>"${TMP_PATH}/menu"
@@ -1089,6 +1090,7 @@ else
         NEXT="8"
         ;;
       D) staticIPMenu; NEXT="D" ;;
+      f) bootScreen; NEXT="f" ;;
       W) [ "${RD_COMPRESSED}" == "true" ] && RD_COMPRESSED='false' || RD_COMPRESSED='true'
         writeConfigKey "rd-compressed" "${RD_COMPRESSED}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"

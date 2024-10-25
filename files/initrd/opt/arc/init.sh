@@ -10,7 +10,6 @@ set -e
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 checkBootLoader || die "The loader is corrupted, please rewrite it!"
 BUS=$(getBus "${LOADER_DISK}")
-[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
 
 # Check if machine has EFI
 [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
@@ -44,10 +43,13 @@ initConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
+initConfigKey "boot" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "boot.dsminfo" "true" "${USER_CONFIG_FILE}"
+initConfigKey "boot.systeminfo" "true" "${USER_CONFIG_FILE}"
+initConfigKey "boot.dsmlogo" "true" "${USER_CONFIG_FILE}"
 initConfigKey "bootipwait" "30" "${USER_CONFIG_FILE}"
 initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
-initConfigKey "dsmlogo" "true" "${USER_CONFIG_FILE}"
 initConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
 initConfigKey "hddsort" "false" "${USER_CONFIG_FILE}"
 initConfigKey "kernel" "official" "${USER_CONFIG_FILE}"
@@ -117,6 +119,7 @@ writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
 # No network devices
 echo
 [ ${ETHN} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
+[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
 
 # Get the VID/PID if we are in USB
 VID="0x46f4"
