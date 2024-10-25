@@ -728,10 +728,16 @@ function make() {
   # Check for Arc Patch
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  if [ -z "${ARCCONF}" ] && [ "${ARCPATCH}" == "true" ]; then
+  if [ -n "${ARCCONF}" ] && [ "${ARCPATCH}" == "true" ]; then
+    if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sspatch"; then
+      writeConfigKey "addons.sspatch" "true" "${USER_CONFIG_FILE}"
+    fi
+  elif [ -z "${ARCCONF}" ] || [ "${ARCPATCH}" == "false" ]; then
     deleteConfigKey "addons.amepatch" "${USER_CONFIG_FILE}"
     deleteConfigKey "addons.arcdns" "${USER_CONFIG_FILE}"
-    deleteConfigKey "addons.sspatch" "${USER_CONFIG_FILE}"
+    if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sspatch"; then
+      writeConfigKey "addons.sspatch" "false" "${USER_CONFIG_FILE}"
+    fi
   fi
   # Max Memory for DSM
   RAMCONFIG="$((${RAMTOTAL} * 1024 * 2))"
