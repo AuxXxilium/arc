@@ -53,8 +53,6 @@ function addonSelection() {
       continue
     elif [ "${ADDON}" == "codecpatch" ] && [ -n "${ARCCONF}" ]; then
       continue
-    elif [ "${ADDON}" == "cpufreqscaling" ] && [[ "${CPUFREQ}" == "false" || "${ACPISYS}" == "false" ]] ; then
-      continue
     else
       echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
     fi
