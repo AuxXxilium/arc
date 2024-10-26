@@ -102,10 +102,10 @@ function arcModel() {
         COMPATIBLE=1
         DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
         FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
-        ARCCONF="$(readConfigKey "${M}.serial" "${S_FILE}")"
+        ARCCONFM="$(readConfigKey "${M}.serial" "${S_FILE}")"
         ARC=""
         BETA=""
-        [ -n "${ARCCONF}" ] && ARC="x" || ARC=""
+        [ -n "${ARCCONFM}" ] && ARC="x" || ARC=""
         [ "${DT}" == "true" ] && DTS="x" || DTS=""
         IGPUS=""
         [[ "${A}" == "apollolake" || "${A}" == "geminilake" ]] && IGPUS="up to 9th"
