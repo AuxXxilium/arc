@@ -2081,7 +2081,7 @@ function getpatfiles() {
 ###############################################################################
 # Generate HardwareID
 function genHardwareID() {
-  HWID="$(echo $(dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g') \ $(ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g') | sha256sum | awk '{print $1}' | cut -c1-12)" 2>/dev/null
+  HWID="$(echo $(ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g') | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
   writeConfigKey arc.hwid "${HWID}" "${USER_CONFIG_FILE}"
   if [ -n "${HWID}" ]; then
     HWDB="$(curl -skL "https://auxxxilium.tech/hwid.yml")"
