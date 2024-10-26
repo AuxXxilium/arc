@@ -27,11 +27,10 @@ function updateLoader() {
         [[ $char == % ]] && echo "$progress%" && progress="" && keep=0 ;
         [[ $keep == 1 ]] && progress="$progress$char" ;
       done
-      if [ -f "${TMP_PATH}/update.zip" ]; then
-        echo -e "Downloading ${TAG}-${ARC_BRANCH} Loader successful!\nUpdating ${ARC_BRANCH} Loader..."
+      if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 300000 ]; then
+        echo -e "Downloading ${TAG}-${ARC_BRANCH} Loader successful!\nUpdating Loader..."
         if unzip -oq "${TMP_PATH}/update.zip" -d "/mnt"; then
           echo "Successful!"
-          echo "${TAG}" > "${PART1_PATH}/VERSION"
           sleep 2
         else
           updateFailed
@@ -336,37 +335,27 @@ function arcUpdate() {
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   FAILED="false"
-  dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
+  dialog --backtitle "$(backtitle)" --title "Full Update" --aspect 18 \
     --infobox "Updating Dependencies..." 0 0
   sleep 3
-  updateAddons
+  updateLoader
   [ $? -ne 0 ] && FAILED="true"
-  updateModules
-  [ $? -ne 0 ] && FAILED="true"
-  updateLKMs
-  [ $? -ne 0 ] && FAILED="true"
-  updatePatches
-  [ $? -ne 0 ] && FAILED="true"
-  if [ "${KERNEL}" == "custom" ]; then
-    updateCustom
-    [ $? -ne 0 ] && FAILED="true"
-  fi
   if [ "${FAILED}" == "true" ] && [ "${UPDATEMODE}" == "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
+    dialog --backtitle "$(backtitle)" --title "Full Update" --aspect 18 \
       --infobox "Update failed!\nTry again later." 0 0
     sleep 3
     exec reboot
   elif [ "${FAILED}" == "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
+    dialog --backtitle "$(backtitle)" --title "Full Update" --aspect 18 \
       --infobox "Update failed!\nTry again later." 0 0
     sleep 3
   elif [ "${FAILED}" == "false" ] && [ "${UPDATEMODE}" == "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
+    dialog --backtitle "$(backtitle)" --title "Full Update" --aspect 18 \
       --infobox "Update successful! -> Reboot to automated build..." 0 0
     sleep 3
     rebootTo "automated"
   elif [ "${FAILED}" == "false" ]; then
-    dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
+    dialog --backtitle "$(backtitle)" --title "Full Update" --aspect 18 \
       --infobox "Update successful!" 0 0
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"

@@ -119,7 +119,7 @@ jobs:
             zip -9 "arc-${{ env.VERSION }}-next.vmdk-dyn.zip" arc-dyn.vmdk
             zip -9 "arc-${{ env.VERSION }}-next.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
             zip -9 "arc-${{ env.VERSION }}-next.vhdx.zip" arc.vhdx
-            (cd files && zip -r ../update-${{ env.VERSION }}-next.zip .)
+            (cd files && zip -r ../update-${{ env.VERSION }}-next.zip ./p1 ./p3)
           fi
 
       # Cleanup
