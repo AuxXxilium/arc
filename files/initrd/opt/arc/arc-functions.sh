@@ -923,6 +923,12 @@ function sysinfo() {
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
   DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
+  MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
+  MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")"
+  ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")"
+  LKMVERSION="$(cat "${LKMS_PATH}/VERSION")"
+  CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
+  PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")"
   TIMEOUT=5
   TEXT=""
   # Print System Informations
@@ -983,6 +989,7 @@ function sysinfo() {
   # Print Config Informations
   TEXT+="\n\n\Z4> Arc: ${ARC_VERSION}\Zn"
   TEXT+="\n  Branch: \Zb${ARC_BRANCH}\Zn"
+  TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"
   if [ "${CONFDONE}" == "true" ]; then
@@ -997,6 +1004,7 @@ function sysinfo() {
     TEXT+="\n"
     TEXT+="\n  Config not completed!\n"
   fi
+  TEXT+="\n  Modules loaded: \Zb${MODULESINFO}\Zn"
   if [ "${CONFDONE}" == "true" ]; then
     [ -n "${USERCMDLINEINFO}" ] && TEXT+="\n  User Cmdline: \Zb${USERCMDLINEINFO}\Zn"
     TEXT+="\n  User Synoinfo: \Zb${USERSYNOINFO}\Zn"
