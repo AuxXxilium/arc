@@ -724,7 +724,6 @@ function backupMenu() {
           fi
         done
         if [ -f "${USER_CONFIG_FILE}" ]; then
-          . ${ARC_PATH}/include/compat.sh
           PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
           if [ -n "${PRODUCTVER}" ]; then
             PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
@@ -732,25 +731,16 @@ function backupMenu() {
             [ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
           fi
           if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
-            updateAddons
-            [ $? -ne 0 ] && updateFailed || true
-            updateModules "${PLATFORM}" "${KVERP}"
-            [ $? -ne 0 ] && updateFailed || true
-            updateLKMs
-            [ $? -ne 0 ] && updateFailed || true
-            updatePatches
-            [ $? -ne 0 ] && updateFailed || true
-            KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
-            if [ "${KERNEL}" == "custom" ]; then
-              updateCustom
-              [ $? -ne 0 ] && updateFailed || true
-            fi
             writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
             while read -r ID DESC; do
               writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
             done < <(getAllModules "${PLATFORM}" "${KVERP}")
           fi
         fi
+        dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
+          --aspect 18 --infobox "Restore successful! -> Reload Arc Init now" 5 50
+        sleep 2
+        exec init.sh
         ;;
       2)
         DSMROOTS="$(findDSMRoot)"
