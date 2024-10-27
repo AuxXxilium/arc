@@ -266,42 +266,44 @@ function arcVersion() {
     PAT_URL=""
     PAT_HASH=""
     URLVER=""
-    while true; do
-      PJ="$(python ${ARC_PATH}/include/functions.py getpats4mv -m "${MODEL}" -v "${PRODUCTVER}")"
-      if [[ -z "${PJ}" || "${PJ}" == "{}" ]]; then
-        MSG="Unable to connect to Synology API, Please check the network and try again!"
-        dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
-          --yes-label "Retry" \
-          --yesno "${MSG}" 0 0
-        [ $? -eq 0 ] && continue # yes-button
-        return 1
-      else
-        PVS="$(echo "${PJ}" | jq -r 'keys | sort | reverse | join("\n")')"
-        [ -f "${TMP_PATH}/versions" ] && rm -f "${TMP_PATH}/versions" >/dev/null 2>&1 && touch "${TMP_PATH}/versions"
-        while IFS= read -r line; do
-          VERSION="${line}"
-          CHECK_URL=$(echo "${PJ}" | jq -r ".\"${VERSION}\".url")
-          if curl --head -skL -m 5 "${CHECK_URL}" | head -n 1 | grep -q "404\|403"; then
-            continue
-          else
-            echo "${VERSION}" >>"${TMP_PATH}/versions"
-          fi
-        done < <(echo "${PVS}")
-        DSMPVS="$(cat ${TMP_PATH}/versions)"
-        dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
-          --no-items --menu "Choose a DSM Build" 0 0 0 ${DSMPVS} \
-        2>${TMP_PATH}/resp
-        RET=$?
-        [ ${RET} -ne 0 ] && return
-        PV=$(cat ${TMP_PATH}/resp)
-        PAT_URL=$(echo "${PJ}" | jq -r ".\"${PV}\".url")
-        PAT_HASH=$(echo "${PJ}" | jq -r ".\"${PV}\".sum")
-        URLVER="$(echo "${PV}" | cut -d'.' -f1,2)"
-        [ "${PRODUCTVER}" != "${URLVER}" ] && PRODUCTVER="${URLVER}"
-        writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-        [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true" && break
-      fi
-    done
+    if [ "${ARCOFFLINE}" == "false" ]; then
+      while true; do
+        PJ="$(python ${ARC_PATH}/include/functions.py getpats4mv -m "${MODEL}" -v "${PRODUCTVER}")"
+        if [[ -z "${PJ}" || "${PJ}" == "{}" ]]; then
+          MSG="Unable to connect to Synology API, Please check the network and try again!"
+          dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
+            --yes-label "Retry" \
+            --yesno "${MSG}" 0 0
+          [ $? -eq 0 ] && continue # yes-button
+          return 1
+        else
+          PVS="$(echo "${PJ}" | jq -r 'keys | sort | reverse | join("\n")')"
+          [ -f "${TMP_PATH}/versions" ] && rm -f "${TMP_PATH}/versions" >/dev/null 2>&1 && touch "${TMP_PATH}/versions"
+          while IFS= read -r line; do
+            VERSION="${line}"
+            CHECK_URL=$(echo "${PJ}" | jq -r ".\"${VERSION}\".url")
+            if curl --head -skL -m 5 "${CHECK_URL}" | head -n 1 | grep -q "404\|403"; then
+              continue
+            else
+              echo "${VERSION}" >>"${TMP_PATH}/versions"
+            fi
+          done < <(echo "${PVS}")
+          DSMPVS="$(cat ${TMP_PATH}/versions)"
+          dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
+            --no-items --menu "Choose a DSM Build" 0 0 0 ${DSMPVS} \
+          2>${TMP_PATH}/resp
+          RET=$?
+          [ ${RET} -ne 0 ] && return
+          PV=$(cat ${TMP_PATH}/resp)
+          PAT_URL=$(echo "${PJ}" | jq -r ".\"${PV}\".url")
+          PAT_HASH=$(echo "${PJ}" | jq -r ".\"${PV}\".sum")
+          URLVER="$(echo "${PV}" | cut -d'.' -f1,2)"
+          [ "${PRODUCTVER}" != "${URLVER}" ] && PRODUCTVER="${URLVER}"
+          writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+          [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true" && break
+        fi
+      done
+    fi
     if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
       MSG="Failed to get PAT Data.\n"
       MSG+="Please manually fill in the URL and Hash of PAT.\n"
@@ -346,7 +348,7 @@ function arcVersion() {
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
   if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ "${PAT_URL}" != "${PAT_URL_CONF}" ]; then
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
-    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/"* >/dev/null 2>&1 || true
+    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" >/dev/null 2>&1 || true
     rm -f "${USER_UP_PATH}/"*.tar >/dev/null 2>&1 || true
   fi
   getpatfiles
