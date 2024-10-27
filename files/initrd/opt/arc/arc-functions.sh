@@ -1618,14 +1618,6 @@ function resetLoader() {
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
   fi
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}" >/dev/null
-  [ -d "${SYSTEM_PATH}" ] && rm -rf "${SYSTEM_PATH}" >/dev/null
-  [ -d "${ADDONS_PATH}" ] && rm -rf "${ADDONS_PATH}" >/dev/null
-  [ -d "${MODULES_PATH}" ] && rm -rf "${MODULES_PATH}" >/dev/null
-  [ -d "${MODEL_CONFIG_PATH}" ] && rm -rf "${MODEL_CONFIG_PATH}" >/dev/null
-  [ -d "${PATCH_PATH}" ] && rm -rf "${PATCH_PATH}" >/dev/null
-  [ -d "${LKMS_PATH}" ] && rm -rf "${LKMS_PATH}" >/dev/null
-  [ -d "${CUSTOM_PATH}" ] && rm -rf "${CUSTOM_PATH}" >/dev/null
-  [ -d "${USER_UP_PATH}" ] && rm -rf "${USER_UP_PATH}" >/dev/null
   [ -f "${USER_CONFIG_FILE}" ] && rm -f "${USER_CONFIG_FILE}" >/dev/null
     dialog --backtitle "$(backtitle)" --title "Reset Loader" --aspect 18 \
     --yesno "Reset successful.\nReboot required!" 0 0
