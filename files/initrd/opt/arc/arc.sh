@@ -529,12 +529,12 @@ function arcSettings() {
     [ $? -ne 0 ] && return 1
   fi
   # Check for CPU Frequency Scaling & Governor
-  if [ "${ARCMODE}" == "config" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
+  if [ "${ARCMODE}" == "config" ] && [ "${MACHINE}" == "Native" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
     dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
       --infobox "Generating Governor Table..." 3 40
     governorSelection
     [ $? -ne 0 ] && return 1
-  elif [ "${ARCMODE}" == "automated" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
+  elif [ "${ARCMODE}" == "automated" ] && [ "${MACHINE}" == "Native" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
     if [ "${PLATFORM}" == "epyc7002" ]; then
       writeConfigKey "addons.cpufreqscaling" "schedutil" "${USER_CONFIG_FILE}"
     else
