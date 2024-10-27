@@ -286,64 +286,44 @@ def getpats4mv(model, version):
 
 
 @cli.command()
-@click.option("-p", "--models", type=str, help="The models of Syno.")
-def getpats(models=None):
-    import json, requests, urllib3, re
-    from bs4 import BeautifulSoup
-    from requests.adapters import HTTPAdapter
-    from requests.packages.urllib3.util.retry import Retry  # type: ignore
+@click.option("-m", "--model", type=str, required=True, help="The model of Syno.")
+@click.option("-r", "--release", type=str, required=True, help="The release version of Syno.")
+def getpats(model, release):
+    """
+    Get all mLink and mCheckSum for the specified model and release.
+    """
+    import json
 
-    adapter = HTTPAdapter(max_retries=Retry(total=3, backoff_factor=0.5, status_forcelist=[500, 502, 503, 504]))
-    session = requests.Session()
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-    if models is not None and models != "":
-        MS = models.lower().replace(",", " ").split()
-    else:
-        MS = []
-
-    pats = {}
     try:
-        req = session.get('https://archive.synology.com/download/Os/DSM', timeout=10, verify=False)
-        req.encoding = 'utf-8'
-        bs=BeautifulSoup(req.text, 'html.parser')
-        p = re.compile(r"(.*?)-(.*?)", re.MULTILINE | re.DOTALL)
-        l = bs.find_all('a', string=p)
-        for i in l:
-            ver = i.attrs['href'].split('/')[-1]
-            if not ver.startswith('7'): continue
-            req = session.get('https://archive.synology.com{}'.format(i.attrs['href']), timeout=10, verify=False)
-            req.encoding = 'utf-8'
-            bs=BeautifulSoup(req.text, 'html.parser')
-            p = re.compile(r"^(.*?)_(.*?)_(.*?).pat$", re.MULTILINE | re.DOTALL)
-            data = bs.find_all('a', string=p)
-            for item in data:
-                p = re.compile(r"DSM_(.*?)_(.*?).pat", re.MULTILINE | re.DOTALL)
-                rels = p.search(item.attrs['href'])
-                if rels != None:
-                    info = p.search(item.attrs['href']).groups()
-                    model = info[0].replace('%2B', '+')
-                    if len(MS) > 0 and model.lower() not in MS:
-                        continue
-                    if model not in pats.keys(): 
-                        pats[model]={}
-                    pats[model][__fullversion(ver)] = item.attrs['href']
-    except:
-        pass
+        with open(os.path.join('/mnt/p3/configs/offline.json')) as file:
+            data = json.load(file)
 
-    print(json.dumps(pats, indent=4))
+        links = []
+        for I in data["channel"]["item"]:
+            if not I["title"].startswith("DSM"):
+                continue
+            if release not in I["title"]:
+                continue
+            for J in I["model"]:
+                name = J["mLink"].split("/")[-1].split("_")[1].replace("%2B", "+")
+                if name == model:
+                    links.append({"mLink": J["mLink"], "mCheckSum": J.get("mCheckSum", "N/A")})
+
+        if links:
+            print(json.dumps(links, indent=4))
+        else:
+            print(f"No data found for model {model} and release {release}")
+
+    except Exception as e:
+        print(f"Error: {e}")
 
 @cli.command()
 @click.option("-p", "--platforms", type=str, help="The platforms of Syno.")
 def getmodelsoffline(platforms=None):
     """
-    Get Syno Models.
+    Get Syno Models from offline data.
     """
-    import re, json
-    import requests
-    import fcntl, struct
+    import json
 
     if platforms is not None and platforms != "":
         PS = platforms.lower().replace(",", " ").split()
@@ -351,22 +331,28 @@ def getmodelsoffline(platforms=None):
         PS = []
 
     models = []
-    with open(os.path.join('/opt/arc/include', "offline.json")) as user_file:
-        data = json.load(user_file)
+    try:
+        with open(os.path.join('/mnt/p3/configs/offline.json')) as file:
+            data = json.load(file)
 
-    for I in data["channel"]["item"]:
-        if not I["title"].startswith("DSM"):
-            continue
-        for J in I["model"]:
-            arch = J["mUnique"].split("_")[1]
-            name = J["mLink"].split("/")[-1].split("_")[1].replace("%2B", "+")
-            if len(PS) > 0 and arch.lower() not in PS:
+        for I in data["channel"]["item"]:
+            if not I["title"].startswith("DSM"):
                 continue
-            if any(name == B["name"] for B in models):
-                continue
-            models.append({"name": name, "arch": arch})
+            for J in I["model"]:
+                arch = J["mUnique"].split("_")[1]
+                name = J["mLink"].split("/")[-1].split("_")[1].replace("%2B", "+")
+                if len(PS) > 0 and arch.lower() not in PS:
+                    continue
+                if any(name == B["name"] for B in models):
+                    continue
+                models.append({"name": name, "arch": arch})
 
-    models = sorted(models, key=lambda k: (k["arch"], k["name"]))
+        models = sorted(models, key=lambda k: (k["arch"], k["name"]))
+
+    except Exception as e:
+        print(f"Error: {e}")
+
+    models.sort(key=lambda x: (x["arch"], x["name"]))
     print(json.dumps(models, indent=4))
 
 if __name__ == "__main__":

@@ -2046,6 +2046,7 @@ function getpatfiles() {
     while true; do
       dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
         --msgbox "Please upload the DSM Boot File to ${USER_UP_PATH}.\nLink: https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar\nUse ${IPCON}:7304 and OK after Upload" 0 0
+      [ $? -ne 0 ] && break
       if [ -f "${DSM_FILE}" ]; then
         VALID="true"
         break

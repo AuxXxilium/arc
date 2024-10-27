@@ -303,6 +303,10 @@ function arcVersion() {
           [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true" && break
         fi
       done
+    elif [ "${ARCOFFLINE}" == "true" ]; then
+      PJ="$(python ${ARC_PATH}/include/functions.py getpats -m "${MODEL}" -r "${PRODUCTVER}")"
+      PAT_URL=$(echo "${PJ}" | jq -r '.[0].mLink')
+      PAT_HASH=$(echo "${PJ}" | jq -r '.[0].mCheckSum')
     fi
     if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
       MSG="Failed to get PAT Data.\n"
