@@ -6,6 +6,7 @@ function availableAddons() {
     echo ""
     return 1
   fi
+  ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   for D in $(find "${ADDONS_PATH}" -maxdepth 1 -type d 2>/dev/null | sort); do
     [ ! -f "${D}/manifest.yml" ] && continue
     ADDON=$(basename ${D})
@@ -13,6 +14,9 @@ function availableAddons() {
     [ "${AVAILABLE}" = false ] && continue
     SYSTEM=$(readConfigKey "system" "${D}/manifest.yml")
     [ "${SYSTEM}" = true ] && continue
+    if [ "${ARCOFFLINE}" == "true" ] && [[ "${ADDON}" == "amepatch" || "${ADDON}" == "arcdns" ]]; then
+      continue
+    fi
     DESC="$(readConfigKey "description" "${D}/manifest.yml")"
     BETA="$(readConfigKey "beta" "${D}/manifest.yml")"
     TARGET="$(readConfigKey "target" "${D}/manifest.yml")"
