@@ -311,7 +311,7 @@ function arcVersion() {
     if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
       MSG="Failed to get PAT Data.\n"
       MSG+="Please manually fill in the URL and Hash of PAT.\n"
-      MSG+="You will find these Data at: https://auxxxilium.tech/wiki/arc-loader-arc-loader/url-hash-liste"
+      MSG+="You will find these Data at: https://github.com/AuxXxilium/arc-dsm/blob/main/webdata.txt"
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
         --form "${MSG}" 11 120 2 "Url" 1 1 "${PAT_URL}" 1 8 110 0 "Hash" 2 1 "${PAT_HASH}" 2 8 110 0 \
         2>"${TMP_PATH}/resp"
@@ -668,7 +668,6 @@ function arcSummary() {
   SUMMARY+="\n>> DSM DT: \Zb${DT}\Zn"
   SUMMARY+="\n>> DSM PAT URL: \Zb${PAT_URL}\Zn"
   SUMMARY+="\n>> DSM PAT Hash: \Zb${PAT_HASH}\Zn"
-  SUMMARY+="\n>> DeviceTree: \Zb${DT}\Zn"
   [ "${MODEL}" == "SA6400" ] && SUMMARY+="\n>> Kernel: \Zb${KERNEL}\Zn"
   SUMMARY+="\n>> Kernel Version: \Zb${KVER}\Zn"
   SUMMARY+="\n"
@@ -755,14 +754,14 @@ function make() {
       livepatch
       sleep 3
     ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Build Loader" \
-      --progressbox "Welcome at the Dark Side..." 20 70
+      --progressbox "Magical things happening..." 20 70
   else
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
       --infobox "Configuration issue found.\nCould not build Loader!\nExit." 5 40
     # Set Build to false
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    sleep 5
+    sleep 2
     return 1
   fi
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
@@ -776,7 +775,7 @@ function make() {
     # Set Build to false
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    sleep 5
+    sleep 2
     return 1
   fi
 }

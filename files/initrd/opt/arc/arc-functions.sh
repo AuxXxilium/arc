@@ -2044,7 +2044,7 @@ function getpatfiles() {
   elif [ ! -f "${DSM_FILE}" ] && [ "${ARCOFFLINE}" == "true" ]; then
     rm -f ${USER_UP_PATH}/*.tar
     dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
-      --msgbox "Please upload the DSM Boot File to ${USER_UP_PATH}.\nLink: https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar\nUse ${IPCON}:7304 and OK after Upload" 0 0
+      --msgbox "Please upload the DSM Boot File to ${USER_UP_PATH}.\nUse ${IPCON}:7304 to upload and press OK after it's finished.\nLink: https://github.com/AuxXxilium/arc-dsm/tree/main/files/${MODEL}/${PRODUCTVER}/${PAT_HASH}.tar" 8 120
     [ $? -ne 0 ] && VALID="false"
     if [ -f "${DSM_FILE}" ]; then
       VALID="true"
@@ -2062,10 +2062,11 @@ function getpatfiles() {
     dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
       --infobox "DSM Extraction failed!\nExit." 4 40
     sleep 2
+    return 1
   fi
   # Cleanup
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
-  return
+  return 0
 }
 
 ###############################################################################
