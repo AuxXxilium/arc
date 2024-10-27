@@ -343,6 +343,10 @@ function arcVersion() {
         writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
         writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
       fi
+    elif [ "${ARCOFFLINE}" == "true" ]; then
+      VALID="true"
+      writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+      writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
     fi
   elif [ "${ARCMODE}" == "automated" ] || [ "${ARCRESTORE}" == "true" ]; then
     VALID="true"
@@ -355,7 +359,6 @@ function arcVersion() {
     rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" >/dev/null 2>&1 || true
     rm -f "${USER_UP_PATH}/"*.tar >/dev/null 2>&1 || true
   fi
-  getpatfiles
   # Change Config if Files are valid
   if [ "${VALID}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Config" \
