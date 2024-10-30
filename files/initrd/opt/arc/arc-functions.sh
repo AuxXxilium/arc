@@ -992,6 +992,7 @@ function sysinfo() {
   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"
+  [ "${ARCOFFLINE}" == "true" ] && TEXT+="\n  Offline Mode: \Zb${ARCOFFLINE}\Zn"
   if [ "${CONFDONE}" == "true" ]; then
     TEXT+="\n\Z4> DSM ${PRODUCTVER} (${BUILDNUM}): ${MODELID:-${MODEL}}\Zn"
     TEXT+="\n  Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
@@ -1196,30 +1197,34 @@ function networkdiag() {
     dnsserver=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')
     echo -e "DNS Server:\n${dnsserver}"
     echo
-    websites=("google.com" "github.com" "auxxxilium.tech")
-    for website in "${websites[@]}"; do
-      if ping -I ${ETH} -c 1 "${website}" &> /dev/null; then
-        echo -e "Connection to ${website} is successful."
-      else
-        echo -e "Connection to ${website} failed."
-      fi
-    done
-    echo
-    GITHUBAPI=$(curl --interface ${ETH} -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 2>/dev/null)
-    if [[ $? -ne 0 || -z "${GITHUBAPI}" ]]; then
-      echo -e "Github API not reachable!"
+    if [ "${ARCOFFLINE}" == "true" ]; then
+      echo -e "Offline Mode: ${ARCOFFLINE}"
     else
-      echo -e "Github API reachable!"
-    fi
-    if [ "${CONFDONE}" == "true" ]; then
-      SYNOAPI=$(curl --interface ${ETH} -m 3 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')
-      if [[ $? -ne 0 || -z "${SYNOAPI}" ]]; then
-        echo -e "Syno API not reachable!"
+      websites=("google.com" "github.com" "auxxxilium.tech")
+      for website in "${websites[@]}"; do
+        if ping -I ${ETH} -c 1 "${website}" &> /dev/null; then
+          echo -e "Connection to ${website} is successful."
+        else
+          echo -e "Connection to ${website} failed."
+        fi
+      done
+      echo
+      GITHUBAPI=$(curl --interface ${ETH} -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 2>/dev/null)
+      if [[ $? -ne 0 || -z "${GITHUBAPI}" ]]; then
+        echo -e "Github API not reachable!"
       else
-        echo -e "Syno API reachable!"
+        echo -e "Github API reachable!"
       fi
-    else
-      echo -e "For Syno API Checks you need to configure Loader first!"
+      if [ "${CONFDONE}" == "true" ]; then
+        SYNOAPI=$(curl --interface ${ETH} -m 3 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')
+        if [[ $? -ne 0 || -z "${SYNOAPI}" ]]; then
+          echo -e "Syno API not reachable!"
+        else
+          echo -e "Syno API reachable!"
+        fi
+      else
+        echo -e "For Syno API Checks you need to configure Loader first!"
+      fi
     fi
   done
   ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Networkdiag" \
@@ -1243,12 +1248,17 @@ function credits() {
   TEXT+="\n\Z4>> Based on:\Zn"
   TEXT+="\n   Redpill: \ZbTTG / Pocopico\Zn"
   TEXT+="\n   ARPL/RR: \Zbfbelavenuto / wjz304\Zn"
+  TEXT+="\n   Others: \Zb007revad / more...\Zn"
   TEXT+="\n   System: \ZbBuildroot 2023.08.x / 2024.02.x\Zn"
   TEXT+="\n   DSM: \ZbSynology Inc.\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4>> Note:\Zn"
-  TEXT+="\n   Arc and all non encoded Parts are OpenSource."
+  TEXT+="\n   Arc and all not encrypted Parts are OpenSource."
+  TEXT+="\n   The encrypted Parts and DSM are licensed to"
+  TEXT+="\n   Synology Inc. and are not under GPL!"
+  TEXT+="\n"
   TEXT+="\n   Commercial use is not permitted!"
+  TEXT+="\n"
   TEXT+="\n   This Loader is FREE and it is forbidden"
   TEXT+="\n   to sell Arc or Parts of it."
   TEXT+="\n"

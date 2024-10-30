@@ -68,7 +68,11 @@ function backtitle() {
   BACKTITLE+="Config: ${CONFDONE} | "
   BACKTITLE+="Build: ${BUILDDONE} | "
   BACKTITLE+="${MACHINE}(${BUS}) | "
-  BACKTITLE+="KB: ${KEYMAP}"
+  if [ -n "${KEYMAP}" ]; then
+   BACKTITLE+="KB: ${KEYMAP}"
+  elif [ "${ARCOFFLINE}" == "true" ]; then
+    BACKTITLE+="Offline"
+  fi
   echo "${BACKTITLE}"
 }
 
@@ -708,12 +712,12 @@ function arcSummary() {
 }
 
 ###############################################################################
-# Building Loader Online
+# Building Loader
 function make() {
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
   BOOTMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
-  if [ "${BOOTMODE}" != "automated" ] && [[ "${ARCPATCH}" != "true" || -z "${ARCCONF}" ]]; then
+  if [ "${BOOTMODE}" != "automated" ] && [ "${ARCOFFLINE}" != "true" ] && [[ "${ARCPATCH}" != "true" || -z "${ARCCONF}" ]]; then
     if ! curl -skL "https://auxxxilium.tech/check.yml" -o "${TMP_PATH}/check.yml" 2>/dev/null; then
       SN=$(generateSerial "${MODEL}" "false")
     else
@@ -847,8 +851,15 @@ function boot() {
 # Main loop
 # Check for Arc Mode
 if [ "${ARCMODE}" == "update" ]; then
-  UPDATEMODE="true"
-  arcUpdate
+  if [ "${ARCOFFLINE}" != "true" ]; then
+    UPDATEMODE="true"
+    arcUpdate
+  else
+    dialog --backtitle "$(backtitle)" --title "Arc Update" \
+      --infobox "Update is not possible in Offline Mode!" 5 40
+    sleep 3
+    exec reboot
+  fi
 elif [ "${ARCMODE}" == "automated" ]; then
   # Check for Custom Build
   if [ "${BUILDDONE}" == "false" ] || [ "${MODEL}" != "${MODELID}" ]; then
@@ -866,7 +877,7 @@ else
   fi
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
-    if [ -z "${ARCCONF}" ]; then
+    if [ -z "${ARCCONF}" ] && [ "${ARCOFFLINE}" != "true" ]; then
       echo "0 \"Enable Arc Patch\" "                                                          >>"${TMP_PATH}/menu"
     fi
     echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
@@ -971,7 +982,7 @@ else
     fi
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
     echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
-    echo "z \"Update Menu \" "                                                                >>"${TMP_PATH}/menu"
+    [ "${ARCOFFLINE}" != "true" ] && echo "z \"Update Menu \" "                               >>"${TMP_PATH}/menu"
     echo "I \"Power/Service Menu \" "                                                         >>"${TMP_PATH}/menu"
     echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
 

@@ -5,10 +5,10 @@ PART3_PATH="/mnt/p3"
 TMP_PATH="/tmp"
 
 if [ -f "${PART1_PATH}/ARC-BRANCH" ]; then
-  ARC_BRANCH=$(cat "${PART1_PATH}/ARC-BRANCH")
+  ARC_BRANCH=$(cat "${PART1_PATH}/ARC-BRANCH" 2>/dev/null)
 fi
 if [ -f "${PART1_PATH}/ARC-VERSION" ]; then
-  ARC_VERSION=$(cat "${PART1_PATH}/ARC-VERSION")
+  ARC_VERSION=$(cat "${PART1_PATH}/ARC-VERSION" 2>/dev/null)
 fi
 ARC_TITLE="Arc ${ARC_VERSION}"
 

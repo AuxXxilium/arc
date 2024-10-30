@@ -517,7 +517,7 @@ function ntpCheck() {
   if [ "${KEYMAP}" == "ua" ] || [ "${REGION}" == "Kyiv" ] || [ "${REGION}" == "Kiev" ]; then
     poweroff
   fi
-  if echo "${ARC_VERSION}" | grep -v "dev"; then
+  if [ $(echo "${ARC_VERSION}" | grep "dev" | wc -l) -eq 0 ]; then
     while true; do
       NEWTAG="$(curl -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
       CNT=$((${CNT} + 1))
@@ -529,7 +529,7 @@ function ntpCheck() {
         break
       fi
     done
-  else
+  elif [ $(echo "${ARC_VERSION}" | grep "dev" | wc -l) -gt 0 ]; then
     while true; do
       NEWTAG="$(curl -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
       CNT=$((${CNT} + 1))
