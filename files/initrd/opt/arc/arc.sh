@@ -852,8 +852,7 @@ function boot() {
 # Check for Arc Mode
 if [ "${ARCMODE}" == "update" ]; then
   if [ "${ARCOFFLINE}" != "true" ]; then
-    UPDATEMODE="true"
-    arcUpdate
+    updateLoader
   else
     dialog --backtitle "$(backtitle)" --title "Arc Update" \
       --infobox "Update is not possible in Offline Mode!" 5 40

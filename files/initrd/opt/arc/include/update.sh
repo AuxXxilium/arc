@@ -1,7 +1,9 @@
 ###############################################################################
 # Update Loader
 function updateLoader() {
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   local ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
+  local ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
   local TAG="${1}"
   if [ -z "${TAG}" ]; then
     idx=0
@@ -45,13 +47,39 @@ function updateLoader() {
         --infobox "Update successful!" 3 50
         sleep 2
       else
-        updateFailed
+        if [ "${ARCMODE}" == "update" ]; then
+          dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
+            --infobox "Update failed!\nTry again later." 0 0
+          sleep 3
+          exec reboot
+        else
+          return 1
+        fi
       fi
     else
-      updateFailed
+      if [ "${ARCMODE}" == "update" ]; then
+        dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
+          --infobox "Update failed!\nTry again later." 0 0
+        sleep 3
+        exec reboot
+      else
+        return 1
+      fi
     fi
   fi
-  return 0
+  if [ "${ARCMODE}" == "update" ] && [ "${CONFDONE}" == "true" ]; then
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+      --infobox "Update successful! -> Reboot to automated Build Mode..." 5 80
+    sleep 3
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    rebootTo "automated"
+  else
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+      --infobox "Update successful! -> Reboot to Config Mode..." 5 80
+    sleep 3
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    rebootTo "config"
+  fi
 }
 
 ###############################################################################
@@ -104,10 +132,10 @@ function updateAddons() {
           --infobox "Update successful!" 3 50
         sleep 2
       else
-        updateFailed
+        return 1
       fi
     else
-      updateFailed
+      return 1
     fi
   fi
   return 0
@@ -156,10 +184,10 @@ function updatePatches() {
           --infobox "Update successful!" 3 50
         sleep 2
       else
-        updateFailed
+        return 1
       fi
     else
-      updateFailed
+      return 1
     fi
   fi
   return 0
@@ -208,10 +236,10 @@ function updateCustom() {
           --infobox "Update successful!" 3 50
         sleep 2
       else
-        updateFailed
+        return 1
       fi
     else
-      updateFailed
+      return 1
     fi
   fi
   return 0
@@ -264,10 +292,10 @@ function updateModules() {
           --infobox "Update successful!" 3 50
         sleep 2
       else
-        updateFailed
+        return 1
       fi
     else
-      updateFailed
+      return 1
     fi
     if [ -f "${MODULES_PATH}/${PLATFORM}-${KVERP}.tgz" ] && [ -f "${MODULES_PATH}/firmware.tgz" ]; then
       dialog --backtitle "$(backtitle)" --title "Update Modules" \
@@ -332,10 +360,10 @@ function updateConfigs() {
           --infobox "Update successful!" 3 50
         sleep 2
       else
-        updateFailed
+        return 1
       fi
     else
-      updateFailed
+      return 1
     fi
   fi
   return 0
@@ -388,19 +416,29 @@ function updateLKMs() {
           --infobox "Update successful!" 3 50
         sleep 2
       else
-        updateFailed
+        return 1
       fi
     else
-      updateFailed
+      return 1
     fi
   fi
   return 0
 }
 
 ###############################################################################
+# Update Offline
+function updateOffline() {
+  local ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+  if [ "${ARCOFFLINE}" != "true" ]; then
+    rm -f "${CONFIGS_PATH}/offline.json"
+    curl -skL "https://autoupdate.synology.com/os/v2" -o "${CONFIGS_PATH}/offline.json"
+  fi
+  return 0
+}
+
+###############################################################################
 # Loading Update Mode
-function arcUpdate() {
-  KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
+function dependenciesUpdate() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   FAILED="false"
   dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
@@ -420,20 +458,10 @@ function arcUpdate() {
   [ $? -ne 0 ] && FAILED="true"
   updateOffline
   [ $? -ne 0 ] && FAILED="true"
-  if [ "${FAILED}" == "true" ] && [ "${UPDATEMODE}" == "true" ]; then
+  if [ "${FAILED}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
       --infobox "Update failed!\nTry again later." 0 0
     sleep 3
-    exec reboot
-  elif [ "${FAILED}" == "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
-      --infobox "Update failed!\nTry again later." 0 0
-    sleep 3
-  elif [ "${FAILED}" == "false" ] && [ "${UPDATEMODE}" == "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
-      --infobox "Update successful! -> Reboot to automated build..." 0 0
-    sleep 3
-    rebootTo "automated"
   elif [ "${FAILED}" == "false" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
       --infobox "Update successful!" 0 0
@@ -443,21 +471,4 @@ function arcUpdate() {
     clear
     exec arc.sh
   fi
-}
-
-###############################################################################
-# Update Offline
-function updateOffline() {
-  local ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  if [ "${ARCOFFLINE}" != "true" ]; then
-    rm -f "${CONFIGS_PATH}/offline.json"
-    curl -skL "https://autoupdate.synology.com/os/v2" -o "${CONFIGS_PATH}/offline.json"
-  fi
-  return 0
-}
-
-###############################################################################
-# Update Failed
-function updateFailed() {
-  return 1
 }

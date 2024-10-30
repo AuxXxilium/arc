@@ -835,14 +835,10 @@ function updateMenu() {
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
         fi
-        if updateLoader "${TAG}"; then
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-          rebootTo "config"
-        fi
+        updateLoader "${TAG}"
         ;;
       2)
-        arcUpdate
+        updateDependencies
         ;;
       3)
         decryptMenu
@@ -884,7 +880,7 @@ function sysinfo() {
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   HWID="$(readConfigKey "arc.hwid" "${USER_CONFIG_FILE}")"
   USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
-  CPU=$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))
+  CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}')"
   SECURE=$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')
   ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
@@ -1770,7 +1766,7 @@ function decryptMenu() {
       mv -f "${S_FILE_ARC}" "${S_FILE}"
   else
     while true; do
-      CONFIGSVERSION=$(cat "${MODEL_CONFIG_PATH}/VERSION")
+      CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION" 2>/dev/null)"
       cp -f "${S_FILE}" "${S_FILE}.bak"
       dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
         --inputbox "Enter Decryption Key for ${CONFIGSVERSION}!\nKey is available in my Discord:\nhttps://discord.auxxxilium.tech" 9 50 2>"${TMP_PATH}/resp"
@@ -1949,8 +1945,7 @@ function dtsMenu() {
       3 "Edit dts file" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break
-    case "$(cat ${TMP_PATH}/resp)" in
-    %) ;;
+    case "$(cat ${TMP_PATH}/resp)" in %) ;;
     1)
       if ! tty 2>/dev/null | grep -q "/dev/pts"; then #if ! tty 2>/dev/null | grep -q "/dev/pts" || [ -z "${SSH_TTY}" ]; then
         MSG=""
