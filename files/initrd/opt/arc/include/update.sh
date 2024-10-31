@@ -320,7 +320,7 @@ function updateModules() {
 # Update Configs
 function updateConfigs() {
   local ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
-  [ -f "${MODEL_CONFIGS_PATH}/VERSION" ] && local CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")" || CONFIGSVERSION="0.0.0"
+  [ -f "${MODEL_CONFIG_PATH}/VERSION" ] && local CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")" || CONFIGSVERSION="0.0.0"
   if [ -z "${1}" ]; then
     idx=0
     while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
@@ -433,9 +433,9 @@ function updateLKMs() {
 function updateOffline() {
   local ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   if [ "${ARCOFFLINE}" != "true" ]; then
-    cp -f "${CONFIGS_PATH}/offline.json" "${CONFIGS_PATH}/offline.json.bak"
-    curl -skL "https://autoupdate.synology.com/os/v2" -o "${CONFIGS_PATH}/offline.json"
-    [ ! -f "${CONFIGS_PATH}/offline.json" ] && cp -f "${CONFIGS_PATH}/offline.json.bak" "${CONFIGS_PATH}/offline.json"
+    [ -f "${MODEL_CONFIG_PATH}/offline.json" ] && cp -f "${MODEL_CONFIG_PATH}/offline.json" "${MODEL_CONFIG_PATH}/offline.json.bak"
+    curl -skL "https://autoupdate.synology.com/os/v2" -o "${MODEL_CONFIG_PATH}/offline.json"
+    [ ! -f "${MODEL_CONFIG_PATH}/offline.json" ] && cp -f "${MODEL_CONFIG_PATH}/offline.json.bak" "${MODEL_CONFIG_PATH}/offline.json"
   fi
   return 0
 }
