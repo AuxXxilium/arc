@@ -2053,7 +2053,7 @@ function getpatfiles() {
   if [ ! -f "${DSM_FILE}" ] && [ "${ARCOFFLINE}" == "false" ]; then
     rm -f ${USER_UP_PATH}/*.tar
     dialog --backtitle "$(backtitlep)" --colors --title "DSM Version" \
-      --infobox "Downloading DSM Boot File..." 3 40
+      --infobox "Downloading DSM Boot Files..." 3 40
     # Get new Files
     DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
     if curl -skL "${DSM_URL}" -o "${DSM_FILE}"; then
