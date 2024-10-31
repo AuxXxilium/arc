@@ -502,9 +502,9 @@ function arcSettings() {
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   # Get Network Config for Loader
+  STEP="network"
   dialog --backtitle "$(backtitlep)" --colors --title "Network Config" \
     --infobox "Generating Network Config..." 3 40
-  STEP="network"
   sleep 2
   getnet
   [ $? -ne 0 ] && return 1
@@ -516,9 +516,9 @@ function arcSettings() {
   fi
   # Select Portmap for Loader
   if [ "${DT}" == "false" ] && [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
+    STEP="storagemap"
     dialog --backtitle "$(backtitlep)" --colors --title "Storage Map" \
       --infobox "Generating Storage Map..." 3 40
-    STEP="storagemap"
     sleep 2
     getmapSelection
     [ $? -ne 0 ] && return 1
@@ -526,9 +526,9 @@ function arcSettings() {
   # Check for Custom Build
   if [ "${ARCMODE}" == "config" ]; then
     # Select Addons
+    STEP="addons"
     dialog --backtitle "$(backtitlep)" --colors --title "DSM Addons" \
       --infobox "Loading Addons Table..." 3 40
-    STEP="addons"
     addonSelection
     [ $? -ne 0 ] && return 1
   fi
