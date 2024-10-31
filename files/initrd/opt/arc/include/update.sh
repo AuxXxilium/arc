@@ -430,8 +430,9 @@ function updateLKMs() {
 function updateOffline() {
   local ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   if [ "${ARCOFFLINE}" != "true" ]; then
-    rm -f "${CONFIGS_PATH}/offline.json"
+    cp -f "${CONFIGS_PATH}/offline.json" "${CONFIGS_PATH}/offline.json.bak"
     curl -skL "https://autoupdate.synology.com/os/v2" -o "${CONFIGS_PATH}/offline.json"
+    [ ! -f "${CONFIGS_PATH}/offline.json" ] && cp -f "${CONFIGS_PATH}/offline.json.bak" "${CONFIGS_PATH}/offline.json"
   fi
   return 0
 }
