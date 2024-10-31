@@ -4,7 +4,9 @@ function updateLoader() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   local ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   local ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
+  local ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
   local TAG="${1}"
+  [ -n "${ARCCONF}" ] && cp -f "${S_FILE}" "${TMP_PATH}/bak.yml"
   if [ -z "${TAG}" ]; then
     idx=0
     while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
@@ -67,6 +69,7 @@ function updateLoader() {
       fi
     fi
   fi
+  [ -n "${ARCCONF}" ] && cp -f "${TMP_PATH}/bak.yml" "${S_FILE}"
   if [ "${ARCMODE}" == "update" ] && [ "${CONFDONE}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
       --infobox "Update successful! -> Reboot to automated Build Mode..." 5 80
@@ -452,8 +455,6 @@ function dependenciesUpdate() {
   updateCustom
   [ $? -ne 0 ] && FAILED="true"
   updatePatches
-  [ $? -ne 0 ] && FAILED="true"
-  updateConfigs
   [ $? -ne 0 ] && FAILED="true"
   updateLKMs
   [ $? -ne 0 ] && FAILED="true"
