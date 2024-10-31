@@ -435,15 +435,26 @@ function arcPatch() {
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     fi
   elif [ "${ARCMODE}" == "config" ]; then
-    dialog --clear --backtitle "$(backtitlep)" \
-      --nocancel --title "SN/Mac Options"\
-      --menu "Choose an Option." 7 60 0 \
-      1 "Use Arc Patch (AME, QC, Push Notify and more)" \
-      2 "Use random SN/Mac (Reduced DSM Features)" \
-      3 "Use my own SN/Mac (Be sure your Data is valid)" \
-    2>"${TMP_PATH}/resp"
-    resp=$(cat ${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return 1
+    if [ -n "${ARCCONF}" ]; then
+      dialog --clear --backtitle "$(backtitlep)" \
+        --nocancel --title "SN/Mac Options"\
+        --menu "Choose an Option." 7 60 0 \
+        1 "Use Arc Patch (AME, QC, Push Notify and more)" \
+        2 "Use random SN/Mac (Reduced DSM Features)" \
+        3 "Use my own SN/Mac (Be sure your Data is valid)" \
+      2>"${TMP_PATH}/resp"
+      resp=$(cat ${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return 1
+    else
+      dialog --clear --backtitle "$(backtitlep)" \
+        --nocancel --title "SN/Mac Options"\
+        --menu "Choose an Option." 7 60 0 \
+        2 "Use random SN/Mac (Reduced DSM Features)" \
+        3 "Use my own SN/Mac (Be sure your Data is valid)" \
+      2>"${TMP_PATH}/resp"
+      resp=$(cat ${TMP_PATH}/resp)
+      [ -z "${resp}" ] && return 1
+    fi
     if [ ${resp} -eq 1 ]; then
       [ -z "${ARCCONF}" ] && decryptMenu || true
       if [ -n "${ARCCONF}" ]; then

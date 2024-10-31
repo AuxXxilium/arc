@@ -61,12 +61,15 @@ function addonSelection() {
     dialog --backtitle "$(backtitlep)" --title "DSM Addons" --colors --aspect 18 \
       --checklist "Select DSM Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
       --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && return 1
+    resp=$(cat ${TMP_PATH}/resp)
   else
     dialog --backtitle "$(backtitle)" --title "DSM Addons" --colors --aspect 18 \
       --checklist "Select DSM Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
       --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return 1
-  resp=$(cat ${TMP_PATH}/resp)
+    [ $? -ne 0 ] && return 1
+    resp=$(cat ${TMP_PATH}/resp)
+  fi
   unset ADDONS
   declare -A ADDONS
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
