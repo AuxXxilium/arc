@@ -499,16 +499,19 @@ function onlineCheck() {
   REGION="$(curl -m 10 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
   TIMEZONE="$(curl -m 10 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
   [ -z "${KEYMAP}" ] && KEYMAP="$(curl -m 10 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
-  writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
-  writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
   if [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ]; then
-    ln -sf "/usr/share/zoneinfo/${REGION}/${TIMEZONE}" /etc/localtime
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
     [ $(echo "${ARC_VERSION}" | grep "dev" | wc -l) -eq 0 ] && NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
     [ $(echo "${ARC_VERSION}" | grep "dev" | wc -l) -gt 0 ] && NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
+    writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
+    writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
+    updateOffline
   else
+    REGION="$(readConfigKey "time.region" "${USER_CONFIG_FILE}")"
+    TIMEZONE="$(readConfigKey "time.timezone" "${USER_CONFIG_FILE}")"
     writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
   fi
+  [ -n "${TIMEZONE}" ] && [ -n "${REGION}" ] && ln -sf "/usr/share/zoneinfo/${REGION}/${TIMEZONE}" /etc/localtime
   if [ -z "${LAYOUT}" ]; then
     [ -n "${KEYMAP}" ] && KEYMAP="$(echo ${KEYMAP} | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]' | tr -d '[:punct:]' | tr -d '[:digit:]')"
     [ -n "${KEYMAP}" ] && writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
