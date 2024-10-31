@@ -7,6 +7,7 @@ function availableAddons() {
     return 1
   fi
   ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+  ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   for D in $(find "${ADDONS_PATH}" -maxdepth 1 -type d 2>/dev/null | sort); do
     [ ! -f "${D}/manifest.yml" ] && continue
     ADDON=$(basename ${D})
@@ -14,7 +15,10 @@ function availableAddons() {
     [ "${AVAILABLE}" = false ] && continue
     SYSTEM=$(readConfigKey "system" "${D}/manifest.yml")
     [ "${SYSTEM}" = true ] && continue
-    if [ "${ARCOFFLINE}" == "true" ] && [[ "${ADDON}" == "amepatch" || "${ADDON}" == "arcdns" ]]; then
+    if [[ "${ARCOFFLINE}" == "true" || -z "${ARCCONF}" ]] && [[ "${ADDON}" == "amepatch" || "${ADDON}" == "arcdns" ]]; then
+      continue
+    fi
+    if [ "${MACHINE}" != "Native" ] && [ "${ADDON}" == "cpufreqscaling" ]; then
       continue
     fi
     DESC="$(readConfigKey "description" "${D}/manifest.yml")"
