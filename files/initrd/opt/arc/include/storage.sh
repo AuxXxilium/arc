@@ -152,17 +152,31 @@ function getmapSelection() {
       REMAP1="*"
     fi
     # Ask for Portmap
-    dialog --backtitle "$(backtitle)" --title "Sata Portmap" \
-      --menu "Choose a Portmap for Sata!?\n* Recommended Option" 8 60 0 \
-      1 "DiskIdxMap: Active Ports ${REMAP1}" \
-      2 "DiskIdxMap: Max Ports ${REMAP2}" \
-      3 "SataRemap: Remove empty Ports ${REMAP3}" \
-      4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
-      5 "Set my own Portmap in Config" \
-    2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
-    resp=$(cat "${TMP_PATH}/resp")
-    [ -z "${resp}" ] && return 1
+    if [ "${STEP}" == "storagemap" ]; then
+      dialog --backtitle "$(backtitlep)" --title "Sata Portmap" \
+        --menu "Choose a Portmap for Sata!?\n* Recommended Option" 8 60 0 \
+        1 "DiskIdxMap: Active Ports ${REMAP1}" \
+        2 "DiskIdxMap: Max Ports ${REMAP2}" \
+        3 "SataRemap: Remove empty Ports ${REMAP3}" \
+        4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
+        5 "Set my own Portmap in Config" \
+      2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && return 1
+      resp=$(cat "${TMP_PATH}/resp")
+      [ -z "${resp}" ] && return 1
+    else
+        dialog --backtitle "$(backtitle)" --title "Sata Portmap" \
+        --menu "Choose a Portmap for Sata!?\n* Recommended Option" 8 60 0 \
+        1 "DiskIdxMap: Active Ports ${REMAP1}" \
+        2 "DiskIdxMap: Max Ports ${REMAP2}" \
+        3 "SataRemap: Remove empty Ports ${REMAP3}" \
+        4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
+        5 "Set my own Portmap in Config" \
+      2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && return 1
+      resp=$(cat "${TMP_PATH}/resp")
+      [ -z "${resp}" ] && return 1
+    fi
     if [ ${resp} -eq 1 ]; then
       writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 2 ]; then

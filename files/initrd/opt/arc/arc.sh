@@ -97,18 +97,13 @@ function arcModel() {
   # Loop menu
   RESTRICT=1
   PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"
-  MJ="$(python ${ARC_PATH}/include/functions.py getmodelsoffline -p "${PS[*]}")"
-  if [[ -z "${MJ}" || "${MJ}" == "[]" ]]; then
-    dialog --backtitle "$(backtitlep)" --title "Model" --title "Model" \
-      --msgbox "Failed to get models, please try again!" 3 50
-    return 1
-  fi
   echo -n "" >"${TMP_PATH}/modellist"
-  echo "${MJ}" | jq -c '.[]' | while read -r item; do
-    name=$(echo "${item}" | jq -r '.name')
-    arch=$(echo "${item}" | jq -r '.arch')
-    echo "${name} ${arch}" >>"${TMP_PATH}/modellist"
-  done
+  while read -r P; do
+    PM="$(readConfigEntriesArray "${P}" "${D_FILE}" | sort)"
+    while read -r M; do
+      echo "${M} ${P}" >>"${TMP_PATH}/modellist"
+    done < <(echo "${PM}")
+  done < <(echo "${PS}")
   if [ "${ARCMODE}" == "config" ]; then
     while true; do
       echo -n "" >"${TMP_PATH}/menu"
@@ -282,17 +277,14 @@ function arcVersion() {
     PAT_HASH=""
     URLVER=""
     while true; do
-      PJ="$(python ${ARC_PATH}/include/functions.py getpats -m "${MODEL}" -r "${PRODUCTVER}")"
-      PVS="$(echo "${PJ}" | jq -r '.[].release')"
-      [ -f "${TMP_PATH}/versions" ] && rm -f "${TMP_PATH}/versions" >/dev/null 2>&1 && touch "${TMP_PATH}/versions"
-      while IFS= read -r line; do
-      VERSION="${line}"
-      CHECK_URL=$(echo "${PJ}" | jq -r ".[] | select(.release == \"${VERSION}\") | .mLink")
-      if curl --head -skL -m 5 "${CHECK_URL}" | head -n 1 | grep -q "404\|403"; then
-        continue
-      else
-        echo "${VERSION}" >>"${TMP_PATH}/versions"
-      fi
+      PVS="$(readConfigEntriesArray "${PLATFORM}.\"${MODEL}\"" "${D_FILE}" | sort -r)"
+      echo -n "" >"${TMP_PATH}/versions"
+      while read -r V; do
+        if [ "${V:0:3}" != "${PRODUCTVER}" ]; then
+          continue
+        else
+          echo "${V}" >>"${TMP_PATH}/versions"
+        fi
       done < <(echo "${PVS}")
       DSMPVS="$(cat ${TMP_PATH}/versions)"
       dialog --backtitle "$(backtitlep)" --colors --title "DSM Version" \
@@ -301,10 +293,9 @@ function arcVersion() {
       RET=$?
       [ ${RET} -ne 0 ] && return
       PV=$(cat ${TMP_PATH}/resp)
-      PAT_URL=$(echo "${PJ}" | jq -r ".[] | select(.release == \"${PV}\") | .mLink")
-      PAT_HASH=$(echo "${PJ}" | jq -r ".[] | select(.release == \"${PV}\") | .mCheckSum")
-      URLVER="$(echo "${PV}" | cut -d'.' -f1,2)"
-      [ "${PRODUCTVER}" != "${URLVER}" ] && PRODUCTVER="${URLVER}"
+      PAT_URL="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${PV}\".url" "${D_FILE}")"
+      PAT_HASH="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${PV}\".hash" "${D_FILE}")"
+      [ "${PRODUCTVER}" != "${PV:0:3}" ] && PRODUCTVER="${PV:0:3}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
       [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true" && break
     done
@@ -763,6 +754,7 @@ function make() {
     sleep 2
     return 1
   fi
+  STEP="boot"
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
     writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
@@ -810,35 +802,42 @@ function arcFinish() {
 ###############################################################################
 # Calls boot.sh to boot into DSM Reinstall Mode
 function juniorboot() {
-  if [ "${BUILDDONE}" == "false" ] && [ "${ARCMODE}" != "automated" ]; then
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
+  if [[ "${BUILDDONE}" == "false" && "${ARCMODE}" != "automated" ]] || [ "${MODEL}" != "${MODELID}" ]; then
     dialog --backtitle "$(backtitle)" --title "Alert" \
       --yesno "Config changed, you need to rebuild the Loader?" 0 0
     if [ $? -eq 0 ]; then
       arcSummary
     fi
+  else
+    dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+      --infobox "Booting DSM Reinstall Mode...\nPlease stay patient!" 4 30
+    sleep 3
+    rebootTo junior
   fi
-  dialog --backtitle "$(backtitle)" --title "Arc Boot" \
-    --infobox "Booting DSM Reinstall Mode...\nPlease stay patient!" 4 30
-  sleep 3
-  rebootTo junior
 }
 
 ###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
 function boot() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  if [ "${BUILDDONE}" == "false" ] && [ "${ARCMODE}" != "automated" ]; then
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
+  if [[ "${BUILDDONE}" == "false" && "${ARCMODE}" != "automated" ]] || [ "${MODEL}" != "${MODELID}" ]; then
     dialog --backtitle "$(backtitle)" --title "Alert" \
       --yesno "Config changed, you need to rebuild the Loader?" 0 0
     if [ $? -eq 0 ]; then
       arcSummary
     fi
+  else
+    dialog --backtitle "$(backtitle)" --title "Arc Boot" \
+      --infobox "Booting DSM...\nPlease stay patient!" 4 25
+    sleep 2
+    clear 
+    exec boot.sh
   fi
-  dialog --backtitle "$(backtitle)" --title "Arc Boot" \
-    --infobox "Booting DSM...\nPlease stay patient!" 4 25
-  sleep 2
-  clear 
-  exec boot.sh
 }
 
 ###############################################################################

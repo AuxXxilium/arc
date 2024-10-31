@@ -244,8 +244,8 @@ function getOffline() {
   local DEST_PATH="${1}"
 
   [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
-  rm -f "${DEST_PATH}/offline.json"
-  if curl -skL "https://autoupdate.synology.com/os/v2" -o "${DEST_PATH}/offline.json"; then
+  rm -f "${DEST_PATH}/data.yml"
+  if curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/refs/heads/main/data.yml" -o "${DEST_PATH}/data.yml"; then
     echo "Getting Offline end"
   else
     echo "Failed to get Offline"

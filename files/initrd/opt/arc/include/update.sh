@@ -433,9 +433,9 @@ function updateLKMs() {
 function updateOffline() {
   local ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   if [ "${ARCOFFLINE}" != "true" ]; then
-    [ -f "${MODEL_CONFIG_PATH}/offline.json" ] && cp -f "${MODEL_CONFIG_PATH}/offline.json" "${MODEL_CONFIG_PATH}/offline.json.bak"
-    curl -skL "https://autoupdate.synology.com/os/v2" -o "${MODEL_CONFIG_PATH}/offline.json"
-    [ ! -f "${MODEL_CONFIG_PATH}/offline.json" ] && cp -f "${MODEL_CONFIG_PATH}/offline.json.bak" "${MODEL_CONFIG_PATH}/offline.json"
+    [ -f "${MODEL_CONFIG_PATH}/data.yml" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml" "${MODEL_CONFIG_PATH}/data.yml.bak"
+    curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/refs/heads/main/data.yml" -o "${MODEL_CONFIG_PATH}/data.yml"
+    [ ! -f "${MODEL_CONFIG_PATH}/data.yml" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml.bak" "${MODEL_CONFIG_PATH}/data.yml"
   fi
   return 0
 }
