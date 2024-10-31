@@ -40,7 +40,6 @@ UNTAR_PAT_PATH="${PART3_PATH}/DSM"
 S_FILE="${MODEL_CONFIG_PATH}/serials.yml"
 S_FILE_ARC="${MODEL_CONFIG_PATH}/arc_serials.yml"
 S_FILE_ENC="${MODEL_CONFIG_PATH}/arc_serials.enc"
-S_FILE_CHECK="${MODEL_CONFIG_PATH}/arc_serials.checksum"
 P_FILE="${MODEL_CONFIG_PATH}/platforms.yml"
 
 EXTRACTOR_PATH="${PART3_PATH}/extractor"
