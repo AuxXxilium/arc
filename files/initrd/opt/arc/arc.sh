@@ -73,10 +73,23 @@ function backtitle() {
   echo "${BACKTITLE}"
 }
 
+function backtitlep() {
+  [ "${STEP}" == "model" ] && BACKTITLEP="CHOOSE MODEL -> " || BACKTITLEP="Choose Model -> "
+  [ "${STEP}" == "version" ] && BACKTITLEP+="CHOOSE VERSION -> " || BACKTITLEP+="Choose Version -> "
+  [ "${STEP}" == "snmac" ] && BACKTITLEP+="SET SN/MAC -> " || BACKTITLEP+="Set Sn/Mac -> "
+  [ "${STEP}" == "network" ] && BACKTITLEP+="SET NETWORK -> " || BACKTITLEP+="Set Network -> "
+  [ "${STEP}" == "storagemap" ] && BACKTITLEP+="SET STORAGEMAP -> " || BACKTITLEP+="Set StorageMap -> "
+  [ "${STEP}" == "addons" ] && BACKTITLEP+="SET ADDONS -> " || BACKTITLEP+="Set Addons -> "
+  [ "${STEP}" == "build" ] && BACKTITLEP+="BUILD LOADER -> " || BACKTITLEP+="Build Loader -> "
+  [ "${STEP}" == "boot" ] && BACKTITLEP+="BOOT DSM" || BACKTITLEP+="Boot DSM"
+  echo "${BACKTITLEP}"
+}
+
 ###############################################################################
 # Model Selection
 function arcModel() {
-  dialog --backtitle "$(backtitle)" --title "DSM Model" \
+  STEP="model"
+  dialog --backtitle "$(backtitlep)" --title "DSM Model" \
     --infobox "Reading Models..." 3 25
   if [ ! -f "${S_FILE}" ]; then
     updateConfigs
@@ -86,7 +99,7 @@ function arcModel() {
   PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"
   MJ="$(python ${ARC_PATH}/include/functions.py getmodelsoffline -p "${PS[*]}")"
   if [[ -z "${MJ}" || "${MJ}" == "[]" ]]; then
-    dialog --backtitle "$(backtitle)" --title "Model" --title "Model" \
+    dialog --backtitle "$(backtitlep)" --title "Model" --title "Model" \
       --msgbox "Failed to get models, please try again!" 3 50
     return 1
   fi
@@ -150,13 +163,13 @@ function arcModel() {
         fi
       done < <(cat "${TMP_PATH}/modellist")
       if [ -n "${ARCKEY}" ]; then
-        dialog --backtitle "$(backtitle)" --title "Arc DSM Model" --colors \
+        dialog --backtitle "$(backtitlep)" --title "Arc DSM Model" --colors \
           --cancel-label "Show all" --help-button --help-label "Exit" \
           --extra-button --extra-label "Info" \
           --menu "Supported Models for your Hardware (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 115 0 \
           --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       else
-        dialog --backtitle "$(backtitle)" --title "DSM Model" --colors \
+        dialog --backtitle "$(backtitlep)" --title "DSM Model" --colors \
           --cancel-label "Show all" --help-button --help-label "Exit" \
           --extra-button --extra-label "Info" \
           --menu "Supported Models for your Hardware (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 115 0 \
@@ -179,7 +192,7 @@ function arcModel() {
         3) # extra-button -> Platform Info
           resp=$(cat ${TMP_PATH}/resp)
           PLATFORM="$(grep -w "${resp}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
-          dialog --backtitle "$(backtitle)" --colors \
+          dialog --backtitle "$(backtitlep)" --colors \
             --title "Platform Info" --textbox "./informations/${PLATFORM}.yml" 70 80
           ;;
         255) # ESC -> Exit
@@ -229,6 +242,7 @@ function arcModel() {
 ###############################################################################
 # Arc Version Section
 function arcVersion() {
+  STEP="version"
   # Read Model Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
@@ -241,7 +255,7 @@ function arcVersion() {
   if [ "${ARCMODE}" == "config" ] && [ "${ARCRESTORE}" != "true" ]; then
     # Select Build for DSM
     ITEMS="$(readConfigEntriesArray "platforms.${PLATFORM}.productvers" "${P_FILE}" | sort -r)"
-    dialog --clear --no-items --nocancel --title "DSM Version" --backtitle "$(backtitle)" \
+    dialog --clear --no-items --nocancel --title "DSM Version" --backtitle "$(backtitlep)" \
       --no-items --menu "Choose DSM Version" 7 30 0 ${ITEMS} \
     2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 0
@@ -262,7 +276,7 @@ function arcVersion() {
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     fi
-    dialog --backtitle "$(backtitle)" --title "DSM Version" \
+    dialog --backtitle "$(backtitlep)" --title "DSM Version" \
     --infobox "Reading DSM Build..." 3 25
     PAT_URL=""
     PAT_HASH=""
@@ -281,7 +295,7 @@ function arcVersion() {
       fi
       done < <(echo "${PVS}")
       DSMPVS="$(cat ${TMP_PATH}/versions)"
-      dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
+      dialog --backtitle "$(backtitlep)" --colors --title "DSM Version" \
       --no-items --menu "Choose a DSM Build" 0 0 0 ${DSMPVS} \
       2>${TMP_PATH}/resp
       RET=$?
@@ -299,7 +313,7 @@ function arcVersion() {
         MSG="Failed to get PAT Data.\n"
         MSG+="Please manually fill in the URL and Hash of PAT.\n"
         MSG+="You will find these Data at: https://github.com/AuxXxilium/arc-dsm/blob/main/webdata.txt"
-        dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
+        dialog --backtitle "$(backtitlep)" --colors --title "Arc Build" --default-button "OK" \
           --form "${MSG}" 11 120 2 "Url" 1 1 "${PAT_URL}" 1 8 110 0 "Hash" 2 1 "${PAT_HASH}" 2 8 110 0 \
           2>"${TMP_PATH}/resp"
         RET=$?
@@ -317,7 +331,7 @@ function arcVersion() {
       rm -f "${USER_UP_PATH}/"*.tar >/dev/null 2>&1 || true
     fi
     MSG="Do you want to try Automated Mode?\nIf yes, Loader will configure, build and boot DSM."
-    dialog --backtitle "$(backtitle)" --colors --title "Automated Mode" \
+    dialog --backtitle "$(backtitlep)" --colors --title "Automated Mode" \
       --yesno "${MSG}" 6 55
     if [ $? -eq 0 ]; then
       ARCMODE="automated"
@@ -329,7 +343,7 @@ function arcVersion() {
   fi
   # Change Config if Files are valid
   if [ "${VALID}" == "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "Arc Config" \
+    dialog --backtitle "$(backtitlep)" --title "Arc Config" \
       --infobox "Reconfiguring Addons, Cmdline, Modules and Synoinfo" 3 60
     # Reset Synoinfo
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
@@ -394,7 +408,7 @@ function arcVersion() {
       arcPatch
     fi
   else
-    dialog --backtitle "$(backtitle)" --title "Arc Config" --aspect 18 \
+    dialog --backtitle "$(backtitlep)" --title "Arc Config" --aspect 18 \
       --infobox "Arc Config failed!\nExit." 4 40
     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -406,6 +420,7 @@ function arcVersion() {
 ###############################################################################
 # Arc Patch Section
 function arcPatch() {
+  STEP="snmac"
   # Read Model Values
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -420,7 +435,7 @@ function arcPatch() {
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     fi
   elif [ "${ARCMODE}" == "config" ]; then
-    dialog --clear --backtitle "$(backtitle)" \
+    dialog --clear --backtitle "$(backtitlep)" \
       --nocancel --title "SN/Mac Options"\
       --menu "Choose an Option." 7 60 0 \
       1 "Use Arc Patch (AME, QC, Push Notify and more)" \
@@ -446,7 +461,7 @@ function arcPatch() {
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 3 ]; then
       while true; do
-        dialog --backtitle "$(backtitle)" --colors --title "DSM SN" \
+        dialog --backtitle "$(backtitlep)" --colors --title "DSM SN" \
           --inputbox "Please enter a valid SN!" 7 50 "" \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break 2
@@ -476,8 +491,9 @@ function arcSettings() {
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   # Get Network Config for Loader
-  dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
+  dialog --backtitle "$(backtitlep)" --colors --title "Network Config" \
     --infobox "Generating Network Config..." 3 40
+  STEP="network"
   sleep 2
   getnet
   [ $? -ne 0 ] && return 1
@@ -489,8 +505,9 @@ function arcSettings() {
   fi
   # Select Portmap for Loader
   if [ "${DT}" == "false" ] && [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
-    dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
+    dialog --backtitle "$(backtitlep)" --colors --title "Storage Map" \
       --infobox "Generating Storage Map..." 3 40
+    STEP="storagemap"
     sleep 2
     getmapSelection
     [ $? -ne 0 ] && return 1
@@ -498,14 +515,15 @@ function arcSettings() {
   # Check for Custom Build
   if [ "${ARCMODE}" == "config" ]; then
     # Select Addons
-    dialog --backtitle "$(backtitle)" --colors --title "DSM Addons" \
+    dialog --backtitle "$(backtitlep)" --colors --title "DSM Addons" \
       --infobox "Loading Addons Table..." 3 40
+    STEP="addons"
     addonSelection
     [ $? -ne 0 ] && return 1
   fi
   # Check for CPU Frequency Scaling & Governor
   if [ "${ARCMODE}" == "config" ] && [ "${MACHINE}" == "Native" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
-    dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
+    dialog --backtitle "$(backtitlep)" --colors --title "CPU Frequency Scaling" \
       --infobox "Generating Governor Table..." 3 40
     governorSelection
     [ $? -ne 0 ] && return 1
@@ -520,7 +538,7 @@ function arcSettings() {
     # Check for DT and HBA/Raid Controller
     if [ "${PLATFORM}" != "epyc7002" ]; then
       if [ "${DT}" == "true" ] && [ "${EXTERNALCONTROLLER}" == "true" ]; then
-        dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+        dialog --backtitle "$(backtitlep)" --title "Arc Warning" \
           --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental." 6 70
       fi
     fi
@@ -528,21 +546,21 @@ function arcSettings() {
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
     MODELNIC="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
     if [ ${DEVICENIC} -gt 8 ]; then
-      dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+      dialog --backtitle "$(backtitlep)" --title "Arc Warning" \
         --msgbox "WARN: You have more NIC (${DEVICENIC}) then 8 NIC.\nOnly 8 supported by DSM." 6 60
     fi
     if [ ${DEVICENIC} -gt ${MODELNIC} ] && [ "${ARCPATCH}" == "true" ]; then
-      dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+      dialog --backtitle "$(backtitlep)" --title "Arc Warning" \
         --msgbox "WARN: You have more NIC (${DEVICENIC}) than supported by Model (${MODELNIC}).\nOnly ${MODELNIC} are used by Arc Patch." 6 80
     fi
     # Check for AES
     if [ "${AESSYS}" == "false" ]; then
-      dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+      dialog --backtitle "$(backtitlep)" --title "Arc Warning" \
         --msgbox "WARN: Your System doesn't support Hardwareencryption in DSM. (AES)" 5 70
     fi
     # Check for CPUFREQ
     if [[ "${CPUFREQ}" == "false" || "${ACPISYS}" == "false" ]] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
-      dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+      dialog --backtitle "$(backtitlep)" --title "Arc Warning" \
         --msgbox "WARN: It is possible that CPU Frequency Scaling is not working properly with your System." 6 80
     fi
   fi
@@ -562,7 +580,7 @@ function arcSettings() {
     # Check for Custom Build
     if [ "${ARCMODE}" == "config" ]; then
       # Ask for Build
-      dialog --clear --backtitle "$(backtitle)" --title "Config done" \
+      dialog --clear --backtitle "$(backtitlep)" --title "Config done" \
         --no-cancel --menu "Build now?" 7 40 0 \
         1 "Yes - Build Arc Loader now" \
         2 "No - I want to make changes" \
@@ -589,6 +607,7 @@ function arcSettings() {
 ###############################################################################
 # Show Summary of Config
 function arcSummary() {
+  STEP="build"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
@@ -659,7 +678,7 @@ function arcSummary() {
   SUMMARY+="\n>> Internal Disks: \Zb${HARDDRIVES}\Zn"
   SUMMARY+="\n>> Additional Controller: \Zb${EXTERNALCONTROLLER}\Zn"
   SUMMARY+="\n>> Memory: \Zb${RAMTOTAL}GB\Zn"
-  dialog --backtitle "$(backtitle)" --colors --title "DSM Config Summary" \
+  dialog --backtitle "$(backtitlep)" --colors --title "DSM Config Summary" \
     --extra-button --extra-label "Cancel" --msgbox "${SUMMARY}" 0 0
   RET=$?
   case ${RET} in
@@ -678,6 +697,7 @@ function arcSummary() {
 ###############################################################################
 # Building Loader
 function make() {
+  STEP="build"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
   BOOTMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
@@ -721,7 +741,7 @@ function make() {
     (
       livepatch
       sleep 3
-    ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Build Loader" \
+    ) 2>&1 | dialog --backtitle "$(backtitlep)" --colors --title "Build Loader" \
       --progressbox "Magical things happening..." 20 70
   else
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \

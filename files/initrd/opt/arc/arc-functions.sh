@@ -57,9 +57,14 @@ function addonSelection() {
       echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
     fi
   done < <(availableAddons "${PLATFORM}")
-  dialog --backtitle "$(backtitle)" --title "DSM Addons" --colors --aspect 18 \
-    --checklist "Select DSM Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
-    --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
+  if [ "${STEP}" == "addons" ]; then
+    dialog --backtitle "$(backtitlep)" --title "DSM Addons" --colors --aspect 18 \
+      --checklist "Select DSM Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
+      --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
+  else
+    dialog --backtitle "$(backtitle)" --title "DSM Addons" --colors --aspect 18 \
+      --checklist "Select DSM Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
+      --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
   resp=$(cat ${TMP_PATH}/resp)
   unset ADDONS
@@ -70,8 +75,13 @@ function addonSelection() {
     writeConfigKey "addons.\"${ADDON}\"" "" "${USER_CONFIG_FILE}"
   done
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
-  dialog --backtitle "$(backtitle)" --title "DSM Addons" \
-    --msgbox "DSM Addons selected:\n${ADDONSINFO}" 7 70
+  if [ "${STEP}" == "addons" ]; then
+    dialog --backtitle "$(backtitlep)" --title "DSM Addons" \
+      --msgbox "DSM Addons selected:\n${ADDONSINFO}" 7 70
+  else
+    dialog --backtitle "$(backtitle)" --title "DSM Addons" \
+      --msgbox "DSM Addons selected:\n${ADDONSINFO}" 7 70
+  fi
 }
 
 ###############################################################################
@@ -2039,7 +2049,7 @@ function getpatfiles() {
   VALID="false"
   if [ ! -f "${DSM_FILE}" ] && [ "${ARCOFFLINE}" == "false" ]; then
     rm -f ${USER_UP_PATH}/*.tar
-    dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
+    dialog --backtitle "$(backtitlep)" --colors --title "DSM Version" \
       --infobox "Downloading DSM Boot File..." 3 40
     # Get new Files
     DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
@@ -2048,7 +2058,7 @@ function getpatfiles() {
     fi
   elif [ ! -f "${DSM_FILE}" ] && [ "${ARCOFFLINE}" == "true" ]; then
     rm -f ${USER_UP_PATH}/*.tar
-    dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
+    dialog --backtitle "$(backtitlep)" --colors --title "DSM Version" \
       --msgbox "Please upload the DSM Boot File to ${USER_UP_PATH}.\nUse ${IPCON}:7304 to upload and press OK after it's finished.\nLink: https://github.com/AuxXxilium/arc-dsm/tree/main/files/${MODEL}/${PRODUCTVER}/${PAT_HASH}.tar" 8 120
     [ $? -ne 0 ] && VALID="false"
     if [ -f "${DSM_FILE}" ]; then
@@ -2059,7 +2069,7 @@ function getpatfiles() {
   fi
   mkdir -p "${UNTAR_PAT_PATH}"
   if [ "${VALID}" == "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "DSM Extraction" --aspect 18 \
+    dialog --backtitle "$(backtitlep)" --title "DSM Extraction" --aspect 18 \
       --infobox "Copying DSM Files..." 3 40
     tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" 2>/dev/null
     copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null
