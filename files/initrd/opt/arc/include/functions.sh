@@ -493,20 +493,19 @@ function livepatch() {
 
 ###############################################################################
 # Check NTP and Keyboard Layout
-function ntpCheck() {
+function onlineCheck() {
   LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
   KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-  REGION="$(readConfigKey "time.region" "${USER_CONFIG_FILE}")"
-  TIMEZONE="$(readConfigKey "time.timezone" "${USER_CONFIG_FILE}")"
-  if [ -z "${REGION}" ] || [ -z "${TIMEZONE}" ]; then
-    REGION="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
-    TIMEZONE="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
-    [ -z "${KEYMAP}" ] && KEYMAP="$(curl -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
-    writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
-    writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
-  fi
+  REGION="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
+  TIMEZONE="$(curl -m 5 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
+  [ -z "${KEYMAP}" ] && KEYMAP="$(curl -m 5 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+  writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
+  writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
   if [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ]; then
     ln -sf "/usr/share/zoneinfo/${REGION}/${TIMEZONE}" /etc/localtime
+    writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
+  else
+    writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
   fi
   if [ -z "${LAYOUT}" ]; then
     [ -n "${KEYMAP}" ] && KEYMAP="$(echo ${KEYMAP} | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]' | tr -d '[:punct:]' | tr -d '[:digit:]')"
@@ -516,31 +515,6 @@ function ntpCheck() {
   fi
   if [ "${KEYMAP}" == "ua" ] || [ "${REGION}" == "Kyiv" ] || [ "${REGION}" == "Kiev" ]; then
     poweroff
-  fi
-  if [ $(echo "${ARC_VERSION}" | grep "dev" | wc -l) -eq 0 ]; then
-    while true; do
-      NEWTAG="$(curl -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-      CNT=$((${CNT} + 1))
-      if [ -n "${NEWTAG}" ]; then
-        writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
-        break
-      elif [ ${CNT} -ge 3 ]; then
-        writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
-        break
-      fi
-    done
-  elif [ $(echo "${ARC_VERSION}" | grep "dev" | wc -l) -gt 0 ]; then
-    while true; do
-      NEWTAG="$(curl -m 5 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
-      CNT=$((${CNT} + 1))
-      if [ -n "${NEWTAG}" ]; then
-        writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
-        break
-      elif [ ${CNT} -ge 3 ]; then
-        writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
-        break
-      fi
-    done
   fi
 }
 

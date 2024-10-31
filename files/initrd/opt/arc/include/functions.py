@@ -290,7 +290,7 @@ def getpats4mv(model, version):
 @click.option("-r", "--release", type=str, required=True, help="The release version of Syno.")
 def getpats(model, release):
     """
-    Get all mLink and mCheckSum for the specified model and release.
+    Get all mLink, mCheckSum, and full release version for the specified model and release.
     """
     import json
 
@@ -307,7 +307,8 @@ def getpats(model, release):
             for J in I["model"]:
                 name = J["mLink"].split("/")[-1].split("_")[1].replace("%2B", "+")
                 if name == model:
-                    links.append({"mLink": J["mLink"], "mCheckSum": J.get("mCheckSum", "N/A")})
+                    full_release = I["title"].split(" ")[1]
+                    links.append({ "release": full_release, "mLink": J["mLink"], "mCheckSum": J.get("mCheckSum", "N/A")})
 
         if links:
             print(json.dumps(links, indent=4))

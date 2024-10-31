@@ -14,8 +14,9 @@
 . ${ARC_PATH}/arc-functions.sh
 
 # Get Keymap and Timezone Config
-ntpCheck
+onlineCheck
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 # Check for System
 systemCheck
 ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
@@ -53,14 +54,13 @@ SASCONTROLLER="$(readConfigKey "device.sascontroller" "${USER_CONFIG_FILE}")"
 
 # Get Config/Build Status
 ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
-ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
-  BACKTITLE="${ARC_TITLE}$([ -n "${NEWTAG}" ] && [[ "$(echo ${ARC_VERSION} | tr -d '.')" -lt "$(echo ${NEWTAG} | tr -d '.')" ]] && echo " > ${NEWTAG}") | "
+  BACKTITLE="${ARC_TITLE} | "
   BACKTITLE+="${MODEL:-(Model)} | "
   BACKTITLE+="${PRODUCTVER:-(Version)} | "
   BACKTITLE+="${IPCON:-(IP)} | "
@@ -68,11 +68,8 @@ function backtitle() {
   BACKTITLE+="Config: ${CONFDONE} | "
   BACKTITLE+="Build: ${BUILDDONE} | "
   BACKTITLE+="${MACHINE}(${BUS}) | "
-  if [ -n "${KEYMAP}" ]; then
-   BACKTITLE+="KB: ${KEYMAP}"
-  elif [ "${ARCOFFLINE}" == "true" ]; then
-    BACKTITLE+="Offline"
-  fi
+  [ -n "${KEYMAP}" ] && BACKTITLE+="KB: ${KEYMAP}"
+  [ "${ARCOFFLINE}" == "true" ] && BACKTITLE+=" | Offline"
   echo "${BACKTITLE}"
 }
 
@@ -87,7 +84,7 @@ function arcModel() {
   # Loop menu
   RESTRICT=1
   PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"
-  [[ "${ARCMODE}" == "automated" || "${ARCOFFLINE}" == "true" ]] && MJ="$(python ${ARC_PATH}/include/functions.py getmodelsoffline -p "${PS[*]}")" || MJ="$(python ${ARC_PATH}/include/functions.py getmodels -p "${PS[*]}")"
+  MJ="$(python ${ARC_PATH}/include/functions.py getmodelsoffline -p "${PS[*]}")"
   if [[ -z "${MJ}" || "${MJ}" == "[]" ]]; then
     dialog --backtitle "$(backtitle)" --title "Model" --title "Model" \
       --msgbox "Failed to get models, please try again!" 3 50
@@ -270,61 +267,54 @@ function arcVersion() {
     PAT_URL=""
     PAT_HASH=""
     URLVER=""
-    if [ "${ARCOFFLINE}" == "false" ]; then
-      while true; do
-        PJ="$(python ${ARC_PATH}/include/functions.py getpats4mv -m "${MODEL}" -v "${PRODUCTVER}")"
-        if [[ -z "${PJ}" || "${PJ}" == "{}" ]]; then
-          MSG="Unable to connect to Synology API, Please check the network and try again!"
-          dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
-            --yes-label "Retry" \
-            --yesno "${MSG}" 0 0
-          [ $? -eq 0 ] && continue # yes-button
-          return 1
-        else
-          PVS="$(echo "${PJ}" | jq -r 'keys | sort | reverse | join("\n")')"
-          [ -f "${TMP_PATH}/versions" ] && rm -f "${TMP_PATH}/versions" >/dev/null 2>&1 && touch "${TMP_PATH}/versions"
-          while IFS= read -r line; do
-            VERSION="${line}"
-            CHECK_URL=$(echo "${PJ}" | jq -r ".\"${VERSION}\".url")
-            if curl --head -skL -m 5 "${CHECK_URL}" | head -n 1 | grep -q "404\|403"; then
-              continue
-            else
-              echo "${VERSION}" >>"${TMP_PATH}/versions"
-            fi
-          done < <(echo "${PVS}")
-          DSMPVS="$(cat ${TMP_PATH}/versions)"
-          dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
-            --no-items --menu "Choose a DSM Build" 0 0 0 ${DSMPVS} \
-          2>${TMP_PATH}/resp
-          RET=$?
-          [ ${RET} -ne 0 ] && return
-          PV=$(cat ${TMP_PATH}/resp)
-          PAT_URL=$(echo "${PJ}" | jq -r ".\"${PV}\".url")
-          PAT_HASH=$(echo "${PJ}" | jq -r ".\"${PV}\".sum")
-          URLVER="$(echo "${PV}" | cut -d'.' -f1,2)"
-          [ "${PRODUCTVER}" != "${URLVER}" ] && PRODUCTVER="${URLVER}"
-          writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-          [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true" && break
-        fi
-      done
-    elif [ "${ARCOFFLINE}" == "true" ]; then
+    while true; do
       PJ="$(python ${ARC_PATH}/include/functions.py getpats -m "${MODEL}" -r "${PRODUCTVER}")"
-      PAT_URL=$(echo "${PJ}" | jq -r '.[0].mLink')
-      PAT_HASH=$(echo "${PJ}" | jq -r '.[0].mCheckSum')
-    fi
-    if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
-      MSG="Failed to get PAT Data.\n"
-      MSG+="Please manually fill in the URL and Hash of PAT.\n"
-      MSG+="You will find these Data at: https://github.com/AuxXxilium/arc-dsm/blob/main/webdata.txt"
-      dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
-        --form "${MSG}" 11 120 2 "Url" 1 1 "${PAT_URL}" 1 8 110 0 "Hash" 2 1 "${PAT_HASH}" 2 8 110 0 \
-        2>"${TMP_PATH}/resp"
+      PVS="$(echo "${PJ}" | jq -r '.[].release')"
+      [ -f "${TMP_PATH}/versions" ] && rm -f "${TMP_PATH}/versions" >/dev/null 2>&1 && touch "${TMP_PATH}/versions"
+      while IFS= read -r line; do
+      VERSION="${line}"
+      CHECK_URL=$(echo "${PJ}" | jq -r ".[] | select(.release == \"${VERSION}\") | .mLink")
+      if curl --head -skL -m 5 "${CHECK_URL}" | head -n 1 | grep -q "404\|403"; then
+        continue
+      else
+        echo "${VERSION}" >>"${TMP_PATH}/versions"
+      fi
+      done < <(echo "${PVS}")
+      DSMPVS="$(cat ${TMP_PATH}/versions)"
+      dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
+      --no-items --menu "Choose a DSM Build" 0 0 0 ${DSMPVS} \
+      2>${TMP_PATH}/resp
       RET=$?
-      [ ${RET} -eq 0 ]             # ok-button
-      return 1                     # 1 or 255  # cancel-button or ESC
-      PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
-      PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
-      [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true"
+      [ ${RET} -ne 0 ] && return
+      PV=$(cat ${TMP_PATH}/resp)
+      PAT_URL=$(echo "${PJ}" | jq -r ".[] | select(.release == \"${PV}\") | .mLink")
+      PAT_HASH=$(echo "${PJ}" | jq -r ".[] | select(.release == \"${PV}\") | .mCheckSum")
+      URLVER="$(echo "${PV}" | cut -d'.' -f1,2)"
+      [ "${PRODUCTVER}" != "${URLVER}" ] && PRODUCTVER="${URLVER}"
+      writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+      [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true" && break
+    done
+    if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
+      while true; do
+        MSG="Failed to get PAT Data.\n"
+        MSG+="Please manually fill in the URL and Hash of PAT.\n"
+        MSG+="You will find these Data at: https://github.com/AuxXxilium/arc-dsm/blob/main/webdata.txt"
+        dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
+          --form "${MSG}" 11 120 2 "Url" 1 1 "${PAT_URL}" 1 8 110 0 "Hash" 2 1 "${PAT_HASH}" 2 8 110 0 \
+          2>"${TMP_PATH}/resp"
+        RET=$?
+        [ ${RET} -ne 0 ] && return
+        PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+        PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+        [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true" && break
+      done
+    fi
+    if [ "${PAT_URL}" != "${PAT_URL_CONF}" ] || [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ]; then
+      writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+      writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+      rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" >/dev/null 2>&1 || true
+      rm -f "${USER_UP_PATH}/"*.tar >/dev/null 2>&1 || true
     fi
     MSG="Do you want to try Automated Mode?\nIf yes, Loader will configure, build and boot DSM."
     dialog --backtitle "$(backtitle)" --colors --title "Automated Mode" \
@@ -334,34 +324,8 @@ function arcVersion() {
     else
       ARCMODE="config"
     fi
-    if [ "${ARCOFFLINE}" == "false" ]; then
-      # Check PAT URL
-      dialog --backtitle "$(backtitle)" --colors --title "DSM Version" \
-        --infobox "Check PAT Data..." 3 40
-      if curl --head -skL -m 10 "${PAT_URL}" | head -n 1 | grep -q 404; then
-        VALID="false"
-        writeConfigKey "paturl" "" "${USER_CONFIG_FILE}"
-        writeConfigKey "pathash" "" "${USER_CONFIG_FILE}"
-      else
-        VALID="true"
-        writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
-        writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
-      fi
-    elif [ "${ARCOFFLINE}" == "true" ]; then
-      VALID="true"
-      writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
-      writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
-    fi
   elif [ "${ARCMODE}" == "automated" ] || [ "${ARCRESTORE}" == "true" ]; then
     VALID="true"
-  fi
-  # Check PAT Hash
-  PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
-  PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
-  if [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ] || [ "${PAT_URL}" != "${PAT_URL_CONF}" ]; then
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
-    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" >/dev/null 2>&1 || true
-    rm -f "${USER_UP_PATH}/"*.tar >/dev/null 2>&1 || true
   fi
   # Change Config if Files are valid
   if [ "${VALID}" == "true" ]; then
@@ -982,6 +946,7 @@ else
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
     echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
     [ "${ARCOFFLINE}" != "true" ] && echo "z \"Update Menu \" "                               >>"${TMP_PATH}/menu"
+    echo "c \"Offline Mode: \Z4${ARCOFFLINE}\Zn \" "                                          >>"${TMP_PATH}/menu"
     echo "I \"Power/Service Menu \" "                                                         >>"${TMP_PATH}/menu"
     echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
 
@@ -1135,6 +1100,11 @@ else
       # Misc Settings
       x) backupMenu; NEXT="x" ;;
       z) updateMenu; NEXT="z" ;;
+      c) [ "${ARCOFFLINE}" == "true" ] && ARCOFFLINE='false' || ARCOFFLINE='true'
+        writeConfigKey "arc.offline" "${ARCOFFLINE}" "${USER_CONFIG_FILE}"
+        [ "${ARCOFFLINE}" == "false" ] && exec arc.sh
+        NEXT="c"
+        ;;
       I) rebootMenu; NEXT="I" ;;
       V) credits; NEXT="V" ;;
     esac
