@@ -541,7 +541,7 @@
     },
     "sortnetif": {
         "system": false,
-        "description": "Sort network interface names | empty: sorted by busid; mac1,mac2,...: sorted by macs sequence",
+        "description": "Sort network interface names: sorted by busid",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
