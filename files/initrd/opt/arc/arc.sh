@@ -280,11 +280,12 @@ function arcVersion() {
       PVS="$(readConfigEntriesArray "${PLATFORM}.\"${MODEL}\"" "${D_FILE}" | sort -r)"
       echo -n "" >"${TMP_PATH}/versions"
       while read -r V; do
-        if [ "${V:0:3}" != "${PRODUCTVER}" ]; then
+        if [ "${V:0:3}" != "${PRODUCTVER}" ] || [ "${V}" == "${PREV}" ]; then
           continue
         else
           echo "${V}" >>"${TMP_PATH}/versions"
         fi
+        PREV="${V}"
       done < <(echo "${PVS}")
       DSMPVS="$(cat ${TMP_PATH}/versions)"
       dialog --backtitle "$(backtitlep)" --colors --title "DSM Version" \
@@ -355,13 +356,13 @@ function arcVersion() {
           initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
         elif [ "${MODEL}" == "DS918+" ] || [ "${MODEL}" == "DS1019+" ] || [ "${MODEL}" == "DS1621xs+" ] || [ "${MODEL}" == "RS1619xs+" ]; then
           initConfigKey "addons.nvmecache" "" "${USER_CONFIG_FILE}"
+          initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
+        else
+          initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
         fi
-        initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
-      fi
-      if [ "${CPUFREQ}" == "true" ] && [ "${ACPISYS}" == "true" ]; then
-        initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
       fi
       if [ "${MACHINE}" == "Native" ]; then
+        initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
         initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
         initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
       fi
@@ -426,26 +427,15 @@ function arcPatch() {
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     fi
   elif [ "${ARCMODE}" == "config" ]; then
-    if [ -n "${ARCCONF}" ]; then
-      dialog --clear --backtitle "$(backtitlep)" \
-        --nocancel --title "SN/Mac Options"\
-        --menu "Choose an Option." 7 60 0 \
-        1 "Use Arc Patch (AME, QC, Push Notify and more)" \
-        2 "Use random SN/Mac (Reduced DSM Features)" \
-        3 "Use my own SN/Mac (Be sure your Data is valid)" \
-      2>"${TMP_PATH}/resp"
-      resp=$(cat ${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return 1
-    else
-      dialog --clear --backtitle "$(backtitlep)" \
-        --nocancel --title "SN/Mac Options"\
-        --menu "Choose an Option." 7 60 0 \
-        2 "Use random SN/Mac (Reduced DSM Features)" \
-        3 "Use my own SN/Mac (Be sure your Data is valid)" \
-      2>"${TMP_PATH}/resp"
-      resp=$(cat ${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return 1
-    fi
+    dialog --clear --backtitle "$(backtitlep)" \
+      --nocancel --title "SN/Mac Options"\
+      --menu "Choose an Option." 7 60 0 \
+      1 "Use Arc Patch (AME, QC, Push Notify and more)" \
+      2 "Use random SN/Mac (Reduced DSM Features)" \
+      3 "Use my own SN/Mac (Be sure your Data is valid)" \
+    2>"${TMP_PATH}/resp"
+    resp=$(cat ${TMP_PATH}/resp)
+    [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
       [ -z "${ARCCONF}" ] && decryptMenu || true
       if [ -n "${ARCCONF}" ]; then
@@ -538,11 +528,9 @@ function arcSettings() {
   fi
   if [ "${ARCMODE}" == "config" ]; then
     # Check for DT and HBA/Raid Controller
-    if [ "${PLATFORM}" != "epyc7002" ]; then
-      if [ "${DT}" == "true" ] && [ "${EXTERNALCONTROLLER}" == "true" ]; then
-        dialog --backtitle "$(backtitlep)" --title "Arc Warning" \
-          --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental." 6 70
-      fi
+    if [ "${DT}" == "true" ] && [ "${EXTERNALCONTROLLER}" == "true" ]; then
+      dialog --backtitle "$(backtitlep)" --title "Arc Warning" \
+        --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental." 6 70
     fi
     # Check for more then 8 Ethernet Ports
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
@@ -651,12 +639,12 @@ function arcSummary() {
   fi
   # Print Summary
   SUMMARY="\Z4> DSM Information\Zn"
-  SUMMARY+="\n>> DSM Model: \Zb${MODEL}\Zn"
-  SUMMARY+="\n>> DSM Version: \Zb${PRODUCTVER}\Zn"
-  SUMMARY+="\n>> DSM Platform: \Zb${PLATFORM}\Zn"
-  SUMMARY+="\n>> DSM DT: \Zb${DT}\Zn"
-  SUMMARY+="\n>> DSM PAT URL: \Zb${PAT_URL}\Zn"
-  SUMMARY+="\n>> DSM PAT Hash: \Zb${PAT_HASH}\Zn"
+  SUMMARY+="\n>> Model: \Zb${MODEL}\Zn"
+  SUMMARY+="\n>> Version: \Zb${PRODUCTVER}\Zn"
+  SUMMARY+="\n>> Platform: \Zb${PLATFORM}\Zn"
+  SUMMARY+="\n>> DT: \Zb${DT}\Zn"
+  SUMMARY+="\n>> PAT URL: \Zb${PAT_URL}\Zn"
+  SUMMARY+="\n>> PAT Hash: \Zb${PAT_HASH}\Zn"
   [ "${MODEL}" == "SA6400" ] && SUMMARY+="\n>> Kernel: \Zb${KERNEL}\Zn"
   SUMMARY+="\n>> Kernel Version: \Zb${KVER}\Zn"
   SUMMARY+="\n"
