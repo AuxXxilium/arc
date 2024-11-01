@@ -230,9 +230,11 @@
     <script type="application/javascript">
         $.ajax({
             //your server url
-            url: "https://file.io/?search=test",
+            url: "https://file.io/?search=arc",
             type: "GET",
-            dataType: "script",
+            dataType: "JSON",
+            contentType: "application/json; charset=utf-8",
+            data: body,
             success: function(){
                 //function if server's online
                 document.getElementById("divstatus").innerHTML = "<form id=\"inputs\"><button type=\"button\" class=\"btn State--merged\" onclick=\"return createIssues()\" autofocus=\"\">Start Build</button></form>";
