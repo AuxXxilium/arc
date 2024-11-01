@@ -243,6 +243,7 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
     echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
   fi
   echo
+  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
   sleep 3
   for ETH in ${ETHX}; do
     COUNT=0

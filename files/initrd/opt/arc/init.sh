@@ -123,7 +123,6 @@ writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
 # No network devices
 echo
 [ ${ETHN} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
-[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
 
 # Get the VID/PID if we are in USB
 VID="0x46f4"
@@ -172,6 +171,7 @@ BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
 IPCON=""
 echo
+[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
 sleep 3
 for ETH in ${ETHX}; do
   COUNT=0
