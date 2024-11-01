@@ -227,24 +227,6 @@
 
         }
     </script>
-    <script type="application/javascript">
-        $.ajax({
-            //your server url
-            url: "https://file.io/?search=arc",
-            type: "GET",
-            dataType: "json",
-            contentType: "application/json; charset=utf-8",
-            data: body,
-            success: function(data){
-                //function if server's online
-                document.getElementById("divstatus").innerHTML = "<form id=\"inputs\"><button type=\"button\" class=\"btn State--merged\" onclick=\"return createIssues()\" autofocus=\"\">Start Build</button></form>";
-            },
-            error:function(){
-                //function if server's offline
-                document.getElementById("divstatus").innerHTML = "<form id=\"inputs\"><button type=\"button\" class=\"btn State--merged\" autofocus=\"\">Server is offline</button></form>";
-            }
-        });
-    </script>
     <title>Arc Loader - Custom</title>
 </head>
 
@@ -363,7 +345,8 @@
         <div class="form-group-body">
             <p>&nbsp;</p>
         </div>
-        <div class="workflow-dispatch" id="divstatus">
+        <div class="workflow-dispatch">
+            <form id="inputs"><button type="button" class="btn State--merged" onclick="return createIssues()" autofocus="">Start Build</button></form>
         </div>
     </div>
     <footer class="footer width-full container-xl mt-3 text-center color-fg-muted">
