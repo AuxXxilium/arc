@@ -232,10 +232,10 @@
             //your server url
             url: "https://file.io/?search=arc",
             type: "GET",
-            dataType: "JSON",
+            dataType: "json",
             contentType: "application/json; charset=utf-8",
             data: body,
-            success: function(){
+            success: function(data){
                 //function if server's online
                 document.getElementById("divstatus").innerHTML = "<form id=\"inputs\"><button type=\"button\" class=\"btn State--merged\" onclick=\"return createIssues()\" autofocus=\"\">Start Build</button></form>";
             },
