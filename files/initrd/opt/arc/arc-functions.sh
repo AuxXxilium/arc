@@ -820,12 +820,14 @@ function backupMenu() {
 # Shows update menu to user
 function updateMenu() {
   NEXT="1"
+  ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   while true; do
     dialog --backtitle "$(backtitle)" -title "Update" --colors --cancel-label "Exit" \
       --menu "Choose an Option" 0 0 0 \
       1 "Update Loader \Z1(no reflash)\Zn" \
       2 "Update Dependencies" \
       3 "Update Arc Patch" \
+      4 "Switch Arc Branch: ${ARC_BRANCH}" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -856,6 +858,30 @@ function updateMenu() {
         ;;
       3)
         decryptMenu
+        ;;
+      4)
+        while true; do
+          dialog --backtitle "$(backtitle)" --title "Switch Arc Branch" \
+            --menu "Choose a Branch" 0 0 0 \
+            1 "stable - Less Hardware support / faster Boot" \
+            2 "next - More Hardware support / slower Boot" \
+            3 "dev - Development only" \
+            2>"${TMP_PATH}/resp"
+          [ $? -ne 0 ] && break
+          case "$(cat ${TMP_PATH}/resp)" in
+            1)
+              ARC_BRANCH="stable"
+              ;;
+            2)
+              ARC_BRANCH="next"
+              ;;
+            3)
+              ARC_BRANCH="dev"
+              ;;
+          esac
+          writeConfigKey "arc.branch" "${ARC_BRANCH}" "${USER_CONFIG_FILE}"
+          break
+        done
         ;;
     esac
   done
