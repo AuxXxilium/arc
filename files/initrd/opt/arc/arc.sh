@@ -921,7 +921,7 @@ else
         echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
         echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
         echo "J \"Reset Network Config \" "                                                   >>"${TMP_PATH}/menu"
-        echo "M \"Mount DSM Storage Pool\" "                                                  >>"${TMP_PATH}/menu"
+        echo "M \"Mount DSM Storage Pool (not SHR)\" "                                        >>"${TMP_PATH}/menu"
         if [ "${PLATFORM}" == "epyc7002" ]; then
           echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
         fi

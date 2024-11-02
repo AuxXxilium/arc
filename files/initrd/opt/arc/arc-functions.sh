@@ -58,14 +58,14 @@ function addonSelection() {
     fi
   done < <(availableAddons "${PLATFORM}")
   if [ "${STEP}" == "addons" ]; then
-    dialog --backtitle "$(backtitlep)" --title "DSM Addons" --colors --aspect 18 \
-      --checklist "Select DSM Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
+    dialog --backtitle "$(backtitlep)" --title "Addons" --colors --aspect 18 \
+      --checklist "Select Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
       --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     resp=$(cat ${TMP_PATH}/resp)
   else
-    dialog --backtitle "$(backtitle)" --title "DSM Addons" --colors --aspect 18 \
-      --checklist "Select DSM Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
+    dialog --backtitle "$(backtitle)" --title "Addons" --colors --aspect 18 \
+      --checklist "Select Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
       --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
     resp=$(cat ${TMP_PATH}/resp)
@@ -79,12 +79,13 @@ function addonSelection() {
   done
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
   if [ "${STEP}" == "addons" ]; then
-    dialog --backtitle "$(backtitlep)" --title "DSM Addons" \
+    dialog --backtitle "$(backtitlep)" --title "Addons" \
       --msgbox "DSM Addons selected:\n${ADDONSINFO}" 7 70
   else
-    dialog --backtitle "$(backtitle)" --title "DSM Addons" \
+    dialog --backtitle "$(backtitle)" --title "Addons" \
       --msgbox "DSM Addons selected:\n${ADDONSINFO}" 7 70
   fi
+  return
 }
 
 ###############################################################################
@@ -97,7 +98,7 @@ function modulesMenu() {
   [ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
   # menu loop
   while true; do
-    dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
+    dialog --backtitle "$(backtitle)" --title "Modules" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       1 "Show selected Modules" \
       2 "Select loaded Modules" \
       3 "Select all Modules" \
@@ -122,7 +123,7 @@ function modulesMenu() {
         for KEY in ${!USERMODULES[@]}; do
           ITEMS+="${KEY}: ${USERMODULES[$KEY]}\n"
         done
-        dialog --backtitle "$(backtitle)" --title "User modules" \
+        dialog --backtitle "$(backtitle)" --title "Modules" \
           --msgbox "${ITEMS}" 0 0
         ;;
       2)
@@ -302,7 +303,7 @@ function cmdlineMenu() {
   echo "5 \"PCI/IRQ Fix\""                                      >>"${TMP_PATH}/menu"
   echo "6 \"C-State Fix\""                                      >>"${TMP_PATH}/menu"
   echo "7 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
-    dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
+    dialog --backtitle "$(backtitle)" --title "Cmdline"  --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -507,7 +508,7 @@ function synoinfoMenu() {
   while true; do
     echo "1 \"Add/edit Synoinfo item\""     >"${TMP_PATH}/menu"
     echo "2 \"Delete Synoinfo item(s)\""    >>"${TMP_PATH}/menu"
-    dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
+    dialog --backtitle "$(backtitle)" --title "Synoinfo" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
@@ -598,7 +599,7 @@ function synoinfoMenu() {
 ###############################################################################
 # Shows available keymaps to user choose one
 function keymapMenu() {
-  dialog --backtitle "$(backtitle)" --default-item "${LAYOUT}" --no-items \
+  dialog --backtitle "$(backtitle)" --title "Keymap" --default-item "${LAYOUT}" --no-items \
     --cancel-label "Exit" --menu "Choose a Layout" 0 0 0 \
     "azerty" "bepo" "carpalx" "colemak" \
     "dvorak" "fgGIod" "neo" "olpc" "qwerty" "qwertz" \
@@ -661,7 +662,7 @@ function sequentialIOMenu() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" == "true" ]; then
     while true; do
-        dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "SequentialIO" 0 0 0 \
+        dialog --backtitle "$(backtitle)" --title "SequentialIO" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
           1 "Enable for SSD Cache" \
           2 "Disable for SSD Cache" \
           2>"${TMP_PATH}/resp"
@@ -692,7 +693,7 @@ function sequentialIOMenu() {
 function backupMenu() {
   NEXT="1"
   while true; do
-    dialog --backtitle "$(backtitle)" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
+    dialog --backtitle "$(backtitle)" -title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       1 "Restore Arc Config from DSM" \
       2 "Restore HW Encryption Key from DSM" \
       3 "Backup HW Encryption Key to DSM" \
@@ -820,7 +821,7 @@ function backupMenu() {
 function updateMenu() {
   NEXT="1"
   while true; do
-    dialog --backtitle "$(backtitle)" --colors --cancel-label "Exit" \
+    dialog --backtitle "$(backtitle)" -title "Update" --colors --cancel-label "Exit" \
       --menu "Choose an Option" 0 0 0 \
       1 "Update Loader \Z1(no reflash)\Zn" \
       2 "Update Dependencies" \
