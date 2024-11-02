@@ -183,7 +183,7 @@ jobs:
             zip -9 "arc-${{ env.VERSION }}-stable.vmdk-dyn.zip" arc-dyn.vmdk
             zip -9 "arc-${{ env.VERSION }}-stable.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
             zip -9 "arc-${{ env.VERSION }}-stable.vhdx.zip" arc.vhdx
-            (cd files && zip -r ../update-${{ env.VERSION }}-stable.zip .)
+            (cd files && zip -r ../update-${{ env.VERSION }}-stable.zip ./p1 ./p3)
           fi
 
       # Publish a release if is a tag
