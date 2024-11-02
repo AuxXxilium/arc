@@ -89,7 +89,7 @@ function backtitlep() {
 # Model Selection
 function arcModel() {
   STEP="model"
-  dialog --backtitle "$(backtitlep)" --title "DSM Model" \
+  dialog --backtitle "$(backtitlep)" --title "Model" \
     --infobox "Reading Models..." 3 25
   if [ ! -f "${S_FILE}" ]; then
     updateConfigs
@@ -158,13 +158,13 @@ function arcModel() {
         fi
       done < <(cat "${TMP_PATH}/modellist")
       if [ -n "${ARCKEY}" ]; then
-        dialog --backtitle "$(backtitlep)" --title "Arc DSM Model" --colors \
+        dialog --backtitle "$(backtitlep)" --title "Arc Model" --colors \
           --cancel-label "Show all" --help-button --help-label "Exit" \
           --extra-button --extra-label "Info" \
           --menu "Supported Models for your Hardware (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 115 0 \
           --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       else
-        dialog --backtitle "$(backtitlep)" --title "DSM Model" --colors \
+        dialog --backtitle "$(backtitlep)" --title "Model" --colors \
           --cancel-label "Show all" --help-button --help-label "Exit" \
           --extra-button --extra-label "Info" \
           --menu "Supported Models for your Hardware (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 115 0 \
@@ -250,7 +250,7 @@ function arcVersion() {
   if [ "${ARCMODE}" == "config" ] && [ "${ARCRESTORE}" != "true" ]; then
     # Select Build for DSM
     ITEMS="$(readConfigEntriesArray "platforms.${PLATFORM}.productvers" "${P_FILE}" | sort -r)"
-    dialog --clear --no-items --nocancel --title "DSM Version" --backtitle "$(backtitlep)" \
+    dialog --clear --no-items --nocancel --title "Version" --backtitle "$(backtitlep)" \
       --no-items --menu "Choose DSM Version" 7 30 0 ${ITEMS} \
     2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 0
@@ -271,7 +271,7 @@ function arcVersion() {
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     fi
-    dialog --backtitle "$(backtitlep)" --title "DSM Version" \
+    dialog --backtitle "$(backtitlep)" --title "Version" \
     --infobox "Reading DSM Build..." 3 25
     PAT_URL=""
     PAT_HASH=""
@@ -288,7 +288,7 @@ function arcVersion() {
         PREV="${V}"
       done < <(echo "${PVS}")
       DSMPVS="$(cat ${TMP_PATH}/versions)"
-      dialog --backtitle "$(backtitlep)" --colors --title "DSM Version" \
+      dialog --backtitle "$(backtitlep)" --colors --title "Version" \
       --no-items --menu "Choose a DSM Build" 0 0 0 ${DSMPVS} \
       2>${TMP_PATH}/resp
       RET=$?
@@ -453,7 +453,7 @@ function arcPatch() {
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 3 ]; then
       while true; do
-        dialog --backtitle "$(backtitlep)" --colors --title "DSM SN" \
+        dialog --backtitle "$(backtitlep)" --colors --title "Serial" \
           --inputbox "Please enter a valid SN!" 7 50 "" \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break 2
@@ -508,7 +508,7 @@ function arcSettings() {
   if [ "${ARCMODE}" == "config" ]; then
     # Select Addons
     STEP="addons"
-    dialog --backtitle "$(backtitlep)" --colors --title "DSM Addons" \
+    dialog --backtitle "$(backtitlep)" --colors --title "Addons" \
       --infobox "Loading Addons Table..." 3 40
     addonSelection
     [ $? -ne 0 ] && return 1
@@ -668,7 +668,7 @@ function arcSummary() {
   SUMMARY+="\n>> Internal Disks: \Zb${HARDDRIVES}\Zn"
   SUMMARY+="\n>> Additional Controller: \Zb${EXTERNALCONTROLLER}\Zn"
   SUMMARY+="\n>> Memory: \Zb${RAMTOTAL}GB\Zn"
-  dialog --backtitle "$(backtitlep)" --colors --title "DSM Config Summary" \
+  dialog --backtitle "$(backtitlep)" --colors --title "Config Summary" \
     --extra-button --extra-label "Cancel" --msgbox "${SUMMARY}" 0 0
   RET=$?
   case ${RET} in
@@ -900,7 +900,7 @@ else
       fi
       if [ "${BOOTOPTS}" == "true" ]; then
         echo "= \"\Z4========== Boot =========\Zn \" "                                        >>"${TMP_PATH}/menu"
-        echo "m \"DSM Kernelload: \Z4${KERNELLOAD}\Zn \" "                                    >>"${TMP_PATH}/menu"
+        echo "m \"Boot Kernelload: \Z4${KERNELLOAD}\Zn \" "                                    >>"${TMP_PATH}/menu"
         echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
         if [ "${DIRECTBOOT}" == "false" ]; then
           echo "i \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
@@ -1037,8 +1037,8 @@ else
       M) mountDSM; NEXT="M" ;;
       K) [ "${KERNEL}" == "official" ] && KERNEL='custom' || KERNEL='official'
         writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
-        dialog --backtitle "$(backtitle)" --title "DSM Kernel" \
-          --infobox "Switching to Custom Kernel! Stay patient..." 4 50
+        dialog --backtitle "$(backtitle)" --title "Kernel" \
+          --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 4 50
         if [ "${ODP}" == "true" ]; then
           ODP="false"
           writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
