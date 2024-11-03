@@ -1252,7 +1252,7 @@ function networkdiag() {
         echo -e "Github API reachable!"
       fi
       if [ "${CONFDONE}" == "true" ]; then
-        SYNOAPI=$(curl --interface ${ETH} -m 3 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')
+        SYNOAPI=$(curl --interface ${ETH} -m 5 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')
         if [[ $? -ne 0 || -z "${SYNOAPI}" ]]; then
           echo -e "Syno API not reachable!"
         else
@@ -2089,7 +2089,7 @@ function getpatfiles() {
   elif [ ! -f "${DSM_FILE}" ] && [ "${ARCOFFLINE}" == "true" ]; then
     rm -f ${USER_UP_PATH}/*.tar
     dialog --backtitle "$(backtitlep)" --colors --title "DSM Boot Files" \
-      --msgbox "Please upload the DSM Boot File to ${USER_UP_PATH}.\nUse ${IPCON}:7304 to upload and press OK after it's finished.\nLink: https://github.com/AuxXxilium/arc-dsm/tree/main/files/${MODEL}/${PRODUCTVER}/${PAT_HASH}.tar" 8 120
+      --msgbox "Please upload the DSM Boot File to ${USER_UP_PATH}.\nUse ${IPCON}:7304 to upload and press OK after it's finished.\nLink: https://github.com/AuxXxilium/arc-dsm/blob/main/files/${MODEL}/${PRODUCTVER}/${PAT_HASH}.tar" 8 120
     [ $? -ne 0 ] && VALID="false"
     if [ -f "${DSM_FILE}" ]; then
       VALID="true"
