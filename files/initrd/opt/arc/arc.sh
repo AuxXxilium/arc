@@ -74,13 +74,13 @@ function backtitle() {
 }
 
 function backtitlep() {
-  [ "${STEP}" == "model" ] && BACKTITLEP="CHOOSE MODEL -> " || BACKTITLEP="Choose Model -> "
-  [ "${STEP}" == "version" ] && BACKTITLEP+="CHOOSE VERSION -> " || BACKTITLEP+="Choose Version -> "
-  [ "${STEP}" == "snmac" ] && BACKTITLEP+="SET SN/MAC -> " || BACKTITLEP+="Set Sn/Mac -> "
-  [ "${STEP}" == "network" ] && BACKTITLEP+="SET NETWORK -> " || BACKTITLEP+="Set Network -> "
-  [ "${STEP}" == "storagemap" ] && BACKTITLEP+="SET STORAGEMAP -> " || BACKTITLEP+="Set StorageMap -> "
-  [ "${STEP}" == "addons" ] && BACKTITLEP+="SET ADDONS -> " || BACKTITLEP+="Set Addons -> "
-  [ "${STEP}" == "build" ] && BACKTITLEP+="BUILD LOADER -> " || BACKTITLEP+="Build Loader -> "
+  [ "${STEP}" == "model" ] && BACKTITLEP="CHOOSE MODEL >>> " || BACKTITLEP="Choose Model >>> "
+  [ "${STEP}" == "version" ] && BACKTITLEP+="CHOOSE VERSION >>> " || BACKTITLEP+="Choose Version >>> "
+  [ "${STEP}" == "snmac" ] && BACKTITLEP+="SET SN/MAC >>> " || BACKTITLEP+="Set Sn/Mac >>> "
+  [ "${STEP}" == "network" ] && BACKTITLEP+="SET NETWORK >>> " || BACKTITLEP+="Set Network >>> "
+  [ "${STEP}" == "storagemap" ] && BACKTITLEP+="SET STORAGEMAP >>> " || BACKTITLEP+="Set StorageMap >>> "
+  [ "${STEP}" == "addons" ] && BACKTITLEP+="SET ADDONS >>> " || BACKTITLEP+="Set Addons >>> "
+  [ "${STEP}" == "build" ] && BACKTITLEP+="BUILD LOADER >>> " || BACKTITLEP+="Build Loader >>> "
   [ "${STEP}" == "boot" ] && BACKTITLEP+="BOOT DSM" || BACKTITLEP+="Boot DSM"
   echo "${BACKTITLEP}"
 }
@@ -157,19 +157,13 @@ function arcModel() {
           [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-15s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${DTS}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
         fi
       done < <(cat "${TMP_PATH}/modellist")
-      if [ -n "${ARCKEY}" ]; then
-        dialog --backtitle "$(backtitlep)" --title "Arc Model" --colors \
-          --cancel-label "Show all" --help-button --help-label "Exit" \
-          --extra-button --extra-label "Info" \
-          --menu "Supported Models for your Hardware (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 115 0 \
-          --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
-      else
-        dialog --backtitle "$(backtitlep)" --title "Model" --colors \
-          --cancel-label "Show all" --help-button --help-label "Exit" \
-          --extra-button --extra-label "Info" \
-          --menu "Supported Models for your Hardware (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" 0 115 0 \
-          --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
-      fi
+      [ -n "${ARCKEY}" ] && MSG="Supported Models for your Hardware (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" || MSG="Supported Models for your Hardware (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
+      [ -n "${ARCKEY}" ] && TITLEMSG="Arc Model" || TITLEMSG="Model"
+      dialog --backtitle "$(backtitlep)" --title "${TITLEMSG}" --colors \
+        --cancel-label "Show all" --help-button --help-label "Exit" \
+        --extra-button --extra-label "Info" \
+        --menu "${MSG}" 0 115 0 \
+        --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       RET=$?
       case ${RET} in
         0) # ok-button
@@ -325,11 +319,7 @@ function arcVersion() {
     MSG="Do you want to try Automated Mode?\nIf yes, Loader will configure, build and boot DSM."
     dialog --backtitle "$(backtitlep)" --colors --title "Automated Mode" \
       --yesno "${MSG}" 6 55
-    if [ $? -eq 0 ]; then
-      ARCMODE="automated"
-    else
-      ARCMODE="config"
-    fi
+    [ $? -eq 0 ] && ARCMODE="automated" || ARCMODE="config"
   elif [ "${ARCMODE}" == "automated" ] || [ "${ARCRESTORE}" == "true" ]; then
     VALID="true"
   fi
@@ -419,13 +409,8 @@ function arcPatch() {
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   # Check for Custom Build
   if [ "${ARCMODE}" == "automated" ]; then
-    if [ -n "${ARCCONF}" ]; then
-      SN=$(generateSerial "${MODEL}" "true")
-      writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-    else
-      SN=$(generateSerial "${MODEL}" "false")
-      writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-    fi
+    [ -n "${ARCCONF}" ] && SN="$(generateSerial "${MODEL}" "true")" || SN="$(generateSerial "${MODEL}" "false")"
+    [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   elif [ "${ARCMODE}" == "config" ]; then
     dialog --clear --backtitle "$(backtitlep)" \
       --nocancel --title "SN/Mac Options"\
@@ -438,15 +423,8 @@ function arcPatch() {
     [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
       [ -z "${ARCCONF}" ] && decryptMenu || true
-      if [ -n "${ARCCONF}" ]; then
-        # Read Arc Patch from File
-        SN="$(generateSerial "${MODEL}" "true")"
-        writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-      else
-        # Read Arc Patch from File
-        SN="$(generateSerial "${MODEL}" "false")"
-        writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-      fi
+      [ -n "${ARCCONF}" ] && SN="$(generateSerial "${MODEL}" "true")" || SN="$(generateSerial "${MODEL}" "false")"
+      [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 2 ]; then
       # Generate random Serial
       SN="$(generateSerial "${MODEL}" "false")"
@@ -520,11 +498,7 @@ function arcSettings() {
     governorSelection
     [ $? -ne 0 ] && return 1
   elif [ "${ARCMODE}" == "automated" ] && [ "${MACHINE}" == "Native" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
-    if [ "${PLATFORM}" == "epyc7002" ]; then
-      writeConfigKey "addons.cpufreqscaling" "schedutil" "${USER_CONFIG_FILE}"
-    else
-      writeConfigKey "addons.cpufreqscaling" "conservative" "${USER_CONFIG_FILE}"
-    fi
+    [ "${PLATFORM}" == "epyc7002" ] && writeConfigKey "addons.cpufreqscaling" "schedutil" "${USER_CONFIG_FILE}" || writeConfigKey "addons.cpufreqscaling" "conservative" "${USER_CONFIG_FILE}"
   fi
   if [ "${ARCMODE}" == "config" ]; then
     # Check for DT and HBA/Raid Controller
@@ -842,13 +816,8 @@ elif [ "${ARCMODE}" == "automated" ]; then
     make
   fi
 else
-  if [ "${BUILDDONE}" == "true" ]; then
-    NEXT="3"
-  elif [ "${CONFDONE}" == "true" ]; then
-    NEXT="2"
-  else
-    NEXT="1"
-  fi
+  [ "${CONFDONE}" == "true" ] && NEXT="2" || NEXT="1"
+  [ "${BUILDDONE}" == "true" ] && NEXT="3" || NEXT="1"
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
     if [ -z "${ARCCONF}" ] && [ "${ARCOFFLINE}" != "true" ]; then
@@ -921,7 +890,8 @@ else
         echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
         echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
         echo "J \"Reset Network Config \" "                                                   >>"${TMP_PATH}/menu"
-        echo "M \"Mount DSM Storage Pool (not SHR)\" "                                        >>"${TMP_PATH}/menu"
+        echo "M \"Mount DSM Storage Pool (not SHR) \" "                                       >>"${TMP_PATH}/menu"
+        echo "T \"Disable all scheduled Tasks \" "                                            >>"${TMP_PATH}/menu"
         if [ "${PLATFORM}" == "epyc7002" ]; then
           echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
         fi
@@ -948,10 +918,12 @@ else
       echo "X \"Sata DOM: \Z4${SATADOM}\Zn \" "                                               >>"${TMP_PATH}/menu"
       echo "u \"LKM Version: \Z4${LKM}\Zn \" "                                                >>"${TMP_PATH}/menu"
       echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
+      echo "U \"Change Loader Password \" "                                                   >>"${TMP_PATH}/menu"
+      echo "Z \"Change Loader Ports \" "                                                      >>"${TMP_PATH}/menu"
       echo "w \"Reset Loader to Defaults \" "                                                 >>"${TMP_PATH}/menu"
       echo "C \"Clone Loader to another Disk \" "                                             >>"${TMP_PATH}/menu"
       echo "n \"Grub Bootloader Config \" "                                                   >>"${TMP_PATH}/menu"
-      echo "y \"Choose a Keymap for Loader\" "                                                >>"${TMP_PATH}/menu"
+      echo "y \"Choose a Keymap for Loader \" "                                               >>"${TMP_PATH}/menu"
       echo "F \"\Z1Formate Disks \Zn \" "                                                     >>"${TMP_PATH}/menu"
     fi
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
@@ -1035,6 +1007,8 @@ else
       N) addNewDSMUser; NEXT="N" ;;
       J) resetDSMNetwork; NEXT="J" ;;
       M) mountDSM; NEXT="M" ;;
+      T) disablescheduledTasks; NEXT="T" ;;
+      Z) loaderPorts; NEXT="Z" ;;
       K) [ "${KERNEL}" == "official" ] && KERNEL='custom' || KERNEL='official'
         writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
         dialog --backtitle "$(backtitle)" --title "Kernel" \
@@ -1103,6 +1077,7 @@ else
         NEXT="u"
         ;;
       L) greplogs; NEXT="L" ;;
+      U) loaderPassword; NEXT="U" ;;
       w) resetLoader; NEXT="w" ;;
       C) cloneLoader; NEXT="C" ;;
       n) editGrubCfg; NEXT="n" ;;
@@ -1131,5 +1106,6 @@ echo -e "IP: \033[1;34m${IPCON}\033[0m"
 echo -e "User: \033[1;34mroot\033[0m"
 echo -e "Password: \033[1;34marc\033[0m"
 echo
-echo -e "Web Terminal:"
-echo -e "Address: \033[1;34mhttp://${IPCON}:7681\033[0m"
+echo -e "Web Terminal: \033[1;34mhttp://${IPCON}:${TTYDPORT}\033[0m"
+echo -e "Web Filemanager: \033[1;34mhttp://${IPCON}:${DUFSPORT}\033[0m"
+echo -e "Web Utilities: \033[1;34mhttp://${IPCON}:${HTTPPORT}\033[0m"

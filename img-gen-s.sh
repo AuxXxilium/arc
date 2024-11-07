@@ -37,10 +37,12 @@ sudo mount ${LOOPX}p3 "/tmp/p3"
 
 [[ ! -f "brs/bzImage-arc" || ! -f "brs/initrd-arc" ]] && return 1
 
-VERSION=$(date +'%y.%m.dev')
-echo "${VERSION}" >files/p1/ARC-VERSION
-echo "${VERSION}" >VERSION
-echo "dev" >files/p1/ARC-BRANCH
+ARC_BUILD="`date +'%y.%m.%d'`-dev"
+ARC_VERSION="13.11"
+ARC_BRANCH="stable"
+echo "${ARC_BUILD}" >files/p1/ARC-BUILD
+echo "${ARC_VERSION}" >files/p1/ARC-VERSION
+echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
 
 echo "Repack initrd"
 cp -f "brs/bzImage-arc" "files/p3/bzImage-arc"

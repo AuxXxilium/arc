@@ -1017,8 +1017,7 @@ function sysinfo() {
     done
   done
   # Print Config Informations
-  TEXT+="\n\n\Z4> Arc: ${ARC_VERSION}\Zn"
-  TEXT+="\n  Branch: \Zb${ARC_BRANCH}\Zn"
+  TEXT+="\n\n\Z4> Arc: ${ARC_VERSION} (${ARC_BUILD}) ${ARC_BRANCH}\Zn"
   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"
@@ -1367,7 +1366,7 @@ function staticIPMenu() {
 function downgradeMenu() {
   TEXT=""
   TEXT+="This feature will allow you to downgrade the installation by removing the VERSION file from the first partition of all disks.\n"
-  TEXT+="Therefore, please insert all disks before continuing.\n"
+  TEXT+="Please insert all disks before continuing.\n"
   TEXT+="Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?"
   dialog --backtitle "$(backtitle)" --title "Allow Downgrade" \
       --yesno "${TEXT}" 0 0
@@ -1445,7 +1444,8 @@ function resetPassword() {
     dialog --backtitle "$(backtitle)" --title "Reset Password" \
       --msgbox "Invalid password" 0 0
   done
-  NEWPASSWD="$(python -c "from passlib.hash import sha512_crypt;pw=\"${VALUE}\";print(sha512_crypt.using(rounds=5000).hash(pw))")"
+  #NEWPASSWD="$(python -c "from passlib.hash import sha512_crypt;pw=\"${VALUE}\";print(sha512_crypt.using(rounds=5000).hash(pw))")"
+  NEWPASSWD="$(openssl passwd -6 -salt $(openssl rand -hex 8) "${VALUE}")"
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
@@ -1510,6 +1510,156 @@ EOF
     --progressbox "Adding ..." 20 100
   [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" == "true" ] && MSG="Add DSM User successful." || MSG="Add DSM User failed."
   dialog --backtitle "$(backtitle)" --title "Add DSM User" \
+    --msgbox "${MSG}" 0 0
+  return
+}
+
+###############################################################################
+# Change Arc Loader Password
+function loaderPassword() {
+  dialog --backtitle "$(backtitle)" --title "Loader Password" \
+    --inputbox "New password: (Empty value 'arc')" 0 70 \
+    2>${TMP_PATH}/resp
+  [ $? -ne 0 ] && continue
+  STRPASSWD="$(cat "${TMP_PATH}/resp")"
+  NEWPASSWD="$(openssl passwd -6 -salt $(openssl rand -hex 8) "${STRPASSWD:-arc}")"
+  cp -p /etc/shadow /etc/shadow-
+  sed -i "s|^root:[^:]*|root:${NEWPASSWD}|" /etc/shadow
+  RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
+  rm -rf "${RDXZ_PATH}"
+  mkdir -p "${RDXZ_PATH}"
+  [ -f "${ARC_RAMDISK_USER_FILE}" ] && (
+    cd "${RDXZ_PATH}"
+    xz -dc <"${ARC_RAMDISK_USER_FILE}" | cpio -idm
+  ) >/dev/null 2>&1 || true
+  if [ "${STRPASSWD:-arc}" = "arc" ]; then
+    rm -f ${RDXZ_PATH}/etc/shadow* 2>/dev/null
+  else
+    mkdir -p "${RDXZ_PATH}/etc"
+    cp -p /etc/shadow* ${RDXZ_PATH}/etc && chown root:root ${RDXZ_PATH}/etc/shadow* && chmod 600 ${RDXZ_PATH}/etc/shadow*
+  fi
+  if [ -n "$(ls -A "${RDXZ_PATH}" 2>/dev/null)" ] && [ -n "$(ls -A "${RDXZ_PATH}/etc" 2>/dev/null)" ]; then
+    (
+      cd "${RDXZ_PATH}"
+      RDSIZE=$(du -sb ${RDXZ_PATH} 2>/dev/null | awk '{print $1}')
+      find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | xz -9 --check=crc32 >"${ARC_RAMDISK_USER_FILE}"
+    ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Loader Password" \
+      --progressbox "Changing Loader password..." 30 100
+  else
+    rm -f "${ARC_RAMDISK_USER_FILE}"
+  fi
+  rm -rf "${RDXZ_PATH}"
+  [ "${STRPASSWD:-arc}" = "arc" ] && MSG="Loader Password for root restored." || MSG="Loader Password for root changed."
+  dialog --backtitle "$(backtitle)" --title "Loader Password" \
+    --msgbox "${MSG}" 0 0
+  return
+}
+
+###############################################################################
+# Change Arc Loader Password
+function loaderPorts() {
+  MSG="Please use a Port between 0-65535: (Leave empty for default value.)"
+  HTTPPORT=$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
+  DUFSPORT=$(grep -i '^DUFS_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
+  TTYDPORT=$(grep -i '^TTYD_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
+  while true; do
+    dialog --backtitle "$(backtitle)" --title "Loader Ports" \
+      --form "${MSG}" 11 70 3 "HTTP" 1 1 "${HTTPPORT}" 1 10 55 0 "DUFS" 2 1 "${DUFSPORT}" 2 10 55 0 "TTYD" 3 1 "${TTYDPORT}" 3 10 55 0 \
+      2>"${TMP_PATH}/resp"
+    RET=$?
+    case ${RET} in
+    0) # ok-button
+      function check_port() {
+        if [ -z "${1}" ]; then
+          return 0
+        else
+          if [[ "${1}" =~ ^[0-9]+$ ]] && [ "${1}" -ge 0 ] && [ "${1}" -le 65535 ]; then
+            return 0
+          else
+            return 1
+          fi
+        fi
+      }
+      HTTPPORT=$(sed -n '1p' "${TMP_PATH}/resp")
+      DUFSPORT=$(sed -n '2p' "${TMP_PATH}/resp")
+      TTYDPORT=$(sed -n '3p' "${TMP_PATH}/resp")
+      EP=""
+      for P in "${HTTPPORT}" "${DUFSPORT}" "${TTYDPORT}"; do check_port "${P}" || EP="${EP} ${P}"; done
+      if [ -n "${EP}" ]; then
+        dialog --backtitle "$(backtitle)" --title "Loader Ports" \
+          --yesno "Invalid ${EP} Port, retry?" 0 0
+        [ $? -eq 0 ] && continue || break
+      fi
+      rm -f "/etc/arc.conf"
+      [ ! "${HTTPPORT:-7080}" = "7080" ] && echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf" && /etc/init.d/S90thttpd restart >/dev/null 2>&1
+      [ ! "${DUFSPORT:-7304}" = "7304" ] && echo "DUFS_PORT=${DUFSPORT}" >>"/etc/arc.conf" && /etc/init.d/S99dufs restart >/dev/null 2>&1
+      [ ! "${TTYDPORT:-7681}" = "7681" ] && echo "TTYD_PORT=${TTYDPORT}" >>"/etc/arc.conf" && /etc/init.d/S99ttyd restart >/dev/null 2>&1
+      RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
+      rm -rf "${RDXZ_PATH}"
+      mkdir -p "${RDXZ_PATH}"
+      [ -f "${ARC_RAMDISK_USER_FILE}" ] && (
+        cd "${RDXZ_PATH}"
+        xz -dc <"${ARC_RAMDISK_USER_FILE}" | cpio -idm
+      ) >/dev/null 2>&1 || true
+      if [ ! -f "/etc/arc.conf" ]; then
+        rm -f "${RDXZ_PATH}/etc/arc.conf" 2>/dev/null
+      else
+        mkdir -p "${RDXZ_PATH}/etc"
+        cp -p /etc/arc.conf ${RDXZ_PATH}/etc
+      fi
+      if [ -n "$(ls -A "${RDXZ_PATH}" 2>/dev/null)" ] && [ -n "$(ls -A "${RDXZ_PATH}/etc" 2>/dev/null)" ]; then
+        (
+          cd "${RDXZ_PATH}"
+          RDSIZE=$(du -sb ${RDXZ_PATH} 2>/dev/null | awk '{print $1}')
+          find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | xz -9 --check=crc32 >"${ARC_RAMDISK_USER_FILE}"
+        ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Loader Ports" \
+          --progressbox "Changing Ports..." 30 100
+      else
+        rm -f "${ARC_RAMDISK_USER_FILE}"
+      fi
+      rm -rf "${RDXZ_PATH}"
+      [ ! -f "/etc/arc.conf" ] && MSG="Ports for TTYD/DUFS/HTTP restored." || MSG="Ports for TTYD/DUFS/HTTP changed."
+      dialog --backtitle "$(backtitle)" --title "Loader Ports" \
+        --msgbox "${MSG}" 0 0
+      break
+      ;;
+    1) # cancel-button
+      break
+      ;;
+    255) # ESC
+      break
+      ;;
+    esac
+  done
+  return
+}
+
+###############################################################################
+# Disable all scheduled tasks of DSM
+function disablescheduledTasks {
+  DSMROOTS="$(findDSMRoot)"
+  if [ -z "${DSMROOTS}" ]; then
+    dialog --backtitle "$(backtitle)" --title "Scheduled Tasks" \
+      --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
+    return
+  fi
+  (
+    mkdir -p "${TMP_PATH}/mdX"
+    for I in ${DSMROOTS}; do
+      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      [ $? -ne 0 ] && continue
+      if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
+        echo "UPDATE task SET enable = 0;" | sqlite3 ${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db
+        sync
+        echo "true" >${TMP_PATH}/isEnable
+      fi
+      umount "${TMP_PATH}/mdX"
+    done
+    rm -rf "${TMP_PATH}/mdX"
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Scheduled Tasks" \
+    --progressbox "Modifying..." 20 100
+  [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Disable all scheduled tasks successful." || MSG="Disable all scheduled tasks failed."
+  dialog --backtitle "$(backtitle)" --title Scheduled Tasks \
     --msgbox "${MSG}" 0 0
   return
 }

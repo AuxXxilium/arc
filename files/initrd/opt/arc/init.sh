@@ -157,7 +157,7 @@ elif [ "${ARCMODE}" == "update" ]; then
 elif [ "${BUILDDONE}" == "true" ] && [ "${ARCMODE}" == "dsm" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
   if [ -f "${ARC_PATH}/boot.sh" ]; then
-    exec boot.sh
+    boot.sh && exit 0
   else
     echo -e "\033[1;31mError: Can't find Arc System Files...\033[0m"
   fi
@@ -189,7 +189,7 @@ for ETH in ${ETHX}; do
         echo -e "\r${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
       else
         echo -e "\r${DRIVER} (${SPEED}): \033[1;37m${IP}\033[0m"
-        [ -z "${IPCON}" ] && IPCON="${IP}" && ONNIC="${ETH}"
+        [ -z "${IPCON}" ] && IPCON="${IP}"
       fi
       break
     fi
@@ -217,10 +217,10 @@ mkdir -p "${USER_UP_PATH}"
 # Load Arc Overlay
 echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
 echo
-echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}:7681\033[0m to configure Loader."
+echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}:${TTYDPORT}\033[0m to configure Loader."
 
 # Check memory and load Arc
-RAM=$(free -m | grep -i mem | awk '{print$2}')
+RAM=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
 if [ ${RAM} -le 3500 ]; then
   echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n\033[1;31mUse arc.sh to proceed. Not recommended!\033[0m"
 else

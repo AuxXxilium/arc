@@ -4,12 +4,9 @@ PART2_PATH="/mnt/p2"
 PART3_PATH="/mnt/p3"
 TMP_PATH="/tmp"
 
-if [ -f "${PART1_PATH}/ARC-BRANCH" ]; then
-  ARC_BRANCH=$(cat "${PART1_PATH}/ARC-BRANCH" 2>/dev/null)
-fi
-if [ -f "${PART1_PATH}/ARC-VERSION" ]; then
-  ARC_VERSION=$(cat "${PART1_PATH}/ARC-VERSION" 2>/dev/null)
-fi
+[ -f "${PART1_PATH}/ARC-BRANCH" ] && ARC_BRANCH=$(cat "${PART1_PATH}/ARC-BRANCH") || ARC_BRANCH="null"
+[ -f "${PART1_PATH}/ARC-VERSION" ] && ARC_VERSION=$(cat "${PART1_PATH}/ARC-VERSION") || ARC_VERSION="null"
+[ -f "${PART1_PATH}/ARC-BUILD" ] && ARC_BUILD=$(cat "${PART1_PATH}/ARC-BUILD") || ARC_BUILD="null"
 ARC_TITLE="Arc ${ARC_VERSION}"
 
 RAMDISK_PATH="${TMP_PATH}/ramdisk"
@@ -25,6 +22,7 @@ ORI_ZIMAGE_FILE="${PART2_PATH}/zImage"
 ORI_RDGZ_FILE="${PART2_PATH}/rd.gz"
 ARC_BZIMAGE_FILE="${PART3_PATH}/bzImage-arc"
 ARC_RAMDISK_FILE="${PART3_PATH}/initrd-arc"
+ARC_RAMDISK_USER_FILE="${PART3_PATH}/initrd-user"
 MOD_ZIMAGE_FILE="${PART3_PATH}/zImage-dsm"
 MOD_RDGZ_FILE="${PART3_PATH}/initrd-dsm"
 
@@ -45,3 +43,10 @@ D_FILE="${MODEL_CONFIG_PATH}/data.yml"
 
 EXTRACTOR_PATH="${PART3_PATH}/extractor"
 EXTRACTOR_BIN="syno_extract_system_patch"
+
+HTTPPORT=$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
+[ -z "${HTTPPORT}" ] && HTTPPORT=7080
+DUFSPORT=$(grep -i '^DUFS_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
+[ -z "${DUFSPORT}" ] && DUFSPORT=7304
+TTYDPORT=$(grep -i '^TTYD_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
+[ -z "${TTYDPORT}" ] && TTYDPORT=7681
