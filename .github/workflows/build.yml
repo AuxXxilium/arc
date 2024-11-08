@@ -98,7 +98,7 @@ jobs:
           . scripts/func.sh
 
           # Modify Source File
-          ARC_BUILD="`date +'%y.%m.%d'`"
+          ARC_BUILD="`date +'%y%m%d'`"
           ARC_VERSION="${{ inputs.version }}"
           ARC_BRANCH="next"
           echo "${ARC_BUILD}" >files/p1/ARC-BUILD
@@ -175,7 +175,7 @@ jobs:
           . scripts/func.sh
 
           # Modify Source File
-          ARC_BUILD="`date +'%y.%m.%d'`"
+          ARC_BUILD="`date +'%y%m%d'`"
           ARC_VERSION="${{ inputs.version }}"
           ARC_BRANCH="stable"
           echo "${ARC_BUILD}" >files/p1/ARC-BUILD
