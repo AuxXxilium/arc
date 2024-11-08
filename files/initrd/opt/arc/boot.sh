@@ -24,7 +24,7 @@ clear
 COLUMNS=${COLUMNS:-50}
 BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
 TITLE="Version:"
-TITLE+=" ${ARC_VERSION}"
+TITLE+=" ${ARC_VERSION} (${ARC_BUILD})"
 [ -n "${ARC_BRANCH}" ] && TITLE+=" | Branch: ${ARC_BRANCH}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
