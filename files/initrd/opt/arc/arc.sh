@@ -913,6 +913,7 @@ else
       echo "= \"\Z4========= Loader =========\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "= \"\Z1=== Edit with caution! ===\Zn \" "                                         >>"${TMP_PATH}/menu"
       echo "D \"StaticIP for Loader/DSM \" "                                                  >>"${TMP_PATH}/menu"
+      echo "c \"Offline Mode: \Z4${ARCOFFLINE}\Zn \" "                                        >>"${TMP_PATH}/menu"
       echo "f \"Bootscreen Options \" "                                                       >>"${TMP_PATH}/menu"
       echo "W \"RD Compression: \Z4${RD_COMPRESSED}\Zn \" "                                   >>"${TMP_PATH}/menu"
       echo "X \"Sata DOM: \Z4${SATADOM}\Zn \" "                                               >>"${TMP_PATH}/menu"
@@ -929,7 +930,6 @@ else
     echo "= \"\Z4========== Misc ==========\Zn \" "                                           >>"${TMP_PATH}/menu"
     echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
     [ "${ARCOFFLINE}" != "true" ] && echo "z \"Update Menu \" "                               >>"${TMP_PATH}/menu"
-    echo "c \"Offline Mode: \Z4${ARCOFFLINE}\Zn \" "                                          >>"${TMP_PATH}/menu"
     echo "I \"Power/Service Menu \" "                                                         >>"${TMP_PATH}/menu"
     echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
 
@@ -1062,6 +1062,11 @@ else
         NEXT="8"
         ;;
       D) staticIPMenu; NEXT="D" ;;
+      c) [ "${ARCOFFLINE}" == "true" ] && ARCOFFLINE='false' || ARCOFFLINE='true'
+        writeConfigKey "arc.offline" "${ARCOFFLINE}" "${USER_CONFIG_FILE}"
+        [ "${ARCOFFLINE}" == "false" ] && exec arc.sh
+        NEXT="c"
+        ;;
       f) bootScreen; NEXT="f" ;;
       W) [ "${RD_COMPRESSED}" == "true" ] && RD_COMPRESSED='false' || RD_COMPRESSED='true'
         writeConfigKey "rd-compressed" "${RD_COMPRESSED}" "${USER_CONFIG_FILE}"
@@ -1086,11 +1091,6 @@ else
       # Misc Settings
       x) backupMenu; NEXT="x" ;;
       z) updateMenu; NEXT="z" ;;
-      c) [ "${ARCOFFLINE}" == "true" ] && ARCOFFLINE='false' || ARCOFFLINE='true'
-        writeConfigKey "arc.offline" "${ARCOFFLINE}" "${USER_CONFIG_FILE}"
-        [ "${ARCOFFLINE}" == "false" ] && exec arc.sh
-        NEXT="c"
-        ;;
       I) rebootMenu; NEXT="I" ;;
       V) credits; NEXT="V" ;;
     esac
@@ -1108,4 +1108,4 @@ echo -e "Password: \033[1;34marc\033[0m"
 echo
 echo -e "Web Terminal: \033[1;34mhttp://${IPCON}:${TTYDPORT}\033[0m"
 echo -e "Web Filemanager: \033[1;34mhttp://${IPCON}:${DUFSPORT}\033[0m"
-echo -e "Web Utilities: \033[1;34mhttp://${IPCON}:${HTTPPORT}\033[0m"
+echo

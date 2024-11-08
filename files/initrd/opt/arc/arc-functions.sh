@@ -1558,7 +1558,7 @@ function loaderPassword() {
 ###############################################################################
 # Change Arc Loader Password
 function loaderPorts() {
-  MSG="Please use a Port between 0-65535: (Leave empty for default value.)"
+  MSG="Modify Ports (0-65535) (Leave empty for default):"
   HTTPPORT=$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
   DUFSPORT=$(grep -i '^DUFS_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
   TTYDPORT=$(grep -i '^TTYD_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
@@ -1591,7 +1591,7 @@ function loaderPorts() {
         [ $? -eq 0 ] && continue || break
       fi
       rm -f "/etc/arc.conf"
-      [ ! "${HTTPPORT:-7080}" = "7080" ] && echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf" && /etc/init.d/S90thttpd restart >/dev/null 2>&1
+      [ ! "${HTTPPORT:-8080}" = "8080" ] && echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf" && /etc/init.d/S90thttpd restart >/dev/null 2>&1
       [ ! "${DUFSPORT:-7304}" = "7304" ] && echo "DUFS_PORT=${DUFSPORT}" >>"/etc/arc.conf" && /etc/init.d/S99dufs restart >/dev/null 2>&1
       [ ! "${TTYDPORT:-7681}" = "7681" ] && echo "TTYD_PORT=${TTYDPORT}" >>"/etc/arc.conf" && /etc/init.d/S99ttyd restart >/dev/null 2>&1
       RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
