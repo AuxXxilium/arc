@@ -10,6 +10,10 @@ name: Build Arc Image
 on:
   workflow_dispatch:
     inputs:
+      runs:
+        description: "runs-on (ubuntu-latest / self-hosted)"
+        default: "ubuntu-latest"
+        type: string
       version:
         description: "version (1.0.0)"
         required: true
@@ -41,7 +45,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs }}
     steps:
       - name: Checkout
         uses: actions/checkout@main
