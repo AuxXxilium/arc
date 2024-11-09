@@ -60,6 +60,16 @@ jobs:
           getBuildrootx "brx"
           getBuildroots "brs"
 
+          # Export Dependencies Version to env
+          echo "ADDONTAG=${ADDONTAG}" >> $GITHUB_ENV
+          echo "MODULETAG=${MODULETAG}" >> $GITHUB_ENV
+          echo "CONFIGTAG=${CONFIGTAG}" >> $GITHUB_ENV
+          echo "PATCHTAG=${PATCHTAG}" >> $GITHUB_ENV
+          echo "CUSTOMTAG=${CUSTOMTAG}" >> $GITHUB_ENV
+          echo "LKMTAG=${LKMTAG}" >> $GITHUB_ENV
+          echo "THEMETAG=${THEMETAG}" >> $GITHUB_ENV
+          echo "BRXTAG=${BRXTAG}" >> $GITHUB_ENV
+          echo "BRSTAG=${BRSTAG}" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
@@ -217,6 +227,17 @@ jobs:
             Notice: Development Build
             
             Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
+
+            ### Dependencies:
+              - Addons: ${{ env.ADDONTAG }}
+              - Modules: ${{ env.MODULETAG }}
+              - Configs: ${{ env.CONFIGTAG }}
+              - Patches: ${{ env.PATCHTAG }}
+              - Custom: ${{ env.CUSTOMTAG }}
+              - LKMs: ${{ env.LKMTAG }}
+              - Theme: ${{ env.THEMETAG }}
+              - Buildroot Next: ${{ env.BRXTAG }}
+              - Buildroot Stable: ${{ env.BRSTAG }}
 
             ### Release
             ${{ env.BUILD_TIME }}
