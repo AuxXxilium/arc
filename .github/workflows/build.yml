@@ -129,8 +129,8 @@ jobs:
           gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
-          LOOPX=$(sudo losetup -f)
-          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
+          LOOPX=$(losetup -f)
+          losetup -P "${LOOPX}" "${IMAGE_FILE}"
 
           echo "Mounting Image File"
           mkdir -p "/tmp/p1"
@@ -156,7 +156,7 @@ jobs:
           rmdir "/tmp/p1"
           rmdir "/tmp/p3"
 
-          sudo losetup --detach ${LOOPX}
+          losetup --detach ${LOOPX}
 
           echo "Image Converter"
           qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
@@ -206,14 +206,14 @@ jobs:
           gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
-          LOOPX=$(sudo losetup -f)
-          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
+          LOOPX=$(losetup -f)
+          losetup -P "${LOOPX}" "${IMAGE_FILE}"
 
           echo "Mounting Image File"
           mkdir -p "/tmp/p1"
           mkdir -p "/tmp/p3"
-          sudo mount ${LOOPX}p1 "/tmp/p1"
-          sudo mount ${LOOPX}p3 "/tmp/p3"
+          mount ${LOOPX}p1 "/tmp/p1"
+          mount ${LOOPX}p3 "/tmp/p3"
 
           [ ! -f "brs/bzImage-arc" ] || [ ! -f "brs/initrd-arc" ] && return 1
           
@@ -223,17 +223,17 @@ jobs:
           repackInitrd "brs/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
-          sudo cp -Rf "files/p1/"* "/tmp/p1"
-          sudo cp -Rf "files/p3/"* "/tmp/p3"
+          sudo cp -rf "files/p1/"* "/tmp/p1"
+          sudo cp -rf "files/p3/"* "/tmp/p3"
           sync
 
           echo "Unmount image file"
-          sudo umount "/tmp/p1"
-          sudo umount "/tmp/p3"
+          umount "/tmp/p1"
+          umount "/tmp/p3"
           rmdir "/tmp/p1"
           rmdir "/tmp/p3"
 
-          sudo losetup --detach ${LOOPX}
+          losetup --detach ${LOOPX}
 
           echo "Image Converter"
           qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
