@@ -12,8 +12,10 @@ on:
     inputs:
       runs:
         description: "runs-on (ubuntu-latest / self-hosted)"
-        default: "ubuntu-latest"
-        type: string
+        type: choice
+        options:
+          - ubuntu-latest
+          - self-hosted
       version:
         description: "version (1.0.0)"
         required: true
