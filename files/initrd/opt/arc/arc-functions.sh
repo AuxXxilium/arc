@@ -971,11 +971,6 @@ function sysinfo() {
   if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::300 | awk '{print $1}'); do
       GPUNAME=$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
-      TEXT+="\n  iGPU: \Zb${GPUNAME}\Zn"
-    done
-  elif [ $(lspci -d ::380 | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::380 | awk '{print $1}'); do
-      GPUNAME=$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       TEXT+="\n  GPU: \Zb${GPUNAME}\Zn"
     done
   fi
@@ -1097,7 +1092,7 @@ function sysinfo() {
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  [ $(lspci -d ::107 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\nHBA Controller:\n"
+  [ $(lspci -d ::107 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  HBA Controller:\n"
   for PCI in $(lspci -d ::107 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
@@ -1107,14 +1102,6 @@ function sysinfo() {
   done
   [ $(lspci -d ::100 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  SCSI Controller:\n"
   for PCI in $(lspci -d ::100 2>/dev/null | awk '{print $1}'); do
-    NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
-    PORTNUM=$(ls -l /sys/block/* 2>/dev/null | grep "${PCI}" | wc -l)
-    [ ${PORTNUM} -eq 0 ] && continue
-    TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
-    NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
-  done
-  [ $(lspci -d ::101 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  IDE Controller:\n"
-  for PCI in $(lspci -d ::101 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORTNUM=$(ls -l /sys/block/* 2>/dev/null | grep "${PCI}" | wc -l)
     [ ${PORTNUM} -eq 0 ] && continue
