@@ -76,7 +76,7 @@ function backtitle() {
 function backtitlep() {
   [ "${STEP}" == "model" ] && BACKTITLEP="CHOOSE MODEL >>> " || BACKTITLEP="Choose Model >>> "
   [ "${STEP}" == "version" ] && BACKTITLEP+="CHOOSE VERSION >>> " || BACKTITLEP+="Choose Version >>> "
-  [ "${STEP}" == "snmac" ] && BACKTITLEP+="SET SN/MAC >>> " || BACKTITLEP+="Set Sn/Mac >>> "
+  [ "${STEP}" == "snmac" ] && BACKTITLEP+="SET SN/MAC >>> " || BACKTITLEP+="Set SN/Mac >>> "
   [ "${STEP}" == "network" ] && BACKTITLEP+="SET NETWORK >>> " || BACKTITLEP+="Set Network >>> "
   [ "${STEP}" == "storagemap" ] && BACKTITLEP+="SET STORAGEMAP >>> " || BACKTITLEP+="Set StorageMap >>> "
   [ "${STEP}" == "addons" ] && BACKTITLEP+="SET ADDONS >>> " || BACKTITLEP+="Set Addons >>> "

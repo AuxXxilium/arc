@@ -1007,9 +1007,9 @@ function sysinfo() {
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          TEXT+="\n${DRIVER} (${SPEED}): \ZbLINK LOCAL (No DHCP server found.)\Zn"
+          TEXT+="\n$   {DRIVER} (${SPEED}): \ZbLINK LOCAL (No DHCP server found.)\Zn"
         else
-          TEXT+="\n${DRIVER} (${SPEED}): \Zb${IP}\Zn"
+          TEXT+="\n   ${DRIVER} (${SPEED}): \Zb${IP}\Zn"
         fi
         break
       fi
