@@ -135,8 +135,8 @@ jobs:
           echo "Mounting Image File"
           mkdir -p "/tmp/p1"
           mkdir -p "/tmp/p3"
-          sudo mount ${LOOPX}p1 "/tmp/p1"
-          sudo mount ${LOOPX}p3 "/tmp/p3"
+          mount ${LOOPX}p1 "/tmp/p1"
+          mount ${LOOPX}p3 "/tmp/p3"
 
           [ ! -f "brx/bzImage-arc" ] || [ ! -f "brx/initrd-arc" ] && return 1
           
@@ -151,8 +151,8 @@ jobs:
           sync
 
           echo "Unmount image file"
-          sudo umount "/tmp/p1"
-          sudo umount "/tmp/p3"
+          umount "/tmp/p1"
+          umount "/tmp/p3"
           rmdir "/tmp/p1"
           rmdir "/tmp/p3"
 
