@@ -5,15 +5,17 @@
 # See /LICENSE for more information.
 #
 
-name: Build Arc Development
+name: Build Arc Image Development
 
 on:
   workflow_dispatch:
     inputs:
       runs:
         description: "runs-on (ubuntu-latest / self-hosted)"
-        default: "ubuntu-latest"
-        type: string
+        type: choice
+        options:
+          - ubuntu-latest
+          - self-hosted
       version:
         description: "version (1.0.0)"
         required: true
@@ -117,8 +119,8 @@ jobs:
           repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
-          sudo cp -Rf "files/p1/"* "/tmp/p1"
-          sudo cp -Rf "files/p3/"* "/tmp/p3"
+          sudo cp -rf "files/p1/"* "/tmp/p1"
+          sudo cp -rf "files/p3/"* "/tmp/p3"
           sync
 
           echo "Unmount image file"

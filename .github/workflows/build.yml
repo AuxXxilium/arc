@@ -12,8 +12,10 @@ on:
     inputs:
       runs:
         description: "runs-on (ubuntu-latest / self-hosted)"
-        default: "ubuntu-latest"
-        type: string
+        type: choice
+        options:
+          - ubuntu-latest
+          - self-hosted
       version:
         description: "version (1.0.0)"
         required: true
@@ -51,13 +53,12 @@ jobs:
         uses: actions/checkout@main
 
       - name: Delete releases and workflows runs
-        if: inputs.clean == true
+        if: ${{ inputs.clean }} == 'true'
         uses: ophub/delete-releases-workflows@main
         with:
           delete_releases: true
           releases_keep_latest: 1
-          delete_workflows: true
-          workflows_keep_day: 1
+          delete_workflows: false
           delete_tags: true
           gh_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -144,8 +145,8 @@ jobs:
           repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
-          sudo cp -Rf "files/p1/"* "/tmp/p1"
-          sudo cp -Rf "files/p3/"* "/tmp/p3"
+          sudo cp -rf "files/p1/"* "/tmp/p1"
+          sudo cp -rf "files/p3/"* "/tmp/p3"
           sync
 
           echo "Unmount image file"
