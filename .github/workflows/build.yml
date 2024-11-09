@@ -266,10 +266,11 @@ jobs:
           makeLatest: ${{ inputs.latest }}
           allowUpdates: true
           body: |
+            ### Notice:
+              - ${{ inputs.notice }}
+
             ### Information:
-            Notice: ${{ inputs.notice }}
-            
-            Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
+              - Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
 
             ### Versions:
               - stable: Stable Image (Full Image, all dependencies are included, less hardware support)
@@ -287,7 +288,7 @@ jobs:
               - Buildroot Stable: ${{ env.BRSTAG }}
 
             ### Release
-            ${{ env.BUILD_TIME }}
+              - ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
             update-*.zip

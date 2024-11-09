@@ -230,10 +230,11 @@ jobs:
           makeLatest: false
           allowUpdates: true
           body: |
+            ### Notice:
+              - Development Build
+
             ### Information:
-            Notice: Development Build
-            
-            Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
+              - Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
 
             ### Dependencies:
               - Addons: ${{ env.ADDONTAG }}
@@ -247,7 +248,7 @@ jobs:
               - Buildroot Stable: ${{ env.BRSTAG }}
 
             ### Release
-            ${{ env.BUILD_TIME }}
+              - ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
             update-*.zip
