@@ -1094,7 +1094,7 @@ function sysinfo() {
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -b 2>/dev/null | grep -v - | grep "\[${PORT}:" | wc -l)
-    TEXT+="\Zb   ${NAME}\Zn\nNumber: ${PORTNUM}\n"
+    TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
   [ $(lspci -d ::107 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\nHBA Controller:\n"
@@ -1102,7 +1102,7 @@ function sysinfo() {
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -b 2>/dev/null | grep -v - | grep "\[${PORT}:" | wc -l)
-    TEXT+="\Zb   ${NAME}\Zn\nNumber: ${PORTNUM}\n"
+    TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
   [ $(lspci -d ::100 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  SCSI Controller:\n"
@@ -1110,7 +1110,7 @@ function sysinfo() {
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORTNUM=$(ls -l /sys/block/* 2>/dev/null | grep "${PCI}" | wc -l)
     [ ${PORTNUM} -eq 0 ] && continue
-    TEXT+="\Zb   ${NAME}\Zn\nNumber: ${PORTNUM}\n"
+    TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
   [ $(lspci -d ::101 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  IDE Controller:\n"
@@ -1118,7 +1118,7 @@ function sysinfo() {
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORTNUM=$(ls -l /sys/block/* 2>/dev/null | grep "${PCI}" | wc -l)
     [ ${PORTNUM} -eq 0 ] && continue
-    TEXT+="\Zb   ${NAME}\Zn\nNumber: ${PORTNUM}\n"
+    TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
   [ $(ls -l /sys/class/scsi_host 2>/dev/null | grep usb | wc -l) -gt 0 ] && TEXT+="\n  USB Controller:\n"
@@ -1127,7 +1127,7 @@ function sysinfo() {
     PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -b 2>/dev/null | grep -v - | grep "\[${PORT}:" | wc -l)
     [ ${PORTNUM} -eq 0 ] && continue
-    TEXT+="\Zb   ${NAME}\Zn\nNumber: ${PORTNUM}\n"
+    TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
   [ $(ls -l /sys/class/mmc_host 2>/dev/null | grep mmc_host | wc -l) -gt 0 ] && TEXT+="\n  MMC Controller:\n"
@@ -1135,7 +1135,7 @@ function sysinfo() {
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORTNUM=$(ls -l /sys/block/mmc* 2>/dev/null | grep "${PCI}" | wc -l)
     [ ${PORTNUM} -eq 0 ] && continue
-    TEXT+="\Zb   ${NAME}\Zn\nNumber: ${PORTNUM}\n"
+    TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
   [ $(lspci -d ::108 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  NVME Controller:\n"
@@ -1143,14 +1143,14 @@ function sysinfo() {
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORT=$(ls -l /sys/class/nvme 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
     PORTNUM=$(lsscsi -b 2>/dev/null | grep -v - | grep "\[N:${PORT}:" | wc -l)
-    TEXT+="\Zb   ${NAME}\Zn\nNumber: ${PORTNUM}\n"
+    TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
   if [ $(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep 'vmbus:acpi' | wc -l) -gt 0 ]; then
     TEXT+="\n  VMBUS Controller:\n"
     NAME="vmbus:acpi"
     PORTNUM=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep 'vmbus:acpi' | wc -l)
-    TEXT+="\Zb   ${NAME}\Zn\nNumber: ${PORTNUM}\n"
+    TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   fi
   TEXT+="\n  Total Disks: \Zb${NUMPORTS}\Zn"
