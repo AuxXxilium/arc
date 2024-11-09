@@ -4,7 +4,6 @@ set -e
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
 . ${ARC_PATH}/include/functions.sh
-. ${ARC_PATH}/include/addons.sh
 
 # Clear logs for dbgutils addons
 rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
@@ -323,7 +322,7 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
     echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
     KEXECARGS+=" --noefi"
   fi
-  kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" >"${LOG_FILE}" 2>&1 || dieLog
+  kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
 
   echo -e "\033[1;37mBooting DSM...\033[0m"
   # Boot to DSM
