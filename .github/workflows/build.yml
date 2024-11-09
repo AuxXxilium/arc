@@ -64,6 +64,7 @@ jobs:
 
       # Install Dependencies
       - name: Install Dependencies
+        if: ${{ github.event.inputs.runs   == 'ubuntu-latest' }}
         run: |
           git config --global user.email "info@auxxxilium.tech"
           git config --global user.name "AuxXxilium"
@@ -147,7 +148,7 @@ jobs:
           echo "Copying files"
           sudo cp -rf "files/p1/"* "/tmp/p1"
           sudo cp -rf "files/p3/"* "/tmp/p3"
-          sync
+          sudo sync
 
           echo "Unmount image file"
           sudo umount "/tmp/p1"
@@ -222,9 +223,9 @@ jobs:
           repackInitrd "brs/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
-          sudo cp -Rf "files/p1/"* "/tmp/p1"
-          sudo cp -Rf "files/p3/"* "/tmp/p3"
-          sync
+          sudo cp -rf "files/p1/"* "/tmp/p1"
+          sudo cp -rf "files/p3/"* "/tmp/p3"
+          sudo sync
 
           echo "Unmount image file"
           sudo umount "/tmp/p1"
@@ -265,10 +266,11 @@ jobs:
           makeLatest: ${{ inputs.latest }}
           allowUpdates: true
           body: |
+            ### Notice:
+              - ${{ inputs.notice }}
+
             ### Information:
-            Notice: ${{ inputs.notice }}
-            
-            Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
+              - Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
 
             ### Versions:
               - stable: Stable Image (Full Image, all dependencies are included, less hardware support)
@@ -286,7 +288,7 @@ jobs:
               - Buildroot Stable: ${{ env.BRSTAG }}
 
             ### Release
-            ${{ env.BUILD_TIME }}
+              - ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
             update-*.zip
