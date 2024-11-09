@@ -78,7 +78,7 @@ jobs:
           issue-number: ${{ github.event.issue.number }}
           body: |
             Hi @${{ github.event.issue.user.login }}.  
-            arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} is being build, it will be uploaded here and sent to your email later..  
+            building arc-${{ env.MODEL }}-${{ env.VERSION }}, it will be uploaded here and sent to your email later..  
             > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}  
             ----
 
@@ -179,36 +179,36 @@ jobs:
       - name: Pack
         run: |
           if [ "${{ env.FORMAT }}" = "img" ]; then
-            zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.img.zip" arc.img
-            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.img.zip" "https://file.io")"
+            zip -9 "arc-${{ env.MODEL }}-${{ env.VERSION }}.img.zip" arc.img
+            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.VERSION }}.img.zip" "https://file.io")"
             if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
               echo "Upload failed"
               exit 1
             fi
           elif [ "${{ env.FORMAT }}" = "dyn" ]; then
-            zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
-            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-dyn.zip" "https://file.io")"
+            zip -9 "arc-${{ env.MODEL }}-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
+            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.VERSION }}.vmdk-dyn.zip" "https://file.io")"
             if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
               echo "Upload failed"
               exit 1
             fi
           elif [ "${{ env.FORMAT }}" = "flat" ]; then
-            zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vmdk-flat.zip" "https://file.io")"
+            zip -9 "arc-${{ env.MODEL }}-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.VERSION }}.vmdk-flat.zip" "https://file.io")"
             if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
               echo "Upload failed"
               exit 1
             fi
           elif [ "${{ env.FORMAT }}" = "vhdx" ]; then
-            zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vhdx.zip" arc.vhdx
-            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.vhdx.zip" "https://file.io")"
+            zip -9 "arc-${{ env.MODEL }}-${{ env.VERSION }}.vhdx.zip" arc.vhdx
+            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.VERSION }}.vhdx.zip" "https://file.io")"
             if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
               echo "Upload failed"
               exit 1
             fi
           elif [ "${{ env.FORMAT }}" = "ova" ]; then
-            zip -9 "arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.ova.zip" arc.ova
-            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}.ova.zip" "https://file.io")"
+            zip -9 "arc-${{ env.MODEL }}-${{ env.VERSION }}.ova.zip" arc.ova
+            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.VERSION }}.ova.zip" "https://file.io")"
             if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
               echo "Upload failed"
               exit 1
@@ -228,7 +228,7 @@ jobs:
           server_port: 587
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
-          subject: arc-${{ env.model }}-${{ env.PRODUCTVER }}-${{ env.VERSION }}
+          subject: arc-${{ env.model }}-${{ env.VERSION }}
           to: ${{ env.EMAIL }}
           from: ${{ secrets.MAIL_USERNAME }}
           body: |
@@ -244,7 +244,7 @@ jobs:
           update-mode: replace
           body: |
             Hi @${{ github.event.issue.user.login }}.  
-            arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} is ready to download: ${{ env.FIOURL }}
+            arc-${{ env.MODEL }}-${{ env.VERSION }} is ready to download: ${{ env.FIOURL }}
             > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
             If this will not work, do not use customized Versions!
