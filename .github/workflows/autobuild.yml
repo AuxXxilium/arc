@@ -38,6 +38,7 @@ jobs:
 
       # Install Dependencies
       - name: Install Dependencies
+        if: ${{ github.event.inputs.runs   == 'ubuntu-latest' }}
         run: |
           git config --global user.email "info@auxxxilium.tech"
           git config --global user.name "AuxXxilium"
