@@ -33,6 +33,7 @@ fi
 
 # Get Arc Data from Config
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
 ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
@@ -409,7 +410,7 @@ function arcPatch() {
   # Check for Custom Build
   if [ "${ARCMODE}" == "automated" ]; then
     [ -z "${ARCCONF}" ] && checkHardwareID || true
-    sleep 2
+    sleep 1
     ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
     [ -n "${ARCCONF}" ] && SN="$(generateSerial "${MODEL}" "true")" || SN="$(generateSerial "${MODEL}" "false")"
     [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
@@ -425,7 +426,7 @@ function arcPatch() {
     [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
       [ -z "${ARCCONF}" ] && checkHardwareID || true
-      sleep 2
+      sleep 1
       ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
       [ -n "${ARCCONF}" ] && SN="$(generateSerial "${MODEL}" "true")" || SN="$(generateSerial "${MODEL}" "false")"
       [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
@@ -824,7 +825,7 @@ else
   [ "${BUILDDONE}" == "true" ] && NEXT="3" || NEXT="1"
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
-    if [ -z "${ARCCONF}" ] && [ "${ARCOFFLINE}" != "true" ]; then
+    if [ -z "${USERID}" ] && [ "${ARCOFFLINE}" != "true" ]; then
       echo "0 \"HardwareID for Arc Patch\" "                                                  >>"${TMP_PATH}/menu"
     fi
     echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"

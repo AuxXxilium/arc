@@ -2210,11 +2210,15 @@ function genHardwareID() {
       else
         dialog --backtitle "$(backtitle)" --title "HardwareID" \
         --yes-label "Retry" --no-label "Cancel" --yesno "HardwareID: ${HWID}\nRegister your HardwareID on\nhttps://arc.auxxxilium.tech (Discord Account needed)." 8 60
+        writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
         [ $? -ne 0 ] && break
       fi
     else
       dialog --backtitle "$(backtitle)" --title "HardwareID" \
         --msgbox "HardwareID: Verification failed!" 6 50
+      writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
       break
     fi
   done
@@ -2234,6 +2238,8 @@ function checkHardwareID() {
       curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}&userid=${USERID}" > "${S_FILE}"
     fi
   else
+    writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
     dialog --backtitle "$(backtitle)" --title "HardwareID" \
       --infobox "Couldn't verify your HardwareID!\nArc Patch not enabled!" 6 40
     cp -f "${S_FILE}.bak" "${S_FILE}"
