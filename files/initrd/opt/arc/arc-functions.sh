@@ -2229,7 +2229,6 @@ function checkHardwareID() {
   if echo "${USERID}" | grep -vq "Hardware ID"; then
     writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
     if [ -n "${USERID}" ] && [ -n "${HWID}" ]; then
       cp -f "${S_FILE}" "${S_FILE}.bak"
       curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}&userid=${USERID}" > "${S_FILE}"
@@ -2237,7 +2236,6 @@ function checkHardwareID() {
   else
     dialog --backtitle "$(backtitle)" --title "HardwareID" \
       --infobox "Couldn't verify your HardwareID!\nArc Patch not enabled!" 6 40
-    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     cp -f "${S_FILE}.bak" "${S_FILE}"
     sleep 3
   fi
