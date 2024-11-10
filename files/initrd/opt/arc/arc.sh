@@ -32,8 +32,8 @@ if [ -n "${MODEL}" ]; then
 fi
 
 # Get Arc Data from Config
-ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
 ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
@@ -91,7 +91,7 @@ function arcModel() {
   STEP="model"
   dialog --backtitle "$(backtitlep)" --title "Model" \
     --infobox "Reading Models..." 3 25
-  if [ ! -f "${S_FILE}" ]; then
+  if [ ! -f "${S_FILE}" ] || [ ! -f "${P_FILE}" ]; then
     updateConfigs
   fi
   # Loop menu
@@ -409,6 +409,9 @@ function arcPatch() {
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   # Check for Custom Build
   if [ "${ARCMODE}" == "automated" ]; then
+    [ -z "${ARCCONF}" ] && checkHardwareID || true
+    sleep 1
+    ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
     [ -n "${ARCCONF}" ] && SN="$(generateSerial "${MODEL}" "true")" || SN="$(generateSerial "${MODEL}" "false")"
     [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   elif [ "${ARCMODE}" == "config" ]; then
@@ -422,7 +425,9 @@ function arcPatch() {
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
-      [ -z "${ARCCONF}" ] && decryptMenu || true
+      [ -z "${ARCCONF}" ] && checkHardwareID || true
+      sleep 1
+      ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
       [ -n "${ARCCONF}" ] && SN="$(generateSerial "${MODEL}" "true")" || SN="$(generateSerial "${MODEL}" "false")"
       [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 2 ]; then
@@ -820,8 +825,8 @@ else
   [ "${BUILDDONE}" == "true" ] && NEXT="3" || NEXT="1"
   while true; do
     echo "= \"\Z4========== Main ==========\Zn \" "                                            >"${TMP_PATH}/menu"
-    if [ -z "${ARCCONF}" ] && [ "${ARCOFFLINE}" != "true" ]; then
-      echo "0 \"Enable Arc Patch\" "                                                          >>"${TMP_PATH}/menu"
+    if [ -z "${USERID}" ] && [ "${ARCOFFLINE}" != "true" ]; then
+      echo "0 \"HardwareID for Arc Patch\" "                                                  >>"${TMP_PATH}/menu"
     fi
     echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
     if [ "${CONFDONE}" == "true" ]; then
@@ -939,7 +944,7 @@ else
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
       # Main Section
-      0) decryptMenu; NEXT="0" ;;
+      0) genHardwareID; NEXT="0" ;;
       1) arcModel; NEXT="2" ;;
       2) arcSummary; NEXT="3" ;;
       3) boot; NEXT="3" ;;

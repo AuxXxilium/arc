@@ -729,8 +729,6 @@ function backupMenu() {
               PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
               DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
               CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-              writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
-              ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
               writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
               BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
               break
@@ -857,7 +855,7 @@ function updateMenu() {
         updateDependencies
         ;;
       3)
-        decryptMenu
+        checkHardwareID
         ;;
       4)
         dialog --backtitle "$(backtitle)" --title "Switch Arc Branch" \
@@ -912,8 +910,6 @@ function networkMenu() {
 function sysinfo() {
   # Get System Informations
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
-  HWID="$(readConfigKey "arc.hwid" "${USER_CONFIG_FILE}")"
-  USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}')"
   SECURE=$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')
@@ -962,9 +958,6 @@ function sysinfo() {
   TIMEOUT=5
   TEXT=""
   # Print System Informations
-  if [ -n ${HWID} ] && [ -n "${USERID}" ]; then
-    TEXT+="\n\Z4> HWID | UserID: ${HWID} | ${USERID}\Zn"
-  fi
   TEXT+="\n\n\Z4> System: ${MACHINE} | ${BOOTSYS} | ${BUS}\Zn"
   TEXT+="\n  Vendor: \Zb${VENDOR}\Zn"
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
@@ -1926,52 +1919,6 @@ function satadomMenu() {
 }
 
 ###############################################################################
-# Decrypt Menu
-function decryptMenu() {
-  ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
-  ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  if [ "${ARCOFFLINE}" == "false" ]; then
-    updateConfigs
-  fi
-  if openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARCKEY}" 2>/dev/null; then
-      dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-        --msgbox "Decrypt successful: You can select Arc Patch." 5 50
-      mv -f "${S_FILE_ARC}" "${S_FILE}"
-  else
-    while true; do
-      CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION" 2>/dev/null)"
-      cp -f "${S_FILE}" "${S_FILE}.bak"
-      dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-        --inputbox "Enter Decryption Key for ${CONFIGSVERSION}!\nKey is available in my Discord:\nhttps://discord.auxxxilium.tech" 9 50 2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && break
-      ARCKEY=$(cat "${TMP_PATH}/resp")
-      if openssl enc -in "${S_FILE_ENC}" -out "${S_FILE_ARC}" -d -aes-256-cbc -k "${ARCKEY}" 2>/dev/null; then
-        dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-          --msgbox "Decrypt successful: You can select Arc Patch." 5 50
-        mv -f "${S_FILE_ARC}" "${S_FILE}"
-        writeConfigKey "arc.key" "${ARCKEY}" "${USER_CONFIG_FILE}"
-        ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
-      else
-        dialog --backtitle "$(backtitle)" --colors --title "Arc Decrypt" \
-          --msgbox "Decrypt failed: Wrong Key!" 5 50
-        mv -f "${S_FILE}.bak" "${S_FILE}"
-        writeConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
-        ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
-      fi
-      if [ -n "${ARCKEY}" ]; then
-        break
-      fi
-    done
-  fi
-  ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
-  writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  return 0
-}
-
-###############################################################################
 # Reboot Menu
 function rebootMenu() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -2250,26 +2197,57 @@ function getpatfiles() {
 ###############################################################################
 # Generate HardwareID
 function genHardwareID() {
-  HWID="$(echo $(ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g') | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
-  writeConfigKey arc.hwid "${HWID}" "${USER_CONFIG_FILE}"
-  if [ -n "${HWID}" ]; then
-    HWDB="$(curl -skL "https://auxxxilium.tech/hwid.yml")"
-    if grep -q "${HWID}" "${HWDB}"; then
-      dialog --backtitle "$(backtitle)" --title "HardwareID" \
-        --msgbox "HardwareID: ${HWID}\n\nYour HardwareID is registered!" 0 0
-      USERID="$(grep -q "${HWID}" "${HWDB}" | awk '{print $1}')"
-      writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
+  while true; do
+    HWID="$(echo $(ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g') | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
+    if [ -n "${HWID}" ]; then
+      USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}")"
+      if echo "${USERID}" | grep -vq "Hardware ID"; then
+        dialog --backtitle "$(backtitle)" --title "HardwareID" \
+          --msgbox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!" 6 70
+        writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
+        break
+      else
+        dialog --backtitle "$(backtitle)" --title "HardwareID" \
+        --yes-label "Retry" --no-label "Cancel" --yesno "HardwareID: ${HWID}\nRegister your HardwareID on\nhttps://arc.auxxxilium.tech (Discord Account needed)." 8 60
+        writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
+        [ $? -ne 0 ] && break
+      fi
     else
       dialog --backtitle "$(backtitle)" --title "HardwareID" \
-        --msgbox "HardwareID: ${HWID}\n\nYour HardwareID is not registered!" 0 0
+        --msgbox "HardwareID: Verification failed!" 6 50
+      writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
+      break
+    fi
+  done
+  return
+}
+
+###############################################################################
+# Check HardwareID
+function checkHardwareID() {
+  HWID="$(echo $(ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g') | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
+  USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}")"
+  if echo "${USERID}" | grep -vq "Hardware ID"; then
+    writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
+    if [ -n "${USERID}" ] && [ -n "${HWID}" ]; then
+      cp -f "${S_FILE}" "${S_FILE}.bak"
+      curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}&userid=${USERID}" > "${S_FILE}"
     fi
   else
+    writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
     dialog --backtitle "$(backtitle)" --title "HardwareID" \
-      --msgbox "HardwareID: Verification failed!" 0 0
-    exit 1
+      --infobox "Couldn't verify your HardwareID!\nArc Patch not enabled!" 6 40
+    cp -f "${S_FILE}.bak" "${S_FILE}"
+    sleep 3
   fi
   return
 }
+
 
 ###############################################################################
 # Bootsreen Menu

@@ -36,8 +36,6 @@ USER_UP_PATH="${PART3_PATH}/users"
 UNTAR_PAT_PATH="${PART3_PATH}/DSM"
 
 S_FILE="${MODEL_CONFIG_PATH}/serials.yml"
-S_FILE_ARC="${MODEL_CONFIG_PATH}/arc_serials.yml"
-S_FILE_ENC="${MODEL_CONFIG_PATH}/arc_serials.enc"
 P_FILE="${MODEL_CONFIG_PATH}/platforms.yml"
 D_FILE="${MODEL_CONFIG_PATH}/data.yml"
 
