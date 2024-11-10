@@ -261,12 +261,12 @@ jobs:
         if: success() && env.ARC_VERSION != ''
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ env.ARC_VERSION }}-${{ env.ARC_BUILD }}
+          tag: ${{ env.ARC_VERSION }}
           prerelease: ${{ inputs.prerelease }}
           makeLatest: ${{ inputs.latest }}
           allowUpdates: true
           body: |
-            ### Notice:
+            ### Note:
               - ${{ inputs.notice }}
 
             ### Information:
@@ -283,9 +283,8 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              - Theme: ${{ env.THEMETAG }}
-              - Buildroot Next: ${{ env.BRXTAG }}
               - Buildroot Stable: ${{ env.BRSTAG }}
+              - Buildroot Next: ${{ env.BRXTAG }}
 
             ### Release
               - ${{ env.BUILD_TIME }}

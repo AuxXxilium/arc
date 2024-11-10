@@ -50,7 +50,7 @@ function updateLoader() {
         sleep 2
       else
         if [ "${ARCMODE}" == "update" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
+          dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
             --infobox "Update failed!\nTry again later." 0 0
           sleep 3
           exec reboot
@@ -60,7 +60,7 @@ function updateLoader() {
       fi
     else
       if [ "${ARCMODE}" == "update" ]; then
-        dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
+        dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
           --infobox "Update failed!\nTry again later." 0 0
         sleep 3
         exec reboot
@@ -72,13 +72,13 @@ function updateLoader() {
   [ -n "${ARCCONF}" ] && cp -f "${TMP_PATH}/bak.yml" "${S_FILE}"
   if [ "${ARCMODE}" == "update" ] && [ "${CONFDONE}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-      --infobox "Update successful! -> Reboot to automated Build Mode..." 5 80
+      --infobox "Update successful! -> Reboot to automated Build Mode..." 3 60
     sleep 3
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     rebootTo "automated"
   else
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-      --infobox "Update successful! -> Reboot to Config Mode..." 5 80
+      --infobox "Update successful! -> Reboot to Config Mode..." 3 50
     sleep 3
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     rebootTo "config"
