@@ -2198,7 +2198,7 @@ function getpatfiles() {
 # Generate HardwareID
 function genHardwareID() {
   while true; do
-    HWID="$(echo $(ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g') | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
+    HWID="$(echo $(ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g') $(cat /proc/cpuinfo | grep "model name" | cut -d':' -f2 | head -1) | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
     if [ -n "${HWID}" ]; then
       USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}")"
       if echo "${USERID}" | grep -vq "Hardware ID"; then
@@ -2228,7 +2228,7 @@ function genHardwareID() {
 ###############################################################################
 # Check HardwareID
 function checkHardwareID() {
-  HWID="$(echo $(ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g') | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
+  HWID="$(echo $(ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g') $(cat /proc/cpuinfo | grep "model name" | cut -d':' -f2 | head -1) | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
   USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}")"
   if echo "${USERID}" | grep -vq "Hardware ID"; then
     writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"
