@@ -561,3 +561,10 @@ function systemCheck () {
   ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
   [ -z "${ARCCONF}" ] && writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
 }
+
+###############################################################################
+# Generate HardwareID
+function genHWID () {
+  HWID="$(echo $(ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g') $(cat /proc/cpuinfo | grep "model name" | cut -d':' -f2 | head -1) | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
+  echo "${HWID}"
+}

@@ -911,6 +911,7 @@ function sysinfo() {
   # Get System Informations
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}')"
+  HWID="$(genHWID)"
   SECURE=$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')
   ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
@@ -959,6 +960,7 @@ function sysinfo() {
   TEXT=""
   # Print System Informations
   TEXT+="\n\n\Z4> System: ${MACHINE} | ${BOOTSYS} | ${BUS}\Zn"
+  TEXT+="\n  HardwareID: \Zb${HWID}\Zn"
   TEXT+="\n  Vendor: \Zb${VENDOR}\Zn"
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
   if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
@@ -1172,8 +1174,8 @@ function getCMDline () {
 
 function uploadDiag () {
   if [ -f "${TMP_PATH}/diag" ]; then
-    GENHASH=$(cat "${TMP_PATH}/diag" | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)
-    dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Your Code: ${GENHASH}" 5 30
+    GENHASH=$(cat "${TMP_PATH}/diag" | curl -s -F "content=<-" "http://arc.auxxxilium.tech?sysinfo=${HWID}")
+    dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Your Code: ${HWID}" 5 30
   else
     dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "No Diag File found!" 0 0
   fi
@@ -2198,7 +2200,7 @@ function getpatfiles() {
 # Generate HardwareID
 function genHardwareID() {
   while true; do
-    HWID="$(echo $(ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g') $(cat /proc/cpuinfo | grep "model name" | cut -d':' -f2 | head -1) | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
+    HWID="$(genHWID)"
     if [ -n "${HWID}" ]; then
       USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}")"
       if echo "${USERID}" | grep -vq "Hardware ID"; then
@@ -2228,7 +2230,7 @@ function genHardwareID() {
 ###############################################################################
 # Check HardwareID
 function checkHardwareID() {
-  HWID="$(echo $(ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g') $(cat /proc/cpuinfo | grep "model name" | cut -d':' -f2 | head -1) | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
+  HWID="$(genHWID)"
   USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}")"
   if echo "${USERID}" | grep -vq "Hardware ID"; then
     writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"
