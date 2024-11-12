@@ -2255,31 +2255,29 @@ function getpatfiles() {
 ###############################################################################
 # Generate HardwareID
 function genHardwareID() {
-  while true; do
-    HWID="$(genHWID)"
-    if [ -n "${HWID}" ]; then
-      USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}")"
-      if echo "${USERID}" | grep -vq "Hardware ID"; then
-        dialog --backtitle "$(backtitle)" --title "HardwareID" \
-          --msgbox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!" 6 70
-        writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
-        break
-      else
-        dialog --backtitle "$(backtitle)" --title "HardwareID" \
-        --yes-label "Retry" --no-label "Cancel" --yesno "HardwareID: ${HWID}\nRegister your HardwareID on\nhttps://arc.auxxxilium.tech (Discord Account needed)." 8 60
-        writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
-        [ $? -ne 0 ] && break
-      fi
+  HWID="$(genHWID)"
+  if [ -n "${HWID}" ]; then
+    USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}")"
+    if echo "${USERID}" | grep -vq "Hardware ID"; then
+      dialog --backtitle "$(backtitle)" --title "HardwareID" \
+        --msgbox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!" 6 70
+      writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
     else
       dialog --backtitle "$(backtitle)" --title "HardwareID" \
-        --msgbox "HardwareID: Verification failed!" 6 50
+      --yes-label "Retry" --no-label "Cancel" --yesno "HardwareID: ${HWID}\nRegister your HardwareID on\nhttps://arc.auxxxilium.tech (Discord Account needed)." 8 60
+      [ $? -ne 0 ] && USERID="" && return 1
       writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
-      break
+      genHardwareID
     fi
-  done
+  else
+    dialog --backtitle "$(backtitle)" --title "HardwareID" \
+      --msgbox "HardwareID: Verification failed!" 6 50
+    USERID=""
+    writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
+  fi
   return
 }
 
