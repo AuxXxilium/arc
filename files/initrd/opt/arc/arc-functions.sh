@@ -692,12 +692,23 @@ function sequentialIOMenu() {
 # Shows backup menu to user
 function backupMenu() {
   NEXT="1"
+  USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   while true; do
-    dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
-      1 "Restore Arc Config from DSM" \
-      2 "Restore HW Encryption Key from DSM" \
-      3 "Backup HW Encryption Key to DSM" \
-      2>"${TMP_PATH}/resp"
+    if [ -n "${USERID}" ]; then
+      dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
+        1 "Restore Arc Config from DSM" \
+        2 "Restore HW Encryption Key from DSM" \
+        3 "Backup HW Encryption Key to DSM" \
+        4 "Restore Arc Config from Online" \
+        5 "Backup Arc Config to Online" \
+        2>"${TMP_PATH}/resp"
+    else
+      dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
+        1 "Restore Arc Config from DSM" \
+        2 "Restore HW Encryption Key from DSM" \
+        3 "Backup HW Encryption Key to DSM" \
+        2>"${TMP_PATH}/resp"
+    fi
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
       1)
@@ -810,6 +821,28 @@ function backupMenu() {
             --msgbox "No Encryption Key found!" 0 0
         fi
         ;;
+      4)
+        [ -f "${USER_CONFIG_FILE}" ] && mv -f "${USER_CONFIG_FILE}" "${USER_CONFIG_FILE}.bak"
+        HWID="$(genHWID)"
+        if curl -skL "https://arc.auxxxilium.tech?cdown=${HWID}" -o "${USER_CONFIG_FILE}" 2>/dev/null; then
+          dialog --backtitle "$(backtitle)" --title "Online Restore" --msgbox "Online Restore successful!" 5 40
+        else
+          dialog --backtitle "$(backtitle)" --title "Online Restore" --msgbox "Online Restore failed!" 5 40
+          mv -f "${USER_CONFIG_FILE}.bak" "${USER_CONFIG_FILE}"
+        fi
+        ;;
+      5)
+        if [ -f "${USER_CONFIG_FILE}" ]; then
+          HWID="$(genHWID)"
+          if curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${HWID}&userid=${USERID}"; then
+            dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup successful!" 5 40
+          else
+            dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup failed!" 5 40
+          fi
+        else
+          dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "No User Config found!" 5 40
+        fi
+        ;;
     esac
   done
 }
@@ -910,6 +943,7 @@ function networkMenu() {
 function sysinfo() {
   # Get System Informations
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
+  USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}')"
   SECURE=$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')
@@ -1134,29 +1168,49 @@ function sysinfo() {
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   fi
   TEXT+="\n  Total Disks: \Zb${NUMPORTS}\Zn"
-  [ -f "${TMP_PATH}/diag" ] && rm -f "${TMP_PATH}/diag" >/dev/null
-  echo -e "${TEXT}" >"${TMP_PATH}/diag"
-  while true; do
-    dialog --backtitle "$(backtitle)" --colors --ok-label "Exit" --help-button --help-label "Show Cmdline" \
-      --extra-button --extra-label "Upload" --title "Sysinfo" --msgbox "${TEXT}" 0 0
-    RET=$?
-    case ${RET} in
-      0) # ok-button
-        return 0
-        break
-        ;;
-      2) # help-button
-        getCMDline
-        ;;
-      3) # extra-button
-        uploadDiag
-        ;;
-      255) # ESC-button
-        return 0
-        break
-        ;;
-    esac
-  done
+  if [ -n "${USERID}" ]; then
+    echo -e "${TEXT}" >"${TMP_PATH}/sysinfo.yml"
+    while true; do
+      dialog --backtitle "$(backtitle)" --colors --ok-label "Exit" --help-button --help-label "Show Cmdline" \
+        --extra-button --extra-label "Upload" --title "Sysinfo" --msgbox "${TEXT}" 0 0
+      RET=$?
+      case ${RET} in
+        0) # ok-button
+          return 0
+          break
+          ;;
+        2) # help-button
+          getCMDline
+          ;;
+        3) # extra-button
+          uploadDiag
+          ;;
+        255) # ESC-button
+          return 0
+          break
+          ;;
+      esac
+    done
+  else
+    while true; do
+      dialog --backtitle "$(backtitle)" --colors --ok-label "Exit" --help-button --help-label "Show Cmdline" \
+        --title "Sysinfo" --msgbox "${TEXT}" 0 0
+      RET=$?
+      case ${RET} in
+        0) # ok-button
+          return 0
+          break
+          ;;
+        2) # help-button
+          getCMDline
+          ;;
+        255) # ESC-button
+          return 0
+          break
+          ;;
+      esac
+    done
+  fi
   return
 }
 
@@ -1171,9 +1225,13 @@ function getCMDline () {
 }
 
 function uploadDiag () {
-  if [ -f "${TMP_PATH}/diag" ]; then
-    GENHASH=$(cat "${TMP_PATH}/diag" | curl -s -F "content=<-" http://dpaste.com/api/v2/ | cut -c 19-)
-    dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Your Code: ${GENHASH}" 5 30
+  if [ -f "${TMP_PATH}/sysinfo.yml" ]; then
+    HWID="$(genHWID)"
+    if curl -sk -X POST -F "file=@${TMP_PATH}/sysinfo.yml" "https://arc.auxxxilium.tech?sysinfo=${HWID}&userid=${USERID}"; then
+      dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Your Code: ${HWID}" 5 40
+    else
+      dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Failed to upload diag file!" 0 0
+    fi
   else
     dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "No Diag File found!" 0 0
   fi
@@ -2198,7 +2256,7 @@ function getpatfiles() {
 # Generate HardwareID
 function genHardwareID() {
   while true; do
-    HWID="$(echo $(ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g') $(cat /proc/cpuinfo | grep "model name" | cut -d':' -f2 | head -1) | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
+    HWID="$(genHWID)"
     if [ -n "${HWID}" ]; then
       USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}")"
       if echo "${USERID}" | grep -vq "Hardware ID"; then
@@ -2228,7 +2286,7 @@ function genHardwareID() {
 ###############################################################################
 # Check HardwareID
 function checkHardwareID() {
-  HWID="$(echo $(ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g') $(cat /proc/cpuinfo | grep "model name" | cut -d':' -f2 | head -1) | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
+  HWID="$(genHWID)"
   USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}")"
   if echo "${USERID}" | grep -vq "Hardware ID"; then
     writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"

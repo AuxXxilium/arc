@@ -698,7 +698,17 @@ function make() {
   # Max Memory for DSM
   RAMCONFIG="$((${RAMTOTAL} * 1024 * 2))"
   writeConfigKey "synoinfo.mem_max_mb" "${RAMCONFIG}" "${USER_CONFIG_FILE}"
-  getpatfiles    
+  if [ -n "${IPCON}" ]; then
+    getpatfiles
+  else
+    dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
+      --infobox "Could not build Loader!\nNetwork Connection needed." 4 40
+    # Set Build to false
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    sleep 2
+    return 1
+  fi
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ "${CONFDONE}" == "true" ] && [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
     (
       livepatch
@@ -829,7 +839,7 @@ else
       echo "0 \"HardwareID for Arc Patch\" "                                                  >>"${TMP_PATH}/menu"
     fi
     echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
-    if [ "${CONFDONE}" == "true" ]; then
+    if [ "${CONFDONE}" == "true" ] && [ -n "${IPCON}" ]; then
       echo "2 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
     fi
     if [ "${BUILDDONE}" == "true" ]; then
