@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       runs:
-        description: "runs-on (ubuntu-latest / self-hosted)"
+        description: "runs-on"
         type: choice
         options:
           - ubuntu-latest
@@ -53,7 +53,7 @@ jobs:
         uses: actions/checkout@main
 
       - name: Delete releases and workflows runs
-        if: ${{ inputs.clean }} == 'true'
+        if: ${{ inputs.clean == true }}
         uses: ophub/delete-releases-workflows@main
         with:
           delete_releases: true
@@ -64,7 +64,7 @@ jobs:
 
       # Install Dependencies
       - name: Install Dependencies
-        if: ${{ github.event.inputs.runs   == 'ubuntu-latest' }}
+        if: ${{ inputs.runs == 'ubuntu-latest' }}
         run: |
           git config --global user.email "info@auxxxilium.tech"
           git config --global user.name "AuxXxilium"
@@ -109,7 +109,7 @@ jobs:
 
        # Build incremental
       - name: Build Next Image
-        if: inputs.next == true
+        if: ${{ inputs.next == true }}
         run: |
           . scripts/func.sh
 
@@ -168,7 +168,7 @@ jobs:
 
       # Zip image and generate checksum
       - name: Pack Next Image
-        if: inputs.next == true
+        if: ${{ inputs.next == true }}
         run: |
           if [ -n "${{ env.ARC_VERSION }}" ]; then
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.img.zip" arc.img
@@ -186,7 +186,7 @@ jobs:
 
        # Build incremental
       - name: Build Stable Image
-        if: inputs.stable == true
+        if: ${{ inputs.stable == true }}
         run: |
           . scripts/func.sh
 
@@ -245,7 +245,7 @@ jobs:
 
       # Zip image and generate checksum
       - name: Pack Stable Image
-        if: inputs.stable == true
+        if: ${{ inputs.stable == true }}
         run: |
           if [ -n "${{ env.ARC_VERSION }}" ]; then
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.img.zip" arc.img
