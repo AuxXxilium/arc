@@ -518,7 +518,7 @@ function onlineCheck() {
     [ -z "${KEYMAP}" ] && KEYMAP="us"
     loadkeys ${KEYMAP}
   fi
-  if [ "${KEYMAP}" == "ua" ] || [ "${REGION}" == "Kyiv" ] || [ "${REGION}" == "Kiev" ]; then
+  if [ "${KEYMAP}" == "ua" ]; then
     poweroff
   fi
 }
