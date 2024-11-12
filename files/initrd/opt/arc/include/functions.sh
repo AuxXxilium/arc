@@ -565,6 +565,6 @@ function systemCheck () {
 ###############################################################################
 # Generate HardwareID
 function genHWID () {
-  HWID="$(echo $(dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g' | head -1) $(ifconfig | grep eth1 | awk '{print $NF}' | sed 's/://g') | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
+  HWID="$(echo $(dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g' | head -1) $(ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g') | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
   echo "${HWID}"
 }
