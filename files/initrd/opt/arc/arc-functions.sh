@@ -828,13 +828,14 @@ function backupMenu() {
           dialog --backtitle "$(backtitle)" --title "Online Restore" --msgbox "Online Restore successful!" 5 40
         else
           dialog --backtitle "$(backtitle)" --title "Online Restore" --msgbox "Online Restore failed!" 5 40
-          mv -f "${USER_CONFIG_FILE}.bak" "${USER_CONFIG_FILE}"
+          [ -f "${USER_CONFIG_FILE}.bak" ] && mv -f "${USER_CONFIG_FILE}.bak" "${USER_CONFIG_FILE}"
         fi
         ;;
       5)
         if [ -f "${USER_CONFIG_FILE}" ]; then
           HWID="$(genHWID)"
-          if curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${HWID}&userid=${USERID}"; then
+          curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${HWID}&userid=${USERID}" 2>/dev/null
+          if [ $? -eq 0 ]; then
             dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup successful!" 5 40
           else
             dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup failed!" 5 40
@@ -1227,7 +1228,8 @@ function getCMDline () {
 function uploadDiag () {
   if [ -f "${TMP_PATH}/sysinfo.yml" ]; then
     HWID="$(genHWID)"
-    if curl -sk -X POST -F "file=@${TMP_PATH}/sysinfo.yml" "https://arc.auxxxilium.tech?sysinfo=${HWID}&userid=${USERID}"; then
+    curl -sk -X POST -F "file=@${TMP_PATH}/sysinfo.yml" "https://arc.auxxxilium.tech?sysinfo=${HWID}&userid=${USERID}" 2>/dev/null
+    if [ $? -eq 0 ]; then
       dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Your Code: ${HWID}" 5 40
     else
       dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Failed to upload diag file!" 0 0
@@ -2221,7 +2223,7 @@ function getpatfiles() {
       --infobox "Downloading DSM Boot Files..." 3 40
     # Get new Files
     DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
-    if curl -skL "${DSM_URL}" -o "${DSM_FILE}"; then
+    if curl -skL "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null; then
       VALID="true"
     fi
   elif [ ! -f "${DSM_FILE}" ] && [ "${ARCOFFLINE}" == "true" ]; then
@@ -2256,28 +2258,31 @@ function getpatfiles() {
 # Generate HardwareID
 function genHardwareID() {
   HWID="$(genHWID)"
-  if [ -n "${HWID}" ]; then
-    USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}")"
-    if echo "${USERID}" | grep -vq "Hardware ID"; then
-      dialog --backtitle "$(backtitle)" --title "HardwareID" \
-        --msgbox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!" 6 70
-      writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
+  while true; do
+    if [ -n "${HWID}" ]; then
+      USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
+      if echo "${USERID}" | grep -vq "Hardware ID"; then
+        dialog --backtitle "$(backtitle)" --title "HardwareID" \
+          --msgbox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!" 6 70
+        writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
+        break
+      else
+        dialog --backtitle "$(backtitle)" --title "HardwareID" \
+          --yes-label "Retry" --no-label "Cancel" --yesno "HardwareID: ${HWID}\nRegister your HardwareID on\nhttps://arc.auxxxilium.tech (Discord Account needed)." 7 60
+        [ $? -ne 0 ] && USERID="" && break
+        writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
+      fi
     else
       dialog --backtitle "$(backtitle)" --title "HardwareID" \
-      --yes-label "Retry" --no-label "Cancel" --yesno "HardwareID: ${HWID}\nRegister your HardwareID on\nhttps://arc.auxxxilium.tech (Discord Account needed)." 8 60
-      [ $? -ne 0 ] && USERID="" && return 1
+        --msgbox "HardwareID: ID Generation failed!" 6 50
+      USERID=""
       writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
-      genHardwareID
+      break
     fi
-  else
-    dialog --backtitle "$(backtitle)" --title "HardwareID" \
-      --msgbox "HardwareID: Verification failed!" 6 50
-    USERID=""
-    writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
-  fi
+  done
   return
 }
 
@@ -2285,22 +2290,29 @@ function genHardwareID() {
 # Check HardwareID
 function checkHardwareID() {
   HWID="$(genHWID)"
-  USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}")"
+  USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
   if echo "${USERID}" | grep -vq "Hardware ID"; then
-    writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
-    if [ -n "${USERID}" ] && [ -n "${HWID}" ]; then
-      cp -f "${S_FILE}" "${S_FILE}.bak"
-      curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}&userid=${USERID}" > "${S_FILE}"
+    cp -f "${S_FILE}" "${S_FILE}.bak"
+    if curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}&userid=${USERID}" -o "${S_FILE}" 2>/dev/null; then
+      dialog --backtitle "$(backtitle)" --title "HardwareID" \
+        --infobox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!" 4 70
+      writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
+    else
+      dialog --backtitle "$(backtitle)" --title "HardwareID" \
+        --infobox "HardwareID: Your HardwareID couldn't be verified!" 4 50
+      USERID=""
+      writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
     fi
   else
+    dialog --backtitle "$(backtitle)" --title "HardwareID" \
+      --infobox "HardwareID: Your HardwareID isn't registered!" 4 50
+    USERID=""
     writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
-    dialog --backtitle "$(backtitle)" --title "HardwareID" \
-      --infobox "Couldn't verify your HardwareID!\nArc Patch not enabled!" 6 40
-    cp -f "${S_FILE}.bak" "${S_FILE}"
-    sleep 3
   fi
+  sleep 3
   return
 }
 

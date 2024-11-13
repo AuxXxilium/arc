@@ -89,11 +89,14 @@ function backtitlep() {
 # Model Selection
 function arcModel() {
   STEP="model"
-  dialog --backtitle "$(backtitlep)" --title "Model" \
-    --infobox "Reading Models..." 3 25
   if [ ! -f "${S_FILE}" ] || [ ! -f "${P_FILE}" ]; then
     updateConfigs
   fi
+  # Check for Hardware ID
+  checkHardwareID
+  dialog --backtitle "$(backtitlep)" --title "Model" \
+    --infobox "Reading Models..." 3 25
+  ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
   # Loop menu
   RESTRICT=1
   PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"
@@ -151,14 +154,15 @@ function arcModel() {
         fi
         [ -n "$(grep -w "${M}" "${S_FILE}")" ] && BETA="Arc" || BETA="Syno"
         [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
-        if [ -n "${ARCKEY}" ]; then
+        if [ -n "${ARCCONF}" ]; then
           [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
         else
           [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-15s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${DTS}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
         fi
       done < <(cat "${TMP_PATH}/modellist")
-      [ -n "${ARCKEY}" ] && MSG="Supported Models for your Hardware (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" || MSG="Supported Models for your Hardware (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
-      [ -n "${ARCKEY}" ] && TITLEMSG="Arc Model" || TITLEMSG="Model"
+      ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
+      [ -n "${ARCCONF}" ] && MSG="Supported Models for your Hardware (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" || MSG="Supported Models for your Hardware (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
+      [ -n "${ARCCONF}" ] && TITLEMSG="Arc Model" || TITLEMSG="Model"
       dialog --backtitle "$(backtitlep)" --title "${TITLEMSG}" --colors \
         --cancel-label "Show all" --help-button --help-label "Exit" \
         --extra-button --extra-label "Info" \
@@ -671,7 +675,7 @@ function make() {
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
   BOOTMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
   if [ "${BOOTMODE}" != "automated" ] && [ "${ARCOFFLINE}" != "true" ] && [[ "${ARCPATCH}" != "true" || -z "${ARCCONF}" ]]; then
-    if ! curl -skL "https://auxxxilium.tech/check.yml" -o "${TMP_PATH}/check.yml" 2>/dev/null; then
+    if ! curl -skL "https://arc.auxxxilium.tech/check.yml" -o "${TMP_PATH}/check.yml" 2>/dev/null; then
       SN=$(generateSerial "${MODEL}" "false")
     else
       if grep -q "${SN}" "${TMP_PATH}/check.yml"; then

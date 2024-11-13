@@ -236,7 +236,8 @@ jobs:
               - Development Build
 
             ### Information:
-              - Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
+              - Full Changelog is available in my Discord
+              - Discord Account for Arc Patch needed
 
             ### Dependencies:
               - Addons: ${{ env.ADDONTAG }}
