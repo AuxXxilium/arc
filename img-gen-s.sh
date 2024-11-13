@@ -37,7 +37,7 @@ sudo mount ${LOOPX}p3 "/tmp/p3"
 
 [[ ! -f "brs/bzImage-arc" || ! -f "brs/initrd-arc" ]] && return 1
 
-ARC_BUILD="`date +'%y%m%d'`-dev"
+ARC_BUILD="`date +'%y%m%d'`"
 ARC_VERSION="13.37.dev"
 ARC_BRANCH="stable"
 echo "${ARC_BUILD}" >files/p1/ARC-BUILD
