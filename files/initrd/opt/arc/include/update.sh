@@ -319,8 +319,8 @@ function updateModules() {
 ###############################################################################
 # Update Configs
 function updateConfigs() {
-  local ARCKEY="$(readConfigKey "arc.key" "${USER_CONFIG_FILE}")"
   [ -f "${MODEL_CONFIG_PATH}/VERSION" ] && local CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")" || CONFIGSVERSION="0.0.0"
+  local USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   if [ -z "${1}" ]; then
     idx=0
     while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
@@ -362,6 +362,7 @@ function updateConfigs() {
         dialog --backtitle "$(backtitle)" --title "Update Configs" \
           --infobox "Update successful!" 3 50
         sleep 2
+        [ -z "${USERID}" ] && checkHardwareID || true
       else
         return 1
       fi

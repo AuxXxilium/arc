@@ -38,7 +38,6 @@ initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.dynamic" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.key" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
@@ -156,7 +155,7 @@ elif [ "${ARCMODE}" == "update" ]; then
 elif [ "${BUILDDONE}" == "true" ] && [ "${ARCMODE}" == "dsm" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
   if [ -f "${ARC_PATH}/boot.sh" ]; then
-    boot.sh && exit 0
+    exec boot.sh && exit 0
   else
     echo -e "\033[1;31mError: Can't find Arc System Files...\033[0m"
   fi
