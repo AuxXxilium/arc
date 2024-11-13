@@ -270,7 +270,8 @@ jobs:
               - ${{ inputs.notice }}
 
             ### Information:
-              - Full Changelog and Arc Patch (Decryption Key) are available in my Discord.
+              - Full Changelog is available in my Discord
+              - Discord Account for Arc Patch needed
 
             ### Versions:
               - stable: Stable Image (Full Image, all dependencies are included, less hardware support)
