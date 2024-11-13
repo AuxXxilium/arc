@@ -89,13 +89,13 @@ function backtitlep() {
 # Model Selection
 function arcModel() {
   STEP="model"
-  dialog --backtitle "$(backtitlep)" --title "Model" \
-    --infobox "Reading Models..." 3 25
-  if [ ! -f "${S_FILE}" ] || [ ! -f "${P_FILE}" ]; then
+    if [ ! -f "${S_FILE}" ] || [ ! -f "${P_FILE}" ]; then
     updateConfigs
   fi
   # Check for Hardware ID
   checkHardwareID
+  dialog --backtitle "$(backtitlep)" --title "Model" \
+    --infobox "Reading Models..." 3 25
   # Loop menu
   RESTRICT=1
   PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"

@@ -2295,19 +2295,19 @@ function checkHardwareID() {
     cp -f "${S_FILE}" "${S_FILE}.bak"
     if curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}&userid=${USERID}" -o "${S_FILE}" 2>/dev/null; then
       dialog --backtitle "$(backtitle)" --title "HardwareID" \
-        --infobox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!" 6 70
+        --infobox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!" 4 70
       writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
     else
       dialog --backtitle "$(backtitle)" --title "HardwareID" \
-        --infobox "HardwareID: Your HardwareID couldn't be verified!" 6 50
+        --infobox "HardwareID: Your HardwareID couldn't be verified!" 4 50
       USERID=""
       writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
     fi
   else
     dialog --backtitle "$(backtitle)" --title "HardwareID" \
-      --infobox "HardwareID: Your HardwareID isn't registered!" 6 50
+      --infobox "HardwareID: Your HardwareID isn't registered!" 4 50
     USERID=""
     writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
