@@ -568,3 +568,17 @@ function genHWID () {
   HWID="$(echo $(dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g' | head -1) $(ifconfig | grep eth | awk '{print $NF}' | sed 's/://g' | sort | head -1) | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
   echo "${HWID}"
 }
+
+###############################################################################
+# Check if port is valid
+function check_port() {
+  if [ -z "${1}" ]; then
+    return 0
+  else
+    if [[ "${1}" =~ ^[0-9]+$ ]] && [ "${1}" -ge 0 ] && [ "${1}" -le 65535 ]; then
+      return 0
+    else
+      return 1
+    fi
+  fi
+}

@@ -1609,17 +1609,6 @@ function loaderPorts() {
     RET=$?
     case ${RET} in
     0) # ok-button
-      function check_port() {
-        if [ -z "${1}" ]; then
-          return 0
-        else
-          if [[ "${1}" =~ ^[0-9]+$ ]] && [ "${1}" -ge 0 ] && [ "${1}" -le 65535 ]; then
-            return 0
-          else
-            return 1
-          fi
-        fi
-      }
       HTTPPORT=$(sed -n '1p' "${TMP_PATH}/resp")
       DUFSPORT=$(sed -n '2p' "${TMP_PATH}/resp")
       TTYDPORT=$(sed -n '3p' "${TMP_PATH}/resp")
@@ -1631,9 +1620,9 @@ function loaderPorts() {
         [ $? -eq 0 ] && continue || break
       fi
       rm -f "/etc/arc.conf"
-      [ ! "${HTTPPORT:-8080}" = "8080" ] && echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf" && /etc/init.d/S90thttpd restart >/dev/null 2>&1
-      [ ! "${DUFSPORT:-7304}" = "7304" ] && echo "DUFS_PORT=${DUFSPORT}" >>"/etc/arc.conf" && /etc/init.d/S99dufs restart >/dev/null 2>&1
-      [ ! "${TTYDPORT:-7681}" = "7681" ] && echo "TTYD_PORT=${TTYDPORT}" >>"/etc/arc.conf" && /etc/init.d/S99ttyd restart >/dev/null 2>&1
+      if [ ! "${HTTPPORT:-8080}" = "8080" ]; then echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf"; /etc/init.d/S90thttpd restart >/dev/null 2>&1; fi
+      if [ ! "${DUFSPORT:-7304}" = "7304" ]; then echo "DUFS_PORT=${DUFSPORT}" >>"/etc/arc.conf"; /etc/init.d/S99dufs restart >/dev/null 2>&1; fi
+      if [ ! "${TTYDPORT:-7681}" = "7681" ]; then echo "TTYD_PORT=${TTYDPORT}" >>"/etc/arc.conf"; /etc/init.d/S99ttyd restart >/dev/null 2>&1; fi
       RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
       rm -rf "${RDXZ_PATH}"
       mkdir -p "${RDXZ_PATH}"
