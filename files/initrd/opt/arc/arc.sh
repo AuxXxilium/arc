@@ -671,19 +671,6 @@ function arcSummary() {
 # Building Loader
 function make() {
   STEP="build"
-  ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}" 2>/dev/null)"
-  SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-  BOOTMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
-  if [ "${BOOTMODE}" != "automated" ] && [ "${ARCOFFLINE}" != "true" ] && [[ "${ARCPATCH}" != "true" || -z "${ARCCONF}" ]]; then
-    if ! curl -skL "https://arc.auxxxilium.tech/check.yml" -o "${TMP_PATH}/check.yml" 2>/dev/null; then
-      SN=$(generateSerial "${MODEL}" "false")
-    else
-      if grep -q "${SN}" "${TMP_PATH}/check.yml"; then
-        SN=$(generateSerial "${MODEL}" "false")
-      fi
-    fi
-    writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-  fi
   # Read Model Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"

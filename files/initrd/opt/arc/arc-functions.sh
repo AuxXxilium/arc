@@ -858,7 +858,7 @@ function updateMenu() {
       --menu "Choose an Option" 0 0 0 \
       1 "Update Loader \Z1(no reflash)\Zn" \
       2 "Update Dependencies" \
-      3 "Update Arc Patch" \
+      3 "Update Configs and Arc Patch" \
       4 "Switch Arc Branch: \Z1${ARC_BRANCH}\Zn" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
@@ -886,9 +886,10 @@ function updateMenu() {
         updateLoader "${TAG}"
         ;;
       2)
-        updateDependencies
+        dependenciesUpdate
         ;;
       3)
+        updateConfigs
         checkHardwareID
         ;;
       4)
@@ -2257,7 +2258,7 @@ function genHardwareID() {
   HWID="$(genHWID)"
   while true; do
     if [ -n "${HWID}" ]; then
-      USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
+      USERID="$(curl -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
       if echo "${USERID}" | grep -vq "Hardware ID"; then
         dialog --backtitle "$(backtitle)" --title "HardwareID" \
           --msgbox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!" 6 70
@@ -2287,15 +2288,16 @@ function genHardwareID() {
 # Check HardwareID
 function checkHardwareID() {
   HWID="$(genHWID)"
-  USERID="$(curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
+  USERID="$(curl -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
   if echo "${USERID}" | grep -vq "Hardware ID"; then
     cp -f "${S_FILE}" "${S_FILE}.bak"
-    if curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}&userid=${USERID}" -o "${S_FILE}" 2>/dev/null; then
+    if curl -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}&userid=${USERID}" -o "${S_FILE}" 2>/dev/null; then
       writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
     else
       dialog --backtitle "$(backtitle)" --title "HardwareID" \
         --infobox "HardwareID: Your HardwareID couldn't be verified!" 4 50
+      sleep 3
       USERID=""
       writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
@@ -2303,11 +2305,11 @@ function checkHardwareID() {
   else
     dialog --backtitle "$(backtitle)" --title "HardwareID" \
       --infobox "HardwareID: Your HardwareID isn't registered!" 4 50
+    sleep 3
     USERID=""
     writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
   fi
-  sleep 3
   return
 }
 
