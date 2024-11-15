@@ -858,7 +858,7 @@ function updateMenu() {
       --menu "Choose an Option" 0 0 0 \
       1 "Update Loader \Z1(no reflash)\Zn" \
       2 "Update Dependencies" \
-      3 "Update Arc Patch" \
+      3 "Update Configs and Arc Patch" \
       4 "Switch Arc Branch: \Z1${ARC_BRANCH}\Zn" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
