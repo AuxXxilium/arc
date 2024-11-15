@@ -447,7 +447,7 @@ function dependenciesUpdate() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   FAILED="false"
   dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
-    --infobox "Updating Dependencies..." 0 0
+    --infobox "Updating Dependencies..." 3 40
   sleep 2
   updateAddons
   [ $? -ne 0 ] && FAILED="true"
@@ -463,11 +463,11 @@ function dependenciesUpdate() {
   [ $? -ne 0 ] && FAILED="true"
   if [ "${FAILED}" == "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
-      --infobox "Update failed!\nTry again later." 0 0
+      --infobox "Update failed! Try again later." 3 40
     sleep 3
   elif [ "${FAILED}" == "false" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
-      --infobox "Update successful!" 0 0
+      --infobox "Update successful!" 3 40
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     sleep 3
