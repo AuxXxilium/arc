@@ -886,9 +886,10 @@ function updateMenu() {
         updateLoader "${TAG}"
         ;;
       2)
-        updateDependencies
+        dependenciesUpdate
         ;;
       3)
+        updateConfigs
         checkHardwareID
         ;;
       4)
