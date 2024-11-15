@@ -2291,8 +2291,6 @@ function checkHardwareID() {
   if echo "${USERID}" | grep -vq "Hardware ID"; then
     cp -f "${S_FILE}" "${S_FILE}.bak"
     if curl -skL "https://arc.auxxxilium.tech?hwid=${HWID}&userid=${USERID}" -o "${S_FILE}" 2>/dev/null; then
-      dialog --backtitle "$(backtitle)" --title "HardwareID" \
-        --infobox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!" 4 70
       writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
     else
