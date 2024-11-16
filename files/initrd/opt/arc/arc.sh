@@ -413,8 +413,6 @@ function arcPatch() {
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   # Check for Custom Build
   if [ "${ARCMODE}" == "automated" ]; then
-    [ -z "${ARCCONF}" ] && checkHardwareID || true
-    sleep 1
     ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
     [ -n "${ARCCONF}" ] && SN="$(generateSerial "${MODEL}" "true")" || SN="$(generateSerial "${MODEL}" "false")"
     [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
@@ -429,8 +427,6 @@ function arcPatch() {
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
-      [ -z "${ARCCONF}" ] && checkHardwareID || true
-      sleep 1
       ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
       [ -n "${ARCCONF}" ] && SN="$(generateSerial "${MODEL}" "true")" || SN="$(generateSerial "${MODEL}" "false")"
       [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
