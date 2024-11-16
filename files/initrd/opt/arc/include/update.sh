@@ -362,7 +362,7 @@ function updateConfigs() {
         dialog --backtitle "$(backtitle)" --title "Update Configs" \
           --infobox "Update successful!" 3 50
         sleep 2
-        [ -z "${USERID}" ] && checkHardwareID || true
+        [ -n "${USERID}" ] && checkHardwareID || true
       else
         return 1
       fi

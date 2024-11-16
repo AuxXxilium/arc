@@ -92,8 +92,6 @@ function arcModel() {
   if [ ! -f "${S_FILE}" ] || [ ! -f "${P_FILE}" ]; then
     updateConfigs
   fi
-  # Check for Hardware ID
-  checkHardwareID
   dialog --backtitle "$(backtitlep)" --title "Model" \
     --infobox "Reading Models..." 3 25
   ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
@@ -413,8 +411,6 @@ function arcPatch() {
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   # Check for Custom Build
   if [ "${ARCMODE}" == "automated" ]; then
-    [ -z "${ARCCONF}" ] && checkHardwareID || true
-    sleep 1
     ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
     [ -n "${ARCCONF}" ] && SN="$(generateSerial "${MODEL}" "true")" || SN="$(generateSerial "${MODEL}" "false")"
     [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
@@ -429,8 +425,6 @@ function arcPatch() {
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
-      [ -z "${ARCCONF}" ] && checkHardwareID || true
-      sleep 1
       ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
       [ -n "${ARCCONF}" ] && SN="$(generateSerial "${MODEL}" "true")" || SN="$(generateSerial "${MODEL}" "false")"
       [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
@@ -746,7 +740,7 @@ function arcFinish() {
       # Ask for Boot
       dialog --clear --backtitle "$(backtitle)" --title "Build done"\
         --no-cancel --menu "Boot now?" 7 40 0 \
-        1 "Yes - Boot Arc Loader now" \
+        1 "Yes - Boot DSM now" \
         2 "No - I want to make changes" \
       2>"${TMP_PATH}/resp"
       resp=$(cat ${TMP_PATH}/resp)
