@@ -265,7 +265,7 @@ function updateModules() {
     sleep 3
     idx=$((${idx} + 1))
   done
-  if [ -n "${TAG}" ] && [[ "${MODULESVERSION}" != "${TAG}" || ! -f "${MODULES_PATH}/${PLATFORM}-${KVERP}.tgz" ]]; then
+  if [ -n "${TAG}" ] && [ "${MODULESVERSION}" != "${TAG}" ]; then
     rm -rf "${MODULES_PATH}"
     mkdir -p "${MODULES_PATH}"
     export URL="https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules-${TAG}.zip"
