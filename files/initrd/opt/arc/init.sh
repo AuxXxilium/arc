@@ -95,16 +95,16 @@ if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); 
   _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
 fi
 # Read/Write IP/Mac to config
-ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
-for ETH in ${ETHX}; do
-  MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
+ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
+for N in ${ETHX}; do
+  MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
   IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
-  if [ -n "${IPR}" ]; then
+  if [ -n "${IPR}" ] && [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
     IFS='/' read -r -a IPRA <<<"${IPR}"
-    ip addr flush dev ${ETH}
-    ip addr add ${IPRA[0]}/${IPRA[1]:-"255.255.255.0"} dev ${ETH}
+    ip addr flush dev ${N}
+    ip addr add ${IPRA[0]}/${IPRA[1]:-"255.255.255.0"} dev ${N}
     if [ -n "${IPRA[2]}" ]; then
-      ip route add default via ${IPRA[2]} dev ${ETH}
+      ip route add default via ${IPRA[2]} dev ${N}
     fi
     if [ -n "${IPRA[3]:-${IPRA[2]}}" ]; then
       sed -i "/nameserver ${IPRA[3]:-${IPRA[2]}}/d" /etc/resolv.conf
@@ -112,11 +112,11 @@ for ETH in ${ETHX}; do
     fi
     sleep 1
   fi
-  [ "${ETH::3}" == "eth" ] && ethtool -s ${ETH} wol g 2>/dev/null || true
-  # [ "${ETH::3}" == "eth" ] && ethtool -K ${ETH} rxhash off 2>/dev/null || true
-  initConfigKey "${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
+  [ "${N::3}" == "eth" ] && ethtool -s ${N} wol g 2>/dev/null || true
+  # [ "${N::3}" == "eth" ] && ethtool -K ${N} rxhash off 2>/dev/null || true
+  initConfigKey "${N}" "${MACR}" "${USER_CONFIG_FILE}"
 done
-ETHN="$(echo ${ETHX} | wc -w)"
+ETHN=$(echo ${ETHX} | wc -w)
 writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
 # No network devices
 echo
@@ -171,18 +171,18 @@ IPCON=""
 echo
 [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
 sleep 3
-for ETH in ${ETHX}; do
+for N in ${ETHX}; do
   COUNT=0
-  DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+  DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
   while true; do
-    if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
+    if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
       echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
       break
     fi
     COUNT=$((${COUNT} + 1))
-    IP="$(getIP ${ETH})"
+    IP="$(getIP ${N})"
     if [ -n "${IP}" ]; then
-      SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
+      SPEED=$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')
       if [[ "${IP}" =~ ^169\.254\..* ]]; then
         echo -e "\r${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
       else
@@ -191,7 +191,7 @@ for ETH in ${ETHX}; do
       fi
       break
     fi
-    if ! ip link show ${ETH} 2>/dev/null | grep -q 'UP'; then
+    if [ -z "$(cat /sys/class/net/${N}}/carrier 2>/dev/null)" ]; then
       echo -e "\r${DRIVER}: \033[1;37mDOWN\033[0m"
       break
     fi
