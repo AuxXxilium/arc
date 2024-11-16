@@ -187,15 +187,14 @@ if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
 fi
 
 # Cmdline NIC Settings
-ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
-ETHM="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
-ETHN="$(echo ${ETHX} | wc -w)"
-[ -z "${ETHM}" ] && ETHM="${ETHN}"
+ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
+ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)
+ETHN=$(echo ${ETHX} | wc -w)
+[ -z "${ETHM}" ] && ETHM=${ETHN}
 NIC=0
-for ETH in ${ETHX}; do
-  MAC="$(readConfigKey "${ETH}" "${USER_CONFIG_FILE}")"
-  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | tr '[:lower:]' '[:upper:]')"
-  NIC=$((${NIC} + 1))
+for N in ${ETHX}; do
+  MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
+  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | tr '[:lower:]' '[:upper:]')" || NIC=$((${NIC} + 1))
   [ ${NIC} -le ${ETHM} ] && CMDLINE["mac${NIC}"]="${MAC}"
   [ ${NIC} -ge ${ETHM} ] && break
 done
@@ -251,7 +250,7 @@ if [ "${DIRECTBOOT}" == "true" ]; then
   grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
   _bootwait || true
   echo -e "\033[1;34mReboot with Directboot\033[0m"
-  exec reboot
+  reboot
   exit 0
 elif [ "${DIRECTBOOT}" == "false" ]; then
   grub-editenv ${USER_GRUBENVFILE} unset dsm_cmdline
@@ -268,18 +267,18 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
   echo
   [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
   sleep 3
-  for ETH in ${ETHX}; do
+  for N in ${ETHX}; do
     COUNT=0
-    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     while true; do
-      if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
+      if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
         echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
         break
       fi
       COUNT=$((${COUNT} + 1))
-      IP="$(getIP ${ETH})"
+      IP="$(getIP ${N})"
       if [ -n "${IP}" ]; then
-        SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
+        SPEED=$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
           echo -e "\r${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
         else
@@ -288,7 +287,7 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
         fi
         break
       fi
-      if ! ip link show ${ETH} 2>/dev/null | grep -q 'UP'; then
+      if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
         echo -e "\r${DRIVER}: \033[1;37mDOWN\033[0m"
         break
       fi
@@ -326,7 +325,6 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
 
   echo -e "\033[1;37mBooting DSM...\033[0m"
   # Boot to DSM
-  [ "${KERNELLOAD}" == "kexec" ] && exec kexec -e || exec poweroff
+  [ "${KERNELLOAD}" == "kexec" ] && kexec -e || poweroff
+  exit 0
 fi
-
-exit 0

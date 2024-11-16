@@ -812,7 +812,7 @@ if [ "${ARCMODE}" == "update" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Update" \
       --infobox "Update is not possible in Offline Mode!" 5 40
     sleep 3
-    exec reboot
+    reboot
   fi
 elif [ "${ARCMODE}" == "automated" ]; then
   # Check for Custom Build

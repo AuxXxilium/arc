@@ -949,8 +949,8 @@ function sysinfo() {
   CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}')"
   SECURE=$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')
-  ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
-  ETHN="$(echo ${ETHX} | wc -w)"
+  ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
+  ETHN=$(echo ${ETHX} | wc -w)
   ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1010,15 +1010,15 @@ function sysinfo() {
   TEXT+="\n  Bootdisk: \Zb${LOADER_DISK}\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${ETHN} NIC\Zn"
-  for ETH in ${ETHX}; do
+  for N in ${ETHX}; do
     COUNT=0
-    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     while true; do
-      if ! ip link show ${ETH} 2>/dev/null | grep -q 'UP'; then
+      if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
         TEXT+="\n${DRIVER}: \ZbDOWN\Zn"
         break
       fi
-      if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
+      if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
         TEXT+="\n${DRIVER}: \ZbNOT CONNECTED\Zn"
         break
       fi
@@ -1027,9 +1027,9 @@ function sysinfo() {
         break
       fi
       COUNT=$((${COUNT} + 1))
-      IP="$(getIP ${ETH})"
+      IP="$(getIP ${N})"
       if [ -n "${IP}" ]; then
-        SPEED=$(ethtool ${ETH} 2>/dev/null | grep "Speed:" | awk '{print $2}')
+        SPEED=$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
           TEXT+="\n$   {DRIVER} (${SPEED}): \ZbLINK LOCAL (No DHCP server found.)\Zn"
         else
@@ -1245,22 +1245,22 @@ function uploadDiag () {
 # Shows Networkdiag to user
 function networkdiag() {
   (
-  ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
-  for ETH in ${ETHX}; do
+  ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
+  for N in ${ETHX}; do
     echo
-    DRIVER=$(ls -ld /sys/class/net/${ETH}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-    echo -e "Interface: ${ETH} (${DRIVER})"
-    if ethtool ${ETH} 2>/dev/null | grep 'Link detected' | grep -q 'no'; then
+    DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    echo -e "Interface: ${N} (${DRIVER})"
+    if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
       echo -e "Link: NOT CONNECTED"
       continue
     fi
-    if ! ip link show ${ETH} 2>/dev/null | grep -q 'UP'; then
+    if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
       echo -e "Link: DOWN"
       continue
     fi
     echo -e "Link: CONNECTED"
-    addr=$(getIP ${ETH})
-    netmask=$(ifconfig ${ETH} | grep inet | grep 255 | awk '{print $4}' | cut -f2 -d':')
+    addr=$(getIP ${N})
+    netmask=$(ifconfig ${N} | grep inet | grep 255 | awk '{print $4}' | cut -f2 -d':')
     echo -e "IP Address: ${addr}"
     echo -e "Netmask: ${netmask}"
     echo
@@ -1281,14 +1281,21 @@ function networkdiag() {
         fi
       done
       echo
-      GITHUBAPI=$(curl --interface ${ETH} -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 2>/dev/null)
+      HWID="$(genHWID)"
+      USERIDAPI="$(curl --interface ${N} -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
+      if [[ $? -ne 0 || -z "${USERIDAPI}" ]]; then
+        echo -e "Arc UserID API not reachable!"
+      else
+        echo -e "Arc UserID API reachable! (${USERIDAPI})"
+      fi
+      GITHUBAPI=$(curl --interface ${N} -skL -m 10 "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 2>/dev/null)
       if [[ $? -ne 0 || -z "${GITHUBAPI}" ]]; then
         echo -e "Github API not reachable!"
       else
         echo -e "Github API reachable!"
       fi
       if [ "${CONFDONE}" == "true" ]; then
-        SYNOAPI=$(curl --interface ${ETH} -m 5 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')
+        SYNOAPI=$(curl --interface ${N} -skL -m 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')
         if [[ $? -ne 0 || -z "${SYNOAPI}" ]]; then
           echo -e "Syno API not reachable!"
         else
@@ -1340,15 +1347,16 @@ function credits() {
 }
 
 ###############################################################################
-# allow setting Static IP for Loader
+# Setting Static IP for Loader
 function staticIPMenu() {
-  ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
-  for ETH in ${ETHX}; do
-    MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
+  ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep -v lo)
+  IPCON=""
+  for N in ${ETHX}; do
+    MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
     IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
     IFS='/' read -r -a IPRA <<<"${IPR}"
 
-    MSG="$(printf "Set to %s: (Delete if empty)" "${ETH}(${MACR})")"
+    MSG="Set ${N}(${MACR}) IP to: (Delete if empty)"
     while true; do
       dialog --backtitle "$(backtitle)" --title "StaticIP" \
         --form "${MSG}" 10 60 4 "address" 1 1 "${IPRA[0]}" 1 9 36 16 "netmask" 2 1 "${IPRA[1]}" 2 9 36 16 "gateway" 3 1 "${IPRA[2]}" 3 9 36 16 "dns" 4 1 "${IPRA[3]}" 4 9 36 16 \
@@ -1356,19 +1364,42 @@ function staticIPMenu() {
       RET=$?
       case ${RET} in
       0) # ok-button
-        dialog --backtitle "$(backtitle)" --title "StaticIP" \
-          --infobox "Setting IP ..." 3 25
         address="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
         netmask="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
         gateway="$(cat "${TMP_PATH}/resp" | sed -n '3p')"
         dnsname="$(cat "${TMP_PATH}/resp" | sed -n '4p')"
-        if [ -z "${address}" ]; then
-          deleteConfigKey "network.${MACR}" "${USER_CONFIG_FILE}"
-        else
-          writeConfigKey "network.${MACR}" "${address}/${netmask}/${gateway}/${dnsname}" "${USER_CONFIG_FILE}"
-        fi
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        (
+          if [ -z "${address}" ]; then
+            if [ -n "$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")" ]; then
+              if [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
+                ip addr flush dev ${N}
+              fi
+              deleteConfigKey "network.${MACR}" "${USER_CONFIG_FILE}"
+              IP="$(getIP)"
+              [ -z "${IPCON}" ] && IPCON="${IP}"
+              sleep 1
+            fi
+          else
+            if [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
+              ip addr flush dev ${N}
+              ip addr add ${address}/${netmask:-"255.255.255.0"} dev ${N}
+              if [ -n "${gateway}" ]; then
+                ip route add default via ${gateway} dev ${N}
+              fi
+              if [ -n "${dnsname:-${gateway}}" ]; then
+                sed -i "/nameserver ${dnsname:-${gateway}}/d" /etc/resolv.conf
+                echo "nameserver ${dnsname:-${gateway}}" >>/etc/resolv.conf
+              fi
+            fi
+            writeConfigKey "network.${MACR}" "${address}/${netmask}/${gateway}/${dnsname}" "${USER_CONFIG_FILE}"
+            IP="$(getIP)"
+            [ -z "${IPCON}" ] && IPCON="${IP}"
+            sleep 1
+          fi
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        ) 2>&1 | dialog --backtitle "$(backtitle)" --title "StaticIP" \
+          --progressbox "Setting IP ..." 20 100
         break
         ;;
       1) # cancel-button
@@ -1379,28 +1410,6 @@ function staticIPMenu() {
         ;;
       esac
     done
-    sleep 1
-  done
-  IPCON=""
-  dialog --backtitle "$(backtitle)" --title "StaticIP" \
-    --infobox "Restart Network ..." 3 25
-  for ETH in ${ETHX}; do
-    MACR="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
-    IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
-    if [ -n "${IPR}" ]; then
-      IFS='/' read -r -a IPRA <<<"${IPR}"
-      ip addr flush dev ${ETH}
-      ip addr add ${IPRA[0]}/${IPRA[1]:-"255.255.255.0"} dev ${ETH}
-      [ -z "${IPCON}" ] && IPCON="${IPRA[0]}"
-      if [ -n "${IPRA[2]}" ]; then
-        ip route add default via ${IPRA[2]} dev ${ETH}
-      fi
-      if [ -n "${IPRA[3]:-${IPRA[2]}}" ]; then
-        sed -i "/nameserver ${IPRA[3]:-${IPRA[2]}}/d" /etc/resolv.conf
-        echo "nameserver ${IPRA[3]:-${IPRA[2]}}" >>/etc/resolv.conf
-      fi
-      sleep 1
-    fi
   done
 }
 
@@ -1609,17 +1618,6 @@ function loaderPorts() {
     RET=$?
     case ${RET} in
     0) # ok-button
-      function check_port() {
-        if [ -z "${1}" ]; then
-          return 0
-        else
-          if [[ "${1}" =~ ^[0-9]+$ ]] && [ "${1}" -ge 0 ] && [ "${1}" -le 65535 ]; then
-            return 0
-          else
-            return 1
-          fi
-        fi
-      }
       HTTPPORT=$(sed -n '1p' "${TMP_PATH}/resp")
       DUFSPORT=$(sed -n '2p' "${TMP_PATH}/resp")
       TTYDPORT=$(sed -n '3p' "${TMP_PATH}/resp")
@@ -1631,9 +1629,9 @@ function loaderPorts() {
         [ $? -eq 0 ] && continue || break
       fi
       rm -f "/etc/arc.conf"
-      [ ! "${HTTPPORT:-8080}" = "8080" ] && echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf" && /etc/init.d/S90thttpd restart >/dev/null 2>&1
-      [ ! "${DUFSPORT:-7304}" = "7304" ] && echo "DUFS_PORT=${DUFSPORT}" >>"/etc/arc.conf" && /etc/init.d/S99dufs restart >/dev/null 2>&1
-      [ ! "${TTYDPORT:-7681}" = "7681" ] && echo "TTYD_PORT=${TTYDPORT}" >>"/etc/arc.conf" && /etc/init.d/S99ttyd restart >/dev/null 2>&1
+      if [ ! "${HTTPPORT:-8080}" = "8080" ]; then echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf"; /etc/init.d/S90thttpd restart >/dev/null 2>&1; fi
+      if [ ! "${DUFSPORT:-7304}" = "7304" ]; then echo "DUFS_PORT=${DUFSPORT}" >>"/etc/arc.conf"; /etc/init.d/S99dufs restart >/dev/null 2>&1; fi
+      if [ ! "${TTYDPORT:-7681}" = "7681" ]; then echo "TTYD_PORT=${TTYDPORT}" >>"/etc/arc.conf"; /etc/init.d/S99ttyd restart >/dev/null 2>&1; fi
       RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
       rm -rf "${RDXZ_PATH}"
       mkdir -p "${RDXZ_PATH}"
@@ -2003,7 +2001,7 @@ function rebootMenu() {
   dialog --backtitle "$(backtitle)" --title "Power Menu" \
     --infobox "Option: ${REDEST} selected ...!" 3 50
   if [ "${REDEST}" == "poweroff" ]; then
-    exec poweroff
+    poweroff
     exit 0
   elif [ "${REDEST}" == "shell" ]; then
     clear
@@ -2267,7 +2265,7 @@ function genHardwareID() {
         break
       else
         dialog --backtitle "$(backtitle)" --title "HardwareID" \
-          --yes-label "Retry" --no-label "Cancel" --yesno "HardwareID: ${HWID}\nRegister your HardwareID on\nhttps://arc.auxxxilium.tech (Discord Account needed)." 7 60
+          --yes-label "Retry" --no-label "Cancel" --yesno "HardwareID: ${HWID}\nRegister your HardwareID on\nhttps://arc.auxxxilium.tech (Discord Account needed).\nPress Retry after you registered it." 8 60
         [ $? -ne 0 ] && USERID="" && break
         writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"

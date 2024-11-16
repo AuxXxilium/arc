@@ -229,18 +229,17 @@ function _set_conf_kv() {
 # sort netif busid
 function _sort_netif() {
   local ETHLIST=""
-  local ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
-  for ETH in ${ETHX}; do
-    local MAC="$(cat /sys/class/net/${ETH}/address 2>/dev/null | sed 's/://g; s/.*/\L&/')"
-    local BUS="$(ethtool -i ${ETH} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
-    ETHLIST="${ETHLIST}${BUS} ${MAC} ${ETH}\n"
+  local ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
+  for N in ${ETHX}; do
+    local MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g; s/.*/\L&/')"
+    local BUS="$(ethtool -i ${N} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
+    ETHLIST="${ETHLIST}${BUS} ${MAC} ${N}\n"
   done
   local ETHLISTTMPB="$(echo -e "${ETHLIST}" | sort)"
   local ETHLIST="$(echo -e "${ETHLISTTMPB}" | grep -v '^$')"
   local ETHSEQ="$(echo -e "${ETHLIST}" | awk '{print $3}' | sed 's/eth//g')"
   local ETHNUM="$(echo -e "${ETHLIST}" | wc -l)"
 
-  # echo "${ETHSEQ}" >"/tmp/ethseq"
   # sort
   if [ ! "${ETHSEQ}" = "$(seq 0 $((${ETHNUM:0} - 1)))" ]; then
     /etc/init.d/S41dhcpcd stop >/dev/null 2>&1
@@ -567,4 +566,18 @@ function systemCheck () {
 function genHWID () {
   HWID="$(echo $(dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g' | head -1) $(ifconfig | grep eth | awk '{print $NF}' | sed 's/://g' | sort | head -1) | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
   echo "${HWID}"
+}
+
+###############################################################################
+# Check if port is valid
+function check_port() {
+  if [ -z "${1}" ]; then
+    return 0
+  else
+    if [[ "${1}" =~ ^[0-9]+$ ]] && [ "${1}" -ge 0 ] && [ "${1}" -le 65535 ]; then
+      return 0
+    else
+      return 1
+    fi
+  fi
 }
