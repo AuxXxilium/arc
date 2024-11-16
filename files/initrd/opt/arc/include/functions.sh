@@ -234,6 +234,7 @@ function _sort_netif() {
     local MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g; s/.*/\L&/')"
     local BUS="$(ethtool -i ${N} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
     ETHLIST="${ETHLIST}${BUS} ${MAC} ${N}\n"
+  done
   local ETHLISTTMPB="$(echo -e "${ETHLIST}" | sort)"
   local ETHLIST="$(echo -e "${ETHLISTTMPB}" | grep -v '^$')"
   local ETHSEQ="$(echo -e "${ETHLIST}" | awk '{print $3}' | sed 's/eth//g')"
