@@ -1281,14 +1281,21 @@ function networkdiag() {
         fi
       done
       echo
-      GITHUBAPI=$(curl --interface ${N} -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 2>/dev/null)
+      HWID="$(genHWID)"
+      USERIDAPI="$(curl --interface ${N} -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
+      if [[ $? -ne 0 || -z "${USERIDAPI}" ]]; then
+        echo -e "Arc UserID API not reachable!"
+      else
+        echo -e "Arc UserID API reachable! (${USERIDAPI})"
+      fi
+      GITHUBAPI=$(curl --interface ${N} -skL -m 10 "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 2>/dev/null)
       if [[ $? -ne 0 || -z "${GITHUBAPI}" ]]; then
         echo -e "Github API not reachable!"
       else
         echo -e "Github API reachable!"
       fi
       if [ "${CONFDONE}" == "true" ]; then
-        SYNOAPI=$(curl --interface ${N} -m 5 -skL "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')
+        SYNOAPI=$(curl --interface ${N} -skL -m 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')
         if [[ $? -ne 0 || -z "${SYNOAPI}" ]]; then
           echo -e "Syno API not reachable!"
         else
