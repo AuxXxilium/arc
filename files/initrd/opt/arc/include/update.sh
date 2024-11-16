@@ -10,7 +10,7 @@ function updateLoader() {
   if [ -z "${TAG}" ]; then
     idx=0
     while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
-      if [ "${ARC_BRANCH}" == "dev" ]; then
+      if [ "${ARC_BRANCH}" = "dev" ]; then
         local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
       else
         local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
@@ -34,7 +34,7 @@ function updateLoader() {
         s/ /\xa0/g;
         if ($. <= 3) {
           $header .= "$_\n";
-          $/ = "\r" if $. == 2
+          $/ = "\r" if $. = 2
         } else {
           print "XXX\n$pcent\n$header$_\nXXX"
         }' |
@@ -49,7 +49,7 @@ function updateLoader() {
         --infobox "Update successful!" 3 50
         sleep 2
       else
-        if [ "${ARCMODE}" == "update" ]; then
+        if [ "${ARCMODE}" = "update" ]; then
           dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
             --infobox "Update failed!\nTry again later." 0 0
           sleep 3
@@ -59,7 +59,7 @@ function updateLoader() {
         fi
       fi
     else
-      if [ "${ARCMODE}" == "update" ]; then
+      if [ "${ARCMODE}" = "update" ]; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
           --infobox "Update failed!\nTry again later." 0 0
         sleep 3
@@ -70,7 +70,7 @@ function updateLoader() {
     fi
   fi
   [ -n "${ARCCONF}" ] && cp -f "${TMP_PATH}/bak.yml" "${S_FILE}"
-  if [ "${ARCMODE}" == "update" ] && [ "${CONFDONE}" == "true" ]; then
+  if [ "${ARCMODE}" = "update" ] && [ "${CONFDONE}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
       --infobox "Update successful! -> Reboot to automated Build Mode..." 3 60
     sleep 3
@@ -110,7 +110,7 @@ function updateAddons() {
         s/ /\xa0/g;
         if ($. <= 3) {
           $header .= "$_\n";
-          $/ = "\r" if $. == 2
+          $/ = "\r" if $. = 2
         } else {
           print "XXX\n$pcent\n$header$_\nXXX"
         }' |
@@ -169,7 +169,7 @@ function updatePatches() {
         s/ /\xa0/g;
         if ($. <= 3) {
           $header .= "$_\n";
-          $/ = "\r" if $. == 2
+          $/ = "\r" if $. = 2
         } else {
           print "XXX\n$pcent\n$header$_\nXXX"
         }' |
@@ -221,7 +221,7 @@ function updateCustom() {
         s/ /\xa0/g;
         if ($. <= 3) {
           $header .= "$_\n";
-          $/ = "\r" if $. == 2
+          $/ = "\r" if $. = 2
         } else {
           print "XXX\n$pcent\n$header$_\nXXX"
         }' |
@@ -255,7 +255,7 @@ function updateModules() {
   local PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   local PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   local KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-  [ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+  [ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
   idx=0
   while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
     local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
@@ -279,7 +279,7 @@ function updateModules() {
         s/ /\xa0/g;
         if ($. <= 3) {
           $header .= "$_\n";
-          $/ = "\r" if $. == 2
+          $/ = "\r" if $. = 2
         } else {
           print "XXX\n$pcent\n$header$_\nXXX"
         }' |
@@ -346,7 +346,7 @@ function updateConfigs() {
         s/ /\xa0/g;
         if ($. <= 3) {
           $header .= "$_\n";
-          $/ = "\r" if $. == 2
+          $/ = "\r" if $. = 2
         } else {
           print "XXX\n$pcent\n$header$_\nXXX"
         }' |
@@ -402,7 +402,7 @@ function updateLKMs() {
         s/ /\xa0/g;
         if ($. <= 3) {
           $header .= "$_\n";
-          $/ = "\r" if $. == 2
+          $/ = "\r" if $. = 2
         } else {
           print "XXX\n$pcent\n$header$_\nXXX"
         }' |
@@ -461,11 +461,11 @@ function dependenciesUpdate() {
   [ $? -ne 0 ] && FAILED="true"
   updateOffline
   [ $? -ne 0 ] && FAILED="true"
-  if [ "${FAILED}" == "true" ]; then
+  if [ "${FAILED}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
       --infobox "Update failed! Try again later." 3 40
     sleep 3
-  elif [ "${FAILED}" == "false" ]; then
+  elif [ "${FAILED}" = "false" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
       --infobox "Update successful!" 3 40
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"

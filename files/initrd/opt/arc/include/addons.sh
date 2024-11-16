@@ -15,19 +15,24 @@ function availableAddons() {
     [ "${AVAILABLE}" = false ] && continue
     local SYSTEM=$(readConfigKey "system" "${D}/manifest.yml")
     [ "${SYSTEM}" = true ] && continue
-    if [[ "${ARCOFFLINE}" == "true" || -z "${ARCCONF}" ]] && [[ "${ADDON}" == "amepatch" || "${ADDON}" == "arcdns" ]]; then
+    if [[ "${ARCOFFLINE}" = "true" || -z "${ARCCONF}" ]] && [[ "${ADDON}" = "amepatch" || "${ADDON}" = "arcdns" ]]; then
       continue
     fi
-    if [ "${MACHINE}" != "Native" ] && [ "${ADDON}" == "cpufreqscaling" ]; then
+    if [ "${MACHINE}" != "Native" ] && [ "${ADDON}" = "cpufreqscaling" ]; then
       continue
+    fi
+    if echo "${PAT_URL}" 2>/dev/null | grep -vq "7.2.2"; then
+      if [ "${ADDON}" = "allowdowngrade" ]; then
+        continue
+      fi
     fi
     local DESC="$(readConfigKey "description" "${D}/manifest.yml")"
     local BETA="$(readConfigKey "beta" "${D}/manifest.yml")"
     local TARGET="$(readConfigKey "target" "${D}/manifest.yml")"
     [ "${BETA}" = true ] && BETA="(Beta) " || BETA=""
-    if [ "${TARGET}" == "app" ]; then
+    if [ "${TARGET}" = "app" ]; then
       [ "${AVAILABLE}" = true ] && echo -e "${ADDON}\t\Z4${BETA}${DESC}\Zn"
-    elif [ "${TARGET}" == "system" ]; then
+    elif [ "${TARGET}" = "system" ]; then
       [ "${AVAILABLE}" = true ] && echo -e "${ADDON}\t\Z1${BETA}${DESC}\Zn"
     else
       [ "${AVAILABLE}" = true ] && echo -e "${ADDON}\t${BETA}${DESC}"

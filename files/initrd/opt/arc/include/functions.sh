@@ -9,7 +9,7 @@
 function checkBootLoader() {
   while read KNAME RO; do
     [ -z "${KNAME}" ] && continue
-    [ "${RO}" == "0" ] && continue
+    [ "${RO}" = "0" ] && continue
     hdparm -r0 "${KNAME}" >/dev/null 2>&1 || true
   done <<<$(lsblk -pno KNAME,RO 2>/dev/null)
   [ ! -w "${PART1_PATH}" ] && return 1
@@ -49,7 +49,7 @@ function arrayExistItem() {
   ITEM="${1}"
   shift
   for i in "$@"; do
-    [ "${i}" == "${ITEM}" ] || continue
+    [ "${i}" = "${ITEM}" ] || continue
     EXISTS=0
     break
   done
@@ -92,7 +92,7 @@ function genRandomValue() {
 function generateSerial() {
   PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}" 2>/dev/null | sort -R | tail -1)"
   MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}" 2>/dev/null | sort -R | tail -1)"
-  if [ "${2}" == "true" ]; then
+  if [ "${2}" = "true" ]; then
     SUFFIX="arc"
   else
     SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}" 2>/dev/null)"
@@ -124,7 +124,7 @@ function generateSerial() {
 # Returns serial number
 function generateMacAddress() {
   MACPRE="$(readConfigKey "${1}.macpre" "${S_FILE}")"
-  if [ "${3}" == "true" ]; then
+  if [ "${3}" = "true" ]; then
     MACSUF="$(readConfigKey "${1}.mac" "${S_FILE}" 2>/dev/null)"
   else
     MACSUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
@@ -188,7 +188,7 @@ function arrayExistItem() {
   ITEM="${1}"
   shift
   for i in "$@"; do
-    [ "${i}" == "${ITEM}" ] || continue
+    [ "${i}" = "${ITEM}" ] || continue
     EXISTS=0
     break
   done
@@ -382,7 +382,7 @@ function rebootTo() {
   local MODES="config recovery junior automated update bios memtest"
   [ -z "${1}" ] && exit 1
   if ! echo "${MODES}" | grep -qw "${1}"; then exit 1; fi
-  [ "${1}" == "automated" ] && echo "arc-${MODEL}-${PRODUCTVER}-${ARC_VERSION}" >"${PART3_PATH}/automated"
+  [ "${1}" = "automated" ] && echo "arc-${MODEL}-${PRODUCTVER}-${ARC_VERSION}" >"${PART3_PATH}/automated"
   [ ! -f "${USER_GRUBENVFILE}" ] && grub-editenv ${USER_GRUBENVFILE} create
   # echo -e "Rebooting to ${1} mode..."
   grub-editenv ${USER_GRUBENVFILE} set next_entry="${1}"
@@ -437,7 +437,7 @@ function extractDSMFiles() {
     echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
     ;;
   esac
-  if [ "${isencrypted}" == "yes" ]; then
+  if [ "${isencrypted}" = "yes" ]; then
     # Uses the extractor to untar PAT file
     LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_PATH}" "${EXT_PATH}" >"${LOG_FILE}" 2>&1
   else
@@ -465,7 +465,7 @@ function livepatch() {
     echo -e " - failed!"
     PVALID="false"
   fi
-  if [ "${PVALID}" == "true" ]; then
+  if [ "${PVALID}" = "true" ]; then
     # Patch Ramdisk
     echo -n "Patching Ramdisk"
     if ${ARC_PATH}/ramdisk-patch.sh; then
@@ -476,12 +476,12 @@ function livepatch() {
       PVALID="false"
     fi
   fi
-  if [ "${PVALID}" == "false" ]; then
+  if [ "${PVALID}" = "false" ]; then
     echo
     echo -e "Patching DSM Files failed! Please stay patient for Update."
     sleep 5
     exit 1
-  elif [ "${PVALID}" == "true" ]; then
+  elif [ "${PVALID}" = "true" ]; then
     ZIMAGE_HASH="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
     writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
     RAMDISK_HASH="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
@@ -517,7 +517,7 @@ function onlineCheck() {
     [ -z "${KEYMAP}" ] && KEYMAP="us"
     loadkeys ${KEYMAP}
   fi
-  if [ "${KEYMAP}" == "ua" ]; then
+  if [ "${KEYMAP}" = "ua" ]; then
     poweroff
   fi
 }
@@ -551,7 +551,7 @@ function systemCheck () {
   fi
   # Check for CPU Frequency Scaling
   CPUFREQUENCIES=$(ls -ltr /sys/devices/system/cpu/cpufreq/* 2>/dev/null | wc -l)
-  if [ ${CPUFREQUENCIES} -gt 1 ] && [ "${ACPISYS}" == "true" ]; then
+  if [ ${CPUFREQUENCIES} -gt 1 ] && [ "${ACPISYS}" = "true" ]; then
     CPUFREQ="true"
   else
     CPUFREQ="false"
