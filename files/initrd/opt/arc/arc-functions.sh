@@ -2258,7 +2258,7 @@ function genHardwareID() {
         break
       else
         dialog --backtitle "$(backtitle)" --title "HardwareID" \
-          --yes-label "Retry" --no-label "Cancel" --yesno "HardwareID: ${HWID}\nRegister your HardwareID on\nhttps://arc.auxxxilium.tech (Discord Account needed)." 7 60
+          --yes-label "Retry" --no-label "Cancel" --yesno "HardwareID: ${HWID}\nRegister your HardwareID on\nhttps://arc.auxxxilium.tech (Discord Account needed).\nPress Retry after you registered it." 8 60
         [ $? -ne 0 ] && USERID="" && break
         writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
