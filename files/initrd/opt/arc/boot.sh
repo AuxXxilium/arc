@@ -251,7 +251,7 @@ if [ "${DIRECTBOOT}" == "true" ]; then
   grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
   _bootwait || true
   echo -e "\033[1;34mReboot with Directboot\033[0m"
-  exec reboot
+  reboot
   exit 0
 elif [ "${DIRECTBOOT}" == "false" ]; then
   grub-editenv ${USER_GRUBENVFILE} unset dsm_cmdline
@@ -326,7 +326,6 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
 
   echo -e "\033[1;37mBooting DSM...\033[0m"
   # Boot to DSM
-  [ "${KERNELLOAD}" == "kexec" ] && exec kexec -e || exec poweroff
+  [ "${KERNELLOAD}" == "kexec" ] && kexec -e || poweroff
+  exit 0
 fi
-
-exit 0

@@ -1992,7 +1992,7 @@ function rebootMenu() {
   dialog --backtitle "$(backtitle)" --title "Power Menu" \
     --infobox "Option: ${REDEST} selected ...!" 3 50
   if [ "${REDEST}" == "poweroff" ]; then
-    exec poweroff
+    poweroff
     exit 0
   elif [ "${REDEST}" == "shell" ]; then
     clear
