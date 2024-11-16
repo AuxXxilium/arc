@@ -740,7 +740,7 @@ function arcFinish() {
       # Ask for Boot
       dialog --clear --backtitle "$(backtitle)" --title "Build done"\
         --no-cancel --menu "Boot now?" 7 40 0 \
-        1 "Yes - Boot Arc Loader now" \
+        1 "Yes - Boot DSM now" \
         2 "No - I want to make changes" \
       2>"${TMP_PATH}/resp"
       resp=$(cat ${TMP_PATH}/resp)
