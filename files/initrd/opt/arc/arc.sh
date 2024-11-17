@@ -92,7 +92,7 @@ function arcModel() {
   if [ ! -f "${S_FILE}" ] || [ ! -f "${P_FILE}" ]; then
     updateConfigs
   else
-    checkHardwareIDsilence
+    checkHardwareID
   fi
   dialog --backtitle "$(backtitlep)" --title "Model" \
     --infobox "Reading Models..." 3 25
@@ -957,7 +957,7 @@ else
       b) addonMenu; NEXT="b" ;;
       d) modulesMenu; NEXT="d" ;;
       e) ONLYVERSION="true" && arcVersion; NEXT="e" ;;
-      p) ONLYPATCH="true" && checkHardwareIDsilence && arcPatch; NEXT="p" ;;
+      p) ONLYPATCH="true" && checkHardwareID && arcPatch; NEXT="p" ;;
       S) storageMenu; NEXT="S" ;;
       o) dtsMenu; NEXT="o" ;;
       g) governorMenu; NEXT="g" ;;
