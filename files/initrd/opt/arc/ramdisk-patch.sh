@@ -43,8 +43,8 @@ ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
 PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
 PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
 
-[ "${PATURL:0:1}" == "#" ] && PATURL=""
-[ "${PATSUM:0:1}" == "#" ] && PATSUM=""
+[ "${PATURL:0:1}" = "#" ] && PATURL=""
+[ "${PATSUM:0:1}" = "#" ] && PATSUM=""
 
 # Check if DSM Version changed
 . "${RAMDISK_PATH}/etc/VERSION"
@@ -67,7 +67,7 @@ writeConfigKey "smallnum" "${SMALLNUM}" "${USER_CONFIG_FILE}"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 
 # Modify KVER for Epyc7002
-[ "${PLATFORM}" == "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+[ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
 
 # Sanity check
 if [ -z "${PLATFORM}" ] || [ -z "${KVER}" ]; then
@@ -168,7 +168,7 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 # System Addons
 for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
   PARAMS=""
-  if [ "${ADDON}" == "disks" ]; then
+  if [ "${ADDON}" = "disks" ]; then
     HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
     USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
     PARAMS="${HDDSORT} ${USBMOUNT}"
@@ -190,7 +190,7 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 
 echo "Modify files" >"${LOG_FILE}"
 # Remove function from scripts
-[ "2" == "${PRODUCTVER:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
+[ "2" = "${PRODUCTVER:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
 
 # Build modules dependencies
 # ${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
@@ -228,14 +228,14 @@ for N in $(seq 0 7); do
 done
 
 # SA6400 patches
-if [ "${PLATFORM}" == "epyc7002" ]; then
+if [ "${PLATFORM}" = "epyc7002" ]; then
   echo -n " - Apply Epyc7002 Fixes"
   sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
 fi
 
 # Broadwellntbap patches
-if [ "${PLATFORM}" == "broadwellntbap" ]; then
+if [ "${PLATFORM}" = "broadwellntbap" ]; then
   echo -n " - Apply Broadwellntbap Fixes"
   sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' ${RAMDISK_PATH}/usr/syno/share/environments.sh
 fi
@@ -247,7 +247,7 @@ for F in $(ls -1 ${USER_UP_PATH}/*.sh 2>/dev/null); do
 done
 
 # Reassembly ramdisk
-if [ "${RD_COMPRESSED}" == "true" ]; then
+if [ "${RD_COMPRESSED}" = "true" ]; then
   (cd "${RAMDISK_PATH}" && find . 2>/dev/null | cpio -o -H newc -R root:root | xz -9 --format=lzma >"${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || exit 1
 else
   (cd "${RAMDISK_PATH}" && find . 2>/dev/null | cpio -o -H newc -R root:root >"${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || exit 1

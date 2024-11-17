@@ -5,19 +5,19 @@ function getnet() {
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   NICPORTS="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
   ETHN=$(echo ${ETHX} | wc -w)
-  if [ "${ARCPATCH}" == "true" ]; then
+  if [ "${ARCPATCH}" = "true" ]; then
     MACS=($(generateMacAddress "${MODEL}" "${ETHN}" "true"))
     for I in $(seq 1 ${ETHN}); do
       eval MAC${I}="${MACS[$((${I} - 1))]}"
       writeConfigKey "eth$((${I} - 1))" "${MACS[$((${I} - 1))]}" "${USER_CONFIG_FILE}"
     done
-  elif [ "${ARCPATCH}" == "false" ]; then
+  elif [ "${ARCPATCH}" = "false" ]; then
     MACS=($(generateMacAddress "${MODEL}" "${ETHN}" "false"))
     for I in $(seq 1 ${ETHN}); do
       eval MAC${I}="${MACS[$((${I} - 1))]}"
       writeConfigKey "eth$((${I} - 1))" "${MACS[$((${I} - 1))]}" "${USER_CONFIG_FILE}"
     done
-  elif [ "${ARCPATCH}" == "user" ]; then
+  elif [ "${ARCPATCH}" = "user" ]; then
     # User Mac
     for N in ${ETHX}; do
       while true; do

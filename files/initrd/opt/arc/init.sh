@@ -112,8 +112,8 @@ for N in ${ETHX}; do
     fi
     sleep 1
   fi
-  [ "${N::3}" == "eth" ] && ethtool -s ${N} wol g 2>/dev/null || true
-  # [ "${N::3}" == "eth" ] && ethtool -K ${N} rxhash off 2>/dev/null || true
+  [ "${N::3}" = "eth" ] && ethtool -s ${N} wol g 2>/dev/null || true
+  # [ "${N::3}" = "eth" ] && ethtool -K ${N} rxhash off 2>/dev/null || true
   initConfigKey "${N}" "${MACR}" "${USER_CONFIG_FILE}"
 done
 ETHN=$(echo ${ETHX} | wc -w)
@@ -127,7 +127,7 @@ VID="0x46f4"
 PID="0x0001"
 
 BUSLIST="usb sata sas scsi nvme mmc ide virtio vmbus xen"
-if [ "${BUS}" == "usb" ]; then
+if [ "${BUS}" = "usb" ]; then
   VID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_VENDOR_ID | cut -d= -f2)"
   PID="0x$(udevadm info --query property --name "${LOADER_DISK}" | grep ID_MODEL_ID | cut -d= -f2)"
 elif ! echo "${BUSLIST}" | grep -wq "${BUS}"; then
@@ -146,13 +146,13 @@ writeConfigKey "pid" "${PID}" "${USER_CONFIG_FILE}"
 # Decide if boot automatically
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
-if [ "${ARCMODE}" == "config" ]; then
+if [ "${ARCMODE}" = "config" ]; then
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
-elif [ "${ARCMODE}" == "automated" ]; then
+elif [ "${ARCMODE}" = "automated" ]; then
   echo -e "\033[1;34mStarting automated Build Mode...\033[0m"
-elif [ "${ARCMODE}" == "update" ]; then
+elif [ "${ARCMODE}" = "update" ]; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
-elif [ "${BUILDDONE}" == "true" ] && [ "${ARCMODE}" == "dsm" ]; then
+elif [ "${BUILDDONE}" = "true" ] && [ "${ARCMODE}" = "dsm" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
   if [ -f "${ARC_PATH}/boot.sh" ]; then
     exec boot.sh && exit 0

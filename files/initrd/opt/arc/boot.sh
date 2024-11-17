@@ -9,7 +9,7 @@ set -e
 rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
 
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-[ "${BUILDDONE}" == "false" ] && die "Loader build not completed!"
+[ "${BUILDDONE}" = "false" ] && die "Loader build not completed!"
 ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
 
 # Get Loader Disk Bus
@@ -59,7 +59,7 @@ DSMINFO="$(readConfigKey "boot.dsminfo" "${USER_CONFIG_FILE}")"
 SYSTEMINFO="$(readConfigKey "boot.systeminfo" "${USER_CONFIG_FILE}")"
 DISKINFO="$(readConfigKey "boot.diskinfo" "${USER_CONFIG_FILE}")"
 
-if [ "${DSMINFO}" == "true" ]; then
+if [ "${DSMINFO}" = "true" ]; then
   echo -e "\033[1;37mDSM:\033[0m"
   echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
   echo -e "Platform: \033[1;37m${PLATFORM}\033[0m"
@@ -67,14 +67,14 @@ if [ "${DSMINFO}" == "true" ]; then
   echo -e "LKM: \033[1;37m${LKM}\033[0m"
   echo
 fi
-if [ "${SYSTEMINFO}" == "true" ]; then
+if [ "${SYSTEMINFO}" = "true" ]; then
   echo -e "\033[1;37mSystem:\033[0m"
   echo -e "Vendor: \033[1;37m${VENDOR}\033[0m"
   echo -e "CPU: \033[1;37m${CPU}\033[0m"
   echo -e "Memory: \033[1;37m${RAMTOTAL}GB\033[0m"
   echo
 fi
-if [ "${DISKINFO}" == "true" ]; then
+if [ "${DISKINFO}" = "true" ]; then
   echo -e "\033[1;37mDisks:\033[0m"
   echo -e "Disks: \033[1;37m$(lsblk -dpno NAME | grep -v "${LOADER_DISK}" | wc -l)\033[0m"
 fi
@@ -82,7 +82,7 @@ fi
 if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   HASATA=0
   for D in $(lsblk -dpno NAME); do
-    [ "${D}" == "${LOADER_DISK}" ] && continue
+    [ "${D}" = "${LOADER_DISK}" ] && continue
     if echo "sata sas scsi" | grep -qw "$(getBus "${D}")"; then
       HASATA=1
       break
@@ -139,7 +139,7 @@ if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
 else
   CMDLINE["split_lock_detect"]="off"
 fi
-if [ "${DT}" == "true" ]; then
+if [ "${DT}" = "true" ]; then
   CMDLINE["syno_ttyS0"]="serial,0x3f8"
   CMDLINE["syno_ttyS1"]="serial,0x2f8"
 else
@@ -167,13 +167,13 @@ CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 
 #if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
 #   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "sdhci"; then
-#     [ ! "${CMDLINE['modprobe.blacklist']}" == "" ] && CMDLINE['modprobe.blacklist']+=","
+#     [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
 #     CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
 #   fi
 # fi
-if [ "${DT}" == "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
+if [ "${DT}" = "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
-    [ ! "${CMDLINE['modprobe.blacklist']}" == "" ] && CMDLINE['modprobe.blacklist']+=","
+    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
     CMDLINE['modprobe.blacklist']+="mpt3sas"
   fi
 fi
@@ -244,7 +244,7 @@ function _bootwait() {
 
 # Boot
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
-if [ "${DIRECTBOOT}" == "true" ]; then
+if [ "${DIRECTBOOT}" = "true" ]; then
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
   grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
   grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
@@ -252,14 +252,14 @@ if [ "${DIRECTBOOT}" == "true" ]; then
   echo -e "\033[1;34mReboot with Directboot\033[0m"
   reboot
   exit 0
-elif [ "${DIRECTBOOT}" == "false" ]; then
+elif [ "${DIRECTBOOT}" = "false" ]; then
   grub-editenv ${USER_GRUBENVFILE} unset dsm_cmdline
   grub-editenv ${USER_GRUBENVFILE} unset next_entry
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
   IPCON=""
-  if [ "${ARCPATCH}" == "true" ]; then
+  if [ "${ARCPATCH}" = "true" ]; then
     echo -e "\033[1;37mDetected ${ETHN} NIC\033[0m | \033[1;34mUsing ${NIC} NIC for Arc Patch:\033[0m"
   else
     echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
@@ -301,7 +301,7 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
    _bootwait || true
 
   DSMLOGO="$(readConfigKey "boot.dsmlogo" "${USER_CONFIG_FILE}")"
-  if [ "${DSMLOGO}" == "true" ] && [ -c "/dev/fb0" ]; then
+  if [ "${DSMLOGO}" = "true" ] && [ -c "/dev/fb0" ]; then
     [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
     [ -n "${IPCON}" ] && URL="http://${IPCON}:5000" || URL="http://find.synology.com/"
     python ${ARC_PATH}/include/functions.py makeqr -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
@@ -325,6 +325,6 @@ elif [ "${DIRECTBOOT}" == "false" ]; then
 
   echo -e "\033[1;37mBooting DSM...\033[0m"
   # Boot to DSM
-  [ "${KERNELLOAD}" == "kexec" ] && kexec -e || poweroff
+  [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
   exit 0
 fi
