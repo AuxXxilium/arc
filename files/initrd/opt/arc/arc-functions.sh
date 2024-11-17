@@ -730,7 +730,7 @@ function backupMenu() {
             MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
             PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
             if [ -n "${MODEL}" ] && [ -n "${PRODUCTVER}" ]; then
-              TEXT="Installation found:\nModel: ${MODELID:-${MODEL}}\nVersion: ${PRODUCTVER}"
+              TEXT="Config found:\nModel: ${MODELID:-${MODEL}}\nVersion: ${PRODUCTVER}"
               SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
               TEXT+="\nSerial: ${SN}"
               ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
@@ -829,6 +829,23 @@ function backupMenu() {
         else
           dialog --backtitle "$(backtitle)" --title "Online Restore" --msgbox "Online Restore failed!" 5 40
           [ -f "${USER_CONFIG_FILE}.bak" ] && mv -f "${USER_CONFIG_FILE}.bak" "${USER_CONFIG_FILE}"
+        fi
+        MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+        MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
+        PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+        if [ -n "${MODEL}" ] && [ -n "${PRODUCTVER}" ]; then
+          TEXT="Config found:\nModel: ${MODELID:-${MODEL}}\nVersion: ${PRODUCTVER}"
+          SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
+          TEXT+="\nSerial: ${SN}"
+          ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+          TEXT+="\nArc Patch: ${ARCPATCH}"
+          dialog --backtitle "$(backtitle)" --title "Online Restore" \
+            --aspect 18 --msgbox "${TEXT}" 0 0
+          PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+          DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
+          CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         fi
         ;;
       5)
