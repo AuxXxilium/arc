@@ -693,8 +693,9 @@ function sequentialIOMenu() {
 function backupMenu() {
   NEXT="1"
   USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
+  ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   while true; do
-    if [ -n "${USERID}" ]; then
+    if [ -n "${USERID}" ] && [ "${ARCOFFLINE}" != "true" ]; then
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
         1 "Restore Arc Config from DSM" \
         2 "Restore HW Encryption Key from DSM" \

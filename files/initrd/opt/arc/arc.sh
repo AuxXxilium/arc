@@ -419,7 +419,7 @@ function arcPatch() {
   elif [ "${ARCMODE}" = "config" ]; then
     dialog --clear --backtitle "$(backtitlep)" \
       --nocancel --title "SN/Mac Options"\
-      --menu "Choose an Option." 7 60 0 \
+      --menu "Choose an Option" 7 60 0 \
       1 "Use Arc Patch (AME, QC, Push Notify and more)" \
       2 "Use random SN/Mac (Reduced DSM Features)" \
       3 "Use my own SN/Mac (Be sure your Data is valid)" \
@@ -428,8 +428,19 @@ function arcPatch() {
     [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
       ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
-      [ -n "${ARCCONF}" ] && SN="$(generateSerial "${MODEL}" "true")" || SN="$(generateSerial "${MODEL}" "false")"
-      [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+      if [ -n "${ARCCONF}" ]; then
+        dialog --backtitle "$(backtitlep)" --colors --title "Arc Patch" \
+          --infobox "Arc Patch successful!" 3 30
+        sleep 2
+        SN="$(generateSerial "${MODEL}" "true")"
+        writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
+      else
+        dialog --backtitle "$(backtitlep)" --colors --title "Arc Patch" \
+          --infobox "Arc Patch failed!" 3 30
+        sleep 2
+        SN="$(generateSerial "${MODEL}" "false")"
+        writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+      fi
     elif [ ${resp} -eq 2 ]; then
       # Generate random Serial
       SN="$(generateSerial "${MODEL}" "false")"
