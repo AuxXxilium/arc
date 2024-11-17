@@ -2313,6 +2313,29 @@ function checkHardwareID() {
   return
 }
 
+###############################################################################
+# Check HardwareID
+function checkHardwareIDsilence() {
+  HWID="$(genHWID)"
+  USERID="$(curl -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
+  [ ! -f "${S_FILE}.bak" ] && cp -f "${S_FILE}" "${S_FILE}.bak" 2>/dev/null || true
+  if echo "${USERID}" | grep -vq "Hardware ID"; then
+    if curl -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}&userid=${USERID}" -o "${S_FILE}" 2>/dev/null; then
+      writeConfigKey "arc.hwid" "${HWID}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
+    else
+      writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
+      mv -f "${S_FILE}.bak" "${S_FILE}" 2>/dev/null
+    fi
+  else
+    USERID=""
+    writeConfigKey "arc.hwid" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
+    mv -f "${S_FILE}.bak" "${S_FILE}" 2>/dev/null
+  fi
+  return
+}
 
 ###############################################################################
 # Bootsreen Menu
