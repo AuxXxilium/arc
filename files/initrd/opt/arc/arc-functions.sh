@@ -847,6 +847,10 @@ function backupMenu() {
           writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
           BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         fi
+        dialog --backtitle "$(backtitle)" --title "Online Restore" \
+          --aspect 18 --infobox "Restore successful! -> Reload Arc Init now" 5 50
+        sleep 2
+        exec init.sh
         ;;
       5)
         if [ -f "${USER_CONFIG_FILE}" ]; then
