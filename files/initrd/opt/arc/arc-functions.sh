@@ -275,7 +275,7 @@ function modulesMenu() {
             2>${TMP_PATH}/resp
           [ $? -ne 0 ] && break
           VALUE="$(cat "${TMP_PATH}/resp")"
-          if echo "${VALUE}" | grep -q " "; then
+          if [[ ${VALUE} = *" "* ]]; then
             dialog --backtitle "$(backtitle)" --title  "Blacklist Module" \
               --yesno "Invalid list, No spaces should appear, retry?" 0 0
             [ $? -eq 0 ] && continue || break
@@ -334,10 +334,10 @@ function cmdlineMenu() {
           RET=$?
           case ${RET} in
             0) # ok-button
-              NAME="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
-              VALUE="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
-              [ "${NAME: -1}" = "=" ] && NAME="${NAME:0:-1}"
-              [ "${VALUE:0:1}" = "=" ] && VALUE="${VALUE:1}"
+              NAME="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+              VALUE="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+              [[ "${NAME}" = *= ]] && NAME="${NAME%?}"
+              [[ "${VALUE}" = =* ]] && VALUE="${VALUE#*=}"
               if [ -z "${NAME//\"/}" ]; then
                 dialog --clear --backtitle "$(backtitle)" --title "User Cmdline" \
                   --yesno "Invalid Parameter Name, retry?" 0 0
@@ -539,10 +539,10 @@ function synoinfoMenu() {
           RET=$?
           case ${RET} in
             0) # ok-button
-              NAME="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
-              VALUE="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
-              [ "${NAME: -1}" = "=" ] && NAME="${NAME:0:-1}"
-              [ "${VALUE:0:1}" = "=" ] && VALUE="${VALUE:1}"
+              NAME="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+              VALUE="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+              [[ "${NAME}" = *= ]] && NAME="${NAME%?}"
+              [[ "${VALUE}" = =* ]] && VALUE="${VALUE#*=}"
               if [ -z "${NAME//\"/}" ]; then
                 dialog --clear --backtitle "$(backtitle)" --title "User Cmdline" \
                   --yesno "Invalid Parameter Name, retry?" 0 0
@@ -971,8 +971,8 @@ function sysinfo() {
   CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}')"
   SECURE=$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
-  ETHN=$(echo "${ETHX}" | wc -w)
+  ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
+  ETHN=$(echo ${ETHX} | wc -w)
   ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1140,7 +1140,6 @@ function sysinfo() {
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -b 2>/dev/null | grep -v - | grep "\[${PORT}:" | wc -l)
-    [ ${PORTNUM} -eq 0 ] && continue
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
@@ -1149,7 +1148,6 @@ function sysinfo() {
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -b 2>/dev/null | grep -v - | grep "\[${PORT}:" | wc -l)
-    [ ${PORTNUM} -eq 0 ] && continue
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
@@ -1183,7 +1181,6 @@ function sysinfo() {
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORT=$(ls -l /sys/class/nvme 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
     PORTNUM=$(lsscsi -b 2>/dev/null | grep -v - | grep "\[N:${PORT}:" | wc -l)
-    [ ${PORTNUM} -eq 0 ] && continue
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
@@ -1191,7 +1188,6 @@ function sysinfo() {
     TEXT+="\n  VMBUS Controller:\n"
     NAME="vmbus:acpi"
     PORTNUM=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep 'vmbus:acpi' | wc -l)
-    [ ${PORTNUM} -eq 0 ] && continue
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   fi
@@ -1271,7 +1267,7 @@ function uploadDiag () {
 # Shows Networkdiag to user
 function networkdiag() {
   (
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
+  ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
   for N in ${ETHX}; do
     echo
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
@@ -1375,7 +1371,7 @@ function credits() {
 ###############################################################################
 # Setting Static IP for Loader
 function staticIPMenu() {
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
+  ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep -v lo)
   IPCON=""
   for N in ${ETHX}; do
     MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
@@ -1390,10 +1386,10 @@ function staticIPMenu() {
       RET=$?
       case ${RET} in
       0) # ok-button
-        address="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
-        netmask="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
-        gateway="$(sed -n '3p' "${TMP_PATH}/resp" 2>/dev/null)"
-        dnsname="$(sed -n '4p' "${TMP_PATH}/resp" 2>/dev/null)"
+        address="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+        netmask="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+        gateway="$(cat "${TMP_PATH}/resp" | sed -n '3p')"
+        dnsname="$(cat "${TMP_PATH}/resp" | sed -n '4p')"
         (
           if [ -z "${address}" ]; then
             if [ -n "$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")" ]; then
@@ -1557,8 +1553,8 @@ function addNewDSMUser() {
     --form "${MSG}" 8 60 3 "username:" 1 1 "user" 1 10 50 0 "password:" 2 1 "passwd" 2 10 50 0 \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
-  username="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
-  password="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
+  username="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
+  password="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
   (
     ONBOOTUP=""
     ONBOOTUP="${ONBOOTUP}if synouser --enum local | grep -q ^${username}\$; then synouser --setpw ${username} ${password}; else synouser --add ${username} ${password} arc 0 user@arc.arc 1; fi\n"
@@ -1595,12 +1591,12 @@ function loaderPassword() {
   dialog --backtitle "$(backtitle)" --title "Loader Password" \
     --inputbox "New password: (Empty value 'arc')" 0 70 \
     2>${TMP_PATH}/resp
-  [ $? -ne 0 ] && return
-  local STRPASSWD="$(cat "${TMP_PATH}/resp")"
-  local NEWPASSWD="$(openssl passwd -6 -salt $(openssl rand -hex 8) "${STRPASSWD:-arc}")"
+  [ $? -ne 0 ] && continue
+  STRPASSWD="$(cat "${TMP_PATH}/resp")"
+  NEWPASSWD="$(openssl passwd -6 -salt $(openssl rand -hex 8) "${STRPASSWD:-arc}")"
   cp -p /etc/shadow /etc/shadow-
   sed -i "s|^root:[^:]*|root:${NEWPASSWD}|" /etc/shadow
-  local RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
+  RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
   rm -rf "${RDXZ_PATH}"
   mkdir -p "${RDXZ_PATH}"
   [ -f "${ARC_RAMDISK_USER_FILE}" ] && (
@@ -1616,7 +1612,7 @@ function loaderPassword() {
   if [ -n "$(ls -A "${RDXZ_PATH}" 2>/dev/null)" ] && [ -n "$(ls -A "${RDXZ_PATH}/etc" 2>/dev/null)" ]; then
     (
       cd "${RDXZ_PATH}"
-      local RDSIZE=$(du -sb ${RDXZ_PATH} 2>/dev/null | awk '{print $1}')
+      RDSIZE=$(du -sb ${RDXZ_PATH} 2>/dev/null | awk '{print $1}')
       find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | xz -9 --check=crc32 >"${ARC_RAMDISK_USER_FILE}"
     ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Loader Password" \
       --progressbox "Changing Loader password..." 30 100
@@ -1633,10 +1629,10 @@ function loaderPassword() {
 ###############################################################################
 # Change Arc Loader Password
 function loaderPorts() {
-  local MSG="Modify Ports (0-65535) (Leave empty for default):"
-  local HTTPPORT=$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
-  local DUFSPORT=$(grep -i '^DUFS_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
-  local TTYDPORT=$(grep -i '^TTYD_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
+  MSG="Modify Ports (0-65535) (Leave empty for default):"
+  HTTPPORT=$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
+  DUFSPORT=$(grep -i '^DUFS_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
+  TTYDPORT=$(grep -i '^TTYD_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
   while true; do
     dialog --backtitle "$(backtitle)" --title "Loader Ports" \
       --form "${MSG}" 11 70 3 "HTTP" 1 1 "${HTTPPORT:-8080}" 1 10 55 0 "DUFS" 2 1 "${DUFSPORT:-7304}" 2 10 55 0 "TTYD" 3 1 "${TTYDPORT:-7681}" 3 10 55 0 \
@@ -1644,9 +1640,9 @@ function loaderPorts() {
     RET=$?
     case ${RET} in
     0) # ok-button
-      HTTP=$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)
-      DUFS=$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)
-      TTYD=$(sed -n '3p' "${TMP_PATH}/resp" 2>/dev/null)
+      HTTPPORT=$(sed -n '1p' "${TMP_PATH}/resp")
+      DUFSPORT=$(sed -n '2p' "${TMP_PATH}/resp")
+      TTYDPORT=$(sed -n '3p' "${TMP_PATH}/resp")
       EP=""
       for P in "${HTTPPORT}" "${DUFSPORT}" "${TTYDPORT}"; do check_port "${P}" || EP="${EP} ${P}"; done
       if [ -n "${EP}" ]; then
@@ -1658,7 +1654,7 @@ function loaderPorts() {
       if [ ! "${HTTPPORT:-8080}" = "8080" ]; then echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf"; /etc/init.d/S90thttpd restart >/dev/null 2>&1; fi
       if [ ! "${DUFSPORT:-7304}" = "7304" ]; then echo "DUFS_PORT=${DUFSPORT}" >>"/etc/arc.conf"; /etc/init.d/S99dufs restart >/dev/null 2>&1; fi
       if [ ! "${TTYDPORT:-7681}" = "7681" ]; then echo "TTYD_PORT=${TTYDPORT}" >>"/etc/arc.conf"; /etc/init.d/S99ttyd restart >/dev/null 2>&1; fi
-      local RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
+      RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
       rm -rf "${RDXZ_PATH}"
       mkdir -p "${RDXZ_PATH}"
       [ -f "${ARC_RAMDISK_USER_FILE}" ] && (
@@ -1674,7 +1670,7 @@ function loaderPorts() {
       if [ -n "$(ls -A "${RDXZ_PATH}" 2>/dev/null)" ] && [ -n "$(ls -A "${RDXZ_PATH}/etc" 2>/dev/null)" ]; then
         (
           cd "${RDXZ_PATH}"
-          local RDSIZE=$(du -sb ${RDXZ_PATH} 2>/dev/null | awk '{print $1}')
+          RDSIZE=$(du -sb ${RDXZ_PATH} 2>/dev/null | awk '{print $1}')
           find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | xz -9 --check=crc32 >"${ARC_RAMDISK_USER_FILE}"
         ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Loader Ports" \
           --progressbox "Changing Ports..." 30 100
@@ -1775,7 +1771,7 @@ function formatDisks() {
     done
   fi
   for I in ${RESP}; do
-    if [ "${I:0:8}" = "/dev/mmc" ]; then
+    if [[ "${I}" = /dev/mmc* ]]; then
       echo y | mkfs.ext4 -T largefile4 -E nodiscard "${I}"
     else
       echo y | mkfs.ext4 -T largefile4 "${I}"
@@ -1799,38 +1795,34 @@ function cloneLoader() {
   done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model)"' 2>/dev/null)
 
   if [ ! -f "${TMP_PATH}/opts" ]; then
-    dialog --backtitle "$(backtitle)" --title "Clone Loader" \
+    dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --msgbox "No disk found!" 0 0
     return
   fi
-
-  dialog --backtitle "$(backtitle)" --title "Clone Loader" \
-    --radiolist "Choose a destination:" 0 0 0 --file "${TMP_PATH}/opts" \
+  dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
+    --radiolist "Choose a Destination" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
-  RESP=$(cat "${TMP_PATH}/resp")
-
-  if [ -z "${RESP}" ]; then
-    dialog --backtitle "$(backtitle)" --title "Clone Loader" \
+  resp=$(cat ${TMP_PATH}/resp)
+  if [ -z "${resp}" ]; then
+    dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --msgbox "No disk selected!" 0 0
     return
+  else
+    SIZE=$(df -m ${resp} 2>/dev/null | awk 'NR=2 {print $2}')
+    if [ ${SIZE:-0} -lt 1024 ]; then
+      dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
+        --msgbox "Disk ${resp} size is less than 1GB and cannot be cloned!" 0 0
+      return
+    fi
+    MSG=""
+    MSG+="Warning:\nDisk ${resp} will be formatted and written to the bootloader. Please confirm that important data has been backed up. \nDo you want to continue?"
+    dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
+      --yesno "${MSG}" 0 0
+    [ $? -ne 0 ] && return
   fi
-
-  SIZE=$(df -m "${RESP}" 2>/dev/null | awk 'NR==2 {print $2}')
-  if [ ${SIZE:-0} -lt 1024 ]; then
-    dialog --backtitle "$(backtitle)" --title "Clone Loader" \
-      --msgbox "$(printf "Disk %s size is less than 1GB and cannot be cloned!" "${RESP}")" 0 0
-    return
-  fi
-
-  MSG="$(printf "Warning:\nDisk %s will be formatted and written to the bootloader. Please confirm that important data has been backed up. \nDo you want to continue?" "${RESP}")"
-  dialog --backtitle "$(backtitle)" --title "Clone Loader" \
-    --yesno "${MSG}" 0 0
-  [ $? -ne 0 ] && return
-
   (
-    rm -f "${LOG_FILE}"
-    rm -rf "${PART3_PATH}/dl"
+    rm -rf "${PART3_PATH}/dl" >/dev/null
     CLEARCACHE=0
 
     gzip -dc "${ARC_PATH}/grub.img.gz" | dd of="${RESP}" bs=1M conv=fsync status=progress
@@ -1901,17 +1893,30 @@ function cloneLoader() {
     sync
     __umountNewBlDisk
     sleep 3
-  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Clone Loader" \
-    --progressbox "Cloning ..." 20 100
 
-  if [ -f "${LOG_FILE}" ]; then
-    dialog --backtitle "$(backtitle)" --title "Clone Loader" \
-      --msgbox "$(cat ${LOG_FILE})" 0 0
-  else
-    dialog --backtitle "$(backtitle)" --title "Clone Loader" \
-      --msgbox "$(printf "Bootloader has been cloned to disk %s, please remove the current bootloader disk!\nReboot?" "${RESP}")" 0 0
-    rebootTo config
-  fi
+    mkdir -p "${TMP_PATH}/sdX1"
+    mount "$(lsblk "${resp}" -pno KNAME,LABEL 2>/dev/null | grep ARC1 | awk '{print $1}')" "${TMP_PATH}/sdX1"
+    cp -vRf "${PART1_PATH}/". "${TMP_PATH}/sdX1/"
+    sync
+    umount "${TMP_PATH}/sdX1"
+
+    mkdir -p "${TMP_PATH}/sdX2"
+    mount "$(lsblk "${resp}" -pno KNAME,LABEL 2>/dev/null | grep ARC2 | awk '{print $1}')" "${TMP_PATH}/sdX2"
+    cp -vRf "${PART2_PATH}/". "${TMP_PATH}/sdX2/"
+    sync
+    umount "${TMP_PATH}/sdX2"
+
+    mkdir -p "${TMP_PATH}/sdX3"
+    mount "$(lsblk "${resp}" -pno KNAME,LABEL 2>/dev/null | grep ARC3 | awk '{print $1}')" "${TMP_PATH}/sdX3"
+    cp -vRf "${PART3_PATH}/". "${TMP_PATH}/sdX3/"
+    sync
+    umount "${TMP_PATH}/sdX3"
+    sleep 3
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
+    --progressbox "Cloning ..." 20 100
+  dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
+    --msgbox "Bootloader has been cloned to disk ${resp},\nplease remove the current bootloader disk!\nReboot?" 0 0
+  rebootTo config
   return
 }
 
@@ -1964,7 +1969,11 @@ function greplogs() {
     done
     rm -rf "${TMP_PATH}/mdX"
   fi
-  [ ${SYSLOG} -eq 1 ] && MSG+="System logs found!\n" || MSG+="Can't find system logs!\n"
+  if [ ${SYSLOG} -eq 1 ]; then
+    MSG+="System logs found!\n"
+  else
+    MSG+="Can't find system logs!\n"
+  fi
 
   ADDONS=0
   if [ -d "${PART1_PATH}/logs" ]; then
@@ -2032,6 +2041,7 @@ function getbackup() {
 # SataDOM Menu
 function satadomMenu() {
   rm -f "${TMP_PATH}/opts" >/dev/null
+  echo "0 \"Create SATA node(ARC)\"" >>"${TMP_PATH}/opts"
   echo "1 \"Native SATA Disk(SYNO)\"" >>"${TMP_PATH}/opts"
   echo "2 \"Fake SATA DOM(Redpill)\"" >>"${TMP_PATH}/opts"
   dialog --backtitle "$(backtitle)" --title "Switch SATA DOM" \

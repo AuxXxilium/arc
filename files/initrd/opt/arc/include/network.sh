@@ -4,7 +4,7 @@ function getnet() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   NICPORTS="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
-  ETHN=$(echo "${ETHX}" | wc -w)
+  ETHN=$(echo ${ETHX} | wc -w)
   if [ "${ARCPATCH}" = "true" ]; then
     MACS=($(generateMacAddress "${MODEL}" "${ETHN}" "true"))
     for I in $(seq 1 ${ETHN}); do
@@ -44,7 +44,7 @@ function getnet() {
 # Get Amount of NIC
 ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
 # Get actual IP
-for N in ${ETHX}; do
-  IPCON=$(getIP "${N}")
+for ETH in ${ETHX}; do
+  IPCON=$(getIP ${ETH})
   [ -n "${IPCON}" ] && break
 done

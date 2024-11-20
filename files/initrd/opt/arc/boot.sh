@@ -3,7 +3,7 @@
 set -e
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
-. "${ARC_PATH}/include/functions.sh"
+. ${ARC_PATH}/include/functions.sh
 
 # Clear logs for dbgutils addons
 rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
@@ -189,7 +189,7 @@ fi
 # Cmdline NIC Settings
 ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
 ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)
-ETHN=$(echo "${ETHX}" | wc -w)
+ETHN=$(echo ${ETHX} | wc -w)
 [ -z "${ETHM}" ] && ETHM=${ETHN}
 NIC=0
 for N in ${ETHX}; do
@@ -203,16 +203,16 @@ CMDLINE['netif_num']="${NIC}"
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["network.${KEY}"]="${VALUE}"
-done <<<"$(readConfigMap "network" "${USER_CONFIG_FILE}")"
+done < <(readConfigMap "network" "${USER_CONFIG_FILE}")
 
 # Read user cmdline
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-done <<<"$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
+done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 
 # Prepare command line
 CMDLINE_LINE=""
-for KEY in "${!CMDLINE[@]}"; do
+for KEY in ${!CMDLINE[@]}; do
   VALUE="${CMDLINE[${KEY}]}"
   CMDLINE_LINE+=" ${KEY}"
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
@@ -223,14 +223,14 @@ echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 function _bootwait() {
   # Exec Bootwait to check SSH/Web connection
   BOOTWAIT=5
-  w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
+  busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
-  while [ ${BOOTWAIT} -ge 0 ]; do
+  while test ${BOOTWAIT} -ge 0; do
     MSG="\033[1;33mAccess SSH/Web will interrupt boot...\033[0m"
-    printf "\r${MSG}"
-    w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
+    echo -en "\r${MSG}"
+    busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
     if ! diff WB WC >/dev/null 2>&1; then
-      printf "\r\033[1;33mAccess SSH/Web detected and boot is interrupted.\033[0m\n"
+      echo -en "\r\033[1;33mAccess SSH/Web detected and boot is interrupted.\033[0m\n"
       rm -f WB WC
       exit 0
     fi
@@ -238,7 +238,7 @@ function _bootwait() {
     BOOTWAIT=$((BOOTWAIT - 1))
   done
   rm -f WB WC
-  printf "\r%$((${#MSG} * 2))s\n" " "
+  echo -en "\r$(printf "%$((${#MSG} * 2))s" " ")\n"
   return 0
 }
 
@@ -249,7 +249,7 @@ if [ "${DIRECTBOOT}" = "true" ]; then
   grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
   grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
   _bootwait || true
-  printf "\033[1;34mReboot with Directboot\033[0m"
+  echo -e "\033[1;34mReboot with Directboot\033[0m"
   reboot
   exit 0
 elif [ "${DIRECTBOOT}" = "false" ]; then
@@ -257,12 +257,12 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   grub-editenv ${USER_GRUBENVFILE} unset next_entry
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
-  BOOTIPWAIT=${BOOTIPWAIT:-20}
+  [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
   IPCON=""
   if [ "${ARCPATCH}" = "true" ]; then
-    printf "\033[1;37mDetected ${ETHN} NIC\033[0m | \033[1;34mUsing ${NIC} NIC for Arc Patch:\033[0m"
+    echo -e "\033[1;37mDetected ${ETHN} NIC\033[0m | \033[1;34mUsing ${NIC} NIC for Arc Patch:\033[0m"
   else
-    printf "\033[1;37mDetected ${ETHN} NIC:\033[0m"
+    echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
   fi
   echo
   [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
@@ -272,27 +272,27 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     while true; do
       if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        printf "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
+        echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
         break
       fi
-      COUNT=$(($COUNT + 1))
-      IP="$(getIP "${N}")"
+      COUNT=$((${COUNT} + 1))
+      IP="$(getIP ${N})"
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')
-        if echo "${IP}" | grep -q "^169\.254\."; then
-          printf "\r${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
+        if [[ "${IP}" =~ ^169\.254\..* ]]; then
+          echo -e "\r${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
         else
-          printf "\r${DRIVER} (${SPEED}): \033[1;37m${IP}\033[0m"
+          echo -e "\r${DRIVER} (${SPEED}): \033[1;37m${IP}\033[0m"
           [ -z "${IPCON}" ] && IPCON="${IP}"
         fi
         break
       fi
       if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        printf "\r${DRIVER}: \033[1;37mDOWN\033[0m"
+        echo -e "\r${DRIVER}: \033[1;37mDOWN\033[0m"
         break
       fi
       if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
-        printf "\r${DRIVER}: \033[1;37mTIMEOUT\033[0m"
+        echo -e "\r${DRIVER}: \033[1;37mTIMEOUT\033[0m"
         break
       fi
       sleep 1
@@ -302,23 +302,23 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
 
   DSMLOGO="$(readConfigKey "boot.dsmlogo" "${USER_CONFIG_FILE}")"
   if [ "${DSMLOGO}" = "true" ] && [ -c "/dev/fb0" ]; then
-    echo "${IPCON}" | grep -q "^169\.254\." && IPCON=""
+    [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
     [ -n "${IPCON}" ] && URL="http://${IPCON}:5000" || URL="http://find.synology.com/"
-    python3 ${ARC_PATH}/include/functions.py makeqr -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
+    python ${ARC_PATH}/include/functions.py makeqr -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
     [ -f "${TMP_PATH}/qrcode_boot.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_boot.png" >/dev/null 2>/dev/null || true
   fi
 
   for T in $(w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
     if [ -w "/dev/${T}" ]; then
-      [ -n "${IPCON}" ] && printf "Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\n" >"/dev/${T}" 2>/dev/null || echo -e "Try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes.\nNo IP found.\033[0m\n" >"/dev/${T}" 2>/dev/null
+      [ -n "${IPCON}" ] && echo -e "Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\n" >"/dev/${T}" 2>/dev/null || echo -e "Try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes.\nNo IP found.\033[0m\n" >"/dev/${T}" 2>/dev/null
     fi
   done
 
-  printf "\033[1;37mLoading DSM Kernel...\033[0m"
+  echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
   # Executes DSM kernel via KEXEC
   KEXECARGS="-a"
   if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 4 ] && [ ${EFI} -eq 1 ]; then
-    printf "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
+    echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
     KEXECARGS+=" --noefi"
   fi
   kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog

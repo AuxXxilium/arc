@@ -1,13 +1,13 @@
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/../" 2>/dev/null && pwd)"
 
-. "${ARC_PATH}/include/consts.sh"
-. "${ARC_PATH}/include/configFile.sh"
-. "${ARC_PATH}/include/addons.sh"
+. ${ARC_PATH}/include/consts.sh
+. ${ARC_PATH}/include/configFile.sh
+. ${ARC_PATH}/include/addons.sh
 
 ###############################################################################
 # Check loader disk
 function checkBootLoader() {
-  while read -r KNAME RO; do
+  while read KNAME RO; do
     [ -z "${KNAME}" ] && continue
     [ "${RO}" = "0" ] && continue
     hdparm -r0 "${KNAME}" >/dev/null 2>&1 || true
@@ -40,41 +40,48 @@ function dieLog() {
 }
 
 ###############################################################################
-# Check if an item exists in an array
+# Check if a item exists into array
 # 1 - Item
 # 2.. - Array
 # Return 0 if exists
 function arrayExistItem() {
-  local ITEM="${1}"
+  EXISTS=1
+  ITEM="${1}"
   shift
   for i in "$@"; do
-    [ "${i}" = "${ITEM}" ] && return 0
+    [ "${i}" = "${ITEM}" ] || continue
+    EXISTS=0
+    break
   done
-  return 1
+  return ${EXISTS}
 }
 
 ###############################################################################
 # Generate a number with 6 digits from 1 to 30000
 function random() {
-  printf "%06d" $((RANDOM % 30000 + 1))
+  printf "%06d" $((${RANDOM} % 30000 + 1))
 }
 
 ###############################################################################
-# Generate a hex number from 0x00 to 0xFF
+# Generate a hexa number from 0x00 to 0xFF
 function randomhex() {
-  printf "%02X" $((RANDOM % 255 + 1))
+  printf "&02X" "$((${RANDOM} % 255 + 1))"
 }
 
 ###############################################################################
 # Generate a random letter
 function genRandomLetter() {
-  echo {A..Z} | tr ' ' '\n' | grep -v '[IO]' | sort -R | head -1
+  for i in A B C D E F G H J K L M N P Q R S T V W X Y Z; do
+    echo ${i}
+  done | sort -R | tail -1
 }
 
 ###############################################################################
 # Generate a random digit (0-9A-Z)
 function genRandomValue() {
-  echo {0..9} {A..Z} | tr ' ' '\n' | grep -v '[IO]' | sort -R | head -1
+  for i in 0 1 2 3 4 5 6 7 8 9 A B C D E F G H J K L M N P Q R S T V W X Y Z; do
+    echo ${i}
+  done | sort -R | tail -1
 }
 
 ###############################################################################
@@ -83,7 +90,6 @@ function genRandomValue() {
 # 2 - Arc
 # Returns serial number
 function generateSerial() {
-  local PREFIX MIDDLE SUFFIX SERIAL
   PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}" 2>/dev/null | sort -R | tail -1)"
   MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}" 2>/dev/null | sort -R | tail -1)"
   if [ "${2}" = "true" ]; then
@@ -105,7 +111,7 @@ function generateSerial() {
       ;;
   esac
 
-  local SERIAL="$(echo "${SERIAL}" | tr '[:lower:]' '[:upper:]')"
+  SERIAL="$(echo "${SERIAL}" | tr '[:lower:]' '[:upper:]')"
   echo "${SERIAL}"
   return 0
 }
@@ -117,17 +123,16 @@ function generateSerial() {
 # 3 - Arc MAC
 # Returns serial number
 function generateMacAddress() {
-  local MACPRE MACSUF NUM MACS
   MACPRE="$(readConfigKey "${1}.macpre" "${S_FILE}")"
   if [ "${3}" = "true" ]; then
     MACSUF="$(readConfigKey "${1}.mac" "${S_FILE}" 2>/dev/null)"
   else
-    MACSUF="$(printf '%02x%02x%02x' $((RANDOM % 256)) $((RANDOM % 256)) $((RANDOM % 256)))"
+    MACSUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
   fi
   NUM=${2:-1}
   local MACS=""
   for I in $(seq 1 ${NUM}); do
-    MACS+="$(printf '%06x%06x' $((0x${MACPRE:-"001132"})) $((0x${MACSUF} + I)))"
+    MACS+="$(printf '%06x%06x' $((0x${MACPRE:-"001132"})) $(($((0x${MACSUF})) + ${I})))"
     [ ${I} -lt ${NUM} ] && MACS+=" "
   done
 
@@ -142,7 +147,6 @@ function generateMacAddress() {
 # 2 - Serial number to test
 # Returns 1 if serial number is invalid
 function validateSerial() {
-  local PREFIX MIDDLE SUFFIX P M S L
   PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}" 2>/dev/null)"
   MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}" 2>/dev/null)"
   SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}" 2>/dev/null)"
@@ -175,11 +179,28 @@ function validateSerial() {
 }
 
 ###############################################################################
+# Check if a item exists into array
+# 1 - Item
+# 2.. - Array
+# Return 0 if exists
+function arrayExistItem() {
+  EXISTS=1
+  ITEM="${1}"
+  shift
+  for i in "$@"; do
+    [ "${i}" = "${ITEM}" ] || continue
+    EXISTS=0
+    break
+  done
+  return ${EXISTS}
+}
+
+###############################################################################
 # Get values in .conf K=V file
 # 1 - key
 # 2 - file
 function _get_conf_kv() {
-  grep "^${1}=" "${2}" 2>/dev/null | cut -d'=' -f2- | sed 's/^"//;s/"$//' 2>/dev/null
+  grep "${1}" "${2}" | sed "s|^${1}=\"\(.*\)\"$|\1|g"
 }
 
 ###############################################################################
@@ -190,57 +211,46 @@ function _get_conf_kv() {
 function _set_conf_kv() {
   # Delete
   if [ -z "${2}" ]; then
-    sed -i "/^${1}=/d" "${3}" 2>/dev/null
+    sed -i "${3}" -e "s/^${1}=.*$//"
     return $?;
   fi
 
   # Replace
   if grep -q "^${1}=" "${3}"; then
-    sed -i "s#^${1}=.*#${1}=\"${2}\"#" "${3}" 2>/dev/null
+    sed -i "${3}" -e "s\"^${1}=.*\"${1}=\\\"${2}\\\"\""
     return $?
   fi
 
   # Add if doesn't exist
   echo "${1}=\"${2}\"" >>"${3}"
-  return $?
 }
 
 ###############################################################################
-# sort netif name
-# @1 -mac1,mac2,mac3...
+# sort netif busid
 function _sort_netif() {
   local ETHLIST=""
-  local ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)" # real network cards list
+  local ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
   for N in ${ETHX}; do
     local MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g; s/.*/\L&/')"
     local BUS="$(ethtool -i ${N} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
     ETHLIST="${ETHLIST}${BUS} ${MAC} ${N}\n"
   done
-  local ETHLISTTMPM=""
   local ETHLISTTMPB="$(echo -e "${ETHLIST}" | sort)"
-  if [ -n "${1}" ]; then
-    local MACS="$(echo "${1}" | sed 's/://g; s/,/ /g; s/.*/\L&/')"
-    for MACX in ${MACS}; do
-      ETHLISTTMPM="${ETHLISTTMPM}$(echo -e "${ETHLISTTMPB}" | grep "${MACX}")\n"
-      ETHLISTTMPB="$(echo -e "${ETHLISTTMPB}" | grep -v "${MACX}")\n"
-    done
-  fi
-  ETHLIST="$(echo -e "${ETHLISTTMPM}${ETHLISTTMPB}" | grep -v '^$')"
+  local ETHLIST="$(echo -e "${ETHLISTTMPB}" | grep -v '^$')"
   local ETHSEQ="$(echo -e "${ETHLIST}" | awk '{print $3}' | sed 's/eth//g')"
   local ETHNUM="$(echo -e "${ETHLIST}" | wc -l)"
 
-  # echo "${ETHSEQ}"
   # sort
   if [ ! "${ETHSEQ}" = "$(seq 0 $((${ETHNUM:0} - 1)))" ]; then
     /etc/init.d/S41dhcpcd stop >/dev/null 2>&1
     /etc/init.d/S40network stop >/dev/null 2>&1
     for i in $(seq 0 $((${ETHNUM:0} - 1))); do
-      ip link set dev "eth${i}" name "tmp${i}"
+      ip link set dev eth${i} name tmp${i}
     done
     I=0
     for i in ${ETHSEQ}; do
-      ip link set dev "tmp${i}" name "eth${I}"
-      I=$((I + 1))
+      ip link set dev tmp${i} name eth${I}
+      I=$((${I} + 1))
     done
     /etc/init.d/S40network start >/dev/null 2>&1
     /etc/init.d/S41dhcpcd start >/dev/null 2>&1
@@ -267,12 +277,19 @@ function getBus() {
 # 1 - ethN
 function getIP() {
   local IP=""
-  if [ -n "${1}" ] && [ -d "/sys/class/net/${1}" ]; then
-    IP=$(ip route show dev "${1}" 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
-    [ -z "${IP}" ] && IP=$(ip addr show "${1}" scope global 2>/dev/null | grep -E "inet .* eth" | awk '{print $2}' | cut -f1 -d'/' | head -1)
+  MACR="$(cat /sys/class/net/${1}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
+  IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
+  if [ -n "${IPR}" ]; then
+    IFS='/' read -r -a IPRA <<<"${IPR}"
+    IP=${IPRA[0]}
   else
-    IP=$(ip route show 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)
-    [ -z "${IP}" ] && IP=$(ip addr show scope global 2>/dev/null | grep -E "inet .* eth" | awk '{print $2}' | cut -f1 -d'/' | head -1)
+    if [ -n "${1}" ] && [ -d "/sys/class/net/${1}" ]; then
+      IP=$(ip route show dev ${1} 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p')
+      [ -z "${IP}" ] && IP=$(ip addr show ${1} scope global 2>/dev/null | grep -E "inet .* eth" | awk '{print $2}' | cut -f1 -d'/' | head -1)
+    else
+      IP=$(ip route show 2>/dev/null | sed -n 's/.* via .* src \(.*\)  metric .*/\1/p' | head -1)
+      [ -z "${IP}" ] && IP=$(ip addr show scope global 2>/dev/null | grep -E "inet .* eth" | awk '{print $2}' | cut -f1 -d'/' | head -1)
+    fi
   fi
   echo "${IP}"
   return 0
@@ -284,11 +301,8 @@ function getIP() {
 function getLogo() {
   local MODEL="${1}"
   rm -f "${PART3_PATH}/logo.png"
-  if [ $? -ne 0 ]; then
-    return 1
-  fi
-  local STATUS=$(curl -skL --connect-timeout 10 -w "%{http_code}" "https://www.synology.com/api/products/getPhoto?product=${MODEL/+/%2B}&type=img_s&sort=0" -o "${PART3_PATH}/logo.png")
-  if [ $? -ne 0 ] || [ "${STATUS:-0}" -ne 200 ] || [ ! -f "${PART3_PATH}/logo.png" ]; then
+  STATUS=$(curl -skL -m 10 -w "%{http_code}" "https://www.synology.com/api/products/getPhoto?product=${MODEL/+/%2B}&type=img_s&sort=0" -o "${PART3_PATH}/logo.png")
+  if [ $? -ne 0 -o ${STATUS:-0} -ne 200 -o ! -f "${PART3_PATH}/logo.png" ]; then
     rm -f "${PART3_PATH}/logo.png"
     return 1
   fi
@@ -325,69 +339,40 @@ function convert_netmask() {
 # 1 - key name
 # 2 - key string
 function checkCmdline() {
-  grub-editenv "${USER_GRUBENVFILE}" list 2>/dev/null | grep -q "^${1}=\"\?${2}\"\?"
+  return $(grub-editenv ${USER_GRUBENVFILE} list 2>/dev/null | grep "^${1}=" | cut -d'=' -f2- | grep -q "${2}")
 }
 
 ###############################################################################
-# set Cmdline
+# get logo of model
 # 1 - key name
 # 2 - key string
 function setCmdline() {
   [ -z "${1}" ] && return 1
   if [ -n "${2}" ]; then
-    grub-editenv "${USER_GRUBENVFILE}" set "${1}=${2}"
+    grub-editenv ${USER_GRUBENVFILE} set "${1}=${2}"
   else
-    grub-editenv "${USER_GRUBENVFILE}" unset "${1}"
+    grub-editenv ${USER_GRUBENVFILE} unset "${1}"
   fi
 }
 
 ###############################################################################
-# add Cmdline
+# get logo of model
+# check Cmdline
 # 1 - key name
 # 2 - key string
 function addCmdline() {
-  local CMDLINE
-  CMDLINE="$(grub-editenv "${USER_GRUBENVFILE}" list 2>/dev/null | grep "^${1}=" | cut -d'=' -f2- | sed 's/^"//;s/"$//')"
+  local CMDLINE="$(grub-editenv ${USER_GRUBENVFILE} list 2>/dev/null | grep "^${1}=" | cut -d'=' -f2-)"
   [ -n "${CMDLINE}" ] && CMDLINE="${CMDLINE} ${2}" || CMDLINE="${2}"
   setCmdline "${1}" "${CMDLINE}"
 }
 
 ###############################################################################
-# del Cmdline
-# 1 - key name
-# 2 - key string
+# get logo of model
+# 1 - model
 function delCmdline() {
-  local CMDLINE
-  CMDLINE="$(grub-editenv "${USER_GRUBENVFILE}" list 2>/dev/null | grep "^${1}=" | cut -d'=' -f2- | sed 's/^"//;s/"$//')"
-  CMDLINE="$(echo "${CMDLINE}" | sed "s/[ \t]*${2}//; s/^[ \t]*//;s/[ \t]*$//")"
+  local CMDLINE="$(grub-editenv ${USER_GRUBENVFILE} list 2>/dev/null | grep "^${1}=" | cut -d'=' -f2-)"
+  CMDLINE="$(echo "${CMDLINE}" | sed "s/ *${2}//; s/^[[:space:]]*//;s/[[:space:]]*$//")"
   setCmdline "${1}" "${CMDLINE}"
-}
-
-###############################################################################
-# check CPU Intel(VT-d)/AMD(AMD-Vi)
-function checkCPU_VT_d() {
-  lsmod | grep -q msr || modprobe msr 2>/dev/null
-  if grep -q "GenuineIntel" /proc/cpuinfo; then
-    local VT_D_ENABLED=$(rdmsr 0x3a 2>/dev/null)
-    [ "$((${VT_D_ENABLED:-0x0} & 0x5))" -eq $((0x5)) ] && return 0
-  elif grep -q "AuthenticAMD" /proc/cpuinfo; then
-    local IOMMU_ENABLED=$(rdmsr 0xC0010114 2>/dev/null)
-    [ "$((${IOMMU_ENABLED:-0x0} & 0x1))" -eq $((0x1)) ] && return 0
-  else
-    return 1
-  fi
-}
-###############################################################################
-# check BIOS Intel(VT-d)/AMD(AMD-Vi)
-function checkBIOS_VT_d() {
-  if grep -q "GenuineIntel" /proc/cpuinfo; then
-    dmesg | grep -iq "DMAR-IR.*DRHD base" && return 0
-  elif grep -q "AuthenticAMD" /proc/cpuinfo; then
-    # TODO: need check
-    dmesg | grep -iq "AMD-Vi.*enabled" && return 0
-  else
-    return 1
-  fi
 }
 
 ###############################################################################
@@ -395,13 +380,12 @@ function checkBIOS_VT_d() {
 # (based on pocopico's TCRP code)
 function rebootTo() {
   local MODES="config recovery junior automated update bios memtest"
-  if [ -z "${1}" ] || ! echo "${MODES}" | grep -qw "${1}"; then exit 1; fi
-  # echo "Rebooting to ${1} mode"
-  GRUBPATH="$(dirname "$(find "${PART1_PATH}/" -name grub.cfg 2>/dev/null | head -1)")"
-  [ -z "${GRUBPATH}" ] && exit 1
-  ENVFILE="${GRUBPATH}/grubenv"
-  [ ! -f "${ENVFILE}" ] && grub-editenv "${ENVFILE}" create
-  grub-editenv "${ENVFILE}" set next_entry="${1}"
+  [ -z "${1}" ] && exit 1
+  if ! echo "${MODES}" | grep -qw "${1}"; then exit 1; fi
+  [ "${1}" = "automated" ] && echo "arc-${MODEL}-${PRODUCTVER}-${ARC_VERSION}" >"${PART3_PATH}/automated"
+  [ ! -f "${USER_GRUBENVFILE}" ] && grub-editenv ${USER_GRUBENVFILE} create
+  # echo -e "Rebooting to ${1} mode..."
+  grub-editenv ${USER_GRUBENVFILE} set next_entry="${1}"
   exec reboot
 }
 

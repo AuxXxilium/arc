@@ -2,9 +2,9 @@
 
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
-. "${ARC_PATH}/include/functions.sh"
-. "${ARC_PATH}/include/addons.sh"
-. "${ARC_PATH}/include/modules.sh"
+. ${ARC_PATH}/include/functions.sh
+. ${ARC_PATH}/include/addons.sh
+. ${ARC_PATH}/include/modules.sh
 
 set -o pipefail # Get exit code from process piped
 
@@ -20,7 +20,10 @@ rm -f "${MOD_RDGZ_FILE}"
 # Unzipping ramdisk
 rm -rf "${RAMDISK_PATH}"
 mkdir -p "${RAMDISK_PATH}"
-(cd "${RAMDISK_PATH}" && xz -dc <"${ORI_RDGZ_FILE}" | cpio -idm) >/dev/null 2>&1 || true
+(
+  cd "${RAMDISK_PATH}"
+  xz -dc <"${ORI_RDGZ_FILE}" | cpio -idm
+) >/dev/null 2>&1
 
 # Read Model Data
 PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
@@ -79,30 +82,32 @@ declare -A MODULES
 # Read synoinfo and addons from config
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
-done <<<"$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
+done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
-done <<<"$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
+done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
 # Read modules from user config
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && MODULES["${KEY}"]="${VALUE}"
-done <<<"$(readConfigMap "modules" "${USER_CONFIG_FILE}")"
+done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 # Patches (diff -Naru OLDFILE NEWFILE > xxx.patch)
-PATCHES=(
-  "ramdisk-etc-rc-*.patch"
-  "ramdisk-init-script-*.patch"
-  "ramdisk-post-init-script-*.patch"
-  "ramdisk-disable-root-pwd-*.patch"
-  "ramdisk-disable-disabled-ports-*.patch"
-)
-for PE in "${PATCHES[@]}"; do
+PATCHES=()
+PATCHES+=("ramdisk-etc-rc-*.patch")
+PATCHES+=("ramdisk-init-script-*.patch")
+PATCHES+=("ramdisk-post-init-script-*.patch")
+PATCHES+=("ramdisk-disable-root-pwd-*.patch")
+PATCHES+=("ramdisk-disable-disabled-ports-*.patch")
+for PE in ${PATCHES[@]}; do
   RET=1
   echo "Patching with ${PE}" >"${LOG_FILE}"
   for PF in $(ls ${PATCH_PATH}/${PE} 2>/dev/null); do
     echo "Patching with ${PF}" >>"${LOG_FILE}"
-    (cd "${RAMDISK_PATH}" && patch -p1 -i "${PF}") >>"${LOG_FILE}" 2>&1
+    (
+      cd "${RAMDISK_PATH}"
+      patch -p1 -i "${PF}" >>"${LOG_FILE}" 2>&1 # busybox patch and gun patch have different processing methods and parameters.
+    )
     RET=$?
     [ ${RET} -eq 0 ] && break
   done
@@ -113,7 +118,7 @@ done
 echo "Set synoinfo SN" >"${LOG_FILE}"
 _set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
 _set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
-for KEY in "${!SYNOINFO[@]}"; do
+for KEY in ${!SYNOINFO[@]}; do
   echo "Set synoinfo ${KEY}" >>"${LOG_FILE}"
   _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
   _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
@@ -126,7 +131,7 @@ rm -f "${TMP_PATH}/rp.txt"
 touch "${TMP_PATH}/rp.txt"
 echo "_set_conf_kv 'SN' '${SN}' '/tmpRoot/etc/synoinfo.conf'" >>"${TMP_PATH}/rp.txt"
 echo "_set_conf_kv 'SN' '${SN}' '/tmpRoot/etc.defaults/synoinfo.conf'" >>"${TMP_PATH}/rp.txt"
-for KEY in "${!SYNOINFO[@]}"; do
+for KEY in ${!SYNOINFO[@]}; do
   echo "_set_conf_kv '${KEY}' '${SYNOINFO[${KEY}]}' '/tmpRoot/etc/synoinfo.conf'" >>"${TMP_PATH}/rp.txt"
   echo "_set_conf_kv '${KEY}' '${SYNOINFO[${KEY}]}' '/tmpRoot/etc.defaults/synoinfo.conf'" >>"${TMP_PATH}/rp.txt"
 done
@@ -144,23 +149,20 @@ gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/u
 # Addons
 echo "Create addons.sh" >"${LOG_FILE}"
 mkdir -p "${RAMDISK_PATH}/addons"
-{
-  echo "#!/bin/sh"
-  echo 'echo "addons.sh called with params ${@}"'
-  echo "export LOADERLABEL=\"ARC\""
-  echo "export LOADERVERSION=\"${ARC_VERSION}\""
-  echo "export LOADERBUILD=\"${ARC_BUILD}\""
-  echo "export LOADERBRANCH=\"${ARCBRANCH}\""
-  echo "export PLATFORM=\"${PLATFORM}\""
-  echo "export PRODUCTVER=\"${PRODUCTVER}\""
-  echo "export PRODUCTVERL=\"${PRODUCTVERL}\""
-  echo "export MODEL=\"${MODEL}\""
-  echo "export MODELID=\"${MODELID}\""
-  echo "export MLINK=\"${PATURL}\""
-  echo "export MCHECKSUM=\"${PATSUM}\""
-  echo "export LAYOUT=\"${LAYOUT}\""
-  echo "export KEYMAP=\"${KEYMAP}\""
-} >"${RAMDISK_PATH}/addons/addons.sh"
+echo "#!/bin/sh" >"${RAMDISK_PATH}/addons/addons.sh"
+echo 'echo "addons.sh called with params ${@}"' >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export LOADERLABEL=\"ARC\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export LOADERVERSION=\"${ARC_VERSION}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export LOADERBUILD=\"${ARC_BUILD}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export LOADERBRANCH=\"${ARCBRANCH}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export PLATFORM=\"${PLATFORM}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export PRODUCTVER=\"${PRODUCTVER}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export MODEL=\"${MODEL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export MODELID=\"${MODELID}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export MLINK=\"${PAT_URL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export MCHECKSUM=\"${PAT_HASH}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export LAYOUT=\"${LAYOUT}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+echo "export KEYMAP=\"${KEYMAP}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
@@ -177,7 +179,7 @@ for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol"
 done
 
 # User Addons
-for ADDON in "${!ADDONS[@]}"; do
+for ADDON in ${!ADDONS[@]}; do
   PARAMS=${ADDONS[${ADDON}]}
   installAddon "${ADDON}" "${PLATFORM}" || echo "Addon ${ADDON} not found"
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
@@ -228,18 +230,18 @@ done
 # SA6400 patches
 if [ "${PLATFORM}" = "epyc7002" ]; then
   echo -n " - Apply Epyc7002 Fixes"
-  sed -i 's#/dev/console#/var/log/lrc#g' "${RAMDISK_PATH}/usr/bin/busybox"
-  sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' "${RAMDISK_PATH}/linuxrc.syno"
+  sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
+  sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
 fi
 
 # Broadwellntbap patches
 if [ "${PLATFORM}" = "broadwellntbap" ]; then
   echo -n " - Apply Broadwellntbap Fixes"
-  sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' "${RAMDISK_PATH}/usr/syno/share/environments.sh"
+  sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' ${RAMDISK_PATH}/usr/syno/share/environments.sh
 fi
 
 # Call user patch scripts
-for F in $(ls -1 "${USER_UP_PATH}/"*.sh 2>/dev/null); do
+for F in $(ls -1 ${USER_UP_PATH}/*.sh 2>/dev/null); do
   echo "Calling ${F}" >"${LOG_FILE}"
   . "${F}" >>"${LOG_FILE}" 2>&1 || exit 1
 done
