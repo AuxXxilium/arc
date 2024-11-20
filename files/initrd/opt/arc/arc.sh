@@ -4,14 +4,14 @@
 # Overlay Init Section
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
-. ${ARC_PATH}/include/functions.sh
-. ${ARC_PATH}/include/addons.sh
-. ${ARC_PATH}/include/modules.sh
-. ${ARC_PATH}/include/update.sh
-. ${ARC_PATH}/include/storage.sh
-. ${ARC_PATH}/include/network.sh
-. ${ARC_PATH}/include/compat.sh
-. ${ARC_PATH}/arc-functions.sh
+. "${ARC_PATH}/include/functions.sh"
+. "${ARC_PATH}/include/addons.sh"
+. "${ARC_PATH}/include/modules.sh"
+. "${ARC_PATH}/include/update.sh"
+. "${ARC_PATH}/include/storage.sh"
+. "${ARC_PATH}/include/network.sh"
+. "${ARC_PATH}/include/compat.sh"
+. "${ARC_PATH}/arc-functions.sh"
 
 # Get Keymap and Timezone Config
 onlineCheck
@@ -105,8 +105,8 @@ function arcModel() {
     PM="$(readConfigEntriesArray "${P}" "${D_FILE}" | sort)"
     while read -r M; do
       echo "${M} ${P}" >>"${TMP_PATH}/modellist"
-    done < <(echo "${PM}")
-  done < <(echo "${PS}")
+    done <<<"$(echo "${PM}")"
+  done <<<"$(echo "${PS}")"
   if [ "${ARCMODE}" = "config" ]; then
     while true; do
       echo -n "" >"${TMP_PATH}/menu"
@@ -159,7 +159,7 @@ function arcModel() {
         else
           [ ${COMPATIBLE} -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-15s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${DTS}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
         fi
-      done < <(cat "${TMP_PATH}/modellist")
+      done <"${TMP_PATH}/modellist"
       ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
       [ -n "${ARCCONF}" ] && MSG="Supported Models for your Hardware (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" || MSG="Supported Models for your Hardware (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-12s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Intel iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
       [ -n "${ARCCONF}" ] && TITLEMSG="Arc Model" || TITLEMSG="Model"
@@ -284,7 +284,7 @@ function arcVersion() {
           echo "${V}" >>"${TMP_PATH}/versions"
         fi
         PREV="${V}"
-      done < <(echo "${PVS}")
+      done <<<"$(echo "${PVS}")"
       DSMPVS="$(cat ${TMP_PATH}/versions)"
       dialog --backtitle "$(backtitlep)" --colors --title "Version" \
       --no-items --menu "Choose a DSM Build" 0 0 0 ${DSMPVS} \
@@ -308,8 +308,8 @@ function arcVersion() {
           2>"${TMP_PATH}/resp"
         RET=$?
         [ ${RET} -ne 0 ] && return
-        PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
-        PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+        PAT_URL="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
+        PAT_HASH="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
         [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true" && break
       done
     fi
@@ -335,7 +335,7 @@ function arcVersion() {
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
     while IFS=': ' read -r KEY VALUE; do
       writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
-    done < <(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")
+    done <<<"$(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")"
     # Check Addons for Platform
     ADDONS="$(readConfigKey "addons" "${USER_CONFIG_FILE}")"
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
@@ -375,14 +375,14 @@ function arcVersion() {
       if ! checkAddonExist "${ADDON}" "${PLATFORM}"; then
         deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
       fi
-    done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+    done <<<"$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
     [ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
     if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
       writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
       while read -r ID DESC; do
         writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-      done < <(getAllModules "${PLATFORM}" "${KVERP}")
+      done <<<"$(getAllModules "${PLATFORM}" "${KVERP}")"
     fi
     # Check for Only Version
     if [ "${ONLYVERSION}" = "true" ]; then
@@ -961,7 +961,7 @@ else
       A) networkdiag; NEXT="A" ;;
       # System Section
       # Arc Section
-      4) [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
+      4) ARCOPTS=$([ "${ARCOPTS}" = "true" ] && echo 'false' || echo 'true')
         ARCOPTS="${ARCOPTS}"
         NEXT="4"
         ;;
@@ -975,15 +975,15 @@ else
       P) storagepanelMenu; NEXT="P" ;;
       Q) sequentialIOMenu; NEXT="Q" ;;
       # Boot Section
-      6) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
+      6) BOOTOPTS=$([ "${BOOTOPTS}" = "true" ] && echo 'false' || echo 'true')
         BOOTOPTS="${BOOTOPTS}"
         NEXT="6"
         ;;
-      m) [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
+      m) KERNELLOAD=$([ "${KERNELLOAD}" = "kexec" ] && echo 'power' || echo 'kexec')
         writeConfigKey "kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
         NEXT="m"
         ;;
-      E) [ "${EMMCBOOT}" = "true" ] && EMMCBOOT='false' || EMMCBOOT='true'
+      E) EMMCBOOT=$([ "${EMMCBOOT}" = "true" ] && echo 'false' || echo 'true')
         if [ "${EMMCBOOT}" = "false" ]; then
           writeConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
           deleteConfigKey "synoinfo.disk_swap" "${USER_CONFIG_FILE}"
@@ -1002,13 +1002,13 @@ else
         NEXT="E"
         ;;
       i) bootipwaittime; NEXT="i" ;;
-      q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
+      q) DIRECTBOOT=$([ "${DIRECTBOOT}" = "true" ] && echo 'false' || echo 'true')
         grub-editenv ${USER_GRUBENVFILE} create
         writeConfigKey "directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
         NEXT="q"
         ;;
       # DSM Section
-      7) [ "${DSMOPTS}" = "true" ] && DSMOPTS='false' || DSMOPTS='true'
+      7) DSMOPTS=$([ "${DSMOPTS}" = "true" ] && echo 'false' || echo 'true')
         DSMOPTS="${DSMOPTS}"
         NEXT="7"
         ;;
@@ -1022,7 +1022,7 @@ else
       M) mountDSM; NEXT="M" ;;
       T) disablescheduledTasks; NEXT="T" ;;
       Z) loaderPorts; NEXT="Z" ;;
-      K) [ "${KERNEL}" = "official" ] && KERNEL='custom' || KERNEL='official'
+      K) KERNEL=$([ "${KERNEL}" = "official" ] && echo 'custom' || echo 'official')
         writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
         dialog --backtitle "$(backtitle)" --title "Kernel" \
           --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 4 50
@@ -1038,13 +1038,13 @@ else
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           while read -r ID DESC; do
             writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-          done < <(getAllModules "${PLATFORM}" "${KVERP}")
+          done <<<"$(getAllModules "${PLATFORM}" "${KVERP}")"
         fi
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="K"
         ;;
-      H) [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
+      H) HDDSORT=$([ "${HDDSORT}" = "true" ] && echo 'false' || echo 'true')
         writeConfigKey "hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1062,7 +1062,7 @@ else
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="h"
         ;;
-      O) [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
+      O) ODP=$([ "${ODP}" = "true" ] && echo 'false' || echo 'true')
         writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1070,25 +1070,25 @@ else
         ;;
       B) getbackup; NEXT="B" ;;
       # Loader Section
-      8) [ "${LOADEROPTS}" = "true" ] && LOADEROPTS='false' || LOADEROPTS='true'
+      8) LOADEROPTS=$([ "${LOADEROPTS}" = "true" ] && echo 'false' || echo 'true')
         LOADEROPTS="${LOADEROPTS}"
         NEXT="8"
         ;;
       D) staticIPMenu; NEXT="D" ;;
-      c) [ "${ARCOFFLINE}" = "true" ] && ARCOFFLINE='false' || ARCOFFLINE='true'
+      c) ARCOFFLINE=$([ "${ARCOFFLINE}" = "true" ] && echo 'false' || echo 'true')
         writeConfigKey "arc.offline" "${ARCOFFLINE}" "${USER_CONFIG_FILE}"
-        [ "${ARCOFFLINE}" = "false" ] && exec arc.sh
+        [ "${ARCOFFLINE}" = "false" ] && exec "${ARC_PATH}/arc.sh"
         NEXT="c"
         ;;
       f) bootScreen; NEXT="f" ;;
-      W) [ "${RD_COMPRESSED}" = "true" ] && RD_COMPRESSED='false' || RD_COMPRESSED='true'
+      W) RD_COMPRESSED=$([ "${RD_COMPRESSED}" = "true" ] && echo 'false' || echo 'true')
         writeConfigKey "rd-compressed" "${RD_COMPRESSED}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="W"
         ;;
       X) satadomMenu; NEXT="X" ;;
-      u) [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
+      u) LKM=$([ "${LKM}" = "prod" ] && echo 'dev' || echo 'prod')
         writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
