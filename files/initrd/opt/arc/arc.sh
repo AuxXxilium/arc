@@ -4,14 +4,14 @@
 # Overlay Init Section
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
-. ${ARC_PATH}/include/functions.sh
-. ${ARC_PATH}/include/addons.sh
-. ${ARC_PATH}/include/modules.sh
-. ${ARC_PATH}/include/update.sh
-. ${ARC_PATH}/include/storage.sh
-. ${ARC_PATH}/include/network.sh
-. ${ARC_PATH}/include/compat.sh
-. ${ARC_PATH}/arc-functions.sh
+. "${ARC_PATH}/include/functions.sh"
+. "${ARC_PATH}/include/addons.sh"
+. "${ARC_PATH}/include/modules.sh"
+. "${ARC_PATH}/include/update.sh"
+. "${ARC_PATH}/include/storage.sh"
+. "${ARC_PATH}/include/network.sh"
+. "${ARC_PATH}/include/compat.sh"
+. "${ARC_PATH}/arc-functions.sh"
 
 # Get Keymap and Timezone Config
 onlineCheck
@@ -874,6 +874,14 @@ else
         if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sequentialio"; then
           echo "Q \"SequentialIO Options \" "                                                 >>"${TMP_PATH}/menu"
         fi
+        if [ "${PLATFORM}" = "epyc7002" ]; then
+          echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
+        fi
+        if [ "${DT}" = "true" ]; then
+          echo "H \"Hotplug/SortDrives: \Z4${HDDSORT}\Zn \" "                                 >>"${TMP_PATH}/menu"
+        else
+          echo "h \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                         >>"${TMP_PATH}/menu"
+        fi
       fi
       if [ "${BOOTOPTS}" = "true" ]; then
         echo "6 \"\Z1Hide Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
@@ -898,23 +906,14 @@ else
         echo "= \"\Z4===== DSM =====\Zn \" "                                        >>"${TMP_PATH}/menu"
         echo "j \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
         echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
-        echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
-        echo "s \"Allow Downgrade \" "                                                        >>"${TMP_PATH}/menu"
-        echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
         echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
+        echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
         echo "J \"Reset Network Config \" "                                                   >>"${TMP_PATH}/menu"
-        echo "M \"Mount DSM Storage Pool (not SHR) \" "                                       >>"${TMP_PATH}/menu"
         echo "T \"Disable all scheduled Tasks \" "                                            >>"${TMP_PATH}/menu"
-        if [ "${PLATFORM}" = "epyc7002" ]; then
-          echo "K \"Kernel: \Z4${KERNEL}\Zn \" "                                              >>"${TMP_PATH}/menu"
-        fi
-        if [ "${DT}" = "true" ]; then
-          echo "H \"Hotplug/SortDrives: \Z4${HDDSORT}\Zn \" "                                 >>"${TMP_PATH}/menu"
-        else
-          echo "h \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                         >>"${TMP_PATH}/menu"
-        fi
+        echo "M \"Mount DSM Storage Pool (not SHR) \" "                                       >>"${TMP_PATH}/menu"
+        echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
+        echo "s \"Allow Downgrade Version \" "                                                >>"${TMP_PATH}/menu"
         echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
-        echo "B \"Grep DSM Config from Backup \" "                                            >>"${TMP_PATH}/menu"
       fi
     fi
     if [ "${LOADEROPTS}" = "true" ]; then
@@ -923,24 +922,25 @@ else
       echo "8 \"\Z1Show Loader Options\Zn \" "                                                >>"${TMP_PATH}/menu"
     fi
     if [ "${LOADEROPTS}" = "true" ]; then
-      echo "= \"\Z4===== Loader =====\Zn \" "                                         >>"${TMP_PATH}/menu"
-      echo "= \"\Z1== Edit with caution! ==\Zn \" "                                         >>"${TMP_PATH}/menu"
-      echo "D \"StaticIP for Loader/DSM \" "                                                  >>"${TMP_PATH}/menu"
+      echo "= \"\Z4===== Loader =====\Zn \" "                                                 >>"${TMP_PATH}/menu"
       echo "c \"Offline Mode: \Z4${ARCOFFLINE}\Zn \" "                                        >>"${TMP_PATH}/menu"
+      echo "D \"StaticIP for Loader/DSM \" "                                                  >>"${TMP_PATH}/menu"
       echo "f \"Bootscreen Options \" "                                                       >>"${TMP_PATH}/menu"
-      echo "W \"RD Compression: \Z4${RD_COMPRESSED}\Zn \" "                                   >>"${TMP_PATH}/menu"
-      echo "X \"Sata DOM: \Z4${SATADOM}\Zn \" "                                               >>"${TMP_PATH}/menu"
-      echo "u \"LKM Version: \Z4${LKM}\Zn \" "                                                >>"${TMP_PATH}/menu"
-      echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
       echo "U \"Change Loader Password \" "                                                   >>"${TMP_PATH}/menu"
       echo "Z \"Change Loader Ports \" "                                                      >>"${TMP_PATH}/menu"
       echo "w \"Reset Loader to Defaults \" "                                                 >>"${TMP_PATH}/menu"
+      echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
+      echo "B \"Grep DSM Config from Backup \" "                                              >>"${TMP_PATH}/menu"
+      echo "= \"\Z1== Edit with caution! ==\Zn \" "                                           >>"${TMP_PATH}/menu"
+      echo "W \"RD Compression: \Z4${RD_COMPRESSED}\Zn \" "                                   >>"${TMP_PATH}/menu"
+      echo "X \"Sata DOM: \Z4${SATADOM}\Zn \" "                                               >>"${TMP_PATH}/menu"
+      echo "u \"LKM Version: \Z4${LKM}\Zn \" "                                                >>"${TMP_PATH}/menu"
       echo "C \"Clone Loader to another Disk \" "                                             >>"${TMP_PATH}/menu"
       echo "n \"Grub Bootloader Config \" "                                                   >>"${TMP_PATH}/menu"
       echo "y \"Choose a Keymap for Loader \" "                                               >>"${TMP_PATH}/menu"
       echo "F \"\Z1Formate Disks \Zn \" "                                                     >>"${TMP_PATH}/menu"
     fi
-    echo "= \"\Z4===== Misc =====\Zn \" "                                           >>"${TMP_PATH}/menu"
+    echo "= \"\Z4===== Misc =====\Zn \" "                                                     >>"${TMP_PATH}/menu"
     echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
     [ "${ARCOFFLINE}" != "true" ] && echo "z \"Update Menu \" "                               >>"${TMP_PATH}/menu"
     echo "I \"Power/Service Menu \" "                                                         >>"${TMP_PATH}/menu"
@@ -1021,8 +1021,7 @@ else
       J) resetDSMNetwork; NEXT="J" ;;
       M) mountDSM; NEXT="M" ;;
       T) disablescheduledTasks; NEXT="T" ;;
-      Z) loaderPorts; NEXT="Z" ;;
-      K) [ "${KERNEL}" = "official" ] && KERNEL='custom' || KERNEL='official'
+      K) KERNEL=$([ "${KERNEL}" = "official" ] && echo 'custom' || echo 'official')
         writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
         dialog --backtitle "$(backtitle)" --title "Kernel" \
           --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 4 50
@@ -1074,14 +1073,16 @@ else
         LOADEROPTS="${LOADEROPTS}"
         NEXT="8"
         ;;
-      D) staticIPMenu; NEXT="D" ;;
-      c) [ "${ARCOFFLINE}" = "true" ] && ARCOFFLINE='false' || ARCOFFLINE='true'
+      c) ARCOFFLINE=$([ "${ARCOFFLINE}" = "true" ] && echo 'false' || echo 'true')
         writeConfigKey "arc.offline" "${ARCOFFLINE}" "${USER_CONFIG_FILE}"
         [ "${ARCOFFLINE}" = "false" ] && exec arc.sh
         NEXT="c"
         ;;
+      D) staticIPMenu; NEXT="D" ;;
       f) bootScreen; NEXT="f" ;;
-      W) [ "${RD_COMPRESSED}" = "true" ] && RD_COMPRESSED='false' || RD_COMPRESSED='true'
+      Z) loaderPorts; NEXT="Z" ;;
+      U) loaderPassword; NEXT="U" ;;
+      W) RD_COMPRESSED=$([ "${RD_COMPRESSED}" = "true" ] && echo 'false' || echo 'true')
         writeConfigKey "rd-compressed" "${RD_COMPRESSED}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1095,7 +1096,6 @@ else
         NEXT="u"
         ;;
       L) greplogs; NEXT="L" ;;
-      U) loaderPassword; NEXT="U" ;;
       w) resetLoader; NEXT="w" ;;
       C) cloneLoader; NEXT="C" ;;
       n) editGrubCfg; NEXT="n" ;;

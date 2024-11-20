@@ -1742,14 +1742,12 @@ function bootipwaittime() {
 # let user format disks from inside arc
 function formatDisks() {
   rm -f "${TMP_PATH}/opts"
-  while read -r KNAME SIZE TYPE PKNAME; do
-    [ -z "${KNAME}" ] && continue
-    [ "${KNAME}" = "N/A" ] && continue
-    [[ "${KNAME}" = /dev/md* ]] && continue
-    [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
-    [ -z "${SIZE}" ] && SIZE="Unknown"
-    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" >>"${TMP_PATH}/opts"
-  done < <(lsblk -Jpno KNAME,SIZE,TYPE,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.pkname)"' 2>/dev/null)
+  while read -r KNAME SIZE TYPE MODEL; do
+    [ "${KNAME}" = "N/A" ] || [ "${SIZE:0:1}" = "0" ] && continue
+    [ "${KNAME:0:7}" = "/dev/md" ] && continue
+    [ "${KNAME:0:8}" = "${LOADER_DISK}" ] && continue
+    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${MODEL}" "${TYPE}" >>"${TMP_PATH}/opts"
+  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model)"' 2>/dev/null)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --msgbox "No disk found!" 0 0
@@ -1786,18 +1784,16 @@ function formatDisks() {
 }
 
 ###############################################################################
-# Clone Loader Disk
+# Clone bootloader disk
 function cloneLoader() {
-  rm -f "${TMP_PATH}/opts" >/dev/null
-  while read -r KNAME SIZE TYPE PKNAME; do
-    [ -z "${KNAME}" ] && continue
-    [ "${KNAME}" = "N/A" ] && continue
-    [ "${TYPE}" != "disk" ] && continue
-    [[ "${KNAME}" = /dev/md* ]] && continue
-    [[ "${KNAME}" = "${LOADER_DISK}" || "${PKNAME}" = "${LOADER_DISK}" ]] && continue
-    [ -z "${SIZE}" ] && SIZE="Unknown"
-    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" >>"${TMP_PATH}/opts"
-  done < <(lsblk -Jpno KNAME,SIZE,TYPE,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.pkname)"' 2>/dev/null)
+  rm -f "${TMP_PATH}/opts"
+  while read -r KNAME SIZE TYPE MODEL; do
+    [ "${KNAME}" = "N/A" ] || [ "${SIZE:0:1}" = "0" ] && continue
+    [ "${KNAME:0:7}" = "/dev/md" ] && continue
+    [ "${KNAME:0:8}" = "${LOADER_DISK}" ] && continue
+    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${MODEL}" "${TYPE}" >>"${TMP_PATH}/opts"
+  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model)"' 2>/dev/null)
+
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --msgbox "No disk found!" 0 0
@@ -1829,9 +1825,73 @@ function cloneLoader() {
     rm -rf "${PART3_PATH}/dl" >/dev/null
     CLEARCACHE=0
 
-    gzip -dc "${ARC_PATH}/grub.img.gz" | dd of="${resp}" bs=1M conv=fsync status=progress
-    hdparm -z "${resp}" # reset disk cache
-    fdisk -l "${resp}"
+    gzip -dc "${ARC_PATH}/grub.img.gz" | dd of="${RESP}" bs=1M conv=fsync status=progress
+    hdparm -z "${RESP}" # reset disk cache
+    fdisk -l "${RESP}"
+    sleep 1
+
+    NEW_BLDISK_P1="$(lsblk "${RESP}" -pno KNAME,LABEL 2>/dev/null | grep 'ARC1' | awk '{print $1}')"
+    NEW_BLDISK_P2="$(lsblk "${RESP}" -pno KNAME,LABEL 2>/dev/null | grep 'ARC2' | awk '{print $1}')"
+    NEW_BLDISK_P3="$(lsblk "${RESP}" -pno KNAME,LABEL 2>/dev/null | grep 'ARC3' | awk '{print $1}')"
+    SIZEOFDISK=$(cat /sys/block/${RESP/\/dev\//}/size)
+    ENDSECTOR=$(($(fdisk -l ${RESP} | grep "${NEW_BLDISK_P3}" | awk '{print $3}') + 1))
+
+    if [ ${SIZEOFDISK}0 -ne ${ENDSECTOR}0 ]; then
+      echo -e "\033[1;36mResizing ${NEW_BLDISK_P3}\033[0m"
+      echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${RESP}" >/dev/null 2>&1
+      resize2fs "${NEW_BLDISK_P3}"
+      fdisk -l "${RESP}"
+      sleep 1
+    fi
+
+    mkdir -p "${TMP_PATH}/sdX1" "${TMP_PATH}/sdX2" "${TMP_PATH}/sdX3"
+    mount "${NEW_BLDISK_P1}" "${TMP_PATH}/sdX1" || {
+      printf "Can't mount %s." "${NEW_BLDISK_P1}" >"${LOG_FILE}"
+      __umountNewBlDisk
+      break
+    }
+    mount "${NEW_BLDISK_P2}" "${TMP_PATH}/sdX2" || {
+      printf "Can't mount %s." "${NEW_BLDISK_P2}" >"${LOG_FILE}"
+      __umountNewBlDisk
+      break
+    }
+    mount "${NEW_BLDISK_P3}" "${TMP_PATH}/sdX3" || {
+      printf "Can't mount %s." "${NEW_BLDISK_P3}" >"${LOG_FILE}"
+      __umountNewBlDisk
+      break
+    }
+
+    SIZEOLD1="$(du -sm "${PART1_PATH}" 2>/dev/null | awk '{print $1}')"
+    SIZEOLD2="$(du -sm "${PART2_PATH}" 2>/dev/null | awk '{print $1}')"
+    SIZEOLD3="$(du -sm "${PART3_PATH}" 2>/dev/null | awk '{print $1}')"
+    SIZENEW1="$(df -m "${NEW_BLDISK_P1}" 2>/dev/null | awk 'NR==2 {print $4}')"
+    SIZENEW2="$(df -m "${NEW_BLDISK_P2}" 2>/dev/null | awk 'NR==2 {print $4}')"
+    SIZENEW3="$(df -m "${NEW_BLDISK_P3}" 2>/dev/null | awk 'NR==2 {print $4}')"
+
+    if [ ${SIZEOLD1:-0} -ge ${SIZENEW1:-0} ] || [ ${SIZEOLD2:-0} -ge ${SIZENEW2:-0} ] || [ ${SIZEOLD3:-0} -ge ${SIZENEW3:-0} ]; then
+      MSG="Cloning failed due to insufficient remaining disk space on the selected hard drive."
+      echo "${MSG}" >"${LOG_FILE}"
+      __umountNewBlDisk
+      break
+    fi
+
+    cp -vRf "${PART1_PATH}/". "${TMP_PATH}/sdX1/" || {
+      printf "Can't copy to %s." "${NEW_BLDISK_P1}" >"${LOG_FILE}"
+      __umountNewBlDisk
+      break
+    }
+    cp -vRf "${PART2_PATH}/". "${TMP_PATH}/sdX2/" || {
+      printf "Can't copy to %s." "${NEW_BLDISK_P2}" >"${LOG_FILE}"
+      __umountNewBlDisk
+      break
+    }
+    cp -vRf "${PART3_PATH}/". "${TMP_PATH}/sdX3/" || {
+      printf "Can't copy to %s." "${NEW_BLDISK_P3}" >"${LOG_FILE}"
+      __umountNewBlDisk
+      break
+    }
+    sync
+    __umountNewBlDisk
     sleep 3
 
     mkdir -p "${TMP_PATH}/sdX1"
@@ -1869,7 +1929,8 @@ function resetLoader() {
   fi
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}" >/dev/null
   [ -f "${USER_CONFIG_FILE}" ] && rm -f "${USER_CONFIG_FILE}" >/dev/null
-    dialog --backtitle "$(backtitle)" --title "Reset Loader" --aspect 18 \
+  [ -f "${ARC_RAMDISK_USER_FILE}" ] && rm -f "${ARC_RAMDISK_USER_FILE}" >/dev/null
+  dialog --backtitle "$(backtitle)" --title "Reset Loader" --aspect 18 \
     --yesno "Reset successful.\nReboot required!" 0 0
   [ $? -ne 0 ] && return
   rebootTo config
