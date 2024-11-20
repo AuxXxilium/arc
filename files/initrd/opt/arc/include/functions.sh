@@ -598,3 +598,11 @@ function check_port() {
     fi
   fi
 }
+
+###############################################################################
+# Unmount new boot loader disk
+function __umountNewBlDisk() {
+  umount "${TMP_PATH}/sdX1" 2>/dev/null
+  umount "${TMP_PATH}/sdX2" 2>/dev/null
+  umount "${TMP_PATH}/sdX3" 2>/dev/null
+}

@@ -1746,14 +1746,12 @@ function bootipwaittime() {
 # let user format disks from inside arc
 function formatDisks() {
   rm -f "${TMP_PATH}/opts"
-  while read -r KNAME SIZE TYPE PKNAME; do
-    [ -z "${KNAME}" ] && continue
-    [ "${KNAME}" = "N/A" ] && continue
+  while read -r KNAME SIZE TYPE MODEL; do
+    [ "${KNAME}" = "N/A" ] || [ "${SIZE:0:1}" = "0" ] && continue
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
-    [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
-    [ -z "${SIZE}" ] && SIZE="Unknown"
-    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" >>"${TMP_PATH}/opts"
-  done < <(lsblk -Jpno KNAME,SIZE,TYPE,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.pkname)"' 2>/dev/null)
+    [ "${KNAME:0:8}" = "${LOADER_DISK}" ] && continue
+    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${MODEL}" "${TYPE}" >>"${TMP_PATH}/opts"
+  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model)"' 2>/dev/null)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --msgbox "No disk found!" 0 0
@@ -1791,13 +1789,14 @@ function formatDisks() {
 
 ###############################################################################
 # Clone bootloader disk
-function cloneBootloaderDisk() {
+function cloneLoader() {
   rm -f "${TMP_PATH}/opts"
-  while read -r KNAME ID SIZE PKNAME; do
+  while read -r KNAME SIZE TYPE MODEL; do
     [ "${KNAME}" = "N/A" ] || [ "${SIZE:0:1}" = "0" ] && continue
-    [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
-    printf "\"%s\" \"%-6s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${ID}" >>"${TMP_PATH}/opts"
-  done <<<"$(lsblk -Jdpno KNAME,ID,SIZE,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.id) \(.size) \(.pkname)"' 2>/dev/null)"
+    [ "${KNAME:0:7}" = "/dev/md" ] && continue
+    [ "${KNAME:0:8}" = "${LOADER_DISK}" ] && continue
+    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${MODEL}" "${TYPE}" >>"${TMP_PATH}/opts"
+  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model)"' 2>/dev/null)
 
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --title "Clone Loader" \
@@ -1852,12 +1851,6 @@ function cloneBootloaderDisk() {
       fdisk -l "${RESP}"
       sleep 1
     fi
-
-    function __umountNewBlDisk() {
-      umount "${TMP_PATH}/sdX1" 2>/dev/null
-      umount "${TMP_PATH}/sdX2" 2>/dev/null
-      umount "${TMP_PATH}/sdX3" 2>/dev/null
-    }
 
     mkdir -p "${TMP_PATH}/sdX1" "${TMP_PATH}/sdX2" "${TMP_PATH}/sdX3"
     mount "${NEW_BLDISK_P1}" "${TMP_PATH}/sdX1" || {
@@ -1931,6 +1924,7 @@ function resetLoader() {
   fi
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}" >/dev/null
   [ -f "${USER_CONFIG_FILE}" ] && rm -f "${USER_CONFIG_FILE}" >/dev/null
+  [ -f "${ARC_RAMDISK_USER_FILE}" ] && rm -f "${ARC_RAMDISK_USER_FILE}" >/dev/null
   dialog --backtitle "$(backtitle)" --title "Reset Loader" --aspect 18 \
     --yesno "Reset successful.\nReboot required!" 0 0
   [ $? -ne 0 ] && return
