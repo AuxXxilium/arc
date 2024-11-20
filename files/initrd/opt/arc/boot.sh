@@ -223,12 +223,12 @@ echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 function _bootwait() {
   # Exec Bootwait to check SSH/Web connection
   BOOTWAIT=5
-  busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
+  w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
   while test ${BOOTWAIT} -ge 0; do
     MSG="\033[1;33mAccess SSH/Web will interrupt boot...\033[0m"
     echo -en "\r${MSG}"
-    busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
+    w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
     if ! diff WB WC >/dev/null 2>&1; then
       echo -en "\r\033[1;33mAccess SSH/Web detected and boot is interrupted.\033[0m\n"
       rm -f WB WC
@@ -304,7 +304,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   if [ "${DSMLOGO}" = "true" ] && [ -c "/dev/fb0" ]; then
     [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
     [ -n "${IPCON}" ] && URL="http://${IPCON}:5000" || URL="http://find.synology.com/"
-    python ${ARC_PATH}/include/functions.py makeqr -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
+    python3 ${ARC_PATH}/include/functions.py makeqr -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
     [ -f "${TMP_PATH}/qrcode_boot.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_boot.png" >/dev/null 2>/dev/null || true
   fi
 
