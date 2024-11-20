@@ -4,14 +4,14 @@
 # Overlay Init Section
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
-. ${ARC_PATH}/include/functions.sh
-. ${ARC_PATH}/include/addons.sh
-. ${ARC_PATH}/include/modules.sh
-. ${ARC_PATH}/include/update.sh
-. ${ARC_PATH}/include/storage.sh
-. ${ARC_PATH}/include/network.sh
-. ${ARC_PATH}/include/compat.sh
-. ${ARC_PATH}/arc-functions.sh
+. "${ARC_PATH}/include/functions.sh"
+. "${ARC_PATH}/include/addons.sh"
+. "${ARC_PATH}/include/modules.sh"
+. "${ARC_PATH}/include/update.sh"
+. "${ARC_PATH}/include/storage.sh"
+. "${ARC_PATH}/include/network.sh"
+. "${ARC_PATH}/include/compat.sh"
+. "${ARC_PATH}/arc-functions.sh"
 
 # Get Keymap and Timezone Config
 onlineCheck

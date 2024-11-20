@@ -1,8 +1,8 @@
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/../" 2>/dev/null && pwd)"
 
-. ${ARC_PATH}/include/consts.sh
-. ${ARC_PATH}/include/configFile.sh
-. ${ARC_PATH}/include/addons.sh
+. "${ARC_PATH}/include/consts.sh"
+. "${ARC_PATH}/include/configFile.sh"
+. "${ARC_PATH}/include/addons.sh"
 
 ###############################################################################
 # Check loader disk
