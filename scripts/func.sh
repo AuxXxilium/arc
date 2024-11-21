@@ -198,12 +198,12 @@ function getBuildrootx() {
   echo "Getting Buildroot-X begin"
   local DEST_PATH="${1}"
 
-  TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-buildroot-x/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  TAG="$(curl -skLH "Authorization: token ${{ secrets.AUXTOKEN }}" https://api.github.com/repos/AuxXxilium/arc-buildroot-x/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
   export BRXTAG="${TAG}"
   [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
   echo "Getting Kernel"
   rm -f "${DEST_PATH}/bzImage-arc"
-  if curl -skL "https://github.com/AuxXxilium/arc-buildroot-x/releases/download/${TAG}/bzImage" -o "${DEST_PATH}/bzImage-arc"; then
+  if curl -skLH "Authorization: token ${{ secrets.AUXTOKEN }}" "https://github.com/AuxXxilium/arc-buildroot-x/releases/download/${TAG}/bzImage" -o "${DEST_PATH}/bzImage-arc"; then
     echo "Kernel: ${TAG}"
   else
     echo "Failed to get Kernel"
@@ -211,7 +211,7 @@ function getBuildrootx() {
   fi
   echo "Getting Ramdisk"
   rm -f "${DEST_PATH}/initrd-arc"
-  if curl -skL "https://github.com/AuxXxilium/arc-buildroot-x/releases/download/${TAG}/rootfs.cpio.xz" -o "${DEST_PATH}/initrd-arc"; then
+  if curl -skLH "Authorization: token ${{ secrets.AUXTOKEN }}" "https://github.com/AuxXxilium/arc-buildroot-x/releases/download/${TAG}/rootfs.cpio.xz" -o "${DEST_PATH}/initrd-arc"; then
     echo "Ramdisk: ${TAG}"
   else
     echo "Failed to get Ramdisk"
@@ -225,12 +225,12 @@ function getBuildroots() {
   echo "Getting Buildroot-S begin"
   local DEST_PATH="${1}"
 
-  TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-buildroot-s/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  TAG="$(curl -skLH "Authorization: token ${{ secrets.AUXTOKEN }}" https://api.github.com/repos/AuxXxilium/arc-buildroot-s/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
   export BRSTAG="${TAG}"
   [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
   echo "Getting Kernel"
   rm -f "${DEST_PATH}/bzImage-arc"
-  if curl -skL "https://github.com/AuxXxilium/arc-buildroot-s/releases/download/${TAG}/bzImage" -o "${DEST_PATH}/bzImage-arc"; then
+  if curl -skLH "Authorization: token ${{ secrets.AUXTOKEN }}" "https://github.com/AuxXxilium/arc-buildroot-s/releases/download/${TAG}/bzImage" -o "${DEST_PATH}/bzImage-arc"; then
     echo "Kernel: ${TAG}"
   else
     echo "Failed to get Kernel"
@@ -238,7 +238,7 @@ function getBuildroots() {
   fi
   echo "Getting Ramdisk"
   rm -f "${DEST_PATH}/initrd-arc"
-  if curl -skL "https://github.com/AuxXxilium/arc-buildroot-s/releases/download/${TAG}/rootfs.cpio.xz" -o "${DEST_PATH}/initrd-arc"; then
+  if curl -skLH "Authorization: token ${{ secrets.AUXTOKEN }}" "https://github.com/AuxXxilium/arc-buildroot-s/releases/download/${TAG}/rootfs.cpio.xz" -o "${DEST_PATH}/initrd-arc"; then
     echo "Ramdisk: ${TAG}"
   else
     echo "Failed to get Ramdisk"

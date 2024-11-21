@@ -17,7 +17,10 @@ getCustom "files/p3/custom"
 getLKMs "files/p3/lkms"
 getTheme "files/p1/boot/grub"
 getOffline "files/p3/configs"
-getBuildrootx "brx"
+#getBuildrootx "brx"
+mkdir -p "brx"
+cp -f "../brx/bzImage" "brx/bzImage-arc"
+cp -f "../brx/rootfs.cpio.xz" "brx/initrd-arc"
 
 # Sbase
 IMAGE_FILE="arc.img"
