@@ -57,7 +57,7 @@ jobs:
       # Get extractor, LKM, Addons, Modules, Theme and Configs
       - name: Get Buildroot
         run: |
-          . scripts/func.sh
+          . scripts/func.sh "${{ secrets.BUILD_TOKEN }}"
 
           echo "Get Dependencies"
           getAddons "files/p3/addons"

@@ -6,30 +6,7 @@
 # See /LICENSE for more information.
 #
 
-# Get latest Arc
-# $1 path
-function getArcSystem() {
-  echo "Getting ArcSystem begin"
-  local DEST_PATH="${1}"
-  local RELEASE="${2}"
-  local CACHE_FILE="/tmp/system.zip"
-  rm -f "${CACHE_FILE}"
-  if [ "${RELEASE}" = "dev" ]; then
-    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
-  else
-    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-  fi
-  if curl -skL "https://github.com/AuxXxilium/arc-system/releases/download/${TAG}/system-${TAG}.zip" -o "${CACHE_FILE}"; then
-    # Unzip LKMs
-    mkdir -p "${DEST_PATH}"
-    unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
-    rm -f "${CACHE_FILE}"
-    echo "Getting ArcSystem end - ${TAG}"
-  else
-    echo "Failed to get ArcSystem"
-    exit 1
-  fi
-}
+[ -n "${1}" ] && export TOKEN="${1}"
 
 # Get latest LKMs
 # $1 path
@@ -198,25 +175,28 @@ function getBuildrootx() {
   echo "Getting Buildroot-X begin"
   local DEST_PATH="${1}"
 
-  TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-buildroot-x/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-buildroot-x/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
   export BRXTAG="${TAG}"
   [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
   echo "Getting Kernel"
   rm -f "${DEST_PATH}/bzImage-arc"
-  if curl -skL "https://github.com/AuxXxilium/arc-buildroot-x/releases/download/${TAG}/bzImage" -o "${DEST_PATH}/bzImage-arc"; then
-    echo "Kernel: ${TAG}"
-  else
-    echo "Failed to get Kernel"
-    exit 1
-  fi
-  echo "Getting Ramdisk"
   rm -f "${DEST_PATH}/initrd-arc"
-  if curl -skL "https://github.com/AuxXxilium/arc-buildroot-x/releases/download/${TAG}/rootfs.cpio.xz" -o "${DEST_PATH}/initrd-arc"; then
-    echo "Ramdisk: ${TAG}"
-  else
-    echo "Failed to get Ramdisk"
-    exit 1
-  fi
+  while true; do
+    if curl -skL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://github.com/AuxXxilium/arc-buildroot-x/releases/download/${TAG}/bzImage" -o "${DEST_PATH}/bzImage-arc"; then
+      echo "Kernel: ${TAG}"
+    else
+      echo "Failed to get Kernel"
+      break && exit 1
+    fi
+    echo "Getting Ramdisk"
+    if curl -skL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://github.com/AuxXxilium/arc-buildroot-x/releases/download/${TAG}/rootfs.cpio.xz" -o "${DEST_PATH}/initrd-arc"; then
+      echo "Ramdisk: ${TAG}"
+    else
+      echo "Failed to get Ramdisk"
+      break && exit 1
+    fi
+    [ -f "${DEST_PATH}/bzImage-arc" ] && [ -f "${DEST_PATH}/initrd-arc" ] && break
+  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-buildroot-x/releases" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Buildroot-X
@@ -225,25 +205,28 @@ function getBuildroots() {
   echo "Getting Buildroot-S begin"
   local DEST_PATH="${1}"
 
-  TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-buildroot-s/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
-  export BRSTAG="${TAG}"
+  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-buildroot-s/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
+  export BRXTAG="${TAG}"
   [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
   echo "Getting Kernel"
   rm -f "${DEST_PATH}/bzImage-arc"
-  if curl -skL "https://github.com/AuxXxilium/arc-buildroot-s/releases/download/${TAG}/bzImage" -o "${DEST_PATH}/bzImage-arc"; then
-    echo "Kernel: ${TAG}"
-  else
-    echo "Failed to get Kernel"
-    exit 1
-  fi
-  echo "Getting Ramdisk"
   rm -f "${DEST_PATH}/initrd-arc"
-  if curl -skL "https://github.com/AuxXxilium/arc-buildroot-s/releases/download/${TAG}/rootfs.cpio.xz" -o "${DEST_PATH}/initrd-arc"; then
-    echo "Ramdisk: ${TAG}"
-  else
-    echo "Failed to get Ramdisk"
-    exit 1
-  fi
+  while true; do
+    if curl -skL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://github.com/AuxXxilium/arc-buildroot-s/releases/download/${TAG}/bzImage" -o "${DEST_PATH}/bzImage-arc"; then
+      echo "Kernel: ${TAG}"
+    else
+      echo "Failed to get Kernel"
+      break && exit 1
+    fi
+    echo "Getting Ramdisk"
+    if curl -skL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://github.com/AuxXxilium/arc-buildroot-s/releases/download/${TAG}/rootfs.cpio.xz" -o "${DEST_PATH}/initrd-arc"; then
+      echo "Ramdisk: ${TAG}"
+    else
+      echo "Failed to get Ramdisk"
+      break && exit 1
+    fi
+    [ -f "${DEST_PATH}/bzImage-arc" ] && [ -f "${DEST_PATH}/initrd-arc" ] && break
+  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-buildroot-s/releases" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Offline

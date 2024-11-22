@@ -83,7 +83,7 @@ jobs:
       # Get extractor, LKM, Addons, Modules, Theme and Configs
       - name: Get Dependencies for all Image
         run: |
-          . scripts/func.sh
+          . scripts/func.sh "${{ secrets.BUILD_TOKEN }}"
 
           echo "Get Dependencies"
           getAddons "files/p3/addons"
@@ -94,7 +94,7 @@ jobs:
           getOffline "files/p3/configs"
           getLKMs "files/p3/lkms"
           getTheme "files/p1/boot/grub"
-          getBuildrootx "brx"
+          getBuildrootx "brx" 
           getBuildroots "brs"
 
           # Export Dependencies Version to env
