@@ -26,21 +26,22 @@ function updateLoader() {
     export URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}-${ARC_BRANCH}.zip"
     export TAG="${TAG}"
     {
-      curl -kL "$URL" -o ${TMP_PATH}/update.zip 2>&1 | 
+      {
+        curl -kL "${URL}" -o ${TMP_PATH}/update.zip 2>&3 3>&-
+      } 3>&1 >&4 4>&- |
       perl -C -lane '
-        BEGIN {$header = "Downloading $ENV{TAG}...\n\n"; $| = 1}
+        BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
         $pcent = $F[0];
         $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-        s/ /\xa0/g;
+        s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
         if ($. <= 3) {
           $header .= "$_\n";
-          $/ = "\r" if $. = 2
+          $/ = "\r" if $. == 2
         } else {
           print "XXX\n$pcent\n$header$_\nXXX"
-        }' |
-      dialog --backtitle "$(backtitle)" --title "Update Loader" \
-       --gauge "Download Loader: $TAG ..." 14 72
-    }
+        }' 4>&- |
+      dialog --gauge "Download Update: ${TAG}..." 14 72 4>&-
+    } 4>&1
     if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 300000 ]; then
       dialog --backtitle "$(backtitle)" --title "Update Loader" \
         --infobox "Updating Loader..." 3 50
@@ -102,21 +103,22 @@ function updateAddons() {
     export URL="https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons-${TAG}.zip"
     export TAG="${TAG}"
     {
-      curl -kL "$URL" -o ${TMP_PATH}/addons.zip 2>&1 | 
+      {
+      curl -kL "${URL}" -o ${TMP_PATH}/addons.zip 2>&3 3>&-
+      } 3>&1 >&4 4>&- |
       perl -C -lane '
-        BEGIN {$header = "Downloading $ENV{TAG}...\n\n"; $| = 1}
-        $pcent = $F[0];
-        $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-        s/ /\xa0/g;
-        if ($. <= 3) {
-          $header .= "$_\n";
-          $/ = "\r" if $. = 2
-        } else {
-          print "XXX\n$pcent\n$header$_\nXXX"
-        }' |
-      dialog --backtitle "$(backtitle)" --title "Update Addons" \
-      --gauge "Download Addons: $TAG ..." 14 72
-    }
+      BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
+      $pcent = $F[0];
+      $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
+      s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
+      if ($. <= 3) {
+        $header .= "$_\n";
+        $/ = "\r" if $. == 2
+      } else {
+        print "XXX\n$pcent\n$header$_\nXXX"
+      }' 4>&- |
+      dialog --gauge "Download Addons: ${TAG}..." 14 72 4>&-
+    } 4>&1
     if [ -f "${TMP_PATH}/addons.zip" ]; then
       rm -rf "${ADDONS_PATH}"
       mkdir -p "${ADDONS_PATH}"
@@ -161,21 +163,22 @@ function updatePatches() {
     export URL="https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches-${TAG}.zip"
     export TAG="${TAG}"
     {
-      curl -kL "$URL" -o ${TMP_PATH}/patches.zip 2>&1 | 
+      {
+        curl -kL "${URL}" -o ${TMP_PATH}/patches.zip 2>&3 3>&-
+      } 3>&1 >&4 4>&- |
       perl -C -lane '
-        BEGIN {$header = "Downloading $ENV{TAG}...\n\n"; $| = 1}
+        BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
         $pcent = $F[0];
         $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-        s/ /\xa0/g;
+        s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
         if ($. <= 3) {
           $header .= "$_\n";
-          $/ = "\r" if $. = 2
+          $/ = "\r" if $. == 2
         } else {
           print "XXX\n$pcent\n$header$_\nXXX"
-        }' |
-      dialog --backtitle "$(backtitle)" --title "Update Patches" \
-      --gauge "Download Patches: $TAG ..." 14 72
-    }
+        }' 4>&- |
+      dialog --gauge "Download Patches: ${TAG}..." 14 72 4>&-
+    } 4>&1
     if [ -f "${TMP_PATH}/patches.zip" ]; then
       rm -rf "${PATCH_PATH}"
       mkdir -p "${PATCH_PATH}"
@@ -213,21 +216,22 @@ function updateCustom() {
     export URL="https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/custom-${TAG}.zip"
     export TAG="${TAG}"
     {
-      curl -kL "$URL" -o ${TMP_PATH}/custom.zip 2>&1 | 
+      {
+        curl -kL "${URL}" -o ${TMP_PATH}/custom.zip 2>&3 3>&-
+      } 3>&1 >&4 4>&- |
       perl -C -lane '
-        BEGIN {$header = "Downloading $ENV{TAG}...\n\n"; $| = 1}
+        BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
         $pcent = $F[0];
         $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-        s/ /\xa0/g;
+        s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
         if ($. <= 3) {
           $header .= "$_\n";
-          $/ = "\r" if $. = 2
+          $/ = "\r" if $. == 2
         } else {
           print "XXX\n$pcent\n$header$_\nXXX"
-        }' |
-      dialog --backtitle "$(backtitle)" --title "Update Custom Kernel" \
-      --gauge "Download Custom Kernel: $TAG ..." 14 72
-    }
+        }' 4>&- |
+      dialog --gauge "Download Custom: ${TAG}..." 14 72 4>&-
+    } 4>&1
     if [ -f "${TMP_PATH}/custom.zip" ]; then
       rm -rf "${CUSTOM_PATH}"
       mkdir -p "${CUSTOM_PATH}"
@@ -271,21 +275,22 @@ function updateModules() {
     export URL="https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules-${TAG}.zip"
     export TAG="${TAG}"
     {
-      curl -kL "$URL" -o ${TMP_PATH}/modules.zip 2>&1 | 
+      {
+        curl -kL "${URL}" -o ${TMP_PATH}/modules.zip 2>&3 3>&-
+      } 3>&1 >&4 4>&- |
       perl -C -lane '
-        BEGIN {$header = "Downloading $ENV{TAG}...\n\n"; $| = 1}
+        BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
         $pcent = $F[0];
         $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-        s/ /\xa0/g;
+        s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
         if ($. <= 3) {
           $header .= "$_\n";
-          $/ = "\r" if $. = 2
+          $/ = "\r" if $. == 2
         } else {
           print "XXX\n$pcent\n$header$_\nXXX"
-        }' |
-      dialog --backtitle "$(backtitle)" --title "Update Modules" \
-      --gauge "Download Modules: $TAG ..." 14 72
-    }
+        }' 4>&- |
+      dialog --gauge "Download Modules: ${TAG}..." 14 72 4>&-
+    } 4>&1
     if [ -f "${TMP_PATH}/modules.zip" ]; then
       dialog --backtitle "$(backtitle)" --title "Update Modules" \
         --infobox "Updating Modules..." 3 50
@@ -338,21 +343,22 @@ function updateConfigs() {
     export URL="https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs-${TAG}.zip"
     export TAG="${TAG}"
     {
-      curl -kL "$URL" -o ${TMP_PATH}/configs.zip 2>&1 | 
+      {
+        curl -kL "${URL}" -o ${TMP_PATH}/configs.zip 2>&3 3>&-
+      } 3>&1 >&4 4>&- |
       perl -C -lane '
-        BEGIN {$header = "Downloading $ENV{TAG}...\n\n"; $| = 1}
+        BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
         $pcent = $F[0];
         $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-        s/ /\xa0/g;
+        s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
         if ($. <= 3) {
           $header .= "$_\n";
-          $/ = "\r" if $. = 2
+          $/ = "\r" if $. == 2
         } else {
           print "XXX\n$pcent\n$header$_\nXXX"
-        }' |
-      dialog --backtitle "$(backtitle)" --title "Update Configs" \
-      --gauge "Download Configs: $TAG ..." 14 72
-    }
+        }' 4>&- |
+      dialog --gauge "Download Configs: ${TAG}..." 14 72 4>&-
+    } 4>&1
     if [ -f "${TMP_PATH}/configs.zip" ]; then
       mkdir -p "${MODEL_CONFIG_PATH}"
       dialog --backtitle "$(backtitle)" --title "Update Configs" \
@@ -394,21 +400,22 @@ function updateLKMs() {
     export URL="https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip"
     export TAG="${TAG}"
     {
-      curl -kL "$URL" -o ${TMP_PATH}/rp-lkms.zip 2>&1 | 
+      {
+        curl -kL "${URL}" -o ${TMP_PATH}/rp-lkms.zip 2>&3 3>&-
+      } 3>&1 >&4 4>&- |
       perl -C -lane '
-        BEGIN {$header = "Downloading $ENV{TAG}...\n\n"; $| = 1}
+        BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
         $pcent = $F[0];
         $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-        s/ /\xa0/g;
+        s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
         if ($. <= 3) {
           $header .= "$_\n";
-          $/ = "\r" if $. = 2
+          $/ = "\r" if $. == 2
         } else {
           print "XXX\n$pcent\n$header$_\nXXX"
-        }' |
-      dialog --backtitle "$(backtitle)" --title "Update LKMs" \
-      --gauge "Download LKMs: $TAG ..." 14 72
-    }
+        }' 4>&- |
+      dialog --gauge "Download LKMs: ${TAG}..." 14 72 4>&-
+    } 4>&1
     if [ -f "${TMP_PATH}/rp-lkms.zip" ]; then
       rm -rf "${LKMS_PATH}"
       mkdir -p "${LKMS_PATH}"
