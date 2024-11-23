@@ -71,15 +71,19 @@ jobs:
           sudo timedatectl set-timezone "Europe/Berlin"
 
           sudo apt update
-          sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils busybox dialog curl sed
-          sudo snap install yq
+          sudo apt install -y locales busybox dialog gettext sed gawk jq curl 
+          sudo apt install -y python-is-python3 python3-pip libelf-dev qemu-utils cpio xz-utils lz4 lzma bzip2 gzip zstd
+          # sudo snap install yq
+          if ! command -v yq &>/dev/null || ! yq --version 2>/dev/null | grep -q "v4."; then
+            sudo curl -kL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/bin/yq && sudo chmod a+x /usr/bin/yq
+          fi
 
           df -h
 
       # Get extractor, LKM, Addons, Modules, Theme and Configs
       - name: Get Dependencies for all Image
         run: |
-          . scripts/func.sh
+          . scripts/func.sh "${{ secrets.BUILD_TOKEN }}"
 
           echo "Get Dependencies"
           getAddons "files/p3/addons"
@@ -90,7 +94,7 @@ jobs:
           getOffline "files/p3/configs"
           getLKMs "files/p3/lkms"
           getTheme "files/p1/boot/grub"
-          getBuildrootx "brx"
+          getBuildrootx "brx" 
           getBuildroots "brs"
 
           # Export Dependencies Version to env
@@ -142,7 +146,6 @@ jobs:
           
           echo "Repack initrd"
           cp -f "brx/bzImage-arc" "files/p3/bzImage-arc"
-          #cp -f "brx/initrd-arc" "files/p3/initrd-arc"
           repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
@@ -159,9 +162,9 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           echo "Image Converter"
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
+          qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
+          qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
+          qemu-img convert -p -f raw -O vhdx ${IMAGE_FILE} arc.vhdx
 
           echo "Create Arc ova"
           convertova "${IMAGE_FILE}" "arc.ova"
@@ -236,9 +239,9 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           echo "Image Converter"
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
+          qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
+          qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
+          qemu-img convert -p -f raw -O vhdx ${IMAGE_FILE} arc.vhdx
 
           echo "Create Arc ova"
           convertova "${IMAGE_FILE}" "arc.ova"

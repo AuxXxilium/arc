@@ -6,30 +6,7 @@
 # See /LICENSE for more information.
 #
 
-# Get latest Arc
-# $1 path
-function getArcSystem() {
-  echo "Getting ArcSystem begin"
-  local DEST_PATH="${1}"
-  local RELEASE="${2}"
-  local CACHE_FILE="/tmp/system.zip"
-  rm -f "${CACHE_FILE}"
-  if [ "${RELEASE}" = "dev" ]; then
-    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
-  else
-    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-system/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-  fi
-  if curl -skL "https://github.com/AuxXxilium/arc-system/releases/download/${TAG}/system-${TAG}.zip" -o "${CACHE_FILE}"; then
-    # Unzip LKMs
-    mkdir -p "${DEST_PATH}"
-    unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
-    rm -f "${CACHE_FILE}"
-    echo "Getting ArcSystem end - ${TAG}"
-  else
-    echo "Failed to get ArcSystem"
-    exit 1
-  fi
-}
+[ -n "${1}" ] && export TOKEN="${1}"
 
 # Get latest LKMs
 # $1 path
@@ -194,56 +171,48 @@ function getTheme() {
 
 # Get latest Buildroot-X
 # $1 path
-function getBuildrootx() {
+function getBuildroots() {
   echo "Getting Buildroot-X begin"
   local DEST_PATH="${1}"
 
-  TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-buildroot-x/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-buildroot-x/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
   export BRXTAG="${TAG}"
   [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
-  echo "Getting Kernel"
   rm -f "${DEST_PATH}/bzImage-arc"
-  if curl -skL "https://github.com/AuxXxilium/arc-buildroot-x/releases/download/${TAG}/bzImage" -o "${DEST_PATH}/bzImage-arc"; then
-    echo "Kernel: ${TAG}"
-  else
-    echo "Failed to get Kernel"
-    exit 1
-  fi
-  echo "Getting Ramdisk"
   rm -f "${DEST_PATH}/initrd-arc"
-  if curl -skL "https://github.com/AuxXxilium/arc-buildroot-x/releases/download/${TAG}/rootfs.cpio.xz" -o "${DEST_PATH}/initrd-arc"; then
-    echo "Ramdisk: ${TAG}"
-  else
-    echo "Failed to get Ramdisk"
-    exit 1
-  fi
+  while read -r ID NAME; do
+    if [ "${NAME}" = "buildroot-${TAG}.zip" ]; then
+      curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-buildroot-x/releases/assets/${ID}" -o "${DEST_PATH}/brx.zip"
+      echo "Buildroot: ${TAG}"
+      unzip -o "${DEST_PATH}/brx.zip" -d "${DEST_PATH}"
+      mv -f "${DEST_PATH}/bzImage" "${DEST_PATH}/bzImage-arc"
+      mv -f "${DEST_PATH}/rootfs.cpio.zst" "${DEST_PATH}/initrd-arc"
+      [ -f "${DEST_PATH}/bzImage-arc" ] && [ -f "${DEST_PATH}/initrd-arc" ] && break
+    fi
+  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-buildroot-x/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
-# Get latest Buildroot-X
+# Get latest Buildroot-S
 # $1 path
 function getBuildroots() {
   echo "Getting Buildroot-S begin"
   local DEST_PATH="${1}"
 
-  TAG="$(curl -s https://api.github.com/repos/AuxXxilium/arc-buildroot-s/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')"
+  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-buildroot-s/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
   export BRSTAG="${TAG}"
   [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
-  echo "Getting Kernel"
   rm -f "${DEST_PATH}/bzImage-arc"
-  if curl -skL "https://github.com/AuxXxilium/arc-buildroot-s/releases/download/${TAG}/bzImage" -o "${DEST_PATH}/bzImage-arc"; then
-    echo "Kernel: ${TAG}"
-  else
-    echo "Failed to get Kernel"
-    exit 1
-  fi
-  echo "Getting Ramdisk"
   rm -f "${DEST_PATH}/initrd-arc"
-  if curl -skL "https://github.com/AuxXxilium/arc-buildroot-s/releases/download/${TAG}/rootfs.cpio.xz" -o "${DEST_PATH}/initrd-arc"; then
-    echo "Ramdisk: ${TAG}"
-  else
-    echo "Failed to get Ramdisk"
-    exit 1
-  fi
+  while read -r ID NAME; do
+    if [ "${NAME}" = "buildroot-${TAG}.zip" ]; then
+      curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-buildroot-s/releases/assets/${ID}" -o "${DEST_PATH}/brs.zip"
+      echo "Buildroot: ${TAG}"
+      unzip -o "${DEST_PATH}/brs.zip" -d "${DEST_PATH}"
+      mv -f "${DEST_PATH}/bzImage" "${DEST_PATH}/bzImage-arc"
+      mv -f "${DEST_PATH}/rootfs.cpio.zst" "${DEST_PATH}/initrd-arc"
+      [ -f "${DEST_PATH}/bzImage-arc" ] && [ -f "${DEST_PATH}/initrd-arc" ] && break
+    fi
+  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-buildroot-s/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Offline
@@ -280,15 +249,34 @@ function repackInitrd() {
 
   RDXZ_PATH="rdxz_tmp"
   mkdir -p "${RDXZ_PATH}"
+  local INITRD_FORMAT=$(file -b --mime-type "${INITRD_FILE}")
   (
     cd "${RDXZ_PATH}"
-    sudo xz -dc <"${INITRD_FILE}" | sudo cpio -idm
+    case "${INITRD_FORMAT}" in
+    *'x-cpio'*) sudo cpio -idm <"${INITRD_FILE}" ;;
+    *'x-xz'*) xz -dc "${INITRD_FILE}" | sudo cpio -idm ;;
+    *'x-lz4'*) lz4 -dc "${INITRD_FILE}" | sudo cpio -idm ;;
+    *'x-lzma'*) lzma -dc "${INITRD_FILE}" | sudo cpio -idm ;;
+    *'x-bzip2'*) bzip2 -dc "${INITRD_FILE}" | sudo cpio -idm ;;
+    *'gzip'*) gzip -dc "${INITRD_FILE}" | sudo cpio -idm ;;
+    *'zstd'*) zstd -dc "${INITRD_FILE}" | sudo cpio -idm ;;
+    *) ;;
+    esac
   ) || true
   sudo cp -rf "${PLUGIN_PATH}/"* "${RDXZ_PATH}/"
   [ -f "${OUTPUT_PATH}" ] && rm -rf "${OUTPUT_PATH}"
   (
     cd "${RDXZ_PATH}"
-    sudo find . 2>/dev/null | sudo cpio -o -H newc -R root:root | xz -9 --check=crc32 >"${OUTPUT_PATH}"
+    case "${INITRD_FORMAT}" in
+    *'x-cpio'*) sudo find . 2>/dev/null | sudo cpio -o -H newc -R root:root >"${OUTPUT_PATH}" ;;
+    *'x-xz'*) sudo find . 2>/dev/null | sudo cpio -o -H newc -R root:root | xz -9 -C crc32 -c - >"${OUTPUT_PATH}" ;;
+    *'x-lz4'*) sudo find . 2>/dev/null | sudo cpio -o -H newc -R root:root | lz4 -9 -l -c - >"${OUTPUT_PATH}" ;;
+    *'x-lzma'*) sudo find . 2>/dev/null | sudo cpio -o -H newc -R root:root | lzma -9 -c - >"${OUTPUT_PATH}" ;;
+    *'x-bzip2'*) sudo find . 2>/dev/null | sudo cpio -o -H newc -R root:root | bzip2 -9 -c - >"${OUTPUT_PATH}" ;;
+    *'gzip'*) sudo find . 2>/dev/null | sudo cpio -o -H newc -R root:root | gzip -9 -c - >"${OUTPUT_PATH}" ;;
+    *'zstd'*) sudo find . 2>/dev/null | sudo cpio -o -H newc -R root:root | zstd -19 -T0 -f -c - >"${OUTPUT_PATH}" ;;
+    *) ;;
+    esac
   ) || true
   sudo rm -rf "${RDXZ_PATH}"
 }
@@ -423,4 +411,13 @@ _EOF_
   rm -f "${OVAPATH}"
   ovftool/ovftool "OVA_${VMNAME}/${VMNAME}.vmx" "${OVAPATH}"
   rm -rf "OVA_${VMNAME}"
+}
+
+# copy buildroot
+function copyBuildroot() {
+  DEST_PATH="${1}"
+  rm -rf "${DEST_PATH}"
+  mkdir -p "${DEST_PATH}"
+  cp -f "../${DEST_PATH}/bzImage" "${DEST_PATH}/bzImage-arc"
+  cp -f "../${DEST_PATH}/rootfs.cpio.zst" "${DEST_PATH}/initrd-arc"
 }

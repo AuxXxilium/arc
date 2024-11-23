@@ -220,28 +220,6 @@ done
 CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
 echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
-function _bootwait() {
-  # Exec Bootwait to check SSH/Web connection
-  BOOTWAIT=5
-  busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
-  MSG=""
-  while test ${BOOTWAIT} -ge 0; do
-    MSG="\033[1;33mAccess SSH/Web will interrupt boot...\033[0m"
-    echo -en "\r${MSG}"
-    busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
-    if ! diff WB WC >/dev/null 2>&1; then
-      echo -en "\r\033[1;33mAccess SSH/Web detected and boot is interrupted.\033[0m\n"
-      rm -f WB WC
-      exit 0
-    fi
-    sleep 1
-    BOOTWAIT=$((BOOTWAIT - 1))
-  done
-  rm -f WB WC
-  echo -en "\r$(printf "%$((${#MSG} * 2))s" " ")\n"
-  return 0
-}
-
 # Boot
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
 if [ "${DIRECTBOOT}" = "true" ]; then
@@ -304,11 +282,11 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   if [ "${DSMLOGO}" = "true" ] && [ -c "/dev/fb0" ]; then
     [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
     [ -n "${IPCON}" ] && URL="http://${IPCON}:5000" || URL="http://find.synology.com/"
-    python ${ARC_PATH}/include/functions.py makeqr -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
+    python3 ${ARC_PATH}/include/functions.py makeqr -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
     [ -f "${TMP_PATH}/qrcode_boot.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_boot.png" >/dev/null 2>/dev/null || true
   fi
 
-  for T in $(w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
+  for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
     if [ -w "/dev/${T}" ]; then
       [ -n "${IPCON}" ] && echo -e "Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\n" >"/dev/${T}" 2>/dev/null || echo -e "Try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes.\nNo IP found.\033[0m\n" >"/dev/${T}" 2>/dev/null
     fi

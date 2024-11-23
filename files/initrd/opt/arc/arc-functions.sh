@@ -334,8 +334,8 @@ function cmdlineMenu() {
           RET=$?
           case ${RET} in
             0) # ok-button
-              NAME="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
-              VALUE="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+              NAME="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
+              VALUE="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
               [[ "${NAME}" = *= ]] && NAME="${NAME%?}"
               [[ "${VALUE}" = =* ]] && VALUE="${VALUE#*=}"
               if [ -z "${NAME//\"/}" ]; then
@@ -539,8 +539,8 @@ function synoinfoMenu() {
           RET=$?
           case ${RET} in
             0) # ok-button
-              NAME="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
-              VALUE="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+              NAME="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
+              VALUE="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
               [[ "${NAME}" = *= ]] && NAME="${NAME%?}"
               [[ "${VALUE}" = =* ]] && VALUE="${VALUE#*=}"
               if [ -z "${NAME//\"/}" ]; then
@@ -1350,7 +1350,7 @@ function credits() {
   TEXT+="\n   Redpill: \ZbTTG / Pocopico\Zn"
   TEXT+="\n   ARPL/RR: \Zbfbelavenuto / wjz304\Zn"
   TEXT+="\n   Others: \Zb007revad / more...\Zn"
-  TEXT+="\n   System: \ZbBuildroot 2023.08.x / 2024.02.x\Zn"
+  TEXT+="\n   System: \ZbBuildroot\Zn"
   TEXT+="\n   DSM: \ZbSynology Inc.\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4>> Note:\Zn"
@@ -1386,10 +1386,10 @@ function staticIPMenu() {
       RET=$?
       case ${RET} in
       0) # ok-button
-        address="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
-        netmask="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
-        gateway="$(cat "${TMP_PATH}/resp" | sed -n '3p')"
-        dnsname="$(cat "${TMP_PATH}/resp" | sed -n '4p')"
+        address="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
+        netmask="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
+        gateway="$(sed -n '3p' "${TMP_PATH}/resp" 2>/dev/null)"
+        dnsname="$(sed -n '4p' "${TMP_PATH}/resp" 2>/dev/null)"
         (
           if [ -z "${address}" ]; then
             if [ -n "$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")" ]; then
@@ -1553,8 +1553,8 @@ function addNewDSMUser() {
     --form "${MSG}" 8 60 3 "username:" 1 1 "user" 1 10 50 0 "password:" 2 1 "passwd" 2 10 50 0 \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
-  username="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
-  password="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
+  username="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
+  password="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
   (
     ONBOOTUP=""
     ONBOOTUP="${ONBOOTUP}if synouser --enum local | grep -q ^${username}\$; then synouser --setpw ${username} ${password}; else synouser --add ${username} ${password} arc 0 user@arc.arc 1; fi\n"
@@ -1599,10 +1599,24 @@ function loaderPassword() {
   RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
   rm -rf "${RDXZ_PATH}"
   mkdir -p "${RDXZ_PATH}"
-  [ -f "${ARC_RAMDISK_USER_FILE}" ] && (
-    cd "${RDXZ_PATH}"
-    xz -dc <"${ARC_RAMDISK_USER_FILE}" | cpio -idm
-  ) >/dev/null 2>&1 || true
+  if [ -f "${ARC_RAMDISK_USER_FILE}" ]; then
+    INITRD_FORMAT=$(file -b --mime-type "${ARC_RAMDISK_USER_FILE}")
+    (
+      cd "${RDXZ_PATH}"
+      case "${INITRD_FORMAT}" in
+      *'x-cpio'*) cpio -idm <"${ARC_RAMDISK_USER_FILE}" ;;
+      *'x-xz'*) xz -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+      *'x-lz4'*) lz4 -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+      *'x-lzma'*) lzma -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+      *'x-bzip2'*) bzip2 -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+      *'gzip'*) gzip -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+      *'zstd'*) zstd -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+      *) ;;
+      esac
+    ) >/dev/null 2>&1 || true
+  else
+    INITRD_FORMAT="application/zstd"
+  fi
   if [ "${STRPASSWD:-arc}" = "arc" ]; then
     rm -f ${RDXZ_PATH}/etc/shadow* 2>/dev/null
   else
@@ -1612,8 +1626,17 @@ function loaderPassword() {
   if [ -n "$(ls -A "${RDXZ_PATH}" 2>/dev/null)" ] && [ -n "$(ls -A "${RDXZ_PATH}/etc" 2>/dev/null)" ]; then
     (
       cd "${RDXZ_PATH}"
-      RDSIZE=$(du -sb ${RDXZ_PATH} 2>/dev/null | awk '{print $1}')
-      find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | xz -9 --check=crc32 >"${ARC_RAMDISK_USER_FILE}"
+      local RDSIZE=$(du -sb ${RDXZ_PATH} 2>/dev/null | awk '{print $1}')
+      case "${INITRD_FORMAT}" in
+      *'x-cpio'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} >"${RR_RAMUSER_FILE}" ;;
+      *'x-xz'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | xz -9 -C crc32 -c - >"${RR_RAMUSER_FILE}" ;;
+      *'x-lz4'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | lz4 -9 -l -c - >"${RR_RAMUSER_FILE}" ;;
+      *'x-lzma'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | lzma -9 -c - >"${RR_RAMUSER_FILE}" ;;
+      *'x-bzip2'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | bzip2 -9 -c - >"${RR_RAMUSER_FILE}" ;;
+      *'gzip'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | gzip -9 -c - >"${RR_RAMUSER_FILE}" ;;
+      *'zstd'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | zstd -19 -T0 -f -c - >"${RR_RAMUSER_FILE}" ;;
+      *) ;;
+      esac
     ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Loader Password" \
       --progressbox "Changing Loader password..." 30 100
   else
@@ -1640,9 +1663,9 @@ function loaderPorts() {
     RET=$?
     case ${RET} in
     0) # ok-button
-      HTTPPORT=$(sed -n '1p' "${TMP_PATH}/resp")
-      DUFSPORT=$(sed -n '2p' "${TMP_PATH}/resp")
-      TTYDPORT=$(sed -n '3p' "${TMP_PATH}/resp")
+      HTTP=$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)
+      DUFS=$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)
+      TTYD=$(sed -n '3p' "${TMP_PATH}/resp" 2>/dev/null)
       EP=""
       for P in "${HTTPPORT}" "${DUFSPORT}" "${TTYDPORT}"; do check_port "${P}" || EP="${EP} ${P}"; done
       if [ -n "${EP}" ]; then
@@ -1651,16 +1674,30 @@ function loaderPorts() {
         [ $? -eq 0 ] && continue || break
       fi
       rm -f "/etc/arc.conf"
-      if [ ! "${HTTPPORT:-8080}" = "8080" ]; then echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf"; /etc/init.d/S90thttpd restart >/dev/null 2>&1; fi
-      if [ ! "${DUFSPORT:-7304}" = "7304" ]; then echo "DUFS_PORT=${DUFSPORT}" >>"/etc/arc.conf"; /etc/init.d/S99dufs restart >/dev/null 2>&1; fi
-      if [ ! "${TTYDPORT:-7681}" = "7681" ]; then echo "TTYD_PORT=${TTYDPORT}" >>"/etc/arc.conf"; /etc/init.d/S99ttyd restart >/dev/null 2>&1; fi
+      [ ! "${HTTPPORT:-8080}" = "8080" ] && (echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf"; /etc/init.d/S90thttpd restart >/dev/null 2>&1)
+      [ ! "${DUFSPORT:-7304}" = "7304" ] && (echo "DUFS_PORT=${DUFSPORT}" >>"/etc/arc.conf"; /etc/init.d/S99dufs restart >/dev/null 2>&1)
+      [ ! "${TTYDPORT:-7681}" = "7681" ] && (echo "TTYD_PORT=${TTYDPORT}" >>"/etc/arc.conf"; /etc/init.d/S99ttyd restart >/dev/null 2>&1)
       RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
       rm -rf "${RDXZ_PATH}"
       mkdir -p "${RDXZ_PATH}"
-      [ -f "${ARC_RAMDISK_USER_FILE}" ] && (
-        cd "${RDXZ_PATH}"
-        xz -dc <"${ARC_RAMDISK_USER_FILE}" | cpio -idm
-      ) >/dev/null 2>&1 || true
+      if [ -f "${ARC_RAMDISK_USER_FILE}" ]; then
+        INITRD_FORMAT=$(file -b --mime-type "${ARC_RAMDISK_USER_FILE}")
+        (
+          cd "${RDXZ_PATH}"
+          case "${INITRD_FORMAT}" in
+          *'x-cpio'*) cpio -idm <"${ARC_RAMDISK_USER_FILE}" ;;
+          *'x-xz'*) xz -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+          *'x-lz4'*) lz4 -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+          *'x-lzma'*) lzma -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+          *'x-bzip2'*) bzip2 -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+          *'gzip'*) gzip -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+          *'zstd'*) zstd -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+          *) ;;
+          esac
+        ) >/dev/null 2>&1 || true
+      else
+        INITRD_FORMAT="application/zstd"
+      fi
       if [ ! -f "/etc/arc.conf" ]; then
         rm -f "${RDXZ_PATH}/etc/arc.conf" 2>/dev/null
       else
@@ -1670,8 +1707,17 @@ function loaderPorts() {
       if [ -n "$(ls -A "${RDXZ_PATH}" 2>/dev/null)" ] && [ -n "$(ls -A "${RDXZ_PATH}/etc" 2>/dev/null)" ]; then
         (
           cd "${RDXZ_PATH}"
-          RDSIZE=$(du -sb ${RDXZ_PATH} 2>/dev/null | awk '{print $1}')
-          find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | xz -9 --check=crc32 >"${ARC_RAMDISK_USER_FILE}"
+          local RDSIZE=$(du -sb ${RDXZ_PATH} 2>/dev/null | awk '{print $1}')
+          case "${INITRD_FORMAT}" in
+          *'x-cpio'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} >"${ARC_RAMDISK_USER_FILE}" ;;
+          *'x-xz'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | xz -9 -C crc32 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+          *'x-lz4'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | lz4 -9 -l -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+          *'x-lzma'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | lzma -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+          *'x-bzip2'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | bzip2 -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+          *'gzip'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | gzip -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+          *'zstd'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | zstd -19 -T0 -f -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+          *) ;;
+          esac
         ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Loader Ports" \
           --progressbox "Changing Ports..." 30 100
       else

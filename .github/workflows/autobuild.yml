@@ -57,7 +57,7 @@ jobs:
       # Get extractor, LKM, Addons, Modules, Theme and Configs
       - name: Get Buildroot
         run: |
-          . scripts/func.sh
+          . scripts/func.sh "${{ secrets.BUILD_TOKEN }}"
 
           echo "Get Dependencies"
           getAddons "files/p3/addons"
@@ -120,7 +120,6 @@ jobs:
           
           echo "Repack initrd"
           cp -f "brx/bzImage-arc" "files/p3/bzImage-arc"
-          #cp -f "brx/initrd-arc" "files/p3/initrd-arc"
           repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
@@ -137,9 +136,9 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           echo "Image Converter"
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
+          qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
+          qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
+          qemu-img convert -p -f raw -O vhdx ${IMAGE_FILE} arc.vhdx
 
       # Zip image and generate checksum
       - name: Pack Next Image
@@ -210,9 +209,9 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           echo "Image Converter"
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic arc-dyn.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
-          qemu-img convert ${IMAGE_FILE} -O vhdx -o subformat=dynamic arc.vhdx
+          qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
+          qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
+          qemu-img convert -p -f raw -O vhdx ${IMAGE_FILE} arc.vhdx
 
       # Zip image and generate checksum
       - name: Pack Stable Image

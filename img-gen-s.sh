@@ -5,7 +5,7 @@ set -e
 # Clean cached Files
 sudo git clean -fdx
 
-. scripts/func.sh
+. scripts/func.sh "${AUX_TOKEN}"
 
 # Get extractor, LKM, addons and Modules
 echo "Get Dependencies"
@@ -17,7 +17,7 @@ getCustom "files/p3/custom"
 getLKMs "files/p3/lkms"
 getTheme "files/p1/boot/grub"
 getOffline "files/p3/configs"
-getBuildroots "brs"
+[ -f "../brs/bzImage" ] && copyBuildroot "brs" || getBuildroots "brs"
 
 # Sbase
 IMAGE_FILE="arc.img"
@@ -35,8 +35,6 @@ mkdir -p "/tmp/p3"
 sudo mount ${LOOPX}p1 "/tmp/p1"
 sudo mount ${LOOPX}p3 "/tmp/p3"
 
-[[ ! -f "brs/bzImage-arc" || ! -f "brs/initrd-arc" ]] && return 1
-
 ARC_BUILD="`date +'%y%m%d'`"
 ARC_VERSION="13.37.dev"
 ARC_BRANCH="stable"
@@ -46,7 +44,7 @@ echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
 
 echo "Repack initrd"
 cp -f "brs/bzImage-arc" "files/p3/bzImage-arc"
-#cp -f "brs/initrd-arc" "files/p3/initrd-arc"
+[[ ! -f "brs/bzImage-arc" || ! -f "brs/initrd-arc" ]] && exit 1
 repackInitrd "brs/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
 echo "Copying files"
@@ -62,4 +60,4 @@ rmdir "/tmp/p3"
 
 sudo losetup --detach ${LOOPX}
 
-qemu-img convert ${IMAGE_FILE} -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat arc.vmdk
+qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
