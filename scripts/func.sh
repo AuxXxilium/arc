@@ -171,7 +171,7 @@ function getTheme() {
 
 # Get latest Buildroot-X
 # $1 path
-function getBuildroots() {
+function getBuildrootx() {
   echo "Getting Buildroot-X begin"
   local DEST_PATH="${1}"
 
