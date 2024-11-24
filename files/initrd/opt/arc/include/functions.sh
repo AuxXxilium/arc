@@ -502,16 +502,11 @@ function onlineCheck() {
   fi
   [ -z "${KEYMAP}" ] && KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
   if [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ]; then
-    writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
-    [ $(echo "${ARC_VERSION}" | grep "dev" | wc -l) -eq 0 ] && NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-    [ $(echo "${ARC_VERSION}" | grep "dev" | wc -l) -gt 0 ] && NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
     writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
     writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
-    updateOffline
   else
     REGION="$(readConfigKey "time.region" "${USER_CONFIG_FILE}")"
     TIMEZONE="$(readConfigKey "time.timezone" "${USER_CONFIG_FILE}")"
-    writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
   fi
   [ -n "${TIMEZONE}" ] && [ -n "${REGION}" ] && ln -sf "/usr/share/zoneinfo/${REGION}/${TIMEZONE}" /etc/localtime
   LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
@@ -520,6 +515,13 @@ function onlineCheck() {
     [ -n "${KEYMAP}" ] && writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
     [ -z "${KEYMAP}" ] && KEYMAP="us"
     loadkeys ${KEYMAP}
+  fi
+  [ $(echo "${ARC_VERSION}" | grep "dev" | wc -l) -eq 0 ] && NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)" || NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
+  if [ -n "${NEWTAG}" ]; then
+    writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
+    updateOffline
+  else
+    writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
   fi
 }
 

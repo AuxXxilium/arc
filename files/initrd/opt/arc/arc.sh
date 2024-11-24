@@ -832,7 +832,7 @@ else
   [ "${CONFDONE}" = "true" ] && NEXT="2" || NEXT="1"
   [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
   while true; do
-    echo "= \"\Z4===== Main =====\Zn \" "                                            >"${TMP_PATH}/menu"
+    echo "= \"\Z4===== Main =====\Zn \" "                                                     >"${TMP_PATH}/menu"
     if [ -z "${USERID}" ] && [ "${ARCOFFLINE}" != "true" ]; then
       echo "0 \"HardwareID for Arc Patch\" "                                                  >>"${TMP_PATH}/menu"
     fi
@@ -843,10 +843,10 @@ else
     if [ "${BUILDDONE}" = "true" ]; then
       echo "3 \"Boot Loader \" "                                                              >>"${TMP_PATH}/menu"
     fi
-    echo "= \"\Z4===== Info =====\Zn \" "                                           >>"${TMP_PATH}/menu"
+    echo "= \"\Z4===== Info =====\Zn \" "                                                     >>"${TMP_PATH}/menu"
     echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
     echo "A \"Networkdiag \" "                                                                >>"${TMP_PATH}/menu"
-    echo "= \"\Z4===== System ====\Zn \" "                                           >>"${TMP_PATH}/menu"
+    echo "= \"\Z4===== System ====\Zn \" "                                                    >>"${TMP_PATH}/menu"
     if [ "${CONFDONE}" = "true" ]; then
       if [ "${ARCOPTS}" = "true" ]; then
         echo "4 \"\Z1Hide Arc DSM Options\Zn \" "                                             >>"${TMP_PATH}/menu"
@@ -854,7 +854,7 @@ else
         echo "4 \"\Z1Show Arc DSM Options\Zn \" "                                             >>"${TMP_PATH}/menu"
       fi
       if [ "${ARCOPTS}" = "true" ]; then
-        echo "= \"\Z4==== Arc DSM ====\Zn \" "                                        >>"${TMP_PATH}/menu"
+        echo "= \"\Z4==== Arc DSM ====\Zn \" "                                                >>"${TMP_PATH}/menu"
         echo "b \"Addons \" "                                                                 >>"${TMP_PATH}/menu"
         echo "d \"Modules \" "                                                                >>"${TMP_PATH}/menu"
         echo "e \"Version \" "                                                                >>"${TMP_PATH}/menu"
@@ -889,8 +889,8 @@ else
         echo "6 \"\Z1Show Boot Options\Zn \" "                                                >>"${TMP_PATH}/menu"
       fi
       if [ "${BOOTOPTS}" = "true" ]; then
-        echo "= \"\Z4===== Boot =====\Zn \" "                                        >>"${TMP_PATH}/menu"
-        echo "m \"Boot Kernelload: \Z4${KERNELLOAD}\Zn \" "                                    >>"${TMP_PATH}/menu"
+        echo "= \"\Z4===== Boot =====\Zn \" "                                                 >>"${TMP_PATH}/menu"
+        echo "m \"Boot Kernelload: \Z4${KERNELLOAD}\Zn \" "                                   >>"${TMP_PATH}/menu"
         echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn \" "                                   >>"${TMP_PATH}/menu"
         if [ "${DIRECTBOOT}" = "false" ]; then
           echo "i \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn \" "                                >>"${TMP_PATH}/menu"
@@ -903,7 +903,7 @@ else
         echo "7 \"\Z1Show DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
       fi
       if [ "${DSMOPTS}" = "true" ]; then
-        echo "= \"\Z4===== DSM =====\Zn \" "                                        >>"${TMP_PATH}/menu"
+        echo "= \"\Z4===== DSM =====\Zn \" "                                                  >>"${TMP_PATH}/menu"
         echo "j \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
         echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
         echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"

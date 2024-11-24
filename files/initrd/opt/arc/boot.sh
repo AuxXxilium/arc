@@ -15,8 +15,8 @@ ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 BUS=$(getBus "${LOADER_DISK}")
-# Check if machine has EFI
-[ -d /sys/firmware/efi ] && EFI=1 || EFI=0
+FBI=$(cat /sys/class/graphics/fb*/name 2>/dev/null | head -1)
+EFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)
 
 # Print Title centralized
 clear
@@ -157,13 +157,21 @@ CMDLINE['console']="ttyS0,115200n8"
 CMDLINE['consoleblank']="600"
 # CMDLINE['no_console_suspend']="1"
 CMDLINE['root']="/dev/md0"
-CMDLINE['rootwait']=""
 CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
+CMDLINE['rootwait']=""
 CMDLINE['panic']="${KERNELPANIC:-0}"
+# CMDLINE['nointremap']="" # no need
+# CMDLINE['split_lock_detect']="off" # no need
 CMDLINE['pcie_aspm']="off"
+# CMDLINE['nox2apic']=""  # check platform
+# CMDLINE['nomodeset']=""
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 #[ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="disable"
+
+if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
+  CMDLINE["nox2apic"]=""
+fi
 
 #if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
 #   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "sdhci"; then
@@ -291,6 +299,15 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       [ -n "${IPCON}" ] && echo -e "Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes.\033[0m\n" >"/dev/${T}" 2>/dev/null || echo -e "Try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes.\nNo IP found.\033[0m\n" >"/dev/${T}" 2>/dev/null
     fi
   done
+
+  # # Unload all network interfaces
+  # for D in $(readlink /sys/class/net/*/device/driver); do rmmod -f "$(basename ${D})" 2>/dev/null || true; done
+
+  # Unload all graphics drivers
+  # for D in $(lsmod | grep -E '^(nouveau|amdgpu|radeon|i915)' | awk '{print $1}'); do rmmod -f "${D}" 2>/dev/null || true; done
+  # for I in $(find /sys/devices -name uevent -exec bash -c 'cat {} 2>/dev/null | grep -Eq "PCI_CLASS=0?30[0|1|2]00" && dirname {}' \;); do
+  #   [ -e ${I}/reset ] && cat ${I}/vendor >/dev/null | grep -iq 0x10de && echo 1 >${I}/reset || true # Proc open nvidia driver when booting
+  # done
 
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
   # Executes DSM kernel via KEXEC

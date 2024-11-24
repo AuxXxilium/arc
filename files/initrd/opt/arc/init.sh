@@ -9,9 +9,7 @@ set -e
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 checkBootLoader || die "The loader is corrupted, please rewrite it!"
 BUS=$(getBus "${LOADER_DISK}")
-
-# Check if machine has EFI
-[ -d /sys/firmware/efi ] && EFI=1 || EFI=0
+EFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)
 
 # Print Title centralized
 clear
