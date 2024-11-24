@@ -277,7 +277,7 @@ function getBus() {
 # 1 - ethN
 function getIP() {
   local IP=""
-  MACR="$(cat /sys/class/net/${1}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
+  MACR="$(cat /sys/class/net/${1}/address 2>/dev/null | sed 's/://g')"
   IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
   if [ -n "${IPR}" ]; then
     IFS='/' read -r -a IPRA <<<"${IPR}"

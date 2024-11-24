@@ -42,9 +42,9 @@ function getnet() {
 }
 
 # Get Amount of NIC
-ETHX="$(ls /sys/class/net 2>/dev/null | grep eth)"
+ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
 # Get actual IP
-for ETH in ${ETHX}; do
-  IPCON=$(getIP ${ETH})
+for N in ${ETHX}; do
+  IPCON="$(getIP "${N}")"
   [ -n "${IPCON}" ] && break
 done

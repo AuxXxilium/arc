@@ -94,26 +94,26 @@ if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); 
 fi
 # Read/Write IP/Mac to config
 ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
-for N in ${ETHX}; do
-  MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
-  IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
-  if [ -n "${IPR}" ] && [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-    IFS='/' read -r -a IPRA <<<"${IPR}"
-    ip addr flush dev ${N}
-    ip addr add ${IPRA[0]}/${IPRA[1]:-"255.255.255.0"} dev ${N}
-    if [ -n "${IPRA[2]}" ]; then
-      ip route add default via ${IPRA[2]} dev ${N}
+  for N in ${ETHX}; do
+    MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
+    IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
+    if [ -n "${IPR}" ] && [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
+      IFS='/' read -r -a IPRA <<<"${IPR}"
+      ip addr flush dev "${N}"
+      ip addr add "${IPRA[0]}/${IPRA[1]:-"255.255.255.0"}" dev "${N}"
+      if [ -n "${IPRA[2]}" ]; then
+        ip route add default via "${IPRA[2]}" dev "${N}"
+      fi
+      if [ -n "${IPRA[3]:-${IPRA[2]}}" ]; then
+        sed -i "/nameserver ${IPRA[3]:-${IPRA[2]}}/d" /etc/resolv.conf
+        echo "nameserver ${IPRA[3]:-${IPRA[2]}}" >>/etc/resolv.conf
+      fi
+      sleep 1
     fi
-    if [ -n "${IPRA[3]:-${IPRA[2]}}" ]; then
-      sed -i "/nameserver ${IPRA[3]:-${IPRA[2]}}/d" /etc/resolv.conf
-      echo "nameserver ${IPRA[3]:-${IPRA[2]}}" >>/etc/resolv.conf
-    fi
-    sleep 1
-  fi
-  [ "${N::3}" = "eth" ] && ethtool -s ${N} wol g 2>/dev/null || true
-  # [ "${N::3}" = "eth" ] && ethtool -K ${N} rxhash off 2>/dev/null || true
-  initConfigKey "${N}" "${MACR}" "${USER_CONFIG_FILE}"
-done
+    [ "${N::3}" = "eth" ] && ethtool -s "${N}" wol g 2>/dev/null || true
+    # [ "${N::3}" = "eth" ] && ethtool -K ${N} rxhash off 2>/dev/null || true
+    initConfigKey "${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
+  done
 ETHN=$(echo ${ETHX} | wc -w)
 writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
 # No network devices
@@ -177,8 +177,8 @@ for N in ${ETHX}; do
       echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
       break
     fi
-    COUNT=$((${COUNT} + 1))
-    IP="$(getIP ${N})"
+    COUNT=$((COUNT + 1))
+    IP="$(getIP "${N}")"
     if [ -n "${IP}" ]; then
       SPEED=$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')
       if [[ "${IP}" =~ ^169\.254\..* ]]; then
