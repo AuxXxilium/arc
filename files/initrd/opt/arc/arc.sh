@@ -369,6 +369,9 @@ function arcVersion() {
       if [ -n "${ARCCONF}" ]; then
         initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
       fi
+      if [ ${SASDRIVES} -gt 0 ]; then
+        initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
+      fi
     fi
     while IFS=': ' read -r ADDON PARAM; do
       [ -z "${ADDON}" ] && continue
