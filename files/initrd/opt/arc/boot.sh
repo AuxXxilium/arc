@@ -200,7 +200,7 @@ ETHN=$(echo ${ETHX} | wc -w)
 [ -z "${ETHM}" ] && ETHM="${ETHN}"
 NIC=0
 for N in ${ETHX}; do
-  MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
+  MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}" | tr '[:lower:]' '[:upper:]')"
   [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | tr '[:lower:]' '[:upper:]')" || NIC=$((NIC + 1))
   [ ${NIC} -le ${ETHM} ] && CMDLINE["mac${NIC}"]="${MAC}"
   [ ${NIC} -ge ${ETHM} ] && break
