@@ -150,7 +150,6 @@ fi
 CMDLINE["HddHotplug"]="1"
 CMDLINE["vender_format_version"]="2"
 CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-
 CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
 CMDLINE['console']="ttyS0,115200n8"
@@ -161,18 +160,18 @@ CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 CMDLINE['rootwait']=""
 CMDLINE['panic']="${KERNELPANIC:-0}"
-# CMDLINE['nointremap']="" # no need
-# CMDLINE['split_lock_detect']="off" # no need
+
+# DSM Specific Cmdline
 CMDLINE['pcie_aspm']="off"
-# CMDLINE['nox2apic']=""  # check platform
-# CMDLINE['nomodeset']=""
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="passive"
-
+# CMDLINE['nointremap']="" # no need
+# CMDLINE['split_lock_detect']="off" # no need
+# CMDLINE['nox2apic']=""  # check platform
+# CMDLINE['nomodeset']=""
 if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
   CMDLINE["nox2apic"]=""
 fi
-
 #if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
 #   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "sdhci"; then
 #     [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
@@ -194,7 +193,7 @@ if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
   CMDLINE["SASmodel"]="1"
 fi
 
-# Cmdline NIC Settings
+# NIC Cmdline
 ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
 ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)
 ETHN=$(echo ${ETHX} | wc -w)
