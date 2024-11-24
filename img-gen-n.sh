@@ -44,9 +44,14 @@ echo "${ARC_VERSION}" >files/p1/ARC-VERSION
 echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
 
 echo "Repack initrd"
-cp -f "brx/bzImage-arc" "files/p3/bzImage-arc"
-[[ ! -f "brx/bzImage-arc" || ! -f "brx/initrd-arc" ]] && exit 1
-repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+if [ -f "brx/bzImage-arc" ] && [ -f "brx/initrd-arc" ]; then
+    cp -f "brx/bzImage-arc" "files/p3/bzImage-arc"
+    repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+else
+    sudo umount "/tmp/p1"
+    sudo umount "/tmp/p3"
+    exit 1
+fi
 
 echo "Copying files"
 sudo cp -rf "files/p1/"* "/tmp/p1"

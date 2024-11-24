@@ -171,7 +171,7 @@ function getTheme() {
 
 # Get latest Buildroot-X
 # $1 path
-function getBuildroots() {
+function getBuildrootx() {
   echo "Getting Buildroot-X begin"
   local DEST_PATH="${1}"
 
@@ -183,7 +183,7 @@ function getBuildroots() {
   while read -r ID NAME; do
     if [ "${NAME}" = "buildroot-${TAG}.zip" ]; then
       curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-buildroot-x/releases/assets/${ID}" -o "${DEST_PATH}/brx.zip"
-      echo "Buildroot: ${TAG}"
+      echo "Buildroot-X: ${TAG}"
       unzip -o "${DEST_PATH}/brx.zip" -d "${DEST_PATH}"
       mv -f "${DEST_PATH}/bzImage" "${DEST_PATH}/bzImage-arc"
       mv -f "${DEST_PATH}/rootfs.cpio.zst" "${DEST_PATH}/initrd-arc"
@@ -206,7 +206,7 @@ function getBuildroots() {
   while read -r ID NAME; do
     if [ "${NAME}" = "buildroot-${TAG}.zip" ]; then
       curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-buildroot-s/releases/assets/${ID}" -o "${DEST_PATH}/brs.zip"
-      echo "Buildroot: ${TAG}"
+      echo "Buildroot-S: ${TAG}"
       unzip -o "${DEST_PATH}/brs.zip" -d "${DEST_PATH}"
       mv -f "${DEST_PATH}/bzImage" "${DEST_PATH}/bzImage-arc"
       mv -f "${DEST_PATH}/rootfs.cpio.zst" "${DEST_PATH}/initrd-arc"
@@ -232,24 +232,25 @@ function getOffline() {
 }
 
 # repack initrd
-# $1 initrd file  
+# $1 initrd file
 # $2 plugin path
 # $3 output file
 function repackInitrd() {
-  INITRD_FILE="${1}"
-  PLUGIN_PATH="${2}"
-  OUTPUT_PATH="${3:-${INITRD_FILE}}"
+  local INITRD_FILE="${1}"
+  local PLUGIN_PATH="${2}"
+  local OUTPUT_PATH="${3:-${INITRD_FILE}}"
 
   [ -z "${INITRD_FILE}" ] || [ ! -f "${INITRD_FILE}" ] && exit 1
   [ -z "${PLUGIN_PATH}" ] || [ ! -d "${PLUGIN_PATH}" ] && exit 1
-  
+
   INITRD_FILE="$(readlink -f "${INITRD_FILE}")"
   PLUGIN_PATH="$(readlink -f "${PLUGIN_PATH}")"
   OUTPUT_PATH="$(readlink -f "${OUTPUT_PATH}")"
 
-  RDXZ_PATH="rdxz_tmp"
+  local RDXZ_PATH="rdxz_tmp"
   mkdir -p "${RDXZ_PATH}"
   local INITRD_FORMAT=$(file -b --mime-type "${INITRD_FILE}")
+
   case "${INITRD_FORMAT}" in
   *'x-cpio'*) (cd "${RDXZ_PATH}" && sudo cpio -idm <"${INITRD_FILE}") >/dev/null 2>&1 ;;
   *'x-xz'*) (cd "${RDXZ_PATH}" && xz -dc "${INITRD_FILE}" | sudo cpio -idm) >/dev/null 2>&1 ;;
@@ -260,8 +261,10 @@ function repackInitrd() {
   *'zstd'*) (cd "${RDXZ_PATH}" && zstd -dc "${INITRD_FILE}" | sudo cpio -idm) >/dev/null 2>&1 ;;
   *) ;;
   esac
+
   sudo cp -rf "${PLUGIN_PATH}/"* "${RDXZ_PATH}/"
   [ -f "${OUTPUT_PATH}" ] && rm -rf "${OUTPUT_PATH}"
+
   case "${INITRD_FORMAT}" in
   *'x-cpio'*) (cd "${RDXZ_PATH}" && sudo find . 2>/dev/null | sudo cpio -o -H newc -R root:root >"${OUTPUT_PATH}") >/dev/null 2>&1 ;;
   *'x-xz'*) (cd "${RDXZ_PATH}" && sudo find . 2>/dev/null | sudo cpio -o -H newc -R root:root | xz -9 -C crc32 -c - >"${OUTPUT_PATH}") >/dev/null 2>&1 ;;
