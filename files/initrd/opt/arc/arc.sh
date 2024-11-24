@@ -840,7 +840,7 @@ else
       echo "0 \"HardwareID for Arc Patch\" "                                                  >>"${TMP_PATH}/menu"
     fi
     echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
-    if [ "${CONFDONE}" = "true" ] && [ -n "${IPCON}" ]; then
+    if [ "${CONFDONE}" = "true" ]; then
       echo "2 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
     fi
     if [ "${BUILDDONE}" = "true" ]; then
