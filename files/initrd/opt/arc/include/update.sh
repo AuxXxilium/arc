@@ -47,7 +47,7 @@ function updateLoader() {
         --infobox "Updating Loader..." 3 50
       if unzip -oq "${TMP_PATH}/update.zip" -d "/mnt"; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" \
-        --infobox "Update successful!" 3 50
+        --infobox "Update Loader successful!" 3 50
         sleep 2
       else
         if [ "${ARCMODE}" = "update" ]; then
@@ -73,13 +73,13 @@ function updateLoader() {
   [ -n "${ARCCONF}" ] && cp -f "${TMP_PATH}/bak.yml" "${S_FILE}"
   if [ "${ARCMODE}" = "update" ] && [ "${CONFDONE}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-      --infobox "Update successful! -> Reboot to automated Build Mode..." 3 60
+      --infobox "Update Loader successful! -> Reboot to automated Build Mode..." 3 60
     sleep 3
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     rebootTo "automated"
   else
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-      --infobox "Update successful! -> Reboot to Config Mode..." 3 50
+      --infobox "Update Loader successful! -> Reboot to Config Mode..." 3 50
     sleep 3
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     rebootTo "config"
@@ -134,7 +134,7 @@ function updateAddons() {
           rm -f "${F}"
         done
         dialog --backtitle "$(backtitle)" --title "Update Addons" \
-          --infobox "Update successful!" 3 50
+          --infobox "Update Addons successful!" 3 50
         sleep 2
       else
         return 1
@@ -187,7 +187,7 @@ function updatePatches() {
       if unzip -oq "${TMP_PATH}/patches.zip" -d "${PATCH_PATH}"; then
         rm -f "${TMP_PATH}/patches.zip"
         dialog --backtitle "$(backtitle)" --title "Update Patches" \
-          --infobox "Update successful!" 3 50
+          --infobox "Update Patches successful!" 3 50
         sleep 2
       else
         return 1
@@ -240,7 +240,7 @@ function updateCustom() {
       if unzip -oq "${TMP_PATH}/custom.zip" -d "${CUSTOM_PATH}"; then
         rm -f "${TMP_PATH}/custom.zip"
         dialog --backtitle "$(backtitle)" --title "Update Custom Kernel" \
-          --infobox "Update successful!" 3 50
+          --infobox "Update Custom successful!" 3 50
         sleep 2
       else
         return 1
@@ -297,7 +297,7 @@ function updateModules() {
       if unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}"; then
         rm -f "${TMP_PATH}/modules.zip"
         dialog --backtitle "$(backtitle)" --title "Update Modules" \
-          --infobox "Update successful!" 3 50
+          --infobox "Update Modules successful!" 3 50
         sleep 2
       else
         return 1
@@ -366,7 +366,7 @@ function updateConfigs() {
       if unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}"; then
         rm -f "${TMP_PATH}/configs.zip"
         dialog --backtitle "$(backtitle)" --title "Update Configs" \
-          --infobox "Update successful!" 3 50
+          --infobox "Update Configs successful!" 3 50
         sleep 2
         [ -n "${USERID}" ] && checkHardwareID || true
       else
@@ -424,7 +424,7 @@ function updateLKMs() {
       if unzip -oq "${TMP_PATH}/rp-lkms.zip" -d "${LKMS_PATH}"; then
         rm -f "${TMP_PATH}/rp-lkms.zip"
         dialog --backtitle "$(backtitle)" --title "Update LKMs" \
-          --infobox "Update successful!" 3 50
+          --infobox "Update LKMs successful!" 3 50
         sleep 2
       else
         return 1
@@ -470,11 +470,11 @@ function dependenciesUpdate() {
   [ $? -ne 0 ] && FAILED="true"
   if [ "${FAILED}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
-      --infobox "Update failed! Try again later." 3 40
+      --infobox "Update Dependencies failed! Try again later." 3 40
     sleep 3
   elif [ "${FAILED}" = "false" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
-      --infobox "Update successful!" 3 40
+      --infobox "Update Dependencies successful!" 3 40
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     sleep 3
