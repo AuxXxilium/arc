@@ -112,6 +112,7 @@ ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
     fi
     [ "${N::3}" = "eth" ] && ethtool -s "${N}" wol g 2>/dev/null || true
     # [ "${N::3}" = "eth" ] && ethtool -K ${N} rxhash off 2>/dev/null || true
+    initConfigKey "${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
   done
 ETHN=$(echo ${ETHX} | wc -w)
 writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
@@ -176,8 +177,8 @@ for N in ${ETHX}; do
       echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
       break
     fi
-    COUNT=$((${COUNT} + 1))
-    IP="$(getIP ${N})"
+    COUNT=$((COUNT + 1))
+    IP="$(getIP "${N}")"
     if [ -n "${IP}" ]; then
       SPEED=$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')
       if [[ "${IP}" =~ ^169\.254\..* ]]; then

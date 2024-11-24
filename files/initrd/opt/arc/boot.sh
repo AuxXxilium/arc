@@ -197,11 +197,11 @@ fi
 ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
 ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)
 ETHN=$(echo ${ETHX} | wc -w)
-[ -z "${ETHM}" ] && ETHM=${ETHN}
+[ -z "${ETHM}" ] && ETHM="${ETHN}"
 NIC=0
 for N in ${ETHX}; do
   MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
-  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | tr '[:lower:]' '[:upper:]')" || NIC=$((${NIC} + 1))
+  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | tr '[:lower:]' '[:upper:]')" || NIC=$((NIC + 1))
   [ ${NIC} -le ${ETHM} ] && CMDLINE["mac${NIC}"]="${MAC}"
   [ ${NIC} -ge ${ETHM} ] && break
 done
@@ -260,8 +260,8 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
         echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
         break
       fi
-      COUNT=$((${COUNT} + 1))
-      IP="$(getIP ${N})"
+      COUNT=$((COUNT + 1))
+      IP="$(getIP "${N}")"
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
