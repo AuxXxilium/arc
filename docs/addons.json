@@ -31,7 +31,7 @@
     },
     "allowdowngrade": {
         "system": false,
-        "description": "Allow Downgrade for AME, SS and VideoStation with DSM 7.2.2",
+        "description": "Allow Downgrade for AME, MediaServer, SynoPhotos, SS and VideoStation on DSM 7.2.2",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
@@ -62,6 +62,21 @@
     "arcdns": {
         "system": false,
         "description": "Dynamic DNS client for arcdns.tech - Modify in DSM DynDNS Settings",
+        "apollolake": true,
+        "broadwell": true,
+        "broadwellnk": true,
+        "broadwellnkv2": true,
+        "broadwellntbap": true,
+        "denverton": true,
+        "geminilake": true,
+        "purley": true,
+        "v1000": true,
+        "r1000": true,
+        "epyc7002": true
+    },
+    "beep": {
+        "system": false,
+        "description": "Beep at startup and shutdown (requires motherboard with buzzer)",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
@@ -527,6 +542,21 @@
     "setrootpw": {
         "system": false,
         "description": "Set root password and enable ssh/sftp. Please modify PW=\"\" to the desired password in DSM Task Scheduler and run the task",
+        "apollolake": true,
+        "broadwell": true,
+        "broadwellnk": true,
+        "broadwellnkv2": true,
+        "broadwellntbap": true,
+        "denverton": true,
+        "geminilake": true,
+        "purley": true,
+        "v1000": true,
+        "r1000": true,
+        "epyc7002": true
+    },
+    "smartctl": {
+        "system": false,
+        "description": "Fix SMART information for HBA devices. @Phachd",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
