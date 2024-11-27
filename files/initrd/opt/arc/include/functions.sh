@@ -229,7 +229,7 @@ function _set_conf_kv() {
 # sort netif busid
 function _sort_netif() {
   local ETHLIST=""
-  local ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
+  local ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
   for N in ${ETHX}; do
     local MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g; s/.*/\L&/')"
     local BUS="$(ethtool -i ${N} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
@@ -585,11 +585,16 @@ function check_port() {
 }
 
 ###############################################################################
-# Unmount new boot loader disk
+# Unmount disks
 function __umountNewBlDisk() {
   umount "${TMP_PATH}/sdX1" 2>/dev/null
   umount "${TMP_PATH}/sdX2" 2>/dev/null
   umount "${TMP_PATH}/sdX3" 2>/dev/null
+}
+
+function __umountDSMRootDisk() {
+  umount "${TMP_PATH}/mdX"
+  rm -rf "${TMP_PATH}/mdX"
 }
 
 ###############################################################################
@@ -597,12 +602,12 @@ function __umountNewBlDisk() {
 function _bootwait() {
   # Exec Bootwait to check SSH/Web connection
   BOOTWAIT=5
-  busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
+  w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
   while test ${BOOTWAIT} -ge 0; do
     MSG="\033[1;33mAccess SSH/Web will interrupt boot...\033[0m"
     echo -en "\r${MSG}"
-    busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
+    w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
     if ! diff WB WC >/dev/null 2>&1; then
       echo -en "\r\033[1;33mAccess SSH/Web detected and boot is interrupted.\033[0m\n"
       rm -f WB WC
@@ -614,4 +619,15 @@ function _bootwait() {
   rm -f WB WC
   echo -en "\r$(printf "%$((${#MSG} * 2))s" " ")\n"
   return 0
+}
+
+###############################################################################
+# check and fix the DSM root partition
+# 1 - DSM root path
+function fixDSMRootPart() {
+  if mdadm --detail "${1}" 2>/dev/null | grep -i "State" | grep -iEq "active|FAILED|Not Started"; then
+    mdadm --stop "${1}" >/dev/null 2>&1
+    mdadm --assemble --scan >/dev/null 2>&1
+    fsck "${1}" >/dev/null 2>&1
+  fi
 }

@@ -93,7 +93,7 @@ if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); 
   _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
 fi
 # Read/Write IP/Mac to config
-ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
+ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
   for N in ${ETHX}; do
     MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
     IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
@@ -112,7 +112,7 @@ ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
     fi
     [ "${N::3}" = "eth" ] && ethtool -s "${N}" wol g 2>/dev/null || true
     # [ "${N::3}" = "eth" ] && ethtool -K ${N} rxhash off 2>/dev/null || true
-    initConfigKey "${ETH}" "${MACR}" "${USER_CONFIG_FILE}"
+    initConfigKey "${N}" "${MACR}" "${USER_CONFIG_FILE}"
   done
 ETHN=$(echo ${ETHX} | wc -w)
 writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"

@@ -721,6 +721,7 @@ function backupMenu() {
         fi
         mkdir -p "${TMP_PATH}/mdX"
         for I in ${DSMROOTS}; do
+          fixDSMRootPart "${I}"
           mount -t ext4 "${I}" "${TMP_PATH}/mdX"
           MODEL=""
           PRODUCTVER=""
@@ -746,6 +747,7 @@ function backupMenu() {
               break
             fi
           fi
+          umount "${TMP_PATH}/mdX"
         done
         if [ -f "${USER_CONFIG_FILE}" ]; then
           PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -775,6 +777,7 @@ function backupMenu() {
         fi
         mkdir -p "${TMP_PATH}/mdX"
         for I in ${DSMROOTS}; do
+          fixDSMRootPart "${I}"
           mount -t ext4 "${I}" "${TMP_PATH}/mdX"
           if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" ]; then
             cp -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" "${PART2_PATH}/machine.key"
@@ -783,6 +786,7 @@ function backupMenu() {
             break
           fi
         done
+        umount "${TMP_PATH}/mdX"
         if [ -f "${PART2_PATH}/machine.key" ]; then
           dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
             --msgbox "Encryption Key restore successful!" 0 0
@@ -802,6 +806,7 @@ function backupMenu() {
         (
           mkdir -p "${TMP_PATH}/mdX"
           for I in ${DSMROOTS}; do
+            fixDSMRootPart "${I}"
             mount -t ext4 "${I}" "${TMP_PATH}/mdX"
             [ $? -ne 0 ] && continue
             if [ -f "${PART2_PATH}/machine.key" ]; then
@@ -854,16 +859,12 @@ function backupMenu() {
         exec init.sh
         ;;
       5)
-        if [ -f "${USER_CONFIG_FILE}" ]; then
-          HWID="$(genHWID)"
-          curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${HWID}&userid=${USERID}" 2>/dev/null
-          if [ $? -eq 0 ]; then
-            dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup successful!" 5 40
-          else
-            dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup failed!" 5 40
-          fi
+        HWID="$(genHWID)"
+        curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${HWID}&userid=${USERID}" 2>/dev/null
+        if [ $? -eq 0 ]; then
+          dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup successful!" 5 40
         else
-          dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "No User Config found!" 5 40
+          dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup failed!" 5 40
         fi
         ;;
     esac
@@ -971,7 +972,7 @@ function sysinfo() {
   CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}')"
   SECURE=$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')
-  ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
+  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
   ETHN=$(echo ${ETHX} | wc -w)
   ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -1020,10 +1021,11 @@ function sysinfo() {
   TEXT+="\n  Vendor: \Zb${VENDOR}\Zn"
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
   if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
+    GPUNAME=""
     for PCI in $(lspci -d ::300 | awk '{print $1}'); do
-      GPUNAME=$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
-      TEXT+="\n  GPU: \Zb${GPUNAME}\Zn"
+      GPUNAME+="$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')"
     done
+    TEXT+="\n  GPU: \Zb${GPUNAME}\Zn"
   fi
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL}))GB\Zn"
   TEXT+="\n  AES | ACPI: \Zb${AESSYS} | ${ACPISYS}\Zn"
@@ -1037,23 +1039,23 @@ function sysinfo() {
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
     while true; do
       if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        TEXT+="\n${DRIVER}: \ZbDOWN\Zn"
+        TEXT+="\n   ${DRIVER}: \ZbDOWN\Zn"
         break
       fi
       if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        TEXT+="\n${DRIVER}: \ZbNOT CONNECTED\Zn"
+        TEXT+="\n   ${DRIVER}: \ZbNOT CONNECTED\Zn"
         break
       fi
       if [ ${COUNT} -ge ${TIMEOUT} ]; then
-        TEXT+="\n${DRIVER}: \ZbTIMEOUT\Zn"
+        TEXT+="\n   ${DRIVER}: \ZbTIMEOUT\Zn"
         break
       fi
       COUNT=$((${COUNT} + 1))
-      IP="$(getIP ${N})"
+      IP="$(getIP "${N}")"
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          TEXT+="\n$   {DRIVER} (${SPEED}): \ZbLINK LOCAL (No DHCP server found.)\Zn"
+          TEXT+="\n   ${DRIVER} (${SPEED}): \ZbLINK LOCAL (No DHCP server found.)\Zn"
         else
           TEXT+="\n   ${DRIVER} (${SPEED}): \Zb${IP}\Zn"
         fi
@@ -1120,8 +1122,7 @@ function sysinfo() {
       TEXT+="\Zb  ${NAME}\Zn\n  Ports: "
       PORTS=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       for P in ${PORTS}; do
-        if lsscsi -b | grep -v - | grep -q "\[${P}:"; then
-          DUMMY="$([ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ] && echo 1 || echo 2)"
+        if lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep -q "\[${P}:"; then
           if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ]; then
             TEXT+="\Z1\Zb$(printf "%02d" ${P})\Zn "
           else
@@ -1139,7 +1140,7 @@ function sysinfo() {
   for PCI in $(lspci -d ::104 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
-    PORTNUM=$(lsscsi -b 2>/dev/null | grep -v - | grep "\[${PORT}:" | wc -l)
+    PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
@@ -1147,7 +1148,7 @@ function sysinfo() {
   for PCI in $(lspci -d ::107 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
-    PORTNUM=$(lsscsi -b 2>/dev/null | grep -v - | grep "\[${PORT}:" | wc -l)
+    PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
@@ -1163,12 +1164,12 @@ function sysinfo() {
   for PCI in $(lspci -d ::c03 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
-    PORTNUM=$(lsscsi -b 2>/dev/null | grep -v - | grep "\[${PORT}:" | wc -l)
+    PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
     [ ${PORTNUM} -eq 0 ] && continue
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  [ $(ls -l /sys/class/mmc_host 2>/dev/null | grep mmc_host | wc -l) -gt 0 ] && TEXT+="\n  MMC Controller:\n"
+  [ $(ls -l /sys/block/mmc* | wc -l) -gt 0 ] && TEXT+="\n  MMC Controller:\n"
   for PCI in $(lspci -d ::805 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORTNUM=$(ls -l /sys/block/mmc* 2>/dev/null | grep "${PCI}" | wc -l)
@@ -1180,7 +1181,7 @@ function sysinfo() {
   for PCI in $(lspci -d ::108 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PORT=$(ls -l /sys/class/nvme 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
-    PORTNUM=$(lsscsi -b 2>/dev/null | grep -v - | grep "\[N:${PORT}:" | wc -l)
+    PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[N:${PORT}:" | wc -l)
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
@@ -1267,7 +1268,7 @@ function uploadDiag () {
 # Shows Networkdiag to user
 function networkdiag() {
   (
-  ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
+  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
   for N in ${ETHX}; do
     echo
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
@@ -1281,8 +1282,8 @@ function networkdiag() {
       continue
     fi
     echo -e "Link: CONNECTED"
-    addr=$(getIP ${N})
-    netmask=$(ifconfig ${N} | grep inet | grep 255 | awk '{print $4}' | cut -f2 -d':')
+    addr=$(getIP "${N}")
+    netmask=$(ifconfig "${N}" | grep inet | grep 255 | awk '{print $4}' | cut -f2 -d':')
     echo -e "IP Address: ${addr}"
     echo -e "Netmask: ${netmask}"
     echo
@@ -1296,7 +1297,7 @@ function networkdiag() {
     else
       websites=("google.com" "github.com" "auxxxilium.tech")
       for website in "${websites[@]}"; do
-        if ping -I ${ETH} -c 1 "${website}" &> /dev/null; then
+        if ping -I "${N}" -c 1 "${website}" &> /dev/null; then
           echo -e "Connection to ${website} is successful."
         else
           echo -e "Connection to ${website} failed."
@@ -1304,20 +1305,20 @@ function networkdiag() {
       done
       echo
       HWID="$(genHWID)"
-      USERIDAPI="$(curl --interface ${N} -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
+      USERIDAPI="$(curl --interface "${N}" -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
       if [[ $? -ne 0 || -z "${USERIDAPI}" ]]; then
         echo -e "Arc UserID API not reachable!"
       else
         echo -e "Arc UserID API reachable! (${USERIDAPI})"
       fi
-      GITHUBAPI=$(curl --interface ${N} -skL -m 10 "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 2>/dev/null)
+      GITHUBAPI=$(curl --interface "${N}" -skL -m 10 "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 2>/dev/null)
       if [[ $? -ne 0 || -z "${GITHUBAPI}" ]]; then
         echo -e "Github API not reachable!"
       else
         echo -e "Github API reachable!"
       fi
       if [ "${CONFDONE}" = "true" ]; then
-        SYNOAPI=$(curl --interface ${N} -skL -m 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')
+        SYNOAPI=$(curl --interface "${N}" -skL -m 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')
         if [[ $? -ne 0 || -z "${SYNOAPI}" ]]; then
           echo -e "Syno API not reachable!"
         else
@@ -1371,7 +1372,7 @@ function credits() {
 ###############################################################################
 # Setting Static IP for Loader
 function staticIPMenu() {
-  ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep -v lo)
+  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
   IPCON=""
   for N in ${ETHX}; do
     MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
@@ -1394,7 +1395,7 @@ function staticIPMenu() {
           if [ -z "${address}" ]; then
             if [ -n "$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")" ]; then
               if [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-                ip addr flush dev ${N}
+                ip addr flush dev "${N}"
               fi
               deleteConfigKey "network.${MACR}" "${USER_CONFIG_FILE}"
               IP="$(getIP)"
@@ -1403,10 +1404,10 @@ function staticIPMenu() {
             fi
           else
             if [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-              ip addr flush dev ${N}
-              ip addr add ${address}/${netmask:-"255.255.255.0"} dev ${N}
+              ip addr flush dev "${N}"
+              ip addr add "${address}/${netmask:-"255.255.255.0"}" dev "${N}"
               if [ -n "${gateway}" ]; then
-                ip route add default via ${gateway} dev ${N}
+                ip route add default via "${gateway}" dev "${N}"
               fi
               if [ -n "${dnsname:-${gateway}}" ]; then
                 sed -i "/nameserver ${dnsname:-${gateway}}/d" /etc/resolv.conf
@@ -1454,6 +1455,7 @@ function downgradeMenu() {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
+      fixDSMRootPart "${I}"
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       [ -f "${TMP_PATH}/mdX/etc/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc/VERSION" >/dev/null
@@ -1463,7 +1465,7 @@ function downgradeMenu() {
     done
     rm -rf "${TMP_PATH}/mdX" >/dev/null
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Allow Downgrade" \
-    --progressbox "Removing ..." 20 70
+    --progressbox "Removing Version lock..." 20 70
   dialog --backtitle "$(backtitle)" --title "Allow Downgrade"  \
     --msgbox "Allow Downgrade Settings completed." 0 0
   return
@@ -1481,6 +1483,7 @@ function resetPassword() {
   rm -f "${TMP_PATH}/menu" >/dev/null
   mkdir -p "${TMP_PATH}/mdX"
   for I in ${DSMROOTS}; do
+    fixDSMRootPart "${I}"
     mount -t ext4 "${I}" "${TMP_PATH}/mdX"
     [ $? -ne 0 ] && continue
     if [ -f "${TMP_PATH}/mdX/etc/shadow" ]; then
@@ -1523,6 +1526,7 @@ function resetPassword() {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
+      fixDSMRootPart "${I}"
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       sed -i "s|^${USER}:[^:]*|${USER}:${NEWPASSWD}|" "${TMP_PATH}/mdX/etc/shadow"
@@ -1563,6 +1567,7 @@ function addNewDSMUser() {
 
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
+      fixDSMRootPart "${I}"
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
@@ -1752,6 +1757,7 @@ function disablescheduledTasks {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
+      fixDSMRootPart "${I}"
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
@@ -2005,6 +2011,7 @@ function greplogs() {
   if [ -n "${DSMROOTS}" ]; then
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
+      fixDSMRootPart "${I}"
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       mkdir -p "${TMP_PATH}/logs/md0/log"
@@ -2013,7 +2020,7 @@ function greplogs() {
       SYSLOG=1
       umount "${TMP_PATH}/mdX"
     done
-    rm -rf "${TMP_PATH}/mdX"
+    rm -rf "${TMP_PATH}/mdX" >/dev/null
   fi
   if [ ${SYSLOG} -eq 1 ]; then
     MSG+="System logs found!\n"
@@ -2041,7 +2048,7 @@ function greplogs() {
     tar -czf "${TMP_PATH}/logs.tar.gz" -C "${TMP_PATH}" logs
     if [ -z "${SSH_TTY}" ]; then # web
       mv -f "${TMP_PATH}/logs.tar.gz" "/var/www/data/logs.tar.gz"
-      URL="http://$(getIP)/logs.tar.gz"
+      URL="http://${IPCON}/logs.tar.gz"
       MSG+="Please via ${URL} to download the logs,\nAnd go to Github or Discord to create an issue and upload the logs."
     else
       sz -be -B 536870912 "${TMP_PATH}/logs.tar.gz"
@@ -2062,7 +2069,7 @@ function getbackup() {
     if [ -z "${SSH_TTY}" ]; then # web
       mv -f "${TMP_PATH}/dsmconfig.tar.gz" "/var/www/data/dsmconfig.tar.gz"
       chmod 644 "/var/www/data/dsmconfig.tar.gz"
-      URL="http://$(getIP)/dsmconfig.tar.gz"
+      URL="http://${IPCON}/dsmconfig.tar.gz"
       dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
         --msgbox "Please via ${URL}\nto download the dsmconfig and unzip it and back it up in order by file name." 0 0
     else
@@ -2164,6 +2171,7 @@ function resetDSMNetwork {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
+      fixDSMRootPart "${I}"
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       rm -f "${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-bond"* "${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-eth"*

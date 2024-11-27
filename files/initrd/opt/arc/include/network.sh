@@ -1,6 +1,6 @@
 # Get Network Config for Loader
 function getnet() {
-  ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
+  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   NICPORTS="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
@@ -23,7 +23,7 @@ function getnet() {
       while true; do
         MAC="$(cat /sys/class/net/${N}/address | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
         dialog --backtitle "$(backtitle)" --title "Mac Setting" \
-          --inputbox "Type a custom MAC for ${ETH} (Eq. 001132abc123)." 7 50 "${MAC}"\
+          --inputbox "Type a custom MAC for ${N} (Eq. 001132abc123)." 7 50 "${MAC}"\
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break
         MAC=$(cat "${TMP_PATH}/resp")
@@ -42,7 +42,7 @@ function getnet() {
 }
 
 # Get Amount of NIC
-ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
+ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
 # Get actual IP
 for N in ${ETHX}; do
   IPCON="$(getIP "${N}")"

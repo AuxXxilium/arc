@@ -194,7 +194,7 @@ if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
 fi
 
 # NIC Cmdline
-ETHX=$(ip -o link show | awk -F': ' '{print $2}' | grep eth)
+ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
 ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)
 ETHN=$(echo ${ETHX} | wc -w)
 [ -z "${ETHM}" ] && ETHM="${ETHN}"

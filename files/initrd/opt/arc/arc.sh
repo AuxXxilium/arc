@@ -13,11 +13,10 @@
 . "${ARC_PATH}/include/compat.sh"
 . "${ARC_PATH}/arc-functions.sh"
 
-# Get Keymap and Timezone Config
+# Get Keymap and Timezone and check System
 onlineCheck
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-# Check for System
 systemCheck
 ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
 
@@ -413,12 +412,13 @@ function arcPatch() {
   # Read Model Values
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   # Check for Custom Build
-  if [ "${ARCMODE}" = "automated" ]; then
-    ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
-    [ -n "${ARCCONF}" ] && SN="$(generateSerial "${MODEL}" "true")" || SN="$(generateSerial "${MODEL}" "false")"
-    [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+  if [ "${ARCMODE}" = "automated" ] && [ "${ARCPATCH}" != "user" ]; then
+      ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
+      [ -n "${ARCCONF}" ] && SN="$(generateSerial "${MODEL}" "true")" || SN="$(generateSerial "${MODEL}" "false")"
+      [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   elif [ "${ARCMODE}" = "config" ]; then
     dialog --clear --backtitle "$(backtitlep)" \
       --nocancel --title "SN/Mac Options"\
@@ -484,7 +484,9 @@ function arcSettings() {
   dialog --backtitle "$(backtitlep)" --colors --title "Network Config" \
     --infobox "Generating Network Config..." 3 40
   sleep 2
-  getnet
+  if [ "${ARCMODE}" != "automated" ] && [ "${ARCPATCH}" != "user" ]; then
+    getnet
+  fi
   [ $? -ne 0 ] && return 1
   if [ "${ONLYPATCH}" = "true" ]; then
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
