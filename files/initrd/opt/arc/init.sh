@@ -152,11 +152,7 @@ elif [ "${ARCMODE}" = "update" ]; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
 elif [ "${BUILDDONE}" = "true" ] && [ "${ARCMODE}" = "dsm" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
-  if [ -f "${ARC_PATH}/boot.sh" ]; then
-    exec boot.sh && exit 0
-  else
-    echo -e "\033[1;31mError: Can't find Arc System Files...\033[0m"
-  fi
+  exec boot.sh
 else
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
 fi
