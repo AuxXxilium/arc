@@ -247,8 +247,8 @@ function arcVersion() {
   if [ "${ARCMODE}" = "config" ] && [ "${ARCRESTORE}" != "true" ]; then
     # Select Build for DSM
     ITEMS="$(readConfigEntriesArray "platforms.${PLATFORM}.productvers" "${P_FILE}" | sort -r)"
-    dialog --clear --no-items --nocancel --title "Version" --backtitle "$(backtitlep)" \
-      --no-items --menu "Choose DSM Version" 7 30 0 ${ITEMS} \
+    dialog --clear --no-items --nocancel --title "DSM Version" --backtitle "$(backtitlep)" \
+      --no-items --menu "Select DSM Version" 7 30 0 ${ITEMS} \
     2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 0
     resp=$(cat ${TMP_PATH}/resp)
@@ -285,8 +285,8 @@ function arcVersion() {
         PREV="${V}"
       done < <(echo "${PVS}")
       DSMPVS="$(cat ${TMP_PATH}/versions)"
-      dialog --backtitle "$(backtitlep)" --colors --title "Version" \
-      --no-items --menu "Choose a DSM Build" 0 0 0 ${DSMPVS} \
+      dialog --backtitle "$(backtitlep)" --colors --title "DSM Build" \
+      --no-items --menu "Select DSM Build" 0 0 0 ${DSMPVS} \
       2>${TMP_PATH}/resp
       RET=$?
       [ ${RET} -ne 0 ] && return
@@ -368,7 +368,7 @@ function arcVersion() {
       if [ -n "${ARCCONF}" ]; then
         initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
       fi
-      if [ ${SASDRIVES} -gt 0 ]; then
+      if [ ${SASDRIVES} -gt 0 ] && [ "${DT}" = "false" ]; then
         initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
       fi
     fi
@@ -717,7 +717,7 @@ function make() {
       livepatch
       sleep 3
     ) 2>&1 | dialog --backtitle "$(backtitlep)" --colors --title "Build Loader" \
-      --progressbox "Magical things happening..." 20 70
+      --progressbox "Patching DSM Files..." 20 70
   else
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
       --infobox "Configuration issue found.\nCould not build Loader!\nExit." 5 40
