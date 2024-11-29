@@ -320,5 +320,4 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo -e "\033[1;37mBooting DSM...\033[0m"
   # Boot to DSM
   [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
-  exit 0
 fi
