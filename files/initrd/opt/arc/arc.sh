@@ -413,7 +413,6 @@ function arcPatch() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   # Check for Custom Build
   if [ "${ARCMODE}" = "automated" ] && [ "${ARCPATCH}" != "user" ]; then
       ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
@@ -484,7 +483,7 @@ function arcSettings() {
   dialog --backtitle "$(backtitlep)" --colors --title "Network Config" \
     --infobox "Generating Network Config..." 3 40
   sleep 2
-  if [ "${ARCMODE}" != "automated" ] && [ "${ARCPATCH}" != "user" ]; then
+  if [ "${ARCPATCH}" != "user" ]; then
     getnet
   fi
   [ $? -ne 0 ] && return 1
