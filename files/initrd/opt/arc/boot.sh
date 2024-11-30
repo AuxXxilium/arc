@@ -200,8 +200,8 @@ ETHN=$(echo ${ETHX} | wc -w)
 [ -z "${ETHM}" ] && ETHM="${ETHN}"
 NIC=0
 for N in ${ETHX}; do
-  MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}" | tr '[:lower:]' '[:upper:]')"
-  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | tr '[:lower:]' '[:upper:]')" || NIC=$((NIC + 1))
+  MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
+  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | tr '[:upper:]' '[:lower:]')" || NIC=$((NIC + 1))
   [ ${NIC} -le ${ETHM} ] && CMDLINE["mac${NIC}"]="${MAC}"
   [ ${NIC} -ge ${ETHM} ] && break
 done
@@ -320,5 +320,4 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo -e "\033[1;37mBooting DSM...\033[0m"
   # Boot to DSM
   [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
-  exit 0
 fi

@@ -808,8 +808,7 @@ function boot() {
     dialog --backtitle "$(backtitle)" --title "Arc Boot" \
       --infobox "Booting DSM...\nPlease stay patient!" 4 25
     sleep 2
-    clear 
-    exec boot.sh
+    exec reboot
   fi
 }
 
@@ -824,7 +823,7 @@ if [ "${ARCMODE}" = "update" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Update" \
       --infobox "Update is not possible in Offline Mode!" 5 40
     sleep 3
-    reboot
+    exec reboot
   fi
 elif [ "${ARCMODE}" = "automated" ]; then
   # Check for Custom Build

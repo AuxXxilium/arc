@@ -76,13 +76,13 @@ function updateLoader() {
       --infobox "Update Loader successful! -> Reboot to automated Build Mode..." 3 60
     sleep 3
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    rebootTo "automated"
+    rebootTo automated
   else
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
       --infobox "Update Loader successful! -> Reboot to Config Mode..." 3 50
     sleep 3
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    rebootTo "config"
+    rebootTo config
   fi
 }
 

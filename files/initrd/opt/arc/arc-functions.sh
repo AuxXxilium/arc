@@ -1794,12 +1794,12 @@ function bootipwaittime() {
 # let user format disks from inside arc
 function formatDisks() {
   rm -f "${TMP_PATH}/opts"
-  while read -r KNAME SIZE TYPE MODEL; do
+  while read -r KNAME SIZE TYPE MODEL PKNAME; do
     [ "${KNAME}" = "N/A" ] || [ "${SIZE:0:1}" = "0" ] && continue
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
-    [ "${KNAME:0:8}" = "${LOADER_DISK}" ] && continue
-    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${MODEL}" "${TYPE}" >>"${TMP_PATH}/opts"
-  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model)"' 2>/dev/null)
+    [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
+    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${MODEL}" >>"${TMP_PATH}/opts"
+  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --msgbox "No disk found!" 0 0
@@ -1816,7 +1816,7 @@ function formatDisks() {
   [ $? -ne 0 ] && return
   if [ $(ls /dev/md[0-9]* 2>/dev/null | wc -l) -gt 0 ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
-      --yesno "Warning:\nThe current hds is in raid, do you still want to format them?" 0 0
+      --yesno "Warning:\nThe current disks are in raid, do you still want to format them?" 0 0
     [ $? -ne 0 ] && return
     for I in $(ls /dev/md[0-9]* 2>/dev/null); do
       mdadm -S "${I}" >/dev/null 2>&1
@@ -1839,12 +1839,12 @@ function formatDisks() {
 # Clone bootloader disk
 function cloneLoader() {
   rm -f "${TMP_PATH}/opts"
-  while read -r KNAME SIZE TYPE MODEL; do
+  while read -r KNAME SIZE TYPE MODEL PKNAME; do
     [ "${KNAME}" = "N/A" ] || [ "${SIZE:0:1}" = "0" ] && continue
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
-    [ "${KNAME:0:8}" = "${LOADER_DISK}" ] && continue
-    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${MODEL}" "${TYPE}" >>"${TMP_PATH}/opts"
-  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model)"' 2>/dev/null)
+    [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
+    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${MODEL}" >>"${TMP_PATH}/opts"
+  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)
 
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \

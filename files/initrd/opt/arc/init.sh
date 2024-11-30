@@ -95,7 +95,7 @@ fi
 # Read/Write IP/Mac to config
 ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
   for N in ${ETHX}; do
-    MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
+    MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
     IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
     if [ -n "${IPR}" ] && [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
       IFS='/' read -r -a IPRA <<<"${IPR}"
@@ -152,11 +152,7 @@ elif [ "${ARCMODE}" = "update" ]; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
 elif [ "${BUILDDONE}" = "true" ] && [ "${ARCMODE}" = "dsm" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
-  if [ -f "${ARC_PATH}/boot.sh" ]; then
-    exec boot.sh && exit 0
-  else
-    echo -e "\033[1;31mError: Can't find Arc System Files...\033[0m"
-  fi
+  exec boot.sh && exit 0
 else
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
 fi
@@ -220,7 +216,5 @@ RAM=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
 if [ ${RAM} -le 3500 ]; then
   echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n\033[1;31mUse arc.sh to proceed. Not recommended!\033[0m"
 else
-  arc.sh
+  exec arc.sh
 fi
-
-exit 0
