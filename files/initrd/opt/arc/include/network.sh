@@ -21,15 +21,14 @@ function getnet() {
     # User Mac
     for N in ${ETHX}; do
       while true; do
-        MAC="$(cat /sys/class/net/${N}/address | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
         dialog --backtitle "$(backtitle)" --title "Mac Setting" \
-          --inputbox "Type a custom MAC for ${N} (Eq. 001132abc123)." 7 50 "${MAC}"\
+          --inputbox "Type a custom MAC for ${N} (Eq. 001132a1b2c3).\nA custom Mac will not be applied to NIC!" 7 50\
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break
         MAC=$(cat "${TMP_PATH}/resp")
         [ -z "${MAC}" ] && MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
-        [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:lower:]' '[:upper:]')"
-        MAC="$(echo "${MAC}" | tr '[:lower:]' '[:upper:]')"
+        [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
+        MAC="$(echo "${MAC}" | tr '[:upper:]' '[:lower:]')"
         if [ ${#MAC} -eq 12 ]; then
           writeConfigKey "${N}" "${MAC}" "${USER_CONFIG_FILE}"
           break

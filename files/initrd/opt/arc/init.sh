@@ -95,7 +95,7 @@ fi
 # Read/Write IP/Mac to config
 ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
   for N in ${ETHX}; do
-    MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
+    MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
     IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
     if [ -n "${IPR}" ] && [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
       IFS='/' read -r -a IPRA <<<"${IPR}"
@@ -152,7 +152,7 @@ elif [ "${ARCMODE}" = "update" ]; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
 elif [ "${BUILDDONE}" = "true" ] && [ "${ARCMODE}" = "dsm" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
-  exec boot.sh
+  exec boot.sh && exit 0
 else
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
 fi

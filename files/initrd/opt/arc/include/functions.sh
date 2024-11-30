@@ -136,7 +136,7 @@ function generateMacAddress() {
     [ ${I} -lt ${NUM} ] && MACS+=" "
   done
 
-  MACS="$(echo "${MACS}" | tr '[:lower:]' '[:upper:]')"
+  MACS="$(echo "${MACS}" | tr '[:upper:]' '[:lower:]')"
   echo "${MACS}"
   return 0
 }
