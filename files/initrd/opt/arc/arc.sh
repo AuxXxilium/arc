@@ -483,7 +483,7 @@ function arcSettings() {
   dialog --backtitle "$(backtitlep)" --colors --title "Network Config" \
     --infobox "Generating Network Config..." 3 40
   sleep 2
-  if [ "${ARCPATCH}" != "user" ]; then
+  if grep -vq "automated_arc" /proc/cmdline && [ "${ARCPATCH}" != "user" ]; then
     getnet
   fi
   [ $? -ne 0 ] && return 1
