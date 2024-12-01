@@ -475,7 +475,7 @@ function arcSettings() {
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   # Get Network Config for Loader
-  if [ "${ARCMODE}" = "config" ] || [ "${ARCPATCH}" = "true" ]; then
+  if [ "${ARCMODE}" = "config" ] || [ "${ARCPATCH}" = "true" ] || [ "${ARCPATCH}" = "false" ]; then
     STEP="network"
     dialog --backtitle "$(backtitlep)" --colors --title "Network Config" \
       --infobox "Generating Network Config..." 3 40
