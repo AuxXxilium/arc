@@ -1838,7 +1838,7 @@ function formatDisks() {
 ###############################################################################
 # Clone bootloader disk
 function cloneLoader() {
-  rm -f "${TMP_PATH}/opts"
+  rm -f "${TMP_PATH}/opts" 2>/dev/null
   while read -r KNAME SIZE TYPE MODEL PKNAME; do
     [ "${KNAME}" = "N/A" ] || [ "${SIZE:0:1}" = "0" ] && continue
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
@@ -1874,25 +1874,24 @@ function cloneLoader() {
     [ $? -ne 0 ] && return
   fi
   (
-    rm -rf "${PART3_PATH}/dl" >/dev/null
     CLEARCACHE=0
 
-    gzip -dc "${ARC_PATH}/grub.img.gz" | dd of="${RESP}" bs=1M conv=fsync status=progress
-    hdparm -z "${RESP}" # reset disk cache
-    fdisk -l "${RESP}"
+    gzip -dc "${ARC_PATH}/grub.img.gz" | dd of="${resp}" bs=1M conv=fsync status=progress
+    hdparm -z "${resp}" # reset disk cache
+    fdisk -l "${resp}"
     sleep 1
 
-    NEW_BLDISK_P1="$(lsblk "${RESP}" -pno KNAME,LABEL 2>/dev/null | grep 'ARC1' | awk '{print $1}')"
-    NEW_BLDISK_P2="$(lsblk "${RESP}" -pno KNAME,LABEL 2>/dev/null | grep 'ARC2' | awk '{print $1}')"
-    NEW_BLDISK_P3="$(lsblk "${RESP}" -pno KNAME,LABEL 2>/dev/null | grep 'ARC3' | awk '{print $1}')"
-    SIZEOFDISK=$(cat /sys/block/${RESP/\/dev\//}/size)
-    ENDSECTOR=$(($(fdisk -l ${RESP} | grep "${NEW_BLDISK_P3}" | awk '{print $3}') + 1))
+    NEW_BLDISK_P1="$(lsblk "${resp}" -pno KNAME,LABEL 2>/dev/null | grep 'ARC1' | awk '{print $1}')"
+    NEW_BLDISK_P2="$(lsblk "${resp}" -pno KNAME,LABEL 2>/dev/null | grep 'ARC2' | awk '{print $1}')"
+    NEW_BLDISK_P3="$(lsblk "${resp}" -pno KNAME,LABEL 2>/dev/null | grep 'ARC3' | awk '{print $1}')"
+    SIZEOFDISK=$(cat /sys/block/${resp/\/dev\//}/size)
+    ENDSECTOR=$(($(fdisk -l ${resp} | grep "${NEW_BLDISK_P3}" | awk '{print $3}') + 1))
 
     if [ ${SIZEOFDISK}0 -ne ${ENDSECTOR}0 ]; then
       echo -e "\033[1;36mResizing ${NEW_BLDISK_P3}\033[0m"
-      echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${RESP}" >/dev/null 2>&1
+      echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${resp}" >/dev/null 2>&1
       resize2fs "${NEW_BLDISK_P3}"
-      fdisk -l "${RESP}"
+      fdisk -l "${resp}"
       sleep 1
     fi
 
@@ -1945,29 +1944,10 @@ function cloneLoader() {
     sync
     __umountNewBlDisk
     sleep 3
-
-    mkdir -p "${TMP_PATH}/sdX1"
-    mount "$(lsblk "${resp}" -pno KNAME,LABEL 2>/dev/null | grep ARC1 | awk '{print $1}')" "${TMP_PATH}/sdX1"
-    cp -vRf "${PART1_PATH}/". "${TMP_PATH}/sdX1/"
-    sync
-    umount "${TMP_PATH}/sdX1"
-
-    mkdir -p "${TMP_PATH}/sdX2"
-    mount "$(lsblk "${resp}" -pno KNAME,LABEL 2>/dev/null | grep ARC2 | awk '{print $1}')" "${TMP_PATH}/sdX2"
-    cp -vRf "${PART2_PATH}/". "${TMP_PATH}/sdX2/"
-    sync
-    umount "${TMP_PATH}/sdX2"
-
-    mkdir -p "${TMP_PATH}/sdX3"
-    mount "$(lsblk "${resp}" -pno KNAME,LABEL 2>/dev/null | grep ARC3 | awk '{print $1}')" "${TMP_PATH}/sdX3"
-    cp -vRf "${PART3_PATH}/". "${TMP_PATH}/sdX3/"
-    sync
-    umount "${TMP_PATH}/sdX3"
-    sleep 3
   ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
     --progressbox "Cloning ..." 20 100
   dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
-    --msgbox "Bootloader has been cloned to disk ${resp},\nplease remove the current bootloader disk!\nReboot?" 0 0
+    --msgbox "Bootloader has been cloned to Disk ${resp},\nremove the current Bootloader Disk!\nReboot?" 0 0
   rebootTo config
   return
 }
