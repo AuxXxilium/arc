@@ -88,11 +88,7 @@ function backtitlep() {
 # Model Selection
 function arcModel() {
   STEP="model"
-  if [ ! -f "${S_FILE}" ] || [ ! -f "${P_FILE}" ]; then
-    updateConfigs
-  else
-    checkHardwareID
-  fi
+  checkHardwareID
   dialog --backtitle "$(backtitlep)" --title "Model" \
     --infobox "Reading Models..." 3 25
   ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
@@ -479,14 +475,14 @@ function arcSettings() {
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   # Get Network Config for Loader
-  STEP="network"
-  dialog --backtitle "$(backtitlep)" --colors --title "Network Config" \
-    --infobox "Generating Network Config..." 3 40
-  sleep 2
-  if grep -vq "automated_arc" /proc/cmdline && [ "${ARCPATCH}" != "user" ]; then
+  if [ "${ARCMODE}" = "config" ] || [ "${ARCPATCH}" = "true" ] || [ "${ARCPATCH}" = "false" ]; then
+    STEP="network"
+    dialog --backtitle "$(backtitlep)" --colors --title "Network Config" \
+      --infobox "Generating Network Config..." 3 40
+    sleep 2
     getnet
+    [ $? -ne 0 ] && return 1
   fi
-  [ $? -ne 0 ] && return 1
   if [ "${ONLYPATCH}" = "true" ]; then
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -494,7 +490,7 @@ function arcSettings() {
     return 0
   fi
   # Select Portmap for Loader
-  if [ "${DT}" = "false" ] && [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
+  if [ "${DT}" = "false" ] && [ ${SATADRIVES} -gt 0 ]; then
     STEP="storagemap"
     dialog --backtitle "$(backtitlep)" --colors --title "Storage Map" \
       --infobox "Generating Storage Map..." 3 40
@@ -535,7 +531,7 @@ function arcSettings() {
     fi
     if [ ${DEVICENIC} -gt ${MODELNIC} ] && [ "${ARCPATCH}" = "true" ]; then
       dialog --backtitle "$(backtitlep)" --title "Arc Warning" \
-        --msgbox "WARN: You have more NIC (${DEVICENIC}) than supported by Model (${MODELNIC}).\nOnly ${MODELNIC} are used by Arc Patch." 6 80
+        --msgbox "WARN: You have more NIC (${DEVICENIC}) than supported by Model (${MODELNIC}).\nOnly the first ${MODELNIC} are used by Arc Patch." 6 80
     fi
     # Check for AES
     if [ "${AESSYS}" = "false" ]; then

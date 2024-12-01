@@ -22,14 +22,15 @@ function getnet() {
     for N in ${ETHX}; do
       while true; do
         dialog --backtitle "$(backtitle)" --title "Mac Setting" \
-          --inputbox "Type a custom MAC for ${N} (Eq. 001132a1b2c3).\nA custom Mac will not be applied to NIC!" 7 50\
+          --inputbox "Type a custom Mac for ${N} (Eq. 001132a1b2c3).\nA custom Mac will not be applied to NIC!" 7 50\
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break
         MAC=$(cat "${TMP_PATH}/resp")
         [ -z "${MAC}" ] && MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
-        [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
+        [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
         MAC="$(echo "${MAC}" | tr '[:upper:]' '[:lower:]')"
         if [ ${#MAC} -eq 12 ]; then
+          dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "Set Mac for ${N} to ${MAC}!" 5 50
           writeConfigKey "${N}" "${MAC}" "${USER_CONFIG_FILE}"
           break
         else
