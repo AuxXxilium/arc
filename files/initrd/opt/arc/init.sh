@@ -222,3 +222,5 @@ if [ ${RAM} -le 3500 ]; then
 else
   exec arc.sh
 fi
+
+exit 0

@@ -582,9 +582,9 @@ function synoinfoMenu() {
           --checklist "Select synoinfo entry to remove" 0 0 0 --file "${TMP_PATH}/opts" \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
-        RESP=$(cat "${TMP_PATH}/resp")
-        [ -z "${RESP}" ] && continue
-        for I in ${RESP}; do
+        resp=$(cat "${TMP_PATH}/resp")
+        [ -z "${resp}" ] && continue
+        for I in ${resp}; do
           unset SYNOINFO[${I}]
           deleteConfigKey "synoinfo.\"${I}\"" "${USER_CONFIG_FILE}"
         done
@@ -1115,7 +1115,7 @@ function sysinfo() {
   TEXT+="\n"
   # Get Information for Sata Controller
   NUMPORTS=0
-  if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
+  if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
     TEXT+="\n  SATA Controller:\n"
     for PCI in $(lspci -d ::106 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
@@ -1809,8 +1809,8 @@ function formatDisks() {
     --checklist "Select Disks" 0 0 0 --file "${TMP_PATH}/opts" \
     2>${TMP_PATH}/resp
   [ $? -ne 0 ] && return
-  RESP=$(cat "${TMP_PATH}/resp")
-  [ -z "${RESP}" ] && return
+  resp=$(cat "${TMP_PATH}/resp")
+  [ -z "${resp}" ] && return
   dialog --backtitle "$(backtitle)" --title "Format Disks" \
     --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return
@@ -1822,7 +1822,7 @@ function formatDisks() {
       mdadm -S "${I}" >/dev/null 2>&1
     done
   fi
-  for I in ${RESP}; do
+  for I in ${resp}; do
     if [[ "${I}" = /dev/mmc* ]]; then
       echo y | mkfs.ext4 -T largefile4 -E nodiscard "${I}"
     else
