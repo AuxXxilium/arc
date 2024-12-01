@@ -167,7 +167,6 @@ CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="passive"
 # CMDLINE['nointremap']="" # no need
 # CMDLINE['split_lock_detect']="off" # no need
-# CMDLINE['nox2apic']=""  # check platform
 # CMDLINE['nomodeset']=""
 if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
   CMDLINE["nox2apic"]=""
@@ -321,3 +320,5 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   # Boot to DSM
   [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
 fi
+
+exit 0

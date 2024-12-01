@@ -2,52 +2,50 @@
 function getmap() {
   # Sata Disks
   SATADRIVES=0
-  # Clean old files
-  [ -f "${TMP_PATH}/drivesmax" ] && rm -f "${TMP_PATH}/drivesmax"
-  touch "${TMP_PATH}/drivesmax"
-  [ -f "${TMP_PATH}/drivescon" ] && rm -f "${TMP_PATH}/drivescon"
-  touch "${TMP_PATH}/drivescon"
-  [ -f "${TMP_PATH}/ports" ] && rm -f "${TMP_PATH}/ports"
-  touch "${TMP_PATH}/ports"
-  [ -f "${TMP_PATH}/remap" ] && rm -f "${TMP_PATH}/remap"
-  touch "${TMP_PATH}/remap"
-  if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
-    let DISKIDXMAPIDX=0
-    DISKIDXMAP=""
-    let DISKIDXMAPIDXMAX=0
-    DISKIDXMAPMAX=""
-    for PCI in $(lspci -d ::106 | awk '{print $1}'); do
-      NUMPORTS=0
-      CONPORTS=0
-      unset HOSTPORTS
-      declare -A HOSTPORTS
-      while read -r LINE; do
-        ATAPORT="$(echo ${LINE} | grep -o 'ata[0-9]*')"
-        PORT=$(echo ${ATAPORT} | sed 's/ata//')
-        HOSTPORTS[${PORT}]=$(echo ${LINE} | grep -o 'host[0-9]*$')
-      done < <(ls -l /sys/class/scsi_host | grep -F "${PCI}")
-      while read -r PORT; do
-        ls -l /sys/block | grep -F -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
-        PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
-        [ ${PCMD} = 0 ] && DUMMY=1 || DUMMY=0
-        [ ${ATTACH} = 1 ] && CONPORTS="$((${CONPORTS} + 1))" && echo "$((${PORT} - 1))" >>"${TMP_PATH}/ports"
-        [ ${DUMMY} = 1 ] # Do nothing for now
-        NUMPORTS=$((${NUMPORTS} + 1))
-      done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
-      [ ${NUMPORTS} -gt 8 ] && NUMPORTS=8
-      [ ${CONPORTS} -gt 8 ] && CONPORTS=8
-      echo -n "${NUMPORTS}" >>"${TMP_PATH}/drivesmax"
-      echo -n "${CONPORTS}" >>"${TMP_PATH}/drivescon"
-      DISKIDXMAP=$DISKIDXMAP$(printf "%02x" $DISKIDXMAPIDX)
-      let DISKIDXMAPIDX=$DISKIDXMAPIDX+$CONPORTS
-      DISKIDXMAPMAX=$DISKIDXMAPMAX$(printf "%02x" $DISKIDXMAPIDXMAX)
-      let DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS
-      SATADRIVES=$((${SATADRIVES} + ${CONPORTS}))
-    done
+  if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
+    # Clean old files
+    [ -f "${TMP_PATH}/drivesmax" ] && rm -f "${TMP_PATH}/drivesmax" && touch "${TMP_PATH}/drivesmax" || true
+    [ -f "${TMP_PATH}/drivescon" ] && rm -f "${TMP_PATH}/drivescon" && touch "${TMP_PATH}/drivescon" || true
+    [ -f "${TMP_PATH}/ports" ] && rm -f "${TMP_PATH}/ports" && touch "${TMP_PATH}/ports" || true
+    [ -f "${TMP_PATH}/remap" ] && rm -f "${TMP_PATH}/remap" && touch "${TMP_PATH}/remap" || true
+    if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
+      let DISKIDXMAPIDX=0
+      DISKIDXMAP=""
+      let DISKIDXMAPIDXMAX=0
+      DISKIDXMAPMAX=""
+      for PCI in $(lspci -d ::106 | awk '{print $1}'); do
+        NUMPORTS=0
+        CONPORTS=0
+        unset HOSTPORTS
+        declare -A HOSTPORTS
+        while read -r LINE; do
+          ATAPORT="$(echo ${LINE} | grep -o 'ata[0-9]*')"
+          PORT=$(echo ${ATAPORT} | sed 's/ata//')
+          HOSTPORTS[${PORT}]=$(echo ${LINE} | grep -o 'host[0-9]*$')
+        done < <(ls -l /sys/class/scsi_host | grep -F "${PCI}")
+        while read -r PORT; do
+          ls -l /sys/block | grep -F -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
+          PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
+          [ ${PCMD} = 0 ] && DUMMY=1 || DUMMY=0
+          [ ${ATTACH} = 1 ] && CONPORTS="$((${CONPORTS} + 1))" && echo "$((${PORT} - 1))" >>"${TMP_PATH}/ports"
+          [ ${DUMMY} = 1 ] # Do nothing for now
+          NUMPORTS=$((${NUMPORTS} + 1))
+        done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
+        [ ${NUMPORTS} -gt 8 ] && NUMPORTS=8
+        [ ${CONPORTS} -gt 8 ] && CONPORTS=8
+        echo -n "${NUMPORTS}" >>"${TMP_PATH}/drivesmax"
+        echo -n "${CONPORTS}" >>"${TMP_PATH}/drivescon"
+        DISKIDXMAP=$DISKIDXMAP$(printf "%02x" $DISKIDXMAPIDX)
+        let DISKIDXMAPIDX=$DISKIDXMAPIDX+$CONPORTS
+        DISKIDXMAPMAX=$DISKIDXMAPMAX$(printf "%02x" $DISKIDXMAPIDXMAX)
+        let DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS
+        SATADRIVES=$((${SATADRIVES} + ${CONPORTS}))
+      done
+    fi
   fi
   # SAS Disks
   SASDRIVES=0
-  if [ $(lspci -d ::107 | wc -l) -gt 0 ]; then
+  if [ $(lspci -d ::107 2>/dev/null | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::107 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
@@ -57,7 +55,7 @@ function getmap() {
   fi
   # SCSI Disks
   SCSIDRIVES=0
-  if [ $(lspci -d ::100 | wc -l) -gt 0 ]; then
+  if [ $(lspci -d ::100 2>/dev/null | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::100 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort - 2>/dev/null)
@@ -67,7 +65,7 @@ function getmap() {
   fi
   # Raid Disks
   RAIDDRIVES=0
-  if [ $(lspci -d ::104 | wc -l) -gt 0 ]; then
+  if [ $(lspci -d ::104 2>/dev/null | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::104 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
@@ -77,7 +75,7 @@ function getmap() {
   fi
   # USB Disks
   USBDRIVES=0
-  if [[ -d "/sys/class/scsi_host" && $(ls -l /sys/class/scsi_host | grep usb | wc -l) -gt 0 ]]; then
+  if [ $(ls -l /sys/class/scsi_host 2>/dev/null | grep usb | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
@@ -88,7 +86,7 @@ function getmap() {
   fi
   # MMC Disks
   MMCDRIVES=0
-  if [[ -d "/sys/class/mmc_host" && $(ls -l /sys/class/mmc_host | grep mmc_host | wc -l) -gt 0 ]]; then
+  if [ $(ls -l /sys/block/mmc* 2>/dev/null | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::805 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l 2>/dev/null)
@@ -98,7 +96,7 @@ function getmap() {
   fi
   # NVMe Disks
   NVMEDRIVES=0
-  if [ $(lspci -d ::108 | wc -l) -gt 0 ]; then
+  if [ $(lspci -d ::108 2>/dev/null | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::108 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n 2>/dev/null)
