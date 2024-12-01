@@ -483,10 +483,9 @@ function arcSettings() {
   dialog --backtitle "$(backtitlep)" --colors --title "Network Config" \
     --infobox "Generating Network Config..." 3 40
   sleep 2
-  if grep -vq "automated_arc" /proc/cmdline && [ "${ARCPATCH}" != "user" ]; then
+  if [ "${ARCMODE}" = "config" ]; then
     getnet
   fi
-  [ $? -ne 0 ] && return 1
   if [ "${ONLYPATCH}" = "true" ]; then
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
