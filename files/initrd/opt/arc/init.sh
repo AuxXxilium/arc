@@ -206,6 +206,9 @@ mkdir -p "${MODULES_PATH}"
 mkdir -p "${PATCH_PATH}"
 mkdir -p "${USER_UP_PATH}"
 
+# Tell webterminal that the loader is ready
+touch "${HOME}/.initialized"
+
 # Load Arc Overlay
 echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
 echo
