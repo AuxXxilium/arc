@@ -511,9 +511,13 @@ function onlineCheck() {
   LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
   if [ -z "${LAYOUT}" ]; then
     [ -n "${KEYMAP}" ] && KEYMAP="$(echo ${KEYMAP} | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]' | tr -d '[:punct:]' | tr -d '[:digit:]')"
-    [ -n "${KEYMAP}" ] && writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
-    [ -z "${KEYMAP}" ] && KEYMAP="us"
-    loadkeys ${KEYMAP}
+    if loadkeys "${KEYMAP:-us}" 2>/dev/null; then
+      writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
+    else
+      KEYMAP="us"
+      loadkeys "${KEYMAP}" 2>/dev/null
+      writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
+    fi
   fi
   [ $(echo "${ARC_VERSION}" | grep "dev" | wc -l) -eq 0 ] && NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)" || NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
   if [ -n "${NEWTAG}" ]; then
