@@ -71,7 +71,7 @@ jobs:
           sudo timedatectl set-timezone "Europe/Berlin"
 
           sudo apt update
-          sudo apt install -y locales busybox dialog gettext sed gawk jq curl 
+          sudo apt install -y locales busybox dialog gettext sed gawk jq curl
           sudo apt install -y python-is-python3 python3-pip libelf-dev qemu-utils cpio xz-utils lz4 lzma bzip2 gzip zstd
           # sudo snap install yq
           if ! command -v yq &>/dev/null || ! yq --version 2>/dev/null | grep -q "v4."; then
@@ -164,7 +164,10 @@ jobs:
           echo "Image Converter"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
-          qemu-img convert -p -f raw -O vhdx ${IMAGE_FILE} arc.vhdx
+
+          echo "Create Arc vhd"
+          createvmc "arc.vmc"
+          qemu-img convert -p -f raw -O vpc ${IMAGE_FILE} arc.vhd
 
           echo "Create Arc ova"
           convertova "${IMAGE_FILE}" "arc.ova"
@@ -177,7 +180,7 @@ jobs:
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.img.zip" arc.img
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vmdk-dyn.zip" arc-dyn.vmdk
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vhdx.zip" arc.vhdx
+            zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vhd.zip" arc.vhd arc.vmc
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.ova.zip" arc.ova
             (cd files && zip -r ../update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.zip ./p1 ./p3)
           fi
@@ -185,7 +188,7 @@ jobs:
       # Cleanup
       - name: Cleanup
         run: |
-          rm -rf "arc.img" "arc.ova" "arc.vmdk" "arc-dyn.vmdk" "arc.vhdx" "arc-flat.vmdk"
+          rm -rf "arc.img" "arc.vmdk" "arc-dyn.vmdk" "arc-flat.vmdk" "arc.vhd" "arc.ova" "arc.vmc"
 
        # Build incremental
       - name: Build Stable Image
@@ -241,7 +244,10 @@ jobs:
           echo "Image Converter"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
-          qemu-img convert -p -f raw -O vhdx ${IMAGE_FILE} arc.vhdx
+
+          echo "Create Arc vhd"
+          createvmc "arc.vmc"
+          qemu-img convert -p -f raw -O vpc ${IMAGE_FILE} arc.vhd
 
           echo "Create Arc ova"
           convertova "${IMAGE_FILE}" "arc.ova"
@@ -254,7 +260,7 @@ jobs:
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.img.zip" arc.img
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vmdk-dyn.zip" arc-dyn.vmdk
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vhdx.zip" arc.vhdx
+            zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vhd.zip" arc.vhd arc.vmc
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.ova.zip" arc.ova
             (cd files && zip -r ../update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.zip ./p1 ./p3)
           fi

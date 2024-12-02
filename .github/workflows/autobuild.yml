@@ -138,7 +138,13 @@ jobs:
           echo "Image Converter"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
-          qemu-img convert -p -f raw -O vhdx ${IMAGE_FILE} arc.vhdx
+
+          echo "Create Arc vhd"
+          createvmc "arc.vmc"
+          qemu-img convert -p -f raw -O vpc ${IMAGE_FILE} arc.vhd
+
+          echo "Create Arc ova"
+          convertova "${IMAGE_FILE}" "arc.ova"
 
       # Zip image and generate checksum
       - name: Pack Next Image
@@ -155,7 +161,7 @@ jobs:
       # Cleanup
       - name: Cleanup
         run: |
-          rm -rf "arc.img" "arc.vmdk" "arc-dyn.vmdk" "arc.vhdx" "arc-flat.vmdk"
+          rm -rf "arc.img" "arc.vmdk" "arc-dyn.vmdk" "arc-flat.vmdk" "arc.vhd" "arc.ova" "arc.vmc"
 
        # Build incremental
       - name: Build Stable Image
@@ -211,7 +217,13 @@ jobs:
           echo "Image Converter"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
-          qemu-img convert -p -f raw -O vhdx ${IMAGE_FILE} arc.vhdx
+
+          echo "Create Arc vhd"
+          createvmc "arc.vmc"
+          qemu-img convert -p -f raw -O vpc ${IMAGE_FILE} arc.vhd
+
+          echo "Create Arc ova"
+          convertova "${IMAGE_FILE}" "arc.ova"
 
       # Zip image and generate checksum
       - name: Pack Stable Image
