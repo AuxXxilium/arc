@@ -93,21 +93,21 @@ while IFS=': ' read -r KEY VALUE; do
 done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 # Patches (diff -Naru OLDFILE NEWFILE > xxx.patch)
-PATCHES=()
-PATCHES+=("ramdisk-etc-rc-*.patch")
-PATCHES+=("ramdisk-init-script-*.patch")
-PATCHES+=("ramdisk-post-init-script-*.patch")
-PATCHES+=("ramdisk-disable-root-pwd-*.patch")
-PATCHES+=("ramdisk-disable-disabled-ports-*.patch")
-for PE in ${PATCHES[@]}; do
+PATCHS=(
+  "ramdisk-etc-rc-*.patch"
+  "ramdisk-init-script-*.patch"
+  "ramdisk-post-init-script-*.patch"
+  "ramdisk-disable-root-pwd-*.patch"
+  "ramdisk-disable-disabled-ports-*.patch"
+)
+for PE in "${PATCHS[@]}"; do
   RET=1
   echo "Patching with ${PE}" >"${LOG_FILE}"
+  # ${PE} contains *, so double quotes cannot be added
   for PF in $(ls ${PATCH_PATH}/${PE} 2>/dev/null); do
     echo "Patching with ${PF}" >>"${LOG_FILE}"
-    (
-      cd "${RAMDISK_PATH}"
-      patch -p1 -i "${PF}" >>"${LOG_FILE}" 2>&1
-    )
+    # busybox patch and gun patch have different processing methods and parameters.
+    (cd "${RAMDISK_PATH}" && busybox patch -p1 -i "${PF}") >>"${LOG_FILE}" 2>&1
     RET=$?
     [ ${RET} -eq 0 ] && break
   done
@@ -149,20 +149,22 @@ gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/u
 # Addons
 echo "Create addons.sh" >"${LOG_FILE}"
 mkdir -p "${RAMDISK_PATH}/addons"
-echo "#!/bin/sh" >"${RAMDISK_PATH}/addons/addons.sh"
-echo 'echo "addons.sh called with params ${@}"' >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export LOADERLABEL=\"ARC\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export LOADERVERSION=\"${ARC_VERSION}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export LOADERBUILD=\"${ARC_BUILD}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export LOADERBRANCH=\"${ARCBRANCH}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export PLATFORM=\"${PLATFORM}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export PRODUCTVER=\"${PRODUCTVER}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export MODEL=\"${MODEL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export MODELID=\"${MODELID}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export MLINK=\"${PAT_URL}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export MCHECKSUM=\"${PAT_HASH}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export LAYOUT=\"${LAYOUT}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
-echo "export KEYMAP=\"${KEYMAP}\"" >>"${RAMDISK_PATH}/addons/addons.sh"
+{
+  echo "#!/bin/sh"
+  echo 'echo "addons.sh called with params ${@}"'
+  echo "export LOADERLABEL=\"ARC\""
+  echo "export LOADERVERSION=\"${ARC_VERSION}\""
+  echo "export LOADERBUILD=\"${ARC_BUILD}\""
+  echo "export LOADERBRANCH=\"${ARCBRANCH}\""
+  echo "export PLATFORM=\"${PLATFORM}\""
+  echo "export MODEL=\"${MODEL}\""
+  echo "export MODELID=\"${MODELID}\""
+  echo "export PRODUCTVER=\"${PRODUCTVER}\""
+  echo "export MLINK=\"${PAT_URL}\""
+  echo "export MCHECKSUM=\"${PAT_HASH}\""
+  echo "export LAYOUT=\"${LAYOUT}\""
+  echo "export KEYMAP=\"${KEYMAP}\""
+} >"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
