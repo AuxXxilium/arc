@@ -243,9 +243,9 @@ function repackInitrd() {
   [ -z "${INITRD_FILE}" ] || [ ! -f "${INITRD_FILE}" ] && exit 1
   [ -z "${PLUGIN_PATH}" ] || [ ! -d "${PLUGIN_PATH}" ] && exit 1
 
-  INITRD_FILE="$(realpath -f "${INITRD_FILE}")"
-  PLUGIN_PATH="$(realpath -f "${PLUGIN_PATH}")"
-  OUTPUT_PATH="$(realpath -f "${OUTPUT_PATH}")"
+  INITRD_FILE="$(realpath "${INITRD_FILE}")"
+  PLUGIN_PATH="$(realpath "${PLUGIN_PATH}")"
+  OUTPUT_PATH="$(realpath "${OUTPUT_PATH}")"
 
   local RDXZ_PATH="rdxz_tmp"
   mkdir -p "${RDXZ_PATH}"
@@ -290,8 +290,8 @@ function resizeImg() {
   [[ -z "${INPUT_FILE}" || ! -f "${INPUT_FILE}" ]] && exit 1
   [ -z "${CHANGE_SIZE}" ] && exit 1
 
-  INPUT_FILE="$(realpath -f "${INPUT_FILE}")"
-  OUTPUT_FILE="$(realpath -f "${OUTPUT_FILE}")"
+  INPUT_FILE="$(realpath "${INPUT_FILE}")"
+  OUTPUT_FILE="$(realpath "${OUTPUT_FILE}")"
 
 
   SIZE=$(($(du -m "${INPUT_FILE}" | awk '{print $1}')$(echo "${CHANGE_SIZE}" | sed 's/M//g; s/b//g')))
