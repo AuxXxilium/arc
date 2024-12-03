@@ -721,7 +721,7 @@ function backupMenu() {
         fi
         mkdir -p "${TMP_PATH}/mdX"
         for I in ${DSMROOTS}; do
-          fixDSMRootPart "${I}"
+          # fixDSMRootPart "${I}"
           mount -t ext4 "${I}" "${TMP_PATH}/mdX"
           MODEL=""
           PRODUCTVER=""
@@ -777,7 +777,7 @@ function backupMenu() {
         fi
         mkdir -p "${TMP_PATH}/mdX"
         for I in ${DSMROOTS}; do
-          fixDSMRootPart "${I}"
+          # fixDSMRootPart "${I}"
           mount -t ext4 "${I}" "${TMP_PATH}/mdX"
           if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" ]; then
             cp -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" "${PART2_PATH}/machine.key"
@@ -806,7 +806,7 @@ function backupMenu() {
         (
           mkdir -p "${TMP_PATH}/mdX"
           for I in ${DSMROOTS}; do
-            fixDSMRootPart "${I}"
+            # fixDSMRootPart "${I}"
             mount -t ext4 "${I}" "${TMP_PATH}/mdX"
             [ $? -ne 0 ] && continue
             if [ -f "${PART2_PATH}/machine.key" ]; then
@@ -1455,7 +1455,7 @@ function downgradeMenu() {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      fixDSMRootPart "${I}"
+      # fixDSMRootPart "${I}"
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       [ -f "${TMP_PATH}/mdX/etc/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc/VERSION" >/dev/null
@@ -1483,7 +1483,7 @@ function resetPassword() {
   rm -f "${TMP_PATH}/menu" >/dev/null
   mkdir -p "${TMP_PATH}/mdX"
   for I in ${DSMROOTS}; do
-    fixDSMRootPart "${I}"
+    # fixDSMRootPart "${I}"
     mount -t ext4 "${I}" "${TMP_PATH}/mdX"
     [ $? -ne 0 ] && continue
     if [ -f "${TMP_PATH}/mdX/etc/shadow" ]; then
@@ -1526,7 +1526,7 @@ function resetPassword() {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      fixDSMRootPart "${I}"
+      # fixDSMRootPart "${I}"
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       sed -i "s|^${USER}:[^:]*|${USER}:${NEWPASSWD}|" "${TMP_PATH}/mdX/etc/shadow"
@@ -1567,7 +1567,7 @@ function addNewDSMUser() {
 
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      fixDSMRootPart "${I}"
+      # fixDSMRootPart "${I}"
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
@@ -1757,7 +1757,7 @@ function disablescheduledTasks {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      fixDSMRootPart "${I}"
+      # fixDSMRootPart "${I}"
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
@@ -1991,7 +1991,7 @@ function greplogs() {
   if [ -n "${DSMROOTS}" ]; then
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      fixDSMRootPart "${I}"
+      # fixDSMRootPart "${I}"
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       mkdir -p "${TMP_PATH}/logs/md0/log"
@@ -2151,7 +2151,7 @@ function resetDSMNetwork {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      fixDSMRootPart "${I}"
+      # fixDSMRootPart "${I}"
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       rm -f "${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-bond"* "${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-eth"*
