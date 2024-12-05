@@ -102,6 +102,20 @@ EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
 MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
+# HardwareID Check
+if [ "${ARCPATCH}" = "true" ]; then
+  HARDWAREID="$(readConfigKey "arc.hardwareid" "${USER_CONFIG_FILE}")"
+  HWID="$(genHWID)"
+  if [ "${HARDWAREID}" != "${HWID}" ]; then
+    echo "\033[1;31m*** HardwareID does not match! - Loader can't boot to DSM! You need to reconfigure your Loader - Rebooting to Config Mode! ***\033[0m"
+    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
+    sleep 5
+    rebootTo "config"
+  fi
+fi
+
 declare -A CMDLINE
 
 # Automated Cmdline
@@ -165,7 +179,8 @@ CMDLINE['panic']="${KERNELPANIC:-0}"
 CMDLINE['pcie_aspm']="off"
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="passive"
-# CMDLINE['nointremap']="" # no need
+[ $(cat /proc/cpuinfo | grep AMD | wc -l) -gt 0 ] && CMDLINE["amd_pstate"]="passive"
+CMDLINE['intremap']="no_x2apic_optout"
 # CMDLINE['split_lock_detect']="off" # no need
 # CMDLINE['nomodeset']=""
 if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
