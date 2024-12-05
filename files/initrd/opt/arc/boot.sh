@@ -105,8 +105,8 @@ ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 # HardwareID Check
 if [ "${ARCPATCH}" = "true" ]; then
   HARDWAREID=="$(readConfigKey "arc.hardwareid" "${USER_CONFIG_FILE}")"
-  HWIDSYS="$(genHWID)"
-  [ "${HARDWAREID}" != "${HWIDSYS}" ] && die "HardwareID does not match! - Loader can't boot to DSM."
+  HWID="$(genHWID)"
+  [ "${HARDWAREID}" != "${HWID}" ] && die "HardwareID does not match! - Loader can't boot to DSM."
 fi
 
 declare -A CMDLINE
