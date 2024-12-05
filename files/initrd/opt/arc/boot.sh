@@ -104,9 +104,16 @@ ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
 # HardwareID Check
 if [ "${ARCPATCH}" = "true" ]; then
-  HARDWAREID=="$(readConfigKey "arc.hardwareid" "${USER_CONFIG_FILE}")"
+  HARDWAREID="$(readConfigKey "arc.hardwareid" "${USER_CONFIG_FILE}")"
   HWID="$(genHWID)"
-  [ "${HARDWAREID}" != "${HWID}" ] && die "HardwareID does not match! - Loader can't boot to DSM."
+  if [ "${HARDWAREID}" != "${HWID}" ]; then
+    echo "\033[1;31m*** HardwareID does not match! - Loader can't boot to DSM! You need to reconfigure your Loader - Rebooting to Config Mode! ***\033[0m"
+    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
+    sleep 5
+    rebootTo "config"
+  fi
 fi
 
 declare -A CMDLINE

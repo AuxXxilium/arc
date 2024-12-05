@@ -88,7 +88,7 @@ function backtitlep() {
 # Model Selection
 function arcModel() {
   STEP="model"
-  checkHardwareID
+  [ "${ARCOFFLINE}" != "true" ] && checkHardwareID || true
   dialog --backtitle "$(backtitlep)" --title "Model" \
     --infobox "Reading Models..." 3 25
   ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
