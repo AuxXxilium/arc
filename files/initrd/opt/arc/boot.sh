@@ -165,7 +165,8 @@ CMDLINE['panic']="${KERNELPANIC:-0}"
 CMDLINE['pcie_aspm']="off"
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="passive"
-# CMDLINE['nointremap']="" # no need
+[ $(cat /proc/cpuinfo | grep AMD | wc -l) -gt 0 ] && CMDLINE["amd_pstate"]="passive"
+CMDLINE['intremap']="no_x2apic_optout"
 # CMDLINE['split_lock_detect']="off" # no need
 # CMDLINE['nomodeset']=""
 if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
