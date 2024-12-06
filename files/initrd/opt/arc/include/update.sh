@@ -43,9 +43,15 @@ function updateLoader() {
       dialog --gauge "Download Update: ${TAG}..." 14 72 4>&-
     } 4>&1
     if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 300000 ]; then
+      mkdir -p "${TMP_PATH}/update"
       dialog --backtitle "$(backtitle)" --title "Update Loader" \
         --infobox "Updating Loader..." 3 50
-      if unzip -oq "${TMP_PATH}/update.zip" -d "/mnt"; then
+      if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update"; then
+        cp -rf "${TMP_PATH}/update"/* "/mnt"
+        rm -rf "${TMP_PATH}/update"
+        rm -f "${TMP_PATH}/update.zip"
+      fi
+      if [ "$(cat "${PART1_PATH}/ARC-VERSION")" = "${TAG}" ]; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" \
         --infobox "Update Loader successful!" 3 50
         sleep 2
