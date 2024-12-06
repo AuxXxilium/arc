@@ -149,19 +149,19 @@ if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
     CMDLINE['synoboot_satadom']="${SATADOM:-2}"
     CMDLINE['dom_szmax']="${SIZE}"
   fi
-  CMDLINE["elevator"]="elevator"
+  CMDLINE['elevator']="elevator"
 else
-  CMDLINE["split_lock_detect"]="off"
+  CMDLINE['split_lock_detect']="off"
 fi
 if [ "${DT}" = "true" ]; then
-  CMDLINE["syno_ttyS0"]="serial,0x3f8"
-  CMDLINE["syno_ttyS1"]="serial,0x2f8"
+  CMDLINE['syno_ttyS0']="serial,0x3f8"
+  CMDLINE['syno_ttyS1']="serial,0x2f8"
 else
-  CMDLINE["SMBusHddDynamicPower"]="1"
-  CMDLINE["syno_hdd_detect"]="0"
-  CMDLINE["syno_hdd_powerup_seq"]="0"
+  CMDLINE['SMBusHddDynamicPower']="1"
+  CMDLINE['syno_hdd_detect']="0"
+  CMDLINE['syno_hdd_powerup_seq']="0"
 fi
-CMDLINE["HddHotplug"]="1"
+CMDLINE['HddHotplug']="1"
 CMDLINE["vender_format_version"]="2"
 CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 CMDLINE['earlyprintk']=""
@@ -180,11 +180,10 @@ CMDLINE['pcie_aspm']="off"
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="passive"
 [ $(cat /proc/cpuinfo | grep AMD | wc -l) -gt 0 ] && CMDLINE["amd_pstate"]="passive"
-CMDLINE['intremap']="no_x2apic_optout"
 # CMDLINE['split_lock_detect']="off" # no need
 # CMDLINE['nomodeset']=""
 if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
-  CMDLINE["nox2apic"]=""
+  CMDLINE['nox2apic']=""
 fi
 #if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
 #   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "sdhci"; then
@@ -216,24 +215,24 @@ NIC=0
 for N in ${ETHX}; do
   MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
   [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | tr '[:upper:]' '[:lower:]')" || NIC=$((NIC + 1))
-  [ ${NIC} -le ${ETHM} ] && CMDLINE["mac${NIC}"]="${MAC}"
+  [ ${NIC} -le ${ETHM} ] && CMDLINE['mac${NIC}']="${MAC}"
   [ ${NIC} -ge ${ETHM} ] && break
 done
 CMDLINE['netif_num']="${NIC}"
 
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do
-  [ -n "${KEY}" ] && CMDLINE["network.${KEY}"]="${VALUE}"
+  [ -n "${KEY}" ] && CMDLINE['network.${KEY}']="${VALUE}"
 done < <(readConfigMap "network" "${USER_CONFIG_FILE}")
 
 # Read user cmdline
 while IFS=': ' read -r KEY VALUE; do
-  [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
+  [ -n "${KEY}" ] && CMDLINE['${KEY}']="${VALUE}"
 done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 
 # Prepare command line
 CMDLINE_LINE=""
-for KEY in ${!CMDLINE[@]}; do
+for KEY in "${!CMDLINE[@]}"; do
   VALUE="${CMDLINE[${KEY}]}"
   CMDLINE_LINE+=" ${KEY}"
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
