@@ -609,11 +609,11 @@ function _bootwait() {
   busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
   while test ${BOOTWAIT} -ge 0; do
-    MSG="\033[1;33mAccess SSH/Web will interrupt boot...\033[0m"
+    MSG="\033[1;33mAccess to SSH/Web will interrupt boot...\033[0m"
     echo -en "\r${MSG}"
     busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
     if ! diff WB WC >/dev/null 2>&1; then
-      echo -en "\r\033[1;33mAccess SSH/Web detected and boot is interrupted.\033[0m\n"
+      echo -en "\r\033[1;33mAccess to SSH/Web detected and boot is interrupted.\033[0m\n"
       rm -f WB WC
       exit 0
     fi
