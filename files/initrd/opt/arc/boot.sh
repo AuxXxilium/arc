@@ -119,23 +119,23 @@ fi
 declare -A CMDLINE
 
 # Automated Cmdline
-CMDLINE['syno_hw_version']="${MODELID:-${MODEL}}"
-CMDLINE['vid']="${VID:-"0x46f4"}" # Sanity check
-CMDLINE['pid']="${PID:-"0x0001"}" # Sanity check
-CMDLINE['sn']="${SN}"
+CMDLINE["syno_hw_version"]="${MODELID:-${MODEL}}"
+CMDLINE["vid"]="${VID:-"0x46f4"}" # Sanity check
+CMDLINE["pid"]="${PID:-"0x0001"}" # Sanity check
+CMDLINE["sn"]="${SN}"
 
 # Boot Cmdline
 if grep -q "force_junior" /proc/cmdline; then
-  CMDLINE['force_junior']=""
+  CMDLINE["force_junior"]=""
 fi
 if grep -q "recovery" /proc/cmdline; then
-  CMDLINE['force_junior']=""
-  CMDLINE['recovery']=""
+  CMDLINE["force_junior"]=""
+  CMDLINE["recovery"]=""
 fi
 if [ ${EFI} -eq 1 ]; then
-  CMDLINE['withefi']=""
+  CMDLINE["withefi"]=""
 else
-  CMDLINE['noefi']=""
+  CMDLINE["noefi"]=""
 fi
 
 # DSM Cmdline
@@ -146,10 +146,10 @@ if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
     SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
     # Read SATADoM type
     SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
-    CMDLINE['synoboot_satadom']="${SATADOM:-2}"
-    CMDLINE['dom_szmax']="${SIZE}"
+    CMDLINE["synoboot_satadom"]="${SATADOM:-2}"
+    CMDLINE["dom_szmax"]="${SIZE}"
   fi
-  CMDLINE["elevator"]="elevator"
+  CMDLINE['elevator']="elevator"
 else
   CMDLINE["split_lock_detect"]="off"
 fi
@@ -163,39 +163,37 @@ else
 fi
 CMDLINE["HddHotplug"]="1"
 CMDLINE["vender_format_version"]="2"
-CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-CMDLINE['earlyprintk']=""
-CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
-CMDLINE['console']="ttyS0,115200n8"
-CMDLINE['consoleblank']="600"
+CMDLINE["skip_vender_mac_interfaces"]="0,1,2,3,4,5,6,7"
+CMDLINE["earlyprintk"]=""
+CMDLINE["earlycon"]="uart8250,io,0x3f8,115200n8"
+CMDLINE["console"]="ttyS0,115200n8"
+CMDLINE["consoleblank"]="600"
 # CMDLINE['no_console_suspend']="1"
-CMDLINE['root']="/dev/md0"
-CMDLINE['loglevel']="15"
-CMDLINE['log_buf_len']="32M"
-CMDLINE['rootwait']=""
-CMDLINE['panic']="${KERNELPANIC:-0}"
+CMDLINE["root"]="/dev/md0"
+CMDLINE["loglevel"]="15"
+CMDLINE["log_buf_len"]="32M"
+CMDLINE["rootwait"]=""
+CMDLINE["panic"]="${KERNELPANIC:-0}"
 
 # DSM Specific Cmdline
-CMDLINE['pcie_aspm']="off"
-CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
+CMDLINE["pcie_aspm"]="off"
+CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
 [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="passive"
 [ $(cat /proc/cpuinfo | grep AMD | wc -l) -gt 0 ] && CMDLINE["amd_pstate"]="passive"
-CMDLINE['intremap']="no_x2apic_optout"
-# CMDLINE['split_lock_detect']="off" # no need
-# CMDLINE['nomodeset']=""
+# CMDLINE["nomodeset"]=""
 if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
   CMDLINE["nox2apic"]=""
 fi
 #if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
-#   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "sdhci"; then
-#     [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
-#     CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
+#   if ! echo "${CMDLINE["modprobe.blacklist"]}" | grep -q "sdhci"; then
+#     [ ! "${CMDLINE["modprobe.blacklist"]}" = "" ] && CMDLINE["modprobe.blacklist"]+=","
+#     CMDLINE["modprobe.blacklist"]+="sdhci,sdhci_pci,sdhci_acpi"
 #   fi
 # fi
 if [ "${DT}" = "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
-    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
-    CMDLINE['modprobe.blacklist']+="mpt3sas"
+    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE["modprobe.blacklist"]+=","
+    CMDLINE["modprobe.blacklist"]+="mpt3sas"
   fi
 fi
 # CMDLINE['kvm.ignore_msrs']="1"
@@ -219,7 +217,7 @@ for N in ${ETHX}; do
   [ ${NIC} -le ${ETHM} ] && CMDLINE["mac${NIC}"]="${MAC}"
   [ ${NIC} -ge ${ETHM} ] && break
 done
-CMDLINE['netif_num']="${NIC}"
+CMDLINE["netif_num"]="${NIC}"
 
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do
@@ -233,7 +231,7 @@ done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 
 # Prepare command line
 CMDLINE_LINE=""
-for KEY in ${!CMDLINE[@]}; do
+for KEY in "${!CMDLINE[@]}"; do
   VALUE="${CMDLINE[${KEY}]}"
   CMDLINE_LINE+=" ${KEY}"
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"

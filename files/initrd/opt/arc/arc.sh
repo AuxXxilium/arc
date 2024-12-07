@@ -414,6 +414,7 @@ function arcPatch() {
       ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
       [ -n "${ARCCONF}" ] && SN="$(generateSerial "${MODEL}" "true")" || SN="$(generateSerial "${MODEL}" "false")"
       [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+      writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
   elif [ "${ARCMODE}" = "config" ]; then
     dialog --clear --backtitle "$(backtitlep)" \
       --nocancel --title "SN/Mac Options"\
@@ -458,8 +459,8 @@ function arcPatch() {
       done
       writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
     fi
+    writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
   fi
-  writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   arcSettings
 }
