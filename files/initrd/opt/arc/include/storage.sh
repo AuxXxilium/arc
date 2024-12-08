@@ -13,7 +13,7 @@ function getmap() {
       DISKIDXMAP=""
       let DISKIDXMAPIDXMAX=0
       DISKIDXMAPMAX=""
-      for PCI in $(lspci -d ::106 | awk '{print $1}'); do
+      for PCI in $(lspci -d ::106 2>/dev/null | awk '{print $1}'); do
         NUMPORTS=0
         CONPORTS=0
         unset HOSTPORTS
@@ -46,7 +46,7 @@ function getmap() {
   # SAS Disks
   SASDRIVES=0
   if [ $(lspci -d ::107 2>/dev/null | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::107 | awk '{print $1}'); do
+    for PCI in $(lspci -d ::107 2>/dev/null | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
@@ -56,7 +56,7 @@ function getmap() {
   # SCSI Disks
   SCSIDRIVES=0
   if [ $(lspci -d ::100 2>/dev/null | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::100 | awk '{print $1}'); do
+    for PCI in $(lspci -d ::100 2>/dev/null | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort - 2>/dev/null)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
@@ -66,7 +66,7 @@ function getmap() {
   # Raid Disks
   RAIDDRIVES=0
   if [ $(lspci -d ::104 2>/dev/null | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::104 | awk '{print $1}'); do
+    for PCI in $(lspci -d ::104 2>/dev/null | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
@@ -76,7 +76,7 @@ function getmap() {
   # USB Disks
   USBDRIVES=0
   if [ $(ls -l /sys/class/scsi_host 2>/dev/null | grep usb | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::c03 | awk '{print $1}'); do
+    for PCI in $(lspci -d ::c03 2>/dev/null | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
@@ -88,7 +88,7 @@ function getmap() {
   MMCDRIVES=0
   if [ $(ls -l /sys/block/mmc* 2>/dev/null | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::805 | awk '{print $1}'); do
-      NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
+      NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
       PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l 2>/dev/null)
       [ ${PORTNUM} -eq 0 ] && continue
       MMCDRIVES=$((${MMCDRIVES} + ${PORTNUM}))
@@ -97,7 +97,7 @@ function getmap() {
   # NVMe Disks
   NVMEDRIVES=0
   if [ $(lspci -d ::108 2>/dev/null | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::108 | awk '{print $1}'); do
+    for PCI in $(lspci -d ::108 2>/dev/null | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://")
       PORT=$(ls -l /sys/class/nvme | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n 2>/dev/null)
       PORTNUM=$(lsscsi -b | grep -v - | grep "\[N:${PORT}:" | wc -l)
@@ -117,7 +117,7 @@ function getmap() {
   writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.harddrives" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
   # Check for Sata Boot
-  if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
+  if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
     LASTDRIVE=0
     while read -r D; do
       if [ "${BUS}" = "sata" ] && [ "${MACHINE}" != "Native" ] && [ ${D} -eq 0 ]; then
@@ -228,22 +228,22 @@ function getmapSelection() {
 }
 
 # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
-SATACONTROLLER=$(lspci -d ::106 | wc -l)
+SATACONTROLLER=$(lspci -d ::106 2>/dev/null | wc -l)
 writeConfigKey "device.satacontroller" "${SATACONTROLLER}" "${USER_CONFIG_FILE}"
 if [ ${SATACONTROLLER} -gt 0 ]; then
   writeConfigKey "device.externalcontroller" "false" "${USER_CONFIG_FILE}"
 fi
-SASCONTROLLER=$(lspci -d ::107 | wc -l)
+SASCONTROLLER=$(lspci -d ::107 2>/dev/null | wc -l)
 writeConfigKey "device.sascontroller" "${SASCONTROLLER}" "${USER_CONFIG_FILE}"
 if [ ${SASCONTROLLER} -gt 0 ]; then
   writeConfigKey "device.externalcontroller" "true" "${USER_CONFIG_FILE}"
 fi
-SCSICONTROLLER=$(lspci -d ::100 | wc -l)
+SCSICONTROLLER=$(lspci -d ::100 2>/dev/null | wc -l)
 writeConfigKey "device.scsicontroller" "${SCSICONTROLLER}" "${USER_CONFIG_FILE}"
 if [ ${SCSICONTROLLER} -gt 0 ]; then
   writeConfigKey "device.externalcontroller" "true" "${USER_CONFIG_FILE}"
 fi
-RAIDCONTROLLER=$(lspci -d ::104 | wc -l)
+RAIDCONTROLLER=$(lspci -d ::104 2>/dev/null | wc -l)
 writeConfigKey "device.raidcontroller" "${RAIDCONTROLLER}" "${USER_CONFIG_FILE}"
 if [ ${RAIDCONTROLLER} -gt 0 ]; then
   writeConfigKey "device.externalcontroller" "true" "${USER_CONFIG_FILE}"
