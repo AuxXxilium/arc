@@ -1658,12 +1658,14 @@ function loaderPassword() {
 # Change Arc Loader Password
 function loaderPorts() {
   MSG="Modify Ports (0-65535) (Leave empty for default):"
-  HTTPPORT=$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
-  DUFSPORT=$(grep -i '^DUFS_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
-  TTYDPORT=$(grep -i '^TTYD_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
+  unset HTTP_PORT DUFS_PORT TTYD_PORT
+  [ -f "/etc/arc.conf" ] && source "/etc/arc.conf" 2>/dev/null
+  local HTTP=${HTTP_PORT:-7080}
+  local DUFS=${DUFS_PORT:-7304}
+  local TTYD=${TTYD_PORT:-7681}
   while true; do
     dialog --backtitle "$(backtitle)" --title "Loader Ports" \
-      --form "${MSG}" 11 70 3 "HTTP" 1 1 "${HTTPPORT:-8080}" 1 10 55 0 "DUFS" 2 1 "${DUFSPORT:-7304}" 2 10 55 0 "TTYD" 3 1 "${TTYDPORT:-7681}" 3 10 55 0 \
+      --form "${MSG}" 11 70 3 "HTTP" 1 1 "${HTTPPORT}" 1 10 55 0 "DUFS" 2 1 "${DUFSPORT}" 2 10 55 0 "TTYD" 3 1 "${TTYDPORT}" 3 10 55 0 \
       2>"${TMP_PATH}/resp"
     RET=$?
     case ${RET} in
@@ -1729,14 +1731,17 @@ function loaderPorts() {
         rm -f "${ARC_RAMDISK_USER_FILE}"
       fi
       rm -rf "${RDXZ_PATH}"
-      {
-        [ "${HTTP:-8080}" != "8080" ] && /etc/init.d/S90thttpd restart
-        [ "${DUFS:-7304}" != "7304" ] && /etc/init.d/S99dufs restart
-        [ "${TTYD:-7681}" != "7681" ] && /etc/init.d/S99ttyd restart
-      } >/dev/null 2>&1 &
       [ ! -f "/etc/arc.conf" ] && MSG="Ports for TTYD/DUFS/HTTP restored." || MSG="Ports for TTYD/DUFS/HTTP changed."
       dialog --backtitle "$(backtitle)" --title "Loader Ports" \
         --msgbox "${MSG}" 0 0
+      rm -f "${TMP_PATH}/restartS.sh"
+      {
+        [ ! "${HTTP:-8080}" = "${HTTP_PORT:-8080}" ] && echo "/etc/init.d/S90thttpd restart"
+        [ ! "${DUFS:-7304}" = "${DUFS_PORT:-7304}" ] && echo "/etc/init.d/S99dufs restart"
+        [ ! "${TTYD:-7681}" = "${TTYD_PORT:-7681}" ] && echo "/etc/init.d/S99ttyd restart"
+      } >"${TMP_PATH}/restartS.sh"
+      chmod +x "${TMP_PATH}/restartS.sh"
+      nohup "${TMP_PATH}/restartS.sh" >/dev/null 2>&1
       break
       ;;
     1) # cancel-button
