@@ -59,6 +59,21 @@
         "r1000": true,
         "epyc7002": true
     },
+    "arccontrol": {
+        "system": false,
+        "description": "Arc Control - System Monitoring Tool (Not compatible if WebStation is installed)",
+        "apollolake": true,
+        "broadwell": true,
+        "broadwellnk": true,
+        "broadwellnkv2": true,
+        "broadwellntbap": true,
+        "denverton": true,
+        "geminilake": true,
+        "purley": true,
+        "v1000": true,
+        "r1000": true,
+        "epyc7002": true
+    },
     "arcdns": {
         "system": false,
         "description": "Dynamic DNS client for arcdns.tech - Modify in DSM DynDNS Settings",
@@ -271,7 +286,7 @@
     },
     "ledcontrol": {
         "system": false,
-        "description": "Add Ugreen Ledcontrol to DSM",
+        "description": "Add Ugreen Ledcontrol to DSM (Need sensors Addon)",
         "apollolake": false,
         "broadwell": false,
         "broadwellnk": false,
@@ -361,7 +376,7 @@
     },
     "nvmecache": {
         "system": false,
-        "description": "Enable M.2 as Cache (for DS918+ RS1619xs+ DS1019+ DS1621xs+)",
+        "description": "Enable M.2 as Cache (for DS718+ DS918+ RS1619xs+ DS1019+ DS1621xs+)",
         "apollolake": true,
         "broadwell": false,
         "broadwellnk": true,
@@ -392,6 +407,21 @@
     "nvmevolume": {
         "system": false,
         "description": "Enable M.2 as Volume (for non supported Models)",
+        "apollolake": true,
+        "broadwell": true,
+        "broadwellnk": true,
+        "broadwellnkv2": true,
+        "broadwellntbap": true,
+        "denverton": true,
+        "geminilake": true,
+        "purley": true,
+        "v1000": true,
+        "r1000": true,
+        "epyc7002": true
+    },
+    "optional": {
+        "system": false,
+        "description": "Disable some DSM logs and help with Disk hibernation",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
