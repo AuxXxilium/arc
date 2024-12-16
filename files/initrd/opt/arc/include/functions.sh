@@ -519,7 +519,7 @@ function onlineCheck() {
       writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
     fi
   fi
-  [ $(echo "${ARC_VERSION}" | grep "dev" | wc -l) -eq 0 ] && NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)" || NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
+  NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
   if [ -n "${NEWTAG}" ]; then
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
     updateOffline

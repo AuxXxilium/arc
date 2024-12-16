@@ -286,6 +286,9 @@ function modulesMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
+      *)
+        break
+        ;;
     esac
   done
   return
@@ -496,6 +499,9 @@ function cmdlineMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
+      *)
+        break
+        ;;
     esac
   done
   return
@@ -591,6 +597,9 @@ function synoinfoMenu() {
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ;;
+      *)
+        break
+        ;;
     esac
   done
   return
@@ -677,6 +686,9 @@ function sequentialIOMenu() {
             dialog --backtitle "$(backtitle)" --colors --title "SequentialIO" \
               --msgbox "SequentialIO disabled" 0 0
             SEQUENTIAL="false"
+            ;;
+          *)
+            break
             ;;
         esac
         writeConfigKey "addons.sequentialio" "${SEQUENTIAL}" "${USER_CONFIG_FILE}"
@@ -867,6 +879,9 @@ function backupMenu() {
           dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup failed!" 5 40
         fi
         ;;
+      *)
+        break
+        ;;
     esac
   done
 }
@@ -932,6 +947,9 @@ function updateMenu() {
           ARC_BRANCH="dev"
         fi
         writeConfigKey "arc.branch" "${ARC_BRANCH}" "${USER_CONFIG_FILE}"
+        ;;
+      *)
+        break
         ;;
     esac
   done
@@ -1200,17 +1218,13 @@ function sysinfo() {
         --extra-button --extra-label "Upload" --title "Sysinfo" --msgbox "${TEXT}" 0 0
       RET=$?
       case ${RET} in
-        0) # ok-button
-          return 0
-          break
-          ;;
-        2) # help-button
+        2)
           getCMDline
           ;;
-        3) # extra-button
+        3)
           uploadDiag
           ;;
-        255) # ESC-button
+        *)
           return 0
           break
           ;;
@@ -1222,14 +1236,10 @@ function sysinfo() {
         --title "Sysinfo" --msgbox "${TEXT}" 0 0
       RET=$?
       case ${RET} in
-        0) # ok-button
-          return 0
-          break
-          ;;
-        2) # help-button
+        2)
           getCMDline
           ;;
-        255) # ESC-button
+        *)
           return 0
           break
           ;;
@@ -1386,7 +1396,7 @@ function staticIPMenu() {
         2>"${TMP_PATH}/resp"
       RET=$?
       case ${RET} in
-      0) # ok-button
+      0)
         address="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
         netmask="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
         gateway="$(sed -n '3p' "${TMP_PATH}/resp" 2>/dev/null)"
@@ -1425,10 +1435,10 @@ function staticIPMenu() {
           --progressbox "Setting IP ..." 20 100
         break
         ;;
-      1) # cancel-button
+      1)
         break
         ;;
-      255) # ESC
+      *)
         break 2
         ;;
       esac
@@ -1744,10 +1754,7 @@ function loaderPorts() {
       nohup "${TMP_PATH}/restartS.sh" >/dev/null 2>&1
       break
       ;;
-    1) # cancel-button
-      break
-      ;;
-    255) # ESC
+    *)
       break
       ;;
     esac
@@ -2248,7 +2255,7 @@ function dtsMenu() {
       3 "Edit dts file" \
       2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break
-    case "$(cat ${TMP_PATH}/resp)" in %) ;;
+    case "$(cat ${TMP_PATH}/resp)" in
     1)
       if ! tty 2>/dev/null | grep -q "/dev/pts"; then #if ! tty 2>/dev/null | grep -q "/dev/pts" || [ -z "${SSH_TTY}" ]; then
         MSG=""
@@ -2311,7 +2318,7 @@ function dtsMenu() {
         dialog --backtitle "$(backtitle)" --title "Edit with caution" \
           --editbox "${TMP_PATH}/model.dts" 0 0 2>"${TMP_PATH}/modelEdit.dts"
         [ $? -ne 0 ] && rm -f "${TMP_PATH}/model.dts" "${TMP_PATH}/modelEdit.dts" && return
-        dtc -q -I dts -O dtb "${TMP_PATH}/modelEdit.dts" >"test.dtb" 2>"${DTC_ERRLOG}"
+        dtc -q -I dts -O dtb "${TMP_PATH}/modelEdit.dts}" >"test.dtb" 2>"${DTC_ERRLOG}"
         if [ $? -ne 0 ]; then
           dialog --backtitle "$(backtitle)" --title "Custom DTS" \
             --msgbox "Not a valid dts file, please try again!\n\n$(cat "${DTC_ERRLOG}")" 0 0
@@ -2324,6 +2331,9 @@ function dtsMenu() {
           break
         fi
       done
+      ;;
+    *)
+      break
       ;;
     esac
   done
@@ -2421,7 +2431,7 @@ function checkHardwareID() {
     writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
     [ -f "${S_FILE}.bak" ] && mv -f "${S_FILE}.bak" "${S_FILE}" 2>/dev/null
   fi
-  return
+  return 0
 }
 
 ###############################################################################
