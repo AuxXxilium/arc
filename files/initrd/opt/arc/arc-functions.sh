@@ -706,14 +706,22 @@ function backupMenu() {
   NEXT="1"
   USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   while true; do
-    if [ -n "${USERID}" ] && [ "${ARCOFFLINE}" != "true" ]; then
+    if [ -n "${USERID}" ] && [ "${ARCOFFLINE}" != "true" ] && [ "${CONFDONE}" = "true" ]; then
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
         1 "Restore Arc Config from DSM" \
         2 "Restore HW Encryption Key from DSM" \
         3 "Backup HW Encryption Key to DSM" \
         4 "Restore Arc Config from Online" \
         5 "Backup Arc Config to Online" \
+        2>"${TMP_PATH}/resp"
+    elif [ -n "${USERID}" ] && [ "${ARCOFFLINE}" != "true" ]; then
+      dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
+        1 "Restore Arc Config from DSM" \
+        2 "Restore HW Encryption Key from DSM" \
+        3 "Backup HW Encryption Key to DSM" \
+        4 "Restore Arc Config from Online" \
         2>"${TMP_PATH}/resp"
     else
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
@@ -1211,7 +1219,7 @@ function sysinfo() {
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   fi
   TEXT+="\n  Total Disks: \Zb${NUMPORTS}\Zn"
-  if [ -n "${USERID}" ]; then
+  if [ -n "${USERID}" ] && [ "${CONFDONE}" = "true" ]; then
     echo -e "${TEXT}" >"${TMP_PATH}/sysinfo.yml"
     while true; do
       dialog --backtitle "$(backtitle)" --colors --ok-label "Exit" --help-button --help-label "Show Cmdline" \
