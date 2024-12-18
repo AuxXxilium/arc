@@ -59,7 +59,7 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
-  BACKTITLE="${ARC_TITLE}$([ -n "${NEWTAG}" ] && [ ${ARC_VERSION//[!0-9]/} -lt ${NEWTAG//[!0-9]/} ] && echo " > ${NEWTAG}") | "
+  BACKTITLE="${ARC_TITLE}$([ -n "${NEWTAG}" ] && [ -n "${ARC_VERSION}" ] && [ ${ARC_VERSION//[!0-9]/} -lt ${NEWTAG//[!0-9]/} ] && echo " > ${NEWTAG}") | "
   BACKTITLE+="${MODEL:-(Model)} | "
   BACKTITLE+="${PRODUCTVER:-(Version)} | "
   BACKTITLE+="${IPCON:-(IP)} | "
@@ -165,25 +165,21 @@ function arcModel() {
         --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       RET=$?
       case ${RET} in
-        0) # ok-button
+        0)
           resp=$(cat ${TMP_PATH}/resp)
           [ -z "${resp}" ] && return 1
           break
           ;;
-        1) # cancel-button -> Show all Models
+        1)
           [ ${RESTRICT} -eq 1 ] && RESTRICT=0 || RESTRICT=1
           ;;
-        2) # help-button -> Exit
-          return 1
-          break
-          ;;
-        3) # extra-button -> Platform Info
+        3)
           resp=$(cat ${TMP_PATH}/resp)
           PLATFORM="$(grep -w "${resp}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
           dialog --backtitle "$(backtitlep)" --colors \
             --title "Platform Info" --textbox "./informations/${PLATFORM}.yml" 70 80
           ;;
-        255) # ESC -> Exit
+        *)
           return 1
           break
           ;;
