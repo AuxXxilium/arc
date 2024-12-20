@@ -55,9 +55,10 @@ LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
 RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')"
-DSMINFO="$(readConfigKey "boot.dsminfo" "${USER_CONFIG_FILE}")"
-SYSTEMINFO="$(readConfigKey "boot.systeminfo" "${USER_CONFIG_FILE}")"
-DISKINFO="$(readConfigKey "boot.diskinfo" "${USER_CONFIG_FILE}")"
+DSMINFO="$(readConfigKey "bootscreen.dsminfo" "${USER_CONFIG_FILE}")"
+SYSTEMINFO="$(readConfigKey "bootscreen.systeminfo" "${USER_CONFIG_FILE}")"
+DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
+HWIDINFO="$(readConfigKey "bootscreen.hwidinfo" "${USER_CONFIG_FILE}")"
 
 if [ "${DSMINFO}" = "true" ]; then
   echo -e "\033[1;37mDSM:\033[0m"
@@ -77,6 +78,10 @@ fi
 if [ "${DISKINFO}" = "true" ]; then
   echo -e "\033[1;37mDisks:\033[0m"
   echo -e "Disks: \033[1;37m$(lsblk -dpno NAME | grep -v "${LOADER_DISK}" | wc -l)\033[0m"
+fi
+if [ "${HWIDINFO}" = "true" ]; then
+  echo -e "\033[1;37mHWID:\033[0m"
+  echo -e "HWID: \033[1;37m$(genHWID)\033[0m"
 fi
 
 if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
