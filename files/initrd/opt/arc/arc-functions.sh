@@ -2053,7 +2053,7 @@ function greplogs() {
     tar -czf "${TMP_PATH}/logs.tar.gz" -C "${TMP_PATH}" logs
     if [ -z "${SSH_TTY}" ]; then # web
       mv -f "${TMP_PATH}/logs.tar.gz" "/var/www/data/logs.tar.gz"
-      URL="http://${IPCON}/logs.tar.gz"
+      URL="http://${IPCON}:${HTTP_PORT}/logs.tar.gz"
       MSG+="Please via ${URL} to download the logs,\nAnd go to Github or Discord to create an issue and upload the logs."
     else
       sz -be -B 536870912 "${TMP_PATH}/logs.tar.gz"
@@ -2072,9 +2072,9 @@ function getbackup() {
     rm -f "${TMP_PATH}/dsmconfig.tar.gz" >/dev/null
     tar -czf "${TMP_PATH}/dsmconfig.tar.gz" -C "${PART1_PATH}" dsmbackup
     if [ -z "${SSH_TTY}" ]; then # web
-      mv -f "${TMP_PATH}/dsmconfig.tar.gz" "/var/www/data/dsmconfig.tar.gz"
+      cp -f "${TMP_PATH}/dsmconfig.tar.gz" "/var/www/data/dsmconfig.tar.gz"
       chmod 644 "/var/www/data/dsmconfig.tar.gz"
-      URL="http://${IPCON}/dsmconfig.tar.gz"
+      URL="http://${IPCON}:${HTTP_PORT}/dsmconfig.tar.gz"
       dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
         --msgbox "Please via ${URL}\nto download the dsmconfig and unzip it and back it up in order by file name." 0 0
     else

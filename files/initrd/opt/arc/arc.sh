@@ -659,13 +659,13 @@ function arcSummary() {
     --extra-button --extra-label "Cancel" --msgbox "${SUMMARY}" 0 0
   RET=$?
   case ${RET} in
-    0) # ok-button
+    0)
       make
       ;;
-    3) # extra-button
+    3)
       return 0
       ;;
-    255) # ESC
+    255)
       return 0
       ;;
   esac
@@ -719,9 +719,8 @@ function make() {
     sleep 2
     return 1
   fi
-  STEP="boot"
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
-    MODELID=$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')
+    MODELID="$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')"
     writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
     arcFinish
@@ -739,6 +738,7 @@ function make() {
 ###############################################################################
 # Finish Building Loader
 function arcFinish() {
+  STEP="boot"
   rm -f "${LOG_FILE}" >/dev/null 2>&1 || true
   MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
   if [ -n "${MODELID}" ]; then
