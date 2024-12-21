@@ -829,7 +829,7 @@ else
   [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
   while true; do
     echo "= \"\Z4===== Main =====\Zn \" "                                                     >"${TMP_PATH}/menu"
-    if [ -z "${USERID}" ] && [ "${ARCOFFLINE}" != "true" ]; then
+    if [ -z "${USERID}" ] && [ "${ARCOFFLINE}" = "false" ]; then
       echo "0 \"HardwareID for Arc Patch\" "                                                  >>"${TMP_PATH}/menu"
     fi
     echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
@@ -938,7 +938,7 @@ else
     fi
     echo "= \"\Z4===== Misc =====\Zn \" "                                                     >>"${TMP_PATH}/menu"
     echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
-    [ "${ARCOFFLINE}" != "true" ] && echo "z \"Update Menu \" "                               >>"${TMP_PATH}/menu"
+    [ "${ARCOFFLINE}" = "false" ] && echo "z \"Update Menu \" "                               >>"${TMP_PATH}/menu"
     echo "I \"Power/Service Menu \" "                                                         >>"${TMP_PATH}/menu"
     echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
 

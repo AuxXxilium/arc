@@ -250,7 +250,7 @@ if [ "${DIRECTBOOT}" = "true" ]; then
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
   grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
   grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
-  _bootwait || true
+  _bootwait || exit 0
   echo -e "\033[1;34mReboot with Directboot\033[0m"
   reboot
   exit 0
@@ -300,7 +300,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       sleep 1
     done
   done
-   _bootwait || true
+  _bootwait || exit 0
 
   DSMLOGO="$(readConfigKey "boot.dsmlogo" "${USER_CONFIG_FILE}")"
   if [ "${DSMLOGO}" = "true" ] && [ -c "/dev/fb0" ]; then
@@ -337,6 +337,5 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo -e "\033[1;37mBooting DSM...\033[0m"
   # Boot to DSM
   [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
+  exit 0
 fi
-
-exit 0
