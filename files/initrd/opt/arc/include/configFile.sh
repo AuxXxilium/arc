@@ -27,6 +27,20 @@ function readConfigKey() {
 }
 
 ###############################################################################
+# Write to yaml config file
+# 1 - Modules
+# 2 - Path of yaml config file
+function mergeConfigModules() {
+  local MS="ARCMOD\n${1// /\\n}"
+  local L="$(echo -en "${MS}" | awk '{print "modules."$1":"}')"
+  local xmlfile=$(mktemp)
+  echo -en "${L}" | yq -p p -o=yaml >"${xmlfile}"
+  deleteConfigKey "modules.\"ARCMOD\"" "${xmlfile}"
+  yq eval-all --inplace 'select(fileIndex == 0) * select(fileIndex == 1)' "${2}" "${xmlfile}" 2>/dev/null
+  rm -f "${xmlfile}"
+}
+
+###############################################################################
 # Write to yaml config file if key not exists
 # 1 - Path of Key
 # 2 - Value

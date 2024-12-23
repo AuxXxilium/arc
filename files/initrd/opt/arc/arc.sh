@@ -327,6 +327,13 @@ function arcVersion() {
     while IFS=': ' read -r KEY VALUE; do
       writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
     done < <(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")
+    # Reset Modules
+    KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+    [ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+    if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+      writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+      mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+    fi
     # Check Addons for Platform
     ADDONS="$(readConfigKey "addons" "${USER_CONFIG_FILE}")"
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
@@ -370,14 +377,6 @@ function arcVersion() {
         deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
       fi
     done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-    KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-    [ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
-    if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
-      writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-      while read -r ID DESC; do
-        writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-      done < <(getAllModules "${PLATFORM}" "${KVERP}")
-    fi
     # Check for Only Version
     if [ "${ONLYVERSION}" = "true" ]; then
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -424,15 +423,12 @@ function arcPatch() {
     if [ ${resp} -eq 1 ]; then
       ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
       if [ -n "${ARCCONF}" ]; then
-        dialog --backtitle "$(backtitlep)" --colors --title "Arc Patch" \
-          --infobox "Arc Patch successful!" 3 30
-        sleep 2
         SN="$(generateSerial "${MODEL}" "true")"
         writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
       else
         dialog --backtitle "$(backtitlep)" --colors --title "Arc Patch" \
-          --infobox "Arc Patch failed!" 3 30
-        sleep 2
+          --infobox "Arc Patch failed - Not registered HardwareID!" 3 50
+        sleep 3
         SN="$(generateSerial "${MODEL}" "false")"
         writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       fi
@@ -1028,12 +1024,10 @@ else
         PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
         PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
         KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-        if [ -n "${PLATFORM}" ] && [ -n "${KVER}" ]; then
-          [ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+        [ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+        if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-          while read -r ID DESC; do
-            writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-          done < <(getAllModules "${PLATFORM}" "${KVERP}")
+          mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
         fi
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"

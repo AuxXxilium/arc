@@ -183,8 +183,8 @@ CMDLINE["panic"]="${KERNELPANIC:-0}"
 # DSM Specific Cmdline
 CMDLINE["pcie_aspm"]="off"
 CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
-[ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="passive"
-[ $(cat /proc/cpuinfo | grep AMD | wc -l) -gt 0 ] && CMDLINE["amd_pstate"]="passive"
+[ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="disable"
+# [ $(cat /proc/cpuinfo | grep AMD | wc -l) -gt 0 ] && CMDLINE["amd_pstate"]="disable"
 # CMDLINE["nomodeset"]=""
 if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
   CMDLINE["nox2apic"]=""
