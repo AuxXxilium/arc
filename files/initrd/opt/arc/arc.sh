@@ -820,7 +820,7 @@ elif [ "${ARCMODE}" = "automated" ]; then
   else
     make
   fi
-else
+elif [ "${ARCMODE}" = "config" ]; then
   [ "${CONFDONE}" = "true" ] && NEXT="2" || NEXT="1"
   [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
   while true; do
@@ -1099,6 +1099,8 @@ else
     esac
   done
   clear
+else
+  exec reboot
 fi
 
 # Inform user
