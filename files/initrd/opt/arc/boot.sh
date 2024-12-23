@@ -183,8 +183,8 @@ CMDLINE["panic"]="${KERNELPANIC:-0}"
 # DSM Specific Cmdline
 CMDLINE["pcie_aspm"]="off"
 CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
-[ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="disable"
-# [ $(cat /proc/cpuinfo | grep AMD | wc -l) -gt 0 ] && CMDLINE["amd_pstate"]="disable"
+[ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="disable" || true
+# [ $(cat /proc/cpuinfo | grep AMD | wc -l) -gt 0 ] && CMDLINE["amd_pstate"]="disable" || true
 # CMDLINE["nomodeset"]=""
 if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
   CMDLINE["nox2apic"]=""
@@ -250,7 +250,9 @@ if [ "${DIRECTBOOT}" = "true" ]; then
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
   grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
   grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
-  _bootwait || exit 0
+  if ! _bootwait; then
+    exit 0
+  fi
   echo -e "\033[1;34mReboot with Directboot\033[0m"
   reboot
   exit 0
@@ -300,7 +302,9 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       sleep 1
     done
   done
-  _bootwait || exit 0
+  if ! _bootwait; then
+    exit 0
+  fi
 
   DSMLOGO="$(readConfigKey "boot.dsmlogo" "${USER_CONFIG_FILE}")"
   if [ "${DSMLOGO}" = "true" ] && [ -c "/dev/fb0" ]; then
