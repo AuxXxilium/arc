@@ -615,7 +615,7 @@ function _bootwait() {
     if ! diff WB WC >/dev/null 2>&1; then
       echo -en "\r\033[1;33mAccess to SSH/Web detected and boot is interrupted.\033[0m\n"
       rm -f WB WC
-      exit 0
+      return 1
     fi
     sleep 1
     BOOTWAIT=$((BOOTWAIT - 1))

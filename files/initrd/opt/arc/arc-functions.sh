@@ -94,204 +94,201 @@ function modulesMenu() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-  # Modify KVER for Epyc7002
   [ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
-  # menu loop
+  # loop menu
   while true; do
-    dialog --backtitle "$(backtitle)" --title "Modules" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
-      1 "Show selected Modules" \
-      2 "Select loaded Modules" \
-      3 "Select all Modules" \
-      4 "Deselect all Modules" \
-      5 "Choose Modules" \
-      6 "Add external module" \
-      7 "Edit Modules copied to DSM" \
-      8 "Force-copy loaded Modules to DSM" \
-      9 "Blacklist Modules to prevent loading in DSM" \
-      2>"${TMP_PATH}/resp"
+    rm -f "${TMP_PATH}/menu"
+    {
+      echo "1 \"Show/Select Modules\""
+      echo "2 \"Select loaded Modules\""
+      echo "3 \"Upload a external Module\""
+      echo "4 \"Deselect i915 with dependencies\""
+      echo "5 \"Edit Modules that need to be copied to DSM\""
+      echo "6 \"Blacklist Modules to prevent loading\""
+    } >"${TMP_PATH}/menu"
+    dialog --backtitle "$(backtitle)" --title "Modules" \
+      --cancel-label "Exit" --menu "Choose an option" 0 0 0 --file "${TMP_PATH}/menu" \
+      2>${TMP_PATH}/resp
     [ $? -ne 0 ] && break
     case "$(cat ${TMP_PATH}/resp)" in
-      1)
-        dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
-          --infobox "Reading modules" 0 0
+    1)
+      while true; do
+        dialog --backtitle "$(backtitle)" --title "Modules" \
+          --infobox "Reading Modules ..." 3 25
+        ALLMODULES=$(getAllModules "${PLATFORM}" "${KVERP}")
         unset USERMODULES
         declare -A USERMODULES
         while IFS=': ' read -r KEY VALUE; do
           [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
         done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
-        ITEMS=""
-        for KEY in ${!USERMODULES[@]}; do
-          ITEMS+="${KEY}: ${USERMODULES[$KEY]}\n"
-        done
-        dialog --backtitle "$(backtitle)" --title "Modules" \
-          --msgbox "${ITEMS}" 0 0
-        ;;
-      2)
-        dialog --backtitle "$(backtitle)" --colors --title "Modules" \
-          --infobox "Selecting loaded Modules" 0 0
-        KOLIST=""
-        for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
-          KOLIST+="$(getdepends "${PLATFORM}" "${KVERP}" "${I}") ${I} "
-        done
-        KOLIST=($(echo ${KOLIST} | tr ' ' '\n' | sort -u))
-        unset USERMODULES
-        declare -A USERMODULES
-        writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-        for ID in ${KOLIST[@]}; do
-          USERMODULES["${ID}"]=""
-          writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-        done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      3)
-        dialog --backtitle "$(backtitle)" --title "Modules" \
-           --infobox "Selecting all Modules" 0 0
-        unset USERMODULES
-        declare -A USERMODULES
-        writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-        while read -r ID DESC; do
-          USERMODULES["${ID}"]=""
-          writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-        done < <(getAllModules "${PLATFORM}" "${KVERP}")
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      4)
-        dialog --backtitle "$(backtitle)" --title "Modules" \
-           --infobox "Deselecting all Modules" 0 0
-        writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-        unset USERMODULES
-        declare -A USERMODULES
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      5)
-        rm -f "${TMP_PATH}/opts" >/dev/null
+        rm -f "${TMP_PATH}/opts"
         while read -r ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
           echo "${ID} ${DESC} ${ACT}" >>"${TMP_PATH}/opts"
-        done < <(getAllModules "${PLATFORM}" "${KVERP}")
-        dialog --backtitle "$(backtitle)" --title "Modules" --aspect 18 \
-          --checklist "Select Modules to include" 0 0 0 \
-          --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && return 1
-        resp=$(cat ${TMP_PATH}/resp)
+        done <<<${ALLMODULES}
         dialog --backtitle "$(backtitle)" --title "Modules" \
-           --infobox "Writing to user config" 20 5
-        unset USERMODULES
-        declare -A USERMODULES
-        writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-        for ID in ${resp}; do
-          USERMODULES["${ID}"]=""
-          writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
-        done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      6)
-        MSG=""
-        MSG+="This function is experimental and dangerous. If you don't know much, please exit.\n"
-        MSG+="The imported .ko of this function will be implanted into the corresponding arch's modules package, which will affect all models of the arch.\n"
-        MSG+="This program will not determine the availability of imported modules or even make type judgments, as please double check if it is correct.\n"
-        MSG+="If you want to remove it, please go to the \"Update\" -> \"Update Modules\" to forcibly update the modules. All imports will be reset.\n"
-        MSG+="Do you want to continue?"
-        dialog --backtitle "$(backtitle)" --title "External Modules" \
-          --yesno "${MSG}" 0 0
-        [ $? -ne 0 ] && return
-        TMP_UP_PATH=${TMP_PATH}/users
-        USER_FILE=""
-        rm -rf "${TMP_UP_PATH}" >/dev/null
-        mkdir -p "${TMP_UP_PATH}"
-        dialog --backtitle "$(backtitle)" --title "External Modules" \
-          --ok-label "Proceed" --msgbox "Please upload the *.ko file to /tmp/users.\n- Use SFTP at ${IPCON}:22 User: root PW: arc\n- Use Webclient at http://${IPCON}:7304" 7 50
-        for F in $(ls "${TMP_UP_PATH}" 2>/dev/null); do
-          USER_FILE="${F}"
-          if [ -n "${USER_FILE}" ] && [ "${USER_FILE##*.}" = "ko" ]; then
-            addToModules "${PLATFORM}" "${KVERP}" "${TMP_UP_PATH}/${USER_FILE}"
-            dialog --backtitle "$(backtitle)" --title "External Modules" \
-              --msgbox "Module: ${USER_FILE}\nadded to ${PLATFORM}-${KVERP}" 7 50
-            rm -f "${TMP_UP_PATH}/${USER_FILE}" >/dev/null
-          else
-            dialog --backtitle "$(backtitle)" --title "External Modules" \
-              --msgbox "Not a valid file, please try again!" 7 50
-          fi
-        done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      7)
-        if [ -f "${USER_UP_PATH}/modulelist" ]; then
-          cp -f "${USER_UP_PATH}/modulelist" "${TMP_PATH}/modulelist.tmp"
-        else
-          cp -f "${ARC_PATH}/include/modulelist" "${TMP_PATH}/modulelist.tmp"
-        fi
-        while true; do
-          dialog --backtitle "$(backtitle)" --title "Edit Modules copied to DSM" \
-            --editbox "${TMP_PATH}/modulelist.tmp" 0 0 2>"${TMP_PATH}/modulelist.user"
-          [ $? -ne 0 ] && return
-          [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
-          mv -f "${TMP_PATH}/modulelist.user" "${USER_UP_PATH}/modulelist"
-          dos2unix "${USER_UP_PATH}/modulelist"
+          --cancel-label "Exit" \
+          --extra-button --extra-label "Select all" \
+          --help-button --help-label "Deselect all" \
+          --checklist "Select Modules to include" 0 0 0 --file "${TMP_PATH}/opts" \
+          2>${TMP_PATH}/resp
+        RET=$?
+        case ${RET} in
+        0)
+          # ok-button
+          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+          mergeConfigModules "$(cat "${TMP_PATH}/resp" 2>/dev/null)" "${USER_CONFIG_FILE}"
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           break
-        done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      8)
-        if [ -f "${USER_UP_PATH}/modulelist" ]; then
-          cp -f "${USER_UP_PATH}/modulelist" "${TMP_PATH}/modulelist.tmp"
-        else
-          cp -f "${ARC_PATH}/include/modulelist" "${TMP_PATH}/modulelist.tmp"
-        fi
-        echo -e "\n\n# Arc Modules" >>"${TMP_PATH}/modulelist.tmp"
-        KOLIST=""
-        for I in $(lsmod | awk -F' ' '{print $1}' | grep -v 'Module'); do
-          KOLIST+="$(getdepends "${PLATFORM}" "${KVERP}" "${I}") ${I} "
-        done
-        KOLIST=($(echo ${KOLIST} | tr ' ' '\n' | sort -u))
-        while read -r ID DESC; do
-          for MOD in ${KOLIST[@]}; do
-            [ "${MOD}" = "${ID}" ] && echo "F ${ID}.ko" >>"${TMP_PATH}/modulelist.tmp"
-          done
-        done < <(getAllModules "${PLATFORM}" "${KVERP}")
-        [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
-        mv -f "${TMP_PATH}/modulelist.tmp" "${USER_UP_PATH}/modulelist"
-        dos2unix "${USER_UP_PATH}/modulelist"
-        dialog --backtitle "$(backtitle)" --title "Loaded Modules Copy" \
-            --msgbox "All loaded Modules will be copied to DSM!" 5 50
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      9)
-        MSG=""
-        MSG+="The blacklist is used to prevent the kernel from loading specific modules.\n"
-        MSG+="The blacklist is a list of module names separated by ','.\n"
-        MSG+="For example: \Z4evbug,cdc_ether\Zn\n"
-        while true; do
-          modblacklist="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
-          dialog --backtitle "$(backtitle)" --title "Blacklist Modules" \
-            --inputbox "${MSG}" 12 70 "${modblacklist}" \
-            2>${TMP_PATH}/resp
-          [ $? -ne 0 ] && break
-          VALUE="$(cat "${TMP_PATH}/resp")"
-          if [[ ${VALUE} = *" "* ]]; then
-            dialog --backtitle "$(backtitle)" --title  "Blacklist Module" \
-              --yesno "Invalid list, No spaces should appear, retry?" 0 0
-            [ $? -eq 0 ] && continue || break
-          fi
-          writeConfigKey "modblacklist" "${VALUE}" "${USER_CONFIG_FILE}"
+          ;;
+        3)
+          # extra-button
+          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+          mergeConfigModules "$(echo "${ALLMODULES}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          ;;
+        2)
+          # help-button
+          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          ;;
+        1)
+          # cancel-button
           break
-        done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ;;
-      *)
+          ;;
+        255)
+          # ESC
+          break
+          ;;
+        esac
+      done
+      ;;
+    2)
+      dialog --backtitle "$(backtitle)" --title "Modules" \
+        --infobox "Select loaded modules" 0 0
+      KOLIST=""
+      for I in $(lsmod 2>/dev/null | awk -F' ' '{print $1}' | grep -v 'Module'); do
+        KOLIST+="$(getdepends "${PLATFORM}" "${KVERP}" "${I}") ${I} "
+      done
+      KOLIST=($(echo ${KOLIST} | tr ' ' '\n' | sort -u))
+      writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+      for ID in ${KOLIST[@]}; do
+        writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
+      done
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      ;;
+    3)
+      if ! tty 2>/dev/null | grep -q "/dev/pts"; then #if ! tty 2>/dev/null | grep -q "/dev/pts" || [ -z "${SSH_TTY}" ]; then
+        MSG=""
+        MSG+="This feature is only available when accessed via ssh (Requires a terminal that supports ZModem protocol)."
+        dialog --backtitle "$(backtitle)" --title "Modules" \
+          --msgbox "${MSG}" 0 0
+        return
+      fi
+      MSG=""
+      MSG+="This function is experimental and dangerous. If you don't know much, please exit.\n"
+      MSG+="The imported .ko of this function will be implanted into the corresponding arch's modules package, which will affect all models of the arch.\n"
+      MSG+="This program will not determine the availability of imported modules or even make type judgments, as please double check if it is correct.\n"
+      MSG+="If you want to remove it, please go to the \"Update Menu\" -> \"Update Dependencies\" to forcibly update the modules. All imports will be reset.\n"
+      MSG+="Do you want to continue?"
+      dialog --backtitle "$(backtitle)" --title "Modules" \
+        --yesno "${MSG}" 0 0
+      [ $? -ne 0 ] && continue
+      dialog --backtitle "$(backtitle)" --title "Modules" \
+        --msgbox "Please upload the *.ko file." 0 0
+      TMP_UP_PATH=${TMP_PATH}/users
+      USER_FILE=""
+      rm -rf ${TMP_UP_PATH}
+      mkdir -p ${TMP_UP_PATH}
+      pushd ${TMP_UP_PATH}
+      rz -be
+      for F in $(ls -A 2>/dev/null); do
+        USER_FILE=${F}
         break
-        ;;
+      done
+      popd
+      if [ -n "${USER_FILE}" ] && [ "${USER_FILE##*.}" = "ko" ]; then
+        addToModules ${PLATFORM} "${KVERP}" "${TMP_UP_PATH}/${USER_FILE}"
+        [ -f "${MODULES_PATH}/VERSION" ] && rm -f "${MODULES_PATH}/VERSION"
+        dialog --backtitle "$(backtitle)" --title "Modules" \
+          --msgbox "$(printf "Module '%s' added to %s-%s" "${USER_FILE}" "${PLATFORM}" "${KVERP}")" 0 0
+        rm -f "${TMP_UP_PATH}/${USER_FILE}"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      else
+        dialog --backtitle "$(backtitle)" --title "Modules" \
+          --msgbox "Not a valid file, please try again!" 0 0
+      fi
+      ;;
+    4)
+      DEPS="$(getdepends "${PLATFORM}" "${KVERP}" i915) i915"
+      DELS=()
+      while IFS=': ' read -r KEY VALUE; do
+        [ -z "${KEY}" ] && continue
+        if echo "${DEPS}" | grep -wq "${KEY}"; then
+          DELS+=("${KEY}")
+        fi
+      done <<<$(readConfigMap "modules" "${USER_CONFIG_FILE}")
+      if [ ${#DELS[@]} -eq 0 ]; then
+        dialog --backtitle "$(backtitle)" --title "Modules" \
+          --msgbox "No i915 with dependencies module to deselect." 0 0
+      else
+        for ID in ${DELS[@]}; do
+          deleteConfigKey "modules.\"${ID}\"" "${USER_CONFIG_FILE}"
+        done
+        dialog --backtitle "$(backtitle)" --title "Modules" \
+          --msgbox "$(printf "Module %s deselected." "${DELS[@]}")" 0 0
+      fi
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      ;;
+    5)
+      if [ -f ${USER_UP_PATH}/modulelist ]; then
+        cp -f "${USER_UP_PATH}/modulelist" "${TMP_PATH}/modulelist.tmp"
+      else
+        cp -f "${ARC_PATH}/include/modulelist" "${TMP_PATH}/modulelist.tmp"
+      fi
+      while true; do
+        dialog --backtitle "$(backtitle)" --title "Edit with caution" \
+          --ok-label "Save" --cancel-label "Exit" \
+          --editbox "${TMP_PATH}/modulelist.tmp" 0 0 2>"${TMP_PATH}/modulelist.user"
+        [ $? -ne 0 ] && break
+        [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
+        mv -f "${TMP_PATH}/modulelist.user" "${USER_UP_PATH}/modulelist"
+        dos2unix "${USER_UP_PATH}/modulelist"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        break
+      done
+      ;;
+    6)
+      # modprobe.blacklist
+      MSG=""
+      MSG+="The blacklist is used to prevent the kernel from loading specific modules.\n"
+      MSG+="The blacklist is a list of module names separated by ','.\n"
+      MSG+="For example: \Z4evbug,cdc_ether\Zn\n"
+      while true; do
+        modblacklist="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "$(backtitle)" --title "Modules" \
+          --inputbox "${MSG}" 12 70 "${modblacklist}" \
+          2>${TMP_PATH}/resp
+        [ $? -ne 0 ] && break
+        VALUE="$(cat "${TMP_PATH}/resp")"
+        if echo "${VALUE}" | grep -q " "; then
+          dialog --backtitle "$(backtitle)" --title "Modules/Cmdline" \
+            --yesno "Invalid list, No spaces should appear, retry?" 0 0
+          [ $? -eq 0 ] && continue || break
+        fi
+        writeConfigKey "modblacklist" "${VALUE}" "${USER_CONFIG_FILE}"
+        break
+      done
+      ;;
     esac
   done
-  return
 }
 
 ###############################################################################
@@ -775,12 +772,10 @@ function backupMenu() {
             PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
             KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
             [ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
-          fi
-          if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
-            writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-            while read -r ID DESC; do
-              writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-            done < <(getAllModules "${PLATFORM}" "${KVERP}")
+            if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+              writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+              mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+            fi
           fi
         fi
         dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
@@ -1676,11 +1671,11 @@ function loaderPassword() {
 # Change Arc Loader Password
 function loaderPorts() {
   MSG="Modify Ports (0-65535) (Leave empty for default):"
-  unset HTTP_PORT DUFS_PORT TTYD_PORT
+  unset HTTPPORT DUFSPORT TTYDPORT
   [ -f "/etc/arc.conf" ] && source "/etc/arc.conf" 2>/dev/null
-  local HTTP=${HTTP_PORT:-7080}
-  local DUFS=${DUFS_PORT:-7304}
-  local TTYD=${TTYD_PORT:-7681}
+  local HTTP=${HTTPPORT:-8080}
+  local DUFS=${DUFSPORT:-7304}
+  local TTYD=${TTYDPORT:-7681}
   while true; do
     dialog --backtitle "$(backtitle)" --title "Loader Ports" \
       --form "${MSG}" 11 70 3 "HTTP" 1 1 "${HTTPPORT}" 1 10 55 0 "DUFS" 2 1 "${DUFSPORT}" 2 10 55 0 "TTYD" 3 1 "${TTYDPORT}" 3 10 55 0 \
@@ -1754,9 +1749,9 @@ function loaderPorts() {
         --msgbox "${MSG}" 0 0
       rm -f "${TMP_PATH}/restartS.sh"
       {
-        [ ! "${HTTP:-8080}" = "${HTTP_PORT:-8080}" ] && echo "/etc/init.d/S90thttpd restart"
-        [ ! "${DUFS:-7304}" = "${DUFS_PORT:-7304}" ] && echo "/etc/init.d/S99dufs restart"
-        [ ! "${TTYD:-7681}" = "${TTYD_PORT:-7681}" ] && echo "/etc/init.d/S99ttyd restart"
+        [ ! "${HTTP:-8080}" = "${HTTPPORT:-8080}" ] && echo "/etc/init.d/S90thttpd restart"
+        [ ! "${DUFS:-7304}" = "${DUFSPORT:-7304}" ] && echo "/etc/init.d/S99dufs restart"
+        [ ! "${TTYD:-7681}" = "${TTYDPORT:-7681}" ] && echo "/etc/init.d/S99ttyd restart"
       } >"${TMP_PATH}/restartS.sh"
       chmod +x "${TMP_PATH}/restartS.sh"
       nohup "${TMP_PATH}/restartS.sh" >/dev/null 2>&1
@@ -2053,7 +2048,7 @@ function greplogs() {
     tar -czf "${TMP_PATH}/logs.tar.gz" -C "${TMP_PATH}" logs
     if [ -z "${SSH_TTY}" ]; then # web
       mv -f "${TMP_PATH}/logs.tar.gz" "/var/www/data/logs.tar.gz"
-      URL="http://${IPCON}:${HTTP_PORT}/logs.tar.gz"
+      URL="http://${IPCON}:${HTTPPORT:-8080}/logs.tar.gz"
       MSG+="Please via ${URL} to download the logs,\nAnd go to Github or Discord to create an issue and upload the logs."
     else
       sz -be -B 536870912 "${TMP_PATH}/logs.tar.gz"
@@ -2074,7 +2069,7 @@ function getbackup() {
     if [ -z "${SSH_TTY}" ]; then # web
       cp -f "${TMP_PATH}/dsmconfig.tar.gz" "/var/www/data/dsmconfig.tar.gz"
       chmod 644 "/var/www/data/dsmconfig.tar.gz"
-      URL="http://${IPCON}:${HTTP_PORT}/dsmconfig.tar.gz"
+      URL="http://${IPCON}:${HTTPPORT:-8080}/dsmconfig.tar.gz"
       dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
         --msgbox "Please via ${URL}\nto download the dsmconfig and unzip it and back it up in order by file name." 0 0
     else
@@ -2445,20 +2440,21 @@ function checkHardwareID() {
 ###############################################################################
 # Bootsreen Menu
 function bootScreen () {
-  rm -f "${TMP_PATH}/boot" "${TMP_PATH}/opts" "${TMP_PATH}/resp" >/dev/null
+  rm -f "${TMP_PATH}/bootscreen" "${TMP_PATH}/opts" "${TMP_PATH}/resp" >/dev/null
   unset BOOTSCREENS
   declare -A BOOTSCREENS
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && BOOTSCREENS["${KEY}"]="${VALUE}"
-  done < <(readConfigMap "boot" "${USER_CONFIG_FILE}")
-  echo -e "dsminfo" >"${TMP_PATH}/boot"
-  echo -e "systeminfo" >>"${TMP_PATH}/boot"
-  echo -e "diskinfo" >>"${TMP_PATH}/boot"
-  echo -e "dsmlogo" >>"${TMP_PATH}/boot"
+  done < <(readConfigMap "bootscreen" "${USER_CONFIG_FILE}")
+  echo -e "dsminfo" >"${TMP_PATH}/bootscreen"
+  echo -e "systeminfo" >>"${TMP_PATH}/bootscreen"
+  echo -e "diskinfo" >>"${TMP_PATH}/bootscreen"
+  echo -e "hwidinfo" >>"${TMP_PATH}/bootscreen"
+  echo -e "dsmlogo" >>"${TMP_PATH}/bootscreen"
   while read -r BOOTSCREEN; do
     arrayExistItem "${BOOTSCREEN}" "${!BOOTSCREENS[@]}" && ACT="on" || ACT="off"
     echo -e "${BOOTSCREEN} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
-  done < <(cat "${TMP_PATH}/boot")
+  done < <(cat "${TMP_PATH}/bootscreen")
   dialog --backtitle "$(backtitle)" --title "Bootscreen" --colors --aspect 18 \
     --checklist "Select Bootscreen Informations\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
@@ -2466,9 +2462,9 @@ function bootScreen () {
   resp=$(cat ${TMP_PATH}/resp)
   unset BOOTSCREENS
   declare -A BOOTSCREENS
-  writeConfigKey "boot" "{}" "${USER_CONFIG_FILE}"
+  writeConfigKey "bootscreen" "{}" "${USER_CONFIG_FILE}"
   for BOOTSCREEN in ${resp}; do
     BOOTSCREENS["${BOOTSCREEN}"]=""
-    writeConfigKey "boot.\"${BOOTSCREEN}\"" "true" "${USER_CONFIG_FILE}"
+    writeConfigKey "bootscreen.\"${BOOTSCREEN}\"" "true" "${USER_CONFIG_FILE}"
   done
 }

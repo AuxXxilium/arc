@@ -55,9 +55,10 @@ LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
 RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')"
-DSMINFO="$(readConfigKey "boot.dsminfo" "${USER_CONFIG_FILE}")"
-SYSTEMINFO="$(readConfigKey "boot.systeminfo" "${USER_CONFIG_FILE}")"
-DISKINFO="$(readConfigKey "boot.diskinfo" "${USER_CONFIG_FILE}")"
+DSMINFO="$(readConfigKey "bootscreen.dsminfo" "${USER_CONFIG_FILE}")"
+SYSTEMINFO="$(readConfigKey "bootscreen.systeminfo" "${USER_CONFIG_FILE}")"
+DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
+HWIDINFO="$(readConfigKey "bootscreen.hwidinfo" "${USER_CONFIG_FILE}")"
 
 if [ "${DSMINFO}" = "true" ]; then
   echo -e "\033[1;37mDSM:\033[0m"
@@ -77,6 +78,10 @@ fi
 if [ "${DISKINFO}" = "true" ]; then
   echo -e "\033[1;37mDisks:\033[0m"
   echo -e "Disks: \033[1;37m$(lsblk -dpno NAME | grep -v "${LOADER_DISK}" | wc -l)\033[0m"
+fi
+if [ "${HWIDINFO}" = "true" ]; then
+  echo -e "\033[1;37mHWID:\033[0m"
+  echo -e "HWID: \033[1;37m$(genHWID)\033[0m"
 fi
 
 if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
@@ -178,8 +183,8 @@ CMDLINE["panic"]="${KERNELPANIC:-0}"
 # DSM Specific Cmdline
 CMDLINE["pcie_aspm"]="off"
 CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
-[ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="passive"
-[ $(cat /proc/cpuinfo | grep AMD | wc -l) -gt 0 ] && CMDLINE["amd_pstate"]="passive"
+[ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="disable" || true
+# [ $(cat /proc/cpuinfo | grep AMD | wc -l) -gt 0 ] && CMDLINE["amd_pstate"]="disable" || true
 # CMDLINE["nomodeset"]=""
 if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
   CMDLINE["nox2apic"]=""
@@ -245,7 +250,9 @@ if [ "${DIRECTBOOT}" = "true" ]; then
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
   grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
   grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
-  _bootwait || true
+  if ! _bootwait; then
+    exit 0
+  fi
   echo -e "\033[1;34mReboot with Directboot\033[0m"
   reboot
   exit 0
@@ -295,9 +302,11 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       sleep 1
     done
   done
-   _bootwait || true
+  if ! _bootwait; then
+    exit 0
+  fi
 
-  DSMLOGO="$(readConfigKey "boot.dsmlogo" "${USER_CONFIG_FILE}")"
+  DSMLOGO="$(readConfigKey "bootscreen.dsmlogo" "${USER_CONFIG_FILE}")"
   if [ "${DSMLOGO}" = "true" ] && [ -c "/dev/fb0" ]; then
     [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
     [ -n "${IPCON}" ] && URL="http://${IPCON}:5000" || URL="http://find.synology.com/"
@@ -332,6 +341,5 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo -e "\033[1;37mBooting DSM...\033[0m"
   # Boot to DSM
   [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
+  exit 0
 fi
-
-exit 0
