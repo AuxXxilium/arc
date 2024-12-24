@@ -15,24 +15,21 @@ function getLKMs() {
   local DEST_PATH="${1}"
   local CACHE_FILE="/tmp/rp-lkms.zip"
   rm -f "${CACHE_FILE}"
-  
-  # Fetch the latest release tag from GitHub API
-  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-lkm/releases/latest" | jq -r ".tag_name")
+  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
   export LKMTAG="${TAG}"
-  
-  # Fetch the release assets and download the zip file
-  curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-lkm/releases/latest" | jq -r ".assets[] | .id, .name" | while read -r ID NAME; do
+  while read -r ID NAME; do
     if [ "${NAME}" = "rp-lkms.zip" ]; then
-      curl -skL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-lkm/releases/assets/${ID}" -o "${CACHE_FILE}"
+      curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-lkm/releases/assets/${ID}" -o "${CACHE_FILE}"
       # Unzip LKMs
       rm -rf "${DEST_PATH}"
       mkdir -p "${DEST_PATH}"
-      unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
-      rm -f "${CACHE_FILE}"
-      echo "Getting LKMs end - ${TAG}"
-      break
+      if unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"; then
+        rm -f "${CACHE_FILE}"
+        echo "Getting LKMs end - ${TAG}"
+        break
+      fi
     fi
-  done
+  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-lkm/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Addons
@@ -43,33 +40,30 @@ function getAddons() {
   local CACHE_DIR="/tmp/addons"
   local CACHE_FILE="/tmp/addons.zip"
   rm -f "${CACHE_FILE}"
-  
-  # Fetch the latest release tag from GitHub API
-  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest" | jq -r ".tag_name")
+  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
   export ADDONTAG="${TAG}"
-  
-  # Fetch the release assets and download the zip file
-  curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-addons/releases/latest" | jq -r ".assets[] | .id, .name" | while read -r ID NAME; do
+  while read -r ID NAME; do
     if [ "${NAME}" = "addons-${TAG}.zip" ]; then
-      curl -skL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-addons/releases/assets/${ID}" -o "${CACHE_FILE}"
+      curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-addons/releases/assets/${ID}" -o "${CACHE_FILE}"
       # Unzip Addons
       rm -rf "${CACHE_DIR}"
       mkdir -p "${CACHE_DIR}"
       mkdir -p "${DEST_PATH}"
-      unzip -o "${CACHE_FILE}" -d "${CACHE_DIR}"
-      echo "Installing Addons to ${DEST_PATH}"
-      [ -f /tmp/addons/VERSION ] && cp -f /tmp/addons/VERSION ${DEST_PATH}/
-      for PKG in $(ls ${CACHE_DIR}/*.addon); do
-        ADDON=$(basename "${PKG}" .addon)
-        mkdir -p "${DEST_PATH}/${ADDON}"
-        echo "Extracting ${PKG} to ${DEST_PATH}/${ADDON}"
-        tar -xaf "${PKG}" -C "${DEST_PATH}/${ADDON}"
-      done
-      rm -f "${CACHE_FILE}"
-      echo "Getting Addons end - ${TAG}"
-      break
+      if unzip -o "${CACHE_FILE}" -d "${CACHE_DIR}"; then
+        echo "Installing Addons to ${DEST_PATH}"
+        [ -f /tmp/addons/VERSION ] && cp -f /tmp/addons/VERSION ${DEST_PATH}/
+        for PKG in $(ls ${CACHE_DIR}/*.addon); do
+          ADDON=$(basename "${PKG}" .addon)
+          mkdir -p "${DEST_PATH}/${ADDON}"
+          echo "Extracting ${PKG} to ${DEST_PATH}/${ADDON}"
+          tar -xaf "${PKG}" -C "${DEST_PATH}/${ADDON}"
+        done
+        rm -f "${CACHE_FILE}"
+        echo "Getting Addons end - ${TAG}"
+        break
+      fi
     fi
-  done
+  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-addons/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Modules
@@ -79,24 +73,21 @@ function getModules() {
   local DEST_PATH="${1}"
   local CACHE_FILE="/tmp/modules.zip"
   rm -f "${CACHE_FILE}"
-  
-  # Fetch the latest release tag from GitHub API
-  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest" | jq -r ".tag_name")
+  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
   export MODULETAG="${TAG}"
-  
-  # Fetch the release assets and download the zip file
-  curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-modules/releases/latest" | jq -r ".assets[] | .id, .name" | while read -r ID NAME; do
+  while read -r ID NAME; do
     if [ "${NAME}" = "modules-${TAG}.zip" ]; then
-      curl -skL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-modules/releases/assets/${ID}" -o "${CACHE_FILE}"
+      curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-modules/releases/assets/${ID}" -o "${CACHE_FILE}"
       # Unzip Modules
       rm -rf "${DEST_PATH}"
       mkdir -p "${DEST_PATH}"
-      unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
-      rm -f "${CACHE_FILE}"
-      echo "Getting Modules end - ${TAG}"
-      break
+      if unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"; then
+        rm -f "${CACHE_FILE}"
+        echo "Getting Modules end - ${TAG}"
+        break
+      fi
     fi
-  done
+  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-modules/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Configs
@@ -106,24 +97,21 @@ function getConfigs() {
   local DEST_PATH="${1}"
   local CACHE_FILE="/tmp/configs.zip"
   rm -f "${CACHE_FILE}"
-  
-  # Fetch the latest release tag from GitHub API
-  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest" | jq -r ".tag_name")
+  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
   export CONFIGTAG="${TAG}"
-  
-  # Fetch the release assets and download the zip file
-  curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-configs/releases/latest" | jq -r ".assets[] | .id, .name" | while read -r ID NAME; do
+  while read -r ID NAME; do
     if [ "${NAME}" = "configs-${TAG}.zip" ]; then
-      curl -skL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-configs/releases/assets/${ID}" -o "${CACHE_FILE}"
+      curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-configs/releases/assets/${ID}" -o "${CACHE_FILE}"
       # Unzip Configs
       rm -rf "${DEST_PATH}"
       mkdir -p "${DEST_PATH}"
-      unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
-      rm -f "${CACHE_FILE}"
-      echo "Getting Configs end - ${TAG}"
-      break
+      if unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"; then
+        rm -f "${CACHE_FILE}"
+        echo "Getting Configs end - ${TAG}"
+        break
+      fi
     fi
-  done
+  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-configs/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Patches
@@ -133,24 +121,21 @@ function getPatches() {
   local DEST_PATH="${1}"
   local CACHE_FILE="/tmp/patches.zip"
   rm -f "${CACHE_FILE}"
-  
-  # Fetch the latest release tag from GitHub API
-  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest" | jq -r ".tag_name")
+  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
   export PATCHTAG="${TAG}"
-  
-  # Fetch the release assets and download the zip file
-  curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-patches/releases/latest" | jq -r ".assets[] | .id, .name" | while read -r ID NAME; do
+  while read -r ID NAME; do
     if [ "${NAME}" = "patches-${TAG}.zip" ]; then
-      curl -skL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-patches/releases/assets/${ID}" -o "${CACHE_FILE}"
+      curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-patches/releases/assets/${ID}" -o "${CACHE_FILE}"
       # Unzip Patches
       rm -rf "${DEST_PATH}"
       mkdir -p "${DEST_PATH}"
-      unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
-      rm -f "${CACHE_FILE}"
-      echo "Getting Patches end - ${TAG}"
-      break
+      if unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"; then
+        rm -f "${CACHE_FILE}"
+        echo "Getting Patches end - ${TAG}"
+        break
+      fi
     fi
-  done
+  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-patches/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Custom
@@ -160,24 +145,21 @@ function getCustom() {
   local DEST_PATH="${1}"
   local CACHE_FILE="/tmp/custom.zip"
   rm -f "${CACHE_FILE}"
-  
-  # Fetch the latest release tag from GitHub API
-  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-custom/releases/latest" | jq -r ".tag_name")
+  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-custom/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
   export CUSTOMTAG="${TAG}"
-  
-  # Fetch the release assets and download the zip file
-  curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-custom/releases/latest" | jq -r ".assets[] | .id, .name" | while read -r ID NAME; do
+  while read -r ID NAME; do
     if [ "${NAME}" = "custom-${TAG}.zip" ]; then
-      curl -skL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-custom/releases/assets/${ID}" -o "${CACHE_FILE}"
+      curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-custom/releases/assets/${ID}" -o "${CACHE_FILE}"
       # Unzip Custom
       rm -rf "${DEST_PATH}"
       mkdir -p "${DEST_PATH}"
-      unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
-      rm -f "${CACHE_FILE}"
-      echo "Getting Custom end - ${TAG}"
-      break
+      if unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"; then
+        rm -f "${CACHE_FILE}"
+        echo "Getting Custom end - ${TAG}"
+        break
+      fi
     fi
-  done
+  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-custom/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Theme
@@ -187,23 +169,21 @@ function getTheme() {
   local DEST_PATH="${1}"
   local CACHE_FILE="/tmp/theme.zip"
   rm -f "${CACHE_FILE}"
-  
-  # Fetch the latest release tag from GitHub API
-  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-theme/releases/latest" | jq -r ".tag_name")
+  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-theme/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
   export THEMETAG="${TAG}"
-  
-  # Fetch the release assets and download the zip file
-  curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-theme/releases/latest" | jq -r ".assets[] | .id, .name" | while read -r ID NAME; do
+  while read -r ID NAME; do
     if [ "${NAME}" = "arc-theme-${TAG}.zip" ]; then
-      curl -skL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-theme/releases/assets/${ID}" -o "${CACHE_FILE}"
+      curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-theme/releases/assets/${ID}" -o "${CACHE_FILE}"
       # Unzip Theme
       mkdir -p "${DEST_PATH}"
-      unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"
-      rm -f "${CACHE_FILE}"
-      echo "Getting Theme end - ${TAG}"
-      break
+      if unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"; then
+        rm -f "${CACHE_FILE}"
+        echo "Getting Theme end - ${TAG}"
+        break
+      fi
     fi
-  done
+  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-theme/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
+  fi
 }
 
 # Get latest Buildroot-X
