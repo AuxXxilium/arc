@@ -8,7 +8,7 @@ set -e
 function loadArcOverlay() {
   echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
   echo
-  echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}:${TTYDPORT}\033[0m to configure Loader."
+  echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}:${TTYDPORT:-7681}\033[0m to configure Loader."
 
   # Check memory and load Arc
   RAM=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)

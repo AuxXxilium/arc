@@ -1112,11 +1112,11 @@ fi
 # Inform user
 echo -e "Call \033[1;34marc.sh\033[0m to configure Loader"
 echo
+echo -e "Web Terminal: \033[1;34mhttp://${IPCON}:${TTYDPORT:-7681}\033[0m"
+echo -e "Web Filemanager: \033[1;34mhttp://${IPCON}:${DUFSPORT:-7304}\033[0m"
+echo
 echo -e "SSH Access:"
 echo -e "IP: \033[1;34m${IPCON}\033[0m"
 echo -e "User: \033[1;34mroot\033[0m"
 echo -e "Password: \033[1;34marc\033[0m"
-echo
-echo -e "Web Terminal: \033[1;34mhttp://${IPCON}:${TTYDPORT}\033[0m"
-echo -e "Web Filemanager: \033[1;34mhttp://${IPCON}:${DUFSPORT}\033[0m"
 echo
