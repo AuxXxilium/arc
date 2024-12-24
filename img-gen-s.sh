@@ -45,6 +45,7 @@ echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
 echo "Repack initrd"
 if [ -f "brs/bzImage-arc" ] && [ -f "brs/initrd-arc" ]; then
     cp -f "brs/bzImage-arc" "files/p3/bzImage-arc"
+    createArc
     repackInitrd "brs/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 else
     sudo umount "/tmp/p1"

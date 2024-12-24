@@ -484,3 +484,11 @@ function copyBuildroot() {
   cp -f "../${DEST_PATH}/bzImage" "${DEST_PATH}/bzImage-arc"
   cp -f "../${DEST_PATH}/rootfs.cpio.zst" "${DEST_PATH}/initrd-arc"
 }
+
+# create arc executable
+function createArc() {
+  ./scripts/make/makeself.sh ../arc/files/initrd/opt/arc arc arc ./init.sh --current --zstd --chown --threads=0 --quiet
+  rm -rf ../arc/files/initrd/opt/arc
+  mkdir -p ../arc/files/initrd/opt/arc
+  mv -f arc ../arc/files/initrd/opt/arc/
+}

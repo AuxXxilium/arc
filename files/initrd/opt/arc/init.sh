@@ -5,9 +5,26 @@ set -e
 
 . "${ARC_PATH}/include/functions.sh"
 
+function loadArcOverlay() {
+  echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
+  echo
+  echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}:${TTYDPORT}\033[0m to configure Loader."
+
+  # Check memory and load Arc
+  RAM=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
+  if [ ${RAM} -le 3500 ]; then
+    echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n\033[1;31mUse arc.sh to proceed. Not recommended!\033[0m"
+  else
+    exec arc.sh
+  fi
+}
+
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 checkBootLoader || die "The loader is corrupted, please rewrite it!"
+
+[ -f "${HOME}/.initialized" ] && loadArcOverlay && exit 0 || true
+
 BUS=$(getBus "${LOADER_DISK}")
 EFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)
 
@@ -214,16 +231,5 @@ mkdir -p "${USER_UP_PATH}"
 touch "${HOME}/.initialized"
 
 # Load Arc Overlay
-echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
-echo
-echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}:${TTYDPORT}\033[0m to configure Loader."
-
-# Check memory and load Arc
-RAM=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
-if [ ${RAM} -le 3500 ]; then
-  echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n\033[1;31mUse arc.sh to proceed. Not recommended!\033[0m"
-else
-  exec arc.sh
-fi
-
+loadArcOverlay
 exit 0
