@@ -2204,9 +2204,18 @@ function mountDSM() {
     umount "${I}" 2>/dev/null
     mount ${I} "/mnt/DSM/${NAME}" -o ro
   done
-  MSG="Storage pools are mounted under /mnt/DSM.\nPlease check them via ${IPCON}:7304."
+  MSG="Storage pools are mounted under /mnt/DSM.\nPlease check them via ${IPCON}:7304.\nIf you proceed, DSM Pool will be unmounted!"
   dialog --backtitle "$(backtitle)" --title "Mount DSM Pool" \
     --msgbox "${MSG}" 7 50
+  if [ -n "${VOLS}" ]; then
+    dialog --backtitle "$(backtitle)" --title "Mount DSM Pool" \
+      --yesno "Unmount all storage pools?" 5 30
+    [ $? -ne 0 ] && return
+    for I in ${VOLS}; do
+      umount "${I}" 2>/dev/null
+    done
+    rm -rf /mnt/DSM
+  fi
   return
 }
 

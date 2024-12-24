@@ -256,9 +256,7 @@ function arcVersion() {
       writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
       writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     fi
     dialog --backtitle "$(backtitlep)" --title "Version" \
     --infobox "Reading DSM Build..." 3 25
@@ -311,10 +309,12 @@ function arcVersion() {
       rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" >/dev/null 2>&1 || true
       rm -f "${USER_UP_PATH}/"*.tar >/dev/null 2>&1 || true
     fi
-    MSG="Do you want to try Automated Mode?\nIf yes, Loader will configure, build and boot DSM."
-    dialog --backtitle "$(backtitlep)" --colors --title "Automated Mode" \
-      --yesno "${MSG}" 6 55
-    [ $? -eq 0 ] && ARCMODE="automated" || ARCMODE="config"
+    if [ "${ONLYVERSION}" != "true" ]; then
+      MSG="Do you want to try Automated Mode?\nIf yes, Loader will configure, build and boot DSM."
+      dialog --backtitle "$(backtitlep)" --colors --title "Automated Mode" \
+        --yesno "${MSG}" 6 55
+      [ $? -eq 0 ] && ARCMODE="automated" || ARCMODE="config"
+    fi
   elif [ "${ARCMODE}" = "automated" ] || [ "${ARCRESTORE}" = "true" ]; then
     VALID="true"
   fi
@@ -411,29 +411,29 @@ function arcPatch() {
       [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
   elif [ "${ARCMODE}" = "config" ]; then
-    dialog --clear --backtitle "$(backtitlep)" \
+    ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
+    if [ -n "${ARCCONF}" ]; then
+      dialog --clear --backtitle "$(backtitlep)" \
       --nocancel --title "SN/Mac Options"\
       --menu "Choose an Option" 7 60 0 \
       1 "Use Arc Patch (AME, QC, Push Notify and more)" \
       2 "Use random SN/Mac (Reduced DSM Features)" \
       3 "Use my own SN/Mac (Be sure your Data is valid)" \
-    2>"${TMP_PATH}/resp"
+      2>"${TMP_PATH}/resp"
+    else
+      dialog --clear --backtitle "$(backtitlep)" \
+      --nocancel --title "SN/Mac Options"\
+      --menu "Choose an Option" 7 60 0 \
+      2 "Use random SN/Mac (Reduced DSM Features)" \
+      3 "Use my own SN/Mac (Be sure your Data is valid)" \
+      2>"${TMP_PATH}/resp"
+    fi
     resp=$(cat ${TMP_PATH}/resp)
     [ -z "${resp}" ] && return 1
     if [ ${resp} -eq 1 ]; then
-      ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
-      if [ -n "${ARCCONF}" ]; then
-        SN="$(generateSerial "${MODEL}" "true")"
-        writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-      else
-        dialog --backtitle "$(backtitlep)" --colors --title "Arc Patch" \
-          --infobox "Arc Patch failed - Not registered HardwareID!" 3 50
-        sleep 3
-        SN="$(generateSerial "${MODEL}" "false")"
-        writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-      fi
+      SN="$(generateSerial "${MODEL}" "true")"
+      writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 2 ]; then
-      # Generate random Serial
       SN="$(generateSerial "${MODEL}" "false")"
       writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 3 ]; then
@@ -820,7 +820,7 @@ elif [ "${ARCMODE}" = "automated" ]; then
   else
     make
   fi
-else
+elif [ "${ARCMODE}" = "config" ]; then
   [ "${CONFDONE}" = "true" ] && NEXT="2" || NEXT="1"
   [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
   while true; do
@@ -1099,6 +1099,8 @@ else
     esac
   done
   clear
+else
+  exec reboot
 fi
 
 # Inform user
