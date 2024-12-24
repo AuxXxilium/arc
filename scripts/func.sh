@@ -183,7 +183,6 @@ function getTheme() {
       fi
     fi
   done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-theme/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
-  fi
 }
 
 # Get latest Buildroot-X
