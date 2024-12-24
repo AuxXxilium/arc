@@ -5,11 +5,13 @@ version: "3"
 tasks:
   build-img-n:
     cmds:
+      - git reset hard
       - git pull
       - ./img-gen-n.sh
 
   build-img-s:
     cmds:
+      - git reset hard
       - git pull
       - ./img-gen-s.sh
 
