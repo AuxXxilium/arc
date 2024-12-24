@@ -255,8 +255,6 @@ function arcVersion() {
       writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
       writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
       writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     fi
     dialog --backtitle "$(backtitlep)" --title "Version" \
     --infobox "Reading DSM Build..." 3 25
@@ -313,7 +311,13 @@ function arcVersion() {
       MSG="Do you want to try Automated Mode?\nIf yes, Loader will configure, build and boot DSM."
       dialog --backtitle "$(backtitlep)" --colors --title "Automated Mode" \
         --yesno "${MSG}" 6 55
-      [ $? -eq 0 ] && ARCMODE="automated" || ARCMODE="config"
+      if [ $? -eq 0 ]; then
+        writeConfigKey "arc.mode" "automated" "${USER_CONFIG_FILE}"
+        ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
+      else
+        writeConfigKey "arc.mode" "config" "${USER_CONFIG_FILE}"
+        ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
+      fi
     fi
   elif [ "${ARCMODE}" = "automated" ] || [ "${ARCRESTORE}" = "true" ]; then
     VALID="true"
