@@ -68,8 +68,6 @@ jobs:
           getOffline "files/p3/configs"
           getLKMs "files/p3/lkms"
           getTheme "files/p1/boot/grub"
-          getBuildrootx "brx"
-          getBuildroots "brs"
 
           # Export Dependencies Version to env
           echo "ADDONTAG=${ADDONTAG}" >> $GITHUB_ENV
@@ -90,6 +88,8 @@ jobs:
         if: ${{ inputs.next == true }}
         run: |
           . scripts/func.sh
+
+          getBuildrootx "brx"
 
           # Modify Source File
           ARC_BUILD="`date +'%y%m%d'`"
@@ -169,6 +169,8 @@ jobs:
         if: ${{ inputs.stable }}
         run: |
           . scripts/func.sh
+
+          getBuildroots "brs"
 
           # Modify Source File
           ARC_BUILD="`date +'%y%m%d'`"
