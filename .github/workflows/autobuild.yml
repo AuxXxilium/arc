@@ -68,8 +68,6 @@ jobs:
           getOffline "files/p3/configs"
           getLKMs "files/p3/lkms"
           getTheme "files/p1/boot/grub"
-          getBuildrootx "brx"
-          getBuildroots "brs"
 
           # Export Dependencies Version to env
           echo "ADDONTAG=${ADDONTAG}" >> $GITHUB_ENV
@@ -90,6 +88,8 @@ jobs:
         if: ${{ inputs.next == true }}
         run: |
           . scripts/func.sh
+
+          getBuildrootx "brx"
 
           # Modify Source File
           ARC_BUILD="`date +'%y%m%d'`"
@@ -120,6 +120,7 @@ jobs:
           
           echo "Repack initrd"
           cp -f "brx/bzImage-arc" "files/p3/bzImage-arc"
+          createArc
           repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
@@ -169,6 +170,8 @@ jobs:
         run: |
           . scripts/func.sh
 
+          getBuildroots "brs"
+
           # Modify Source File
           ARC_BUILD="`date +'%y%m%d'`"
           ARC_VERSION="${{ inputs.version }}-dev"
@@ -198,7 +201,7 @@ jobs:
           
           echo "Repack initrd"
           cp -f "brs/bzImage-arc" "files/p3/bzImage-arc"
-          #cp -f "brs/initrd-arc" "files/p3/initrd-arc"
+          createArc
           repackInitrd "brs/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
