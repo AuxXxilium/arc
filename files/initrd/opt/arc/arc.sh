@@ -1110,7 +1110,7 @@ else
 fi
 
 # Inform user
-echo -e "Call \033[1;34marc.sh\033[0m to configure Loader"
+echo -e "Call \033[1;34marc\033[0m to configure Loader"
 echo
 echo -e "Web Terminal: \033[1;34mhttp://${IPCON}:${TTYDPORT:-7681}\033[0m"
 echo -e "Web Filemanager: \033[1;34mhttp://${IPCON}:${DUFSPORT:-7304}\033[0m"
