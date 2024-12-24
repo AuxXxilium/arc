@@ -22,7 +22,7 @@ mkdir -p "brx"
 
 # Sbase
 IMAGE_FILE="arc.img"
-gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
+gzip -dc "./grub.img.gz" >"${IMAGE_FILE}"
 fdisk -l "${IMAGE_FILE}"
 
 LOOPX=$(sudo losetup -f)
