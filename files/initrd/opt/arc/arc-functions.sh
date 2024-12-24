@@ -996,6 +996,7 @@ function sysinfo() {
   ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
   ETHN=$(echo ${ETHX} | wc -w)
   ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
+  HWID="$(genHWID)"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
@@ -1090,6 +1091,8 @@ function sysinfo() {
   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"
+  TEXT+="\n  HardwareID: \Zb${HWID}\Zn"
+  TEXT+="\n  Offline Mode: \Zb${ARCOFFLINE}\Zn"
   [ "${ARCOFFLINE}" = "true" ] && TEXT+="\n  Offline Mode: \Zb${ARCOFFLINE}\Zn"
   if [ "${CONFDONE}" = "true" ]; then
     TEXT+="\n\Z4> DSM ${PRODUCTVER} (${BUILDNUM}): ${MODELID:-${MODEL}}\Zn"
@@ -2204,9 +2207,9 @@ function mountDSM() {
     umount "${I}" 2>/dev/null
     mount ${I} "/mnt/DSM/${NAME}" -o ro
   done
-  MSG="Storage pools are mounted under /mnt/DSM.\nPlease check them via ${IPCON}:7304.\nIf you proceed, DSM Pool will be unmounted!"
+  MSG="Storage pools are mounted at /mnt/DSM.\nPlease check them via ${IPCON}:7304."
   dialog --backtitle "$(backtitle)" --title "Mount DSM Pool" \
-    --msgbox "${MSG}" 7 50
+    --msgbox "${MSG}" 6 50
   if [ -n "${VOLS}" ]; then
     dialog --backtitle "$(backtitle)" --title "Mount DSM Pool" \
       --yesno "Unmount all storage pools?" 5 30
@@ -2410,6 +2413,7 @@ function genHardwareID() {
         --msgbox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!" 6 70
       writeConfigKey "arc.hardwareid" "${HWID}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
+      writeConfigKey "bootscreen.hwidinfo" "true" "${USER_CONFIG_FILE}"
       break
     else
       dialog --backtitle "$(backtitle)" --title "HardwareID" \
@@ -2417,6 +2421,7 @@ function genHardwareID() {
       [ $? -ne 0 ] && break
       writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
     fi
   done
   return
@@ -2432,15 +2437,18 @@ function checkHardwareID() {
     if curl -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}&userid=${USERID}" -o "${S_FILE}" 2>/dev/null; then
       writeConfigKey "arc.hardwareid" "${HWID}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
+      writeConfigKey "bootscreen.hwidinfo" "true" "${USER_CONFIG_FILE}"
     else
       writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
       [ -f "${S_FILE}.bak" ] && mv -f "${S_FILE}.bak" "${S_FILE}" 2>/dev/null
     fi
   else
     USERID=""
     writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
     [ -f "${S_FILE}.bak" ] && mv -f "${S_FILE}.bak" "${S_FILE}" 2>/dev/null
   fi
   return 0

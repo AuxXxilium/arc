@@ -283,8 +283,8 @@ jobs:
               - Discord Account for Arc Patch needed
 
             ### Versions:
-              - stable: Stable Image (Full Image, all dependencies are included, less hardware support)
-              - next: Next Image (Full Image, all dependencies are included, more hardware support, new features to test)
+              ${{ inputs.stable && '- stable: Stable Image (Full Image, all dependencies are included, less hardware support)' || '' }}
+              ${{ inputs.next && '- next: Next Image (Full Image, all dependencies are included, more hardware support, new features to test)' || '' }}
 
             ### Dependencies:
               - Addons: ${{ env.ADDONTAG }}
