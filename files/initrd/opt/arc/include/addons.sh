@@ -8,6 +8,7 @@ function availableAddons() {
   fi
   local ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   local ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
+  local PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   for D in $(find "${ADDONS_PATH}" -maxdepth 1 -type d 2>/dev/null | sort); do
     [ ! -f "${D}/manifest.yml" ] && continue
     local ADDON=$(basename ${D})
