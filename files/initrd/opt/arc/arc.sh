@@ -1071,7 +1071,7 @@ elif [ "${ARCMODE}" = "config" ]; then
         ;;
       c) ARCOFFLINE=$([ "${ARCOFFLINE}" = "true" ] && echo 'false' || echo 'true')
         writeConfigKey "arc.offline" "${ARCOFFLINE}" "${USER_CONFIG_FILE}"
-        [ "${ARCOFFLINE}" = "false" ] && exec arc.sh
+        [ "${ARCOFFLINE}" = "false" ] && ./arc.sh
         NEXT="c"
         ;;
       D) staticIPMenu; NEXT="D" ;;
