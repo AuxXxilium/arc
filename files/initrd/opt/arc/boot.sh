@@ -331,7 +331,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   # done
 
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
-  # Executes DSM kernel via KEXEC
   KEXECARGS="-a"
   if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 4 ] && [ ${EFI} -eq 1 ]; then
     echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
@@ -340,7 +339,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
 
   echo -e "\033[1;37mBooting DSM...\033[0m"
-  # Boot to DSM
   [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
   exit 0
 fi

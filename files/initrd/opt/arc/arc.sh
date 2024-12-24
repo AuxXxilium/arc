@@ -906,7 +906,9 @@ elif [ "${ARCMODE}" = "config" ]; then
         echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
         echo "J \"Reset Network Config \" "                                                   >>"${TMP_PATH}/menu"
         echo "T \"Disable all scheduled Tasks \" "                                            >>"${TMP_PATH}/menu"
-        echo "M \"Mount DSM Storage Pool (not SHR) \" "                                       >>"${TMP_PATH}/menu"
+        if [ "${PLATFORM}" = "epyc7002" ]; then
+          echo "M \"Mount DSM Storage Pool \" "                                               >>"${TMP_PATH}/menu"
+        fi
         echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
         echo "s \"Allow Downgrade Version \" "                                                >>"${TMP_PATH}/menu"
         echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"
