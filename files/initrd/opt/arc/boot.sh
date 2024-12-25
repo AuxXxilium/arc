@@ -80,8 +80,9 @@ if [ "${DISKINFO}" = "true" ]; then
   echo -e "Disks: \033[1;37m$(lsblk -dpno NAME | grep -v "${LOADER_DISK}" | wc -l)\033[0m"
 fi
 if [ "${HWIDINFO}" = "true" ]; then
-  echo -e "\033[1;37mHWID:\033[0m"
+  echo -e "\033[1;37mHardwareID:\033[0m"
   echo -e "HWID: \033[1;37m$(genHWID)\033[0m"
+  echo
 fi
 
 if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
