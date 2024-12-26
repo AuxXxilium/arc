@@ -29,7 +29,7 @@ function getLKMs() {
         break
       fi
     fi
-  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-lkm/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
+  done < <(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-lkm/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Addons
@@ -63,7 +63,7 @@ function getAddons() {
         break
       fi
     fi
-  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-addons/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
+  done < <(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-addons/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Modules
@@ -87,7 +87,7 @@ function getModules() {
         break
       fi
     fi
-  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-modules/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
+  done < <(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-modules/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Configs
@@ -111,7 +111,7 @@ function getConfigs() {
         break
       fi
     fi
-  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-configs/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
+  done < <(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-configs/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Patches
@@ -135,7 +135,7 @@ function getPatches() {
         break
       fi
     fi
-  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-patches/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
+  done < <(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-patches/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Custom
@@ -159,7 +159,7 @@ function getCustom() {
         break
       fi
     fi
-  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-custom/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
+  done < <(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-custom/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Theme
@@ -182,7 +182,7 @@ function getTheme() {
         break
       fi
     fi
-  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-theme/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
+  done < <(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-theme/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Buildroot-X
@@ -205,7 +205,7 @@ function getBuildrootx() {
       mv -f "${DEST_PATH}/rootfs.cpio.zst" "${DEST_PATH}/initrd-arc"
       [ -f "${DEST_PATH}/bzImage-arc" ] && [ -f "${DEST_PATH}/initrd-arc" ] && break
     fi
-  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-buildroot-x/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
+  done < <(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-buildroot-x/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Buildroot-S
@@ -228,7 +228,7 @@ function getBuildroots() {
       mv -f "${DEST_PATH}/rootfs.cpio.zst" "${DEST_PATH}/initrd-arc"
       [ -f "${DEST_PATH}/bzImage-arc" ] && [ -f "${DEST_PATH}/initrd-arc" ] && break
     fi
-  done <<<$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-buildroot-s/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
+  done < <(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-buildroot-s/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
 # Get latest Offline
