@@ -167,7 +167,7 @@ function arcModel() {
       case ${RET} in
         0)
           resp=$(cat ${TMP_PATH}/resp)
-          [ -z "${resp}" ] && return 1
+          [ -z "${resp}" ] && return
           break
           ;;
         1)
@@ -180,7 +180,7 @@ function arcModel() {
             --title "Platform Info" --textbox "./informations/${PLATFORM}.yml" 70 80
           ;;
         *)
-          return 1
+          return 
           break
           ;;
       esac
@@ -242,9 +242,9 @@ function arcVersion() {
     dialog --clear --no-items --nocancel --title "DSM Version" --backtitle "$(backtitlep)" \
       --no-items --menu "Select DSM Version" 7 30 0 ${ITEMS} \
     2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 0
+    [ $? -ne 0 ] && return
     resp=$(cat ${TMP_PATH}/resp)
-    [ -z "${resp}" ] && return 1
+    [ -z "${resp}" ] && return
     if [ "${PRODUCTVER}" != "${resp}" ]; then
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
@@ -386,7 +386,7 @@ function arcVersion() {
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       ONLYVERSION="false"
-      return 0
+      return
     else
       arcPatch
     fi
@@ -396,7 +396,7 @@ function arcVersion() {
     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     sleep 5
-    return 1
+    return
   fi
 }
 
@@ -478,7 +478,7 @@ function arcSettings() {
       --infobox "Generating Network Config..." 3 40
     sleep 2
     getnet
-    [ $? -ne 0 ] && return 1
+    [ $? -ne 0 ] && return
   fi
   if [ "${ONLYPATCH}" = "true" ]; then
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -493,7 +493,7 @@ function arcSettings() {
       --infobox "Generating Storage Map..." 3 40
     sleep 2
     getmapSelection
-    [ $? -ne 0 ] && return 1
+    [ $? -ne 0 ] && return
   fi
   # Check for Custom Build
   if [ "${ARCMODE}" = "config" ]; then
@@ -502,14 +502,14 @@ function arcSettings() {
     dialog --backtitle "$(backtitlep)" --colors --title "Addons" \
       --infobox "Loading Addons Table..." 3 40
     addonSelection
-    [ $? -ne 0 ] && return 1
+    [ $? -ne 0 ] && return
   fi
   # Check for CPU Frequency Scaling & Governor
   if [ "${ARCMODE}" = "config" ] && [ "${MACHINE}" = "Native" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
     dialog --backtitle "$(backtitlep)" --colors --title "CPU Frequency Scaling" \
       --infobox "Generating Governor Table..." 3 40
     governorSelection
-    [ $? -ne 0 ] && return 1
+    [ $? -ne 0 ] && return
   elif [ "${ARCMODE}" = "automated" ] && [ "${MACHINE}" = "Native" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
     [ "${PLATFORM}" = "epyc7002" ] && writeConfigKey "addons.cpufreqscaling" "schedutil" "${USER_CONFIG_FILE}" || writeConfigKey "addons.cpufreqscaling" "conservative" "${USER_CONFIG_FILE}"
   fi
@@ -563,12 +563,12 @@ function arcSettings() {
         2 "No - I want to make changes" \
       2>"${TMP_PATH}/resp"
       resp=$(cat ${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return 1
+      [ -z "${resp}" ] && return
       if [ ${resp} -eq 1 ]; then
         arcSummary
       elif [ ${resp} -eq 2 ]; then
         dialog --clear --no-items --backtitle "$(backtitle)"
-        return 1
+        return
       fi
     else
       # Build Loader
@@ -702,7 +702,7 @@ function make() {
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     sleep 2
-    return 1
+    return
   fi
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ "${CONFDONE}" = "true" ] && [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
     (
@@ -717,7 +717,7 @@ function make() {
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     sleep 2
-    return 1
+    return
   fi
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     MODELID="$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')"
@@ -731,7 +731,7 @@ function make() {
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     sleep 2
-    return 1
+    return
   fi
 }
 
@@ -754,11 +754,11 @@ function arcFinish() {
         2 "No - I want to make changes" \
       2>"${TMP_PATH}/resp"
       resp=$(cat ${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return 1
+      [ -z "${resp}" ] && return
       if [ ${resp} -eq 1 ]; then
         boot
       elif [ ${resp} -eq 2 ]; then
-        return 0
+        return
       fi
     fi
   fi
@@ -1071,7 +1071,7 @@ elif [ "${ARCMODE}" = "config" ]; then
         ;;
       c) ARCOFFLINE=$([ "${ARCOFFLINE}" = "true" ] && echo 'false' || echo 'true')
         writeConfigKey "arc.offline" "${ARCOFFLINE}" "${USER_CONFIG_FILE}"
-        [ "${ARCOFFLINE}" = "false" ] && ./arc.sh
+        [ "${ARCOFFLINE}" = "false" ] && exec arc.sh
         NEXT="c"
         ;;
       D) staticIPMenu; NEXT="D" ;;
@@ -1110,7 +1110,7 @@ else
 fi
 
 # Inform user
-echo -e "Call \033[1;34marc\033[0m to configure Loader"
+echo -e "Call \033[1;34marc.sh\033[0m to configure Loader"
 echo
 echo -e "Web Terminal: \033[1;34mhttp://${IPCON}:${TTYDPORT:-7681}\033[0m"
 echo -e "Web Filemanager: \033[1;34mhttp://${IPCON}:${DUFSPORT:-7304}\033[0m"

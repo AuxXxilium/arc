@@ -485,6 +485,6 @@ function dependenciesUpdate() {
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     sleep 3
     clear
-    ./arc.sh
+    exec arc.sh
   fi
 }

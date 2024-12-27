@@ -7,6 +7,10 @@ sudo git clean -fdx
 
 . scripts/func.sh "${AUX_TOKEN}"
 
+# Unmount Image File
+sudo umount "/tmp/p1" 2>/dev/null || true
+sudo umount "/tmp/p3" 2>/dev/null || true
+
 # Get extractor, LKM, addons and Modules
 echo "Get Dependencies"
 getAddons "files/p3/addons"
@@ -22,7 +26,7 @@ mkdir -p "brx"
 
 # Sbase
 IMAGE_FILE="arc.img"
-gzip -dc "./grub.img.gz" >"${IMAGE_FILE}"
+gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
 fdisk -l "${IMAGE_FILE}"
 
 LOOPX=$(sudo losetup -f)
@@ -49,8 +53,6 @@ if [ -f "brx/bzImage-arc" ] && [ -f "brx/initrd-arc" ]; then
     createArc
     repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 else
-    sudo umount "/tmp/p1"
-    sudo umount "/tmp/p3"
     exit 1
 fi
 
@@ -62,8 +64,8 @@ sync
 echo "Unmount image file"
 sudo umount "/tmp/p1"
 sudo umount "/tmp/p3"
-rmdir "/tmp/p1"
-rmdir "/tmp/p3"
+sudo rm -rf "/tmp/p1"
+sudo rm -rf "/tmp/p3"
 
 sudo losetup --detach ${LOOPX}
 

@@ -781,7 +781,7 @@ function backupMenu() {
         dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
           --aspect 18 --infobox "Restore successful! -> Reload Arc Init now" 5 50
         sleep 2
-        ./init.sh
+        exec init.sh
         ;;
       2)
         DSMROOTS="$(findDSMRoot)"
@@ -871,7 +871,7 @@ function backupMenu() {
         dialog --backtitle "$(backtitle)" --title "Online Restore" \
           --aspect 18 --infobox "Restore successful! -> Reload Arc Init now" 5 50
         sleep 2
-        ./init.sh
+        exec init.sh
         ;;
       5)
         HWID="$(genHWID)"
@@ -2148,7 +2148,7 @@ function rebootMenu() {
   elif [ "${REDEST}" = "network" ]; then
     clear
     /etc/init.d/S41dhcpcd restart
-    ./init.sh
+    exec init.sh
   else
     rebootTo ${REDEST}
     exit 0
@@ -2408,22 +2408,24 @@ function genHardwareID() {
   HWID="$(genHWID)"
   while true; do
     USERID="$(curl -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
-    if echo "${USERID}" | grep -vq "Hardware ID"; then
-      dialog --backtitle "$(backtitle)" --title "HardwareID" \
-        --msgbox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!" 6 70
+    if echo "${USERID}" | grep -qE '^[0-9]+$'; then
       writeConfigKey "arc.hardwareid" "${HWID}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
       writeConfigKey "bootscreen.hwidinfo" "true" "${USER_CONFIG_FILE}"
+      dialog --backtitle "$(backtitle)" --title "HardwareID" \
+        --msgbox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!" 6 70
       break
     else
-      dialog --backtitle "$(backtitle)" --title "HardwareID" \
-        --yes-label "Retry" --no-label "Cancel" --yesno "HardwareID: ${HWID}\nRegister your HardwareID on\nhttps://arc.auxxxilium.tech (Discord Account needed).\nPress Retry after you registered it." 8 60
-      [ $? -ne 0 ] && break
       writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
+      dialog --backtitle "$(backtitle)" --title "HardwareID" \
+        --yes-label "Retry" --no-label "Cancel" --yesno "HardwareID: ${HWID}\nRegister your HardwareID at\nhttps://arc.auxxxilium.tech (Discord Account needed).\nPress Retry after you registered it." 8 60
+      [ $? -ne 0 ] && break
+      continue
     fi
   done
+  [ -n "${USERID}" ] && ONLYPATCH="true" && arcPatch || true
   return
 }
 
@@ -2433,12 +2435,13 @@ function checkHardwareID() {
   HWID="$(genHWID)"
   USERID="$(curl -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
   [ ! -f "${S_FILE}.bak" ] && cp -f "${S_FILE}" "${S_FILE}.bak" 2>/dev/null || true
-  if echo "${USERID}" | grep -vq "Hardware ID"; then
+  if echo "${USERID}" | grep -qE '^[0-9]+$'; then
     if curl -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}&userid=${USERID}" -o "${S_FILE}" 2>/dev/null; then
       writeConfigKey "arc.hardwareid" "${HWID}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
       writeConfigKey "bootscreen.hwidinfo" "true" "${USER_CONFIG_FILE}"
     else
+      USERID=""
       writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
@@ -2451,7 +2454,7 @@ function checkHardwareID() {
     writeConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
     [ -f "${S_FILE}.bak" ] && mv -f "${S_FILE}.bak" "${S_FILE}" 2>/dev/null
   fi
-  return 0
+  return
 }
 
 ###############################################################################
