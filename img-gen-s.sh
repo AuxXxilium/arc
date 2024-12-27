@@ -28,6 +28,8 @@ LOOPX=$(sudo losetup -f)
 sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
 
 echo "Mounting Image File"
+sudo umount "/tmp/p1"
+sudo umount "/tmp/p3"
 sudo rm -rf "/tmp/p1"
 sudo rm -rf "/tmp/p3"
 mkdir -p "/tmp/p1"
@@ -48,8 +50,6 @@ if [ -f "brs/bzImage-arc" ] && [ -f "brs/initrd-arc" ]; then
     createArc
     repackInitrd "brs/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 else
-    sudo umount "/tmp/p1"
-    sudo umount "/tmp/p3"
     exit 1
 fi
 
