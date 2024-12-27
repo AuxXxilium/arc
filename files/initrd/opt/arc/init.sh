@@ -23,8 +23,7 @@ function loadArcOverlay() {
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 checkBootLoader || die "The loader is corrupted, please rewrite it!"
 
-[ -f "${USER_CONFIG_FILE}" ] && sed -i "s/'/\"/g" "${USER_CONFIG_FILE}"
-[ -f "${HOME}/.initialized" ] && loadArcOverlay && exit 0 || true
+[ -f "${USER_CONFIG_FILE}" ] && sed -i "s/'/\"/g" "${USER_CONFIG_FILE}" >/dev/null 2>&1 || true
 
 BUS=$(getBus "${LOADER_DISK}")
 EFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)
