@@ -39,6 +39,9 @@ jobs:
         if: success() && inputs.push == true
         run: |
           if [ -f "grub.img.gz" ]; then
+            echo "Copy img ..."
+            mv -f grub.img.gz files/initrd/opt/arc/grub.img.gz
+
             echo "Git push ..."
             git pull
             status=$(git status -s | grep -E 'grub.img.gz' | awk '{printf " %s", $2}')
