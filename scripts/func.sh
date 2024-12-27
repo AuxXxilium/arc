@@ -503,7 +503,7 @@ function copyBuildroot() {
 
 # create arc executable
 function createArc() {
-  ./scripts/make/makeself.sh "../arc/files/initrd/opt/arc" arc "Arc Loader" "./init.sh" --current --keep --zstd --chown --threads=0 --quiet --noexec --notemp
+  ./scripts/make/makeself.sh --current --keep --zstd --chown --threads=0 --quiet --noexec --notemp ../arc/files/initrd/opt/arc arc "Arc Loader" ./init.sh
   rm -rf "../arc/files/initrd/opt/arc"
   mkdir -p "../arc/files/initrd/opt/arc"
   mv -f "arc" "../arc/files/initrd/opt/arc/"
