@@ -2414,6 +2414,7 @@ function genHardwareID() {
       writeConfigKey "arc.hardwareid" "${HWID}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
       writeConfigKey "bootscreen.hwidinfo" "true" "${USER_CONFIG_FILE}"
+      USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
       break
     else
       dialog --backtitle "$(backtitle)" --title "HardwareID" \
@@ -2422,6 +2423,8 @@ function genHardwareID() {
       writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
+      USERID=""
+      continue
     fi
   done
   return
