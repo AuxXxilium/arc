@@ -7,6 +7,10 @@ sudo git clean -fdx
 
 . scripts/func.sh "${AUX_TOKEN}"
 
+# Unmount Image File
+sudo umount "/tmp/p1" 2>/dev/null || true
+sudo umount "/tmp/p3" 2>/dev/null || true
+
 # Get extractor, LKM, addons and Modules
 echo "Get Dependencies"
 getAddons "files/p3/addons"
@@ -29,8 +33,6 @@ LOOPX=$(sudo losetup -f)
 sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
 
 echo "Mounting Image File"
-sudo umount "/tmp/p1"
-sudo umount "/tmp/p3"
 sudo rm -rf "/tmp/p1"
 sudo rm -rf "/tmp/p3"
 mkdir -p "/tmp/p1"
@@ -62,8 +64,8 @@ sync
 echo "Unmount image file"
 sudo umount "/tmp/p1"
 sudo umount "/tmp/p3"
-rmdir "/tmp/p1"
-rmdir "/tmp/p3"
+sudo rm -rf "/tmp/p1"
+sudo rm -rf "/tmp/p3"
 
 sudo losetup --detach ${LOOPX}
 
