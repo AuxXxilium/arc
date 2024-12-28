@@ -781,7 +781,7 @@ function backupMenu() {
         dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
           --aspect 18 --infobox "Restore successful! -> Reload Arc Init now" 5 50
         sleep 2
-        exec init.sh
+        rm -f "${HOME}/.initialized" && exec init.sh
         ;;
       2)
         DSMROOTS="$(findDSMRoot)"
@@ -871,7 +871,7 @@ function backupMenu() {
         dialog --backtitle "$(backtitle)" --title "Online Restore" \
           --aspect 18 --infobox "Restore successful! -> Reload Arc Init now" 5 50
         sleep 2
-        exec init.sh
+        rm -f "${HOME}/.initialized" && exec init.sh
         ;;
       5)
         HWID="$(genHWID)"
@@ -2148,7 +2148,7 @@ function rebootMenu() {
   elif [ "${REDEST}" = "network" ]; then
     clear
     /etc/init.d/S41dhcpcd restart
-    exec init.sh
+    rm -f "${HOME}/.initialized" && exec init.sh
   else
     rebootTo ${REDEST}
     exit 0
