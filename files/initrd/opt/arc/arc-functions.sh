@@ -2416,6 +2416,7 @@ function genHardwareID() {
         --msgbox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!" 6 70
       break
     else
+      USERID=""
       writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
@@ -2425,7 +2426,10 @@ function genHardwareID() {
       continue
     fi
   done
-  [ -n "${USERID}" ] && ONLYPATCH="true" && arcPatch || true
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  if [ -n "${USERID}" ] && [ "${CONFDONE}" = "true"]; then
+    ONLYPATCH="true" && arcPatch
+  fi
   return
 }
 
