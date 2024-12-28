@@ -2470,25 +2470,31 @@ function bootScreen () {
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && BOOTSCREENS["${KEY}"]="${VALUE}"
   done < <(readConfigMap "bootscreen" "${USER_CONFIG_FILE}")
-  echo -e "dsminfo" >"${TMP_PATH}/bootscreen"
-  echo -e "systeminfo" >>"${TMP_PATH}/bootscreen"
-  echo -e "diskinfo" >>"${TMP_PATH}/bootscreen"
-  echo -e "hwidinfo" >>"${TMP_PATH}/bootscreen"
-  echo -e "dsmlogo" >>"${TMP_PATH}/bootscreen"
-  while read -r BOOTSCREEN; do
-    arrayExistItem "${BOOTSCREEN}" "${!BOOTSCREENS[@]}" && ACT="on" || ACT="off"
-    echo -e "${BOOTSCREEN} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
-  done < <(cat "${TMP_PATH}/bootscreen")
+  cat <<EOL >"${TMP_PATH}/bootscreen"
+dsminfo: DSM Information
+systeminfo: System Information
+diskinfo: Disk Information
+hwidinfo: HardwareID Information
+dsmlogo: DSM Logo
+EOL
+  while IFS=': ' read -r BOOTSCREEN BOOTDESCRIPTION; do
+    if [ "${BOOTSCREENS[${BOOTSCREEN}]}" = "true" ]; then
+      ACT="on"
+    else
+      ACT="off"
+    fi
+    echo -e "${BOOTSCREEN} \"${BOOTDESCRIPTION}\" ${ACT}" >>"${TMP_PATH}/opts"
+  done < "${TMP_PATH}/bootscreen"
   dialog --backtitle "$(backtitle)" --title "Bootscreen" --colors --aspect 18 \
     --checklist "Select Bootscreen Informations\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
-  resp=$(cat ${TMP_PATH}/resp)
-  unset BOOTSCREENS
-  declare -A BOOTSCREENS
-  writeConfigKey "bootscreen" "{}" "${USER_CONFIG_FILE}"
-  for BOOTSCREEN in ${resp}; do
-    BOOTSCREENS["${BOOTSCREEN}"]=""
-    writeConfigKey "bootscreen.\"${BOOTSCREEN}\"" "true" "${USER_CONFIG_FILE}"
+  resp=$(cat "${TMP_PATH}/resp")
+  for BOOTSCREEN in dsminfo systeminfo diskinfo hwidinfo dsmlogo; do
+    if echo "${resp}" | grep -q "${BOOTSCREEN}"; then
+      writeConfigKey "bootscreen.${BOOTSCREEN}" "true" "${USER_CONFIG_FILE}"
+    else
+      writeConfigKey "bootscreen.${BOOTSCREEN}" "false" "${USER_CONFIG_FILE}"
+    fi
   done
 }
