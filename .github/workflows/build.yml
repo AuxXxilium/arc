@@ -184,6 +184,7 @@ jobs:
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vhd.zip" arc.vhd arc.vmc
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.ova.zip" arc.ova
             (cd files && zip -r ../update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.zip ./p1 ./p3)
+            sha256sum update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.zip >"update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.hash"
           fi
 
       # Cleanup
@@ -264,6 +265,7 @@ jobs:
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vhd.zip" arc.vhd arc.vmc
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.ova.zip" arc.ova
             (cd files && zip -r ../update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.zip ./p1 ./p3)
+            sha256sum update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.zip >"update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.hash"
           fi
 
       # Publish a release if is a tag

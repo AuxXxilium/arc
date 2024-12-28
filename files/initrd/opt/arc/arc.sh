@@ -833,7 +833,9 @@ elif [ "${ARCMODE}" = "config" ]; then
       echo "0 \"HardwareID for Arc Patch\" "                                                  >>"${TMP_PATH}/menu"
     fi
     echo "1 \"Choose Model \" "                                                               >>"${TMP_PATH}/menu"
-    if [ "${CONFDONE}" = "true" ]; then
+    if [ "${CONFDONE}" = "true" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
+      echo "2 \"Rebuild Loader \" "                                                           >>"${TMP_PATH}/menu"
+    elif [ "${CONFDONE}" = "true" ]; then
       echo "2 \"Build Loader \" "                                                             >>"${TMP_PATH}/menu"
     fi
     if [ "${BUILDDONE}" = "true" ]; then
