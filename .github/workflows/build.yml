@@ -96,7 +96,6 @@ jobs:
           getTheme "files/p1/boot/grub"
           getBuildrootx "brx" 
           getBuildroots "brs"
-          cp -f "files/initrd/opt/arc/grub.img.gz" "grub.img.gz"
 
           # Export Dependencies Version to env
           echo "ADDONTAG=${ADDONTAG}" >> $GITHUB_ENV
@@ -131,8 +130,7 @@ jobs:
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
-          cp -f "grub.img.gz" "files/initrd/opt/arc/grub.img.gz"
-          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
+          gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
@@ -213,8 +211,7 @@ jobs:
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
-          cp -f "grub.img.gz" "files/initrd/opt/arc/grub.img.gz"
-          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
+          gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
