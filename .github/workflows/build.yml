@@ -307,3 +307,4 @@ jobs:
           artifacts: |
             arc-*.zip
             update-*.zip
+            update-*.hash
