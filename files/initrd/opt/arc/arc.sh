@@ -372,8 +372,7 @@ function arcVersion() {
       fi
       if [ "${PLATFORM}" = "apollolake" ] || [ "${PLATFORM}" = "geminilake" ]; then
         if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" ${ARC_PATH}/include/i915ids && IGPU="all" || IGPU="epyc7002"; else IGPU=""; fi
-          [ "${IGPU}"="all" ] && initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}" || true
-        fi
+        [ "${IGPU}"="all" ] && initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}" || true
       fi
       if echo "${PAT_URL}" 2>/dev/null | grep -q "7.2.2"; then
         initConfigKey "addons.allowdowngrade" "" "${USER_CONFIG_FILE}"
