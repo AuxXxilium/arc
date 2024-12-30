@@ -114,9 +114,17 @@ function arcModel() {
         BETA=""
         [ -n "${ARCCONFM}" ] && ARC="x" || ARC=""
         [ "${DT}" = "true" ] && DTS="x" || DTS=""
+        IGPU=""
         IGPUS=""
-        [[ "${A}" = "apollolake" || "${A}" = "geminilake" ]] && IGPUS="up to 9th"
-        [ "${A}" = "epyc7002" ] && IGPUS="up to 14th" 
+        IGPUID="$(lspci -nd ::300 2>/dev/null | grep "8086" | cut -d' ' -f3 | sed 's/://g')"
+        if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" ${ARC_PATH}/include/i915ids && IGPU="all" || IGPU="epyc7002"; else IGPU=""; fi
+        if [[ "${A}" = "apollolake" || "${A}" = "geminilake" ]] && [ "${IGPU}" = "all" ]; then
+          IGPUS="+"
+        elif [ "${A}" = "epyc7002" ] && [[ "${IGPU}" = "epyc7002" || "${IGPU}" = "all" ]]; then
+          IGPUS="x"
+        else
+          IGPUS=""
+        fi
         [ "${DT}" = "true" ] && HBAS="" || HBAS="x"
         [ "${M}" = "SA6400" ] && HBAS="x"
         [ "${DT}" = "false" ] && USBS="int/ext" || USBS="ext"
@@ -511,7 +519,7 @@ function arcSettings() {
     governorSelection
     [ $? -ne 0 ] && return
   elif [ "${ARCMODE}" = "automated" ] && [ "${MACHINE}" = "Native" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
-    [ "${PLATFORM}" = "epyc7002" ] && writeConfigKey "addons.cpufreqscaling" "schedutil" "${USER_CONFIG_FILE}" || writeConfigKey "addons.cpufreqscaling" "conservative" "${USER_CONFIG_FILE}"
+    [ "${PLATFORM}" = "epyc7002" ] && writeConfigKey "governor" "schedutil" "${USER_CONFIG_FILE}" || writeConfigKey "governor" "conservative" "${USER_CONFIG_FILE}"
   fi
   if [ "${ARCMODE}" = "config" ]; then
     # Check for DT and HBA/Raid Controller
@@ -1047,13 +1055,7 @@ elif [ "${ARCMODE}" = "config" ]; then
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="H"
         ;;
-      h) if [ "${USBMOUNT}" = "auto" ]; then
-          USBMOUNT='internal'
-        elif [ "${USBMOUNT}" = "internal" ]; then
-          USBMOUNT='external'
-        elif [ "${USBMOUNT}" = "external" ]; then
-          USBMOUNT='auto'
-        fi
+      h) [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
         writeConfigKey "usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
