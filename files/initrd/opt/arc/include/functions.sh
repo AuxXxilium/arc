@@ -69,6 +69,12 @@ function randomhex() {
 }
 
 ###############################################################################
+# Generate a random digit (0-9A-Z)
+function genRandomDigit() {
+  echo {0..9} | tr ' ' '\n' | sort -R | head -1
+}
+
+###############################################################################
 # Generate a random letter
 function genRandomLetter() {
   for i in A B C D E F G H J K L M N P Q R S T V W X Y Z; do
@@ -377,11 +383,10 @@ function delCmdline() {
 
 ###############################################################################
 # Rebooting
-# (based on pocopico's TCRP code)
 function rebootTo() {
   local MODES="config recovery junior automated update bios memtest"
   [ -z "${1}" ] && exit 1
-  if ! echo "${MODES}" | grep -qw "${1}"; then exit 1; fi
+  if ! echo "${MODES}" | grep -wq "${1}"; then exit 1; fi
   [ "${1}" = "automated" ] && echo "arc-${MODEL}-${PRODUCTVER}-${ARC_VERSION}" >"${PART3_PATH}/automated"
   [ ! -f "${USER_GRUBENVFILE}" ] && grub-editenv ${USER_GRUBENVFILE} create
   # echo -e "Rebooting to ${1} mode..."

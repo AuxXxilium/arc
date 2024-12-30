@@ -104,6 +104,8 @@ SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
 DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
+USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
 MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
@@ -184,7 +186,15 @@ CMDLINE["panic"]="${KERNELPANIC:-0}"
 # DSM Specific Cmdline
 CMDLINE["pcie_aspm"]="off"
 CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
-[ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ] && CMDLINE["intel_pstate"]="disable" || true
+if [ "${USBMOUNT}" = "true" ]; then
+  CMDLINE['usbinternal']=""
+fi
+if [ "${GOVERNOR}" = "ondemand" ] || [ "${GOVERNOR}" = "conservative" ] || [ "${GOVERNOR}" = "schedutil" ]; then
+  CMDLINE["governor"]="${GOVERNOR}"
+fi
+if [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ]; then
+  CMDLINE["intel_pstate"]="disable"
+fi
 # [ $(cat /proc/cpuinfo | grep AMD | wc -l) -gt 0 ] && CMDLINE["amd_pstate"]="disable" || true
 # CMDLINE["nomodeset"]=""
 if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
