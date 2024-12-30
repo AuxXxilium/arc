@@ -82,7 +82,7 @@ initConfigKey "rd-compressed" "false" "${USER_CONFIG_FILE}"
 initConfigKey "satadom" "2" "${USER_CONFIG_FILE}"
 initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
-initConfigKey "usbmount" "auto" "${USER_CONFIG_FILE}"
+initConfigKey "usbmount" "false" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 if grep -q "automated_arc" /proc/cmdline; then
   writeConfigKey "arc.mode" "automated" "${USER_CONFIG_FILE}"
