@@ -34,7 +34,7 @@ on:
         type: boolean
       next:
         description: "next"
-        default: true
+        default: false
         type: boolean
       stable:
         description: "stable"
