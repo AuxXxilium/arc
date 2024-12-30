@@ -44,7 +44,7 @@ initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
-initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
+initConfigKey "arc.version" "\"${ARC_VERSION}\"" "${USER_CONFIG_FILE}"
 initConfigKey "bootscreen" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "bootscreen.dsminfo" "true" "${USER_CONFIG_FILE}"
 initConfigKey "bootscreen.systeminfo" "true" "${USER_CONFIG_FILE}"
@@ -55,10 +55,10 @@ initConfigKey "bootipwait" "30" "${USER_CONFIG_FILE}"
 initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
 initConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
-initConfigKey "governor" "performance" "${USER_CONFIG_FILE}"
+initConfigKey "governor" "\"performance\"" "${USER_CONFIG_FILE}"
 initConfigKey "hddsort" "false" "${USER_CONFIG_FILE}"
-initConfigKey "kernel" "official" "${USER_CONFIG_FILE}"
-initConfigKey "kernelload" "power" "${USER_CONFIG_FILE}"
+initConfigKey "kernel" "\"official\"" "${USER_CONFIG_FILE}"
+initConfigKey "kernelload" "\"power\"" "${USER_CONFIG_FILE}"
 initConfigKey "kernelpanic" "5" "${USER_CONFIG_FILE}"
 initConfigKey "odp" "false" "${USER_CONFIG_FILE}"
 initConfigKey "pathash" "" "${USER_CONFIG_FILE}"
@@ -85,17 +85,17 @@ initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "usbmount" "false" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 if grep -q "automated_arc" /proc/cmdline; then
-  writeConfigKey "arc.mode" "automated" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.mode" "\"automated\"" "${USER_CONFIG_FILE}"
 elif grep -q "update_arc" /proc/cmdline; then
-  writeConfigKey "arc.mode" "update" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.mode" "\"update\"" "${USER_CONFIG_FILE}"
 elif grep -q "force_arc" /proc/cmdline; then
-  writeConfigKey "arc.mode" "config" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.mode" "\"config\"" "${USER_CONFIG_FILE}"
 else
-  writeConfigKey "arc.mode" "dsm" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.mode" "\"dsm\"" "${USER_CONFIG_FILE}"
 fi
 [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1 || true
 if [ -n "${ARC_BRANCH}" ]; then
-  writeConfigKey "arc.branch" "${ARC_BRANCH}" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.branch" "\"${ARC_BRANCH}\"" "${USER_CONFIG_FILE}"
 fi
 # Sort network interfaces
 if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
@@ -121,7 +121,7 @@ ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
     fi
     [ "${N::3}" = "eth" ] && ethtool -s "${N}" wol g 2>/dev/null || true
     # [ "${N::3}" = "eth" ] && ethtool -K ${N} rxhash off 2>/dev/null || true
-    initConfigKey "${N}" "${MACR}" "${USER_CONFIG_FILE}"
+    initConfigKey "${N}" "\"${MACR}\"" "${USER_CONFIG_FILE}"
   done
 ETHN=$(echo ${ETHX} | wc -w)
 writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
@@ -225,7 +225,7 @@ echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}:${TTYD
 
 # Check memory and load Arc
 RAM=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
-if [ ${RAM} -le 3500 ]; then
+if [ ${RAM} -le 1800 ]; then
   echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n\033[1;31mUse arc.sh to proceed. Not recommended!\033[0m"
 else
   exec arc.sh

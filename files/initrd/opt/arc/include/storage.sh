@@ -176,24 +176,24 @@ function getmapSelection() {
       [ -z "${resp}" ] && return 1
     fi
     if [ ${resp} -eq 1 ]; then
-      writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.remap" "\"acports\"" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 2 ]; then
-      writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.remap" "\"maxports\"" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 3 ]; then
-      writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.remap" "\"remap\"" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 4 ]; then
-      writeConfigKey "arc.remap" "ahci" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.remap" "\"ahci\"" "${USER_CONFIG_FILE}"
     elif [ ${resp} -eq 5 ]; then
-      writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.remap" "\"user\"" "${USER_CONFIG_FILE}"
     fi
   else
     # Show recommended Option to user
     if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ "${MACHINE}" = "Native" ]; then
-      writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.remap" "\"maxports\"" "${USER_CONFIG_FILE}"
     elif [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
-      writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.remap" "\"remap\"" "${USER_CONFIG_FILE}"
     else
-      writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.remap" "\"acports\"" "${USER_CONFIG_FILE}"
     fi
   fi
   # Check Remap for correct config
