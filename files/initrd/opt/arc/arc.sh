@@ -887,7 +887,7 @@ elif [ "${ARCMODE}" = "config" ]; then
         if [ "${DT}" = "true" ]; then
           echo "H \"Hotplug/SortDrives: \Z4${HDDSORT}\Zn \" "                                 >>"${TMP_PATH}/menu"
         else
-          echo "h \"USB Mount: \Z4${USBMOUNT}\Zn \" "                                         >>"${TMP_PATH}/menu"
+          echo "h \"USB Mount as Internal: \Z4${USBMOUNT}\Zn \" "                             >>"${TMP_PATH}/menu"
         fi
       fi
       if [ "${BOOTOPTS}" = "true" ]; then
