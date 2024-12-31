@@ -59,21 +59,6 @@
         "r1000": true,
         "epyc7002": true
     },
-    "arccontrol": {
-        "system": false,
-        "description": "Arc Control - System Monitoring Tool (Not compatible if WebStation is installed)",
-        "apollolake": true,
-        "broadwell": true,
-        "broadwellnk": true,
-        "broadwellnkv2": true,
-        "broadwellntbap": true,
-        "denverton": true,
-        "geminilake": true,
-        "purley": true,
-        "v1000": true,
-        "r1000": true,
-        "epyc7002": true
-    },
     "arcdns": {
         "system": false,
         "description": "Dynamic DNS client for arcdns.tech - Modify in DSM DynDNS Settings",
@@ -616,7 +601,7 @@
     },
     "sspatch": {
         "system": false,
-        "description": "Dynamic License Patch for SS 9.2.0-11289 (Not for DVA 3219)",
+        "description": "Dynamic License Patch for SS 9.2.x (Not for DVA 3219)",
         "apollolake": true,
         "broadwell": true,
         "broadwellnk": true,
