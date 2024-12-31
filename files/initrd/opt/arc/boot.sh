@@ -314,6 +314,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       sleep 1
     done
   done
+  echo
   if ! _bootwait; then
     exit 0
   fi
