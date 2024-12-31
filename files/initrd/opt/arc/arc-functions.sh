@@ -897,8 +897,8 @@ function updateMenu() {
   while true; do
     dialog --backtitle "$(backtitle)" --title "Update" --colors --cancel-label "Exit" \
       --menu "Choose an Option" 0 0 0 \
-      1 "Update Loader \Z1(no reflash)\Zn" \
-      2 "Update Dependencies" \
+      1 "Update Full Loader \Z1(no reflash)\Zn" \
+      2 "Update Dependencies (only integrated Parts)" \
       3 "Update Configs and Arc Patch" \
       4 "Switch Arc Branch: \Z1${ARC_BRANCH}\Zn" \
       2>"${TMP_PATH}/resp"
@@ -936,8 +936,8 @@ function updateMenu() {
       4)
         dialog --backtitle "$(backtitle)" --title "Switch Arc Branch" \
           --menu "Choose a Branch" 0 0 0 \
-          1 "stable - Less Hardware support / faster Boot" \
-          2 "next - More Hardware support / slower Boot" \
+          1 "stable - faster Boot than next" \
+          2 "next - Test for upcoming Features/Support" \
           3 "dev - Development only" \
           2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && break
@@ -1059,28 +1059,29 @@ function sysinfo() {
   TEXT+="\n\Z4> Network: ${ETHN} NIC\Zn"
   for N in ${ETHX}; do
     COUNT=0
-    DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    DRIVER="$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
+    MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
     while true; do
       if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        TEXT+="\n   ${DRIVER}: \ZbDOWN\Zn"
+        TEXT+="\n   ${DRIVER} (${MAC}): \ZbDOWN\Zn"
         break
       fi
       if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        TEXT+="\n   ${DRIVER}: \ZbNOT CONNECTED\Zn"
+        TEXT+="\n   ${DRIVER} (${MAC}): \ZbNOT CONNECTED\Zn"
         break
       fi
       if [ ${COUNT} -ge ${TIMEOUT} ]; then
-        TEXT+="\n   ${DRIVER}: \ZbTIMEOUT\Zn"
+        TEXT+="\n   ${DRIVER} (${MAC}): \ZbTIMEOUT\Zn"
         break
       fi
       COUNT=$((${COUNT} + 1))
       IP="$(getIP "${N}")"
       if [ -n "${IP}" ]; then
-        SPEED=$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')
+        SPEED="$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')"
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          TEXT+="\n   ${DRIVER} (${SPEED}): \ZbLINK LOCAL (No DHCP server found.)\Zn"
+          TEXT+="\n   ${DRIVER} (${SPEED} | ${MAC}): \ZbLINK LOCAL (No DHCP server found.)\Zn"
         else
-          TEXT+="\n   ${DRIVER} (${SPEED}): \Zb${IP}\Zn"
+          TEXT+="\n   ${DRIVER} (${SPEED} | ${MAC}): \Zb${IP}\Zn"
         fi
         break
       fi

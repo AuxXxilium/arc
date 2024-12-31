@@ -195,31 +195,31 @@ fi
 if [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ]; then
   CMDLINE["intel_pstate"]="disable"
 fi
-# [ $(cat /proc/cpuinfo | grep AMD | wc -l) -gt 0 ] && CMDLINE["amd_pstate"]="disable" || true
-# CMDLINE["nomodeset"]=""
 if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
   CMDLINE["nox2apic"]=""
 fi
-#if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
-#   if ! echo "${CMDLINE["modprobe.blacklist"]}" | grep -q "sdhci"; then
-#     [ ! "${CMDLINE["modprobe.blacklist"]}" = "" ] && CMDLINE["modprobe.blacklist"]+=","
-#     CMDLINE["modprobe.blacklist"]+="sdhci,sdhci_pci,sdhci_acpi"
-#   fi
-# fi
 if [ "${DT}" = "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
     [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE["modprobe.blacklist"]+=","
     CMDLINE["modprobe.blacklist"]+="mpt3sas"
   fi
 fi
-# CMDLINE['kvm.ignore_msrs']="1"
-# CMDLINE['kvm.report_ignored_msrs']="0"
 if echo "apollolake geminilake" | grep -wq "${PLATFORM}"; then
   CMDLINE["intel_iommu"]="igfx_off"
 fi
 if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
   CMDLINE["SASmodel"]="1"
 fi
+# Disabled for now
+# if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
+#   if ! echo "${CMDLINE["modprobe.blacklist"]}" | grep -q "sdhci"; then
+#     [ ! "${CMDLINE["modprobe.blacklist"]}" = "" ] && CMDLINE["modprobe.blacklist"]+=","
+#     CMDLINE["modprobe.blacklist"]+="sdhci,sdhci_pci,sdhci_acpi"
+#   fi
+# fi
+# CMDLINE["nomodeset"]=""
+# CMDLINE['kvm.ignore_msrs']="1"
+# CMDLINE['kvm.report_ignored_msrs']="0"
 
 # NIC Cmdline
 ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
@@ -285,9 +285,10 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   for N in ${ETHX}; do
     COUNT=0
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
     while true; do
       if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
+        echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED @ Mac: ${MAC}\033[0m"
         break
       fi
       COUNT=$((COUNT + 1))
@@ -295,24 +296,25 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          echo -e "\r${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
+          echo -e "\r${DRIVER} (${SPEED} | ${MAC}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
         else
-          echo -e "\r${DRIVER} (${SPEED}): \033[1;37m${IP}\033[0m"
+          echo -e "\r${DRIVER} (${SPEED} | ${MAC}): \033[1;37m${IP}\033[0m"
           [ -z "${IPCON}" ] && IPCON="${IP}"
         fi
         break
       fi
       if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        echo -e "\r${DRIVER}: \033[1;37mDOWN\033[0m"
+        echo -e "\r${DRIVER} (${MAC}): \033[1;37mDOWN\033[0m"
         break
       fi
       if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
-        echo -e "\r${DRIVER}: \033[1;37mTIMEOUT\033[0m"
+        echo -e "\r${DRIVER} (${MAC}): \033[1;37mTIMEOUT\033[0m"
         break
       fi
       sleep 1
     done
   done
+  echo
   if ! _bootwait; then
     exit 0
   fi
