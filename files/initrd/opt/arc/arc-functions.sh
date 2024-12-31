@@ -897,8 +897,8 @@ function updateMenu() {
   while true; do
     dialog --backtitle "$(backtitle)" --title "Update" --colors --cancel-label "Exit" \
       --menu "Choose an Option" 0 0 0 \
-      1 "Update Loader \Z1(no reflash)\Zn" \
-      2 "Update Dependencies" \
+      1 "Update Full Loader \Z1(no reflash)\Zn" \
+      2 "Update Dependencies (only integrated Parts)" \
       3 "Update Configs and Arc Patch" \
       4 "Switch Arc Branch: \Z1${ARC_BRANCH}\Zn" \
       2>"${TMP_PATH}/resp"
@@ -936,8 +936,8 @@ function updateMenu() {
       4)
         dialog --backtitle "$(backtitle)" --title "Switch Arc Branch" \
           --menu "Choose a Branch" 0 0 0 \
-          1 "stable - Less Hardware support / faster Boot" \
-          2 "next - More Hardware support / slower Boot" \
+          1 "stable - faster Boot than next" \
+          2 "next - Test for upcoming Features/Support" \
           3 "dev - Development only" \
           2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && break
