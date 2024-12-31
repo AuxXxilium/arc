@@ -1063,15 +1063,15 @@ function sysinfo() {
     MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
     while true; do
       if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        TEXT+="\n   ${DRIVER}: \ZbDOWN @ Mac: ${MAC}\Zn"
+        TEXT+="\n   ${DRIVER} (${MAC}): \ZbDOWN\Zn"
         break
       fi
       if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        TEXT+="\n   ${DRIVER}: \ZbNOT CONNECTED @ Mac: ${MAC}\Zn"
+        TEXT+="\n   ${DRIVER} (${MAC}): \ZbNOT CONNECTED\Zn"
         break
       fi
       if [ ${COUNT} -ge ${TIMEOUT} ]; then
-        TEXT+="\n   ${DRIVER}: \ZbTIMEOUT @ Mac: ${MAC}\Zn"
+        TEXT+="\n   ${DRIVER} (${MAC}): \ZbTIMEOUT\Zn"
         break
       fi
       COUNT=$((${COUNT} + 1))
@@ -1079,9 +1079,9 @@ function sysinfo() {
       if [ -n "${IP}" ]; then
         SPEED="$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')"
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          TEXT+="\n   ${DRIVER} (${SPEED}): \ZbLINK LOCAL (No DHCP server found.) @ Mac: ${MAC}\Zn"
+          TEXT+="\n   ${DRIVER} (${SPEED} | ${MAC}): \ZbLINK LOCAL (No DHCP server found.)\Zn"
         else
-          TEXT+="\n   ${DRIVER} (${SPEED}): \Zb${IP} @ Mac: ${MAC}\Zn"
+          TEXT+="\n   ${DRIVER} (${SPEED} | ${MAC}): \Zb${IP}\Zn"
         fi
         break
       fi

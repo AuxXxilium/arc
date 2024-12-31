@@ -296,19 +296,19 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          echo -e "\r${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.) @ Mac: ${MAC}\033[0m"
+          echo -e "\r${DRIVER} (${SPEED} | ${MAC}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
         else
-          echo -e "\r${DRIVER} (${SPEED}): \033[1;37m${IP} @ Mac: ${MAC}\033[0m"
+          echo -e "\r${DRIVER} (${SPEED} | ${MAC}): \033[1;37m${IP}\033[0m"
           [ -z "${IPCON}" ] && IPCON="${IP}"
         fi
         break
       fi
       if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        echo -e "\r${DRIVER}: \033[1;37mDOWN @ Mac: ${MAC}\033[0m"
+        echo -e "\r${DRIVER} (${MAC}): \033[1;37mDOWN\033[0m"
         break
       fi
       if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
-        echo -e "\r${DRIVER}: \033[1;37mTIMEOUT @ Mac: ${MAC}\033[0m"
+        echo -e "\r${DRIVER} (${MAC}): \033[1;37mTIMEOUT\033[0m"
         break
       fi
       sleep 1
