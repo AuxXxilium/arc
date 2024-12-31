@@ -1059,28 +1059,29 @@ function sysinfo() {
   TEXT+="\n\Z4> Network: ${ETHN} NIC\Zn"
   for N in ${ETHX}; do
     COUNT=0
-    DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    DRIVER="$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
+    MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
     while true; do
       if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        TEXT+="\n   ${DRIVER}: \ZbDOWN\Zn"
+        TEXT+="\n   ${DRIVER}: \ZbDOWN @ Mac: ${MAC}\Zn"
         break
       fi
       if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        TEXT+="\n   ${DRIVER}: \ZbNOT CONNECTED\Zn"
+        TEXT+="\n   ${DRIVER}: \ZbNOT CONNECTED @ Mac: ${MAC}\Zn"
         break
       fi
       if [ ${COUNT} -ge ${TIMEOUT} ]; then
-        TEXT+="\n   ${DRIVER}: \ZbTIMEOUT\Zn"
+        TEXT+="\n   ${DRIVER}: \ZbTIMEOUT @ Mac: ${MAC}\Zn"
         break
       fi
       COUNT=$((${COUNT} + 1))
       IP="$(getIP "${N}")"
       if [ -n "${IP}" ]; then
-        SPEED=$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')
+        SPEED="$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')"
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          TEXT+="\n   ${DRIVER} (${SPEED}): \ZbLINK LOCAL (No DHCP server found.)\Zn"
+          TEXT+="\n   ${DRIVER} (${SPEED}): \ZbLINK LOCAL (No DHCP server found.) @ Mac: ${MAC}\Zn"
         else
-          TEXT+="\n   ${DRIVER} (${SPEED}): \Zb${IP}\Zn"
+          TEXT+="\n   ${DRIVER} (${SPEED}): \Zb${IP} @ Mac: ${MAC}\Zn"
         fi
         break
       fi
