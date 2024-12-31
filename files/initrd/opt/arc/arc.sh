@@ -970,7 +970,8 @@ elif [ "${ARCMODE}" = "config" ]; then
       A) networkdiag; NEXT="A" ;;
       # System Section
       # Arc Section
-      4) ARCOPTS=$([ "${ARCOPTS}" = "true" ] && echo 'false' || echo 'true')
+      4) [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
+        ARCOPTS="${ARCOPTS}"
         NEXT="4"
         ;;
       b) addonMenu; NEXT="b" ;;
@@ -983,14 +984,15 @@ elif [ "${ARCMODE}" = "config" ]; then
       P) storagepanelMenu; NEXT="P" ;;
       Q) sequentialIOMenu; NEXT="Q" ;;
       # Boot Section
-      6) BOOTOPTS=$([ "${BOOTOPTS}" = "true" ] && echo 'false' || echo 'true')
+      6) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
+        BOOTOPTS="${BOOTOPTS}"
         NEXT="6"
         ;;
-      m) KERNELLOAD=$([ "${KERNELLOAD}" = "kexec" ] && echo 'power' || echo 'kexec')
-        writeConfigKey "kernelload" "\"${KERNELLOAD}"\" "${USER_CONFIG_FILE}"
+      m) [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
+        writeConfigKey "kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
         NEXT="m"
         ;;
-      E) EMMCBOOT=$([ "${EMMCBOOT}" = "true" ] && echo 'false' || echo 'true')
+      E) [ "${EMMCBOOT}" = "true" ] && EMMCBOOT='false' || EMMCBOOT='true'
         if [ "${EMMCBOOT}" = "false" ]; then
           writeConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
           deleteConfigKey "synoinfo.disk_swap" "${USER_CONFIG_FILE}"
@@ -1009,13 +1011,14 @@ elif [ "${ARCMODE}" = "config" ]; then
         NEXT="E"
         ;;
       i) bootipwaittime; NEXT="i" ;;
-      q) DIRECTBOOT=$([ "${DIRECTBOOT}" = "false" ] && echo 'true' || echo 'false')
+      q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
         grub-editenv ${USER_GRUBENVFILE} create
         writeConfigKey "directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
         NEXT="q"
         ;;
       # DSM Section
-      7) DSMOPTS=$([ "${DSMOPTS}" = "true" ] && echo 'false' || echo 'true')
+      7) [ "${DSMOPTS}" = "true" ] && DSMOPTS='false' || DSMOPTS='true'
+        DSMOPTS="${DSMOPTS}"
         NEXT="7"
         ;;
       j) cmdlineMenu; NEXT="j" ;;
@@ -1028,7 +1031,7 @@ elif [ "${ARCMODE}" = "config" ]; then
       M) mountDSM; NEXT="M" ;;
       T) disablescheduledTasks; NEXT="T" ;;
       K) KERNEL=$([ "${KERNEL}" = "official" ] && echo 'custom' || echo 'official')
-        writeConfigKey "kernel" "\"${KERNEL}\"" "${USER_CONFIG_FILE}"
+        writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
         dialog --backtitle "$(backtitle)" --title "Kernel" \
           --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 4 50
         if [ "${ODP}" = "true" ]; then
@@ -1047,19 +1050,19 @@ elif [ "${ARCMODE}" = "config" ]; then
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="K"
         ;;
-      H) HDDSORT=$([ "${HDDSORT}" = "true" ] && echo 'false' || echo 'true')
+      H) [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
         writeConfigKey "hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="H"
         ;;
-      h) USBMOUNT=$([ "${USBMOUNT}" = "true" ] && echo 'false' || echo 'true')
+      h) [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
         writeConfigKey "usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="h"
         ;;
-      O) ODP=$([ "${ODP}" = "false" ] && echo 'true' || echo 'false')
+      O) [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
         writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1067,7 +1070,8 @@ elif [ "${ARCMODE}" = "config" ]; then
         ;;
       B) getbackup; NEXT="B" ;;
       # Loader Section
-      8) LOADEROPTS=$([ "${LOADEROPTS}" = "true" ] && echo 'false' || echo 'true')
+      8) [ "${LOADEROPTS}" = "true" ] && LOADEROPTS='false' || LOADEROPTS='true'
+        LOADEROPTS="${LOADEROPTS}"
         NEXT="8"
         ;;
       c) ARCOFFLINE=$([ "${ARCOFFLINE}" = "true" ] && echo 'false' || echo 'true')
@@ -1086,8 +1090,8 @@ elif [ "${ARCMODE}" = "config" ]; then
         NEXT="W"
         ;;
       X) satadomMenu; NEXT="X" ;;
-      u) LKM=$([ "${LKM}" = "prod" ] && echo 'dev' || echo 'prod')
-        writeConfigKey "lkm" "\"${LKM}\"" "${USER_CONFIG_FILE}"
+      u) [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
+        writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         NEXT="u"

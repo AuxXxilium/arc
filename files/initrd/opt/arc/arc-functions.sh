@@ -949,7 +949,7 @@ function updateMenu() {
         elif [ ${opts} -eq 3 ]; then
           ARC_BRANCH="dev"
         fi
-        writeConfigKey "arc.branch" "\"${ARC_BRANCH}\"" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.branch" "${ARC_BRANCH}" "${USER_CONFIG_FILE}"
         ;;
       *)
         break
@@ -1432,7 +1432,7 @@ function staticIPMenu() {
                 echo "nameserver ${dnsname:-${gateway}}" >>/etc/resolv.conf
               fi
             fi
-            writeConfigKey "network.${MACR}" "\"${address}/${netmask}/${gateway}/${dnsname}\"" "${USER_CONFIG_FILE}"
+            writeConfigKey "network.${MACR}" "${address}/${netmask}/${gateway}/${dnsname}" "${USER_CONFIG_FILE}"
             IP="$(getIP)"
             [ -z "${IPCON}" ] && IPCON="${IP}"
             sleep 1
@@ -1687,7 +1687,7 @@ function loaderPorts() {
       2>"${TMP_PATH}/resp"
     RET=$?
     case ${RET} in
-    0)
+    0) # ok-button
       HTTP=$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)
       DUFS=$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)
       TTYD=$(sed -n '3p' "${TMP_PATH}/resp" 2>/dev/null)
@@ -2249,7 +2249,7 @@ function governorSelection () {
   resp=$(cat ${TMP_PATH}/resp)
   [ -z "${resp}" ] && return
   GOVERNOR=${resp}
-  writeConfigKey "governor" "\"${GOVERNOR}\"" "${USER_CONFIG_FILE}"
+  writeConfigKey "governor" "${GOVERNOR}" "${USER_CONFIG_FILE}"
 }
 
 ###############################################################################

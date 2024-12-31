@@ -9,13 +9,13 @@ function getnet() {
     MACS=($(generateMacAddress "${MODEL}" "${ETHN}" "true"))
     for I in $(seq 1 ${ETHN}); do
       eval MAC${I}="${MACS[$((${I} - 1))]}"
-      writeConfigKey "eth$((${I} - 1))" "\"${MACS[$((${I} - 1))]}\"" "${USER_CONFIG_FILE}"
+      writeConfigKey "eth$((${I} - 1))" "${MACS[$((${I} - 1))]}" "${USER_CONFIG_FILE}"
     done
   elif [ "${ARCPATCH}" = "false" ]; then
     MACS=($(generateMacAddress "${MODEL}" "${ETHN}" "false"))
     for I in $(seq 1 ${ETHN}); do
       eval MAC${I}="${MACS[$((${I} - 1))]}"
-      writeConfigKey "eth$((${I} - 1))" "\"${MACS[$((${I} - 1))]}\"" "${USER_CONFIG_FILE}"
+      writeConfigKey "eth$((${I} - 1))" "${MACS[$((${I} - 1))]}" "${USER_CONFIG_FILE}"
     done
   elif [ "${ARCPATCH}" = "user" ]; then
     # User Mac
