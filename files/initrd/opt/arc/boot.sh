@@ -169,6 +169,7 @@ else
   CMDLINE["syno_hdd_detect"]="0"
   CMDLINE["syno_hdd_powerup_seq"]="0"
 fi
+
 CMDLINE["HddHotplug"]="1"
 CMDLINE["vender_format_version"]="2"
 CMDLINE["skip_vender_mac_interfaces"]="0,1,2,3,4,5,6,7"
@@ -181,10 +182,15 @@ CMDLINE["root"]="/dev/md0"
 CMDLINE["loglevel"]="15"
 CMDLINE["log_buf_len"]="32M"
 CMDLINE["rootwait"]=""
-CMDLINE["panic"]="${KERNELPANIC:-0}"
-
-# DSM Specific Cmdline
-CMDLINE["pcie_aspm"]="off"
+CMDLINE['panic']="${KERNELPANIC:-0}"
+# CMDLINE['intremap']="off" # no need
+# CMDLINE['amd_iommu_intr']="legacy" # no need
+# CMDLINE['split_lock_detect']="off" # check KVER
+CMDLINE['pcie_aspm']="off"
+# CMDLINE['intel_pstate']="disable"
+# CMDLINE['amd_pstate']="disable"
+# CMDLINE['nox2apic']=""  # check platform
+# CMDLINE['nomodeset']=""
 CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
 if [ "${USBMOUNT}" = "true" ]; then
   CMDLINE['usbinternal']=""
@@ -198,18 +204,7 @@ fi
 if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
   CMDLINE["nox2apic"]=""
 fi
-if [ "${DT}" = "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
-  if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
-    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE["modprobe.blacklist"]+=","
-    CMDLINE["modprobe.blacklist"]+="mpt3sas"
-  fi
-fi
-if echo "apollolake geminilake" | grep -wq "${PLATFORM}"; then
-  CMDLINE["intel_iommu"]="igfx_off"
-fi
-if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
-  CMDLINE["SASmodel"]="1"
-fi
+
 # Disabled for now
 # if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
 #   if ! echo "${CMDLINE["modprobe.blacklist"]}" | grep -q "sdhci"; then
@@ -217,9 +212,25 @@ fi
 #     CMDLINE["modprobe.blacklist"]+="sdhci,sdhci_pci,sdhci_acpi"
 #   fi
 # fi
-# CMDLINE["nomodeset"]=""
+if [ "${DT}" = "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
+  if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
+    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE["modprobe.blacklist"]+=","
+    CMDLINE["modprobe.blacklist"]+="mpt3sas"
+  fi
+#else
+#  CMDLINE['scsi_mod.scan']="sync"  # TODO: kernel panic caused by vmware scsi? (add to cmdline)
+fi
+
 # CMDLINE['kvm.ignore_msrs']="1"
 # CMDLINE['kvm.report_ignored_msrs']="0"
+
+if echo "apollolake geminilake" | grep -wq "${PLATFORM}"; then
+  CMDLINE["intel_iommu"]="igfx_off"
+fi
+
+if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
+  CMDLINE["SASmodel"]="1"
+fi
 
 # NIC Cmdline
 ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
@@ -261,9 +272,6 @@ if [ "${DIRECTBOOT}" = "true" ]; then
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
   grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
   grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
-  if ! _bootwait; then
-    exit 0
-  fi
   echo -e "\033[1;34mReboot with Directboot\033[0m"
   reboot
   exit 0
@@ -315,9 +323,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     done
   done
   echo
-  if ! _bootwait; then
-    exit 0
-  fi
 
   DSMLOGO="$(readConfigKey "bootscreen.dsmlogo" "${USER_CONFIG_FILE}")"
   if [ "${DSMLOGO}" = "true" ] && [ -c "/dev/fb0" ]; then

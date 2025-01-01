@@ -609,11 +609,13 @@ function __umountDSMRootDisk() {
 ###############################################################################
 # bootwait SSH/Web
 function _bootwait() {
-  # Exec Bootwait to check SSH/Web connection
-  BOOTWAIT=5
+  BOOTWAIT="$(readConfigKey "bootwait" "${USER_CONFIG_FILE}")"
+  [ -z "${BOOTWAIT}" ] && BOOTWAIT=10
   busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
-  while test ${BOOTWAIT} -ge 0; do
+  while [ ${BOOTWAIT} -gt 0 ]; do
+    sleep 1
+    BOOTWAIT=$((BOOTWAIT - 1))
     MSG="\033[1;33mAccess to SSH/Web will interrupt boot...\033[0m"
     echo -en "\r${MSG}"
     busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
@@ -622,8 +624,6 @@ function _bootwait() {
       rm -f WB WC
       return 1
     fi
-    sleep 1
-    BOOTWAIT=$((BOOTWAIT - 1))
   done
   rm -f WB WC
   echo -en "\r$(printf "%$((${#MSG} * 2))s" " ")\n"
