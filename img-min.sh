@@ -21,11 +21,10 @@ getCustom "files/p3/custom"
 getLKMs "files/p3/lkms"
 getTheme "files/p1/boot/grub"
 getOffline "files/p3/configs"
-mkdir -p "brx"
-[ ! -f "../brx/bzImage" ] && getBuildrootx "brx" || copyBuildroot "brx"
+[ -f "../brs/bzImage" ] && copyBuildroot "brs" || getBuildroots "brs"
 
 # Sbase
-IMAGE_FILE="arc.img"
+IMAGE_FILE="arc_create.img"
 gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
 fdisk -l "${IMAGE_FILE}"
 
@@ -42,16 +41,16 @@ sudo mount ${LOOPX}p3 "/tmp/p3"
 
 ARC_BUILD="`date +'%y%m%d'`"
 ARC_VERSION="13.3.7"
-ARC_BRANCH="next"
+ARC_BRANCH="stable"
 echo "${ARC_BUILD}" >files/p1/ARC-BUILD
 echo "${ARC_VERSION}" >files/p1/ARC-VERSION
 echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
 
 echo "Repack initrd"
-if [ -f "brx/bzImage-arc" ] && [ -f "brx/initrd-arc" ]; then
-    cp -f "brx/bzImage-arc" "files/p3/bzImage-arc"
+if [ -f "brs/bzImage-arc" ] && [ -f "brs/initrd-arc" ]; then
+    cp -f "brs/bzImage-arc" "files/p3/bzImage-arc"
     createArc
-    repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+    repackInitrd "brs/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 else
     exit 1
 fi
@@ -68,5 +67,8 @@ sudo rm -rf "/tmp/p1"
 sudo rm -rf "/tmp/p3"
 
 sudo losetup --detach ${LOOPX}
+
+# Resize Image
+resizeImg "${IMAGE_FILE}" "+1024M" "arc.img"
 
 qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk

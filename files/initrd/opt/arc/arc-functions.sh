@@ -91,6 +91,7 @@ function addonSelection() {
 ###############################################################################
 # Permit user select the modules to include
 function modulesMenu() {
+  NEXT="1"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
@@ -936,16 +937,16 @@ function updateMenu() {
       4)
         dialog --backtitle "$(backtitle)" --title "Switch Arc Branch" \
           --menu "Choose a Branch" 0 0 0 \
-          1 "stable - faster Boot than next" \
-          2 "next - Test for upcoming Features/Support" \
+          1 "minimal - reduced size and faster boot" \
+          2 "extended - new features to test" \
           3 "dev - Development only" \
           2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && break
         opts=$(cat ${TMP_PATH}/opts)
         if [ ${opts} -eq 1 ]; then
-          ARC_BRANCH="stable"
+          ARC_BRANCH="minimal"
         elif [ ${opts} -eq 2 ]; then
-          ARC_BRANCH="next"
+          ARC_BRANCH="extended"
         elif [ ${opts} -eq 3 ]; then
           ARC_BRANCH="dev"
         fi

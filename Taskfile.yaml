@@ -3,17 +3,17 @@
 version: "3"
 
 tasks:
-  build-img-n:
+  build-ext:
     cmds:
       - git reset --hard
       - git pull
-      - ./img-gen-n.sh
+      - ./img-ext.sh
 
-  build-img-s:
+  build-min:
     cmds:
       - git reset --hard
       - git pull
-      - ./img-gen-s.sh
+      - ./img-min.sh
 
   compile-kpatch:
     dir: kpatch

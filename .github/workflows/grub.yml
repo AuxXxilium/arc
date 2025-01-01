@@ -34,7 +34,7 @@ jobs:
       - name: Make Grub
         run: |
           rm -f grub.img.gz
-          . scripts/grub.sh "grub-2.12" "i386-pc i386-efi x86_64-efi"
+          . scripts/grub.sh "grub-2.12" "i386-pc i386-efi x86_64-efi" "ARC"
 
       - name: Check and Push
         if: success() && inputs.push == true

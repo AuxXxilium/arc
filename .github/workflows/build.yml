@@ -32,13 +32,13 @@ on:
         description: "pre release"
         default: false
         type: boolean
-      next:
-        description: "next"
-        default: false
-        type: boolean
-      stable:
-        description: "stable"
+      minimal:
+        description: "minimal"
         default: true
+        type: boolean
+      extended:
+        description: "extended"
+        default: false
         type: boolean
       clean:
         description: "clean"
@@ -112,15 +112,15 @@ jobs:
           echo "OK"
 
        # Build incremental
-      - name: Build Next Image
-        if: ${{ inputs.next }}
+      - name: Build extended Image
+        if: ${{ inputs.extended }}
         run: |
           . scripts/func.sh
 
           # Modify Source File
           ARC_BUILD="`date +'%y%m%d'`"
           ARC_VERSION="${{ inputs.version }}"
-          ARC_BRANCH="next"
+          ARC_BRANCH="extended"
           echo "${ARC_BUILD}" >files/p1/ARC-BUILD
           echo "${ARC_VERSION}" >files/p1/ARC-VERSION
           echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
@@ -129,7 +129,7 @@ jobs:
           echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
-          IMAGE_FILE="arc.img"
+          IMAGE_FILE="arc_create.img"
           gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
@@ -162,6 +162,9 @@ jobs:
 
           sudo losetup --detach ${LOOPX}
 
+          # Resize Image
+          resizeImg "${IMAGE_FILE}" "+1024M" "arc.img"
+
           echo "Image Converter"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
@@ -174,8 +177,8 @@ jobs:
           convertova "${IMAGE_FILE}" "arc.ova"
 
       # Zip image and generate checksum
-      - name: Pack Next Image
-        if: ${{ inputs.next }}
+      - name: Pack extended Image
+        if: ${{ inputs.extended }}
         run: |
           if [ -n "${{ env.ARC_VERSION }}" ]; then
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.img.zip" arc.img
@@ -190,18 +193,18 @@ jobs:
       # Cleanup
       - name: Cleanup
         run: |
-          rm -rf "arc.img" "arc.vmdk" "arc-dyn.vmdk" "arc-flat.vmdk" "arc.vhd" "arc.ova" "arc.vmc"
+          rm -rf "arc.img" "arc_create.img" "arc.vmdk" "arc-dyn.vmdk" "arc-flat.vmdk" "arc.vhd" "arc.ova" "arc.vmc" 2>/dev/null
 
        # Build incremental
-      - name: Build Stable Image
-        if: ${{ inputs.stable }}
+      - name: Build minimal Image
+        if: ${{ inputs.minimal }}
         run: |
           . scripts/func.sh
 
           # Modify Source File
           ARC_BUILD="`date +'%y%m%d'`"
           ARC_VERSION="${{ inputs.version }}"
-          ARC_BRANCH="stable"
+          ARC_BRANCH="minimal"
           echo "${ARC_BUILD}" >files/p1/ARC-BUILD
           echo "${ARC_VERSION}" >files/p1/ARC-VERSION
           echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
@@ -210,7 +213,7 @@ jobs:
           echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
-          IMAGE_FILE="arc.img"
+          IMAGE_FILE="arc_create.img"
           gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
@@ -243,6 +246,9 @@ jobs:
 
           sudo losetup --detach ${LOOPX}
 
+          # Resize Image
+          resizeImg "${IMAGE_FILE}" "+1024M" "arc.img"
+
           echo "Image Converter"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
@@ -255,8 +261,8 @@ jobs:
           convertova "${IMAGE_FILE}" "arc.ova"
 
       # Zip image and generate checksum
-      - name: Pack Stable Image
-        if: ${{ inputs.stable }}
+      - name: Pack minimal Image
+        if: ${{ inputs.minimal }}
         run: |
           if [ -n "${{ env.ARC_VERSION }}" ]; then
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.img.zip" arc.img
@@ -286,8 +292,8 @@ jobs:
               - Discord Account for Arc Patch needed
 
             ### Versions:
-              ${{ inputs.stable && '- Stable: Full Image, all dependencies are included, reduced hardware support (if there is a Next image)' || '' }}
-              ${{ inputs.next && '- Next: Full Image, all dependencies are included, more hardware support, new features to test' || '' }}
+              ${{ inputs.minimal && '- minimal: Full Image, all dependencies are included (reduced size, faster boot)' || '' }}
+              ${{ inputs.extended && '- extended: Full Image, all dependencies are included (new features to test)' || '' }}
 
             ### Dependencies:
               - Addons: ${{ env.ADDONTAG }}
@@ -296,8 +302,8 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              ${{ inputs.stable && format('- Buildroot Stable: {0}', env.BRSTAG) || '' }}
-              ${{ inputs.next && format('- Buildroot Next: {0}', env.BRXTAG) || '' }}
+              ${{ inputs.minimal && format('- Buildroot minimal: {0}', env.BRSTAG) || '' }}
+              ${{ inputs.extended && format('- Buildroot extended: {0}', env.BRXTAG) || '' }}
 
             ### Release
               - ${{ env.BUILD_TIME }}
