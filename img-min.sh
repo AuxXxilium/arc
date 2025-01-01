@@ -41,7 +41,7 @@ sudo mount ${LOOPX}p3 "/tmp/p3"
 
 ARC_BUILD="`date +'%y%m%d'`"
 ARC_VERSION="13.3.7"
-ARC_BRANCH="stable"
+ARC_BRANCH="minimal"
 echo "${ARC_BUILD}" >files/p1/ARC-BUILD
 echo "${ARC_VERSION}" >files/p1/ARC-VERSION
 echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
