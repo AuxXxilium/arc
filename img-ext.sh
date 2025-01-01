@@ -70,6 +70,6 @@ sudo rm -rf "/tmp/p3"
 sudo losetup --detach ${LOOPX}
 
 # Resize Image
-resizeImg "${IMAGE_FILE}" "+1024M" "arc.img"
+resizeImg "${IMAGE_FILE}" "+1024M" "arc.img" 2>/dev/null
 
 qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
