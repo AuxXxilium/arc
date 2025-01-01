@@ -167,6 +167,7 @@ jobs:
           rm -f "${IMAGE_FILE}"
 
           echo "Image Converter"
+          IMAGE_FILE="arc.img"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
 
@@ -252,6 +253,7 @@ jobs:
           rm -f "${IMAGE_FILE}"
 
           echo "Image Converter"
+          IMAGE_FILE="arc.img"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
 
