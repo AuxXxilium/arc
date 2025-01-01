@@ -992,6 +992,7 @@ function sysinfo() {
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}')"
+  GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
   SECURE=$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')
   ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
@@ -1018,7 +1019,6 @@ function sysinfo() {
     elif [ "${REMAP}" = "ahci" ]; then
       AHCIPORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
     fi
-    GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
     USERCMDLINEINFO="$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
     USERSYNOINFO="$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
   fi
