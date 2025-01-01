@@ -1039,9 +1039,8 @@ function sysinfo() {
   CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
   PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")"
   TIMEOUT=5
-  TEXT=""
   # Print System Informations
-  TEXT+="\n\n\Z4> System: ${MACHINE} | ${BOOTSYS} | ${BUS}\Zn"
+  TEXT="\n\n\Z4> System: ${MACHINE} | ${BOOTSYS} | ${BUS}\Zn"
   TEXT+="\n  Vendor: \Zb${VENDOR}\Zn"
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
   if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
