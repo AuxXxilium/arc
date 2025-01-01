@@ -164,6 +164,7 @@ jobs:
 
           # Resize Image
           resizeImg "${IMAGE_FILE}" "+1024M" "arc.img" 2>/dev/null
+          rm -f "${IMAGE_FILE}"
 
           echo "Image Converter"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
@@ -193,7 +194,7 @@ jobs:
       # Cleanup
       - name: Cleanup
         run: |
-          rm -rf "arc.img" "arc_create.img" "arc.vmdk" "arc-dyn.vmdk" "arc-flat.vmdk" "arc.vhd" "arc.ova" "arc.vmc" 2>/dev/null
+          rm -rf "arc.img" "arc.vmdk" "arc-dyn.vmdk" "arc-flat.vmdk" "arc.vhd" "arc.ova" "arc.vmc" 2>/dev/null
 
        # Build incremental
       - name: Build minimal Image
@@ -248,6 +249,7 @@ jobs:
 
           # Resize Image
           resizeImg "${IMAGE_FILE}" "+1024M" "arc.img" 2>/dev/null
+          rm -f "${IMAGE_FILE}"
 
           echo "Image Converter"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
