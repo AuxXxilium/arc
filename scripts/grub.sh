@@ -35,8 +35,8 @@ fdisk -l grub.img
 
 LOOPX=$(sudo losetup -f)
 sudo losetup -P ${LOOPX} grub.img
-sudo mkfs.ext4 -F -L ${NAME}1 ${LOOPX}p1
-sudo mkfs.ext4 -F -L ${NAME}2 ${LOOPX}p2
+sudo mkdosfs -F32 -n ${NAME}1 ${LOOPX}p1
+sudo mkfs.ext2 -F -L ${NAME}2 ${LOOPX}p2
 sudo mkfs.ext4 -F -L ${NAME}3 ${LOOPX}p3
 
 rm -rf ${NAME}1
