@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2024 AuxXxilium <https://github.com/AuxXxilium>
-# 
+# Copyright (C) 2025 AuxXxilium <https://github.com/AuxXxilium>
+#
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
 #
@@ -499,13 +499,4 @@ function copyBuildroot() {
   mkdir -p "${DEST_PATH}"
   cp -f "../${DEST_PATH}/bzImage" "${DEST_PATH}/bzImage-arc"
   cp -f "../${DEST_PATH}/rootfs.cpio.zst" "${DEST_PATH}/initrd-arc"
-}
-
-# create arc executable
-function createArc() {
-  [ ! -f "arc" ] && ./scripts/make/makeself.sh --current --zstd "files/initrd/opt/arc" arc "Arc Loader" "./init.sh" || true
-  rm -rf "files/initrd/opt/arc"
-  mkdir -p "files/initrd/opt/arc"
-  cp -f "arc" "files/initrd/opt/arc/"
-  cp -f "grub.img.gz" "files/initrd/opt/arc/grub.img.gz"
 }
