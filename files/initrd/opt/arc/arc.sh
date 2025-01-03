@@ -10,7 +10,6 @@
 . "${ARC_PATH}/include/update.sh"
 . "${ARC_PATH}/include/storage.sh"
 . "${ARC_PATH}/include/network.sh"
-. "${ARC_PATH}/include/compat.sh"
 . "${ARC_PATH}/arc-functions.sh"
 
 # Get Keymap and Timezone and check System
