@@ -4,10 +4,10 @@ function getmap() {
   SATADRIVES=0
   if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
     # Clean old files
-    [ -f "${TMP_PATH}/drivesmax" ] && rm -f "${TMP_PATH}/drivesmax" && touch "${TMP_PATH}/drivesmax" || true
-    [ -f "${TMP_PATH}/drivescon" ] && rm -f "${TMP_PATH}/drivescon" && touch "${TMP_PATH}/drivescon" || true
-    [ -f "${TMP_PATH}/ports" ] && rm -f "${TMP_PATH}/ports" && touch "${TMP_PATH}/ports" || true
-    [ -f "${TMP_PATH}/remap" ] && rm -f "${TMP_PATH}/remap" && touch "${TMP_PATH}/remap" || true
+    [ -f "${TMP_PATH}/drivesmax" ] && rm -f "${TMP_PATH}/drivesmax" && touch "${TMP_PATH}/drivesmax"
+    [ -f "${TMP_PATH}/drivescon" ] && rm -f "${TMP_PATH}/drivescon" && touch "${TMP_PATH}/drivescon"
+    [ -f "${TMP_PATH}/ports" ] && rm -f "${TMP_PATH}/ports" && touch "${TMP_PATH}/ports"
+    [ -f "${TMP_PATH}/remap" ] && rm -f "${TMP_PATH}/remap" && touch "${TMP_PATH}/remap"
     if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
       let DISKIDXMAPIDX=0
       DISKIDXMAP=""
@@ -248,5 +248,3 @@ writeConfigKey "device.raidcontroller" "${RAIDCONTROLLER}" "${USER_CONFIG_FILE}"
 if [ ${RAIDCONTROLLER} -gt 0 ]; then
   writeConfigKey "device.externalcontroller" "true" "${USER_CONFIG_FILE}"
 fi
-# Check Controller for Disks
-getmap
