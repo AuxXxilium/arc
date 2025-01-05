@@ -597,6 +597,8 @@ function systemCheck () {
   # Check for Arc Patch
   ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
   [ -z "${ARCCONF}" ] && writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+  # Check for Disks
+  getmap
 }
 
 ###############################################################################

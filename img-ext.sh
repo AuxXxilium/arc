@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+#
+# Copyright (C) 2025 AuxXxilium <https://github.com/AuxXxilium>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
 
 set -e
 
@@ -50,7 +56,6 @@ echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
 echo "Repack initrd"
 if [ -f "brx/bzImage-arc" ] && [ -f "brx/initrd-arc" ]; then
     cp -f "brx/bzImage-arc" "files/p3/bzImage-arc"
-    createArc
     repackInitrd "brx/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 else
     exit 1
@@ -73,4 +78,5 @@ sudo losetup --detach ${LOOPX}
 resizeImg "${IMAGE_FILE}" "+1024M" "arc.img" 2>/dev/null
 rm -f "${IMAGE_FILE}"
 
+IMAGE_FILE="arc.img"
 qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
