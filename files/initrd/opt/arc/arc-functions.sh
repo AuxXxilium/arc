@@ -822,15 +822,20 @@ function backupMenu() {
         (
           mkdir -p "${TMP_PATH}/mdX"
           for I in ${DSMROOTS}; do
-            # fixDSMRootPart "${I}"
-            mount -t ext4 "${I}" "${TMP_PATH}/mdX"
-            [ $? -ne 0 ] && continue
-            if [ -f "${PART2_PATH}/machine.key" ]; then
-              cp -f "${PART2_PATH}/machine.key" "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key"
-              BACKUPKEY="true"
-              sync
-            fi
-            umount "${TMP_PATH}/mdX"
+            while true; do
+              # fixDSMRootPart "${I}"
+              mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+              if [ -f "${PART2_PATH}/machine.key" ]; then
+                mkdir -p "${TMP_PATH}/mdX/usr/arc/backup/p2"
+                cp -f "${PART2_PATH}/machine.key" "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key"
+                if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" ]; then
+                  BACKUPKEY="true"
+                  sync
+                  break
+                fi
+              fi
+              umount "${TMP_PATH}/mdX"
+            done
           done
           rm -rf "${TMP_PATH}/mdX" >/dev/null
         ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Backup Encrytion Key" \
