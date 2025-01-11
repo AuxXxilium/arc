@@ -7,13 +7,15 @@
 # eg: N i915.ko
 
 # kvm
-N irqbypass.ko
-N kvm-intel.ko
-N kvm-amd.ko
-N kvm.ko
+F irqbypass.ko
+F kvm-intel.ko
+F kvm-amd.ko
+F kvm.ko
 
 # acpi
-N acpi_call.ko
+F acpi_call.ko
+F acpi-cpufreq.ko
+F processor.ko
 
 # misc
 N check_signature.ko

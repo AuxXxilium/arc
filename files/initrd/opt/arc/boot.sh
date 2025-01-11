@@ -59,6 +59,8 @@ DSMINFO="$(readConfigKey "bootscreen.dsminfo" "${USER_CONFIG_FILE}")"
 SYSTEMINFO="$(readConfigKey "bootscreen.systeminfo" "${USER_CONFIG_FILE}")"
 DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
 HWIDINFO="$(readConfigKey "bootscreen.hwidinfo" "${USER_CONFIG_FILE}")"
+GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
+USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 
 if [ "${DSMINFO}" = "true" ]; then
   echo -e "\033[1;37mDSM:\033[0m"
@@ -73,6 +75,8 @@ if [ "${SYSTEMINFO}" = "true" ]; then
   echo -e "Vendor: \033[1;37m${VENDOR}\033[0m"
   echo -e "CPU: \033[1;37m${CPU}\033[0m"
   echo -e "Memory: \033[1;37m${RAMTOTAL}GB\033[0m"
+  echo -e "Governor: \033[1;37m${GOVERNOR}\033[0m"
+  [ "${USBMOUNT}" = "true" ] && echo -e "USB Mount: \033[1;37m${USBMOUNT}\033[0m"
   echo
 fi
 if [ "${DISKINFO}" = "true" ]; then
@@ -109,8 +113,6 @@ SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
 DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
-USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
 MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
