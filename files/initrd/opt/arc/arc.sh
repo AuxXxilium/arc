@@ -288,9 +288,11 @@ function arcVersion() {
       PV=$(cat ${TMP_PATH}/resp)
       PAT_URL="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${PV}\".url" "${D_FILE}")"
       PAT_HASH="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${PV}\".hash" "${D_FILE}")"
-      [ "${PRODUCTVER}" != "${PV:0:3}" ] && PRODUCTVER="${PV:0:3}"
-      writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-      [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true" && break
+      writeConfigKey "productver" "${PV:0:3}" "${USER_CONFIG_FILE}"
+      if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+        VALID="true"
+        break
+      fi
     done
     if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
       while true; do
@@ -320,11 +322,10 @@ function arcVersion() {
         --yesno "${MSG}" 6 55
       if [ $? -eq 0 ]; then
         writeConfigKey "arc.mode" "automated" "${USER_CONFIG_FILE}"
-        ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
       else
         writeConfigKey "arc.mode" "config" "${USER_CONFIG_FILE}"
-        ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
       fi
+      ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
     fi
   elif [ "${ARCMODE}" = "automated" ] || [ "${ARCRESTORE}" = "true" ]; then
     VALID="true"
