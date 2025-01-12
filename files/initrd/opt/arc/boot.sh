@@ -202,7 +202,7 @@ CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
 if [ "${USBMOUNT}" = "true" ]; then
   CMDLINE['usbinternal']=""
 fi
-if [ "${GOVERNOR}" = "ondemand" ] || [ "${GOVERNOR}" = "conservative" ] || [ "${GOVERNOR}" = "schedutil" ]; then
+if [ -n "${GOVERNOR}" ]; then
   CMDLINE["governor"]="${GOVERNOR}"
 fi
 if [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ]; then
