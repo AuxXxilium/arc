@@ -9,7 +9,6 @@ set -e
 rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
 
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-[ "${BUILDDONE}" = "false" ] && die "Loader build not completed!"
 ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
 
 # Get Loader Disk Bus
@@ -61,6 +60,25 @@ DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
 HWIDINFO="$(readConfigKey "bootscreen.hwidinfo" "${USER_CONFIG_FILE}")"
 GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
+
+# Build Sanity Check
+[ "${BUILDDONE}" = "false" ] && die "Loader build not completed!"
+if [ -z "${MODELID}" ] || [ "${MODELID}" != "${MODEL}" ]; then
+  die "Loader build not completed! Model mismatch!"
+fi
+# HardwareID Check
+if [ "${ARCPATCH}" = "true" ]; then
+  HARDWAREID="$(readConfigKey "arc.hardwareid" "${USER_CONFIG_FILE}")"
+  HWID="$(genHWID)"
+  if [ "${HARDWAREID}" != "${HWID}" ]; then
+    echo "\033[1;31m*** HardwareID does not match! - Loader can't boot to DSM! You need to reconfigure your Loader - Rebooting to Config Mode! ***\033[0m"
+    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
+    sleep 5
+    rebootTo "config"
+  fi
+fi
 
 if [ "${DSMINFO}" = "true" ]; then
   echo -e "\033[1;37mDSM:\033[0m"
@@ -117,27 +135,28 @@ EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
 MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
-# HardwareID Check
-if [ "${ARCPATCH}" = "true" ]; then
-  HARDWAREID="$(readConfigKey "arc.hardwareid" "${USER_CONFIG_FILE}")"
-  HWID="$(genHWID)"
-  if [ "${HARDWAREID}" != "${HWID}" ]; then
-    echo "\033[1;31m*** HardwareID does not match! - Loader can't boot to DSM! You need to reconfigure your Loader - Rebooting to Config Mode! ***\033[0m"
-    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
-    sleep 5
-    rebootTo "config"
-  fi
-fi
-
 declare -A CMDLINE
 
 # Automated Cmdline
-CMDLINE["syno_hw_version"]="${MODELID:-${MODEL}}"
+CMDLINE["syno_hw_version"]="${MODELID}"
 CMDLINE["vid"]="${VID:-"0x46f4"}" # Sanity check
 CMDLINE["pid"]="${PID:-"0x0001"}" # Sanity check
 CMDLINE["sn"]="${SN}"
+
+# NIC Cmdline
+ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
+ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)
+ETHN=$(echo "${ETHX}" | wc -w)
+ETHM=${ETHM:-${ETHN}}
+NIC=0
+for N in ${ETHX}; do
+  MAC=$(readConfigKey "${N}" "${USER_CONFIG_FILE}")
+  MAC=${MAC:-$(cat /sys/class/net/${N}/address 2>/dev/null | tr '[:upper:]' '[:lower:]')}
+  NIC=$((NIC + 1))
+  CMDLINE["mac${NIC}"]="${MAC}"
+  [ ${NIC} -ge ${ETHM} ] && break
+done
+CMDLINE["netif_num"]="${NIC}"
 
 # Boot Cmdline
 if grep -q "force_junior" /proc/cmdline; then
@@ -161,13 +180,14 @@ if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
     SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
     # Read SATADoM type
     SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
-    CMDLINE["synoboot_satadom"]="${SATADOM:-2}"
-    CMDLINE["dom_szmax"]="${SIZE}"
+    CMDLINE['synoboot_satadom']="${SATADOM:-2}"
+    CMDLINE['dom_szmax']="${SIZE}"
   fi
-  CMDLINE['elevator']="elevator"
+  CMDLINE["elevator"]="elevator"
 else
   CMDLINE["split_lock_detect"]="off"
 fi
+
 if [ "${DT}" = "true" ]; then
   CMDLINE["syno_ttyS0"]="serial,0x3f8"
   CMDLINE["syno_ttyS1"]="serial,0x2f8"
@@ -179,35 +199,33 @@ fi
 
 CMDLINE["HddHotplug"]="1"
 CMDLINE["vender_format_version"]="2"
-CMDLINE["skip_vender_mac_interfaces"]="0,1,2,3,4,5,6,7"
-CMDLINE["earlyprintk"]=""
-CMDLINE["earlycon"]="uart8250,io,0x3f8,115200n8"
-CMDLINE["console"]="ttyS0,115200n8"
-CMDLINE["consoleblank"]="600"
+CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
+CMDLINE['earlyprintk']=""
+CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
+CMDLINE['console']="ttyS0,115200n8"
+CMDLINE['consoleblank']="600"
 # CMDLINE['no_console_suspend']="1"
-CMDLINE["root"]="/dev/md0"
-CMDLINE["loglevel"]="15"
-CMDLINE["log_buf_len"]="32M"
-CMDLINE["rootwait"]=""
+CMDLINE['root']="/dev/md0"
+CMDLINE['loglevel']="15"
+CMDLINE['log_buf_len']="32M"
+CMDLINE['rootwait']=""
 CMDLINE['panic']="${KERNELPANIC:-0}"
 # CMDLINE['intremap']="off" # no need
 # CMDLINE['amd_iommu_intr']="legacy" # no need
-# CMDLINE['split_lock_detect']="off" # check KVER
 CMDLINE['pcie_aspm']="off"
 # CMDLINE['intel_pstate']="disable"
 # CMDLINE['amd_pstate']="disable"
-# CMDLINE['nox2apic']=""  # check platform
 # CMDLINE['nomodeset']=""
-CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
+CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
+
 if [ "${USBMOUNT}" = "true" ]; then
   CMDLINE['usbinternal']=""
 fi
+
 if [ -n "${GOVERNOR}" ]; then
-  CMDLINE["governor"]="${GOVERNOR}"
+  CMDLINE['governor']="${GOVERNOR}"
 fi
-if [ $(cat /proc/cpuinfo | grep Intel | wc -l) -gt 0 ]; then
-  CMDLINE["intel_pstate"]="disable"
-fi
+
 if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
   CMDLINE["nox2apic"]=""
 fi
@@ -221,11 +239,11 @@ fi
 # fi
 if [ "${DT}" = "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
-    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE["modprobe.blacklist"]+=","
-    CMDLINE["modprobe.blacklist"]+="mpt3sas"
+    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+    CMDLINE['modprobe.blacklist']+="mpt3sas"
   fi
 #else
-#  CMDLINE['scsi_mod.scan']="sync"  # TODO: kernel panic caused by vmware scsi? (add to cmdline)
+#  CMDLINE['scsi_mod.scan']="sync"  # TODO: redpill panic of vmware scsi? (add to cmdline)
 fi
 
 # CMDLINE['kvm.ignore_msrs']="1"
@@ -238,20 +256,6 @@ fi
 if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
   CMDLINE["SASmodel"]="1"
 fi
-
-# NIC Cmdline
-ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
-ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)
-ETHN=$(echo ${ETHX} | wc -w)
-[ -z "${ETHM}" ] && ETHM="${ETHN}"
-NIC=0
-for N in ${ETHX}; do
-  MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
-  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | tr '[:upper:]' '[:lower:]')" || NIC=$((NIC + 1))
-  [ ${NIC} -le ${ETHM} ] && CMDLINE["mac${NIC}"]="${MAC}"
-  [ ${NIC} -ge ${ETHM} ] && break
-done
-CMDLINE["netif_num"]="${NIC}"
 
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do
@@ -295,8 +299,10 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
   fi
   echo
+
   [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
-  sleep 3
+  sleep 2
+
   for N in ${ETHX}; do
     COUNT=0
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
@@ -361,7 +367,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
     KEXECARGS+=" --noefi"
   fi
-  kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
+  kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" >"${LOG_FILE}" 2>&1 || dieLog
 
   echo -e "\033[1;37mBooting DSM...\033[0m"
   [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff

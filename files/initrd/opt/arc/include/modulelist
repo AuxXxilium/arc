@@ -13,9 +13,7 @@ F kvm-amd.ko
 F kvm.ko
 
 # acpi
-F acpi_call.ko
-F acpi-cpufreq.ko
-F processor.ko
+N acpi_call.ko
 
 # misc
 N check_signature.ko
@@ -35,14 +33,6 @@ N mii.ko
 N cdc_ether.ko
 N rndis_host.ko
 N r8152.ko
-
-# iwlwifi
-N libarc4.ko
-N cfg80211.ko
-N mac80211.ko
-N iwlwifi.ko
-N iwlmvm.ko
-N iwldvm.ko
 
 ## i915
 #N dmabuf.ko

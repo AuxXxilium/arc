@@ -1000,7 +1000,7 @@ function sysinfo() {
   GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
   SECURE=$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
+  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
   ETHN=$(echo ${ETHX} | wc -w)
   ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
   HWID="$(genHWID)"
@@ -1291,7 +1291,7 @@ function uploadDiag () {
 # Shows Networkdiag to user
 function networkdiag() {
   (
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
+  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
   for N in ${ETHX}; do
     echo
     DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
@@ -1395,7 +1395,7 @@ function credits() {
 ###############################################################################
 # Setting Static IP for Loader
 function staticIPMenu() {
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
+  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
   IPCON=""
   for N in ${ETHX}; do
     MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
@@ -2134,7 +2134,7 @@ function rebootMenu() {
     echo -e "recovery \"DSM: Recovery Mode\"" >>"${TMP_PATH}/opts"
     echo -e "junior \"DSM: Reinstall Mode\"" >>"${TMP_PATH}/opts"
   fi
-  echo -e "bios \"System: BIOS/UEFI\"" >>"${TMP_PATH}/opts"
+  echo -e "uefi \"System: UEFI\"" >>"${TMP_PATH}/opts"
   echo -e "poweroff \"System: Shutdown\"" >>"${TMP_PATH}/opts"
   echo -e "shell \"System: Shell Cmdline\"" >>"${TMP_PATH}/opts"
   dialog --backtitle "$(backtitle)" --title "Power Menu" \
