@@ -1,22 +1,46 @@
 # Get PortMap for Loader
-function getmap() {
-  detect_drives() {
-    local pci_id=$1
-    local drive_var=$2
-    local class_path=$3
-    local grep_pattern=$4
-    local sed_pattern=$5
-  
-    eval "${drive_var}=0"
-    if [ $(lspci -d ::${pci_id} 2>/dev/null | wc -l) -gt 0 ]; then
-      for PCI in $(lspci -d ::${pci_id} 2>/dev/null | awk '{print $1}'); do
-        PORT=$(ls -l ${class_path} | grep "${PCI}" | awk -F'/' '{print $NF}' | sed "${sed_pattern}" | sort -n 2>/dev/null)
-        PORTNUM=$(lsscsi -b | grep -v - | grep "${grep_pattern}${PORT}:" | wc -l)
-        eval "${drive_var}=\$((\${${drive_var}} + \${PORTNUM}))"
-      done
-    fi
-  }
+function detect_drives() {
+  local pci_id=$1
+  local drive_var=$2
+  local class_path=$3
+  local grep_pattern=$4
+  local sed_pattern=$5
 
+  eval "${drive_var}=0"
+  if [ $(lspci -d ::${pci_id} 2>/dev/null | wc -l) -gt 0 ]; then
+    for PCI in $(lspci -d ::${pci_id} 2>/dev/null | awk '{print $1}'); do
+      PORT=$(ls -l ${class_path} | grep "${PCI}" | awk -F'/' '{print $NF}' | sed "${sed_pattern}" | sort -n 2>/dev/null)
+      PORTNUM=$(lsscsi -b | grep -v - | grep "${grep_pattern}${PORT}:" | wc -l)
+      eval "${drive_var}=\$((\${${drive_var}} + \${PORTNUM}))"
+    done
+  fi
+}
+
+function show_dialog() {
+  dialog --backtitle "$(backtitle)" --title "Sata Portmap" \
+    --menu "Choose a Portmap for Sata!?\n* Recommended Option" 8 60 0 \
+    1 "DiskIdxMap: Active Ports ${REMAP1}" \
+    2 "DiskIdxMap: Max Ports ${REMAP2}" \
+    3 "SataRemap: Remove empty Ports ${REMAP3}" \
+    4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
+    5 "Set my own Portmap in Config" \
+  2>"${TMP_PATH}/resp"
+  [ $? -ne 0 ] && return 1
+  resp=$(cat "${TMP_PATH}/resp")
+  [ -z "${resp}" ] && return 1
+}
+
+function set_remap() {
+  case ${resp} in
+    1) writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}" ;;
+    2) writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}" ;;
+    3) writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}" ;;
+    4) writeConfigKey "arc.remap" "ahci" "${USER_CONFIG_FILE}" ;;
+    5) writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}" ;;
+  esac
+}
+
+function getmap() {
   # Sata Disks
   SATADRIVES=0
   if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
@@ -133,30 +157,6 @@ function getmapSelection() {
   EXTERNALCONTROLLER=$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")
   ARCMODE=$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")
   
-  show_dialog() {
-    dialog --backtitle "$(backtitle)" --title "Sata Portmap" \
-      --menu "Choose a Portmap for Sata!?\n* Recommended Option" 8 60 0 \
-      1 "DiskIdxMap: Active Ports ${REMAP1}" \
-      2 "DiskIdxMap: Max Ports ${REMAP2}" \
-      3 "SataRemap: Remove empty Ports ${REMAP3}" \
-      4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
-      5 "Set my own Portmap in Config" \
-    2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
-    resp=$(cat "${TMP_PATH}/resp")
-    [ -z "${resp}" ] && return 1
-  }
-  
-  set_remap() {
-    case ${resp} in
-      1) writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}" ;;
-      2) writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}" ;;
-      3) writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}" ;;
-      4) writeConfigKey "arc.remap" "ahci" "${USER_CONFIG_FILE}" ;;
-      5) writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}" ;;
-    esac
-  }
-  
   if [ "${ARCMODE}" = "config" ]; then
     # Show recommended Option to user
     if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ "${MACHINE}" = "Native" ]; then
@@ -168,10 +168,10 @@ function getmapSelection() {
     fi
   
     if [ "${STEP}" = "storagemap" ]; then
-      show_dialog || return 1
+      show_dialog
       set_remap
     else
-      show_dialog || return 1
+      show_dialog
       set_remap
     fi
   else
@@ -207,6 +207,7 @@ function getmapSelection() {
       writeConfigKey "cmdline.ahci_remap" "${SATAREMAP}" "${USER_CONFIG_FILE}"
       ;;
   esac
+  return
 }
 
 # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
