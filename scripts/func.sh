@@ -344,12 +344,15 @@ function resizeImg() {
   fi
 
   sudo truncate -s "${SIZE}M" "${OUTPUT_FILE}"
-  echo -e "d\nn\n\n\n\n\nw" | sudo fdisk "${OUTPUT_FILE}"
+
+  # Use `parted` to resize partition 3
+  sudo parted "${OUTPUT_FILE}" --script -- resizepart 3 "${SIZE}M"
+
   local LOOPX
   LOOPX=$(sudo losetup -f)
   sudo losetup -P "${LOOPX}" "${OUTPUT_FILE}"
-  sudo e2fsck -fp "$(ls "${LOOPX}"* | sort -n | tail -1)"
-  sudo resize2fs "$(ls "${LOOPX}"* | sort -n | tail -1)"
+  sudo e2fsck -fp "$(ls "${LOOPX}p3")"
+  sudo resize2fs "$(ls "${LOOPX}p3")"
   sudo losetup -d "${LOOPX}"
 }
 
