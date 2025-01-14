@@ -135,7 +135,7 @@ jobs:
           echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
-          IMAGE_FILE="arc_create.img"
+          IMAGE_FILE="arc.img"
           gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
@@ -198,6 +198,7 @@ jobs:
 
       # Cleanup
       - name: Cleanup
+        if: ${{ inputs.minimal }}
         run: |
           rm -rf "arc.img" "arc.vmdk" "arc-dyn.vmdk" "arc-flat.vmdk" "arc.vhd" "arc.ova" "arc.vmc" 2>/dev/null
 
@@ -282,6 +283,7 @@ jobs:
 
       # Cleanup
       - name: Cleanup
+        if: ${{ inputs.microcode }}
         run: |
           rm -rf "arc.img" "arc.vmdk" "arc-dyn.vmdk" "arc-flat.vmdk" "arc.vhd" "arc.ova" "arc.vmc" 2>/dev/null
 
@@ -303,7 +305,7 @@ jobs:
           echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
-          IMAGE_FILE="arc_create.img"
+          IMAGE_FILE="arc.img"
           gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
