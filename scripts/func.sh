@@ -231,6 +231,29 @@ function getBuildroots() {
   done < <(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-buildroot-s/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }
 
+# Get latest Buildroot-M
+# $1 path
+function getBuildrootm() {
+  echo "Getting Buildroot-M begin"
+  local DEST_PATH="${1}"
+
+  TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-buildroot-m/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
+  export BRSTAG="${TAG}"
+  [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
+  rm -f "${DEST_PATH}/bzImage-arc"
+  rm -f "${DEST_PATH}/initrd-arc"
+  while read -r ID NAME; do
+    if [ "${NAME}" = "buildroot-${TAG}.zip" ]; then
+      curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/arc-buildroot-m/releases/assets/${ID}" -o "${DEST_PATH}/brm.zip"
+      echo "Buildroot-M: ${TAG}"
+      unzip -o "${DEST_PATH}/brm.zip" -d "${DEST_PATH}"
+      mv -f "${DEST_PATH}/bzImage" "${DEST_PATH}/bzImage-arc"
+      mv -f "${DEST_PATH}/rootfs.cpio.zst" "${DEST_PATH}/initrd-arc"
+      [ -f "${DEST_PATH}/bzImage-arc" ] && [ -f "${DEST_PATH}/initrd-arc" ] && break
+    fi
+  done < <(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/arc-buildroot-m/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
+}
+
 # Get latest Offline
 # $1 path
 function getOffline() {

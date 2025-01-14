@@ -172,7 +172,7 @@ mkdir -p "${RAMDISK_PATH}/addons"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
-for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
+for ADDON in redpill revert misc eudev disks localrss notify wol mountloader; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
@@ -184,8 +184,8 @@ for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol"
 done
 
 # User Addons
-for ADDON in ${!ADDONS[@]}; do
-  PARAMS=${ADDONS[${ADDON}]}
+for ADDON in "${!ADDONS[@]}"; do
+  PARAMS="${ADDONS[${ADDON}]}"
   installAddon "${ADDON}" "${PLATFORM}" || echo "Addon ${ADDON} not found"
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 done

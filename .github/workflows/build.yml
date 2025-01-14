@@ -36,6 +36,10 @@ on:
         description: "minimal"
         default: true
         type: boolean
+      microcode:
+        description: "microcode"
+        default: true
+        type: boolean
       extended:
         description: "extended"
         default: false
@@ -96,6 +100,7 @@ jobs:
           getTheme "files/p1/boot/grub"
           getBuildrootx "brx" 
           getBuildroots "brs"
+          getBuildrootm "brm"
 
           # Export Dependencies Version to env
           echo "ADDONTAG=${ADDONTAG}" >> $GITHUB_ENV
@@ -276,6 +281,91 @@ jobs:
             sha256sum update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.zip >"update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.hash"
           fi
 
+      # Cleanup
+      - name: Cleanup
+        run: |
+          rm -rf "arc.img" "arc.vmdk" "arc-dyn.vmdk" "arc-flat.vmdk" "arc.vhd" "arc.ova" "arc.vmc" 2>/dev/null
+
+       # Build incremental
+      - name: Build microcode Image
+        if: ${{ inputs.microcode }}
+        run: |
+          . scripts/func.sh
+
+          # Modify Source File
+          ARC_BUILD="`date +'%y%m%d'`"
+          ARC_VERSION="${{ inputs.version }}"
+          ARC_BRANCH="microcode"
+          echo "${ARC_BUILD}" >files/p1/ARC-BUILD
+          echo "${ARC_VERSION}" >files/p1/ARC-VERSION
+          echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
+          echo "ARC_BUILD=${ARC_BUILD}" >> $GITHUB_ENV
+          echo "ARC_VERSION=${ARC_VERSION}" >> $GITHUB_ENV
+          echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
+
+          echo "Create Arc Image"
+          IMAGE_FILE="arc_create.img"
+          gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
+          fdisk -l "${IMAGE_FILE}"
+          
+          LOOPX=$(sudo losetup -f)
+          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
+
+          echo "Mounting Image File"
+          mkdir -p "/tmp/p1"
+          mkdir -p "/tmp/p3"
+          sudo mount ${LOOPX}p1 "/tmp/p1"
+          sudo mount ${LOOPX}p3 "/tmp/p3"
+
+          [ ! -f "brm/bzImage-arc" ] || [ ! -f "brm/initrd-arc" ] && return 1
+          
+          echo "Repack initrd"
+          cp -f "brm/bzImage-arc" "files/p3/bzImage-arc"
+          repackInitrd "brm/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+
+          echo "Copying files"
+          sudo cp -rf "files/p1/"* "/tmp/p1"
+          sudo cp -rf "files/p3/"* "/tmp/p3"
+          sudo sync
+
+          echo "Unmount image file"
+          sudo umount "/tmp/p1"
+          sudo umount "/tmp/p3"
+          rmdir "/tmp/p1"
+          rmdir "/tmp/p3"
+
+          sudo losetup --detach ${LOOPX}
+
+          # Resize Image
+          resizeImg "${IMAGE_FILE}" "+1024M" "arc.img" 2>/dev/null
+          rm -f "${IMAGE_FILE}"
+
+          echo "Image Converter"
+          IMAGE_FILE="arc.img"
+          qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
+          qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
+
+          echo "Create Arc vhd"
+          createvmc "arc.vmc"
+          qemu-img convert -p -f raw -O vpc ${IMAGE_FILE} arc.vhd
+
+          echo "Create Arc ova"
+          convertova "${IMAGE_FILE}" "arc.ova"
+
+      # Zip image and generate checksum
+      - name: Pack minimal Image
+        if: ${{ inputs.minimal }}
+        run: |
+          if [ -n "${{ env.ARC_VERSION }}" ]; then
+            zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.img.zip" arc.img
+            zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vhd.zip" arc.vhd arc.vmc
+            zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.ova.zip" arc.ova
+            (cd files && zip -r ../update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.zip ./p1 ./p3)
+            sha256sum update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.zip >"update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.hash"
+          fi
+
       # Publish a release if is a tag
       - name: Release
         if: success() && env.ARC_VERSION != ''
@@ -295,6 +385,7 @@ jobs:
 
             ### Versions:
               ${{ inputs.minimal && '- minimal: Full Image, all dependencies are included (reduced size, faster boot)' || '' }}
+              ${{ inputs.microcode && '- microcode: Minimal + additional Microcode Updates' || '' }}
               ${{ inputs.extended && '- extended: Full Image, all dependencies are included (new features to test)' || '' }}
 
             ### Dependencies:

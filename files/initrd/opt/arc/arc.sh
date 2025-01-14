@@ -416,18 +416,18 @@ function arcPatch() {
   # Read Model Values
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  # Check for Custom Build
+  ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
+  
   if [ "${ARCMODE}" = "automated" ] && [ "${ARCPATCH}" != "user" ]; then
-      ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
-      [ -n "${ARCCONF}" ] && SN="$(generateSerial "${MODEL}" "true")" || SN="$(generateSerial "${MODEL}" "false")"
-      [ -n "${ARCCONF}" ] && writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}" || writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-      writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-  elif [ "${ARCMODE}" = "config" ]; then
-    ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
     if [ -n "${ARCCONF}" ]; then
-      dialog --clear --backtitle "$(backtitlep)" \
-      --nocancel --title "SN/Mac Options"\
+      generate_and_write_serial "true"
+    else
+      generate_and_write_serial "false"
+    fi
+  elif [ "${ARCMODE}" = "config" ]; then
+   if [ -n "${ARCCONF}" ]; then
+    dialog --clear --backtitle "$(backtitlep)" \
+      --nocancel --title "SN/Mac Options" \
       --menu "Choose an Option" 7 60 0 \
       1 "Use Arc Patch (AME, QC, Push Notify and more)" \
       2 "Use random SN/Mac (Reduced DSM Features)" \
@@ -435,37 +435,39 @@ function arcPatch() {
       2>"${TMP_PATH}/resp"
     else
       dialog --clear --backtitle "$(backtitlep)" \
-      --nocancel --title "SN/Mac Options"\
-      --menu "Choose an Option" 7 60 0 \
-      2 "Use random SN/Mac (Reduced DSM Features)" \
-      3 "Use my own SN/Mac (Be sure your Data is valid)" \
-      2>"${TMP_PATH}/resp"
+        --nocancel --title "SN/Mac Options" \
+        --menu "Choose an Option" 7 60 0 \
+        2 "Use random SN/Mac (Reduced DSM Features)" \
+        3 "Use my own SN/Mac (Be sure your Data is valid)" \
+        2>"${TMP_PATH}/resp"
     fi
-    resp=$(cat ${TMP_PATH}/resp)
+    
+    resp=$(cat "${TMP_PATH}/resp")
     [ -z "${resp}" ] && return 1
-    if [ ${resp} -eq 1 ]; then
-      SN="$(generateSerial "${MODEL}" "true")"
-      writeConfigKey "arc.patch" "true" "${USER_CONFIG_FILE}"
-    elif [ ${resp} -eq 2 ]; then
-      SN="$(generateSerial "${MODEL}" "false")"
-      writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-    elif [ ${resp} -eq 3 ]; then
-      while true; do
-        dialog --backtitle "$(backtitlep)" --colors --title "Serial" \
-          --inputbox "Please enter a valid SN!" 7 50 "" \
-          2>"${TMP_PATH}/resp"
-        [ $? -ne 0 ] && break 2
-        SN="$(cat ${TMP_PATH}/resp)"
-        if [ -z "${SN}" ]; then
-          return
-        else
+    
+    case ${resp} in
+      1)
+        generate_and_write_serial "true"
+        ;;
+      2)
+        generate_and_write_serial "false"
+        ;;
+      3)
+        while true; do
+          dialog --backtitle "$(backtitlep)" --colors --title "Serial" \
+            --inputbox "Please enter a valid SN!" 7 50 "" \
+            2>"${TMP_PATH}/resp"
+          [ $? -ne 0 ] && break 2
+          SN="$(cat "${TMP_PATH}/resp" | tr '[:lower:]' '[:upper:]')"
+          [ -z "${SN}" ] && return
           break
-        fi
-      done
-      writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
-    fi
-    writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+        done
+        writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
+        writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+        ;;
+    esac
   fi
+
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   arcSettings
 }
@@ -473,85 +475,76 @@ function arcPatch() {
 ###############################################################################
 # Arc Settings Section
 function arcSettings() {
-  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  STEP="build"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
   PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-  # Get Network Config for Loader
-  if [ "${ARCMODE}" = "config" ] || [ "${ARCPATCH}" = "true" ] || [ "${ARCPATCH}" = "false" ]; then
+  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+  
+  # Network Config for Loader
+  if [ "${ARCMODE}" = "config" ]; then
     STEP="network"
     dialog --backtitle "$(backtitlep)" --colors --title "Network Config" \
       --infobox "Generating Network Config..." 3 40
     sleep 2
-    getnet
-    [ $? -ne 0 ] && return
+    getnet || return
   fi
+  
   if [ "${ONLYPATCH}" = "true" ]; then
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     ONLYPATCH="false"
     return 0
   fi
+  
   # Select Portmap for Loader
   if [ "${DT}" = "false" ] && [ ${SATADRIVES} -gt 0 ]; then
     STEP="storagemap"
     dialog --backtitle "$(backtitlep)" --colors --title "Storage Map" \
       --infobox "Generating Storage Map..." 3 40
     sleep 2
-    getmapSelection
-    [ $? -ne 0 ] && return
+    getmapSelection || return
   fi
-  # Check for Custom Build
+  
+  # Select Addons
   if [ "${ARCMODE}" = "config" ]; then
-    # Select Addons
     STEP="addons"
     dialog --backtitle "$(backtitlep)" --colors --title "Addons" \
       --infobox "Loading Addons Table..." 3 40
-    addonSelection
-    [ $? -ne 0 ] && return
+    addonSelection || return
   fi
-  # Check for CPU Frequency Scaling & Governor
-  if [ "${ARCMODE}" = "config" ] && [ "${MACHINE}" = "Native" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
-    dialog --backtitle "$(backtitlep)" --colors --title "CPU Frequency Scaling" \
-      --infobox "Generating Governor Table..." 3 40
-    governorSelection
-    [ $? -ne 0 ] && return
-  elif [ "${ARCMODE}" = "automated" ] && [ "${MACHINE}" = "Native" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
-    [ "${PLATFORM}" = "epyc7002" ] && writeConfigKey "governor" "schedutil" "${USER_CONFIG_FILE}" || writeConfigKey "governor" "conservative" "${USER_CONFIG_FILE}"
-  fi
-  if [ "${ARCMODE}" = "config" ]; then
-    # Check for DT and HBA/Raid Controller
-    if [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
-      dialog --backtitle "$(backtitlep)" --title "Arc Warning" \
-        --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental." 6 70
+  
+  # CPU Frequency Scaling & Governor
+  if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
+    if [ "${ARCMODE}" = "config" ] && [ "${MACHINE}" = "Native" ]; then
+      dialog --backtitle "$(backtitlep)" --colors --title "CPU Frequency Scaling" \
+        --infobox "Generating Governor Table..." 3 40
+      governorSelection || return
+    elif [ "${ARCMODE}" = "automated" ] && [ "${MACHINE}" = "Native" ]; then
+      if [ "${PLATFORM}" = "epyc7002" ]; then
+        writeConfigKey "governor" "schedutil" "${USER_CONFIG_FILE}"
+      else
+        writeConfigKey "governor" "conservative" "${USER_CONFIG_FILE}"
+      fi
     fi
-    # Check for more then 8 Ethernet Ports
+  fi
+  
+  # Warnings and Checks
+  if [ "${ARCMODE}" = "config" ]; then
+    [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && dialog --backtitle "$(backtitlep)" --title "Arc Warning" --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental." 6 70
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
     MODELNIC="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
-    if [ ${DEVICENIC} -gt 8 ]; then
-      dialog --backtitle "$(backtitlep)" --title "Arc Warning" \
-        --msgbox "WARN: You have more NIC (${DEVICENIC}) then 8 NIC.\nOnly 8 supported by DSM." 6 60
-    fi
-    if [ ${DEVICENIC} -gt ${MODELNIC} ] && [ "${ARCPATCH}" = "true" ]; then
-      dialog --backtitle "$(backtitlep)" --title "Arc Warning" \
-        --msgbox "WARN: You have more NIC (${DEVICENIC}) than supported by Model (${MODELNIC}).\nOnly the first ${MODELNIC} are used by Arc Patch." 6 80
-    fi
-    # Check for AES
-    if [ "${AESSYS}" = "false" ]; then
-      dialog --backtitle "$(backtitlep)" --title "Arc Warning" \
-        --msgbox "WARN: Your System doesn't support Hardwareencryption in DSM. (AES)" 5 70
-    fi
-    # Check for CPUFREQ
-    if [[ "${CPUFREQ}" = "false" || "${ACPISYS}" = "false" ]] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
-      dialog --backtitle "$(backtitlep)" --title "Arc Warning" \
-        --msgbox "WARN: It is possible that CPU Frequency Scaling is not working properly with your System." 6 80
-    fi
+    [ ${DEVICENIC} -gt 8 ] && dialog --backtitle "$(backtitlep)" --title "Arc Warning" --msgbox "WARN: You have more NIC (${DEVICENIC}) than 8 NIC.\nOnly 8 supported by DSM." 6 60
+    [ ${DEVICENIC} -gt ${MODELNIC} ] && [ "${ARCPATCH}" = "true" ] && dialog --backtitle "$(backtitlep)" --title "Arc Warning" --msgbox "WARN: You have more NIC (${DEVICENIC}) than supported by Model (${MODELNIC}).\nOnly the first ${MODELNIC} are used by Arc Patch." 6 80
+    [ "${AESSYS}" = "false" ] && dialog --backtitle "$(backtitlep)" --title "Arc Warning" --msgbox "WARN: Your System doesn't support Hardware encryption in DSM. (AES)" 5 70
+    [[ "${CPUFREQ}" = "false" || "${ACPISYS}" = "false" ]] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling" && dialog --backtitle "$(backtitlep)" --title "Arc Warning" --msgbox "WARN: It is possible that CPU Frequency Scaling is not working properly with your System." 6 80
   fi
-  EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
+  
   # eMMC Boot Support
+  EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
   if [ "${EMMCBOOT}" = "true" ]; then
     writeConfigKey "modules.mmc_block" "" "${USER_CONFIG_FILE}"
     writeConfigKey "modules.mmc_core" "" "${USER_CONFIG_FILE}"
@@ -559,13 +552,11 @@ function arcSettings() {
     deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
     deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
   fi
+  
+  # Final Config Check
   if [ -n "${PLATFORM}" ] && [ -n "${MODEL}" ] && [ -n "${KVER}" ] && [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-    # Config is done
     writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
-    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-    # Check for Custom Build
     if [ "${ARCMODE}" = "config" ]; then
-      # Ask for Build
       dialog --clear --backtitle "$(backtitlep)" --title "Config done" \
         --no-cancel --menu "Build now?" 7 40 0 \
         1 "Yes - Build Arc Loader now" \
@@ -573,19 +564,12 @@ function arcSettings() {
       2>"${TMP_PATH}/resp"
       resp=$(cat ${TMP_PATH}/resp)
       [ -z "${resp}" ] && return
-      if [ ${resp} -eq 1 ]; then
-        arcSummary
-      elif [ ${resp} -eq 2 ]; then
-        dialog --clear --no-items --backtitle "$(backtitle)"
-        return
-      fi
+      [ ${resp} -eq 1 ] && arcSummary || dialog --clear --no-items --backtitle "$(backtitle)"
     else
-      # Build Loader
       make
     fi
   else
-    dialog --backtitle "$(backtitle)" --title "Config failed" \
-      --msgbox "ERROR: Config failed!\nExit." 6 40
+    dialog --backtitle "$(backtitle)" --title "Config failed" --msgbox "ERROR: Config failed!\nExit." 6 40
     return 1
   fi
 }
@@ -604,19 +588,13 @@ function arcSummary() {
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
   REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
-  if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
-    PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
-    DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
-  elif [ "${REMAP}" = "remap" ]; then
-    PORTREMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
-  elif [ "${REMAP}" = "ahci" ]; then
-    AHCIPORTREMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
-  else
-    PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
-    DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
-    PORTREMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
-    AHCIPORTREMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
-  fi
+  
+  # Read remap configurations
+  PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
+  DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
+  PORTREMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
+  AHCIPORTREMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
+  
   DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
@@ -626,13 +604,14 @@ function arcSummary() {
   DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
-  if [ "${DT}" = "false" ] && [ "${REMAP}" = "user" ]; then
-    if [ -z "${PORTMAP}" ] && [ -z "${DISKMAP}"] && [ -z "${PORTREMAP}" ] && [ -z "${AHCIPORTREMAP}" ]; then
-      dialog --backtitle "$(backtitle)" --title "Arc Error" \
-        --msgbox "ERROR: You selected Portmap: User and not set any values. -> Can't build Loader!\nGo need to go Cmdline Options and add your Values." 6 80
-      return 1
-    fi
+  
+  # Check for user-defined remap values
+  if [ "${DT}" = "false" ] && [ "${REMAP}" = "user" ] && [ -z "${PORTMAP}${DISKMAP}${PORTREMAP}${AHCIPORTREMAP}" ]; then
+    dialog --backtitle "$(backtitle)" --title "Arc Error" \
+      --msgbox "ERROR: You selected Portmap: User and not set any values. -> Can't build Loader!\nGo need to go Cmdline Options and add your Values." 6 80
+    return 1
   fi
+  
   # Print Summary
   SUMMARY="\Z4> DSM Information\Zn"
   SUMMARY+="\n>> Model: \Zb${MODEL}\Zn"
@@ -657,24 +636,21 @@ function arcSummary() {
   SUMMARY+="\n>> Addons: \Zb${ADDONSINFO}\Zn"
   SUMMARY+="\n"
   SUMMARY+="\n\Z4> Device Information\Zn"
-  SUMMARY+="\n>> AES: \Zb${AESSYS}\Zn"
-  SUMMARY+="\n>> CPU FreqScaling | ACPI: \Zb${CPUFREQ} | ${ACPISYS}\Zn"
   SUMMARY+="\n>> NIC: \Zb${NIC}\Zn"
   SUMMARY+="\n>> Total Disks: \Zb${DRIVES}\Zn"
   SUMMARY+="\n>> Internal Disks: \Zb${HARDDRIVES}\Zn"
   SUMMARY+="\n>> Additional Controller: \Zb${EXTERNALCONTROLLER}\Zn"
-  SUMMARY+="\n>> Memory: \Zb${RAMTOTAL}GB\Zn"
+  SUMMARY+="\n"
+  
   dialog --backtitle "$(backtitlep)" --colors --title "Config Summary" \
     --extra-button --extra-label "Cancel" --msgbox "${SUMMARY}" 0 0
+  
   RET=$?
   case ${RET} in
     0)
       make
       ;;
-    3)
-      return 0
-      ;;
-    255)
+    3|255)
       return 0
       ;;
   esac
@@ -750,25 +726,22 @@ function arcFinish() {
   STEP="boot"
   rm -f "${LOG_FILE}" >/dev/null 2>&1 || true
   MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
+  
   if [ -n "${MODELID}" ]; then
     writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  
     if [ "${ARCMODE}" = "automated" ] || [ "${UPDATEMODE}" = "true" ]; then
       boot
     else
       # Ask for Boot
-      dialog --clear --backtitle "$(backtitle)" --title "Build done"\
+      dialog --clear --backtitle "$(backtitle)" --title "Build done" \
         --no-cancel --menu "Boot now?" 7 40 0 \
         1 "Yes - Boot DSM now" \
         2 "No - I want to make changes" \
       2>"${TMP_PATH}/resp"
-      resp=$(cat ${TMP_PATH}/resp)
-      [ -z "${resp}" ] && return
-      if [ ${resp} -eq 1 ]; then
-        boot
-      elif [ ${resp} -eq 2 ]; then
-        return
-      fi
+      resp=$(cat "${TMP_PATH}/resp")
+      [ "${resp}" -eq 1 ] && boot || return
     fi
   fi
 }

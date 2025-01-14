@@ -14,6 +14,18 @@ F kvm.ko
 
 # acpi
 N acpi_call.ko
+N acpi-cpufreq.ko
+N processor.ko
+N button.ko
+
+# cpufreq
+N cpufreq_governor.ko
+N cpufreq_ondemand.ko
+N cpufreq_conservative.ko
+N cpufreq_performance.ko
+N cpufreq_powersave.ko
+N cpufreq_userspace.ko
+N cpufreq_stats.ko
 
 # misc
 N check_signature.ko
