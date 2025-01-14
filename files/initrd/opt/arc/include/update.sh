@@ -459,7 +459,12 @@ function updateOffline() {
   if [ "${ARCOFFLINE}" != "true" ]; then
     [ -f "${MODEL_CONFIG_PATH}/data.yml" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml" "${MODEL_CONFIG_PATH}/data.yml.bak" || true
     curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/refs/heads/main/data.yml" -o "${MODEL_CONFIG_PATH}/data.yml"
-    [ ! -f "${MODEL_CONFIG_PATH}/data.yml" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml.bak" "${MODEL_CONFIG_PATH}/data.yml" || true
+    
+    # Check file size and restore backup if necessary
+    local FILESIZE=$(stat -c%s "${MODEL_CONFIG_PATH}/data.yml")
+    if [ "${FILESIZE}" -lt 3072 ]; then
+      cp -f "${MODEL_CONFIG_PATH}/data.yml.bak" "${MODEL_CONFIG_PATH}/data.yml"
+    fi
   fi
   return 0
 }
@@ -467,34 +472,24 @@ function updateOffline() {
 ###############################################################################
 # Loading Update Mode
 function dependenciesUpdate() {
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  FAILED="false"
   dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
     --infobox "Updating Dependencies..." 3 40
   sleep 2
-  updateAddons
-  [ $? -ne 0 ] && FAILED="true"
-  updateModules
-  [ $? -ne 0 ] && FAILED="true"
-  updateCustom
-  [ $? -ne 0 ] && FAILED="true"
-  updatePatches
-  [ $? -ne 0 ] && FAILED="true"
-  updateLKMs
-  [ $? -ne 0 ] && FAILED="true"
-  updateOffline
-  [ $? -ne 0 ] && FAILED="true"
+
+  FAILED="false"
+  for updateFunction in updateAddons updateModules updateCustom updatePatches updateLKMs updateOffline; do
+    $updateFunction || FAILED="true"
+  done
+
   if [ "${FAILED}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
       --infobox "Update Dependencies failed! Try again later." 3 40
-    sleep 3
-  elif [ "${FAILED}" = "false" ]; then
+  else
     dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
       --infobox "Update Dependencies successful!" 3 40
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    sleep 3
-    clear
-    exec arc.sh
   fi
+  sleep 3
+  clear
+  exec arc.sh
 }

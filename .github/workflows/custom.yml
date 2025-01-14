@@ -247,7 +247,7 @@ jobs:
             arc-${{ env.MODEL }}-${{ env.VERSION }} is ready to download: ${{ env.FIOURL }}
             > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-            If this will not work, do not use customized Versions!
+            If this isn't working, do not use customized Versions!
             ----
 
       - name: Update Comment Fail
@@ -260,10 +260,8 @@ jobs:
           update-mode: replace
           body: |
             Hi @${{ github.event.issue.user.login }}.  
-            arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} failed to build and package, please try again.  
+            arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} failed to build and package, please try again later.  
             > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} 
-
-            If this will not work, do not use customized Versions!
             ----
 
       - name: Close Issues
