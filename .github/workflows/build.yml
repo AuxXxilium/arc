@@ -198,6 +198,7 @@ jobs:
 
       # Cleanup
       - name: Cleanup
+        if: ${{ inputs.minimal }}
         run: |
           rm -rf "arc.img" "arc.vmdk" "arc-dyn.vmdk" "arc-flat.vmdk" "arc.vhd" "arc.ova" "arc.vmc" 2>/dev/null
 
@@ -282,6 +283,7 @@ jobs:
 
       # Cleanup
       - name: Cleanup
+        if: ${{ inputs.microcode }}
         run: |
           rm -rf "arc.img" "arc.vmdk" "arc-dyn.vmdk" "arc-flat.vmdk" "arc.vhd" "arc.ova" "arc.vmc" 2>/dev/null
 
