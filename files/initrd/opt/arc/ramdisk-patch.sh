@@ -43,9 +43,6 @@ ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
 PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
 PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
 
-[ "${PATURL:0:1}" = "#" ] && PATURL=""
-[ "${PATSUM:0:1}" = "#" ] && PATSUM=""
-
 # Check if DSM Version changed
 . "${RAMDISK_PATH}/etc/VERSION"
 
@@ -55,6 +52,16 @@ if [[ -n "${PRODUCTVER}" && -n "${BUILDNUM}" && -n "${SMALLNUM}" ]] &&
   NEWVER="${majorversion}.${minorversion}(${buildnumber}$([[ ${smallfixnumber:-0} -ne 0 ]] && echo "u${smallfixnumber}"))"
   PAT_URL=""
   PAT_HASH=""
+  echo "Version changed from ${OLDVER} to ${NEWVER}"
+fi
+
+[ "${PATURL:0:1}" = "#" ] && PATURL=""
+[ "${PATSUM:0:1}" = "#" ] && PATSUM=""
+
+# Re-read PAT_URL and PAT_HASH if they are empty
+if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
+  PAT_URL="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${majorversion}.${minorversion}\".url" "${D_FILE}")"
+  PAT_HASH="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${majorversion}.${minorversion}\".hash" "${D_FILE}")"
 fi
 
 PRODUCTVER="${majorversion}.${minorversion}"
@@ -71,7 +78,7 @@ KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver"
 
 # Sanity check
 if [ -z "${PLATFORM}" ] || [ -z "${KVER}" ]; then
-  echo "ERROR: Configuration for model ${MODEL} and productversion ${PRODUCTVER} not found." >"${LOG_FILE}"
+  echo "ERROR: Configuration for Model ${MODEL} and Version ${PRODUCTVER} not found." >"${LOG_FILE}"
   exit 1
 fi
 
