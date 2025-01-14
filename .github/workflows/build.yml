@@ -38,7 +38,7 @@ on:
         type: boolean
       microcode:
         description: "microcode"
-        default: true
+        default: false
         type: boolean
       extended:
         description: "extended"
@@ -168,8 +168,9 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           # Resize Image
-          resizeImg "${IMAGE_FILE}" "+1024M" "arc_2G.img" 2>/dev/null
-          mv -f "arc_2G.img" "${IMAGE_FILE}"
+          resizeImg "${IMAGE_FILE}" "+1024M" "arc2G.img" 2>/dev/null
+          rm -f "${IMAGE_FILE}"
+          mv -f "arc2G.img" "${IMAGE_FILE}"
 
           echo "Image Converter"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
@@ -198,7 +199,7 @@ jobs:
 
       # Cleanup
       - name: Cleanup
-        if: ${{ inputs.minimal }}
+        if: ${{ inputs.extended }}
         run: |
           rm -rf "arc.img" "arc.vmdk" "arc-dyn.vmdk" "arc-flat.vmdk" "arc.vhd" "arc.ova" "arc.vmc" 2>/dev/null
 
@@ -253,8 +254,9 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           # Resize Image
-          resizeImg "${IMAGE_FILE}" "+1024M" "arc_2G.img" 2>/dev/null
-          mv -f "arc_2G.img" "${IMAGE_FILE}"
+          resizeImg "${IMAGE_FILE}" "+1024M" "arc2G.img" 2>/dev/null
+          rm -f "${IMAGE_FILE}"
+          mv -f "arc2G.img" "${IMAGE_FILE}"
 
           echo "Image Converter"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
@@ -283,7 +285,7 @@ jobs:
 
       # Cleanup
       - name: Cleanup
-        if: ${{ inputs.microcode }}
+        if: ${{ inputs.minimal }}
         run: |
           rm -rf "arc.img" "arc.vmdk" "arc-dyn.vmdk" "arc-flat.vmdk" "arc.vhd" "arc.ova" "arc.vmc" 2>/dev/null
 
@@ -338,8 +340,9 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           # Resize Image
-          resizeImg "${IMAGE_FILE}" "+1024M" "arc_2G.img" 2>/dev/null
-          mv -f "arc_2G.img" "${IMAGE_FILE}"
+          resizeImg "${IMAGE_FILE}" "+1024M" "arc2G.img" 2>/dev/null
+          rm -f "${IMAGE_FILE}"
+          mv -f "arc2G.img" "${IMAGE_FILE}"
 
           echo "Image Converter"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
