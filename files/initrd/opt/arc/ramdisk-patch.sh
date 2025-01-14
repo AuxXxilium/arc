@@ -50,15 +50,17 @@ PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
 . "${RAMDISK_PATH}/etc/VERSION"
 
 if [[ -n "${PRODUCTVER}" && -n "${BUILDNUM}" && -n "${SMALLNUM}" ]] &&
-  ([ "${PRODUCTVER}" != "${majorversion}.${minorversion}" ] || [ "${BUILDNUM}" != "${buildnumber}" ] || [ "${SMALLNUM}" != "${smallfixnumber}" ]); then
-  OLDVER="${PRODUCTVER}(${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))"
-  NEWVER="${majorversion}.${minorversion}(${buildnumber}$([ ${smallfixnumber:-0} -ne 0 ] && echo "u${smallfixnumber}"))"
+  ([[ "${PRODUCTVER}" != "${majorversion}.${minorversion}" ]] || [[ "${BUILDNUM}" != "${buildnumber}" ]] || [[ "${SMALLNUM}" != "${smallfixnumber}" ]]); then
+  OLDVER="${PRODUCTVER}(${BUILDNUM}$([[ ${SMALLNUM:-0} -ne 0 ]] && echo "u${SMALLNUM}"))"
+  NEWVER="${majorversion}.${minorversion}(${buildnumber}$([[ ${smallfixnumber:-0} -ne 0 ]] && echo "u${smallfixnumber}"))"
   PAT_URL=""
   PAT_HASH=""
 fi
-PRODUCTVER=${majorversion}.${minorversion}
-BUILDNUM=${buildnumber}
-SMALLNUM=${smallfixnumber}
+
+PRODUCTVER="${majorversion}.${minorversion}"
+BUILDNUM="${buildnumber}"
+SMALLNUM="${smallfixnumber}"
+
 writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
 writeConfigKey "buildnum" "${BUILDNUM}" "${USER_CONFIG_FILE}"
 writeConfigKey "smallnum" "${SMALLNUM}" "${USER_CONFIG_FILE}"
@@ -75,14 +77,13 @@ if [ -z "${PLATFORM}" ] || [ -z "${KVER}" ]; then
   exit 1
 fi
 
-declare -A SYNOINFO
-declare -A ADDONS
-declare -A MODULES
-
 # Read synoinfo and addons from config
+declare -A SYNOINFO ADDONS MODULES
+
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
 done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
+
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
 done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
@@ -93,32 +94,29 @@ while IFS=': ' read -r KEY VALUE; do
 done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 # Patches (diff -Naru OLDFILE NEWFILE > xxx.patch)
-PATCHS=(
+PATCHES=(
   "ramdisk-etc-rc-*.patch"
   "ramdisk-init-script-*.patch"
   "ramdisk-post-init-script-*.patch"
   "ramdisk-disable-root-pwd-*.patch"
   "ramdisk-disable-disabled-ports-*.patch"
 )
-for PE in "${PATCHS[@]}"; do
-  RET=1
-  echo "Patching with ${PE}" >"${LOG_FILE}"
-  # ${PE} contains *, so double quotes cannot be added
-  for PF in $(ls ${PATCH_PATH}/${PE} 2>/dev/null); do
-    echo "Patching with ${PF}" >>"${LOG_FILE}"
-    # busybox patch and gun patch have different processing methods and parameters.
-    (cd "${RAMDISK_PATH}" && busybox patch -p1 -i "${PF}") >>"${LOG_FILE}" 2>&1
-    RET=$?
-    [ ${RET} -eq 0 ] && break
+
+for PATCH in "${PATCHES[@]}"; do
+  echo "Patching with ${PATCH}" >>"${LOG_FILE}"
+  for FILE in ${PATCH_PATH}/${PATCH}; do
+    [ -e "${FILE}" ] || continue
+    echo "Applying patch ${FILE}" >>"${LOG_FILE}"
+    (cd "${RAMDISK_PATH}" && busybox patch -p1 -i "${FILE}") >>"${LOG_FILE}" 2>&1 || exit 1
   done
-  [ ${RET} -ne 0 ] && exit 1
 done
 
-# Add serial number to synoinfo.conf, to help to recovery a installed DSM
-echo "Set synoinfo SN" >"${LOG_FILE}"
+# Add serial number to synoinfo.conf, to help to recover an installed DSM
+echo "Set synoinfo SN" >>"${LOG_FILE}"
 _set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
 _set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
-for KEY in ${!SYNOINFO[@]}; do
+
+for KEY in "${!SYNOINFO[@]}"; do
   echo "Set synoinfo ${KEY}" >>"${LOG_FILE}"
   _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
   _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
