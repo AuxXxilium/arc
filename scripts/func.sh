@@ -317,36 +317,40 @@ function repackInitrd() {
   sudo rm -rf "${RDXZ_PATH}"
 }
 
-# resizeimg
+# resizeImg
 # $1 input file  
-# $2 changsize MB eg: +50M -50M
+# $2 change size MB e.g., +50M -50M
 # $3 output file
 function resizeImg() {
-  INPUT_FILE="${1}"
-  CHANGE_SIZE="${2}"
-  OUTPUT_FILE="${3:-${INPUT_FILE}}"
+  local INPUT_FILE="${1}"
+  local CHANGE_SIZE="${2}"
+  local OUTPUT_FILE="${3:-${INPUT_FILE}}"
 
-  [[ -z "${INPUT_FILE}" || ! -f "${INPUT_FILE}" ]] && exit 1
-  [ -z "${CHANGE_SIZE}" ] && exit 1
+  [[ -z "${INPUT_FILE}" || ! -f "${INPUT_FILE}" ]] && { echo "Input file not specified or does not exist"; exit 1; }
+  [[ -z "${CHANGE_SIZE}" ]] && { echo "Change size not specified"; exit 1; }
 
   INPUT_FILE="$(realpath "${INPUT_FILE}")"
   OUTPUT_FILE="$(realpath "${OUTPUT_FILE}")"
 
+  local CURRENT_SIZE
+  CURRENT_SIZE=$(du -m "${INPUT_FILE}" | awk '{print $1}')
+  local SIZE
+  SIZE=$((CURRENT_SIZE + ${CHANGE_SIZE//M/}))
 
-  SIZE=$(($(du -m "${INPUT_FILE}" | awk '{print $1}')$(echo "${CHANGE_SIZE}" | sed 's/M//g; s/b//g')))
-  [[ -z "${SIZE}" || "${SIZE}" -lt 0 ]] && exit 1
+  [[ -z "${SIZE}" || "${SIZE}" -lt 0 ]] && { echo "Invalid size calculated"; exit 1; }
 
-  if [ ! "${INPUT_FILE}" = "${OUTPUT_FILE}" ]; then
+  if [[ "${INPUT_FILE}" != "${OUTPUT_FILE}" ]]; then
     sudo cp -f "${INPUT_FILE}" "${OUTPUT_FILE}"
   fi
 
-  sudo truncate -s ${SIZE}M "${OUTPUT_FILE}"
-  echo -e "d\n\nn\n\n\n\n\nn\nw" | sudo fdisk "${OUTPUT_FILE}"
+  sudo truncate -s "${SIZE}M" "${OUTPUT_FILE}"
+  echo -e "d\nn\n\n\n\n\nw" | sudo fdisk "${OUTPUT_FILE}"
+  local LOOPX
   LOOPX=$(sudo losetup -f)
-  sudo losetup -P ${LOOPX} "${OUTPUT_FILE}"
-  sudo e2fsck -fp $(ls ${LOOPX}* | sort -n | tail -1)
-  sudo resize2fs $(ls ${LOOPX}* | sort -n | tail -1)
-  sudo losetup -d ${LOOPX}
+  sudo losetup -P "${LOOPX}" "${OUTPUT_FILE}"
+  sudo e2fsck -fp "$(ls "${LOOPX}"* | sort -n | tail -1)"
+  sudo resize2fs "$(ls "${LOOPX}"* | sort -n | tail -1)"
+  sudo losetup -d "${LOOPX}"
 }
 
 # createvmx
