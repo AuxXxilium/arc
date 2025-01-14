@@ -943,16 +943,19 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Switch Arc Branch" \
           --menu "Choose a Branch" 0 0 0 \
           1 "minimal - reduced size and faster boot" \
-          2 "extended - new features to test" \
-          3 "dev - Development only" \
+          2 "microcode - minimal with microcode" \
+          3 "extended - new features to test" \
+          4 "dev - Development only" \
           2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && break
         opts=$(cat ${TMP_PATH}/opts)
         if [ ${opts} -eq 1 ]; then
           ARC_BRANCH="minimal"
         elif [ ${opts} -eq 2 ]; then
-          ARC_BRANCH="extended"
+          ARC_BRANCH="microcode"
         elif [ ${opts} -eq 3 ]; then
+          ARC_BRANCH="extended"
+        elif [ ${opts} -eq 4 ]; then
           ARC_BRANCH="dev"
         fi
         writeConfigKey "arc.branch" "${ARC_BRANCH}" "${USER_CONFIG_FILE}"
