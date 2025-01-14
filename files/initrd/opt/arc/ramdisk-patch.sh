@@ -109,10 +109,13 @@ PATCHES=(
 
 for PATCH in "${PATCHES[@]}"; do
   echo "Patching with ${PATCH}" >>"${LOG_FILE}"
-  for FILE in ${PATCH_PATH}/${PATCH}; do
-    [ -e "${FILE}" ] || continue
-    echo "Applying patch ${FILE}" >>"${LOG_FILE}"
-    (cd "${RAMDISK_PATH}" && busybox patch -p1 -i "${FILE}") >>"${LOG_FILE}" 2>&1 || exit 1
+  for PF in ${PATCH_PATH}/${PATCH}; do
+    [ -e "${PF}" ] || continue
+    echo "Applying patch ${PF}" >>"${LOG_FILE}"
+    if ! (cd "${RAMDISK_PATH}" && busybox patch -p1 -i "${PF}") >>"${LOG_FILE}" 2>&1; then
+      echo "Failed to apply patch ${FILE}" >>"${LOG_FILE}"
+      continue
+    fi
   done
 done
 
