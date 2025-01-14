@@ -112,6 +112,7 @@ jobs:
           echo "THEMETAG=${THEMETAG}" >> $GITHUB_ENV
           echo "BRXTAG=${BRXTAG}" >> $GITHUB_ENV
           echo "BRSTAG=${BRSTAG}" >> $GITHUB_ENV
+          echo "BRMTAG=${BRMTAG}" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
@@ -167,11 +168,10 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           # Resize Image
-          resizeImg "${IMAGE_FILE}" "+1024M" "arc.img" 2>/dev/null
-          rm -f "${IMAGE_FILE}"
+          resizeImg "${IMAGE_FILE}" "+1024M" "arc_2G.img" 2>/dev/null
+          mv -f "arc_2G.img" "${IMAGE_FILE}"
 
           echo "Image Converter"
-          IMAGE_FILE="arc.img"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
 
@@ -219,7 +219,7 @@ jobs:
           echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
-          IMAGE_FILE="arc_create.img"
+          IMAGE_FILE="arc.img"
           gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
@@ -252,11 +252,10 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           # Resize Image
-          resizeImg "${IMAGE_FILE}" "+1024M" "arc.img" 2>/dev/null
-          rm -f "${IMAGE_FILE}"
+          resizeImg "${IMAGE_FILE}" "+1024M" "arc_2G.img" 2>/dev/null
+          mv -f "arc_2G.img" "${IMAGE_FILE}"
 
           echo "Image Converter"
-          IMAGE_FILE="arc.img"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
 
@@ -337,11 +336,10 @@ jobs:
           sudo losetup --detach ${LOOPX}
 
           # Resize Image
-          resizeImg "${IMAGE_FILE}" "+1024M" "arc.img" 2>/dev/null
-          rm -f "${IMAGE_FILE}"
+          resizeImg "${IMAGE_FILE}" "+1024M" "arc_2G.img" 2>/dev/null
+          mv -f "arc_2G.img" "${IMAGE_FILE}"
 
           echo "Image Converter"
-          IMAGE_FILE="arc.img"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
 
