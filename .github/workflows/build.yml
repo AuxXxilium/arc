@@ -133,10 +133,12 @@ jobs:
           ARC_BUILD="$(date +'%y%m%d')"
           ARC_VERSION="${{ inputs.version }}"
           ARC_BRANCH="extended"
-          for file in ARC-BUILD ARC-VERSION ARC-BRANCH; do
-            echo "${!file}" > "files/p1/${file}"
-            echo "${file}=${!file}" >> $GITHUB_ENV
-          done
+          echo "${ARC_BUILD}" > "files/p1/ARC-BUILD"
+          echo "ARC-BUILD=${ARC_BUILD}" >> $GITHUB_ENV
+          echo "${ARC_VERSION}" > "files/p1/ARC-VERSION"
+          echo "ARC-VERSION=${ARC_VERSION}" >> $GITHUB_ENV
+          echo "${ARC_BRANCH}" > "files/p1/ARC-BRANCH"
+          echo "ARC-BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -212,10 +214,12 @@ jobs:
           ARC_BUILD="$(date +'%y%m%d')"
           ARC_VERSION="${{ inputs.version }}"
           ARC_BRANCH="minimal"
-          for file in ARC-BUILD ARC-VERSION ARC-BRANCH; do
-            echo "${!file}" > "files/p1/${file}"
-            echo "${file}=${!file}" >> $GITHUB_ENV
-          done
+          echo "${ARC_BUILD}" > "files/p1/ARC-BUILD"
+          echo "ARC-BUILD=${ARC_BUILD}" >> $GITHUB_ENV
+          echo "${ARC_VERSION}" > "files/p1/ARC-VERSION"
+          echo "ARC-VERSION=${ARC_VERSION}" >> $GITHUB_ENV
+          echo "${ARC_BRANCH}" > "files/p1/ARC-BRANCH"
+          echo "ARC-BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -291,10 +295,12 @@ jobs:
           ARC_BUILD="$(date +'%y%m%d')"
           ARC_VERSION="${{ inputs.version }}"
           ARC_BRANCH="microcode"
-          for file in ARC-BUILD ARC-VERSION ARC-BRANCH; do
-            echo "${!file}" > "files/p1/${file}"
-            echo "${file}=${!file}" >> $GITHUB_ENV
-          done
+          echo "${ARC_BUILD}" > "files/p1/ARC-BUILD"
+          echo "ARC-BUILD=${ARC_BUILD}" >> $GITHUB_ENV
+          echo "${ARC_VERSION}" > "files/p1/ARC-VERSION"
+          echo "ARC-VERSION=${ARC_VERSION}" >> $GITHUB_ENV
+          echo "${ARC_BRANCH}" > "files/p1/ARC-BRANCH"
+          echo "ARC-BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
