@@ -319,7 +319,7 @@ function arcVersion() {
   # Change Config if Files are valid
   if [ "${VALID}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Config" \
-      --infobox "Reconfiguring Addons, Cmdline, Modules and Synoinfo" 3 60
+      --infobox "Reconfiguring Cmdline, Modules and Synoinfo" 3 60
     # Reset Synoinfo
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
     while IFS=': ' read -r KEY VALUE; do
