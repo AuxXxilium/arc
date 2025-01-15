@@ -178,13 +178,8 @@ function getmapSelection() {
       REMAP1="*"
     fi
   
-    if [ "${STEP}" = "storagemap" ]; then
-      show_dialog
-      set_remap
-    else
-      show_dialog
-      set_remap
-    fi
+    show_dialog
+    set_remap
   else
     # Show recommended Option to user
     if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ "${MACHINE}" = "Native" ]; then
