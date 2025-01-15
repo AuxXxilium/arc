@@ -46,12 +46,12 @@ PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
 # Check if DSM Version changed
 . "${RAMDISK_PATH}/etc/VERSION"
 
-if [[ "${PRODUCTVER}" != "${majorversion}.${minorversion}" || "${BUILDNUM}" != "${buildnumber}" || "${SMALLNUM}" != "${smallfixnumber}" ]]; then
+if [[ -n "${BUILDNUM}" && ("${PRODUCTVER}" != "${majorversion}.${minorversion}" || "${BUILDNUM}" != "${buildnumber}" || "${SMALLNUM}" != "${smallfixnumber}") ]]; then
   OLDVER="${PRODUCTVER}(${BUILDNUM}$([[ ${SMALLNUM:-0} -ne 0 ]] && echo "u${SMALLNUM}"))"
   NEWVER="${majorversion}.${minorversion}(${buildnumber}$([[ ${smallfixnumber:-0} -ne 0 ]] && echo "u${smallfixnumber}"))"
   PAT_URL=""
   PAT_HASH=""
-  echo "Version changed from ${OLDVER} to ${NEWVER}"
+  echo "\nVersion changed from ${OLDVER} to ${NEWVER}"
 fi
 
 # Re-read PAT_URL and PAT_HASH if they are empty or commented out
