@@ -46,8 +46,7 @@ PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
 # Check if DSM Version changed
 . "${RAMDISK_PATH}/etc/VERSION"
 
-if [[ -n "${PRODUCTVER}" && -n "${BUILDNUM}" && -n "${SMALLNUM}" ]] &&
-  ([[ "${PRODUCTVER}" != "${majorversion}.${minorversion}" ]] || [[ "${BUILDNUM}" != "${buildnumber}" ]] || [[ "${SMALLNUM}" != "${smallfixnumber}" ]]); then
+if [[ "${PRODUCTVER}" != "${majorversion}.${minorversion}" || "${BUILDNUM}" != "${buildnumber}" || "${SMALLNUM}" != "${smallfixnumber}" ]]; then
   OLDVER="${PRODUCTVER}(${BUILDNUM}$([[ ${SMALLNUM:-0} -ne 0 ]] && echo "u${SMALLNUM}"))"
   NEWVER="${majorversion}.${minorversion}(${buildnumber}$([[ ${smallfixnumber:-0} -ne 0 ]] && echo "u${smallfixnumber}"))"
   PAT_URL=""
@@ -55,12 +54,11 @@ if [[ -n "${PRODUCTVER}" && -n "${BUILDNUM}" && -n "${SMALLNUM}" ]] &&
   echo "Version changed from ${OLDVER} to ${NEWVER}"
 fi
 
-[ "${PATURL:0:1}" = "#" ] && PATURL=""
-[ "${PATSUM:0:1}" = "#" ] && PATSUM=""
-
-# Re-read PAT_URL and PAT_HASH if they are empty
-if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
+# Re-read PAT_URL and PAT_HASH if they are empty or commented out
+if [[ -z "${PAT_URL}" || "${PAT_URL:0:1}" == "#" ]]; then
   PAT_URL="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${majorversion}.${minorversion}\".url" "${D_FILE}")"
+fi
+if [[ -z "${PAT_HASH}" || "${PAT_HASH:0:1}" == "#" ]]; then
   PAT_HASH="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${majorversion}.${minorversion}\".hash" "${D_FILE}")"
 fi
 
@@ -120,14 +118,18 @@ for PATCH in "${PATCHES[@]}"; do
 done
 
 # Add serial number to synoinfo.conf, to help to recover an installed DSM
-echo "Set synoinfo SN" >>"${LOG_FILE}"
-_set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
-_set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
+{
+  echo "Set synoinfo SN"
+  _set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc/synoinfo.conf" || exit 1
+  _set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" || exit 1
+} >>"${LOG_FILE}" 2>&1
 
 for KEY in "${!SYNOINFO[@]}"; do
-  echo "Set synoinfo ${KEY}" >>"${LOG_FILE}"
-  _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
-  _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
+  {
+    echo "Set synoinfo ${KEY}"
+    _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc/synoinfo.conf" || exit 1
+    _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" || exit 1
+  } >>"${LOG_FILE}" 2>&1
 done
 
 # Patch /sbin/init.post
