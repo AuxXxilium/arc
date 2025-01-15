@@ -483,7 +483,6 @@ function arcSettings() {
   PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   
   # Network Config for Loader
   if [ "${ARCMODE}" = "config" ]; then
