@@ -556,6 +556,7 @@ function arcSettings() {
   # Final Config Check
   if [ -n "${PLATFORM}" ] && [ -n "${MODEL}" ] && [ -n "${KVER}" ] && [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
     writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
+    CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
     if [ "${ARCMODE}" = "config" ]; then
       dialog --clear --backtitle "$(backtitlep)" --title "Config done" \
         --no-cancel --menu "Build now?" 7 40 0 \
