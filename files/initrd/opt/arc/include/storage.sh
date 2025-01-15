@@ -1,46 +1,29 @@
 # Get PortMap for Loader
-function detect_drives() {
-  local pci_id=$1
-  local drive_var=$2
-  local class_path=$3
-  local grep_pattern=$4
-  local sed_pattern=$5
-
-  eval "${drive_var}=0"
-  if [ $(lspci -d ::${pci_id} 2>/dev/null | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::${pci_id} 2>/dev/null | awk '{print $1}'); do
-      PORT=$(ls -l ${class_path} | grep "${PCI}" | awk -F'/' '{print $NF}' | sed "${sed_pattern}" | sort -n 2>/dev/null)
-      PORTNUM=$(lsscsi -b | grep -v - | grep "${grep_pattern}${PORT}:" | wc -l)
-      eval "${drive_var}=\$((\${${drive_var}} + \${PORTNUM}))"
-    done
-  fi
-}
-
-function show_dialog() {
-  dialog --backtitle "$(backtitle)" --title "Sata Portmap" \
-    --menu "Choose a Portmap for Sata!?\n* Recommended Option" 8 60 0 \
-    1 "DiskIdxMap: Active Ports ${REMAP1}" \
-    2 "DiskIdxMap: Max Ports ${REMAP2}" \
-    3 "SataRemap: Remove empty Ports ${REMAP3}" \
-    4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
-    5 "Set my own Portmap in Config" \
-  2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return 1
-  resp=$(cat "${TMP_PATH}/resp")
-  [ -z "${resp}" ] && return 1
-}
-
-function set_remap() {
-  case ${resp} in
-    1) writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}" ;;
-    2) writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}" ;;
-    3) writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}" ;;
-    4) writeConfigKey "arc.remap" "ahci" "${USER_CONFIG_FILE}" ;;
-    5) writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}" ;;
-  esac
-}
-
 function getmap() {
+  function show_dialog() {
+    dialog --backtitle "$(backtitle)" --title "Sata Portmap" \
+      --menu "Choose a Portmap for Sata!?\n* Recommended Option" 8 60 0 \
+      1 "DiskIdxMap: Active Ports ${REMAP1}" \
+      2 "DiskIdxMap: Max Ports ${REMAP2}" \
+      3 "SataRemap: Remove empty Ports ${REMAP3}" \
+      4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
+      5 "Set my own Portmap in Config" \
+    2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && return 1
+    resp=$(cat "${TMP_PATH}/resp")
+    [ -z "${resp}" ] && return 1
+  }
+
+  function set_remap() {
+    case ${resp} in
+      1) writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}" ;;
+      2) writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}" ;;
+      3) writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}" ;;
+      4) writeConfigKey "arc.remap" "ahci" "${USER_CONFIG_FILE}" ;;
+      5) writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}" ;;
+    esac
+  }
+
   # Sata Disks
   SATADRIVES=0
   if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
@@ -48,34 +31,34 @@ function getmap() {
     for file in drivesmax drivescon ports remap; do
       > "${TMP_PATH}/${file}"
     done
-  
+
     DISKIDXMAPIDX=0
     DISKIDXMAP=""
     DISKIDXMAPIDXMAX=0
     DISKIDXMAPMAX=""
-  
+
     for PCI in $(lspci -d ::106 2>/dev/null | awk '{print $1}'); do
       NUMPORTS=0
       CONPORTS=0
       declare -A HOSTPORTS
-  
+
       while read -r LINE; do
         PORT=$(echo ${LINE} | grep -o 'ata[0-9]*' | sed 's/ata//')
         HOSTPORTS[${PORT}]=$(echo ${LINE} | grep -o 'host[0-9]*$')
       done < <(ls -l /sys/class/scsi_host | grep -F "${PCI}")
-  
+
       for PORT in $(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n); do
         ATTACH=$(ls -l /sys/block | grep -F -q "${PCI}/ata${PORT}" && echo 1 || echo 0)
         PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
         DUMMY=$([ ${PCMD} = 0 ] && echo 1 || echo 0)
-  
+
         [ ${ATTACH} = 1 ] && CONPORTS=$((CONPORTS + 1)) && echo $((PORT - 1)) >>"${TMP_PATH}/ports"
         NUMPORTS=$((NUMPORTS + 1))
       done
-  
+
       NUMPORTS=$((NUMPORTS > 8 ? 8 : NUMPORTS))
       CONPORTS=$((CONPORTS > 8 ? 8 : CONPORTS))
-  
+
       echo -n "${NUMPORTS}" >>"${TMP_PATH}/drivesmax"
       echo -n "${CONPORTS}" >>"${TMP_PATH}/drivescon"
       DISKIDXMAP+=$(printf "%02x" $DISKIDXMAPIDX)
@@ -87,16 +70,44 @@ function getmap() {
   fi
 
   # SAS Disks
-  detect_drives "107" "SASDRIVES" "/sys/class/scsi_host" "\[${PORT}:" "s/host//"
+  SASDRIVES=0
+  if [ $(lspci -d ::107 2>/dev/null | wc -l) -gt 0 ]; then
+    for PCI in $(lspci -d ::107 2>/dev/null | awk '{print $1}'); do
+      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
+      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+      SASDRIVES=$((SASDRIVES + PORTNUM))
+    done
+  fi
 
   # SCSI Disks
-  detect_drives "100" "SCSIDRIVES" "/sys/class/scsi_host" "\[${PORT}:" "s/host//"
+  SCSIDRIVES=0
+  if [ $(lspci -d ::100 2>/dev/null | wc -l) -gt 0 ]; then
+    for PCI in $(lspci -d ::100 2>/dev/null | awk '{print $1}'); do
+      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
+      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+      SCSIDRIVES=$((SCSIDRIVES + PORTNUM))
+    done
+  fi
 
   # Raid Disks
-  detect_drives "104" "RAIDDRIVES" "/sys/class/scsi_host" "\[${PORT}:" "s/host//"
+  RAIDDRIVES=0
+  if [ $(lspci -d ::104 2>/dev/null | wc -l) -gt 0 ]; then
+    for PCI in $(lspci -d ::104 2>/dev/null | awk '{print $1}'); do
+      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
+      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
+      RAIDDRIVES=$((RAIDDRIVES + PORTNUM))
+    done
+  fi
 
   # NVMe Disks
-  detect_drives "108" "NVMEDRIVES" "/sys/class/nvme" "\[N:${PORT}:" "s/nvme//"
+  NVMEDRIVES=0
+  if [ $(ls -l /sys/class/nvme 2>/dev/null | wc -l) -gt 0 ]; then
+    for PCI in $(lspci -d ::108 2>/dev/null | awk '{print $1}'); do
+      PORTNUM=$(ls -l /sys/class/nvme | grep "${PCI}" | wc -l 2>/dev/null)
+      [ ${PORTNUM} -eq 0 ] && continue
+      NVMEDRIVES=$((NVMEDRIVES + PORTNUM))
+    done
+  fi
 
   # USB Disks
   USBDRIVES=0
@@ -167,13 +178,8 @@ function getmapSelection() {
       REMAP1="*"
     fi
   
-    if [ "${STEP}" = "storagemap" ]; then
-      show_dialog
-      set_remap
-    else
-      show_dialog
-      set_remap
-    fi
+    show_dialog
+    set_remap
   else
     # Show recommended Option to user
     if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ "${MACHINE}" = "Native" ]; then

@@ -64,7 +64,7 @@ jobs:
           releases_keep_latest: 1
           delete_workflows: false
           delete_tags: true
-          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          gh_token: ${{ secrets.BUILD_TOKEN }}
 
       # Install Dependencies
       - name: Install Dependencies
@@ -98,9 +98,15 @@ jobs:
           getOffline "files/p3/configs"
           getLKMs "files/p3/lkms"
           getTheme "files/p1/boot/grub"
-          getBuildrootx "brx" 
-          getBuildroots "brs"
-          getBuildrootm "brm"
+          if [ "${{ inputs.extended }}" = "true" ]; then
+            getBuildroot "ext" "brx"
+          fi
+          if [ "${{ inputs.minimal }}" = "true" ]; then
+            getBuildroot "min" "brs"
+          fi
+          if [ "${{ inputs.microcode }}" = "true" ]; then
+            getBuildroot "micro" "brm"
+          fi
 
           # Export Dependencies Version to env
           echo "ADDONTAG=${ADDONTAG}" >> $GITHUB_ENV
@@ -124,15 +130,13 @@ jobs:
           . scripts/func.sh
 
           # Modify Source File
-          ARC_BUILD="`date +'%y%m%d'`"
+          ARC_BUILD="$(date +'%y%m%d')"
           ARC_VERSION="${{ inputs.version }}"
           ARC_BRANCH="extended"
-          echo "${ARC_BUILD}" >files/p1/ARC-BUILD
-          echo "${ARC_VERSION}" >files/p1/ARC-VERSION
-          echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
-          echo "ARC_BUILD=${ARC_BUILD}" >> $GITHUB_ENV
-          echo "ARC_VERSION=${ARC_VERSION}" >> $GITHUB_ENV
-          echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
+          for file in ARC-BUILD ARC-VERSION ARC-BRANCH; do
+            echo "${!file}" > "files/p1/${file}"
+            echo "${file}=${!file}" >> $GITHUB_ENV
+          done
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -205,15 +209,13 @@ jobs:
           . scripts/func.sh
 
           # Modify Source File
-          ARC_BUILD="`date +'%y%m%d'`"
+          ARC_BUILD="$(date +'%y%m%d')"
           ARC_VERSION="${{ inputs.version }}"
           ARC_BRANCH="minimal"
-          echo "${ARC_BUILD}" >files/p1/ARC-BUILD
-          echo "${ARC_VERSION}" >files/p1/ARC-VERSION
-          echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
-          echo "ARC_BUILD=${ARC_BUILD}" >> $GITHUB_ENV
-          echo "ARC_VERSION=${ARC_VERSION}" >> $GITHUB_ENV
-          echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
+          for file in ARC-BUILD ARC-VERSION ARC-BRANCH; do
+            echo "${!file}" > "files/p1/${file}"
+            echo "${file}=${!file}" >> $GITHUB_ENV
+          done
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -286,15 +288,13 @@ jobs:
           . scripts/func.sh
 
           # Modify Source File
-          ARC_BUILD="`date +'%y%m%d'`"
+          ARC_BUILD="$(date +'%y%m%d')"
           ARC_VERSION="${{ inputs.version }}"
           ARC_BRANCH="microcode"
-          echo "${ARC_BUILD}" >files/p1/ARC-BUILD
-          echo "${ARC_VERSION}" >files/p1/ARC-VERSION
-          echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
-          echo "ARC_BUILD=${ARC_BUILD}" >> $GITHUB_ENV
-          echo "ARC_VERSION=${ARC_VERSION}" >> $GITHUB_ENV
-          echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
+          for file in ARC-BUILD ARC-VERSION ARC-BRANCH; do
+            echo "${!file}" > "files/p1/${file}"
+            echo "${file}=${!file}" >> $GITHUB_ENV
+          done
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"

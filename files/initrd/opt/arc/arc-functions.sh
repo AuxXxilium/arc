@@ -39,53 +39,41 @@ function addonSelection() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
+
   # read addons from user config
-  unset ADDONS
   declare -A ADDONS
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  rm -f "${TMP_PATH}/opts" >/dev/null
+
+  rm -f "${TMP_PATH}/opts"
   touch "${TMP_PATH}/opts"
+
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
-    if [[ "${ADDON}" = "amepatch" || "${ADDON}" = "arcdns" ]] && [ -z "${ARCCONF}" ]; then
-      continue
-    elif [ "${ADDON}" = "codecpatch" ] && [ -n "${ARCCONF}" ]; then
+    if { [[ "${ADDON}" = "amepatch" || "${ADDON}" = "arcdns" ]] && [ -z "${ARCCONF}" ]; } || { [ "${ADDON}" = "codecpatch" ] && [ -n "${ARCCONF}" ]; }; then
       continue
     else
       echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
     fi
   done < <(availableAddons "${PLATFORM}")
-  if [ "${STEP}" = "addons" ]; then
-    dialog --backtitle "$(backtitlep)" --title "Addons" --colors --aspect 18 \
-      --checklist "Select Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
-      --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
-    resp=$(cat ${TMP_PATH}/resp)
-  else
-    dialog --backtitle "$(backtitle)" --title "Addons" --colors --aspect 18 \
-      --checklist "Select Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
-      --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
-    resp=$(cat ${TMP_PATH}/resp)
-  fi
-  unset ADDONS
+
+  dialog --backtitle "$(backtitle)" --title "Addons" --colors --aspect 18 \
+    --checklist "Select Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
+    --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
+  [ $? -ne 0 ] && return 1
+  resp=$(cat "${TMP_PATH}/resp")
+
   declare -A ADDONS
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   for ADDON in ${resp}; do
     ADDONS["${ADDON}"]=""
     writeConfigKey "addons.\"${ADDON}\"" "" "${USER_CONFIG_FILE}"
   done
+
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
-  if [ "${STEP}" = "addons" ]; then
-    dialog --backtitle "$(backtitlep)" --title "Addons" \
-      --msgbox "Addons selected:\n${ADDONSINFO}" 7 70
-  else
-    dialog --backtitle "$(backtitle)" --title "Addons" \
-      --msgbox "Addons selected:\n${ADDONSINFO}" 7 70
-  fi
-  return
+  dialog --backtitle "$(backtitle)" --title "Addons" \
+    --msgbox "Addons selected:\n${ADDONSINFO}" 7 70
 }
 
 ###############################################################################
@@ -2371,7 +2359,7 @@ function getpatfiles() {
   VALID="false"
   if [ ! -f "${DSM_FILE}" ] && [ "${ARCOFFLINE}" = "false" ]; then
     rm -f ${USER_UP_PATH}/*.tar
-    dialog --backtitle "$(backtitlep)" --colors --title "DSM Boot Files" \
+    dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files" \
       --infobox "Downloading DSM Boot Files..." 3 40
     # Get new Files
     DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
@@ -2380,7 +2368,7 @@ function getpatfiles() {
     fi
   elif [ ! -f "${DSM_FILE}" ] && [ "${ARCOFFLINE}" = "true" ]; then
     rm -f ${USER_UP_PATH}/*.tar
-    dialog --backtitle "$(backtitlep)" --colors --title "DSM Boot Files" \
+    dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files" \
       --msgbox "Please upload the DSM Boot File to ${USER_UP_PATH}.\nUse ${IPCON}:7304 to upload and press OK after it's finished.\nLink: https://github.com/AuxXxilium/arc-dsm/blob/main/files/${MODEL}/${PRODUCTVER}/${PAT_HASH}.tar" 8 120
     [ $? -ne 0 ] && VALID="false"
     if [ -f "${DSM_FILE}" ]; then
@@ -2391,7 +2379,7 @@ function getpatfiles() {
   fi
   mkdir -p "${UNTAR_PAT_PATH}"
   if [ "${VALID}" = "true" ]; then
-    dialog --backtitle "$(backtitlep)" --title "DSM Boot Files" --aspect 18 \
+    dialog --backtitle "$(backtitle)" --title "DSM Boot Files" --aspect 18 \
       --infobox "Copying DSM Boot Files..." 3 40
     tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" 2>/dev/null
     copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null
