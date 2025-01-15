@@ -98,9 +98,15 @@ jobs:
           getOffline "files/p3/configs"
           getLKMs "files/p3/lkms"
           getTheme "files/p1/boot/grub"
-          getBuildrootx "brx" 
-          getBuildroots "brs"
-          getBuildrootm "brm"
+          if [ "${{ inputs.extended }}" = "true" ]; then
+            getBuildroot "ext" "brx"
+          fi
+          if [ "${{ inputs.minimal }}" = "true" ]; then
+            getBuildroot "min" "brs"
+          fi
+          if [ "${{ inputs.microcode }}" = "true" ]; then
+            getBuildroot "micro" "brm"
+          fi
 
           # Export Dependencies Version to env
           echo "ADDONTAG=${ADDONTAG}" >> $GITHUB_ENV

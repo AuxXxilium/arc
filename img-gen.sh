@@ -27,7 +27,12 @@ getCustom "files/p3/custom"
 getLKMs "files/p3/lkms"
 getTheme "files/p1/boot/grub"
 getOffline "files/p3/configs"
-[ -f "../brs/bzImage" ] && copyBuildroot "brs" || getBuildroots "brs"
+case "${1}" in
+  min) getBuildroot "${1}" "brs" ;;
+  ext) getBuildroot "${1}" "brx" ;;
+  micro) getBuildroot "${1}" "brm" ;;
+  *) echo "Invalid option specified" ;;
+esac
 
 # Sbase
 IMAGE_FILE="arc.img"
