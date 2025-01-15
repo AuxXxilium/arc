@@ -31,8 +31,8 @@ mkdir -p "brx"
 [ ! -f "../brx/bzImage" ] && getBuildrootx "brx" || copyBuildroot "brx"
 
 # Sbase
-IMAGE_FILE="arc_create.img"
-gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
+IMAGE_FILE="arc.img"
+gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
 fdisk -l "${IMAGE_FILE}"
 
 LOOPX=$(sudo losetup -f)
@@ -73,10 +73,6 @@ sudo rm -rf "/tmp/p1"
 sudo rm -rf "/tmp/p3"
 
 sudo losetup --detach ${LOOPX}
-
-# Resize Image
-resizeImg "${IMAGE_FILE}" "+1024M" "arc.img" 2>/dev/null
-rm -f "${IMAGE_FILE}"
 
 IMAGE_FILE="arc.img"
 qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk

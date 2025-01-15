@@ -38,7 +38,7 @@ on:
         type: boolean
       microcode:
         description: "microcode"
-        default: true
+        default: false
         type: boolean
       extended:
         description: "extended"
@@ -112,6 +112,7 @@ jobs:
           echo "THEMETAG=${THEMETAG}" >> $GITHUB_ENV
           echo "BRXTAG=${BRXTAG}" >> $GITHUB_ENV
           echo "BRSTAG=${BRSTAG}" >> $GITHUB_ENV
+          echo "BRMTAG=${BRMTAG}" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
@@ -134,8 +135,8 @@ jobs:
           echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
-          IMAGE_FILE="arc_create.img"
-          gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
+          IMAGE_FILE="arc.img"
+          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
@@ -166,12 +167,7 @@ jobs:
 
           sudo losetup --detach ${LOOPX}
 
-          # Resize Image
-          resizeImg "${IMAGE_FILE}" "+1024M" "arc.img" 2>/dev/null
-          rm -f "${IMAGE_FILE}"
-
           echo "Image Converter"
-          IMAGE_FILE="arc.img"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
 
@@ -198,6 +194,7 @@ jobs:
 
       # Cleanup
       - name: Cleanup
+        if: ${{ inputs.extended }}
         run: |
           rm -rf "arc.img" "arc.vmdk" "arc-dyn.vmdk" "arc-flat.vmdk" "arc.vhd" "arc.ova" "arc.vmc" 2>/dev/null
 
@@ -219,8 +216,8 @@ jobs:
           echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
-          IMAGE_FILE="arc_create.img"
-          gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
+          IMAGE_FILE="arc.img"
+          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
@@ -251,12 +248,7 @@ jobs:
 
           sudo losetup --detach ${LOOPX}
 
-          # Resize Image
-          resizeImg "${IMAGE_FILE}" "+1024M" "arc.img" 2>/dev/null
-          rm -f "${IMAGE_FILE}"
-
           echo "Image Converter"
-          IMAGE_FILE="arc.img"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
 
@@ -283,6 +275,7 @@ jobs:
 
       # Cleanup
       - name: Cleanup
+        if: ${{ inputs.minimal }}
         run: |
           rm -rf "arc.img" "arc.vmdk" "arc-dyn.vmdk" "arc-flat.vmdk" "arc.vhd" "arc.ova" "arc.vmc" 2>/dev/null
 
@@ -304,8 +297,8 @@ jobs:
           echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
-          IMAGE_FILE="arc_create.img"
-          gzip -dc "grub.img.gz" >"${IMAGE_FILE}"
+          IMAGE_FILE="arc.img"
+          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
           fdisk -l "${IMAGE_FILE}"
           
           LOOPX=$(sudo losetup -f)
@@ -336,12 +329,7 @@ jobs:
 
           sudo losetup --detach ${LOOPX}
 
-          # Resize Image
-          resizeImg "${IMAGE_FILE}" "+1024M" "arc.img" 2>/dev/null
-          rm -f "${IMAGE_FILE}"
-
           echo "Image Converter"
-          IMAGE_FILE="arc.img"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
 
@@ -384,9 +372,9 @@ jobs:
               - Discord Account for Arc Patch needed
 
             ### Versions:
-              ${{ inputs.minimal && '- minimal: Full Image, all dependencies are included (reduced size, faster boot)' || '' }}
-              ${{ inputs.microcode && '- microcode: Minimal + additional Microcode Updates' || '' }}
-              ${{ inputs.extended && '- extended: Full Image, all dependencies are included (new features to test)' || '' }}
+              ${{ inputs.minimal && '- minimal: full image, all dependencies included (reduced size, faster boot)' || '' }}
+              ${{ inputs.microcode && '- microcode: minimal + additional microcode updates' || '' }}
+              ${{ inputs.extended && '- extended: full image, all dependencies included (new features to test)' || '' }}
 
             ### Dependencies:
               - Addons: ${{ env.ADDONTAG }}
@@ -396,6 +384,7 @@ jobs:
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
               ${{ inputs.minimal && format('- Buildroot minimal: {0}', env.BRSTAG) || '' }}
+              ${{ inputs.microcode && format('- Buildroot microcode: {0}', env.BRMTAG) || '' }}
               ${{ inputs.extended && format('- Buildroot extended: {0}', env.BRXTAG) || '' }}
 
             ### Release
