@@ -64,7 +64,7 @@ jobs:
           releases_keep_latest: 1
           delete_workflows: false
           delete_tags: true
-          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          gh_token: ${{ secrets.BUILD_TOKEN }}
 
       # Install Dependencies
       - name: Install Dependencies
