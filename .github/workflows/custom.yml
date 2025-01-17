@@ -161,64 +161,43 @@ jobs:
 
           cp -f "${IMAGE_FILE}" "arc.img"
 
-          if [ "${{ env.FORMAT }}" = "dyn" ]; then
+      # Zip image and generate checksum
+      - name: Convert & Pack
+        run: |
+          rm -rf arc-*.zip 2>/dev/null
+          if [ "${{ env.FORMAT }}" = "img" ]; then
+            zip -9 "arc-${{ env.MODEL }}-${{ env.VERSION }}.img.zip" arc.img
+          elif [ "${{ env.FORMAT }}" = "dyn" ]; then
             echo "Image Converter -> dyn"
             qemu-img convert arc.img -O vmdk -o adapter_type=lsilogic,compat6 arc-dyn.vmdk
+            zip -9 "arc-${{ env.MODEL }}-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
           elif [ "${{ env.FORMAT }}" = "flat" ]; then
             echo "Image Converter -> flat"
             qemu-img convert arc.img -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat,compat6 arc.vmdk
+            zip -9 "arc-${{ env.MODEL }}-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
           elif [ "${{ env.FORMAT }}" = "vhdx" ]; then
             echo "Image Converter -> vhdx"
             qemu-img convert arc.img -O vhdx -o subformat=dynamic arc.vhdx
+            zip -9 "arc-${{ env.MODEL }}-${{ env.VERSION }}.vhdx.zip" arc.vhdx
           elif [ "${{ env.FORMAT }}" = "ova" ]; then
             echo "Image Converter -> ova"
             convertova "arc.img" "arc.ova"
-          fi
-
-      # Zip image and generate checksum
-      - name: Pack
-        run: |
-          if [ "${{ env.FORMAT }}" = "img" ]; then
-            zip -9 "arc-${{ env.MODEL }}-${{ env.VERSION }}.img.zip" arc.img
-            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.VERSION }}.img.zip" "https://file.io")"
-            if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
-              echo "Upload failed"
-              exit 1
-            fi
-          elif [ "${{ env.FORMAT }}" = "dyn" ]; then
-            zip -9 "arc-${{ env.MODEL }}-${{ env.VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
-            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.VERSION }}.vmdk-dyn.zip" "https://file.io")"
-            if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
-              echo "Upload failed"
-              exit 1
-            fi
-          elif [ "${{ env.FORMAT }}" = "flat" ]; then
-            zip -9 "arc-${{ env.MODEL }}-${{ env.VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.VERSION }}.vmdk-flat.zip" "https://file.io")"
-            if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
-              echo "Upload failed"
-              exit 1
-            fi
-          elif [ "${{ env.FORMAT }}" = "vhdx" ]; then
-            zip -9 "arc-${{ env.MODEL }}-${{ env.VERSION }}.vhdx.zip" arc.vhdx
-            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.VERSION }}.vhdx.zip" "https://file.io")"
-            if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
-              echo "Upload failed"
-              exit 1
-            fi
-          elif [ "${{ env.FORMAT }}" = "ova" ]; then
             zip -9 "arc-${{ env.MODEL }}-${{ env.VERSION }}.ova.zip" arc.ova
-            UPLOAD="$(curl -k -F "file=@arc-${{ env.MODEL }}-${{ env.VERSION }}.ova.zip" "https://file.io")"
-            if ! echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+'; then
-              echo "Upload failed"
-              exit 1
-            fi
           fi
 
           EMAIL=$(curl -s -H "Authorization: token ${{ secrets.ACTION }}" "https://api.github.com/users/${{ github.event.issue.user.login }}" | jq -r '.email')
           FIOURL="$(echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+')"
           echo "EMAIL=${EMAIL}" >> $GITHUB_ENV
           echo "FIOURL=${FIOURL}" >> $GITHUB_ENV
+
+      # Upload artifact
+      - name: Upload to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: arc-*
+          path: |
+            arc-*.zip
+          retention-days: 1
 
       - name: Send mail
         if: success() && env.EMAIL != 'null'
@@ -232,7 +211,12 @@ jobs:
           to: ${{ env.EMAIL }}
           from: ${{ secrets.MAIL_USERNAME }}
           body: |
-            ${{ env.FIOURL }}
+            Hi @${{ github.event.issue.user.login }}.  
+            arc-${{ env.MODEL }}-${{ env.VERSION }} is ready to download:
+            > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            If this isn't working, do not use customized Versions!
+            ----
 
       - name: Update Comment Success
         if: success()
@@ -244,7 +228,7 @@ jobs:
           update-mode: replace
           body: |
             Hi @${{ github.event.issue.user.login }}.  
-            arc-${{ env.MODEL }}-${{ env.VERSION }} is ready to download: ${{ env.FIOURL }}
+            arc-${{ env.MODEL }}-${{ env.VERSION }} is ready to download:
             > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
             If this isn't working, do not use customized Versions!
