@@ -186,9 +186,7 @@ jobs:
           fi
 
           EMAIL=$(curl -s -H "Authorization: token ${{ secrets.ACTION }}" "https://api.github.com/users/${{ github.event.issue.user.login }}" | jq -r '.email')
-          FIOURL="$(echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+')"
           echo "EMAIL=${EMAIL}" >> $GITHUB_ENV
-          echo "FIOURL=${FIOURL}" >> $GITHUB_ENV
 
       # Upload artifact
       - name: Upload to Artifacts
