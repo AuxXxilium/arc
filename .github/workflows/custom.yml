@@ -186,15 +186,13 @@ jobs:
           fi
 
           EMAIL=$(curl -s -H "Authorization: token ${{ secrets.ACTION }}" "https://api.github.com/users/${{ github.event.issue.user.login }}" | jq -r '.email')
-          FIOURL="$(echo "${UPLOAD}" | grep -oP '"link":\s*"\K[^"]+')"
           echo "EMAIL=${EMAIL}" >> $GITHUB_ENV
-          echo "FIOURL=${FIOURL}" >> $GITHUB_ENV
 
       # Upload artifact
       - name: Upload to Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: arc-*
+          name: arc-${{ env.MODEL }}-${{ env.VERSION }}-${{ github.run_id }}
           path: |
             arc-*.zip
           retention-days: 1
