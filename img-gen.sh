@@ -53,10 +53,9 @@ sudo mount ${LOOPX}p3 "/tmp/p3"
 ARC_BUILD="$(date +'%y%m%d')"
 ARC_VERSION="13.3.7"
 ARC_BRANCH="dev"
-
-for file in ARC_BUILD ARC_VERSION ARC_BRANCH; do
-  echo "${!file}" > "files/p1/${file}"
-done
+echo "${ARC_VERSION}" >"files/p1/ARC-VERSION"
+echo "${ARC_BUILD}" >"files/p1/ARC-BUILD"
+echo "${ARC_BRANCH}" >"files/p1/ARC-BRANCH"
 
 echo "Repack initrd"
 if [ -f "br/bzImage-arc" ] && [ -f "br/initrd-arc" ]; then

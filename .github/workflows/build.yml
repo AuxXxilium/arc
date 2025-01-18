@@ -138,7 +138,6 @@ jobs:
           echo "${ARC_VERSION}" > "files/p1/ARC-VERSION"
           echo "ARC_VERSION=${ARC_VERSION}" >> $GITHUB_ENV
           echo "${ARC_BRANCH}" > "files/p1/ARC-BRANCH"
-          echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -219,7 +218,6 @@ jobs:
           echo "${ARC_VERSION}" > "files/p1/ARC-VERSION"
           echo "ARC_VERSION=${ARC_VERSION}" >> $GITHUB_ENV
           echo "${ARC_BRANCH}" > "files/p1/ARC-BRANCH"
-          echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -300,7 +298,6 @@ jobs:
           echo "${ARC_VERSION}" > "files/p1/ARC-VERSION"
           echo "ARC_VERSION=${ARC_VERSION}" >> $GITHUB_ENV
           echo "${ARC_BRANCH}" > "files/p1/ARC-BRANCH"
-          echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
