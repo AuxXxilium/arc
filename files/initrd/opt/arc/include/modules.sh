@@ -49,9 +49,9 @@ function getAllModules() {
 
   # Get list of all modules
   for F in $(ls ${TMP_PATH}/modules/*.ko 2>/dev/null); do
-    local X=$(basename ${F})
+    local X=$(basename "${F}")
     local M=${X:0:-3}
-    local DESC=$(modinfo ${F} | awk -F':' '/description:/{ print $2}' | awk '{sub(/^[ ]+/,""); print}')
+    local DESC=$(modinfo "${F}" | awk -F':' '/description:/{ print $2}' | awk '{sub(/^[ ]+/,""); print}')
     [ -z "${DESC}" ] && DESC="${X}"
     echo "${M} \"${DESC}\""
   done
@@ -78,19 +78,19 @@ function installModules() {
 
   local ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
   for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
-    local M=$(basename ${F})
+    local M=$(basename "${F}")
     [ "${ODP}" = "true" ] && [ -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ] && continue
     if echo "${MLIST}" | grep -wq "${M:0:-3}"; then
-      cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}"
+      cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}" 2>"${LOG_FILE}"
     else
-      rm -f "${RAMDISK_PATH}/usr/lib/modules/${M}"
+      rm -f "${RAMDISK_PATH}/usr/lib/modules/${M}" 2>"${LOG_FILE}"
     fi
   done
   mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
   if [ "${KERNEL}" = "custom" ]; then
-    tar -zxf "${CUSTOM_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
+    tar -zxf "${CUSTOM_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
   else
-    tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware"
+    tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
   fi
   if [ $? -ne 0 ]; then
     return 1
@@ -118,7 +118,7 @@ function addToModules() {
 
   unpackModules "${PLATFORM}" "${KVER}"
 
-  cp -f ${KOFILE} ${TMP_PATH}/modules
+  cp -f "${KOFILE}" "${TMP_PATH}/modules"
 
   packModules "${PLATFORM}" "${KVER}"
 }
@@ -140,7 +140,7 @@ function delToModules() {
 
   unpackModules "${PLATFORM}" "${KVER}"
 
-  rm -f ${TMP_PATH}/modules/${KONAME}
+  rm -f "${TMP_PATH}/modules/${KONAME}"
 
   packModules "${PLATFORM}" "${KVER}"
 }
@@ -173,7 +173,7 @@ function getdepends() {
 
   unpackModules "${PLATFORM}" "${KVER}"
 
-  local DPS=($(_getdepends ${KONAME} | tr ' ' '\n' | sort -u))
+  local DPS=($(_getdepends "${KONAME}" | tr ' ' '\n' | sort -u))
   echo ${DPS[@]}
   rm -rf "${TMP_PATH}/modules"
 }
