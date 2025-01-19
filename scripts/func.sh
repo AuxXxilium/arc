@@ -221,7 +221,7 @@ function getBuildroot() {
   rm -f "${DEST_PATH}/bzImage-arc"
   rm -f "${DEST_PATH}/initrd-arc"
   while read -r ID NAME; do
-    if [ "${NAME}" = "buildroot-${TAG}.zip" ]; then
+    if [ "${NAME}" = "buildroot-${TAG:0:9}.zip" ]; then
       curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/${REPO}/releases/assets/${ID}" -o "${DEST_PATH}/br.zip"
       echo "Buildroot-${TYPE}: ${TAG}"
       unzip -o "${DEST_PATH}/br.zip" -d "${DEST_PATH}"
