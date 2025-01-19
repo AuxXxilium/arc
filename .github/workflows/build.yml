@@ -371,8 +371,9 @@ jobs:
               - ${{ inputs.notice }}
 
             ### Information:
-              - Changelog is available in my Discord
               - Discord Account for Arc Patch needed
+              - Changelog is available in my Discord
+              - Based on VisionZ Evolution Code Base
 
             ### Versions:
               ${{ inputs.minimal && '- minimal: full image, all dependencies included (reduced size, faster boot)' || '' }}
@@ -386,9 +387,9 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              ${{ inputs.minimal && format('- Buildroot minimal: {0}', env.BRSTAG) || '' }}
-              ${{ inputs.microcode && format('- Buildroot microcode: {0}', env.BRMTAG) || '' }}
-              ${{ inputs.extended && format('- Buildroot extended: {0}', env.BRXTAG) || '' }}
+              ${{ inputs.minimal && '- Buildroot minimal: ' + env.BRSTAG + '-evo' || '' }}
+              ${{ inputs.microcode && '- Buildroot microcode: ' + env.BRMTAG + '-evo' || '' }}
+              ${{ inputs.extended && '- Buildroot extended: ' + env.BRXTAG + '-evo' || '' }}
 
             ### Release
               - ${{ env.BUILD_TIME }}
