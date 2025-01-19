@@ -117,21 +117,6 @@ for PATCH in "${PATCHES[@]}"; do
   done
 done
 
-# Add serial number to synoinfo.conf, to help to recover an installed DSM
-{
-  echo "Set synoinfo SN"
-  _set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc/synoinfo.conf" || exit 1
-  _set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" || exit 1
-} >>"${LOG_FILE}" 2>&1
-
-for KEY in "${!SYNOINFO[@]}"; do
-  {
-    echo "Set synoinfo ${KEY}"
-    _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc/synoinfo.conf" || exit 1
-    _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" || exit 1
-  } >>"${LOG_FILE}" 2>&1
-done
-
 # Patch /sbin/init.post
 grep -v -e '^[\t ]*#' -e '^$' "${PATCH_PATH}/config-manipulators.sh" >"${TMP_PATH}/rp.txt"
 sed -e "/@@@CONFIG-MANIPULATORS-TOOLS@@@/ {" -e "r ${TMP_PATH}/rp.txt" -e 'd' -e '}' -i "${RAMDISK_PATH}/sbin/init.post"
@@ -203,7 +188,7 @@ echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 
 echo "Modify files" >"${LOG_FILE}"
 # Remove function from scripts
-[ "2" = "${PRODUCTVER:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
+[ "2" = "${PRODUCTVER:2:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
 
 # Build modules dependencies
 # ${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
