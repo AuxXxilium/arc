@@ -203,7 +203,7 @@ fi
 # backup current loader configs
 BACKUP_PATH="${RAMDISK_PATH}/usr/arc/backup"
 rm -rf "${BACKUP_PATH}"
-for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}" "${USER_UP_PATH}"; do
+for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}" "${USER_UP_PATH}" "${HW_KEY}"; do
   if [ -f "${F}" ]; then
     FD="$(dirname "${F}")"
     mkdir -p "${FD/\/mnt/${BACKUP_PATH}}"

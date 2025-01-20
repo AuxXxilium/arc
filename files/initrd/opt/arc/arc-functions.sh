@@ -697,23 +697,20 @@ function backupMenu() {
     if [ -n "${USERID}" ] && [ "${ARCOFFLINE}" != "true" ] && [ "${CONFDONE}" = "true" ]; then
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
         1 "Restore Arc Config from DSM" \
-        2 "Restore HW Encryption Key from DSM" \
-        3 "Backup HW Encryption Key to DSM" \
-        4 "Restore Arc Config from Online" \
-        5 "Backup Arc Config to Online" \
+        2 "Restore Hardware Key from DSM" \
+        3 "Restore Arc Config from Online" \
+        4 "Backup Arc Config to Online" \
         2>"${TMP_PATH}/resp"
     elif [ -n "${USERID}" ] && [ "${ARCOFFLINE}" != "true" ]; then
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
         1 "Restore Arc Config from DSM" \
-        2 "Restore HW Encryption Key from DSM" \
-        3 "Backup HW Encryption Key to DSM" \
-        4 "Restore Arc Config from Online" \
+        2 "Restore Hardware Key from DSM" \
+        3 "Restore Arc Config from Online" \
         2>"${TMP_PATH}/resp"
     else
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
         1 "Restore Arc Config from DSM" \
-        2 "Restore HW Encryption Key from DSM" \
-        3 "Backup HW Encryption Key to DSM" \
+        2 "Restore Hardware Key from DSM" \
         2>"${TMP_PATH}/resp"
     fi
     [ $? -ne 0 ] && break
@@ -800,43 +797,6 @@ function backupMenu() {
         fi
         ;;
       3)
-        BACKUPKEY="false"
-        DSMROOTS="$(findDSMRoot)"
-        if [ -z "${DSMROOTS}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Backup Encrytion Key" \
-            --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
-          return
-        fi
-        (
-          mkdir -p "${TMP_PATH}/mdX"
-          for I in ${DSMROOTS}; do
-            while true; do
-              # fixDSMRootPart "${I}"
-              mount -t ext4 "${I}" "${TMP_PATH}/mdX"
-              if [ -f "${PART2_PATH}/machine.key" ]; then
-                mkdir -p "${TMP_PATH}/mdX/usr/arc/backup/p2"
-                cp -f "${PART2_PATH}/machine.key" "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key"
-                if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" ]; then
-                  BACKUPKEY="true"
-                  sync
-                  break
-                fi
-              fi
-              umount "${TMP_PATH}/mdX"
-            done
-          done
-          rm -rf "${TMP_PATH}/mdX" >/dev/null
-        ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Backup Encrytion Key" \
-          --progressbox "Backup Encryption Key ..." 20 70
-        if [ "${BACKUPKEY}" = "true" ]; then
-          dialog --backtitle "$(backtitle)" --title "Backup Encrytion Key"  \
-            --msgbox "Encryption Key backup successful!" 0 0
-        else
-          dialog --backtitle "$(backtitle)" --title "Backup Encrytion Key"  \
-            --msgbox "No Encryption Key found!" 0 0
-        fi
-        ;;
-      4)
         [ -f "${USER_CONFIG_FILE}" ] && mv -f "${USER_CONFIG_FILE}" "${USER_CONFIG_FILE}.bak"
         HWID="$(genHWID)"
         if curl -skL "https://arc.auxxxilium.tech?cdown=${HWID}" -o "${USER_CONFIG_FILE}" 2>/dev/null; then
@@ -867,7 +827,7 @@ function backupMenu() {
         sleep 2
         rm -f "${HOME}/.initialized" && exec init.sh
         ;;
-      5)
+      4)
         HWID="$(genHWID)"
         curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${HWID}&userid=${USERID}" 2>/dev/null
         if [ $? -eq 0 ]; then
@@ -1036,7 +996,7 @@ function sysinfo() {
   PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")"
   TIMEOUT=5
   # Print System Informations
-  TEXT="\n\n\Z4> System: ${MACHINE} | ${BOOTSYS} | ${BUS}\Zn"
+  TEXT="\n\Z4> System: ${MACHINE} | ${BOOTSYS} | ${BUS}\Zn"
   TEXT+="\n  Vendor: \Zb${VENDOR}\Zn"
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
   if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then

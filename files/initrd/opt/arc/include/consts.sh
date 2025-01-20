@@ -17,6 +17,7 @@ GRUB_PATH="${PART1_PATH}/boot/grub"
 USER_GRUB_CONFIG="${GRUB_PATH}/grub.cfg"
 USER_GRUBENVFILE="${GRUB_PATH}/grubenv"
 USER_CONFIG_FILE="${PART1_PATH}/user-config.yml"
+HW_KEY="${PART2_PATH}/machine.key"
 
 ORI_ZIMAGE_FILE="${PART2_PATH}/zImage"
 ORI_RDGZ_FILE="${PART2_PATH}/rd.gz"
