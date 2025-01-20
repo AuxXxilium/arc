@@ -100,12 +100,15 @@ jobs:
           getTheme "files/p1/boot/grub"
           if [ "${{ inputs.extended }}" = "true" ]; then
             getBuildroot "ext" "brx"
+            echo "BRXTAG=${BRXTAG}" >> $GITHUB_ENV
           fi
           if [ "${{ inputs.minimal }}" = "true" ]; then
             getBuildroot "min" "brs"
+            echo "BRSTAG=${BRSTAG}" >> $GITHUB_ENV
           fi
           if [ "${{ inputs.microcode }}" = "true" ]; then
             getBuildroot "micro" "brm"
+            echo "BRMTAG=${BRMTAG}" >> $GITHUB_ENV
           fi
 
           # Export Dependencies Version to env
@@ -116,9 +119,6 @@ jobs:
           echo "CUSTOMTAG=${CUSTOMTAG}" >> $GITHUB_ENV
           echo "LKMTAG=${LKMTAG}" >> $GITHUB_ENV
           echo "THEMETAG=${THEMETAG}" >> $GITHUB_ENV
-          echo "BRXTAG=${BRXTAG}" >> $GITHUB_ENV
-          echo "BRSTAG=${BRSTAG}" >> $GITHUB_ENV
-          echo "BRMTAG=${BRMTAG}" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
@@ -133,11 +133,12 @@ jobs:
           ARC_BUILD="$(date +'%y%m%d')"
           ARC_VERSION="${{ inputs.version }}"
           ARC_BRANCH="extended"
-          echo "${ARC_BUILD}" > "files/p1/ARC-BUILD"
+          echo "${ARC_BUILD}" >files/p1/ARC-BUILD
+          echo "${ARC_VERSION}" >files/p1/ARC-VERSION
+          echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
           echo "ARC_BUILD=${ARC_BUILD}" >> $GITHUB_ENV
-          echo "${ARC_VERSION}" > "files/p1/ARC-VERSION"
           echo "ARC_VERSION=${ARC_VERSION}" >> $GITHUB_ENV
-          echo "${ARC_BRANCH}" > "files/p1/ARC-BRANCH"
+          echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -187,7 +188,7 @@ jobs:
       - name: Pack extended Image
         if: ${{ inputs.extended }}
         run: |
-          if [ -n "${{ env.ARC_VERSION }}" ]; then
+          if [ -n "${{ env.ARC_VERSION }}" ] && [ -n "${{ env.ARC_BRANCH }}" ]; then
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.img.zip" arc.img
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vmdk-dyn.zip" arc-dyn.vmdk
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
@@ -213,11 +214,12 @@ jobs:
           ARC_BUILD="$(date +'%y%m%d')"
           ARC_VERSION="${{ inputs.version }}"
           ARC_BRANCH="minimal"
-          echo "${ARC_BUILD}" > "files/p1/ARC-BUILD"
+          echo "${ARC_BUILD}" >files/p1/ARC-BUILD
+          echo "${ARC_VERSION}" >files/p1/ARC-VERSION
+          echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
           echo "ARC_BUILD=${ARC_BUILD}" >> $GITHUB_ENV
-          echo "${ARC_VERSION}" > "files/p1/ARC-VERSION"
           echo "ARC_VERSION=${ARC_VERSION}" >> $GITHUB_ENV
-          echo "${ARC_BRANCH}" > "files/p1/ARC-BRANCH"
+          echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -267,7 +269,7 @@ jobs:
       - name: Pack minimal Image
         if: ${{ inputs.minimal }}
         run: |
-          if [ -n "${{ env.ARC_VERSION }}" ]; then
+          if [ -n "${{ env.ARC_VERSION }}" ] && [ -n "${{ env.ARC_BRANCH }}" ]; then
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.img.zip" arc.img
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vmdk-dyn.zip" arc-dyn.vmdk
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
@@ -293,11 +295,12 @@ jobs:
           ARC_BUILD="$(date +'%y%m%d')"
           ARC_VERSION="${{ inputs.version }}"
           ARC_BRANCH="microcode"
-          echo "${ARC_BUILD}" > "files/p1/ARC-BUILD"
+          echo "${ARC_BUILD}" >files/p1/ARC-BUILD
+          echo "${ARC_VERSION}" >files/p1/ARC-VERSION
+          echo "${ARC_BRANCH}" >files/p1/ARC-BRANCH
           echo "ARC_BUILD=${ARC_BUILD}" >> $GITHUB_ENV
-          echo "${ARC_VERSION}" > "files/p1/ARC-VERSION"
           echo "ARC_VERSION=${ARC_VERSION}" >> $GITHUB_ENV
-          echo "${ARC_BRANCH}" > "files/p1/ARC-BRANCH"
+          echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -347,7 +350,7 @@ jobs:
       - name: Pack minimal Image
         if: ${{ inputs.minimal }}
         run: |
-          if [ -n "${{ env.ARC_VERSION }}" ]; then
+          if [ -n "${{ env.ARC_VERSION }}" ] && [ -n "${{ env.ARC_BRANCH }}" ]; then
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.img.zip" arc.img
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vmdk-dyn.zip" arc-dyn.vmdk
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
