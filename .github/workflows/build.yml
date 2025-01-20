@@ -387,9 +387,9 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              ${{ inputs.minimal && '- Buildroot minimal: ' + env.BRSTAG + '-evo' || '' }}
-              ${{ inputs.microcode && '- Buildroot microcode: ' + env.BRMTAG + '-evo' || '' }}
-              ${{ inputs.extended && '- Buildroot extended: ' + env.BRXTAG + '-evo' || '' }}
+              ${{ inputs.minimal && format('- Buildroot minimal: {0}-evo', env.BRSTAG) || '' }}
+              ${{ inputs.microcode && format('- Buildroot microcode: {0}-evo', env.BRMTAG) || '' }}
+              ${{ inputs.extended && format('- Buildroot extended: {0}-evo', env.BRXTAG) || '' }}
 
             ### Release
               - ${{ env.BUILD_TIME }}
