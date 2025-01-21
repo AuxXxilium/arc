@@ -28,9 +28,7 @@ getLKMs "files/p3/lkms"
 getTheme "files/p1/boot/grub"
 getOffline "files/p3/configs"
 case "${1}" in
-  min) getBuildroot "${1}" "br" ;;
-  ext) getBuildroot "${1}" "br" ;;
-  micro) getBuildroot "${1}" "br" ;;
+  evo) getBuildroot "${1}" "br" ;;
   *) echo "Invalid option specified" ;;
 esac
 

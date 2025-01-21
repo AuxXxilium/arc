@@ -194,36 +194,18 @@ function getBuildroot() {
   local REPO=""
   local ZIP_NAME=""
   local TAG_VAR=""
-
-  case "${TYPE}" in
-    min)
-      REPO="arc-buildroot-s"
-      TAG_VAR="BRSTAG"
-      ;;
-    ext)
-      REPO="arc-buildroot-x"
-      TAG_VAR="BRXTAG"
-      ;;
-    micro)
-      REPO="arc-buildroot-m"
-      TAG_VAR="BRMTAG"
-      ;;
-    *)
-      echo "Invalid type specified"
-      return 1
-      ;;
-  esac
+  local REPO="arc-buildroot-${TYPE}"
 
   echo "Getting Buildroot-${TYPE} begin"
   TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/${REPO}/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
-  export ${TAG_VAR}="${TAG}"
+  export BRTAG="${TAG}-${TYPE}"
   [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
   rm -f "${DEST_PATH}/bzImage-arc"
   rm -f "${DEST_PATH}/initrd-arc"
   while read -r ID NAME; do
-    if [ "${NAME}" = "buildroot-${TAG:0:9}.zip" ]; then
+    if [ "${NAME}" = "buildroot-${TAG}.zip" ]; then
       curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/${REPO}/releases/assets/${ID}" -o "${DEST_PATH}/br.zip"
-      echo "Buildroot-${TYPE}: ${TAG}"
+      echo "Buildroot: ${TAG}-${TYPE}"
       unzip -o "${DEST_PATH}/br.zip" -d "${DEST_PATH}"
       mv -f "${DEST_PATH}/bzImage" "${DEST_PATH}/bzImage-arc"
       mv -f "${DEST_PATH}/rootfs.cpio.zst" "${DEST_PATH}/initrd-arc"
