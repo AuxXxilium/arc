@@ -102,7 +102,7 @@ jobs:
           echo "OK"
 
        # Build incremental
-      - name: Build evo Image
+      - name: Build Image
         run: |
           . scripts/func.sh
 
@@ -115,6 +115,7 @@ jobs:
           echo "${ARC_VERSION}" > "files/p1/ARC-VERSION"
           echo "ARC_VERSION=${ARC_VERSION}" >> $GITHUB_ENV
           echo "${ARC_BRANCH}" > "files/p1/ARC-BRANCH"
+          echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
           IMAGE_FILE="arc.img"
@@ -161,7 +162,7 @@ jobs:
           convertova "${IMAGE_FILE}" "arc.ova"
 
       # Zip image and generate checksum
-      - name: Pack extended Image
+      - name: Pack Image
         run: |
           if [ -n "${{ env.ARC_VERSION }}" ]; then
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.img.zip" arc.img
