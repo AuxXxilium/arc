@@ -1,27 +1,25 @@
 # Get PortMap for Loader
 function getmap() {
-  function show_dialog() {
-    dialog --backtitle "$(backtitle)" --title "Sata Portmap" \
-      --menu "Choose a Portmap for Sata!?\n* Recommended Option" 8 60 0 \
-      1 "DiskIdxMap: Active Ports ${REMAP1}" \
-      2 "DiskIdxMap: Max Ports ${REMAP2}" \
-      3 "SataRemap: Remove empty Ports ${REMAP3}" \
-      4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
-      5 "Set my own Portmap in Config" \
-    2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
-    resp=$(cat "${TMP_PATH}/resp")
-    [ -z "${resp}" ] && return 1
-  }
-
-  function set_remap() {
-    case ${resp} in
-      1) writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}" ;;
-      2) writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}" ;;
-      3) writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}" ;;
-      4) writeConfigKey "arc.remap" "ahci" "${USER_CONFIG_FILE}" ;;
-      5) writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}" ;;
-    esac
+  function show_and_set_remap() {
+      dialog --backtitle "$(backtitle)" --title "Sata Portmap" \
+        --menu "Choose a Portmap for Sata!?\n* Recommended Option" 8 60 0 \
+        1 "DiskIdxMap: Active Ports ${REMAP1}" \
+        2 "DiskIdxMap: Max Ports ${REMAP2}" \
+        3 "SataRemap: Remove empty Ports ${REMAP3}" \
+        4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
+        5 "Set my own Portmap in Config" \
+      2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && return 1
+      resp=$(cat "${TMP_PATH}/resp")
+      [ -z "${resp}" ] && return 1
+  
+      case ${resp} in
+        1) writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}" ;;
+        2) writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}" ;;
+        3) writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}" ;;
+        4) writeConfigKey "arc.remap" "ahci" "${USER_CONFIG_FILE}" ;;
+        5) writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}" ;;
+      esac
   }
 
   # Sata Disks
@@ -177,9 +175,7 @@ function getmapSelection() {
     else
       REMAP1="*"
     fi
-  
-    show_dialog
-    set_remap
+    show_and_set_remap
   else
     # Show recommended Option to user
     if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ "${MACHINE}" = "Native" ]; then
