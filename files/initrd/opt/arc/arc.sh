@@ -78,6 +78,7 @@ function arcModel() {
   dialog --backtitle "$(backtitle)" --title "Model" \
     --infobox "Reading Models..." 3 25
   ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
+  ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
   # Loop menu
   RESTRICT=1
   PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"
@@ -224,6 +225,7 @@ function arcVersion() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
   # Get PAT Data from Config
   PAT_URL_CONF="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH_CONF="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
@@ -401,7 +403,7 @@ function arcPatch() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
-  
+  ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
   if [ "${ARCMODE}" = "automated" ] && [ "${ARCPATCH}" != "user" ]; then
     if [ -n "${ARCCONF}" ]; then
       generate_and_write_serial "true"
@@ -463,17 +465,16 @@ function arcSettings() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+  ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
   PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   
   # Network Config for Loader
-  if [ "${ARCMODE}" = "config" ]; then
-    dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
-      --infobox "Generating Network Config..." 3 40
-    sleep 2
-    getnet || return
-  fi
+  dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
+    --infobox "Generating Network Config..." 3 40
+  sleep 2
+  getnet || return
   
   if [ "${ONLYPATCH}" = "true" ]; then
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -703,6 +704,7 @@ function make() {
 function arcFinish() {
   rm -f "${LOG_FILE}" >/dev/null 2>&1 || true
   MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
+  ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
   
   if [ -n "${MODELID}" ]; then
     writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
@@ -729,6 +731,7 @@ function juniorboot() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
+  ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
   if [[ "${BUILDDONE}" = "false" && "${ARCMODE}" != "automated" ]] || [ "${MODEL}" != "${MODELID}" ]; then
     dialog --backtitle "$(backtitle)" --title "Alert" \
       --yesno "Config changed, you need to rebuild the Loader?" 0 0
@@ -749,6 +752,7 @@ function boot() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
+  ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
   if [[ "${BUILDDONE}" = "false" && "${ARCMODE}" != "automated" ]] || [ "${MODEL}" != "${MODELID}" ]; then
     dialog --backtitle "$(backtitle)" --title "Alert" \
       --yesno "Config changed, you need to rebuild the Loader?" 0 0
@@ -766,7 +770,6 @@ function boot() {
 ###############################################################################
 ###############################################################################
 # Main loop
-# Check for Arc Mode
 if [ "${ARCMODE}" = "update" ]; then
   if [ "${ARCOFFLINE}" != "true" ]; then
     updateLoader
@@ -777,7 +780,6 @@ if [ "${ARCMODE}" = "update" ]; then
     exec reboot
   fi
 elif [ "${ARCMODE}" = "automated" ]; then
-  # Check for Custom Build
   if [ "${BUILDDONE}" = "false" ] || [ "${MODEL}" != "${MODELID}" ]; then
     arcModel
   else
@@ -867,9 +869,7 @@ elif [ "${ARCMODE}" = "config" ]; then
         echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
         echo "J \"Reset Network Config \" "                                                   >>"${TMP_PATH}/menu"
         echo "T \"Disable all scheduled Tasks \" "                                            >>"${TMP_PATH}/menu"
-        if [ "${PLATFORM}" = "epyc7002" ]; then
-          echo "M \"Mount DSM Storage Pool \" "                                               >>"${TMP_PATH}/menu"
-        fi
+        echo "M \"Mount DSM Storage Pool \" "                                                 >>"${TMP_PATH}/menu"
         echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
         echo "s \"Allow Downgrade Version \" "                                                >>"${TMP_PATH}/menu"
         echo "O \"Official Driver Priority: \Z4${ODP}\Zn \" "                                 >>"${TMP_PATH}/menu"

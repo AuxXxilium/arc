@@ -12,12 +12,12 @@ function getnet() {
 
   ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
   MODEL=$(readConfigKey "model" "${USER_CONFIG_FILE}")
-  ARCPATCH=$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")
+  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+  ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
+  ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
   ETHN=$(echo "${ETHX}" | wc -w)
 
-  if [ "${ARCPATCH}" != "user" ]; then
-    generate_and_write_macs "${ARCPATCH}"
-  else
+  if [ "${ARCPATCH}" = "user" ]; then
     for N in ${ETHX}; do
       while true; do
         dialog --backtitle "$(backtitle)" --title "Mac Setting" \
@@ -37,6 +37,10 @@ function getnet() {
         fi
       done
     done
+  elif [ "${ARCPATCH}" != "user" ] && [ -n "${ARCCONF}" ]; then
+    generate_and_write_macs "${ARCPATCH}"
+  else
+    generate_and_write_macs "false"
   fi
 }
 
@@ -45,5 +49,5 @@ ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
 # Get actual IP
 for N in ${ETHX}; do
   IPCON="$(getIP "${N}")"
-  [ -n "${IPCON}" ] && break
+  [ -n "${IPCON}" ] && break || IPCON="noip"
 done
