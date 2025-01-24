@@ -754,7 +754,7 @@ elif [ "${ARCMODE}" = "config" ]; then
   NEXT="1"
   while true; do
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
-    readData
+    write_menu "\Z4===== Main =====\Zn"
     if [ -z "${USERID}" ] && [ "${ARCOFFLINE}" = "false" ]; then
       write_menu_with_color "0" "HardwareID" "${HARDWAREID}"
     fi
@@ -770,22 +770,19 @@ elif [ "${ARCMODE}" = "config" ]; then
         write_menu_with_color "p" "Arc Patch" "${ARCPATCH}"
       elif [ "${ARCOFFLINE}" = "false" ]; then
         write_menu "p" "Arc Patch: \Z4Register HardwareID first\Zn"
+      else
+        write_menu "p" "SN/Mac Options"
       fi
 
       if [ "${PLATFORM}" = "epyc7002" ]; then
         CPUINFO="$(cat /proc/cpuinfo | wc -l)"
-        if [ "${CPUINFO}" -gt 24 ]; then
+        if [ ${CPUINFO} -gt 24 ]; then
           write_menu "=" "Custom Kernel should be used for this CPU"
         fi
         write_menu_with_color "K" "Kernel" "${KERNEL}"
       fi
 
       write_menu "b" "Addons"
-
-      if [ "${DT}" = "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
-        write_menu_with_color "S" "PortMap" "${REMAP}"
-        write_menu_with_color "=" "Mapping" "${PORTMAP}"
-      fi
 
       for addon in "cpufreqscaling" "storagepanel" "sequentialio"; do
         if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "${addon}"; then
@@ -800,6 +797,11 @@ elif [ "${ARCMODE}" = "config" ]; then
       write_menu "d" "Modules"
       write_menu_with_color "O" "Official Driver Priority" "${ODP}"
 
+      if [ "${DT}" = "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
+        write_menu_with_color "S" "PortMap" "${REMAP}"
+        write_menu_with_color "=" "Mapping" "${PORTMAP}"
+      fi
+
       if [ "${DT}" = "true" ]; then
         write_menu_with_color "H" "Hotplug/SortDrives" "${HDDSORT}"
       else
@@ -808,11 +810,6 @@ elif [ "${ARCMODE}" = "config" ]; then
 
       if [ "${SHOWMORE}" = "true" ]; then
         write_menu "8" "\Z1Hide More Options\Zn"
-      else
-        write_menu "8" "\Z1Show More Options\Zn"
-      fi
-
-      if [ "${SHOWMORE}" = "true" ]; then
         write_menu_with_color "m" "Kernelload" "${KERNELLOAD}"
         write_menu_with_color "E" "eMMC Boot Support" "${EMMCBOOT}"
         if [ "${DIRECTBOOT}" = "false" ]; then
@@ -822,10 +819,17 @@ elif [ "${ARCMODE}" = "config" ]; then
         write_menu_with_color "W" "RD Compression" "${RD_COMPRESSED}"
         write_menu_with_color "X" "Sata DOM" "${SATADOM}"
         write_menu_with_color "u" "LKM Version" "${LKM}"
+      else
+        write_menu "8" "\Z1Show More Options\Zn"
       fi
     fi
 
     write_menu_with_color "c" "Offline Mode" "${ARCOFFLINE}"
+    write_menu "=" "\Z4===== Misc =====\Zn"
+    write_menu "x" "Backup/Restore/Recovery"
+    [ "${ARCOFFLINE}" = "false" ] && write_menu "z" "Update Menu"
+    write_menu "I" "Power/Service Menu"
+    write_menu "V" "Credits"
     write_menu "9" "Advanced Options"
 
     if [ "${CONFDONE}" = "false" ]; then
@@ -944,6 +948,11 @@ elif [ "${ARCMODE}" = "config" ]; then
             [ "${ARCOFFLINE}" = "false" ] && exec arc.sh
             NEXT="c"
             ;;
+          # Misc Settings
+          x) backupMenu; NEXT="x" ;;
+          z) updateMenu; NEXT="z" ;;
+          I) rebootMenu; NEXT="I" ;;
+          V) credits; NEXT="V" ;;
           9) advancedMenu; NEXT="9" ;;
         esac
         ;;

@@ -755,7 +755,7 @@ elif [ "${ARCMODE}" = "config" ]; then
     [ "${CONFDONE}" = "true" ] && NEXT="2" || NEXT="1"
     [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
-    readData
+
     write_menu "\Z4===== Main =====\Zn"
 
     if [ -z "${USERID}" ] && [ "${ARCOFFLINE}" = "false" ]; then
@@ -1054,15 +1054,6 @@ elif [ "${ARCMODE}" = "config" ]; then
         ;;
       1)
         exec evo.sh
-        ;;
-      3)
-        if [ "${CONFDONE}" = "false" ]; then
-          arcModel
-        elif [ "${CONFDONE}" = "true" ]; then
-          arcSummary
-        elif [ "${BUILDDONE}" = "true" ]; then
-          boot
-        fi
         ;;
       *)
         break

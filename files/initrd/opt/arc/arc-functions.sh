@@ -76,15 +76,15 @@ function advancedMenu() {
   NEXT="a"
   while true; do
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
-    write_menu_with_color "=" "===== Diag ====="
+    write_menu "=" "\Z4===== Diag =====\Zn"
     write_menu "a" "Sysinfo"
     write_menu "A" "Networkdiag"
-    write_menu_with_color "=" "===== System ===="
+    write_menu "=" "\Z4===== System ====\Zn"
 
     if [ "${CONFDONE}" = "true" ]; then
       if [ "${DSMOPTS}" = "true" ]; then
         write_menu "7" "\Z1Hide DSM Options\Zn"
-        write_menu_with_color "=" "===== DSM ====="
+        write_menu "=" "\Z4===== DSM =====\Zn"
         write_menu "j" "Cmdline"
         write_menu "k" "Synoinfo"
         write_menu "N" "Add new User"
@@ -101,7 +101,7 @@ function advancedMenu() {
 
     if [ "${LOADEROPTS}" = "true" ]; then
       write_menu "8" "\Z1Hide Loader Options\Zn"
-      write_menu_with_color "=" "===== Loader ====="
+      write_menu "=" "\Z4===== Loader =====\Zn"
       write_menu "D" "StaticIP for Loader/DSM"
       write_menu "f" "Bootscreen Options"
       write_menu "U" "Change Loader Password"
@@ -118,14 +118,8 @@ function advancedMenu() {
       write_menu "8" "\Z1Show Loader Options\Zn"
     fi
 
-    write_menu_with_color "=" "===== Misc ====="
-    write_menu "x" "Backup/Restore/Recovery"
-    [ "${ARCOFFLINE}" = "false" ] && write_menu "z" "Update Menu"
-    write_menu "I" "Power/Service Menu"
-    write_menu "V" "Credits"
-
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Arc Config" --colors \
-          --cancel-label "Evo Mode" --help-button --help-label "Exit" \
+          --cancel-label "Exit" \
           --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
           2>"${TMP_PATH}/resp"
     RET=$?
@@ -167,24 +161,7 @@ function advancedMenu() {
           n) editGrubCfg; NEXT="n" ;;
           y) keymapMenu; NEXT="y" ;;
           F) formatDisks; NEXT="F" ;;
-          # Misc Settings
-          x) backupMenu; NEXT="x" ;;
-          z) updateMenu; NEXT="z" ;;
-          I) rebootMenu; NEXT="I" ;;
-          V) credits; NEXT="V" ;;
         esac
-        ;;
-      1)
-        exec evo.sh
-        ;;
-      3)
-        if [ "${CONFDONE}" = "false" ]; then
-          arcModel
-        elif [ "${CONFDONE}" = "true" ]; then
-          arcSummary
-        elif [ "${BUILDDONE}" = "true" ]; then
-          boot
-        fi
         ;;
       *)
         break
