@@ -24,8 +24,6 @@ function readData() {
 
   # Advanced Config
   if [ "${CONFDONE}" = "true" ]; then
-    ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
-    MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
     BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
     DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
     EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
@@ -75,92 +73,114 @@ function readData() {
 ###############################################################################
 # Advanced Menu
 function advancedMenu() {
+  rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
   NEXT="a"
   while true; do
-    echo "= \"\Z4===== Diag =====\Zn \" "                                                     >>"${TMP_PATH}/menu"
-    echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
-    echo "A \"Networkdiag \" "                                                                >>"${TMP_PATH}/menu"
-    echo "= \"\Z4===== System ====\Zn \" "                                                    >>"${TMP_PATH}/menu"
+    write_menu_with_color "=" "===== Diag ====="
+    write_menu "a" "Sysinfo"
+    write_menu "A" "Networkdiag"
+    write_menu_with_color "=" "===== System ===="
+
     if [ "${CONFDONE}" = "true" ]; then
       if [ "${DSMOPTS}" = "true" ]; then
-        echo "7 \"\Z1Hide DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+        write_menu "7" "\Z1Hide DSM Options\Zn"
+        write_menu_with_color "=" "===== DSM ====="
+        write_menu "j" "Cmdline"
+        write_menu "k" "Synoinfo"
+        write_menu "N" "Add new User"
+        write_menu "t" "Change User Password"
+        write_menu "J" "Reset Network Config"
+        write_menu "T" "Disable all scheduled Tasks"
+        write_menu "M" "Mount DSM Storage Pool"
+        write_menu "l" "Edit User Config"
+        write_menu "s" "Allow Downgrade Version"
       else
-        echo "7 \"\Z1Show DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
-      fi
-      if [ "${DSMOPTS}" = "true" ]; then
-        echo "= \"\Z4===== DSM =====\Zn \" "                                                  >>"${TMP_PATH}/menu"
-        echo "j \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
-        echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
-        echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
-        echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
-        echo "J \"Reset Network Config \" "                                                   >>"${TMP_PATH}/menu"
-        echo "T \"Disable all scheduled Tasks \" "                                            >>"${TMP_PATH}/menu"
-        echo "M \"Mount DSM Storage Pool \" "                                                 >>"${TMP_PATH}/menu"
-        echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
-        echo "s \"Allow Downgrade Version \" "                                                >>"${TMP_PATH}/menu"
+        write_menu "7" "\Z1Show DSM Options\Zn"
       fi
     fi
-    if [ "${LOADEROPTS}" = "true" ]; then
-      echo "8 \"\Z1Hide Loader Options\Zn \" "                                                >>"${TMP_PATH}/menu"
-    else
-      echo "8 \"\Z1Show Loader Options\Zn \" "                                                >>"${TMP_PATH}/menu"
-    fi
-    if [ "${LOADEROPTS}" = "true" ]; then
-      echo "= \"\Z4===== Loader =====\Zn \" "                                                 >>"${TMP_PATH}/menu"
-      echo "D \"StaticIP for Loader/DSM \" "                                                  >>"${TMP_PATH}/menu"
-      echo "f \"Bootscreen Options \" "                                                       >>"${TMP_PATH}/menu"
-      echo "U \"Change Loader Password \" "                                                   >>"${TMP_PATH}/menu"
-      echo "Z \"Change Loader Ports \" "                                                      >>"${TMP_PATH}/menu"
-      echo "w \"Reset Loader to Defaults \" "                                                 >>"${TMP_PATH}/menu"
-      echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
-      echo "B \"Grep DSM Config from Backup \" "                                              >>"${TMP_PATH}/menu"
-      echo "= \"\Z1== Edit with caution! ==\Zn \" "                                           >>"${TMP_PATH}/menu"
-      echo "C \"Clone Loader to another Disk \" "                                             >>"${TMP_PATH}/menu"
-      echo "n \"Grub Bootloader Config \" "                                                   >>"${TMP_PATH}/menu"
-      echo "y \"Choose a Keymap for Loader \" "                                               >>"${TMP_PATH}/menu"
-      echo "F \"\Z1Formate Disks \Zn \" "                                                     >>"${TMP_PATH}/menu"
-    fi
-    echo "= \"\Z4===== Misc =====\Zn \" "                                                     >>"${TMP_PATH}/menu"
-    echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
-    [ "${ARCOFFLINE}" = "false" ] && echo "z \"Update Menu \" "                               >>"${TMP_PATH}/menu"
-    echo "I \"Power/Service Menu \" "                                                         >>"${TMP_PATH}/menu"
-    echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
 
-    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --colors \
-      --cancel-label "Exit" --title "Arc Menu" --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
-      2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && break
-    case "$(cat ${TMP_PATH}/resp)" in
-      # Diag Section
-      a) sysinfo; NEXT="a" ;;
-      A) networkdiag; NEXT="A" ;;
-      # DSM Section
-      j) cmdlineMenu; NEXT="j" ;;
-      k) synoinfoMenu; NEXT="k" ;;
-      l) editUserConfig; NEXT="l" ;;
-      s) downgradeMenu; NEXT="s" ;;
-      t) resetPassword; NEXT="t" ;;
-      N) addNewDSMUser; NEXT="N" ;;
-      J) resetDSMNetwork; NEXT="J" ;;
-      M) mountDSM; NEXT="M" ;;
-      T) disablescheduledTasks; NEXT="T" ;;
-      B) getbackup; NEXT="B" ;;
-      # Loader Section
-      D) staticIPMenu; NEXT="D" ;;
-      f) bootScreen; NEXT="f" ;;
-      Z) loaderPorts; NEXT="Z" ;;
-      U) loaderPassword; NEXT="U" ;;
-      L) greplogs; NEXT="L" ;;
-      w) resetLoader; NEXT="w" ;;
-      C) cloneLoader; NEXT="C" ;;
-      n) editGrubCfg; NEXT="n" ;;
-      y) keymapMenu; NEXT="y" ;;
-      F) formatDisks; NEXT="F" ;;
-      # Misc Settings
-      x) backupMenu; NEXT="x" ;;
-      z) updateMenu; NEXT="z" ;;
-      I) rebootMenu; NEXT="I" ;;
-      V) credits; NEXT="V" ;;
+    if [ "${LOADEROPTS}" = "true" ]; then
+      write_menu "8" "\Z1Hide Loader Options\Zn"
+      write_menu_with_color "=" "===== Loader ====="
+      write_menu "D" "StaticIP for Loader/DSM"
+      write_menu "f" "Bootscreen Options"
+      write_menu "U" "Change Loader Password"
+      write_menu "Z" "Change Loader Ports"
+      write_menu "w" "Reset Loader to Defaults"
+      write_menu "L" "Grep Logs from dbgutils"
+      write_menu "B" "Grep DSM Config from Backup"
+      write_menu_with_color "=" "== Edit with caution! =="
+      write_menu "C" "Clone Loader to another Disk"
+      write_menu "n" "Grub Bootloader Config"
+      write_menu "y" "Choose a Keymap for Loader"
+      write_menu "F" "\Z1Formate Disks\Zn"
+    else
+      write_menu "8" "\Z1Show Loader Options\Zn"
+    fi
+
+    write_menu_with_color "=" "===== Misc ====="
+    write_menu "x" "Backup/Restore/Recovery"
+    [ "${ARCOFFLINE}" = "false" ] && write_menu "z" "Update Menu"
+    write_menu "I" "Power/Service Menu"
+    write_menu "V" "Credits"
+
+    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Arc Config" --colors \
+          --cancel-label "Evo Mode" --help-button --help-label "Exit" \
+          --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
+          2>"${TMP_PATH}/resp"
+    RET=$?
+    case ${RET} in
+      0)
+        resp=$(cat ${TMP_PATH}/resp)
+        [ -z "${resp}" ] && return
+        case ${resp} in
+          # Diag Section
+          a) sysinfo; NEXT="a" ;;
+          A) networkdiag; NEXT="A" ;;
+          # DSM Section
+          j) cmdlineMenu; NEXT="j" ;;
+          k) synoinfoMenu; NEXT="k" ;;
+          l) editUserConfig; NEXT="l" ;;
+          s) downgradeMenu; NEXT="s" ;;
+          t) resetPassword; NEXT="t" ;;
+          N) addNewDSMUser; NEXT="N" ;;
+          J) resetDSMNetwork; NEXT="J" ;;
+          M) mountDSM; NEXT="M" ;;
+          T) disablescheduledTasks; NEXT="T" ;;
+          B) getbackup; NEXT="B" ;;
+          # Loader Section
+          D) staticIPMenu; NEXT="D" ;;
+          f) bootScreen; NEXT="f" ;;
+          Z) loaderPorts; NEXT="Z" ;;
+          U) loaderPassword; NEXT="U" ;;
+          L) greplogs; NEXT="L" ;;
+          w) resetLoader; NEXT="w" ;;
+          C) cloneLoader; NEXT="C" ;;
+          n) editGrubCfg; NEXT="n" ;;
+          y) keymapMenu; NEXT="y" ;;
+          F) formatDisks; NEXT="F" ;;
+          # Misc Settings
+          x) backupMenu; NEXT="x" ;;
+          z) updateMenu; NEXT="z" ;;
+          I) rebootMenu; NEXT="I" ;;
+          V) credits; NEXT="V" ;;
+        esac
+        ;;
+      1)
+        exec evo.sh
+        ;;
+      3)
+        if [ "${CONFDONE}" = "false" ]; then
+          arcModel
+        elif [ "${CONFDONE}" = "true" ]; then
+          arcSummary
+        elif [ "${BUILDDONE}" = "true" ]; then
+          boot
+        fi
+        ;;
+      *)
+        break
+        ;;
     esac
   done
   return

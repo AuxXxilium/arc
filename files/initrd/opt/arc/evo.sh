@@ -752,60 +752,81 @@ elif [ "${ARCMODE}" = "automated" ]; then
   fi
 elif [ "${ARCMODE}" = "config" ]; then
   NEXT="1"
+  rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
   while true; do
     readData
-    echo "= \"\Z4===== Arc Config =====\Zn\" "                                              >"${TMP_PATH}/menu"
-    echo "0 \"Hardware ID: \Z4${HARDWAREID}\Zn\" "                                          >>"${TMP_PATH}/menu"
-    echo "1 \"Model: \Z4${MODEL:-non}\Zn\" "                                                >>"${TMP_PATH}/menu"
-    if [ "${CONFDONE}" = "${true}" ]; then
-      echo "e \"Version: \Z4${PRODUCTVER:-none}\Zn\" "                                      >>"${TMP_PATH}/menu"
-      echo "= \"DT: \Z4${DT}\Zn\" "                                                         >>"${TMP_PATH}/menu"
-      echo "= \"Platform: \Z4${PLATFORM}\Zn\" "                                             >>"${TMP_PATH}/menu"
-      if [ -z "${USERID}" ] && [ "${ARCOFFLINE}" = "false" ]; then
-        echo "p \"Arc Patch: \Z4${ARCPATCH}\Zn\" "                                          >>"${TMP_PATH}/menu"
+    if [ -z "${USERID}" ] && [ "${ARCOFFLINE}" = "false" ]; then
+      write_menu "0" "HardwareID: ${HARDWAREID}"
+    fi
+
+    write_menu_with_color "1" "Model" "${MODEL}"
+
+    if [ "${CONFDONE}" = "true" ]; then
+      write_menu_with_color "e" "Version" "${PRODUCTVER}"
+      write_menu_with_color "=" "DT" "${DT}"
+      write_menu_with_color "=" "Platform" "${PLATFORM}"
+
+      if [ -n "${USERID}" ] && [ "${ARCOFFLINE}" = "false" ]; then
+        write_menu_with_color "p" "Arc Patch" "${ARCPATCH}"
+      elif [ "${ARCOFFLINE}" = "false" ]; then
+        write_menu "p" "Arc Patch: \Z4Register HardwareID first\Zn"
       fi
+
       if [ "${PLATFORM}" = "epyc7002" ]; then
-        echo "K \"Kernel: \Z4${KERNEL}\Zn\" "                                               >>"${TMP_PATH}/menu"
-      fi
-      echo "b \"Addons: \Z4${ADDONSINFO}\Zn\" "                                             >>"${TMP_PATH}/menu"
-      if [ "${DT}" = "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
-        echo "S \"PortMap: \Z4${REMAP}\Zn\" "                                               >>"${TMP_PATH}/menu"
-        echo "= \"Mapping: \Z4${PORTMAP}\Zn\" "                                             >>"${TMP_PATH}/menu"
-      fi
-      if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
-        echo "g \"Scaling Governor: \Z4${GOVERNOR}\Zn\" "                                   >>"${TMP_PATH}/menu"
-      fi
-      if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "storagepanel"; then
-        echo "P \"StoragePanel: \Z4${STORAGEPANEL:-auto}\Zn\" "                             >>"${TMP_PATH}/menu"
-      fi
-      if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sequentialio"; then
-        echo "Q \"SequentialIO: \Z4${SEQUENTIALIO}\Zn\" "                                   >>"${TMP_PATH}/menu"
-      fi
-      echo "d \"Modules: \Z4${MODULESINFO}\Zn\" "                                           >>"${TMP_PATH}/menu"
-      echo "O \"Official Driver Priority: \Z4${ODP}\Zn\" "                                  >>"${TMP_PATH}/menu"
-      if [ "${DT}" = "true" ]; then
-        echo "H \"Hotplug/SortDrives: \Z4${HDDSORT}\Zn\" "                                  >>"${TMP_PATH}/menu"
-      else
-        echo "h \"USB as Internal: \Z4${USBMOUNT}\Zn\" "                                    >>"${TMP_PATH}/menu"
-      fi
-      if [ "${SHOWMORE}" = "true" ]; then
-        echo "8 \"\Z1Hide More Options\Zn \" "                                              >>"${TMP_PATH}/menu"
-      else
-        echo "8 \"\Z1Show More Options\Zn \" "                                              >>"${TMP_PATH}/menu"
-      fi
-      if [ "${SHOWMORE}" = "true" ]; then
-        echo "m \"Kernelload: \Z4${KERNELLOAD}\Zn\" "                                       >>"${TMP_PATH}/menu"
-        echo "E \"eMMC Boot Support: \Z4${EMMCBOOT}\Zn\" "                                  >>"${TMP_PATH}/menu"
-        if [ "${DIRECTBOOT}" = "false" ]; then
-          echo "i \"Boot IP Waittime: \Z4${BOOTIPWAIT}\Zn\" "                               >>"${TMP_PATH}/menu"
+        CPUINFO="$(cat /proc/cpuinfo | wc -l)"
+        if [ "${CPUINFO}" -gt 24 ]; then
+          write_menu "=" "Custom Kernel should be used for this CPU"
         fi
-        echo "q \"Directboot: \Z4${DIRECTBOOT}\Zn\" "                                       >>"${TMP_PATH}/menu"
-        echo "W \"RD Compression: \Z4${RD_COMPRESSED}\Zn\" "                                >>"${TMP_PATH}/menu"
-        echo "X \"Sata DOM: \Z4${SATADOM}\Zn\" "                                            >>"${TMP_PATH}/menu"
-        echo "u \"LKM Version: \Z4${LKM}\Zn\" "                                             >>"${TMP_PATH}/menu"
+        write_menu_with_color "K" "Kernel" "${KERNEL}"
+      fi
+
+      write_menu "b" "Addons"
+
+      if [ "${DT}" = "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
+        write_menu_with_color "S" "PortMap" "${REMAP}"
+        write_menu_with_color "=" "Mapping" "${PORTMAP}"
+      fi
+
+      for addon in "cpufreqscaling" "storagepanel" "sequentialio"; do
+        if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "${addon}"; then
+          case "${addon}" in
+            "cpufreqscaling") write_menu_with_color "g" "Scaling Governor" "${GOVERNOR}" ;;
+            "storagepanel") write_menu_with_color "P" "StoragePanel" "${STORAGEPANEL:-auto}" ;;
+            "sequentialio") write_menu_with_color "Q" "SequentialIO" "${SEQUENTIALIO}" ;;
+          esac
+        fi
+      done
+
+      write_menu "d" "Modules"
+      write_menu_with_color "O" "Official Driver Priority" "${ODP}"
+
+      if [ "${DT}" = "true" ]; then
+        write_menu_with_color "H" "Hotplug/SortDrives" "${HDDSORT}"
+      else
+        write_menu_with_color "h" "USB as Internal" "${USBMOUNT}"
+      fi
+
+      if [ "${SHOWMORE}" = "true" ]; then
+        write_menu "8" "\Z1Hide More Options\Zn"
+      else
+        write_menu "8" "\Z1Show More Options\Zn"
+      fi
+
+      if [ "${SHOWMORE}" = "true" ]; then
+        write_menu_with_color "m" "Kernelload" "${KERNELLOAD}"
+        write_menu_with_color "E" "eMMC Boot Support" "${EMMCBOOT}"
+        if [ "${DIRECTBOOT}" = "false" ]; then
+          write_menu_with_color "i" "Boot IP Waittime" "${BOOTIPWAIT}"
+        fi
+        write_menu_with_color "q" "Directboot" "${DIRECTBOOT}"
+        write_menu_with_color "W" "RD Compression" "${RD_COMPRESSED}"
+        write_menu_with_color "X" "Sata DOM" "${SATADOM}"
+        write_menu_with_color "u" "LKM Version" "${LKM}"
       fi
     fi
-    echo "c \"Offline Mode: \Z4${ARCOFFLINE}\Zn\" "                                         >>"${TMP_PATH}/menu"
+
+    write_menu_with_color "c" "Offline Mode" "${ARCOFFLINE}"
+    write_menu "9" "Advanced Options"
 
     if [ "${CONFDONE}" = "false" ]; then
       EXTRA_LABEL="Config"
@@ -815,8 +836,8 @@ elif [ "${ARCMODE}" = "config" ]; then
       EXTRA_LABEL="Boot"
     fi
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Arc Config" --colors \
-          --cancel-label "Advanced" --help-button --help-label "Exit" \
-          --extra-button --extra-label "EXTRA_LABEL" \
+          --cancel-label "Classic Mode" --help-button --help-label "Exit" \
+          --extra-button --extra-label "${EXTRA_LABEL}" \
           --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
           2>"${TMP_PATH}/resp"
     RET=$?
@@ -923,10 +944,11 @@ elif [ "${ARCMODE}" = "config" ]; then
             [ "${ARCOFFLINE}" = "false" ] && exec arc.sh
             NEXT="c"
             ;;
+          9) advancedMenu; NEXT="9" ;;
         esac
         ;;
       1)
-        advancedMenu
+        exec arc.sh
         ;;
       3)
         if [ "${CONFDONE}" = "false" ]; then
