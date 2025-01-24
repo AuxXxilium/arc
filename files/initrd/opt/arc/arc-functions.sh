@@ -73,9 +73,9 @@ function readData() {
 ###############################################################################
 # Advanced Menu
 function advancedMenu() {
-  rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
   NEXT="a"
   while true; do
+    rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
     write_menu_with_color "=" "===== Diag ====="
     write_menu "a" "Sysinfo"
     write_menu "A" "Networkdiag"
@@ -109,7 +109,7 @@ function advancedMenu() {
       write_menu "w" "Reset Loader to Defaults"
       write_menu "L" "Grep Logs from dbgutils"
       write_menu "B" "Grep DSM Config from Backup"
-      write_menu_with_color "=" "== Edit with caution! =="
+      write_menu "=" "\Z1== Edit with caution! ==\Zn"
       write_menu "C" "Clone Loader to another Disk"
       write_menu "n" "Grub Bootloader Config"
       write_menu "y" "Choose a Keymap for Loader"
@@ -138,6 +138,10 @@ function advancedMenu() {
           a) sysinfo; NEXT="a" ;;
           A) networkdiag; NEXT="A" ;;
           # DSM Section
+          7) [ "${DSMOPTS}" = "true" ] && DSMOPTS='false' || DSMOPTS='true'
+            DSMOPTS="${DSMOPTS}"
+            NEXT="7"
+            ;;
           j) cmdlineMenu; NEXT="j" ;;
           k) synoinfoMenu; NEXT="k" ;;
           l) editUserConfig; NEXT="l" ;;
@@ -149,6 +153,10 @@ function advancedMenu() {
           T) disablescheduledTasks; NEXT="T" ;;
           B) getbackup; NEXT="B" ;;
           # Loader Section
+          8) [ "${LOADEROPTS}" = "true" ] && LOADEROPTS='false' || LOADEROPTS='true'
+            LOADEROPTS="${LOADEROPTS}"
+            NEXT="8"
+            ;;
           D) staticIPMenu; NEXT="D" ;;
           f) bootScreen; NEXT="f" ;;
           Z) loaderPorts; NEXT="Z" ;;

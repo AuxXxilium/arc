@@ -751,12 +751,12 @@ elif [ "${ARCMODE}" = "automated" ]; then
     make
   fi
 elif [ "${ARCMODE}" = "config" ]; then
-  [ "${CONFDONE}" = "true" ] && NEXT="2" || NEXT="1"
-  [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
-  rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
   while true; do
+    [ "${CONFDONE}" = "true" ] && NEXT="2" || NEXT="1"
+    [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
+    rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
     readData
-    echo "= \"\Z4===== Main =====\Zn \" " >"${TMP_PATH}/menu"
+    write_menu "\Z4===== Main =====\Zn"
 
     if [ -z "${USERID}" ] && [ "${ARCOFFLINE}" = "false" ]; then
       write_menu "0" "HardwareID for Arc Patch"
@@ -776,10 +776,10 @@ elif [ "${ARCMODE}" = "config" ]; then
       write_menu "3" "Boot Loader"
     fi
 
-    write_menu_with_color "=" "===== Info ====="
+    write_menu "=" "\Z4===== Info =====\Zn"
     write_menu "a" "Sysinfo"
     write_menu "A" "Networkdiag"
-    write_menu_with_color "=" "===== System ===="
+    write_menu "=" "\Z4===== System ====\Zn"
     
     if [ "${CONFDONE}" = "true" ]; then
       if [ "${ARCOPTS}" = "true" ]; then
@@ -789,7 +789,7 @@ elif [ "${ARCMODE}" = "config" ]; then
       fi
 
       if [ "${ARCOPTS}" = "true" ]; then
-        write_menu_with_color "=" "==== Arc DSM ===="
+        write_menu "=" "\Z4==== Arc DSM ====\Zn"
         write_menu "b" "Addons"
         write_menu "d" "Modules"
         write_menu "e" "Version"
@@ -831,7 +831,7 @@ elif [ "${ARCMODE}" = "config" ]; then
       fi
 
       if [ "${BOOTOPTS}" = "true" ]; then
-        write_menu_with_color "=" "===== Boot ====="
+        write_menu "=" "\Z4===== Boot =====\Zn"
         write_menu_with_color "m" "Boot Kernelload" "${KERNELLOAD}"
         write_menu_with_color "E" "eMMC Boot Support" "${EMMCBOOT}"
         if [ "${DIRECTBOOT}" = "false" ]; then
@@ -847,7 +847,7 @@ elif [ "${ARCMODE}" = "config" ]; then
       fi
 
       if [ "${DSMOPTS}" = "true" ]; then
-        write_menu_with_color "=" "===== DSM ====="
+        write_menu "=" "\Z4===== DSM =====\Zn"
         write_menu "j" "Cmdline"
         write_menu "k" "Synoinfo"
         write_menu "N" "Add new User"
@@ -868,7 +868,7 @@ elif [ "${ARCMODE}" = "config" ]; then
     fi
 
     if [ "${LOADEROPTS}" = "true" ]; then
-      write_menu_with_color "=" "===== Loader ====="
+      write_menu "=" "\Z4===== Loader =====\Zn"
       write_menu_with_color "c" "Offline Mode" "${ARCOFFLINE}"
       write_menu "D" "StaticIP for Loader/DSM"
       write_menu "f" "Bootscreen Options"
@@ -877,7 +877,7 @@ elif [ "${ARCMODE}" = "config" ]; then
       write_menu "w" "Reset Loader to Defaults"
       write_menu "L" "Grep Logs from dbgutils"
       write_menu "B" "Grep DSM Config from Backup"
-      write_menu_with_color "=" "== Edit with caution! =="
+      write_menu "=" "\Z1== Edit with caution! ==\Zn"
       write_menu_with_color "W" "RD Compression" "${RD_COMPRESSED}"
       write_menu_with_color "X" "Sata DOM" "${SATADOM}"
       write_menu_with_color "u" "LKM Version" "${LKM}"
@@ -887,15 +887,14 @@ elif [ "${ARCMODE}" = "config" ]; then
       write_menu "F" "\Z1Formate Disks\Zn"
     fi
 
-    write_menu_with_color "=" "===== Misc ====="
+    write_menu_with_color "=" "\Z4===== Misc =====\Zn"
     write_menu "x" "Backup/Restore/Recovery"
     [ "${ARCOFFLINE}" = "false" ] && write_menu "z" "Update Menu"
     write_menu "I" "Power/Service Menu"
     write_menu "V" "Credits"
 
-    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Arc Config" --colors \
-          --cancel-label "Evo Mode" --help-button --help-label "Exit" \
-          --extra-button --extra-label "${EXTRA_LABEL}" \
+    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Classic Mode" --colors \
+          --cancel-label "Evo" --help-button --help-label "Exit" \
           --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
           2>"${TMP_PATH}/resp"
     RET=$?
