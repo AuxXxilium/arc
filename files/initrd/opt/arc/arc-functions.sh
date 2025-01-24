@@ -1,4 +1,172 @@
 ###############################################################################
+# Read Data
+function readData() {
+  # Get DSM Data from Config
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
+  LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
+  if [ -n "${MODEL}" ]; then
+    DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
+    PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+    PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  fi
+
+  # Get Arc Data from Config
+  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+  HARDWAREID="$(genHWID)"
+  USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
+  ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
+  EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
+  SATACONTROLLER="$(readConfigKey "device.satacontroller" "${USER_CONFIG_FILE}")"
+  SCSICONTROLLER="$(readConfigKey "device.scsicontroller" "${USER_CONFIG_FILE}")"
+  RAIDCONTROLLER="$(readConfigKey "device.raidcontroller" "${USER_CONFIG_FILE}")"
+  SASCONTROLLER="$(readConfigKey "device.sascontroller" "${USER_CONFIG_FILE}")"
+
+  # Advanced Config
+  if [ "${CONFDONE}" = "true" ]; then
+    ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
+    MODULESINFO="$(lsmod | awk -F' ' '{print $1}' | grep -v 'Module')"
+    BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
+    DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
+    EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
+    HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
+    USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
+    KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
+    KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
+    KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
+    GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
+    STORAGEPANEL="$(readConfigKey "addons.storagepanel" "${USER_CONFIG_FILE}")"
+    SEQUENTIALIO="$(readConfigKey "addons.sequentialio" "${USER_CONFIG_FILE}")"
+    ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
+    RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
+    SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
+    REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
+    if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
+      PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
+      DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
+    elif [ "${REMAP}" = "remap" ]; then
+      PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
+    elif [ "${REMAP}" = "ahci" ]; then
+      PORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
+    elif [ "${REMAP}" = "user" ]; then
+      PORTMAP="user"
+    fi
+    if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
+      SPORTMAP="SataPortMap: ${PORTMAP} | ${DISKMAP}"
+    elif [ "${REMAP}" = "remap" ]; then
+      SPORTMAP="SataRemap: ${PORTMAP}"
+    elif [ "${REMAP}" = "ahci" ]; then
+      SPORTMAP="AHCIRemap: ${PORTMAP}"
+    elif [ "${REMAP}" = "user" ]; then
+      SPORTMAP=""
+      [ -n "${PORTMAP}" ] && SPORTMAP+="SataPortMap: ${PORTMAP}"
+      [ -n "${DISKMAP}" ] && SPORTMAP+="DiskIdxMap: ${DISKMAP}"
+      [ -n "${PORTREMAP}" ] && SPORTMAP+="SataRemap: ${PORTREMAP}"
+      [ -n "${AHCIPORTREMAP}" ] && SPORTMAP+="AHCIRemap: ${AHCIPORTREMAP}"
+    fi
+  fi
+
+  # Get Config/Build Status
+  ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+}
+
+###############################################################################
+# Advanced Menu
+function advancedMenu() {
+  NEXT="a"
+  while true; do
+    echo "= \"\Z4===== Diag =====\Zn \" "                                                     >>"${TMP_PATH}/menu"
+    echo "a \"Sysinfo \" "                                                                    >>"${TMP_PATH}/menu"
+    echo "A \"Networkdiag \" "                                                                >>"${TMP_PATH}/menu"
+    echo "= \"\Z4===== System ====\Zn \" "                                                    >>"${TMP_PATH}/menu"
+    if [ "${CONFDONE}" = "true" ]; then
+      if [ "${DSMOPTS}" = "true" ]; then
+        echo "7 \"\Z1Hide DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      else
+        echo "7 \"\Z1Show DSM Options\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      fi
+      if [ "${DSMOPTS}" = "true" ]; then
+        echo "= \"\Z4===== DSM =====\Zn \" "                                                  >>"${TMP_PATH}/menu"
+        echo "j \"Cmdline \" "                                                                >>"${TMP_PATH}/menu"
+        echo "k \"Synoinfo \" "                                                               >>"${TMP_PATH}/menu"
+        echo "N \"Add new User\" "                                                            >>"${TMP_PATH}/menu"
+        echo "t \"Change User Password \" "                                                   >>"${TMP_PATH}/menu"
+        echo "J \"Reset Network Config \" "                                                   >>"${TMP_PATH}/menu"
+        echo "T \"Disable all scheduled Tasks \" "                                            >>"${TMP_PATH}/menu"
+        echo "M \"Mount DSM Storage Pool \" "                                                 >>"${TMP_PATH}/menu"
+        echo "l \"Edit User Config \" "                                                       >>"${TMP_PATH}/menu"
+        echo "s \"Allow Downgrade Version \" "                                                >>"${TMP_PATH}/menu"
+      fi
+    fi
+    if [ "${LOADEROPTS}" = "true" ]; then
+      echo "8 \"\Z1Hide Loader Options\Zn \" "                                                >>"${TMP_PATH}/menu"
+    else
+      echo "8 \"\Z1Show Loader Options\Zn \" "                                                >>"${TMP_PATH}/menu"
+    fi
+    if [ "${LOADEROPTS}" = "true" ]; then
+      echo "= \"\Z4===== Loader =====\Zn \" "                                                 >>"${TMP_PATH}/menu"
+      echo "D \"StaticIP for Loader/DSM \" "                                                  >>"${TMP_PATH}/menu"
+      echo "f \"Bootscreen Options \" "                                                       >>"${TMP_PATH}/menu"
+      echo "U \"Change Loader Password \" "                                                   >>"${TMP_PATH}/menu"
+      echo "Z \"Change Loader Ports \" "                                                      >>"${TMP_PATH}/menu"
+      echo "w \"Reset Loader to Defaults \" "                                                 >>"${TMP_PATH}/menu"
+      echo "L \"Grep Logs from dbgutils \" "                                                  >>"${TMP_PATH}/menu"
+      echo "B \"Grep DSM Config from Backup \" "                                              >>"${TMP_PATH}/menu"
+      echo "= \"\Z1== Edit with caution! ==\Zn \" "                                           >>"${TMP_PATH}/menu"
+      echo "C \"Clone Loader to another Disk \" "                                             >>"${TMP_PATH}/menu"
+      echo "n \"Grub Bootloader Config \" "                                                   >>"${TMP_PATH}/menu"
+      echo "y \"Choose a Keymap for Loader \" "                                               >>"${TMP_PATH}/menu"
+      echo "F \"\Z1Formate Disks \Zn \" "                                                     >>"${TMP_PATH}/menu"
+    fi
+    echo "= \"\Z4===== Misc =====\Zn \" "                                                     >>"${TMP_PATH}/menu"
+    echo "x \"Backup/Restore/Recovery \" "                                                    >>"${TMP_PATH}/menu"
+    [ "${ARCOFFLINE}" = "false" ] && echo "z \"Update Menu \" "                               >>"${TMP_PATH}/menu"
+    echo "I \"Power/Service Menu \" "                                                         >>"${TMP_PATH}/menu"
+    echo "V \"Credits \" "                                                                    >>"${TMP_PATH}/menu"
+
+    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --colors \
+      --cancel-label "Exit" --title "Arc Menu" --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
+      2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && break
+    case "$(cat ${TMP_PATH}/resp)" in
+      # Diag Section
+      a) sysinfo; NEXT="a" ;;
+      A) networkdiag; NEXT="A" ;;
+      # DSM Section
+      j) cmdlineMenu; NEXT="j" ;;
+      k) synoinfoMenu; NEXT="k" ;;
+      l) editUserConfig; NEXT="l" ;;
+      s) downgradeMenu; NEXT="s" ;;
+      t) resetPassword; NEXT="t" ;;
+      N) addNewDSMUser; NEXT="N" ;;
+      J) resetDSMNetwork; NEXT="J" ;;
+      M) mountDSM; NEXT="M" ;;
+      T) disablescheduledTasks; NEXT="T" ;;
+      B) getbackup; NEXT="B" ;;
+      # Loader Section
+      D) staticIPMenu; NEXT="D" ;;
+      f) bootScreen; NEXT="f" ;;
+      Z) loaderPorts; NEXT="Z" ;;
+      U) loaderPassword; NEXT="U" ;;
+      L) greplogs; NEXT="L" ;;
+      w) resetLoader; NEXT="w" ;;
+      C) cloneLoader; NEXT="C" ;;
+      n) editGrubCfg; NEXT="n" ;;
+      y) keymapMenu; NEXT="y" ;;
+      F) formatDisks; NEXT="F" ;;
+      # Misc Settings
+      x) backupMenu; NEXT="x" ;;
+      z) updateMenu; NEXT="z" ;;
+      I) rebootMenu; NEXT="I" ;;
+      V) credits; NEXT="V" ;;
+    esac
+  done
+  return
+}
+
+###############################################################################
 # Permits user edit the user config
 function editUserConfig() {
   OLDMODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
