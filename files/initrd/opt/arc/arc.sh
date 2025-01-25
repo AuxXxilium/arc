@@ -751,9 +751,9 @@ elif [ "${ARCMODE}" = "automated" ]; then
     make
   fi
 elif [ "${ARCMODE}" = "config" ]; then
+  [ "${CONFDONE}" = "true" ] && NEXT="2" || NEXT="1"
+  [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
   while true; do
-    [ "${CONFDONE}" = "true" ] && NEXT="2" || NEXT="1"
-    [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
 
     write_menu "=" "\Z4===== Main =====\Zn"
@@ -779,7 +779,6 @@ elif [ "${ARCMODE}" = "config" ]; then
     write_menu "=" "\Z4===== Info =====\Zn"
     write_menu "a" "Sysinfo"
     write_menu "A" "Networkdiag"
-    write_menu "=" "\Z4===== System ====\Zn"
     
     if [ "${CONFDONE}" = "true" ]; then
       if [ "${ARCOPTS}" = "true" ]; then
@@ -806,9 +805,9 @@ elif [ "${ARCMODE}" = "config" ]; then
         for addon in "cpufreqscaling" "storagepanel" "sequentialio"; do
           if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "${addon}"; then
             case "${addon}" in
-              "cpufreqscaling") write_menu "g" "Frequency Scaling Governor" ;;
-              "storagepanel") write_menu "P" "StoragePanel Options" ;;
-              "sequentialio") write_menu "Q" "SequentialIO Options" ;;
+              "cpufreqscaling") write_menu "g" "Scaling Governor" ;;
+              "storagepanel") write_menu "P" "StoragePanel" ;;
+              "sequentialio") write_menu "Q" "SequentialIO" ;;
             esac
           fi
         done

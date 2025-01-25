@@ -1864,7 +1864,7 @@ function loaderPorts() {
       2>"${TMP_PATH}/resp"
     RET=$?
     case ${RET} in
-    0) # ok-button
+    0)
       HTTP=$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)
       DUFS=$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)
       TTYD=$(sed -n '3p' "${TMP_PATH}/resp" 2>/dev/null)
@@ -1961,19 +1961,25 @@ function disablescheduledTasks {
     for I in ${DSMROOTS}; do
       # fixDSMRootPart "${I}"
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
-      [ $? -ne 0 ] && continue
+      if [ $? -ne 0 ]; then
+        continue
+      fi
       if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
-        echo "UPDATE task SET enable = 0;" | sqlite3 ${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db
+        echo "UPDATE task SET enable = 0;" | sqlite3 "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db"
         sync
-        echo "true" >${TMP_PATH}/isEnable
+        echo "true" > "${TMP_PATH}/isEnable"
       fi
       umount "${TMP_PATH}/mdX"
     done
     rm -rf "${TMP_PATH}/mdX"
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Scheduled Tasks" \
     --progressbox "Modifying..." 20 100
-  [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Disable all scheduled tasks successful." || MSG="Disable all scheduled tasks failed."
-  dialog --backtitle "$(backtitle)" --title Scheduled Tasks \
+  if [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ]; then
+    MSG="Disable all scheduled tasks successful."
+  else
+    MSG="Disable all scheduled tasks failed."
+  fi
+  dialog --backtitle "$(backtitle)" --title "Scheduled Tasks" \
     --msgbox "${MSG}" 0 0
   return
 }
