@@ -756,7 +756,7 @@ elif [ "${ARCMODE}" = "config" ]; then
     [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
 
-    write_menu "\Z4===== Main =====\Zn"
+    write_menu "=" "\Z4===== Main =====\Zn"
 
     if [ -z "${USERID}" ] && [ "${ARCOFFLINE}" = "false" ]; then
       write_menu "0" "HardwareID for Arc Patch"
@@ -893,8 +893,8 @@ elif [ "${ARCMODE}" = "config" ]; then
     write_menu "I" "Power/Service Menu"
     write_menu "V" "Credits"
 
-    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Classic Mode" --colors \
-          --cancel-label "Evo" --help-button --help-label "Exit" \
+    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Classic UI" --colors \
+          --cancel-label "Evo UI" --help-button --help-label "Exit" \
           --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
           2>"${TMP_PATH}/resp"
     RET=$?

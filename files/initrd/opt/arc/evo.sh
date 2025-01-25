@@ -754,7 +754,7 @@ elif [ "${ARCMODE}" = "config" ]; then
   NEXT="1"
   while true; do
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
-    write_menu "\Z4===== Main =====\Zn"
+    write_menu "=" "\Z4===== Main =====\Zn"
     if [ -z "${USERID}" ] && [ "${ARCOFFLINE}" = "false" ]; then
       write_menu_with_color "0" "HardwareID" "${HARDWAREID}"
     fi
@@ -839,8 +839,8 @@ elif [ "${ARCMODE}" = "config" ]; then
     elif [ "${BUILDDONE}" = "true" ]; then
       EXTRA_LABEL="Boot"
     fi
-    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Evo Mode" --colors \
-          --cancel-label "Classic" --help-button --help-label "Exit" \
+    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Evo UI" --colors \
+          --cancel-label "Classic UI" --help-button --help-label "Exit" \
           --extra-button --extra-label "${EXTRA_LABEL}" \
           --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
           2>"${TMP_PATH}/resp"
