@@ -78,22 +78,22 @@ function advancedMenu() {
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
     write_menu "=" "\Z4===== System ====\Zn"
 
-    if [ "${BOOTOPTS}" = "true" ]; then
-      write_menu "6" "\Z1Hide Boot Options\Zn"
-      write_menu_with_color "m" "Kernelload" "${KERNELLOAD}"
-      write_menu_with_color "E" "eMMC Boot Support" "${EMMCBOOT}"
-      if [ "${DIRECTBOOT}" = "false" ]; then
-        write_menu_with_color "i" "Boot IP Waittime" "${BOOTIPWAIT}"
-      fi
-      write_menu_with_color "q" "Directboot" "${DIRECTBOOT}"
-      write_menu_with_color "W" "RD Compression" "${RD_COMPRESSED}"
-      write_menu_with_color "X" "Sata DOM" "${SATADOM}"
-      write_menu_with_color "u" "LKM Version" "${LKM}"
-    else
-      write_menu "8" "\Z1Show Boot Options\Zn"
-    fi
-
     if [ "${CONFDONE}" = "true" ]; then
+      if [ "${BOOTOPTS}" = "true" ]; then
+        write_menu "6" "\Z1Hide Boot Options\Zn"
+        write_menu_with_color "m" "Kernelload" "${KERNELLOAD}"
+        write_menu_with_color "E" "eMMC Boot Support" "${EMMCBOOT}"
+        if [ "${DIRECTBOOT}" = "false" ]; then
+          write_menu_with_color "i" "Boot IP Waittime" "${BOOTIPWAIT}"
+        fi
+        write_menu_with_color "q" "Directboot" "${DIRECTBOOT}"
+        write_menu_with_color "W" "RD Compression" "${RD_COMPRESSED}"
+        write_menu_with_color "X" "Sata DOM" "${SATADOM}"
+        write_menu_with_color "u" "LKM Version" "${LKM}"
+      else
+        write_menu "6" "\Z1Show Boot Options\Zn"
+      fi
+
       if [ "${DSMOPTS}" = "true" ]; then
         write_menu "7" "\Z1Hide DSM Options\Zn"
         write_menu "=" "\Z4===== DSM =====\Zn"
@@ -172,7 +172,7 @@ function advancedMenu() {
           F) formatDisks; NEXT="F" ;;
           6) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
             BOOTOPTS="${BOOTOPTS}"
-            NEXT="8"
+            NEXT="6"
             ;;
           m) [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
             writeConfigKey "kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"

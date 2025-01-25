@@ -894,7 +894,7 @@ elif [ "${ARCMODE}" = "config" ]; then
     write_menu "V" "Credits"
 
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Classic UI" --colors \
-          --cancel-label "Evo UI" --help-button --help-label "Exit" \
+          --cancel-label "Evo" --help-button --help-label "Exit" \
           --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
           2>"${TMP_PATH}/resp"
     RET=$?

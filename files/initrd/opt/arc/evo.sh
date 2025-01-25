@@ -810,6 +810,7 @@ elif [ "${ARCMODE}" = "config" ]; then
     fi
 
     write_menu_with_color "c" "Offline Mode" "${ARCOFFLINE}"
+    write_menu "9" "Advanced Options"
     write_menu "=" "\Z4===== Diag =====\Zn"
     write_menu "a" "Sysinfo"
     write_menu "A" "Networkdiag"
@@ -818,7 +819,6 @@ elif [ "${ARCMODE}" = "config" ]; then
     [ "${ARCOFFLINE}" = "false" ] && write_menu "z" "Update Menu"
     write_menu "I" "Power/Service Menu"
     write_menu "V" "Credits"
-    write_menu "9" "Advanced Options"
 
     if [ "${CONFDONE}" = "false" ]; then
       EXTRA_LABEL="Config"
@@ -828,7 +828,7 @@ elif [ "${ARCMODE}" = "config" ]; then
       EXTRA_LABEL="Boot"
     fi
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Evo UI" --colors \
-          --cancel-label "Classic UI" --help-button --help-label "Exit" \
+          --cancel-label "Classic" --help-button --help-label "Exit" \
           --extra-button --extra-label "${EXTRA_LABEL}" \
           --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
           2>"${TMP_PATH}/resp"
