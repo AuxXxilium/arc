@@ -807,24 +807,12 @@ elif [ "${ARCMODE}" = "config" ]; then
       else
         write_menu_with_color "h" "USB as Internal" "${USBMOUNT}"
       fi
-
-      if [ "${SHOWMORE}" = "true" ]; then
-        write_menu "8" "\Z1Hide More Options\Zn"
-        write_menu_with_color "m" "Kernelload" "${KERNELLOAD}"
-        write_menu_with_color "E" "eMMC Boot Support" "${EMMCBOOT}"
-        if [ "${DIRECTBOOT}" = "false" ]; then
-          write_menu_with_color "i" "Boot IP Waittime" "${BOOTIPWAIT}"
-        fi
-        write_menu_with_color "q" "Directboot" "${DIRECTBOOT}"
-        write_menu_with_color "W" "RD Compression" "${RD_COMPRESSED}"
-        write_menu_with_color "X" "Sata DOM" "${SATADOM}"
-        write_menu_with_color "u" "LKM Version" "${LKM}"
-      else
-        write_menu "8" "\Z1Show More Options\Zn"
-      fi
     fi
 
     write_menu_with_color "c" "Offline Mode" "${ARCOFFLINE}"
+    write_menu "=" "\Z4===== Diag =====\Zn"
+    write_menu "a" "Sysinfo"
+    write_menu "A" "Networkdiag"
     write_menu "=" "\Z4===== Misc =====\Zn"
     write_menu "x" "Backup/Restore/Recovery"
     [ "${ARCOFFLINE}" = "false" ] && write_menu "z" "Update Menu"
@@ -860,38 +848,6 @@ elif [ "${ARCMODE}" = "config" ]; then
           g) governorMenu; NEXT="g" ;;
           P) storagepanelMenu; NEXT="P" ;;
           Q) sequentialIOMenu; NEXT="Q" ;;
-          8) [ "${SHOWMORE}" = "true" ] && SHOWMORE='false' || SHOWMORE='true'
-            SHOWMORE="${SHOWMORE}"
-            NEXT="8"
-            ;;
-          m) [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
-            writeConfigKey "kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
-            NEXT="m"
-            ;;
-          E) [ "${EMMCBOOT}" = "true" ] && EMMCBOOT='false' || EMMCBOOT='true'
-            if [ "${EMMCBOOT}" = "false" ]; then
-              writeConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
-              deleteConfigKey "synoinfo.disk_swap" "${USER_CONFIG_FILE}"
-              deleteConfigKey "synoinfo.supportraid" "${USER_CONFIG_FILE}"
-              deleteConfigKey "synoinfo.support_emmc_boot" "${USER_CONFIG_FILE}"
-              deleteConfigKey "synoinfo.support_install_only_dev" "${USER_CONFIG_FILE}"
-            elif [ "${EMMCBOOT}" = "true" ]; then
-              writeConfigKey "emmcboot" "true" "${USER_CONFIG_FILE}"
-              writeConfigKey "synoinfo.disk_swap" "no" "${USER_CONFIG_FILE}"
-              writeConfigKey "synoinfo.supportraid" "no" "${USER_CONFIG_FILE}"
-              writeConfigKey "synoinfo.support_emmc_boot" "yes" "${USER_CONFIG_FILE}"
-              writeConfigKey "synoinfo.support_install_only_dev" "yes" "${USER_CONFIG_FILE}"
-            fi
-            writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-            BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-            NEXT="E"
-            ;;
-          i) bootipwaittime; NEXT="i" ;;
-          q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
-            grub-editenv ${USER_GRUBENVFILE} create
-            writeConfigKey "directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
-            NEXT="q"
-            ;;
           K) KERNEL=$([ "${KERNEL}" = "official" ] && echo 'custom' || echo 'official')
             writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
             dialog --backtitle "$(backtitle)" --title "Kernel" \
@@ -930,24 +886,14 @@ elif [ "${ARCMODE}" = "config" ]; then
             BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
             NEXT="O"
             ;;
-          W) RD_COMPRESSED=$([ "${RD_COMPRESSED}" = "true" ] && echo 'false' || echo 'true')
-            writeConfigKey "rd-compressed" "${RD_COMPRESSED}" "${USER_CONFIG_FILE}"
-            writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-            BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-            NEXT="W"
-            ;;
-          X) satadomMenu; NEXT="X" ;;
-          u) [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
-            writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
-            writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-            BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-            NEXT="u"
-            ;;
           c) ARCOFFLINE=$([ "${ARCOFFLINE}" = "true" ] && echo 'false' || echo 'true')
             writeConfigKey "arc.offline" "${ARCOFFLINE}" "${USER_CONFIG_FILE}"
             [ "${ARCOFFLINE}" = "false" ] && exec arc.sh
             NEXT="c"
             ;;
+          # Diag Section
+          a) sysinfo; NEXT="a" ;;
+          A) networkdiag; NEXT="A" ;;
           # Misc Settings
           x) backupMenu; NEXT="x" ;;
           z) updateMenu; NEXT="z" ;;
