@@ -44,7 +44,7 @@ EXTRACTOR_PATH="${PART3_PATH}/extractor"
 EXTRACTOR_BIN="syno_extract_system_patch"
 
 HTTPPORT=$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
-[ -z "${HTTPPORT}" ] && HTTPPORT=8080 || true
+[ -z "${HTTPPORT}" ] && HTTPPORT=5000 || true
 DUFSPORT=$(grep -i '^DUFS_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
 [ -z "${DUFSPORT}" ] && DUFSPORT=7304 || true
 TTYDPORT=$(grep -i '^TTYD_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)

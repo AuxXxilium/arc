@@ -1822,7 +1822,7 @@ function loaderPorts() {
         [ $? -eq 0 ] && continue || break
       fi
       rm -f "/etc/arc.conf"
-      [ "${HTTPPORT:-8080}" != "8080" ] && echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf"
+      [ "${HTTPPORT:-5000}" != "5000" ] && echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf"
       [ "${DUFSPORT:-7304}" != "7304" ] && echo "DUFS_PORT=${DUFSPORT}" >>"/etc/arc.conf"
       [ "${TTYDPORT:-7681}" != "7681" ] && echo "TTYD_PORT=${TTYDPORT}" >>"/etc/arc.conf"
       RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
