@@ -24,6 +24,6 @@ Unsupported
 Community Package required *
 
 - NVMe
-Cache: yes (sometimes addon required)
-Storage: Addon required
+Cache: yes
+Storage: no
 System (NVMe only): no
