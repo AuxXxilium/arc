@@ -892,7 +892,7 @@ elif [ "${ARCMODE}" = "config" ]; then
     write_menu "I" "Power/Service Menu"
     write_menu "V" "Credits"
     if [ "$TERM" != "xterm-256color" ]; then
-      WEBCONFIG="Webconfig: http://${IPCON}:5000"
+      WEBCONFIG="Webconfig: http://${IPCON}${HTTPPORT:+:$HTTPPORT}"
     else
       WEBCONFIG=""
     fi
@@ -1071,7 +1071,7 @@ fi
 # Inform user
 echo -e "Call \033[1;34marc.sh\033[0m to configure Loader"
 echo
-echo -e "Web Config: \033[1;34mhttp://${IPCON}:${HTTPPORT:-5000}\033[0m"
+echo -e "Web Config: \033[1;34mhttp://${IPCON}${HTTPPORT:+:$HTTPPORT}\033[0m"
 echo
 echo -e "SSH Access:"
 echo -e "IP: \033[1;34m${IPCON}\033[0m"
