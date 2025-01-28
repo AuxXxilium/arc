@@ -667,6 +667,7 @@ function systemCheck () {
   [ -z "${ARCCONF}" ] && writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   getnetinfo
   getdiskinfo
+  getmap
 }
 
 ###############################################################################
