@@ -261,15 +261,13 @@ function arcVersion() {
     if [ "${ADDONS}" = "{}" ]; then
       initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+      initConfigKey "addons.hdddb" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
       if [ ${NVMEDRIVES} -gt 0 ]; then
         if [ "${PLATFORM}" = "epyc7002" ] && [ ${SATADRIVES} -eq 0 ] && [ ${SASDRIVES} -eq 0 ]; then
           initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
-        elif [ "${MODEL}" = "DS918+" ] || [ "${MODEL}" = "DS1019+" ] || [ "${MODEL}" = "DS1621xs+" ] || [ "${MODEL}" = "RS1619xs+" ]; then
-          initConfigKey "addons.nvmecache" "" "${USER_CONFIG_FILE}"
-          initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
-        else
+        elif [ "${DT}" = "true"]; then
           initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
         fi
       fi
@@ -288,7 +286,7 @@ function arcVersion() {
       if [ -n "${ARCCONF}" ]; then
         initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
       fi
-      if [ ${SASDRIVES} -gt 0 ] && [ "${DT}" = "false" ]; then
+      if [ ${SASDRIVES} -gt 0 ]; then
         initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
       fi
     fi
