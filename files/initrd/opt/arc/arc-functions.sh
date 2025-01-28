@@ -3645,3 +3645,15 @@ function getdiskinfo() {
   done
   writeConfigKey "device.externalcontroller" "${external_controller}" "${USER_CONFIG_FILE}"
 }
+
+###############################################################################
+# Get Network Info
+function getnetinfo() {
+  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
+  for N in ${ETHX}; do
+    IPCON="$(getIP "${N}")"
+    [ -n "${IPCON}" ] && break
+  done
+  
+  export IPCON="${IPCON:-noip}"
+}

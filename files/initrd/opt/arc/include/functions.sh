@@ -665,6 +665,7 @@ function systemCheck () {
   # Check for Arc Patch
   arc_mode
   [ -z "${ARCCONF}" ] && writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+  getnetinfo
   getdiskinfo
 }
 
