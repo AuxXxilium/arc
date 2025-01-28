@@ -14,23 +14,21 @@ checkBootLoader || die "The loader is corrupted, please rewrite it!"
 
 BUS=$(getBus "${LOADER_DISK}")
 EFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)
-check_boot_mode
+arc_mode
 
 # Print Title centralized
 clear
 COLUMNS=${COLUMNS:-50}
 BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
 TITLE="Version:"
-TITLE+=" ${ARC_VERSION} (${ARC_BUILD})"
-[ -n "${ARC_BRANCH}" ] && TITLE+=" | Branch: ${ARC_BRANCH}"
+TITLE+=" ${ARC_VERSION} (${ARC_BUILD}) | Branch: ${ARC_BRANCH}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 TITLE="Boot:"
 [ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
-TITLE+=" | Device: [${BUS}]"
-TITLE+=" | Mode: [${ARCMODE}]"
+TITLE+=" | Device: [${BUS}] | Mode: [${ARCMODE}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
 # Check for Config File
@@ -165,37 +163,7 @@ IPCON=""
 echo
 [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
 sleep 3
-for N in ${ETHX}; do
-  COUNT=0
-  DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-  while true; do
-    if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-      echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
-      break
-    fi
-    COUNT=$((COUNT + 1))
-    IP="$(getIP "${N}")"
-    if [ -n "${IP}" ]; then
-      SPEED=$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')
-      if [[ "${IP}" =~ ^169\.254\..* ]]; then
-        echo -e "\r${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
-      else
-        echo -e "\r${DRIVER} (${SPEED}): \033[1;37m${IP}\033[0m"
-        [ -z "${IPCON}" ] && IPCON="${IP}"
-      fi
-      break
-    fi
-    if [ -z "$(cat /sys/class/net/${N}}/carrier 2>/dev/null)" ]; then
-      echo -e "\r${DRIVER}: \033[1;37mDOWN\033[0m"
-      break
-    fi
-    if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
-      echo -e "\r${DRIVER}: \033[1;37mTIMEOUT\033[0m"
-      break
-    fi
-    sleep 1
-  done
-done
+checkNIC
 echo
 
 mkdir -p "${ADDONS_PATH}"

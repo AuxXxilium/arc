@@ -13,7 +13,6 @@ function getnet() {
   ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
   MODEL=$(readConfigKey "model" "${USER_CONFIG_FILE}")
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   ETHN=$(echo "${ETHX}" | wc -w)
 
   if [ "${ARCPATCH}" = "user" ]; then

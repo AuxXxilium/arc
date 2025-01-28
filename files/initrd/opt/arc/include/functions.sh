@@ -24,21 +24,60 @@ function checkBootLoader() {
 
 ###############################################################################
 # Check boot mode
-function check_boot_mode() {
-  if grep -q 'automated_arc' /proc/cmdline; then
+function arc_mode() {
+  unset ARCMODE ARC_BRANCH ARC_VERSION ARC_BUILD ARCCONF
+  if grep -q "automated_arc" /proc/cmdline; then
     export ARCMODE="automated"
-  elif grep -q 'update_arc' /proc/cmdline; then
+  elif grep -q "update_arc" /proc/cmdline; then
     export ARCMODE="update"
-  elif grep -q 'force_arc' /proc/cmdline; then
+  elif grep -q "force_arc" /proc/cmdline; then
     export ARCMODE="config"
   else
     export ARCMODE="dsm"
   fi
-  [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1
-  if [ -n "${ARC_BRANCH}" ]; then
-    writeConfigKey "arc.branch" "${ARC_BRANCH}" "${USER_CONFIG_FILE}"
-  fi
-  return 0
+  [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1 || true
+  [ -f "${PART1_PATH}/ARC-BRANCH" ] && export ARC_BRANCH=$(cat "${PART1_PATH}/ARC-BRANCH") || export ARC_BRANCH="null"
+  [ -f "${PART1_PATH}/ARC-VERSION" ] && export ARC_VERSION=$(cat "${PART1_PATH}/ARC-VERSION") || export ARC_VERSION="null"
+  [ -f "${PART1_PATH}/ARC-BUILD" ] && export ARC_BUILD=$(cat "${PART1_PATH}/ARC-BUILD") || export ARC_BUILD="null"
+  [ "$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")" ] && export ARCCONF="true" || export ARCCONF=""
+}
+
+
+###
+# Check for NIC and IP
+function checkNIC() {
+  for N in ${ETHX}; do
+    COUNT=0
+    DRIVER=$(basename "$(readlink -f /sys/class/net/${N}/device/driver 2>/dev/null)")
+    while true; do
+      CARRIER=$(cat /sys/class/net/${N}/carrier 2>/dev/null)
+      if [ "${CARRIER}" = "0" ]; then
+        echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
+        break
+      fi
+      COUNT=$((COUNT + 1))
+      IP=$(getIP "${N}")
+      if [ -n "${IP}" ]; then
+        SPEED=$(ethtool ${N} 2>/dev/null | awk '/Speed:/ {print $2}')
+        if [[ "${IP}" =~ ^169\.254\..* ]]; then
+          echo -e "\r${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
+        else
+          echo -e "\r${DRIVER} (${SPEED}): \033[1;37m${IP}\033[0m"
+          [ -z "${IPCON}" ] && IPCON="${IP}"
+        fi
+        break
+      fi
+      if [ -z "${CARRIER}" ]; then
+        echo -e "\r${DRIVER}: \033[1;37mDOWN\033[0m"
+        break
+      fi
+      if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
+        echo -e "\r${DRIVER}: \033[1;37mTIMEOUT\033[0m"
+        break
+      fi
+      sleep 1
+    done
+  done
 }
 
 ###############################################################################
@@ -622,7 +661,6 @@ function systemCheck () {
     CPUFREQ="false"
   fi
   # Check for Arc Patch
-  ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
   [ -z "${ARCCONF}" ] && writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   # Check for Disks
   getmap
