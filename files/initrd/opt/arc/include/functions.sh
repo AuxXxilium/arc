@@ -692,17 +692,13 @@ function write_menu_with_color() {
 # Check boot mode
 function check_boot_mode() {
   if grep -q "automated_arc" /proc/cmdline; then
-    writeConfigKey "arc.mode" "automated" "${USER_CONFIG_FILE}"
-    BOOTMODE="automated"
+    export ARCMODE="automated"
   elif grep -q "update_arc" /proc/cmdline; then
-    writeConfigKey "arc.mode" "update" "${USER_CONFIG_FILE}"
-    BOOTMODE="update"
+    export ARCMODE="update"
   elif grep -q "force_arc" /proc/cmdline; then
-    writeConfigKey "arc.mode" "config" "${USER_CONFIG_FILE}"
-    BOOTMODE="config"
+    export ARCMODE="config"
   else
-    writeConfigKey "arc.mode" "dsm" "${USER_CONFIG_FILE}"
-    BOOTMODE="dsm"
+    export ARCMODE="dsm"
   fi
   [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1 || true
   if [ -n "${ARC_BRANCH}" ]; then

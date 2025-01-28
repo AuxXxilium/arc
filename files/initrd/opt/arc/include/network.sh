@@ -14,7 +14,6 @@ function getnet() {
   MODEL=$(readConfigKey "model" "${USER_CONFIG_FILE}")
   ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
-  ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
   ETHN=$(echo "${ETHX}" | wc -w)
 
   if [ "${ARCPATCH}" = "user" ]; then

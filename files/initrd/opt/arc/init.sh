@@ -30,7 +30,7 @@ printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 TITLE="Boot:"
 [ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
 TITLE+=" | Device: [${BUS}]"
-TITLE+=" | Mode: [${BOOT_MODE}]"
+TITLE+=" | Mode: [${ARCMODE}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
 # Check for Config File
@@ -144,7 +144,6 @@ writeConfigKey "pid" "${PID}" "${USER_CONFIG_FILE}"
 
 # Decide if boot automatically
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
 if [ "${ARCMODE}" = "config" ]; then
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
 elif [ "${ARCMODE}" = "automated" ]; then
