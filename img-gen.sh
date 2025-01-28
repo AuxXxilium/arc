@@ -66,7 +66,7 @@ fi
 echo "Copying files"
 sudo cp -rf "files/p1/"* "/tmp/p1"
 sudo cp -rf "files/p3/"* "/tmp/p3"
-sync
+sudo sync
 
 echo "Unmount image file"
 sudo umount "/tmp/p1"
