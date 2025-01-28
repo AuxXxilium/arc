@@ -14,8 +14,8 @@ ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 BUS=$(getBus "${LOADER_DISK}")
-FBI=$(cat /sys/class/graphics/fb*/name 2>/dev/null | head -1)
 EFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)
+check_boot_mode
 
 # Print Title centralized
 clear
@@ -30,7 +30,8 @@ printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 TITLE="Boot:"
 [ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
-TITLE+=" [${BUS}]"
+TITLE+="| Device: [${BUS}]"
+TITLE+="| Mode: [${BOOT_MODE}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 # Check if DSM zImage/Ramdisk is changed, patch it if necessary, update Files if necessary
 ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
@@ -71,7 +72,7 @@ if [ "${ARCPATCH}" = "true" ]; then
   HARDWAREID="$(readConfigKey "arc.hardwareid" "${USER_CONFIG_FILE}")"
   HWID="$(genHWID)"
   if [ "${HARDWAREID}" != "${HWID}" ]; then
-    echo "\033[1;31m*** HardwareID does not match! - Loader can't boot to DSM! You need to reconfigure your Loader - Rebooting to Config Mode! ***\033[0m"
+    echo -e "\033[1;31m*** HardwareID does not match! - Loader can't boot to DSM! You need to reconfigure your Loader - Rebooting to Config Mode! ***\033[0m"
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"

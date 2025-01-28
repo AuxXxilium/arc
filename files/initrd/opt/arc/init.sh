@@ -14,6 +14,7 @@ checkBootLoader || die "The loader is corrupted, please rewrite it!"
 
 BUS=$(getBus "${LOADER_DISK}")
 EFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)
+check_boot_mode
 
 # Print Title centralized
 clear
@@ -28,7 +29,8 @@ printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 TITLE="Boot:"
 [ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
-TITLE+=" [${BUS}]"
+TITLE+=" | Device: [${BUS}]"
+TITLE+=" | Mode: [${BOOT_MODE}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
 # Check for Config File
@@ -84,22 +86,12 @@ initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "usbmount" "false" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-if grep -q "automated_arc" /proc/cmdline; then
-  writeConfigKey "arc.mode" "automated" "${USER_CONFIG_FILE}"
-elif grep -q "update_arc" /proc/cmdline; then
-  writeConfigKey "arc.mode" "update" "${USER_CONFIG_FILE}"
-elif grep -q "force_arc" /proc/cmdline; then
-  writeConfigKey "arc.mode" "config" "${USER_CONFIG_FILE}"
-else
-  writeConfigKey "arc.mode" "dsm" "${USER_CONFIG_FILE}"
-fi
-[ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1 || true
-if [ -n "${ARC_BRANCH}" ]; then
-  writeConfigKey "arc.branch" "${ARC_BRANCH}" "${USER_CONFIG_FILE}"
-fi
+
 # Sort network interfaces
 if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
+  echo -e "Sorting NIC: \033[1;34mactive\033[0m"
   _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
+  echo
 fi
 # Read/Write IP/Mac to config
 ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
