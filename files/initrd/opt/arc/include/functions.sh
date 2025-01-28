@@ -26,11 +26,11 @@ function checkBootLoader() {
 # Check boot mode
 function arc_mode() {
   unset ARCMODE ARC_BRANCH ARC_VERSION ARC_BUILD ARCCONF
-  if grep -q "automated_arc" /proc/cmdline; then
+  if grep -q 'automated_arc' /proc/cmdline; then
     export ARCMODE="automated"
-  elif grep -q "update_arc" /proc/cmdline; then
+  elif grep -q 'update_arc' /proc/cmdline; then
     export ARCMODE="update"
-  elif grep -q "force_arc" /proc/cmdline; then
+  elif grep -q 'force_arc' /proc/cmdline; then
     export ARCMODE="config"
   else
     export ARCMODE="dsm"
@@ -661,6 +661,7 @@ function systemCheck () {
     CPUFREQ="false"
   fi
   # Check for Arc Patch
+  arc_mode
   [ -z "${ARCCONF}" ] && writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   # Check for Disks
   getmap

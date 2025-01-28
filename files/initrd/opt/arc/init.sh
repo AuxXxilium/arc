@@ -8,13 +8,13 @@ set -e
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 checkBootLoader || die "The loader is corrupted, please rewrite it!"
+arc_mode || die "No bootmode found!"
 
 [ -f "${HOME}/.initialized" ] && exec arc.sh || true
 [ -f "${USER_CONFIG_FILE}" ] && sed -i "s/'/\"/g" "${USER_CONFIG_FILE}" >/dev/null 2>&1 || true
 
 BUS=$(getBus "${LOADER_DISK}")
 EFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)
-arc_mode
 
 # Print Title centralized
 clear

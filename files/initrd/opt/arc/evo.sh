@@ -227,8 +227,6 @@ elif [ "${ARCMODE}" = "config" ]; then
         ;;
     esac
   done
-else
-  exec reboot
 fi
 
 # Inform user
