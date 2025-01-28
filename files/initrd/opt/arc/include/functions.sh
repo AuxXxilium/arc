@@ -23,6 +23,25 @@ function checkBootLoader() {
 }
 
 ###############################################################################
+# Check boot mode
+function check_boot_mode() {
+  if grep -q 'automated_arc' /proc/cmdline; then
+    export ARCMODE="automated"
+  elif grep -q 'update_arc' /proc/cmdline; then
+    export ARCMODE="update"
+  elif grep -q 'force_arc' /proc/cmdline; then
+    export ARCMODE="config"
+  else
+    export ARCMODE="dsm"
+  fi
+  [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1
+  if [ -n "${ARC_BRANCH}" ]; then
+    writeConfigKey "arc.branch" "${ARC_BRANCH}" "${USER_CONFIG_FILE}"
+  fi
+  return 0
+}
+
+###############################################################################
 # Just show error message and dies
 function die() {
   echo -e "\033[1;41m$@\033[0m"
@@ -686,22 +705,4 @@ function write_menu() {
     
 function write_menu_with_color() {
   echo "$1 \"$2: \Z4${3:-none}\Zn\" " >>"${TMP_PATH}/menu"
-}
-
-###############################################################################
-# Check boot mode
-function check_boot_mode() {
-  if grep -q "automated_arc" /proc/cmdline; then
-    export ARCMODE="automated"
-  elif grep -q "update_arc" /proc/cmdline; then
-    export ARCMODE="update"
-  elif grep -q "force_arc" /proc/cmdline; then
-    export ARCMODE="config"
-  else
-    export ARCMODE="dsm"
-  fi
-  [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1 || true
-  if [ -n "${ARC_BRANCH}" ]; then
-    writeConfigKey "arc.branch" "${ARC_BRANCH}" "${USER_CONFIG_FILE}"
-  fi
 }
