@@ -8,6 +8,7 @@ set -e
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 checkBootLoader || die "The loader is corrupted, please rewrite it!"
+arc_mode || die "No bootmode found!"
 
 [ -f "${HOME}/.initialized" ] && exec arc.sh || true
 [ -f "${USER_CONFIG_FILE}" ] && sed -i "s/'/\"/g" "${USER_CONFIG_FILE}" >/dev/null 2>&1 || true
@@ -20,15 +21,14 @@ clear
 COLUMNS=${COLUMNS:-50}
 BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
 TITLE="Version:"
-TITLE+=" ${ARC_VERSION} (${ARC_BUILD})"
-[ -n "${ARC_BRANCH}" ] && TITLE+=" | Branch: ${ARC_BRANCH}"
+TITLE+=" ${ARC_VERSION} (${ARC_BUILD}) | Branch: ${ARC_BRANCH}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 TITLE="Boot:"
 [ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
-TITLE+=" [${BUS}]"
+TITLE+=" | Device: [${BUS}] | Mode: [${ARCMODE}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
 # Check for Config File
@@ -84,45 +84,35 @@ initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "usbmount" "false" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-if grep -q "automated_arc" /proc/cmdline; then
-  writeConfigKey "arc.mode" "automated" "${USER_CONFIG_FILE}"
-elif grep -q "update_arc" /proc/cmdline; then
-  writeConfigKey "arc.mode" "update" "${USER_CONFIG_FILE}"
-elif grep -q "force_arc" /proc/cmdline; then
-  writeConfigKey "arc.mode" "config" "${USER_CONFIG_FILE}"
-else
-  writeConfigKey "arc.mode" "dsm" "${USER_CONFIG_FILE}"
-fi
-[ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1 || true
-if [ -n "${ARC_BRANCH}" ]; then
-  writeConfigKey "arc.branch" "${ARC_BRANCH}" "${USER_CONFIG_FILE}"
-fi
+
 # Sort network interfaces
 if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
+  echo -e "Sorting NIC: \033[1;34mactive\033[0m"
   _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
+  echo
 fi
 # Read/Write IP/Mac to config
-ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
-  for N in ${ETHX}; do
-    MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
-    IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
-    if [ -n "${IPR}" ] && [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-      IFS='/' read -r -a IPRA <<<"${IPR}"
-      ip addr flush dev "${N}"
-      ip addr add "${IPRA[0]}/${IPRA[1]:-"255.255.255.0"}" dev "${N}"
-      if [ -n "${IPRA[2]}" ]; then
-        ip route add default via "${IPRA[2]}" dev "${N}"
-      fi
-      if [ -n "${IPRA[3]:-${IPRA[2]}}" ]; then
-        sed -i "/nameserver ${IPRA[3]:-${IPRA[2]}}/d" /etc/resolv.conf
-        echo "nameserver ${IPRA[3]:-${IPRA[2]}}" >>/etc/resolv.conf
-      fi
-      sleep 1
+ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
+for N in ${ETHX}; do
+  MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
+  IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
+  if [ -n "${IPR}" ] && [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
+    IFS='/' read -r -a IPRA <<<"${IPR}"
+    ip addr flush dev "${N}"
+    ip addr add "${IPRA[0]}/${IPRA[1]:-"255.255.255.0"}" dev "${N}"
+    if [ -n "${IPRA[2]}" ]; then
+      ip route add default via "${IPRA[2]}" dev "${N}"
     fi
-    [ "${N::3}" = "eth" ] && ethtool -s "${N}" wol g 2>/dev/null || true
-    # [ "${N::3}" = "eth" ] && ethtool -K ${N} rxhash off 2>/dev/null || true
-    initConfigKey "${N}" "${MACR}" "${USER_CONFIG_FILE}"
-  done
+    if [ -n "${IPRA[3]:-${IPRA[2]}}" ]; then
+      sed -i "/nameserver ${IPRA[3]:-${IPRA[2]}}/d" /etc/resolv.conf
+      echo "nameserver ${IPRA[3]:-${IPRA[2]}}" >>/etc/resolv.conf
+    fi
+    sleep 1
+  fi
+  [ "${N::3}" = "eth" ] && ethtool -s "${N}" wol g 2>/dev/null || true
+  # [ "${N::3}" = "eth" ] && ethtool -K ${N} rxhash off 2>/dev/null || true
+  initConfigKey "${N}" "${MACR}" "${USER_CONFIG_FILE}"
+done
 ETHN=$(echo ${ETHX} | wc -w)
 writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
 # No network devices
@@ -152,7 +142,6 @@ writeConfigKey "pid" "${PID}" "${USER_CONFIG_FILE}"
 
 # Decide if boot automatically
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
 if [ "${ARCMODE}" = "config" ]; then
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
 elif [ "${ARCMODE}" = "automated" ]; then
@@ -169,42 +158,13 @@ echo
 
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
+echo
 echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
 IPCON=""
 echo
 [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
 sleep 3
-for N in ${ETHX}; do
-  COUNT=0
-  DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-  while true; do
-    if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-      echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
-      break
-    fi
-    COUNT=$((COUNT + 1))
-    IP="$(getIP "${N}")"
-    if [ -n "${IP}" ]; then
-      SPEED=$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')
-      if [[ "${IP}" =~ ^169\.254\..* ]]; then
-        echo -e "\r${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
-      else
-        echo -e "\r${DRIVER} (${SPEED}): \033[1;37m${IP}\033[0m"
-        [ -z "${IPCON}" ] && IPCON="${IP}"
-      fi
-      break
-    fi
-    if [ -z "$(cat /sys/class/net/${N}}/carrier 2>/dev/null)" ]; then
-      echo -e "\r${DRIVER}: \033[1;37mDOWN\033[0m"
-      break
-    fi
-    if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
-      echo -e "\r${DRIVER}: \033[1;37mTIMEOUT\033[0m"
-      break
-    fi
-    sleep 1
-  done
-done
+checkNIC
 echo
 
 mkdir -p "${ADDONS_PATH}"

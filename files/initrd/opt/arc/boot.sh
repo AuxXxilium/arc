@@ -8,13 +8,9 @@ set -e
 # Clear logs for dbgutils addons
 rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
 
-BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
-
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 BUS=$(getBus "${LOADER_DISK}")
-FBI=$(cat /sys/class/graphics/fb*/name 2>/dev/null | head -1)
 EFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)
 
 # Print Title centralized
@@ -22,15 +18,14 @@ clear
 COLUMNS=${COLUMNS:-50}
 BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
 TITLE="Version:"
-TITLE+=" ${ARC_VERSION} (${ARC_BUILD})"
-[ -n "${ARC_BRANCH}" ] && TITLE+=" | Branch: ${ARC_BRANCH}"
+TITLE+=" ${ARC_VERSION} (${ARC_BUILD}) | Branch: ${ARC_BRANCH}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 TITLE="Boot:"
 [ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
-TITLE+=" [${BUS}]"
+TITLE+=" | Device: [${BUS}] | Mode: [${ARCMODE}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 # Check if DSM zImage/Ramdisk is changed, patch it if necessary, update Files if necessary
 ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
@@ -60,6 +55,7 @@ DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
 HWIDINFO="$(readConfigKey "bootscreen.hwidinfo" "${USER_CONFIG_FILE}")"
 GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
+BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
 # Build Sanity Check
 [ "${BUILDDONE}" = "false" ] && die "Loader build not completed!"
@@ -71,7 +67,7 @@ if [ "${ARCPATCH}" = "true" ]; then
   HARDWAREID="$(readConfigKey "arc.hardwareid" "${USER_CONFIG_FILE}")"
   HWID="$(genHWID)"
   if [ "${HARDWAREID}" != "${HWID}" ]; then
-    echo "\033[1;31m*** HardwareID does not match! - Loader can't boot to DSM! You need to reconfigure your Loader - Rebooting to Config Mode! ***\033[0m"
+    echo -e "\033[1;31m*** HardwareID does not match! - Loader can't boot to DSM! You need to reconfigure your Loader - Rebooting to Config Mode! ***\033[0m"
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
@@ -150,10 +146,9 @@ ETHN=$(echo "${ETHX}" | wc -w)
 ETHM=${ETHM:-${ETHN}}
 NIC=0
 for N in ${ETHX}; do
-  MAC=$(readConfigKey "${N}" "${USER_CONFIG_FILE}")
+  MAC=$(readConfigKey "${N}" "${USER_CONFIG_FILE}" 2>/dev/null)
   MAC=${MAC:-$(cat /sys/class/net/${N}/address 2>/dev/null | tr '[:upper:]' '[:lower:]')}
-  NIC=$((NIC + 1))
-  CMDLINE["mac${NIC}"]="${MAC}"
+  CMDLINE["mac$((++NIC))"]="${MAC}"
   [ ${NIC} -ge ${ETHM} ] && break
 done
 CMDLINE["netif_num"]="${NIC}"
@@ -293,6 +288,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
   IPCON=""
+  echo
   if [ "${ARCPATCH}" = "true" ]; then
     echo -e "\033[1;37mDetected ${ETHN} NIC\033[0m | \033[1;34mUsing ${NIC} NIC for Arc Patch:\033[0m"
   else
@@ -301,40 +297,8 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo
 
   [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
-  sleep 2
-
-  for N in ${ETHX}; do
-    COUNT=0
-    DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
-    MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
-    while true; do
-      if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED @ Mac: ${MAC}\033[0m"
-        break
-      fi
-      COUNT=$((COUNT + 1))
-      IP="$(getIP "${N}")"
-      if [ -n "${IP}" ]; then
-        SPEED=$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')
-        if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          echo -e "\r${DRIVER} (${SPEED} | ${MAC}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
-        else
-          echo -e "\r${DRIVER} (${SPEED} | ${MAC}): \033[1;37m${IP}\033[0m"
-          [ -z "${IPCON}" ] && IPCON="${IP}"
-        fi
-        break
-      fi
-      if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        echo -e "\r${DRIVER} (${MAC}): \033[1;37mDOWN\033[0m"
-        break
-      fi
-      if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
-        echo -e "\r${DRIVER} (${MAC}): \033[1;37mTIMEOUT\033[0m"
-        break
-      fi
-      sleep 1
-    done
-  done
+  sleep 3
+  checkNIC
   echo
 
   DSMLOGO="$(readConfigKey "bootscreen.dsmlogo" "${USER_CONFIG_FILE}")"
