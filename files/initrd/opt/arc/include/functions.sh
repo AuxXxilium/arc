@@ -43,9 +43,11 @@ function arc_mode() {
 }
 
 
-###
+###############################################################################
 # Check for NIC and IP
 function checkNIC() {
+  # Get Amount of NIC
+  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
   for N in ${ETHX}; do
     COUNT=0
     DRIVER=$(basename "$(readlink -f /sys/class/net/${N}/device/driver 2>/dev/null)")
@@ -663,8 +665,7 @@ function systemCheck () {
   # Check for Arc Patch
   arc_mode
   [ -z "${ARCCONF}" ] && writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-  # Check for Disks
-  getmap
+  getdiskinfo
 }
 
 ###############################################################################
