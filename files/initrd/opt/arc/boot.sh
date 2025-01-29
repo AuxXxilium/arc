@@ -296,7 +296,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   fi
   echo
 
-  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
+  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S09dhcpcd restart >/dev/null 2>&1 || true
   sleep 3
   checkNIC
   echo

@@ -40,7 +40,7 @@ function arcModel() {
         [ "${DT}" = "true" ] && HBAS="" || HBAS="x"
         [ "${M}" = "SA6400" ] && HBAS="x"
         [ "${DT}" = "false" ] && USBS="int/ext" || USBS="ext"
-        M_2_CACHE="x"
+        [[ "${M}" = "DS719+" || "${M}" = "DS918+" || "${M}" = "DS1019+" || "${M}" = "DS1621xs+" || "${M}" = "RS1619xs+" ]] && M_2_CACHE="+" || M_2_CACHE="x"
         [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" ]] && M_2_CACHE=""
         [[ "${M}" = "DS220+" || "${M}" = "DS224+" || "${DT}" = "false" ]] && M_2_STORAGE="" || M_2_STORAGE="+"
         # Check id model is compatible with CPU
@@ -547,7 +547,7 @@ function arcSummary() {
     0)
       make
       ;;
-    3|255)
+    *)
       return 0
       ;;
   esac
@@ -3009,7 +3009,8 @@ function rebootMenu() {
     exit 0
   elif [ "${REDEST}" = "network" ]; then
     clear
-    /etc/init.d/S41dhcpcd restart
+    /etc/init.d/S07network restart
+    /etc/init.d/S09dhcpcd restart
     rm -f "${HOME}/.initialized" && exec init.sh
   else
     rebootTo ${REDEST}
