@@ -5,6 +5,8 @@ set -e
 
 . "${ARC_PATH}/include/functions.sh"
 
+arc_mode || die "No bootmode found!"
+
 # Clear logs for dbgutils addons
 rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
 
@@ -81,6 +83,7 @@ if [ "${DSMINFO}" = "true" ]; then
   echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
   echo -e "Platform: \033[1;37m${PLATFORM}\033[0m"
   echo -e "Version: \033[1;37m${PRODUCTVER} (${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))\033[0m"
+  echo -e "Kernel: \033[1;37m${KVER}\033[0m"
   echo -e "LKM: \033[1;37m${LKM}\033[0m"
   echo
 fi
@@ -304,7 +307,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   fi
 
   # Wait for boot interrupt
-  _bootwait
+  _bootwait || true
 
   for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
     if [ -w "/dev/${T}" ]; then

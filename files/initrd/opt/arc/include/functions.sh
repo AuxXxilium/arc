@@ -474,7 +474,7 @@ function checkBIOS_VT_d() {
 ###############################################################################
 # Rebooting
 function rebootTo() {
-  local MODES="config recovery junior automated update bios memtest"
+  local MODES="config recovery junior automated update uefi memtest"
   [ -z "${1}" ] && exit 1
   if ! echo "${MODES}" | grep -wq "${1}"; then exit 1; fi
   [ "${1}" = "automated" ] && echo "arc-${MODEL}-${PRODUCTVER}-${ARC_VERSION}" >"${PART3_PATH}/automated"
