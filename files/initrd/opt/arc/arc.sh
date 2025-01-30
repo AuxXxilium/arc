@@ -84,12 +84,6 @@ elif [ "${ARCMODE}" = "config" ]; then
     if [ "${CONFDONE}" = "true" ]; then
       if [ "${ARCOPTS}" = "true" ]; then
         write_menu "4" "\Z1Hide Arc DSM Options\Zn"
-      else
-        write_menu "4" "\Z1Show Arc DSM Options\Zn"
-      fi
-
-      if [ "${ARCOPTS}" = "true" ]; then
-        write_menu "=" "\Z4==== Arc DSM ====\Zn"
         write_menu "b" "Addons"
         write_menu "d" "Modules"
         write_menu "e" "Version"
@@ -122,32 +116,24 @@ elif [ "${ARCMODE}" = "config" ]; then
         else
           write_menu_with_color "h" "USB as Internal" "${USBMOUNT}"
         fi
+      else
+        write_menu "4" "\Z1Show Arc DSM Options\Zn"
       fi
 
       if [ "${BOOTOPTS}" = "true" ]; then
         write_menu "6" "\Z1Hide Boot Options\Zn"
-      else
-        write_menu "6" "\Z1Show Boot Options\Zn"
-      fi
-
-      if [ "${BOOTOPTS}" = "true" ]; then
-        write_menu "=" "\Z4===== Boot =====\Zn"
         write_menu_with_color "m" "Boot Kernelload" "${KERNELLOAD}"
         write_menu_with_color "E" "eMMC Boot Support" "${EMMCBOOT}"
         if [ "${DIRECTBOOT}" = "false" ]; then
           write_menu_with_color "i" "Boot IP Waittime" "${BOOTIPWAIT}"
         fi
         write_menu_with_color "q" "Directboot" "${DIRECTBOOT}"
+      else
+        write_menu "6" "\Z1Show Boot Options\Zn"
       fi
 
       if [ "${DSMOPTS}" = "true" ]; then
         write_menu "7" "\Z1Hide DSM Options\Zn"
-      else
-        write_menu "7" "\Z1Show DSM Options\Zn"
-      fi
-
-      if [ "${DSMOPTS}" = "true" ]; then
-        write_menu "=" "\Z4===== DSM =====\Zn"
         write_menu "j" "Cmdline"
         write_menu "k" "Synoinfo"
         write_menu "N" "Add new User"
@@ -158,17 +144,13 @@ elif [ "${ARCMODE}" = "config" ]; then
         write_menu "l" "Edit User Config"
         write_menu "s" "Allow Downgrade Version"
         write_menu_with_color "O" "Official Driver Priority" "${ODP}"
+      else
+        write_menu "7" "\Z1Show DSM Options\Zn"
       fi
     fi
 
     if [ "${LOADEROPTS}" = "true" ]; then
       write_menu "8" "\Z1Hide Loader Options\Zn"
-    else
-      write_menu "8" "\Z1Show Loader Options\Zn"
-    fi
-
-    if [ "${LOADEROPTS}" = "true" ]; then
-      write_menu "=" "\Z4===== Loader =====\Zn"
       write_menu_with_color "c" "Offline Mode" "${ARCOFFLINE}"
       write_menu "D" "StaticIP for Loader/DSM"
       write_menu "f" "Bootscreen Options"
@@ -185,18 +167,16 @@ elif [ "${ARCMODE}" = "config" ]; then
       write_menu "n" "Grub Bootloader Config"
       write_menu "y" "Choose a Keymap for Loader"
       write_menu "F" "\Z1Formate Disks\Zn"
+    else
+      write_menu "8" "\Z1Show Loader Options\Zn"
     fi
 
-    write_menu_with_color "=" "\Z4===== Misc =====\Zn"
+    write_menu "=" "\Z4===== Misc =====\Zn"
     write_menu "x" "Backup/Restore/Recovery"
     [ "${ARCOFFLINE}" = "false" ] && write_menu "z" "Update Menu"
     write_menu "I" "Power/Service Menu"
     write_menu "V" "Credits"
-    if [ "$TERM" != "xterm-256color" ]; then
-      WEBCONFIG="Webconfig: http://${IPCON}${HTTPPORT:+:$HTTPPORT}"
-    else
-      WEBCONFIG=""
-    fi
+    [ "$TERM" != "xterm-256color" ] && WEBCONFIG="Webconfig: http://${IPCON}${HTTPPORT:+:$HTTPPORT}" || WEBCONFIG=""
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Classic UI" --colors \
           --cancel-label "Evo" --help-button --help-label "Exit" \
           --menu "${WEBCONFIG}" 0 0 0 --file "${TMP_PATH}/menu" \
@@ -365,6 +345,8 @@ elif [ "${ARCMODE}" = "config" ]; then
     esac
   done
   clear
+else
+  echo "Unknown Mode: ${ARCMODE} - Exiting..."
 fi
 
 # Inform user

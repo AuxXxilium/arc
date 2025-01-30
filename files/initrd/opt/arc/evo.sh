@@ -225,6 +225,8 @@ elif [ "${ARCMODE}" = "config" ]; then
         ;;
     esac
   done
+else
+  echo "Unknown Mode: ${ARCMODE} - Exiting..."
 fi
 
 # Inform user

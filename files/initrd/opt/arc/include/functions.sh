@@ -11,7 +11,7 @@ function checkBootLoader() {
     [ -z "${KNAME}" ] && continue
     [ "${RO}" = "0" ] && continue
     hdparm -r0 "${KNAME}" >/dev/null 2>&1 || true
-  done <<<$(lsblk -pno KNAME,RO 2>/dev/null)
+  done < <(lsblk -pno KNAME,RO 2>/dev/null)
   [ ! -w "${PART1_PATH}" ] && return 1
   [ ! -w "${PART2_PATH}" ] && return 1
   [ ! -w "${PART3_PATH}" ] && return 1
@@ -25,21 +25,16 @@ function checkBootLoader() {
 ###############################################################################
 # Check boot mode
 function arc_mode() {
-  unset ARCMODE ARC_BRANCH ARC_VERSION ARC_BUILD ARCCONF
   if grep -q 'automated_arc' /proc/cmdline; then
-    export ARCMODE="automated"
+    ARCMODE="automated"
   elif grep -q 'update_arc' /proc/cmdline; then
-    export ARCMODE="update"
+    ARCMODE="update"
   elif grep -q 'force_arc' /proc/cmdline; then
-    export ARCMODE="config"
+    ARCMODE="config"
   else
-    export ARCMODE="dsm"
+    ARCMODE="dsm"
   fi
-  [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1 || true
-  [ -f "${PART1_PATH}/ARC-BRANCH" ] && export ARC_BRANCH=$(cat "${PART1_PATH}/ARC-BRANCH") || export ARC_BRANCH="null"
-  [ -f "${PART1_PATH}/ARC-VERSION" ] && export ARC_VERSION=$(cat "${PART1_PATH}/ARC-VERSION") || export ARC_VERSION="null"
-  [ -f "${PART1_PATH}/ARC-BUILD" ] && export ARC_BUILD=$(cat "${PART1_PATH}/ARC-BUILD") || export ARC_BUILD="null"
-  [ "$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")" ] && export ARCCONF="true" || export ARCCONF=""
+  [ "$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")" ] && ARCCONF="true" || true
 }
 
 
@@ -623,6 +618,7 @@ function onlineCheck() {
   if [ -n "${NEWTAG}" ]; then
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
     updateOffline
+    checkHardwareID
   else
     writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
   fi
@@ -737,6 +733,74 @@ function fixDSMRootPart() {
     mdadm --assemble --scan >/dev/null 2>&1
     fsck "${1}" >/dev/null 2>&1
   fi
+}
+
+###############################################################################
+# Read Data
+function readData() {
+  # Get DSM Data from Config
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
+  LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
+  if [ -n "${MODEL}" ]; then
+    DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
+    PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+    PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  fi
+
+  # Get Arc Data from Config
+  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+  HARDWAREID="$(genHWID)"
+  USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
+  EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
+  SATACONTROLLER="$(readConfigKey "device.satacontroller" "${USER_CONFIG_FILE}")"
+  SCSICONTROLLER="$(readConfigKey "device.scsicontroller" "${USER_CONFIG_FILE}")"
+  RAIDCONTROLLER="$(readConfigKey "device.raidcontroller" "${USER_CONFIG_FILE}")"
+  SASCONTROLLER="$(readConfigKey "device.sascontroller" "${USER_CONFIG_FILE}")"
+
+  # Advanced Config
+  BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
+  DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
+  EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
+  HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
+  USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
+  KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
+  KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
+  KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
+  GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
+  STORAGEPANEL="$(readConfigKey "addons.storagepanel" "${USER_CONFIG_FILE}")"
+  SEQUENTIALIO="$(readConfigKey "addons.sequentialio" "${USER_CONFIG_FILE}")"
+  ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
+  RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
+  SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
+  REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
+  if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
+    PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
+    DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
+  elif [ "${REMAP}" = "remap" ]; then
+    PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
+  elif [ "${REMAP}" = "ahci" ]; then
+    PORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
+  elif [ "${REMAP}" = "user" ]; then
+    PORTMAP="user"
+  fi
+  if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
+    SPORTMAP="SataPortMap: ${PORTMAP} | ${DISKMAP}"
+  elif [ "${REMAP}" = "remap" ]; then
+    SPORTMAP="SataRemap: ${PORTMAP}"
+  elif [ "${REMAP}" = "ahci" ]; then
+    SPORTMAP="AHCIRemap: ${PORTMAP}"
+  elif [ "${REMAP}" = "user" ]; then
+    SPORTMAP=""
+    [ -n "${PORTMAP}" ] && SPORTMAP+="SataPortMap: ${PORTMAP}"
+    [ -n "${DISKMAP}" ] && SPORTMAP+="DiskIdxMap: ${DISKMAP}"
+    [ -n "${PORTREMAP}" ] && SPORTMAP+="SataRemap: ${PORTREMAP}"
+    [ -n "${AHCIPORTREMAP}" ] && SPORTMAP+="AHCIRemap: ${AHCIPORTREMAP}"
+  fi
+
+  # Get Config/Build Status
+  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
 
 ###############################################################################

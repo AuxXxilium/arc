@@ -681,76 +681,6 @@ function boot() {
 }
 
 ###############################################################################
-# Read Data
-function readData() {
-  # Get DSM Data from Config
-  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
-  LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
-  if [ -n "${MODEL}" ]; then
-    DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-    PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-    PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-  fi
-
-  # Get Arc Data from Config
-  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  HARDWAREID="$(genHWID)"
-  USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
-  EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
-  SATACONTROLLER="$(readConfigKey "device.satacontroller" "${USER_CONFIG_FILE}")"
-  SCSICONTROLLER="$(readConfigKey "device.scsicontroller" "${USER_CONFIG_FILE}")"
-  RAIDCONTROLLER="$(readConfigKey "device.raidcontroller" "${USER_CONFIG_FILE}")"
-  SASCONTROLLER="$(readConfigKey "device.sascontroller" "${USER_CONFIG_FILE}")"
-
-  # Advanced Config
-  if [ "${CONFDONE}" = "true" ]; then
-    BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
-    DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
-    EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
-    HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
-    USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
-    KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
-    KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
-    KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
-    GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
-    STORAGEPANEL="$(readConfigKey "addons.storagepanel" "${USER_CONFIG_FILE}")"
-    SEQUENTIALIO="$(readConfigKey "addons.sequentialio" "${USER_CONFIG_FILE}")"
-    ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
-    RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
-    SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
-    REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
-    if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
-      PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
-      DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
-    elif [ "${REMAP}" = "remap" ]; then
-      PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
-    elif [ "${REMAP}" = "ahci" ]; then
-      PORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
-    elif [ "${REMAP}" = "user" ]; then
-      PORTMAP="user"
-    fi
-    if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
-      SPORTMAP="SataPortMap: ${PORTMAP} | ${DISKMAP}"
-    elif [ "${REMAP}" = "remap" ]; then
-      SPORTMAP="SataRemap: ${PORTMAP}"
-    elif [ "${REMAP}" = "ahci" ]; then
-      SPORTMAP="AHCIRemap: ${PORTMAP}"
-    elif [ "${REMAP}" = "user" ]; then
-      SPORTMAP=""
-      [ -n "${PORTMAP}" ] && SPORTMAP+="SataPortMap: ${PORTMAP}"
-      [ -n "${DISKMAP}" ] && SPORTMAP+="DiskIdxMap: ${DISKMAP}"
-      [ -n "${PORTREMAP}" ] && SPORTMAP+="SataRemap: ${PORTREMAP}"
-      [ -n "${AHCIPORTREMAP}" ] && SPORTMAP+="AHCIRemap: ${AHCIPORTREMAP}"
-    fi
-  fi
-
-  # Get Config/Build Status
-  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-}
-
-###############################################################################
 # Advanced Menu
 function advancedMenu() {
   NEXT="a"
@@ -3654,5 +3584,5 @@ function getnetinfo() {
     [ -n "${IPCON}" ] && break
   done
   
-  export IPCON="${IPCON:-noip}"
+  IPCON="${IPCON:-noip}"
 }
