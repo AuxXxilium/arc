@@ -5,6 +5,8 @@ set -e
 
 . "${ARC_PATH}/include/functions.sh"
 
+arc_mode || die "No bootmode found!"
+
 # Clear logs for dbgutils addons
 rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
 
@@ -81,6 +83,7 @@ if [ "${DSMINFO}" = "true" ]; then
   echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
   echo -e "Platform: \033[1;37m${PLATFORM}\033[0m"
   echo -e "Version: \033[1;37m${PRODUCTVER} (${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))\033[0m"
+  echo -e "Kernel: \033[1;37m${KVER}\033[0m"
   echo -e "LKM: \033[1;37m${LKM}\033[0m"
   echo
 fi
@@ -121,15 +124,9 @@ if checkBIOS_VT_d && [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
 fi
 
 # Read necessary variables
-VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
-PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
+readData
 SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
-DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
 MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
-ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
 declare -A CMDLINE
 
@@ -310,7 +307,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   fi
 
   # Wait for boot interrupt
-  _bootwait
+  _bootwait || true
 
   for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
     if [ -w "/dev/${T}" ]; then
