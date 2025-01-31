@@ -2,9 +2,6 @@
 # Update Loader
 function updateLoader() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-  local ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
-  local ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
-  local ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
   local TAG="${1}"
   [ -n "${ARCCONF}" ] && cp -f "${S_FILE}" "${TMP_PATH}/bak.yml"
   if [ "${TAG}" != "zip" ]; then
@@ -12,9 +9,9 @@ function updateLoader() {
       idx=0
       while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
         if [ "${ARC_BRANCH}" = "dev" ]; then
-          local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
+          TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
         else
-          local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+          TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
         fi
         if [ -n "${TAG}" ]; then
           break
