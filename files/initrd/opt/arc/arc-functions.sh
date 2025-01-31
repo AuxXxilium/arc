@@ -1377,21 +1377,24 @@ function backupMenu() {
   while true; do
     if [ -n "${USERID}" ] && [ "${ARCOFFLINE}" != "true" ] && [ "${CONFDONE}" = "true" ]; then
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
-        1 "Restore Arc Config from DSM" \
-        2 "Restore Hardware Key from DSM" \
-        3 "Restore Arc Config from Online" \
-        4 "Backup Arc Config to Online" \
+        1 "Restore Arc Config (from DSM)" \
+        2 "Restore Hardware Key (local)" \
+        3 "Backup Hardware Key (local)" \
+        4 "Restore Arc Config (from Online)" \
+        5 "Backup Arc Config (to Online)" \
         2>"${TMP_PATH}/resp"
     elif [ -n "${USERID}" ] && [ "${ARCOFFLINE}" != "true" ]; then
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
-        1 "Restore Arc Config from DSM" \
-        2 "Restore Hardware Key from DSM" \
-        3 "Restore Arc Config from Online" \
+        1 "Restore Arc Config (from DSM)" \
+        2 "Restore Hardware Key (local)" \
+        3 "Backup Hardware Key (local)" \
+        4 "Restore Arc Config (from Online)" \
         2>"${TMP_PATH}/resp"
     else
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
-        1 "Restore Arc Config from DSM" \
-        2 "Restore Hardware Key from DSM" \
+        1 "Restore Arc Config (from DSM)" \
+        2 "Restore Hardware Key (local)" \
+        3 "Backup Hardware Key (local)" \
         2>"${TMP_PATH}/resp"
     fi
     [ $? -ne 0 ] && break
@@ -1451,33 +1454,40 @@ function backupMenu() {
         rm -f "${HOME}/.initialized" && exec init.sh
         ;;
       2)
-        DSMROOTS="$(findDSMRoot)"
-        if [ -z "${DSMROOTS}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" \
-            --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
-          return
-        fi
-        mkdir -p "${TMP_PATH}/mdX"
-        for I in ${DSMROOTS}; do
-          # fixDSMRootPart "${I}"
-          mount -t ext4 "${I}" "${TMP_PATH}/mdX"
-          if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" ]; then
-            cp -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" "${PART2_PATH}/machine.key"
-            dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-              --msgbox "Encryption Key restore successful!" 0 0
-            break
-          fi
-        done
-        umount "${TMP_PATH}/mdX"
-        if [ -f "${PART2_PATH}/machine.key" ]; then
+        dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" \
+          --msgbox "Upload the machine.key file to ${PART3_PATH}/users\nand press OK after the upload is done." 0 0
+        [ $? -ne 0 ] && return 1
+        if [ -f "${PART3_PATH}/users/machine.key" ]; then
+          mv -f "${PART3_PATH}/users/machine.key" "${PART2_PATH}/machine.key"
           dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
             --msgbox "Encryption Key restore successful!" 0 0
         else
-          dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-            --msgbox "No Encryption Key found!" 0 0
+          dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" \
+            --msgbox "File not found!" 0 0
+          return 1
         fi
+        return
         ;;
       3)
+        dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" \
+          --msgbox "To backup the Encryption Key press OK." 0 0
+        [ $? -ne 0 ] && return 1
+        
+        if [ -f "${PART2_PATH}/machine.key" ]; then
+          cp -f "${PART2_PATH}/machine.key" "/var/www/data/machine.key"
+          URL="http://${IPCON}${HTTPPORT:+:$HTTPPORT}/machine.key"
+          MSG="Please use ${URL} to download the machine.key file."
+        else
+          MSG="File not found!"
+        fi
+        dialog --backtitle "$(backtitle)" --colors --title "Backup Encryption Key" \
+          --msgbox "${MSG}" 0 0
+        if [ "${MSG}" = "File not found!" ]; then
+          return 1
+        fi
+        return
+        ;;
+      4)
         [ -f "${USER_CONFIG_FILE}" ] && mv -f "${USER_CONFIG_FILE}" "${USER_CONFIG_FILE}.bak"
         HWID="$(genHWID)"
         if curl -skL "https://arc.auxxxilium.tech?cdown=${HWID}" -o "${USER_CONFIG_FILE}" 2>/dev/null; then
@@ -1509,14 +1519,16 @@ function backupMenu() {
         sleep 2
         rm -f "${HOME}/.initialized" && exec init.sh
         ;;
-      4)
+      5)
         HWID="$(genHWID)"
         curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${HWID}&userid=${USERID}" 2>/dev/null
         if [ $? -eq 0 ]; then
           dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup successful!" 5 40
         else
           dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup failed!" 5 40
+          return 1
         fi
+        return
         ;;
       *)
         break

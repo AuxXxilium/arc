@@ -59,7 +59,6 @@ function advancedMenu() {
 
       if [ "${DSMOPTS}" = "true" ]; then
         write_menu "7" "\Z1Hide DSM Options\Zn"
-        write_menu "=" "\Z4===== DSM =====\Zn"
         write_menu "j" "Cmdline"
         write_menu "k" "Synoinfo"
         write_menu "N" "Add new User"
@@ -76,7 +75,6 @@ function advancedMenu() {
 
     if [ "${LOADEROPTS}" = "true" ]; then
       write_menu "8" "\Z1Hide Loader Options\Zn"
-      write_menu "=" "\Z4===== Loader =====\Zn"
       write_menu "D" "StaticIP for Loader/DSM"
       write_menu "f" "Bootscreen Options"
       write_menu "U" "Change Loader Password"
@@ -93,8 +91,8 @@ function advancedMenu() {
       write_menu "8" "\Z1Show Loader Options\Zn"
     fi
 
-    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Arc Config" --colors \
-          --cancel-label "Exit" \
+    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Evo UI Advanced" --colors \
+          --cancel-label "Back" \
           --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
           2>"${TMP_PATH}/resp"
     RET=$?
