@@ -2718,14 +2718,9 @@ function greplogs() {
 
   if [ -n "$(ls -A ${TMP_PATH}/logs 2>/dev/null)" ]; then
     tar -czf "${TMP_PATH}/logs.tar.gz" -C "${TMP_PATH}" logs
-    if [ -z "${SSH_TTY}" ]; then # web
-      mv -f "${TMP_PATH}/logs.tar.gz" "/var/www/data/logs.tar.gz"
-      URL="http://${IPCON}${HTTPPORT:+:$HTTPPORT}/logs.tar.gz"
-      MSG+="Please via ${URL} to download the logs,\nAnd go to Github or Discord to create an issue and upload the logs."
-    else
-      sz -be -B 536870912 "${TMP_PATH}/logs.tar.gz"
-      MSG+="Please go to Github or Discord to create an issue and upload the logs."
-    fi
+    mv -f "${TMP_PATH}/logs.tar.gz" "/var/www/data/logs.tar.gz"
+    URL="http://${IPCON}${HTTPPORT:+:$HTTPPORT}/logs.tar.gz"
+    MSG+="Please via ${URL} to download the logs,\nAnd go to Github or Discord to create an issue and upload the logs."
   fi
   dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
     --msgbox "${MSG}" 0 0
@@ -2738,17 +2733,11 @@ function getbackup() {
   if [ -d "${PART1_PATH}/dsmbackup" ]; then
     rm -f "${TMP_PATH}/dsmconfig.tar.gz" >/dev/null
     tar -czf "${TMP_PATH}/dsmconfig.tar.gz" -C "${PART1_PATH}" dsmbackup
-    if [ -z "${SSH_TTY}" ]; then # web
-      cp -f "${TMP_PATH}/dsmconfig.tar.gz" "/var/www/data/dsmconfig.tar.gz"
-      chmod 644 "/var/www/data/dsmconfig.tar.gz"
-      URL="http://${IPCON}${HTTPPORT:+:$HTTPPORT}/dsmconfig.tar.gz"
-      dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
-        --msgbox "Please via ${URL}\nto download the dsmconfig and unzip it and back it up in order by file name." 0 0
-    else
-      sz -be -B 536870912 "${TMP_PATH}/dsmconfig.tar.gz"
-      dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
-        --msgbox "Please unzip it and back it up in order by file name." 0 0
-    fi
+    cp -f "${TMP_PATH}/dsmconfig.tar.gz" "/var/www/data/dsmconfig.tar.gz"
+    chmod 644 "/var/www/data/dsmconfig.tar.gz"
+    URL="http://${IPCON}${HTTPPORT:+:$HTTPPORT}/dsmconfig.tar.gz"
+    dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
+      --msgbox "Please via ${URL}\nto download the dsmconfig and unzip it and back it up in order by file name." 0 0
   else
     MSG=""
     MSG+="\Z1No dsmbackup found!\Zn\n\n"
