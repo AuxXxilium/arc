@@ -23,7 +23,7 @@ function backtitle() {
   BACKTITLE="${ARC_TITLE}$([ -n "${NEWTAG}" ] && [ -n "${ARC_VERSION}" ] && [ ${ARC_VERSION//[!0-9]/} -lt ${NEWTAG//[!0-9]/} ] && echo " > ${NEWTAG}") | "
   BACKTITLE+="${MODEL:-(Model)} | "
   BACKTITLE+="${PRODUCTVER:-(Version)} | "
-  BACKTITLE+="${IPCON:-(IP)} | "
+  BACKTITLE+="${IPCON:-(no IP)} | "
   BACKTITLE+="Patch: ${ARCPATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
   BACKTITLE+="Build: ${BUILDDONE} | "
@@ -44,22 +44,21 @@ function advancedMenu() {
     if [ "${CONFDONE}" = "true" ]; then
       if [ "${BOOTOPTS}" = "true" ]; then
         write_menu "6" "\Z1Hide Boot Options\Zn"
-        write_menu_with_color "m" "Kernelload" "${KERNELLOAD}"
-        write_menu_with_color "E" "eMMC Boot Support" "${EMMCBOOT}"
+        write_menu_value "m" "Kernelload" "${KERNELLOAD}"
+        write_menu_value "E" "eMMC Boot Support" "${EMMCBOOT}"
         if [ "${DIRECTBOOT}" = "false" ]; then
-          write_menu_with_color "i" "Boot IP Waittime" "${BOOTIPWAIT}"
+          write_menu_value "i" "Boot IP Waittime" "${BOOTIPWAIT}"
         fi
-        write_menu_with_color "q" "Directboot" "${DIRECTBOOT}"
-        write_menu_with_color "W" "RD Compression" "${RD_COMPRESSED}"
-        write_menu_with_color "X" "Sata DOM" "${SATADOM}"
-        write_menu_with_color "u" "LKM Version" "${LKM}"
+        write_menu_value "q" "Directboot" "${DIRECTBOOT}"
+        write_menu_value "W" "RD Compression" "${RD_COMPRESSED}"
+        write_menu_value "X" "Sata DOM" "${SATADOM}"
+        write_menu_value "u" "LKM Version" "${LKM}"
       else
         write_menu "6" "\Z1Show Boot Options\Zn"
       fi
 
       if [ "${DSMOPTS}" = "true" ]; then
         write_menu "7" "\Z1Hide DSM Options\Zn"
-        write_menu "=" "\Z4===== DSM =====\Zn"
         write_menu "j" "Cmdline"
         write_menu "k" "Synoinfo"
         write_menu "N" "Add new User"
@@ -76,7 +75,6 @@ function advancedMenu() {
 
     if [ "${LOADEROPTS}" = "true" ]; then
       write_menu "8" "\Z1Hide Loader Options\Zn"
-      write_menu "=" "\Z4===== Loader =====\Zn"
       write_menu "D" "StaticIP for Loader/DSM"
       write_menu "f" "Bootscreen Options"
       write_menu "U" "Change Loader Password"
@@ -93,8 +91,8 @@ function advancedMenu() {
       write_menu "8" "\Z1Show Loader Options\Zn"
     fi
 
-    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Arc Config" --colors \
-          --cancel-label "Exit" \
+    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Evo UI Advanced" --colors \
+          --cancel-label "Back" \
           --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
           2>"${TMP_PATH}/resp"
     RET=$?
@@ -212,18 +210,18 @@ elif [ "${ARCMODE}" = "config" ]; then
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
     write_menu "=" "\Z4===== Main =====\Zn"
     if [ -z "${USERID}" ] && [ "${ARCOFFLINE}" = "false" ]; then
-      write_menu_with_color "0" "HardwareID" "${HARDWAREID}"
+      write_menu_value "0" "HardwareID" "${HARDWAREID}"
     fi
 
-    write_menu_with_color "1" "Model" "${MODEL}"
+    write_menu_value "1" "Model" "${MODEL}"
 
     if [ "${CONFDONE}" = "true" ]; then
-      write_menu_with_color "e" "Version" "${PRODUCTVER}"
-      write_menu_with_color "=" "DT" "${DT}"
-      write_menu_with_color "=" "Platform" "${PLATFORM}"
+      write_menu_value "e" "Version" "${PRODUCTVER}"
+      write_menu_value "=" "DT" "${DT}"
+      write_menu_value "=" "Platform" "${PLATFORM}"
 
       if [ -n "${USERID}" ] && [ "${ARCOFFLINE}" = "false" ]; then
-        write_menu_with_color "p" "Arc Patch" "${ARCPATCH}"
+        write_menu_value "p" "Arc Patch" "${ARCPATCH}"
       elif [ "${ARCOFFLINE}" = "false" ]; then
         write_menu "p" "Arc Patch: \Z4Register HardwareID first\Zn"
       else
@@ -235,7 +233,7 @@ elif [ "${ARCMODE}" = "config" ]; then
         if [ ${CPUINFO} -gt 24 ]; then
           write_menu "=" "Custom Kernel should be used for this CPU"
         fi
-        write_menu_with_color "K" "Kernel" "${KERNEL}"
+        write_menu_value "K" "Kernel" "${KERNEL}"
       fi
 
       write_menu "b" "Addons"
@@ -243,29 +241,29 @@ elif [ "${ARCMODE}" = "config" ]; then
       for addon in "cpufreqscaling" "storagepanel" "sequentialio"; do
         if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "${addon}"; then
           case "${addon}" in
-            "cpufreqscaling") write_menu_with_color "g" "Scaling Governor" "${GOVERNOR}" ;;
-            "storagepanel") write_menu_with_color "P" "StoragePanel" "${STORAGEPANEL:-auto}" ;;
-            "sequentialio") write_menu_with_color "Q" "SequentialIO" "${SEQUENTIALIO}" ;;
+            "cpufreqscaling") write_menu_value "g" "Scaling Governor" "${GOVERNOR}" ;;
+            "storagepanel") write_menu_value "P" "StoragePanel" "${STORAGEPANEL:-auto}" ;;
+            "sequentialio") write_menu_value "Q" "SequentialIO" "${SEQUENTIALIO}" ;;
           esac
         fi
       done
 
       write_menu "d" "Modules"
-      write_menu_with_color "O" "Official Driver Priority" "${ODP}"
+      write_menu_value "O" "Official Driver Priority" "${ODP}"
 
       if [ "${DT}" = "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
-        write_menu_with_color "S" "PortMap" "${REMAP}"
-        write_menu_with_color "=" "Mapping" "${PORTMAP}"
+        write_menu_value "S" "PortMap" "${REMAP}"
+        write_menu_value "=" "Mapping" "${PORTMAP}"
       fi
 
       if [ "${DT}" = "true" ]; then
-        write_menu_with_color "H" "Hotplug/SortDrives" "${HDDSORT}"
+        write_menu_value "H" "Hotplug/SortDrives" "${HDDSORT}"
       else
-        write_menu_with_color "h" "USB as Internal" "${USBMOUNT}"
+        write_menu_value "h" "USB as Internal" "${USBMOUNT}"
       fi
     fi
 
-    write_menu_with_color "c" "Offline Mode" "${ARCOFFLINE}"
+    write_menu_value "c" "Offline Mode" "${ARCOFFLINE}"
     write_menu "9" "Advanced Options"
     write_menu "=" "\Z4===== Diag =====\Zn"
     write_menu "a" "Sysinfo"

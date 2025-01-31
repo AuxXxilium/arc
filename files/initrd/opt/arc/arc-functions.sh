@@ -1377,21 +1377,24 @@ function backupMenu() {
   while true; do
     if [ -n "${USERID}" ] && [ "${ARCOFFLINE}" != "true" ] && [ "${CONFDONE}" = "true" ]; then
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
-        1 "Restore Arc Config from DSM" \
-        2 "Restore Hardware Key from DSM" \
-        3 "Restore Arc Config from Online" \
-        4 "Backup Arc Config to Online" \
+        1 "Restore Arc Config (from DSM)" \
+        2 "Restore Hardware Key (local)" \
+        3 "Backup Hardware Key (local)" \
+        4 "Restore Arc Config (from Online)" \
+        5 "Backup Arc Config (to Online)" \
         2>"${TMP_PATH}/resp"
     elif [ -n "${USERID}" ] && [ "${ARCOFFLINE}" != "true" ]; then
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
-        1 "Restore Arc Config from DSM" \
-        2 "Restore Hardware Key from DSM" \
-        3 "Restore Arc Config from Online" \
+        1 "Restore Arc Config (from DSM)" \
+        2 "Restore Hardware Key (local)" \
+        3 "Backup Hardware Key (local)" \
+        4 "Restore Arc Config (from Online)" \
         2>"${TMP_PATH}/resp"
     else
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
-        1 "Restore Arc Config from DSM" \
-        2 "Restore Hardware Key from DSM" \
+        1 "Restore Arc Config (from DSM)" \
+        2 "Restore Hardware Key (local)" \
+        3 "Backup Hardware Key (local)" \
         2>"${TMP_PATH}/resp"
     fi
     [ $? -ne 0 ] && break
@@ -1451,33 +1454,40 @@ function backupMenu() {
         rm -f "${HOME}/.initialized" && exec init.sh
         ;;
       2)
-        DSMROOTS="$(findDSMRoot)"
-        if [ -z "${DSMROOTS}" ]; then
-          dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" \
-            --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
-          return
-        fi
-        mkdir -p "${TMP_PATH}/mdX"
-        for I in ${DSMROOTS}; do
-          # fixDSMRootPart "${I}"
-          mount -t ext4 "${I}" "${TMP_PATH}/mdX"
-          if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" ]; then
-            cp -f "${TMP_PATH}/mdX/usr/arc/backup/p2/machine.key" "${PART2_PATH}/machine.key"
-            dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-              --msgbox "Encryption Key restore successful!" 0 0
-            break
-          fi
-        done
-        umount "${TMP_PATH}/mdX"
-        if [ -f "${PART2_PATH}/machine.key" ]; then
+        dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" \
+          --msgbox "Upload the machine.key file to ${PART3_PATH}/users\nand press OK after the upload is done." 0 0
+        [ $? -ne 0 ] && return 1
+        if [ -f "${PART3_PATH}/users/machine.key" ]; then
+          mv -f "${PART3_PATH}/users/machine.key" "${PART2_PATH}/machine.key"
           dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
             --msgbox "Encryption Key restore successful!" 0 0
         else
-          dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-            --msgbox "No Encryption Key found!" 0 0
+          dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" \
+            --msgbox "File not found!" 0 0
+          return 1
         fi
+        return
         ;;
       3)
+        dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" \
+          --msgbox "To backup the Encryption Key press OK." 0 0
+        [ $? -ne 0 ] && return 1
+        
+        if [ -f "${PART2_PATH}/machine.key" ]; then
+          cp -f "${PART2_PATH}/machine.key" "/var/www/data/machine.key"
+          URL="http://${IPCON}${HTTPPORT:+:$HTTPPORT}/machine.key"
+          MSG="Please use ${URL} to download the machine.key file."
+        else
+          MSG="File not found!"
+        fi
+        dialog --backtitle "$(backtitle)" --colors --title "Backup Encryption Key" \
+          --msgbox "${MSG}" 0 0
+        if [ "${MSG}" = "File not found!" ]; then
+          return 1
+        fi
+        return
+        ;;
+      4)
         [ -f "${USER_CONFIG_FILE}" ] && mv -f "${USER_CONFIG_FILE}" "${USER_CONFIG_FILE}.bak"
         HWID="$(genHWID)"
         if curl -skL "https://arc.auxxxilium.tech?cdown=${HWID}" -o "${USER_CONFIG_FILE}" 2>/dev/null; then
@@ -1509,14 +1519,16 @@ function backupMenu() {
         sleep 2
         rm -f "${HOME}/.initialized" && exec init.sh
         ;;
-      4)
+      5)
         HWID="$(genHWID)"
         curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${HWID}&userid=${USERID}" 2>/dev/null
         if [ $? -eq 0 ]; then
           dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup successful!" 5 40
         else
           dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup failed!" 5 40
+          return 1
         fi
+        return
         ;;
       *)
         break
@@ -1542,11 +1554,12 @@ function updateMenu() {
       1)
         # Ask for Tag
         TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-        OLD="$(cat ${PART1_PATH}/ARC-VERSION)"
+        OLD="${ARC_VERSION}"
         dialog --clear --backtitle "$(backtitle)" --title "Update Loader" \
           --menu "Current: ${OLD} -> Which Version?" 7 50 0 \
           1 "Latest ${TAG}" \
           2 "Select Version" \
+          3 "Upload .zip File" \
         2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && break
         opts=$(cat ${TMP_PATH}/opts)
@@ -1558,6 +1571,25 @@ function updateMenu() {
           2>"${TMP_PATH}/input"
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
+        elif [ ${opts} -eq 3 ]; then
+          mkdir -p "${PART3_PATH}/users"
+          dialog --backtitle "$(backtitle)" --title "Update Loader" \
+            --msgbox "Upload the update-*.zip File to ${PART3_PATH}/users\nand press OK after upload is done." 0 0
+          [ $? -ne 0 ] && return 1
+          UPDATEFOUND="false"
+          for UPDATEFILE in "${PART3_PATH}/users/update-*.zip"; do
+            if [ -e "${UPDATEFILE}" ]; then
+              mv -f "${UPDATEFILE}" "${TMP_PATH}/update.zip"
+              TAG="zip"
+              UPDATEFOUND="true"
+              break
+            fi
+          done
+          if [ "${UPDATEFOUND}" = "false" ]; then
+            dialog --backtitle "$(backtitle)" --title "Update Loader" \
+              --msgbox "File not found!" 0 0
+            return 1
+          fi
         fi
         updateLoader "${TAG}"
         ;;
@@ -1571,7 +1603,7 @@ function updateMenu() {
       4)
         dialog --backtitle "$(backtitle)" --title "Switch Arc Branch" \
           --menu "Choose a Branch" 0 0 0 \
-          1 "evolution - New Evolution System" \
+          1 "evo - New Evolution System" \
           3 "dev - Development System" \
           2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && break
@@ -2686,14 +2718,9 @@ function greplogs() {
 
   if [ -n "$(ls -A ${TMP_PATH}/logs 2>/dev/null)" ]; then
     tar -czf "${TMP_PATH}/logs.tar.gz" -C "${TMP_PATH}" logs
-    if [ -z "${SSH_TTY}" ]; then # web
-      mv -f "${TMP_PATH}/logs.tar.gz" "/var/www/data/logs.tar.gz"
-      URL="http://${IPCON}${HTTPPORT:+:$HTTPPORT}/logs.tar.gz"
-      MSG+="Please via ${URL} to download the logs,\nAnd go to Github or Discord to create an issue and upload the logs."
-    else
-      sz -be -B 536870912 "${TMP_PATH}/logs.tar.gz"
-      MSG+="Please go to Github or Discord to create an issue and upload the logs."
-    fi
+    mv -f "${TMP_PATH}/logs.tar.gz" "/var/www/data/logs.tar.gz"
+    URL="http://${IPCON}${HTTPPORT:+:$HTTPPORT}/logs.tar.gz"
+    MSG+="Please via ${URL} to download the logs,\nAnd go to Github or Discord to create an issue and upload the logs."
   fi
   dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
     --msgbox "${MSG}" 0 0
@@ -2706,17 +2733,11 @@ function getbackup() {
   if [ -d "${PART1_PATH}/dsmbackup" ]; then
     rm -f "${TMP_PATH}/dsmconfig.tar.gz" >/dev/null
     tar -czf "${TMP_PATH}/dsmconfig.tar.gz" -C "${PART1_PATH}" dsmbackup
-    if [ -z "${SSH_TTY}" ]; then # web
-      cp -f "${TMP_PATH}/dsmconfig.tar.gz" "/var/www/data/dsmconfig.tar.gz"
-      chmod 644 "/var/www/data/dsmconfig.tar.gz"
-      URL="http://${IPCON}${HTTPPORT:+:$HTTPPORT}/dsmconfig.tar.gz"
-      dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
-        --msgbox "Please via ${URL}\nto download the dsmconfig and unzip it and back it up in order by file name." 0 0
-    else
-      sz -be -B 536870912 "${TMP_PATH}/dsmconfig.tar.gz"
-      dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
-        --msgbox "Please unzip it and back it up in order by file name." 0 0
-    fi
+    cp -f "${TMP_PATH}/dsmconfig.tar.gz" "/var/www/data/dsmconfig.tar.gz"
+    chmod 644 "/var/www/data/dsmconfig.tar.gz"
+    URL="http://${IPCON}${HTTPPORT:+:$HTTPPORT}/dsmconfig.tar.gz"
+    dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
+      --msgbox "Please via ${URL}\nto download the dsmconfig and unzip it and back it up in order by file name." 0 0
   else
     MSG=""
     MSG+="\Z1No dsmbackup found!\Zn\n\n"

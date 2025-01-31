@@ -2,66 +2,66 @@
 # Update Loader
 function updateLoader() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-  local ARC_BRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
-  local ARCMODE="$(readConfigKey "arc.mode" "${USER_CONFIG_FILE}")"
-  local ARCCONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
   local TAG="${1}"
   [ -n "${ARCCONF}" ] && cp -f "${S_FILE}" "${TMP_PATH}/bak.yml"
-  if [ -z "${TAG}" ]; then
-    idx=0
-    while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
-      if [ "${ARC_BRANCH}" = "dev" ]; then
-        local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
-      else
-        local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-      fi
-      if [ -n "${TAG}" ]; then
-        break
-      fi
-      sleep 3
-      idx=$((${idx} + 1))
-    done
-  fi
-  if [ -n "${TAG}" ]; then
-    export URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}-${ARC_BRANCH}.zip"
-    export TAG="${TAG}"
-    {
-      {
-        curl -kL "${URL}" -o ${TMP_PATH}/update.zip 2>&3 3>&-
-      } 3>&1 >&4 4>&- |
-      perl -C -lane '
-        BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
-        $pcent = $F[0];
-        $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-        s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
-        if ($. <= 3) {
-          $header .= "$_\n";
-          $/ = "\r" if $. == 2
-        } else {
-          print "XXX\n$pcent\n$header$_\nXXX"
-        }' 4>&- |
-      dialog --gauge "Download Update: ${TAG}..." 14 72 4>&-
-    } 4>&1
-    if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 300000 ]; then
-      HASHURL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}-${ARC_BRANCH}.hash"
-      HASH="$(curl -skL "${HASHURL}" | awk '{print $1}')"
-      if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
-        dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-          --infobox "Update failed - Hash mismatch!\nTry again later." 0 0
+  if [ "${TAG}" != "zip" ]; then
+    if [ -z "${TAG}" ]; then
+      idx=0
+      while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
+        if [ "${ARC_BRANCH}" = "dev" ]; then
+          TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
+        else
+          TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+        fi
+        if [ -n "${TAG}" ]; then
+          break
+        fi
         sleep 3
-        exec reboot
-      else
-        rm -rf "/mnt/update"
-        mkdir -p "${TMP_PATH}/update"
-        dialog --backtitle "$(backtitle)" --title "Update Loader" \
-          --infobox "Updating Loader..." 3 50
-        if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update"; then
-          cp -rf "${TMP_PATH}/update"/* "/mnt"
-          rm -rf "${TMP_PATH}/update"
-          rm -f "${TMP_PATH}/update.zip"
+        idx=$((${idx} + 1))
+      done
+    fi
+    if [ -n "${TAG}" ]; then
+      export URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}-${ARC_BRANCH}.zip"
+      export TAG="${TAG}"
+      {
+        {
+          curl -kL "${URL}" -o ${TMP_PATH}/update.zip 2>&3 3>&-
+        } 3>&1 >&4 4>&- |
+        perl -C -lane '
+          BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
+          $pcent = $F[0];
+          $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
+          s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
+          if ($. <= 3) {
+            $header .= "$_\n";
+            $/ = "\r" if $. == 2
+          } else {
+            print "XXX\n$pcent\n$header$_\nXXX"
+          }' 4>&- |
+        dialog --gauge "Download Update: ${TAG}..." 14 72 4>&-
+      } 4>&1
+    fi
+    if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 300000 ]; then
+      if [ "${TAG}" != "zip" ]; then
+        HASHURL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}-${ARC_BRANCH}.hash"
+        HASH="$(curl -skL "${HASHURL}" | awk '{print $1}')"
+        if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
+          dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+            --infobox "Update failed - Hash mismatch!\nTry again later." 0 0
+          sleep 3
+          exec reboot
         fi
       fi
-      if [ "$(cat "${PART1_PATH}/ARC-VERSION")" = "${TAG}" ]; then
+      rm -rf "/mnt/update"
+      mkdir -p "${TMP_PATH}/update"
+      dialog --backtitle "$(backtitle)" --title "Update Loader" \
+        --infobox "Updating Loader..." 3 50
+      if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update"; then
+        cp -rf "${TMP_PATH}/update"/* "/mnt"
+        rm -rf "${TMP_PATH}/update"
+        rm -f "${TMP_PATH}/update.zip"
+      fi
+      if [ "$(cat "${PART1_PATH}/ARC-VERSION")" = "${TAG}" ] || [ "${TAG}" = "zip" ]; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" \
         --infobox "Update Loader successful!" 3 50
         sleep 2

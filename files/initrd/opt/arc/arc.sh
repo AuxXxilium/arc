@@ -23,7 +23,7 @@ function backtitle() {
   BACKTITLE="${ARC_TITLE}$([ -n "${NEWTAG}" ] && [ -n "${ARC_VERSION}" ] && [ ${ARC_VERSION//[!0-9]/} -lt ${NEWTAG//[!0-9]/} ] && echo " > ${NEWTAG}") | "
   BACKTITLE+="${MODEL:-(Model)} | "
   BACKTITLE+="${PRODUCTVER:-(Version)} | "
-  BACKTITLE+="${IPCON:-(IP)} | "
+  BACKTITLE+="${IPCON:-(no IP)} | "
   BACKTITLE+="Patch: ${ARCPATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
   BACKTITLE+="Build: ${BUILDDONE} | "
@@ -108,13 +108,13 @@ elif [ "${ARCMODE}" = "config" ]; then
         done
 
         if [ "${PLATFORM}" = "epyc7002" ]; then
-          write_menu_with_color "K" "Kernel" "${KERNEL}"
+          write_menu_value "K" "Kernel" "${KERNEL}"
         fi
 
         if [ "${DT}" = "true" ]; then
-          write_menu_with_color "H" "Hotplug/SortDrives" "${HDDSORT}"
+          write_menu_value "H" "Hotplug/SortDrives" "${HDDSORT}"
         else
-          write_menu_with_color "h" "USB as Internal" "${USBMOUNT}"
+          write_menu_value "h" "USB as Internal" "${USBMOUNT}"
         fi
       else
         write_menu "4" "\Z1Show Arc DSM Options\Zn"
@@ -122,12 +122,12 @@ elif [ "${ARCMODE}" = "config" ]; then
 
       if [ "${BOOTOPTS}" = "true" ]; then
         write_menu "6" "\Z1Hide Boot Options\Zn"
-        write_menu_with_color "m" "Boot Kernelload" "${KERNELLOAD}"
-        write_menu_with_color "E" "eMMC Boot Support" "${EMMCBOOT}"
+        write_menu_value "m" "Boot Kernelload" "${KERNELLOAD}"
+        write_menu_value "E" "eMMC Boot Support" "${EMMCBOOT}"
         if [ "${DIRECTBOOT}" = "false" ]; then
-          write_menu_with_color "i" "Boot IP Waittime" "${BOOTIPWAIT}"
+          write_menu_value "i" "Boot IP Waittime" "${BOOTIPWAIT}"
         fi
-        write_menu_with_color "q" "Directboot" "${DIRECTBOOT}"
+        write_menu_value "q" "Directboot" "${DIRECTBOOT}"
       else
         write_menu "6" "\Z1Show Boot Options\Zn"
       fi
@@ -143,7 +143,7 @@ elif [ "${ARCMODE}" = "config" ]; then
         write_menu "M" "Mount DSM Storage Pool"
         write_menu "l" "Edit User Config"
         write_menu "s" "Allow Downgrade Version"
-        write_menu_with_color "O" "Official Driver Priority" "${ODP}"
+        write_menu_value "O" "Official Driver Priority" "${ODP}"
       else
         write_menu "7" "\Z1Show DSM Options\Zn"
       fi
@@ -151,7 +151,7 @@ elif [ "${ARCMODE}" = "config" ]; then
 
     if [ "${LOADEROPTS}" = "true" ]; then
       write_menu "8" "\Z1Hide Loader Options\Zn"
-      write_menu_with_color "c" "Offline Mode" "${ARCOFFLINE}"
+      write_menu_value "c" "Offline Mode" "${ARCOFFLINE}"
       write_menu "D" "StaticIP for Loader/DSM"
       write_menu "f" "Bootscreen Options"
       write_menu "U" "Change Loader Password"
@@ -160,9 +160,9 @@ elif [ "${ARCMODE}" = "config" ]; then
       write_menu "L" "Grep Logs from dbgutils"
       write_menu "B" "Grep DSM Config from Backup"
       write_menu "=" "\Z1== Edit with caution! ==\Zn"
-      write_menu_with_color "W" "RD Compression" "${RD_COMPRESSED}"
-      write_menu_with_color "X" "Sata DOM" "${SATADOM}"
-      write_menu_with_color "u" "LKM Version" "${LKM}"
+      write_menu_value "W" "RD Compression" "${RD_COMPRESSED}"
+      write_menu_value "X" "Sata DOM" "${SATADOM}"
+      write_menu_value "u" "LKM Version" "${LKM}"
       write_menu "C" "Clone Loader to another Disk"
       write_menu "n" "Grub Bootloader Config"
       write_menu "y" "Choose a Keymap for Loader"

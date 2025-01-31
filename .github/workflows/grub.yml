@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2023 AuxXxilium <https://github.com/AuxXxilium>
+# Copyright (C) 2025 AuxXxilium <https://github.com/AuxXxilium>
 #
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
@@ -33,7 +33,7 @@ jobs:
 
       - name: Make Grub
         run: |
-          rm -f grub.img.gz
+          rm -f "files/initrd/opt/arc/grub.img.gz"
           . scripts/grub.sh "grub-2.12" "i386-pc i386-efi x86_64-efi" "ARC"
 
       - name: Check and Push
