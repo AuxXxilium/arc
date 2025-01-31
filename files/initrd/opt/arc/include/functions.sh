@@ -809,6 +809,6 @@ function write_menu() {
   echo "$1 \"$2\" " >>"${TMP_PATH}/menu"
 }
     
-function write_menu_with_color() {
+function write_menu_value() {
   echo "$1 \"$2: \Z4${3:-none}\Zn\" " >>"${TMP_PATH}/menu"
 }
