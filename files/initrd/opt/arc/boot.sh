@@ -63,9 +63,7 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
 # Build Sanity Check
 [ "${BUILDDONE}" = "false" ] && die "Loader build not completed!"
-if [ -z "${MODELID}" ] || [ "${MODELID}" != "${MODEL}" ]; then
-  die "Loader build not completed! Model mismatch!"
-fi
+[[ -z "${MODELID}" || "${MODELID}" != "${MODEL}" ]] && die "Loader build not completed! Model mismatch!"
 # HardwareID Check
 if [ "${ARCPATCH}" = "true" ]; then
   HARDWAREID="$(readConfigKey "arc.hardwareid" "${USER_CONFIG_FILE}")"
