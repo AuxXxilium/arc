@@ -1542,11 +1542,12 @@ function updateMenu() {
       1)
         # Ask for Tag
         TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-        OLD="$(cat ${PART1_PATH}/ARC-VERSION)"
+        OLD="${ARC-VERSION}"
         dialog --clear --backtitle "$(backtitle)" --title "Update Loader" \
           --menu "Current: ${OLD} -> Which Version?" 7 50 0 \
           1 "Latest ${TAG}" \
           2 "Select Version" \
+          3 "Upload .zip File" \
         2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && break
         opts=$(cat ${TMP_PATH}/opts)
@@ -1558,6 +1559,25 @@ function updateMenu() {
           2>"${TMP_PATH}/input"
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
+        elif [ ${opts} -eq 3 ]; then
+          mkdir -p "${PART3_PATH}/users"
+          dialog --backtitle "$(backtitle)" --title "Update Loader" \
+            --msgbox "Upload the update-*.zip File to ${PART3_PATH}/users\nand press OK after upload is done." 0 0
+          [ $? -ne 0 ] && return 1
+          UPDATEFOUND="false"
+          for UPDATEFILE in "${PART3_PATH}/users/update-*.zip"; do
+            if [ -e "${UPDATEFILE}" ]; then
+              mv -f "${UPDATEFILE}" "${TMP_PATH}/update.zip"
+              TAG="zip"
+              UPDATEFOUND="true"
+              break
+            fi
+          done
+          if [ "${UPDATEFOUND}" = "false" ]; then
+            dialog --backtitle "$(backtitle)" --title "Update Loader" \
+              --msgbox "File not found!" 0 0
+            return 1
+          fi
         fi
         updateLoader "${TAG}"
         ;;
