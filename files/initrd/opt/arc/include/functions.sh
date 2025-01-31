@@ -3,6 +3,7 @@
 . "${ARC_PATH}/include/consts.sh"
 . "${ARC_PATH}/include/configFile.sh"
 . "${ARC_PATH}/include/addons.sh"
+. "${ARC_PATH}/include/modules.sh"
 
 ###############################################################################
 # Check loader disk
@@ -645,18 +646,14 @@ function systemCheck () {
   else
     AESSYS="true"
   fi
-  # Check for ACPI Support
-  if ! grep -q "^flags.*acpi.*" /proc/cpuinfo; then
-    ACPISYS="false"
-  else
-    ACPISYS="true"
-  fi
   # Check for CPU Frequency Scaling
-  CPUFREQUENCIES=$(ls -ltr /sys/devices/system/cpu/cpufreq/* 2>/dev/null | wc -l)
-  if [ ${CPUFREQUENCIES} -gt 1 ]; then
+  CPUFREQUENCIES=$(ls -l /sys/devices/system/cpu/cpufreq/*/* 2>/dev/null | wc -l)
+  if [ ${CPUFREQUENCIES} -gt 0 ]; then
     CPUFREQ="true"
+    ACPISYS="true"
   else
     CPUFREQ="false"
+    ACPISYS="false"
   fi
   # Check for Arc Patch
   arc_mode
