@@ -6,62 +6,42 @@
 # See /LICENSE for more information.
 #
 
-import os, click
-
-WORK_PATH = os.path.abspath(os.path.dirname(__file__))
-
+import os, re, sys, glob, json, yaml, click, shutil, tarfile, kmodule, requests, urllib3
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry  # type: ignore
+from openpyxl import Workbook
 
 @click.group()
 def cli():
     """
-    The CLI is a commands to Arc.
+    The CLI is a commands to ARC.
     """
     pass
 
 
-def mutually_exclusive_options(ctx, param, value):
-    other_option = "file" if param.name == "data" else "data"
-    if value is not None and ctx.params.get(other_option) is not None:
-        raise click.UsageError(f"Illegal usage: `{param.name}` is mutually exclusive with `{other_option}`.")
-    return value
-
-
-def validate_required_param(ctx, param, value):
-    if not value and "file" not in ctx.params and "data" not in ctx.params:
-        raise click.MissingParameter(param_decls=[param.name])
-    return value
-
-def __fullversion(ver):
-    out = ver
-    arr = ver.split('-')
-    if len(arr) > 0:
-        a = arr[0].split('.')[0] if len(arr[0].split('.')) > 0 else '0'
-        b = arr[0].split('.')[1] if len(arr[0].split('.')) > 1 else '0'
-        c = arr[0].split('.')[2] if len(arr[0].split('.')) > 2 else '0'
-        d = arr[1] if len(arr) > 1 else '00000'
-        e = arr[2] if len(arr) > 2 else '0'
-        out = '{}.{}.{}-{}-{}'.format(a,b,c,d,e)
-    return out
-
 @cli.command()
-@click.option("-p", "--platforms", type=str, help="The platforms of Syno.")
-def getmodels(platforms=None):
-    """
-    Get Syno Models.
-    """
-    import re, json, requests, urllib3
-    from requests.adapters import HTTPAdapter
-    from requests.packages.urllib3.util.retry import Retry  # type: ignore
+@click.option("-w", "--workpath", type=str, required=True, help="The workpath of ARC.")
+@click.option("-j", "--jsonpath", type=str, required=True, help="The output path of jsonfile.")
+def getmodels(workpath, jsonpath):
+    models = {}
+    platforms_yml = os.path.join(workpath, "mnt", "p3", "configs", "platforms.yml")
+    with open(platforms_yml, "r") as f:
+        P_data = yaml.safe_load(f)
+        P_platforms = P_data.get("platforms", [])
+        for P in P_platforms:
+            productvers = {}
+            for V in P_platforms[P]["productvers"]:
+                kpre = P_platforms[P]["productvers"][V].get("kpre", "")
+                kver = P_platforms[P]["productvers"][V].get("kver", "")
+                productvers[V] = f"{kpre}-{kver}" if kpre else kver
+            models[P] = {"productvers": productvers, "models": []}
 
     adapter = HTTPAdapter(max_retries=Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504]))
     session = requests.Session()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-    PS = platforms.lower().replace(",", " ").split() if platforms else []
-
-    models = []
+    
     try:
         url = "http://update7.synology.com/autoupdate/genRSS.php?include_beta=1"
         #url = "https://update7.synology.com/autoupdate/genRSS.php?include_beta=1"
@@ -69,42 +49,76 @@ def getmodels(platforms=None):
         req = session.get(url, timeout=10, verify=False)
         req.encoding = "utf-8"
         p = re.compile(r"<mUnique>(.*?)</mUnique>.*?<mLink>(.*?)</mLink>", re.MULTILINE | re.DOTALL)
-
         data = p.findall(req.text)
-        for item in data:
-            if not "DSM" in item[1]:
-                continue
-            arch = item[0].split("_")[1]
-            name = item[1].split("/")[-1].split("_")[1].replace("%2B", "+")
-            if PS and arch.lower() not in PS:
-                continue
-            if not any(m["name"] == name for m in models):
-                models.append({"name": name, "arch": arch})
-
-        models.sort(key=lambda k: (k["arch"], k["name"]))
-
     except Exception as e:
-        # click.echo(f"Error: {e}")
-        pass
+        click.echo(f"Error: {e}")
+        return
 
-    print(json.dumps(models, indent=4))
+    for item in data:
+        if not "DSM" in item[1]:
+            continue
+        arch = item[0].split("_")[1]
+        name = item[1].split("/")[-1].split("_")[1].replace("%2B", "+")
+        if arch not in models:
+            continue
+        if name in (A for B in models for A in models[B]["models"]):
+            continue
+        models[arch]["models"].append(name)
+
+    if jsonpath:
+        with open(jsonpath, "w") as f:
+            json.dump(models, f, indent=4, ensure_ascii=False)
 
 @cli.command()
-@click.option("-m", "--model", type=str, required=True, help="The model of Syno.")
-@click.option("-v", "--version", type=str, required=True, help="The version of Syno.")
-def getpats4mv(model, version):
-    import json, requests, urllib3
-    from requests.adapters import HTTPAdapter
-    from requests.packages.urllib3.util.retry import Retry  # type: ignore
+@click.option("-w", "--workpath", type=str, required=True, help="The workpath of ARC.")
+@click.option("-j", "--jsonpath", type=str, required=True, help="The output path of jsonfile.")
+def getpats(workpath, jsonpath):
+    def __fullversion(ver):
+        arr = ver.split('-')
+        a, b, c = (arr[0].split('.') + ['0', '0', '0'])[:3]
+        d = arr[1] if len(arr) > 1 else '00000'
+        e = arr[2] if len(arr) > 2 else '0'
+        return f'{a}.{b}.{c}-{d}-{e}'
+
+    platforms_yml = os.path.join(workpath, "mnt", "p3", "configs", "platforms.yml")
+    with open(platforms_yml, "r") as f:
+        data = yaml.safe_load(f)
+        platforms = data.get("platforms", [])
 
     adapter = HTTPAdapter(max_retries=Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504]))
     session = requests.Session()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    
+    try:
+        url = "http://update7.synology.com/autoupdate/genRSS.php?include_beta=1"
+        #url = "https://update7.synology.com/autoupdate/genRSS.php?include_beta=1"
+
+        req = session.get(url, timeout=10, verify=False)
+        req.encoding = "utf-8"
+        p = re.compile(r"<mUnique>(.*?)</mUnique>.*?<mLink>(.*?)</mLink>", re.MULTILINE | re.DOTALL)
+        data = p.findall(req.text)
+    except Exception as e:
+        click.echo(f"Error: {e}")
+        return
+
+    models = []
+    for item in data:
+        if not "DSM" in item[1]:
+            continue
+        arch = item[0].split("_")[1]
+        name = item[1].split("/")[-1].split("_")[1].replace("%2B", "+")
+        if arch not in platforms:
+            continue
+        if name in models:
+            continue
+        models.append(name)
 
     pats = {}
-    try:
+    for M in models:
+        pats[M] = {}
+        version = '7'
         urlInfo = "https://www.synology.com/api/support/findDownloadInfo?lang=en-us"
         urlSteps = "https://www.synology.com/api/support/findUpgradeSteps?"
         #urlInfo = "https://www.synology.cn/api/support/findDownloadInfo?lang=zh-cn"
@@ -112,16 +126,20 @@ def getpats4mv(model, version):
 
         major = f"&major={version.split('.')[0]}" if len(version.split('.')) > 0 else ""
         minor = f"&minor={version.split('.')[1]}" if len(version.split('.')) > 1 else ""
-        req = session.get(f"{urlInfo}&product={model.replace('+', '%2B')}{major}{minor}", timeout=10, verify=False)
-        req.encoding = "utf-8"
-        data = json.loads(req.text)
+        try:
+            req = session.get(f"{urlInfo}&product={M.replace('+', '%2B')}{major}{minor}", timeout=10, verify=False)
+            req.encoding = "utf-8"
+            data = json.loads(req.text)
+        except Exception as e:
+            click.echo(f"Error: {e}")
+            continue
 
         build_ver = data['info']['system']['detail'][0]['items'][0]['build_ver']
         build_num = data['info']['system']['detail'][0]['items'][0]['build_num']
         buildnano = data['info']['system']['detail'][0]['items'][0]['nano']
         V = __fullversion(f"{build_ver}-{build_num}-{buildnano}")
-        if V not in pats:
-            pats[V] = {
+        if V not in pats[M]:
+            pats[M][V] = {
                 'url': data['info']['system']['detail'][0]['items'][0]['files'][0]['url'].split('?')[0],
                 'sum': data['info']['system']['detail'][0]['items'][0]['files'][0]['checksum']
             }
@@ -134,120 +152,100 @@ def getpats4mv(model, version):
             if not major or not minor:
                 majorTmp = f"&major={I['version'].split('.')[0]}" if len(I['version'].split('.')) > 0 else ""
                 minorTmp = f"&minor={I['version'].split('.')[1]}" if len(I['version'].split('.')) > 1 else ""
-                reqTmp = session.get(f"{urlInfo}&product={model.replace('+', '%2B')}{majorTmp}{minorTmp}", timeout=10, verify=False)
-                reqTmp.encoding = "utf-8"
-                dataTmp = json.loads(reqTmp.text)
+                try:
+                    reqTmp = session.get(f"{urlInfo}&product={M.replace('+', '%2B')}{majorTmp}{minorTmp}", timeout=10, verify=False)
+                    reqTmp.encoding = "utf-8"
+                    dataTmp = json.loads(reqTmp.text)
+                except Exception as e:
+                    click.echo(f"Error: {e}")
+                    continue
 
                 build_ver = dataTmp['info']['system']['detail'][0]['items'][0]['build_ver']
                 build_num = dataTmp['info']['system']['detail'][0]['items'][0]['build_num']
                 buildnano = dataTmp['info']['system']['detail'][0]['items'][0]['nano']
                 V = __fullversion(f"{build_ver}-{build_num}-{buildnano}")
-                if V not in pats:
-                    pats[V] = {
+                if V not in pats[M]:
+                    pats[M][V] = {
                         'url': dataTmp['info']['system']['detail'][0]['items'][0]['files'][0]['url'].split('?')[0],
                         'sum': dataTmp['info']['system']['detail'][0]['items'][0]['files'][0]['checksum']
                     }
 
             for J in I['versions']:
                 to_ver = J['build']
-                reqSteps = session.get(f"{urlSteps}&product={model.replace('+', '%2B')}&from_ver={from_ver}&to_ver={to_ver}", timeout=10, verify=False)
-                if reqSteps.status_code != 200:
+                try:
+                    reqSteps = session.get(f"{urlSteps}&product={M.replace('+', '%2B')}&from_ver={from_ver}&to_ver={to_ver}", timeout=10, verify=False)
+                    if reqSteps.status_code != 200:
+                        continue
+                    reqSteps.encoding = "utf-8"
+                    dataSteps = json.loads(reqSteps.text)
+                except Exception as e:
+                    click.echo(f"Error: {e}")
                     continue
-                reqSteps.encoding = "utf-8"
-                dataSteps = json.loads(reqSteps.text)
+
                 for S in dataSteps['upgrade_steps']:
                     if not S.get('full_patch') or not S['build_ver'].startswith(version):
                         continue
                     V = __fullversion(f"{S['build_ver']}-{S['build_num']}-{S['nano']}")
-                    if V not in pats:
-                        pats[V] = {
+                    if V not in pats[M]:
+                        pats[M][V] = {
                             'url': S['files'][0]['url'].split('?')[0],
                             'sum': S['files'][0]['checksum']
                         }
-    except Exception as e:
-        # click.echo(f"Error: {e}")
-        pass
 
-    pats = {k: pats[k] for k in sorted(pats.keys(), reverse=True)}
-    print(json.dumps(pats, indent=4))
+    if jsonpath:
+        with open(jsonpath, "w") as f:
+            json.dump(pats, f, indent=4, ensure_ascii=False)
+
+@cli.command()
+@click.option("-w", "--workpath", type=str, required=True, help="The workpath of ARC.")
+@click.option("-j", "--jsonpath", type=str, required=True, help="The output path of jsonfile.")
+def getaddons(workpath, jsonpath):
+    AS = glob.glob(os.path.join(workpath, "mnt", "p3", "addons", "*", "manifest.yml"))
+    AS.sort()
+    addons = {}
+    for A in AS:
+        with open(A, "r") as file:
+            A_data = yaml.safe_load(file)
+            A_name = A_data.get("name", "")
+            A_system = A_data.get("system", False)
+            A_description = A_data.get("description", "")
+            addons[A_name] = {"system": A_system, "description": A_description}
+    if jsonpath:
+        with open(jsonpath, "w") as f:
+            json.dump(addons, f, indent=4, ensure_ascii=False)
 
 
 @cli.command()
-@click.option("-p", "--models", type=str, help="The models of Syno.")
-def getpats(models=None):
-    import re, json, requests, urllib3
-    from bs4 import BeautifulSoup
-    from requests.adapters import HTTPAdapter
-    from requests.packages.urllib3.util.retry import Retry  # type: ignore
+@click.option("-w", "--workpath", type=str, required=True, help="The workpath of ARC.")
+@click.option("-j", "--jsonpath", type=str, required=True, help="The output path of jsonfile.")
+def getmodules(workpath, jsonpath):
+    MS = glob.glob(os.path.join(workpath, "mnt", "p3", "modules", "*.tgz"))
+    MS.sort()
+    modules = {}
+    TMP_PATH = "/tmp/modules"
+    if os.path.exists(TMP_PATH):
+        shutil.rmtree(TMP_PATH)
+    for M in MS:
+        M_name = os.path.splitext(os.path.basename(M))[0]
+        M_modules = {}
+        os.makedirs(TMP_PATH)
+        with tarfile.open(M, "r") as tar:
+            tar.extractall(TMP_PATH)
+        KS = glob.glob(os.path.join(TMP_PATH, "*.ko"))
+        KS.sort()
+        for K in KS:
+            K_name = os.path.splitext(os.path.basename(K))[0]
+            K_info = kmodule.modinfo(K, basedir=os.path.dirname(K), kernel=None)[0]
+            K_description = K_info.get("description", "")
+            K_depends = K_info.get("depends", "")
+            M_modules[K_name] = {"description": K_description, "depends": K_depends}
+        modules[M_name] = M_modules
+        if os.path.exists(TMP_PATH):
+            shutil.rmtree(TMP_PATH)
+    if jsonpath:
+        with open(jsonpath, "w") as file:
+            json.dump(modules, file, indent=4, ensure_ascii=False)
 
-    adapter = HTTPAdapter(max_retries=Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504]))
-    session = requests.Session()
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-    MS = models.lower().replace(",", " ").split() if models else []
-
-    pats = {}
-    try:
-        req = session.get('https://archive.synology.com/download/Os/DSM', timeout=10, verify=False)
-        req.encoding = 'utf-8'
-        bs = BeautifulSoup(req.text, 'html.parser')
-        p = re.compile(r"(.*?)-(.*?)", re.MULTILINE | re.DOTALL)
-        l = bs.find_all('a', string=p)
-        for i in l:
-            ver = i.attrs['href'].split('/')[-1]
-            if not ver.startswith('7'):
-                continue
-            req = session.get(f'https://archive.synology.com{i.attrs["href"]}', timeout=10, verify=False)
-            req.encoding = 'utf-8'
-            bs = BeautifulSoup(req.text, 'html.parser')
-            p = re.compile(r"DSM_(.*?)_(.*?).pat", re.MULTILINE | re.DOTALL)
-            data = bs.find_all('a', string=p)
-            for item in data:
-                rels = p.search(item.attrs['href'])
-                if rels:
-                    model, _ = rels.groups()
-                    model = model.replace('%2B', '+')
-                    if MS and model.lower() not in MS:
-                        continue
-                    if model not in pats:
-                        pats[model] = {}
-                    pats[model][__fullversion(ver)] = item.attrs['href']
-    except Exception as e:
-        # click.echo(f"Error: {e}")
-        pass
-
-    print(json.dumps(pats, indent=4))
-
-@cli.command()
-@click.option("-p", "--platforms", type=str, help="The platforms of Syno.")
-def getmodelsoffline(platforms=None):
-    """
-    Get Syno Models.
-    """
-    import json
-    import os
-
-    PS = platforms.lower().replace(",", " ").split() if platforms else []
-
-    with open(os.path.join('/mnt/p3/configs', "offline.json")) as user_file:
-        data = json.load(user_file)
-
-    models = []
-    for item in data["channel"]["item"]:
-        if not item["title"].startswith("DSM"):
-            continue
-        for model in item["model"]:
-            arch = model["mUnique"].split("_")[1]
-            name = model["mLink"].split("/")[-1].split("_")[1].replace("%2B", "+")
-            if PS and arch.lower() not in PS:
-                continue
-            if not any(m["name"] == name for m in models):
-                models.append({"name": name, "arch": arch})
-
-    models = sorted(models, key=lambda k: (k["arch"], k["name"]))
-    print(json.dumps(models, indent=4))
 
 if __name__ == "__main__":
     cli()
