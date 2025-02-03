@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2023 AuxXxilium <https://github.com/AuxXxilium> and Ing <https://github.com/wjz304>
+# Copyright (C) 2025 AuxXxilium <https://github.com/AuxXxilium>
 #
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
@@ -67,10 +67,10 @@ jobs:
       - name: Get data
         run: |
           pip install -r scripts/requirements.txt
-          python scripts/func.py getmodels -w "arc/ws" -j "docs/models.json"
-          python scripts/func.py getaddons -w "arc/ws" -j "docs/addons.json"
-          python scripts/func.py getmodules -w "arc/ws" -j "docs/modules.json"
-          python scripts/func.py getpats -w "arc/ws" -j "docs/pats.json"
+          python scripts/functions.py getmodels -j "docs/models.json"
+          python scripts/functions.py getaddons -j "docs/addons.json"
+          python scripts/functions.py getmodules -j "docs/modules.json"
+          python scripts/functions.py getpats -j "docs/pats.json"
 
       - name: Upload to Artifacts
         if: success()
