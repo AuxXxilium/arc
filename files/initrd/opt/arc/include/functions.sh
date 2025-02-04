@@ -615,13 +615,15 @@ function onlineCheck() {
       writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
     fi
   fi
-  NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-  if [ -n "${NEWTAG}" ]; then
-    writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
-    updateOffline
-    checkHardwareID
-  else
-    writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
+  if [ "${ARC_BRANCH}" != "dev" ]; then
+    NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+    if [ -n "${NEWTAG}" ]; then
+      writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
+      updateOffline
+      checkHardwareID
+    else
+      writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
+    fi
   fi
 }
 
@@ -701,7 +703,7 @@ function __umountDSMRootDisk() {
 # bootwait SSH/Web
 function _bootwait() {
   BOOTWAIT="$(readConfigKey "bootwait" "${USER_CONFIG_FILE}")"
-  [ -z "${BOOTWAIT}" ] && BOOTWAIT=10
+  [ -z "${BOOTWAIT}" ] && BOOTWAIT="5"
   busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
   while [ ${BOOTWAIT} -gt 0 ]; do

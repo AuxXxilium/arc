@@ -1003,7 +1003,7 @@ function cmdlineMenu() {
             2>"${TMP_PATH}/resp"
           RET=$?
           case ${RET} in
-            0) # ok-button
+            0)
               NAME="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
               VALUE="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
               [[ "${NAME}" = *= ]] && NAME="${NAME%?}"
@@ -1016,11 +1016,11 @@ function cmdlineMenu() {
               writeConfigKey "cmdline.\"${NAME//\"/}\"" "${VALUE}" "${USER_CONFIG_FILE}"
               break
               ;;
-            1) # cancel-button
+            1)
               break
               ;;
-            255) # ESC
-              # break
+            255)
+              break
               ;;
           esac
         done
@@ -1036,7 +1036,7 @@ function cmdlineMenu() {
           done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
           if [ ${#CMDLINE[@]} -eq 0 ]; then
             dialog --backtitle "$(backtitle)" --msgbox "No user cmdline to remove" 0 0
-            continue
+            break
           fi
           ITEMS=""
           for I in "${!CMDLINE[@]}"; do
