@@ -11,7 +11,7 @@ set -e
 # Clean cached Files
 sudo git clean -fdx
 
-. scripts/func.sh "${AUX_TOKEN}"
+. scripts/functions.sh "${AUX_TOKEN}"
 
 # Unmount Image File
 sudo umount "/tmp/p1" 2>/dev/null || true
