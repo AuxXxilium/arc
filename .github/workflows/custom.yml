@@ -138,7 +138,6 @@ jobs:
               writeConfigKey "addons.\"${A}\"" "${VALUE}" "${PRESET_CONFIG_FILE}"
             done
           fi
-          writeConfigKey "automated" "true" "${PRESET_CONFIG_FILE}"
           echo "$(cat "${PRESET_CONFIG_FILE}")"
           sudo echo "arc-${MODEL}-${PRODUCTVER:0:3}-${TAG}" >"/tmp/automated"
           sudo mv -f "/tmp/automated" "/tmp/p3/automated"
