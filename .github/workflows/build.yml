@@ -104,7 +104,7 @@ jobs:
        # Build incremental
       - name: Build Image
         run: |
-          . scripts/func.sh
+          . scripts/functions.sh
 
           # Modify Source File
           ARC_BUILD="$(date +'%y%m%d')"
