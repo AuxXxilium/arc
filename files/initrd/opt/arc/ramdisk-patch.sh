@@ -164,8 +164,14 @@ mkdir -p "${RAMDISK_PATH}/addons"
 } >"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
+# Add redpill ADDON only if PLATFORM is epyc7002
+if [ "${PLATFORM}" = "epyc7002" ]; then
+  installAddon "redpill" "${PLATFORM}" || exit 1
+  echo "/addons/redpill.sh \${1}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+fi
+
 # System Addons
-for ADDON in redpill revert misc eudev disks localrss notify wol mountloader; do
+for ADDON in revert misc eudev disks localrss notify wol mountloader; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
