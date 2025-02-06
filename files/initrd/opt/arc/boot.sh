@@ -60,21 +60,23 @@ HWIDINFO="$(readConfigKey "bootscreen.hwidinfo" "${USER_CONFIG_FILE}")"
 GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
 # Build Sanity Check
 [ "${BUILDDONE}" = "false" ] && die "Loader build not completed!"
 [[ -z "${MODELID}" || "${MODELID}" != "${MODEL}" ]] && die "Loader build not completed! Model mismatch!"
+
 # HardwareID Check
-if [ "${ARCPATCH}" = "true" ]; then
+if [ "${ARCPATCH}" = "true" ] || [ -n "${ARCCONF}" ]; then
   HARDWAREID="$(readConfigKey "arc.hardwareid" "${USER_CONFIG_FILE}")"
   HWID="$(genHWID)"
   if [ "${HARDWAREID}" != "${HWID}" ]; then
-    echo -e "\033[1;31m*** HardwareID does not match! - Loader can't boot to DSM! You need to reconfigure your Loader - Rebooting to Config Mode! ***\033[0m"
-    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
+    echo -e "\033[1;31m*** HardwareID does not match! - Loader can't verfify your System! You need to reconfigure your Loader - Rebooting to Config Mode! ***\033[0m"
+    rm -f "${USER_CONFIG_FILE}" 2>/dev/null || true
+    [ -f "${S_FILE}.bak" ] && mv -f "${S_FILE}.bak" "${S_FILE}" 2>/dev/null || true
     sleep 5
     rebootTo "config"
+    exit 1
   fi
 fi
 
