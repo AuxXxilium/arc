@@ -101,6 +101,7 @@ fi
 if [ "${DISKINFO}" = "true" ]; then
   echo -e "\033[1;37mDisks:\033[0m"
   echo -e "Disks: \033[1;37m$(lsblk -dpno NAME | grep -v "${LOADER_DISK}" | wc -l)\033[0m"
+  echo
 fi
 if [ "${HWIDINFO}" = "true" ]; then
   echo -e "\033[1;37mHardwareID:\033[0m"
@@ -293,16 +294,13 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
   IPCON=""
-  echo
   if [ "${ARCPATCH}" = "true" ]; then
     echo -e "\033[1;37mDetected ${ETHN} NIC\033[0m | \033[1;34mUsing ${NIC} NIC for Arc Patch:\033[0m"
   else
     echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
   fi
-  echo
 
-  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S09dhcpcd restart >/dev/null 2>&1 || true
-  sleep 3
+  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S09dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
   checkNIC
   echo
 
