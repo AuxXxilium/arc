@@ -177,8 +177,8 @@ elif [ "${ARCMODE}" = "config" ]; then
     write_menu "I" "Power/Service Menu"
     write_menu "V" "Credits"
     [ "$TERM" != "xterm-256color" ] && WEBCONFIG="Webconfig: http://${IPCON}${HTTPPORT:+:$HTTPPORT}" || WEBCONFIG=""
-    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Classic UI" --colors \
-          --cancel-label "Evo" --help-button --help-label "Exit" \
+    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Advanced UI" --colors \
+          --cancel-label "Easy UI" --help-button --help-label "Exit" \
           --menu "${WEBCONFIG}" 0 0 0 --file "${TMP_PATH}/menu" \
           2>"${TMP_PATH}/resp"
     RET=$?

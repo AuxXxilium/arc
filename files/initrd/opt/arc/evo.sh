@@ -91,7 +91,7 @@ function advancedMenu() {
       write_menu "8" "\Z1Show Loader Options\Zn"
     fi
 
-    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Evo UI Advanced" --colors \
+    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Easy UI Advanced" --colors \
           --cancel-label "Back" \
           --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
           2>"${TMP_PATH}/resp"
@@ -286,8 +286,8 @@ elif [ "${ARCMODE}" = "config" ]; then
     else
       WEBCONFIG=""
     fi
-    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Evo UI" --colors \
-          --cancel-label "Classic" --help-button --help-label "Exit" \
+    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Easy UI" --colors \
+          --cancel-label "Advanced UI" --help-button --help-label "Exit" \
           --extra-button --extra-label "${EXTRA_LABEL}" \
           --menu "${WEBCONFIG}" 0 0 0 --file "${TMP_PATH}/menu" \
           2>"${TMP_PATH}/resp"
