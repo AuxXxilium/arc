@@ -124,6 +124,7 @@ function arcModel() {
     writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
     writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
     writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
   fi
   PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -1)"
   writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
@@ -172,6 +173,7 @@ function arcVersion() {
       writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
       writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
       writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
     fi
     dialog --backtitle "$(backtitle)" --title "Version" \
     --infobox "Reading DSM Build..." 3 25
