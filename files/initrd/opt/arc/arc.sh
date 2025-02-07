@@ -53,7 +53,7 @@ elif [ "${ARCMODE}" = "automated" ]; then
   fi
 elif [ "${ARCMODE}" = "config" ]; then
   [ "${CONFDONE}" = "true" ] && NEXT="2" || NEXT="1"
-  [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
+  [ "${BUILDDONE}" = "true" ] && NEXT="4" || NEXT="1"
   while true; do
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
 

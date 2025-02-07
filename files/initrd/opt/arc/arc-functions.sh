@@ -2057,11 +2057,10 @@ function staticIPMenu() {
   IPCON=""
   for N in ${ETHX}; do
     MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
-    IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
-    IFS='/' read -r -a IPRA <<<"${IPR}"
-
     MSG="Set ${N}(${MACR}) IP to: (Delete if empty)"
     while true; do
+      IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
+      IFS='/' read -r -a IPRA <<<"${IPR}"
       dialog --backtitle "$(backtitle)" --title "StaticIP" \
         --form "${MSG}" 10 60 4 \
         "address" 1 1 "${IPRA[0]}" 1 9 36 16 \
@@ -2072,58 +2071,54 @@ function staticIPMenu() {
       RET=$?
       case ${RET} in
       0)
-        fail=0
         address="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
         netmask="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
         gateway="$(sed -n '3p' "${TMP_PATH}/resp" 2>/dev/null)"
         dnsname="$(sed -n '4p' "${TMP_PATH}/resp" 2>/dev/null)"
-        if [ -z "${address}" ]; then
-          echo "Deleting IP for ${N}(${MACR})"
-          if [ -n "$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")" ]; then
+        (
+          if [ -z "${address}" ]; then
+            echo "Deleting IP for ${N}(${MACR})"
+            if [ -n "$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")" ]; then
+              if [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
+                ip addr flush dev ${N}
+              fi
+              deleteConfigKey "network.${MACR}" "${USER_CONFIG_FILE}"
+              IP="$(getIP)"
+              [ -z "${IPCON}" ] && IPCON="${IP}"
+              sleep 1
+            fi
+          else
+            echo "Setting IP for ${N}(${MACR}) to ${address}/${netmask}/${gateway}/${dnsname}"
             if [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-              ip addr flush dev "${N}" || fail=1
+              ip addr flush dev ${N}
+              ip addr add ${address}/${netmask:-"255.255.255.0"} dev ${N} || exit 1
+              if [ -n "${gateway}" ]; then
+                ip route add default via ${gateway} dev ${N} || exit 1
+              fi
+              if [ -n "${dnsname:-${gateway}}" ]; then
+                sed -i "/nameserver ${dnsname:-${gateway}}/d" /etc/resolv.conf
+                echo "nameserver ${dnsname:-${gateway}}" >>/etc/resolv.conf || exit 1
+              fi
             fi
-            deleteConfigKey "network.${MACR}" "${USER_CONFIG_FILE}"
-            IP="$(getIP)"
-            [ -z "${IPCON}" ] && IPCON="${IP}"
-            sleep 1
+            writeConfigKey "network.${MACR}" "${address}/${netmask}/${gateway}/${dnsname}" "${USER_CONFIG_FILE}"
+            sleep 3
           fi
-        else
-          echo "Setting IP for ${N}(${MACR}) to ${address}/${netmask}/${gateway}/${dnsname}"
-          if [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-            ip addr flush dev "${N}" || fail=1
-            ip addr add "${address}/${netmask:-"255.255.255.0"}" dev "${N}" || fail=1
-            if [ -n "${gateway}" ]; then
-              ip route add default via "${gateway}" dev "${N}" || fail=1
-            fi
-            if [ -n "${dnsname:-${gateway}}" ]; then
-              sed -i "/nameserver ${dnsname:-${gateway}}/d" /etc/resolv.conf || fail=1
-              echo "nameserver ${dnsname:-${gateway}}" >>/etc/resolv.conf || fail=1
-            fi
-          fi
-          writeConfigKey "network.${MACR}" "${address}/${netmask}/${gateway}/${dnsname}" "${USER_CONFIG_FILE}"
-          sleep 3
-        fi
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}" || continue
+        ) 2>&1 | dialog --backtitle "$(backtitle)" --title "StaticIP" \
+          --progressbox "Setting IP for ${N}" 20 100
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "StaticIP" \
-          --msgbox "IP set to ${address}/${netmask}/${gateway}/${dnsname} for ${N}(${MACR})" 0 0
-        [ ${fail} -eq 1 ] && continue || break
+        getnetinfo
+        break
         ;;
       1)
         break
         ;;
       *)
-        dialog --backtitle "$(backtitle)" --title "Error" --msgbox "An unexpected error occurred. Please try again." 5 50
-        continue
+        break
         ;;
       esac
     done
   done
-  /etc/init.d/S07network restart
-  /etc/init.d/S09dhcpcd restart
-  sleep 3
-  getnetinfo
   return
 }
 
