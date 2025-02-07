@@ -124,6 +124,7 @@ function arcModel() {
     writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
     writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
     writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
   fi
   PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -1)"
   writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
@@ -172,6 +173,7 @@ function arcVersion() {
       writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
       writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
       writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
     fi
     dialog --backtitle "$(backtitle)" --title "Version" \
     --infobox "Reading DSM Build..." 3 25
@@ -2051,7 +2053,7 @@ function credits() {
 ###############################################################################
 # Setting Static IP for Loader
 function staticIPMenu() {
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
+  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
   IPCON=""
   for N in ${ETHX}; do
     MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
@@ -2061,58 +2063,68 @@ function staticIPMenu() {
     MSG="Set ${N}(${MACR}) IP to: (Delete if empty)"
     while true; do
       dialog --backtitle "$(backtitle)" --title "StaticIP" \
-        --form "${MSG}" 10 60 4 "address" 1 1 "${IPRA[0]}" 1 9 36 16 "netmask" 2 1 "${IPRA[1]}" 2 9 36 16 "gateway" 3 1 "${IPRA[2]}" 3 9 36 16 "dns" 4 1 "${IPRA[3]}" 4 9 36 16 \
+        --form "${MSG}" 10 60 4 \
+        "address" 1 1 "${IPRA[0]}" 1 9 36 16 \
+        "netmask" 2 1 "${IPRA[1]}" 2 9 36 16 \
+        "gateway" 3 1 "${IPRA[2]}" 3 9 36 16 \
+        "dns" 4 1 "${IPRA[3]}" 4 9 36 16 \
         2>"${TMP_PATH}/resp"
       RET=$?
       case ${RET} in
       0)
+        fail=0
         address="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
         netmask="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
         gateway="$(sed -n '3p' "${TMP_PATH}/resp" 2>/dev/null)"
         dnsname="$(sed -n '4p' "${TMP_PATH}/resp" 2>/dev/null)"
-        (
-          if [ -z "${address}" ]; then
-            if [ -n "$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")" ]; then
-              if [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-                ip addr flush dev "${N}"
-              fi
-              deleteConfigKey "network.${MACR}" "${USER_CONFIG_FILE}"
-              IP="$(getIP)"
-              [ -z "${IPCON}" ] && IPCON="${IP}"
-              sleep 1
-            fi
-          else
+        if [ -z "${address}" ]; then
+          echo "Deleting IP for ${N}(${MACR})"
+          if [ -n "$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")" ]; then
             if [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-              ip addr flush dev "${N}"
-              ip addr add "${address}/${netmask:-"255.255.255.0"}" dev "${N}"
-              if [ -n "${gateway}" ]; then
-                ip route add default via "${gateway}" dev "${N}"
-              fi
-              if [ -n "${dnsname:-${gateway}}" ]; then
-                sed -i "/nameserver ${dnsname:-${gateway}}/d" /etc/resolv.conf
-                echo "nameserver ${dnsname:-${gateway}}" >>/etc/resolv.conf
-              fi
+              ip addr flush dev "${N}" || fail=1
             fi
-            writeConfigKey "network.${MACR}" "${address}/${netmask}/${gateway}/${dnsname}" "${USER_CONFIG_FILE}"
+            deleteConfigKey "network.${MACR}" "${USER_CONFIG_FILE}"
             IP="$(getIP)"
             [ -z "${IPCON}" ] && IPCON="${IP}"
             sleep 1
           fi
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        ) 2>&1 | dialog --backtitle "$(backtitle)" --title "StaticIP" \
-          --progressbox "Setting IP ..." 20 100
-        break
+        else
+          echo "Setting IP for ${N}(${MACR}) to ${address}/${netmask}/${gateway}/${dnsname}"
+          if [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
+            ip addr flush dev "${N}" || fail=1
+            ip addr add "${address}/${netmask:-"255.255.255.0"}" dev "${N}" || fail=1
+            if [ -n "${gateway}" ]; then
+              ip route add default via "${gateway}" dev "${N}" || fail=1
+            fi
+            if [ -n "${dnsname:-${gateway}}" ]; then
+              sed -i "/nameserver ${dnsname:-${gateway}}/d" /etc/resolv.conf || fail=1
+              echo "nameserver ${dnsname:-${gateway}}" >>/etc/resolv.conf || fail=1
+            fi
+          fi
+          writeConfigKey "network.${MACR}" "${address}/${netmask}/${gateway}/${dnsname}" "${USER_CONFIG_FILE}"
+          sleep 3
+        fi
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}" || continue
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        dialog --backtitle "$(backtitle)" --title "StaticIP" \
+          --msgbox "IP set to ${address}/${netmask}/${gateway}/${dnsname} for ${N}(${MACR})" 0 0
+        [ ${fail} -eq 1 ] && continue || break
         ;;
       1)
         break
         ;;
       *)
-        break 2
+        dialog --backtitle "$(backtitle)" --title "Error" --msgbox "An unexpected error occurred. Please try again." 5 50
+        continue
         ;;
       esac
     done
   done
+  /etc/init.d/S07network restart
+  /etc/init.d/S09dhcpcd restart
+  sleep 3
+  getnetinfo
+  return
 }
 
 ###############################################################################
@@ -2654,10 +2666,11 @@ function resetLoader() {
   [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}" >/dev/null
   [ -f "${USER_CONFIG_FILE}" ] && rm -f "${USER_CONFIG_FILE}" >/dev/null
   [ -f "${ARC_RAMDISK_USER_FILE}" ] && rm -f "${ARC_RAMDISK_USER_FILE}" >/dev/null
+  [ -f "${HOME}/.initialized" ] && rm -f "${HOME}/.initialized" >/dev/null
   dialog --backtitle "$(backtitle)" --title "Reset Loader" --aspect 18 \
     --yesno "Reset successful.\nReboot required!" 0 0
   [ $? -ne 0 ] && return
-  rebootTo config
+  exec init.sh
 }
 
 ###############################################################################

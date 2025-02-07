@@ -71,10 +71,13 @@ elif [ "${ARCMODE}" = "config" ]; then
       else
         write_menu "2" "Build Loader"
       fi
+      if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
+        write_menu "3" "Rebuild Loader with clean Image"
+      fi
     fi
 
     if [ "${BUILDDONE}" = "true" ]; then
-      write_menu "3" "Boot Loader"
+      write_menu "4" "Boot Loader"
     fi
 
     write_menu "=" "\Z4===== Info =====\Zn"
@@ -83,7 +86,7 @@ elif [ "${ARCMODE}" = "config" ]; then
     
     if [ "${CONFDONE}" = "true" ]; then
       if [ "${ARCOPTS}" = "true" ]; then
-        write_menu "4" "\Z1Hide Arc DSM Options\Zn"
+        write_menu "5" "\Z1Hide Arc DSM Options\Zn"
         write_menu "b" "Addons"
         write_menu "d" "Modules"
         write_menu "e" "Version"
@@ -117,7 +120,7 @@ elif [ "${ARCMODE}" = "config" ]; then
           write_menu_value "h" "USB as Internal" "${USBMOUNT}"
         fi
       else
-        write_menu "4" "\Z1Show Arc DSM Options\Zn"
+        write_menu "5" "\Z1Show Arc DSM Options\Zn"
       fi
 
       if [ "${BOOTOPTS}" = "true" ]; then
@@ -177,8 +180,8 @@ elif [ "${ARCMODE}" = "config" ]; then
     write_menu "I" "Power/Service Menu"
     write_menu "V" "Credits"
     [ "$TERM" != "xterm-256color" ] && WEBCONFIG="Webconfig: http://${IPCON}${HTTPPORT:+:$HTTPPORT}" || WEBCONFIG=""
-    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Classic UI" --colors \
-          --cancel-label "Evo" --help-button --help-label "Exit" \
+    dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Advanced UI" --colors \
+          --cancel-label "Easy UI" --help-button --help-label "Exit" \
           --menu "${WEBCONFIG}" 0 0 0 --file "${TMP_PATH}/menu" \
           2>"${TMP_PATH}/resp"
     RET=$?
@@ -191,15 +194,19 @@ elif [ "${ARCMODE}" = "config" ]; then
           0) genHardwareID; NEXT="0" ;;
           1) arcModel; NEXT="2" ;;
           2) arcSummary; NEXT="3" ;;
-          3) boot; NEXT="3" ;;
+          3) rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+            arcSummary;
+            NEXT="3"
+            ;;
+          4) boot; NEXT="3" ;;
           # Info Section
           a) sysinfo; NEXT="a" ;;
           A) networkdiag; NEXT="A" ;;
           # System Section
           # Arc Section
-          4) [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
+          5) [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
             ARCOPTS="${ARCOPTS}"
-            NEXT="4"
+            NEXT="5"
             ;;
           b) addonMenu; NEXT="b" ;;
           d) modulesMenu; NEXT="d" ;;

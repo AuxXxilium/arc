@@ -158,12 +158,11 @@ echo
 
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
-echo
-echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
 IPCON=""
+echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
 echo
-[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S09dhcpcd restart >/dev/null 2>&1 || true
-sleep 3
+
+[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S09dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
 checkNIC
 echo
 
