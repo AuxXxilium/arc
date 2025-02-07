@@ -229,7 +229,7 @@ elif [ "${ARCMODE}" = "config" ]; then
       fi
 
       if [ "${PLATFORM}" = "epyc7002" ]; then
-        CPUINFO="$(cat /proc/cpuinfo | wc -l)"
+        CPUINFO="$(cat /proc/cpuinfo | grep MHz | wc -l)"
         if [ ${CPUINFO} -gt 24 ]; then
           write_menu "=" "Custom Kernel should be used for this CPU"
         fi
