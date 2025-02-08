@@ -131,14 +131,14 @@ elif ! echo "${BUSLIST}" | grep -wq "${BUS}"; then
   die "$(printf "The boot disk does not support the current %s, only %s are supported." "${BUS}" "${BUSLIST// /\/}")"
 fi
 
+# Save variables to user config file
+writeConfigKey "vid" "${VID}" "${USER_CONFIG_FILE}"
+writeConfigKey "pid" "${PID}" "${USER_CONFIG_FILE}"
+
 # Inform user and check bus
 echo -e "Loader Disk: \033[1;34m${LOADER_DISK}\033[0m"
 echo -e "Loader Disk Type: \033[1;34m${BUS}\033[0m"
 echo
-
-# Save variables to user config file
-writeConfigKey "vid" "${VID}" "${USER_CONFIG_FILE}"
-writeConfigKey "pid" "${PID}" "${USER_CONFIG_FILE}"
 
 # Decide if boot automatically
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
