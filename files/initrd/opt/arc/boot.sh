@@ -153,7 +153,7 @@ ETHM=${ETHM:-${ETHN}}
 NIC=0
 for N in ${ETHX}; do
   MAC=$(readConfigKey "${N}" "${USER_CONFIG_FILE}" 2>/dev/null)
-  MAC=${MAC:-$(cat /sys/class/net/${N}/address 2>/dev/null | tr '[:upper:]' '[:lower:]')}
+  [ -z ${MAC} ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null)"
   CMDLINE["mac$((++NIC))"]="${MAC}"
   [ ${NIC} -ge ${ETHM} ] && break
 done
