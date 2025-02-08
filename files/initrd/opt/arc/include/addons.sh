@@ -67,14 +67,10 @@ function installAddon() {
   fi
   local ADDON="${1}"
   mkdir -p "${TMP_PATH}/${ADDON}"
-  local HAS_FILES=0
   # First check generic files
   if [ -f "${ADDONS_PATH}/${ADDON}/all.tgz" ]; then
     tar -zxf "${ADDONS_PATH}/${ADDON}/all.tgz" -C "${TMP_PATH}/${ADDON}"
-    HAS_FILES=1
   fi
-  # If has files to copy, copy it, else return error
-  [ ${HAS_FILES} -ne 1 ] && return 1
   cp -f "${TMP_PATH}/${ADDON}/install.sh" "${RAMDISK_PATH}/addons/${ADDON}.sh" 2>"${LOG_FILE}"
   chmod +x "${RAMDISK_PATH}/addons/${ADDON}.sh"
   [ -d ${TMP_PATH}/${ADDON}/root ] && (cp -rnf "${TMP_PATH}/${ADDON}/root/"* "${RAMDISK_PATH}/" 2>"${LOG_FILE}")
