@@ -180,7 +180,7 @@ if [ "${PLATFORM}" = "epyc7002" ]; then
 fi
 
 # System Addons
-for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol"; do
+for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "wol"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
