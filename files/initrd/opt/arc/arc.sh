@@ -353,7 +353,9 @@ elif [ "${ARCMODE}" = "config" ]; then
   done
   clear
 else
-  echo "Unknown Mode: ${ARCMODE} - Exiting..."
+  echo "Unknown Mode: ${ARCMODE} - Rebooting to Config Mode"
+  sleep 3
+  rebootTo config
 fi
 
 # Inform user
