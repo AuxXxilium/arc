@@ -301,7 +301,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   fi
 
   [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S09dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
-  checkNIC
+  checkNIC || true
   echo
 
   DSMLOGO="$(readConfigKey "bootscreen.dsmlogo" "${USER_CONFIG_FILE}")"
@@ -332,13 +332,14 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   # done
 
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
-  KEXECARGS="-a"
+  KEXECARGS="-l \"${MOD_ZIMAGE_FILE}\" --initrd \"${MOD_RDGZ_FILE}\" --command-line=\"${CMDLINE_LINE} --real-mode\""
   if [ ${EFI} -eq 0 ]; then
     KEXECARGS+=" --noefi"
   fi
-  kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" >"${LOG_FILE}" 2>&1 || dieLog
+
+  kexec ${KEXECARGS} >"${LOG_FILE}" 2>&1 || dieLog
 
   echo -e "\033[1;37mBooting DSM...\033[0m"
-  [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
+  [ "${KERNELLOAD}" = "kexec" ] && kexec -e || reboot -k
   exit 0
 fi
