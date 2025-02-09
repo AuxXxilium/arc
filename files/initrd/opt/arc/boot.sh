@@ -13,7 +13,7 @@ rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 BUS=$(getBus "${LOADER_DISK}")
-EFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)
+[ -d /sys/firmware/efi ] && EFI="1" || EFI="0"
 
 # Print Title centralized
 clear
@@ -333,8 +333,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
 
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
   KEXECARGS="-a"
-  if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 4 ] && [ ${EFI} -eq 1 ]; then
-    echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
+  if [ ${EFI} -eq 0 ]; then
     KEXECARGS+=" --noefi"
   fi
   kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" >"${LOG_FILE}" 2>&1 || dieLog
