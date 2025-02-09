@@ -276,7 +276,6 @@ for KEY in "${!CMDLINE[@]}"; do
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
 CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
-echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
 # Boot
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
@@ -322,24 +321,15 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     fi
   done
 
-  # # Unload all network interfaces
-  # for D in $(realpath /sys/class/net/*/device/driver); do rmmod -f "$(basename ${D})" 2>/dev/null || true; done
-
-  # Unload all graphics drivers
-  # for D in $(lsmod | grep -E '^(nouveau|amdgpu|radeon|i915)' | awk '{print $1}'); do rmmod -f "${D}" 2>/dev/null || true; done
-  # for I in $(find /sys/devices -name uevent -exec bash -c 'cat {} 2>/dev/null | grep -Eq "PCI_CLASS=0?30[0|1|2]00" && dirname {}' \;); do
-  #   [ -e ${I}/reset ] && cat ${I}/vendor >/dev/null | grep -iq 0x10de && echo 1 >${I}/reset || true # Proc open nvidia driver when booting
-  # done
-
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
-  KEXECARGS="-l \"${MOD_ZIMAGE_FILE}\" --initrd \"${MOD_RDGZ_FILE}\" --command-line=\"${CMDLINE_LINE} --real-mode\""
+  KEXECARGS="kexecboot"
   if [ ${EFI} -eq 0 ]; then
     KEXECARGS+=" --noefi"
   fi
 
-  kexec ${KEXECARGS} >"${LOG_FILE}" 2>&1 || dieLog
+  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} ${KEXECARGS}" >"${PART1_PATH}/cmdline.yml" || die "Failed to load DSM Kernel!"
 
   echo -e "\033[1;37mBooting DSM...\033[0m"
-  [ "${KERNELLOAD}" = "kexec" ] && kexec -e || reboot -k
+  [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
   exit 0
 fi
