@@ -64,7 +64,7 @@ ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
 # Build Sanity Check
 [ "${BUILDDONE}" = "false" ] && die "Loader build not completed!"
-[[ -z "${MODELID}" || "${MODELID}" != "${MODEL}" ]] && die "Loader build not completed! Model mismatch!"
+[[ -z "${MODELID}" || "${MODELID}" != "${MODEL}" ]] && die "Loader build not completed! Model mismatch! -> Rebuild loader!"
 
 # HardwareID Check
 if [ "${ARCPATCH}" = "true" ] || [ -n "${ARCCONF}" ]; then
@@ -337,7 +337,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
     KEXECARGS+=" --noefi"
   fi
-  kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || dieLog
+  kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" >"${LOG_FILE}" 2>&1 || dieLog
 
   echo -e "\033[1;37mBooting DSM...\033[0m"
   [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
