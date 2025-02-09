@@ -193,12 +193,12 @@ elif [ "${ARCMODE}" = "config" ]; then
           # Main Section
           0) genHardwareID; NEXT="0" ;;
           1) arcModel; NEXT="2" ;;
-          2) arcSummary; NEXT="3" ;;
+          2) arcSummary; NEXT="4" ;;
           3) rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
             arcSummary;
-            NEXT="3"
+            NEXT="4"
             ;;
-          4) boot; NEXT="3" ;;
+          4) boot; NEXT="4" ;;
           # Info Section
           a) sysinfo; NEXT="a" ;;
           A) networkdiag; NEXT="A" ;;
@@ -353,7 +353,9 @@ elif [ "${ARCMODE}" = "config" ]; then
   done
   clear
 else
-  echo "Unknown Mode: ${ARCMODE} - Exiting..."
+  echo "Unknown Mode: ${ARCMODE} - Rebooting to Config Mode"
+  sleep 3
+  rebootTo config
 fi
 
 # Inform user

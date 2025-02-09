@@ -379,7 +379,9 @@ elif [ "${ARCMODE}" = "config" ]; then
     esac
   done
 else
-  echo "Unknown Mode: ${ARCMODE} - Exiting..."
+  echo "Unknown Mode: ${ARCMODE} - Rebooting to Config Mode"
+  sleep 3
+  rebootTo config
 fi
 
 # Inform user

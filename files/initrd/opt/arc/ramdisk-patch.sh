@@ -38,7 +38,6 @@ RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
 SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
-ARCBRANCH="$(readConfigKey "arc.branch" "${USER_CONFIG_FILE}")"
 # Read new PAT Info from Config
 PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
 PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
@@ -117,6 +116,16 @@ for PATCH in "${PATCHES[@]}"; do
   done
 done
 
+# Add serial number to synoinfo.conf, to help to recovery a installed DSM
+echo "Set synoinfo SN" >"${LOG_FILE}"
+_set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
+_set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
+for KEY in "${!SYNOINFO[@]}"; do
+  echo "Set synoinfo ${KEY}" >>"${LOG_FILE}"
+  _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
+  _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
+done
+
 # Patch /sbin/init.post
 grep -v -e '^[\t ]*#' -e '^$' "${PATCH_PATH}/config-manipulators.sh" >"${TMP_PATH}/rp.txt"
 sed -e "/@@@CONFIG-MANIPULATORS-TOOLS@@@/ {" -e "r ${TMP_PATH}/rp.txt" -e 'd' -e '}' -i "${RAMDISK_PATH}/sbin/init.post"
@@ -152,7 +161,7 @@ mkdir -p "${RAMDISK_PATH}/addons"
   echo "export LOADERLABEL=\"ARC\""
   echo "export LOADERVERSION=\"${ARC_VERSION}\""
   echo "export LOADERBUILD=\"${ARC_BUILD}\""
-  echo "export LOADERBRANCH=\"${ARCBRANCH}\""
+  echo "export LOADERBRANCH=\"${ARC_BRANCH}\""
   echo "export PLATFORM=\"${PLATFORM}\""
   echo "export MODEL=\"${MODEL}\""
   echo "export MODELID=\"${MODELID}\""
@@ -171,11 +180,13 @@ if [ "${PLATFORM}" = "epyc7002" ]; then
 fi
 
 # System Addons
-for ADDON in revert misc eudev disks localrss notify wol mountloader; do
+for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "wol"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
-    PARAMS="${HDDSORT}"
+    if [ -n "${HDDSORT}" ]; then
+      PARAMS="${HDDSORT}"
+    fi
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   fi
   installAddon "${ADDON}" "${PLATFORM}" || exit 1
@@ -193,6 +204,8 @@ done
 echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 
 echo "Modify files" >"${LOG_FILE}"
+# Remove function from scripts
+[ "2" = "${BUILDNUM:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
 
 # Build modules dependencies
 # ${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null

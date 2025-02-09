@@ -13,7 +13,7 @@ rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 BUS=$(getBus "${LOADER_DISK}")
-EFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)
+[ -d /sys/firmware/efi ] && EFI="1" || EFI="0"
 
 # Print Title centralized
 clear
@@ -64,7 +64,7 @@ ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
 # Build Sanity Check
 [ "${BUILDDONE}" = "false" ] && die "Loader build not completed!"
-[[ -z "${MODELID}" || "${MODELID}" != "${MODEL}" ]] && die "Loader build not completed! Model mismatch!"
+[[ -z "${MODELID}" || "${MODELID}" != "${MODEL}" ]] && die "Loader build not completed! Model mismatch! -> Rebuild loader!"
 
 # HardwareID Check
 if [ "${ARCPATCH}" = "true" ] || [ -n "${ARCCONF}" ]; then
@@ -153,7 +153,7 @@ ETHM=${ETHM:-${ETHN}}
 NIC=0
 for N in ${ETHX}; do
   MAC=$(readConfigKey "${N}" "${USER_CONFIG_FILE}" 2>/dev/null)
-  MAC=${MAC:-$(cat /sys/class/net/${N}/address 2>/dev/null | tr '[:upper:]' '[:lower:]')}
+  [ -z ${MAC} ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null)"
   CMDLINE["mac$((++NIC))"]="${MAC}"
   [ ${NIC} -ge ${ETHM} ] && break
 done
@@ -276,7 +276,6 @@ for KEY in "${!CMDLINE[@]}"; do
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
 CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
-echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
 # Boot
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
@@ -301,7 +300,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   fi
 
   [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S09dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
-  checkNIC
+  checkNIC || true
   echo
 
   DSMLOGO="$(readConfigKey "bootscreen.dsmlogo" "${USER_CONFIG_FILE}")"
@@ -322,22 +321,13 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     fi
   done
 
-  # # Unload all network interfaces
-  # for D in $(realpath /sys/class/net/*/device/driver); do rmmod -f "$(basename ${D})" 2>/dev/null || true; done
-
-  # Unload all graphics drivers
-  # for D in $(lsmod | grep -E '^(nouveau|amdgpu|radeon|i915)' | awk '{print $1}'); do rmmod -f "${D}" 2>/dev/null || true; done
-  # for I in $(find /sys/devices -name uevent -exec bash -c 'cat {} 2>/dev/null | grep -Eq "PCI_CLASS=0?30[0|1|2]00" && dirname {}' \;); do
-  #   [ -e ${I}/reset ] && cat ${I}/vendor >/dev/null | grep -iq 0x10de && echo 1 >${I}/reset || true # Proc open nvidia driver when booting
-  # done
-
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
-  KEXECARGS="-a"
-  if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 4 ] && [ ${EFI} -eq 1 ]; then
-    echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
+  KEXECARGS="kexecboot"
+  if [ ${EFI} -eq 0 ]; then
     KEXECARGS+=" --noefi"
   fi
-  kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" >"${LOG_FILE}" 2>&1 || dieLog
+
+  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} ${KEXECARGS}" >"${PART1_PATH}/cmdline.yml" || die "Failed to load DSM Kernel!"
 
   echo -e "\033[1;37mBooting DSM...\033[0m"
   [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
