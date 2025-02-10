@@ -173,14 +173,14 @@ mkdir -p "${RAMDISK_PATH}/addons"
 } >"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
-# Add redpill ADDON only if PLATFORM is epyc7002
+# Add redpill Addon if Platform is epyc7002
 if [ "${PLATFORM}" = "epyc7002" ]; then
   installAddon "redpill" "${PLATFORM}" || exit 1
   echo "/addons/redpill.sh \${1}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 fi
 
 # System Addons
-for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "wol"; do
+for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
@@ -204,8 +204,6 @@ done
 echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
 
 echo "Modify files" >"${LOG_FILE}"
-# Remove function from scripts
-[ "2" = "${BUILDNUM:0:1}" ] && sed -i 's/function //g' $(find "${RAMDISK_PATH}/addons/" -type f -name "*.sh")
 
 # Build modules dependencies
 # ${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
