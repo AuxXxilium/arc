@@ -312,7 +312,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   fi
 
   # Wait for boot interrupt
-  _bootwait || true
+  _bootwait || rebootTo "config"
 
   for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
     if [ -w "/dev/${T}" ]; then
