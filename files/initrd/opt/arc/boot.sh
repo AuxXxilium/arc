@@ -276,6 +276,7 @@ for KEY in "${!CMDLINE[@]}"; do
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
 CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
+echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
 # Boot
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
@@ -311,9 +312,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     [ -f "${TMP_PATH}/qrcode_boot.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_boot.png" >/dev/null 2>/dev/null || true
   fi
 
-  # Wait for boot interrupt
-  _bootwait || rebootTo "config"
-
   for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
     if [ -w "/dev/${T}" ]; then
       [ -n "${IPCON}" ] && echo -e "Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes - Network will be unreachable until DSM boot.\033[0m\n" >"/dev/${T}" 2>/dev/null \
@@ -322,12 +320,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   done
 
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
-  KEXECARGS="kexecboot"
-  if [ ${EFI} -eq 0 ]; then
-    KEXECARGS+=" --noefi"
-  fi
-
-  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} ${KEXECARGS}" >"${PART1_PATH}/cmdline.yml" || die "Failed to load DSM Kernel!"
+  kexec -a -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" || die "Failed to load DSM Kernel!"
 
   echo -e "\033[1;37mBooting DSM...\033[0m"
   [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff

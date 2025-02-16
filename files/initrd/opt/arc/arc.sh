@@ -53,7 +53,7 @@ elif [ "${ARCMODE}" = "automated" ]; then
   fi
 elif [ "${ARCMODE}" = "config" ]; then
   [ "${CONFDONE}" = "true" ] && NEXT="2" || NEXT="1"
-  [ "${BUILDDONE}" = "true" ] && NEXT="4" || NEXT="1"
+  [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
   while true; do
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
 
@@ -71,13 +71,10 @@ elif [ "${ARCMODE}" = "config" ]; then
       else
         write_menu "2" "Build Loader"
       fi
-      if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
-        write_menu "3" "Rebuild Loader with clean Image"
-      fi
     fi
 
     if [ "${BUILDDONE}" = "true" ]; then
-      write_menu "4" "Boot Loader"
+      write_menu "3" "Boot Loader"
     fi
 
     write_menu "=" "\Z4===== Info =====\Zn"
@@ -154,6 +151,9 @@ elif [ "${ARCMODE}" = "config" ]; then
 
     if [ "${LOADEROPTS}" = "true" ]; then
       write_menu "8" "\Z1Hide Loader Options\Zn"
+      if [ "${CONFDONE}" = "true" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
+        write_menu "3" "Rebuild Loader with clean Image"
+      fi
       write_menu_value "c" "Offline Mode" "${ARCOFFLINE}"
       write_menu "D" "StaticIP for Loader/DSM"
       write_menu "f" "Bootscreen Options"
@@ -193,12 +193,8 @@ elif [ "${ARCMODE}" = "config" ]; then
           # Main Section
           0) genHardwareID; NEXT="0" ;;
           1) arcModel; NEXT="2" ;;
-          2) arcSummary; NEXT="4" ;;
-          3) rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
-            arcSummary;
-            NEXT="4"
-            ;;
-          4) boot; NEXT="4" ;;
+          2) arcSummary; NEXT="3" ;;
+          3) boot; NEXT="4" ;;
           # Info Section
           a) sysinfo; NEXT="a" ;;
           A) networkdiag; NEXT="A" ;;
@@ -307,6 +303,10 @@ elif [ "${ARCMODE}" = "config" ]; then
           8) [ "${LOADEROPTS}" = "true" ] && LOADEROPTS='false' || LOADEROPTS='true'
             LOADEROPTS="${LOADEROPTS}"
             NEXT="8"
+            ;;
+          4) rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+            arcSummary;
+            NEXT="3"
             ;;
           c) ARCOFFLINE=$([ "${ARCOFFLINE}" = "true" ] && echo 'false' || echo 'true')
             writeConfigKey "arc.offline" "${ARCOFFLINE}" "${USER_CONFIG_FILE}"
