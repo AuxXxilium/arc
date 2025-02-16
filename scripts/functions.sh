@@ -484,12 +484,3 @@ function createvmc() {
 </preferences>
 _EOF_
 }
-
-# copy buildroot
-function copyBuildroot() {
-  DEST_PATH="${1}"
-  rm -rf "${DEST_PATH}"
-  mkdir -p "${DEST_PATH}"
-  cp -f "../${DEST_PATH}/bzImage" "${DEST_PATH}/bzImage-arc"
-  cp -f "../${DEST_PATH}/rootfs.cpio.zst" "${DEST_PATH}/initrd-arc"
-}
