@@ -141,8 +141,8 @@ declare -A CMDLINE
 
 # Automated Cmdline
 CMDLINE["syno_hw_version"]="${MODELID}"
-CMDLINE["vid"]="${VID:-"0x46f4"}" # Sanity check
-CMDLINE["pid"]="${PID:-"0x0001"}" # Sanity check
+CMDLINE["vid"]="${VID:-"0x46f4"}"
+CMDLINE["pid"]="${PID:-"0x0001"}"
 CMDLINE["sn"]="${SN}"
 
 # NIC Cmdline
@@ -176,13 +176,13 @@ fi
 # DSM Cmdline
 if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
   if [ "${BUS}" != "usb" ]; then
-    SZ=$(blockdev --getsz ${LOADER_DISK} 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
-    SS=$(blockdev --getss ${LOADER_DISK} 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
+    SZ=$(blockdev --getsz ${LOADER_DISK} 2>/dev/null)
+    SS=$(blockdev --getss ${LOADER_DISK} 2>/dev/null)
     SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
     # Read SATADoM type
     SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
-    CMDLINE['synoboot_satadom']="${SATADOM:-2}"
-    CMDLINE['dom_szmax']="${SIZE}"
+    CMDLINE["synoboot_satadom"]="${SATADOM:-2}"
+    CMDLINE["dom_szmax"]="${SIZE}"
   fi
   CMDLINE["elevator"]="elevator"
 else
@@ -200,31 +200,36 @@ fi
 
 CMDLINE["HddHotplug"]="1"
 CMDLINE["vender_format_version"]="2"
-CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-CMDLINE['earlyprintk']=""
-CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
-CMDLINE['console']="ttyS0,115200n8"
-CMDLINE['consoleblank']="600"
-# CMDLINE['no_console_suspend']="1"
-CMDLINE['root']="/dev/md0"
-CMDLINE['loglevel']="15"
-CMDLINE['log_buf_len']="32M"
-CMDLINE['rootwait']=""
-CMDLINE['panic']="${KERNELPANIC:-0}"
-# CMDLINE['intremap']="off" # workaround for mlx5_core througput issues from linux mailing list (need more testing)
-# CMDLINE['amd_iommu_intr']="legacy" # workaround for mlx5_core througput issues from linux mailing list (need more testing)
-CMDLINE['pcie_aspm']="off"
-# CMDLINE['intel_pstate']="disable"
-# CMDLINE['amd_pstate']="disable"
-# CMDLINE['nomodeset']=""
-CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
+CMDLINE["skip_vender_mac_interfaces"]="0,1,2,3,4,5,6,7"
+CMDLINE["earlyprintk"]=""
+CMDLINE["earlycon"]="uart8250,io,0x3f8,115200n8"
+CMDLINE["console"]="ttyS0,115200n8"
+CMDLINE["consoleblank"]="600"
+# CMDLINE["no_console_suspend"]="1"
+CMDLINE["root"]="/dev/md0"
+CMDLINE["loglevel"]="15"
+CMDLINE["log_buf_len"]="32M"
+CMDLINE["rootwait"]=""
+CMDLINE["panic"]="${KERNELPANIC:-0}"
+CMDLINE["intremap"]="off"
+CMDLINE["amd_iommu_intr"]="legacy"
+CMDLINE["pcie_aspm"]="off"
+CMDLINE["split_lock_detect"]="off"
+
+if grep -qi "intel" /proc/cpuinfo; then
+  CMDLINE["intel_pstate"]="disable"
+elif grep -qi "amd" /proc/cpuinfo; then
+  CMDLINE["amd_pstate"]="disable"
+fi
+# CMDLINE["nomodeset"]=""
+CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
 
 if [ "${USBMOUNT}" = "true" ]; then
-  CMDLINE['usbinternal']=""
+  CMDLINE["usbinternal"]=""
 fi
 
 if [ -n "${GOVERNOR}" ]; then
-  CMDLINE['governor']="${GOVERNOR}"
+  CMDLINE["governor"]="${GOVERNOR}"
 fi
 
 if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
@@ -239,16 +244,16 @@ fi
 #   fi
 # fi
 if [ "${DT}" = "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
-  if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
-    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
-    CMDLINE['modprobe.blacklist']+="mpt3sas"
+  if ! echo "${CMDLINE["modprobe.blacklist"]}" | grep -q "mpt3sas"; then
+    [ ! "${CMDLINE["modprobe.blacklist"]}" = "" ] && CMDLINE["modprobe.blacklist"]+=","
+    CMDLINE["modprobe.blacklist"]+="mpt3sas"
   fi
 #else
-#  CMDLINE['scsi_mod.scan']="sync"  # TODO: redpill panic of vmware scsi? (add to cmdline)
+#  CMDLINE["scsi_mod.scan"]="sync"  # TODO: redpill panic of vmware scsi? (add to cmdline)
 fi
 
-# CMDLINE['kvm.ignore_msrs']="1"
-# CMDLINE['kvm.report_ignored_msrs']="0"
+# CMDLINE["kvm.ignore_msrs"]="1"
+# CMDLINE["kvm.report_ignored_msrs"]="0"
 
 if echo "apollolake geminilake" | grep -wq "${PLATFORM}"; then
   CMDLINE["intel_iommu"]="igfx_off"
