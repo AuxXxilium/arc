@@ -13,7 +13,6 @@
 # Get Keymap and Timezone and check System
 onlineCheck
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 systemCheck
 readData
 
@@ -24,12 +23,12 @@ function backtitle() {
   BACKTITLE+="${MODEL:-(Model)} | "
   BACKTITLE+="${PRODUCTVER:-(Version)} | "
   BACKTITLE+="${IPCON:-(no IP)} | "
-  BACKTITLE+="Patch: ${ARCPATCH} | "
+  BACKTITLE+="Patch: ${ARC_PATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
   BACKTITLE+="Build: ${BUILDDONE} | "
   BACKTITLE+="${MACHINE}(${BUS}) | "
   [ -n "${KEYMAP}" ] && BACKTITLE+="KB: ${KEYMAP}"
-  [ "${ARCOFFLINE}" = "true" ] && BACKTITLE+=" | Offline"
+  [ "${ARC_OFFLINE}" = "true" ] && BACKTITLE+=" | Offline"
   echo "${BACKTITLE}"
 }
 
@@ -189,8 +188,8 @@ function advancedMenu() {
 ###############################################################################
 ###############################################################################
 # Main loop
-if [ "${ARCMODE}" = "update" ]; then
-  if [ "${ARCOFFLINE}" != "true" ]; then
+if [ "${ARC_MODE}" = "update" ]; then
+  if [ "${ARC_OFFLINE}" != "true" ]; then
     updateLoader
   else
     dialog --backtitle "$(backtitle)" --title "Arc Update" \
@@ -198,18 +197,18 @@ if [ "${ARCMODE}" = "update" ]; then
     sleep 3
     exec reboot
   fi
-elif [ "${ARCMODE}" = "automated" ]; then
+elif [ "${ARC_MODE}" = "automated" ]; then
   if [ "${BUILDDONE}" = "false" ] || [ "${MODEL}" != "${MODELID}" ]; then
     arcModel
   else
     make
   fi
-elif [ "${ARCMODE}" = "config" ]; then
+elif [ "${ARC_MODE}" = "config" ]; then
   NEXT="1"
   while true; do
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
     write_menu "=" "\Z4===== Main =====\Zn"
-    if [ -z "${USERID}" ] && [ "${ARCOFFLINE}" = "false" ]; then
+    if [ -z "${USERID}" ] && [ "${ARC_OFFLINE}" = "false" ]; then
       write_menu_value "0" "HardwareID" "${HARDWAREID}"
     fi
 
@@ -220,9 +219,9 @@ elif [ "${ARCMODE}" = "config" ]; then
       write_menu_value "=" "DT" "${DT}"
       write_menu_value "=" "Platform" "${PLATFORM}"
 
-      if [ -n "${USERID}" ] && [ "${ARCOFFLINE}" = "false" ]; then
-        write_menu_value "p" "Arc Patch" "${ARCPATCH}"
-      elif [ "${ARCOFFLINE}" = "false" ]; then
+      if [ -n "${USERID}" ] && [ "${ARC_OFFLINE}" = "false" ]; then
+        write_menu_value "p" "Arc Patch" "${ARC_PATCH}"
+      elif [ "${ARC_OFFLINE}" = "false" ]; then
         write_menu "p" "Arc Patch: \Z4Register HardwareID first\Zn"
       else
         write_menu "p" "SN/Mac Options"
@@ -263,14 +262,14 @@ elif [ "${ARCMODE}" = "config" ]; then
       fi
     fi
 
-    write_menu_value "c" "Offline Mode" "${ARCOFFLINE}"
+    write_menu_value "c" "Offline Mode" "${ARC_OFFLINE}"
     write_menu "9" "Advanced Options"
     write_menu "=" "\Z4===== Diag =====\Zn"
     write_menu "a" "Sysinfo"
     write_menu "A" "Networkdiag"
     write_menu "=" "\Z4===== Misc =====\Zn"
     write_menu "x" "Backup/Restore/Recovery"
-    [ "${ARCOFFLINE}" = "false" ] && write_menu "z" "Update Menu"
+    [ "${ARC_OFFLINE}" = "false" ] && write_menu "z" "Update Menu"
     write_menu "I" "Power/Service Menu"
     write_menu "V" "Credits"
 
@@ -345,9 +344,9 @@ elif [ "${ARCMODE}" = "config" ]; then
             BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
             NEXT="O"
             ;;
-          c) ARCOFFLINE=$([ "${ARCOFFLINE}" = "true" ] && echo 'false' || echo 'true')
-            writeConfigKey "arc.offline" "${ARCOFFLINE}" "${USER_CONFIG_FILE}"
-            [ "${ARCOFFLINE}" = "false" ] && exec arc.sh
+          c) ARC_OFFLINE=$([ "${ARC_OFFLINE}" = "true" ] && echo 'false' || echo 'true')
+            writeConfigKey "arc.offline" "${ARC_OFFLINE}" "${USER_CONFIG_FILE}"
+            [ "${ARC_OFFLINE}" = "false" ] && exec arc.sh
             NEXT="c"
             ;;
           # Diag Section
@@ -379,7 +378,7 @@ elif [ "${ARCMODE}" = "config" ]; then
     esac
   done
 else
-  echo "Unknown Mode: ${ARCMODE} - Rebooting to Config Mode"
+  echo "Unknown Mode: ${ARC_MODE} - Rebooting to Config Mode"
   sleep 3
   rebootTo config
 fi

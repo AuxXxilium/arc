@@ -27,7 +27,7 @@ printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 TITLE="Boot:"
 [ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
-TITLE+=" | Device: [${BUS}] | Mode: [${ARCMODE}]"
+TITLE+=" | Device: [${BUS}] | Mode: [${ARC_MODE}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 # Check if DSM zImage/Ramdisk is changed, patch it if necessary, update Files if necessary
 ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
@@ -60,14 +60,15 @@ HWIDINFO="$(readConfigKey "bootscreen.hwidinfo" "${USER_CONFIG_FILE}")"
 GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+ARC_MAC="$(readConfigKey "arc.mac" "${USER_CONFIG_FILE}")"
 
 # Build Sanity Check
 [ "${BUILDDONE}" = "false" ] && die "Loader build not completed!"
 [[ -z "${MODELID}" || "${MODELID}" != "${MODEL}" ]] && die "Loader build not completed! Model mismatch! -> Rebuild loader!"
 
 # HardwareID Check
-if [ "${ARCPATCH}" = "true" ] || [ -n "${ARCCONF}" ]; then
+if [ "${ARC_PATCH}" = "true" ] || [ -n "${ARCCONF}" ]; then
   HARDWAREID="$(readConfigKey "arc.hardwareid" "${USER_CONFIG_FILE}")"
   HWID="$(genHWID)"
   if [ "${HARDWAREID}" != "${HWID}" ]; then
@@ -135,7 +136,6 @@ DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
 MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
-ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
 declare -A CMDLINE
 
@@ -200,7 +200,11 @@ fi
 
 CMDLINE["HddHotplug"]="1"
 CMDLINE["vender_format_version"]="2"
-CMDLINE["skip_vender_mac_interfaces"]="0,1,2,3,4,5,6,7"
+if [ "${ARC_MAC}" = "true" ]; then
+  CMDLINE['skip_vender_mac_interfaces']="$(seq -s, 0 $((${CMDLINE['netif_num']:-1} - 1)))"
+else
+  CMDLINE["skip_vender_mac_interfaces"]="0,1,2,3,4,5,6,7"
+fi
 CMDLINE["earlyprintk"]=""
 CMDLINE["earlycon"]="uart8250,io,0x3f8,115200n8"
 CMDLINE["console"]="ttyS0,115200n8"
@@ -299,7 +303,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
   IPCON=""
-  if [ "${ARCPATCH}" = "true" ]; then
+  if [ "${ARC_PATCH}" = "true" ]; then
     echo -e "\033[1;37mDetected ${ETHN} NIC\033[0m | \033[1;34mUsing ${NIC} NIC for Arc Patch:\033[0m"
   else
     echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"

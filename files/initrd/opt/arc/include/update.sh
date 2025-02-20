@@ -3,7 +3,7 @@
 function updateLoader() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   local TAG="${1}"
-  [ -n "${ARCCONF}" ] && cp -f "${S_FILE}" "${TMP_PATH}/bak.yml"
+  [ -n "${ARC_CONF}" ] && cp -f "${S_FILE}" "${TMP_PATH}/bak.yml"
   if [ "${TAG}" != "zip" ]; then
     if [ -z "${TAG}" ]; then
       idx=0
@@ -66,7 +66,7 @@ function updateLoader() {
         --infobox "Update Loader successful!" 3 50
         sleep 2
       else
-        if [ "${ARCMODE}" = "update" ]; then
+        if [ "${ARC_MODE}" = "update" ]; then
           dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
             --infobox "Update failed!\nTry again later." 0 0
           sleep 3
@@ -76,7 +76,7 @@ function updateLoader() {
         fi
       fi
     else
-      if [ "${ARCMODE}" = "update" ]; then
+      if [ "${ARC_MODE}" = "update" ]; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
           --infobox "Update failed!\nTry again later." 0 0
         sleep 3
@@ -86,8 +86,8 @@ function updateLoader() {
       fi
     fi
   fi
-  [ -n "${ARCCONF}" ] && cp -f "${TMP_PATH}/bak.yml" "${S_FILE}"
-  if [ "${ARCMODE}" = "update" ] && [ "${CONFDONE}" = "true" ]; then
+  [ -n "${ARC_CONF}" ] && cp -f "${TMP_PATH}/bak.yml" "${S_FILE}"
+  if [ "${ARC_MODE}" = "update" ] && [ "${CONFDONE}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
       --infobox "Update Loader successful! -> Reboot to automated Build Mode..." 3 60
     sleep 3
@@ -455,8 +455,8 @@ function updateLKMs() {
 ###############################################################################
 # Update Offline
 function updateOffline() {
-  local ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  if [ "${ARCOFFLINE}" != "true" ]; then
+  local ARC_OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+  if [ "${ARC_OFFLINE}" != "true" ]; then
     [ -f "${MODEL_CONFIG_PATH}/data.yml" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml" "${MODEL_CONFIG_PATH}/data.yml.bak" || true
     curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/refs/heads/main/data.yml" -o "${MODEL_CONFIG_PATH}/data.yml"
     

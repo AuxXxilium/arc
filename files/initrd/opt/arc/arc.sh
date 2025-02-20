@@ -13,7 +13,6 @@
 # Get Keymap and Timezone and check System
 onlineCheck
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
 systemCheck
 readData
 
@@ -24,20 +23,20 @@ function backtitle() {
   BACKTITLE+="${MODEL:-(Model)} | "
   BACKTITLE+="${PRODUCTVER:-(Version)} | "
   BACKTITLE+="${IPCON:-(no IP)} | "
-  BACKTITLE+="Patch: ${ARCPATCH} | "
+  BACKTITLE+="Patch: ${ARC_PATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
   BACKTITLE+="Build: ${BUILDDONE} | "
   BACKTITLE+="${MACHINE}(${BUS}) | "
   [ -n "${KEYMAP}" ] && BACKTITLE+="KB: ${KEYMAP}"
-  [ "${ARCOFFLINE}" = "true" ] && BACKTITLE+=" | Offline"
+  [ "${ARC_OFFLINE}" = "true" ] && BACKTITLE+=" | Offline"
   echo "${BACKTITLE}"
 }
 
 ###############################################################################
 ###############################################################################
 # Main loop
-if [ "${ARCMODE}" = "update" ]; then
-  if [ "${ARCOFFLINE}" != "true" ]; then
+if [ "${ARC_MODE}" = "update" ]; then
+  if [ "${ARC_OFFLINE}" != "true" ]; then
     updateLoader
   else
     dialog --backtitle "$(backtitle)" --title "Arc Update" \
@@ -45,13 +44,13 @@ if [ "${ARCMODE}" = "update" ]; then
     sleep 3
     exec reboot
   fi
-elif [ "${ARCMODE}" = "automated" ]; then
+elif [ "${ARC_MODE}" = "automated" ]; then
   if [ "${BUILDDONE}" = "false" ] || [ "${MODEL}" != "${MODELID}" ]; then
     arcModel
   else
     make
   fi
-elif [ "${ARCMODE}" = "config" ]; then
+elif [ "${ARC_MODE}" = "config" ]; then
   [ "${CONFDONE}" = "true" ] && NEXT="2" || NEXT="1"
   [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
   while true; do
@@ -59,7 +58,7 @@ elif [ "${ARCMODE}" = "config" ]; then
 
     write_menu "=" "\Z4===== Main =====\Zn"
 
-    if [ -z "${USERID}" ] && [ "${ARCOFFLINE}" = "false" ]; then
+    if [ -z "${USERID}" ] && [ "${ARC_OFFLINE}" = "false" ]; then
       write_menu "0" "HardwareID for Arc Patch"
     fi
 
@@ -114,8 +113,9 @@ elif [ "${ARCMODE}" = "config" ]; then
         if [ "${DT}" = "true" ]; then
           write_menu_value "H" "Hotplug/SortDrives" "${HDDSORT}"
         else
-          write_menu_value "h" "USB as Internal" "${USBMOUNT}"
+          write_menu_value "h" "USB Disk(s) as Internal" "${USBMOUNT}"
         fi
+        write_menu_value "r" "Apply Fake MAC" "${ARC_MAC}"
       else
         write_menu "5" "\Z1Show Arc DSM Options\Zn"
       fi
@@ -154,7 +154,7 @@ elif [ "${ARCMODE}" = "config" ]; then
       if [ "${CONFDONE}" = "true" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
         write_menu "3" "Rebuild Loader with clean Image"
       fi
-      write_menu_value "c" "Offline Mode" "${ARCOFFLINE}"
+      write_menu_value "c" "Offline Mode" "${ARC_OFFLINE}"
       write_menu "D" "StaticIP for Loader/DSM"
       write_menu "f" "Bootscreen Options"
       write_menu "U" "Change Loader Password"
@@ -176,7 +176,7 @@ elif [ "${ARCMODE}" = "config" ]; then
 
     write_menu "=" "\Z4===== Misc =====\Zn"
     write_menu "x" "Backup/Restore/Recovery"
-    [ "${ARCOFFLINE}" = "false" ] && write_menu "z" "Update Menu"
+    [ "${ARC_OFFLINE}" = "false" ] && write_menu "z" "Update Menu"
     write_menu "I" "Power/Service Menu"
     write_menu "V" "Credits"
     [ "$TERM" != "xterm-256color" ] && WEBCONFIG="Webconfig: http://${IPCON}${HTTPPORT:+:$HTTPPORT}" || WEBCONFIG=""
@@ -201,7 +201,6 @@ elif [ "${ARCMODE}" = "config" ]; then
           # System Section
           # Arc Section
           5) [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
-            ARCOPTS="${ARCOPTS}"
             NEXT="5"
             ;;
           b) addonMenu; NEXT="b" ;;
@@ -213,9 +212,12 @@ elif [ "${ARCMODE}" = "config" ]; then
           g) governorMenu; NEXT="g" ;;
           P) storagepanelMenu; NEXT="P" ;;
           Q) sequentialIOMenu; NEXT="Q" ;;
+          r) [ "${ARC_MAC}" = "true" ] && ARC_MAC='false' || ARC_MAC='true'
+            writeConfigKey "arc.mac" "${ARC_MAC}" "${USER_CONFIG_FILE}"
+            NEXT="r"
+            ;;
           # Boot Section
           6) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
-            BOOTOPTS="${BOOTOPTS}"
             NEXT="6"
             ;;
           m) [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
@@ -248,7 +250,6 @@ elif [ "${ARCMODE}" = "config" ]; then
             ;;
           # DSM Section
           7) [ "${DSMOPTS}" = "true" ] && DSMOPTS='false' || DSMOPTS='true'
-            DSMOPTS="${DSMOPTS}"
             NEXT="7"
             ;;
           j) cmdlineMenu; NEXT="j" ;;
@@ -301,16 +302,15 @@ elif [ "${ARCMODE}" = "config" ]; then
           B) getbackup; NEXT="B" ;;
           # Loader Section
           8) [ "${LOADEROPTS}" = "true" ] && LOADEROPTS='false' || LOADEROPTS='true'
-            LOADEROPTS="${LOADEROPTS}"
             NEXT="8"
             ;;
           4) rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
             arcSummary;
             NEXT="3"
             ;;
-          c) ARCOFFLINE=$([ "${ARCOFFLINE}" = "true" ] && echo 'false' || echo 'true')
-            writeConfigKey "arc.offline" "${ARCOFFLINE}" "${USER_CONFIG_FILE}"
-            [ "${ARCOFFLINE}" = "false" ] && exec arc.sh
+          c) ARC_OFFLINE=$([ "${ARC_OFFLINE}" = "true" ] && echo 'false' || echo 'true')
+            writeConfigKey "arc.offline" "${ARC_OFFLINE}" "${USER_CONFIG_FILE}"
+            [ "${ARC_OFFLINE}" = "false" ] && exec arc.sh
             NEXT="c"
             ;;
           D) staticIPMenu; NEXT="D" ;;

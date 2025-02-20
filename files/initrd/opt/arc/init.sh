@@ -28,7 +28,7 @@ printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 TITLE="Boot:"
 [ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
-TITLE+=" | Device: [${BUS}] | Mode: [${ARCMODE}]"
+TITLE+=" | Device: [${BUS}] | Mode: [${ARC_MODE}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
 # Check for Config File
@@ -40,6 +40,7 @@ initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.dynamic" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.mac" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
@@ -142,13 +143,13 @@ echo
 
 # Decide if boot automatically
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-if [ "${ARCMODE}" = "config" ]; then
+if [ "${ARC_MODE}" = "config" ]; then
   echo -e "\033[1;34mStarting Config Mode...\033[0m"
-elif [ "${ARCMODE}" = "automated" ]; then
+elif [ "${ARC_MODE}" = "automated" ]; then
   echo -e "\033[1;34mStarting automated Build Mode...\033[0m"
-elif [ "${ARCMODE}" = "update" ]; then
+elif [ "${ARC_MODE}" = "update" ]; then
   echo -e "\033[1;34mStarting Update Mode...\033[0m"
-elif [ "${BUILDDONE}" = "true" ] && [ "${ARCMODE}" = "dsm" ]; then
+elif [ "${BUILDDONE}" = "true" ] && [ "${ARC_MODE}" = "dsm" ]; then
   echo -e "\033[1;34mStarting DSM Mode...\033[0m"
   exec boot.sh && exit 0
 else
