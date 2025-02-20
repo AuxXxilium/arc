@@ -18,6 +18,7 @@ BUS=$(getBus "${LOADER_DISK}")
 
 # Print Title centralized
 clear
+COLUMNS=$(ttysize 2>/dev/null | awk '{print $1}')
 COLUMNS=${COLUMNS:-50}
 BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
 TITLE="Version:"

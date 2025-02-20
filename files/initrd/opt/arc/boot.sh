@@ -17,6 +17,7 @@ BUS=$(getBus "${LOADER_DISK}")
 
 # Print Title centralized
 clear
+COLUMNS=$(ttysize 2>/dev/null | awk '{print $1}')
 COLUMNS=${COLUMNS:-50}
 BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
 TITLE="Version:"
@@ -215,16 +216,16 @@ CMDLINE["loglevel"]="15"
 CMDLINE["log_buf_len"]="32M"
 CMDLINE["rootwait"]=""
 CMDLINE["panic"]="${KERNELPANIC:-0}"
-CMDLINE["intremap"]="off"
-CMDLINE["amd_iommu_intr"]="legacy"
+# CMDLINE["intremap"]="off"
+# CMDLINE["amd_iommu_intr"]="legacy"
 CMDLINE["pcie_aspm"]="off"
-CMDLINE["split_lock_detect"]="off"
+# CMDLINE["split_lock_detect"]="off"
 
-if grep -qi "intel" /proc/cpuinfo; then
-  CMDLINE["intel_pstate"]="disable"
-elif grep -qi "amd" /proc/cpuinfo; then
-  CMDLINE["amd_pstate"]="disable"
-fi
+# if grep -qi "intel" /proc/cpuinfo; then
+#   CMDLINE["intel_pstate"]="disable"
+# elif grep -qi "amd" /proc/cpuinfo; then
+#   CMDLINE["amd_pstate"]="disable"
+# fi
 # CMDLINE["nomodeset"]=""
 CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
 
