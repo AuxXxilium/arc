@@ -74,7 +74,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
     fi
 
     if [ "${BUILDDONE}" = "true" ]; then
-      write_menu "3" "Boot Loader"
+      write_menu "4" "Boot Loader"
     fi
 
     write_menu "=" "\Z4===== Info =====\Zn"
