@@ -50,7 +50,7 @@ if [[ -n "${BUILDNUM}" && ("${PRODUCTVER}" != "${majorversion}.${minorversion}" 
   NEWVER="${majorversion}.${minorversion}(${buildnumber}$([[ ${smallfixnumber:-0} -ne 0 ]] && echo "u${smallfixnumber}"))"
   PAT_URL=""
   PAT_HASH=""
-  echo -e "\nVersion changed from ${OLDVER} to ${NEWVER}"
+  echo -e "Version changed from ${OLDVER} to ${NEWVER}"
 fi
 
 # Re-read PAT_URL and PAT_HASH if they are empty or commented out
