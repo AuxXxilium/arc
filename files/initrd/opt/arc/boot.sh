@@ -303,7 +303,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
-  IPCON=""
   if [ "${ARC_PATCH}" = "true" ]; then
     echo -e "\033[1;37mDetected ${ETHN} NIC\033[0m | \033[1;34mUsing ${NIC} NIC for Arc Patch:\033[0m"
   else
@@ -311,6 +310,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   fi
 
   [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S09dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
+  IPCON=""
   checkNIC || true
   echo
 
