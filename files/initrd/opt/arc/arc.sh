@@ -67,6 +67,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
     if [ "${CONFDONE}" = "true" ]; then
       if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
         write_menu "2" "Rebuild Loader"
+        write_menu "3" "Rebuild Loader with clean Image"
       else
         write_menu "2" "Build Loader"
       fi
@@ -151,9 +152,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
 
     if [ "${LOADEROPTS}" = "true" ]; then
       write_menu "8" "\Z1Hide Loader Options\Zn"
-      if [ "${CONFDONE}" = "true" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
-        write_menu "3" "Rebuild Loader with clean Image"
-      fi
       write_menu_value "c" "Offline Mode" "${ARC_OFFLINE}"
       write_menu "D" "StaticIP for Loader/DSM"
       write_menu "f" "Bootscreen Options"
@@ -194,7 +192,11 @@ elif [ "${ARC_MODE}" = "config" ]; then
           0) genHardwareID; NEXT="0" ;;
           1) arcModel; NEXT="2" ;;
           2) arcSummary; NEXT="3" ;;
-          3) boot; NEXT="4" ;;
+          3) rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+            arcSummary;
+            NEXT="3"
+            ;;
+          4) boot; NEXT="4" ;;
           # Info Section
           a) sysinfo; NEXT="a" ;;
           A) networkdiag; NEXT="A" ;;
