@@ -41,7 +41,7 @@ function arcModel() {
         [ "${M}" = "SA6400" ] && HBAS="x"
         [ "${DT}" = "false" ] && USBS="int/ext" || USBS="ext"
         [[ "${M}" = "DS719+" || "${M}" = "DS918+" || "${M}" = "DS1019+" || "${M}" = "DS1621xs+" || "${M}" = "RS1619xs+" ]] && M_2_CACHE="+" || M_2_CACHE="x"
-        [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" ]] && M_2_CACHE=""
+        [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DVA1622" ]] && M_2_CACHE=""
         [[ "${M}" = "DS220+" || "${M}" = "DS224+" || "${DT}" = "false" ]] && M_2_STORAGE="" || M_2_STORAGE="+"
         # Check id model is compatible with CPU
         if [ ${RESTRICT} -eq 1 ]; then
