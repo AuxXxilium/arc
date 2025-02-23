@@ -27,15 +27,15 @@ function checkBootLoader() {
 # Check boot mode
 function arc_mode() {
   if grep -q 'automated_arc' /proc/cmdline; then
-    ARCMODE="automated"
+    ARC_MODE="automated"
   elif grep -q 'update_arc' /proc/cmdline; then
-    ARCMODE="update"
+    ARC_MODE="update"
   elif grep -q 'force_arc' /proc/cmdline; then
-    ARCMODE="config"
+    ARC_MODE="config"
   else
-    ARCMODE="dsm"
+    ARC_MODE="dsm"
   fi
-  [ "$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")" ] && ARCCONF="true" || true
+  [ "$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")" ] && ARC_CONF="true" || true
 }
 
 
@@ -508,74 +508,32 @@ function copyDSMFiles() {
 }
 
 ###############################################################################
-# Extract DSM files
-# 1 - PAT File
-# 2 - Destination Path
-function extractDSMFiles() {
-  rm -f "${LOG_FILE}"
-  PAT_PATH="${1}"
-  EXT_PATH="${2}"
-
-  header="$(od -bcN2 "${PAT_PATH}" | head -1 | awk '{print $3}')"
-  case ${header} in
-    105)
-    echo -e "Uncompressed tar"
-    isencrypted="no"
-    ;;
-    213)
-    echo -e "Compressed tar"
-    isencrypted="no"
-    ;;
-    255)
-    echo -e "Encrypted tar"
-    isencrypted="yes"
-    ;;
-    *)
-    echo -e "Could not determine if pat file is encrypted or not, maybe corrupted, try again!"
-    ;;
-  esac
-  if [ "${isencrypted}" = "yes" ]; then
-    # Uses the extractor to untar PAT file
-    LD_LIBRARY_PATH="${EXTRACTOR_PATH}" "${EXTRACTOR_PATH}/${EXTRACTOR_BIN}" "${PAT_PATH}" "${EXT_PATH}" >"${LOG_FILE}" 2>&1
-  else
-    # Untar PAT file
-    tar -xf "${PAT_PATH}" -C "${EXT_PATH}" >"${LOG_FILE}" 2>&1
-  fi
-  if [ -f "${EXT_PATH}/grub_cksum.syno" ] && [ -f "${EXT_PATH}/GRUB_VER" ] && [ -f "${EXT_PATH}/zImage" ] && [ -f "${EXT_PATH}/rd.gz" ]; then
-    rm -f "${LOG_FILE}"
-    return 0
-  else
-    return 1
-  fi
-}
-
-###############################################################################
 # Livepatch
 function livepatch() {
   PVALID="false"
   # Patch zImage
-  echo -n "Patching zImage"
+  echo -e "Patching zImage..."
   if ${ARC_PATH}/zimage-patch.sh; then
-    echo -e " - successful!"
+    echo -e "Patching zImage - successful!"
     PVALID="true"
   else
-    echo -e " - failed!"
+    echo -e "Patching zImage - failed!"
     PVALID="false"
   fi
   if [ "${PVALID}" = "true" ]; then
     # Patch Ramdisk
-    echo -n "Patching Ramdisk"
+    echo -e "Patching Ramdisk..."
     if ${ARC_PATH}/ramdisk-patch.sh; then
-      echo -e " - successful!"
+      echo -e "Patching Ramdisk - successful!"
       PVALID="true"
     else
-      echo -e " - failed!"
+      echo -e "Patching Ramdisk - failed!"
       PVALID="false"
     fi
   fi
   if [ "${PVALID}" = "false" ]; then
     echo
-    echo -e "Patching DSM Files failed! Please stay patient for Update."
+    echo -e "Please stay patient for Update."
     sleep 5
     exit 1
   elif [ "${PVALID}" = "true" ]; then
@@ -583,7 +541,7 @@ function livepatch() {
     writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
     RAMDISK_HASH="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
     writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
-    echo "DSM Image patched - Ready!"
+    echo -e "DSM Image patched!"
   fi
 }
 
@@ -657,7 +615,7 @@ function systemCheck () {
   fi
   # Check for Arc Patch
   arc_mode
-  [ -z "${ARCCONF}" ] && writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+  [ -z "${ARC_CONF}" ] && writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   getnetinfo
   getdiskinfo
   getmap
@@ -746,7 +704,7 @@ function readData() {
   fi
 
   # Get Arc Data from Config
-  ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+  ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   HARDWAREID="$(genHWID)"
   USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
@@ -756,6 +714,8 @@ function readData() {
   SASCONTROLLER="$(readConfigKey "device.sascontroller" "${USER_CONFIG_FILE}")"
 
   # Advanced Config
+  ARC_OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+  ARC_MAC="$(readConfigKey "arc.mac" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
   DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"

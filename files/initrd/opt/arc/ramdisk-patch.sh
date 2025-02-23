@@ -50,7 +50,7 @@ if [[ -n "${BUILDNUM}" && ("${PRODUCTVER}" != "${majorversion}.${minorversion}" 
   NEWVER="${majorversion}.${minorversion}(${buildnumber}$([[ ${smallfixnumber:-0} -ne 0 ]] && echo "u${smallfixnumber}"))"
   PAT_URL=""
   PAT_HASH=""
-  echo "\nVersion changed from ${OLDVER} to ${NEWVER}"
+  echo -e "Version changed from ${OLDVER} to ${NEWVER}"
 fi
 
 # Re-read PAT_URL and PAT_HASH if they are empty or commented out
@@ -184,9 +184,7 @@ for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloa
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
-    if [ -n "${HDDSORT}" ]; then
-      PARAMS="${HDDSORT}"
-    fi
+    PARAMS="${HDDSORT}"
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   fi
   installAddon "${ADDON}" "${PLATFORM}" || exit 1
