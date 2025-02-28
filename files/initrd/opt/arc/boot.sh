@@ -227,6 +227,7 @@ CMDLINE["pcie_aspm"]="off"
 #   CMDLINE["amd_pstate"]="disable"
 # fi
 # CMDLINE["nomodeset"]=""
+CMDLINE['nowatchdog']=""
 CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
 
 if [ "${USBMOUNT}" = "true" ]; then
