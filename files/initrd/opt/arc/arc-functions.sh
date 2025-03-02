@@ -2810,8 +2810,8 @@ function rebootMenu() {
     exit 0
   elif [ "${REDEST}" = "network" ]; then
     clear
-    /etc/init.d/S07network restart
-    /etc/init.d/S09dhcpcd restart
+    /etc/init.d/S40network restart
+    /etc/init.d/S41dhcpcd restart
     rm -f "${HOME}/.initialized" && exec init.sh
   else
     rebootTo ${REDEST}
