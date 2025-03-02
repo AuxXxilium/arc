@@ -24,6 +24,14 @@ on:
         description: "Notice here"
         required: false
         type: string
+      evolution:
+        description: "evolution"
+        default: true
+        type: boolean
+      minimal:
+        description: "minimal"
+        default: false
+        type: boolean
       latest:
         description: "latest"
         default: true
@@ -86,7 +94,8 @@ jobs:
           getOffline "files/p3/configs"
           getLKMs "files/p3/lkms"
           getTheme "files/p1/boot/grub"
-          getBuildroot "evo" "br"
+          getBuildroot "evo" "bre"
+          getBuildroot "minimal" "brm"
 
           # Export Dependencies Version to env
           echo "ADDONTAG=${ADDONTAG}" >> $GITHUB_ENV
@@ -96,13 +105,15 @@ jobs:
           echo "CUSTOMTAG=${CUSTOMTAG}" >> $GITHUB_ENV
           echo "LKMTAG=${LKMTAG}" >> $GITHUB_ENV
           echo "THEMETAG=${THEMETAG}" >> $GITHUB_ENV
-          echo "BRTAG=${BRTAG}" >> $GITHUB_ENV
+          echo "BRETAG=${BRETAG}" >> $GITHUB_ENV
+          echo "BRMTAG=${BRMTAG}" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"
 
        # Build incremental
-      - name: Build Image
+      - name: Build Image Evo
+        if: ${{ inputs.evolution }}
         run: |
           . scripts/functions.sh
 
@@ -131,11 +142,11 @@ jobs:
           sudo mount ${LOOPX}p1 "/tmp/p1"
           sudo mount ${LOOPX}p3 "/tmp/p3"
 
-          [ ! -f "br/bzImage-arc" ] || [ ! -f "br/initrd-arc" ] && return 1
+          [ ! -f "bre/bzImage-arc" ] || [ ! -f "bre/initrd-arc" ] && return 1
           
           echo "Repack initrd"
-          cp -f "br/bzImage-arc" "files/p3/bzImage-arc"
-          repackInitrd "br/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+          cp -f "bre/bzImage-arc" "files/p3/bzImage-arc"
+          repackInitrd "bre/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
           sudo cp -rf "files/p1/"* "/tmp/p1"
@@ -162,7 +173,8 @@ jobs:
           convertova "${IMAGE_FILE}" "arc.ova"
 
       # Zip image and generate checksum
-      - name: Pack Image
+      - name: Pack Image Evo
+        if: ${{ inputs.evolution }}
         run: |
           if [ -n "${{ env.ARC_VERSION }}" ]; then
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.img.zip" arc.img
@@ -173,6 +185,88 @@ jobs:
             (cd files && zip -r ../update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.zip ./p1 ./p3)
             sha256sum update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.zip >"update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.hash"
           fi
+
+      # Clean up
+      - name: Clean up
+        if: ${{ inputs.evolution && inputs.minimal }}
+        run: |
+          rm -f arc.img arc-dyn.vmdk arc.vmdk arc-flat.vmdk arc.vhd arc.vmc arc.ova
+
+       # Build incremental
+      - name: Build Image Minimal
+        if: ${{ inputs.minimal }}
+        run: |
+          . scripts/functions.sh
+
+          # Modify Source File
+          ARC_BUILD="$(date +'%y%m%d')"
+          ARC_VERSION="${{ inputs.version }}"
+          ARC_BRANCH="minimal"
+          echo "${ARC_BUILD}" > "files/p1/ARC-BUILD"
+          echo "ARC_BUILD=${ARC_BUILD}" >> $GITHUB_ENV
+          echo "${ARC_VERSION}" > "files/p1/ARC-VERSION"
+          echo "ARC_VERSION=${ARC_VERSION}" >> $GITHUB_ENV
+          echo "${ARC_BRANCH}" > "files/p1/ARC-BRANCH"
+          echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
+
+          echo "Create Arc Image"
+          IMAGE_FILE="arc.img"
+          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
+          fdisk -l "${IMAGE_FILE}"
+          
+          LOOPX=$(sudo losetup -f)
+          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
+
+          echo "Mounting Image File"
+          mkdir -p "/tmp/p1"
+          mkdir -p "/tmp/p3"
+          sudo mount ${LOOPX}p1 "/tmp/p1"
+          sudo mount ${LOOPX}p3 "/tmp/p3"
+
+          [ ! -f "brm/bzImage-arc" ] || [ ! -f "brm/initrd-arc" ] && return 1
+          
+          echo "Repack initrd"
+          cp -f "brm/bzImage-arc" "files/p3/bzImage-arc"
+          repackInitrd "brm/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+
+          echo "Copying files"
+          sudo cp -rf "files/p1/"* "/tmp/p1"
+          sudo cp -rf "files/p3/"* "/tmp/p3"
+          sudo sync
+
+          echo "Unmount image file"
+          sudo umount "/tmp/p1"
+          sudo umount "/tmp/p3"
+          rmdir "/tmp/p1"
+          rmdir "/tmp/p3"
+
+          sudo losetup --detach ${LOOPX}
+
+          echo "Image Converter"
+          qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
+          qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
+
+          echo "Create Arc vhd"
+          createvmc "arc.vmc"
+          qemu-img convert -p -f raw -O vpc ${IMAGE_FILE} arc.vhd
+
+          echo "Create Arc ova"
+          convertova "${IMAGE_FILE}" "arc.ova"
+
+      # Zip image and generate checksum
+      - name: Pack Image Minimal
+        if: ${{ inputs.minimal }}
+        run: |
+          if [ -n "${{ env.ARC_VERSION }}" ]; then
+            zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.img.zip" arc.img
+            zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vmdk-dyn.zip" arc-dyn.vmdk
+            zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+            zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.vhd.zip" arc.vhd arc.vmc
+            zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.ova.zip" arc.ova
+            (cd files && zip -r ../update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.zip ./p1 ./p3)
+            sha256sum update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.zip >"update-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.hash"
+          fi
+
 
       # Publish a release if is a tag
       - name: Release
@@ -191,6 +285,8 @@ jobs:
               - Discord Account for Arc Patch needed
               - Changelog is available in my Discord
               - Based on VisionZ Evolution Code
+              ${{ inputs.evolution && '- Basesystem Evolution: full features - bigger / slower' || '' }}
+              ${{ inputs.minimal && '- Basesystem Minimal: reduced features - smaller / faster' || '' }}
 
             ### Dependencies:
               - Addons: ${{ env.ADDONTAG }}
@@ -199,7 +295,8 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              - Basesystem: ${{ env.BRTAG }}
+              ${{ inputs.evolution && format('- Basesystem Evolution: {0}', env.BRETAG) || '' }}
+              ${{ inputs.minimal && format('- Basesystem Minimal: {0}', env.BRMTAG) || '' }}
 
             ### Release
               - ${{ env.BUILD_TIME }}

@@ -9,6 +9,13 @@ tasks:
       - git pull
       - ./img-gen.sh evo
 
+  build-min:
+    cmds:
+      - git reset --hard
+      - git pull
+      - ./img-gen.sh minimal
+
+
   compile-kpatch:
     dir: kpatch
     cmds:

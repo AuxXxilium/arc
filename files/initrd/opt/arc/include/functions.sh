@@ -313,8 +313,8 @@ function _sort_netif() {
 
   # sort
   if [ ! "${ETHSEQ}" = "$(seq 0 $((${ETHNUM:0} - 1)))" ]; then
-    /etc/init.d/S09dhcpcd stop >/dev/null 2>&1
-    /etc/init.d/S07network stop >/dev/null 2>&1
+    /etc/init.d/S41dhcpcd stop >/dev/null 2>&1
+    /etc/init.d/S40network stop >/dev/null 2>&1
     for i in $(seq 0 $((${ETHNUM:0} - 1))); do
       ip link set dev eth${i} name tmp${i}
     done
@@ -323,8 +323,8 @@ function _sort_netif() {
       ip link set dev tmp${i} name eth${I}
       I=$((${I} + 1))
     done
-    /etc/init.d/S07network start >/dev/null 2>&1
-    /etc/init.d/S09dhcpcd start >/dev/null 2>&1
+    /etc/init.d/S40network start >/dev/null 2>&1
+    /etc/init.d/S41dhcpcd start >/dev/null 2>&1
   fi
   return 0
 }

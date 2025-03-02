@@ -18,8 +18,8 @@ BUS=$(getBus "${LOADER_DISK}")
 # Print Title centralized
 clear
 COLUMNS=$(ttysize 2>/dev/null | awk '{print $1}')
-COLUMNS=${COLUMNS:-50}
-BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
+COLUMNS=${COLUMNS:-120}
+BANNER="$(figlet -c -w "${COLUMNS}" "Arc Loader")"
 TITLE="Version:"
 TITLE+=" ${ARC_VERSION} (${ARC_BUILD}) | Branch: ${ARC_BRANCH}"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
@@ -227,6 +227,7 @@ CMDLINE["pcie_aspm"]="off"
 #   CMDLINE["amd_pstate"]="disable"
 # fi
 # CMDLINE["nomodeset"]=""
+CMDLINE['nowatchdog']=""
 CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
 
 if [ "${USBMOUNT}" = "true" ]; then
@@ -309,7 +310,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
   fi
 
-  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S09dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
+  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
   IPCON=""
   checkNIC || true
   echo

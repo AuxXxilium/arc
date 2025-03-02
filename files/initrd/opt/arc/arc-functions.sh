@@ -78,7 +78,6 @@ function arcModel() {
       [ -n "${ARC_CONF}" ] && TITLEMSG="Arc Model" || TITLEMSG="Model"
       dialog --backtitle "$(backtitle)" --title "${TITLEMSG}" --colors \
         --cancel-label "Show all" --help-button --help-label "Exit" \
-        --extra-button --extra-label "Info" \
         --menu "${MSG}" 0 115 0 \
         --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       RET=$?
@@ -90,12 +89,6 @@ function arcModel() {
           ;;
         1)
           [ ${RESTRICT} -eq 1 ] && RESTRICT=0 || RESTRICT=1
-          ;;
-        3)
-          resp=$(cat ${TMP_PATH}/resp)
-          PLATFORM="$(grep -w "${resp}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -n 1)"
-          dialog --backtitle "$(backtitle)" --colors \
-            --title "Platform Info" --textbox "./informations/${PLATFORM}.yml" 70 80
           ;;
         *)
           return 
@@ -1608,6 +1601,7 @@ function updateMenu() {
         dialog --backtitle "$(backtitle)" --title "Switch Arc Branch" \
           --menu "Choose a Branch" 0 0 0 \
           1 "evo - New Evolution System" \
+          2 "minimal - Minimal System" \
           3 "dev - Development System" \
           2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && break
@@ -1615,6 +1609,8 @@ function updateMenu() {
         if [ ${opts} -eq 1 ]; then
           export ARC_BRANCH="evo"
         elif [ ${opts} -eq 2 ]; then
+          export ARC_BRANCH="minimal"
+        elif [ ${opts} -eq 3 ]; then
           export ARC_BRANCH="dev"
         fi
         ;;
@@ -2814,8 +2810,8 @@ function rebootMenu() {
     exit 0
   elif [ "${REDEST}" = "network" ]; then
     clear
-    /etc/init.d/S07network restart
-    /etc/init.d/S09dhcpcd restart
+    /etc/init.d/S40network restart
+    /etc/init.d/S41dhcpcd restart
     rm -f "${HOME}/.initialized" && exec init.sh
   else
     rebootTo ${REDEST}
