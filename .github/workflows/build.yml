@@ -285,6 +285,8 @@ jobs:
               - Discord Account for Arc Patch needed
               - Changelog is available in my Discord
               - Based on VisionZ Evolution Code
+              ${{ inputs.evolution && '- Basesystem Evolution: full features - bigger / slower' || '' }}
+              ${{ inputs.minimal && '- Basesystem Minimal: reduced features - smaller / faster' || '' }}
 
             ### Dependencies:
               - Addons: ${{ env.ADDONTAG }}
