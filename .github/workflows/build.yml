@@ -24,6 +24,14 @@ on:
         description: "Notice here"
         required: false
         type: string
+      evolution:
+        description: "evolution"
+        default: true
+        type: boolean
+      minimal:
+        description: "minimal"
+        default: false
+        type: boolean
       latest:
         description: "latest"
         default: true
@@ -105,6 +113,7 @@ jobs:
 
        # Build incremental
       - name: Build Image Evo
+        if: ${{ inputs.evolution }}
         run: |
           . scripts/functions.sh
 
@@ -165,6 +174,7 @@ jobs:
 
       # Zip image and generate checksum
       - name: Pack Image Evo
+        if: ${{ inputs.evolution }}
         run: |
           if [ -n "${{ env.ARC_VERSION }}" ]; then
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.img.zip" arc.img
@@ -178,11 +188,13 @@ jobs:
 
       # Clean up
       - name: Clean up
+        if: ${{ inputs.evolution && inputs.minimal }}
         run: |
           rm -f arc.img arc-dyn.vmdk arc.vmdk arc-flat.vmdk arc.vhd arc.vmc arc.ova
 
        # Build incremental
       - name: Build Image Minimal
+        if: ${{ inputs.minimal }}
         run: |
           . scripts/functions.sh
 
@@ -243,6 +255,7 @@ jobs:
 
       # Zip image and generate checksum
       - name: Pack Image Minimal
+        if: ${{ inputs.minimal }}
         run: |
           if [ -n "${{ env.ARC_VERSION }}" ]; then
             zip -9 "arc-${{ env.ARC_VERSION }}-${{ env.ARC_BRANCH }}.img.zip" arc.img
@@ -280,8 +293,8 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              - Basesystem Evo: ${{ env.BRETAG }}
-              - Basesystem Minimal: ${{ env.BRMTAG }}
+              ${{ inputs.evolution && format('- Basesystem Evolution: {0}', env.BRETAG) || '' }}
+              ${{ inputs.minimal && format('- Basesystem Minimal: {0}', env.BRMTAG) || '' }}
 
             ### Release
               - ${{ env.BUILD_TIME }}
