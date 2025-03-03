@@ -164,6 +164,10 @@ elif [ "${ARC_MODE}" = "config" ]; then
       write_menu_value "W" "RD Compression" "${RD_COMPRESSED}"
       write_menu_value "X" "Sata DOM" "${SATADOM}"
       write_menu_value "u" "LKM Version" "${LKM}"
+      if [ "${ARC_BRACH}" = "evo" ]; then
+        MICROCODEIMG="$([ -f "${MC_RAMDISK_FILE}" ] && echo "true" || echo "false")"
+        write_menu_value "R" "Microcode Update" "${MICROCODEIMG}"
+      fi
       write_menu "C" "Clone Loader to another Disk"
       write_menu "n" "Grub Bootloader Config"
       write_menu "y" "Choose a Keymap for Loader"
@@ -334,6 +338,14 @@ elif [ "${ARC_MODE}" = "config" ]; then
             ;;
           L) greplogs; NEXT="L" ;;
           w) resetLoader; NEXT="w" ;;
+          R) MICROCODEIMG="$([ -f "${MC_RAMDISK_FILE}" ] && echo "true" || echo "false")"
+              if [ "${MICROCODEIMG}" = "true" ]; then
+                rm -f "${MC_RAMDISK_FILE}"
+              else
+                createMicrocode
+              fi
+              NEXT="R"
+              ;;
           C) cloneLoader; NEXT="C" ;;
           n) editGrubCfg; NEXT="n" ;;
           y) keymapMenu; NEXT="y" ;;
