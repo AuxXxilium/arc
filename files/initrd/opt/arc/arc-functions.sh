@@ -242,7 +242,7 @@ function arcVersion() {
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
     while IFS=': ' read -r KEY VALUE; do
       writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
-    done < <(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")
+    done < <"(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")"
     # Reset Modules
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
     [ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
@@ -266,7 +266,7 @@ function arcVersion() {
           initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
         fi
       fi
-      if [ "${MACHINE}" = "Native" ]; then
+      if [ "${MACHINE}" = "physical" ]; then
         initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
         initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
         initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
@@ -292,7 +292,7 @@ function arcVersion() {
       if ! checkAddonExist "${ADDON}" "${PLATFORM}"; then
         deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
       fi
-    done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+    done < <"(readConfigMap "addons" "${USER_CONFIG_FILE}")"
     # Check for Only Version
     if [ "${ONLYVERSION}" = "true" ]; then
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -413,11 +413,11 @@ function arcSettings() {
   
   # CPU Frequency Scaling & Governor
   if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
-    if [ "${ARC_MODE}" = "config" ] && [ "${MACHINE}" = "Native" ]; then
+    if [ "${ARC_MODE}" = "config" ] && [ "${MACHINE}" = "pysical" ]; then
       dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
         --infobox "Generating Governor Table..." 3 40
       governorSelection || return
-    elif [ "${ARC_MODE}" = "automated" ] && [ "${MACHINE}" = "Native" ]; then
+    elif [ "${ARC_MODE}" = "automated" ] && [ "${MACHINE}" = "physical" ]; then
       if [ "${PLATFORM}" = "epyc7002" ]; then
         writeConfigKey "governor" "schedutil" "${USER_CONFIG_FILE}"
       else
@@ -722,7 +722,7 @@ function addonSelection() {
   declare -A ADDONS
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
-  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+  done < <"(readConfigMap "addons" "${USER_CONFIG_FILE}")"
 
   rm -f "${TMP_PATH}/opts"
   touch "${TMP_PATH}/opts"
@@ -787,7 +787,7 @@ function modulesMenu() {
         declare -A USERMODULES
         while IFS=': ' read -r KEY VALUE; do
           [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
-        done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
+        done < <"(readConfigMap "modules" "${USER_CONFIG_FILE}")"
         rm -f "${TMP_PATH}/opts"
         while read -r ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
@@ -899,7 +899,7 @@ function modulesMenu() {
         if echo "${DEPS}" | grep -wq "${KEY}"; then
           DELS+=("${KEY}")
         fi
-      done <<<$(readConfigMap "modules" "${USER_CONFIG_FILE}")
+      done < <"(readConfigMap "modules" "${USER_CONFIG_FILE}")"
       if [ ${#DELS[@]} -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Modules" \
           --msgbox "No i915 with dependencies module to deselect." 0 0
@@ -1030,7 +1030,7 @@ function cmdlineMenu() {
           declare -A CMDLINE
           while IFS=': ' read -r KEY VALUE; do
             [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-          done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
+          done < <"(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
           if [ ${#CMDLINE[@]} -eq 0 ]; then
             dialog --backtitle "$(backtitle)" --msgbox "No user cmdline to remove" 0 0
             break
@@ -1238,7 +1238,7 @@ function synoinfoMenu() {
         declare -A SYNOINFO
         while IFS=': ' read KEY VALUE; do
           [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
-        done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
+        done < <"(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
         if [ ${#SYNOINFO[@]} -eq 0 ]; then
           dialog --backtitle "$(backtitle)" --title "Synoinfo" \
             --msgbox "No synoinfo entries to remove" 0 0
@@ -1657,7 +1657,7 @@ function sysinfo() {
   GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
   SECURE=$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')
   VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
+  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
   ETHN=$(echo ${ETHX} | wc -w)
   HWID="$(genHWID)"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -1720,14 +1720,14 @@ function sysinfo() {
   TEXT+="\n\Z4> Network: ${ETHN} NIC\Zn"
   for N in ${ETHX}; do
     COUNT=0
-    DRIVER="$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
-    MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
+    DRIVER="$(basename "$(realpath "/sys/class/net/${N}/device/driver" 2>/dev/null)" 2>/dev/null)"
+    MAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null)"
     while true; do
-      if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
+      if [ -z "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" ]; then
         TEXT+="\n   ${DRIVER} (${MAC}): \ZbDOWN\Zn"
         break
       fi
-      if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
+      if [ "0" = "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" ]; then
         TEXT+="\n   ${DRIVER} (${MAC}): \ZbNOT CONNECTED\Zn"
         break
       fi
@@ -1874,7 +1874,7 @@ function sysinfo() {
   if [ $(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep 'vmbus:acpi' | wc -l) -gt 0 ]; then
     TEXT+="\n  VMBUS Controller:\n"
     NAME="vmbus:acpi"
-    PORTNUM=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep 'vmbus:acpi' | wc -l)
+    PORTNUM="$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep 'vmbus:acpi' | wc -l)"
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   fi
@@ -1946,16 +1946,16 @@ function uploadDiag () {
 # Shows Networkdiag to user
 function networkdiag() {
   (
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
+  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
   for N in ${ETHX}; do
     echo
-    DRIVER=$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')
+    DRIVER="$(basename "$(realpath "/sys/class/net/${N}/device/driver" 2>/dev/null)" 2>/dev/null)"
     echo -e "Interface: ${N} (${DRIVER})"
-    if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
+    if [ "0" = "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" ]; then
       echo -e "Link: NOT CONNECTED"
       continue
     fi
-    if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
+    if [ -z "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" ]; then
       echo -e "Link: DOWN"
       continue
     fi
@@ -2050,10 +2050,10 @@ function credits() {
 ###############################################################################
 # Setting Static IP for Loader
 function staticIPMenu() {
-  ETHX="$(ls /sys/class/net/ 2>/dev/null | grep eth)"
+  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
   IPCON=""
   for N in ${ETHX}; do
-    MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
+    MACR="$(cat "/sys/class/net/${N}/address" 2>/dev/null)"
     MSG="Set ${N}(${MACR}) IP to: (Delete if empty)"
     while true; do
       IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
@@ -2076,7 +2076,7 @@ function staticIPMenu() {
           if [ -z "${address}" ]; then
             echo "Deleting IP for ${N}(${MACR})"
             if [ -n "$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")" ]; then
-              if [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
+              if [ "1" = "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" ]; then
                 ip addr flush dev ${N}
               fi
               deleteConfigKey "network.${MACR}" "${USER_CONFIG_FILE}"
@@ -2086,7 +2086,7 @@ function staticIPMenu() {
             fi
           else
             echo "Setting IP for ${N}(${MACR}) to ${address}/${netmask}/${gateway}/${dnsname}"
-            if [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
+            if [ "1" = "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" ]; then
               ip addr flush dev ${N}
               ip addr add ${address}/${netmask:-"255.255.255.0"} dev ${N} || exit 1
               if [ -n "${gateway}" ]; then
@@ -2495,7 +2495,7 @@ function formatDisks() {
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
     printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/opts"
-  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)
+  done < <"(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)"
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --msgbox "No disk found!" 0 0
@@ -2540,7 +2540,7 @@ function cloneLoader() {
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
     printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/opts"
-  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)
+  done < <"(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)"
 
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
@@ -3132,7 +3132,7 @@ function bootScreen () {
   declare -A BOOTSCREENS
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && BOOTSCREENS["${KEY}"]="${VALUE}"
-  done < <(readConfigMap "bootscreen" "${USER_CONFIG_FILE}")
+  done < <"(readConfigMap "bootscreen" "${USER_CONFIG_FILE}")"
   cat <<EOL >"${TMP_PATH}/bootscreen"
 dsminfo: DSM Information
 systeminfo: System Information
@@ -3175,7 +3175,7 @@ function getnet() {
     done
   }
 
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
+  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
   MODEL=$(readConfigKey "model" "${USER_CONFIG_FILE}")
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   ETHN=$(echo "${ETHX}" | wc -w)
@@ -3189,7 +3189,7 @@ function getnet() {
         [ $? -ne 0 ] && break
         MAC=$(cat "${TMP_PATH}/resp")
         [ -z "${MAC}" ] && MAC=$(readConfigKey "${N}" "${USER_CONFIG_FILE}")
-        [ -z "${MAC}" ] && MAC=$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')
+        [ -z "${MAC}" ] && MAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null)"
         MAC=$(echo "${MAC}" | tr '[:upper:]' '[:lower:]')
         if [ ${#MAC} -eq 12 ]; then
           dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "Set Mac for ${N} to ${MAC}!" 5 50
@@ -3333,7 +3333,7 @@ function getmap() {
   if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
     LASTDRIVE=0
     while read -r D; do
-      if [ "${BUS}" = "sata" ] && [ "${MACHINE}" != "Native" ] && [ ${D} -eq 0 ]; then
+      if [ "${BUS}" = "sata" ] && [ "${MACHINE}" != "physical" ] && [ ${D} -eq 0 ]; then
         MAXDISKS=${DRIVES}
         echo -n "${D}>${MAXDISKS}:" >>"${TMP_PATH}/remap"
       elif [ ${D} -ne ${LASTDRIVE} ]; then
@@ -3357,7 +3357,7 @@ function getmapSelection() {
   
   if [ "${ARC_MODE}" = "config" ]; then
     # Show recommended Option to user
-    if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ "${MACHINE}" = "Native" ]; then
+    if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ "${MACHINE}" = "physical" ]; then
       REMAP2="*"
     elif [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
       REMAP3="*"
@@ -3367,7 +3367,7 @@ function getmapSelection() {
     show_and_set_remap
   else
     # Show recommended Option to user
-    if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ "${MACHINE}" = "Native" ]; then
+    if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ "${MACHINE}" = "physical" ]; then
       writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}"
     elif [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
       writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}"
@@ -3449,7 +3449,7 @@ function getdiskinfo() {
 ###############################################################################
 # Get Network Info
 function getnetinfo() {
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
+  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
   for N in ${ETHX}; do
     IPCON="$(getIP "${N}")"
     [ -n "${IPCON}" ] && break

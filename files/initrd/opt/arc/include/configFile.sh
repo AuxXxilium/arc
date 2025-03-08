@@ -22,6 +22,7 @@ function writeConfigKey() {
 # 2 - Path of yaml config file
 # Return Value
 function readConfigKey() {
+  local RESULT
   RESULT=$(yq eval '.'${1}' | explode(.)' "${2}" 2>/dev/null)
   [ "${RESULT}" = "null" ] && echo "" || echo "${RESULT}"
 }
