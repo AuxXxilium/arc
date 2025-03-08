@@ -13,4 +13,4 @@ payload_offset=$(read_u32 "${1}" 0x248)
 payload_length=$(read_u32 "${1}" 0x24c)
 inner_pos=$(((setup_size + 1) * 512))
 
-tail -c+$(($inner_pos + 1)) "${1}" | tail -c+$(($payload_offset + 1)) | head -c "${payload_length}" | head -c $(($payload_length - 4)) | unlzma >"${2}"
+tail -c+$((inner_pos + 1)) "${1}" | tail -c+$((payload_offset + 1)) | head -c "${payload_length}" | head -c $((payload_length - 4)) | unlzma >"${2}"

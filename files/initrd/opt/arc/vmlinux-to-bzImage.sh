@@ -3,7 +3,7 @@
 
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
-calculate_run_size() {
+calc_run_size() {
   NUM='\([0-9a-fA-F]*[ \t]*\)'
   OUT=$(sed -n 's/^[ \t0-9]*.b[sr][sk][ \t]*'"${NUM}${NUM}${NUM}${NUM}"'.*/0x\1 0x\4/p')
 
@@ -12,7 +12,7 @@ calculate_run_size() {
     return 1
   fi
 
-  read -r sizeA offsetA sizeB offsetB <<<$(echo ${OUT} | awk '{printf "%d %d %d %d", strtonum($1), strtonum($2), strtonum($3), strtonum($4)}')
+  read -r sizeA offsetA sizeB offsetB <<<"$(echo ${OUT} | awk '{printf "%d %d %d %d", strtonum($1), strtonum($2), strtonum($3), strtonum($4)}')"
 
   runSize=$((offsetA + sizeA + sizeB))
 
@@ -38,23 +38,23 @@ calculate_run_size() {
 # Usage: size_append FILE [FILE2] [FILEn]...
 # Output: LE HEX with size of file in bytes (to STDOUT)
 file_size_le() {
-  printf $(
+  printf "$(
     local dec_size=0
     for F in "$@"; do dec_size=$((dec_size + $(stat -c "%s" "${F}"))); done
     printf "%08x\n" "${dec_size}" | sed 's/\(..\)/\1 /g' | {
       read -r ch0 ch1 ch2 ch3
       for ch in "${ch3}" "${ch2}" "${ch1}" "${ch0}"; do printf '%s%03o' '\' "$((0x${ch}))"; done
     }
-  )
+  )"
 }
 
 size_le() {
-  printf $(
+  printf "$(
     printf "%08x\n" "${@}" | sed 's/\(..\)/\1 /g' | {
       read -r ch0 ch1 ch2 ch3
       for ch in "${ch3}" "${ch2}" "${ch1}" "${ch0}"; do printf '%s%03o' '\' "$((0x${ch}))"; done
     }
-  )
+  )"
 }
 
 VMLINUX_MOD=${1}

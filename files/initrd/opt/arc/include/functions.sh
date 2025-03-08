@@ -12,7 +12,7 @@ function checkBootLoader() {
     [ -z "${KNAME}" ] && continue
     [ "${RO}" = "0" ] && continue
     hdparm -r0 "${KNAME}" >/dev/null 2>&1 || true
-  done < <(lsblk -pno KNAME,RO 2>/dev/null)
+  done < <"(lsblk -pno KNAME,RO 2>/dev/null)"
   [ ! -w "${PART1_PATH}" ] && return 1
   [ ! -w "${PART2_PATH}" ] && return 1
   [ ! -w "${PART3_PATH}" ] && return 1
@@ -43,14 +43,17 @@ function arc_mode() {
 # Check for NIC and IP
 function checkNIC() {
   # Get Amount of NIC
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
+  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
   for N in ${ETHX}; do
     COUNT=0
-    DRIVER=$(basename "$(readlink -f /sys/class/net/${N}/device/driver 2>/dev/null)")
+    DRIVER="$(basename "$(realpath "/sys/class/net/${N}/device/driver" 2>/dev/null)" 2>/dev/null)"
     while true; do
-      CARRIER=$(cat /sys/class/net/${N}/carrier 2>/dev/null)
+      CARRIER=$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)
       if [ "${CARRIER}" = "0" ]; then
         echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
+        break
+      elif [ -z "${CARRIER}" ]; then
+        echo -e "\r${DRIVER}: \033[1;37mDOWN\033[0m"
         break
       fi
       COUNT=$((COUNT + 1))
@@ -63,10 +66,6 @@ function checkNIC() {
           echo -e "\r${DRIVER} (${SPEED}): \033[1;37m${IP}\033[0m"
           [ -z "${IPCON}" ] && IPCON="${IP}"
         fi
-        break
-      fi
-      if [ -z "${CARRIER}" ]; then
-        echo -e "\r${DRIVER}: \033[1;37mDOWN\033[0m"
         break
       fi
       if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
@@ -82,7 +81,7 @@ function checkNIC() {
 ###############################################################################
 # Just show error message and dies
 function die() {
-  echo -e "\033[1;41m$@\033[0m"
+  echo -e "\033[1;41m${*}\033[0m"
   exit 1
 }
 
@@ -300,9 +299,9 @@ function _set_conf_kv() {
 # sort netif busid
 function _sort_netif() {
   local ETHLIST=""
-  local ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
+  local ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
   for N in ${ETHX}; do
-    local MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g; s/.*/\L&/')"
+    local MAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null)"
     local BUS="$(ethtool -i ${N} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
     ETHLIST="${ETHLIST}${BUS} ${MAC} ${N}\n"
   done
@@ -335,9 +334,9 @@ function _sort_netif() {
 function getBus() {
   local BUS=""
   # usb/ata(ide)/sata/sas/spi(scsi)/virtio/mmc/nvme
-  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,TRAN 2>/dev/null | grep "${1} " | awk '{print $2}' | sed 's/^ata$/ide/' | sed 's/^spi$/scsi/') #Spaces are intentional
+  [ -z "${BUS}" ] && BUS="$(lsblk -dpno KNAME,TRAN 2>/dev/null | grep "${1} " | awk '{print $2}' | sed 's/^ata$/ide/' | sed 's/^spi$/scsi/')" #Spaces are intentional
   # usb/scsi(ide/sata/sas)/virtio/mmc/nvme/vmbus/xen(xvd)
-  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | awk '{print $2}' | awk -F':' '{print $(NF-1)}' | sed 's/_host//' | sed 's/^.*xen.*$/xen/') # Spaces are intentional
+  [ -z "${BUS}" ] && BUS="$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | awk '{print $2}' | awk -F':' '{print $(NF-1)}' | sed 's/_host//' | sed 's/^.*xen.*$/xen/')" # Spaces are intentional
   [ -z "${BUS}" ] && BUS="unknown"
   echo "${BUS}"
   return 0
@@ -593,16 +592,13 @@ function systemCheck () {
   RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
   [ -z "${RAMTOTAL}" ] && RAMTOTAL="8"
   # Check for Hypervisor
-  if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
-    MACHINE="$(lscpu | grep Hypervisor | awk '{print $3}')" # KVM or VMware
-  else
-    MACHINE="Native"
-  fi
+  MACHINE="$(virt-what 2>/dev/null | head -1)"
+  [ -z "$MACHINE" ] && MACHINE="physical"
   # Check for AES Support
-  if ! grep -q "^flags.*aes.*" /proc/cpuinfo; then
-    AESSYS="false"
-  else
+  if grep -q "^flags.*aes.*" /proc/cpuinfo; then
     AESSYS="true"
+  else
+    AESSYS="false"
   fi
   # Check for CPU Frequency Scaling
   CPUFREQUENCIES=$(ls -l /sys/devices/system/cpu/cpufreq/*/* 2>/dev/null | wc -l)

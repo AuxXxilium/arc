@@ -54,6 +54,8 @@ KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver"
 CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
 RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')"
+MACHINE="$(virt-what 2>/dev/null | head -1)"
+[ -z "$MACHINE" ] && MACHINE="physical"
 DSMINFO="$(readConfigKey "bootscreen.dsminfo" "${USER_CONFIG_FILE}")"
 SYSTEMINFO="$(readConfigKey "bootscreen.systeminfo" "${USER_CONFIG_FILE}")"
 DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
@@ -97,6 +99,7 @@ if [ "${SYSTEMINFO}" = "true" ]; then
   echo -e "CPU: \033[1;37m${CPU}\033[0m"
   echo -e "Memory: \033[1;37m${RAMTOTAL}GB\033[0m"
   echo -e "Governor: \033[1;37m${GOVERNOR}\033[0m"
+  echo -E "Type: \033[1;37m${MEV}\033[0m"
   [ "${USBMOUNT}" = "true" ] && echo -e "USB Mount: \033[1;37m${USBMOUNT}\033[0m"
   echo
 fi
@@ -123,7 +126,7 @@ if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   [ ${HASATA} -eq 0 ] && echo -e "\033[1;31m*** Note: Please insert at least one Sata/SAS/SCSI Disk for System installation, except the Bootloader Disk. ***\033[0m"
 fi
 
-if checkBIOS_VT_d && [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
+if checkBIOS_VT_d && [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
   echo -e "\033[1;31m*** Notice: Disable Intel(VT-d)/AMD(AMD-V) in BIOS/UEFI settings if you encounter a boot failure. ***\033[0m"
   echo
 fi
@@ -147,7 +150,7 @@ CMDLINE["pid"]="${PID:-"0x0001"}"
 CMDLINE["sn"]="${SN}"
 
 # NIC Cmdline
-ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
+ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
 ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)
 ETHN=$(echo "${ETHX}" | wc -w)
 ETHM=${ETHM:-${ETHN}}
@@ -175,10 +178,10 @@ else
 fi
 
 # DSM Cmdline
-if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
+if [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
   if [ "${BUS}" != "usb" ]; then
-    SZ=$(blockdev --getsz ${LOADER_DISK} 2>/dev/null)
-    SS=$(blockdev --getss ${LOADER_DISK} 2>/dev/null)
+    SZ=$(blockdev --getsz "${LOADER_DISK}" 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
+    SS=$(blockdev --getss "${LOADER_DISK}" 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
     SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
     # Read SATADoM type
     SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
@@ -229,6 +232,7 @@ CMDLINE["pcie_aspm"]="off"
 # CMDLINE["nomodeset"]=""
 CMDLINE['nowatchdog']=""
 CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
+CMDLINE['mev']="${MACHINE}"
 
 if [ "${USBMOUNT}" = "true" ]; then
   CMDLINE["usbinternal"]=""
@@ -272,12 +276,12 @@ fi
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["network.${KEY}"]="${VALUE}"
-done < <(readConfigMap "network" "${USER_CONFIG_FILE}")
+done < <"(readConfigMap "network" "${USER_CONFIG_FILE}")"
 
 # Read user cmdline
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
+done < <"(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
 
 # Prepare command line
 CMDLINE_LINE=""
@@ -286,7 +290,7 @@ for KEY in "${!CMDLINE[@]}"; do
   CMDLINE_LINE+=" ${KEY}"
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
-CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
+CMDLINE_LINE="$(echo "${CMDLINE_LINE}" | sed 's/^ //')" # Remove leading space
 echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
 # Boot
@@ -319,7 +323,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   if [ "${DSMLOGO}" = "true" ] && [ -c "/dev/fb0" ]; then
     [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
     [ -n "${IPCON}" ] && URL="http://${IPCON}:5000" || URL="http://find.synology.com/"
-    python3 ${ARC_PATH}/include/functions.py makeqr -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
+    python3 "${ARC_PATH}/include/functions.py" "makeqr" -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
     [ -f "${TMP_PATH}/qrcode_boot.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_boot.png" >/dev/null 2>/dev/null || true
   fi
 
