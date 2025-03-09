@@ -242,7 +242,7 @@ function arcVersion() {
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
     while IFS=': ' read -r KEY VALUE; do
       writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
-    done < <"(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")"
+    done < <(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")
     # Reset Modules
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
     [ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
@@ -292,7 +292,7 @@ function arcVersion() {
       if ! checkAddonExist "${ADDON}" "${PLATFORM}"; then
         deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
       fi
-    done < <"(readConfigMap "addons" "${USER_CONFIG_FILE}")"
+    done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
     # Check for Only Version
     if [ "${ONLYVERSION}" = "true" ]; then
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -722,7 +722,7 @@ function addonSelection() {
   declare -A ADDONS
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
-  done < <"(readConfigMap "addons" "${USER_CONFIG_FILE}")"
+  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
   rm -f "${TMP_PATH}/opts"
   touch "${TMP_PATH}/opts"
@@ -787,7 +787,7 @@ function modulesMenu() {
         declare -A USERMODULES
         while IFS=': ' read -r KEY VALUE; do
           [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
-        done < <"(readConfigMap "modules" "${USER_CONFIG_FILE}")"
+        done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
         rm -f "${TMP_PATH}/opts"
         while read -r ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
@@ -899,7 +899,7 @@ function modulesMenu() {
         if echo "${DEPS}" | grep -wq "${KEY}"; then
           DELS+=("${KEY}")
         fi
-      done < <"(readConfigMap "modules" "${USER_CONFIG_FILE}")"
+      done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
       if [ ${#DELS[@]} -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Modules" \
           --msgbox "No i915 with dependencies module to deselect." 0 0
@@ -1030,7 +1030,7 @@ function cmdlineMenu() {
           declare -A CMDLINE
           while IFS=': ' read -r KEY VALUE; do
             [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-          done < <"(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
+          done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
           if [ ${#CMDLINE[@]} -eq 0 ]; then
             dialog --backtitle "$(backtitle)" --msgbox "No user cmdline to remove" 0 0
             break
@@ -1238,7 +1238,7 @@ function synoinfoMenu() {
         declare -A SYNOINFO
         while IFS=': ' read KEY VALUE; do
           [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
-        done < <"(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
+        done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
         if [ ${#SYNOINFO[@]} -eq 0 ]; then
           dialog --backtitle "$(backtitle)" --title "Synoinfo" \
             --msgbox "No synoinfo entries to remove" 0 0
@@ -2495,7 +2495,7 @@ function formatDisks() {
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
     printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/opts"
-  done < <"(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)"
+  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --msgbox "No disk found!" 0 0
@@ -2540,7 +2540,7 @@ function cloneLoader() {
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
     printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/opts"
-  done < <"(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)"
+  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)
 
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
@@ -3132,7 +3132,7 @@ function bootScreen () {
   declare -A BOOTSCREENS
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && BOOTSCREENS["${KEY}"]="${VALUE}"
-  done < <"(readConfigMap "bootscreen" "${USER_CONFIG_FILE}")"
+  done < <(readConfigMap "bootscreen" "${USER_CONFIG_FILE}")
   cat <<EOL >"${TMP_PATH}/bootscreen"
 dsminfo: DSM Information
 systeminfo: System Information
