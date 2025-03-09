@@ -230,6 +230,8 @@ CMDLINE["pcie_aspm"]="off"
 #   CMDLINE["amd_pstate"]="disable"
 # fi
 # CMDLINE["nomodeset"]=""
+CMDLINE['net.ifnames']="0"
+CMDLINE['biosdevname']="0"
 CMDLINE['nowatchdog']=""
 CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
 CMDLINE['mev']="${MACHINE}"
