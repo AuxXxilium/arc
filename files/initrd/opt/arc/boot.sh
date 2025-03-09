@@ -276,12 +276,12 @@ fi
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["network.${KEY}"]="${VALUE}"
-done < <"(readConfigMap "network" "${USER_CONFIG_FILE}")"
+done < <(readConfigMap "network" "${USER_CONFIG_FILE}")
 
 # Read user cmdline
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-done < <"(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
+done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 
 # Prepare command line
 CMDLINE_LINE=""
