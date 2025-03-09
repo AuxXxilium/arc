@@ -19,7 +19,7 @@ function availableAddons() {
     if [[ "${ARCOFFLINE}" = "true" || -z "${ARCCONF}" ]] && [[ "${ADDON}" = "amepatch" || "${ADDON}" = "arcdns" ]]; then
       continue
     fi
-    if [ "${MACHINE}" != "Native" ] && [ "${ADDON}" = "cpufreqscaling" ]; then
+    if [ "${MACHINE}" != "physical" ] && [ "${ADDON}" = "cpufreqscaling" ]; then
       continue
     fi
     if echo "${PAT_URL}" 2>/dev/null | grep -vq "7.2.2"; then
