@@ -99,7 +99,7 @@ if [ "${SYSTEMINFO}" = "true" ]; then
   echo -e "CPU: \033[1;37m${CPU}\033[0m"
   echo -e "Memory: \033[1;37m${RAMTOTAL}GB\033[0m"
   echo -e "Governor: \033[1;37m${GOVERNOR}\033[0m"
-  echo -E "Type: \033[1;37m${MEV}\033[0m"
+  echo -e "Type: \033[1;37m${MACHINE}\033[0m"
   [ "${USBMOUNT}" = "true" ] && echo -e "USB Mount: \033[1;37m${USBMOUNT}\033[0m"
   echo
 fi
