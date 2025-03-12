@@ -1959,7 +1959,7 @@ function networkdiag() {
       continue
     fi
     echo -e "Link: CONNECTED"
-    addr=$(getIP "${N}")
+    addr="$(getIP "${N}")"
     netmask=$(ifconfig "${N}" | grep inet | grep 255 | awk '{print $4}' | cut -f2 -d':')
     echo -e "IP Address: ${addr}"
     echo -e "Netmask: ${netmask}"
@@ -2052,17 +2052,14 @@ function staticIPMenu() {
   ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
   IPCON=""
   for N in ${ETHX}; do
-    MACR="$(cat "/sys/class/net/${N}/address" 2>/dev/null)"
-    MSG="Set ${N}(${MACR}) IP to: (Delete if empty)"
+    MACR="$(cat "/sys/class/net/${N}/address" 2>/dev/null | sed 's/://g')"
+    IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
+    IFS='/' read -r -a IPRA <<<"${IPR}"
+
+    MSG="Set to ${N}(${MACR}: (Delete if empty)"
     while true; do
-      IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
-      IFS='/' read -r -a IPRA <<<"${IPR}"
       dialog --backtitle "$(backtitle)" --title "StaticIP" \
-        --form "${MSG}" 10 60 4 \
-        "address" 1 1 "${IPRA[0]}" 1 9 36 16 \
-        "netmask" 2 1 "${IPRA[1]}" 2 9 36 16 \
-        "gateway" 3 1 "${IPRA[2]}" 3 9 36 16 \
-        "dns" 4 1 "${IPRA[3]}" 4 9 36 16 \
+        --form "${MSG}" 10 60 4 "address" 1 1 "${IPRA[0]}" 1 9 36 16 "netmask" 2 1 "${IPRA[1]}" 2 9 36 16 "gateway" 3 1 "${IPRA[2]}" 3 9 36 16 "dns" 4 1 "${IPRA[3]}" 4 9 36 16 \
         2>"${TMP_PATH}/resp"
       RET=$?
       case ${RET} in
@@ -2073,49 +2070,47 @@ function staticIPMenu() {
         dnsname="$(sed -n '4p' "${TMP_PATH}/resp" 2>/dev/null)"
         (
           if [ -z "${address}" ]; then
-            echo "Deleting IP for ${N}(${MACR})"
             if [ -n "$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")" ]; then
+              echo "Deleting IP for ${N}(${MACR})"
               if [ "1" = "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" ]; then
                 ip addr flush dev ${N}
               fi
               deleteConfigKey "network.${MACR}" "${USER_CONFIG_FILE}"
-              IP="$(getIP)"
-              [ -z "${IPCON}" ] && IPCON="${IP}"
               sleep 1
             fi
           else
             echo "Setting IP for ${N}(${MACR}) to ${address}/${netmask}/${gateway}/${dnsname}"
             if [ "1" = "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" ]; then
               ip addr flush dev ${N}
-              ip addr add ${address}/${netmask:-"255.255.255.0"} dev ${N} || exit 1
+              ip addr add ${address}/${netmask:-"255.255.255.0"} dev ${N}
               if [ -n "${gateway}" ]; then
-                ip route add default via ${gateway} dev ${N} || exit 1
+                ip route add default via ${gateway} dev ${N}
               fi
               if [ -n "${dnsname:-${gateway}}" ]; then
                 sed -i "/nameserver ${dnsname:-${gateway}}/d" /etc/resolv.conf
-                echo "nameserver ${dnsname:-${gateway}}" >>/etc/resolv.conf || exit 1
+                echo "nameserver ${dnsname:-${gateway}}" >>/etc/resolv.conf
               fi
             fi
             writeConfigKey "network.${MACR}" "${address}/${netmask}/${gateway}/${dnsname}" "${USER_CONFIG_FILE}"
-            sleep 3
+            sleep 1
           fi
+          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
         ) 2>&1 | dialog --backtitle "$(backtitle)" --title "StaticIP" \
-          --progressbox "Setting IP for ${N}" 20 100
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-        getnetinfo
+          --progressbox "Set Network ..." 20 100
         break
         ;;
       1)
         break
         ;;
       *)
-        break
+        break 2
         ;;
       esac
     done
   done
-  return
+  IP="$(getIP)"
+  [ -z "${IPCON}" ] && IPCON="${IP}"
 }
 
 ###############################################################################

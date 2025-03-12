@@ -57,7 +57,7 @@ function checkNIC() {
         break
       fi
       COUNT=$((COUNT + 1))
-      IP=$(getIP "${N}")
+      IP="$(getIP "${N}")"
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} 2>/dev/null | awk '/Speed:/ {print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
