@@ -189,7 +189,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
     RET=$?
     case ${RET} in
       0)
-        resp=$(cat ${TMP_PATH}/resp)
+        resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
         [ -z "${resp}" ] && return
         case ${resp} in
           # Main Section
