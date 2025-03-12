@@ -191,8 +191,6 @@ function arcVersion() {
       RET=$?
       [ ${RET} -ne 0 ] && return
       PV="$(cat ${TMP_PATH}/resp)"
-      [ -z "${resp}" ] && return
-      PV="${resp}"
       PAT_URL="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${PV}\".url" "${D_FILE}")"
       PAT_HASH="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${PV}\".hash" "${D_FILE}")"
       writeConfigKey "productver" "${PV:0:3}" "${USER_CONFIG_FILE}"
