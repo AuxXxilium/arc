@@ -83,7 +83,7 @@ function arcModel() {
       RET=$?
       case ${RET} in
         0)
-          resp=$(cat ${TMP_PATH}/resp)
+          resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
           [ -z "${resp}" ] && return
           break
           ;;
@@ -154,7 +154,7 @@ function arcVersion() {
       --no-items --menu "Select DSM Version" 7 30 0 ${ITEMS} \
     2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return
-    resp=$(cat ${TMP_PATH}/resp)
+    resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${resp}" ] && return
     if [ "${PRODUCTVER}" != "${resp}" ]; then
       PRODUCTVER="${resp}"
@@ -187,10 +187,12 @@ function arcVersion() {
       DSMPVS="$(cat ${TMP_PATH}/versions)"
       dialog --backtitle "$(backtitle)" --colors --title "DSM Build" \
       --no-items --menu "Select DSM Build" 0 0 0 ${DSMPVS} \
-      2>${TMP_PATH}/resp
+      2>"${TMP_PATH}/resp"
       RET=$?
       [ ${RET} -ne 0 ] && return
-      PV=$(cat ${TMP_PATH}/resp)
+      PV="$(cat ${TMP_PATH}/resp)"
+      [ -z "${resp}" ] && return
+      PV="${resp}"
       PAT_URL="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${PV}\".url" "${D_FILE}")"
       PAT_HASH="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${PV}\".hash" "${D_FILE}")"
       writeConfigKey "productver" "${PV:0:3}" "${USER_CONFIG_FILE}"
@@ -342,7 +344,7 @@ function arcPatch() {
         2>"${TMP_PATH}/resp"
     fi
     
-    resp=$(cat "${TMP_PATH}/resp")
+    resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${resp}" ] && return 1
     
     case ${resp} in
@@ -457,7 +459,7 @@ function arcSettings() {
         1 "Yes - Build Arc Loader now" \
         2 "No - I want to make changes" \
       2>"${TMP_PATH}/resp"
-      resp=$(cat ${TMP_PATH}/resp)
+      resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
       [ -z "${resp}" ] && return
       [ ${resp} -eq 1 ] && arcSummary || dialog --clear --no-items --backtitle "$(backtitle)"
     else
@@ -631,7 +633,7 @@ function arcFinish() {
         1 "Yes - Boot DSM now" \
         2 "No - I want to make changes" \
       2>"${TMP_PATH}/resp"
-      resp=$(cat "${TMP_PATH}/resp")
+      resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
       [ "${resp}" -eq 1 ] && boot || return
     fi
   fi
@@ -740,7 +742,7 @@ function addonSelection() {
     --checklist "Select Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
-  resp=$(cat "${TMP_PATH}/resp")
+  resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
 
   declare -A ADDONS
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
@@ -775,9 +777,9 @@ function modulesMenu() {
     } >"${TMP_PATH}/menu"
     dialog --backtitle "$(backtitle)" --title "Modules" \
       --cancel-label "Exit" --menu "Choose an option" 0 0 0 --file "${TMP_PATH}/menu" \
-      2>${TMP_PATH}/resp
+      2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
-    case "$(cat ${TMP_PATH}/resp)" in
+    case "$(cat "${TMP_PATH}/resp" 2>/dev/null)" in
     1)
       while true; do
         dialog --backtitle "$(backtitle)" --title "Modules" \
@@ -798,7 +800,7 @@ function modulesMenu() {
           --extra-button --extra-label "Select all" \
           --help-button --help-label "Deselect all" \
           --checklist "Select Modules to include" 0 0 0 --file "${TMP_PATH}/opts" \
-          2>${TMP_PATH}/resp
+          2>"${TMP_PATH}/resp"
         RET=$?
         case ${RET} in
         0)
@@ -942,7 +944,7 @@ function modulesMenu() {
         modblacklist="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
         dialog --backtitle "$(backtitle)" --title "Modules" \
           --inputbox "${MSG}" 12 70 "${modblacklist}" \
-          2>${TMP_PATH}/resp
+          2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break
         VALUE="$(cat "${TMP_PATH}/resp")"
         if echo "${VALUE}" | grep -q " "; then
@@ -973,7 +975,7 @@ function cmdlineMenu() {
     dialog --backtitle "$(backtitle)" --title "Cmdline"  --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
-    case "$(cat ${TMP_PATH}/resp)" in
+    case "$(cat "${TMP_PATH}/resp" 2>/dev/null)" in
       1)
         MSG=""
         MSG+="Commonly used Parameter (Format: Name=Value):\n"
@@ -1043,7 +1045,7 @@ function cmdlineMenu() {
             --checklist "Select cmdline to remove" 0 0 0 ${ITEMS} \
             2>"${TMP_PATH}/resp"
           [ $? -ne 0 ] && break
-          resp=$(cat ${TMP_PATH}/resp)
+          resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
           [ -z "${resp}" ] && break
           for I in ${resp}; do
             unset 'CMDLINE[${I}]'
@@ -1060,7 +1062,7 @@ function cmdlineMenu() {
             1 "Install" \
             2 "Uninstall" \
           2>"${TMP_PATH}/resp"
-          resp=$(cat ${TMP_PATH}/resp)
+          resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
           [ -z "${resp}" ] && break
           if [ ${resp} -eq 1 ]; then
             writeConfigKey "cmdline.nmi_watchdog" "0" "${USER_CONFIG_FILE}"
@@ -1084,7 +1086,7 @@ function cmdlineMenu() {
             1 "Install" \
             2 "Uninstall" \
           2>"${TMP_PATH}/resp"
-          resp=$(cat ${TMP_PATH}/resp)
+          resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
           [ -z "${resp}" ] && break
           if [ ${resp} -eq 1 ]; then
             writeConfigKey "cmdline.disable_mtrr_trim" "0" "${USER_CONFIG_FILE}"
@@ -1108,7 +1110,7 @@ function cmdlineMenu() {
             1 "Install" \
             2 "Uninstall" \
           2>"${TMP_PATH}/resp"
-          resp=$(cat ${TMP_PATH}/resp)
+          resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
           [ -z "${resp}" ] && break
           if [ ${resp} -eq 1 ]; then
             writeConfigKey "cmdline.pci" "routeirq" "${USER_CONFIG_FILE}"
@@ -1130,7 +1132,7 @@ function cmdlineMenu() {
             1 "Install" \
             2 "Uninstall" \
           2>"${TMP_PATH}/resp"
-          resp=$(cat ${TMP_PATH}/resp)
+          resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
           [ -z "${resp}" ] && break
           if [ ${resp} -eq 1 ]; then
             writeConfigKey "cmdline.intel_idle.max_cstate" "1" "${USER_CONFIG_FILE}"
@@ -1153,9 +1155,9 @@ function cmdlineMenu() {
           echo "-1 \"Restart immediately\"" >>"${TMP_PATH}/opts"
           dialog --backtitle "$(backtitle)" --colors --title "Kernelpanic" \
             --default-item "${KERNELPANIC}" --menu "Choose a time(seconds)" 0 0 0 --file "${TMP_PATH}/opts" \
-            2>${TMP_PATH}/resp
+            2>"${TMP_PATH}/resp"
           [ $? -ne 0 ] && break
-          resp=$(cat ${TMP_PATH}/resp)
+          resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
           [ -z "${resp}" ] && break
           KERNELPANIC=${resp}
           writeConfigKey "kernelpanic" "${KERNELPANIC}" "${USER_CONFIG_FILE}"
@@ -1181,7 +1183,7 @@ function synoinfoMenu() {
     dialog --backtitle "$(backtitle)" --title "Synoinfo" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
-    case "$(cat ${TMP_PATH}/resp)" in
+    case "$(cat "${TMP_PATH}/resp" 2>/dev/null)" in
       1)
         MSG=""
         MSG+="Commonly used Synoinfo (Format: Name=Value):\n"
@@ -1208,7 +1210,7 @@ function synoinfoMenu() {
             2>"${TMP_PATH}/resp"
           RET=$?
           case ${RET} in
-            0) # ok-button
+            0)
               NAME="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
               VALUE="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
               [[ "${NAME}" = *= ]] && NAME="${NAME%?}"
@@ -1221,11 +1223,8 @@ function synoinfoMenu() {
               writeConfigKey "synoinfo.\"${NAME//\"/}\"" "${VALUE}" "${USER_CONFIG_FILE}"
               break
               ;;
-            1) # cancel-button
+            *)
               break
-              ;;
-            255) # ESC
-              # break
               ;;
           esac
         done
@@ -1252,7 +1251,7 @@ function synoinfoMenu() {
           --checklist "Select synoinfo entry to remove" 0 0 0 --file "${TMP_PATH}/opts" \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
-        resp=$(cat "${TMP_PATH}/resp")
+        resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
         [ -z "${resp}" ] && continue
         for I in ${resp}; do
           unset SYNOINFO[${I}]
@@ -1278,7 +1277,7 @@ function keymapMenu() {
     "dvorak" "fgGIod" "neo" "olpc" "qwerty" "qwertz" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
-  LAYOUT=$(cat "${TMP_PATH}/resp")
+  LAYOUT="$(cat "${TMP_PATH}/resp")"
   OPTIONS=""
   while read -r KM; do
     OPTIONS+="${KM::-7} "
@@ -1287,7 +1286,7 @@ function keymapMenu() {
     --menu "Choice a keymap" 0 0 0 ${OPTIONS} \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
-  resp=$(cat ${TMP_PATH}/resp)
+  resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   [ -z "${resp}" ] && return 1
   KEYMAP=${resp}
   writeConfigKey "layout" "${LAYOUT}" "${USER_CONFIG_FILE}"
@@ -1309,14 +1308,14 @@ function storagepanelMenu() {
       dialog --backtitle "$(backtitle)" --title "StoragePanel" \
         --default-item "${DISKPANELUSER}" --no-items --menu "Choose a Disk Panel" 0 0 0 ${ITEMS} \
         2>"${TMP_PATH}/resp"
-      resp=$(cat ${TMP_PATH}/resp)
+      resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
       [ -z "${resp}" ] && break
       STORAGE=${resp}
       ITEMS="$(echo -e "1X2 \n1X4 \n1X8 \n")"
       dialog --backtitle "$(backtitle)" --title "StoragePanel" \
         --default-item "${M2PANELUSER}" --no-items --menu "Choose a M.2 Panel" 0 0 0 ${ITEMS} \
         2>"${TMP_PATH}/resp"
-      resp=$(cat ${TMP_PATH}/resp)
+      resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
       [ -z "${resp}" ] && break
       M2PANEL=${resp}
       STORAGEPANEL="${STORAGE} ${M2PANEL}"
@@ -1340,7 +1339,7 @@ function sequentialIOMenu() {
           2 "Disable for SSD Cache" \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break
-        case "$(cat ${TMP_PATH}/resp)" in
+        case "$(cat "${TMP_PATH}/resp" 2>/dev/null)" in
           1)
             dialog --backtitle "$(backtitle)" --colors --title "SequentialIO" \
               --msgbox "SequentialIO enabled" 0 0
@@ -1395,7 +1394,7 @@ function backupMenu() {
         2>"${TMP_PATH}/resp"
     fi
     [ $? -ne 0 ] && break
-    case "$(cat ${TMP_PATH}/resp)" in
+    case "$(cat "${TMP_PATH}/resp" 2>/dev/null)" in
       1)
         DSMROOTS="$(findDSMRoot)"
         if [ -z "${DSMROOTS}" ]; then
@@ -1547,7 +1546,7 @@ function updateMenu() {
       4 "Switch Arc Branch: \Z1${ARC_BRANCH}\Zn" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
-    case "$(cat ${TMP_PATH}/resp)" in
+    case "$(cat "${TMP_PATH}/resp" 2>/dev/null)" in
       1)
         # Ask for Tag
         TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
@@ -1559,7 +1558,7 @@ function updateMenu() {
           3 "Upload .zip File" \
         2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && break
-        opts=$(cat ${TMP_PATH}/opts)
+        opts="$(cat "${TMP_PATH}/opts")"
         if [ ${opts} -eq 1 ]; then
           [ -z "${TAG}" ] && return 1
         elif [ ${opts} -eq 2 ]; then
@@ -1605,7 +1604,7 @@ function updateMenu() {
           3 "dev - Development System" \
           2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && break
-        opts=$(cat ${TMP_PATH}/opts)
+        opts="$(cat "${TMP_PATH}/opts")"
         if [ ${opts} -eq 1 ]; then
           export ARC_BRANCH="evo"
         elif [ ${opts} -eq 2 ]; then
@@ -2190,14 +2189,14 @@ function resetPassword() {
   fi
   dialog --backtitle "$(backtitle)" --title "Reset Password" \
     --no-items --menu  "Choose a User" 0 0 0 --file "${TMP_PATH}/menu" \
-    2>${TMP_PATH}/resp
+    2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
   USER="$(cat "${TMP_PATH}/resp" 2>/dev/null | awk '{print $1}')"
   [ -z "${USER}" ] && return
   while true; do
     dialog --backtitle "$(backtitle)" --title "Reset Password" \
       --inputbox "Type a new password for user ${USER}" 0 70 \
-    2>${TMP_PATH}/resp
+    2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break 2
     VALUE="$(cat "${TMP_PATH}/resp")"
     [ -n "${VALUE}" ] && break
@@ -2254,7 +2253,7 @@ function addNewDSMUser() {
       mount -t ext4 "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
-        sqlite3 ${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db <<EOF
+        sqlite3 "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" <<EOF
 DELETE FROM task WHERE task_name LIKE 'ARCONBOOTUPARC_ADDUSER';
 INSERT INTO task VALUES('ARCONBOOTUPARC_ADDUSER', '', 'bootup', '', 1, 0, 0, 0, '', 0, '$(echo -e ${ONBOOTUP})', 'script', '{}', '', '', '{}', '{}');
 EOF
@@ -2278,7 +2277,7 @@ EOF
 function loaderPassword() {
   dialog --backtitle "$(backtitle)" --title "Loader Password" \
     --inputbox "New password: (Empty value 'arc')" 0 70 \
-    2>${TMP_PATH}/resp
+    2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && continue
   STRPASSWD="$(cat "${TMP_PATH}/resp")"
   NEWPASSWD="$(openssl passwd -6 -salt $(openssl rand -hex 8) "${STRPASSWD:-arc}")"
@@ -2353,9 +2352,9 @@ function loaderPorts() {
     RET=$?
     case ${RET} in
     0)
-      HTTP=$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)
-      DUFS=$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)
-      TTYD=$(sed -n '3p' "${TMP_PATH}/resp" 2>/dev/null)
+      HTTP="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
+      DUFS="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
+      TTYD="$(sed -n '3p' "${TMP_PATH}/resp" 2>/dev/null)"
       EP=""
       for P in "${HTTPPORT}" "${DUFSPORT}" "${TTYDPORT}"; do check_port "${P}" || EP="${EP} ${P}"; done
       if [ -n "${EP}" ]; then
@@ -2479,7 +2478,7 @@ function bootipwaittime() {
   dialog --backtitle "$(backtitle)" --colors --title "Boot IP Waittime" \
     --default-item "${BOOTIPWAIT}" --no-items --menu "Choose Waittime(seconds)\nto get an IP" 0 0 0 ${ITEMS} \
     2>"${TMP_PATH}/resp"
-  resp=$(cat ${TMP_PATH}/resp)
+  resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   [ -z "${resp}" ] && return 1
   BOOTIPWAIT=${resp}
   writeConfigKey "bootipwait" "${BOOTIPWAIT}" "${USER_CONFIG_FILE}"
@@ -2503,9 +2502,9 @@ function formatDisks() {
   fi
   dialog --backtitle "$(backtitle)" --title "Format Disks" \
     --checklist "Select Disks" 0 0 0 --file "${TMP_PATH}/opts" \
-    2>${TMP_PATH}/resp
+    2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
-  resp=$(cat "${TMP_PATH}/resp")
+  resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   [ -z "${resp}" ] && return
   dialog --backtitle "$(backtitle)" --title "Format Disks" \
     --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
@@ -2549,9 +2548,9 @@ function cloneLoader() {
   fi
   dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
     --radiolist "Choose a Destination" 0 0 0 --file "${TMP_PATH}/opts" \
-    2>${TMP_PATH}/resp
+    2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
-  resp=$(cat ${TMP_PATH}/resp)
+  resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   if [ -z "${resp}" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --msgbox "No disk selected!" 0 0
@@ -2759,15 +2758,15 @@ function getbackup() {
 ###############################################################################
 # SataDOM Menu
 function satadomMenu() {
-  rm -f "${TMP_PATH}/opts" >/dev/null
+  rm -f "${TMP_PATH}/opts" 2>/dev/null
   echo "0 \"Create SATA node(ARC)\"" >>"${TMP_PATH}/opts"
   echo "1 \"Native SATA Disk(SYNO)\"" >>"${TMP_PATH}/opts"
   echo "2 \"Fake SATA DOM(Redpill)\"" >>"${TMP_PATH}/opts"
   dialog --backtitle "$(backtitle)" --title "Switch SATA DOM" \
     --default-item "${SATADOM}" --menu  "Choose an Option" 0 0 0 --file "${TMP_PATH}/opts" \
-    2>${TMP_PATH}/resp
+    2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
-  resp=$(cat ${TMP_PATH}/resp)
+  resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   [ -z "${resp}" ] && return
   SATADOM=${resp}
   writeConfigKey "satadom" "${SATADOM}" "${USER_CONFIG_FILE}"
@@ -2795,9 +2794,9 @@ function rebootMenu() {
   echo -e "shell \"System: Shell Cmdline\"" >>"${TMP_PATH}/opts"
   dialog --backtitle "$(backtitle)" --title "Power Menu" \
     --menu  "Choose a Destination" 0 0 0 --file "${TMP_PATH}/opts" \
-    2>${TMP_PATH}/resp
+    2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
-  resp=$(cat ${TMP_PATH}/resp)
+  resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   [ -z "${resp}" ] && return
   REDEST=${resp}
   dialog --backtitle "$(backtitle)" --title "Power Menu" \
@@ -2906,9 +2905,9 @@ function governorSelection () {
   echo -e "powersave \"always run at lowest frequency\"" >>"${TMP_PATH}/opts"
   dialog --backtitle "$(backtitle)" --title "CPU Frequency Scaling" \
     --menu  "Choose a Governor\n* Recommended Option" 0 0 0 --file "${TMP_PATH}/opts" \
-    2>${TMP_PATH}/resp
+    2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
-  resp=$(cat ${TMP_PATH}/resp)
+  resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   [ -z "${resp}" ] && return
   GOVERNOR=${resp}
   writeConfigKey "governor" "${GOVERNOR}" "${USER_CONFIG_FILE}"
@@ -2926,9 +2925,9 @@ function dtsMenu() {
       1 "Upload dts file" \
       2 "Delete dts file" \
       3 "Edit dts file" \
-      2>${TMP_PATH}/resp
+      2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
-    case "$(cat ${TMP_PATH}/resp)" in
+    case "$(cat "${TMP_PATH}/resp" 2>/dev/null)" in
     1)
       if ! tty 2>/dev/null | grep -q "/dev/pts"; then #if ! tty 2>/dev/null | grep -q "/dev/pts" || [ -z "${SSH_TTY}" ]; then
         MSG=""
@@ -3152,7 +3151,7 @@ EOL
     --checklist "Select Bootscreen Informations\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
-  resp=$(cat "${TMP_PATH}/resp")
+  resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   for BOOTSCREEN in dsminfo systeminfo diskinfo hwidinfo dsmlogo; do
     if echo "${resp}" | grep -q "${BOOTSCREEN}"; then
       writeConfigKey "bootscreen.${BOOTSCREEN}" "true" "${USER_CONFIG_FILE}"
@@ -3167,7 +3166,7 @@ EOL
 function getnet() {
   generate_and_write_macs() {
     local patch=$1
-    local macs=($(generateMacAddress "${MODEL}" "${ETHN}" "${patch}"))
+    local macs="$(generateMacAddress "${MODEL}" "${ETHN}" "${patch}")"
 
     for i in $(seq 1 "${ETHN}"); do
       local mac="${macs[$((i - 1))]}"
@@ -3187,7 +3186,7 @@ function getnet() {
           --inputbox "Type a custom Mac for ${N} (Eq. 001132a1b2c3).\nA custom Mac will not be applied to NIC!" 8 50 \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break
-        MAC=$(cat "${TMP_PATH}/resp")
+        MAC="$(cat "${TMP_PATH}/resp")"
         [ -z "${MAC}" ] && MAC=$(readConfigKey "${N}" "${USER_CONFIG_FILE}")
         [ -z "${MAC}" ] && MAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null)"
         MAC=$(echo "${MAC}" | tr '[:upper:]' '[:lower:]')
@@ -3413,7 +3412,7 @@ function show_and_set_remap() {
       5 "Set my own Portmap in Config" \
     2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return 1
-    resp=$(cat "${TMP_PATH}/resp")
+    resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${resp}" ] && return 1
 
     case ${resp} in
