@@ -258,7 +258,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       if [ "${DT}" = "true" ]; then
         write_menu_value "H" "Hotplug/SortDrives" "${HDDSORT}"
       else
-        write_menu_value "h" "USB as Internal" "${USBMOUNT}"
+        write_menu_value "h" "USB Disk(s) as Internal" "${USBMOUNT}"
       fi
     fi
 
