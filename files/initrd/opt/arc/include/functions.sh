@@ -152,12 +152,12 @@ function genRandomValue() {
 # 2 - Arc
 # Returns serial number
 function generateSerial() {
-  PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}" 2>/dev/null | sort -R | tail -1)"
-  MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}" 2>/dev/null | sort -R | tail -1)"
+  PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}" | sort -R | tail -1)"
+  MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}" | sort -R | tail -1)"
   if [ "${2}" = "true" ]; then
     SUFFIX="arc"
   else
-    SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}" 2>/dev/null)"
+    SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}")"
   fi
 
   local SERIAL="${PREFIX:-"0000"}${MIDDLE:-"XXX"}"
@@ -169,7 +169,7 @@ function generateSerial() {
       SERIAL+="$(genRandomLetter)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)"
       ;;
     arc)
-      SERIAL+="$(readConfigKey "${1}.serial" "${S_FILE}" 2>/dev/null)"
+      SERIAL+="$(readConfigKey "${1}.serial" "${S_FILE}")"
       ;;
   esac
 
@@ -187,7 +187,7 @@ function generateSerial() {
 function generateMacAddress() {
   MACPRE="$(readConfigKey "${1}.macpre" "${S_FILE}")"
   if [ "${3}" = "true" ]; then
-    MACSUF="$(readConfigKey "${1}.mac" "${S_FILE}" 2>/dev/null)"
+    MACSUF="$(readConfigKey "${1}.mac" "${S_FILE}")"
   else
     MACSUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
   fi
@@ -217,9 +217,9 @@ function generate_and_write_serial() {
 # 2 - Serial number to test
 # Returns 1 if serial number is invalid
 function validateSerial() {
-  PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}" 2>/dev/null)"
-  MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}" 2>/dev/null)"
-  SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}" 2>/dev/null)"
+  PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}")"
+  MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}")"
+  SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}")"
   P=${2:0:4}
   M=${2:4:3}
   S=${2:7}
@@ -620,8 +620,7 @@ function systemCheck () {
 ###############################################################################
 # Generate HardwareID
 function genHWID () {
-  HWID="$(echo $(dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g' | head -1) $(ifconfig | grep eth | awk '{print $NF}' | sed 's/://g' | sort | head -1) | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
-  echo "${HWID}"
+  echo "$(dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g' | head -1) $(ip link show | grep ether | awk '{print $2}' | sed 's/://g' | sort | head -1)" | sha256sum | awk '{print $1}' | cut -c1-16
 }
 
 ###############################################################################

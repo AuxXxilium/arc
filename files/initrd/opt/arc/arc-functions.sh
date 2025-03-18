@@ -430,7 +430,7 @@ function arcSettings() {
   if [ "${ARC_MODE}" = "config" ]; then
     [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && dialog --backtitle "$(backtitle)" --title "Arc Warning" --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental." 6 70
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
-    MODELNIC="$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)"
+    MODELNIC="$(readConfigKey "${MODEL}.ports" "${S_FILE}")"
     [ ${DEVICENIC} -gt 8 ] && dialog --backtitle "$(backtitle)" --title "Arc Warning" --msgbox "WARN: You have more NIC (${DEVICENIC}) than 8 NIC.\nOnly 8 supported by DSM." 6 60
     [ ${DEVICENIC} -gt ${MODELNIC} ] && [ "${ARC_PATCH}" = "true" ] && dialog --backtitle "$(backtitle)" --title "Arc Warning" --msgbox "WARN: You have more NIC (${DEVICENIC}) than supported by Model (${MODELNIC}).\nOnly the first ${MODELNIC} are used by Arc Patch." 6 80
     [ "${AESSYS}" = "false" ] && dialog --backtitle "$(backtitle)" --title "Arc Warning" --msgbox "WARN: Your System doesn't support Hardware encryption in DSM. (AES)" 5 70
