@@ -318,39 +318,38 @@ function arcPatch() {
   # Read Model Values
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+
+  getserial() {
+    local use_arc_patch=$1
+    SN="$(generateSerial "${MODEL}" "${use_arc_patch}")"
+    writeConfigKey "arc.patch" "${use_arc_patch}" "${USER_CONFIG_FILE}"
+    writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+  }
+
   if [ "${ARC_MODE}" = "automated" ] && [ "${ARC_PATCH}" != "user" ]; then
-    if [ -n "${ARC_CONF}" ]; then
-      generate_and_write_serial "true"
-    else
-      generate_and_write_serial "false"
-    fi
+    getserial "${ARC_CONF:+true}"
   elif [ "${ARC_MODE}" = "config" ]; then
-   if [ -n "${ARC_CONF}" ]; then
+    dialog_options=(
+      2 "Use random SN/Mac (Reduced DSM Features)"
+      3 "Use my own SN/Mac (Be sure your Data is valid)"
+    )
+    [ -n "${ARC_CONF}" ] && dialog_options=(1 "Use Arc Patch (AME, QC, Push Notify and more)" "${dialog_options[@]}")
+
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "SN/Mac Options" \
       --menu "Choose an Option" 7 60 0 \
-      1 "Use Arc Patch (AME, QC, Push Notify and more)" \
-      2 "Use random SN/Mac (Reduced DSM Features)" \
-      3 "Use my own SN/Mac (Be sure your Data is valid)" \
-      2>"${TMP_PATH}/resp"
-    else
-      dialog --clear --backtitle "$(backtitle)" \
-        --nocancel --title "SN/Mac Options" \
-        --menu "Choose an Option" 7 60 0 \
-        2 "Use random SN/Mac (Reduced DSM Features)" \
-        3 "Use my own SN/Mac (Be sure your Data is valid)" \
-        2>"${TMP_PATH}/resp"
-    fi
-    
+      "${dialog_options[@]}" 2>"${TMP_PATH}/resp"
+
     resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${resp}" ] && return 1
-    
+
     case ${resp} in
       1)
-        generate_and_write_serial "true"
+        getserial "true"
         ;;
       2)
-        generate_and_write_serial "false"
+        getserial "false"
         ;;
       3)
         while true; do
@@ -3157,30 +3156,19 @@ EOL
 ###############################################################################
 # Get Network Config for Loader
 function getnet() {
-  generate_and_write_macs() {
-    local patch=$1
-    local macs="$(generateMacAddress "${MODEL}" "${ETHN}" "${patch}")"
-
-    for i in $(seq 1 "${ETHN}"); do
-      local mac="${macs[$((i - 1))]}"
-      writeConfigKey "eth$((i - 1))" "${mac}" "${USER_CONFIG_FILE}"
-    done
-  }
-
-  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
+  ETHX=($(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort))
   MODEL=$(readConfigKey "model" "${USER_CONFIG_FILE}")
-  ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  ETHN=$(echo "${ETHX}" | wc -w)
+  ARC_PATCH=$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")
 
   if [ "${ARC_PATCH}" = "user" ]; then
-    for N in ${ETHX}; do
+    for N in "${ETHX[@]}"; do
       while true; do
         dialog --backtitle "$(backtitle)" --title "Mac Setting" \
           --inputbox "Type a custom Mac for ${N} (Eq. 001132a1b2c3).\nA custom Mac will not be applied to NIC!" 8 50 \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break
         MAC="$(cat "${TMP_PATH}/resp")"
-        [ -z "${MAC}" ] && MAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null)"
+        [ -z "${MAC}" ] && MAC=$(cat "/sys/class/net/${N}/address" 2>/dev/null | sed 's/://g')
         MAC="$(echo "${MAC}" | tr '[:upper:]' '[:lower:]')"
         if [ ${#MAC} -eq 12 ]; then
           dialog --backtitle "$(backtitle)" --title "Mac Setting" --msgbox "Set Mac for ${N} to ${MAC}!" 5 50
@@ -3191,10 +3179,14 @@ function getnet() {
         fi
       done
     done
-  elif [ "${ARC_PATCH}" != "user" ] && [ -n "${ARC_CONF}" ]; then
-    generate_and_write_macs "${ARC_PATCH}"
   else
-    generate_and_write_macs "false"
+    local patch="${ARC_PATCH}"
+    local macs=($(generateMacAddress "${MODEL}" "${#ETHX[@]}" "${patch}"))
+
+    for i in "${!ETHX[@]}"; do
+      local mac="${macs[$i]}"
+      writeConfigKey "${ETHX[$i]}" "${mac}" "${USER_CONFIG_FILE}"
+    done
   fi
 }
 

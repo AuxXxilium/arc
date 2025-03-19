@@ -204,14 +204,6 @@ function generateMacAddress() {
 }
 
 ###############################################################################
-function generate_and_write_serial() {
-  local use_patch=$1
-  SN="$(generateSerial "${MODEL}" "${use_patch}")"
-  writeConfigKey "arc.patch" "${use_patch}" "${USER_CONFIG_FILE}"
-  writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-}
-
-###############################################################################
 # Validate a serial number for a model
 # 1 - Model
 # 2 - Serial number to test
