@@ -612,7 +612,7 @@ function systemCheck () {
 ###############################################################################
 # Generate HardwareID
 function genHWID () {
-  echo "$(dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g' | head -1) $(ip link show | grep ether | awk '{print $2}' | sed 's/://g' | sort | head -1)" | sha256sum | awk '{print $1}' | cut -c1-16
+  echo "$(dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g' | head -1) $(ip link show | grep eth* | awk '{print $2}' | sed 's/://g' | sort | head -1)" | sha256sum | awk '{print $1}' | cut -c1-16
 }
 
 ###############################################################################
