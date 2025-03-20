@@ -204,9 +204,7 @@ fi
 
 CMDLINE["HddHotplug"]="1"
 CMDLINE["vender_format_version"]="2"
-if [ "${ARC_MAC}" = "true" ]; then
-  CMDLINE['skip_vender_mac_interfaces']="$(seq -s, 0 $((${CMDLINE['netif_num']:-1} - 1)))"
-else
+if [ "${ARC_MAC}" != "true" ]; then
   CMDLINE["skip_vender_mac_interfaces"]="0,1,2,3,4,5,6,7"
 fi
 CMDLINE["earlyprintk"]=""
@@ -222,7 +220,6 @@ CMDLINE["panic"]="${KERNELPANIC:-0}"
 # CMDLINE["intremap"]="off"
 # CMDLINE["amd_iommu_intr"]="legacy"
 CMDLINE["pcie_aspm"]="off"
-# CMDLINE["split_lock_detect"]="off"
 
 # if grep -qi "intel" /proc/cpuinfo; then
 #   CMDLINE["intel_pstate"]="disable"
@@ -337,7 +334,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
   if [ ! -f "${TMP_PATH}/.bootlock" ]; then
     touch "${TMP_PATH}/.bootlock"
-    kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" || die "Failed to load DSM Kernel!"
+    kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexec" || die "Failed to load DSM Kernel!"
     [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
   fi
   echo -e "\033[1;37mBooting DSM...\033[0m"
