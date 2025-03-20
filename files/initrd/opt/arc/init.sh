@@ -89,7 +89,7 @@ initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 
 # Sort network interfaces
 if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
-  echo -e "Sorting NIC: \033[1;34mactive\033[0m"
+  echo -e "Sorting NIC: \033[1;34menabled\033[0m"
   _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
   echo
 fi

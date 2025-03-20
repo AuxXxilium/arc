@@ -204,9 +204,7 @@ fi
 
 CMDLINE["HddHotplug"]="1"
 CMDLINE["vender_format_version"]="2"
-if [ "${ARC_MAC}" = "true" ]; then
-  CMDLINE['skip_vender_mac_interfaces']="$(seq -s, 0 $((${CMDLINE['netif_num']:-1} - 1)))"
-else
+if [ "${ARC_MAC}" != "true" ]; then
   CMDLINE["skip_vender_mac_interfaces"]="0,1,2,3,4,5,6,7"
 fi
 CMDLINE["earlyprintk"]=""
@@ -222,7 +220,6 @@ CMDLINE["panic"]="${KERNELPANIC:-0}"
 # CMDLINE["intremap"]="off"
 # CMDLINE["amd_iommu_intr"]="legacy"
 CMDLINE["pcie_aspm"]="off"
-# CMDLINE["split_lock_detect"]="off"
 
 # if grep -qi "intel" /proc/cpuinfo; then
 #   CMDLINE["intel_pstate"]="disable"
@@ -230,7 +227,6 @@ CMDLINE["pcie_aspm"]="off"
 #   CMDLINE["amd_pstate"]="disable"
 # fi
 # CMDLINE["nomodeset"]=""
-CMDLINE['net.ifnames']="0"
 CMDLINE['nowatchdog']=""
 CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
 CMDLINE['mev']="${MACHINE}"
@@ -330,15 +326,19 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
 
   for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
     if [ -w "/dev/${T}" ]; then
-      [ -n "${IPCON}" ] && echo -e "Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes - Network will be unreachable until DSM boot.\033[0m\n" >"/dev/${T}" 2>/dev/null \
-      || echo -e "Try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes - Network will be unreachable until DSM boot.\nNo IP found - DSM will not work properly!\033[0m\n" >"/dev/${T}" 2>/dev/null
+      if [ "${ARC_MAC}" = "true" ]; then
+        [ -n "${IPCON}" ] && echo -e "Apply Mac enabled (IP will not match) - Try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes - Network will be unreachable until DSM boot.\033[0m\n" >"/dev/${T}" 2>/dev/null \
+        || echo -e "Try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes - Network will be unreachable until DSM boot.\nNo IP found - DSM will not work properly!\033[0m\n" >"/dev/${T}" 2>/dev/null
+      else
+        [ -n "${IPCON}" ] && echo -e "Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes - Network will be unreachable until DSM boot.\033[0m\n" >"/dev/${T}" 2>/dev/null \
+        || echo -e "Try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes - Network will be unreachable until DSM boot.\nNo IP found - DSM will not work properly!\033[0m\n" >"/dev/${T}" 2>/dev/null
     fi
   done
 
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
   if [ ! -f "${TMP_PATH}/.bootlock" ]; then
     touch "${TMP_PATH}/.bootlock"
-    kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" || die "Failed to load DSM Kernel!"
+    kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexec" || die "Failed to load DSM Kernel!"
     [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
   fi
   echo -e "\033[1;37mBooting DSM...\033[0m"

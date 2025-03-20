@@ -204,14 +204,6 @@ function generateMacAddress() {
 }
 
 ###############################################################################
-function generate_and_write_serial() {
-  local use_patch=$1
-  SN="$(generateSerial "${MODEL}" "${use_patch}")"
-  writeConfigKey "arc.patch" "${use_patch}" "${USER_CONFIG_FILE}"
-  writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-}
-
-###############################################################################
 # Validate a serial number for a model
 # 1 - Model
 # 2 - Serial number to test
@@ -620,7 +612,7 @@ function systemCheck () {
 ###############################################################################
 # Generate HardwareID
 function genHWID () {
-  echo "$(dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g' | head -1) $(ip link show | grep ether | awk '{print $2}' | sed 's/://g' | sort | head -1)" | sha256sum | awk '{print $1}' | cut -c1-16
+  echo "$(dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g' | head -1) $(ip link show | grep eth* | awk '{print $2}' | sed 's/://g' | sort | head -1)" | sha256sum | awk '{print $1}' | cut -c1-16
 }
 
 ###############################################################################
