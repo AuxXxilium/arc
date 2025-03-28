@@ -43,18 +43,21 @@ function arc_mode() {
 # Check for NIC and IP
 function checkNIC() {
   # Get Amount of NIC
-  ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
+  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
   for N in ${ETHX}; do
     COUNT=0
-    DRIVER=$(basename "$(readlink -f /sys/class/net/${N}/device/driver 2>/dev/null)")
+    DRIVER="$(basename "$(realpath "/sys/class/net/${N}/device/driver" 2>/dev/null)" 2>/dev/null)"
     while true; do
-      CARRIER=$(cat /sys/class/net/${N}/carrier 2>/dev/null)
+      CARRIER=$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)
       if [ "${CARRIER}" = "0" ]; then
         echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
         break
+      elif [ -z "${CARRIER}" ]; then
+        echo -e "\r${DRIVER}: \033[1;37mDOWN\033[0m"
+        break
       fi
       COUNT=$((COUNT + 1))
-      IP=$(getIP "${N}")
+      IP="$(getIP "${N}")"
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} 2>/dev/null | awk '/Speed:/ {print $2}')
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
@@ -63,10 +66,6 @@ function checkNIC() {
           echo -e "\r${DRIVER} (${SPEED}): \033[1;37m${IP}\033[0m"
           [ -z "${IPCON}" ] && IPCON="${IP}"
         fi
-        break
-      fi
-      if [ -z "${CARRIER}" ]; then
-        echo -e "\r${DRIVER}: \033[1;37mDOWN\033[0m"
         break
       fi
       if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
@@ -82,7 +81,7 @@ function checkNIC() {
 ###############################################################################
 # Just show error message and dies
 function die() {
-  echo -e "\033[1;41m$@\033[0m"
+  echo -e "\033[1;41m${*}\033[0m"
   exit 1
 }
 
@@ -153,12 +152,12 @@ function genRandomValue() {
 # 2 - Arc
 # Returns serial number
 function generateSerial() {
-  PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}" 2>/dev/null | sort -R | tail -1)"
-  MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}" 2>/dev/null | sort -R | tail -1)"
+  PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}" | sort -R | tail -1)"
+  MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}" | sort -R | tail -1)"
   if [ "${2}" = "true" ]; then
     SUFFIX="arc"
   else
-    SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}" 2>/dev/null)"
+    SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}")"
   fi
 
   local SERIAL="${PREFIX:-"0000"}${MIDDLE:-"XXX"}"
@@ -170,7 +169,7 @@ function generateSerial() {
       SERIAL+="$(genRandomLetter)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)"
       ;;
     arc)
-      SERIAL+="$(readConfigKey "${1}.serial" "${S_FILE}" 2>/dev/null)"
+      SERIAL+="$(readConfigKey "${1}.serial" "${S_FILE}")"
       ;;
   esac
 
@@ -188,7 +187,7 @@ function generateSerial() {
 function generateMacAddress() {
   MACPRE="$(readConfigKey "${1}.macpre" "${S_FILE}")"
   if [ "${3}" = "true" ]; then
-    MACSUF="$(readConfigKey "${1}.mac" "${S_FILE}" 2>/dev/null)"
+    MACSUF="$(readConfigKey "${1}.mac" "${S_FILE}")"
   else
     MACSUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
   fi
@@ -205,22 +204,14 @@ function generateMacAddress() {
 }
 
 ###############################################################################
-function generate_and_write_serial() {
-  local use_patch=$1
-  SN="$(generateSerial "${MODEL}" "${use_patch}")"
-  writeConfigKey "arc.patch" "${use_patch}" "${USER_CONFIG_FILE}"
-  writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-}
-
-###############################################################################
 # Validate a serial number for a model
 # 1 - Model
 # 2 - Serial number to test
 # Returns 1 if serial number is invalid
 function validateSerial() {
-  PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}" 2>/dev/null)"
-  MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}" 2>/dev/null)"
-  SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}" 2>/dev/null)"
+  PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}")"
+  MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}")"
+  SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}")"
   P=${2:0:4}
   M=${2:4:3}
   S=${2:7}
@@ -300,7 +291,7 @@ function _set_conf_kv() {
 # sort netif busid
 function _sort_netif() {
   local ETHLIST=""
-  local ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth) || true
+  local ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
   for N in ${ETHX}; do
     local MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g; s/.*/\L&/')"
     local BUS="$(ethtool -i ${N} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
@@ -313,8 +304,8 @@ function _sort_netif() {
 
   # sort
   if [ ! "${ETHSEQ}" = "$(seq 0 $((${ETHNUM:0} - 1)))" ]; then
-    /etc/init.d/S09dhcpcd stop >/dev/null 2>&1
-    /etc/init.d/S07network stop >/dev/null 2>&1
+    /etc/init.d/S41dhcpcd stop >/dev/null 2>&1
+    /etc/init.d/S40network stop >/dev/null 2>&1
     for i in $(seq 0 $((${ETHNUM:0} - 1))); do
       ip link set dev eth${i} name tmp${i}
     done
@@ -323,8 +314,8 @@ function _sort_netif() {
       ip link set dev tmp${i} name eth${I}
       I=$((${I} + 1))
     done
-    /etc/init.d/S07network start >/dev/null 2>&1
-    /etc/init.d/S09dhcpcd start >/dev/null 2>&1
+    /etc/init.d/S40network start >/dev/null 2>&1
+    /etc/init.d/S41dhcpcd start >/dev/null 2>&1
   fi
   return 0
 }
@@ -335,9 +326,9 @@ function _sort_netif() {
 function getBus() {
   local BUS=""
   # usb/ata(ide)/sata/sas/spi(scsi)/virtio/mmc/nvme
-  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,TRAN 2>/dev/null | grep "${1} " | awk '{print $2}' | sed 's/^ata$/ide/' | sed 's/^spi$/scsi/') #Spaces are intentional
+  [ -z "${BUS}" ] && BUS="$(lsblk -dpno KNAME,TRAN 2>/dev/null | grep "${1} " | awk '{print $2}' | sed 's/^ata$/ide/' | sed 's/^spi$/scsi/')" #Spaces are intentional
   # usb/scsi(ide/sata/sas)/virtio/mmc/nvme/vmbus/xen(xvd)
-  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | awk '{print $2}' | awk -F':' '{print $(NF-1)}' | sed 's/_host//' | sed 's/^.*xen.*$/xen/') # Spaces are intentional
+  [ -z "${BUS}" ] && BUS="$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | awk '{print $2}' | awk -F':' '{print $(NF-1)}' | sed 's/_host//' | sed 's/^.*xen.*$/xen/')" # Spaces are intentional
   [ -z "${BUS}" ] && BUS="unknown"
   echo "${BUS}"
   return 0
@@ -348,19 +339,12 @@ function getBus() {
 # 1 - ethN
 function getIP() {
   local IP=""
-  MACR="$(cat /sys/class/net/${1}/address 2>/dev/null | sed 's/://g')"
-  IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
-  if [ -n "${IPR}" ]; then
-    IFS='/' read -r -a IPRA <<<"${IPR}"
-    IP=${IPRA[0]}
+  if [ -n "${1}" ] && [ -d "/sys/class/net/${1}" ]; then
+    IP=$(ip route show dev "${1}" 2>/dev/null | sed -n 's/.* via .* src \(.*\) metric .*/\1/p' | head -1)
+    [ -z "${IP}" ] && IP=$(ip addr show "${1}" scope global 2>/dev/null | grep -E "inet .* eth" | awk '{print $2}' | cut -d'/' -f1 | head -1)
   else
-    if [ -n "${1}" ] && [ -d "/sys/class/net/${1}" ]; then
-      IP=$(ip route show dev ${1} 2>/dev/null | sed -n 's/.* via .* src \(.*\) metric .*/\1/p')
-      [ -z "${IP}" ] && IP=$(ip addr show ${1} scope global 2>/dev/null | grep -E "inet .* eth" | awk '{print $2}' | cut -f1 -d'/' | head -1)
-    else
-      IP=$(ip route show 2>/dev/null | sed -n 's/.* via .* src \(.*\) metric .*/\1/p' | head -1)
-      [ -z "${IP}" ] && IP=$(ip addr show scope global 2>/dev/null | grep -E "inet .* eth" | awk '{print $2}' | cut -f1 -d'/' | head -1)
-    fi
+    IP=$(ip route show 2>/dev/null | sed -n 's/.* via .* src \(.*\) metric .*/\1/p' | head -1 | awk '{$1=$1};1')
+    [ -z "${IP}" ] && IP=$(ip addr show scope global 2>/dev/null | grep -E "inet .* eth" | awk '{print $2}' | cut -d'/' -f1 | head -1)
   fi
   echo "${IP}"
   return 0
@@ -512,22 +496,22 @@ function copyDSMFiles() {
 function livepatch() {
   PVALID="false"
   # Patch zImage
-  echo -e "Patching zImage..."
+  echo -e "- patching zImage..."
   if ${ARC_PATH}/zimage-patch.sh; then
-    echo -e "Patching zImage - successful!"
+    echo -e "- patching zImage successful!"
     PVALID="true"
   else
-    echo -e "Patching zImage - failed!"
+    echo -e "- patching zImage failed!"
     PVALID="false"
   fi
   if [ "${PVALID}" = "true" ]; then
     # Patch Ramdisk
-    echo -e "Patching Ramdisk..."
+    echo -e "- patching Ramdisk..."
     if ${ARC_PATH}/ramdisk-patch.sh; then
-      echo -e "Patching Ramdisk - successful!"
+      echo -e "- patching Ramdisk successful!"
       PVALID="true"
     else
-      echo -e "Patching Ramdisk - failed!"
+      echo -e "- patching Ramdisk failed!"
       PVALID="false"
     fi
   fi
@@ -541,7 +525,7 @@ function livepatch() {
     writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
     RAMDISK_HASH="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
     writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
-    echo -e "DSM Image patched!"
+    echo -e "- DSM Image patched!"
   fi
 }
 
@@ -571,15 +555,13 @@ function onlineCheck() {
       writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
     fi
   fi
-  if [ "${ARC_BRANCH}" != "dev" ]; then
-    NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-    if [ -n "${NEWTAG}" ]; then
-      writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
-      updateOffline
-      checkHardwareID
-    else
-      writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
-    fi
+  NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+  if [ -n "${NEWTAG}" ]; then
+    writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
+    updateOffline
+    checkHardwareID
+  else
+    writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
   fi
 }
 
@@ -593,25 +575,20 @@ function systemCheck () {
   RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
   [ -z "${RAMTOTAL}" ] && RAMTOTAL="8"
   # Check for Hypervisor
-  if grep -q "^flags.*hypervisor.*" /proc/cpuinfo; then
-    MACHINE="$(lscpu | grep Hypervisor | awk '{print $3}')" # KVM or VMware
-  else
-    MACHINE="Native"
-  fi
+  MACHINE="$(virt-what 2>/dev/null | head -1)"
+  [ -z "${MACHINE}" ] && MACHINE="physical"
   # Check for AES Support
-  if ! grep -q "^flags.*aes.*" /proc/cpuinfo; then
-    AESSYS="false"
-  else
+  if grep -q "^flags.*aes.*" /proc/cpuinfo; then
     AESSYS="true"
+  else
+    AESSYS="false"
   fi
   # Check for CPU Frequency Scaling
   CPUFREQUENCIES=$(ls -l /sys/devices/system/cpu/cpufreq/*/* 2>/dev/null | wc -l)
   if [ ${CPUFREQUENCIES} -gt 0 ]; then
     CPUFREQ="true"
-    ACPISYS="true"
   else
     CPUFREQ="false"
-    ACPISYS="false"
   fi
   # Check for Arc Patch
   arc_mode
@@ -624,8 +601,10 @@ function systemCheck () {
 ###############################################################################
 # Generate HardwareID
 function genHWID () {
-  HWID="$(echo $(dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g' | head -1) $(ifconfig | grep eth | awk '{print $NF}' | sed 's/://g' | sort | head -1) | sha256sum | awk '{print $1}' | cut -c1-16)" 2>/dev/null
-  echo "${HWID}"
+  CPU_ID="$(dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g' | head -1)"
+  NIC="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort | head -1)"
+  NIC_MAC="$(cat /sys/class/net/${NIC}/address 2>/dev/null | sed 's/://g' | sort | head -1)"
+  echo "${CPU_ID} ${NIC_MAC}" | sha256sum | awk '{print $1}' | cut -c1-16
 }
 
 ###############################################################################
@@ -715,7 +694,6 @@ function readData() {
 
   # Advanced Config
   ARC_OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  ARC_MAC="$(readConfigKey "arc.mac" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
   DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"

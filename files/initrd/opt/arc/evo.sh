@@ -97,7 +97,7 @@ function advancedMenu() {
     RET=$?
     case ${RET} in
       0)
-        resp=$(cat ${TMP_PATH}/resp)
+        resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
         [ -z "${resp}" ] && return
         case ${resp} in
           # DSM Section
@@ -258,7 +258,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       if [ "${DT}" = "true" ]; then
         write_menu_value "H" "Hotplug/SortDrives" "${HDDSORT}"
       else
-        write_menu_value "h" "USB as Internal" "${USBMOUNT}"
+        write_menu_value "h" "USB Disk(s) as Internal" "${USBMOUNT}"
       fi
     fi
 
@@ -293,7 +293,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
     RET=$?
     case ${RET} in
       0)
-        resp=$(cat ${TMP_PATH}/resp)
+        resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
         [ -z "${resp}" ] && return
         case ${resp} in
           0) genHardwareID; NEXT="0" ;;

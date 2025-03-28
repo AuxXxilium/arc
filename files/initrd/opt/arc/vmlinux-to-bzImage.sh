@@ -3,7 +3,7 @@
 
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
-calculate_run_size() {
+calc_run_size() {
   NUM='\([0-9a-fA-F]*[ \t]*\)'
   OUT=$(sed -n 's/^[ \t0-9]*.b[sr][sk][ \t]*'"${NUM}${NUM}${NUM}${NUM}"'.*/0x\1 0x\4/p')
 

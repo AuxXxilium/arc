@@ -19,10 +19,10 @@ BUS=$(getBus "${LOADER_DISK}")
 # Print Title centralized
 clear
 COLUMNS=$(ttysize 2>/dev/null | awk '{print $1}')
-COLUMNS=${COLUMNS:-50}
-BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
+COLUMNS=${COLUMNS:-120}
+BANNER="$(figlet -c -w "${COLUMNS}" "Arc Loader")"
 TITLE="Version:"
-TITLE+=" ${ARC_VERSION} (${ARC_BUILD}) | Branch: ${ARC_BRANCH}"
+TITLE+=" ${ARC_VERSION} (${ARC_BUILD})"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
@@ -40,8 +40,6 @@ initConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.dynamic" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.mac" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
@@ -89,14 +87,14 @@ initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 
 # Sort network interfaces
 if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
-  echo -e "Sorting NIC: \033[1;34mactive\033[0m"
+  echo -e "Sorting NIC: \033[1;34menabled\033[0m"
   _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
   echo
 fi
 # Read/Write IP/Mac to config
-ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
+ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
 for N in ${ETHX}; do
-  MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
+  MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
   IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
   if [ -n "${IPR}" ] && [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
     IFS='/' read -r -a IPRA <<<"${IPR}"
@@ -164,7 +162,7 @@ IPCON=""
 echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
 echo
 
-[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S09dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
+[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
 checkNIC
 echo
 

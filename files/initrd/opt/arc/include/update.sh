@@ -8,11 +8,7 @@ function updateLoader() {
     if [ -z "${TAG}" ]; then
       idx=0
       while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
-        if [ "${ARC_BRANCH}" = "dev" ]; then
-          TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep "dev" | sort -rV | head -1)"
-        else
-          TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-        fi
+        TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
         if [ -n "${TAG}" ]; then
           break
         fi
@@ -21,7 +17,7 @@ function updateLoader() {
       done
     fi
     if [ -n "${TAG}" ]; then
-      export URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}-${ARC_BRANCH}.zip"
+      export URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}.zip"
       export TAG="${TAG}"
       {
         {
@@ -43,7 +39,7 @@ function updateLoader() {
     fi
     if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 300000 ]; then
       if [ "${TAG}" != "zip" ]; then
-        HASHURL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}-${ARC_BRANCH}.hash"
+        HASHURL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}.hash"
         HASH="$(curl -skL "${HASHURL}" | awk '{print $1}')"
         if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
           dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \

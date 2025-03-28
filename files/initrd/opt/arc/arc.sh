@@ -116,7 +116,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
         else
           write_menu_value "h" "USB Disk(s) as Internal" "${USBMOUNT}"
         fi
-        write_menu_value "r" "Apply Fake MAC" "${ARC_MAC}"
       else
         write_menu "5" "\Z1Show Arc DSM Options\Zn"
       fi
@@ -185,7 +184,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
     RET=$?
     case ${RET} in
       0)
-        resp=$(cat ${TMP_PATH}/resp)
+        resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
         [ -z "${resp}" ] && return
         case ${resp} in
           # Main Section
@@ -214,10 +213,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
           g) governorMenu; NEXT="g" ;;
           P) storagepanelMenu; NEXT="P" ;;
           Q) sequentialIOMenu; NEXT="Q" ;;
-          r) [ "${ARC_MAC}" = "true" ] && ARC_MAC='false' || ARC_MAC='true'
-            writeConfigKey "arc.mac" "${ARC_MAC}" "${USER_CONFIG_FILE}"
-            NEXT="r"
-            ;;
           # Boot Section
           6) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
             NEXT="6"

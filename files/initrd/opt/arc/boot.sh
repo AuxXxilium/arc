@@ -18,10 +18,10 @@ BUS=$(getBus "${LOADER_DISK}")
 # Print Title centralized
 clear
 COLUMNS=$(ttysize 2>/dev/null | awk '{print $1}')
-COLUMNS=${COLUMNS:-50}
-BANNER="$(figlet -c -w "$(((${COLUMNS})))" "Arc Loader")"
+COLUMNS=${COLUMNS:-120}
+BANNER="$(figlet -c -w "${COLUMNS}" "Arc Loader")"
 TITLE="Version:"
-TITLE+=" ${ARC_VERSION} (${ARC_BUILD}) | Branch: ${ARC_BRANCH}"
+TITLE+=" ${ARC_VERSION} (${ARC_BUILD})"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
@@ -54,6 +54,8 @@ KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver"
 CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
 RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')"
+MACHINE="$(virt-what 2>/dev/null | head -1)"
+[ -z "$MACHINE" ] && MACHINE="physical"
 DSMINFO="$(readConfigKey "bootscreen.dsminfo" "${USER_CONFIG_FILE}")"
 SYSTEMINFO="$(readConfigKey "bootscreen.systeminfo" "${USER_CONFIG_FILE}")"
 DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
@@ -62,7 +64,6 @@ GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-ARC_MAC="$(readConfigKey "arc.mac" "${USER_CONFIG_FILE}")"
 
 # Build Sanity Check
 [ "${BUILDDONE}" = "false" ] && die "Loader build not completed!"
@@ -97,6 +98,7 @@ if [ "${SYSTEMINFO}" = "true" ]; then
   echo -e "CPU: \033[1;37m${CPU}\033[0m"
   echo -e "Memory: \033[1;37m${RAMTOTAL}GB\033[0m"
   echo -e "Governor: \033[1;37m${GOVERNOR}\033[0m"
+  echo -e "Type: \033[1;37m${MACHINE}\033[0m"
   [ "${USBMOUNT}" = "true" ] && echo -e "USB Mount: \033[1;37m${USBMOUNT}\033[0m"
   echo
 fi
@@ -123,7 +125,7 @@ if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   [ ${HASATA} -eq 0 ] && echo -e "\033[1;31m*** Note: Please insert at least one Sata/SAS/SCSI Disk for System installation, except the Bootloader Disk. ***\033[0m"
 fi
 
-if checkBIOS_VT_d && [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
+if checkBIOS_VT_d && [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
   echo -e "\033[1;31m*** Notice: Disable Intel(VT-d)/AMD(AMD-V) in BIOS/UEFI settings if you encounter a boot failure. ***\033[0m"
   echo
 fi
@@ -147,14 +149,14 @@ CMDLINE["pid"]="${PID:-"0x0001"}"
 CMDLINE["sn"]="${SN}"
 
 # NIC Cmdline
-ETHX=$(ls /sys/class/net/ 2>/dev/null | grep eth)
-ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}" 2>/dev/null)
+ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
+ETHM="$(readConfigKey "${MODEL}.ports" "${S_FILE}")"
 ETHN=$(echo "${ETHX}" | wc -w)
 ETHM=${ETHM:-${ETHN}}
 NIC=0
 for N in ${ETHX}; do
-  MAC=$(readConfigKey "${N}" "${USER_CONFIG_FILE}" 2>/dev/null)
-  [ -z ${MAC} ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null)"
+  MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
+  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null)"
   CMDLINE["mac$((++NIC))"]="${MAC}"
   [ ${NIC} -ge ${ETHM} ] && break
 done
@@ -175,10 +177,10 @@ else
 fi
 
 # DSM Cmdline
-if [ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ]; then
+if [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
   if [ "${BUS}" != "usb" ]; then
-    SZ=$(blockdev --getsz ${LOADER_DISK} 2>/dev/null)
-    SS=$(blockdev --getss ${LOADER_DISK} 2>/dev/null)
+    SZ=$(blockdev --getsz "${LOADER_DISK}" 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
+    SS=$(blockdev --getss "${LOADER_DISK}" 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
     SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
     # Read SATADoM type
     SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
@@ -201,11 +203,7 @@ fi
 
 CMDLINE["HddHotplug"]="1"
 CMDLINE["vender_format_version"]="2"
-if [ "${ARC_MAC}" = "true" ]; then
-  CMDLINE['skip_vender_mac_interfaces']="$(seq -s, 0 $((${CMDLINE['netif_num']:-1} - 1)))"
-else
-  CMDLINE["skip_vender_mac_interfaces"]="0,1,2,3,4,5,6,7"
-fi
+CMDLINE["skip_vender_mac_interfaces"]="0,1,2,3,4,5,6,7"
 CMDLINE["earlyprintk"]=""
 CMDLINE["earlycon"]="uart8250,io,0x3f8,115200n8"
 CMDLINE["console"]="ttyS0,115200n8"
@@ -219,7 +217,6 @@ CMDLINE["panic"]="${KERNELPANIC:-0}"
 # CMDLINE["intremap"]="off"
 # CMDLINE["amd_iommu_intr"]="legacy"
 CMDLINE["pcie_aspm"]="off"
-# CMDLINE["split_lock_detect"]="off"
 
 # if grep -qi "intel" /proc/cpuinfo; then
 #   CMDLINE["intel_pstate"]="disable"
@@ -227,7 +224,9 @@ CMDLINE["pcie_aspm"]="off"
 #   CMDLINE["amd_pstate"]="disable"
 # fi
 # CMDLINE["nomodeset"]=""
+CMDLINE['nowatchdog']=""
 CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
+CMDLINE['mev']="${MACHINE}"
 
 if [ "${USBMOUNT}" = "true" ]; then
   CMDLINE["usbinternal"]=""
@@ -285,7 +284,7 @@ for KEY in "${!CMDLINE[@]}"; do
   CMDLINE_LINE+=" ${KEY}"
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
-CMDLINE_LINE=$(echo "${CMDLINE_LINE}" | sed 's/^ //') # Remove leading space
+CMDLINE_LINE="$(echo "${CMDLINE_LINE}" | sed 's/^ //')" # Remove leading space
 echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
 # Boot
@@ -309,7 +308,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
   fi
 
-  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S09dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
+  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
   IPCON=""
   checkNIC || true
   echo
@@ -318,13 +317,13 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   if [ "${DSMLOGO}" = "true" ] && [ -c "/dev/fb0" ]; then
     [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
     [ -n "${IPCON}" ] && URL="http://${IPCON}:5000" || URL="http://find.synology.com/"
-    python3 ${ARC_PATH}/include/functions.py makeqr -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
+    python3 "${ARC_PATH}/include/functions.py" "makeqr" -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
     [ -f "${TMP_PATH}/qrcode_boot.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_boot.png" >/dev/null 2>/dev/null || true
   fi
 
   for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
     if [ -w "/dev/${T}" ]; then
-      [ -n "${IPCON}" ] && echo -e "Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes - Network will be unreachable until DSM boot.\033[0m\n" >"/dev/${T}" 2>/dev/null \
+      [ -n "${IPCON}" ] && echo -e "FakeMac enabled (IP will not match) - Try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes - Network will be unreachable until DSM boot.\033[0m\n" >"/dev/${T}" 2>/dev/null \
       || echo -e "Try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Wait a few minutes - Network will be unreachable until DSM boot.\nNo IP found - DSM will not work properly!\033[0m\n" >"/dev/${T}" 2>/dev/null
     fi
   done
@@ -332,7 +331,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
   if [ ! -f "${TMP_PATH}/.bootlock" ]; then
     touch "${TMP_PATH}/.bootlock"
-    kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" || die "Failed to load DSM Kernel!"
+    kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" || die "Failed to load DSM Kernel!"
     [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
   fi
   echo -e "\033[1;37mBooting DSM...\033[0m"
