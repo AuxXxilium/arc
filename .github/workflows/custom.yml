@@ -47,7 +47,7 @@ jobs:
               PRODUCTVER = jsonbody.get('version', '')
               ADDONS = jsonbody.get('addons', '')
               KERNEL = jsonbody.get('kernel', '')
-              FORMAT = jsonbody.get('format', ')
+              FORMAT = jsonbody.get('format', '')
           except ValueError as e:
               pass
 
