@@ -41,15 +41,13 @@ jobs:
           ADDONS = ''
           KERNEL = ''
           FORMAT = ''
-          BRANCH = ''
           try:
               jsonbody = json.loads(issuebody)
               MODEL = jsonbody.get('model', '')
               PRODUCTVER = jsonbody.get('version', '')
               ADDONS = jsonbody.get('addons', '')
               KERNEL = jsonbody.get('kernel', '')
-              FORMAT = jsonbody.get('format', '')
-              BRANCH = jsonbody.get('branch', '')
+              FORMAT = jsonbody.get('format', ')
           except ValueError as e:
               pass
 
@@ -58,7 +56,6 @@ jobs:
           set_output("ADDONS", ADDONS)
           set_output("KERNEL", KERNEL)
           set_output("FORMAT", FORMAT)
-          set_output("BRANCH", BRANCH)
 
       # calculates the version number and push
       - name: Calculate Version
@@ -100,7 +97,7 @@ jobs:
           }
 
           TAG="$(curl -m 5 -kL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          curl -kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}-${{ env.BRANCH }}.img.zip" -o "/tmp/arc.img.zip"
+          curl -kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "/tmp/arc.img.zip"
           unzip -o "/tmp/arc.img.zip" -d "/tmp"
 
           echo "Modify Arc Image"
