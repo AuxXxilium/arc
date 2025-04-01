@@ -16,6 +16,7 @@ KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 systemCheck
 readData
 
+
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {

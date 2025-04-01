@@ -576,7 +576,9 @@ function systemCheck () {
   [ -z "${RAMTOTAL}" ] && RAMTOTAL="8"
   # Check for Hypervisor
   MACHINE="$(virt-what 2>/dev/null | head -1)"
-  [ -z "${MACHINE}" ] && MACHINE="physical"
+  if [ -z "${MACHINE}" ]; then
+    MACHINE="physical"
+  fi
   # Check for AES Support
   if grep -q "^flags.*aes.*" /proc/cpuinfo; then
     AESSYS="true"
