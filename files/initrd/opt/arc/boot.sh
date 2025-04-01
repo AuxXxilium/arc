@@ -13,7 +13,7 @@ rm -rf "${PART1_PATH}/logs" >/dev/null 2>&1 || true
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 BUS=$(getBus "${LOADER_DISK}")
-[ -d /sys/firmware/efi ] && EFI="1" || EFI="0"
+EFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)
 
 # Print Title centralized
 clear
@@ -53,8 +53,7 @@ KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver"
 CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
 RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')"
-MACHINE="$(virt-what 2>/dev/null | head -1)"
-[ -z "$MACHINE" ] && MACHINE="physical"
+MACHINE="$(virt-what 2>/dev/null | head -1 || echo "physical")"
 DSMINFO="$(readConfigKey "bootscreen.dsminfo" "${USER_CONFIG_FILE}")"
 SYSTEMINFO="$(readConfigKey "bootscreen.systeminfo" "${USER_CONFIG_FILE}")"
 DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
@@ -124,7 +123,7 @@ if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
 fi
 
 if checkBIOS_VT_d && [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
-  echo -e "\033[1;31m*** Notice: Disable Intel(VT-d)/AMD(AMD-V) in BIOS/UEFI settings if you encounter a boot failure. ***\033[0m"
+  echo -e "\033[1;31m*** Notice: Disable Intel(VT-d)/AMD(AMD-V) in BIOS/UEFI settings if you encounter a boot issues. ***\033[0m"
   echo
 fi
 
@@ -141,7 +140,7 @@ MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 declare -A CMDLINE
 
 # Automated Cmdline
-CMDLINE["syno_hw_version"]="${MODELID}"
+CMDLINE["syno_hw_version"]="${MODELID:-${MODEL}}"
 CMDLINE["vid"]="${VID:-"0x46f4"}"
 CMDLINE["pid"]="${PID:-"0x0001"}"
 CMDLINE["sn"]="${SN}"
@@ -168,11 +167,7 @@ if grep -q "recovery" /proc/cmdline; then
   CMDLINE["force_junior"]=""
   CMDLINE["recovery"]=""
 fi
-if [ ${EFI} -eq 1 ]; then
-  CMDLINE["withefi"]=""
-else
-  CMDLINE["noefi"]=""
-fi
+CMDLINE[$([ ${EFI} -eq 1 ] && echo "withefi" || echo "noefi")]=""
 
 # DSM Cmdline
 if [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
@@ -224,7 +219,7 @@ CMDLINE["pcie_aspm"]="off"
 # CMDLINE["nomodeset"]=""
 CMDLINE['nowatchdog']=""
 CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
-CMDLINE['mev']="${MACHINE}"
+CMDLINE['mev']="${MACHINE:-physical}"
 
 if [ "${USBMOUNT}" = "true" ]; then
   CMDLINE["usbinternal"]=""
