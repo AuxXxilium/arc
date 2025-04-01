@@ -412,7 +412,7 @@ function arcSettings() {
   
   # CPU Frequency Scaling & Governor
   if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
-    if [ "${ARC_MODE}" = "config" ] && [ "${MACHINE}" = "pysical" ]; then
+    if [ "${ARC_MODE}" = "config" ] && [ "${MACHINE}" = "physical" ]; then
       dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
         --infobox "Generating Governor Table..." 3 40
       governorSelection || return
