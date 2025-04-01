@@ -575,7 +575,10 @@ function systemCheck () {
   RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
   [ -z "${RAMTOTAL}" ] && RAMTOTAL="8"
   # Check for Hypervisor
-  MACHINE="$(virt-what 2>/dev/null | head -1 || echo "physical")"
+  MACHINE="$(virt-what 2>/dev/null | head -1)"
+  if [ -z "${MACHINE}" ]; then
+    MACHINE="physical"
+  fi
   # Check for AES Support
   if grep -q "^flags.*aes.*" /proc/cpuinfo; then
     AESSYS="true"
