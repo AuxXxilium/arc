@@ -496,22 +496,22 @@ function copyDSMFiles() {
 function livepatch() {
   PVALID="false"
   # Patch zImage
-  echo -e "- patching zImage..."
+  echo -e ">>> patching zImage..."
   if ${ARC_PATH}/zimage-patch.sh; then
-    echo -e "- patching zImage successful!"
+    echo -e ">>> patching zImage successful!"
     PVALID="true"
   else
-    echo -e "- patching zImage failed!"
+    echo -e ">>> patching zImage failed!"
     PVALID="false"
   fi
   if [ "${PVALID}" = "true" ]; then
     # Patch Ramdisk
-    echo -e "- patching Ramdisk..."
+    echo -e ">>> patching Ramdisk..."
     if ${ARC_PATH}/ramdisk-patch.sh; then
-      echo -e "- patching Ramdisk successful!"
+      echo -e ">>> patching Ramdisk successful!"
       PVALID="true"
     else
-      echo -e "- patching Ramdisk failed!"
+      echo -e ">>> patching Ramdisk failed!"
       PVALID="false"
     fi
   fi
@@ -525,7 +525,7 @@ function livepatch() {
     writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
     RAMDISK_HASH="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
     writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
-    echo -e "- DSM Image patched!"
+    echo -e ">>> DSM Image patched!"
   fi
 }
 
