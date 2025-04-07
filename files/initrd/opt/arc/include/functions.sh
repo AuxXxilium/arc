@@ -604,8 +604,11 @@ function systemCheck () {
 # Generate HardwareID
 function genHWID () {
   CPU_ID="$(dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g' | head -1)"
-  NIC="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort | head -1)"
-  NIC_MAC="$(cat /sys/class/net/${NIC}/address 2>/dev/null | sed 's/://g' | sort | head -1)"
+  NIC_MACS=$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort | while read NIC; do
+    MAC=$(cat "/sys/class/net/${NIC}/address" 2>/dev/null | sed 's/://g')
+    echo "${MAC}"
+  done | sort)
+  NIC_MAC="$(echo "${NIC_MACS}" | head -1)"
   echo "${CPU_ID} ${NIC_MAC}" | sha256sum | awk '{print $1}' | cut -c1-16
 }
 
