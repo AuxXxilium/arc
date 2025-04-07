@@ -2243,6 +2243,8 @@ EOF
   [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Add DSM User successful." || MSG="Add DSM User failed."
   dialog --backtitle "$(backtitle)" --title "Add DSM User" \
     --msgbox "${MSG}" 0 0
+  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   return
 }
 
@@ -2442,6 +2444,8 @@ function disablescheduledTasks {
   fi
   dialog --backtitle "$(backtitle)" --title "Scheduled Tasks" \
     --msgbox "${MSG}" 0 0
+  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   return
 }
 
