@@ -85,6 +85,12 @@ initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "usbmount" "false" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 
+# Check for Addons and remove old ones
+deleteConfigKey "addons.codecpatch" "${USER_CONFIG_FILE}"
+deleteConfigKey "addons.photosfacepatch" "${USER_CONFIG_FILE}"
+deleteConfigKey "addons.sspatch" "${USER_CONFIG_FILE}"
+
+
 # Sort network interfaces
 if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
   echo -e "Sorting NIC: \033[1;34menabled\033[0m"
