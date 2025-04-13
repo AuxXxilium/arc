@@ -88,6 +88,8 @@ initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 # Check for Addons and remove old ones
 deleteConfigKey "addons.codecpatch" "${USER_CONFIG_FILE}"
 deleteConfigKey "addons.photosfacepatch" "${USER_CONFIG_FILE}"
+deleteConfigKey "addons.sspatch" "${USER_CONFIG_FILE}"
+
 
 # Sort network interfaces
 if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
