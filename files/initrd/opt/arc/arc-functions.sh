@@ -25,20 +25,25 @@ function arcModel() {
         ARC=""
         BETA=""
         [ -n "${ARC_CONFM}" ] && ARC="x" || ARC=""
+        KVER5L=(v1000nk epyc7002)
+        IGPU1L=(apollolake geminilake)
+        IGPU2L=(v1000nk epyc7002)
         [ "${DT}" = "true" ] && DTS="x" || DTS=""
         IGPU=""
         IGPUS=""
         IGPUID="$(lspci -nd ::300 2>/dev/null | grep "8086" | cut -d' ' -f3 | sed 's/://g')"
         if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" ${ARC_PATH}/include/i915ids && IGPU="all" || IGPU="epyc7002"; else IGPU=""; fi
-        if [[ "${A}" = "apollolake" || "${A}" = "geminilake" ]] && [ "${IGPU}" = "all" ]; then
+        if echo "${IGPU1L[@]}" | grep -wq "${A}" && [ "${IGPU}" = "all" ]; then
           IGPUS="+"
-        elif [ "${A}" = "epyc7002" ] && [[ "${IGPU}" = "epyc7002" || "${IGPU}" = "all" ]]; then
+        elif echo "${IGPU2L[@]}" | grep -wq "${A}" && [[ "${IGPU}" = "epyc7002" || "${IGPU}" = "all" ]]; then
           IGPUS="x"
         else
           IGPUS=""
         fi
         [ "${DT}" = "true" ] && HBAS="" || HBAS="x"
-        [ "${M}" = "SA6400" ] && HBAS="x"
+        if echo "${KVER5L[@]}" | grep -wq "${A}"; then
+          HBAS="x"
+        fi
         [ "${DT}" = "false" ] && USBS="int/ext" || USBS="ext"
         [[ "${M}" = "DS719+" || "${M}" = "DS918+" || "${M}" = "DS1019+" || "${M}" = "DS1621xs+" || "${M}" = "RS1619xs+" ]] && M_2_CACHE="+" || M_2_CACHE="x"
         [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DVA1622" ]] && M_2_CACHE=""
@@ -50,19 +55,20 @@ function arcModel() {
               COMPATIBLE=0
             fi
           done
-          if [ "${A}" != "epyc7002" ] && [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
-            COMPATIBLE=0
-          fi
-          if [ "${A}" != "epyc7002" ] && [ ${SATACONTROLLER} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
-            COMPATIBLE=0
-          fi
-          if [ "${A}" = "epyc7002" ] && [[ ${SCSICONTROLLER} -ne 0 || ${RAIDCONTROLLER} -ne 0 ]]; then
-            COMPATIBLE=0
-          fi
-          if [ "${A}" != "epyc7002" ] && [ ${NVMEDRIVES} -gt 0 ] && [ "${BUS}" = "usb" ] && [ ${SATADRIVES} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
-            COMPATIBLE=0
-          elif [ "${A}" != "epyc7002" ] && [ ${NVMEDRIVES} -gt 0 ] && [ "${BUS}" = "sata" ] && [ ${SATADRIVES} -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
-            COMPATIBLE=0
+          if ! echo "${KVER5L[@]}" | grep -wq "${A}"; then
+            if [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
+              COMPATIBLE=0
+            elif [ ${SATACONTROLLER:-0} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+              COMPATIBLE=0
+            elif [ ${NVMEDRIVES:-0} -gt 0 ] && [ "${BUS}" = "usb" ] && [ ${SATADRIVES:-0} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+              COMPATIBLE=0
+            elif [ ${NVMEDRIVES:-0} -gt 0 ] && [ "${BUS}" = "sata" ] && [ ${SATADRIVES:-0} -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+              COMPATIBLE=0
+            fi
+          else
+            if [[ ${SCSICONTROLLER:-0} -ne 0 || ${RAIDCONTROLLER:-0} -ne 0 ]]; then
+              COMPATIBLE=0
+            fi
           fi
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
         fi
@@ -253,6 +259,9 @@ function arcVersion() {
     # Check Addons for Platform
     ADDONS="$(readConfigKey "addons" "${USER_CONFIG_FILE}")"
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
+    KVER5L=(v1000nk epyc7002)
+    IGPU1L=(apollolake geminilake)
+    IGPU2L=(v1000nk epyc7002)
     if [ "${ADDONS}" = "{}" ]; then
       initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
@@ -260,7 +269,7 @@ function arcVersion() {
       initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
       if [ ${NVMEDRIVES} -gt 0 ]; then
-        if [ "${PLATFORM}" = "epyc7002" ] && [ ${SATADRIVES} -eq 0 ] && [ ${SASDRIVES} -eq 0 ]; then
+        if echo "${KVER5L[@]}" | grep -wq "${A}" && [ ${SATADRIVES} -eq 0 ] && [ ${SASDRIVES} -eq 0 ]; then
           initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
         elif [ "${DT}" = "true" ]; then
           initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
@@ -273,7 +282,7 @@ function arcVersion() {
       else
         initConfigKey "addons.vmtools" "" "${USER_CONFIG_FILE}"
       fi
-      if [ "${PLATFORM}" = "apollolake" ] || [ "${PLATFORM}" = "geminilake" ]; then
+      if echo "${IGPU1L[@]}" | grep -wq "${A}" && [ "${IGPU}" = "all" ]; then
         if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" ${ARC_PATH}/include/i915ids && IGPU="all" || IGPU="epyc7002"; else IGPU=""; fi
         [ "${IGPU}"="all" ] && initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}" || true
       fi
@@ -3412,7 +3421,7 @@ function getdiskinfo() {
       external_controller=true
     fi
   done
-  writeConfigKey "device.externalcontroller" "${external_controller}" "${USER_CONFIG_FILE}"
+  writeConfigKey "device.externalcontroller" "${external_controller:-0}" "${USER_CONFIG_FILE}"
 }
 
 ###############################################################################
