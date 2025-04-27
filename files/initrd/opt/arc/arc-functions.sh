@@ -279,20 +279,18 @@ function arcVersion() {
         initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
         initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
         initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
-      else
-        initConfigKey "addons.vmtools" "" "${USER_CONFIG_FILE}"
       fi
       if echo "${IGPU1L[@]}" | grep -wq "${A}" && [ "${IGPU}" = "all" ]; then
         if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" ${ARC_PATH}/include/i915ids && IGPU="all" || IGPU="epyc7002"; else IGPU=""; fi
         [ "${IGPU}"="all" ] && initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}" || true
       fi
-      if echo "${PAT_URL}" 2>/dev/null | grep -q "7.2.2"; then
+      if echo "${PAT_URL}" 2>/dev/null | grep -qE "7\.2\.[2-9]|7\.[3-9]\.|[8-9]\."; then
         initConfigKey "addons.allowdowngrade" "" "${USER_CONFIG_FILE}"
       fi
       if [ -n "${ARC_CONF}" ]; then
         initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
       fi
-      if [ ${SASDRIVES} -gt 0 ]; then
+      if [ ${SASDRIVES} -gt 0 ] && [ "${DT}" = "true" ]; then
         initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
       fi
     fi
