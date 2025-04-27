@@ -35,7 +35,7 @@ function arcModel() {
         if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" ${ARC_PATH}/include/i915ids && IGPU="all" || IGPU="epyc7002"; else IGPU=""; fi
         if [[ " ${IGPU1L[@]} " =~ " ${A} " ]] && [ "${IGPU}" = "all" ]; then
           IGPUS="+"
-        elif [[ " ${IGPU2L[@]} " =~ " ${A} " ]] && { [ "${IGPU}" = "epyc7002" ] || [ "${IGPU}" = "all" ]; }; then
+        elif [[ " ${IGPU2L[@]} " =~ " ${A} " ]] && [[ "${IGPU}" = "epyc7002" || "${IGPU}" = "all" ]]; then
           IGPUS="x"
         else
           IGPUS=""
@@ -58,15 +58,15 @@ function arcModel() {
           if ! echo "${KVER5L[@]}" | grep -wq "${A}"; then
             if [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
               COMPATIBLE=0
-            elif [ "${SATACONTROLLER:-0}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+            elif [ ${SATACONTROLLER:-0} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
               COMPATIBLE=0
-            elif [ "${NVMEDRIVES:-0}" -gt 0 ] && [ "${BUS}" = "usb" ] && [ "${SATADRIVES:-0}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+            elif [ ${NVMEDRIVES:-0} -gt 0 ] && [ "${BUS}" = "usb" ] && [ ${SATADRIVES:-0} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
               COMPATIBLE=0
-            elif [ "${NVMEDRIVES:-0}" -gt 0 ] && [ "${BUS}" = "sata" ] && [ "${SATADRIVES:-0}" -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+            elif [ ${NVMEDRIVES:-0} -gt 0 ] && [ "${BUS}" = "sata" ] && [ ${SATADRIVES:-0} -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
               COMPATIBLE=0
             fi
           else
-            if [ "${SCSICONTROLLER:-0}" -ne 0 ] || [ "${RAIDCONTROLLER:-0}" -ne 0 ]; then
+            if [ ${SCSICONTROLLER:-0} -ne 0 ] || [ ${RAIDCONTROLLER:-0} -ne 0 ]; then
               COMPATIBLE=0
             fi
           fi
