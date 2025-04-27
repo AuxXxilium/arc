@@ -33,9 +33,9 @@ function arcModel() {
         IGPUS=""
         IGPUID="$(lspci -nd ::300 2>/dev/null | grep "8086" | cut -d' ' -f3 | sed 's/://g')"
         if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" ${ARC_PATH}/include/i915ids && IGPU="all" || IGPU="epyc7002"; else IGPU=""; fi
-        if echo "${IGPU1L[@]}" | grep -wq "${A}" && [ "${IGPU}" = "all" ]; then
+        if [[ " ${IGPU1L[@]} " =~ " ${A} " ]] && [ "${IGPU}" = "all" ]; then
           IGPUS="+"
-        elif echo "${IGPU2L[@]}" | grep -wq "${A}" && [[ "${IGPU}" = "epyc7002" || "${IGPU}" = "all" ]]; then
+        elif [[ " ${IGPU2L[@]} " =~ " ${A} " ]] && { [ "${IGPU}" = "epyc7002" ] || [ "${IGPU}" = "all" ]; }; then
           IGPUS="x"
         else
           IGPUS=""
@@ -58,15 +58,15 @@ function arcModel() {
           if ! echo "${KVER5L[@]}" | grep -wq "${A}"; then
             if [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
               COMPATIBLE=0
-            elif [ ${SATACONTROLLER:-0} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+            elif [ "${SATACONTROLLER:-0}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
               COMPATIBLE=0
-            elif [ ${NVMEDRIVES:-0} -gt 0 ] && [ "${BUS}" = "usb" ] && [ ${SATADRIVES:-0} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+            elif [ "${NVMEDRIVES:-0}" -gt 0 ] && [ "${BUS}" = "usb" ] && [ "${SATADRIVES:-0}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
               COMPATIBLE=0
-            elif [ ${NVMEDRIVES:-0} -gt 0 ] && [ "${BUS}" = "sata" ] && [ ${SATADRIVES:-0} -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+            elif [ "${NVMEDRIVES:-0}" -gt 0 ] && [ "${BUS}" = "sata" ] && [ "${SATADRIVES:-0}" -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
               COMPATIBLE=0
             fi
           else
-            if [[ ${SCSICONTROLLER:-0} -ne 0 || ${RAIDCONTROLLER:-0} -ne 0 ]]; then
+            if [ "${SCSICONTROLLER:-0}" -ne 0 ] || [ "${RAIDCONTROLLER:-0}" -ne 0 ]; then
               COMPATIBLE=0
             fi
           fi
@@ -280,9 +280,20 @@ function arcVersion() {
         initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
         initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
       fi
-      if echo "${IGPU1L[@]}" | grep -wq "${A}" && [ "${IGPU}" = "all" ]; then
-        if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" ${ARC_PATH}/include/i915ids && IGPU="all" || IGPU="epyc7002"; else IGPU=""; fi
-        [ "${IGPU}"="all" ] && initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}" || true
+      if [[ " ${IGPU1L[@]} " =~ " ${A} " ]] && [ "${IGPU}" = "all" ]; then
+        if [ -n "${IGPUID}" ]; then
+          if grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids"; then
+            IGPU="all"
+          else
+            IGPU="epyc7002"
+          fi
+        else
+          IGPU=""
+        fi
+      
+        if [ "${IGPU}" = "all" ]; then
+          initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
+        fi
       fi
       if echo "${PAT_URL}" 2>/dev/null | grep -qE "7\.2\.[2-9]|7\.[3-9]\.|[8-9]\."; then
         initConfigKey "addons.allowdowngrade" "" "${USER_CONFIG_FILE}"
