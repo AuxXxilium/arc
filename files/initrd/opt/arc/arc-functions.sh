@@ -1625,7 +1625,7 @@ function storageMenu() {
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   # Get Portmap for Loader
   getmap
-  if [ "${DT}" = "false" ] && [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
+  if [ "${DT}" = "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
     getmapSelection
   fi
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -3197,117 +3197,89 @@ function getnet() {
 ###############################################################################
 # Generate PortMap
 function getmap() {
-  # Initialize variables
-  SATADRIVES=0
-  SASDRIVES=0
-  SCSIDRIVES=0
-  RAIDDRIVES=0
-  NVMEDRIVES=0
-  USBDRIVES=0
-  MMCDRIVES=0
+  local SATADRIVES=0 SASDRIVES=0 SCSIDRIVES=0 RAIDDRIVES=0 NVMEDRIVES=0 USBDRIVES=0 MMCDRIVES=0
 
   # Clean old files
   for file in drivesmax drivescon ports remap; do
     > "${TMP_PATH}/${file}"
   done
 
-  # SATA Disks
-  if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
-    DISKIDXMAPIDX=0
-    DISKIDXMAP=""
-    DISKIDXMAPIDXMAX=0
-    DISKIDXMAPMAX=""
+  # Helper function to process PCI devices
+  function process_pci_devices() {
+    local pci_class=$1
+    local device_path=$2
+    local count_var=$3
+    local port_filter=$4
 
-    for PCI in $(lspci -d ::106 2>/dev/null | awk '{print $1}'); do
+    for PCI in $(lspci -d ::${pci_class} 2>/dev/null | awk '{print $1}'); do
+      local PORTS=$(ls -l /sys/class/${device_path} | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      local PORTNUM=$(lsscsi -b | grep -v - | grep "${port_filter}" | wc -l)
+      eval "${count_var}=$(( ${!count_var} + PORTNUM ))"
+    done
+  }
+
+  # Process SATA Disks
+  if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
+    let DISKIDXMAPIDX=0
+    DISKIDXMAP=""
+    let DISKIDXMAPIDXMAX=0
+    DISKIDXMAPMAX=""
+    for PCI in $(lspci -d ::106 | awk '{print $1}'); do
       NUMPORTS=0
       CONPORTS=0
+      unset HOSTPORTS
       declare -A HOSTPORTS
-
       while read -r LINE; do
-        PORT=$(echo ${LINE} | grep -o 'ata[0-9]*' | sed 's/ata//')
-        HOSTPORTS[${PORT}]=$(echo ${LINE} | grep -o 'host[0-9]*$')
+        ATAPORT="$(echo "${LINE}" | grep -o 'ata[0-9]*')"
+        PORT=$(echo "${ATAPORT}" | sed 's/ata//')
+        HOSTPORTS["${PORT}"]=$(echo "${LINE}" | grep -o 'host[0-9]*$')
       done < <(ls -l /sys/class/scsi_host | grep -F "${PCI}")
-
-      for PORT in $(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n); do
-        ATTACH=$(ls -l /sys/block | grep -F -q "${PCI}/ata${PORT}" && echo 1 || echo 0)
+      while read -r PORT; do
+        ls -l /sys/block | grep -F -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
         PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
-        DUMMY=$([ ${PCMD} = 0 ] && echo 1 || echo 0)
-
-        [ ${ATTACH} = 1 ] && CONPORTS=$((CONPORTS + 1)) && echo $((PORT - 1)) >>"${TMP_PATH}/ports"
-        NUMPORTS=$((NUMPORTS + 1))
-      done
-
-      NUMPORTS=$((NUMPORTS > 8 ? 8 : NUMPORTS))
-      CONPORTS=$((CONPORTS > 8 ? 8 : CONPORTS))
-
+        [ ${PCMD} = 0 ] && DUMMY=1 || DUMMY=0
+        [[ ${ATTACH} = 1 && ${DUMMY} = 0 ]] && CONPORTS="$((${CONPORTS} + 1))" && echo "$((${PORT} - 1))" >>"${TMP_PATH}/ports"
+        NUMPORTS=$((${NUMPORTS} + 1))
+      done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
+      [ ${NUMPORTS} -gt 8 ] && NUMPORTS=8
+      [ ${CONPORTS} -gt 8 ] && CONPORTS=8
       echo -n "${NUMPORTS}" >>"${TMP_PATH}/drivesmax"
       echo -n "${CONPORTS}" >>"${TMP_PATH}/drivescon"
-      DISKIDXMAP+=$(printf "%02x" $DISKIDXMAPIDX)
-      DISKIDXMAPIDX=$((DISKIDXMAPIDX + CONPORTS))
-      DISKIDXMAPMAX+=$(printf "%02x" $DISKIDXMAPIDXMAX)
-      DISKIDXMAPIDXMAX=$((DISKIDXMAPIDXMAX + NUMPORTS))
-      SATADRIVES=$((SATADRIVES + CONPORTS))
+      DISKIDXMAP=$DISKIDXMAP$(printf "%02x" $DISKIDXMAPIDX)
+      let DISKIDXMAPIDX=$DISKIDXMAPIDX+$CONPORTS
+      DISKIDXMAPMAX=$DISKIDXMAPMAX$(printf "%02x" $DISKIDXMAPIDXMAX)
+      let DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS
+      SATADRIVES=$((${SATADRIVES} + ${CONPORTS}))
     done
   fi
 
-  # SAS Disks
-  if [ $(lspci -d ::107 2>/dev/null | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::107 2>/dev/null | awk '{print $1}'); do
-      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
-      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
-      SASDRIVES=$((SASDRIVES + PORTNUM))
-    done
-  fi
+  # Process Other Disk Types
+  process_pci_devices 107 "scsi_host" SASDRIVES "\[${PORT}:"
+  process_pci_devices 100 "scsi_host" SCSIDRIVES "\[${PORT}:"
+  process_pci_devices 104 "scsi_host" RAIDDRIVES "\[${PORT}:"
+  process_pci_devices c03 "scsi_host" USBDRIVES "\[${PORT}:"
 
-  # SCSI Disks
-  if [ $(lspci -d ::100 2>/dev/null | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::100 2>/dev/null | awk '{print $1}'); do
-      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
-      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
-      SCSIDRIVES=$((SCSIDRIVES + PORTNUM))
-    done
-  fi
-
-  # RAID Disks
-  if [ $(lspci -d ::104 2>/dev/null | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::104 2>/dev/null | awk '{print $1}'); do
-      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
-      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
-      RAIDDRIVES=$((RAIDDRIVES + PORTNUM))
-    done
-  fi
-
-  # NVMe Disks
+  # Process NVMe Disks
   if [ $(ls -l /sys/class/nvme 2>/dev/null | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::108 2>/dev/null | awk '{print $1}'); do
-      PORTNUM=$(ls -l /sys/class/nvme | grep "${PCI}" | wc -l 2>/dev/null)
+      local PORTNUM=$(ls -l /sys/class/nvme | grep "${PCI}" | wc -l 2>/dev/null)
       [ ${PORTNUM} -eq 0 ] && continue
       NVMEDRIVES=$((NVMEDRIVES + PORTNUM))
     done
   fi
 
-  # USB Disks
-  if [ $(ls -l /sys/class/scsi_host 2>/dev/null | grep usb | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::c03 2>/dev/null | awk '{print $1}'); do
-      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
-      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
-      [ ${PORTNUM} -eq 0 ] && continue
-      USBDRIVES=$((USBDRIVES + PORTNUM))
-    done
-  fi
-
-  # MMC Disks
+  # Process MMC Disks
   if [ $(ls -l /sys/block/mmc* 2>/dev/null | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::805 | awk '{print $1}'); do
-      PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l 2>/dev/null)
+    for PCI in $(lspci -d ::805 2>/dev/null | awk '{print $1}'); do
+      local PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l 2>/dev/null)
       [ ${PORTNUM} -eq 0 ] && continue
       MMCDRIVES=$((MMCDRIVES + PORTNUM))
     done
   fi
 
-  # Disk Count for MaxDisks
-  DRIVES=$((${SATADRIVES} + ${SASDRIVES} + ${SCSIDRIVES} + ${RAIDDRIVES} + ${USBDRIVES} + ${MMCDRIVES} + ${NVMEDRIVES}))
-  HARDDRIVES=$((${SATADRIVES} + ${SASDRIVES} + ${SCSIDRIVES} + ${RAIDDRIVES} + ${NVMEDRIVES}))
+  # Write Disk Counts to Config
+  local DRIVES=$((SATADRIVES + SASDRIVES + SCSIDRIVES + RAIDDRIVES + USBDRIVES + MMCDRIVES + NVMEDRIVES))
+  local HARDDRIVES=$((SATADRIVES + SASDRIVES + SCSIDRIVES + RAIDDRIVES + NVMEDRIVES))
   writeConfigKey "device.satadrives" "${SATADRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.sasdrives" "${SASDRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.scsidrives" "${SCSIDRIVES}" "${USER_CONFIG_FILE}"
@@ -3338,6 +3310,27 @@ function getmap() {
 ###############################################################################
 # Select PortMap
 function getmapSelection() {
+  show_and_set_remap() {
+    dialog --backtitle "$(backtitle)" --title "Sata Portmap" \
+      --menu "Choose a Portmap for Sata!?\n* Recommended Option" 8 60 0 \
+      1 "DiskIdxMap: Active Ports ${REMAP1}" \
+      2 "DiskIdxMap: Max Ports ${REMAP2}" \
+      3 "SataRemap: Remove empty Ports ${REMAP3}" \
+      4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
+      5 "Set my own Portmap in Config" \
+    2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && return 1
+    resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+    [ -z "${resp}" ] && return 1
+
+    case ${resp} in
+      1) writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}" ;;
+      2) writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}" ;;
+      3) writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}" ;;
+      4) writeConfigKey "arc.remap" "ahci" "${USER_CONFIG_FILE}" ;;
+      5) writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}" ;;
+    esac
+  }
   # Compute PortMap Options
   SATAPORTMAPMAX=$(awk '{print $1}' "${TMP_PATH}/drivesmax")
   SATAPORTMAP=$(awk '{print $1}' "${TMP_PATH}/drivescon")
@@ -3388,30 +3381,6 @@ function getmapSelection() {
       ;;
   esac
   return
-}
-
-###############################################################################
-# Choose PortMap
-function show_and_set_remap() {
-    dialog --backtitle "$(backtitle)" --title "Sata Portmap" \
-      --menu "Choose a Portmap for Sata!?\n* Recommended Option" 8 60 0 \
-      1 "DiskIdxMap: Active Ports ${REMAP1}" \
-      2 "DiskIdxMap: Max Ports ${REMAP2}" \
-      3 "SataRemap: Remove empty Ports ${REMAP3}" \
-      4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
-      5 "Set my own Portmap in Config" \
-    2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
-    resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
-    [ -z "${resp}" ] && return 1
-
-    case ${resp} in
-      1) writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}" ;;
-      2) writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}" ;;
-      3) writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}" ;;
-      4) writeConfigKey "arc.remap" "ahci" "${USER_CONFIG_FILE}" ;;
-      5) writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}" ;;
-    esac
 }
 
 ###############################################################################
