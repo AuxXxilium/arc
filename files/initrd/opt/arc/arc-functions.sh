@@ -3197,14 +3197,22 @@ function getnet() {
 ###############################################################################
 # Generate PortMap
 function getmap() {
-  # Sata Disks
+  # Initialize variables
   SATADRIVES=0
-  if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
-    # Clean old files
-    for file in drivesmax drivescon ports remap; do
-      > "${TMP_PATH}/${file}"
-    done
+  SASDRIVES=0
+  SCSIDRIVES=0
+  RAIDDRIVES=0
+  NVMEDRIVES=0
+  USBDRIVES=0
+  MMCDRIVES=0
 
+  # Clean old files
+  for file in drivesmax drivescon ports remap; do
+    > "${TMP_PATH}/${file}"
+  done
+
+  # SATA Disks
+  if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
     DISKIDXMAPIDX=0
     DISKIDXMAP=""
     DISKIDXMAPIDXMAX=0
@@ -3243,7 +3251,6 @@ function getmap() {
   fi
 
   # SAS Disks
-  SASDRIVES=0
   if [ $(lspci -d ::107 2>/dev/null | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::107 2>/dev/null | awk '{print $1}'); do
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
@@ -3253,7 +3260,6 @@ function getmap() {
   fi
 
   # SCSI Disks
-  SCSIDRIVES=0
   if [ $(lspci -d ::100 2>/dev/null | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::100 2>/dev/null | awk '{print $1}'); do
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
@@ -3262,8 +3268,7 @@ function getmap() {
     done
   fi
 
-  # Raid Disks
-  RAIDDRIVES=0
+  # RAID Disks
   if [ $(lspci -d ::104 2>/dev/null | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::104 2>/dev/null | awk '{print $1}'); do
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
@@ -3273,7 +3278,6 @@ function getmap() {
   fi
 
   # NVMe Disks
-  NVMEDRIVES=0
   if [ $(ls -l /sys/class/nvme 2>/dev/null | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::108 2>/dev/null | awk '{print $1}'); do
       PORTNUM=$(ls -l /sys/class/nvme | grep "${PCI}" | wc -l 2>/dev/null)
@@ -3283,7 +3287,6 @@ function getmap() {
   fi
 
   # USB Disks
-  USBDRIVES=0
   if [ $(ls -l /sys/class/scsi_host 2>/dev/null | grep usb | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::c03 2>/dev/null | awk '{print $1}'); do
       PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
@@ -3294,7 +3297,6 @@ function getmap() {
   fi
 
   # MMC Disks
-  MMCDRIVES=0
   if [ $(ls -l /sys/block/mmc* 2>/dev/null | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::805 | awk '{print $1}'); do
       PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l 2>/dev/null)
@@ -3316,7 +3318,7 @@ function getmap() {
   writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.harddrives" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
 
-  # Check for Sata Boot
+  # Check for SATA Boot
   if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
     LASTDRIVE=0
     while read -r D; do
@@ -3430,7 +3432,7 @@ function getdiskinfo() {
       external_controller=true
     fi
   done
-  writeConfigKey "device.externalcontroller" "${external_controller:-0}" "${USER_CONFIG_FILE}"
+  writeConfigKey "device.externalcontroller" "${external_controller}" "${USER_CONFIG_FILE}"
 }
 
 ###############################################################################
