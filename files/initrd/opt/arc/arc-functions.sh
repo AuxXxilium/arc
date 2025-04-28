@@ -268,7 +268,7 @@ function arcVersion() {
       initConfigKey "addons.hdddb" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
-      if [ ${NVMEDRIVES} -gt 0 ]; then
+      if [ ${NVMEDRIVES:-0} -gt 0 ]; then
         if echo "${KVER5L[@]}" | grep -wq "${A}" && [ ${SATADRIVES} -eq 0 ] && [ ${SASDRIVES} -eq 0 ]; then
           initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
         elif [ "${DT}" = "true" ]; then
@@ -303,7 +303,7 @@ function arcVersion() {
       if [ -n "${ARC_CONF}" ]; then
         initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
       fi
-      if [ ${SASDRIVES} -gt 0 ] && [ "${DT}" = "true" ]; then
+      if [ ${SASDRIVES:-0} -gt 0 ] && [ "${DT}" = "true" ]; then
         initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
       fi
     fi
@@ -419,7 +419,7 @@ function arcSettings() {
     --infobox "Generating Storage Map..." 3 40
   sleep 2
   getmap || return
-  if [ "${DT}" = "false" ] && [ ${SATADRIVES} -gt 0 ]; then
+  if [ "${DT}" = "false" ] && [ ${SATADRIVES:-0} -gt 0 ]; then
     getmapSelection || return
   fi
   
