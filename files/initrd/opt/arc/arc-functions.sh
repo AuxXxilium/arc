@@ -279,6 +279,8 @@ function arcVersion() {
         initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
         initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
         initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
+      else
+        initConfigKey "addons.vmtools" "" "${USER_CONFIG_FILE}"
       fi
       if [[ " ${IGPU1L[@]} " =~ " ${A} " ]] && [ "${IGPU}" = "all" ]; then
         if [ -n "${IGPUID}" ]; then
