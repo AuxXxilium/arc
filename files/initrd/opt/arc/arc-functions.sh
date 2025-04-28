@@ -2914,7 +2914,8 @@ function governorSelection () {
 function dtsMenu() {
   # Loop menu
   while true; do
-    [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && CUSTOMDTS="Yes" || CUSTOMDTS="No"
+    [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && mv -f "${USER_UP_PATH}/${MODEL}.dts" "${USER_UP_PATH}/model.dts"
+    [ -f "${USER_UP_PATH}/model.dts" ] && CUSTOMDTS="Yes" || CUSTOMDTS="No"
     dialog --backtitle "$(backtitle)" --title "Custom DTS" \
       --default-item ${NEXT} --menu "Choose an option" 0 0 0 \
       % "Custom dts: ${CUSTOMDTS}" \
@@ -2927,8 +2928,8 @@ function dtsMenu() {
     1)
       if ! tty 2>/dev/null | grep -q "/dev/pts"; then #if ! tty 2>/dev/null | grep -q "/dev/pts" || [ -z "${SSH_TTY}" ]; then
         MSG=""
-        MSG+="This feature is only available when accessed via ssh (Requires a terminal that supports ZModem protocol).\n"
-        MSG+="$(printf "Or upload the dts file to %s via DUFS, Will be automatically imported when building." "${USER_UP_PATH}/${MODEL}.dts")"
+        MSG+="This feature is only available when accessed via ssh (Requires a terminal that supports ZModem protocol)\n"
+        MSG+="or upload the dts file to ${USER_UP_PATH}/model.dts via Webfilemananger, will be automatically imported at building."
         dialog --backtitle "$(backtitle)" --title "Custom DTS" \
           --msgbox "${MSG}" 0 0
         return
@@ -2954,7 +2955,7 @@ function dtsMenu() {
           --msgbox "Not a valid dts file, please try again!\n\n$(cat "${DTC_ERRLOG}")" 0 0
       else
         [ -d "{USER_UP_PATH}" ] || mkdir -p "${USER_UP_PATH}"
-        cp -f "${USER_FILE}" "${USER_UP_PATH}/${MODEL}.dts"
+        cp -f "${USER_FILE}" "${USER_UP_PATH}/model.dts"
         dialog --backtitle "$(backtitle)" --title "$(TEXT "Custom DTS")" \
           --msgbox "A valid dts file, Automatically import at compile time." 0 0
       fi
@@ -2963,14 +2964,14 @@ function dtsMenu() {
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       ;;
     2)
-      rm -f "${USER_UP_PATH}/${MODEL}.dts"
+      rm -f "${USER_UP_PATH}/model.dts"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       ;;
     3)
       rm -rf "${TMP_PATH}/model.dts"
-      if [ -f "${USER_UP_PATH}/${MODEL}.dts" ]; then
-        cp -f "${USER_UP_PATH}/${MODEL}.dts" "${TMP_PATH}/model.dts"
+      if [ -f "${USER_UP_PATH}/model.dts" ]; then
+        cp -f "${USER_UP_PATH}/model.dts" "${TMP_PATH}/model.dts"
       else
         ODTB="$(ls ${PART2_PATH}/*.dtb 2>/dev/null | head -1)"
         if [ -f "${ODTB}" ]; then
@@ -2992,7 +2993,7 @@ function dtsMenu() {
             --msgbox "Not a valid dts file, please try again!\n\n$(cat "${DTC_ERRLOG}")" 0 0
         else
           mkdir -p "${USER_UP_PATH}"
-          cp -f "${TMP_PATH}/modelEdit.dts" "${USER_UP_PATH}/${MODEL}.dts"
+          cp -f "${TMP_PATH}/modelEdit.dts" "${USER_UP_PATH}/model.dts"
           rm -r "${TMP_PATH}/model.dts" "${TMP_PATH}/modelEdit.dts"
           writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
           BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"

@@ -262,27 +262,6 @@ if [ "${DT}" = "true" ]; then
     fi
   fi
 fi
-for P in v1000nk; do
-  if [ "${PLATFORM}" = "${P}" ]; then
-    if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "virtio"; then
-      [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
-      CMDLINE['modprobe.blacklist']+="virtio,virtio_blk,virtio_console,virtio_input,virtio_mmio,virtio_net,virtio_pci,virtio_ring,virtio_scsi"
-    fi
-    if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "e1000"; then
-      [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
-      CMDLINE['modprobe.blacklist']+="e1000,e1000e"
-    fi
-    if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
-      [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
-      CMDLINE['modprobe.blacklist']+="mpt3sas"
-    fi
-    if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "megaraid_sas"; then
-      [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
-      CMDLINE['modprobe.blacklist']+="megaraid_sas"
-    fi
-    break
-  fi
-done
 # CMDLINE['kvm.ignore_msrs']="1"
 # CMDLINE['kvm.report_ignored_msrs']="0"
 
