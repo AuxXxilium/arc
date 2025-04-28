@@ -143,10 +143,10 @@ MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 declare -A CMDLINE
 
 # Automated Cmdline
-CMDLINE["syno_hw_version"]="${MODELID:-${MODEL}}"
-CMDLINE["vid"]="${VID:-"0x46f4"}"
-CMDLINE["pid"]="${PID:-"0x0001"}"
-CMDLINE["sn"]="${SN}"
+CMDLINE['syno_hw_version']="${MODELID:-${MODEL}}"
+CMDLINE['vid']="${VID:-"0x46f4"}"
+CMDLINE['pid']="${PID:-"0x0001"}"
+CMDLINE['sn']="${SN}"
 
 # NIC Cmdline
 ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
@@ -160,17 +160,19 @@ for N in ${ETHX}; do
   CMDLINE["mac$((++NIC))"]="${MAC}"
   [ ${NIC} -ge ${ETHM} ] && break
 done
-CMDLINE["netif_num"]="${NIC}"
+CMDLINE['netif_num']="${NIC}"
 
 # Boot Cmdline
-if grep -q "force_junior" /proc/cmdline; then
-  CMDLINE["force_junior"]=""
-fi
-if grep -q "recovery" /proc/cmdline; then
-  CMDLINE["force_junior"]=""
-  CMDLINE["recovery"]=""
-fi
-CMDLINE[$([ ${EFI} -eq 1 ] && echo "withefi" || echo "noefi")]=""
+for BM in force_junior recovery; do
+  if grep -q "${BM}" /proc/cmdline; then
+    CMDLINE["${BM}"]=""
+  fi
+done
+if [ ${EFI} -eq 1 ]; then
+   CMDLINE['withefi']=""
+ else
+   CMDLINE['noefi']=""
+ fi
 
 # DSM Cmdline
 if [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
@@ -180,88 +182,95 @@ if [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
     SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
     # Read SATADoM type
     SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
-    CMDLINE["synoboot_satadom"]="${SATADOM:-2}"
-    CMDLINE["dom_szmax"]="${SIZE}"
+    CMDLINE['synoboot_satadom']="${SATADOM:-2}"
+    CMDLINE['dom_szmax']="${SIZE}"
   fi
-  CMDLINE["elevator"]="elevator"
+  CMDLINE['elevator']="elevator"
 else
-  CMDLINE["split_lock_detect"]="off"
+  CMDLINE['split_lock_detect']="off"
+  # CMDLINE['module.sig_enforce']="0"
+  # CMDLINE['loadpin.enforce']="0"
 fi
 
 if [ "${DT}" = "true" ]; then
-  CMDLINE["syno_ttyS0"]="serial,0x3f8"
-  CMDLINE["syno_ttyS1"]="serial,0x2f8"
+  CMDLINE['syno_ttyS0']="serial,0x3f8"
+  CMDLINE['syno_ttyS1']="serial,0x2f8"
 else
-  CMDLINE["SMBusHddDynamicPower"]="1"
-  CMDLINE["syno_hdd_detect"]="0"
-  CMDLINE["syno_hdd_powerup_seq"]="0"
+  CMDLINE['SMBusHddDynamicPower']="1"
+  CMDLINE['syno_hdd_detect']="0"
+  CMDLINE['syno_hdd_powerup_seq']="0"
 fi
 
-CMDLINE["HddHotplug"]="1"
-CMDLINE["vender_format_version"]="2"
-CMDLINE["skip_vender_mac_interfaces"]="0,1,2,3,4,5,6,7"
-CMDLINE["earlyprintk"]=""
-CMDLINE["earlycon"]="uart8250,io,0x3f8,115200n8"
-CMDLINE["console"]="ttyS0,115200n8"
-CMDLINE["consoleblank"]="600"
-# CMDLINE["no_console_suspend"]="1"
-CMDLINE["root"]="/dev/md0"
-CMDLINE["loglevel"]="15"
-CMDLINE["log_buf_len"]="32M"
-CMDLINE["rootwait"]=""
-CMDLINE["panic"]="${KERNELPANIC:-0}"
-# CMDLINE["intremap"]="off"
-# CMDLINE["amd_iommu_intr"]="legacy"
-CMDLINE["pcie_aspm"]="off"
+CMDLINE['HddHotplug']="1"
+CMDLINE['vender_format_version']="2"
+CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
+CMDLINE['earlyprintk']=""
+CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
+CMDLINE['console']="ttyS0,115200n8"
+CMDLINE['consoleblank']="600"
+# CMDLINE['no_console_suspend']="1"
+CMDLINE['root']="/dev/md0"
+CMDLINE['loglevel']="15"
+CMDLINE['log_buf_len']="32M"
+CMDLINE['rootwait']=""
+CMDLINE['panic']="${KERNELPANIC:-0}"
+# CMDLINE['intremap']="off"
+# CMDLINE['amd_iommu_intr']="legacy"
+CMDLINE['pcie_aspm']="off"
 
 # if grep -qi "intel" /proc/cpuinfo; then
-#   CMDLINE["intel_pstate"]="disable"
+#   CMDLINE['intel_pstate']="disable"
 # elif grep -qi "amd" /proc/cpuinfo; then
-#   CMDLINE["amd_pstate"]="disable"
+#   CMDLINE['amd_pstate']="disable"
 # fi
-# CMDLINE["nomodeset"]=""
+# CMDLINE['nomodeset']=""
 CMDLINE['nowatchdog']=""
-CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
+CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 CMDLINE['mev']="${MACHINE:-physical}"
 
 if [ "${USBMOUNT}" = "true" ]; then
-  CMDLINE["usbinternal"]=""
+  CMDLINE['usbinternal']=""
 fi
 
 if [ -n "${GOVERNOR}" ]; then
-  CMDLINE["governor"]="${GOVERNOR}"
+  CMDLINE['governor']="${GOVERNOR}"
 fi
 
-if echo "apollolake geminilake purley" | grep -wq "${PLATFORM}"; then
-  CMDLINE["nox2apic"]=""
-fi
+for P in apollolake geminilake purley; do
+  if [ "${PLATFORM}" = "${P}" ]; then
+    CMDLINE['nox2apic']=""
+    break
+  fi
+done
 
-# Disabled for now
 # if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
-#   if ! echo "${CMDLINE["modprobe.blacklist"]}" | grep -q "sdhci"; then
-#     [ ! "${CMDLINE["modprobe.blacklist"]}" = "" ] && CMDLINE["modprobe.blacklist"]+=","
-#     CMDLINE["modprobe.blacklist"]+="sdhci,sdhci_pci,sdhci_acpi"
+#   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "sdhci"; then
+#     [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+#     CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
 #   fi
 # fi
-if [ "${DT}" = "true" ] && ! echo "epyc7002 purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
-  if ! echo "${CMDLINE["modprobe.blacklist"]}" | grep -q "mpt3sas"; then
-    [ ! "${CMDLINE["modprobe.blacklist"]}" = "" ] && CMDLINE["modprobe.blacklist"]+=","
-    CMDLINE["modprobe.blacklist"]+="mpt3sas"
+if [ "${DT}" = "true" ]; then
+  for P in v1000nk epyc7002 purley broadwellnkv2; do
+    if [ "${PLATFORM}" = "${P}" ]; then
+      break
+    fi
+  done
+  if [ "${PLATFORM}" != "${P}" ]; then
+    if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
+      [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+      CMDLINE['modprobe.blacklist']+="mpt3sas"
+    fi
   fi
-#else
-#  CMDLINE["scsi_mod.scan"]="sync"  # TODO: redpill panic of vmware scsi? (add to cmdline)
 fi
+# CMDLINE['kvm.ignore_msrs']="1"
+# CMDLINE['kvm.report_ignored_msrs']="0"
 
-# CMDLINE["kvm.ignore_msrs"]="1"
-# CMDLINE["kvm.report_ignored_msrs"]="0"
-
-if echo "apollolake geminilake" | grep -wq "${PLATFORM}"; then
-  CMDLINE["intel_iommu"]="igfx_off"
-fi
-
-if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
-  CMDLINE["SASmodel"]="1"
-fi
+for P in apollolake geminilake; do
+  if [ "${PLATFORM}" = "${P}" ]; then
+    CMDLINE['SASmodel']="1"
+    break
+  fi
+done
 
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do

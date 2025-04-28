@@ -25,20 +25,25 @@ function arcModel() {
         ARC=""
         BETA=""
         [ -n "${ARC_CONFM}" ] && ARC="x" || ARC=""
+        KVER5L=(v1000nk epyc7002)
+        IGPU1L=(apollolake geminilake)
+        IGPU2L=(v1000nk epyc7002)
         [ "${DT}" = "true" ] && DTS="x" || DTS=""
         IGPU=""
         IGPUS=""
         IGPUID="$(lspci -nd ::300 2>/dev/null | grep "8086" | cut -d' ' -f3 | sed 's/://g')"
         if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" ${ARC_PATH}/include/i915ids && IGPU="all" || IGPU="epyc7002"; else IGPU=""; fi
-        if [[ "${A}" = "apollolake" || "${A}" = "geminilake" ]] && [ "${IGPU}" = "all" ]; then
+        if [[ " ${IGPU1L[@]} " =~ " ${A} " ]] && [ "${IGPU}" = "all" ]; then
           IGPUS="+"
-        elif [ "${A}" = "epyc7002" ] && [[ "${IGPU}" = "epyc7002" || "${IGPU}" = "all" ]]; then
+        elif [[ " ${IGPU2L[@]} " =~ " ${A} " ]] && [[ "${IGPU}" = "epyc7002" || "${IGPU}" = "all" ]]; then
           IGPUS="x"
         else
           IGPUS=""
         fi
         [ "${DT}" = "true" ] && HBAS="" || HBAS="x"
-        [ "${M}" = "SA6400" ] && HBAS="x"
+        if echo "${KVER5L[@]}" | grep -wq "${A}"; then
+          HBAS="x"
+        fi
         [ "${DT}" = "false" ] && USBS="int/ext" || USBS="ext"
         [[ "${M}" = "DS719+" || "${M}" = "DS918+" || "${M}" = "DS1019+" || "${M}" = "DS1621xs+" || "${M}" = "RS1619xs+" ]] && M_2_CACHE="+" || M_2_CACHE="x"
         [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DVA1622" ]] && M_2_CACHE=""
@@ -50,19 +55,20 @@ function arcModel() {
               COMPATIBLE=0
             fi
           done
-          if [ "${A}" != "epyc7002" ] && [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
-            COMPATIBLE=0
-          fi
-          if [ "${A}" != "epyc7002" ] && [ ${SATACONTROLLER} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
-            COMPATIBLE=0
-          fi
-          if [ "${A}" = "epyc7002" ] && [[ ${SCSICONTROLLER} -ne 0 || ${RAIDCONTROLLER} -ne 0 ]]; then
-            COMPATIBLE=0
-          fi
-          if [ "${A}" != "epyc7002" ] && [ ${NVMEDRIVES} -gt 0 ] && [ "${BUS}" = "usb" ] && [ ${SATADRIVES} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
-            COMPATIBLE=0
-          elif [ "${A}" != "epyc7002" ] && [ ${NVMEDRIVES} -gt 0 ] && [ "${BUS}" = "sata" ] && [ ${SATADRIVES} -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
-            COMPATIBLE=0
+          if ! echo "${KVER5L[@]}" | grep -wq "${A}"; then
+            if [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
+              COMPATIBLE=0
+            elif [ ${SATACONTROLLER:-0} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+              COMPATIBLE=0
+            elif [ ${NVMEDRIVES:-0} -gt 0 ] && [ "${BUS}" = "usb" ] && [ ${SATADRIVES:-0} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+              COMPATIBLE=0
+            elif [ ${NVMEDRIVES:-0} -gt 0 ] && [ "${BUS}" = "sata" ] && [ ${SATADRIVES:-0} -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+              COMPATIBLE=0
+            fi
+          else
+            if [ ${SCSICONTROLLER:-0} -ne 0 ] || [ ${RAIDCONTROLLER:-0} -ne 0 ]; then
+              COMPATIBLE=0
+            fi
           fi
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
         fi
@@ -253,14 +259,17 @@ function arcVersion() {
     # Check Addons for Platform
     ADDONS="$(readConfigKey "addons" "${USER_CONFIG_FILE}")"
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
+    KVER5L=(v1000nk epyc7002)
+    IGPU1L=(apollolake geminilake)
+    IGPU2L=(v1000nk epyc7002)
     if [ "${ADDONS}" = "{}" ]; then
       initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.hdddb" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
-      if [ ${NVMEDRIVES} -gt 0 ]; then
-        if [ "${PLATFORM}" = "epyc7002" ] && [ ${SATADRIVES} -eq 0 ] && [ ${SASDRIVES} -eq 0 ]; then
+      if [ ${NVMEDRIVES:-0} -gt 0 ]; then
+        if echo "${KVER5L[@]}" | grep -wq "${A}" && [ ${SATADRIVES} -eq 0 ] && [ ${SASDRIVES} -eq 0 ]; then
           initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
         elif [ "${DT}" = "true" ]; then
           initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
@@ -273,17 +282,28 @@ function arcVersion() {
       else
         initConfigKey "addons.vmtools" "" "${USER_CONFIG_FILE}"
       fi
-      if [ "${PLATFORM}" = "apollolake" ] || [ "${PLATFORM}" = "geminilake" ]; then
-        if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" ${ARC_PATH}/include/i915ids && IGPU="all" || IGPU="epyc7002"; else IGPU=""; fi
-        [ "${IGPU}"="all" ] && initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}" || true
+      if [[ " ${IGPU1L[@]} " =~ " ${A} " ]] && [ "${IGPU}" = "all" ]; then
+        if [ -n "${IGPUID}" ]; then
+          if grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids"; then
+            IGPU="all"
+          else
+            IGPU="epyc7002"
+          fi
+        else
+          IGPU=""
+        fi
+      
+        if [ "${IGPU}" = "all" ]; then
+          initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
+        fi
       fi
-      if echo "${PAT_URL}" 2>/dev/null | grep -q "7.2.2"; then
+      if echo "${PAT_URL}" 2>/dev/null | grep -qE "7\.2\.[2-9]|7\.[3-9]\.|[8-9]\."; then
         initConfigKey "addons.allowdowngrade" "" "${USER_CONFIG_FILE}"
       fi
       if [ -n "${ARC_CONF}" ]; then
         initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
       fi
-      if [ ${SASDRIVES} -gt 0 ]; then
+      if [ ${SASDRIVES:-0} -gt 0 ] && [ "${DT}" = "true" ]; then
         initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
       fi
     fi
@@ -399,7 +419,7 @@ function arcSettings() {
     --infobox "Generating Storage Map..." 3 40
   sleep 2
   getmap || return
-  if [ "${DT}" = "false" ] && [ ${SATADRIVES} -gt 0 ]; then
+  if [ "${DT}" = "false" ] && [ ${SATADRIVES:-0} -gt 0 ]; then
     getmapSelection || return
   fi
   
@@ -1607,7 +1627,7 @@ function storageMenu() {
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   # Get Portmap for Loader
   getmap
-  if [ "${DT}" = "false" ] && [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
+  if [ "${DT}" = "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
     getmapSelection
   fi
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -2896,7 +2916,8 @@ function governorSelection () {
 function dtsMenu() {
   # Loop menu
   while true; do
-    [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && CUSTOMDTS="Yes" || CUSTOMDTS="No"
+    [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && mv -f "${USER_UP_PATH}/${MODEL}.dts" "${USER_UP_PATH}/model.dts"
+    [ -f "${USER_UP_PATH}/model.dts" ] && CUSTOMDTS="Yes" || CUSTOMDTS="No"
     dialog --backtitle "$(backtitle)" --title "Custom DTS" \
       --default-item ${NEXT} --menu "Choose an option" 0 0 0 \
       % "Custom dts: ${CUSTOMDTS}" \
@@ -2909,8 +2930,8 @@ function dtsMenu() {
     1)
       if ! tty 2>/dev/null | grep -q "/dev/pts"; then #if ! tty 2>/dev/null | grep -q "/dev/pts" || [ -z "${SSH_TTY}" ]; then
         MSG=""
-        MSG+="This feature is only available when accessed via ssh (Requires a terminal that supports ZModem protocol).\n"
-        MSG+="$(printf "Or upload the dts file to %s via DUFS, Will be automatically imported when building." "${USER_UP_PATH}/${MODEL}.dts")"
+        MSG+="This feature is only available when accessed via ssh (Requires a terminal that supports ZModem protocol)\n"
+        MSG+="or upload the dts file to ${USER_UP_PATH}/model.dts via Webfilemananger, will be automatically imported at building."
         dialog --backtitle "$(backtitle)" --title "Custom DTS" \
           --msgbox "${MSG}" 0 0
         return
@@ -2936,7 +2957,7 @@ function dtsMenu() {
           --msgbox "Not a valid dts file, please try again!\n\n$(cat "${DTC_ERRLOG}")" 0 0
       else
         [ -d "{USER_UP_PATH}" ] || mkdir -p "${USER_UP_PATH}"
-        cp -f "${USER_FILE}" "${USER_UP_PATH}/${MODEL}.dts"
+        cp -f "${USER_FILE}" "${USER_UP_PATH}/model.dts"
         dialog --backtitle "$(backtitle)" --title "$(TEXT "Custom DTS")" \
           --msgbox "A valid dts file, Automatically import at compile time." 0 0
       fi
@@ -2945,14 +2966,14 @@ function dtsMenu() {
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       ;;
     2)
-      rm -f "${USER_UP_PATH}/${MODEL}.dts"
+      rm -f "${USER_UP_PATH}/model.dts"
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       ;;
     3)
       rm -rf "${TMP_PATH}/model.dts"
-      if [ -f "${USER_UP_PATH}/${MODEL}.dts" ]; then
-        cp -f "${USER_UP_PATH}/${MODEL}.dts" "${TMP_PATH}/model.dts"
+      if [ -f "${USER_UP_PATH}/model.dts" ]; then
+        cp -f "${USER_UP_PATH}/model.dts" "${TMP_PATH}/model.dts"
       else
         ODTB="$(ls ${PART2_PATH}/*.dtb 2>/dev/null | head -1)"
         if [ -f "${ODTB}" ]; then
@@ -2974,7 +2995,7 @@ function dtsMenu() {
             --msgbox "Not a valid dts file, please try again!\n\n$(cat "${DTC_ERRLOG}")" 0 0
         else
           mkdir -p "${USER_UP_PATH}"
-          cp -f "${TMP_PATH}/modelEdit.dts" "${USER_UP_PATH}/${MODEL}.dts"
+          cp -f "${TMP_PATH}/modelEdit.dts" "${USER_UP_PATH}/model.dts"
           rm -r "${TMP_PATH}/model.dts" "${TMP_PATH}/modelEdit.dts"
           writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
           BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -3179,115 +3200,89 @@ function getnet() {
 ###############################################################################
 # Generate PortMap
 function getmap() {
-  # Sata Disks
-  SATADRIVES=0
-  if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
-    # Clean old files
-    for file in drivesmax drivescon ports remap; do
-      > "${TMP_PATH}/${file}"
+  local SATADRIVES=0 SASDRIVES=0 SCSIDRIVES=0 RAIDDRIVES=0 NVMEDRIVES=0 USBDRIVES=0 MMCDRIVES=0
+
+  # Clean old files
+  for file in drivesmax drivescon ports remap; do
+    > "${TMP_PATH}/${file}"
+  done
+
+  # Helper function to process PCI devices
+  function process_pci_devices() {
+    local pci_class=$1
+    local device_path=$2
+    local count_var=$3
+    local port_filter=$4
+
+    for PCI in $(lspci -d ::${pci_class} 2>/dev/null | awk '{print $1}'); do
+      local PORTS=$(ls -l /sys/class/${device_path} | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      local PORTNUM=$(lsscsi -b | grep -v - | grep "${port_filter}" | wc -l)
+      eval "${count_var}=$(( ${!count_var} + PORTNUM ))"
     done
+  }
 
-    DISKIDXMAPIDX=0
+  # Process SATA Disks
+  if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
+    let DISKIDXMAPIDX=0
     DISKIDXMAP=""
-    DISKIDXMAPIDXMAX=0
+    let DISKIDXMAPIDXMAX=0
     DISKIDXMAPMAX=""
-
-    for PCI in $(lspci -d ::106 2>/dev/null | awk '{print $1}'); do
+    for PCI in $(lspci -d ::106 | awk '{print $1}'); do
       NUMPORTS=0
       CONPORTS=0
+      unset HOSTPORTS
       declare -A HOSTPORTS
-
       while read -r LINE; do
-        PORT=$(echo ${LINE} | grep -o 'ata[0-9]*' | sed 's/ata//')
-        HOSTPORTS[${PORT}]=$(echo ${LINE} | grep -o 'host[0-9]*$')
+        ATAPORT="$(echo "${LINE}" | grep -o 'ata[0-9]*')"
+        PORT=$(echo "${ATAPORT}" | sed 's/ata//')
+        HOSTPORTS["${PORT}"]=$(echo "${LINE}" | grep -o 'host[0-9]*$')
       done < <(ls -l /sys/class/scsi_host | grep -F "${PCI}")
-
-      for PORT in $(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n); do
-        ATTACH=$(ls -l /sys/block | grep -F -q "${PCI}/ata${PORT}" && echo 1 || echo 0)
+      while read -r PORT; do
+        ls -l /sys/block | grep -F -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
         PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
-        DUMMY=$([ ${PCMD} = 0 ] && echo 1 || echo 0)
-
-        [ ${ATTACH} = 1 ] && CONPORTS=$((CONPORTS + 1)) && echo $((PORT - 1)) >>"${TMP_PATH}/ports"
-        NUMPORTS=$((NUMPORTS + 1))
-      done
-
-      NUMPORTS=$((NUMPORTS > 8 ? 8 : NUMPORTS))
-      CONPORTS=$((CONPORTS > 8 ? 8 : CONPORTS))
-
+        [ ${PCMD} = 0 ] && DUMMY=1 || DUMMY=0
+        [[ ${ATTACH} = 1 && ${DUMMY} = 0 ]] && CONPORTS="$((${CONPORTS} + 1))" && echo "$((${PORT} - 1))" >>"${TMP_PATH}/ports"
+        NUMPORTS=$((${NUMPORTS} + 1))
+      done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
+      [ ${NUMPORTS} -gt 8 ] && NUMPORTS=8
+      [ ${CONPORTS} -gt 8 ] && CONPORTS=8
       echo -n "${NUMPORTS}" >>"${TMP_PATH}/drivesmax"
       echo -n "${CONPORTS}" >>"${TMP_PATH}/drivescon"
-      DISKIDXMAP+=$(printf "%02x" $DISKIDXMAPIDX)
-      DISKIDXMAPIDX=$((DISKIDXMAPIDX + CONPORTS))
-      DISKIDXMAPMAX+=$(printf "%02x" $DISKIDXMAPIDXMAX)
-      DISKIDXMAPIDXMAX=$((DISKIDXMAPIDXMAX + NUMPORTS))
-      SATADRIVES=$((SATADRIVES + CONPORTS))
+      DISKIDXMAP=$DISKIDXMAP$(printf "%02x" $DISKIDXMAPIDX)
+      let DISKIDXMAPIDX=$DISKIDXMAPIDX+$CONPORTS
+      DISKIDXMAPMAX=$DISKIDXMAPMAX$(printf "%02x" $DISKIDXMAPIDXMAX)
+      let DISKIDXMAPIDXMAX=$DISKIDXMAPIDXMAX+$NUMPORTS
+      SATADRIVES=$((${SATADRIVES} + ${CONPORTS}))
     done
   fi
 
-  # SAS Disks
-  SASDRIVES=0
-  if [ $(lspci -d ::107 2>/dev/null | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::107 2>/dev/null | awk '{print $1}'); do
-      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
-      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
-      SASDRIVES=$((SASDRIVES + PORTNUM))
-    done
-  fi
+  # Process Other Disk Types
+  process_pci_devices 107 "scsi_host" SASDRIVES "\[${PORT}:"
+  process_pci_devices 100 "scsi_host" SCSIDRIVES "\[${PORT}:"
+  process_pci_devices 104 "scsi_host" RAIDDRIVES "\[${PORT}:"
+  process_pci_devices c03 "scsi_host" USBDRIVES "\[${PORT}:"
 
-  # SCSI Disks
-  SCSIDRIVES=0
-  if [ $(lspci -d ::100 2>/dev/null | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::100 2>/dev/null | awk '{print $1}'); do
-      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
-      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
-      SCSIDRIVES=$((SCSIDRIVES + PORTNUM))
-    done
-  fi
-
-  # Raid Disks
-  RAIDDRIVES=0
-  if [ $(lspci -d ::104 2>/dev/null | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::104 2>/dev/null | awk '{print $1}'); do
-      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
-      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
-      RAIDDRIVES=$((RAIDDRIVES + PORTNUM))
-    done
-  fi
-
-  # NVMe Disks
-  NVMEDRIVES=0
+  # Process NVMe Disks
   if [ $(ls -l /sys/class/nvme 2>/dev/null | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::108 2>/dev/null | awk '{print $1}'); do
-      PORTNUM=$(ls -l /sys/class/nvme | grep "${PCI}" | wc -l 2>/dev/null)
+      local PORTNUM=$(ls -l /sys/class/nvme | grep "${PCI}" | wc -l 2>/dev/null)
       [ ${PORTNUM} -eq 0 ] && continue
       NVMEDRIVES=$((NVMEDRIVES + PORTNUM))
     done
   fi
 
-  # USB Disks
-  USBDRIVES=0
-  if [ $(ls -l /sys/class/scsi_host 2>/dev/null | grep usb | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::c03 2>/dev/null | awk '{print $1}'); do
-      PORT=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n 2>/dev/null)
-      PORTNUM=$(lsscsi -b | grep -v - | grep "\[${PORT}:" | wc -l)
-      [ ${PORTNUM} -eq 0 ] && continue
-      USBDRIVES=$((USBDRIVES + PORTNUM))
-    done
-  fi
-
-  # MMC Disks
-  MMCDRIVES=0
+  # Process MMC Disks
   if [ $(ls -l /sys/block/mmc* 2>/dev/null | wc -l) -gt 0 ]; then
-    for PCI in $(lspci -d ::805 | awk '{print $1}'); do
-      PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l 2>/dev/null)
+    for PCI in $(lspci -d ::805 2>/dev/null | awk '{print $1}'); do
+      local PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l 2>/dev/null)
       [ ${PORTNUM} -eq 0 ] && continue
       MMCDRIVES=$((MMCDRIVES + PORTNUM))
     done
   fi
 
-  # Disk Count for MaxDisks
-  DRIVES=$((${SATADRIVES} + ${SASDRIVES} + ${SCSIDRIVES} + ${RAIDDRIVES} + ${USBDRIVES} + ${MMCDRIVES} + ${NVMEDRIVES}))
-  HARDDRIVES=$((${SATADRIVES} + ${SASDRIVES} + ${SCSIDRIVES} + ${RAIDDRIVES} + ${NVMEDRIVES}))
+  # Write Disk Counts to Config
+  local DRIVES=$((SATADRIVES + SASDRIVES + SCSIDRIVES + RAIDDRIVES + USBDRIVES + MMCDRIVES + NVMEDRIVES))
+  local HARDDRIVES=$((SATADRIVES + SASDRIVES + SCSIDRIVES + RAIDDRIVES + NVMEDRIVES))
   writeConfigKey "device.satadrives" "${SATADRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.sasdrives" "${SASDRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.scsidrives" "${SCSIDRIVES}" "${USER_CONFIG_FILE}"
@@ -3298,7 +3293,7 @@ function getmap() {
   writeConfigKey "device.drives" "${DRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.harddrives" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
 
-  # Check for Sata Boot
+  # Check for SATA Boot
   if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
     LASTDRIVE=0
     while read -r D; do
@@ -3318,6 +3313,27 @@ function getmap() {
 ###############################################################################
 # Select PortMap
 function getmapSelection() {
+  show_and_set_remap() {
+    dialog --backtitle "$(backtitle)" --title "Sata Portmap" \
+      --menu "Choose a Portmap for Sata!?\n* Recommended Option" 8 60 0 \
+      1 "DiskIdxMap: Active Ports ${REMAP1}" \
+      2 "DiskIdxMap: Max Ports ${REMAP2}" \
+      3 "SataRemap: Remove empty Ports ${REMAP3}" \
+      4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
+      5 "Set my own Portmap in Config" \
+    2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && return 1
+    resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+    [ -z "${resp}" ] && return 1
+
+    case ${resp} in
+      1) writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}" ;;
+      2) writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}" ;;
+      3) writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}" ;;
+      4) writeConfigKey "arc.remap" "ahci" "${USER_CONFIG_FILE}" ;;
+      5) writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}" ;;
+    esac
+  }
   # Compute PortMap Options
   SATAPORTMAPMAX=$(awk '{print $1}' "${TMP_PATH}/drivesmax")
   SATAPORTMAP=$(awk '{print $1}' "${TMP_PATH}/drivescon")
@@ -3368,30 +3384,6 @@ function getmapSelection() {
       ;;
   esac
   return
-}
-
-###############################################################################
-# Choose PortMap
-function show_and_set_remap() {
-    dialog --backtitle "$(backtitle)" --title "Sata Portmap" \
-      --menu "Choose a Portmap for Sata!?\n* Recommended Option" 8 60 0 \
-      1 "DiskIdxMap: Active Ports ${REMAP1}" \
-      2 "DiskIdxMap: Max Ports ${REMAP2}" \
-      3 "SataRemap: Remove empty Ports ${REMAP3}" \
-      4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
-      5 "Set my own Portmap in Config" \
-    2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
-    resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
-    [ -z "${resp}" ] && return 1
-
-    case ${resp} in
-      1) writeConfigKey "arc.remap" "acports" "${USER_CONFIG_FILE}" ;;
-      2) writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}" ;;
-      3) writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}" ;;
-      4) writeConfigKey "arc.remap" "ahci" "${USER_CONFIG_FILE}" ;;
-      5) writeConfigKey "arc.remap" "user" "${USER_CONFIG_FILE}" ;;
-    esac
 }
 
 ###############################################################################

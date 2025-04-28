@@ -184,6 +184,7 @@ for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloa
   if [ "${ADDON}" = "disks" ]; then
     HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
     PARAMS="${HDDSORT}"
+    [ -f "${USER_UP_PATH}/model.dts" ] && cp -f "${USER_UP_PATH}/model.dts" "${RAMDISK_PATH}/addons/model.dts"
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   fi
   installAddon "${ADDON}" "${PLATFORM}" || exit 1
@@ -238,8 +239,10 @@ for N in $(seq 0 7); do
 done
 
 # SA6400 patches
-if [ "${PLATFORM}" = "epyc7002" ]; then
-  echo -e ">>> apply Epyc7002 Fixes"
+if [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
+   :
+ else
+  echo -e ">>> apply Linux 5.x Fixes"
   sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
 fi

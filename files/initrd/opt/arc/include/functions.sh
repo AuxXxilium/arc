@@ -682,9 +682,9 @@ function readData() {
   MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   if [ -n "${MODEL}" ]; then
+    PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
     DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-    PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   fi
 
   # Get Arc Data from Config
@@ -714,29 +714,6 @@ function readData() {
   RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
   SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
   REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
-  if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
-    PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
-    DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
-  elif [ "${REMAP}" = "remap" ]; then
-    PORTMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
-  elif [ "${REMAP}" = "ahci" ]; then
-    PORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
-  elif [ "${REMAP}" = "user" ]; then
-    PORTMAP="user"
-  fi
-  if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
-    SPORTMAP="SataPortMap: ${PORTMAP} | ${DISKMAP}"
-  elif [ "${REMAP}" = "remap" ]; then
-    SPORTMAP="SataRemap: ${PORTMAP}"
-  elif [ "${REMAP}" = "ahci" ]; then
-    SPORTMAP="AHCIRemap: ${PORTMAP}"
-  elif [ "${REMAP}" = "user" ]; then
-    SPORTMAP=""
-    [ -n "${PORTMAP}" ] && SPORTMAP+="SataPortMap: ${PORTMAP}"
-    [ -n "${DISKMAP}" ] && SPORTMAP+="DiskIdxMap: ${DISKMAP}"
-    [ -n "${PORTREMAP}" ] && SPORTMAP+="SataRemap: ${PORTREMAP}"
-    [ -n "${AHCIPORTREMAP}" ] && SPORTMAP+="AHCIRemap: ${AHCIPORTREMAP}"
-  fi
 
   # Get Config/Build Status
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
