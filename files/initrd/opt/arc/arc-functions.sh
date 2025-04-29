@@ -176,7 +176,7 @@ function arcVersion() {
       PVS="$(readConfigEntriesArray "${PLATFORM}.\"${MODEL}\"" "${D_FILE}" | sort -r)"
       echo -n "" >"${TMP_PATH}/versions"
       while read -r V; do
-        if [ "${V:0:3}" != "${PRODUCTVER}" ] || [ "${V}" = "${PREV}" ]; then
+        if [ "${V}" = "${PREV}" ]; then
           continue
         else
           echo "${V}" >>"${TMP_PATH}/versions"

@@ -206,7 +206,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
             ;;
           b) addonMenu; NEXT="b" ;;
           d) modulesMenu; NEXT="d" ;;
-          e) ONLYVERSION="true" && arcVersion; NEXT="e" ;;
+          e) ONLYVERSION="true" && writeConfigKey "productver" "" "${USER_CONFIG_FILE}" && arcVersion; NEXT="e" ;;
           p) ONLYPATCH="true" && checkHardwareID && arcPatch; NEXT="p" ;;
           S) storageMenu; NEXT="S" ;;
           o) dtsMenu; NEXT="o" ;;
