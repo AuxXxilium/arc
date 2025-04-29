@@ -1,14 +1,3 @@
-#!/usr/bin/env bash
-
-###############################################################################
-# Overlay Init Section
-[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
-
-. "${ARC_PATH}/include/functions.sh"
-. "${ARC_PATH}/include/addons.sh"
-. "${ARC_PATH}/include/modules.sh"
-. "${ARC_PATH}/include/update.sh"
-
 ###############################################################################
 # Model Selection
 function arcModel() {
@@ -36,9 +25,6 @@ function arcModel() {
         ARC=""
         BETA=""
         [ -n "${ARC_CONFM}" ] && ARC="x" || ARC=""
-        KVER5L=(v1000nk epyc7002)
-        IGPU1L=(apollolake geminilake)
-        IGPU2L=(v1000nk epyc7002)
         [ "${DT}" = "true" ] && DTS="x" || DTS=""
         IGPU=""
         IGPUS=""
@@ -56,7 +42,7 @@ function arcModel() {
           HBAS="x"
         fi
         [ "${DT}" = "false" ] && USBS="int/ext" || USBS="ext"
-        [[ "${M}" = "DS719+" || "${M}" = "DS918+" || "${M}" = "DS1019+" || "${M}" = "DS1621xs+" || "${M}" = "RS1619xs+" ]] && M_2_CACHE="+" || M_2_CACHE="x"
+        is_in_array "${M}" "${NVMECACHE[@]}" && M_2_CACHE="+" || M_2_CACHE="x"
         [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DVA1622" ]] && M_2_CACHE=""
         [[ "${M}" = "DS220+" || "${M}" = "DS224+" || "${DT}" = "false" ]] && M_2_STORAGE="" || M_2_STORAGE="+"
         # Check id model is compatible with CPU
@@ -66,18 +52,15 @@ function arcModel() {
               COMPATIBLE=0
             fi
           done
-          if ! echo "${KVER5L[@]}" | grep -wq "${A}" && [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
+          if ! is_in_array "${A}" "${KVER5L[@]}" && { 
+              ([ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]) || 
+              ([ "${SATACONTROLLER}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]) || 
+              ([ ${NVMEDRIVES} -gt 0 ] && [ "${BUS}" = "usb" ] && [ ${SATADRIVES} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]) || 
+              ([ ${NVMEDRIVES} -gt 0 ] && [ "${BUS}" = "sata" ] && [ ${SATADRIVES} -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ])
+            }; then
             COMPATIBLE=0
           fi
-          if ! echo "${KVER5L[@]}" | grep -wq "${A}" && [ ${SATACONTROLLER} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
-            COMPATIBLE=0
-          fi
-          if echo "${KVER5L[@]}" | grep -wq "${A}" && [[ ${SCSICONTROLLER} -ne 0 || ${RAIDCONTROLLER} -ne 0 ]]; then
-            COMPATIBLE=0
-          fi
-          if ! echo "${KVER5L[@]}" | grep -wq "${A}" && [ ${NVMEDRIVES} -gt 0 ] && [ "${BUS}" = "usb" ] && [ ${SATADRIVES} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
-            COMPATIBLE=0
-          elif ! echo "${KVER5L[@]}" | grep -wq "${A}" && [ ${NVMEDRIVES} -gt 0 ] && [ "${BUS}" = "sata" ] && [ ${SATADRIVES} -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+          if is_in_array "${A}" "${KVER5L[@]}" && [[ ${SCSICONTROLLER} -ne 0 || ${RAIDCONTROLLER} -ne 0 ]]; then
             COMPATIBLE=0
           fi
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
@@ -193,7 +176,7 @@ function arcVersion() {
       PVS="$(readConfigEntriesArray "${PLATFORM}.\"${MODEL}\"" "${D_FILE}" | sort -r)"
       echo -n "" >"${TMP_PATH}/versions"
       while read -r V; do
-        if [ "${V:0:3}" != "${PRODUCTVER}" ] || [ "${V}" = "${PREV}" ]; then
+        if [ "${V}" = "${PREV}" ]; then
           continue
         else
           echo "${V}" >>"${TMP_PATH}/versions"
@@ -261,7 +244,7 @@ function arcVersion() {
     done < <(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")
     # Reset Modules
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-    [ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+    is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
     if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
       writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
       mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
@@ -269,9 +252,6 @@ function arcVersion() {
     # Check Addons for Platform
     ADDONS="$(readConfigKey "addons" "${USER_CONFIG_FILE}")"
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
-    KVER5L=(v1000nk epyc7002)
-    IGPU1L=(apollolake geminilake)
-    IGPU2L=(v1000nk epyc7002)
     if [ "${ADDONS}" = "{}" ]; then
       initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
@@ -280,10 +260,12 @@ function arcVersion() {
       initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
       if [ ${NVMEDRIVES} -gt 0 ]; then
-        if echo "${KVER5L[@]}" | grep -wq "${A}" && [ ${SATADRIVES} -eq 0 ] && [ ${SASDRIVES} -eq 0 ]; then
+        if is_in_array "${PLATFORM}" "${KVER5L[@]}" && [ ${SATADRIVES} -eq 0 ] && [ ${SASDRIVES} -eq 0 ]; then
           initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
         elif [ "${DT}" = "true" ]; then
           initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
+        elif is_in_array "${MODEL}" "${NVMECACHE[@]}"; then
+          initConfigKey "addons.nvmecache" "" "${USER_CONFIG_FILE}"
         fi
       fi
       if [ "${MACHINE}" = "physical" ]; then
@@ -293,7 +275,7 @@ function arcVersion() {
       else
         initConfigKey "addons.vmtools" "" "${USER_CONFIG_FILE}"
       fi
-      if [[ " ${IGPU1L[@]} " =~ " ${A} " ]] && grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids"; then
+      if is_in_array "${PLATFORM}" "${IGPU1L[@]}" && grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids"; then
         initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
       fi
       if echo "${PAT_URL}" 2>/dev/null | grep -qE "7\.2\.[2-9]|7\.[3-9]\.|[8-9]\."; then
@@ -302,7 +284,7 @@ function arcVersion() {
       if [ -n "${ARC_CONF}" ]; then
         initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
       fi
-      if [ ${SASDRIVES:-0} -gt 0 ] && [ "${DT}" = "true" ]; then
+      if [ ${SASDRIVES} -gt 0 ] && [ "${DT}" = "true" ]; then
         initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
       fi
     fi
@@ -779,7 +761,7 @@ function modulesMenu() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-  [ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+  is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
   # loop menu
   while true; do
     rm -f "${TMP_PATH}/menu"
@@ -1453,7 +1435,7 @@ function backupMenu() {
           if [ -n "${PRODUCTVER}" ]; then
             PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
             KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-            [ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+            is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
             if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
               writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
               mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
@@ -3199,7 +3181,13 @@ function getnet() {
 ###############################################################################
 # Generate PortMap
 function getmap() {
-  local SATADRIVES=0 SASDRIVES=0 SCSIDRIVES=0 RAIDDRIVES=0 NVMEDRIVES=0 USBDRIVES=0 MMCDRIVES=0
+  SATADRIVES=0
+  SASDRIVES=0
+  SCSIDRIVES=0
+  RAIDDRIVES=0
+  NVMEDRIVES=0
+  USBDRIVES=0
+  MMCDRIVES=0
 
   # Clean old files
   for file in drivesmax drivescon ports remap; do
@@ -3280,8 +3268,8 @@ function getmap() {
   fi
 
   # Write Disk Counts to Config
-  local DRIVES=$((SATADRIVES + SASDRIVES + SCSIDRIVES + RAIDDRIVES + USBDRIVES + MMCDRIVES + NVMEDRIVES))
-  local HARDDRIVES=$((SATADRIVES + SASDRIVES + SCSIDRIVES + RAIDDRIVES + NVMEDRIVES))
+  DRIVES=$((SATADRIVES + SASDRIVES + SCSIDRIVES + RAIDDRIVES + USBDRIVES + MMCDRIVES + NVMEDRIVES))
+  HARDDRIVES=$((SATADRIVES + SASDRIVES + SCSIDRIVES + RAIDDRIVES + NVMEDRIVES))
   writeConfigKey "device.satadrives" "${SATADRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.sasdrives" "${SASDRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.scsidrives" "${SCSIDRIVES}" "${USER_CONFIG_FILE}"

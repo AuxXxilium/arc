@@ -5,6 +5,11 @@
 . "${ARC_PATH}/include/addons.sh"
 . "${ARC_PATH}/include/modules.sh"
 
+KVER5L=(v1000nk epyc7002)
+IGPU1L=(apollolake geminilake)
+IGPU2L=(v1000nk epyc7002)
+NVMECACHE=(DS719+ DS918+ DS1019+ DS1621xs+ RS1619xs+)
+
 ###############################################################################
 # Check loader disk
 function checkBootLoader() {
@@ -731,4 +736,18 @@ function write_menu() {
     
 function write_menu_value() {
   echo "$1 \"$2: \Z4${3:-none}\Zn\" " >>"${TMP_PATH}/menu"
+}
+
+################################################################################
+# Function to check if a value exists in an array
+function is_in_array() {
+  local value="$1"
+  shift
+  local array=("$@")
+  for item in "${array[@]}"; do
+    if [[ "$item" == "$value" ]]; then
+      return 0
+    fi
+  done
+  return 1
 }

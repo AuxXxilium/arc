@@ -296,7 +296,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
           1) arcModel; NEXT="2" ;;
           b) addonMenu; NEXT="b" ;;
           d) modulesMenu; NEXT="d" ;;
-          e) ONLYVERSION="true" && arcVersion; NEXT="e" ;;
+          e) ONLYVERSION="true" && writeConfigKey "productver" "" "${USER_CONFIG_FILE}" && arcVersion; NEXT="e" ;;
           p) ONLYPATCH="true" && checkHardwareID && arcPatch; NEXT="p" ;;
           S) storageMenu; NEXT="S" ;;
           g) governorMenu; NEXT="g" ;;
@@ -313,7 +313,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
             PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
             PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
             KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-            [ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+            is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
             if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
               writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
               mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
