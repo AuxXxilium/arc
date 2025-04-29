@@ -43,10 +43,10 @@ function arcModel() {
         IGPU=""
         IGPUS=""
         IGPUID="$(lspci -nd ::300 2>/dev/null | grep "8086" | cut -d' ' -f3 | sed 's/://g')"
-        if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" ${ARC_PATH}/include/i915ids && IGPU="all" || IGPU="epyc7002"; else IGPU=""; fi
+        if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" ${ARC_PATH}/include/i915ids && IGPU="all" || IGPU="igpuv5"; else IGPU=""; fi
         if [[ " ${IGPU1L[@]} " =~ " ${A} " ]] && [ "${IGPU}" = "all" ]; then
           IGPUS="+"
-        elif [[ " ${IGPU2L[@]} " =~ " ${A} " ]] && [[ "${IGPU}" = "epyc7002" || "${IGPU}" = "all" ]]; then
+        elif [[ " ${IGPU2L[@]} " =~ " ${A} " ]] && [[ "${IGPU}" = "igpuv5" || "${IGPU}" = "all" ]]; then
           IGPUS="x"
         else
           IGPUS=""
@@ -66,20 +66,19 @@ function arcModel() {
               COMPATIBLE=0
             fi
           done
-          if ! echo "${KVER5L[@]}" | grep -wq "${A}"; then
-            if [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
-              COMPATIBLE=0
-            elif [ ${SATACONTROLLER:-0} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
-              COMPATIBLE=0
-            elif [ ${NVMEDRIVES:-0} -gt 0 ] && [ "${BUS}" = "usb" ] && [ ${SATADRIVES:-0} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
-              COMPATIBLE=0
-            elif [ ${NVMEDRIVES:-0} -gt 0 ] && [ "${BUS}" = "sata" ] && [ ${SATADRIVES:-0} -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
-              COMPATIBLE=0
-            fi
-          else
-            if [ ${SCSICONTROLLER:-0} -ne 0 ] || [ ${RAIDCONTROLLER:-0} -ne 0 ]; then
-              COMPATIBLE=0
-            fi
+          if ! echo "${KVER5L[@]}" | grep -wq "${A}" && [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
+            COMPATIBLE=0
+          fi
+          if ! echo "${KVER5L[@]}" | grep -wq "${A}" && [ ${SATACONTROLLER} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+            COMPATIBLE=0
+          fi
+          if echo "${KVER5L[@]}" | grep -wq "${A}" && [[ ${SCSICONTROLLER} -ne 0 || ${RAIDCONTROLLER} -ne 0 ]]; then
+            COMPATIBLE=0
+          fi
+          if ! echo "${KVER5L[@]}" | grep -wq "${A}" && [ ${NVMEDRIVES} -gt 0 ] && [ "${BUS}" = "usb" ] && [ ${SATADRIVES} -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+            COMPATIBLE=0
+          elif ! echo "${KVER5L[@]}" | grep -wq "${A}" && [ ${NVMEDRIVES} -gt 0 ] && [ "${BUS}" = "sata" ] && [ ${SATADRIVES} -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
+            COMPATIBLE=0
           fi
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
         fi
@@ -280,7 +279,7 @@ function arcVersion() {
       initConfigKey "addons.reducelogs" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
-      if [ ${NVMEDRIVES:-0} -gt 0 ]; then
+      if [ ${NVMEDRIVES} -gt 0 ]; then
         if echo "${KVER5L[@]}" | grep -wq "${A}" && [ ${SATADRIVES} -eq 0 ] && [ ${SASDRIVES} -eq 0 ]; then
           initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
         elif [ "${DT}" = "true" ]; then
@@ -294,20 +293,8 @@ function arcVersion() {
       else
         initConfigKey "addons.vmtools" "" "${USER_CONFIG_FILE}"
       fi
-      if [[ " ${IGPU1L[@]} " =~ " ${A} " ]] && [ "${IGPU}" = "all" ]; then
-        if [ -n "${IGPUID}" ]; then
-          if grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids"; then
-            IGPU="all"
-          else
-            IGPU="epyc7002"
-          fi
-        else
-          IGPU=""
-        fi
-      
-        if [ "${IGPU}" = "all" ]; then
-          initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
-        fi
+      if [[ " ${IGPU1L[@]} " =~ " ${A} " ]] && grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids"; then
+        initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
       fi
       if echo "${PAT_URL}" 2>/dev/null | grep -qE "7\.2\.[2-9]|7\.[3-9]\.|[8-9]\."; then
         initConfigKey "addons.allowdowngrade" "" "${USER_CONFIG_FILE}"
