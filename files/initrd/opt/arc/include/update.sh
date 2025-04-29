@@ -271,7 +271,7 @@ function updateModules() {
   local PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   local PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   local KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-  [ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+  is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
   idx=0
   while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
     local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
