@@ -277,6 +277,7 @@ function arcVersion() {
       initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.hdddb" "" "${USER_CONFIG_FILE}"
+      initConfigKey "addons.reducelogs" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
       if [ ${NVMEDRIVES:-0} -gt 0 ]; then
