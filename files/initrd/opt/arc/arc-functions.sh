@@ -1,14 +1,3 @@
-#!/usr/bin/env bash
-
-###############################################################################
-# Overlay Init Section
-[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
-
-. "${ARC_PATH}/include/functions.sh"
-. "${ARC_PATH}/include/addons.sh"
-. "${ARC_PATH}/include/modules.sh"
-. "${ARC_PATH}/include/update.sh"
-
 ###############################################################################
 # Model Selection
 function arcModel() {
@@ -3192,7 +3181,13 @@ function getnet() {
 ###############################################################################
 # Generate PortMap
 function getmap() {
-  local SATADRIVES=0 SASDRIVES=0 SCSIDRIVES=0 RAIDDRIVES=0 NVMEDRIVES=0 USBDRIVES=0 MMCDRIVES=0
+  SATADRIVES=0
+  SASDRIVES=0
+  SCSIDRIVES=0
+  RAIDDRIVES=0
+  NVMEDRIVES=0
+  USBDRIVES=0
+  MMCDRIVES=0
 
   # Clean old files
   for file in drivesmax drivescon ports remap; do
@@ -3273,8 +3268,8 @@ function getmap() {
   fi
 
   # Write Disk Counts to Config
-  local DRIVES=$((SATADRIVES + SASDRIVES + SCSIDRIVES + RAIDDRIVES + USBDRIVES + MMCDRIVES + NVMEDRIVES))
-  local HARDDRIVES=$((SATADRIVES + SASDRIVES + SCSIDRIVES + RAIDDRIVES + NVMEDRIVES))
+  DRIVES=$((SATADRIVES + SASDRIVES + SCSIDRIVES + RAIDDRIVES + USBDRIVES + MMCDRIVES + NVMEDRIVES))
+  HARDDRIVES=$((SATADRIVES + SASDRIVES + SCSIDRIVES + RAIDDRIVES + NVMEDRIVES))
   writeConfigKey "device.satadrives" "${SATADRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.sasdrives" "${SASDRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.scsidrives" "${SCSIDRIVES}" "${USER_CONFIG_FILE}"
