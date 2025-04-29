@@ -1,3 +1,14 @@
+#!/usr/bin/env bash
+
+###############################################################################
+# Overlay Init Section
+[[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+
+. "${ARC_PATH}/include/functions.sh"
+. "${ARC_PATH}/include/addons.sh"
+. "${ARC_PATH}/include/modules.sh"
+. "${ARC_PATH}/include/update.sh"
+
 ###############################################################################
 # Model Selection
 function arcModel() {
@@ -3389,18 +3400,22 @@ function getmapSelection() {
 ###############################################################################
 # Get initial Disk Controller Info
 function getdiskinfo() {
-  # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
+  # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB // 108=NVMe // 805=MMC
   declare -A controllers=(
     [satacontroller]=106
     [sascontroller]=107
     [scsicontroller]=100
     [raidcontroller]=104
+    [nvmecontroller]=108
+    [mmccontroller]=805
+    [usbcontroller]=c03
   )
   external_controller=false
   for controller in "${!controllers[@]}"; do
     count=$(lspci -d ::${controllers[$controller]} 2>/dev/null | wc -l)
-    writeConfigKey "device.${controller}" "${count}" "${USER_CONFIG_FILE}"
-    if [ "${controller}" != "satacontroller" ] && [ ${count} -gt 0 ]; then
+    writeConfigKey "device.${controller}" "${count:-0}" "${USER_CONFIG_FILE}"
+    # Only mark specific controllers as external
+    if [[ "${controller}" == "sascontroller" || "${controller}" == "scsicontroller" || "${controller}" == "raidcontroller" ]] && [ ${count} -gt 0 ]; then
       external_controller=true
     fi
   done
