@@ -36,6 +36,7 @@ KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
 SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
 # Read new PAT Info from Config
@@ -172,14 +173,8 @@ mkdir -p "${RAMDISK_PATH}/addons"
 } >"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
-# Add redpill Addon if Platform is epyc7002
-if [ "${PLATFORM}" = "epyc7002" ]; then
-  installAddon "redpill" "${PLATFORM}" || exit 1
-  echo "/addons/redpill.sh \${1}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
-fi
-
 # System Addons
-for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
+for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
@@ -238,7 +233,7 @@ for N in $(seq 0 7); do
   echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
 done
 
-# SA6400 patches
+# Linux 5.x patches
 if [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
    :
  else
