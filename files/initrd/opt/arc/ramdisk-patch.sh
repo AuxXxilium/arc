@@ -36,7 +36,6 @@ KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
 SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
 # Read new PAT Info from Config
@@ -81,11 +80,9 @@ if [ -z "${PLATFORM}" ] || [ -z "${KVER}" ]; then
 fi
 
 # Read synoinfo and addons from config
-declare -A SYNOINFO ADDONS MODULES
-
-while IFS=': ' read -r KEY VALUE; do
-  [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
-done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
+declare -A ADDONS
+declare -A MODULES
+declare -A SYNOINFO
 
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
@@ -96,13 +93,16 @@ while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && MODULES["${KEY}"]="${VALUE}"
 done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
+SYNOINFO["SN"]="${SN}"
+while IFS=': ' read -r KEY VALUE; do
+  [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
+done <<<"$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
+
 # Patches (diff -Naru OLDFILE NEWFILE > xxx.patch)
 PATCHES=(
   "ramdisk-etc-rc-*.patch"
   "ramdisk-init-script-*.patch"
   "ramdisk-post-init-script-*.patch"
-  "ramdisk-disable-root-pwd-*.patch"
-  "ramdisk-disable-disabled-ports-*.patch"
 )
 
 for PATCH in "${PATCHES[@]}"; do
@@ -117,45 +117,10 @@ for PATCH in "${PATCHES[@]}"; do
   done
 done
 
-# Add serial number to synoinfo.conf, to help to recovery a installed DSM
-echo "Set synoinfo SN" >"${LOG_FILE}"
-_set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
-_set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
-for KEY in "${!SYNOINFO[@]}"; do
-  echo "Set synoinfo ${KEY}" >>"${LOG_FILE}"
-  _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
-  _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
-done
-
-# Patch /sbin/init.post
-grep -v -e '^[\t ]*#' -e '^$' "${PATCH_PATH}/config-manipulators.sh" >"${TMP_PATH}/rp.txt"
-sed -e "/@@@CONFIG-MANIPULATORS-TOOLS@@@/ {" -e "r ${TMP_PATH}/rp.txt" -e 'd' -e '}' -i "${RAMDISK_PATH}/sbin/init.post"
-rm -f "${TMP_PATH}/rp.txt"
-
-# Generate synoinfo configurations
-{
-  echo "_set_conf_kv 'SN' '${SN}' '/tmpRoot/etc/synoinfo.conf'"
-  echo "_set_conf_kv 'SN' '${SN}' '/tmpRoot/etc.defaults/synoinfo.conf'"
-  for KEY in "${!SYNOINFO[@]}"; do
-    echo "_set_conf_kv '${KEY}' '${SYNOINFO[${KEY}]}' '/tmpRoot/etc/synoinfo.conf'"
-    echo "_set_conf_kv '${KEY}' '${SYNOINFO[${KEY}]}' '/tmpRoot/etc.defaults/synoinfo.conf'"
-  done
-} >"${TMP_PATH}/rp.txt"
-
-sed -e "/@@@CONFIG-GENERATED@@@/ {" -e "r ${TMP_PATH}/rp.txt" -e 'd' -e '}' -i "${RAMDISK_PATH}/sbin/init.post"
-rm -f "${TMP_PATH}/rp.txt"
-
-# Extract Modules to Ramdisk
-installModules "${PLATFORM}" "${KVERP}" "${!MODULES[@]}" || exit 1
-
-# Copying fake modprobe
-[ $(echo "${KVER:-4}" | cut -d'.' -f1) -lt 5 ] && cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
-# Copying LKM to /usr/lib/modules
-gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>"${LOG_FILE}" || exit 1
+mkdir -p "${RAMDISK_PATH}/addons"
 
 # Addons
 echo "Create addons.sh" >"${LOG_FILE}"
-mkdir -p "${RAMDISK_PATH}/addons"
 {
   echo "#!/bin/sh"
   echo 'echo "addons.sh called with params ${@}"'
@@ -174,7 +139,7 @@ mkdir -p "${RAMDISK_PATH}/addons"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
-for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
+for ADDON in $(if [[ "${KVER}" =~ ^5 ]]; then echo "redpill"; fi) "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
@@ -193,8 +158,31 @@ for ADDON in "${!ADDONS[@]}"; do
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 done
 
-# Enable Telnet
-echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
+
+ # Extract ck modules to ramdisk
+ installModules "${PLATFORM}" "${KVERP}" "${!MODULES[@]}" || exit 1
+ 
+ # Copying fake modprobe
+ [[ "${KVER}" =~ ^4 ]] && cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
+ # Copying LKM to /usr/lib/modules
+ gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>"${LOG_FILE}" || exit 1
+ 
+ # Patch synoinfo.conf
+ echo -n "" >"${RAMDISK_PATH}/addons/synoinfo.conf"
+ for KEY in "${!SYNOINFO[@]}"; do
+   echo "Set synoinfo ${KEY}" >>"${LOG_FILE}"
+   echo "${KEY}=\"${SYNOINFO[${KEY}]}\"" >>"${RAMDISK_PATH}/addons/synoinfo.conf"
+   _set_conf_kv "${RAMDISK_PATH}/etc/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || exit 1
+   _set_conf_kv "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || exit 1
+ done
+ if [ ! -x "${RAMDISK_PATH}/usr/bin/get_key_value" ]; then
+   printf '#!/bin/sh\n%s\n_get_conf_kv "$@"' "$(declare -f _get_conf_kv)" >"${RAMDISK_PATH}/usr/bin/get_key_value"
+   chmod a+x "${RAMDISK_PATH}/usr/bin/get_key_value"
+ fi
+ if [ ! -x "${RAMDISK_PATH}/usr/bin/set_key_value" ]; then
+   printf '#!/bin/sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
+   chmod a+x "${RAMDISK_PATH}/usr/bin/set_key_value"
+ fi
 
 echo "Modify files" >"${LOG_FILE}"
 
@@ -234,17 +222,15 @@ for N in $(seq 0 7); do
 done
 
 # Linux 5.x patches
-if [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
-   :
- else
-  echo -e ">>> apply Linux 5.x Fixes"
+if [[ "${KVER}" =~ ^5 ]]; then
+  echo -e ">>> apply Linux 5.x fixes"
   sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
 fi
 
 # Broadwellntbap patches
 if [ "${PLATFORM}" = "broadwellntbap" ]; then
-  echo -e ">>> apply Broadwellntbap Fixes"
+  echo -e ">>> apply Platform fixes"
   sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' ${RAMDISK_PATH}/usr/syno/share/environments.sh
 fi
 

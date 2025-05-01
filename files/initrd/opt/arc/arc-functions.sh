@@ -176,12 +176,9 @@ function arcVersion() {
       PVS="$(readConfigEntriesArray "${PLATFORM}.\"${MODEL}\"" "${D_FILE}" | sort -r)"
       echo -n "" >"${TMP_PATH}/versions"
       while read -r V; do
-        if [ "${V}" = "${PREV}" ]; then
-          continue
-        else
+        if [ "${V:0:3}" = "${PRODUCTVER}" ]; then
           echo "${V}" >>"${TMP_PATH}/versions"
         fi
-        PREV="${V}"
       done < <(echo "${PVS}")
       DSMPVS="$(cat ${TMP_PATH}/versions)"
       dialog --backtitle "$(backtitle)" --colors --title "DSM Build" \
