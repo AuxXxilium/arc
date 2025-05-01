@@ -264,32 +264,35 @@ function arrayExistItem() {
 
 ###############################################################################
 # Get values in .conf K=V file
-# 1 - key
-# 2 - file
+# 1 - file
+# 2 - key
 function _get_conf_kv() {
-  grep "${1}" "${2}" | sed "s|^${1}=\"\(.*\)\"$|\1|g"
+  grep "^${2}=" "${1}" 2>/dev/null | cut -d'=' -f2- | sed 's/^"//;s/"$//' 2>/dev/null
+  return $?
 }
 
 ###############################################################################
 # Replace/remove/add values in .conf K=V file
-# 1 - name
-# 2 - new_val
-# 3 - path
+# 1 - file
+# 2 - key
+# 3 - value
 function _set_conf_kv() {
   # Delete
-  if [ -z "${2}" ]; then
-    sed -i "${3}" -e "s/^${1}=.*$//"
+  if [ -z "${3}" ]; then
+    sed -i "/^${2}=/d" "${1}" 2>/dev/null
     return $?;
   fi
 
   # Replace
-  if grep -q "^${1}=" "${3}"; then
-    sed -i "${3}" -e "s\"^${1}=.*\"${1}=\\\"${2}\\\"\""
+  if grep -q "^${2}=" "${1}" 2>/dev/null; then
+    sed -i "s#^${2}=.*#${2}=\"${3}\"#" "${1}" 2>/dev/null
     return $?
   fi
 
   # Add if doesn't exist
-  echo "${1}=\"${2}\"" >>"${3}"
+  mkdir -p "$(dirname "${1}" 2>/dev/null)" 2>/dev/null
+  echo "${2}=\"${3}\"" >>"${1}" 2>/dev/null
+  return $?
 }
 
 ###############################################################################
