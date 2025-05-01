@@ -139,7 +139,7 @@ echo "Create addons.sh" >"${LOG_FILE}"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
-for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
+for ADDON in $(if [[ "${KVER}" =~ ^5 ]]; then echo "redpill"; fi) "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
@@ -163,7 +163,7 @@ done
  installModules "${PLATFORM}" "${KVERP}" "${!MODULES[@]}" || exit 1
  
  # Copying fake modprobe
- [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ] && cp -f "${ARC_PATH}/patch/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
+ [[ "${KVER}" =~ ^4 ]] && cp -f "${ARC_PATH}/patch/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
  # Copying LKM to /usr/lib/modules
  gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>"${LOG_FILE}" || exit 1
  
@@ -222,17 +222,15 @@ for N in $(seq 0 7); do
 done
 
 # Linux 5.x patches
-if [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
-   :
- else
-  echo -e ">>> apply Linux 5.x Fixes"
+if [[ "${KVER}" =~ ^5 ]]; then
+  echo -e ">>> apply Linux 5.x fixes"
   sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
 fi
 
 # Broadwellntbap patches
 if [ "${PLATFORM}" = "broadwellntbap" ]; then
-  echo -e ">>> apply Broadwellntbap Fixes"
+  echo -e ">>> apply Platform fixes"
   sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' ${RAMDISK_PATH}/usr/syno/share/environments.sh
 fi
 

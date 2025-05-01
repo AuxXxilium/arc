@@ -61,7 +61,7 @@ VMLINUX_MOD=${1}
 ZIMAGE_MOD=${2}
 
 KVER=$(strings "${VMLINUX_MOD}" | grep -Eo "Linux version [0-9]+\.[0-9]+\.[0-9]+" | head -1 | awk '{print $3}')
-if [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
+if [[ "${KVER}" =~ ^4 ]]; then
   # Kernel version 4.x or 3.x (bromolow)
   # zImage_head           16494
   # payload(
