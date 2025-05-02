@@ -73,7 +73,7 @@ function checkNIC() {
         fi
         break
       fi
-      if [ ${COUNT} -ge ${BOOTIPWAIT} ]; then
+      if [ "${COUNT}" -ge "${BOOTIPWAIT}" ]; then
         echo -e "\r${DRIVER}: \033[1;37mTIMEOUT\033[0m"
         break
       fi
@@ -196,11 +196,11 @@ function generateMacAddress() {
   else
     MACSUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
   fi
-  NUM=${2:-1}
+  NUM="${2:-1}"
   local MACS=""
-  for I in $(seq 1 ${NUM}); do
+  for I in $(seq 1 "${NUM}"); do
     MACS+="$(printf '%06x%06x' $((0x${MACPRE:-"001132"})) $(($((0x${MACSUF})) + ${I})))"
-    [ ${I} -lt ${NUM} ] && MACS+=" "
+    [ "${I}" -lt "${NUM}" ] && MACS+=" "
   done
 
   MACS="$(echo "${MACS}" | tr '[:upper:]' '[:lower:]')"
@@ -221,13 +221,13 @@ function validateSerial() {
   M=${2:4:3}
   S=${2:7}
   L=${#2}
-  if [ ${L} -ne 13 ]; then
+  if [ "${L}" -ne 13 ]; then
     return 1
   fi
-  if ! arrayExistItem ${P} ${PREFIX}; then
+  if ! arrayExistItem "${P}" "${PREFIX}"; then
     return 1
   fi
-  if ! arrayExistItem ${M} ${MIDDLE}; then
+  if ! arrayExistItem "${M}" "${MIDDLE}"; then
     return 1
   fi
   case "${SUFFIX:-"alpha"}" in
@@ -595,7 +595,7 @@ function systemCheck () {
   fi
   # Check for CPU Frequency Scaling
   CPUFREQUENCIES=$(ls -l /sys/devices/system/cpu/cpufreq/*/* 2>/dev/null | wc -l)
-  if [ ${CPUFREQUENCIES} -gt 0 ]; then
+  if [ "${CPUFREQUENCIES}" -gt 0 ]; then
     CPUFREQ="true"
   else
     CPUFREQ="false"
@@ -654,7 +654,7 @@ function _bootwait() {
   [ -z "${BOOTWAIT}" ] && BOOTWAIT="5"
   busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WB
   MSG=""
-  while [ ${BOOTWAIT} -gt 0 ]; do
+  while [ "${BOOTWAIT}" -gt 0 ]; do
     sleep 1
     BOOTWAIT=$((BOOTWAIT - 1))
     MSG="\033[1;33mAccess to SSH/Web will interrupt boot...\033[0m"

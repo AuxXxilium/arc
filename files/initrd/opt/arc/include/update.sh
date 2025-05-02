@@ -7,7 +7,7 @@ function updateLoader() {
   if [ "${TAG}" != "zip" ]; then
     if [ -z "${TAG}" ]; then
       idx=0
-      while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
+      while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
         TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
         if [ -n "${TAG}" ]; then
           break
@@ -21,7 +21,7 @@ function updateLoader() {
       export TAG="${TAG}"
       {
         {
-          curl -kL "${URL}" -o ${TMP_PATH}/update.zip 2>&3 3>&-
+          curl -kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&3 3>&-
         } 3>&1 >&4 4>&- |
         perl -C -lane '
           BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -103,7 +103,7 @@ function updateLoader() {
 function updateAddons() {
   [ -f "${ADDONS_PATH}/VERSION" ] && local ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")" || ADDONSVERSION="0.0.0"
   idx=0
-  while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
+  while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
     local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
     if [ -n "${TAG}" ]; then
       break
@@ -116,7 +116,7 @@ function updateAddons() {
     export TAG="${TAG}"
     {
       {
-      curl -kL "${URL}" -o ${TMP_PATH}/addons.zip 2>&3 3>&-
+      curl -kL "${URL}" -o "${TMP_PATH}/addons.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
       BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -163,7 +163,7 @@ function updateAddons() {
 function updatePatches() {
   [ -f "${PATCH_PATH}/VERSION" ] && local PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")" || PATCHESVERSION="0.0.0"
   idx=0
-  while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
+  while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
     local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
     if [ -n "${TAG}" ]; then
       break
@@ -176,7 +176,7 @@ function updatePatches() {
     export TAG="${TAG}"
     {
       {
-        curl -kL "${URL}" -o ${TMP_PATH}/patches.zip 2>&3 3>&-
+        curl -kL "${URL}" -o "${TMP_PATH}/patches.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
         BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -216,7 +216,7 @@ function updatePatches() {
 function updateCustom() {
   [ -f "${CUSTOM_PATH}/VERSION" ] && local CUSTOMVERSION="$(cat "${CUSTOM_PATH}/VERSION")" || CUSTOMVERSION="0.0.0"
   idx=0
-  while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
+  while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
     local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-custom/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
     if [ -n "${TAG}" ]; then
       break
@@ -229,7 +229,7 @@ function updateCustom() {
     export TAG="${TAG}"
     {
       {
-        curl -kL "${URL}" -o ${TMP_PATH}/custom.zip 2>&3 3>&-
+        curl -kL "${URL}" -o "${TMP_PATH}/custom.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
         BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -273,7 +273,7 @@ function updateModules() {
   local KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
   is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
   idx=0
-  while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
+  while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
     local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
     if [ -n "${TAG}" ]; then
       break
@@ -288,7 +288,7 @@ function updateModules() {
     export TAG="${TAG}"
     {
       {
-        curl -kL "${URL}" -o ${TMP_PATH}/modules.zip 2>&3 3>&-
+        curl -kL "${URL}" -o "${TMP_PATH}/modules.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
         BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -340,7 +340,7 @@ function updateConfigs() {
   local USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   if [ -z "${1}" ]; then
     idx=0
-    while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
+    while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
       local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       if [ -n "${TAG}" ]; then
         break
@@ -356,7 +356,7 @@ function updateConfigs() {
     export TAG="${TAG}"
     {
       {
-        curl -kL "${URL}" -o ${TMP_PATH}/configs.zip 2>&3 3>&-
+        curl -kL "${URL}" -o "${TMP_PATH}/configs.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
         BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -397,7 +397,7 @@ function updateLKMs() {
   [ -f "${LKMS_PATH}/VERSION" ] && local LKMVERSION="$(cat "${LKMS_PATH}/VERSION")" || LKMVERSION="0.0.0"
   if [ -z "${1}" ]; then
     idx=0
-    while [ ${idx} -le 5 ]; do # Loop 5 times, if successful, break
+    while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
       local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       if [ -n "${TAG}" ]; then
         break
@@ -413,7 +413,7 @@ function updateLKMs() {
     export TAG="${TAG}"
     {
       {
-        curl -kL "${URL}" -o ${TMP_PATH}/rp-lkms.zip 2>&3 3>&-
+        curl -kL "${URL}" -o "${TMP_PATH}/rp-lkms.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
         BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}

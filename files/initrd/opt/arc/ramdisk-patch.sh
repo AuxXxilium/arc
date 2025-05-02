@@ -79,11 +79,12 @@ if [ -z "${PLATFORM}" ] || [ -z "${KVER}" ]; then
   exit 1
 fi
 
-# Read synoinfo and addons from config
+# Read synoinfo from user config
 declare -A ADDONS
 declare -A MODULES
 declare -A SYNOINFO
 
+# Read addons from user config
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
 done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
@@ -93,7 +94,7 @@ while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && MODULES["${KEY}"]="${VALUE}"
 done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
-SYNOINFO["SN"]="${SN}"
+# Read synoinfo from user config
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
 done <<<"$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
@@ -139,7 +140,7 @@ echo "Create addons.sh" >"${LOG_FILE}"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
-for ADDON in $(if [[ "${KVER}" =~ ^5 ]]; then echo "redpill"; fi) "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
+for ADDON in $(if [ "${KVER:0:1}" -eq 5 ]; then echo "redpill"; fi) "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
@@ -163,7 +164,7 @@ done
  installModules "${PLATFORM}" "${KVERP}" "${!MODULES[@]}" || exit 1
  
  # Copying fake modprobe
- [[ "${KVER}" =~ ^4 ]] && cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
+ [ "${KVER:0:1}" -eq 4 ] && cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
  # Copying LKM to /usr/lib/modules
  gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>"${LOG_FILE}" || exit 1
  
@@ -206,7 +207,7 @@ for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}" "${USER_UP_PATH}" "${HW_KEY
     cp -f "${F}" "${FD/\/mnt/${BACKUP_PATH}}"
   elif [ -d "${F}" ]; then
     SIZE="$(du -sm "${F}" 2>/dev/null | awk '{print $1}')"
-    if [ ${SIZE:-0} -gt 4 ]; then
+    if [ "${SIZE:-0}" -gt 4 ]; then
       echo "Backup of ${F} skipped, size is ${SIZE}MB" >>"${LOG_FILE}"
       continue
     fi
@@ -222,7 +223,7 @@ for N in $(seq 0 7); do
 done
 
 # Linux 5.x patches
-if [[ "${KVER}" =~ ^5 ]]; then
+if [ "${KVER:0:1}" -eq 5 ]; then
   echo -e ">>> apply Linux 5.x fixes"
   sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
