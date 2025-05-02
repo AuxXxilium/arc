@@ -233,12 +233,11 @@ elif [ "${ARC_MODE}" = "config" ]; then
 
       write_menu "b" "Addons"
 
-      for addon in "cpufreqscaling" "storagepanel" "sequentialio"; do
+      for addon in "cpufreqscaling" "storagepanel"; do
         if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "${addon}"; then
           case "${addon}" in
             "cpufreqscaling") write_menu_value "g" "Scaling Governor" "${GOVERNOR}" ;;
             "storagepanel") write_menu_value "P" "StoragePanel" "${STORAGEPANEL:-auto}" ;;
-            "sequentialio") write_menu_value "Q" "SequentialIO" "${SEQUENTIALIO}" ;;
           esac
         fi
       done
@@ -301,7 +300,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
           S) storageMenu; NEXT="S" ;;
           g) governorMenu; NEXT="g" ;;
           P) storagepanelMenu; NEXT="P" ;;
-          Q) sequentialIOMenu; NEXT="Q" ;;
           K) KERNEL=$([ "${KERNEL}" = "official" ] && echo 'custom' || echo 'official')
             writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
             dialog --backtitle "$(backtitle)" --title "Kernel" \

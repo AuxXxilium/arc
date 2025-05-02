@@ -67,7 +67,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
     if [ "${CONFDONE}" = "true" ]; then
       if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
         write_menu "2" "Rebuild Loader"
-        write_menu "3" "Rebuild Loader (clean)"
+        write_menu "3" "Rebuild Loader (clean)*"
       else
         write_menu "2" "Build Loader"
       fi
@@ -97,12 +97,11 @@ elif [ "${ARC_MODE}" = "config" ]; then
           write_menu "o" "DTS Map Options"
         fi
 
-        for addon in "cpufreqscaling" "storagepanel" "sequentialio"; do
+        for addon in "cpufreqscaling" "storagepanel"; do
           if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "${addon}"; then
             case "${addon}" in
               "cpufreqscaling") write_menu "g" "Scaling Governor" ;;
               "storagepanel") write_menu "P" "StoragePanel" ;;
-              "sequentialio") write_menu "Q" "SequentialIO" ;;
             esac
           fi
         done
@@ -212,7 +211,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
           o) dtsMenu; NEXT="o" ;;
           g) governorMenu; NEXT="g" ;;
           P) storagepanelMenu; NEXT="P" ;;
-          Q) sequentialIOMenu; NEXT="Q" ;;
           # Boot Section
           6) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
             NEXT="6"
