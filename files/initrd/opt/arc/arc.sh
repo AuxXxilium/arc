@@ -89,7 +89,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
         write_menu "e" "Version"
         write_menu "p" "SN/Mac Options"
     
-        if [ "${DT}" = "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
+        if [ "${DT}" = "false" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
           write_menu "S" "Sata PortMap"
         fi
 

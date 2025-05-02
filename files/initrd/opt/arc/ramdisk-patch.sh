@@ -207,7 +207,7 @@ for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}" "${USER_UP_PATH}" "${HW_KEY
     cp -f "${F}" "${FD/\/mnt/${BACKUP_PATH}}"
   elif [ -d "${F}" ]; then
     SIZE="$(du -sm "${F}" 2>/dev/null | awk '{print $1}')"
-    if [ ${SIZE:-0} -gt 4 ]; then
+    if [ "${SIZE:-0}" -gt 4 ]; then
       echo "Backup of ${F} skipped, size is ${SIZE}MB" >>"${LOG_FILE}"
       continue
     fi

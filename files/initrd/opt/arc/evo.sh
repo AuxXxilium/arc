@@ -225,7 +225,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
 
       if [ "${PLATFORM}" = "epyc7002" ]; then
         CPUINFO="$(cat /proc/cpuinfo | grep MHz | wc -l)"
-        if [ ${CPUINFO} -gt 24 ]; then
+        if [ "${CPUINFO}" -gt 24 ]; then
           write_menu "=" "Custom Kernel should be used for this CPU"
         fi
         write_menu_value "K" "Kernel" "${KERNEL}"
@@ -246,7 +246,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       write_menu "d" "Modules"
       write_menu_value "O" "Official Driver Priority" "${ODP}"
 
-      if [ "${DT}" = "false" ] && [ ${SATACONTROLLER} -gt 0 ]; then
+      if [ "${DT}" = "false" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
         write_menu_value "S" "PortMap" "${REMAP}"
         write_menu_value "=" "Mapping" "${PORTMAP}"
       fi

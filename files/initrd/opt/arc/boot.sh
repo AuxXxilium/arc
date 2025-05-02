@@ -27,7 +27,7 @@ printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 TITLE="Boot:"
-[ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
+[ "${EFI}" -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
 TITLE+=" | Device: [${BUS}] | Mode: [${ARC_MODE}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 # Check if DSM zImage/Ramdisk is changed, patch it if necessary, update Files if necessary
@@ -120,7 +120,7 @@ if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
       break
     fi
   done
-  [ ${HASATA} -eq 0 ] && echo -e "\033[1;31m*** Note: Please insert at least one Sata/SAS/SCSI Disk for System installation, except the Bootloader Disk. ***\033[0m"
+  [ "${HASATA}" -eq 0 ] && echo -e "\033[1;31m*** Note: Please insert at least one Sata/SAS/SCSI Disk for System installation, except the Bootloader Disk. ***\033[0m"
 fi
 
 if checkBIOS_VT_d && [ "${KVER:0:1}" -eq 4 ]; then
@@ -163,7 +163,7 @@ for N in ${ETHX}; do
   MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
   [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null)"
   CMDLINE["mac$((++NIC))"]="${MAC}"
-  [ ${NIC} -ge ${ETHM} ] && break
+  [ "${NIC}" -ge "${ETHM}" ] && break
 done
 CMDLINE['netif_num']="${NIC}"
 
@@ -173,7 +173,7 @@ for BM in force_junior recovery; do
     CMDLINE["${BM}"]=""
   fi
 done
-if [ ${EFI} -eq 1 ]; then
+if [ "${EFI}" -eq 1 ]; then
    CMDLINE['withefi']=""
  else
    CMDLINE['noefi']=""

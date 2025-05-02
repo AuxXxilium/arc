@@ -28,7 +28,7 @@ printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 TITLE="Boot:"
-[ ${EFI} -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
+[ "${EFI}" -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
 TITLE+=" | Device: [${BUS}] | Mode: [${ARC_MODE}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
@@ -123,7 +123,7 @@ ETHN=$(echo ${ETHX} | wc -w)
 writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
 # No network devices
 echo
-[ ${ETHN} -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
+[ "${ETHN}" -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
 
 # Get the VID/PID if we are in USB
 VID="0x46f4"
@@ -190,7 +190,7 @@ echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}${HTTPP
 
 # Check memory and load Arc
 RAM=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
-if [ ${RAM} -le 3500 ]; then
+if [ "${RAM}" -le 3500 ]; then
   echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n\033[1;31mUse arc.sh to proceed. Not recommended!\033[0m"
 else
   exec arc.sh
