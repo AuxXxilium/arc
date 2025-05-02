@@ -318,15 +318,11 @@ function arcPatch() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
-  getserial() {
-    local use_arc_patch=$1
-    SN="$(generateSerial "${MODEL}" "${use_arc_patch}")"
-    writeConfigKey "arc.patch" "${use_arc_patch}" "${USER_CONFIG_FILE}"
-    writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-  }
-
   if [ "${ARC_MODE}" = "automated" ] && [ "${ARC_PATCH}" != "user" ]; then
-    getserial "${ARC_CONF:+true}"
+    [ -n "${ARC_CONF}" ] && ARC_PATCH="true" || ARC_PATCH="false"
+    SN="$(generateSerial "${MODEL}" "${ARC_PATCH}")"
+    writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.patch" "${ARC_PATCH}" "${USER_CONFIG_FILE}"
   elif [ "${ARC_MODE}" = "config" ]; then
     dialog_options=(
       2 "Use random SN/Mac (Reduced DSM Features)"
@@ -344,10 +340,16 @@ function arcPatch() {
 
     case ${resp} in
       1)
-        getserial "true"
+        [ -n "${ARC_CONF}" ] && ARC_PATCH="true" || ARC_PATCH="false"
+        SN="$(generateSerial "${MODEL}" "${ARC_PATCH}")"
+        writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.patch" "${ARC_PATCH}" "${USER_CONFIG_FILE}"
         ;;
       2)
-        getserial "false"
+        ARC_PATCH="false"
+        SN="$(generateSerial "${MODEL}" "${ARC_PATCH}")"
+        writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.patch" "${ARC_PATCH}" "${USER_CONFIG_FILE}"
         ;;
       3)
         while true; do

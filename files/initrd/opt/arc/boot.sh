@@ -54,9 +54,7 @@ CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F'
 RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')"
 MACHINE="$(virt-what 2>/dev/null | head -1)"
-if [ -z "${MACHINE}" ]; then
-  MACHINE="physical"
-fi
+[ -z "${MACHINE}" ] && MACHINE="physical" || true
 DSMINFO="$(readConfigKey "bootscreen.dsminfo" "${USER_CONFIG_FILE}")"
 SYSTEMINFO="$(readConfigKey "bootscreen.systeminfo" "${USER_CONFIG_FILE}")"
 DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
@@ -125,7 +123,7 @@ if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   [ ${HASATA} -eq 0 ] && echo -e "\033[1;31m*** Note: Please insert at least one Sata/SAS/SCSI Disk for System installation, except the Bootloader Disk. ***\033[0m"
 fi
 
-if checkBIOS_VT_d && [[ "${KVER}" =~ ^4 ]]; then
+if checkBIOS_VT_d && [ "${KVER:0:1}" -eq 4 ]; then
   echo -e "\033[1;31m*** Notice: Disable Intel(VT-d)/AMD(AMD-V) in BIOS/UEFI settings if you encounter a boot issues. ***\033[0m"
   echo
 fi
@@ -139,6 +137,13 @@ DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
 MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
+
+if [ -z "${SN}" ] && [ "${ARC_PATCH}" != "user" ]; then
+  [ -n "${ARC_CONF}" ] && ARC_PATCH="true" || ARC_PATCH="false"
+  SN="$(generateSerial "${MODEL}" "${ARC_PATCH}")"
+  writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.patch" "${ARC_PATCH}" "${USER_CONFIG_FILE}"
+fi
 
 declare -A CMDLINE
 
@@ -175,7 +180,7 @@ if [ ${EFI} -eq 1 ]; then
  fi
 
 # DSM Cmdline
-if [[ "${KVER}" =~ ^4 ]]; then
+if [ "${KVER:0:1}" -eq 4 ]; then
   if [ "${BUS}" != "usb" ]; then
     SZ=$(blockdev --getsz "${LOADER_DISK}" 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
     SS=$(blockdev --getss "${LOADER_DISK}" 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
@@ -251,16 +256,15 @@ done
 # fi
 if [ "${DT}" = "true" ]; then
   for P in v1000nk epyc7002 purley broadwellnkv2; do
-    if [ "${PLATFORM}" = "${P}" ]; then
+    if [ "${PLATFORM}" != "${P}" ]; then
+      if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
+        [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+        CMDLINE['modprobe.blacklist']+="mpt3sas"
+      fi
+    elif [ "${PLATFORM}" = "${P}" ]; then
       break
     fi
   done
-  if [ "${PLATFORM}" != "${P}" ]; then
-    if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
-      [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
-      CMDLINE['modprobe.blacklist']+="mpt3sas"
-    fi
-  fi
 fi
 # CMDLINE['kvm.ignore_msrs']="1"
 # CMDLINE['kvm.report_ignored_msrs']="0"
