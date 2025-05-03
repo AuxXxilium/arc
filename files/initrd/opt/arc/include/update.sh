@@ -111,7 +111,7 @@ function updateAddons() {
     sleep 3
     idx=$((${idx} + 1))
   done
-  if [ -n "${TAG}" ] && [ "${ADDONSVERSION}" != "${TAG}" ]; then
+  if [ -n "${TAG}" ]; then
     export URL="https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons-${TAG}.zip"
     export TAG="${TAG}"
     {
@@ -171,7 +171,7 @@ function updatePatches() {
     sleep 3
     idx=$((${idx} + 1))
   done
-  if [ -n "${TAG}" ] && [ "${PATCHESVERSION}" != "${TAG}" ]; then
+  if [ -n "${TAG}" ]; then
     export URL="https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches-${TAG}.zip"
     export TAG="${TAG}"
     {
@@ -224,7 +224,7 @@ function updateCustom() {
     sleep 3
     idx=$((${idx} + 1))
   done
-  if [ -n "${TAG}" ] && [ "${CUSTOMVERSION}" != "${TAG}" ]; then
+  if [ -n "${TAG}" ]; then
     export URL="https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/custom-${TAG}.zip"
     export TAG="${TAG}"
     {
@@ -281,7 +281,7 @@ function updateModules() {
     sleep 3
     idx=$((${idx} + 1))
   done
-  if [ -n "${TAG}" ] && [ "${MODULESVERSION}" != "${TAG}" ]; then
+  if [ -n "${TAG}" ]; then
     rm -rf "${MODULES_PATH}"
     mkdir -p "${MODULES_PATH}"
     export URL="https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules-${TAG}.zip"
@@ -351,7 +351,7 @@ function updateConfigs() {
   else
     local TAG="${1}"
   fi
-  if [ -n "${TAG}" ] && [ "${CONFIGSVERSION}" != "${TAG}" ]; then
+  if [ -n "${TAG}" ]; then
     export URL="https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs-${TAG}.zip"
     export TAG="${TAG}"
     {
@@ -408,7 +408,7 @@ function updateLKMs() {
   else
     local TAG="${1}"
   fi
-  if [ -n "${TAG}" ] && [ "${LKMVERSION}" != "${TAG}" ]; then
+  if [ -n "${TAG}" ]; then
     export URL="https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip"
     export TAG="${TAG}"
     {
@@ -465,26 +465,34 @@ function updateOffline() {
   return 0
 }
 
-###############################################################################
-# Loading Update Mode
 function dependenciesUpdate() {
-  dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
-    --infobox "Updating Dependencies..." 3 40
-  sleep 2
+  # Display a selection box for the user to choose updates
+  CHOICES=$(dialog --backtitle "$(backtitle)" --title "Select Dependencies to Update" \
+    --checklist "Use SPACE to select and ENTER to confirm:" 15 50 6 \
+    "updateAddons" "Update Addons" off \
+    "updateModules" "Update Modules" off \
+    "updateCustom" "Update Custom Kernel" off \
+    "updatePatches" "Update Patches" off \
+    "updateLKMs" "Update LKMs" off \
+    "updateOffline" "Update Offline Data" off 3>&1 1>&2 2>&3)
 
-  FAILED="false"
-  for updateFunction in updateAddons updateModules updateCustom updatePatches updateLKMs updateOffline; do
-    $updateFunction || FAILED="true"
+  # Exit if the user cancels the selection
+  [ $? -ne 0 ] && dialog --infobox "Update canceled by the user." 3 40 && sleep 2 && clear && return
+
+  # Process the selected updates
+  FAILED=false
+  for updateFunction in ${CHOICES}; do
+    $updateFunction || FAILED=true
   done
 
-  if [ "${FAILED}" = "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
-      --infobox "Update Dependencies failed! Try again later." 3 40
+  # Display the result of the update process
+  if $FAILED; then
+    dialog --infobox "Some updates failed! Try again later." 3 40
   else
-    dialog --backtitle "$(backtitle)" --title "Update Dependencies" --aspect 18 \
-      --infobox "Update Dependencies successful!" 3 40
+    dialog --infobox "All selected updates completed successfully!" 3 40
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   fi
+
   sleep 3
   clear
   exec arc.sh
