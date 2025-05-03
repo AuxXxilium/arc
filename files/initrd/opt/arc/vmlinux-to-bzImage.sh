@@ -60,7 +60,9 @@ size_le() {
 VMLINUX_MOD=${1}
 ZIMAGE_MOD=${2}
 
-KVER=$(strings "${VMLINUX_MOD}" | grep -Eo "Linux version [0-9]+\.[0-9]+\.[0-9]+" | head -1 | awk '{print $3}')
+PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 if [ "${KVER:0:1}" = "4" ]; then
   # Kernel version 4.x or 3.x (bromolow)
   # zImage_head           16494
