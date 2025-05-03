@@ -174,7 +174,7 @@ if [ "${EFI}" -eq 1 ]; then
  fi
 
 # DSM Cmdline
-if [ "${KVER:0:1}" -eq 4 ]; then
+if [ "${KVER:0:1}" = "4" ]; then
   if [ "${BUS}" != "usb" ]; then
     SZ=$(blockdev --getsz "${LOADER_DISK}" 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
     SS=$(blockdev --getss "${LOADER_DISK}" 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)

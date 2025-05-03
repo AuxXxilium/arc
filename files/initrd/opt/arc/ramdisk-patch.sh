@@ -140,7 +140,7 @@ echo "Create addons.sh" >"${LOG_FILE}"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
-for ADDON in $(if [ "${KVER:0:1}" -eq 5 ]; then echo "redpill"; fi) "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
+for ADDON in $(if [ "${KVER:0:1}" = "5" ]; then echo "redpill"; fi) "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     [ -f "${USER_UP_PATH}/model.dts" ] && cp -f "${USER_UP_PATH}/model.dts" "${RAMDISK_PATH}/addons/model.dts"
@@ -221,7 +221,7 @@ for N in $(seq 0 7); do
 done
 
 # Linux 5.x patches
-if [ "${KVER:0:1}" -eq 5 ]; then
+if [ "${KVER:0:1}" = "5" ]; then
   echo -e ">>> apply Linux 5.x fixes"
   sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno

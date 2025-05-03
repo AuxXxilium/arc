@@ -61,7 +61,7 @@ VMLINUX_MOD=${1}
 ZIMAGE_MOD=${2}
 
 KVER=$(strings "${VMLINUX_MOD}" | grep -Eo "Linux version [0-9]+\.[0-9]+\.[0-9]+" | head -1 | awk '{print $3}')
-if [ "${KVER:0:1}" -eq 4 ]; then
+if [ "${KVER:0:1}" = "4" ]; then
   # Kernel version 4.x or 3.x (bromolow)
   # zImage_head           16494
   # payload(
@@ -77,6 +77,7 @@ if [ "${KVER:0:1}" -eq 4 ]; then
   #   unknown             114460
   # )                     114570
   # crc32                 4
+  echo -n " - Using Kernel 4.x"
   gzip -dc "${ARC_PATH}/bzImage-template-v4.gz" >"${ZIMAGE_MOD}" || exit 1
 
   dd if="${VMLINUX_MOD}" of="${ZIMAGE_MOD}" bs=16494 seek=1 conv=notrunc || exit 1
@@ -88,6 +89,7 @@ if [ "${KVER:0:1}" -eq 4 ]; then
   size_le "$((16#$(crc32 "${ZIMAGE_MOD}" | awk '{print $1}') ^ 0xFFFFFFFF))" | dd of="${ZIMAGE_MOD}" conv=notrunc oflag=append || exit 1
 else
   # Kernel version 5.x
+  echo -n " - Using Kernel 5.x"
   gzip -dc "${ARC_PATH}/bzImage-template-v5.gz" >"${ZIMAGE_MOD}" || exit 1
 
   dd if="${VMLINUX_MOD}" of="${ZIMAGE_MOD}" bs=14561 seek=1 conv=notrunc || exit 1
