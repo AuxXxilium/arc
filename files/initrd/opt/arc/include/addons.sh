@@ -7,12 +7,9 @@ function availableAddons() {
     return 1
   fi
   local ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  local ARCCONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   local PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   MACHINE="$(virt-what 2>/dev/null | head -1)"
-  if [ -z "${MACHINE}" ]; then
-    MACHINE="physical"
-  fi
+  [ -z "${MACHINE}" ] && MACHINE="physical" || true
   for D in $(find "${ADDONS_PATH}" -maxdepth 1 -type d 2>/dev/null | sort); do
     [ ! -f "${D}/manifest.yml" ] && continue
     local ADDON=$(basename "${D}")
@@ -20,16 +17,8 @@ function availableAddons() {
     [ "${AVAILABLE}" = false ] && continue
     local SYSTEM=$(readConfigKey "system" "${D}/manifest.yml")
     [ "${SYSTEM}" = true ] && continue
-    if [[ "${ARCOFFLINE}" = "true" || -z "${ARCCONF}" ]] && [[ "${ADDON}" = "amepatch" || "${ADDON}" = "arcdns" ]]; then
-      continue
-    fi
     if [ "${MACHINE}" != "physical" ] && [ "${ADDON}" = "cpufreqscaling" ]; then
       continue
-    fi
-    if echo "${PAT_URL}" 2>/dev/null | grep -vq "7.2.2"; then
-      if [ "${ADDON}" = "allowdowngrade" ]; then
-        continue
-      fi
     fi
     local DESC="$(readConfigKey "description" "${D}/manifest.yml")"
     local BETA="$(readConfigKey "beta" "${D}/manifest.yml")"

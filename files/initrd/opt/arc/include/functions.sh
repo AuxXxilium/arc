@@ -40,7 +40,6 @@ function arc_mode() {
   else
     ARC_MODE="dsm"
   fi
-  [ "$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")" ] && ARC_CONF="true" || true
 }
 
 
@@ -602,6 +601,7 @@ function systemCheck () {
   fi
   # Check for Arc Patch
   arc_mode
+  ARC_CONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
   [ -z "${ARC_CONF}" ] && writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   getnetinfo
   getdiskinfo

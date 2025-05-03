@@ -61,6 +61,7 @@ DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
 HWIDINFO="$(readConfigKey "bootscreen.hwidinfo" "${USER_CONFIG_FILE}")"
 GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
+HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
@@ -138,13 +139,6 @@ KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
 MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 
-if [ -z "${SN}" ] && [ "${ARC_PATCH}" != "user" ]; then
-  [ -n "${ARC_CONF}" ] && ARC_PATCH="true" || ARC_PATCH="false"
-  SN="$(generateSerial "${MODEL}" "${ARC_PATCH}")"
-  writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.patch" "${ARC_PATCH}" "${USER_CONFIG_FILE}"
-fi
-
 declare -A CMDLINE
 
 # Automated Cmdline
@@ -154,9 +148,9 @@ CMDLINE['pid']="${PID:-"0x0001"}"
 CMDLINE['sn']="${SN}"
 
 # NIC Cmdline
-ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
-ETHM="$(readConfigKey "${MODEL}.ports" "${S_FILE}")"
-ETHN=$(echo "${ETHX}" | wc -w)
+ETHX=$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)
+ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}")
+ETHN=$(wc -w <<< "${ETHX}")
 ETHM=${ETHM:-${ETHN}}
 NIC=0
 for N in ${ETHX}; do
@@ -180,7 +174,7 @@ if [ "${EFI}" -eq 1 ]; then
  fi
 
 # DSM Cmdline
-if [ "${KVER:0:1}" -eq 4 ]; then
+if [ "${KVER:0:1}" = "4" ]; then
   if [ "${BUS}" != "usb" ]; then
     SZ=$(blockdev --getsz "${LOADER_DISK}" 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
     SS=$(blockdev --getss "${LOADER_DISK}" 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
@@ -233,20 +227,32 @@ CMDLINE['nowatchdog']=""
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 CMDLINE['mev']="${MACHINE:-physical}"
 
+if [ "${HDDSORT}" = "true" ]; then
+  CMDLINE['hddsort']=""
+fi
 if [ "${USBMOUNT}" = "true" ]; then
   CMDLINE['usbinternal']=""
 fi
-
 if [ -n "${GOVERNOR}" ]; then
   CMDLINE['governor']="${GOVERNOR}"
 fi
 
-for P in apollolake geminilake purley; do
-  if [ "${PLATFORM}" = "${P}" ]; then
-    CMDLINE['nox2apic']=""
-    break
+if [ "${PLATFORM}" = "apollolake" ] || [ "${PLATFORM}" = "geminilake" ] || [ "${PLATFORM}" = "purley" ]; then
+  CMDLINE['nox2apic']=""
+fi
+
+if [ "${PLATFORM}" = "apollolake" ] || [ "${PLATFORM}" = "geminilake" ]; then
+  CMDLINE['SASmodel']="1"
+fi
+
+if [ "${DT}" = "true" ]; then
+  if [ "${PLATFORM}" != "v1000nk" ] && [ "${PLATFORM}" != "epyc7002" ] && [ "${PLATFORM}" != "purley" ] && [ "${PLATFORM}" != "broadwellnkv2" ]; then
+    if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
+      [ -n "${CMDLINE['modprobe.blacklist']}" ] && CMDLINE['modprobe.blacklist']+=","
+      CMDLINE['modprobe.blacklist']+="mpt3sas"
+    fi
   fi
-done
+fi
 
 # if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
 #   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "sdhci"; then
@@ -254,27 +260,9 @@ done
 #     CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
 #   fi
 # fi
-if [ "${DT}" = "true" ]; then
-  for P in v1000nk epyc7002 purley broadwellnkv2; do
-    if [ "${PLATFORM}" != "${P}" ]; then
-      if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
-        [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
-        CMDLINE['modprobe.blacklist']+="mpt3sas"
-      fi
-    elif [ "${PLATFORM}" = "${P}" ]; then
-      break
-    fi
-  done
-fi
+
 # CMDLINE['kvm.ignore_msrs']="1"
 # CMDLINE['kvm.report_ignored_msrs']="0"
-
-for P in apollolake geminilake; do
-  if [ "${PLATFORM}" = "${P}" ]; then
-    CMDLINE['SASmodel']="1"
-    break
-  fi
-done
 
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do
