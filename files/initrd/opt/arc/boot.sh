@@ -27,7 +27,7 @@ printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 TITLE="Boot:"
-[ "${EFI}" -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
+[ "${EFI}" = "1" ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
 TITLE+=" | Device: [${BUS}] | Mode: [${ARC_MODE}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 # Check if DSM zImage/Ramdisk is changed, patch it if necessary, update Files if necessary
@@ -167,7 +167,7 @@ for BM in force_junior recovery; do
     CMDLINE["${BM}"]=""
   fi
 done
-if [ "${EFI}" -eq 1 ]; then
+if [ "${EFI}" = "1" ]; then
    CMDLINE['withefi']=""
  else
    CMDLINE['noefi']=""
