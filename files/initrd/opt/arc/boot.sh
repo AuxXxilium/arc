@@ -61,6 +61,7 @@ DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
 HWIDINFO="$(readConfigKey "bootscreen.hwidinfo" "${USER_CONFIG_FILE}")"
 GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
+HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
@@ -233,10 +234,12 @@ CMDLINE['nowatchdog']=""
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 CMDLINE['mev']="${MACHINE:-physical}"
 
+if [ "${HDDSORT}" = "true" ]; then
+  CMDLINE['hddsort']=""
+fi
 if [ "${USBMOUNT}" = "true" ]; then
   CMDLINE['usbinternal']=""
 fi
-
 if [ -n "${GOVERNOR}" ]; then
   CMDLINE['governor']="${GOVERNOR}"
 fi

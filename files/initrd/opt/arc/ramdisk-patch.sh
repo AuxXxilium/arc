@@ -143,8 +143,6 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 for ADDON in $(if [ "${KVER:0:1}" -eq 5 ]; then echo "redpill"; fi) "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
-    HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
-    PARAMS="${HDDSORT}"
     [ -f "${USER_UP_PATH}/model.dts" ] && cp -f "${USER_UP_PATH}/model.dts" "${RAMDISK_PATH}/addons/model.dts"
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   fi
