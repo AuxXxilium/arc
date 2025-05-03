@@ -139,13 +139,6 @@ KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
 MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 
-if [ -z "${SN}" ] && [ "${ARC_PATCH}" != "user" ]; then
-  [ -n "${ARC_CONF}" ] && ARC_PATCH="true" || ARC_PATCH="false"
-  SN="$(generateSerial "${MODEL}" "${ARC_PATCH}")"
-  writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.patch" "${ARC_PATCH}" "${USER_CONFIG_FILE}"
-fi
-
 declare -A CMDLINE
 
 # Automated Cmdline
