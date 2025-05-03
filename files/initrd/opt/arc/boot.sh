@@ -244,12 +244,22 @@ if [ -n "${GOVERNOR}" ]; then
   CMDLINE['governor']="${GOVERNOR}"
 fi
 
-for P in apollolake geminilake purley; do
-  if [ "${PLATFORM}" = "${P}" ]; then
-    CMDLINE['nox2apic']=""
-    break
+if [ "${PLATFORM}" = "apollolake" ] || [ "${PLATFORM}" = "geminilake" ] || [ "${PLATFORM}" = "purley" ]; then
+  CMDLINE['nox2apic']=""
+fi
+
+if [ "${PLATFORM}" = "apollolake" ] || [ "${PLATFORM}" = "geminilake" ]; then
+  CMDLINE['SASmodel']="1"
+fi
+
+if [ "${DT}" = "true" ]; then
+  if [ "${PLATFORM}" != "v1000nk" ] && [ "${PLATFORM}" != "epyc7002" ] && [ "${PLATFORM}" != "purley" ] && [ "${PLATFORM}" != "broadwellnkv2" ]; then
+    if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
+      [ -n "${CMDLINE['modprobe.blacklist']}" ] && CMDLINE['modprobe.blacklist']+=","
+      CMDLINE['modprobe.blacklist']+="mpt3sas"
+    fi
   fi
-done
+fi
 
 # if [ -n "$(ls /dev/mmcblk* 2>/dev/null)" ] && [ "${BUS}" != "mmc" ] && [ "${EMMCBOOT}" != "true" ]; then
 #   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "sdhci"; then
@@ -257,27 +267,9 @@ done
 #     CMDLINE['modprobe.blacklist']+="sdhci,sdhci_pci,sdhci_acpi"
 #   fi
 # fi
-if [ "${DT}" = "true" ]; then
-  for P in v1000nk epyc7002 purley broadwellnkv2; do
-    if [ "${PLATFORM}" != "${P}" ]; then
-      if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
-        [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
-        CMDLINE['modprobe.blacklist']+="mpt3sas"
-      fi
-    elif [ "${PLATFORM}" = "${P}" ]; then
-      break
-    fi
-  done
-fi
+
 # CMDLINE['kvm.ignore_msrs']="1"
 # CMDLINE['kvm.report_ignored_msrs']="0"
-
-for P in apollolake geminilake; do
-  if [ "${PLATFORM}" = "${P}" ]; then
-    CMDLINE['SASmodel']="1"
-    break
-  fi
-done
 
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do
