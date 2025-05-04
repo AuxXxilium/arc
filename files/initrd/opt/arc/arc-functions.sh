@@ -65,6 +65,7 @@ function arcModel() {
           fi
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
         fi
+        [ "${M}" = "DS925+" ] && COMPATIBLE=0
         [ -n "$(grep -w "${M}" "${S_FILE}")" ] && BETA="Arc" || BETA="Syno"
         [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
         if [ -n "${ARC_CONF}" ]; then
@@ -160,10 +161,13 @@ function arcVersion() {
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
       # Reset Config if changed
       writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
+      writeConfigKey "governor" "" "${USER_CONFIG_FILE}"
       writeConfigKey "paturl" "" "${USER_CONFIG_FILE}"
       writeConfigKey "pathash" "" "${USER_CONFIG_FILE}"
       writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
       writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
       writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
     fi
