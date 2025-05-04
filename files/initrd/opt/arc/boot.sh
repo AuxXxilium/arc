@@ -70,7 +70,7 @@ ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 [[ -z "${MODELID}" || "${MODELID}" != "${MODEL}" ]] && die "Loader build not completed! Model mismatch! -> Rebuild loader!"
 
 # HardwareID Check
-if [ "${ARC_PATCH}" = "true" ] || [ -n "${ARCCONF}" ]; then
+if [ "${ARC_PATCH}" = "true" ]; then
   HARDWAREID="$(readConfigKey "arc.hardwareid" "${USER_CONFIG_FILE}")"
   HWID="$(genHWID)"
   if [ "${HARDWAREID}" != "${HWID}" ]; then
@@ -124,7 +124,7 @@ if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   [ "${HASATA}" -eq 0 ] && echo -e "\033[1;31m*** Note: Please insert at least one Sata/SAS/SCSI Disk for System installation, except the Bootloader Disk. ***\033[0m"
 fi
 
-if checkBIOS_VT_d && [ "${KVER:0:1}" -eq 4 ]; then
+if checkBIOS_VT_d && [ "${KVER:0:1}" = "4" ]; then
   echo -e "\033[1;31m*** Notice: Disable Intel(VT-d)/AMD(AMD-V) in BIOS/UEFI settings if you encounter a boot issues. ***\033[0m"
   echo
 fi
@@ -162,11 +162,13 @@ done
 CMDLINE['netif_num']="${NIC}"
 
 # Boot Cmdline
-for BM in force_junior recovery; do
-  if grep -q "${BM}" /proc/cmdline; then
-    CMDLINE["${BM}"]=""
-  fi
-done
+if grep -q "force_junior" /proc/cmdline; then
+  CMDLINE["force_junior"]=""
+fi
+if grep -q "recovery" /proc/cmdline; then
+  CMDLINE["recovery"]=""
+fi
+
 if [ "${EFI}" = "1" ]; then
    CMDLINE['withefi']=""
  else
@@ -225,7 +227,7 @@ CMDLINE['pcie_aspm']="off"
 # CMDLINE['nomodeset']=""
 CMDLINE['nowatchdog']=""
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
-CMDLINE['mev']="${MACHINE:-physical}"
+CMDLINE['mev']="${MACHINE}"
 
 if [ "${HDDSORT}" = "true" ]; then
   CMDLINE['hddsort']=""

@@ -65,6 +65,7 @@ function arcModel() {
           fi
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
         fi
+        [ "${M}" = "DS925+" ] && COMPATIBLE=0
         [ -n "$(grep -w "${M}" "${S_FILE}")" ] && BETA="Arc" || BETA="Syno"
         [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
         if [ -n "${ARC_CONF}" ]; then
@@ -160,10 +161,13 @@ function arcVersion() {
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
       # Reset Config if changed
       writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
+      writeConfigKey "governor" "" "${USER_CONFIG_FILE}"
       writeConfigKey "paturl" "" "${USER_CONFIG_FILE}"
       writeConfigKey "pathash" "" "${USER_CONFIG_FILE}"
       writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
       writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
       writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
     fi
@@ -399,7 +403,7 @@ function arcSettings() {
     --infobox "Generating Storage Map..." 3 40
   sleep 2
   getmap || return
-  if [ "${DT}" = "false" ] && [ "${SATADRIVES:-0}" -gt 0 ]; then
+  if [ "${DT}" = "false" ] && [ "${SATADRIVES}" -gt 0 ]; then
     getmapSelection || return
   fi
   
@@ -417,7 +421,7 @@ function arcSettings() {
         --infobox "Generating Governor Table..." 3 40
       governorSelection || return
     elif [ "${ARC_MODE}" = "automated" ] && [ "${MACHINE}" = "physical" ]; then
-      if [ "${PLATFORM}" = "epyc7002" ]; then
+      if [ "${KVER:0:1}" = "5" ]; then
         writeConfigKey "governor" "schedutil" "${USER_CONFIG_FILE}"
       else
         writeConfigKey "governor" "conservative" "${USER_CONFIG_FILE}"
@@ -2841,9 +2845,9 @@ function governorSelection () {
   rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
   # Selectable CPU governors
-  [ "${PLATFORM}" = "epyc7002" ] && echo -e "schedutil \"use schedutil to scale frequency *\"" >>"${TMP_PATH}/opts"
-  [ "${PLATFORM}" != "epyc7002" ] && echo -e "conservative \"use conservative to scale frequency *\"" >>"${TMP_PATH}/opts"
-  [ "${PLATFORM}" != "epyc7002" ] && echo -e "ondemand \"use ondemand to scale frequency\"" >>"${TMP_PATH}/opts"
+  [ "${KVER:0:1}" = "5" ] && echo -e "schedutil \"use schedutil to scale frequency *\"" >>"${TMP_PATH}/opts"
+  [ "${KVER:0:1}" = "4" ] && echo -e "conservative \"use conservative to scale frequency *\"" >>"${TMP_PATH}/opts"
+  [ "${KVER:0:1}" = "4" ] && echo -e "ondemand \"use ondemand to scale frequency\"" >>"${TMP_PATH}/opts"
   echo -e "performance \"always run at max frequency\"" >>"${TMP_PATH}/opts"
   echo -e "powersave \"always run at lowest frequency\"" >>"${TMP_PATH}/opts"
   dialog --backtitle "$(backtitle)" --title "CPU Frequency Scaling" \

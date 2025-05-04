@@ -106,7 +106,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
           fi
         done
 
-        if [ "${PLATFORM}" = "epyc7002" ]; then
+        if [ "${PLATFORM}" = "epyc7002" ] && [ "${PRODUCTVER}" = "7.2" ]; then
           write_menu_value "K" "Kernel" "${KERNEL}"
         fi
 
