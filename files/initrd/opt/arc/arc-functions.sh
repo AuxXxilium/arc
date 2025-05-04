@@ -403,7 +403,7 @@ function arcSettings() {
     --infobox "Generating Storage Map..." 3 40
   sleep 2
   getmap || return
-  if [ "${DT}" = "false" ] && [ "${SATADRIVES:-0}" -gt 0 ]; then
+  if [ "${DT}" = "false" ] && [ "${SATADRIVES}" -gt 0 ]; then
     getmapSelection || return
   fi
   
@@ -421,7 +421,7 @@ function arcSettings() {
         --infobox "Generating Governor Table..." 3 40
       governorSelection || return
     elif [ "${ARC_MODE}" = "automated" ] && [ "${MACHINE}" = "physical" ]; then
-      if [ "${PLATFORM}" = "epyc7002" ]; then
+      if [ "${KVER:0:1}" = "5" ]; then
         writeConfigKey "governor" "schedutil" "${USER_CONFIG_FILE}"
       else
         writeConfigKey "governor" "conservative" "${USER_CONFIG_FILE}"
@@ -2845,9 +2845,9 @@ function governorSelection () {
   rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
   # Selectable CPU governors
-  [ "${PLATFORM}" = "epyc7002" ] && echo -e "schedutil \"use schedutil to scale frequency *\"" >>"${TMP_PATH}/opts"
-  [ "${PLATFORM}" != "epyc7002" ] && echo -e "conservative \"use conservative to scale frequency *\"" >>"${TMP_PATH}/opts"
-  [ "${PLATFORM}" != "epyc7002" ] && echo -e "ondemand \"use ondemand to scale frequency\"" >>"${TMP_PATH}/opts"
+  [ "${KVER:0:1}" = "5" ] && echo -e "schedutil \"use schedutil to scale frequency *\"" >>"${TMP_PATH}/opts"
+  [ "${KVER:0:1}" = "4" ] && echo -e "conservative \"use conservative to scale frequency *\"" >>"${TMP_PATH}/opts"
+  [ "${KVER:0:1}" = "4" ] && echo -e "ondemand \"use ondemand to scale frequency\"" >>"${TMP_PATH}/opts"
   echo -e "performance \"always run at max frequency\"" >>"${TMP_PATH}/opts"
   echo -e "powersave \"always run at lowest frequency\"" >>"${TMP_PATH}/opts"
   dialog --backtitle "$(backtitle)" --title "CPU Frequency Scaling" \

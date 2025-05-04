@@ -15,7 +15,7 @@ KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-[ "${PLATFORM}" = "epyc7002" ] && KVERP="${PRODUCTVER}-${KVER}" || die "Unsupported platform: ${PLATFORM}"
+is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || true
 if [ "${KERNEL}" = "custom" ]; then
   echo -e ">>> using customized Kernel for ${PLATFORM} (${KVER})"
   # Extract bzImage
