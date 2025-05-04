@@ -70,7 +70,7 @@ ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 [[ -z "${MODELID}" || "${MODELID}" != "${MODEL}" ]] && die "Loader build not completed! Model mismatch! -> Rebuild loader!"
 
 # HardwareID Check
-if [ "${ARC_PATCH}" = "true" ] || [ -n "${ARCCONF}" ]; then
+if [ "${ARC_PATCH}" = "true" ]; then
   HARDWAREID="$(readConfigKey "arc.hardwareid" "${USER_CONFIG_FILE}")"
   HWID="$(genHWID)"
   if [ "${HARDWAREID}" != "${HWID}" ]; then
