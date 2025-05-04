@@ -690,6 +690,7 @@ function readData() {
     PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
     DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+    KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
   fi
 
   # Get Arc Data from Config
@@ -717,7 +718,6 @@ function readData() {
   KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
   GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
   STORAGEPANEL="$(readConfigKey "addons.storagepanel" "${USER_CONFIG_FILE}")"
-  SEQUENTIALIO="$(readConfigKey "addons.sequentialio" "${USER_CONFIG_FILE}")"
   ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
   RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
   SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
