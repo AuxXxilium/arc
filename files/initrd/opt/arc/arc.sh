@@ -122,7 +122,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       if [ "${BOOTOPTS}" = "true" ]; then
         write_menu "6" "\Z1Hide Boot Options\Zn"
         write_menu_value "m" "Boot Kernelload" "${KERNELLOAD}"
-        write_menu_value "E" "eMMC Boot Support" "${EMMCBOOT}"
+        write_menu_value "E" "DSM on eMMC Boot Support" "${EMMCBOOT}"
         if [ "${DIRECTBOOT}" = "false" ]; then
           write_menu_value "i" "Boot IP Waittime" "${BOOTIPWAIT}"
         fi
