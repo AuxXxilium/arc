@@ -570,9 +570,6 @@ function make() {
     deleteConfigKey "addons.amepatch" "${USER_CONFIG_FILE}"
     deleteConfigKey "addons.arcdns" "${USER_CONFIG_FILE}"
   fi
-  # Max Memory for DSM
-  RAMCONFIG="$((${RAMTOTAL} * 1024 * 2))"
-  writeConfigKey "synoinfo.mem_max_mb" "${RAMCONFIG}" "${USER_CONFIG_FILE}"
   if [ -n "${IPCON}" ]; then
     getpatfiles
   else
@@ -1370,8 +1367,9 @@ function backupMenu() {
         fi
         mkdir -p "${TMP_PATH}/mdX"
         for I in ${DSMROOTS}; do
-          # fixDSMRootPart "${I}"
-          mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+          fixDSMRootPart "${I}"
+          mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
+          [ $? -ne 0 ] && continue
           MODEL=""
           PRODUCTVER=""
           if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" ]; then
@@ -2080,8 +2078,8 @@ function downgradeMenu() {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      # fixDSMRootPart "${I}"
-      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+    fixDSMRootPart "${I}"
+      mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       [ -f "${TMP_PATH}/mdX/etc/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc/VERSION" >/dev/null
       [ -f "${TMP_PATH}/mdX/etc.defaults/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc.defaults/VERSION" >/dev/null
@@ -2108,8 +2106,8 @@ function resetPassword() {
   rm -f "${TMP_PATH}/menu" >/dev/null
   mkdir -p "${TMP_PATH}/mdX"
   for I in ${DSMROOTS}; do
-    # fixDSMRootPart "${I}"
-    mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+    fixDSMRootPart "${I}"
+    mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
     [ $? -ne 0 ] && continue
     if [ -f "${TMP_PATH}/mdX/etc/shadow" ]; then
       while read L; do
@@ -2151,8 +2149,8 @@ function resetPassword() {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      # fixDSMRootPart "${I}"
-      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      fixDSMRootPart "${I}"
+      mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       sed -i "s|^${USER}:[^:]*|${USER}:${NEWPASSWD}|" "${TMP_PATH}/mdX/etc/shadow"
       sed -i "/^${USER}:/ s/^\(${USER}:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:\)[^:]*:/\1:/" "${TMP_PATH}/mdX/etc/shadow"
@@ -2192,8 +2190,8 @@ function addNewDSMUser() {
 
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      # fixDSMRootPart "${I}"
-      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      fixDSMRootPart "${I}"
+      mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
         sqlite3 "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" <<EOF
@@ -2391,11 +2389,9 @@ function disablescheduledTasks {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      # fixDSMRootPart "${I}"
-      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
-      if [ $? -ne 0 ]; then
-        continue
-      fi
+      fixDSMRootPart "${I}"
+      mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
+      [ $? -ne 0 ] && continue
       if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
         echo "UPDATE task SET enable = 0;" | sqlite3 "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db"
         sync
@@ -2634,8 +2630,8 @@ function greplogs() {
   if [ -n "${DSMROOTS}" ]; then
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      # fixDSMRootPart "${I}"
-      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      fixDSMRootPart "${I}"
+      mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       mkdir -p "${TMP_PATH}/logs/md0/log"
       cp -rf ${TMP_PATH}/mdX/.log.junior "${TMP_PATH}/logs/md0"
@@ -2784,8 +2780,8 @@ function resetDSMNetwork {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      # fixDSMRootPart "${I}"
-      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      fixDSMRootPart "${I}"
+      mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       rm -f "${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-bond"* "${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-eth"*
       sync
