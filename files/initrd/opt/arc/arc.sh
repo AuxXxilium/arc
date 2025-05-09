@@ -67,14 +67,13 @@ elif [ "${ARC_MODE}" = "config" ]; then
     if [ "${CONFDONE}" = "true" ]; then
       if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
         write_menu "2" "Rebuild Loader"
-        write_menu "3" "Rebuild Loader (clean)*"
       else
         write_menu "2" "Build Loader"
       fi
     fi
 
     if [ "${BUILDDONE}" = "true" ]; then
-      write_menu "4" "Boot Loader"
+      write_menu "3" "Boot Loader"
     fi
 
     write_menu "=" "\Z4===== Info =====\Zn"
@@ -121,6 +120,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
 
       if [ "${BOOTOPTS}" = "true" ]; then
         write_menu "6" "\Z1Hide Boot Options\Zn"
+        write_menu "f" "Bootscreen Options"
         write_menu_value "m" "Boot Kernelload" "${KERNELLOAD}"
         write_menu_value "E" "DSM on eMMC Boot Support" "${EMMCBOOT}"
         if [ "${DIRECTBOOT}" = "false" ]; then
@@ -152,14 +152,13 @@ elif [ "${ARC_MODE}" = "config" ]; then
       write_menu "8" "\Z1Hide Loader Options\Zn"
       write_menu_value "c" "Offline Mode" "${ARC_OFFLINE}"
       write_menu "D" "StaticIP for Loader/DSM"
-      write_menu "f" "Bootscreen Options"
       write_menu "U" "Change Loader Password"
       write_menu "Z" "Change Loader Ports"
       write_menu "w" "Reset Loader to Defaults"
       write_menu "L" "Grep Logs from dbgutils"
       write_menu "B" "Grep DSM Config from Backup"
       write_menu "=" "\Z1== Edit with caution! ==\Zn"
-      write_menu_value "W" "RD Compression" "${RD_COMPRESSED}"
+      write_menu_value "W" "Ramdisk Compression" "${RD_COMPRESSED}"
       write_menu_value "X" "Sata DOM" "${SATADOM}"
       write_menu_value "u" "LKM Version" "${LKM}"
       write_menu "C" "Clone Loader to another Disk"
@@ -190,11 +189,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
           0) genHardwareID; NEXT="0" ;;
           1) arcModel; NEXT="2" ;;
           2) arcSummary; NEXT="3" ;;
-          3) rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
-            arcSummary;
-            NEXT="3"
-            ;;
-          4) boot; NEXT="4" ;;
+          3) boot; NEXT="3" ;;
           # Info Section
           a) sysinfo; NEXT="a" ;;
           A) networkdiag; NEXT="A" ;;
@@ -215,6 +210,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
           6) [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
             NEXT="6"
             ;;
+          f) bootScreen; NEXT="f" ;;
           m) [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
             writeConfigKey "kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
             NEXT="m"
@@ -309,7 +305,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
             NEXT="c"
             ;;
           D) staticIPMenu; NEXT="D" ;;
-          f) bootScreen; NEXT="f" ;;
           Z) loaderPorts; NEXT="Z" ;;
           U) loaderPassword; NEXT="U" ;;
           W) RD_COMPRESSED=$([ "${RD_COMPRESSED}" = "true" ] && echo 'false' || echo 'true')

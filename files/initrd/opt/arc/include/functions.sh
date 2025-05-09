@@ -195,7 +195,7 @@ function generateMacAddress() {
   else
     MACSUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
   fi
-  NUM="${2:-1}"
+  NUM="${2:1}"
   local MACS=""
   for I in $(seq 1 "${NUM}"); do
     MACS+="$(printf '%06x%06x' $((0x${MACPRE:-"001132"})) $(($((0x${MACSUF})) + ${I})))"
@@ -263,60 +263,73 @@ function arrayExistItem() {
 
 ###############################################################################
 # Get values in .conf K=V file
-# 1 - key
-# 2 - file
+# 1 - file
+# 2 - key
 function _get_conf_kv() {
-  grep "${1}" "${2}" | sed "s|^${1}=\"\(.*\)\"$|\1|g"
+  grep "^${2}=" "${1}" 2>/dev/null | cut -d'=' -f2- | sed 's/^"//;s/"$//' 2>/dev/null
+  return $?
 }
 
 ###############################################################################
 # Replace/remove/add values in .conf K=V file
-# 1 - name
-# 2 - new_val
-# 3 - path
+# 1 - file
+# 2 - key
+# 3 - value
 function _set_conf_kv() {
   # Delete
-  if [ -z "${2}" ]; then
-    sed -i "${3}" -e "s/^${1}=.*$//"
-    return $?;
+  if [ -z "${3}" ]; then
+    sed -i "/^${2}=/d" "${1}" 2>/dev/null
+    return $?
   fi
 
   # Replace
-  if grep -q "^${1}=" "${3}"; then
-    sed -i "${3}" -e "s\"^${1}=.*\"${1}=\\\"${2}\\\"\""
+  if grep -q "^${2}=" "${1}" 2>/dev/null; then
+    sed -i "s#^${2}=.*#${2}=\"${3}\"#" "${1}" 2>/dev/null
     return $?
   fi
 
   # Add if doesn't exist
-  echo "${1}=\"${2}\"" >>"${3}"
+  mkdir -p "$(dirname "${1}" 2>/dev/null)" 2>/dev/null
+  echo "${2}=\"${3}\"" >>"${1}" 2>/dev/null
+  return $?
 }
 
 ###############################################################################
-# sort netif busid
+# sort netif name
+# @1 -mac1,mac2,mac3...
 function _sort_netif() {
-  local ETHLIST=""
-  local ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
-  for N in ${ETHX}; do
-    local MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g; s/.*/\L&/')"
-    local BUS="$(ethtool -i ${N} 2>/dev/null | grep bus-info | cut -d' ' -f2)"
-    ETHLIST="${ETHLIST}${BUS} ${MAC} ${N}\n"
+  ETHLIST=""
+  for F in /sys/class/net/eth*; do
+    [ ! -e "${F}" ] && continue
+    ETH="$(basename "${F}")"
+    MAC="$(cat "/sys/class/net/${ETH}/address" 2>/dev/null | sed 's/://g; s/.*/\L&/')"
+    BUS="$(ethtool -i "${ETH}" 2>/dev/null | grep bus-info | cut -d' ' -f2)"
+    ETHLIST="${ETHLIST}${BUS} ${MAC} ${ETH}\n"
   done
-  local ETHLISTTMPB="$(echo -e "${ETHLIST}" | sort)"
-  local ETHLIST="$(echo -e "${ETHLISTTMPB}" | grep -v '^$')"
-  local ETHSEQ="$(echo -e "${ETHLIST}" | awk '{print $3}' | sed 's/eth//g')"
-  local ETHNUM="$(echo -e "${ETHLIST}" | wc -l)"
+  ETHLISTTMPM=""
+  ETHLISTTMPB="$(echo -e "${ETHLIST}" | sort)"
+  if [ -n "${1}" ]; then
+    MACS="$(echo "${1}" | sed 's/://g; s/,/ /g; s/.*/\L&/')"
+    for MACX in ${MACS}; do
+      ETHLISTTMPM="${ETHLISTTMPM}$(echo -e "${ETHLISTTMPB}" | grep "${MACX}")\n"
+      ETHLISTTMPB="$(echo -e "${ETHLISTTMPB}" | grep -v "${MACX}")\n"
+    done
+  fi
+  ETHLIST="$(echo -e "${ETHLISTTMPM}${ETHLISTTMPB}" | grep -v '^$')"
+  ETHSEQ="$(echo -e "${ETHLIST}" | awk '{print $3}' | sed 's/eth//g')"
+  ETHNUM="$(echo -e "${ETHLIST}" | wc -l)"
 
   # sort
   if [ ! "${ETHSEQ}" = "$(seq 0 $((${ETHNUM:0} - 1)))" ]; then
     /etc/init.d/S41dhcpcd stop >/dev/null 2>&1
     /etc/init.d/S40network stop >/dev/null 2>&1
     for i in $(seq 0 $((${ETHNUM:0} - 1))); do
-      ip link set dev eth${i} name tmp${i}
+      ip link set dev "eth${i}" name "tmp${i}"
     done
     I=0
     for i in ${ETHSEQ}; do
-      ip link set dev tmp${i} name eth${I}
-      I=$((${I} + 1))
+      ip link set dev "tmp${i}" name "eth${I}"
+      I=$((I + 1))
     done
     /etc/init.d/S40network start >/dev/null 2>&1
     /etc/init.d/S41dhcpcd start >/dev/null 2>&1
@@ -330,9 +343,9 @@ function _sort_netif() {
 function getBus() {
   local BUS=""
   # usb/ata(ide)/sata/sas/spi(scsi)/virtio/mmc/nvme
-  [ -z "${BUS}" ] && BUS="$(lsblk -dpno KNAME,TRAN 2>/dev/null | grep "${1} " | awk '{print $2}' | sed 's/^ata$/ide/' | sed 's/^spi$/scsi/')" #Spaces are intentional
+  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,TRAN 2>/dev/null | grep "${1} " | awk '{print $2}' | sed 's/^ata$/ide/' | sed 's/^spi$/scsi/') #Spaces are intentional
   # usb/scsi(ide/sata/sas)/virtio/mmc/nvme/vmbus/xen(xvd)
-  [ -z "${BUS}" ] && BUS="$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | awk '{print $2}' | awk -F':' '{print $(NF-1)}' | sed 's/_host//' | sed 's/^.*xen.*$/xen/')" # Spaces are intentional
+  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | awk '{print $2}' | awk -F':' '{print $(NF-1)}' | sed 's/_host//' | sed 's/^.*xen.*$/xen/') # Spaces are intentional
   [ -z "${BUS}" ] && BUS="unknown"
   echo "${BUS}"
   return 0
@@ -478,9 +491,11 @@ function rebootTo() {
 # Copy DSM files to the boot partition
 # 1 - DSM root path
 function copyDSMFiles() {
-  if [ -f "${1}/grub_cksum.syno" ] && [ -f "${1}/GRUB_VER" ] && [ -f "${1}/zImage" ] && [ -f "${1}/rd.gz" ]; then
-    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/grub_cksum.syno" "${PART2_PATH}/GRUB_VER" >/dev/null
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" >/dev/null
+  if [ -f "${1}/VERSION" ] && [ -f "${1}/grub_cksum.syno" ] && [ -f "${1}/GRUB_VER" ] && [ -f "${1}/zImage" ] && [ -f "${1}/rd.gz" ]; then
+    # Remove old model files
+    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/grub_cksum.syno" "${PART2_PATH}/GRUB_VER"
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}"
+    # Remove old build files
     rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
     # Copy new model files
     cp -f "${1}/grub_cksum.syno" "${PART1_PATH}"
