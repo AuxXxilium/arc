@@ -1367,7 +1367,8 @@ function backupMenu() {
         mkdir -p "${TMP_PATH}/mdX"
         for I in ${DSMROOTS}; do
           fixDSMRootPart "${I}"
-          mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
+          T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+          mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
           [ $? -ne 0 ] && continue
           MODEL=""
           PRODUCTVER=""
@@ -2077,8 +2078,9 @@ function downgradeMenu() {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-    fixDSMRootPart "${I}"
-      mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
+      fixDSMRootPart "${I}"
+      T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+      mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       [ -f "${TMP_PATH}/mdX/etc/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc/VERSION" >/dev/null
       [ -f "${TMP_PATH}/mdX/etc.defaults/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc.defaults/VERSION" >/dev/null
@@ -2106,7 +2108,8 @@ function resetPassword() {
   mkdir -p "${TMP_PATH}/mdX"
   for I in ${DSMROOTS}; do
     fixDSMRootPart "${I}"
-    mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
+    T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+    mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
     [ $? -ne 0 ] && continue
     if [ -f "${TMP_PATH}/mdX/etc/shadow" ]; then
       while read L; do
@@ -2149,7 +2152,8 @@ function resetPassword() {
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
       fixDSMRootPart "${I}"
-      mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
+      T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+      mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       sed -i "s|^${USER}:[^:]*|${USER}:${NEWPASSWD}|" "${TMP_PATH}/mdX/etc/shadow"
       sed -i "/^${USER}:/ s/^\(${USER}:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:\)[^:]*:/\1:/" "${TMP_PATH}/mdX/etc/shadow"
@@ -2190,7 +2194,8 @@ function addNewDSMUser() {
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
       fixDSMRootPart "${I}"
-      mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
+      T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+      mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
         sqlite3 "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" <<EOF
@@ -2389,7 +2394,8 @@ function disablescheduledTasks {
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
       fixDSMRootPart "${I}"
-      mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
+      T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+      mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
         echo "UPDATE task SET enable = 0;" | sqlite3 "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db"
@@ -2630,7 +2636,8 @@ function greplogs() {
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
       fixDSMRootPart "${I}"
-      mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
+      T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+      mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       mkdir -p "${TMP_PATH}/logs/md0/log"
       cp -rf ${TMP_PATH}/mdX/.log.junior "${TMP_PATH}/logs/md0"
@@ -2780,7 +2787,8 @@ function resetDSMNetwork {
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
       fixDSMRootPart "${I}"
-      mount -t "$(blkid -o value -s TYPE "${I}")" "${I}" "${TMP_PATH}/mdX"
+      T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+      mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       rm -f "${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-bond"* "${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-eth"*
       sync

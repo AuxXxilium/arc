@@ -21,10 +21,10 @@ function checkBootLoader() {
   [ ! -w "${PART1_PATH}" ] && return 1
   [ ! -w "${PART2_PATH}" ] && return 1
   [ ! -w "${PART3_PATH}" ] && return 1
-  command -v awk >/dev/null 2>&1 || return 1
-  command -v cut >/dev/null 2>&1 || return 1
-  command -v sed >/dev/null 2>&1 || return 1
-  command -v tar >/dev/null 2>&1 || return 1
+  type awk >/dev/null 2>&1 || return 1
+  type cut >/dev/null 2>&1 || return 1
+  type sed >/dev/null 2>&1 || return 1
+  type tar >/dev/null 2>&1 || return 1
   return 0
 }
 
