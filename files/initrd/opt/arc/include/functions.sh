@@ -577,7 +577,6 @@ function onlineCheck() {
   NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
   if [ -n "${NEWTAG}" ]; then
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
-    updateOffline
     checkHardwareID
   else
     writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"

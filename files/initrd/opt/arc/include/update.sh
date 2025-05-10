@@ -474,7 +474,7 @@ function dependenciesUpdate() {
     "updateCustom" "Update Custom Kernel" off \
     "updatePatches" "Update Patches" off \
     "updateLKMs" "Update LKMs" off \
-    "updateOffline" "Update Offline Data" off 3>&1 1>&2 2>&3)
+    "updateOffline" "Update Models Data" off 3>&1 1>&2 2>&3)
 
   # Exit if the user cancels the selection
   [ $? -ne 0 ] && dialog --infobox "Update canceled by the user." 3 40 && sleep 2 && clear && return
