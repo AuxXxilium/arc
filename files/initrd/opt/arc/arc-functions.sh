@@ -156,9 +156,9 @@ function arcVersion() {
     resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${resp}" ] && return
     if [ "${PRODUCTVER}" != "${resp}" ]; then
+      # Reset Config if changed
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-      # Reset Config if changed
       writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
       writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
       writeConfigKey "governor" "" "${USER_CONFIG_FILE}"
@@ -225,9 +225,9 @@ function arcVersion() {
       dialog --backtitle "$(backtitle)" --colors --title "Automated Mode" \
         --yesno "${MSG}" 6 55
       if [ $? -eq 0 ]; then
-        export ARC_MODE="automated"
+        ARC_MODE="automated"
       else
-        export ARC_MODE="config"
+        ARC_MODE="config"
       fi
     fi
   elif [ "${ARC_MODE}" = "automated" ] || [ "${ARCRESTORE}" = "true" ]; then
