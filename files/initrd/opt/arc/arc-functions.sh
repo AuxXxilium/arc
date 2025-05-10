@@ -614,7 +614,6 @@ function make() {
 ###############################################################################
 # Finish Building Loader
 function arcFinish() {
-  rm -f "${LOG_FILE}" >/dev/null 2>&1 || true
   MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
   
   if [ -n "${MODELID}" ]; then

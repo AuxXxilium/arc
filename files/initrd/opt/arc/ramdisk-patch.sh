@@ -18,12 +18,9 @@ fi
 rm -f "${MOD_RDGZ_FILE}"
 
 # Unzipping ramdisk
-rm -rf "${RAMDISK_PATH}"
+rm -rf "${RAMDISK_PATH}" # Force clean
 mkdir -p "${RAMDISK_PATH}"
-(
-  cd "${RAMDISK_PATH}"
-  xz -dc <"${ORI_RDGZ_FILE}" | cpio -idm
-) >/dev/null 2>&1
+(cd "${RAMDISK_PATH}" && xz -dc <"${ORI_RDGZ_FILE}" | cpio -idm) >/dev/null 2>&1
 
 # Read Model Data
 PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
@@ -80,7 +77,9 @@ if [ -z "${PLATFORM}" ] || [ -z "${KVER}" ]; then
 fi
 
 # Read addons, modules and synoinfo
-declare -A SYNOINFO ADDONS MODULES
+declare -A SYNOINFO
+declare -A ADDONS
+declare -A MODULES
 
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
@@ -101,9 +100,9 @@ PATCHES=(
   "ramdisk-post-init-script-*.patch"
 )
 
-for PE in "${PATCHS[@]}"; do
+for PE in "${PATCHES[@]}"; do
   RET=1
-  echo "Patching with ${PE}" >"${LOG_FILE}"
+  echo "Patching with ${PE}" >>"${LOG_FILE}"
   # ${PE} contains *, so double quotes cannot be added
   for PF in ${PATCH_PATH}/${PE}; do
     [ ! -e "${PF}" ] && continue
@@ -119,7 +118,7 @@ done
 mkdir -p "${RAMDISK_PATH}/addons"
 
 # Addons
-echo "Create addons.sh" >"${LOG_FILE}"
+echo "Create addons.sh" >>"${LOG_FILE}"
 {
   echo "#!/bin/sh"
   echo 'echo "addons.sh called with params ${@}"'
@@ -137,14 +136,8 @@ echo "Create addons.sh" >"${LOG_FILE}"
 } >"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
-# Add redpill Addon if Kernel is 5.x
-if [ "${KVER:0:1}" = "5" ]; then
-  installAddon "redpill" "${PLATFORM}" || exit 1
-  echo "/addons/redpill.sh \${1}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
-fi
-
 # System Addons
-for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
+for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     [ -f "${USER_UP_PATH}/model.dts" ] && cp -f "${USER_UP_PATH}/model.dts" "${RAMDISK_PATH}/addons/model.dts"
@@ -167,7 +160,7 @@ installModules "${PLATFORM}" "${KVERP}" "${!MODULES[@]}" || exit 1
 # Copying fake modprobe
 [ "${KVER:0:1}" = "4" ] && cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
 # Copying LKM to /usr/lib/modules
-gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>"${LOG_FILE}" || exit 1
+gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>>"${LOG_FILE}" || exit 1
 
 # Patch synoinfo.conf
 echo -n "" >"${RAMDISK_PATH}/addons/synoinfo.conf"
@@ -178,15 +171,15 @@ for KEY in "${!SYNOINFO[@]}"; do
   _set_conf_kv "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || exit 1
 done
 if [ ! -x "${RAMDISK_PATH}/usr/bin/get_key_value" ]; then
-  printf '#!/bin/sh\n%s\n_get_conf_kv "$@"' "$(declare -f _get_conf_kv)" >"${RAMDISK_PATH}/usr/bin/get_key_value"
+  printf '#!/usr/bin/env sh\n%s\n_get_conf_kv "$@"' "$(declare -f _get_conf_kv)" > "${RAMDISK_PATH}/usr/bin/get_key_value"
   chmod a+x "${RAMDISK_PATH}/usr/bin/get_key_value"
 fi
 if [ ! -x "${RAMDISK_PATH}/usr/bin/set_key_value" ]; then
-  printf '#!/bin/sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
+  printf '#!/usr/bin/env sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
   chmod a+x "${RAMDISK_PATH}/usr/bin/set_key_value"
 fi
 
-echo "Modify files" >"${LOG_FILE}"
+echo "Modify files" >>"${LOG_FILE}"
 
 # Copying modulelist
 if [ -f "${USER_UP_PATH}/modulelist" ]; then
@@ -236,9 +229,9 @@ fi
 # Reassembly ramdisk
 rm -f "${MOD_RDGZ_FILE}"
 if [ "${RD_COMPRESSED}" = "true" ]; then
-  (cd "${RAMDISK_PATH}" && find . 2>/dev/null | cpio -o -H newc -R root:root | xz -9 --format=lzma >"${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || exit 1
+  (cd "${RAMDISK_PATH}" && find . 2>/dev/null | cpio -o -H newc -R root:root | xz -9 --format=lzma >"${MOD_RDGZ_FILE}") >>"${LOG_FILE}" 2>&1 || exit 1
 else
-  (cd "${RAMDISK_PATH}" && find . 2>/dev/null | cpio -o -H newc -R root:root >"${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || exit 1
+  (cd "${RAMDISK_PATH}" && find . 2>/dev/null | cpio -o -H newc -R root:root >"${MOD_RDGZ_FILE}") >>"${LOG_FILE}" 2>&1 || exit 1
 fi
 
 sync
