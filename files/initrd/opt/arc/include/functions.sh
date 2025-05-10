@@ -195,10 +195,10 @@ function generateMacAddress() {
   else
     MACSUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
   fi
-  NUM="${2:1}"
-  local MACS=""
-  for I in $(seq 1 "${NUM}"); do
-    MACS+="$(printf '%06x%06x' $((0x${MACPRE:-"001132"})) $(($((0x${MACSUF})) + ${I})))"
+  NUM="${2}"
+  MACS=""
+  for I in $(seq 1 ${NUM}); do
+    MACS+="$(printf '%06x%06x' $((0x${MACPRE:-"001132"})) $((0x${MACSUF:-"000000"} + ${I})))"
     [ "${I}" -lt "${NUM}" ] && MACS+=" "
   done
 

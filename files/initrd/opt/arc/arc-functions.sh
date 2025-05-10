@@ -3134,12 +3134,11 @@ function getnet() {
       done
     done
   else
-    local patch="${ARC_PATCH}"
-    local macs=($(generateMacAddress "${MODEL}" "${#ETHX[@]}" "${patch}"))
+    macs=($(generateMacAddress "${MODEL}" "${#ETHX[@]}" "${ARC_PATCH}"))
 
-    for i in "${!ETHX[@]}"; do
-      local mac="${macs[$i]}"
-      writeConfigKey "${ETHX[$i]}" "${mac}" "${USER_CONFIG_FILE}"
+    for N in "${!ETHX[@]}"; do
+      mac="${macs[$N]}"
+      writeConfigKey "${ETHX[$N]}" "${mac}" "${USER_CONFIG_FILE}"
     done
   fi
 }
