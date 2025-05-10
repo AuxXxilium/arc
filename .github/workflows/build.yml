@@ -184,6 +184,7 @@ jobs:
           allowUpdates: true
           owner: AuxXxilium
           repo: arc-beta
+          token: ${{ secrets.BUILD_TOKEN }}
           body: |
             ### Note:
               - ${{ inputs.notice }}
@@ -219,6 +220,7 @@ jobs:
           allowUpdates: true
           owner: AuxXxilium
           repo: arc
+          token: ${{ secrets.BUILD_TOKEN }}
           body: |
             ### Note:
               - ${{ inputs.notice }}
