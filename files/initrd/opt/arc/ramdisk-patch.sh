@@ -18,12 +18,9 @@ fi
 rm -f "${MOD_RDGZ_FILE}"
 
 # Unzipping ramdisk
-rm -rf "${RAMDISK_PATH}"
+rm -rf "${RAMDISK_PATH}" # Force clean
 mkdir -p "${RAMDISK_PATH}"
-(
-  cd "${RAMDISK_PATH}"
-  xz -dc <"${ORI_RDGZ_FILE}" | cpio -idm
-) >/dev/null 2>&1
+(cd "${RAMDISK_PATH}" && xz -dc <"${ORI_RDGZ_FILE}" | cpio -idm) >/dev/null 2>&1
 
 # Read Model Data
 PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
@@ -79,82 +76,49 @@ if [ -z "${PLATFORM}" ] || [ -z "${KVER}" ]; then
   exit 1
 fi
 
-# Read synoinfo and addons from config
-declare -A SYNOINFO ADDONS MODULES
-
-while IFS=': ' read -r KEY VALUE; do
-  [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
-done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
+# Read addons, modules and synoinfo
+declare -A SYNOINFO
+declare -A ADDONS
+declare -A MODULES
 
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
 done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
-# Read modules from user config
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && MODULES["${KEY}"]="${VALUE}"
 done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
+
+while IFS=': ' read -r KEY VALUE; do
+  [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
+done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 
 # Patches (diff -Naru OLDFILE NEWFILE > xxx.patch)
 PATCHES=(
   "ramdisk-etc-rc-*.patch"
   "ramdisk-init-script-*.patch"
   "ramdisk-post-init-script-*.patch"
-  "ramdisk-disable-root-pwd-*.patch"
-  "ramdisk-disable-disabled-ports-*.patch"
 )
 
-for PATCH in "${PATCHES[@]}"; do
-  echo "Patching with ${PATCH}" >>"${LOG_FILE}"
-  for PF in ${PATCH_PATH}/${PATCH}; do
-    [ -e "${PF}" ] || continue
-    echo "Applying patch ${PF}" >>"${LOG_FILE}"
-    if ! (cd "${RAMDISK_PATH}" && busybox patch -p1 -i "${PF}") >>"${LOG_FILE}" 2>&1; then
-      echo "Failed to apply patch ${FILE}" >>"${LOG_FILE}"
-      continue
-    fi
+for PE in "${PATCHES[@]}"; do
+  RET=1
+  echo "Patching with ${PE}" >>"${LOG_FILE}"
+  # ${PE} contains *, so double quotes cannot be added
+  for PF in ${PATCH_PATH}/${PE}; do
+    [ ! -e "${PF}" ] && continue
+    echo "Patching with ${PF}" >>"${LOG_FILE}"
+    # busybox patch and gun patch have different processing methods and parameters.
+    (cd "${RAMDISK_PATH}" && busybox patch -p1 -i "${PF}") >>"${LOG_FILE}" 2>&1
+    RET=$?
+    [ ${RET} -eq 0 ] && break
   done
+  [ ${RET} -ne 0 ] && exit 1
 done
 
-# Add serial number to synoinfo.conf, to help to recovery a installed DSM
-echo "Set synoinfo SN" >"${LOG_FILE}"
-_set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
-_set_conf_kv "SN" "${SN}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
-for KEY in "${!SYNOINFO[@]}"; do
-  echo "Set synoinfo ${KEY}" >>"${LOG_FILE}"
-  _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
-  _set_conf_kv "${KEY}" "${SYNOINFO[${KEY}]}" "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" >>"${LOG_FILE}" 2>&1 || exit 1
-done
-
-# Patch /sbin/init.post
-grep -v -e '^[\t ]*#' -e '^$' "${PATCH_PATH}/config-manipulators.sh" >"${TMP_PATH}/rp.txt"
-sed -e "/@@@CONFIG-MANIPULATORS-TOOLS@@@/ {" -e "r ${TMP_PATH}/rp.txt" -e 'd' -e '}' -i "${RAMDISK_PATH}/sbin/init.post"
-rm -f "${TMP_PATH}/rp.txt"
-
-# Generate synoinfo configurations
-{
-  echo "_set_conf_kv 'SN' '${SN}' '/tmpRoot/etc/synoinfo.conf'"
-  echo "_set_conf_kv 'SN' '${SN}' '/tmpRoot/etc.defaults/synoinfo.conf'"
-  for KEY in "${!SYNOINFO[@]}"; do
-    echo "_set_conf_kv '${KEY}' '${SYNOINFO[${KEY}]}' '/tmpRoot/etc/synoinfo.conf'"
-    echo "_set_conf_kv '${KEY}' '${SYNOINFO[${KEY}]}' '/tmpRoot/etc.defaults/synoinfo.conf'"
-  done
-} >"${TMP_PATH}/rp.txt"
-
-sed -e "/@@@CONFIG-GENERATED@@@/ {" -e "r ${TMP_PATH}/rp.txt" -e 'd' -e '}' -i "${RAMDISK_PATH}/sbin/init.post"
-rm -f "${TMP_PATH}/rp.txt"
-
-# Extract Modules to Ramdisk
-installModules "${PLATFORM}" "${KVERP}" "${!MODULES[@]}" || exit 1
-
-# Copying fake modprobe
-[ "${KVER:0:1}" = "4" ] && cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
-# Copying LKM to /usr/lib/modules
-gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>"${LOG_FILE}" || exit 1
+mkdir -p "${RAMDISK_PATH}/addons"
 
 # Addons
-echo "Create addons.sh" >"${LOG_FILE}"
-mkdir -p "${RAMDISK_PATH}/addons"
+echo "Create addons.sh" >>"${LOG_FILE}"
 {
   echo "#!/bin/sh"
   echo 'echo "addons.sh called with params ${@}"'
@@ -172,14 +136,8 @@ mkdir -p "${RAMDISK_PATH}/addons"
 } >"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
-# Add redpill Addon if Kernel is 5.x
-if [ "${KVER:0:1}" = "5" ]; then
-  installAddon "redpill" "${PLATFORM}" || exit 1
-  echo "/addons/redpill.sh \${1}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
-fi
-
 # System Addons
-for ADDON in "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
+for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol" "mountloader"; do
   PARAMS=""
   if [ "${ADDON}" = "disks" ]; then
     [ -f "${USER_UP_PATH}/model.dts" ] && cp -f "${USER_UP_PATH}/model.dts" "${RAMDISK_PATH}/addons/model.dts"
@@ -196,13 +154,32 @@ for ADDON in "${!ADDONS[@]}"; do
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 done
 
-# Enable Telnet
-echo "inetd" >>"${RAMDISK_PATH}/addons/addons.sh"
+# Extract ck modules to ramdisk
+installModules "${PLATFORM}" "${KVERP}" "${!MODULES[@]}" || exit 1
 
-echo "Modify files" >"${LOG_FILE}"
+# Copying fake modprobe
+[ "${KVER:0:1}" = "4" ] && cp -f "${PATCH_PATH}/iosched-trampoline.sh" "${RAMDISK_PATH}/usr/sbin/modprobe"
+# Copying LKM to /usr/lib/modules
+gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>>"${LOG_FILE}" || exit 1
 
-# Build modules dependencies
-# ${ARC_PATH}/depmod -a -b ${RAMDISK_PATH} 2>/dev/null
+# Patch synoinfo.conf
+echo -n "" >"${RAMDISK_PATH}/addons/synoinfo.conf"
+for KEY in "${!SYNOINFO[@]}"; do
+  echo "Set synoinfo ${KEY}" >>"${LOG_FILE}"
+  echo "${KEY}=\"${SYNOINFO[${KEY}]}\"" >>"${RAMDISK_PATH}/addons/synoinfo.conf"
+  _set_conf_kv "${RAMDISK_PATH}/etc/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || exit 1
+  _set_conf_kv "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || exit 1
+done
+if [ ! -x "${RAMDISK_PATH}/usr/bin/get_key_value" ]; then
+  printf '#!/usr/bin/env sh\n%s\n_get_conf_kv "$@"' "$(declare -f _get_conf_kv)" > "${RAMDISK_PATH}/usr/bin/get_key_value"
+  chmod a+x "${RAMDISK_PATH}/usr/bin/get_key_value"
+fi
+if [ ! -x "${RAMDISK_PATH}/usr/bin/set_key_value" ]; then
+  printf '#!/usr/bin/env sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
+  chmod a+x "${RAMDISK_PATH}/usr/bin/set_key_value"
+fi
+
+echo "Modify files" >>"${LOG_FILE}"
 
 # Copying modulelist
 if [ -f "${USER_UP_PATH}/modulelist" ]; then
@@ -250,10 +227,11 @@ if [ "${PLATFORM}" = "broadwellntbap" ]; then
 fi
 
 # Reassembly ramdisk
+rm -f "${MOD_RDGZ_FILE}"
 if [ "${RD_COMPRESSED}" = "true" ]; then
-  (cd "${RAMDISK_PATH}" && find . 2>/dev/null | cpio -o -H newc -R root:root | xz -9 --format=lzma >"${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || exit 1
+  (cd "${RAMDISK_PATH}" && find . 2>/dev/null | cpio -o -H newc -R root:root | xz -9 --format=lzma >"${MOD_RDGZ_FILE}") >>"${LOG_FILE}" 2>&1 || exit 1
 else
-  (cd "${RAMDISK_PATH}" && find . 2>/dev/null | cpio -o -H newc -R root:root >"${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || exit 1
+  (cd "${RAMDISK_PATH}" && find . 2>/dev/null | cpio -o -H newc -R root:root >"${MOD_RDGZ_FILE}") >>"${LOG_FILE}" 2>&1 || exit 1
 fi
 
 sync

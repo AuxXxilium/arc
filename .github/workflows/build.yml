@@ -24,12 +24,12 @@ on:
         description: "Notice here"
         required: false
         type: string
-      latest:
-        description: "latest"
+      stable:
+        description: "stable"
         default: true
         type: boolean
-      prerelease:
-        description: "pre release"
+      beta:
+        description: "beta"
         default: false
         type: boolean
       clean:
@@ -174,15 +174,51 @@ jobs:
             sha256sum update-${{ env.ARC_VERSION }}.zip >"update-${{ env.ARC_VERSION }}.hash"
           fi
 
-      # Publish a release if is a tag
+      # Publish a release if beta is true
       - name: Release
-        if: success() && env.ARC_VERSION != ''
+        if: success() && env.ARC_VERSION != '' && inputs.beta == true
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.ARC_VERSION }}
-          prerelease: ${{ inputs.prerelease }}
-          makeLatest: ${{ inputs.latest }}
+          makeLatest: true
           allowUpdates: true
+          owner: AuxXxilium
+          repo: arc-beta
+          body: |
+            ### Note:
+              - ${{ inputs.notice }}
+
+            ### Information:
+              - Discord Account for Arc Patch needed
+              - Changelog is available in my Discord
+              - Based on VisionZ Evolution Code
+
+            ### Dependencies:
+              - Addons: ${{ env.ADDONTAG }}
+              - Modules: ${{ env.MODULETAG }}
+              - Configs: ${{ env.CONFIGTAG }}
+              - Patches: ${{ env.PATCHTAG }}
+              - Custom: ${{ env.CUSTOMTAG }}
+              - LKMs: ${{ env.LKMTAG }}
+              - Basesystem Evolution: ${{ env.BRETAG }}
+
+            ### Release
+              - ${{ env.BUILD_TIME }}
+          artifacts: |
+            arc-*.zip
+            update-*.zip
+            update-*.hash
+
+      # Publish a release if stable is true
+      - name: Release
+        if: success() && env.ARC_VERSION != '' && inputs.stable == true
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.ARC_VERSION }}
+          makeLatest: true
+          allowUpdates: true
+          owner: AuxXxilium
+          repo: arc
           body: |
             ### Note:
               - ${{ inputs.notice }}

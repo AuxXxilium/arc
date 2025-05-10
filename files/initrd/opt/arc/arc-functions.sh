@@ -65,7 +65,6 @@ function arcModel() {
           fi
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
         fi
-        [ "${M}" = "DS925+" ] && COMPATIBLE=0
         [ -n "$(grep -w "${M}" "${S_FILE}")" ] && BETA="Arc" || BETA="Syno"
         [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
         if [ -n "${ARC_CONF}" ]; then
@@ -157,9 +156,9 @@ function arcVersion() {
     resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${resp}" ] && return
     if [ "${PRODUCTVER}" != "${resp}" ]; then
+      # Reset Config if changed
       PRODUCTVER="${resp}"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-      # Reset Config if changed
       writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
       writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
       writeConfigKey "governor" "" "${USER_CONFIG_FILE}"
@@ -226,9 +225,9 @@ function arcVersion() {
       dialog --backtitle "$(backtitle)" --colors --title "Automated Mode" \
         --yesno "${MSG}" 6 55
       if [ $? -eq 0 ]; then
-        export ARC_MODE="automated"
+        ARC_MODE="automated"
       else
-        export ARC_MODE="config"
+        ARC_MODE="config"
       fi
     fi
   elif [ "${ARC_MODE}" = "automated" ] || [ "${ARCRESTORE}" = "true" ]; then
@@ -570,9 +569,6 @@ function make() {
     deleteConfigKey "addons.amepatch" "${USER_CONFIG_FILE}"
     deleteConfigKey "addons.arcdns" "${USER_CONFIG_FILE}"
   fi
-  # Max Memory for DSM
-  RAMCONFIG="$((${RAMTOTAL} * 1024 * 2))"
-  writeConfigKey "synoinfo.mem_max_mb" "${RAMCONFIG}" "${USER_CONFIG_FILE}"
   if [ -n "${IPCON}" ]; then
     getpatfiles
   else
@@ -618,7 +614,6 @@ function make() {
 ###############################################################################
 # Finish Building Loader
 function arcFinish() {
-  rm -f "${LOG_FILE}" >/dev/null 2>&1 || true
   MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
   
   if [ -n "${MODELID}" ]; then
@@ -1370,8 +1365,10 @@ function backupMenu() {
         fi
         mkdir -p "${TMP_PATH}/mdX"
         for I in ${DSMROOTS}; do
-          # fixDSMRootPart "${I}"
-          mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+          fixDSMRootPart "${I}"
+          T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+          mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
+          [ $? -ne 0 ] && continue
           MODEL=""
           PRODUCTVER=""
           if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" ]; then
@@ -2080,8 +2077,9 @@ function downgradeMenu() {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      # fixDSMRootPart "${I}"
-      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      fixDSMRootPart "${I}"
+      T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+      mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       [ -f "${TMP_PATH}/mdX/etc/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc/VERSION" >/dev/null
       [ -f "${TMP_PATH}/mdX/etc.defaults/VERSION" ] && rm -f "${TMP_PATH}/mdX/etc.defaults/VERSION" >/dev/null
@@ -2108,8 +2106,9 @@ function resetPassword() {
   rm -f "${TMP_PATH}/menu" >/dev/null
   mkdir -p "${TMP_PATH}/mdX"
   for I in ${DSMROOTS}; do
-    # fixDSMRootPart "${I}"
-    mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+    fixDSMRootPart "${I}"
+    T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+    mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
     [ $? -ne 0 ] && continue
     if [ -f "${TMP_PATH}/mdX/etc/shadow" ]; then
       while read L; do
@@ -2151,8 +2150,9 @@ function resetPassword() {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      # fixDSMRootPart "${I}"
-      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      fixDSMRootPart "${I}"
+      T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+      mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       sed -i "s|^${USER}:[^:]*|${USER}:${NEWPASSWD}|" "${TMP_PATH}/mdX/etc/shadow"
       sed -i "/^${USER}:/ s/^\(${USER}:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:\)[^:]*:/\1:/" "${TMP_PATH}/mdX/etc/shadow"
@@ -2192,8 +2192,9 @@ function addNewDSMUser() {
 
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      # fixDSMRootPart "${I}"
-      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      fixDSMRootPart "${I}"
+      T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+      mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
         sqlite3 "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" <<EOF
@@ -2391,11 +2392,10 @@ function disablescheduledTasks {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      # fixDSMRootPart "${I}"
-      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
-      if [ $? -ne 0 ]; then
-        continue
-      fi
+      fixDSMRootPart "${I}"
+      T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+      mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
+      [ $? -ne 0 ] && continue
       if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
         echo "UPDATE task SET enable = 0;" | sqlite3 "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db"
         sync
@@ -2634,8 +2634,9 @@ function greplogs() {
   if [ -n "${DSMROOTS}" ]; then
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      # fixDSMRootPart "${I}"
-      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      fixDSMRootPart "${I}"
+      T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+      mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       mkdir -p "${TMP_PATH}/logs/md0/log"
       cp -rf ${TMP_PATH}/mdX/.log.junior "${TMP_PATH}/logs/md0"
@@ -2784,8 +2785,9 @@ function resetDSMNetwork {
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      # fixDSMRootPart "${I}"
-      mount -t ext4 "${I}" "${TMP_PATH}/mdX"
+      fixDSMRootPart "${I}"
+      T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+      mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       rm -f "${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-bond"* "${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-eth"*
       sync
@@ -3131,12 +3133,11 @@ function getnet() {
       done
     done
   else
-    local patch="${ARC_PATCH}"
-    local macs=($(generateMacAddress "${MODEL}" "${#ETHX[@]}" "${patch}"))
+    macs=($(generateMacAddress "${MODEL}" "${#ETHX[@]}" "${ARC_PATCH}"))
 
-    for i in "${!ETHX[@]}"; do
-      local mac="${macs[$i]}"
-      writeConfigKey "${ETHX[$i]}" "${mac}" "${USER_CONFIG_FILE}"
+    for N in "${!ETHX[@]}"; do
+      mac="${macs[$N]}"
+      writeConfigKey "${ETHX[$N]}" "${mac}" "${USER_CONFIG_FILE}"
     done
   fi
 }
