@@ -1512,24 +1512,31 @@ function updateMenu() {
       1)
         # Ask for Tag
         TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+        BETATAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-beta/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
         OLD="${ARC_VERSION}"
         dialog --clear --backtitle "$(backtitle)" --title "Update Loader" \
           --menu "Current: ${OLD} -> Which Version?" 7 50 0 \
           1 "Latest ${TAG}" \
-          2 "Select Version" \
-          3 "Upload .zip File" \
+          2 "Beta ${BETATAG}" \
+          3 "Select Version" \
+          4 "Upload .zip File" \
         2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && break
         opts="$(cat "${TMP_PATH}/opts")"
         if [ "${opts}" -eq 1 ]; then
           [ -z "${TAG}" ] && return 1
+          updateLoader "${TAG}"
         elif [ "${opts}" -eq 2 ]; then
+          [ -z "${BETATAG}" ] && return 1
+          updateLoaderBeta "${BETATAG}"
+        elif [ "${opts}" -eq 3 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Loader" \
-          --inputbox "Type the Version!" 0 0 \
+          --inputbox "Which Version?" 0 0 \
           2>"${TMP_PATH}/input"
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
-        elif [ "${opts}" -eq 3 ]; then
+          updateLoader "${TAG}"
+        elif [ "${opts}" -eq 4 ]; then
           mkdir -p "${PART3_PATH}/users"
           dialog --backtitle "$(backtitle)" --title "Update Loader" \
             --msgbox "Upload the update-*.zip File to ${PART3_PATH}/users\nand press OK after upload is done." 0 0
@@ -1548,8 +1555,8 @@ function updateMenu() {
               --msgbox "File not found!" 0 0
             return 1
           fi
+          updateLoader "${TAG}"
         fi
-        updateLoader "${TAG}"
         ;;
       2)
         dependenciesUpdate
