@@ -316,7 +316,7 @@ function createvmx() {
   BLIMAGE=${1}
   VMNAME=${2}
 
-  if ! command -v qemu-img &>/dev/null; then
+  if ! type -p qemu-img; then
     sudo apt install -y qemu-utils
   fi
 

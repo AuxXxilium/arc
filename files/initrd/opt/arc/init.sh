@@ -5,6 +5,13 @@ set -e
 
 . "${ARC_PATH}/include/functions.sh"
 
+# VMware time sync
+if type -p vmware-toolbox-cmd; then
+  if [ ! "Enabled" = "$(vmware-toolbox-cmd timesync status 2>/dev/null)" ]; then
+    vmware-toolbox-cmd timesync enable >/dev/null 2>&1 || true
+  fi
+fi
+
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 checkBootLoader || die "The loader is corrupted, please rewrite it!"
