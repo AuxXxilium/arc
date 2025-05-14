@@ -148,61 +148,42 @@ function arcVersion() {
   # Check for Custom Build
   if [ "${ARC_MODE}" = "config" ] && [ "${ARCRESTORE}" != "true" ]; then
     # Select Build for DSM
-    ITEMS="$(readConfigEntriesArray "platforms.${PLATFORM}.productvers" "${P_FILE}" | sort -r)"
+    CVS="$(readConfigEntriesArray "platforms.${PLATFORM}.productvers" "${P_FILE}")"
+    PVS="$(readConfigEntriesArray "${PLATFORM}.\"${MODEL}\"" "${D_FILE}")"
+    LVS=""
+    for V in $(echo "${PVS}" | sort -r); do
+      if echo "${CVS}" | grep -qx "${V:0:3}"; then
+        LVS="${LVS}${V} "$'\n'
+      fi
+    done
     dialog --clear --no-items --nocancel --title "DSM Version" --backtitle "$(backtitle)" \
-      --no-items --menu "Select DSM Version" 7 30 0 ${ITEMS} \
+      --no-items --menu "Select DSM Version" 7 30 0 ${LVS} \
     2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && return
-    resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
-    [ -z "${resp}" ] && return
-    if [ "${PRODUCTVER}" != "${resp}" ]; then
+    RESP="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+    [ -z "${RESP}" ] && return
+    if [ "${PRODUCTVER}" != "${RESP:0:3}" ]; then
       # Reset Config if changed
-      PRODUCTVER="${resp}"
+      PRODUCTVER="${RESP:0:3}"
+      PAT_URL="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${RESP}\".url" "${D_FILE}")"
+      PAT_HASH="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${RESP}\".hash" "${D_FILE}")"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
       writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
       writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
       writeConfigKey "governor" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "paturl" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "pathash" "" "${USER_CONFIG_FILE}"
       writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
       writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
       writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
       writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
     fi
-    dialog --backtitle "$(backtitle)" --title "Version" \
-    --infobox "Reading DSM Build..." 3 25
-    PAT_URL=""
-    PAT_HASH=""
-    URLVER=""
-    while true; do
-      PVS="$(readConfigEntriesArray "${PLATFORM}.\"${MODEL}\"" "${D_FILE}" | sort -r)"
-      echo -n "" >"${TMP_PATH}/versions"
-      while read -r V; do
-        if [ "${V:0:3}" = "${PRODUCTVER}" ]; then
-          echo "${V}" >>"${TMP_PATH}/versions"
-        fi
-      done < <(echo "${PVS}")
-      DSMPVS="$(cat ${TMP_PATH}/versions)"
-      dialog --backtitle "$(backtitle)" --colors --title "DSM Build" \
-      --no-items --menu "Select DSM Build" 0 0 0 ${DSMPVS} \
-      2>"${TMP_PATH}/resp"
-      RET=$?
-      [ "${RET}" -ne 0 ] && return
-      PV="$(cat ${TMP_PATH}/resp)"
-      PAT_URL="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${PV}\".url" "${D_FILE}")"
-      PAT_HASH="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${PV}\".hash" "${D_FILE}")"
-      writeConfigKey "productver" "${PV:0:3}" "${USER_CONFIG_FILE}"
-      if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-        VALID="true"
-        break
-      fi
-    done
-    if [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
+    if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+      VALID="true"
+    elif [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
       while true; do
         MSG="Failed to get PAT Data.\n"
         MSG+="Please manually fill in the URL and Hash of PAT.\n"
-        MSG+="You will find these Data at: https://github.com/AuxXxilium/arc-dsm/blob/main/webdata.txt"
+        MSG+="You will find these Data at: http://dsmdata.auxxxilium.tech/"
         dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
           --form "${MSG}" 11 120 2 "Url" 1 1 "${PAT_URL}" 1 8 110 0 "Hash" 2 1 "${PAT_HASH}" 2 8 110 0 \
           2>"${TMP_PATH}/resp"
