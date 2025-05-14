@@ -7,10 +7,6 @@
 
 name: Data
 on:
-  release:
-    types:
-      - created
-
   workflow_dispatch:
     inputs:
       push:

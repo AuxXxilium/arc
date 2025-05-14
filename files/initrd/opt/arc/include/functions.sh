@@ -21,10 +21,10 @@ function checkBootLoader() {
   [ ! -w "${PART1_PATH}" ] && return 1
   [ ! -w "${PART2_PATH}" ] && return 1
   [ ! -w "${PART3_PATH}" ] && return 1
-  type awk >/dev/null 2>&1 || return 1
-  type cut >/dev/null 2>&1 || return 1
-  type sed >/dev/null 2>&1 || return 1
-  type tar >/dev/null 2>&1 || return 1
+  type -p awk || return 1
+  type -p cut || return 1
+  type -p sed || return 1
+  type -p tar || return 1
   return 0
 }
 
@@ -301,9 +301,9 @@ function _sort_netif() {
   ETHLIST=""
   for F in /sys/class/net/eth*; do
     [ ! -e "${F}" ] && continue
-    ETH="$(basename "${F}")"
-    MAC="$(cat "/sys/class/net/${ETH}/address" 2>/dev/null | sed 's/://g; s/.*/\L&/')"
-    BUS="$(ethtool -i "${ETH}" 2>/dev/null | grep bus-info | cut -d' ' -f2)"
+    local ETH="$(basename "${F}")"
+    local MAC="$(cat "/sys/class/net/${ETH}/address" 2>/dev/null | sed 's/://g; s/.*/\L&/')"
+    local BUS="$(ethtool -i "${ETH}" 2>/dev/null | grep bus-info | cut -d' ' -f2)"
     ETHLIST="${ETHLIST}${BUS} ${MAC} ${ETH}\n"
   done
   ETHLISTTMPM=""
@@ -343,9 +343,9 @@ function _sort_netif() {
 function getBus() {
   local BUS=""
   # usb/ata(ide)/sata/sas/spi(scsi)/virtio/mmc/nvme
-  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,TRAN 2>/dev/null | grep "${1} " | awk '{print $2}' | sed 's/^ata$/ide/' | sed 's/^spi$/scsi/') #Spaces are intentional
+  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,TRAN 2>/dev/null | grep "${1} " | awk '{print $2}' | sed 's/^ata$/ide/' | sed 's/^spi$/scsi/')
   # usb/scsi(ide/sata/sas)/virtio/mmc/nvme/vmbus/xen(xvd)
-  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | awk '{print $2}' | awk -F':' '{print $(NF-1)}' | sed 's/_host//' | sed 's/^.*xen.*$/xen/') # Spaces are intentional
+  [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | awk '{print $2}' | awk -F':' '{print $(NF-1)}' | sed 's/_host//' | sed 's/^.*xen.*$/xen/')
   [ -z "${BUS}" ] && BUS="unknown"
   echo "${BUS}"
   return 0
@@ -589,14 +589,9 @@ function systemCheck () {
   # Get Loader Disk Bus
   BUS=$(getBus "${LOADER_DISK}")
   [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
-  # Memory: Check Memory installed
-  RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
-  [ -z "${RAMTOTAL}" ] && RAMTOTAL="8"
   # Check for Hypervisor
-  MACHINE="$(virt-what 2>/dev/null | head -1)"
-  if [ -z "${MACHINE}" ]; then
-    MACHINE="physical"
-  fi
+  MEV="$(virt-what 2>/dev/null | head -1)"
+  MACHINE="${MEV:-physical}"
   # Check for AES Support
   if grep -q "^flags.*aes.*" /proc/cpuinfo; then
     AESSYS="true"
@@ -604,8 +599,7 @@ function systemCheck () {
     AESSYS="false"
   fi
   # Check for CPU Frequency Scaling
-  CPUFREQUENCIES=$(ls -l /sys/devices/system/cpu/cpufreq/*/* 2>/dev/null | wc -l)
-  if [ "${CPUFREQUENCIES}" -gt 0 ]; then
+  if ls /sys/devices/system/cpu/cpufreq/*/* 1>/dev/null 2>&1; then
     CPUFREQ="true"
   else
     CPUFREQ="false"

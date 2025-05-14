@@ -1,0 +1,15 @@
+# Disabled for now
+
+# CMDLINE['intremap']="off"
+# CMDLINE['amd_iommu_intr']="legacy"
+# CMDLINE['kvm.ignore_msrs']="1"
+# CMDLINE['kvm.report_ignored_msrs']="0"
+# CMDLINE['nomodeset']=""
+# CMDLINE['module.sig_enforce']="0"
+# CMDLINE['loadpin.enforce']="0"
+
+# if grep -qi "intel" /proc/cpuinfo; then
+#   CMDLINE['intel_pstate']="disable"
+# elif grep -qi "amd" /proc/cpuinfo; then
+#   CMDLINE['amd_pstate']="disable"
+# fi
