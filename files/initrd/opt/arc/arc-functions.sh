@@ -32,7 +32,7 @@ function arcModel() {
         if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" ${ARC_PATH}/include/i915ids && IGPU="all" || IGPU="igpuv5"; else IGPU=""; fi
         if [[ " ${IGPU1L[@]} " =~ " ${A} " ]] && [ "${IGPU}" = "all" ]; then
           IGPUS="+"
-        elif [[ " ${IGPU2L[@]} " =~ " ${A} " ]] && [[ "${IGPU}" = "igpuv5" || "${IGPU}" = "all" ]]; then
+        elif [[ " ${IGPU2L[@]} " =~ " ${A} " ]] && [[ "${IGPU}" = "igpuv5" || "${IGPU}" = "all" ]] && [ "${M}" != "DS925+" ]; then
           IGPUS="x"
         else
           IGPUS=""
@@ -2587,12 +2587,12 @@ function cloneLoader() {
 function resetLoader() {
   if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
     # Clean old files
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1
   fi
-  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}" >/dev/null
-  [ -f "${USER_CONFIG_FILE}" ] && rm -f "${USER_CONFIG_FILE}" >/dev/null
-  [ -f "${ARC_RAMDISK_USER_FILE}" ] && rm -f "${ARC_RAMDISK_USER_FILE}" >/dev/null
-  [ -f "${HOME}/.initialized" ] && rm -f "${HOME}/.initialized" >/dev/null
+  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}" >/dev/null 2>&1
+  [ -f "${USER_CONFIG_FILE}" ] && rm -f "${USER_CONFIG_FILE}" >/dev/null 2>&1
+  [ -f "${ARC_RAMDISK_USER_FILE}" ] && rm -f "${ARC_RAMDISK_USER_FILE}" >/dev/null 2>&1
+  [ -f "${HOME}/.initialized" ] && rm -f "${HOME}/.initialized" >/dev/null 2>&1
   dialog --backtitle "$(backtitle)" --title "Reset Loader" --aspect 18 \
     --yesno "Reset successful.\nReboot required!" 0 0
   [ $? -ne 0 ] && return
