@@ -6,9 +6,12 @@ set -e
 . "${ARC_PATH}/include/functions.sh"
 
 # VMware time sync
-if type -p vmware-toolbox-cmd; then
-  if [ ! "Enabled" = "$(vmware-toolbox-cmd timesync status 2>/dev/null)" ]; then
+if type vmware-toolbox-cmd >/dev/null 2>&1; then
+  if [ "Disable" = "$(vmware-toolbox-cmd timesync status 2>/dev/null)" ]; then
     vmware-toolbox-cmd timesync enable >/dev/null 2>&1 || true
+  fi
+  if [ "Enabled" = "$(vmware-toolbox-cmd timesync status 2>/dev/null)" ]; then
+    vmware-toolbox-cmd timesync disable >/dev/null 2>&1 || true
   fi
 fi
 
@@ -109,12 +112,15 @@ ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename
 for N in ${ETHX}; do
   MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
   IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
-  if [ -n "${IPR}" ] && [ "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
+  if [ -n "${IPR}" ]; then
+    if [ ! "1" = "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" ]; then
+      ip link set "${N}" up 2>/dev/null || true
+    fi
     IFS='/' read -r -a IPRA <<<"${IPR}"
-    ip addr flush dev "${N}"
-    ip addr add "${IPRA[0]}/${IPRA[1]:-"255.255.255.0"}" dev "${N}"
+    ip addr flush dev "${N}" 2>/dev/null || true
+      ip addr add "${IPRA[0]}/${IPRA[1]:-"255.255.255.0"}" dev "${N}" 2>/dev/null || true
     if [ -n "${IPRA[2]}" ]; then
-      ip route add default via "${IPRA[2]}" dev "${N}"
+      ip route add default via "${IPRA[2]}" dev "${N}" 2>/dev/null || true
     fi
     if [ -n "${IPRA[3]:-${IPRA[2]}}" ]; then
       sed -i "/nameserver ${IPRA[3]:-${IPRA[2]}}/d" /etc/resolv.conf

@@ -277,9 +277,9 @@ function repackInitrd() {
   sudo rm -rf "${RDXZ_PATH}"
 }
 
-# resizeImg
-# $1 input file  
-# $2 change size MB e.g., +50M -50M
+# resizeimg
+# $1 input file
+# $2 changsize MB eg: +50M -50M
 # $3 output file
 function resizeImg() {
   local INPUT_FILE="${1}"
@@ -301,11 +301,12 @@ function resizeImg() {
 
   sudo truncate -s ${SIZE}M "${OUTPUT_FILE}"
   echo -e "d\n\nn\n\n\n\n\nn\nw" | sudo fdisk "${OUTPUT_FILE}" >/dev/null 2>&1
-  local LOOPX
+  local LOOPX LOOPXPY
   LOOPX=$(sudo losetup -f)
   sudo losetup -P "${LOOPX}" "${OUTPUT_FILE}"
-  sudo e2fsck -fp "$(find "${LOOPX}p"* -maxdepth 0 2>/dev/null | sort -n | tail -1)"
-  sudo resize2fs "$(find "${LOOPX}p"* -maxdepth 0 2>/dev/null | sort -n | tail -1)"
+  LOOPXPY="$(find "${LOOPX}p"* -maxdepth 0 2>/dev/null | sort -n | tail -1)"
+  sudo e2fsck -fp "${LOOPXPY:-${LOOPX}p3}"
+  sudo resize2fs "${LOOPXPY:-${LOOPX}p3}"
   sudo losetup -d "${LOOPX}"
 }
 
@@ -316,7 +317,7 @@ function createvmx() {
   BLIMAGE=${1}
   VMNAME=${2}
 
-  if ! type -p qemu-img; then
+  if ! type -p qemu-img >/dev/null 2>&1; then
     sudo apt install -y qemu-utils
   fi
 

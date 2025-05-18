@@ -8,9 +8,3 @@ tasks:
       - git reset --hard
       - git pull
       - ./img-gen.sh evo
-
-  compile-kpatch:
-    dir: kpatch
-    cmds:
-      - make clean all
-      - mv kpatch ../files/p3/system/
