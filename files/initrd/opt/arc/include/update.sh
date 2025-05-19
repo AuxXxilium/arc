@@ -559,7 +559,7 @@ function updateOffline() {
     # Check file size and restore backup if necessary
     local FILESIZE=$(stat -c%s "${MODEL_CONFIG_PATH}/data.yml")
     if [ "${FILESIZE}" -lt 3072 ]; then
-      cp -f "${MODEL_CONFIG_PATH}/data.yml.bak" "${MODEL_CONFIG_PATH}/data.yml"
+      [ -f "${MODEL_CONFIG_PATH}/data.yml.bak" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml.bak" "${MODEL_CONFIG_PATH}/data.yml"
     fi
   fi
   return 0
