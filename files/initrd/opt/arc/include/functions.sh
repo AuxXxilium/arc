@@ -611,6 +611,7 @@ function systemCheck () {
   getnetinfo
   getdiskinfo
   getmap
+  [ ! -f "${D_FILE}" ] && updateOffline || true
 }
 
 ###############################################################################
