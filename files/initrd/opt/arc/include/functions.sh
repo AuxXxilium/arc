@@ -605,13 +605,14 @@ function systemCheck () {
     CPUFREQ="false"
   fi
   # Check for Arc Patch
-  arc_mode
   ARC_CONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
   [ -z "${ARC_CONF}" ] && writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+  [ ! -f "${D_FILE}" ] && updateOffline || true
+  KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+  arc_mode
   getnetinfo
   getdiskinfo
   getmap
-  [ ! -f "${D_FILE}" ] && updateOffline || true
 }
 
 ###############################################################################
