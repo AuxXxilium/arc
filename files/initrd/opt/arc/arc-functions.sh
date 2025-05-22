@@ -1489,7 +1489,7 @@ function updateMenu() {
     dialog --backtitle "$(backtitle)" --title "Update" --colors --cancel-label "Exit" \
       --menu "Choose an Option" 0 0 0 \
       1 "Update Full Loader \Z1(no reflash)\Zn" \
-      2 "Update Dependencies (only integrated Parts)" \
+      2 "Update Dependencies (maybe not stable)" \
       3 "Update Configs and Arc Patch" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
