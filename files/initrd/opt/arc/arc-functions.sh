@@ -2179,26 +2179,20 @@ function addNewDSMUser() {
   username="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
   password="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
   (
-    ONBOOTUP=""
-    ONBOOTUP="${ONBOOTUP}if synouser --enum local | grep -q ^${username}\$; then synouser --setpw ${username} ${password}; else synouser --add ${username} ${password} arc 0 user@arc.arc 1; fi\n"
-    ONBOOTUP="${ONBOOTUP}synogroup --memberadd administrators ${username}\n"
-    ONBOOTUP="${ONBOOTUP}echo \"DELETE FROM task WHERE task_name LIKE ''ARCONBOOTUPARC_ADDUSER'';\" | sqlite3 /usr/syno/etc/esynoscheduler/esynoscheduler.db\n"
-
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
       fixDSMRootPart "${I}"
       T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
       mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
-      if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
-        sqlite3 "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" <<EOF
-DELETE FROM task WHERE task_name LIKE 'ARCONBOOTUPARC_ADDUSER';
-INSERT INTO task VALUES('ARCONBOOTUPARC_ADDUSER', '', 'bootup', '', 1, 0, 0, 0, '', 0, '$(echo -e ${ONBOOTUP})', 'script', '{}', '', '', '{}', '{}');
-EOF
-        sleep 1
-        sync
-        echo "true" >${TMP_PATH}/isEnable
-      fi
+      mkdir -p "${TMP_PATH}/mdX/usr/arc/once.d"
+      {
+        echo "#!/usr/bin/env bash"
+        echo "if synouser --enum local | grep -q ^${username}\$; then synouser --setpw ${username} ${password}; else synouser --add ${username} ${password} rr 0 user@rr.com 1; fi"
+        echo "synogroup --memberadd administrators ${username}"
+      } >"${TMP_PATH}/mdX/usr/arc/once.d/addNewDSMUser.sh"
+      sync
+      echo "true" >"${TMP_PATH}/isOk"
       umount "${TMP_PATH}/mdX"
     done
     rm -rf "${TMP_PATH}/mdX" >/dev/null
@@ -2371,6 +2365,83 @@ function loaderPorts() {
       ;;
     esac
   done
+  return
+}
+
+###############################################################################
+# Force enable Telnet&SSH of DSM system
+function forceEnableDSMTelnetSSH() {
+  DSMROOTS="$(findDSMRoot)"
+  if [ -z "${DSMROOTS}" ]; then
+    dialog --backtitle "$(backtitle)" --title "Force DSM SSH" \
+      --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
+    return
+  fi
+  rm -f "${TMP_PATH}/isOk"
+  (
+    mkdir -p "${TMP_PATH}/mdX"
+    for I in ${DSMROOTS}; do
+      fixDSMRootPart "${I}"
+      T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+      mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
+      [ $? -ne 0 ] && continue
+      mkdir -p "${TMP_PATH}/mdX/usr/arc/once.d"
+      {
+        echo "#!/usr/bin/env bash"
+        echo "systemctl restart inetd"
+        echo "synowebapi -s --exec api=SYNO.Core.Terminal method=set version=3 enable_telnet=true enable_ssh=true ssh_port=22 forbid_console=false"
+      } >"${TMP_PATH}/mdX/usr/arc/once.d/enableTelnetSSH.sh"
+      sync
+      echo "true" >"${TMP_PATH}/isOk"
+      umount "${TMP_PATH}/mdX"
+    done
+    rm -rf "${TMP_PATH}/mdX"
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Force DSM SSH" \
+    --progressbox "Enabling ..." 20 100
+  [ -f "${TMP_PATH}/isOk" ] &&
+    MSG="Force enable Telnet&SSH of DSM system completed." ||
+    MSG="Force enable Telnet&SSH of DSM system failed."
+  dialog --backtitle "$(backtitle)" --title "Force DSM SSH" \
+    --msgbox "${MSG}" 0 0
+  return
+}
+
+###############################################################################
+# Removing the blocked ip database
+function removeBlockIPDB {
+  MSG=""
+  MSG+="This feature will removing the blocked ip database from the first partition of all disks.\n"
+  MSG+="Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?"
+  dialog --backtitle "$(backtitle)" --title "Remove Blocked IP Database" \
+    --yesno "${MSG}" 0 0
+  [ $? -ne 0 ] && return
+  DSMROOTS="$(findDSMRoot)"
+  if [ -z "${DSMROOTS}" ]; then
+    dialog --backtitle "$(backtitle)" --title "Remove Blocked IP Database" \
+      --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
+    return
+  fi
+  rm -f "${TMP_PATH}/isOk"
+  (
+    mkdir -p "${TMP_PATH}/mdX"
+    for I in ${DSMROOTS}; do
+      fixDSMRootPart "${I}"
+      T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+      mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
+      [ $? -ne 0 ] && continue
+      rm -f "${TMP_PATH}/mdX/etc/synoautoblock.db"
+      sync
+      echo "true" >"${TMP_PATH}/isOk"
+      umount "${TMP_PATH}/mdX"
+    done
+    rm -rf "${TMP_PATH}/mdX"
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Remove Blocked IP Database" \
+    --progressbox "Removing ..." 20 100
+  [ -f "${TMP_PATH}/isOk" ] &&
+    MSG="Removing the blocked ip database completed." ||
+    MSG="Removing the blocked ip database failed."
+  dialog --backtitle "$(backtitle)" --title "Remove Blocked IP Database" \
+    --msgbox "${MSG}" 0 0
   return
 }
 
@@ -2649,7 +2720,7 @@ function greplogs() {
   ADDONS=0
   if [ -d "${PART1_PATH}/logs" ]; then
     mkdir -p "${TMP_PATH}/logs/addons"
-    cp -rf "${PART1_PATH}/logs"/* "${TMP_PATH}/logs/addons"
+    cp -rf "${PART1_PATH}/logs"/* "${TMP_PATH}/logs/addons" 2>/dev/null || true
     ADDONS=1
   fi
   if [ "${ADDONS}" -eq 1 ]; then
@@ -2665,8 +2736,13 @@ function greplogs() {
   if [ -n "$(ls -A ${TMP_PATH}/logs 2>/dev/null)" ]; then
     tar -czf "${TMP_PATH}/logs.tar.gz" -C "${TMP_PATH}" logs
     mv -f "${TMP_PATH}/logs.tar.gz" "/var/www/data/logs.tar.gz"
-    URL="http://${IPCON}${HTTPPORT:+:$HTTPPORT}/logs.tar.gz"
-    MSG+="Please via ${URL} to download the logs,\nAnd go to Github or Discord to create an issue and upload the logs."
+    if [ -f "/var/www/data/logs.tar.gz" ]; then
+      chmod 644 "/var/www/data/logs.tar.gz"
+      URL="http://${IPCON}${HTTPPORT:+:$HTTPPORT}/logs.tar.gz"
+      MSG+="Please via ${URL} to download the logs,\nAnd go to Github or Discord to create an issue and upload the logs."
+    else
+      MSG+="Can't find logs!\n"
+    fi
   fi
   dialog --backtitle "$(backtitle)" --colors --title "Grep Logs" \
     --msgbox "${MSG}" 0 0
