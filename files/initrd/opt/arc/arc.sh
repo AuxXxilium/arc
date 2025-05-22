@@ -89,7 +89,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
         write_menu "p" "SN/Mac Options"
     
         if [ "${DT}" = "false" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
-          write_menu "S" "Sata PortMap"
+          write_menu "S" "PortMap (Sata Controller)"
         fi
 
         if [ "${DT}" = "true" ]; then
@@ -139,6 +139,8 @@ elif [ "${ARC_MODE}" = "config" ]; then
         write_menu "t" "Change User Password"
         write_menu "J" "Reset Network Config"
         write_menu "T" "Disable all scheduled Tasks"
+        write_menu "r" "Remove Blocked IP Database"
+        write_menu "v" "Force enable SSH"
         write_menu "M" "Mount DSM Storage Pool"
         write_menu "l" "Edit User Config"
         write_menu "s" "Allow Downgrade Version"
