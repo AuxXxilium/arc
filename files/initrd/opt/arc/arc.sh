@@ -10,9 +10,8 @@
 . "${ARC_PATH}/include/modules.sh"
 . "${ARC_PATH}/include/update.sh"
 
-# Get Keymap and Timezone and check System
+# Check System
 onlineCheck
-KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
 systemCheck
 readData
 

@@ -705,21 +705,21 @@ function addonSelection() {
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
-  rm -f "${TMP_PATH}/resp"
-  touch "${TMP_PATH}/resp"
+  rm -f "${TMP_PATH}/opts"
+  touch "${TMP_PATH}/opts"
 
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     if { [[ "${ADDON}" = "amepatch" || "${ADDON}" = "arcdns" ]] && [ -z "${ARC_CONF}" ]; } || { [ "${ADDON}" = "codecpatch" ] && [ -n "${ARC_CONF}" ]; }; then
       continue
     else
-      echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/resp"
+      echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
     fi
   done < <(availableAddons "${PLATFORM}")
 
   dialog --backtitle "$(backtitle)" --title "Addons" --colors --aspect 18 \
     --checklist "Select Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
-    --file "${TMP_PATH}/resp" 2>"${TMP_PATH}/resp"
+    --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
 
@@ -769,16 +769,16 @@ function modulesMenu() {
         while IFS=': ' read -r KEY VALUE; do
           [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
         done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
-        rm -f "${TMP_PATH}/resp"
+        rm -f "${TMP_PATH}/opts"
         while read -r ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
-          echo "${ID} ${DESC} ${ACT}" >>"${TMP_PATH}/resp"
+          echo "${ID} ${DESC} ${ACT}" >>"${TMP_PATH}/opts"
         done <<<${ALLMODULES}
         dialog --backtitle "$(backtitle)" --title "Modules" \
           --cancel-label "Exit" \
           --extra-button --extra-label "Select all" \
           --help-button --help-label "Deselect all" \
-          --checklist "Select Modules to include" 0 0 0 --file "${TMP_PATH}/resp" \
+          --checklist "Select Modules to include" 0 0 0 --file "${TMP_PATH}/opts" \
           2>"${TMP_PATH}/resp"
         RET=$?
         case ${RET} in
@@ -1128,12 +1128,12 @@ function cmdlineMenu() {
         ;;
       7)
         while true; do
-          rm -f "${TMP_PATH}/resp" >/dev/null
-          echo "5 \"Reboot after 5 seconds\"" >>"${TMP_PATH}/resp"
-          echo "0 \"No reboot\"" >>"${TMP_PATH}/resp"
-          echo "-1 \"Restart immediately\"" >>"${TMP_PATH}/resp"
+          rm -f "${TMP_PATH}/opts" >/dev/null
+          echo "5 \"Reboot after 5 seconds\"" >>"${TMP_PATH}/opts"
+          echo "0 \"No reboot\"" >>"${TMP_PATH}/opts"
+          echo "-1 \"Restart immediately\"" >>"${TMP_PATH}/opts"
           dialog --backtitle "$(backtitle)" --colors --title "Kernelpanic" \
-            --default-item "${KERNELPANIC}" --menu "Choose a time(seconds)" 0 0 0 --file "${TMP_PATH}/resp" \
+            --default-item "${KERNELPANIC}" --menu "Choose a time(seconds)" 0 0 0 --file "${TMP_PATH}/opts" \
             2>"${TMP_PATH}/resp"
           [ $? -ne 0 ] && break
           resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -1222,12 +1222,12 @@ function synoinfoMenu() {
             --msgbox "No synoinfo entries to remove" 0 0
           continue
         fi
-        rm -f "${TMP_PATH}/resp"
+        rm -f "${TMP_PATH}/opts"
         for I in ${!SYNOINFO[@]}; do
-          echo "\"${I}\" \"${SYNOINFO[${I}]}\" \"off\"" >>"${TMP_PATH}/resp"
+          echo "\"${I}\" \"${SYNOINFO[${I}]}\" \"off\"" >>"${TMP_PATH}/opts"
         done
         dialog --backtitle "$(backtitle)" --title "Synoinfo" \
-          --checklist "Select synoinfo entry to remove" 0 0 0 --file "${TMP_PATH}/resp" \
+          --checklist "Select synoinfo entry to remove" 0 0 0 --file "${TMP_PATH}/opts" \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
         resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -1504,9 +1504,9 @@ function updateMenu() {
           2 "Beta ${BETATAG}" \
           3 "Select Version" \
           4 "Upload .zip File" \
-        2>"${TMP_PATH}/resp"
+        2>"${TMP_PATH}/opts"
         [ $? -ne 0 ] && break
-        opts="$(cat "${TMP_PATH}/resp")"
+        opts="$(cat "${TMP_PATH}/opts")"
         if [ "${opts}" -eq 1 ]; then
           [ -z "${TAG}" ] && return 1
           updateLoader "${TAG}"
@@ -2500,20 +2500,20 @@ function bootipwaittime() {
 ###############################################################################
 # let user format disks from inside arc
 function formatDisks() {
-  rm -f "${TMP_PATH}/resp"
+  rm -f "${TMP_PATH}/opts"
   while read -r KNAME SIZE TYPE DMODEL PKNAME; do
     [ "${KNAME}" = "N/A" ] || [ "${SIZE:0:1}" = "0" ] && continue
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
-    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/resp"
+    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/opts"
   done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)
-  if [ ! -f "${TMP_PATH}/resp" ]; then
+  if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --msgbox "No disk found!" 0 0
     return
   fi
   dialog --backtitle "$(backtitle)" --title "Format Disks" \
-    --checklist "Select Disks" 0 0 0 --file "${TMP_PATH}/resp" \
+    --checklist "Select Disks" 0 0 0 --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -2546,21 +2546,21 @@ function formatDisks() {
 ###############################################################################
 # Clone bootloader disk
 function cloneLoader() {
-  rm -f "${TMP_PATH}/resp" 2>/dev/null
+  rm -f "${TMP_PATH}/opts" 2>/dev/null
   while read -r KNAME SIZE TYPE DMODEL PKNAME; do
     [ "${KNAME}" = "N/A" ] || [ "${SIZE:0:1}" = "0" ] && continue
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
-    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/resp"
+    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/opts"
   done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)
 
-  if [ ! -f "${TMP_PATH}/resp" ]; then
+  if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --msgbox "No disk found!" 0 0
     return
   fi
   dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
-    --radiolist "Choose a Destination" 0 0 0 --file "${TMP_PATH}/resp" \
+    --radiolist "Choose a Destination" 0 0 0 --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -2778,12 +2778,12 @@ function getbackup() {
 ###############################################################################
 # SataDOM Menu
 function satadomMenu() {
-  rm -f "${TMP_PATH}/resp" 2>/dev/null
-  echo "0 \"Create SATA node(ARC)\"" >>"${TMP_PATH}/resp"
-  echo "1 \"Native SATA Disk(SYNO)\"" >>"${TMP_PATH}/resp"
-  echo "2 \"Fake SATA DOM(Redpill)\"" >>"${TMP_PATH}/resp"
+  rm -f "${TMP_PATH}/opts" 2>/dev/null
+  echo "0 \"Create SATA node(ARC)\"" >>"${TMP_PATH}/opts"
+  echo "1 \"Native SATA Disk(SYNO)\"" >>"${TMP_PATH}/opts"
+  echo "2 \"Fake SATA DOM(Redpill)\"" >>"${TMP_PATH}/opts"
   dialog --backtitle "$(backtitle)" --title "Switch SATA DOM" \
-    --default-item "${SATADOM}" --menu  "Choose an Option" 0 0 0 --file "${TMP_PATH}/resp" \
+    --default-item "${SATADOM}" --menu  "Choose an Option" 0 0 0 --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -2799,21 +2799,21 @@ function satadomMenu() {
 # Reboot Menu
 function rebootMenu() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  rm -f "${TMP_PATH}/resp" >/dev/null
-  touch "${TMP_PATH}/resp"
+  rm -f "${TMP_PATH}/opts" >/dev/null
+  touch "${TMP_PATH}/opts"
   # Selectable Reboot Options
-  echo -e "config \"Arc: Config Mode\"" >>"${TMP_PATH}/resp"
-  echo -e "update \"Arc: Automated Update Mode\"" >>"${TMP_PATH}/resp"
-  echo -e "network \"Arc: Restart Network Service\"" >>"${TMP_PATH}/resp"
+  echo -e "config \"Arc: Config Mode\"" >>"${TMP_PATH}/opts"
+  echo -e "update \"Arc: Automated Update Mode\"" >>"${TMP_PATH}/opts"
+  echo -e "network \"Arc: Restart Network Service\"" >>"${TMP_PATH}/opts"
   if [ "${BUILDDONE}" = "true" ]; then
-    echo -e "recovery \"DSM: Recovery Mode\"" >>"${TMP_PATH}/resp"
-    echo -e "junior \"DSM: Reinstall Mode\"" >>"${TMP_PATH}/resp"
+    echo -e "recovery \"DSM: Recovery Mode\"" >>"${TMP_PATH}/opts"
+    echo -e "junior \"DSM: Reinstall Mode\"" >>"${TMP_PATH}/opts"
   fi
-  echo -e "uefi \"System: UEFI\"" >>"${TMP_PATH}/resp"
-  echo -e "poweroff \"System: Shutdown\"" >>"${TMP_PATH}/resp"
-  echo -e "shell \"System: Shell Cmdline\"" >>"${TMP_PATH}/resp"
+  echo -e "uefi \"System: UEFI\"" >>"${TMP_PATH}/opts"
+  echo -e "poweroff \"System: Shutdown\"" >>"${TMP_PATH}/opts"
+  echo -e "shell \"System: Shell Cmdline\"" >>"${TMP_PATH}/opts"
   dialog --backtitle "$(backtitle)" --title "Power Menu" \
-    --menu  "Choose a Destination" 0 0 0 --file "${TMP_PATH}/resp" \
+    --menu  "Choose a Destination" 0 0 0 --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -2916,16 +2916,16 @@ function governorMenu () {
 }
 
 function governorSelection () {
-  rm -f "${TMP_PATH}/resp" >/dev/null
-  touch "${TMP_PATH}/resp"
+  rm -f "${TMP_PATH}/opts" >/dev/null
+  touch "${TMP_PATH}/opts"
   # Selectable CPU governors
-  [ "${KVER:0:1}" = "5" ] && echo -e "schedutil \"use schedutil to scale frequency *\"" >>"${TMP_PATH}/resp"
-  [ "${KVER:0:1}" = "4" ] && echo -e "conservative \"use conservative to scale frequency *\"" >>"${TMP_PATH}/resp"
-  [ "${KVER:0:1}" = "4" ] && echo -e "ondemand \"use ondemand to scale frequency\"" >>"${TMP_PATH}/resp"
-  echo -e "performance \"always run at max frequency\"" >>"${TMP_PATH}/resp"
-  echo -e "powersave \"always run at lowest frequency\"" >>"${TMP_PATH}/resp"
+  [ "${KVER:0:1}" = "5" ] && echo -e "schedutil \"use schedutil to scale frequency *\"" >>"${TMP_PATH}/opts"
+  [ "${KVER:0:1}" = "4" ] && echo -e "conservative \"use conservative to scale frequency *\"" >>"${TMP_PATH}/opts"
+  [ "${KVER:0:1}" = "4" ] && echo -e "ondemand \"use ondemand to scale frequency\"" >>"${TMP_PATH}/opts"
+  echo -e "performance \"always run at max frequency\"" >>"${TMP_PATH}/opts"
+  echo -e "powersave \"always run at lowest frequency\"" >>"${TMP_PATH}/opts"
   dialog --backtitle "$(backtitle)" --title "CPU Frequency Scaling" \
-    --menu  "Choose a Governor\n* Recommended Option" 0 0 0 --file "${TMP_PATH}/resp" \
+    --menu  "Choose a Governor\n* Recommended Option" 0 0 0 --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -3143,7 +3143,7 @@ function checkHardwareID() {
 ###############################################################################
 # Bootsreen Menu
 function bootScreen () {
-  rm -f "${TMP_PATH}/bootscreen" "${TMP_PATH}/resp" "${TMP_PATH}/resp" >/dev/null
+  rm -f "${TMP_PATH}/bootscreen" "${TMP_PATH}/opts" "${TMP_PATH}/resp" >/dev/null
   unset BOOTSCREENS
   declare -A BOOTSCREENS
   while IFS=': ' read -r KEY VALUE; do
@@ -3162,11 +3162,11 @@ EOL
     else
       ACT="off"
     fi
-    echo -e "${BOOTSCREEN} \"${BOOTDESCRIPTION}\" ${ACT}" >>"${TMP_PATH}/resp"
+    echo -e "${BOOTSCREEN} \"${BOOTDESCRIPTION}\" ${ACT}" >>"${TMP_PATH}/opts"
   done < "${TMP_PATH}/bootscreen"
   dialog --backtitle "$(backtitle)" --title "Bootscreen" --colors --aspect 18 \
     --checklist "Select Bootscreen Informations\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
-    --file "${TMP_PATH}/resp" 2>"${TMP_PATH}/resp"
+    --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   for BOOTSCREEN in dsminfo systeminfo diskinfo hwidinfo dsmlogo; do
@@ -3218,31 +3218,11 @@ function getnet() {
 # Generate PortMap
 function getmap() {
   SATADRIVES=0
-  SASDRIVES=0
-  SCSIDRIVES=0
-  RAIDDRIVES=0
-  NVMEDRIVES=0
-  USBDRIVES=0
-  MMCDRIVES=0
 
   # Clean old files
   for file in drivesmax drivescon ports remap; do
     > "${TMP_PATH}/${file}"
   done
-
-  # Helper function to process PCI devices
-  function process_pci_devices() {
-    local pci_class=$1
-    local device_path=$2
-    local count_var=$3
-    local port_filter=$4
-
-    for PCI in $(lspci -d ::${pci_class} 2>/dev/null | awk '{print $1}'); do
-      local PORTS=$(ls -l /sys/class/${device_path} | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
-      local PORTNUM=$(lsscsi -b | grep -v - | grep "${port_filter}" | wc -l)
-      eval "${count_var}=$(( ${!count_var} + PORTNUM ))"
-    done
-  }
 
   # Process SATA Disks
   if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
@@ -3279,35 +3259,82 @@ function getmap() {
     done
   fi
 
-  # Process Other Disk Types
-  process_pci_devices 107 "scsi_host" SASDRIVES "\[${PORT}:"
-  process_pci_devices 100 "scsi_host" SCSIDRIVES "\[${PORT}:"
-  process_pci_devices 104 "scsi_host" RAIDDRIVES "\[${PORT}:"
-  process_pci_devices c03 "scsi_host" USBDRIVES "\[${PORT}:"
-
   # Process NVMe Disks
-  if [ $(ls -l /sys/class/nvme 2>/dev/null | wc -l) -gt 0 ]; then
+  NVMEDRIVES=0
+  if [ $(lspci -d ::108 2>/dev/null | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::108 2>/dev/null | awk '{print $1}'); do
-      local PORTNUM=$(ls -l /sys/class/nvme | grep "${PCI}" | wc -l 2>/dev/null)
-      [ "${PORTNUM}" -eq 0 ] && continue
+      NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
+      PORT=$(ls -l /sys/class/nvme 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
+      PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[N:${PORT}:" | wc -l)
       NVMEDRIVES=$((NVMEDRIVES + PORTNUM))
     done
+    writeConfigKey "device.nvmedrives" "${NVMEDRIVES}" "${USER_CONFIG_FILE}"
   fi
 
   # Process MMC Disks
-  if [ $(ls -l /sys/block/mmc* 2>/dev/null | wc -l) -gt 0 ]; then
+  MMCDRIVES=0
+  if [ $(lspci -d ::805 2>/dev/null | wc -l) -gt 0 ]; then
     for PCI in $(lspci -d ::805 2>/dev/null | awk '{print $1}'); do
-      local PORTNUM=$(ls -l /sys/block/mmc* | grep "${PCI}" | wc -l 2>/dev/null)
-      [ "${PORTNUM}" -eq 0 ] && continue
+      NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
+      PORT=$(ls -l /sys/block/mmc* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/mmcblk//' | sort -n)
+      PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[M:${PORT}:" | wc -l)
       MMCDRIVES=$((MMCDRIVES + PORTNUM))
     done
+    writeConfigKey "device.mmcdrives" "${MMCDRIVES}" "${USER_CONFIG_FILE}"
+  fi
+
+  # Process SAS Disks
+  SASDRIVES=0
+  if [ $(lspci -d ::107 2>/dev/null | wc -l) -gt 0 ]; then
+    for PCI in $(lspci -d ::107 2>/dev/null | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
+      PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
+      SASDRIVES=$((SASDRIVES + PORTNUM))
+    done
+    writeConfigKey "device.sasdrives" "${SASDRIVES}" "${USER_CONFIG_FILE}"
+  fi
+
+  # Process SCSI Disks
+  SCSIDRIVES=0
+  if [ $(lspci -d ::100 2>/dev/null | wc -l) -gt 0 ]; then
+    for PCI in $(lspci -d ::100 2>/dev/null | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
+      PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
+      SCSIDRIVES=$((SCSIDRIVES + PORTNUM))
+    done
+    writeConfigKey "device.scsidrives" "${SCSIDRIVES}" "${USER_CONFIG_FILE}"
+  fi
+
+  # Process RAID Disks
+  RAIDDRIVES=0
+  if [ $(lspci -d ::104 2>/dev/null | wc -l) -gt 0 ]; then
+    for PCI in $(lspci -d ::104 2>/dev/null | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
+      PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
+      RAIDDRIVES=$((RAIDDRIVES + PORTNUM))
+    done
+    writeConfigKey "device.raiddrives" "${RAIDDRIVES}" "${USER_CONFIG_FILE}"
+  fi
+
+  # Process USB Disks
+  USBDRIVES=0
+  if [ $(lspci -d ::c03 2>/dev/null | wc -l) -gt 0 ]; then
+    for PCI in $(lspci -d ::c03 2>/dev/null | awk '{print $1}'); do
+      NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
+      PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
+      USBDRIVES=$((USBDRIVES + PORTNUM))
+    done
+    writeConfigKey "device.usbdrives" "${USBDRIVES}" "${USER_CONFIG_FILE}"
   fi
 
   # Write Disk Counts to Config
   DRIVES=$((SATADRIVES + SASDRIVES + SCSIDRIVES + RAIDDRIVES + USBDRIVES + MMCDRIVES + NVMEDRIVES))
   HARDDRIVES=$((SATADRIVES + SASDRIVES + SCSIDRIVES + RAIDDRIVES + NVMEDRIVES))
   writeConfigKey "device.satadrives" "${SATADRIVES}" "${USER_CONFIG_FILE}"
-  writeConfigKey "device.sasdrives" "${SASDRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.scsidrives" "${SCSIDRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.raiddrives" "${RAIDDRIVES}" "${USER_CONFIG_FILE}"
   writeConfigKey "device.usbdrives" "${USBDRIVES}" "${USER_CONFIG_FILE}"
