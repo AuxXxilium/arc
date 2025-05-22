@@ -707,21 +707,21 @@ function addonSelection() {
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
-  rm -f "${TMP_PATH}/opts"
-  touch "${TMP_PATH}/opts"
+  rm -f "${TMP_PATH}/resp"
+  touch "${TMP_PATH}/resp"
 
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     if { [[ "${ADDON}" = "amepatch" || "${ADDON}" = "arcdns" ]] && [ -z "${ARC_CONF}" ]; } || { [ "${ADDON}" = "codecpatch" ] && [ -n "${ARC_CONF}" ]; }; then
       continue
     else
-      echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
+      echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/resp"
     fi
   done < <(availableAddons "${PLATFORM}")
 
   dialog --backtitle "$(backtitle)" --title "Addons" --colors --aspect 18 \
     --checklist "Select Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
-    --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
+    --file "${TMP_PATH}/resp" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
 
@@ -771,16 +771,16 @@ function modulesMenu() {
         while IFS=': ' read -r KEY VALUE; do
           [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
         done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
-        rm -f "${TMP_PATH}/opts"
+        rm -f "${TMP_PATH}/resp"
         while read -r ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
-          echo "${ID} ${DESC} ${ACT}" >>"${TMP_PATH}/opts"
+          echo "${ID} ${DESC} ${ACT}" >>"${TMP_PATH}/resp"
         done <<<${ALLMODULES}
         dialog --backtitle "$(backtitle)" --title "Modules" \
           --cancel-label "Exit" \
           --extra-button --extra-label "Select all" \
           --help-button --help-label "Deselect all" \
-          --checklist "Select Modules to include" 0 0 0 --file "${TMP_PATH}/opts" \
+          --checklist "Select Modules to include" 0 0 0 --file "${TMP_PATH}/resp" \
           2>"${TMP_PATH}/resp"
         RET=$?
         case ${RET} in
@@ -1130,12 +1130,12 @@ function cmdlineMenu() {
         ;;
       7)
         while true; do
-          rm -f "${TMP_PATH}/opts" >/dev/null
-          echo "5 \"Reboot after 5 seconds\"" >>"${TMP_PATH}/opts"
-          echo "0 \"No reboot\"" >>"${TMP_PATH}/opts"
-          echo "-1 \"Restart immediately\"" >>"${TMP_PATH}/opts"
+          rm -f "${TMP_PATH}/resp" >/dev/null
+          echo "5 \"Reboot after 5 seconds\"" >>"${TMP_PATH}/resp"
+          echo "0 \"No reboot\"" >>"${TMP_PATH}/resp"
+          echo "-1 \"Restart immediately\"" >>"${TMP_PATH}/resp"
           dialog --backtitle "$(backtitle)" --colors --title "Kernelpanic" \
-            --default-item "${KERNELPANIC}" --menu "Choose a time(seconds)" 0 0 0 --file "${TMP_PATH}/opts" \
+            --default-item "${KERNELPANIC}" --menu "Choose a time(seconds)" 0 0 0 --file "${TMP_PATH}/resp" \
             2>"${TMP_PATH}/resp"
           [ $? -ne 0 ] && break
           resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -1224,12 +1224,12 @@ function synoinfoMenu() {
             --msgbox "No synoinfo entries to remove" 0 0
           continue
         fi
-        rm -f "${TMP_PATH}/opts"
+        rm -f "${TMP_PATH}/resp"
         for I in ${!SYNOINFO[@]}; do
-          echo "\"${I}\" \"${SYNOINFO[${I}]}\" \"off\"" >>"${TMP_PATH}/opts"
+          echo "\"${I}\" \"${SYNOINFO[${I}]}\" \"off\"" >>"${TMP_PATH}/resp"
         done
         dialog --backtitle "$(backtitle)" --title "Synoinfo" \
-          --checklist "Select synoinfo entry to remove" 0 0 0 --file "${TMP_PATH}/opts" \
+          --checklist "Select synoinfo entry to remove" 0 0 0 --file "${TMP_PATH}/resp" \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && continue
         resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -1350,7 +1350,7 @@ function backupMenu() {
         fi
         mkdir -p "${TMP_PATH}/mdX"
         for I in ${DSMROOTS}; do
-          fixDSMRootPart "${I}"
+          #fixDSMRootPart "${I}"
           T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
           mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
           [ $? -ne 0 ] && continue
@@ -1380,6 +1380,7 @@ function backupMenu() {
           fi
           umount "${TMP_PATH}/mdX"
         done
+        rm -rf "${TMP_PATH}/mdX" 2>/dev/null
         if [ -f "${USER_CONFIG_FILE}" ]; then
           PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
           if [ -n "${PRODUCTVER}" ]; then
@@ -1505,9 +1506,9 @@ function updateMenu() {
           2 "Beta ${BETATAG}" \
           3 "Select Version" \
           4 "Upload .zip File" \
-        2>"${TMP_PATH}/opts"
+        2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break
-        opts="$(cat "${TMP_PATH}/opts")"
+        opts="$(cat "${TMP_PATH}/resp")"
         if [ "${opts}" -eq 1 ]; then
           [ -z "${TAG}" ] && return 1
           updateLoader "${TAG}"
@@ -2100,7 +2101,7 @@ function resetPassword() {
   rm -f "${TMP_PATH}/menu" >/dev/null
   mkdir -p "${TMP_PATH}/mdX"
   for I in ${DSMROOTS}; do
-    fixDSMRootPart "${I}"
+    #fixDSMRootPart "${I}"
     T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
     mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
     [ $? -ne 0 ] && continue
@@ -2113,6 +2114,7 @@ function resetPassword() {
         [ $? -eq 0 ] && S="SecureSignIn" || S="            "
         printf "\"%-36s %-10s %-14s\"\n" "${U}" "${E}" "${S}" >>"${TMP_PATH}/menu"
       done < <(cat "${TMP_PATH}/mdX/etc/shadow" 2>/dev/null)
+      break
     fi
     umount "${TMP_PATH}/mdX"
     [ -f "${TMP_PATH}/menu" ] && break
@@ -2198,7 +2200,7 @@ function addNewDSMUser() {
     rm -rf "${TMP_PATH}/mdX" >/dev/null
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Add DSM User" \
     --progressbox "Adding ..." 20 100
-  [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ] && MSG="Add DSM User successful." || MSG="Add DSM User failed."
+  [ "$(cat ${TMP_PATH}/isOk 2>/dev/null)" = "true" ] && MSG="Add DSM User successful." || MSG="Add DSM User failed."
   dialog --backtitle "$(backtitle)" --title "Add DSM User" \
     --msgbox "${MSG}" 0 0
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -2464,14 +2466,14 @@ function disablescheduledTasks {
       if [ -f "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db" ]; then
         echo "UPDATE task SET enable = 0;" | sqlite3 "${TMP_PATH}/mdX/usr/syno/etc/esynoscheduler/esynoscheduler.db"
         sync
-        echo "true" > "${TMP_PATH}/isEnable"
+        echo "true" > "${TMP_PATH}/isOk"
       fi
       umount "${TMP_PATH}/mdX"
     done
     rm -rf "${TMP_PATH}/mdX"
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Scheduled Tasks" \
     --progressbox "Modifying..." 20 100
-  if [ "$(cat ${TMP_PATH}/isEnable 2>/dev/null)" = "true" ]; then
+  if [ "$(cat ${TMP_PATH}/isOk 2>/dev/null)" = "true" ]; then
     MSG="Disable all scheduled tasks successful."
   else
     MSG="Disable all scheduled tasks failed."
@@ -2500,20 +2502,20 @@ function bootipwaittime() {
 ###############################################################################
 # let user format disks from inside arc
 function formatDisks() {
-  rm -f "${TMP_PATH}/opts"
+  rm -f "${TMP_PATH}/resp"
   while read -r KNAME SIZE TYPE DMODEL PKNAME; do
     [ "${KNAME}" = "N/A" ] || [ "${SIZE:0:1}" = "0" ] && continue
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
-    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/opts"
+    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/resp"
   done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)
-  if [ ! -f "${TMP_PATH}/opts" ]; then
+  if [ ! -f "${TMP_PATH}/resp" ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --msgbox "No disk found!" 0 0
     return
   fi
   dialog --backtitle "$(backtitle)" --title "Format Disks" \
-    --checklist "Select Disks" 0 0 0 --file "${TMP_PATH}/opts" \
+    --checklist "Select Disks" 0 0 0 --file "${TMP_PATH}/resp" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -2530,6 +2532,7 @@ function formatDisks() {
     done
   fi
   for I in ${resp}; do
+    umount -l "${I}" 2>/dev/null
     if [[ "${I}" = /dev/mmc* ]]; then
       echo y | mkfs.ext4 -T largefile4 -E nodiscard "${I}"
     else
@@ -2545,21 +2548,21 @@ function formatDisks() {
 ###############################################################################
 # Clone bootloader disk
 function cloneLoader() {
-  rm -f "${TMP_PATH}/opts" 2>/dev/null
+  rm -f "${TMP_PATH}/resp" 2>/dev/null
   while read -r KNAME SIZE TYPE DMODEL PKNAME; do
     [ "${KNAME}" = "N/A" ] || [ "${SIZE:0:1}" = "0" ] && continue
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
-    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/opts"
+    printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/resp"
   done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)
 
-  if [ ! -f "${TMP_PATH}/opts" ]; then
+  if [ ! -f "${TMP_PATH}/resp" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --msgbox "No disk found!" 0 0
     return
   fi
   dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
-    --radiolist "Choose a Destination" 0 0 0 --file "${TMP_PATH}/opts" \
+    --radiolist "Choose a Destination" 0 0 0 --file "${TMP_PATH}/resp" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -2708,6 +2711,7 @@ function greplogs() {
       cp -rf ${TMP_PATH}/mdX/var/log/messages ${TMP_PATH}/mdX/var/log/*.log "${TMP_PATH}/logs/md0/log"
       SYSLOG=1
       umount "${TMP_PATH}/mdX"
+      break
     done
     rm -rf "${TMP_PATH}/mdX" >/dev/null
   fi
@@ -2776,12 +2780,12 @@ function getbackup() {
 ###############################################################################
 # SataDOM Menu
 function satadomMenu() {
-  rm -f "${TMP_PATH}/opts" 2>/dev/null
-  echo "0 \"Create SATA node(ARC)\"" >>"${TMP_PATH}/opts"
-  echo "1 \"Native SATA Disk(SYNO)\"" >>"${TMP_PATH}/opts"
-  echo "2 \"Fake SATA DOM(Redpill)\"" >>"${TMP_PATH}/opts"
+  rm -f "${TMP_PATH}/resp" 2>/dev/null
+  echo "0 \"Create SATA node(ARC)\"" >>"${TMP_PATH}/resp"
+  echo "1 \"Native SATA Disk(SYNO)\"" >>"${TMP_PATH}/resp"
+  echo "2 \"Fake SATA DOM(Redpill)\"" >>"${TMP_PATH}/resp"
   dialog --backtitle "$(backtitle)" --title "Switch SATA DOM" \
-    --default-item "${SATADOM}" --menu  "Choose an Option" 0 0 0 --file "${TMP_PATH}/opts" \
+    --default-item "${SATADOM}" --menu  "Choose an Option" 0 0 0 --file "${TMP_PATH}/resp" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -2797,21 +2801,21 @@ function satadomMenu() {
 # Reboot Menu
 function rebootMenu() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  rm -f "${TMP_PATH}/opts" >/dev/null
-  touch "${TMP_PATH}/opts"
+  rm -f "${TMP_PATH}/resp" >/dev/null
+  touch "${TMP_PATH}/resp"
   # Selectable Reboot Options
-  echo -e "config \"Arc: Config Mode\"" >>"${TMP_PATH}/opts"
-  echo -e "update \"Arc: Automated Update Mode\"" >>"${TMP_PATH}/opts"
-  echo -e "network \"Arc: Restart Network Service\"" >>"${TMP_PATH}/opts"
+  echo -e "config \"Arc: Config Mode\"" >>"${TMP_PATH}/resp"
+  echo -e "update \"Arc: Automated Update Mode\"" >>"${TMP_PATH}/resp"
+  echo -e "network \"Arc: Restart Network Service\"" >>"${TMP_PATH}/resp"
   if [ "${BUILDDONE}" = "true" ]; then
-    echo -e "recovery \"DSM: Recovery Mode\"" >>"${TMP_PATH}/opts"
-    echo -e "junior \"DSM: Reinstall Mode\"" >>"${TMP_PATH}/opts"
+    echo -e "recovery \"DSM: Recovery Mode\"" >>"${TMP_PATH}/resp"
+    echo -e "junior \"DSM: Reinstall Mode\"" >>"${TMP_PATH}/resp"
   fi
-  echo -e "uefi \"System: UEFI\"" >>"${TMP_PATH}/opts"
-  echo -e "poweroff \"System: Shutdown\"" >>"${TMP_PATH}/opts"
-  echo -e "shell \"System: Shell Cmdline\"" >>"${TMP_PATH}/opts"
+  echo -e "uefi \"System: UEFI\"" >>"${TMP_PATH}/resp"
+  echo -e "poweroff \"System: Shutdown\"" >>"${TMP_PATH}/resp"
+  echo -e "shell \"System: Shell Cmdline\"" >>"${TMP_PATH}/resp"
   dialog --backtitle "$(backtitle)" --title "Power Menu" \
-    --menu  "Choose a Destination" 0 0 0 --file "${TMP_PATH}/opts" \
+    --menu  "Choose a Destination" 0 0 0 --file "${TMP_PATH}/resp" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -2914,16 +2918,16 @@ function governorMenu () {
 }
 
 function governorSelection () {
-  rm -f "${TMP_PATH}/opts" >/dev/null
-  touch "${TMP_PATH}/opts"
+  rm -f "${TMP_PATH}/resp" >/dev/null
+  touch "${TMP_PATH}/resp"
   # Selectable CPU governors
-  [ "${KVER:0:1}" = "5" ] && echo -e "schedutil \"use schedutil to scale frequency *\"" >>"${TMP_PATH}/opts"
-  [ "${KVER:0:1}" = "4" ] && echo -e "conservative \"use conservative to scale frequency *\"" >>"${TMP_PATH}/opts"
-  [ "${KVER:0:1}" = "4" ] && echo -e "ondemand \"use ondemand to scale frequency\"" >>"${TMP_PATH}/opts"
-  echo -e "performance \"always run at max frequency\"" >>"${TMP_PATH}/opts"
-  echo -e "powersave \"always run at lowest frequency\"" >>"${TMP_PATH}/opts"
+  [ "${KVER:0:1}" = "5" ] && echo -e "schedutil \"use schedutil to scale frequency *\"" >>"${TMP_PATH}/resp"
+  [ "${KVER:0:1}" = "4" ] && echo -e "conservative \"use conservative to scale frequency *\"" >>"${TMP_PATH}/resp"
+  [ "${KVER:0:1}" = "4" ] && echo -e "ondemand \"use ondemand to scale frequency\"" >>"${TMP_PATH}/resp"
+  echo -e "performance \"always run at max frequency\"" >>"${TMP_PATH}/resp"
+  echo -e "powersave \"always run at lowest frequency\"" >>"${TMP_PATH}/resp"
   dialog --backtitle "$(backtitle)" --title "CPU Frequency Scaling" \
-    --menu  "Choose a Governor\n* Recommended Option" 0 0 0 --file "${TMP_PATH}/opts" \
+    --menu  "Choose a Governor\n* Recommended Option" 0 0 0 --file "${TMP_PATH}/resp" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -3141,7 +3145,7 @@ function checkHardwareID() {
 ###############################################################################
 # Bootsreen Menu
 function bootScreen () {
-  rm -f "${TMP_PATH}/bootscreen" "${TMP_PATH}/opts" "${TMP_PATH}/resp" >/dev/null
+  rm -f "${TMP_PATH}/bootscreen" "${TMP_PATH}/resp" "${TMP_PATH}/resp" >/dev/null
   unset BOOTSCREENS
   declare -A BOOTSCREENS
   while IFS=': ' read -r KEY VALUE; do
@@ -3160,11 +3164,11 @@ EOL
     else
       ACT="off"
     fi
-    echo -e "${BOOTSCREEN} \"${BOOTDESCRIPTION}\" ${ACT}" >>"${TMP_PATH}/opts"
+    echo -e "${BOOTSCREEN} \"${BOOTDESCRIPTION}\" ${ACT}" >>"${TMP_PATH}/resp"
   done < "${TMP_PATH}/bootscreen"
   dialog --backtitle "$(backtitle)" --title "Bootscreen" --colors --aspect 18 \
     --checklist "Select Bootscreen Informations\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
-    --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
+    --file "${TMP_PATH}/resp" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   for BOOTSCREEN in dsminfo systeminfo diskinfo hwidinfo dsmlogo; do
