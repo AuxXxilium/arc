@@ -100,12 +100,13 @@ function arcModel() {
   fi
   # Reset Model Config if changed
   if [ "${ARC_MODE}" = "config" ] && [ "${MODEL}" != "${resp}" ]; then
-    MODEL="${resp}"
+    MODEL="$(echo ${resp} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')"
     writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
+    writeConfigKey "dsmver" "" "${USER_CONFIG_FILE}"
     writeConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "hddsort" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "kernel" "official" "${USER_CONFIG_FILE}"
@@ -144,6 +145,7 @@ function arcVersion() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  DSMVER="$(readConfigKey "dsmver" "${USER_CONFIG_FILE}")"
   # Get PAT Data from Config
   PAT_URL_CONF="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH_CONF="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
@@ -164,12 +166,14 @@ function arcVersion() {
     [ $? -ne 0 ] && return
     RESP="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${RESP}" ] && return
-    if [ "${PRODUCTVER}" != "${RESP:0:3}" ]; then
+    if [ "${DSMVER}" != "${RESP:0:5}" ]; then
       # Reset Config if changed
       PRODUCTVER="${RESP:0:3}"
+      DSMVER="${RESP:0:5}"
       PAT_URL="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${RESP}\".url" "${D_FILE}")"
       PAT_HASH="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${RESP}\".hash" "${D_FILE}")"
       writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+      writeConfigKey "dsmver" "${DSMVER}" "${USER_CONFIG_FILE}"
       writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
       writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
       writeConfigKey "governor" "" "${USER_CONFIG_FILE}"
@@ -461,6 +465,7 @@ function arcSettings() {
 function arcSummary() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  DSMVER="$(readConfigKey "dsmver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
@@ -496,7 +501,7 @@ function arcSummary() {
   # Print Summary
   SUMMARY="\Z4> DSM Information\Zn"
   SUMMARY+="\n>> Model: \Zb${MODEL}\Zn"
-  SUMMARY+="\n>> Version: \Zb${PRODUCTVER}\Zn"
+  SUMMARY+="\n>> Version: \Zb${DSMVER}\Zn"
   SUMMARY+="\n>> Platform: \Zb${PLATFORM}\Zn"
   SUMMARY+="\n>> DT: \Zb${DT}\Zn"
   SUMMARY+="\n>> PAT URL: \Zb${PAT_URL}\Zn"
@@ -663,8 +668,7 @@ function boot() {
 ###############################################################################
 # Permits user edit the user config
 function editUserConfig() {
-  OLDMODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  OLDPRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  PREHASH="$(sha256sum "${USER_CONFIG_FILE}" | awk '{print $1}')"
   while true; do
     dialog --backtitle "$(backtitle)" --title "Edit with caution" \
       --ok-label "Save" --editbox "${USER_CONFIG_FILE}" 0 0 2>"${TMP_PATH}/userconfig"
@@ -674,15 +678,16 @@ function editUserConfig() {
     [ $? -eq 0 ] && break || continue
     dialog --backtitle "$(backtitle)" --title "Invalid YAML format" --msgbox "${ERRORS}" 0 0
   done
-  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-  if [ "${MODEL}" != "${OLDMODEL}" ] || [ "${PRODUCTVER}" != "${OLDPRODUCTVER}" ]; then
-    # Delete old files
+  POSTHASH="$(sha256sum "${USER_CONFIG_FILE}" | awk '{print $1}')"
+  if [ "${POSTHASH}" != "${PREHASH}" ]; then
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    dialog --backtitle "$(backtitle)" --title "User Config" \
+      --msgbox "User Config changed!\nYou need to rebuild the Loader." 6 40
+    sleep 3
+    clear
+    exec arc.sh
   fi
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   return
 }
 
@@ -698,7 +703,6 @@ function addonMenu() {
 function addonSelection() {
   # read platform and kernel version to check if addon exists
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
 
   # read addons from user config
@@ -1605,6 +1609,7 @@ function sysinfo() {
     MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
     MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+    DSMVER="$(readConfigKey "dsmver" "${USER_CONFIG_FILE}")"
     PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
     DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
@@ -1696,7 +1701,7 @@ function sysinfo() {
   TEXT+="\n  HardwareID: \Zb${HWID}\Zn"
   TEXT+="\n  Offline Mode: \Zb${ARC_OFFLINE}\Zn"
   if [ "${CONFDONE}" = "true" ]; then
-    TEXT+="\n\Z4> DSM ${PRODUCTVER} (${BUILDNUM}): ${MODELID:-${MODEL}}\Zn"
+    TEXT+="\n\Z4> DSM ${DSMVER} (${BUILDNUM}): ${MODELID:-${MODEL}}\Zn"
     TEXT+="\n  Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
     TEXT+="\n  Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
     TEXT+="\n  Arc Patch: \Zb${ARC_PATCH}\Zn"
