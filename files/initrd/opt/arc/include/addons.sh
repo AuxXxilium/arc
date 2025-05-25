@@ -6,8 +6,6 @@ function availableAddons() {
     echo ""
     return 1
   fi
-  local ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  local PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   MACHINE="$(virt-what 2>/dev/null | head -1)"
   [ -z "${MACHINE}" ] && MACHINE="physical" || true
   for D in $(find "${ADDONS_PATH}" -maxdepth 1 -type d 2>/dev/null | sort); do
