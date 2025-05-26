@@ -591,7 +591,7 @@ function systemCheck () {
   [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
   # Check for Hypervisor
   MEV="$(virt-what 2>/dev/null | head -1)"
-  MACHINE="${MEV:-physical}"
+  [ -z "${MEV}" ] && MEV="physical"
   # Check for AES Support
   if grep -q "^flags.*aes.*" /proc/cpuinfo; then
     AESSYS="true"

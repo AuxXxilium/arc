@@ -25,7 +25,7 @@ function backtitle() {
   BACKTITLE+="Patch: ${ARC_PATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
   BACKTITLE+="Build: ${BUILDDONE} | "
-  BACKTITLE+="${MACHINE}(${BUS}) | "
+  BACKTITLE+="${MEV}(${BUS}) | "
   [ -n "${KEYMAP}" ] && BACKTITLE+="KB: ${KEYMAP}"
   [ "${ARC_OFFLINE}" = "true" ] && BACKTITLE+=" | Offline"
   echo "${BACKTITLE}"
