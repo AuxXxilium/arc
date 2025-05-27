@@ -112,7 +112,7 @@ if [ "${HWIDINFO}" = "true" ]; then
   echo
 fi
 
-if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
+if ! (readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem); then
   HASATA=0
   for D in $(lsblk -dpno NAME); do
     [ "${D}" = "${LOADER_DISK}" ] && continue
@@ -242,7 +242,7 @@ fi
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 if [ "${DT}" = "true" ]; then
   if [ "${PLATFORM}" != "v1000nk" ] && [ "${PLATFORM}" != "epyc7002" ] && [ "${PLATFORM}" != "purley" ] && [ "${PLATFORM}" != "broadwellnkv2" ]; then
-    if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
+    if ! (echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"); then
       [ -n "${CMDLINE['modprobe.blacklist']}" ] && CMDLINE['modprobe.blacklist']+=","
       CMDLINE['modprobe.blacklist']+="mpt3sas"
     fi
