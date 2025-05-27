@@ -560,11 +560,17 @@ function make() {
   if [ -z "${ARC_CONF}" ] || [ "${ARC_PATCH}" = "false" ]; then
     deleteConfigKey "addons.amepatch" "${USER_CONFIG_FILE}"
   fi
+  while IFS=': ' read -r ADDON PARAM; do
+    [ -z "${ADDON}" ] && continue
+    if ! (checkAddonExist "${ADDON}" "${PLATFORM}"); then
+      deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
+    fi
+  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
   if [ -n "${IPCON}" ]; then
     getpatfiles
   else
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
-      --infobox "Could not build Loader!\nNetwork Connection needed." 4 40
+      --infobox "Offline Mode disabled!\nNetwork Connection required." 4 40
     # Set Build to false
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
