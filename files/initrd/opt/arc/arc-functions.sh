@@ -258,6 +258,7 @@ function arcVersion() {
       if [ "${MEV}" = "physical" ]; then
         initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
         initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
+        initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
         if [ "$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp' | sed -n 's|.*/\(hwmon.*\/temp1_input\).*|\1|p' | wc -l)" -gt 0 ]; then
           initConfigKey "addons.fancontrol" "" "${USER_CONFIG_FILE}"
         fi
@@ -417,10 +418,6 @@ function arcSettings() {
     fi
   fi
 
-  if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q fancontrol && ! (readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q sensors); then
-      writeConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
-  fi
-
   # Warnings and Checks
   if [ "${ARC_MODE}" = "config" ]; then
     [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && dialog --backtitle "$(backtitle)" --title "Arc Warning" --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental." 6 70
@@ -561,7 +558,6 @@ function make() {
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   if [ -z "${ARC_CONF}" ] || [ "${ARC_PATCH}" = "false" ]; then
     deleteConfigKey "addons.amepatch" "${USER_CONFIG_FILE}"
-    deleteConfigKey "addons.arcdns" "${USER_CONFIG_FILE}"
   fi
   if [ -n "${IPCON}" ]; then
     getpatfiles
@@ -574,6 +570,9 @@ function make() {
     sleep 2
     return
   fi
+  if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q fancontrol && ! (readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q sensors); then
+    writeConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
+  fi
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ "${CONFDONE}" = "true" ] && [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
     (
       livepatch
@@ -583,13 +582,14 @@ function make() {
   else
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
       --infobox "Configuration issue found.\nCould not build Loader!\nExit." 5 40
+    rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
     # Set Build to false
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     sleep 2
     return
   fi
-  if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
+  if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     MODELID="$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')"
     writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
