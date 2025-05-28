@@ -279,7 +279,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       EXTRA_LABEL="Boot"
     fi
     if [ "$TERM" != "xterm-256color" ]; then
-      WEBCONFIG="Webconfig: http://${IPCON}${HTTPPORT:+:$HTTPPORT}"
+      WEBCONFIG="Webconfig: http://${IPCON}:${HTTPPORT:-7080}"
     else
       WEBCONFIG=""
     fi
@@ -383,7 +383,7 @@ fi
 # Inform user
 echo -e "Call \033[1;34marc.sh\033[0m to configure Loader"
 echo
-echo -e "Web Config: \033[1;34mhttp://${IPCON}${HTTPPORT:+:$HTTPPORT}\033[0m"
+echo -e "Web Config: \033[1;34mhttp://${IPCON}:${HTTPPORT:-7080}\033[0m"
 echo
 echo -e "SSH Access:"
 echo -e "IP: \033[1;34m${IPCON}\033[0m"

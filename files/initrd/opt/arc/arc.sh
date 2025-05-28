@@ -175,7 +175,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
     [ "${ARC_OFFLINE}" = "false" ] && write_menu "z" "Update Menu"
     write_menu "I" "Power/Service Menu"
     write_menu "V" "Credits"
-    [ "$TERM" != "xterm-256color" ] && WEBCONFIG="Webconfig: http://${IPCON}${HTTPPORT:+:$HTTPPORT}" || WEBCONFIG=""
+    [ "$TERM" != "xterm-256color" ] && WEBCONFIG="Webconfig: http://${IPCON}:${HTTPPORT:-7080}" || WEBCONFIG=""
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Advanced UI" --colors \
           --cancel-label "Easy UI" --help-button --help-label "Exit" \
           --menu "${WEBCONFIG}" 0 0 0 --file "${TMP_PATH}/menu" \
@@ -352,7 +352,7 @@ fi
 # Inform user
 echo -e "Call \033[1;34marc.sh\033[0m to configure Loader"
 echo
-echo -e "Web Config: \033[1;34mhttp://${IPCON}${HTTPPORT:+:$HTTPPORT}\033[0m"
+echo -e "Web Config: \033[1;34mhttp://${IPCON}:${HTTPPORT:-7080}\033[0m"
 echo
 echo -e "SSH Access:"
 echo -e "IP: \033[1;34m${IPCON}\033[0m"

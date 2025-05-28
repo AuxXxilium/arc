@@ -1434,7 +1434,7 @@ function backupMenu() {
         
         if [ -f "${PART2_PATH}/machine.key" ]; then
           cp -f "${PART2_PATH}/machine.key" "/var/www/data/machine.key"
-          URL="http://${IPCON}${HTTPPORT:+:$HTTPPORT}/machine.key"
+          URL="http://${IPCON}:${HTTPPORT:-7080}/machine.key"
           MSG="Please use ${URL} to download the machine.key file."
         else
           MSG="File not found!"
@@ -2757,7 +2757,7 @@ function greplogs() {
     mv -f "${TMP_PATH}/logs.tar.gz" "/var/www/data/logs.tar.gz"
     if [ -f "/var/www/data/logs.tar.gz" ]; then
       chmod 644 "/var/www/data/logs.tar.gz"
-      URL="http://${IPCON}${HTTPPORT:+:$HTTPPORT}/logs.tar.gz"
+      URL="http://${IPCON}:${HTTPPORT:-7080}/logs.tar.gz"
       MSG+="Please via ${URL} to download the logs,\nAnd go to Github or Discord to create an issue and upload the logs."
     else
       MSG+="Can't find logs!\n"
@@ -2776,7 +2776,7 @@ function getbackup() {
     tar -czf "${TMP_PATH}/dsmconfig.tar.gz" -C "${PART1_PATH}" dsmbackup
     cp -f "${TMP_PATH}/dsmconfig.tar.gz" "/var/www/data/dsmconfig.tar.gz"
     chmod 644 "/var/www/data/dsmconfig.tar.gz"
-    URL="http://${IPCON}${HTTPPORT:+:$HTTPPORT}/dsmconfig.tar.gz"
+    URL="http://${IPCON}:${HTTPPORT:-7080}/dsmconfig.tar.gz"
     dialog --backtitle "$(backtitle)" --colors --title "DSM Config" \
       --msgbox "Please via ${URL}\nto download the dsmconfig and unzip it and back it up in order by file name." 0 0
   else
