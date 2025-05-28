@@ -1414,12 +1414,19 @@ function backupMenu() {
         ;;
       2)
         dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" \
-          --msgbox "Upload the machine.key file to ${PART3_PATH}/users\nand press OK after the upload is done." 0 0
+          --msgbox "Upload the machine.key or machine.key.tar.gz file to ${PART3_PATH}/users\nand press OK after the upload is done." 0 0
         [ $? -ne 0 ] && return 1
-        if [ -f "${PART3_PATH}/users/machine.key" ]; then
-          mv -f "${PART3_PATH}/users/machine.key" "${PART2_PATH}/machine.key"
-          dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
-            --msgbox "Encryption Key restore successful!" 0 0
+        if [ -f "${PART3_PATH}/users/machine.key.tar.gz" ]; then
+          tar -xzf "${PART3_PATH}/users/machine.key.tar.gz" -C "${PART2_PATH}" machine.key 2>/dev/null
+          if [ -f "${PART2_PATH}/machine.key" ]; then
+            dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
+              --msgbox "Encryption Key restore successful!" 0 0
+            rm -f "${PART3_PATH}/users/machine.key.tar.gz"
+          else
+            dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" \
+              --msgbox "Extraction failed! machine.key not found in archive." 0 0
+            return 1
+          fi
         else
           dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" \
             --msgbox "File not found!" 0 0
@@ -1433,9 +1440,10 @@ function backupMenu() {
         [ $? -ne 0 ] && return 1
         
         if [ -f "${PART2_PATH}/machine.key" ]; then
-          cp -f "${PART2_PATH}/machine.key" "/var/www/data/machine.key"
-          URL="http://${IPCON}:${HTTPPORT:-7080}/machine.key"
-          MSG="Please use ${URL} to download the machine.key file."
+          mkdir -p /var/www/data
+          tar -czf /var/www/data/machine.key.tar.gz -C "${PART2_PATH}" machine.key
+          URL="http://${IPCON}:${HTTPPORT:-7080}/machine.key.tar.gz"
+          MSG="Please use ${URL} to download the machine.key.tar.gz archive."
         else
           MSG="File not found!"
         fi
