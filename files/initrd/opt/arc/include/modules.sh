@@ -5,7 +5,8 @@
 function unpackModules() {
   local PLATFORM=${1}
   local KVERP=${2}
-  local KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
+  local KERNEL
+  KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
@@ -23,7 +24,8 @@ function unpackModules() {
 function packModules() {
   local PLATFORM=${1}
   local KVERP=${2}
-  local KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
+  local KERNEL
+  KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 
   if [ "${KERNEL}" = "custom" ]; then
     tar -zcf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVERP}.tgz" -C "${TMP_PATH}/modules" .
@@ -41,7 +43,6 @@ function getAllModules() {
   local KVERP=${2}
 
   if [ -z "${PLATFORM}" ] || [ -z "${KVERP}" ]; then
-    echo ""
     return 1
   fi
 
@@ -67,28 +68,31 @@ function getAllModules() {
 function installModules() {
   local PLATFORM=${1}
   local KVERP=${2}
-  shift 2
-  local MLIST="${@}"
 
   if [ -z "${PLATFORM}" ] || [ -z "${KVERP}" ]; then
-    echo "ERROR: installModules: Platform or Kernel Version not defined" >"${LOG_FILE}"
+    echo "ERROR: Platform or Kernel Version not defined" >"${LOG_FILE}"
     return 1
   fi
+  local MLIST ODP KERNEL
+  shift 2
+  MLIST="${*}"
 
   unpackModules "${PLATFORM}" "${KVERP}"
 
-  local ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
-  for F in $(ls "${TMP_PATH}/modules/"*.ko 2>/dev/null); do
-    local M=$(basename "${F}")
+  ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
+  for F in ${TMP_PATH}/modules/*.ko; do
+    [ ! -e "${F}" ] && continue
+    M=$(basename "${F}")
     [ "${ODP}" = "true" ] && [ -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ] && continue
-    if echo "${MLIST}" | grep -wq "${M:0:-3}"; then
+    if echo "${MLIST}" | grep -wq "$(basename "${M}" .ko)"; then
       cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}" 2>"${LOG_FILE}"
     else
       rm -f "${RAMDISK_PATH}/usr/lib/modules/${M}" 2>"${LOG_FILE}"
     fi
   done
+
   mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
-  local KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
+  KERNEL=$(readConfigKey "kernel" "${USER_CONFIG_FILE}")
   if [ "${KERNEL}" = "custom" ]; then
     tar -zxf "${CUSTOM_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
   else
@@ -98,7 +102,6 @@ function installModules() {
     return 1
   fi
 
-  # Clean
   rm -rf "${TMP_PATH}/modules"
   return 0
 }
@@ -118,11 +121,11 @@ function addToModules() {
     return 1
   fi
 
-  unpackModules "${PLATFORM}" "${KVER}"
+  unpackModules "${PLATFORM}" "${KVERP}"
 
   cp -f "${KOFILE}" "${TMP_PATH}/modules"
 
-  packModules "${PLATFORM}" "${KVER}"
+  packModules "${PLATFORM}" "${KVERP}"
 }
 
 ###############################################################################
@@ -140,11 +143,11 @@ function delToModules() {
     return 1
   fi
 
-  unpackModules "${PLATFORM}" "${KVER}"
+  unpackModules "${PLATFORM}" "${KVERP}"
 
   rm -f "${TMP_PATH}/modules/${KONAME}"
 
-  packModules "${PLATFORM}" "${KVER}"
+  packModules "${PLATFORM}" "${KVERP}"
 }
 
 ###############################################################################
