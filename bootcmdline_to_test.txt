@@ -7,6 +7,8 @@
 # CMDLINE['nomodeset']=""
 # CMDLINE['module.sig_enforce']="0"
 # CMDLINE['loadpin.enforce']="0"
+# CMDLINE['nr_cpus']="x"
+# CMDLINE['maxcpus']="x"
 
 # if grep -qi "intel" /proc/cpuinfo; then
 #   CMDLINE['intel_pstate']="disable"
