@@ -32,7 +32,7 @@ function arcModel() {
         if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" ${ARC_PATH}/include/i915ids && IGPU="all" || IGPU="igpuv5"; else IGPU=""; fi
         if [[ " ${IGPU1L[@]} " =~ " ${A} " ]] && [ "${IGPU}" = "all" ]; then
           IGPUS="+"
-        elif [[ " ${IGPU2L[@]} " =~ " ${A} " ]] && [[ "${IGPU}" = "igpuv5" || "${IGPU}" = "all" ]] && [ "${M}" != "DS925+" ]; then
+        elif [[ " ${IGPU2L[@]} " =~ " ${A} " ]] && [[ "${IGPU}" = "igpuv5" || "${IGPU}" = "all" ]]; then
           IGPUS="x"
         else
           IGPUS=""
@@ -48,11 +48,11 @@ function arcModel() {
         # Check id model is compatible with CPU
         if [ "${RESTRICT}" -eq 1 ]; then
           for F in ${FLAGS}; do
-            if ! (grep -q "^flags.*${F}.*" /proc/cpuinfo); then
+            if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
               COMPATIBLE=0
             fi
           done
-          if ! (is_in_array "${A}" "${KVER5L[@]}") && { 
+          if ! is_in_array "${A}" "${KVER5L[@]}" && { 
               ([ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]) || 
               ([ "${SATACONTROLLER}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]) || 
               ([ "${NVMEDRIVES}" -gt 0 ] && [ "${BUS}" = "usb" ] && [ "${SATADRIVES}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]) || 
@@ -281,7 +281,7 @@ function arcVersion() {
     fi
     while IFS=': ' read -r ADDON PARAM; do
       [ -z "${ADDON}" ] && continue
-      if ! (checkAddonExist "${ADDON}" "${PLATFORM}"); then
+      if ! checkAddonExist "${ADDON}" "${PLATFORM}"; then
         deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
       fi
     done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
@@ -562,7 +562,7 @@ function make() {
   fi
   while IFS=': ' read -r ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
-    if ! (checkAddonExist "${ADDON}" "${PLATFORM}"); then
+    if ! checkAddonExist "${ADDON}" "${PLATFORM}"; then
       deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
@@ -846,7 +846,7 @@ function modulesMenu() {
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       ;;
     3)
-      if ! (tty 2>/dev/null | grep -q "/dev/pts"); then
+      if ! tty 2>/dev/null | grep -q "/dev/pts"; then
         MSG=""
         MSG+="This feature is only available when accessed via ssh (Requires a terminal that supports ZModem protocol)."
         dialog --backtitle "$(backtitle)" --title "Modules" \
@@ -2976,7 +2976,7 @@ function dtsMenu() {
     [ $? -ne 0 ] && break
     case "$(cat "${TMP_PATH}/resp" 2>/dev/null)" in
     1)
-      if ! (tty 2>/dev/null | grep -q "/dev/pts"); then
+      if ! tty 2>/dev/null | grep -q "/dev/pts"; then
         MSG=""
         MSG+="This feature is only available when accessed via ssh (Requires a terminal that supports ZModem protocol)\n"
         MSG+="or upload the dts file to ${USER_UP_PATH}/model.dts via Webfilemananger, will be automatically imported at building."

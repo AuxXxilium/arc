@@ -5,11 +5,6 @@
 . "${ARC_PATH}/include/addons.sh"
 . "${ARC_PATH}/include/modules.sh"
 
-KVER5L=(v1000nk epyc7002)
-IGPU1L=(apollolake geminilake)
-IGPU2L=(v1000nk epyc7002)
-NVMECACHE=(DS719+ DS918+ DS1019+ DS1621xs+ RS1619xs+)
-
 ###############################################################################
 # Check loader disk
 function checkBootLoader() {

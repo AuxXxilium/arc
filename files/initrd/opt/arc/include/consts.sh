@@ -42,6 +42,14 @@ D_FILE="${MODEL_CONFIG_PATH}/data.yml"
 EXTRACTOR_PATH="${PART3_PATH}/extractor"
 EXTRACTOR_BIN="syno_extract_system_patch"
 
+KVER5L=(epyc7002 geminilakenk r1000nk v1000nk)
+IGPU1L=(apollolake geminilake)
+IGPU2L=(epyc7002 geminilakenk r1000nk v1000nk)
+NVMECACHE=(DS719+ DS918+ DS1019+ DS1621xs+ RS1619xs+)
+MPT3PL=(purley broadwellnkv2 epyc7002 geminilakenk r1000nk v1000nk)
+IGFXRL=(apollolake geminilake geminilakenk)
+XAPICRL=(apollolake geminilake purley geminilakenk)
+
 HTTPPORT=$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
 [ -z "${HTTPPORT}" ] && HTTPPORT="7080"
 DUFSPORT=$(grep -i '^DUFS_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)

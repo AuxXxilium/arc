@@ -112,7 +112,7 @@ if [ "${HWIDINFO}" = "true" ]; then
   echo
 fi
 
-if ! (readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem); then
+if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   HASATA=0
   for D in $(lsblk -dpno NAME); do
     [ "${D}" = "${LOADER_DISK}" ] && continue
@@ -231,21 +231,23 @@ if [ -n "${GOVERNOR}" ]; then
   CMDLINE['governor']="${GOVERNOR}"
 fi
 
-if [ "${PLATFORM}" = "apollolake" ] || [ "${PLATFORM}" = "geminilake" ] || [ "${PLATFORM}" = "purley" ]; then
+if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
   CMDLINE['nox2apic']=""
 fi
 
-if [ "${PLATFORM}" = "apollolake" ] || [ "${PLATFORM}" = "geminilake" ]; then
+if is_in_array "${PLATFORM}" "${IGFXRL[@]}"; then
+  CMDLINE["intel_iommu"]="igfx_off"
+fi
+
+if [ "${PLATFORM}" = "purley" ] || [ "${PLATFORM}" = "broadwellnkv2" ]; then
   CMDLINE['SASmodel']="1"
 fi
 
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
-if [ "${DT}" = "true" ]; then
-  if [ "${PLATFORM}" != "v1000nk" ] && [ "${PLATFORM}" != "epyc7002" ] && [ "${PLATFORM}" != "purley" ] && [ "${PLATFORM}" != "broadwellnkv2" ]; then
-    if ! (echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"); then
-      [ -n "${CMDLINE['modprobe.blacklist']}" ] && CMDLINE['modprobe.blacklist']+=","
-      CMDLINE['modprobe.blacklist']+="mpt3sas"
-    fi
+if [ "${DT}" = "true" ] && ! is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
+  if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
+    [ -n "${CMDLINE['modprobe.blacklist']}" ] && CMDLINE['modprobe.blacklist']+=","
+    CMDLINE['modprobe.blacklist']+="mpt3sas"
   fi
 fi
 

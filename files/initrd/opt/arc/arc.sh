@@ -71,7 +71,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       fi
     fi
 
-    if [ "${BUILDDONE}" = "true" ]; then
+    if [ "${BUILDDONE}" = "true" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
       write_menu "3" "Boot Loader"
     fi
 
