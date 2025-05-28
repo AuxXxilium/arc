@@ -43,7 +43,7 @@ PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
 # Check if DSM Version changed
 . "${RAMDISK_PATH}/etc/VERSION"
 
-if [[ -n "${BUILDNUM}" && ("${PRODUCTVER}" != "${majorversion}.${minorversion}" || "${BUILDNUM}" != "${buildnumber}" || "${SMALLNUM}" != "${smallfixnumber}") ]]; then
+if [[ -n "${BUILDNUM}" && ("${PRODUCTVER}" != "${majorversion}.${minorversion}" || "${BUILDNUM}" != "${buildnumber}") ]]; then
   OLDVER="${PRODUCTVER}(${BUILDNUM}$([[ ${SMALLNUM:-0} -ne 0 ]] && echo "u${SMALLNUM}"))"
   NEWVER="${majorversion}.${minorversion}(${buildnumber}$([[ ${smallfixnumber:-0} -ne 0 ]] && echo "u${smallfixnumber}"))"
   PAT_URL=""
@@ -120,7 +120,7 @@ echo "Create addons.sh" >>"${LOG_FILE}"
   echo "export LOADERBUILD=\"${ARC_BUILD}\""
   echo "export PLATFORM=\"${PLATFORM}\""
   echo "export MODEL=\"${MODEL}\""
-  echo "export PRODUCTVER=\"${PRODUCTVER}\""
+  echo "export PRODUCTVERL=\"${PRODUCTVERL}\""
   echo "export MLINK=\"${PAT_URL}\""
   echo "export MCHECKSUM=\"${PAT_HASH}\""
   echo "export LAYOUT=\"${LAYOUT:-qwerty}\""
@@ -145,7 +145,7 @@ for ADDON in "${!ADDONS[@]}"; do
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 done
 
-# Extract ck modules to ramdisk
+# Extract modules to ramdisk
 installModules "${PLATFORM}" "${KVERP}" "${!MODULES[@]}" || exit 1
 
 # Copying fake modprobe
