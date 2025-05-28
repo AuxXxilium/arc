@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC2034
+
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
 . "${ARC_PATH}/include/functions.sh"
@@ -47,14 +49,6 @@ if [[ -n "${BUILDNUM}" && ("${PRODUCTVER}" != "${majorversion}.${minorversion}" 
   PAT_URL=""
   PAT_HASH=""
   echo -e "Version changed from ${OLDVER} to ${NEWVER}"
-fi
-
-# Re-read PAT_URL and PAT_HASH if they are empty or commented out
-if [[ -z "${PAT_URL}" || "${PAT_URL:0:1}" == "#" ]]; then
-  PAT_URL="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${majorversion}.${minorversion}\".url" "${D_FILE}")"
-fi
-if [[ -z "${PAT_HASH}" || "${PAT_HASH:0:1}" == "#" ]]; then
-  PAT_HASH="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${majorversion}.${minorversion}\".hash" "${D_FILE}")"
 fi
 
 PRODUCTVER="${majorversion}.${minorversion}"
@@ -140,14 +134,14 @@ for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "wol"
     [ -f "${USER_UP_PATH}/model.dts" ] && cp -f "${USER_UP_PATH}/model.dts" "${RAMDISK_PATH}/addons/model.dts"
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   fi
-  installAddon "${ADDON}" "${PLATFORM}" || exit 1
+  installAddon "${ADDON}" "${PLATFORM}" "${KVERP}" || exit 1
   echo "/addons/${ADDON}.sh \${1}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 done
 
 # User Addons
 for ADDON in "${!ADDONS[@]}"; do
   PARAMS="${ADDONS[${ADDON}]}"
-  installAddon "${ADDON}" "${PLATFORM}" || echo "Addon ${ADDON} not found"
+  installAddon "${ADDON}" "${PLATFORM}" "${KVERP}" || echo "Addon ${ADDON} not found"
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 done
 
@@ -177,6 +171,8 @@ if [ ! -x "${RAMDISK_PATH}/usr/bin/set_key_value" ]; then
 fi
 
 echo "Modify files" >>"${LOG_FILE}"
+# Remove function from scripts
+[ "2" = "${BUILDNUM:0:1}" ] && find "${RAMDISK_PATH}/addons/" -type f -name "*.sh" -exec sed -i 's/function //g' {} \;
 
 # Copying modulelist
 if [ -f "${USER_UP_PATH}/modulelist" ]; then
