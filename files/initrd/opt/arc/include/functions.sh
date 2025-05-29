@@ -747,11 +747,11 @@ function write_menu_value() {
 ################################################################################
 # Function to check if a value exists in an array
 function is_in_array() {
-  local value="$1"
+  local V="$1"
   shift
-  local array=("$@")
-  for item in "${array[@]}"; do
-    if [[ "$item" == "$value" ]]; then
+  local A=("$@")
+  for I in "${A[@]}"; do
+    if [[ "$I" == "$V" ]]; then
       return 0
     fi
   done
