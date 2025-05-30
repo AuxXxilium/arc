@@ -37,40 +37,31 @@ function updateLoader() {
         dialog --gauge "Download Update: ${TAG}..." 14 72 4>&-
       } 4>&1
     fi
-    if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 300000 ]; then
-      if [ "${TAG}" != "zip" ]; then
-        HASHURL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}.hash"
-        HASH="$(curl -skL "${HASHURL}" | awk '{print $1}')"
-        if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-            --infobox "Update failed - Hash mismatch!\nTry again later." 0 0
-          sleep 3
-          exec reboot
-        fi
+  fi
+  if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 300000 ]; then
+    if [ "${TAG}" != "zip" ]; then
+      HASHURL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}.hash"
+      HASH="$(curl -skL "${HASHURL}" | awk '{print $1}')"
+      if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
+        dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+          --infobox "Update failed - Hash mismatch!\nTry again later." 0 0
+        sleep 3
+        exec reboot
       fi
-      rm -rf "/mnt/update"
-      mkdir -p "${TMP_PATH}/update"
+    fi
+    rm -rf "/mnt/update"
+    mkdir -p "${TMP_PATH}/update"
+    dialog --backtitle "$(backtitle)" --title "Update Loader" \
+      --infobox "Updating Loader..." 3 50
+    if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update"; then
+      cp -rf "${TMP_PATH}/update"/* "/mnt"
+      rm -rf "${TMP_PATH}/update"
+      rm -f "${TMP_PATH}/update.zip"
+    fi
+    if [ "$(cat "${PART1_PATH}/ARC-VERSION")" = "${TAG}" ] || [ "${TAG}" = "zip" ]; then
       dialog --backtitle "$(backtitle)" --title "Update Loader" \
-        --infobox "Updating Loader..." 3 50
-      if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update"; then
-        cp -rf "${TMP_PATH}/update"/* "/mnt"
-        rm -rf "${TMP_PATH}/update"
-        rm -f "${TMP_PATH}/update.zip"
-      fi
-      if [ "$(cat "${PART1_PATH}/ARC-VERSION")" = "${TAG}" ] || [ "${TAG}" = "zip" ]; then
-        dialog --backtitle "$(backtitle)" --title "Update Loader" \
-        --infobox "Update Loader successful!" 3 50
-        sleep 2
-      else
-        if [ "${ARC_MODE}" = "update" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-            --infobox "Update failed!\nTry again later." 0 0
-          sleep 3
-          exec reboot
-        else
-          return 1
-        fi
-      fi
+      --infobox "Update Loader successful!" 3 50
+      sleep 2
     else
       if [ "${ARC_MODE}" = "update" ]; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
@@ -80,6 +71,15 @@ function updateLoader() {
       else
         return 1
       fi
+    fi
+  else
+    if [ "${ARC_MODE}" = "update" ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+        --infobox "Update failed!\nTry again later." 0 0
+      sleep 3
+      exec reboot
+    else
+      return 1
     fi
   fi
   [ -n "${ARC_CONF}" ] && cp -f "${TMP_PATH}/bak.yml" "${S_FILE}"
@@ -137,50 +137,36 @@ function updateLoaderBeta() {
         dialog --gauge "Download Update: ${TAG}..." 14 72 4>&-
       } 4>&1
     fi
-    if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 300000 ]; then
-      if [ "${TAG}" != "zip" ]; then
-        HASHURL="https://github.com/AuxXxilium/arc-beta/releases/download/${TAG}/update-${TAG}.hash"
-        HASH="$(curl -skL "${HASHURL}" | awk '{print $1}')"
-        if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-            --infobox "Update failed - Hash mismatch!\nTry again later." 0 0
-          sleep 3
-          exec reboot
-        fi
-      fi
-      rm -rf "/mnt/update"
-      mkdir -p "${TMP_PATH}/update"
-      dialog --backtitle "$(backtitle)" --title "Update Loader" \
-        --infobox "Updating Loader..." 3 50
-      if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update"; then
-        cp -rf "${TMP_PATH}/update"/* "/mnt"
-        rm -rf "${TMP_PATH}/update"
-        rm -f "${TMP_PATH}/update.zip"
-      fi
-      if [ "$(cat "${PART1_PATH}/ARC-VERSION")" = "${TAG}" ] || [ "${TAG}" = "zip" ]; then
-        dialog --backtitle "$(backtitle)" --title "Update Loader" \
-        --infobox "Update Loader successful!" 3 50
-        sleep 2
-      else
-        if [ "${ARC_MODE}" = "update" ]; then
-          dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-            --infobox "Update failed!\nTry again later." 0 0
-          sleep 3
-          exec reboot
-        else
-          return 1
-        fi
-      fi
-    else
-      if [ "${ARC_MODE}" = "update" ]; then
+  fi
+  if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 300000 ]; then
+    if [ "${TAG}" != "zip" ]; then
+      HASHURL="https://github.com/AuxXxilium/arc-beta/releases/download/${TAG}/update-${TAG}.hash"
+      HASH="$(curl -skL "${HASHURL}" | awk '{print $1}')"
+      if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-          --infobox "Update failed!\nTry again later." 0 0
+          --infobox "Update failed - Hash mismatch!\nTry again later." 0 0
         sleep 3
         exec reboot
-      else
-        return 1
       fi
     fi
+    rm -rf "/mnt/update"
+    mkdir -p "${TMP_PATH}/update"
+    dialog --backtitle "$(backtitle)" --title "Update Loader" \
+      --infobox "Updating Loader..." 3 50
+    if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update"; then
+      cp -rf "${TMP_PATH}/update"/* "/mnt"
+      rm -rf "${TMP_PATH}/update"
+      rm -f "${TMP_PATH}/update.zip"
+    fi
+    if [ "$(cat "${PART1_PATH}/ARC-VERSION")" = "${TAG}" ] || [ "${TAG}" = "zip" ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" \
+      --infobox "Update Loader successful!" 3 50
+      sleep 2
+    else
+      return 1
+    fi
+  else
+    return 1
   fi
   [ -n "${ARC_CONF}" ] && cp -f "${TMP_PATH}/bak.yml" "${S_FILE}"
   if [ "${ARC_MODE}" = "update" ] && [ "${CONFDONE}" = "true" ]; then
@@ -196,6 +182,72 @@ function updateLoaderBeta() {
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     rebootTo config
   fi
+}
+
+###############################################################################
+# Upgrade Loader
+function upgradeLoader() {
+  local TAG="${1}"
+  if [ "${TAG}" != "zip" ]; then
+    if [ -z "${TAG}" ]; then
+      idx=0
+      while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
+        TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+        if [ -n "${TAG}" ]; then
+          break
+        fi
+        sleep 3
+        idx=$((${idx} + 1))
+      done
+    fi
+    if [ -n "${TAG}" ]; then
+      export URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip"
+      export TAG="${TAG}"
+      {
+        {
+          curl -kL "${URL}" -o "${TMP_PATH}/arc.img.zip" 2>&3 3>&-
+        } 3>&1 >&4 4>&- |
+        perl -C -lane '
+          BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
+          $pcent = $F[0];
+          $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
+          s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
+          if ($. <= 3) {
+            $header .= "$_\n";
+            $/ = "\r" if $. == 2
+          } else {
+            print "XXX\n$pcent\n$header$_\nXXX"
+          }' 4>&- |
+        dialog --gauge "Download Loader: ${TAG}..." 14 72 4>&-
+      } 4>&1
+    fi
+  fi
+  if [ -f "${TMP_PATH}/arc.img.zip" ] && [ $(ls -s "${TMP_PATH}/arc.img.zip" | cut -d' ' -f1) -gt 300000 ]; then
+    unzip -oq "${TMP_PATH}/arc.img.zip" -d "${TMP_PATH}"
+    rm -f "${TMP_PATH}/arc.img.zip"
+    dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
+      --infobox "Installing new Loader Image..." 3 50
+    umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
+    local IMG_FILE
+    IMG_FILE="${TMP_PATH}/arc.img"
+    if dd if="${IMG_FILE}" of=$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1) bs=1M conv=fsync; then
+      rm -f "${IMG_FILE}"
+      dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
+        --infobox "Upgrade done! -> Rebooting..." 3 50
+      sleep 2
+      exec reboot
+    else
+      dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
+        --infobox "Upgrade failed!\nTry again later." 0 0
+      sleep 3
+      exec reboot
+    fi
+  else
+    dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
+      --infobox "Upgrade failed!\nTry again later." 0 0
+    sleep 3
+  fi
+  return 0
 }
 
 ###############################################################################
@@ -238,7 +290,7 @@ function updateAddons() {
       --infobox "Updating Addons..." 3 50
       if unzip -oq "${TMP_PATH}/addons.zip" -d "${ADDONS_PATH}"; then
         rm -f "${TMP_PATH}/addons.zip"
-        for F in $(ls ${ADDONS_PATH}/*.addon 2>/dev/null); do
+        for F in "${ADDONS_PATH}"/*.addon; do
           ADDON=$(basename "${F}" | sed 's|.addon||')
           rm -rf "${ADDONS_PATH}/${ADDON}"
           mkdir -p "${ADDONS_PATH}/${ADDON}"
@@ -551,6 +603,8 @@ function updateLKMs() {
 ###############################################################################
 # Update Offline
 function updateOffline() {
+  updateConfigs
+  checkHardwareID
   local ARC_OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   if [ "${ARC_OFFLINE}" != "true" ]; then
     [ -f "${MODEL_CONFIG_PATH}/data.yml" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml" "${MODEL_CONFIG_PATH}/data.yml.bak" || true
@@ -574,7 +628,7 @@ function dependenciesUpdate() {
     "updateCustom" "Update Custom Kernel" off \
     "updatePatches" "Update Patches" off \
     "updateLKMs" "Update LKMs" off \
-    "updateOffline" "Update Models Database" off 3>&1 1>&2 2>&3)
+    "updateOffline" "Update Config & Models DB" off 3>&1 1>&2 2>&3)
 
   # Exit if the user cancels the selection
   [ $? -ne 0 ] && dialog --infobox "Update canceled by the user." 3 40 && sleep 2 && clear && return

@@ -306,7 +306,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
           K) KERNEL=$([ "${KERNEL}" = "official" ] && echo 'custom' || echo 'official')
             writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
             dialog --backtitle "$(backtitle)" --title "Kernel" \
-              --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 4 50
+              --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 50
             if [ "${ODP}" = "true" ]; then
               ODP="false"
               writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"

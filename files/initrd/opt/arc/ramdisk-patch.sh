@@ -182,9 +182,14 @@ else
 fi
 
 # backup current loader configs
+{
+  echo "LOADERLABEL=\"Arc\""
+  echo "LOADERVERSION=\"${ARC_VERSION}\""
+  echo "LOADERBUILD=\"${ARC_BUILD}\""
+} >"${RAMDISK_PATH}/usr/arc/VERSION"
 BACKUP_PATH="${RAMDISK_PATH}/usr/arc/backup"
 rm -rf "${BACKUP_PATH}"
-for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}" "${USER_UP_PATH}" "${HW_KEY}"; do
+for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}" "${USER_UP_PATH}"; do
   if [ -f "${F}" ]; then
     FD="$(dirname "${F}")"
     mkdir -p "${FD/\/mnt/${BACKUP_PATH}}"

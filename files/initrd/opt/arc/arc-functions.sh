@@ -1511,9 +1511,9 @@ function updateMenu() {
   while true; do
     dialog --backtitle "$(backtitle)" --title "Update" --colors --cancel-label "Exit" \
       --menu "Choose an Option" 0 0 0 \
-      1 "Update Full Loader \Z1(no reflash)\Zn" \
-      2 "Update Dependencies (maybe not stable)" \
-      3 "Update Configs and Arc Patch" \
+      1 "Update Loader (incl. Dependencies) \Z1(no reflash)\Zn" \
+      2 "Upgrade Loader (incl. Dependencies) \Z1(reflash!)\Zn" \
+      3 "Update Dependencies \Z1(maybe not stable)\Zn" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat "${TMP_PATH}/resp" 2>/dev/null)" in
@@ -1567,11 +1567,52 @@ function updateMenu() {
         fi
         ;;
       2)
-        dependenciesUpdate
+        # Ask for Tag
+        TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+        BETATAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-beta/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+        OLD="${ARC_VERSION}"
+        dialog --clear --backtitle "$(backtitle)" --title "Upgrade Loader" --colors \
+          --menu "\Z1Loader will be reset to default after upgrade!\nIf you use Hardware encryption, your key will be deleted!\Zn\nCurrent: ${OLD} -> Which Version?" 7 50 0 \
+          1 "Latest ${TAG}" \
+          2 "Select Version" \
+          3 "Upload .zip File" \
+        2>"${TMP_PATH}/opts"
+        [ $? -ne 0 ] && break
+        opts="$(cat "${TMP_PATH}/opts")"
+        if [ "${opts}" -eq 1 ]; then
+          [ -z "${TAG}" ] && return 1
+          upgradeLoader "${TAG}"
+        elif [ "${opts}" -eq 2 ]; then
+          dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
+          --inputbox "Which Version?" 0 0 \
+          2>"${TMP_PATH}/input"
+          TAG=$(cat "${TMP_PATH}/input")
+          [ -z "${TAG}" ] && return 1
+          upgradeLoader "${TAG}"
+        elif [ "${opts}" -eq 3 ]; then
+          mkdir -p "${PART3_PATH}/users"
+          dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
+            --msgbox "Upload the arc-*.zip File to ${PART3_PATH}/users\nand press OK after upload is done." 0 0
+          [ $? -ne 0 ] && return 1
+          UPDATEFOUND="false"
+          for UPDATEFILE in ${PART3_PATH}/users/arc-*.zip; do
+            if [ -e "${UPDATEFILE}" ]; then
+              mv -f "${UPDATEFILE}" "${TMP_PATH}/arc.zip"
+              TAG="zip"
+              UPDATEFOUND="true"
+              break
+            fi
+          done
+          if [ "${UPDATEFOUND}" = "false" ]; then
+            dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
+              --msgbox "File not found!" 0 0
+            return 1
+          fi
+          upgradeLoader "${TAG}"
+        fi
         ;;
       3)
-        updateConfigs
-        checkHardwareID
+        dependenciesUpdate
         ;;
       *)
         break
