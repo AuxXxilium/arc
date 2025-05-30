@@ -59,6 +59,11 @@ function arcModel() {
               ([ "${NVMEDRIVES}" -gt 0 ] && [ "${BUS}" = "sata" ] && [ "${SATADRIVES}" -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ])
             }; then
             COMPATIBLE=0
+          elif is_in_array "${A}" "${KVER5L[@]}" && { 
+              ([ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "usb" ] && [ "${SATADRIVES}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]) || 
+              ([ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "sata" ] && [ "${SATADRIVES}" -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ])
+            }; then
+            COMPATIBLE=0
           fi
           if is_in_array "${A}" "${KVER5L[@]}" && [[ "${SCSICONTROLLER}" -ne 0 || "${RAIDCONTROLLER}" -ne 0 ]]; then
             COMPATIBLE=0
