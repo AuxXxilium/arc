@@ -11,11 +11,11 @@ function availableAddons() {
   for D in $(find "${ADDONS_PATH}" -maxdepth 1 -type d 2>/dev/null | sort); do
     [ ! -f "${D}/manifest.yml" ] && continue
     local ADDON=$(basename "${D}")
-    local AVAILABLE="$(readConfigKey "${1}" "${D}/manifest.yml")"
-    [ "${AVAILABLE}" = false ] && continue
     local SYSTEM=$(readConfigKey "system" "${D}/manifest.yml")
     [ "${SYSTEM}" = true ] && continue
-    if [ "${MACHINE}" != "physical" ] && [ "${ADDON}" = "cpufreqscaling" ]; then
+    local AVAILABLE="$(readConfigKey "${1}" "${D}/manifest.yml")"
+    [ "${AVAILABLE}" = false ] && continue
+    if [ "${MACHINE}" != "physical" ] && ( [ "${ADDON}" = "cpufreqscaling" ] || [ "${ADDON}" = "fancontrol" ] ); then
       continue
     fi
     local DESC="$(readConfigKey "description" "${D}/manifest.yml")"
