@@ -194,13 +194,13 @@ touch "${HOME}/.initialized"
 # Load Arc Overlay
 echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
 echo
-echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}${HTTPPORT:+:$HTTPPORT}\033[0m to configure Loader."
+echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}:${HTTPPORT:-7080}\033[0m to configure Loader."
 
 # Check memory and load Arc
 RAM=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
 if [ "${RAM}" -le 3500 ]; then
-  echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m\n\033[1;31mUse arc.sh to proceed. Not recommended!\033[0m"
+  echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m"
+  read -rp "Press Enter to continue..."
 else
   exec arc.sh
 fi
-exit 0

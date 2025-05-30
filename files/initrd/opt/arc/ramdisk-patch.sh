@@ -182,6 +182,7 @@ else
 fi
 
 # backup current loader configs
+mkdir -p "${RAMDISK_PATH}/usr/arc"
 {
   echo "LOADERLABEL=\"Arc\""
   echo "LOADERVERSION=\"${ARC_VERSION}\""
