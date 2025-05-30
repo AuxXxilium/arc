@@ -619,27 +619,45 @@ function updateOffline() {
   return 0
 }
 
+# Define descriptions and their corresponding functions
+DEPENDENCY_DESCRIPTIONS=(
+  "Update Addons"
+  "Update Modules"
+  "Update Custom Kernel"
+  "Update Patches"
+  "Update LKMs"
+  "Update Config & Models DB"
+)
+DEPENDENCY_FUNCTIONS=(
+  "updateAddons"
+  "updateModules"
+  "updateCustom"
+  "updatePatches"
+  "updateLKMs"
+  "updateOffline"
+)
+
 function dependenciesUpdate() {
-  # Display a selection box for the user to choose updates
-  CHOICES=$(dialog --backtitle "$(backtitle)" --title "Select Dependencies to Update" \
-    --checklist "Use SPACE to select and ENTER to confirm:" 15 50 6 \
-    "updateAddons" "Update Addons" off \
-    "updateModules" "Update Modules" off \
-    "updateCustom" "Update Custom Kernel" off \
-    "updatePatches" "Update Patches" off \
-    "updateLKMs" "Update LKMs" off \
-    "updateOffline" "Update Config & Models DB" off 3>&1 1>&2 2>&3)
-
-  # Exit if the user cancels the selection
-  [ $? -ne 0 ] && dialog --infobox "Update canceled by the user." 3 40 && sleep 2 && clear && return
-
-  # Process the selected updates
-  FAILED=false
-  for updateFunction in ${CHOICES}; do
-    $updateFunction || FAILED=true
+  # Build checklist options: index as tag, description as item
+  CHECKLIST_OPTS=()
+  for i in "${!DEPENDENCY_DESCRIPTIONS[@]}"; do
+    CHECKLIST_OPTS+=("$i" "${DEPENDENCY_DESCRIPTIONS[$i]}" "off")
   done
 
-  # Display the result of the update process
+  # Show dialog with only descriptions
+  CHOICES=$(dialog --backtitle "$(backtitle)" --title "Select Dependencies to Update" \
+    --checklist "Use SPACE to select and ENTER to confirm:" 15 50 6 \
+    "${CHECKLIST_OPTS[@]}" 3>&1 1>&2 2>&3)
+
+  [ $? -ne 0 ] && dialog --infobox "Update canceled by the user." 3 40 && sleep 2 && clear && return
+
+  FAILED=false
+  for idx in $CHOICES; do
+    # Remove quotes if any
+    idx=${idx//\"/}
+    ${DEPENDENCY_FUNCTIONS[$idx]} || FAILED=true
+  done
+
   if $FAILED; then
     dialog --infobox "Some updates failed! Try again later." 3 40
   else

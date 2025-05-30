@@ -2867,26 +2867,39 @@ function rebootMenu() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
-  # Selectable Reboot Options
-  echo -e "config \"Arc: Config Mode\"" >>"${TMP_PATH}/opts"
-  echo -e "update \"Arc: Automated Update Mode\"" >>"${TMP_PATH}/opts"
-  echo -e "network \"Arc: Restart Network Service\"" >>"${TMP_PATH}/opts"
+  # Only show descriptions in the menu
+  echo -e "\"Arc: Config Mode\" \"\"" >>"${TMP_PATH}/opts"
+  echo -e "\"Arc: Automated Update Mode\" \"\"" >>"${TMP_PATH}/opts"
+  echo -e "\"Arc: Restart Network Service\" \"\"" >>"${TMP_PATH}/opts"
   if [ "${BUILDDONE}" = "true" ]; then
-    echo -e "recovery \"DSM: Recovery Mode\"" >>"${TMP_PATH}/opts"
-    echo -e "junior \"DSM: Reinstall Mode\"" >>"${TMP_PATH}/opts"
+    echo -e "\"DSM: Recovery Mode\" \"\"" >>"${TMP_PATH}/opts"
+    echo -e "\"DSM: Reinstall Mode\" \"\"" >>"${TMP_PATH}/opts"
   fi
-  echo -e "uefi \"System: UEFI\"" >>"${TMP_PATH}/opts"
-  echo -e "poweroff \"System: Shutdown\"" >>"${TMP_PATH}/opts"
-  echo -e "shell \"System: Shell Cmdline\"" >>"${TMP_PATH}/opts"
+  echo -e "\"System: UEFI\" \"\"" >>"${TMP_PATH}/opts"
+  echo -e "\"System: Shutdown\" \"\"" >>"${TMP_PATH}/opts"
+  echo -e "\"System: Shell Cmdline\" \"\"" >>"${TMP_PATH}/opts"
   dialog --backtitle "$(backtitle)" --title "Power Menu" \
     --menu  "Choose a Destination" 0 0 0 --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   [ -z "${resp}" ] && return
-  REDEST=${resp}
+
+  # Map the description back to the action
+  case "${resp}" in
+    "Arc: Config Mode") REDEST="config" ;;
+    "Arc: Automated Update Mode") REDEST="update" ;;
+    "Arc: Restart Network Service") REDEST="network" ;;
+    "DSM: Recovery Mode") REDEST="recovery" ;;
+    "DSM: Reinstall Mode") REDEST="junior" ;;
+    "System: UEFI") REDEST="uefi" ;;
+    "System: Shutdown") REDEST="poweroff" ;;
+    "System: Shell Cmdline") REDEST="shell" ;;
+    *) return ;;
+  esac
+
   dialog --backtitle "$(backtitle)" --title "Power Menu" \
-    --infobox "Option: ${REDEST} selected ...!" 3 50
+    --infobox "Option: ${resp} selected ...!" 3 50
   if [ "${REDEST}" = "poweroff" ]; then
     poweroff
     exit 0
