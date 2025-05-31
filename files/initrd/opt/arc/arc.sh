@@ -155,6 +155,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       write_menu "D" "StaticIP for Loader/DSM"
       write_menu "U" "Change Loader Password"
       write_menu "Z" "Change Loader Ports"
+      write_menu "R" "Change Loader ARP Settings"
       write_menu "w" "Reset Loader to Defaults"
       write_menu "L" "Grep Logs from dbgutils"
       write_menu "B" "Grep DSM Config from Backup"
