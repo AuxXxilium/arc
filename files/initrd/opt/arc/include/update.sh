@@ -608,12 +608,13 @@ function updateOffline() {
   local ARC_OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   if [ "${ARC_OFFLINE}" != "true" ]; then
     [ -f "${MODEL_CONFIG_PATH}/data.yml" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml" "${MODEL_CONFIG_PATH}/data.yml.bak" || true
-    curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/refs/heads/main/data.yml" -o "${MODEL_CONFIG_PATH}/data.yml"
-    
-    # Check file size and restore backup if necessary
-    local FILESIZE=$(stat -c%s "${MODEL_CONFIG_PATH}/data.yml")
-    if [ "${FILESIZE}" -lt 3072 ]; then
+    if ! curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/refs/heads/main/data.yml" -o "${MODEL_CONFIG_PATH}/data.yml"; then
       [ -f "${MODEL_CONFIG_PATH}/data.yml.bak" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml.bak" "${MODEL_CONFIG_PATH}/data.yml"
+    else
+      local FILESIZE=$(stat -c%s "${MODEL_CONFIG_PATH}/data.yml")
+      if [ "${FILESIZE}" -lt 3072 ]; then
+        [ -f "${MODEL_CONFIG_PATH}/data.yml.bak" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml.bak" "${MODEL_CONFIG_PATH}/data.yml"
+      fi
     fi
   fi
   return 0
