@@ -44,8 +44,6 @@ def getmodels(workpath, jsonpath):
     
     try:
         url = "http://update7.synology.com/autoupdate/genRSS.php?include_beta=1"
-        #url = "https://update7.synology.com/autoupdate/genRSS.php?include_beta=1"
-
         req = session.get(url, timeout=10, verify=False)
         req.encoding = "utf-8"
         p = re.compile(r"<mUnique>(.*?)</mUnique>.*?<mLink>(.*?)</mLink>", re.MULTILINE | re.DOTALL)
@@ -69,131 +67,31 @@ def getmodels(workpath, jsonpath):
         with open(jsonpath, "w") as f:
             json.dump(models, f, indent=4, ensure_ascii=False)
 
+
 @cli.command()
 @click.option("-w", "--workpath", type=str, required=True, help="The workpath of ARC.")
 @click.option("-j", "--jsonpath", type=str, required=True, help="The output path of jsonfile.")
 def getpats(workpath, jsonpath):
-    def __fullversion(ver):
-        arr = ver.split('-')
-        a, b, c = (arr[0].split('.') + ['0', '0', '0'])[:3]
-        d = arr[1] if len(arr) > 1 else '00000'
-        e = arr[2] if len(arr) > 2 else '0'
-        return f'{a}.{b}.{c}-{d}-{e}'
-
-    platforms_yml = os.path.join(workpath, "mnt", "p3", "configs", "platforms.yml")
-    with open(platforms_yml, "r") as f:
+    # Path to your data.yml file (adjust as needed)
+    data_yml_path = os.path.join(workpath, "mnt", "p3", "configs", "data.yml")
+    with open(data_yml_path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
-        platforms = data.get("platforms", [])
-
-    adapter = HTTPAdapter(max_retries=Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504]))
-    session = requests.Session()
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    
-    try:
-        url = "http://update7.synology.com/autoupdate/genRSS.php?include_beta=1"
-        #url = "https://update7.synology.com/autoupdate/genRSS.php?include_beta=1"
-
-        req = session.get(url, timeout=10, verify=False)
-        req.encoding = "utf-8"
-        p = re.compile(r"<mUnique>(.*?)</mUnique>.*?<mLink>(.*?)</mLink>", re.MULTILINE | re.DOTALL)
-        data = p.findall(req.text)
-    except Exception as e:
-        click.echo(f"Error: {e}")
-        return
-
-    models = []
-    for item in data:
-        if not "DSM" in item[1]:
-            continue
-        arch = item[0].split("_")[1]
-        name = item[1].split("/")[-1].split("_")[1].replace("%2B", "+")
-        if arch not in platforms:
-            continue
-        if name in models:
-            continue
-        models.append(name)
 
     pats = {}
-    for M in models:
-        pats[M] = {}
-        version = '7'
-        urlInfo = "https://www.synology.com/api/support/findDownloadInfo?lang=en-us"
-        urlSteps = "https://www.synology.com/api/support/findUpgradeSteps?"
-        #urlInfo = "https://www.synology.cn/api/support/findDownloadInfo?lang=zh-cn"
-        #urlSteps = "https://www.synology.cn/api/support/findUpgradeSteps?"
-
-        major = f"&major={version.split('.')[0]}" if len(version.split('.')) > 0 else ""
-        minor = f"&minor={version.split('.')[1]}" if len(version.split('.')) > 1 else ""
-        try:
-            req = session.get(f"{urlInfo}&product={M.replace('+', '%2B')}{major}{minor}", timeout=10, verify=False)
-            req.encoding = "utf-8"
-            data = json.loads(req.text)
-        except Exception as e:
-            click.echo(f"Error: {e}")
-            continue
-
-        build_ver = data['info']['system']['detail'][0]['items'][0]['build_ver']
-        build_num = data['info']['system']['detail'][0]['items'][0]['build_num']
-        buildnano = data['info']['system']['detail'][0]['items'][0]['nano']
-        V = __fullversion(f"{build_ver}-{build_num}-{buildnano}")
-        if V not in pats[M]:
-            pats[M][V] = {
-                'url': data['info']['system']['detail'][0]['items'][0]['files'][0]['url'].split('?')[0],
-                'sum': data['info']['system']['detail'][0]['items'][0]['files'][0]['checksum']
-            }
-
-        from_ver = min(I['build'] for I in data['info']['pubVers'])
-
-        for I in data['info']['productVers']:
-            if not I['version'].startswith(version):
-                continue
-            if not major or not minor:
-                majorTmp = f"&major={I['version'].split('.')[0]}" if len(I['version'].split('.')) > 0 else ""
-                minorTmp = f"&minor={I['version'].split('.')[1]}" if len(I['version'].split('.')) > 1 else ""
-                try:
-                    reqTmp = session.get(f"{urlInfo}&product={M.replace('+', '%2B')}{majorTmp}{minorTmp}", timeout=10, verify=False)
-                    reqTmp.encoding = "utf-8"
-                    dataTmp = json.loads(reqTmp.text)
-                except Exception as e:
-                    click.echo(f"Error: {e}")
-                    continue
-
-                build_ver = dataTmp['info']['system']['detail'][0]['items'][0]['build_ver']
-                build_num = dataTmp['info']['system']['detail'][0]['items'][0]['build_num']
-                buildnano = dataTmp['info']['system']['detail'][0]['items'][0]['nano']
-                V = __fullversion(f"{build_ver}-{build_num}-{buildnano}")
-                if V not in pats[M]:
-                    pats[M][V] = {
-                        'url': dataTmp['info']['system']['detail'][0]['items'][0]['files'][0]['url'].split('?')[0],
-                        'sum': dataTmp['info']['system']['detail'][0]['items'][0]['files'][0]['checksum']
-                    }
-
-            for J in I['versions']:
-                to_ver = J['build']
-                try:
-                    reqSteps = session.get(f"{urlSteps}&product={M.replace('+', '%2B')}&from_ver={from_ver}&to_ver={to_ver}", timeout=10, verify=False)
-                    if reqSteps.status_code != 200:
-                        continue
-                    reqSteps.encoding = "utf-8"
-                    dataSteps = json.loads(reqSteps.text)
-                except Exception as e:
-                    click.echo(f"Error: {e}")
-                    continue
-
-                for S in dataSteps['upgrade_steps']:
-                    if not S.get('full_patch') or not S['build_ver'].startswith(version):
-                        continue
-                    V = __fullversion(f"{S['build_ver']}-{S['build_num']}-{S['nano']}")
-                    if V not in pats[M]:
-                        pats[M][V] = {
-                            'url': S['files'][0]['url'].split('?')[0],
-                            'sum': S['files'][0]['checksum']
-                        }
+    for platform, models in data.items():
+        for model, versions in models.items():
+            if model not in pats:
+                pats[model] = {}
+            for version, info in versions.items():
+                url = info.get("url", "")
+                checksum = info.get("hash", "")
+                pats[model][version] = {
+                    "url": url,
+                    "sum": checksum
+                }
 
     if jsonpath:
-        with open(jsonpath, "w") as f:
+        with open(jsonpath, "w", encoding="utf-8") as f:
             json.dump(pats, f, indent=4, ensure_ascii=False)
 
 @cli.command()

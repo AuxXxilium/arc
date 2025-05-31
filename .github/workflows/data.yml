@@ -34,12 +34,18 @@ jobs:
           sudo timedatectl set-timezone "Europe/Berlin"
 
           sudo apt update
-          sudo apt install -y build-essential libtool pkgconf libzstd-dev liblzma-dev libssl-dev busybox dialog curl xz-utils cpio sed qemu-utils
+          sudo apt install -y locales busybox dialog gettext sed gawk jq curl 
+          sudo apt install -y python-is-python3 python3-pip libelf-dev qemu-utils cpio xz-utils lz4 lzma bzip2 gzip zstd
+          sudo apt install -y build-essential libtool pkgconf libzstd-dev liblzma-dev libssl-dev
 
           YQ=$(command -v yq)
           if [ -z "${YQ}" ] || ! ${YQ} --version 2>/dev/null | grep -q "v4."; then
             wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O "${YQ:-"/usr/bin/yq"}" && chmod +x "${YQ:-"/usr/bin/yq"}"
           fi
+
+          # Backup the original python3 executable.
+          sudo mv -f "$(realpath $(which python3))/EXTERNALLY-MANAGED" "$(realpath $(which python3))/EXTERNALLY-MANAGED.bak" 2>/dev/null || true
+          sudo pip3 install -U -r scripts/requirements.txt
 
       - name: Get Addon Data for Arc
         run: |
@@ -88,9 +94,12 @@ jobs:
           unzip configs.zip -d "mnt/p3/configs"
           rm -f configs.zip
 
-      - name: Get data
+      - name: Get Data
         run: |
-          pip install -r scripts/requirements.txt
+          curl -L -o mnt/p3/configs/data.yml "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/refs/heads/main/data.yml"
+
+      - name: Process data
+        run: |
           python scripts/functions.py getmodels -w "." -j "docs/models.json"
           python scripts/functions.py getaddons -w "." -j "docs/addons.json"
           python scripts/functions.py getpats -w "." -j "docs/pats.json"
