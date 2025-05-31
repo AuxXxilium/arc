@@ -1432,6 +1432,16 @@ function backupMenu() {
               --msgbox "Extraction failed! machine.key not found in archive." 0 0
             return 1
           fi
+        elif [ -f "${PART3_PATH}/users/machine.key" ]; then
+          cp -f "${PART3_PATH}/users/machine.key" "${PART2_PATH}/machine.key"
+          if [ -f "${PART2_PATH}/machine.key" ]; then
+            dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" --aspect 18 \
+              --msgbox "Encryption Key restore successful!" 0 0
+          else
+            dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" \
+              --msgbox "File not found!" 0 0
+            return 1
+          fi
         else
           dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" \
             --msgbox "File not found!" 0 0
@@ -2342,17 +2352,17 @@ function loaderPassword() {
 }
 
 ###############################################################################
-# Change Arc Loader Password
+# Change Arc Loader Ports
 function loaderPorts() {
   MSG="Modify Ports (0-65535) (Leave empty for default):"
   unset HTTPPORT DUFSPORT TTYDPORT
   [ -f "/etc/arc.conf" ] && source "/etc/arc.conf" 2>/dev/null
-  local HTTP=${HTTPPORT:-80}
+  local HTTP=${HTTPPORT:-7080}
   local DUFS=${DUFSPORT:-7304}
   local TTYD=${TTYDPORT:-7681}
   while true; do
     dialog --backtitle "$(backtitle)" --title "Loader Ports" \
-      --form "${MSG}" 11 70 3 "HTTP" 1 1 "${HTTPPORT:-80}" 1 10 55 0 "DUFS" 2 1 "${DUFSPORT:-7304}" 2 10 55 0 "TTYD" 3 1 "${TTYDPORT:-7681}" 3 10 55 0 \
+      --form "${MSG}" 11 70 3 "HTTP" 1 1 "${HTTPPORT:-7080}" 1 10 55 0 "DUFS" 2 1 "${DUFSPORT:-7304}" 2 10 55 0 "TTYD" 3 1 "${TTYDPORT:-7681}" 3 10 55 0 \
       2>"${TMP_PATH}/resp"
     RET=$?
     case ${RET} in
@@ -2368,7 +2378,7 @@ function loaderPorts() {
         [ $? -eq 0 ] && continue || break
       fi
       rm -f "/etc/arc.conf"
-      [ "${HTTPPORT:-80}" != "80" ] && echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf"
+      [ "${HTTPPORT:-7080}" != "7080" ] && echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf"
       [ "${DUFSPORT:-7304}" != "7304" ] && echo "DUFS_PORT=${DUFSPORT}" >>"/etc/arc.conf"
       [ "${TTYDPORT:-7681}" != "7681" ] && echo "TTYD_PORT=${TTYDPORT}" >>"/etc/arc.conf"
       RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
@@ -2423,7 +2433,7 @@ function loaderPorts() {
         --msgbox "${MSG}" 0 0
       rm -f "${TMP_PATH}/restartS.sh"
       {
-        [ ! "${HTTP:-80}" = "${HTTPPORT:-80}" ] && echo "/etc/init.d/S90thttpd restart"
+        [ ! "${HTTP:-7080}" = "${HTTPPORT:-7080}" ] && echo "/etc/init.d/S90thttpd restart"
         [ ! "${DUFS:-7304}" = "${DUFSPORT:-7304}" ] && echo "/etc/init.d/S99dufs restart"
         [ ! "${TTYD:-7681}" = "${TTYDPORT:-7681}" ] && echo "/etc/init.d/S99ttyd restart"
       } >"${TMP_PATH}/restartS.sh"
@@ -2435,6 +2445,93 @@ function loaderPorts() {
       break
       ;;
     esac
+  done
+  return
+}
+
+function loaderARP() {
+  MSG="Enable or Disable ARP Probing for NIC (May speedup boot time):"
+  # Check current ARP status
+  ARP_STATUS="enabled"
+  [ -f "/etc/dhcpcd.conf" ] && grep -q "^noarp" /etc/dhcpcd.conf && ARP_STATUS="disabled"
+
+  while true; do
+    dialog --backtitle "$(backtitle)" --title "ARP Probing" \
+      --menu "${MSG}" 10 60 2 \
+      1 "Enable ARP Probing $( [ "${ARP_STATUS}" = "enabled" ] && echo '[Current]' )" \
+      2 "Disable ARP Probing $( [ "${ARP_STATUS}" = "disabled" ] && echo '[Current]' )" \
+      2>"${TMP_PATH}/resp"
+    RET=$?
+    [ $RET -ne 0 ] && break
+    resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+    case "${resp}" in
+      1)
+        sed -i '/^noarp/d' /etc/dhcpcd.conf 2>/dev/null
+        sed -i '/^noipv6rs/d' /etc/dhcpcd.conf 2>/dev/null
+        ARP_STATUS="enabled"
+        MSG="ARP Probing enabled."
+        ;;
+      2)
+        grep -q "^noarp" /etc/dhcpcd.conf 2>/dev/null || echo "noarp" >> /etc/dhcpcd.conf
+        grep -q "^noipv6rs" /etc/dhcpcd.conf 2>/dev/null || echo "noipv6rs" >> /etc/dhcpcd.conf
+        ARP_STATUS="disabled"
+        MSG="ARP Probing disabled."
+        ;;
+      *)
+        break
+        ;;
+    esac
+
+    RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
+    rm -rf "${RDXZ_PATH}"
+    mkdir -p "${RDXZ_PATH}"
+    if [ -f "${ARC_RAMDISK_USER_FILE}" ]; then
+      INITRD_FORMAT=$(file -b --mime-type "${ARC_RAMDISK_USER_FILE}")
+      (
+        cd "${RDXZ_PATH}"
+        case "${INITRD_FORMAT}" in
+        *'x-cpio'*) cpio -idm <"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-xz'*) xz -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+        *'x-lz4'*) lz4 -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+        *'x-lzma'*) lzma -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+        *'x-bzip2'*) bzip2 -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+        *'gzip'*) gzip -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+        *'zstd'*) zstd -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
+        *) ;;
+        esac
+      ) >/dev/null 2>&1 || true
+    else
+      INITRD_FORMAT="application/zstd"
+    fi
+    if [ ! -f "/etc/dhcpcd.conf" ]; then
+      rm -f "${RDXZ_PATH}/etc/dhcpcd.conf" 2>/dev/null
+    else
+      mkdir -p "${RDXZ_PATH}/etc"
+      cp -p /etc/dhcpcd.conf "${RDXZ_PATH}/etc/dhcpcd.conf"
+    fi
+    if [ -n "$(ls -A "${RDXZ_PATH}" 2>/dev/null)" ] && [ -n "$(ls -A "${RDXZ_PATH}/etc" 2>/dev/null)" ]; then
+      (
+        cd "${RDXZ_PATH}"
+        local RDSIZE=$(du -sb ${RDXZ_PATH} 2>/dev/null | awk '{print $1}')
+        case "${INITRD_FORMAT}" in
+        *'x-cpio'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-xz'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | xz -9 -C crc32 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-lz4'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | lz4 -9 -l -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-lzma'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | lzma -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-bzip2'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | bzip2 -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'gzip'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | gzip -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'zstd'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | zstd -19 -T0 -f -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *) ;;
+        esac
+      ) 2>&1 | dialog --backtitle "$(backtitle)" --title "ARP Probing" \
+        --progressbox "Saving ARP settings..." 20 70
+    else
+      rm -f "${ARC_RAMDISK_USER_FILE}"
+    fi
+    rm -rf "${RDXZ_PATH}"
+
+    dialog --backtitle "$(backtitle)" --title "ARP Probing" --msgbox "${MSG}" 0 0
+    break
   done
   return
 }
