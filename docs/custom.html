@@ -152,7 +152,7 @@
                         }
 
                         var dispar = "";
-                        if (!addonsData[ext][platform]) {
+                        if (!addonsData[ext]["platforms"].includes(platform)) {
                             dispar = "disabled";
                         }
                         var par = "";
@@ -324,8 +324,7 @@
                 <label class="color-fg-default text-mono f5">Addons: <a href="https://auxxxilium.tech/wiki/arc-loader-arc-loader/addons/" target="_blank">More Information</a></label>
             </div>
             <div class="form-group-body">
-                <textarea class="textarea-style input-contrast input-sm" type="text" id="addons" name="inputs[addons]"
-                    disabled></textarea>
+                <textarea class="textarea-style input-contrast input-sm" type="text" id="addons" name="inputs[addons]" disabled></textarea>
                 <div class="form-group-body" id="addons_btns">
                 </div>
             </div>

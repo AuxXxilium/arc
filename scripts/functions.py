@@ -98,6 +98,12 @@ def getpats(workpath, jsonpath):
 @click.option("-w", "--workpath", type=str, required=True, help="The workpath of ARC.")
 @click.option("-j", "--jsonpath", type=str, required=True, help="The output path of jsonfile.")
 def getaddons(workpath, jsonpath):
+    # Load platforms from platforms.yml
+    platforms_yml = os.path.join(workpath, "mnt", "p3", "configs", "platforms.yml")
+    with open(platforms_yml, "r") as f:
+        platforms_data = yaml.safe_load(f)
+        platforms_list = list(platforms_data.get("platforms", {}).keys())
+
     AS = glob.glob(os.path.join(workpath, "mnt", "p3", "addons", "*", "manifest.yml"))
     AS.sort()
     addons = {}
@@ -107,7 +113,16 @@ def getaddons(workpath, jsonpath):
             A_name = A_data.get("name", "")
             A_system = A_data.get("system", False)
             A_description = A_data.get("description", "")
-            addons[A_name] = {"system": A_system, "description": A_description}
+            # Extract platform support from manifest based on platforms.yml
+            addon_platforms = []
+            for plat in platforms_list:
+                if A_data.get(plat, False):
+                    addon_platforms.append(plat)
+            addons[A_name] = {
+                "system": A_system,
+                "description": A_description,
+                "platforms": addon_platforms
+            }
     if jsonpath:
         with open(jsonpath, "w") as f:
             json.dump(addons, f, indent=4, ensure_ascii=False)
