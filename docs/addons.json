@@ -1,194 +1,900 @@
 {
     "abbpatch": {
         "system": false,
-        "description": "Activate Active Backup for Business"
+        "description": "Activate Active Backup for Business",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "acpid": {
         "system": false,
-        "description": "Daemon for delivering ACPI events (Powerbutton, etc.)"
+        "description": "Daemon for delivering ACPI events (Powerbutton, etc.)",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "addincards": {
         "system": false,
-        "description": "Remove the Modelrestrictions for official Addin Cards"
+        "description": "Remove the Modelrestrictions for official Addin Cards",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "allowdowngrade": {
         "system": false,
-        "description": "Allow Downgrade for AME, MediaServer, SynoPhotos, SS and VideoStation on DSM 7.2.2"
+        "description": "Allow Downgrade for AME, MediaServer, SynoPhotos, SS and VideoStation on DSM 7.2.2",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "amepatch": {
         "system": false,
-        "description": "Dynamic Licensepatch for AME (only for AME 3.1.0)"
+        "description": "Dynamic Licensepatch for AME (only for AME 3.1.0)",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "apppatch": {
         "system": false,
-        "description": "Fix Synology Photos and local_display"
+        "description": "Fix Synology Photos and local_display",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "arcdns": {
         "system": false,
-        "description": "Dynamic DNS client for arcdns.tech - Modify in DSM DynDNS Settings"
+        "description": "Dynamic DNS client for arcdns.tech - Modify in DSM DynDNS Settings",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "beep": {
         "system": false,
-        "description": "Beep at startup and shutdown (requires motherboard with buzzer)"
+        "description": "Beep at startup and shutdown (requires motherboard with buzzer)",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "blockupdate": {
         "system": false,
-        "description": "Block all automatic DSM update"
+        "description": "Block all automatic DSM update",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "bootwait": {
         "system": false,
-        "description": "Boot process waits until boot device (`/dev/synoboot`) and PCIe Device are available"
+        "description": "Boot process waits until boot device (`/dev/synoboot`) and PCIe Device are available",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "cpufreqscaling": {
         "system": false,
-        "description": "Enable CPU Freqscaling for DSM - Modify in Arc DSM Options"
+        "description": "Enable CPU Freqscaling for DSM - Modify in Arc DSM Options",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "cpuinfo": {
         "system": false,
-        "description": "Add real CPU Information to DSM System"
+        "description": "Add real CPU Information to DSM System",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "dbgutils": {
         "system": false,
-        "description": "Binaries to facilitate debug in the junior mode"
+        "description": "Binaries to facilitate debug in the junior mode",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "deduplication": {
         "system": false,
-        "description": "Force enable Deduplication (Only for SSD)"
+        "description": "Force enable Deduplication (Only for SSD)",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "disks": {
         "system": true,
-        "description": "Config disks related setting"
+        "description": "Config disks related setting",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "dsmconfigbackup": {
         "system": false,
-        "description": "Automatically backup Systemconfig Settings to the Bootloader Disk(/mnt/p1/dsmbackup) at Shutdown"
+        "description": "Automatically backup Systemconfig Settings to the Bootloader Disk(/mnt/p1/dsmbackup) at Shutdown",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "eudev": {
         "system": true,
-        "description": "eudev + kmod will assist with auto module loading"
+        "description": "eudev + kmod will assist with auto module loading",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "expands": {
         "system": false,
-        "description": "Updated usb.map, ca-certificates.crt and more"
+        "description": "Updated usb.map, ca-certificates.crt and more",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "fancontrol": {
         "system": false,
-        "description": "Control fan speeds from DSM (Incl. sensors addon, only for supported devices)."
+        "description": "Control fan speeds from DSM (Incl. sensors addon, only for supported devices).",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "hdddb": {
         "system": false,
-        "description": "Add Disks to DSM DiskDB, enable M.2 Volume and bypass Memory Limitation"
+        "description": "Add Disks to DSM DiskDB, enable M.2 Volume and bypass Memory Limitation",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "i915": {
         "system": false,
-        "description": "Automatically replace the device ID of i915 module. (Intel 2nd - 9th Gen)"
+        "description": "Automatically replace the device ID of i915 module. (Intel 2nd - 9th Gen)",
+        "platforms": [
+            "apollolake",
+            "geminilake",
+            "geminilakenk"
+        ]
     },
     "ledcontrol": {
         "system": false,
-        "description": "Add Ugreen Ledcontrol to DSM (requires sensors)"
+        "description": "Add Ugreen Ledcontrol to DSM (requires sensors)",
+        "platforms": [
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "localrss": {
         "system": true,
-        "description": "rss for bootloader pat"
+        "description": "rss for bootloader pat",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "lsiutil": {
         "system": false,
-        "description": "A tool for working with some LSI RAID controllers"
+        "description": "A tool for working with some LSI RAID controllers",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellntbap",
+            "denverton"
+        ]
     },
     "mailplus": {
         "system": false,
-        "description": "Dynamic License Patch for MailPlus-Server 3.3.0"
+        "description": "Dynamic License Patch for MailPlus-Server 3.3.0",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "memory": {
         "system": false,
-        "description": "Remove Memory limitation"
+        "description": "Remove Memory limitation",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "misc": {
         "system": true,
-        "description": "Miscellaneous functions"
+        "description": "Miscellaneous functions",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "mountloader": {
         "system": true,
-        "description": "Add a script to mount/unmount loader disk in the DSM scheduled task"
+        "description": "Add a script to mount/unmount loader disk in the DSM scheduled task",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "notify": {
         "system": true,
-        "description": "Add Arc Notification System"
+        "description": "Add Arc Notification System",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "nvmecache": {
         "system": false,
-        "description": "Enable M.2 as Cache (for DS918+ RS1619xs+ DS1019+ DS1621xs+)"
+        "description": "Enable M.2 as Cache (for DS918+ RS1619xs+ DS1019+ DS1621xs+)",
+        "platforms": [
+            "apollolake",
+            "broadwellnk"
+        ]
     },
     "nvmesystem": {
         "system": false,
-        "description": "Enable DSM installation to NVMe SSDs. (For Systems with only NVMe)"
+        "description": "Enable DSM installation to NVMe SSDs. (For Systems with only NVMe)",
+        "platforms": [
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "nvmevolume": {
         "system": false,
-        "description": "Enable M.2 as Volume (for non supported Models)"
+        "description": "Enable M.2 as Volume (for non supported Models)",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "powersched": {
         "system": false,
-        "description": "Utility to configure RTC according to DSM power schedule (If supported)"
+        "description": "Utility to configure RTC according to DSM power schedule (If supported)",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "redpill": {
         "system": true,
-        "description": "Delay redpill for Linux 5.10.x"
+        "description": "Delay redpill for Linux 5.10.x",
+        "platforms": [
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "reducelogs": {
         "system": false,
-        "description": "Reduce DSM log spam"
+        "description": "Reduce DSM log spam",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "remotefs": {
         "system": false,
-        "description": "Allow remote NFS/CIFS shared folder be used in VideoStation, AudioStation and PhotoStation"
+        "description": "Allow remote NFS/CIFS shared folder be used in VideoStation, AudioStation and PhotoStation",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "revert": {
         "system": true,
-        "description": "Revert all Modifications"
+        "description": "Revert all Modifications",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "sensors": {
         "system": false,
-        "description": "Install sensors package to monitor temperature of CPU and other components"
+        "description": "Install sensors package to monitor temperature of CPU and other components",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "setrootpw": {
         "system": false,
-        "description": "Set root password and enable ssh/sftp. Modify PW=\"\" to the desired password in DSM Task Scheduler and run the task"
+        "description": "Set root password and enable ssh/sftp. Modify PW=\"\" to the desired password in DSM Task Scheduler and run the task",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "smartctl": {
         "system": false,
-        "description": "Fix SMART information for HBA devices."
+        "description": "Fix SMART information for HBA devices.",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "sortnetif": {
         "system": false,
-        "description": "Sort network interface names: sorted by busid"
+        "description": "Sort network interface names: sorted by busid",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "storagepanel": {
         "system": false,
-        "description": "Automated Storagepanel selection - Modify in Arc DSM Options"
+        "description": "Automated Storagepanel selection - Modify in Arc DSM Options",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "surveillance": {
         "system": false,
-        "description": "Dynamic License Patch for Surveillance 9.2.0 / 9.2.3"
+        "description": "Dynamic License Patch for Surveillance 9.2.0 / 9.2.3",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "updatenotify": {
         "system": false,
-        "description": "Arc Loader Update Notifications in DSM"
+        "description": "Arc Loader Update Notifications in DSM",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "ups": {
         "system": false,
-        "description": "Force UPS to shut down in Standby mode"
+        "description": "Force UPS to shut down in Standby mode",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "vmm": {
         "system": false,
-        "description": "Dynamic License Patch for VMM 2.7.0"
+        "description": "Dynamic License Patch for VMM 2.7.0",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "vmtools": {
         "system": false,
-        "description": "qemu-ga & &open-vm-tools (replacement for apps)"
+        "description": "qemu-ga & &open-vm-tools (replacement for apps)",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     },
     "wol": {
         "system": true,
-        "description": "Force enable the Wake-on-lan on all nic"
+        "description": "Force enable the Wake-on-lan on all nic",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
     }
 }
