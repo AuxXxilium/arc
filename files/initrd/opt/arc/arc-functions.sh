@@ -2449,8 +2449,11 @@ function loaderPorts() {
   return
 }
 
+###############################################################################
+# Enable or Disable ARP Probing for NIC
 function loaderARP() {
-  MSG="Enable or Disable ARP Probing for NIC (May speedup boot time):"
+  MSG="ARP Probing for NIC:\n"
+  MSG+="Disable: may speedup boot time but can cause network issues."
   # Check current ARP status
   ARP_STATUS="enabled"
   [ -f "/etc/dhcpcd.conf" ] && grep -q "^noarp" /etc/dhcpcd.conf && ARP_STATUS="disabled"
