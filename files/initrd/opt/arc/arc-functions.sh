@@ -2536,6 +2536,11 @@ function loaderARP() {
     dialog --backtitle "$(backtitle)" --title "ARP Probing" --msgbox "${MSG}" 0 0
     break
   done
+  dialog --backtitle "$(backtitle)" --title "Reboot Required" \
+    --yesno "A reboot is required for ARP Probing changes to take effect.\n\nDo you want to reboot now?" 7 60
+  if [ $? -eq 0 ]; then
+    exec reboot
+  fi
   return
 }
 
