@@ -269,7 +269,19 @@ function arcVersion() {
 
   # Main logic
   if [ "${ONLYVERSION}" != "true" ]; then
-    MSG="Do you want to try Automated Mode?\nIf yes, Loader will configure, build and boot DSM."
+    if [ "${DT}" = "true" ]; then
+      if [ "${SASCONTROLLER}" -ge 1 ]; then
+        dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+          --yesno "WARN: You use a HBA Controller and selected a DT Model.\nThis is an experimental feature.\n\nContinue anyway?" 8 70
+        [ $? -ne 0 ] && return
+      fi
+      if [ "${SCSICONTROLLER}" -ge 1 ] || [ "${RAIDCONTROLLER}" -ge 1 ]; then
+        dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+          --yesno "WARN: You use a Raid/SCSI Controller and selected a DT Model.\nThis is not supported.\n\nContinue anyway?" 8 70
+        [ $? -ne 0 ] && return
+      fi
+    fi
+    MSG="Do you want to use Automated Mode?\nIf yes, Loader will configure, build and boot DSM."
     dialog --backtitle "$(backtitle)" --colors --title "Automated Mode" \
       --yesno "${MSG}" 6 55
     ARC_MODE=$([ $? -eq 0 ] && echo "automated" || echo "config")
@@ -443,16 +455,6 @@ function arcSettings() {
 
   # Warnings and Checks
   if [ "${ARC_MODE}" = "config" ]; then
-    if [ "${DT}" = "true" ]; then
-      if [ "${SASCONTROLLER}" -ge 1 ]; then
-        dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-          --msgbox "WARN: You use a HBA Controller and selected a DT Model.\nThis is an experimental feature." 6 70
-      fi
-      if [ "${SCSICONTROLLER}" -ge 1 ] || [ "${RAIDCONTROLLER}" -ne 0 ]; then
-        dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-          --msgbox "WARN: You use a Raid/SCSI Controller and selected a DT Model.\nThis is not supported." 6 70
-      fi
-    fi
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
     MODELNIC="$(readConfigKey "${MODEL}.ports" "${S_FILE}")"
     [ "${DEVICENIC}" -gt 8 ] && dialog --backtitle "$(backtitle)" --title "Arc Warning" --msgbox "WARN: You have more NIC (${DEVICENIC}) than 8 NIC.\nOnly 8 supported by DSM." 6 60
