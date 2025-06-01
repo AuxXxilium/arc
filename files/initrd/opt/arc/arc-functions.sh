@@ -79,7 +79,7 @@ function arcModel() {
         fi
       done < <(cat "${TMP_PATH}/modellist")
       # Show Menu
-      [ "${RESTRICT} " -eq 1 ] && TITLEMSG="Supported Models for your Hardware" || TITLEMSG="All Models supported by Loader"
+      [ "${RESTRICT} " -eq 1 ] && TITLEMSG="Supported Models for your Hardware" || TITLEMSG="Supported and unsupported Models for your Hardware"
       [ -n "${ARC_CONF}" ] && MSG="${TITLEMSG} (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" || MSG="${TITLEMSG} (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
       [ -n "${ARC_CONF}" ] && TITLEMSG="Arc Model" || TITLEMSG="Model"
       dialog --backtitle "$(backtitle)" --title "${TITLEMSG}" --colors \
@@ -435,7 +435,16 @@ function arcSettings() {
 
   # Warnings and Checks
   if [ "${ARC_MODE}" = "config" ]; then
-    [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && dialog --backtitle "$(backtitle)" --title "Arc Warning" --msgbox "WARN: You use a HBA/Raid Controller and selected a DT Model.\nThis is still an experimental." 6 70
+    if [ "${DT}" = "true" ]; then
+      if [ "${SASCONTROLLER}" -ge 1 ]; then
+        dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+          --msgbox "WARN: You use a HBA Controller and selected a DT Model.\nThis is an experimental feature." 6 70
+      fi
+      if [ "${SCSICONTROLLER}" -ge 1 ] || [ "${RAIDCONTROLLER}" -ne 0 ]; then
+        dialog --backtitle "$(backtitle)" --title "Arc Warning" \
+          --msgbox "WARN: You use a Raid/SCSI Controller and selected a DT Model.\nThis is not supported." 6 70
+      fi
+    fi
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
     MODELNIC="$(readConfigKey "${MODEL}.ports" "${S_FILE}")"
     [ "${DEVICENIC}" -gt 8 ] && dialog --backtitle "$(backtitle)" --title "Arc Warning" --msgbox "WARN: You have more NIC (${DEVICENIC}) than 8 NIC.\nOnly 8 supported by DSM." 6 60
