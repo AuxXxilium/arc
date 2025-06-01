@@ -21,6 +21,7 @@ function arcModel() {
         COMPATIBLE=1
         DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
         FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
+        NOFLAGS="$(readConfigArray "platforms.${A}.noflags" "${P_FILE}")"
         ARC_CONFM="$(readConfigKey "${M}.serial" "${S_FILE}")"
         ARC=""
         BETA=""
@@ -47,31 +48,36 @@ function arcModel() {
         [[ "${M}" = "DS220+" || "${M}" = "DS224+" || "${DT}" = "false" ]] && M_2_STORAGE="" || M_2_STORAGE="+"
         # Check id model is compatible with CPU
         if [ "${RESTRICT}" -eq 1 ]; then
+          # Check required CPU flags
           for F in ${FLAGS}; do
-            if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
+            grep -q "^flags.*${F}.*" /proc/cpuinfo || COMPATIBLE=0
+          done
+
+          for NF in ${NOFLAGS}; do
+            grep -q "^flags.*${NF}.*" /proc/cpuinfo && COMPATIBLE=0
+          done
+
+          # Compatibility checks for platforms
+          if is_in_array "${A}" "${KVER5L[@]}"; then
+            if [[ "${NVMEDRIVES}" -eq 0 && "${BUS}" = "usb" && "${SATADRIVES}" -eq 0 && "${EXTERNALCONTROLLER}" = "false" ]] ||
+               [[ "${NVMEDRIVES}" -eq 0 && "${BUS}" = "sata" && "${SATADRIVES}" -eq 1 && "${EXTERNALCONTROLLER}" = "false" ]] ||
+               [ "${SCSICONTROLLER}" -ge 1 ] || [ "${RAIDCONTROLLER}" -ge 1 ]; then
               COMPATIBLE=0
             fi
-          done
-          if ! is_in_array "${A}" "${KVER5L[@]}" && { 
-              ([ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]) || 
-              ([ "${SATACONTROLLER}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]) || 
-              ([ "${NVMEDRIVES}" -gt 0 ] && [ "${BUS}" = "usb" ] && [ "${SATADRIVES}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]) || 
-              ([ "${NVMEDRIVES}" -gt 0 ] && [ "${BUS}" = "sata" ] && [ "${SATADRIVES}" -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ])
-            }; then
-            COMPATIBLE=0
-          elif is_in_array "${A}" "${KVER5L[@]}" && { 
-              ([ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "usb" ] && [ "${SATADRIVES}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]) || 
-              ([ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "sata" ] && [ "${SATADRIVES}" -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ])
-            }; then
-            COMPATIBLE=0
+          else
+            if [[ "${DT}" = "true" && "${EXTERNALCONTROLLER}" = "true" ]] ||
+               [[ "${SATACONTROLLER}" -eq 0 && "${EXTERNALCONTROLLER}" = "false" ]] ||
+               [[ "${NVMEDRIVES}" -gt 0 && "${BUS}" = "usb" && "${SATADRIVES}" -eq 0 && "${EXTERNALCONTROLLER}" = "false" ]] ||
+               [[ "${NVMEDRIVES}" -gt 0 && "${BUS}" = "sata" && "${SATADRIVES}" -eq 1 && "${EXTERNALCONTROLLER}" = "false" ]]; then
+              COMPATIBLE=0
+            fi
           fi
-          if is_in_array "${A}" "${KVER5L[@]}" && [[ "${SCSICONTROLLER}" -ne 0 || "${RAIDCONTROLLER}" -ne 0 ]]; then
-            COMPATIBLE=0
-          fi
+
+          # Model and platform existence checks
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
+          [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
         fi
         [ -n "$(grep -w "${M}" "${S_FILE}")" ] && BETA="Arc" || BETA="Syno"
-        [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
         if [ -n "${ARC_CONF}" ]; then
           [ "${COMPATIBLE}" -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
         else
@@ -155,7 +161,9 @@ function arcVersion() {
     initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
     if [ "${NVMEDRIVES}" -gt 0 ]; then
-      if is_in_array "${PLATFORM}" "${KVER5L[@]}" && [ "${SATADRIVES}" -eq 0 ] && [ "${SASDRIVES}" -eq 0 ]; then
+      if is_in_array "${PLATFORM}" "${KVER5L[@]}" && [ "${SATADRIVES}" -eq 0 ] && [ "${SASDRIVES}" -eq 0 ] && [ "${BUS}" != "sata" ]; then
+        initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
+      elif is_in_array "${PLATFORM}" "${KVER5L[@]}" && [ "${SATADRIVES}" -le 1 ] && [ "${SASDRIVES}" -eq 0 ] && [ "${BUS}" = "sata" ]; then
         initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
       elif [ "${DT}" = "true" ]; then
         initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
@@ -749,7 +757,7 @@ function addonSelection() {
 
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
-    if { [[ "${ADDON}" = "amepatch" || "${ADDON}" = "arcdns" ]] && [ -z "${ARC_CONF}" ]; } || { [ "${ADDON}" = "codecpatch" ] && [ -n "${ARC_CONF}" ]; }; then
+    if [[ "${ADDON}" = "amepatch" && -z "${ARC_CONF}" ]]; then
       continue
     else
       echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
