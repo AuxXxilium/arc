@@ -42,6 +42,8 @@ function arc_mode() {
 # Check for NIC and IP
 function checkNIC() {
   # Get Amount of NIC
+  local BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
+  [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT="20"
   ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
   for N in ${ETHX}; do
     COUNT=0
