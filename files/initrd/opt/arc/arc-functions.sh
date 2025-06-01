@@ -113,6 +113,7 @@ function arcModel() {
     writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "dsmver" "" "${USER_CONFIG_FILE}"
     writeConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "governor" "" "${USER_CONFIG_FILE}"
     writeConfigKey "hddsort" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "kernel" "official" "${USER_CONFIG_FILE}"
     writeConfigKey "odp" "false" "${USER_CONFIG_FILE}"
@@ -146,6 +147,46 @@ function arcModel() {
 ###############################################################################
 # Arc Version Section
 function arcVersion() {
+  init_default_addons() {
+    initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
+    initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
+    initConfigKey "addons.hdddb" "" "${USER_CONFIG_FILE}"
+    initConfigKey "addons.reducelogs" "" "${USER_CONFIG_FILE}"
+    initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
+    initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
+    if [ "${NVMEDRIVES}" -gt 0 ]; then
+      if is_in_array "${PLATFORM}" "${KVER5L[@]}" && [ "${SATADRIVES}" -eq 0 ] && [ "${SASDRIVES}" -eq 0 ]; then
+        initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
+      elif [ "${DT}" = "true" ]; then
+        initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
+      elif is_in_array "${MODEL}" "${NVMECACHE[@]}"; then
+        initConfigKey "addons.nvmecache" "" "${USER_CONFIG_FILE}"
+      fi
+    fi
+    if [ "${MEV}" = "physical" ]; then
+      initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
+      initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
+      initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
+      if [ "$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp' | sed -n 's|.*/\(hwmon.*\/temp1_input\).*|\1|p' | wc -l)" -gt 0 ]; then
+        initConfigKey "addons.fancontrol" "" "${USER_CONFIG_FILE}"
+      fi
+    else
+      initConfigKey "addons.vmtools" "" "${USER_CONFIG_FILE}"
+    fi
+    if is_in_array "${PLATFORM}" "${IGPU1L[@]}" && grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids"; then
+      initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
+    fi
+    if echo "${PAT_URL}" 2>/dev/null | grep -qE "7\.2\.[2-9]|7\.[3-9]\.|[8-9]\."; then
+      initConfigKey "addons.allowdowngrade" "" "${USER_CONFIG_FILE}"
+    fi
+    if [ -n "${ARC_CONF}" ]; then
+      initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
+    fi
+    if [ "${SASDRIVES}" -gt 0 ] && [ "${DT}" = "true" ]; then
+      initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
+    fi
+  }
+
   # Read Model Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
@@ -153,8 +194,8 @@ function arcVersion() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   DSMVER="$(readConfigKey "dsmver" "${USER_CONFIG_FILE}")"
   # Get PAT Data from Config
-  PAT_URL_CONF="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
-  PAT_HASH_CONF="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
+  PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
+  PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
   # Check for Custom Build
   if [ "${ARC_MODE}" = "config" ] && [ "${ARCRESTORE}" != "true" ]; then
     # Select Build for DSM
@@ -172,69 +213,70 @@ function arcVersion() {
     [ $? -ne 0 ] && return
     RESP="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${RESP}" ] && return
-    if [ "${DSMVER}" != "${RESP:0:5}" ]; then
-      # Reset Config if changed
+     if [ "${DSMVER}" != "${RESP:0:5}" ]; then
       PRODUCTVER="${RESP:0:3}"
       DSMVER="${RESP:0:5}"
-      PAT_URL="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${RESP}\".url" "${D_FILE}")"
-      PAT_HASH="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${RESP}\".hash" "${D_FILE}")"
-      writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-      writeConfigKey "dsmver" "${DSMVER}" "${USER_CONFIG_FILE}"
-      writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
-      writeConfigKey "governor" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
-      writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
     fi
-    if [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
-      VALID="true"
-    elif [ -z "${PAT_URL}" ] || [ -z "${PAT_HASH}" ]; then
-      while true; do
-        MSG="Failed to get PAT Data.\n"
-        MSG+="Please manually fill in the URL and Hash of PAT.\n"
-        MSG+="You will find these Data at: http://dsmdata.auxxxilium.tech/"
-        dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
-          --form "${MSG}" 11 120 2 "Url" 1 1 "${PAT_URL}" 1 8 110 0 "Hash" 2 1 "${PAT_HASH}" 2 8 110 0 \
-          2>"${TMP_PATH}/resp"
-        RET=$?
-        [ "${RET}" -ne 0 ] && return
-        PAT_URL="$(cat "${TMP_PATH}/resp" | sed -n '1p')"
-        PAT_HASH="$(cat "${TMP_PATH}/resp" | sed -n '2p')"
-        [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ] && VALID="true" && break
-      done
-    fi
-    if [ "${PAT_URL}" != "${PAT_URL_CONF}" ] || [ "${PAT_HASH}" != "${PAT_HASH_CONF}" ]; then
+
+    # Always update config keys for version selection
+    writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+    writeConfigKey "dsmver" "${DSMVER}" "${USER_CONFIG_FILE}"
+    writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+
+    PAT_URL_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${RESP}\".url" "${D_FILE}")"
+    PAT_HASH_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${RESP}\".hash" "${D_FILE}")"
+
+    # Ensure PAT_URL and PAT_HASH are set, ask user if missing
+    while [ -z "${PAT_URL_UPDATE}" ] || [ -z "${PAT_HASH_UPDATE}" ]; do
+      MSG="Failed to get PAT Data.\n"
+      MSG+="Please manually fill in the URL and Hash of PAT.\n"
+      MSG+="You will find these Data at: http://dsmdata.auxxxilium.tech/"
+      dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
+        --form "${MSG}" 11 120 2 "Url" 1 1 "${PAT_URL_UPDATE}" 1 8 110 0 "Hash" 2 1 "${PAT_HASH_UPDATE}" 2 8 110 0 \
+        2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && return
+      PAT_URL_UPDATE="$(sed -n '1p' "${TMP_PATH}/resp")"
+      PAT_HASH_UPDATE="$(sed -n '2p' "${TMP_PATH}/resp")"
+    done
+
+    # Only update if changed
+    if [ "${PAT_URL}" != "${PAT_URL_UPDATE}" ] || [ "${PAT_HASH}" != "${PAT_HASH_UPDATE}" ]; then
+      PAT_URL="${PAT_URL_UPDATE}"
+      PAT_HASH="${PAT_HASH_UPDATE}"
       writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
       writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
       rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" >/dev/null 2>&1 || true
       rm -f "${USER_UP_PATH}/"*.tar >/dev/null 2>&1 || true
     fi
-    if [ "${ONLYVERSION}" != "true" ]; then
-      MSG="Do you want to try Automated Mode?\nIf yes, Loader will configure, build and boot DSM."
-      dialog --backtitle "$(backtitle)" --colors --title "Automated Mode" \
-        --yesno "${MSG}" 6 55
-      if [ $? -eq 0 ]; then
-        ARC_MODE="automated"
-      else
-        ARC_MODE="config"
-      fi
-    fi
-  elif [ "${ARC_MODE}" = "automated" ] || [ "${ARCRESTORE}" = "true" ]; then
+  fi
+
+  if [ -n "${PAT_URL}" ] || [ -n "${PAT_HASH}" ]; then
     VALID="true"
   fi
-  # Change Config if Files are valid
+
+  # Main logic
+  if [ "${ONLYVERSION}" != "true" ]; then
+    MSG="Do you want to try Automated Mode?\nIf yes, Loader will configure, build and boot DSM."
+    dialog --backtitle "$(backtitle)" --colors --title "Automated Mode" \
+      --yesno "${MSG}" 6 55
+    ARC_MODE=$([ $? -eq 0 ] && echo "automated" || echo "config")
+  fi
+
   if [ "${VALID}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Config" \
       --infobox "Reconfiguring Cmdline, Modules and Synoinfo" 3 60
+
     # Reset Synoinfo
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
     while IFS=': ' read -r KEY VALUE; do
       writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
     done < <(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")
+
     # Reset Modules
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
     is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
@@ -242,55 +284,22 @@ function arcVersion() {
       writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
       mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
     fi
-    # Check Addons for Platform
+
+    # Addons
     ADDONS="$(readConfigKey "addons" "${USER_CONFIG_FILE}")"
-    DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
     if [ "${ADDONS}" = "{}" ]; then
-      initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
-      initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-      initConfigKey "addons.hdddb" "" "${USER_CONFIG_FILE}"
-      initConfigKey "addons.reducelogs" "" "${USER_CONFIG_FILE}"
-      initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
-      initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
-      if [ "${NVMEDRIVES}" -gt 0 ]; then
-        if is_in_array "${PLATFORM}" "${KVER5L[@]}" && [ "${SATADRIVES}" -eq 0 ] && [ "${SASDRIVES}" -eq 0 ]; then
-          initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
-        elif [ "${DT}" = "true" ]; then
-          initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
-        elif is_in_array "${MODEL}" "${NVMECACHE[@]}"; then
-          initConfigKey "addons.nvmecache" "" "${USER_CONFIG_FILE}"
-        fi
-      fi
-      if [ "${MEV}" = "physical" ]; then
-        initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
-        initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
-        initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
-        if [ "$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp' | sed -n 's|.*/\(hwmon.*\/temp1_input\).*|\1|p' | wc -l)" -gt 0 ]; then
-          initConfigKey "addons.fancontrol" "" "${USER_CONFIG_FILE}"
-        fi
-      else
-        initConfigKey "addons.vmtools" "" "${USER_CONFIG_FILE}"
-      fi
-      if is_in_array "${PLATFORM}" "${IGPU1L[@]}" && grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids"; then
-        initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
-      fi
-      if echo "${PAT_URL}" 2>/dev/null | grep -qE "7\.2\.[2-9]|7\.[3-9]\.|[8-9]\."; then
-        initConfigKey "addons.allowdowngrade" "" "${USER_CONFIG_FILE}"
-      fi
-      if [ -n "${ARC_CONF}" ]; then
-        initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
-      fi
-      if [ "${SASDRIVES}" -gt 0 ] && [ "${DT}" = "true" ]; then
-        initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
-      fi
+      init_default_addons
     fi
+
+    # Remove unavailable addons
     while IFS=': ' read -r ADDON PARAM; do
       [ -z "${ADDON}" ] && continue
       if ! checkAddonExist "${ADDON}" "${PLATFORM}"; then
         deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
       fi
     done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-    # Check for Only Version
+
+    # Only Version Mode
     if [ "${ONLYVERSION}" = "true" ]; then
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -398,7 +407,7 @@ function arcSettings() {
     --infobox "Generating Storage Map..." 3 40
   sleep 2
   getmap || return
-  if [ "${DT}" = "false" ] && [ "${SATADRIVES}" -gt 0 ]; then
+  if [ "${DT}" = "false" ]; then
     getmapSelection || return
   fi
   
