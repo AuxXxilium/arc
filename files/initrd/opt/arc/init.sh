@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-set -e
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
 . "${ARC_PATH}/include/functions.sh"
@@ -61,7 +60,7 @@ initConfigKey "bootscreen.systeminfo" "true" "${USER_CONFIG_FILE}"
 initConfigKey "bootscreen.diskinfo" "false" "${USER_CONFIG_FILE}"
 initConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
 initConfigKey "bootscreen.dsmlogo" "true" "${USER_CONFIG_FILE}"
-initConfigKey "bootipwait" "30" "${USER_CONFIG_FILE}"
+initConfigKey "bootipwait" "20" "${USER_CONFIG_FILE}"
 initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
 initConfigKey "dsmver" "" "${USER_CONFIG_FILE}"
@@ -108,12 +107,12 @@ for N in ${ETHX}; do
   MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
   IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
   if [ -n "${IPR}" ]; then
-    if [ ! "1" = "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" ]; then
+    if [ ! "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
       ip link set "${N}" up 2>/dev/null || true
     fi
     IFS='/' read -r -a IPRA <<<"${IPR}"
     ip addr flush dev "${N}" 2>/dev/null || true
-      ip addr add "${IPRA[0]}/${IPRA[1]:-"255.255.255.0"}" dev "${N}" 2>/dev/null || true
+    ip addr add "${IPRA[0]}/${IPRA[1]:-"255.255.255.0"}" dev "${N}" 2>/dev/null || true
     if [ -n "${IPRA[2]}" ]; then
       ip route add default via "${IPRA[2]}" dev "${N}" 2>/dev/null || true
     fi
