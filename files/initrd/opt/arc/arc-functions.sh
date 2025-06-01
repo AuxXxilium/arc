@@ -2129,6 +2129,7 @@ function staticIPMenu() {
             fi
           else
             echo "Setting IP for ${N}(${MACR}) to ${address}/${netmask}/${gateway}/${dnsname}"
+            writeConfigKey "network.${MACR}" "${address}/${netmask}/${gateway}/${dnsname}" "${USER_CONFIG_FILE}"
             if [ "1" = "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" ]; then
               ip addr flush dev ${N}
               ip addr add ${address}/${netmask:-"255.255.255.0"} dev ${N}
@@ -2140,7 +2141,6 @@ function staticIPMenu() {
                 echo "nameserver ${dnsname:-${gateway}}" >>/etc/resolv.conf
               fi
             fi
-            writeConfigKey "network.${MACR}" "${address}/${netmask}/${gateway}/${dnsname}" "${USER_CONFIG_FILE}"
             sleep 1
           fi
           writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -3594,21 +3594,4 @@ function getnetinfo() {
     [ -n "${IPCON}" ] && break
   done
   IPCON="${IPCON:-noip}"
-}
-
-###############################################################################
-# Create Microcode for Kernel
-function createMicrocode() {
-  rm -rf ${TMP_PATH}/kernel
-  if [ -d /usr/lib/firmware/amd-ucode ]; then
-    mkdir -p "${TMP_PATH}/kernel/x86/microcode"
-    cat /usr/lib/firmware/amd-ucode/microcode_amd*.bin >"${TMP_PATH}/kernel/x86/microcode/AuthenticAMD.bin"
-  fi
-  if [ -d /usr/lib/firmware/intel-ucode ]; then
-    mkdir -p "${TMP_PATH}/kernel/x86/microcode"
-    cat /usr/lib/firmware/intel-ucode/* >"${TMP_PATH}/kernel/x86/microcode/GenuineIntel.bin"
-  fi
-  if [ -d "${TMP_PATH}/kernel/x86/microcode" ]; then
-    (cd "${TMP_PATH}" && find kernel 2>/dev/null | cpio -o -H newc -R root:root >"${MC_RAMDISK_FILE}") >/dev/null 2>&1
-  fi
 }
