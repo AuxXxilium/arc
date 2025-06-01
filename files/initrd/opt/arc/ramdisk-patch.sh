@@ -82,7 +82,7 @@ while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && MODULES["${KEY}"]="${VALUE}"
 done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
-SYNOINFO["SN"]="${SN}"
+#SYNOINFO["SN"]="${SN}"
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
 done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")

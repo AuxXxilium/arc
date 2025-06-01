@@ -80,8 +80,8 @@ function installAddon() {
   fi
   # If has files to copy, copy it, else return error
   if [ ${HAS_FILES} -ne 1 ]; then
-    echo "ERROR: installAddon: ${ADDON} addon not found" >"${LOG_FILE}"
-    return 1
+    deleteConfigKey "addon.${ADDON}" "${USER_CONFIG_FILE}"
+    return 0
   fi
   cp -f "${TMP_PATH}/${ADDON}/install.sh" "${RAMDISK_PATH}/addons/${ADDON}.sh" 2>"${LOG_FILE}"
   chmod +x "${RAMDISK_PATH}/addons/${ADDON}.sh"

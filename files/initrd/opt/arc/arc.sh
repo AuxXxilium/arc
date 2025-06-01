@@ -155,7 +155,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
       write_menu "D" "StaticIP for Loader/DSM"
       write_menu "U" "Change Loader Password"
       write_menu "Z" "Change Loader Ports"
-      write_menu "R" "Change Loader ARP Settings"
       write_menu "w" "Reset Loader to Defaults"
       write_menu "L" "Grep Logs from dbgutils"
       write_menu "B" "Grep DSM Config from Backup"
@@ -309,7 +308,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
           D) staticIPMenu; NEXT="D" ;;
           Z) loaderPorts; NEXT="Z" ;;
           U) loaderPassword; NEXT="U" ;;
-          R) loaderARP; NEXT="R" ;;
           W) RD_COMPRESSED=$([ "${RD_COMPRESSED}" = "true" ] && echo 'false' || echo 'true')
             writeConfigKey "rd-compressed" "${RD_COMPRESSED}" "${USER_CONFIG_FILE}"
             writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"

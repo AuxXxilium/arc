@@ -518,6 +518,7 @@ function livepatch() {
     echo -e ">> patching zImage failed!"
     PVALID="false"
   fi
+  echo
   if [ "${PVALID}" = "true" ]; then
     # Patch Ramdisk
     echo -e ">> patching Ramdisk..."
@@ -529,8 +530,8 @@ function livepatch() {
       PVALID="false"
     fi
   fi
+  echo
   if [ "${PVALID}" = "false" ]; then
-    echo
     echo -e "Please stay patient for Update."
     sleep 5
     exit 1
