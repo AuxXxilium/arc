@@ -267,7 +267,7 @@ function arcVersion() {
     VALID="true"
   fi
 
-  # Main logic
+  # Warning logic
   if [ "${ONLYVERSION}" != "true" ]; then
     if [ "${DT}" = "true" ]; then
       if [ "${SASCONTROLLER}" -ge 1 ]; then
@@ -275,7 +275,7 @@ function arcVersion() {
           --yesno "WARN: You use a HBA Controller and selected a DT Model.\nThis is an experimental feature.\n\nContinue anyway?" 8 70
         [ $? -ne 0 ] && return
       fi
-      if [ "${SCSICONTROLLER}" -ge 1 ] || [ "${RAIDCONTROLLER}" -ge 1 ]; then
+      if [[ "${SCSIDRIVES}" -gt 1 && "${BUS}" = "scsi" ]] || [[ "${SCSIDRIVES}" -ge 1 && "${BUS}" != "scsi" ]] || [ "${RAIDDRIVES}" -ge 1 ]; then
         dialog --backtitle "$(backtitle)" --title "Arc Warning" \
           --yesno "WARN: You use a Raid/SCSI Controller and selected a DT Model.\nThis is not supported.\n\nContinue anyway?" 8 70
         [ $? -ne 0 ] && return
@@ -1735,6 +1735,7 @@ function sysinfo() {
   DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
+  KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
   USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
@@ -1807,6 +1808,7 @@ function sysinfo() {
   if [ "${CONFDONE}" = "true" ]; then
     TEXT+="\n\Z4> DSM ${DSMVER} (${BUILDNUM}): ${MODELID:-${MODEL}}\Zn"
     TEXT+="\n  Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
+    TEXT+="\n  Kerneltype: \Zb${KERNEL}\Zn"
     TEXT+="\n  Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
     TEXT+="\n  Arc Patch: \Zb${ARC_PATCH}\Zn"
     TEXT+="\n  Kernelload: \Zb${KERNELLOAD}\Zn"
@@ -2195,6 +2197,44 @@ function downgradeMenu() {
     --progressbox "Removing Version lock..." 20 70
   dialog --backtitle "$(backtitle)" --title "Allow Downgrade"  \
     --msgbox "Allow Downgrade Settings completed." 0 0
+  return
+}
+
+###############################################################################
+# login screen fix
+function loginScreenFix() {
+  TEXT=""
+  TEXT+="This feature will allow you to fix the login screen\n"
+  TEXT+="Please insert all disks before continuing.\n"
+  TEXT+="Warning:\nThis operation is irreversible. Do you want to continue?"
+  dialog --backtitle "$(backtitle)" --title "Login Screen Fix" \
+      --yesno "${TEXT}" 0 0
+  [ $? -ne 0 ] && return 1
+  DSMROOTS="$(findDSMRoot)"
+  if [ -z "${DSMROOTS}" ]; then
+    dialog --backtitle "$(backtitle)" --title "Login Screen Fix" \
+      --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
+    return
+  fi
+  (
+    mkdir -p "${TMP_PATH}/mdX"
+    for I in ${DSMROOTS}; do
+      #fixDSMRootPart "${I}"
+      T="$(blkid -o value -s TYPE "${I}" 2>/dev/null)"
+      mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
+      [ $? -ne 0 ] && continue
+      cp -f "/mnt/p3/workaround/admin_center.js" "${TMP_PATH}/mdX/usr/syno/synoman/webman/modules/AdminCenter/admin_center.js" >/dev/null
+      cp -f "/mnt/p3/workaround/admin_center.js.gz" "${TMP_PATH}/mdX/usr/syno/synoman/webman/modules/AdminCenter/admin_center.js.gz" >/dev/null
+      chown root:root "${TMP_PATH}/mdX/usr/syno/synoman/webman/modules/AdminCenter/admin_center.js" "${TMP_PATH}/mdX/usr/syno/synoman/webman/modules/AdminCenter/admin_center.js.gz"
+      chmod 644 "${TMP_PATH}/mdX/usr/syno/synoman/webman/modules/AdminCenter/admin_center.js" "${TMP_PATH}/mdX/usr/syno/synoman/webman/modules/AdminCenter/admin_center.js.gz"
+      sync
+      umount "${TMP_PATH}/mdX"
+    done
+    rm -rf "${TMP_PATH}/mdX" >/dev/null
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Login Screen Fix" \
+    --progressbox "Fixing..." 20 70
+  dialog --backtitle "$(backtitle)" --title "Login Screen Fix"  \
+    --msgbox "Login Screen Fix completed." 0 0
   return
 }
 

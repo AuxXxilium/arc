@@ -140,6 +140,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
         write_menu "T" "Disable all scheduled Tasks"
         write_menu "r" "Remove Blocked IP Database"
         write_menu "v" "Force enable SSH"
+        write_menu "G" "Login Screen Fix"
         write_menu "M" "Mount DSM Storage Pool"
         write_menu "l" "Edit User Config"
         write_menu "s" "Allow Downgrade Version"
@@ -251,6 +252,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
           t) resetPassword; NEXT="t" ;;
           N) addNewDSMUser; NEXT="N" ;;
           J) resetDSMNetwork; NEXT="J" ;;
+          G) loginScreenFix; NEXT="G" ;;
           M) mountDSM; NEXT="M" ;;
           T) disablescheduledTasks; NEXT="T" ;;
           K) KERNEL=$([ "${KERNEL}" = "official" ] && echo 'custom' || echo 'official')
