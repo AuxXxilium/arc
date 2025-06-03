@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -e
-
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
 . "${ARC_PATH}/include/functions.sh"
@@ -247,7 +245,7 @@ if [ ! -f "${TMP_PATH}/.cmdllock" ]; then
   fi
 
   CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
-  if ! is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
+  if [ "${DT}" = "true" ] && ! is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
     if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
       [ -n "${CMDLINE['modprobe.blacklist']}" ] && CMDLINE['modprobe.blacklist']+=","
       CMDLINE['modprobe.blacklist']+="mpt3sas"
