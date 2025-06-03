@@ -247,7 +247,7 @@ if [ ! -f "${TMP_PATH}/.cmdllock" ]; then
   fi
 
   CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
-  if ! is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
+  if [ "${DT}" = "true" ] && ! is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
     if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
       [ -n "${CMDLINE['modprobe.blacklist']}" ] && CMDLINE['modprobe.blacklist']+=","
       CMDLINE['modprobe.blacklist']+="mpt3sas"
