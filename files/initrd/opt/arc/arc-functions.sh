@@ -778,10 +778,6 @@ function addonSelection() {
     ADDONS["${ADDON}"]=""
     writeConfigKey "addons.\"${ADDON}\"" "" "${USER_CONFIG_FILE}"
   done
-
-  ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
-  dialog --backtitle "$(backtitle)" --title "Addons" \
-    --msgbox "Addons selected:\n${ADDONSINFO}" 7 70
 }
 
 ###############################################################################
