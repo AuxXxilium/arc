@@ -140,137 +140,140 @@ KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
 MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 
-declare -A CMDLINE
+if [ ! -f "${TMP_PATH}/.cmdllock" ]; then
+  touch "${TMP_PATH}/.cmdllock"
+  declare -A CMDLINE
 
-# Automated Cmdline
-CMDLINE['syno_hw_version']="${MODELID:-${MODEL}}"
-CMDLINE['vid']="${VID:-"0x46f4"}"
-CMDLINE['pid']="${PID:-"0x0001"}"
-CMDLINE['sn']="${SN}"
+  # Automated Cmdline
+  CMDLINE['syno_hw_version']="${MODELID:-${MODEL}}"
+  CMDLINE['vid']="${VID:-"0x46f4"}"
+  CMDLINE['pid']="${PID:-"0x0001"}"
+  CMDLINE['sn']="${SN}"
 
-# NIC Cmdline
-ETHX=$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)
-ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}")
-ETHN=$(wc -w <<< "${ETHX}")
-ETHM=${ETHM:-${ETHN}}
-NIC=0
-for N in ${ETHX}; do
-  MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
-  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null)"
-  CMDLINE["mac$((++NIC))"]="${MAC}"
-  [ "${NIC}" -ge "${ETHM}" ] && break
-done
-CMDLINE['netif_num']="${NIC}"
+  # NIC Cmdline
+  ETHX=$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)
+  ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}")
+  ETHN=$(wc -w <<< "${ETHX}")
+  ETHM=${ETHM:-${ETHN}}
+  NIC=0
+  for N in ${ETHX}; do
+    MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
+    [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null)"
+    CMDLINE["mac$((++NIC))"]="${MAC}"
+    [ "${NIC}" -ge "${ETHM}" ] && break
+  done
+  CMDLINE['netif_num']="${NIC}"
 
-# Boot Cmdline
-if grep -q "force_junior" /proc/cmdline; then
-  CMDLINE["force_junior"]=""
-fi
-if grep -q "recovery" /proc/cmdline; then
-  CMDLINE["recovery"]=""
-fi
-
-if [ "${EFI}" = "1" ]; then
-   CMDLINE['withefi']=""
- else
-   CMDLINE['noefi']=""
- fi
-
-# DSM Cmdline
-if [ "${KVER:0:1}" = "4" ]; then
-  if [ "${BUS}" != "usb" ]; then
-    SZ=$(blockdev --getsz "${LOADER_DISK}" 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
-    SS=$(blockdev --getss "${LOADER_DISK}" 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
-    SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
-    # Read SATADoM type
-    SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
-    CMDLINE['synoboot_satadom']="${SATADOM:-2}"
-    CMDLINE['dom_szmax']="${SIZE}"
+  # Boot Cmdline
+  if grep -q "force_junior" /proc/cmdline; then
+    CMDLINE["force_junior"]=""
   fi
-  CMDLINE['elevator']="elevator"
-else
-  CMDLINE['split_lock_detect']="off"
-fi
-
-if [ "${DT}" = "true" ]; then
-  CMDLINE['syno_ttyS0']="serial,0x3f8"
-  CMDLINE['syno_ttyS1']="serial,0x2f8"
-else
-  CMDLINE['SMBusHddDynamicPower']="1"
-  CMDLINE['syno_hdd_detect']="0"
-  CMDLINE['syno_hdd_powerup_seq']="0"
-fi
-
-CMDLINE['HddHotplug']="1"
-CMDLINE['vender_format_version']="2"
-CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-CMDLINE['earlyprintk']=""
-CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
-CMDLINE['console']="ttyS0,115200n8"
-CMDLINE['consoleblank']="600"
-CMDLINE['root']="/dev/md0"
-CMDLINE['loglevel']="15"
-CMDLINE['log_buf_len']="32M"
-CMDLINE['rootwait']=""
-CMDLINE['panic']="${KERNELPANIC:-0}"
-CMDLINE['pcie_aspm']="off"
-CMDLINE['nowatchdog']=""
-CMDLINE['mev']="${MEV}"
-
-if [ "${MEV}" = "vmware" ]; then
-  CMDLINE['tsc']="reliable"
-  CMDLINE['pmtmr']="0x0"
-fi
-
-if [ "${HDDSORT}" = "true" ]; then
-  CMDLINE['hddsort']=""
-fi
-if [ "${USBMOUNT}" = "true" ]; then
-  CMDLINE['usbinternal']=""
-fi
-if [ -n "${GOVERNOR}" ]; then
-  CMDLINE['governor']="${GOVERNOR}"
-fi
-
-if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
-  CMDLINE['nox2apic']=""
-fi
-
-if is_in_array "${PLATFORM}" "${IGFXRL[@]}"; then
-  CMDLINE["intel_iommu"]="igfx_off"
-fi
-
-if [ "${PLATFORM}" = "purley" ] || [ "${PLATFORM}" = "broadwellnkv2" ]; then
-  CMDLINE['SASmodel']="1"
-fi
-
-CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
-if ! is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
-  if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
-    [ -n "${CMDLINE['modprobe.blacklist']}" ] && CMDLINE['modprobe.blacklist']+=","
-    CMDLINE['modprobe.blacklist']+="mpt3sas"
+  if grep -q "recovery" /proc/cmdline; then
+    CMDLINE["recovery"]=""
   fi
+
+  if [ "${EFI}" = "1" ]; then
+    CMDLINE['withefi']=""
+  else
+    CMDLINE['noefi']=""
+  fi
+
+  # DSM Cmdline
+  if [ "${KVER:0:1}" = "4" ]; then
+    if [ "${BUS}" != "usb" ]; then
+      SZ=$(blockdev --getsz "${LOADER_DISK}" 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
+      SS=$(blockdev --getss "${LOADER_DISK}" 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
+      SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
+      # Read SATADoM type
+      SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
+      CMDLINE['synoboot_satadom']="${SATADOM:-2}"
+      CMDLINE['dom_szmax']="${SIZE}"
+    fi
+    CMDLINE['elevator']="elevator"
+  else
+    CMDLINE['split_lock_detect']="off"
+  fi
+
+  if [ "${DT}" = "true" ]; then
+    CMDLINE['syno_ttyS0']="serial,0x3f8"
+    CMDLINE['syno_ttyS1']="serial,0x2f8"
+  else
+    CMDLINE['SMBusHddDynamicPower']="1"
+    CMDLINE['syno_hdd_detect']="0"
+    CMDLINE['syno_hdd_powerup_seq']="0"
+  fi
+
+  CMDLINE['HddHotplug']="1"
+  CMDLINE['vender_format_version']="2"
+  CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
+  CMDLINE['earlyprintk']=""
+  CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
+  CMDLINE['console']="ttyS0,115200n8"
+  CMDLINE['consoleblank']="600"
+  CMDLINE['root']="/dev/md0"
+  CMDLINE['loglevel']="15"
+  CMDLINE['log_buf_len']="32M"
+  CMDLINE['rootwait']=""
+  CMDLINE['panic']="${KERNELPANIC:-0}"
+  CMDLINE['pcie_aspm']="off"
+  CMDLINE['nowatchdog']=""
+  CMDLINE['mev']="${MEV}"
+
+  if [ "${MEV}" = "vmware" ]; then
+    CMDLINE['tsc']="reliable"
+    CMDLINE['pmtmr']="0x0"
+  fi
+
+  if [ "${HDDSORT}" = "true" ]; then
+    CMDLINE['hddsort']=""
+  fi
+  if [ "${USBMOUNT}" = "true" ]; then
+    CMDLINE['usbinternal']=""
+  fi
+  if [ -n "${GOVERNOR}" ]; then
+    CMDLINE['governor']="${GOVERNOR}"
+  fi
+
+  if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
+    CMDLINE['nox2apic']=""
+  fi
+
+  if is_in_array "${PLATFORM}" "${IGFXRL[@]}"; then
+    CMDLINE["intel_iommu"]="igfx_off"
+  fi
+
+  if [ "${PLATFORM}" = "purley" ] || [ "${PLATFORM}" = "broadwellnkv2" ]; then
+    CMDLINE['SASmodel']="1"
+  fi
+
+  CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
+  if ! is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
+    if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
+      [ -n "${CMDLINE['modprobe.blacklist']}" ] && CMDLINE['modprobe.blacklist']+=","
+      CMDLINE['modprobe.blacklist']+="mpt3sas"
+    fi
+  fi
+
+  # Read user network settings
+  while IFS=': ' read -r KEY VALUE; do
+    [ -n "${KEY}" ] && CMDLINE["network.${KEY}"]="${VALUE}"
+  done < <(readConfigMap "network" "${USER_CONFIG_FILE}")
+
+  # Read user cmdline
+  while IFS=': ' read -r KEY VALUE; do
+    [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
+  done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
+
+  # Prepare command line
+  CMDLINE_LINE=""
+  for KEY in "${!CMDLINE[@]}"; do
+    VALUE="${CMDLINE[${KEY}]}"
+    CMDLINE_LINE+=" ${KEY}"
+    [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
+  done
+  CMDLINE_LINE="$(echo "${CMDLINE_LINE}" | sed 's/^ //')" # Remove leading space
+  echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 fi
-
-# Read user network settings
-while IFS=': ' read -r KEY VALUE; do
-  [ -n "${KEY}" ] && CMDLINE["network.${KEY}"]="${VALUE}"
-done < <(readConfigMap "network" "${USER_CONFIG_FILE}")
-
-# Read user cmdline
-while IFS=': ' read -r KEY VALUE; do
-  [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
-
-# Prepare command line
-CMDLINE_LINE=""
-for KEY in "${!CMDLINE[@]}"; do
-  VALUE="${CMDLINE[${KEY}]}"
-  CMDLINE_LINE+=" ${KEY}"
-  [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
-done
-CMDLINE_LINE="$(echo "${CMDLINE_LINE}" | sed 's/^ //')" # Remove leading space
-echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
 # Boot
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
@@ -315,7 +318,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   done
 
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
-  if [ ! -f "${TMP_PATH}/.bootlock" ]; then
+  if [ ! -f "${TMP_PATH}/.bootlock" ] && [ -f "${TMP_PATH}/.cmdllock" ]; then
     touch "${TMP_PATH}/.bootlock"
     kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" || die "Failed to load DSM Kernel!"
     [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
