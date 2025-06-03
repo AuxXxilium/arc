@@ -268,7 +268,7 @@ function arcVersion() {
   fi
 
   # Main logic
-  if [ "${ONLYVERSION}" != "true" ]; then
+  if [ "${ONLYVERSION}" != "true" ] && [ "${ARC_MODE}" = "config" ]; then
     if [ "${DT}" = "true" ]; then
       if [ "${SASCONTROLLER}" -ge 1 ]; then
         dialog --backtitle "$(backtitle)" --title "Arc Warning" \
