@@ -727,9 +727,8 @@ function editUserConfig() {
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     dialog --backtitle "$(backtitle)" --title "User Config" \
       --msgbox "User Config changed!\nYou need to rebuild the Loader." 6 40
-    sleep 3
-    clear
-    exec arc.sh
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   fi
   return
 }
