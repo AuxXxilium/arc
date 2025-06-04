@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+#
+# Copyright (C) 2025 AuxXxilium <https://github.com/AuxXxilium>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
 
 ###############################################################################
 # Overlay Init Section
@@ -34,6 +40,16 @@ function backtitle() {
 ###############################################################################
 ###############################################################################
 # Main loop
+
+if [ "${ARC_MODE}" = "update" ] || [ "${ARC_MODE}" = "automated" ]; then
+  LOCKFILE="/tmp/arc_menu.lock"
+  exec 200>"$LOCKFILE"
+  flock -n 200 || {
+    echo "Another Arc instance is running in this mode."
+    exit 1
+  }
+fi
+
 if [ "${ARC_MODE}" = "update" ]; then
   if [ "${ARC_OFFLINE}" != "true" ]; then
     updateLoader
