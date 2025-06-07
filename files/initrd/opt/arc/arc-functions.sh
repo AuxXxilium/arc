@@ -972,7 +972,7 @@ function modulesMenu() {
       MSG+="For example: \Z4evbug,cdc_ether\Zn\n"
       while true; do
         modblacklist="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
-        dialog --backtitle "$(backtitle)" --title "Modules" \
+        dialog --backtitle "$(backtitle)" --title "Modules" --colors \
           --inputbox "${MSG}" 12 70 "${modblacklist}" \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break
