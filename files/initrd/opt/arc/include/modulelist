@@ -15,8 +15,6 @@ F kvm.ko
 # acpi
 N acpi_call.ko
 N acpi_cpufreq.ko
-N processor.ko
-N button.ko
 
 # cpufreq
 N cpufreq_governor.ko
