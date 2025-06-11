@@ -61,7 +61,7 @@ function checkNIC() {
       IP="$(getIP "${N}")"
       if [ -n "${IP}" ]; then
         SPEED=$(ethtool ${N} 2>/dev/null | awk '/Speed:/ {print $2}')
-        if [[ "${IP}" =~ ^169\.254\..* ]]; then
+        if echo "${IP}" | grep -q "^169\.254\."; then
           echo -e "\r${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
         else
           echo -e "\r${DRIVER} (${SPEED}): \033[1;37m${IP}\033[0m"
