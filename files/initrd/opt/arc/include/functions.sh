@@ -605,7 +605,6 @@ function systemCheck () {
   # Check for Arc Patch
   ARC_CONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
   [ -z "${ARC_CONF}" ] && writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-  [ "${OFFLINE}" = "false" ] && updateOffline
   KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
   arc_mode
   getnetinfo

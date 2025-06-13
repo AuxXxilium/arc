@@ -603,19 +603,16 @@ function updateLKMs() {
 ###############################################################################
 # Update Offline
 function updateOffline() {
-  updateConfigs
-  checkHardwareID
-  local ARC_OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  if [ "${ARC_OFFLINE}" != "true" ]; then
-    [ -f "${MODEL_CONFIG_PATH}/data.yml" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml" "${MODEL_CONFIG_PATH}/data.yml.bak" || true
-    if ! curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/refs/heads/main/data.yml" -o "${MODEL_CONFIG_PATH}/data.yml"; then
-      [ -f "${MODEL_CONFIG_PATH}/data.yml.bak" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml.bak" "${MODEL_CONFIG_PATH}/data.yml"
-    else
+  [ -f "${MODEL_CONFIG_PATH}/data.yml" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml" "${MODEL_CONFIG_PATH}/data.yml.bak" || true
+  if curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/refs/heads/main/data.yml" -o "${MODEL_CONFIG_PATH}/data.yml"; then
+    if [ -f "${MODEL_CONFIG_PATH}/data.yml" ]; then
       local FILESIZE=$(stat -c%s "${MODEL_CONFIG_PATH}/data.yml")
       if [ "${FILESIZE}" -lt 3072 ]; then
         [ -f "${MODEL_CONFIG_PATH}/data.yml.bak" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml.bak" "${MODEL_CONFIG_PATH}/data.yml"
       fi
     fi
+  else
+    [ -f "${MODEL_CONFIG_PATH}/data.yml.bak" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml.bak" "${MODEL_CONFIG_PATH}/data.yml"
   fi
   return 0
 }
@@ -625,14 +622,16 @@ DEPENDENCY_DESCRIPTIONS=(
   "Update Addons"
   "Update Modules"
   "Update Custom Kernel"
+  "Update Configs"
   "Update Patches"
   "Update LKMs"
-  "Update Config & Models DB"
+  "Update ModelDB"
 )
 DEPENDENCY_FUNCTIONS=(
   "updateAddons"
   "updateModules"
   "updateCustom"
+  "updateConfigs"
   "updatePatches"
   "updateLKMs"
   "updateOffline"
