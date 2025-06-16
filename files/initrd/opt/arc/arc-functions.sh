@@ -402,6 +402,8 @@ function arcPatch() {
     esac
   fi
 
+  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   arcSettings
 }
