@@ -78,20 +78,6 @@ ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 [ "${BUILDDONE}" = "false" ] && die "Build not completed!"
 [[ -z "${MODELID}" || "${MODELID}" != "${MODEL}" ]] && die "Build not completed! Model mismatch! -> Rebuild loader!"
 
-# HardwareID Check
-if [ "${ARC_PATCH}" = "true" ]; then
-  HARDWAREID="$(readConfigKey "arc.hardwareid" "${USER_CONFIG_FILE}")"
-  HWID="$(genHWID)"
-  if [ "${HARDWAREID}" != "${HWID}" ]; then
-    echo -e "\033[1;31m*** HardwareID mismatch! - You need to reconfigure your Loader - Rebooting to Config Mode! ***\033[0m"
-    rm -f "${USER_CONFIG_FILE}" 2>/dev/null || true
-    [ -f "${S_FILE}.bak" ] && mv -f "${S_FILE}.bak" "${S_FILE}" 2>/dev/null || true
-    sleep 5
-    rebootTo "config"
-    exit 1
-  fi
-fi
-
 if [ "${DSMINFO}" = "true" ]; then
   echo -e "\033[1;37mDSM:\033[0m"
   echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
