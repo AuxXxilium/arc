@@ -32,10 +32,6 @@ on:
         description: "beta"
         default: false
         type: boolean
-      clean:
-        description: "clean"
-        default: false
-        type: boolean
 
 jobs:
   build:
@@ -43,16 +39,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@main
-
-      - name: Delete releases and workflows runs
-        if: ${{ inputs.clean }}
-        uses: ophub/delete-releases-workflows@main
-        with:
-          delete_releases: true
-          releases_keep_latest: 1
-          delete_workflows: false
-          delete_tags: true
-          gh_token: ${{ secrets.BUILD_TOKEN }}
 
       # Install Dependencies
       - name: Install Dependencies
