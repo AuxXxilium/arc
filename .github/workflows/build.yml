@@ -88,8 +88,6 @@ jobs:
           getTheme "files/p1/boot/grub"
           getBuildroot "evo" "bre"
           echo "BRETAG=${BRTAG}" >> $GITHUB_ENV
-          getBuildroot "minimal" "brm"
-          echo "BRMTAG=${BRTAG}" >> $GITHUB_ENV
 
           # Export Dependencies Version to env
           echo "ADDONTAG=${ADDONTAG}" >> $GITHUB_ENV
@@ -150,6 +148,11 @@ jobs:
 
           sudo losetup --detach ${LOOPX}
 
+          echo "Resize Image File"
+          mv -f "${IMAGE_FILE}" "${IMAGE_FILE}.tmp"
+          resizeImg "${IMAGE_FILE}.tmp" "+1024M" "${IMAGE_FILE}"
+          rm -f "${IMAGE_FILE}.tmp"
+
           echo "Image Converter"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
@@ -175,7 +178,7 @@ jobs:
           fi
 
       # Publish a release if beta is true
-      - name: Release
+      - name: Beta Release
         if: success() && env.ARC_VERSION != '' && inputs.beta == true
         uses: ncipollo/release-action@v1
         with:
@@ -211,7 +214,7 @@ jobs:
             update-*.hash
 
       # Publish a release if stable is true
-      - name: Release
+      - name: Stable Release
         if: success() && env.ARC_VERSION != '' && inputs.stable == true
         uses: ncipollo/release-action@v1
         with:
