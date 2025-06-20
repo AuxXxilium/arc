@@ -665,9 +665,10 @@ function _bootwait() {
     echo -en "\r${MSG}"
     busybox w 2>/dev/null | awk '{print $1" "$2" "$4" "$5" "$6}' >WC
     if ! diff WB WC >/dev/null 2>&1; then
-      echo -en "\r\033[1;33mAccess to SSH/Web detected and boot is interrupted.\033[0m\n"
+      echo -en "\r\033[1;33mAccess to SSH/Web detected and boot is interrupted. Rebooting to config...\033[0m\n"
       rm -f WB WC
-      return 1
+      sleep 5
+      rebootTo "config"
     fi
   done
   rm -f WB WC

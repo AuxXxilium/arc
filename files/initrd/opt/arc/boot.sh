@@ -310,6 +310,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
 
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
   touch "${TMP_PATH}/.bootlock"
+  _bootwait
   kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" || die "Failed to load DSM Kernel!"
   [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
   echo -e "\033[1;37mBooting DSM...\033[0m"

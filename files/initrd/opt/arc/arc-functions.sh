@@ -3595,10 +3595,27 @@ function getdiskinfo() {
 ###############################################################################
 # Get Network Info
 function getnetinfo() {
+  BOOTIPWAIT=3
+  IPCON=""
   ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
   for N in ${ETHX}; do
-    IPCON="$(getIP "${N}")"
-    [ -n "${IPCON}" ] && break
+    COUNT=0
+    while true; do
+      CARRIER=$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)
+      if [ "${CARRIER}" = "0" ]; then
+        break
+      elif [ -z "${CARRIER}" ]; then
+        break
+      fi
+      COUNT=$((COUNT + 1))
+      IP="$(getIP "${N}")"
+      if [ -n "${IP}" ]; then
+        if ! echo "${IP}" | grep -q "^169\.254\."; then
+          IPCON="${IP}"
+        fi
+        break
+      fi
+    done
   done
   IPCON="${IPCON:-noip}"
 }
