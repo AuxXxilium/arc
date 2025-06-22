@@ -157,11 +157,11 @@ done
 CMDLINE['netif_num']="${NIC}"
 
 # Boot Cmdline
-if grep -q "force_junior" /proc/cmdline; then
+if [ "${ARC_MODE}" = "reinstall" ]; then
   CMDLINE["force_junior"]=""
-fi
-if grep -q "recovery" /proc/cmdline; then
+elif [ "${ARC_MODE}" = "recovery" ]; then
   CMDLINE["recovery"]=""
+  CMDLINE["force_junior"]=""
 fi
 
 if [ "${EFI}" = "1" ]; then
@@ -224,6 +224,13 @@ if [ "${USBMOUNT}" = "true" ]; then
 fi
 if [ -n "${GOVERNOR}" ]; then
   CMDLINE['governor']="${GOVERNOR}"
+  if [ "${GOVERNOR}" != "performance" ]; then
+    if grep -qi "intel" /proc/cpuinfo; then
+      CMDLINE['intel_pstate']="disable"
+    elif grep -qi "amd" /proc/cpuinfo; then
+      CMDLINE['amd_pstate']="disable"
+    fi
+  fi
 fi
 
 if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
