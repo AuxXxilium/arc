@@ -1756,6 +1756,7 @@ function sysinfo() {
   TIMEOUT=5
   # Print System Informations
   TEXT="\n\Z4> System: ${MEV} | ${BOOTSYS} | ${BUS}\Zn"
+  TEXT+="\n"
   TEXT+="\n  Vendor: \Zb${VENDOR}\Zn"
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
   if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
@@ -1773,20 +1774,24 @@ function sysinfo() {
   TEXT+="\n"
   TEXT+="\n\Z4> Network: ${ETHN} NIC\Zn"
   for N in ${ETHX}; do
+    TEXT+="\n"
     COUNT=0
     DRIVER="$(basename "$(realpath "/sys/class/net/${N}/device/driver" 2>/dev/null)" 2>/dev/null)"
     MAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null)"
+    PCIDN="$(awk -F= '/PCI_SLOT_NAME/ {print $2}' "/sys/class/net/${N}/device/uevent" 2>/dev/null)"
+    LNAME="$(lspci -s ${PCIDN} 2>/dev/null | sed "s/.*: //")"
+    TEXT+="\n  ${N}: ${LNAME:-"unspecified"}"
     while true; do
       if [ -z "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" ]; then
-        TEXT+="\n   ${DRIVER} (${MAC}): \ZbDOWN\Zn"
+        TEXT+="\n  ${DRIVER} (${MAC}): \ZbDOWN\Zn"
         break
       fi
       if [ "0" = "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" ]; then
-        TEXT+="\n   ${DRIVER} (${MAC}): \ZbNOT CONNECTED\Zn"
+        TEXT+="\n  ${DRIVER} (${MAC}): \ZbNOT CONNECTED\Zn"
         break
       fi
       if [ "${COUNT}" -ge "${TIMEOUT}" ]; then
-        TEXT+="\n   ${DRIVER} (${MAC}): \ZbTIMEOUT\Zn"
+        TEXT+="\n  ${DRIVER} (${MAC}): \ZbTIMEOUT\Zn"
         break
       fi
       COUNT=$((${COUNT} + 1))
@@ -1794,9 +1799,9 @@ function sysinfo() {
       if [ -n "${IP}" ]; then
         SPEED="$(ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')"
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          TEXT+="\n   ${DRIVER} (${SPEED} | ${MAC}): \ZbLINK LOCAL (No DHCP server found.)\Zn"
+          TEXT+="\n  ${DRIVER} (${SPEED} | ${MAC}): \ZbLINK LOCAL (No DHCP server found.)\Zn"
         else
-          TEXT+="\n   ${DRIVER} (${SPEED} | ${MAC}): \Zb${IP}\Zn"
+          TEXT+="\n  ${DRIVER} (${SPEED} | ${MAC}): \Zb${IP}\Zn"
         fi
         break
       fi
@@ -1805,13 +1810,16 @@ function sysinfo() {
   done
   # Print Config Informations
   TEXT+="\n\n\Z4> Arc: ${ARC_VERSION} (${ARC_BUILD})\Zn"
+  TEXT+="\n"
   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"
   TEXT+="\n  HardwareID: \Zb${HWID}\Zn"
   TEXT+="\n  Offline Mode: \Zb${ARC_OFFLINE}\Zn"
+  TEXT+="\n"
   if [ "${CONFDONE}" = "true" ]; then
     TEXT+="\n\Z4> DSM ${DSMVER} (${BUILDNUM}): ${MODELID:-${MODEL}}\Zn"
+    TEXT+="\n"
     TEXT+="\n  Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
     TEXT+="\n  Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
     TEXT+="\n  Arc Patch: \Zb${ARC_PATCH}\Zn"
@@ -1819,8 +1827,8 @@ function sysinfo() {
     TEXT+="\n  Directboot: \Zb${DIRECTBOOT}\Zn"
     TEXT+="\n  Addons selected: \Zb${ADDONSINFO}\Zn"
   else
+    TEXT+="\n  Config not completed!"
     TEXT+="\n"
-    TEXT+="\n  Config not completed!\n"
   fi
   TEXT+="\n  Modules loaded: \Zb${MODULESINFO}\Zn"
   if [ "${CONFDONE}" = "true" ]; then
@@ -1829,6 +1837,7 @@ function sysinfo() {
   fi
   TEXT+="\n"
   TEXT+="\n\Z4> Settings\Zn"
+  TEXT+="\n"
   if [[ "${REMAP}" = "acports" || "${REMAP}" = "maxports" ]]; then
     TEXT+="\n  SataPortMap | DiskIdxMap: \Zb${PORTMAP} | ${DISKMAP}\Zn"
   elif [ "${REMAP}" = "remap" ]; then
@@ -1850,6 +1859,7 @@ function sysinfo() {
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
   TEXT+="\n\Z4> Storage\Zn"
+  TEXT+="\n"
   TEXT+="\n  Additional Controller: \Zb${EXTERNALCONTROLLER}\Zn"
   TEXT+="\n  Disks | Internal: \Zb${DRIVES} | ${HARDDRIVES}\Zn"
   TEXT+="\n"
