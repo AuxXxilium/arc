@@ -160,18 +160,29 @@ echo
 
 # Decide if boot automatically
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-if [ "${ARC_MODE}" = "config" ]; then
-  echo -e "\033[1;34mStarting Config Mode...\033[0m"
-elif [ "${ARC_MODE}" = "automated" ]; then
-  echo -e "\033[1;34mStarting automated Build Mode...\033[0m"
-elif [ "${ARC_MODE}" = "update" ]; then
-  echo -e "\033[1;34mStarting Update Mode...\033[0m"
-elif [ "${BUILDDONE}" = "true" ] && [ "${ARC_MODE}" = "dsm" ]; then
-  echo -e "\033[1;34mStarting DSM Mode...\033[0m"
-  exec boot.sh && exit 0
-else
-  echo -e "\033[1;34mStarting Config Mode...\033[0m"
-fi
+
+case "${ARC_MODE}" in
+  config)
+    echo -e "\033[1;34mStarting Config Mode...\033[0m"
+    ;;
+  automated)
+    echo -e "\033[1;34mStarting automated Build Mode...\033[0m"
+    ;;
+  update)
+    echo -e "\033[1;34mStarting Update Mode...\033[0m"
+    ;;
+  dsm|reinstall|recovery)
+    if [ "${BUILDDONE}" = "true" ]; then
+      echo -e "\033[1;34mStarting DSM Mode...\033[0m"
+      exec boot.sh && exit 0
+    else
+      echo -e "\033[1;34mStarting Config Mode...\033[0m"
+    fi
+    ;;
+  *)
+    echo -e "\033[1;34mStarting Config Mode...\033[0m"
+    ;;
+esac
 echo
 
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
