@@ -122,7 +122,7 @@ for N in ${ETHX}; do
       ip route add default via "${IPRA[2]}" dev "${N}" 2>/dev/null || true
     fi
     if [ -n "${IPRA[3]:-${IPRA[2]}}" ]; then
-      sed -i "/nameserver ${IPRA[3]:-${IPRA[2]}}/d" /etc/resolv.conf
+      sed -i '/^nameserver /d' /etc/resolv.conf
       echo "nameserver ${IPRA[3]:-${IPRA[2]}}" >>/etc/resolv.conf
     fi
     sleep 1

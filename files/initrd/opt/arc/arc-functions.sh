@@ -2109,7 +2109,7 @@ function networkdiag() {
     if [ "${ARC_OFFLINE}" = "true" ]; then
       echo -e "Offline Mode: ${ARC_OFFLINE}"
     else
-      websites=("google.com" "github.com" "auxxxilium.tech")
+      websites=("github.com" "auxxxilium.tech")
       for website in "${websites[@]}"; do
         if ping -I "${N}" -c 1 "${website}" &> /dev/null; then
           echo -e "Connection to ${website} is successful."
@@ -2225,7 +2225,7 @@ function staticIPMenu() {
                 ip route add default via ${gateway} dev ${N}
               fi
               if [ -n "${dnsname:-${gateway}}" ]; then
-                sed -i "/nameserver ${dnsname:-${gateway}}/d" /etc/resolv.conf
+                sed -i '/^nameserver /d' /etc/resolv.conf
                 echo "nameserver ${dnsname:-${gateway}}" >>/etc/resolv.conf
               fi
             fi

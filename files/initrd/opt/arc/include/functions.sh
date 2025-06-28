@@ -41,7 +41,6 @@ function arc_mode() {
   fi
 }
 
-
 ###############################################################################
 # Check for NIC and IP
 function checkNIC() {
