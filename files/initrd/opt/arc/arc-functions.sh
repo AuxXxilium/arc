@@ -803,11 +803,11 @@ function modulesMenu() {
     rm -f "${TMP_PATH}/menu"
     {
       echo "1 \"Show/Select Modules\""
-      echo "2 \"Select loaded Modules\""
-      echo "3 \"Upload a external Module\""
+      echo "2 \"Add from expanded Modules\""
+      echo "3 \"Only select loaded Modules\""
       echo "4 \"Deselect i915 with dependencies\""
-      echo "5 \"Edit Modules that need to be copied to DSM\""
-      echo "6 \"Blacklist Modules to prevent loading\""
+      echo "5 \"Edit Moduleslist for Modules copied to DSM\""
+      echo "6 \"Blacklist Modules to prevent loading in DSM\""
     } >"${TMP_PATH}/menu"
     dialog --backtitle "$(backtitle)" --title "Modules" \
       --cancel-label "Exit" --menu "Choose an option" 0 0 0 --file "${TMP_PATH}/menu" \
@@ -870,8 +870,123 @@ function modulesMenu() {
       done
       ;;
     2)
+      PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+      PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+      KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+      is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+      MODULES_TMP_PATH="/tmp/arc-modules-ex"
+      if [ -z "${KVERP}" ]; then
+        dialog --backtitle "$(backtitle)" --title "Modules" \
+          --msgbox "No Kernel Version found, please select a Platform and Product Version first." 0 0
+        continue
+      fi
+      idx=0
+      while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
+        local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules-ex/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+        if [ -n "${TAG}" ]; then
+          break
+        fi
+        sleep 3
+        idx=$((${idx} + 1))
+      done
+      if [ -n "${TAG}" ]; then
+        mkdir -p "${MODULES_TMP_PATH}"
+        export URL="https://github.com/AuxXxilium/arc-modules-ex/releases/download/${TAG}/${PLATFORM}-${KVERP}.tgz"
+        export TAG="${TAG}"
+        {
+          {
+            curl -kL "${URL}" -o "${MODULES_TMP_PATH}/${PLATFORM}-${KVERP}.tgz" 2>&3 3>&-
+          } 3>&1 >&4 4>&- |
+          perl -C -lane '
+            BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
+            $pcent = $F[0];
+            $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
+            s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
+            if ($. <= 3) {
+              $header .= "$_\n";
+              $/ = "\r" if $. == 2
+            } else {
+              print "XXX\n$pcent\n$header$_\nXXX"
+            }' 4>&- |
+          dialog --gauge "Download Modules: ${TAG}..." 14 72 4>&-
+        } 4>&1
+        TGZ1="${MODULES_PATH}/${PLATFORM}-${KVERP}.tgz"
+        TGZ2="${MODULES_TMP_PATH}/${PLATFORM}-${KVERP}.tgz"
+        TMP1="$(mktemp -d)"
+        TMP2="$(mktemp -d)"
+        TMPOUT="$(mktemp -d)"
+        CHECKLIST="${TMP_PATH}/modcompare"
+        rm -f "$CHECKLIST"
+
+        tar -xzf "$TGZ1" -C "$TMP1"
+        tar -xzf "$TGZ2" -C "$TMP2"
+
+        MODS1=($(find "$TMP1" -type f -name '*.ko' -exec basename {} \; | sort -u))
+        MODS2=($(find "$TMP2" -type f -name '*.ko' -exec basename {} \; | sort -u))
+        ALL_MODS=($(printf "%s\n%s\n" "${MODS1[@]}" "${MODS2[@]}" | sort -u))
+
+        for MOD in "${ALL_MODS[@]}"; do
+          DESC=""
+          MODNAME="${MOD%.ko}"
+          if [ -f "$TMP2/$MOD" ]; then
+            DESC="$(modinfo -F description "$TMP2/$MOD" 2>/dev/null | head -1)"
+            [ -z "$DESC" ] && DESC="No description"
+          fi
+        
+          if [[ " ${MODS1[*]} " == *" $MOD "* && " ${MODS2[*]} " == *" $MOD "* ]]; then
+            if ! cmp -s "$TMP1/$MOD" "$TMP2/$MOD"; then
+              echo "\"$MODNAME\" \"\Z1Different\Zn - $DESC\" off" >>"$CHECKLIST"
+            fi
+          elif [[ " ${MODS2[*]} " == *" $MOD "* ]]; then
+            echo "\"$MODNAME\" \"\Z1Only in Expanded\Zn - $DESC\" off" >>"$CHECKLIST"
+          else
+            echo "\"$MODNAME\" \"\Z1Only in Loader\Zn\" off" >>"$CHECKLIST"
+          fi
+        done
+
+        dialog --title "Expanded Modules" --colors \
+          --checklist "Select modules to REPLACE in Loader with version from Expanded:" 0 0 0 \
+          --file "$CHECKLIST" 2>"${TMP_PATH}/modsel"
+
+        [ $? -ne 0 ] && { rm -rf "$TMP1" "$TMP2" "$TMPOUT"; return 1; }
+        SELMODS=$(cat "${TMP_PATH}/modsel" | tr -d '"')
+
+        cp -f "$TMP1"/*.ko "$TMPOUT/" 2>/dev/null
+
+        REPLACED_LIST=""
+        for MOD in $SELMODS; do
+          MODFILE="${MODNAME}.ko"
+          MODNAME="${MODNAME//[[:space:]]/}"
+          for DEP in $(getdepends "${PLATFORM}" "${KVERP}" "${MODNAME}"); do
+            [ -f "$TMP2/$DEP" ] && cp -f "$TMP2/$DEP" "$TMPOUT/$DEP"
+            REPLACED_LIST+="$DEP\n"
+          done
+        done
+
+        tar -czf "$TGZ1" -C "$TMPOUT" .
+
+        if [ -n "$SELMODS" ]; then
+          FIRMWARE_URL="https://github.com/AuxXxilium/arc-modules-ex/releases/download/${TAG}/firmware.tgz"
+          FIRMWARE_PATH="${MODULES_TMP_PATH}/firmware.tgz"
+          FIRMWARE_TMP="$(mktemp -d)"
+          curl -skL "$FIRMWARE_URL" -o "$FIRMWARE_PATH"
+          if [ -f "$FIRMWARE_PATH" ]; then
+            tar -xzf "$FIRMWARE_PATH" -C "$FIRMWARE_TMP"
+            tar -czf "${MODULES_PATH}/firmware.tgz" -C "$FIRMWARE_TMP" .
+            rm -rf "$FIRMWARE_TMP"
+          fi
+        fi
+
+        dialog --title "Expanded Modules" --msgbox "Replaced Modules:\n$REPLACED_LIST" 20 60
+
+        rm -rf "$TMP1" "$TMP2" "$TMPOUT" "$CHECKLIST" "${TMP_PATH}/modsel"
+        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      fi
+      ;;
+    3)
       dialog --backtitle "$(backtitle)" --title "Modules" \
-        --infobox "Select loaded modules" 0 0
+        --infobox "Only select loaded modules" 0 0
       KOLIST=""
       for I in $(lsmod 2>/dev/null | awk -F' ' '{print $1}' | grep -v 'Module'); do
         KOLIST+="$(getdepends "${PLATFORM}" "${KVERP}" "${I}") ${I} "
@@ -883,49 +998,6 @@ function modulesMenu() {
       done
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      ;;
-    3)
-      if ! tty 2>/dev/null | grep -q "/dev/pts"; then
-        MSG=""
-        MSG+="This feature is only available when accessed via ssh (Requires a terminal that supports ZModem protocol)."
-        dialog --backtitle "$(backtitle)" --title "Modules" \
-          --msgbox "${MSG}" 0 0
-        return
-      fi
-      MSG=""
-      MSG+="This function is experimental and dangerous. If you don't know much, please exit.\n"
-      MSG+="The imported .ko of this function will be implanted into the corresponding arch's modules package, which will affect all models of the arch.\n"
-      MSG+="This program will not determine the availability of imported modules or even make type judgments, as please double check if it is correct.\n"
-      MSG+="If you want to remove it, please go to the \"Update Menu\" -> \"Update Dependencies\" to forcibly update the modules. All imports will be reset.\n"
-      MSG+="Do you want to continue?"
-      dialog --backtitle "$(backtitle)" --title "Modules" \
-        --yesno "${MSG}" 0 0
-      [ $? -ne 0 ] && continue
-      dialog --backtitle "$(backtitle)" --title "Modules" \
-        --msgbox "Please upload the *.ko file." 0 0
-      TMP_UP_PATH=${TMP_PATH}/users
-      USER_FILE=""
-      rm -rf ${TMP_UP_PATH}
-      mkdir -p ${TMP_UP_PATH}
-      pushd ${TMP_UP_PATH}
-      rz -be
-      for F in $(ls -A 2>/dev/null); do
-        USER_FILE=${F}
-        break
-      done
-      popd
-      if [ -n "${USER_FILE}" ] && [ "${USER_FILE##*.}" = "ko" ]; then
-        addToModules ${PLATFORM} "${KVERP}" "${TMP_UP_PATH}/${USER_FILE}"
-        [ -f "${MODULES_PATH}/VERSION" ] && rm -f "${MODULES_PATH}/VERSION"
-        dialog --backtitle "$(backtitle)" --title "Modules" \
-          --msgbox "$(printf "Module '%s' added to %s-%s" "${USER_FILE}" "${PLATFORM}" "${KVERP}")" 0 0
-        rm -f "${TMP_UP_PATH}/${USER_FILE}"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      else
-        dialog --backtitle "$(backtitle)" --title "Modules" \
-          --msgbox "Not a valid file, please try again!" 0 0
-      fi
       ;;
     4)
       DEPS="$(getdepends "${PLATFORM}" "${KVERP}" i915) i915"
