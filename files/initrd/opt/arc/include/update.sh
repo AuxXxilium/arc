@@ -226,19 +226,35 @@ function upgradeLoader() {
     unzip -oq "${TMP_PATH}/arc.img.zip" -d "${TMP_PATH}"
     rm -f "${TMP_PATH}/arc.img.zip"
     dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
-      --infobox "Installing new Loader Image..." 3 50
+      --infobox "Installing new Loader Image to all partitions..." 3 60
     umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
-    local IMG_FILE
-    IMG_FILE="${TMP_PATH}/arc.img"
-    if dd if="${IMG_FILE}" of=$(blkid | grep 'LABEL="ARC3"' | cut -d3 -f1) bs=1M conv=fsync; then
-      rm -f "${IMG_FILE}"
-      dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
-        --infobox "Upgrade done! -> Rebooting..." 3 50
-      sleep 2
-      exec reboot
+
+    local IMG_FILE="${TMP_PATH}/arc.img"
+    # Find the parent device (e.g., /dev/sda) for ARC1
+    local DEV1 DEV2 DEV3 DEV
+    DEV1=$(blkid | grep 'LABEL="ARC1"' | cut -d: -f1)
+    DEV2=$(blkid | grep 'LABEL="ARC2"' | cut -d: -f1)
+    DEV3=$(blkid | grep 'LABEL="ARC3"' | cut -d: -f1)
+    # Get the base device (e.g., /dev/sda from /dev/sda1)
+    DEV=$(echo "$DEV1" | sed 's/[0-9]*$//')
+
+    if [ -b "$DEV" ] && [ -f "$IMG_FILE" ]; then
+      # Write the whole image to the device (overwriting all partitions)
+      if dd if="$IMG_FILE" of="$DEV" bs=1M conv=fsync; then
+        rm -f "$IMG_FILE"
+        dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
+          --infobox "Upgrade done! -> Rebooting..." 3 50
+        sleep 2
+        exec reboot
+      else
+        dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
+          --infobox "Upgrade failed!\nTry again later." 0 0
+        sleep 3
+        exec reboot
+      fi
     else
       dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
-        --infobox "Upgrade failed!\nTry again later." 0 0
+        --infobox "Device not found!\nTry again later." 0 0
       sleep 3
       exec reboot
     fi
