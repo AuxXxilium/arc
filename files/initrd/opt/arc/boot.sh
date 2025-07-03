@@ -59,7 +59,7 @@ BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
 SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-CPU="$(echo $(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}'))"
+CPU="$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | sed -E 's/@ [0-9.]+[[:space:]]*GHz//g' | sed -E 's/ CPU//g')"
 RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')"
 MEV="$(virt-what 2>/dev/null | head -1)"
@@ -287,10 +287,9 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   grub-editenv ${USER_GRUBENVFILE} unset next_entry
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
-  [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
+  [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
   if [ "${ARC_PATCH}" = "true" ]; then
-    echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
-    echo -e "\033[1;34mUsing ${NIC} NIC for Arc Patch\033[0m"
+    echo -e "\033[1;37mDetected ${ETHN} NIC / ${NIC} NIC for Arc Patch:\033[0m"
   else
     echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
   fi
@@ -317,8 +316,8 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
 
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
   touch "${TMP_PATH}/.bootlock"
-  _bootwait
-  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" || die "Failed to load DSM Kernel!"
+  #_bootwait
+  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" || die "Failed to load DSM Kernel!"
   [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
   echo -e "\033[1;37mBooting DSM...\033[0m"
   exit 0
