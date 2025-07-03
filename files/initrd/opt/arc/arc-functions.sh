@@ -3402,7 +3402,7 @@ function getnet() {
     for N in "${ETHX[@]}"; do
       while true; do
         dialog --backtitle "$(backtitle)" --title "Mac Setting" \
-          --inputbox "Type a custom Mac for ${N} (Eq. 001132a1b2c3).\nA custom Mac will not be applied to NIC!" 8 50 \
+          --inputbox "Type a custom Mac for ${N} (Eq. 001132a1b2c3).\nThe Mac will not be applied to NIC!" 8 50 \
           2>"${TMP_PATH}/resp"
         [ $? -ne 0 ] && break
         MAC="$(cat "${TMP_PATH}/resp")"
