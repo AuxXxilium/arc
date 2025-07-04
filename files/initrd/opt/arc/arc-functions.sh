@@ -184,9 +184,6 @@ function arcVersion() {
       initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
-      if [ "$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp' | sed -n 's|.*/\(hwmon.*\/temp1_input\).*|\1|p' | wc -l)" -gt 0 ]; then
-        initConfigKey "addons.fancontrol" "" "${USER_CONFIG_FILE}"
-      fi
     else
       initConfigKey "addons.vmtools" "" "${USER_CONFIG_FILE}"
     fi
