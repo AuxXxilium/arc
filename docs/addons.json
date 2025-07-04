@@ -1,24 +1,4 @@
 {
-    "abbpatch": {
-        "system": false,
-        "description": "Activate Active Backup for Business",
-        "platforms": [
-            "apollolake",
-            "broadwell",
-            "broadwellnk",
-            "broadwellnkv2",
-            "broadwellntbap",
-            "denverton",
-            "geminilake",
-            "purley",
-            "r1000",
-            "v1000",
-            "epyc7002",
-            "geminilakenk",
-            "r1000nk",
-            "v1000nk"
-        ]
-    },
     "acpid": {
         "system": false,
         "description": "Daemon for delivering ACPI events (Powerbutton, etc.)",
@@ -41,7 +21,7 @@
     },
     "addincards": {
         "system": false,
-        "description": "Remove the Modelrestrictions for official Addin Cards",
+        "description": "Add support for Addin Cards (e.q. QNAP QM2 or Syno E10Mxx / M2Dxx cards)",
         "platforms": [
             "apollolake",
             "broadwell",
@@ -361,18 +341,8 @@
     },
     "fancontrol": {
         "system": false,
-        "description": "Control fan speeds from DSM (Incl. sensors addon, only for supported devices).",
+        "description": "Control fan PWM from DSM (Depending on sensors addon, only for supported devices).",
         "platforms": [
-            "apollolake",
-            "broadwell",
-            "broadwellnk",
-            "broadwellnkv2",
-            "broadwellntbap",
-            "denverton",
-            "geminilake",
-            "purley",
-            "r1000",
-            "v1000",
             "epyc7002",
             "geminilakenk",
             "r1000nk",
@@ -447,26 +417,6 @@
             "broadwellnk",
             "broadwellntbap",
             "denverton"
-        ]
-    },
-    "mailplus": {
-        "system": false,
-        "description": "Dynamic License Patch for MailPlus-Server 3.3.0",
-        "platforms": [
-            "apollolake",
-            "broadwell",
-            "broadwellnk",
-            "broadwellnkv2",
-            "broadwellntbap",
-            "denverton",
-            "geminilake",
-            "purley",
-            "r1000",
-            "v1000",
-            "epyc7002",
-            "geminilakenk",
-            "r1000nk",
-            "v1000nk"
         ]
     },
     "memory": {
@@ -777,26 +727,6 @@
             "v1000nk"
         ]
     },
-    "surveillance": {
-        "system": false,
-        "description": "Dynamic License Patch for Surveillance 9.2.0 / 9.2.3",
-        "platforms": [
-            "apollolake",
-            "broadwell",
-            "broadwellnk",
-            "broadwellnkv2",
-            "broadwellntbap",
-            "denverton",
-            "geminilake",
-            "purley",
-            "r1000",
-            "v1000",
-            "epyc7002",
-            "geminilakenk",
-            "r1000nk",
-            "v1000nk"
-        ]
-    },
     "updatenotify": {
         "system": false,
         "description": "Arc Loader Update Notifications in DSM",
@@ -820,26 +750,6 @@
     "ups": {
         "system": false,
         "description": "Force UPS to shut down in Standby mode",
-        "platforms": [
-            "apollolake",
-            "broadwell",
-            "broadwellnk",
-            "broadwellnkv2",
-            "broadwellntbap",
-            "denverton",
-            "geminilake",
-            "purley",
-            "r1000",
-            "v1000",
-            "epyc7002",
-            "geminilakenk",
-            "r1000nk",
-            "v1000nk"
-        ]
-    },
-    "vmm": {
-        "system": false,
-        "description": "Dynamic License Patch for VMM 2.7.0",
         "platforms": [
             "apollolake",
             "broadwell",
