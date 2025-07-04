@@ -951,13 +951,22 @@ function modulesMenu() {
         cp -f "$TMP1"/*.ko "$TMPOUT/" 2>/dev/null
 
         REPLACED_LIST=""
+        DEPS_TO_COPY=()
         for MOD in $SELMODS; do
-          MODFILE="${MODNAME}.ko"
-          MODNAME="${MODNAME//[[:space:]]/}"
+          MODNAME="${MOD//[[:space:]]/}"
+          DEPS_TO_COPY+=("$MODNAME")
           for DEP in $(getdepends "${PLATFORM}" "${KVERP}" "${MODNAME}"); do
-            [ -f "$TMP2/$DEP" ] && cp -f "$TMP2/$DEP" "$TMPOUT/$DEP"
+            DEPS_TO_COPY+=("$DEP")
             REPLACED_LIST+="$DEP\n"
           done
+        done
+        
+        DEPS_TO_COPY=($(printf "%s\n" "${DEPS_TO_COPY[@]}" | sort -u))
+        REPLACED_LIST="$(printf "%s\n" "${REPLACED_LIST}" | sort -u  | sed 's/^\s*//; s/\s*$//')"
+        [ -z "$REPLACED_LIST" ] && REPLACED_LIST="No modules replaced."
+
+        for DEP in "${DEPS_TO_COPY[@]}"; do
+          [ -f "$TMP2/$DEP" ] && cp -f "$TMP2/$DEP" "$TMPOUT/$DEP"
         done
 
         tar -czf "$TGZ1" -C "$TMPOUT" .
