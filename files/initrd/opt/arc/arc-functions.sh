@@ -3094,38 +3094,6 @@ function resetDSMNetwork {
 }
 
 ###############################################################################
-# Mount DSM Storage Pools
-function mountDSM() {
-  vgscan >/dev/null 2>&1
-  vgchange -ay >/dev/null 2>&1
-  VOLS="$(lvdisplay 2>/dev/null | grep 'LV Path' | grep -v 'syno_vg_reserved_area' | awk '{print $3}')"
-  if [ -z "${VOLS}" ]; then
-    dialog --backtitle "$(backtitle)" --title "Mount DSM Pool" \
-      --msgbox "No storage pool found!" 0 0
-    return
-  fi
-  for I in ${VOLS}; do
-    NAME="$(echo "${I}" | awk -F'/' '{print $3"_"$4}')"
-    mkdir -p "/mnt/DSM/${NAME}"
-    umount "${I}" 2>/dev/null
-    mount ${I} "/mnt/DSM/${NAME}" -o ro
-  done
-  MSG="Storage pools are mounted at /mnt/DSM.\nPlease check them via ${IPCON}:7304."
-  dialog --backtitle "$(backtitle)" --title "Mount DSM Pool" \
-    --msgbox "${MSG}" 6 50
-  if [ -n "${VOLS}" ]; then
-    dialog --backtitle "$(backtitle)" --title "Mount DSM Pool" \
-      --yesno "Unmount all storage pools?" 5 30
-    [ $? -ne 0 ] && return
-    for I in ${VOLS}; do
-      umount "${I}" 2>/dev/null
-    done
-    rm -rf /mnt/DSM
-  fi
-  return
-}
-
-###############################################################################
 # CPU Governor Menu
 function governorMenu () {
   governorSelection

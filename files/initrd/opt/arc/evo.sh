@@ -69,7 +69,6 @@ function advancedMenu() {
         write_menu "t" "Change User Password"
         write_menu "J" "Reset Network Config"
         write_menu "T" "Disable all scheduled Tasks"
-        write_menu "M" "Mount DSM Storage Pool"
         write_menu "l" "Edit User Config"
         write_menu "s" "Allow Downgrade Version"
       else
@@ -117,7 +116,6 @@ function advancedMenu() {
           t) resetPassword; NEXT="t" ;;
           N) addNewDSMUser; NEXT="N" ;;
           J) resetDSMNetwork; NEXT="J" ;;
-          M) mountDSM; NEXT="M" ;;
           T) disablescheduledTasks; NEXT="T" ;;
           B) getbackup; NEXT="B" ;;
           # Loader Section
