@@ -54,6 +54,8 @@ function updateLoader() {
     dialog --backtitle "$(backtitle)" --title "Update Loader" \
       --infobox "Updating Loader..." 3 50
     if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update"; then
+      rm -rf "/mnt/addons" "/mnt/modules" "/mnt/custom" "/mnt/patches" "/mnt/lkms"
+      mkdir -p "/mnt/addons" "/mnt/modules" "/mnt/custom" "/mnt/patches" "/mnt/lkms"
       cp -rf "${TMP_PATH}/update"/* "/mnt"
       rm -rf "${TMP_PATH}/update"
       rm -f "${TMP_PATH}/update.zip"
@@ -154,6 +156,8 @@ function updateLoaderBeta() {
     dialog --backtitle "$(backtitle)" --title "Update Loader" \
       --infobox "Updating Loader..." 3 50
     if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update"; then
+      rm -rf "/mnt/addons" "/mnt/modules" "/mnt/custom" "/mnt/patches" "/mnt/lkms"
+      mkdir -p "/mnt/addons" "/mnt/modules" "/mnt/custom" "/mnt/patches" "/mnt/lkms"
       cp -rf "${TMP_PATH}/update"/* "/mnt"
       rm -rf "${TMP_PATH}/update"
       rm -f "${TMP_PATH}/update.zip"
