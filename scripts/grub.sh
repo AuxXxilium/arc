@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2023 AuxXxilium <https://github.com/AuxXxilium> and Ing <https://github.com/wjz304>
+# Copyright (C) 2023 AuxXxilium <https://github.com/AuxXxilium>
 #
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
@@ -29,7 +29,7 @@ done
 popd
 
 rm -f grub.img
-dd if=/dev/zero of=grub.img bs=1M seek=1024 count=0
+dd if=/dev/zero of=grub.img bs=1M seek=1850 count=0
 echo -e "n\np\n1\n\n+50M\nn\np\n2\n\n+50M\nn\np\n3\n\n\na\n1\nw\nq\n" | fdisk grub.img
 fdisk -l grub.img
 

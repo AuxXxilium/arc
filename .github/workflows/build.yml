@@ -134,10 +134,10 @@ jobs:
 
           sudo losetup --detach ${LOOPX}
 
-          echo "Resize Image File"
-          mv -f "${IMAGE_FILE}" "${IMAGE_FILE}.tmp"
-          resizeImg "${IMAGE_FILE}.tmp" "+1024M" "${IMAGE_FILE}"
-          rm -f "${IMAGE_FILE}.tmp"
+          # echo "Resize Image File"
+          # mv -f "${IMAGE_FILE}" "${IMAGE_FILE}.tmp"
+          # resizeImg "${IMAGE_FILE}.tmp" "+1024M" "${IMAGE_FILE}"
+          # rm -f "${IMAGE_FILE}.tmp"
 
           echo "Image Converter"
           qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
