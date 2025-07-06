@@ -7,7 +7,7 @@ function availableAddons() {
     return 1
   fi
   MACHINE="$(virt-what 2>/dev/null | head -1)"
-  [ -z "${MACHINE}" ] && MACHINE="physical" || true
+  [ -z "${MACHINE}" ] && MACHINE="physical"
   for D in $(find "${ADDONS_PATH}" -maxdepth 1 -type d 2>/dev/null | sort); do
     [ ! -f "${D}/manifest.yml" ] && continue
     local ADDON=$(basename "${D}")
@@ -15,7 +15,24 @@ function availableAddons() {
     [ "${SYSTEM}" = true ] && continue
     local AVAILABLE="$(readConfigKey "${1}" "${D}/manifest.yml")"
     [ "${AVAILABLE}" = false ] && continue
-    if [ "${MACHINE}" != "physical" ] && ( [ "${ADDON}" = "cpufreqscaling" ] || [ "${ADDON}" = "fancontrol" ] ); then
+    if [ "${MACHINE}" = "physical" ]; then
+      if [ "${ADDON}" = "ledcontrol" ]; then
+        if is_in_array "${1}" "${KVER5L[@]}"; then
+          UGREEN_CHECK=$(dmidecode --string system-product-name 2>/dev/null)
+          case "${UGREEN_CHECK}" in
+            DXP6800*|DX4600*|DX4700*|DXP2800*|DXP4800*|DXP8800*)
+              ;;
+            *)
+              continue
+              ;;
+          esac
+        else
+          continue
+        fi
+      elif [ "${ADDON}" = "fancontrol" ] && ! is_in_array "${1}" "${KVER5L[@]}"; then
+        continue
+      fi
+    elif [ "${MACHINE}" != "physical" ] && { [ "${ADDON}" = "cpufreqscaling" ] || [ "${ADDON}" = "fancontrol" ] || [ "${ADDON}" = "ledcontrol" ]; }; then
       continue
     fi
     local DESC="$(readConfigKey "description" "${D}/manifest.yml")"

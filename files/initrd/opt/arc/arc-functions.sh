@@ -184,6 +184,16 @@ function arcVersion() {
       initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
+      if is_in_array "${PLATFORM}" "${KVER5L[@]}"; then
+          if command -v dmidecode >/dev/null 2>&1; then
+              UGREEN_CHECK=$(dmidecode --string system-product-name 2>/dev/null)
+              case "${UGREEN_CHECK}" in
+                DXP6800*|DX4600*|DX4700*|DXP2800*|DXP4800*|DXP8800*)
+                  initConfigKey "addons.ledcontrol" "" "${USER_CONFIG_FILE}"
+                  ;;
+              esac
+          fi
+      fi
     else
       initConfigKey "addons.vmtools" "" "${USER_CONFIG_FILE}"
     fi
