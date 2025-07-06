@@ -182,8 +182,6 @@ if [ "${KVER:0:1}" = "4" ]; then
     CMDLINE['dom_szmax']="${SIZE}"
   fi
   CMDLINE['elevator']="elevator"
-else
-  CMDLINE['split_lock_detect']="off"
 fi
 
 if [ "${DT}" = "true" ]; then
@@ -198,17 +196,11 @@ fi
 CMDLINE['HddHotplug']="1"
 CMDLINE['vender_format_version']="2"
 CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-CMDLINE['earlyprintk']=""
-CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
-CMDLINE['console']="ttyS0,115200n8"
 CMDLINE['consoleblank']="600"
 CMDLINE['root']="/dev/md0"
 CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
-CMDLINE['rootwait']=""
 CMDLINE['panic']="${KERNELPANIC:-0}"
-CMDLINE['pcie_aspm']="off"
-CMDLINE['nowatchdog']=""
 CMDLINE['mev']="${MEV}"
 
 if [ "${MEV}" = "vmware" ]; then
@@ -223,16 +215,13 @@ if [ "${USBMOUNT}" = "true" ]; then
   CMDLINE['usbinternal']=""
 fi
 if [ -n "${GOVERNOR}" ]; then
-  CMDLINE['governor']="${GOVERNOR}"
-  # if [ "${GOVERNOR}" != "performance" ]; then
-  #   if grep -qi "intel" /proc/cpuinfo; then
-  #     CMDLINE['intel_pstate']="disable"
-  #   elif grep -qi "amd" /proc/cpuinfo; then
-  #     CMDLINE['amd_pstate']="disable"
-  #   fi
-  # fi
+  CMDLINE['governor']="${GOVERNOR:-"performance"}"
 fi
-
+if grep -qi "intel" /proc/cpuinfo; then
+  CMDLINE['intel_pstate']="passive"
+elif grep -qi "amd" /proc/cpuinfo; then
+  CMDLINE['amd_pstate']="passive"
+fi
 if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
   CMDLINE['nox2apic']=""
 fi
@@ -270,14 +259,15 @@ for KEY in "${!CMDLINE[@]}"; do
   CMDLINE_LINE+=" ${KEY}"
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
-CMDLINE_LINE="$(echo "${CMDLINE_LINE}" | sed 's/^ //')" # Remove leading space
-echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
+GRUB_CMDLINE=$(cat /proc/cmdline | sed 's/ root=\/dev\/ram//g; s/ panic=5//g')
+COMBINED_CMDLINE="${GRUB_CMDLINE} ${CMDLINE_LINE}"
+COMBINED_CMDLINE=$(echo "${COMBINED_CMDLINE}" | sed 's/>/\\\\>/g') # Escape special chars
+echo "${COMBINED_CMDLINE}" >"${PART1_PATH}/cmdline.yml"
 
 # Boot
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
 if [ "${DIRECTBOOT}" = "true" ]; then
-  CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
-  grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
+  grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${COMBINED_CMDLINE}"
   grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
   echo -e "\033[1;34mReboot with Directboot\033[0m"
   reboot
@@ -317,7 +307,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
   touch "${TMP_PATH}/.bootlock"
   #_bootwait
-  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" || die "Failed to load DSM Kernel!"
+  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${COMBINED_CMDLINE}" || die "Failed to load DSM Kernel!"
   [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
   echo -e "\033[1;37mBooting DSM...\033[0m"
   exit 0
