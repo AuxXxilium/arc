@@ -6,8 +6,6 @@
 # See /LICENSE for more information.
 #
 
-# shellcheck disable=SC2034
-
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
 . "${ARC_PATH}/include/functions.sh"
@@ -15,20 +13,6 @@
 . "${ARC_PATH}/include/modules.sh"
 
 set -o pipefail # Get exit code from process piped
-
-# Sanity check
-if [ ! -f "${ORI_RDGZ_FILE}" ]; then
-  echo "ERROR: ${ORI_RDGZ_FILE} not found!" >"${LOG_FILE}"
-  exit 1
-fi
-
-# Remove old rd.gz patched
-rm -f "${MOD_RDGZ_FILE}"
-
-# Unzipping ramdisk
-rm -rf "${RAMDISK_PATH}" # Force clean
-mkdir -p "${RAMDISK_PATH}"
-(cd "${RAMDISK_PATH}" && xz -dc <"${ORI_RDGZ_FILE}" | cpio -idm) >/dev/null 2>&1
 
 # Read Model Data
 PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
@@ -42,30 +26,10 @@ RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
 SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
-# Read new PAT Info from Config
-PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
-PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
+ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
+DT="$(readConfigKey "dt" "${USER_CONFIG_FILE}")"
 
-# Check if DSM Version changed
-. "${RAMDISK_PATH}/etc/VERSION"
-
-if [[ -n "${BUILDNUM}" && ("${PRODUCTVER}" != "${majorversion}.${minorversion}" || "${BUILDNUM}" != "${buildnumber}") ]]; then
-  OLDVER="${PRODUCTVER}(${BUILDNUM}$([[ ${SMALLNUM:-0} -ne 0 ]] && echo "u${SMALLNUM}"))"
-  NEWVER="${majorversion}.${minorversion}(${buildnumber}$([[ ${smallfixnumber:-0} -ne 0 ]] && echo "u${smallfixnumber}"))"
-  PAT_URL=""
-  PAT_HASH=""
-  echo -e "Version changed from ${OLDVER} to ${NEWVER}"
-fi
-
-PRODUCTVER="${majorversion}.${minorversion}"
-BUILDNUM="${buildnumber}"
-SMALLNUM="${smallfixnumber}"
-
-writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-writeConfigKey "buildnum" "${BUILDNUM}" "${USER_CONFIG_FILE}"
-writeConfigKey "smallnum" "${SMALLNUM}" "${USER_CONFIG_FILE}"
-
-# Read model data
+# Read kver data
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
 
@@ -74,6 +38,44 @@ if [ -z "${PLATFORM}" ] || [ -z "${KVER}" ]; then
   echo "ERROR: Configuration for Model ${MODEL} and Version ${PRODUCTVER} not found." >"${LOG_FILE}"
   exit 1
 fi
+
+# Read new PAT Info from Config
+PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
+PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
+
+[ "${PATURL:0:1}" = "#" ] && PATURL=""
+[ "${PATSUM:0:1}" = "#" ] && PATSUM=""
+
+# Sanity check
+if [ ! -f "${ORI_RDGZ_FILE}" ]; then
+  echo "ERROR: ${ORI_RDGZ_FILE} not found!" >"${LOG_FILE}"
+  exit 1
+fi
+
+# Unzipping ramdisk
+rm -rf "${RAMDISK_PATH}" # Force clean
+mkdir -p "${RAMDISK_PATH}"
+(cd "${RAMDISK_PATH}" && xz -dc <"${ORI_RDGZ_FILE}" | cpio -idm) >/dev/null 2>&1
+
+# Check if DSM Version changed
+. "${RAMDISK_PATH}/etc/VERSION"
+
+if [ -n "${PRODUCTVER}" ] && [ -n "${BUILDNUM}" ] && [ -n "${SMALLNUM}" ] &&
+  ([ ! "${PRODUCTVER}" = "${majorversion:-0}.${minorversion:-0}" ] || [ ! "${BUILDNUM}" = "${buildnumber:-0}" ] || [ ! "${SMALLNUM}" = "${smallfixnumber:-0}" ]); then
+  OLDVER="${PRODUCTVER}(${BUILDNUM}$([[ ${SMALLNUM:-0} -ne 0 ]] && echo "u${SMALLNUM}"))"
+  NEWVER="${majorversion}.${minorversion}(${buildnumber}$([[ ${smallfixnumber:-0} -ne 0 ]] && echo "u${smallfixnumber}"))"
+  PAT_URL=""
+  PAT_HASH=""
+  echo -e "Version changed from ${OLDVER} to ${NEWVER}"
+fi
+
+# Update buildnumber
+PRODUCTVER="${majorversion}.${minorversion}"
+BUILDNUM="${buildnumber}"
+SMALLNUM="${smallfixnumber}"
+writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+writeConfigKey "buildnum" "${BUILDNUM}" "${USER_CONFIG_FILE}"
+writeConfigKey "smallnum" "${SMALLNUM}" "${USER_CONFIG_FILE}"
 
 # Read addons, modules and synoinfo
 declare -A SYNOINFO
@@ -169,11 +171,11 @@ for KEY in "${!SYNOINFO[@]}"; do
   _set_conf_kv "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || exit 1
 done
 if [ ! -x "${RAMDISK_PATH}/usr/bin/get_key_value" ]; then
-  printf '#!/usr/bin/env sh\n%s\n_get_conf_kv "$@"' "$(declare -f _get_conf_kv)" > "${RAMDISK_PATH}/usr/bin/get_key_value"
+  printf '#!/bin/sh\n%s\n_get_conf_kv "$@"' "$(declare -f _get_conf_kv)" > "${RAMDISK_PATH}/usr/bin/get_key_value"
   chmod a+x "${RAMDISK_PATH}/usr/bin/get_key_value"
 fi
 if [ ! -x "${RAMDISK_PATH}/usr/bin/set_key_value" ]; then
-  printf '#!/usr/bin/env sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
+  printf '#!/bin/sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
   chmod a+x "${RAMDISK_PATH}/usr/bin/set_key_value"
 fi
 
@@ -216,7 +218,7 @@ done
 
 # Network card configuration file
 for N in $(seq 0 7); do
-  echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=no\nIPV6_ACCEPT_RA=0" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
+  echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
 done
 
 # Kernel 5.x patches
