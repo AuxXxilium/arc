@@ -171,7 +171,7 @@ jobs:
           tag: ${{ env.ARC_VERSION }}
           makeLatest: true
           allowUpdates: true
-          owner: AuxXxilium
+          owner: ${{ github.repo.owner }}
           repo: arc-beta
           token: ${{ secrets.BUILD_TOKEN }}
           body: |
@@ -207,7 +207,7 @@ jobs:
           tag: ${{ env.ARC_VERSION }}
           makeLatest: true
           allowUpdates: true
-          owner: AuxXxilium
+          owner: ${{ github.repo.owner }}
           repo: arc
           token: ${{ secrets.BUILD_TOKEN }}
           body: |
