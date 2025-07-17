@@ -164,7 +164,7 @@ elif [ "${ARC_MODE}" = "recovery" ]; then
   CMDLINE["force_junior"]=""
 fi
 
-if [ "${EFI}" = "1" ]; then
+if [ ${EFI} -eq 1 ]; then
   CMDLINE['withefi']=""
 else
   CMDLINE['noefi']=""
@@ -182,6 +182,8 @@ if [ "${KVER:0:1}" = "4" ]; then
     CMDLINE['dom_szmax']="${SIZE}"
   fi
   CMDLINE['elevator']="elevator"
+else
+  CMDLINE['split_lock_detect']="off"
 fi
 
 if [ "${DT}" = "true" ]; then
@@ -196,12 +198,19 @@ fi
 CMDLINE['HddHotplug']="1"
 CMDLINE['vender_format_version']="2"
 CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
+CMDLINE['earlyprintk']=""
+CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
+CMDLINE['console']="ttyS0,115200n8"
 CMDLINE['consoleblank']="600"
 CMDLINE['root']="/dev/md0"
 CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
+CMDLINE['rootwait']=""
 CMDLINE['panic']="${KERNELPANIC:-0}"
-CMDLINE['mev']="${MEV}"
+CMDLINE['pcie_aspm']="off"
+CMDLINE['nowatchdog']=""
+CMDLINE['mev']="${MEV:-"physical"}"
+CMDLINE['governor']="${GOVERNOR:-"performance"}"
 
 if [ "${MEV}" = "vmware" ]; then
   CMDLINE['tsc']="reliable"
@@ -214,14 +223,7 @@ fi
 if [ "${USBMOUNT}" = "true" ]; then
   CMDLINE['usbinternal']=""
 fi
-if [ -n "${GOVERNOR}" ]; then
-  CMDLINE['governor']="${GOVERNOR:-"performance"}"
-fi
-if grep -qi "intel" /proc/cpuinfo; then
-  CMDLINE['intel_pstate']="passive"
-elif grep -qi "amd" /proc/cpuinfo; then
-  CMDLINE['amd_pstate']="passive"
-fi
+
 if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
   CMDLINE['nox2apic']=""
 fi
@@ -259,10 +261,8 @@ for KEY in "${!CMDLINE[@]}"; do
   CMDLINE_LINE+=" ${KEY}"
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
-GRUB_CMDLINE=$(cat /proc/cmdline | sed 's/ root=\/dev\/ram//g; s/ panic=5//g')
-COMBINED_CMDLINE="${GRUB_CMDLINE} ${CMDLINE_LINE}"
-COMBINED_CMDLINE=$(echo "${COMBINED_CMDLINE}" | sed 's/>/\\\\>/g') # Escape special chars
-echo "${COMBINED_CMDLINE}" >"${PART1_PATH}/cmdline.yml"
+CMDLINE_LINE="$(echo "${CMDLINE_LINE}" | sed 's/^ //')" # Remove leading space
+echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
 # Boot
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
@@ -275,7 +275,6 @@ if [ "${DIRECTBOOT}" = "true" ]; then
 elif [ "${DIRECTBOOT}" = "false" ]; then
   grub-editenv ${USER_GRUBENVFILE} unset dsm_cmdline
   grub-editenv ${USER_GRUBENVFILE} unset next_entry
-  KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
   if [ "${ARC_PATCH}" = "true" ]; then
@@ -297,6 +296,15 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
     [ -f "${TMP_PATH}/qrcode_boot.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_boot.png" >/dev/null 2>/dev/null || true
   fi
 
+  # Executes DSM kernel via KEXEC
+  KEXECARGS="-a"
+  if [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 4 ] && [ ${EFI} -eq 1 ]; then
+    echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
+    KEXECARGS+=" --noefi"
+  fi
+
+  kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" >"${LOG_FILE}" 2>&1 || die "Failed to load DSM Kernel!"
+
   for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
     if [ -w "/dev/${T}" ]; then
       [ -n "${IPCON}" ] && echo -e "Use \033[1;34mhttp://${IPCON}:5000\033[0m or try \033[1;34mhttp://find.synology.com/ \033[0mto find DSM and proceed.\n\n\033[1;37mThis interface will not be operational. Network will be unreachable until DSM boot.\033[0m\n" >"/dev/${T}" 2>/dev/null \
@@ -307,7 +315,12 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
   touch "${TMP_PATH}/.bootlock"
   #_bootwait
-  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${COMBINED_CMDLINE}" || die "Failed to load DSM Kernel!"
+
+  # Unload all network drivers
+  for F in $(realpath /sys/class/net/*/device/driver); do [ ! -e "${F}" ] && continue; rmmod -f "$(basename ${F})" 2>/dev/null || true; done
+
+  KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
+  [ -z "${KERNELLOAD}" ] && KERNELLOAD="kexec"
   [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
   echo -e "\033[1;37mBooting DSM...\033[0m"
   exit 0
