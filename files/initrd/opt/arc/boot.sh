@@ -39,6 +39,7 @@ TITLE="Boot:"
 [ "${EFI}" = "1" ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
 TITLE+=" | Device: [${BUS}] | Mode: [${ARC_MODE}]"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
+
 # Check if DSM zImage/Ramdisk is changed, patch it if necessary, update Files if necessary
 ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
 ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
@@ -63,7 +64,6 @@ CPU="$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | sed -E 's
 RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
 VENDOR="$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')"
 MEV="$(virt-what 2>/dev/null | head -1)"
-[ -z "${MEV}" ] && MEV="physical"
 DSMINFO="$(readConfigKey "bootscreen.dsminfo" "${USER_CONFIG_FILE}")"
 SYSTEMINFO="$(readConfigKey "bootscreen.systeminfo" "${USER_CONFIG_FILE}")"
 DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
@@ -75,9 +75,23 @@ BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
 # Build Sanity Check
-[ "${BUILDDONE}" = "false" ] && die "Build not completed!"
-[[ -z "${MODELID}" || "${MODELID}" != "${MODEL}" ]] && die "Build not completed! Model mismatch! -> Rebuild loader!"
+if [ "${BUILDDONE}" = "false" ]; then
+  echo "Build not completed!"
+  echo "Please run the loader build script again!"
+  echo "Rebooting to config mode in 10 seconds..."
+  sleep 10
+  rebootTo "config"
+  exit 0
+elif [ -z "${MODELID}" ] || [ "${MODELID}" != "${MODEL}" ]; then
+  echo "Build not completed! Model mismatch! -> Rebuild loader!"
+  echo "Please run the loader build script again!"
+  echo "Rebooting to config mode in 10 seconds..."
+  sleep 10
+  rebootTo "config"
+  exit 0
+fi
 
+# Show Loader Info
 if [ "${DSMINFO}" = "true" ]; then
   echo -e "\033[1;37mDSM:\033[0m"
   echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
@@ -91,8 +105,8 @@ if [ "${SYSTEMINFO}" = "true" ]; then
   echo -e "Vendor: \033[1;37m${VENDOR}\033[0m"
   echo -e "CPU: \033[1;37m${CPU}\033[0m"
   echo -e "Memory: \033[1;37m${RAMTOTAL}GB\033[0m"
-  echo -e "Governor: \033[1;37m${GOVERNOR}\033[0m"
-  echo -e "Type: \033[1;37m${MEV}\033[0m"
+  echo -e "Governor: \033[1;37m${GOVERNOR:-"performance"}\033[0m"
+  echo -e "Type: \033[1;37m${MEV:-"physical"}\033[0m"
   [ "${USBMOUNT}" = "true" ] && echo -e "USB Mount: \033[1;37m${USBMOUNT}\033[0m"
   echo
 fi
@@ -298,7 +312,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
 
   # Executes DSM kernel via KEXEC
   KEXECARGS="-a"
-  if [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 4 ] && [ ${EFI} -eq 1 ]; then
+  if [ "${KVER:0:1}" != "4" ] && [ "${KVER:0:1}" != "5" ] && [ ${EFI} -eq 1 ]; then
     echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
     KEXECARGS+=" --noefi"
   fi
