@@ -151,10 +151,10 @@ MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 declare -A CMDLINE
 
 # Automated Cmdline
-CMDLINE['syno_hw_version']="${MODELID:-${MODEL}}"
-CMDLINE['vid']="${VID:-"0x46f4"}"
-CMDLINE['pid']="${PID:-"0x0001"}"
-CMDLINE['sn']="${SN}"
+CMDLINE["syno_hw_version"]="${MODELID:-${MODEL}}"
+CMDLINE["vid"]="${VID:-"0x46f4"}"
+CMDLINE["pid"]="${PID:-"0x0001"}"
+CMDLINE["sn"]="${SN}"
 
 # NIC Cmdline
 ETHX=$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)
@@ -168,7 +168,7 @@ for N in ${ETHX}; do
   CMDLINE["mac$((++NIC))"]="${MAC}"
   [ "${NIC}" -ge "${ETHM}" ] && break
 done
-CMDLINE['netif_num']="${NIC}"
+CMDLINE["netif_num"]="${NIC}"
 
 # Boot Cmdline
 if [ "${ARC_MODE}" = "reinstall" ]; then
@@ -179,9 +179,9 @@ elif [ "${ARC_MODE}" = "recovery" ]; then
 fi
 
 if [ ${EFI} -eq 1 ]; then
-  CMDLINE['withefi']=""
+  CMDLINE["with_efi"]=""
 else
-  CMDLINE['noefi']=""
+  CMDLINE["noefi"]=""
 fi
 
 # DSM Cmdline
@@ -192,54 +192,54 @@ if [ "${KVER:0:1}" = "4" ]; then
     SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))
     # Read SATADoM type
     SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
-    CMDLINE['synoboot_satadom']="${SATADOM:-2}"
-    CMDLINE['dom_szmax']="${SIZE}"
+    CMDLINE["syno_boot_satadom"]="${SATADOM:-2}"
+    CMDLINE["dom_szmax"]="${SIZE}"
   fi
-  CMDLINE['elevator']="elevator"
+  CMDLINE["elevator"]="elevator"
 else
-  CMDLINE['split_lock_detect']="off"
+  CMDLINE["split_lock_detect"]="off"
 fi
 
 if [ "${DT}" = "true" ]; then
-  CMDLINE['syno_ttyS0']="serial,0x3f8"
-  CMDLINE['syno_ttyS1']="serial,0x2f8"
+  CMDLINE["syno_ttyS0"]="serial,0x3f8"
+  CMDLINE["syno_ttyS1"]="serial,0x2f8"
 else
-  CMDLINE['SMBusHddDynamicPower']="1"
-  CMDLINE['syno_hdd_detect']="0"
-  CMDLINE['syno_hdd_powerup_seq']="0"
+  CMDLINE["SMBusHddDynamicPower"]="1"
+  CMDLINE["syno_hdd_detect"]="0"
+  CMDLINE["syno_hdd_powerup_seq"]="0"
 fi
 
-CMDLINE['HddHotplug']="1"
-CMDLINE['vender_format_version']="2"
-CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-CMDLINE['earlyprintk']=""
-CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
-CMDLINE['console']="ttyS0,115200n8"
-CMDLINE['consoleblank']="600"
-CMDLINE['root']="/dev/md0"
-CMDLINE['loglevel']="15"
-CMDLINE['log_buf_len']="32M"
-CMDLINE['rootwait']=""
-CMDLINE['panic']="${KERNELPANIC:-0}"
-CMDLINE['pcie_aspm']="off"
-CMDLINE['nowatchdog']=""
-CMDLINE['mev']="${MEV:-"physical"}"
-CMDLINE['governor']="${GOVERNOR:-"performance"}"
+CMDLINE["HddHotplug"]="1"
+CMDLINE["vender_format_version"]="2"
+CMDLINE["skip_vender_mac_interfaces"]="0,1,2,3,4,5,6,7"
+CMDLINE["earlyprintk"]=""
+CMDLINE["earlycon"]="uart8250,io,0x3f8,115200n8"
+CMDLINE["console"]="ttyS0,115200n8"
+CMDLINE["consoleblank"]="600"
+CMDLINE["root"]="/dev/md0"
+CMDLINE["loglevel"]="15"
+CMDLINE["log_buf_len"]="32M"
+CMDLINE["rootwait"]=""
+CMDLINE["panic"]="${KERNELPANIC:-0}"
+CMDLINE["pcie_aspm"]="off"
+CMDLINE["nowatchdog"]=""
+CMDLINE["mev"]="${MEV:-"physical"}"
+CMDLINE["governor"]="${GOVERNOR:-"performance"}"
 
 if [ "${MEV}" = "vmware" ]; then
-  CMDLINE['tsc']="reliable"
-  CMDLINE['pmtmr']="0x0"
+  CMDLINE["tsc"]="reliable"
+  CMDLINE["pmtmr"]="0x0"
 fi
 
 if [ "${HDDSORT}" = "true" ]; then
-  CMDLINE['hddsort']=""
+  CMDLINE["hddsort"]=""
 fi
 if [ "${USBMOUNT}" = "true" ]; then
-  CMDLINE['usbinternal']=""
+  CMDLINE["usbinternal"]=""
 fi
 
 if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
-  CMDLINE['nox2apic']=""
+  CMDLINE["nox2apic"]=""
 fi
 
 if is_in_array "${PLATFORM}" "${IGFXRL[@]}"; then
@@ -247,14 +247,14 @@ if is_in_array "${PLATFORM}" "${IGFXRL[@]}"; then
 fi
 
 if [ "${PLATFORM}" = "purley" ] || [ "${PLATFORM}" = "broadwellnkv2" ]; then
-  CMDLINE['SASmodel']="1"
+  CMDLINE["SASmodel"]="1"
 fi
 
-CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
+CMDLINE["modprobe.blacklist"]="${MODBLACKLIST}"
 if [ "${DT}" = "true" ] && ! is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
-  if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
-    [ -n "${CMDLINE['modprobe.blacklist']}" ] && CMDLINE['modprobe.blacklist']+=","
-    CMDLINE['modprobe.blacklist']+="mpt3sas"
+  if ! echo "${CMDLINE["modprobe.blacklist"]}" | grep -q "mpt3sas"; then
+    [ -n "${CMDLINE["modprobe.blacklist"]}" ] && CMDLINE["modprobe.blacklist"]+=","
+    CMDLINE["modprobe.blacklist"]+="mpt3sas"
   fi
 fi
 
@@ -275,13 +275,13 @@ for KEY in "${!CMDLINE[@]}"; do
   CMDLINE_LINE+=" ${KEY}"
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
-CMDLINE_LINE="$(echo "${CMDLINE_LINE}" | sed 's/^ //')" # Remove leading space
+CMDLINE_LINE="$(echo "${CMDLINE_LINE}" | sed -e 's/^ //' -e 's/>/\\>/g')"
 echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
 # Boot
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
 if [ "${DIRECTBOOT}" = "true" ]; then
-  grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${COMBINED_CMDLINE}"
+  grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_LINE}"
   grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
   echo -e "\033[1;34mReboot with Directboot\033[0m"
   reboot
