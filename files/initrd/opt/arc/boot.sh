@@ -6,7 +6,7 @@
 # See /LICENSE for more information.
 #
 
-LOCKFILE="/tmp/arc_boot.lock"
+LOCKFILE="/tmp/.bootlock"
 exec 200>"$LOCKFILE"
 flock -n 200 || { echo "Boot is in progress. Exiting."; exit 0; }
 
@@ -313,7 +313,6 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   done
 
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
-  touch "${TMP_PATH}/.bootlock"
   #_bootwait
 
   # Unload all network drivers
