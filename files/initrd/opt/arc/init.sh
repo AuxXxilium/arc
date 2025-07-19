@@ -214,6 +214,7 @@ touch "${HOME}/.initialized"
 echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
 echo
 echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}:${HTTPPORT:-7080}\033[0m to configure Loader."
+echo
 
 # Notification System
 WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
@@ -221,6 +222,7 @@ if [ "${WEBHOOKNOTIFY}" = "true" ]; then
   WEBHOOKURL="$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")"
   sendWebhook "${WEBHOOKURL}" "Loader [${ARC_MODE}] started @ ${IPCON}" || true
   echo -e "\033[1;34mWebhook Notification enabled.\033[0m"
+  echo
 fi
 DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
 if [ "${DISCORDNOTIFY}" = "true" ]; then
@@ -228,6 +230,7 @@ if [ "${DISCORDNOTIFY}" = "true" ]; then
   if [ -n "${DISCORDUSER}" ]; then
     sendDiscord "${DISCORDUSER}" "Loader [${ARC_MODE}] started @ ${IPCON}" || true
     echo -e "\033[1;34mDiscord Notification enabled.\033[0m"
+    echo
   fi
 fi
 

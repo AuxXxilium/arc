@@ -178,7 +178,7 @@ elif [ "${ARC_MODE}" = "recovery" ]; then
   CMDLINE["force_junior"]=""
 fi
 
-if [ ${EFI} -eq 1 ]; then
+if [ "${EFI}" = "1" ]; then
   CMDLINE["with_efi"]=""
 else
   CMDLINE["noefi"]=""
@@ -275,13 +275,14 @@ for KEY in "${!CMDLINE[@]}"; do
   CMDLINE_LINE+=" ${KEY}"
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
-CMDLINE_LINE="$(echo "${CMDLINE_LINE}" | sed -e 's/^ //' -e 's/>/\\>/g')"
+CMDLINE_LINE="$(echo "${CMDLINE_LINE}" | sed 's/^ //')" # Remove leading space
 echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
 # Boot
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
 if [ "${DIRECTBOOT}" = "true" ]; then
-  grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_LINE}"
+  CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
+  grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
   grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
   echo -e "\033[1;34mReboot with Directboot\033[0m"
   reboot
