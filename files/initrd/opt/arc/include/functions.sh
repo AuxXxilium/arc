@@ -774,7 +774,7 @@ function is_in_array() {
 # 2 - message (optional)
 function sendWebhook() {
   local URL="${1}"
-  local MSGT="Notification from ${ARC_TITLE}"
+  local MSGT="${ARC_TITLE}"
   local MSGC="${2:-"test at $(date +'%Y-%m-%d %H:%M:%S')"}"
 
   [ -z "${URL}" ] && return 1
@@ -789,7 +789,7 @@ function sendWebhook() {
 # 2 - message (optional)
 function sendDiscord() {
   local USERID="${1}"
-  local MSGT="Notification from ${ARC_TITLE}"
+  local MSGT="${ARC_TITLE}"
   local MSGC="${2:-"test at $(date +'%Y-%m-%d %H:%M:%S')"}"
   [ -z "${USERID}" ] && return 1
 
