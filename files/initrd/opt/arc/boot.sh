@@ -313,7 +313,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
 
   # Executes DSM kernel via KEXEC
   KEXECARGS="-a"
-  if [ "${KVER:0:1}" != "4" ] && [ "${KVER:0:1}" != "5" ] && [ ${EFI} -eq 1 ]; then
+  if [ "${KVER:0:1}" != "4" ] && [ "${KVER:0:1}" != "5" ] && [ "${EFI}" = "1" ]; then
     echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
     KEXECARGS+=" --noefi"
   fi

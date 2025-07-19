@@ -237,7 +237,7 @@ fi
 
 # Check memory and load Arc
 RAM=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
-if [ "${RAM}" -le 3500 ]; then
+if [ "${RAM:-0}" -le 3500 ]; then
   echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m"
   read -rp "Press Enter to continue..."
 else
