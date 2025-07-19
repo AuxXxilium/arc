@@ -126,7 +126,6 @@ function arcModel() {
     writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
     writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
-    writeConfigKey "dsmver" "" "${USER_CONFIG_FILE}"
     writeConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "governor" "" "${USER_CONFIG_FILE}"
     writeConfigKey "hddsort" "false" "${USER_CONFIG_FILE}"
@@ -209,6 +208,11 @@ function arcVersion() {
     if [ "${SASDRIVES}" -gt 0 ] && [ "${DT}" = "true" ]; then
       initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
     fi
+    WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
+    DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
+    if [ "${WEBHOOKNOTIFY}" = "true" ] || [ "${DISCORDNOTIFY}" = "true" ]; then
+      initConfigKey "addons.notification" "" "${USER_CONFIG_FILE}"
+    fi
   }
 
   # Read Model Config
@@ -216,7 +220,6 @@ function arcVersion() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  DSMVER="$(readConfigKey "dsmver" "${USER_CONFIG_FILE}")"
   # Get PAT Data from Config
   PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
@@ -237,15 +240,13 @@ function arcVersion() {
     [ $? -ne 0 ] && return
     RESP="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${RESP}" ] && return
-     if [ "${DSMVER}" != "${RESP:0:5}" ]; then
+     if [ "${PRODUCTVER}" != "${RESP:0:3}" ]; then
       PRODUCTVER="${RESP:0:3}"
-      DSMVER="${RESP:0:5}"
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
     fi
 
     # Always update config keys for version selection
     writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-    writeConfigKey "dsmver" "${DSMVER}" "${USER_CONFIG_FILE}"
     writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
@@ -518,7 +519,6 @@ function arcSettings() {
 function arcSummary() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  DSMVER="$(readConfigKey "dsmver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
@@ -554,7 +554,7 @@ function arcSummary() {
   # Print Summary
   SUMMARY="\Z4> DSM Information\Zn"
   SUMMARY+="\n>> Model: \Zb${MODEL}\Zn"
-  SUMMARY+="\n>> Version: \Zb${DSMVER}\Zn"
+  SUMMARY+="\n>> Version: \Zb${PRODUCTVER}\Zn"
   SUMMARY+="\n>> Platform: \Zb${PLATFORM}\Zn"
   SUMMARY+="\n>> DT: \Zb${DT}\Zn"
   SUMMARY+="\n>> PAT URL: \Zb${PAT_URL}\Zn"
@@ -1855,7 +1855,6 @@ function sysinfo() {
     MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
     MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-    DSMVER="$(readConfigKey "dsmver" "${USER_CONFIG_FILE}")"
     PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
     DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
@@ -1954,7 +1953,7 @@ function sysinfo() {
   TEXT+="\n  Offline Mode: \Zb${ARC_OFFLINE}\Zn"
   TEXT+="\n"
   if [ "${CONFDONE}" = "true" ]; then
-    TEXT+="\n\Z4> DSM ${DSMVER} (${BUILDNUM}): ${MODELID:-${MODEL}}\Zn"
+    TEXT+="\n\Z4> DSM ${PRODUCTVER} (${BUILDNUM}): ${MODELID:-${MODEL}}\Zn"
     TEXT+="\n"
     TEXT+="\n  Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
     TEXT+="\n  Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"

@@ -706,7 +706,6 @@ function readData() {
     PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
     DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-    DSMVER="$(readConfigKey "dsmver" "${USER_CONFIG_FILE}")"
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
   fi
 
@@ -797,6 +796,5 @@ function sendDiscord() {
   local MESSAGE="${MSGT}: ${MSGC}"
   local ENCODED_MSG=$(echo "${MESSAGE}" | jq -sRr @uri)
   curl -skL "https://arc.auxxxilium.tech/notify.php?id=${USERID}&message=${ENCODED_MSG}" >/dev/null 2>&1
-  echo "USERID=${USERID} MESSAGE=${MESSAGE} ENCODED=${ENCODED_MSG}" >/tmp/arc_notify_debug.log
   return $?
 }

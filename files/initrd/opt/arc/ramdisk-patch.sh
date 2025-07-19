@@ -153,7 +153,7 @@ for ADDON in "${!ADDONS[@]}"; do
     WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
     [ "${WEBHOOKNOTIFY}" = "true" ] && WEBHOOK="$(readConfigKey "arc.webhook" "${USER_CONFIG_FILE}")"
     DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
-    [ "${DISCORDNOTIFY}" = "true" ] && DISCORDUSERID="$(readConfigKey "arc.discorduserid" "${USER_CONFIG_FILE}")"
+    [ "${DISCORDNOTIFY}" = "true" ] && DISCORDUSERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
     PARAMS="${WEBHOOK:-false} ${DISCORDUSERID:-false}"
   else
     PARAMS="${ADDONS[${ADDON}]}"
