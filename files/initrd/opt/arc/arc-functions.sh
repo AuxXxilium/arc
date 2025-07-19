@@ -3733,3 +3733,83 @@ function getnetinfo() {
   done
   IPCON="${IPCON:-noip}"
 }
+
+###############################################################################
+# Bootloader notifications
+function notificationMenu() {
+  WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
+  DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
+  # Submenu for notification type
+  dialog --backtitle "$(backtitle)" --title "Notification Type" \
+    --menu "Choose notification type:" 10 60 2 \
+    1 "Webhook Notification (${WEBHOOKNOTIFY})" \
+    2 "Discord Notification (${DISCORDNOTIFY})" \
+    2>"${TMP_PATH}/notiftype"
+  [ $? -ne 0 ] && return
+  NOTIFTYPE="$(cat "${TMP_PATH}/notiftype" 2>/dev/null)"
+  [ -z "${NOTIFTYPE}" ] && return
+
+  MSG=""
+  if [ "${NOTIFTYPE}" = "1" ]; then
+    MSG+="Please enter the webhook url.\n"
+    MSG+="The webhook url must be a valid URL (Reference https://webhook-test.com/).\n"
+    WEBHOOKURL="$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")"
+    while true; do
+      dialog --backtitle "$(backtitle)" --title "WebhookNotification Settings" \
+        --extra-button --extra-label "Test" \
+        --form "${MSG}" 10 110 2 "webhookurl" 1 1 "${WEBHOOKURL}" 1 12 93 0 \
+        2>"${TMP_PATH}/resp"
+      RET=$?
+      case ${RET} in
+      0)
+        # ok-button
+        WEBHOOKURL="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
+        writeConfigKey "arc.webhooknotify" "true" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.webhookurl" "${WEBHOOKURL}" "${USER_CONFIG_FILE}"
+        break
+        ;;
+      3)
+        # extra-button
+        WEBHOOKURL="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
+        sendWebhook "${WEBHOOKURL}"
+        ;;
+      *)
+        # cancel-button
+        writeConfigKey "arc.webhooknotify" "false" "${USER_CONFIG_FILE}"
+        writeConfigKey "arc.webhookurl" "" "${USER_CONFIG_FILE}"
+        break
+        ;;
+      esac
+      WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
+    done
+  elif [ "${NOTIFTYPE}" = "2" ]; then
+    while true; do
+      dialog --backtitle "$(backtitle)" --title "Discord Notification Settings" \
+        --ok-label "Enable" --extra-button --extra-label "Test" --cancel-label "Disable" \
+        --msgbox "If you enable this, it will send you a notification to your Discord account after Arc and DSM is booted.\n\nYou can disable this at any time." 10 60
+      [ $? -ne 0 ] && return
+      DISCORDUSER="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
+      if [ -z "${DISCORDUSER}" ]; then
+        MSG="Please register HardwareID first!\n"
+        2>"${TMP_PATH}/resp"
+      RET=$?
+      case ${RET} in
+      0)
+        # ok-button
+        writeConfigKey "arc.discordnotify" "true" "${USER_CONFIG_FILE}"
+        break
+        ;;
+      3)
+        # extra-button (Test)
+        sendDiscord "${DISCORDUSER}"
+        ;;
+      *)
+        # cancel-button (disabled by --no-cancel)
+        writeConfigKey "arc.discordnotify" "false" "${USER_CONFIG_FILE}"
+        break
+        ;;
+      esac
+      DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
+    done
+  fi
+}

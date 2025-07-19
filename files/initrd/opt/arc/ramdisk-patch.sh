@@ -129,7 +129,7 @@ echo "Create addons.sh" >>"${LOG_FILE}"
   echo "export LOADERBUILD=\"${ARC_BUILD}\""
   echo "export PLATFORM=\"${PLATFORM}\""
   echo "export MODEL=\"${MODEL}\""
-  echo "export PRODUCTVERL=\"${PRODUCTVERL}\""
+  echo "export PRODUCTVER=\"${PRODUCTVER}\""
   echo "export MLINK=\"${PAT_URL}\""
   echo "export MCHECKSUM=\"${PAT_HASH}\""
   echo "export LAYOUT=\"${LAYOUT:-qwerty}\""
@@ -149,7 +149,15 @@ done
 
 # User Addons
 for ADDON in "${!ADDONS[@]}"; do
-  PARAMS="${ADDONS[${ADDON}]}"
+  if [ "${ADDON}" = "notification" ]; then
+    WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
+    [ "${WEBHOOKNOTIFY}" = "true" ] && WEBHOOK="$(readConfigKey "arc.webhook" "${USER_CONFIG_FILE}")"
+    DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
+    [ "${DISCORDNOTIFY}" = "true" ] && DISCORDUSERID="$(readConfigKey "arc.discorduserid" "${USER_CONFIG_FILE}")"
+    PARAMS="${WEBHOOK:-false} ${DISCORDUSERID:-false}"
+  else
+    PARAMS="${ADDONS[${ADDON}]}"
+  fi
   installAddon "${ADDON}" "${PLATFORM}" "${KVERP}" || echo "Addon ${ADDON} not found"
   echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 done
@@ -178,10 +186,6 @@ if [ ! -x "${RAMDISK_PATH}/usr/bin/set_key_value" ]; then
   printf '#!/bin/sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
   chmod a+x "${RAMDISK_PATH}/usr/bin/set_key_value"
 fi
-
-echo "Modify files" >>"${LOG_FILE}"
-# Remove function from scripts
-[ "2" = "${BUILDNUM:0:1}" ] && find "${RAMDISK_PATH}/addons/" -type f -name "*.sh" -exec sed -i 's/function //g' {} \;
 
 # Copying modulelist
 if [ -f "${USER_UP_PATH}/modulelist" ]; then

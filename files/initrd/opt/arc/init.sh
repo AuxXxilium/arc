@@ -54,11 +54,14 @@ initConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.discordnotify" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
+initConfigKey "arc.webhooknotify" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.webhookurl" "" "${USER_CONFIG_FILE}"
 initConfigKey "bootscreen" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "bootscreen.dsminfo" "true" "${USER_CONFIG_FILE}"
 initConfigKey "bootscreen.systeminfo" "true" "${USER_CONFIG_FILE}"
@@ -176,7 +179,9 @@ case "${ARC_MODE}" in
       echo -e "\033[1;34mStarting DSM Mode...\033[0m"
       exec boot.sh && exit 0
     else
-      echo -e "\033[1;34mStarting Config Mode...\033[0m"
+      echo -e "\033[1;34mRebooting to Config Mode...\033[0m"
+      rebootTo "config" || die "Reboot to Config Mode failed!"
+      exit 0
     fi
     ;;
   *)
@@ -210,6 +215,23 @@ touch "${HOME}/.initialized"
 echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
 echo
 echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}:${HTTPPORT:-7080}\033[0m to configure Loader."
+
+# Notification System
+WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
+if [ "${WEBHOOKNOTIFY}" = "true" ]; then
+  WEBHOOKURL="$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")"
+  sendWebhook "${WEBHOOKURL}" "Loader [${ARC_MODE}] started @ ${IPCON}" || true
+  echo -e "\033[1;34mWebhook Notification enabled.\033[0m"
+fi
+DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
+if [ "${DISCORDNOTIFY}" = "true" ]; then
+  DISCORDUSER="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
+  if [ -n "${DISCORDUSER}" ]; then
+    sendDiscord "${DISCORDUSER}" "Loader [${ARC_MODE}] started @ ${IPCON}" || true
+    echo -e "\033[1;34mDiscord Notification enabled.\033[0m"
+  fi
+fi
+
 
 # Check memory and load Arc
 RAM=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)

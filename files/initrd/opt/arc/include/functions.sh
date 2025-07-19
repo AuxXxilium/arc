@@ -768,3 +768,33 @@ function is_in_array() {
   done
   return 1
 }
+
+###############################################################################
+# Send a webhook notification
+# 1 - webhook url
+# 2 - message (optional)
+function sendWebhook() {
+  local URL="${1}"
+  local MSGT="Notification from ${ARC_TITLE}"
+  local MSGC="${2:-"test at $(date +'%Y-%m-%d %H:%M:%S')"}"
+
+  [ -z "${URL}" ] && return 1
+
+  curl -skL -X POST -H "Content-Type: application/json" -d "{\"title\":\"${MSGT}\", \"text\":\"${MSGC}\"}" "${URL}" >/dev/null 2>&1
+  return $?
+}
+
+###############################################################################
+# Send a webhook notification
+# 1 - userid
+# 2 - message (optional)
+function sendDiscord() {
+  local USERID="${1}"
+  local MSGT="Notification from ${ARC_TITLE}"
+  local MSGC="${2:-"test at $(date +'%Y-%m-%d %H:%M:%S')"}"
+
+  [ -z "${USERID}" ] && return 1
+
+  curl -skL "https://arc.auxxxilium.tech/notify?id=${USERID}&message=${MSGT}: $(urlencode "${MSGC}")" >/dev/null 2>&1
+  return $?
+}

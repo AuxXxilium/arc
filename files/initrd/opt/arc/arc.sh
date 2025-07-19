@@ -167,6 +167,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       write_menu "8" "\Z1Hide Loader Options\Zn"
       write_menu_value "c" "Offline Mode" "${ARC_OFFLINE}"
       write_menu "D" "StaticIP for Loader/DSM"
+      write_menu "Q" "Notification Settings"
       write_menu "U" "Change Loader Password"
       write_menu "Z" "Change Loader Ports"
       write_menu "w" "Reset Loader to Defaults"
@@ -319,6 +320,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
             NEXT="c"
             ;;
           D) staticIPMenu; NEXT="D" ;;
+          Q) notificationMenu; NEXT="Q" ;;
           Z) loaderPorts; NEXT="Z" ;;
           U) loaderPassword; NEXT="U" ;;
           W) RD_COMPRESSED=$([ "${RD_COMPRESSED}" = "true" ] && echo 'false' || echo 'true')
