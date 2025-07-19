@@ -220,7 +220,7 @@ echo
 WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
 if [ "${WEBHOOKNOTIFY}" = "true" ]; then
   WEBHOOKURL="$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")"
-  sendWebhook "${WEBHOOKURL}" "Loader [${ARC_MODE}] started @ ${IPCON}" || true
+  sendWebhook "${WEBHOOKURL}" "${ARC_MODE} is running @ ${IPCON}" || true
   echo -e "\033[1;34mWebhook Notification enabled.\033[0m"
   echo
 fi
@@ -228,7 +228,7 @@ DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
 if [ "${DISCORDNOTIFY}" = "true" ]; then
   DISCORDUSER="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   if [ -n "${DISCORDUSER}" ]; then
-    sendDiscord "${DISCORDUSER}" "Loader [${ARC_MODE}] started @ ${IPCON}" || true
+    sendDiscord "${DISCORDUSER}" "${ARC_MODE} is running @ ${IPCON}" || true
     echo -e "\033[1;34mDiscord Notification enabled.\033[0m"
     echo
   fi
