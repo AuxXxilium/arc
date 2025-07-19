@@ -785,16 +785,18 @@ function sendWebhook() {
 }
 
 ###############################################################################
-# Send a webhook notification
+# Send a discord notification
 # 1 - userid
 # 2 - message (optional)
 function sendDiscord() {
   local USERID="${1}"
   local MSGT="Notification from ${ARC_TITLE}"
   local MSGC="${2:-"test at $(date +'%Y-%m-%d %H:%M:%S')"}"
-
   [ -z "${USERID}" ] && return 1
 
-  curl -skL "https://arc.auxxxilium.tech/notify?id=${USERID}&message=${MSGT}: $(urlencode "${MSGC}")" >/dev/null 2>&1
+  local MESSAGE="${MSGT}: ${MSGC}"
+  local ENCODED_MSG=$(echo "${MESSAGE}" | jq -sRr @uri)
+  curl -skL "https://arc.auxxxilium.tech/notify.php?id=${USERID}&message=${ENCODED_MSG}" >/dev/null 2>&1
+  echo "USERID=${USERID} MESSAGE=${MESSAGE} ENCODED=${ENCODED_MSG}" >/tmp/arc_notify_debug.log
   return $?
 }
