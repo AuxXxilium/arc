@@ -884,11 +884,11 @@ function modulesMenu() {
       MODULES_TMP_PATH="/tmp/arc-modules-ex"
       if [ -z "${KVERP}" ]; then
         dialog --backtitle "$(backtitle)" --title "Modules" \
-          --msgbox "No Kernel Version found, please select a Platform and Product Version first." 0 0
+          --msgbox "No Kernel Version found, please select a Model and Version first." 0 0
         continue
       fi
       idx=0
-      while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
+      while (( idx <= 5 )); do
         local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules-ex/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
         if [ -n "${TAG}" ]; then
           break
@@ -3790,8 +3790,10 @@ function notificationMenu() {
       [ $? -ne 0 ] && return
       DISCORDUSER="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
       if [ -z "${DISCORDUSER}" ]; then
-        MSG="Please register HardwareID first!\n"
-        2>"${TMP_PATH}/resp"
+        dialog --backtitle "$(backtitle)" --title "Discord Notification" \
+          --msgbox "Please register HardwareID first!\n" 6 60
+        break
+      fi
       RET=$?
       case ${RET} in
       0)
