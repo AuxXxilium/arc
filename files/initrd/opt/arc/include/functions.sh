@@ -793,7 +793,7 @@ function sendDiscord() {
   local MSGC="${2:-"test at $(date +'%Y-%m-%d %H:%M:%S')"}"
   [ -z "${USERID}" ] && return 1
 
-  local MESSAGE="${MSGT}: ${MSGC}"
+  local MESSAGE="**${MSGT}**: ${MSGC}"
   local ENCODED_MSG=$(echo "${MESSAGE}" | jq -sRr @uri)
   curl -skL "https://arc.auxxxilium.tech/notify.php?id=${USERID}&message=${ENCODED_MSG}" >/dev/null 2>&1
   return $?
