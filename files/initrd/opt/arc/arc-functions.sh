@@ -1841,11 +1841,11 @@ function sysinfo() {
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}')"
+  BOARD="$(dmesg | grep 'DMI:' | head -1 | sed 's/\[.*\] DMI: //i')"
   RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
   [ -z "${RAMTOTAL}" ] && RAMTOTAL="N/A"
   GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
   SECURE=$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')
-  VENDOR=$(dmesg 2>/dev/null | grep -i "DMI:" | head -1 | sed 's/\[.*\] DMI: //i')
   ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
   ETHN=$(echo ${ETHX} | wc -w)
   HWID="$(genHWID)"
@@ -1892,7 +1892,7 @@ function sysinfo() {
   # Print System Informations
   TEXT="\n\Z4> System: ${MEV} | ${BOOTSYS} | ${BUS}\Zn"
   TEXT+="\n"
-  TEXT+="\n  Vendor: \Zb${VENDOR}\Zn"
+  TEXT+="\n  Board: \Zb${BOARD}\Zn"
   TEXT+="\n  CPU: \Zb${CPU}\Zn"
   if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
     GPUNAME=""
