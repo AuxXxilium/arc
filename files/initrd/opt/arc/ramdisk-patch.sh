@@ -43,8 +43,8 @@ fi
 PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
 PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
 
-[ "${PATURL:0:1}" = "#" ] && PATURL=""
-[ "${PATSUM:0:1}" = "#" ] && PATSUM=""
+[ "${PAT_URL:0:1}" = "#" ] && PAT_URL=""
+[ "${PAT_HASH:0:1}" = "#" ] && PAT_HASH=""
 
 # Sanity check
 if [ ! -f "${ORI_RDGZ_FILE}" ]; then
@@ -78,9 +78,9 @@ writeConfigKey "buildnum" "${BUILDNUM}" "${USER_CONFIG_FILE}"
 writeConfigKey "smallnum" "${SMALLNUM}" "${USER_CONFIG_FILE}"
 
 # Read addons, modules and synoinfo
-declare -A SYNOINFO
 declare -A ADDONS
 declare -A MODULES
+declare -A SYNOINFO
 
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
@@ -90,7 +90,6 @@ while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && MODULES["${KEY}"]="${VALUE}"
 done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
-#SYNOINFO["SN"]="${SN}"
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
 done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
@@ -171,21 +170,31 @@ installModules "${PLATFORM}" "${KVERP}" "${!MODULES[@]}" || exit 1
 gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>>"${LOG_FILE}" || exit 1
 
 # Patch synoinfo.conf
-echo -n "" >"${RAMDISK_PATH}/addons/synoinfo.conf"
+# Patch synoinfo.conf
+: > "${RAMDISK_PATH}/addons/synoinfo.conf"  # Safely truncate file
+
 for KEY in "${!SYNOINFO[@]}"; do
-  echo "Set synoinfo ${KEY}" >>"${LOG_FILE}"
-  echo "${KEY}=\"${SYNOINFO[${KEY}]}\"" >>"${RAMDISK_PATH}/addons/synoinfo.conf"
-  _set_conf_kv "${RAMDISK_PATH}/etc/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || exit 1
-  _set_conf_kv "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || exit 1
+  echo "Set synoinfo ${KEY}" >> "${LOG_FILE}"
+  echo "${KEY}=\"${SYNOINFO[${KEY}]}\"" >> "${RAMDISK_PATH}/addons/synoinfo.conf"
+  _set_conf_kv "${RAMDISK_PATH}/etc/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || {
+    echo "Failed to set ${KEY} in etc/synoinfo.conf" >> "${LOG_FILE}"
+    exit 1
+  }
+  _set_conf_kv "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || {
+    echo "Failed to set ${KEY} in etc.defaults/synoinfo.conf" >> "${LOG_FILE}"
+    exit 1
+  }
 done
-if [ ! -x "${RAMDISK_PATH}/usr/bin/get_key_value" ]; then
-  printf '#!/bin/sh\n%s\n_get_conf_kv "$@"' "$(declare -f _get_conf_kv)" > "${RAMDISK_PATH}/usr/bin/get_key_value"
-  chmod a+x "${RAMDISK_PATH}/usr/bin/get_key_value"
-fi
-if [ ! -x "${RAMDISK_PATH}/usr/bin/set_key_value" ]; then
-  printf '#!/bin/sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
-  chmod a+x "${RAMDISK_PATH}/usr/bin/set_key_value"
-fi
+
+# Create helper scripts for key-value access
+for BIN in get_key_value set_key_value; do
+  BIN_PATH="${RAMDISK_PATH}/usr/bin/${BIN}"
+  FUNC_NAME="_${BIN/_key_value/conf_kv}"
+  if [ ! -x "${BIN_PATH}" ]; then
+    printf '#!/bin/sh\n%s\n%s "$@"\n' "$(declare -f ${FUNC_NAME})" "${FUNC_NAME}" > "${BIN_PATH}"
+    chmod a+x "${BIN_PATH}"
+  fi
+done
 
 # Copying modulelist
 if [ -f "${USER_UP_PATH}/modulelist" ]; then
@@ -203,7 +212,7 @@ mkdir -p "${RAMDISK_PATH}/usr/arc"
 } >"${RAMDISK_PATH}/usr/arc/VERSION"
 BACKUP_PATH="${RAMDISK_PATH}/usr/arc/backup"
 rm -rf "${BACKUP_PATH}"
-for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}" "${USER_UP_PATH}"; do
+for F in "${USER_GRUB_CONFIG}" "${USER_CONFIG_FILE}"; do
   if [ -f "${F}" ]; then
     FD="$(dirname "${F}")"
     mkdir -p "${FD/\/mnt/${BACKUP_PATH}}"
