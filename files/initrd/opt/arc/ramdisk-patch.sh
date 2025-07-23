@@ -102,17 +102,16 @@ PATCHES=(
 )
 
 for PE in "${PATCHES[@]}"; do
-  RET=1
-  echo "Patching with ${PE}" >>"${LOG_FILE}"
-  # ${PE} contains *, so double quotes cannot be added
+  RET=2
+  MATCHED=0
   for PF in ${PATCH_PATH}/${PE}; do
     [ ! -e "${PF}" ] && continue
-    echo "Patching with ${PF}" >>"${LOG_FILE}"
-    # busybox patch and gun patch have different processing methods and parameters.
+    MATCHED=1
     (cd "${RAMDISK_PATH}" && busybox patch -p1 -i "${PF}") >>"${LOG_FILE}" 2>&1
     RET=$?
     [ ${RET} -eq 0 ] && break
   done
+  [ ${MATCHED} -eq 0 ] && continue # skip if no patch files found
   [ ${RET} -ne 0 ] && exit 1
 done
 
@@ -170,31 +169,23 @@ installModules "${PLATFORM}" "${KVERP}" "${!MODULES[@]}" || exit 1
 gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>>"${LOG_FILE}" || exit 1
 
 # Patch synoinfo.conf
-# Patch synoinfo.conf
-: > "${RAMDISK_PATH}/addons/synoinfo.conf"  # Safely truncate file
-
+echo -n "" >"${RAMDISK_PATH}/addons/synoinfo.conf"
 for KEY in "${!SYNOINFO[@]}"; do
-  echo "Set synoinfo ${KEY}" >> "${LOG_FILE}"
-  echo "${KEY}=\"${SYNOINFO[${KEY}]}\"" >> "${RAMDISK_PATH}/addons/synoinfo.conf"
-  _set_conf_kv "${RAMDISK_PATH}/etc/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || {
-    echo "Failed to set ${KEY} in etc/synoinfo.conf" >> "${LOG_FILE}"
-    exit 1
-  }
-  _set_conf_kv "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || {
-    echo "Failed to set ${KEY} in etc.defaults/synoinfo.conf" >> "${LOG_FILE}"
-    exit 1
-  }
+  echo "Set synoinfo ${KEY}" >>"${LOG_FILE}"
+  echo "${KEY}=\"${SYNOINFO[${KEY}]}\"" >>"${RAMDISK_PATH}/addons/synoinfo.conf"
+  _set_conf_kv "${RAMDISK_PATH}/etc/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || exit 1
+  _set_conf_kv "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || exit 1
 done
-
-# Create helper scripts for key-value access
-for BIN in get_key_value set_key_value; do
-  BIN_PATH="${RAMDISK_PATH}/usr/bin/${BIN}"
-  FUNC_NAME="_${BIN/_key_value/conf_kv}"
-  if [ ! -x "${BIN_PATH}" ]; then
-    printf '#!/bin/sh\n%s\n%s "$@"\n' "$(declare -f ${FUNC_NAME})" "${FUNC_NAME}" > "${BIN_PATH}"
-    chmod a+x "${BIN_PATH}"
-  fi
-done
+rm -f "${RAMDISK_PATH}/usr/bin/get_key_value"
+if [ ! -x "${RAMDISK_PATH}/usr/bin/get_key_value" ]; then
+  printf '#!/bin/sh\n%s\n_get_conf_kv "$@"' "$(declare -f _get_conf_kv)" >"${RAMDISK_PATH}/usr/bin/get_key_value"
+  chmod a+x "${RAMDISK_PATH}/usr/bin/get_key_value"
+fi
+rm -f "${RAMDISK_PATH}/usr/bin/set_key_value"
+if [ ! -x "${RAMDISK_PATH}/usr/bin/set_key_value" ]; then
+  printf '#!/bin/sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
+  chmod a+x "${RAMDISK_PATH}/usr/bin/set_key_value"
+fi
 
 # Copying modulelist
 if [ -f "${USER_UP_PATH}/modulelist" ]; then
