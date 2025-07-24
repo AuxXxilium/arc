@@ -57,7 +57,6 @@ function installAddon() {
   local KVER="${3:-}"
   [ -z "${ADDON}" ] && echo "ERROR: Addon not defined" && return 1
   isAddonAvailable "${ADDON}" "${PLATFORM}" || {
-    echo "INFO: ${ADDON} not available for platform ${PLATFORM}" 2>>"${LOG_FILE}"
     deleteConfigKey "addon.${ADDON}" "${USER_CONFIG_FILE}"
     return 0
   }
@@ -85,7 +84,7 @@ function untarAddon() {
   fi
   rm -rf "${TMP_PATH}/addon"
   mkdir -p "${TMP_PATH}/addon"
-  tar -xaf "${1}" -C "${TMP_PATH}/addon" || return
+  tar -zxf "${1}" -C "${TMP_PATH}/addon" || return
   local ADDON=$(readConfigKey "name" "${TMP_PATH}/addon/manifest.yml")
   [ -z "${ADDON}" ] && return
   rm -rf "${ADDONS_PATH}/${ADDON}"
@@ -101,7 +100,7 @@ function updateAddon() {
     rm -rf "${ADDONS_PATH}/${ADDON}"
     mkdir -p "${ADDONS_PATH}/${ADDON}"
     echo "Installing ${F} to ${ADDONS_PATH}/${ADDON}"
-    tar -xaf "${F}" -C "${ADDONS_PATH}/${ADDON}"
+    tar -zxf "${F}" -C "${ADDONS_PATH}/${ADDON}"
     rm -f "${F}"
   done
 }
