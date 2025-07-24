@@ -115,12 +115,11 @@ for PE in "${PATCHES[@]}"; do
   [ ${RET} -ne 0 ] && exit 1
 done
 
-mkdir -p "${RAMDISK_PATH}/addons"
-
 # Addons
+mkdir -p "${RAMDISK_PATH}/addons"
 echo "Create addons.sh" >>"${LOG_FILE}"
 {
-  echo "#!/bin/sh"
+  echo "#!/usr/bin/env sh"
   echo 'echo "addons.sh called with params ${@}"'
   echo "export LOADERLABEL=\"ARC\""
   echo "export LOADERVERSION=\"${ARC_VERSION}\""
@@ -178,12 +177,12 @@ for KEY in "${!SYNOINFO[@]}"; do
 done
 rm -f "${RAMDISK_PATH}/usr/bin/get_key_value"
 if [ ! -x "${RAMDISK_PATH}/usr/bin/get_key_value" ]; then
-  printf '#!/bin/sh\n%s\n_get_conf_kv "$@"' "$(declare -f _get_conf_kv)" >"${RAMDISK_PATH}/usr/bin/get_key_value"
+  printf '#!/usr/bin/env sh\n%s\n_get_conf_kv "$@"' "$(declare -f _get_conf_kv)" >"${RAMDISK_PATH}/usr/bin/get_key_value"
   chmod a+x "${RAMDISK_PATH}/usr/bin/get_key_value"
 fi
 rm -f "${RAMDISK_PATH}/usr/bin/set_key_value"
 if [ ! -x "${RAMDISK_PATH}/usr/bin/set_key_value" ]; then
-  printf '#!/bin/sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
+  printf '#!/usr/bin/env sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
   chmod a+x "${RAMDISK_PATH}/usr/bin/set_key_value"
 fi
 
