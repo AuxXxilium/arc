@@ -74,32 +74,12 @@ function installAddon() {
 }
 
 ###############################################################################
-# Untar an addon to correct path
-# 1 - Addon file path
-# Return name of addon on sucess or empty on error
-function untarAddon() {
-  if [ -z "${1}" ]; then
-    echo ""
-    return 1
-  fi
-  rm -rf "${TMP_PATH}/addon"
-  mkdir -p "${TMP_PATH}/addon"
-  tar -zxf "${1}" -C "${TMP_PATH}/addon" || return
-  local ADDON=$(readConfigKey "name" "${TMP_PATH}/addon/manifest.yml")
-  [ -z "${ADDON}" ] && return
-  rm -rf "${ADDONS_PATH}/${ADDON}"
-  mv -f "${TMP_PATH}/addon" "${ADDONS_PATH}/${ADDON}"
-  echo "${ADDON}"
-}
-
-###############################################################################
 # Detect if has new local plugins to install/reinstall
 function updateAddon() {
   for F in $(ls ${ADDONS_PATH}/*.addon 2>/dev/null); do
     local ADDON=$(basename "${F}" | sed 's|.addon||')
     rm -rf "${ADDONS_PATH}/${ADDON}"
     mkdir -p "${ADDONS_PATH}/${ADDON}"
-    echo "Installing ${F} to ${ADDONS_PATH}/${ADDON}"
     tar -zxf "${F}" -C "${ADDONS_PATH}/${ADDON}"
     rm -f "${F}"
   done

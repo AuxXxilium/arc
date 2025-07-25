@@ -49,14 +49,14 @@ function updateLoader() {
         exec reboot
       fi
     fi
-    rm -rf "/mnt/update"
+    rm -rf "${TMP_PATH}/update"
     mkdir -p "${TMP_PATH}/update"
     dialog --backtitle "$(backtitle)" --title "Update Loader" \
       --infobox "Updating Loader..." 3 50
     if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update"; then
       rm -rf "/mnt/addons" "/mnt/modules" "/mnt/custom" "/mnt/patches" "/mnt/lkms"
       mkdir -p "/mnt/addons" "/mnt/modules" "/mnt/custom" "/mnt/patches" "/mnt/lkms"
-      cp -rf "${TMP_PATH}/update"/* "/mnt"
+      find "${TMP_PATH}/update" -mindepth 1 -maxdepth 1 -exec cp -rf {} "/mnt" \;
       rm -rf "${TMP_PATH}/update"
       rm -f "${TMP_PATH}/update.zip"
     fi
@@ -151,14 +151,14 @@ function updateLoaderBeta() {
         exec reboot
       fi
     fi
-    rm -rf "/mnt/update"
+    rm -rf "${TMP_PATH}/update"
     mkdir -p "${TMP_PATH}/update"
     dialog --backtitle "$(backtitle)" --title "Update Loader" \
       --infobox "Updating Loader..." 3 50
     if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update"; then
       rm -rf "/mnt/addons" "/mnt/modules" "/mnt/custom" "/mnt/patches" "/mnt/lkms"
       mkdir -p "/mnt/addons" "/mnt/modules" "/mnt/custom" "/mnt/patches" "/mnt/lkms"
-      cp -rf "${TMP_PATH}/update"/* "/mnt"
+      find "${TMP_PATH}/update" -mindepth 1 -maxdepth 1 -exec cp -rf {} "/mnt" \;
       rm -rf "${TMP_PATH}/update"
       rm -f "${TMP_PATH}/update.zip"
     fi
@@ -310,13 +310,7 @@ function updateAddons() {
       --infobox "Updating Addons..." 3 50
       if unzip -oq "${TMP_PATH}/addons.zip" -d "${ADDONS_PATH}"; then
         rm -f "${TMP_PATH}/addons.zip"
-        for F in "${ADDONS_PATH}"/*.addon; do
-          ADDON=$(basename "${F}" | sed 's|.addon||')
-          rm -rf "${ADDONS_PATH}/${ADDON}"
-          mkdir -p "${ADDONS_PATH}/${ADDON}"
-          tar -xaf "${F}" -C "${ADDONS_PATH}/${ADDON}"
-          rm -f "${F}"
-        done
+        updateAddon
         dialog --backtitle "$(backtitle)" --title "Update Addons" \
           --infobox "Update Addons successful!" 3 50
         sleep 2
