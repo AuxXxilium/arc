@@ -341,8 +341,18 @@
     },
     "fancontrol": {
         "system": false,
-        "description": "Control fan PWM from DSM (Depending on sensors addon, only for supported devices).",
+        "description": "Control fan PWM from DSM (Depending on sensors addon, only if PWM is supported).",
         "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
             "epyc7002",
             "geminilakenk",
             "r1000nk",
@@ -462,6 +472,26 @@
     "mountloader": {
         "system": true,
         "description": "Add a script to mount/unmount loader disk in the DSM scheduled task",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
+    },
+    "notification": {
+        "system": false,
+        "description": "Add notification system to DSM",
         "platforms": [
             "apollolake",
             "broadwell",
