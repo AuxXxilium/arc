@@ -3369,6 +3369,7 @@ function checkHardwareID() {
     else
       USERID=""
       writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
       [ -f "${S_FILE}.bak" ] && mv -f "${S_FILE}.bak" "${S_FILE}" 2>/dev/null
@@ -3376,6 +3377,7 @@ function checkHardwareID() {
   else
     USERID=""
     writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
     writeConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
     [ -f "${S_FILE}.bak" ] && mv -f "${S_FILE}.bak" "${S_FILE}" 2>/dev/null
