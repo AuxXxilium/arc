@@ -1696,26 +1696,40 @@ function backupMenu() {
 function updateMenu() {
   NEXT="1"
   while true; do
-    dialog --backtitle "$(backtitle)" --title "Update" --colors --cancel-label "Exit" \
-      --menu "Choose an Option" 0 0 0 \
-      1 "Update Loader (incl. Dependencies) \Z1(no reflash)\Zn" \
-      2 "Upgrade Loader (incl. Dependencies) \Z1(reflash!)\Zn" \
-      3 "Update Dependencies \Z1(maybe not stable)\Zn" \
-      2>"${TMP_PATH}/resp"
+    if [ "${ARC_OFFLINE}" = "false" ]; then
+      dialog --backtitle "$(backtitle)" --title "Update" --colors --cancel-label "Exit" \
+        --menu "Choose an Option" 0 0 0 \
+        1 "Update Loader (incl. Dependencies) \Z1(no reflash)\Zn" \
+        2 "Upgrade Loader (incl. Dependencies) \Z1(reflash!)\Zn" \
+        3 "Update Dependencies \Z1(maybe not stable)\Zn" \
+        2>"${TMP_PATH}/resp"
+    else
+      dialog --backtitle "$(backtitle)" --title "Update" --colors --cancel-label "Exit" \
+        --menu "Choose an Option" 0 0 0 \
+        1 "Update Loader (incl. Dependencies) \Z1(no reflash)\Zn" \
+        2 "Upgrade Loader (incl. Dependencies) \Z1(reflash!)\Zn" \
+        2>"${TMP_PATH}/resp"
+    fi
     [ $? -ne 0 ] && break
     case "$(cat "${TMP_PATH}/resp" 2>/dev/null)" in
       1)
         # Ask for Tag
-        TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-        BETATAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-beta/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-        OLD="${ARC_VERSION}"
-        dialog --clear --backtitle "$(backtitle)" --title "Update Loader" \
-          --menu "Current: ${OLD} -> Which Version?" 7 50 0 \
-          1 "Latest ${TAG}" \
-          2 "Beta ${BETATAG}" \
-          3 "Select Version" \
-          4 "Upload .zip File" \
-        2>"${TMP_PATH}/opts"
+        if [ "${ARC_OFFLINE}" = "false" ]; then
+          TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+          BETATAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-beta/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+          dialog --clear --backtitle "$(backtitle)" --title "Update Loader" \
+            --menu "Current: ${ARC_VERSION}" 7 50 0 \
+            1 "Latest ${TAG}" \
+            2 "Beta ${BETATAG}" \
+            3 "Select Version" \
+            4 "Upload .zip File" \
+            2>"${TMP_PATH}/opts"
+        else
+          dialog --clear --backtitle "$(backtitle)" --title "Update Loader" \
+            --menu "Current: ${ARC_VERSION}" 7 50 0 \
+            4 "Upload .zip File" \
+            2>"${TMP_PATH}/opts"
+        fi
         [ $? -ne 0 ] && break
         opts="$(cat "${TMP_PATH}/opts")"
         if [ "${opts}" -eq 1 ]; then
@@ -1755,15 +1769,21 @@ function updateMenu() {
         ;;
       2)
         # Ask for Tag
-        TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-        BETATAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-beta/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-        OLD="${ARC_VERSION}"
-        dialog --clear --backtitle "$(backtitle)" --title "Upgrade Loader" --colors \
-          --menu "\Z1Loader will be reset to default after upgrade!\nIf you use Hardware encryption, your key will be deleted!\Zn\nCurrent: ${OLD} -> Which Version?" 7 50 0 \
-          1 "Latest ${TAG}" \
-          2 "Select Version" \
-          3 "Upload .zip File" \
-        2>"${TMP_PATH}/opts"
+        if [ "${ARC_OFFLINE}" = "false" ]; then
+          TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+          BETATAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-beta/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+          dialog --clear --backtitle "$(backtitle)" --title "Upgrade Loader" --colors \
+            --menu "\Z1Loader will be reset to defaults after upgrade!\nIf you use Hardware encryption, your key will be deleted!\Zn\nCurrent: ${ARC_VERSION}" 10 50 0 \
+            1 "Latest ${TAG}" \
+            2 "Select Version" \
+            3 "Upload .zip File" \
+            2>"${TMP_PATH}/opts"
+        else
+          dialog --clear --backtitle "$(backtitle)" --title "Upgrade Loader" --colors \
+            --menu "\Z1Loader will be reset to default after upgrade!\nIf you use Hardware encryption, your key will be deleted!\Zn\nCurrent: ${ARC_VERSION}" 10 50 0 \
+            3 "Upload .zip File" \
+            2>"${TMP_PATH}/opts"
+        fi
         [ $? -ne 0 ] && break
         opts="$(cat "${TMP_PATH}/opts")"
         if [ "${opts}" -eq 1 ]; then

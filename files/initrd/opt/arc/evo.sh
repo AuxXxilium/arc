@@ -50,12 +50,7 @@ function advancedMenu() {
         write_menu "6" "\Z1Hide Boot Options\Zn"
         write_menu_value "m" "Kernelload" "${KERNELLOAD}"
         write_menu_value "E" "eMMC Boot Support" "${EMMCBOOT}"
-        if [ "${DIRECTBOOT}" = "false" ]; then
-          write_menu_value "i" "Boot IP Waittime" "${BOOTIPWAIT}"
-        fi
         write_menu_value "q" "Directboot" "${DIRECTBOOT}"
-        write_menu_value "W" "RD Compression" "${RD_COMPRESSED}"
-        write_menu_value "X" "Sata DOM" "${SATADOM}"
         write_menu_value "u" "LKM Version" "${LKM}"
       else
         write_menu "6" "\Z1Show Boot Options\Zn"
@@ -159,20 +154,12 @@ function advancedMenu() {
             BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
             NEXT="E"
             ;;
-          W) RD_COMPRESSED=$([ "${RD_COMPRESSED}" = "true" ] && echo 'false' || echo 'true')
-            writeConfigKey "rd-compressed" "${RD_COMPRESSED}" "${USER_CONFIG_FILE}"
-            writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-            BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-            NEXT="W"
-            ;;
-          X) satadomMenu; NEXT="X" ;;
           u) [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
             writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
             writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
             BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
             NEXT="u"
             ;;
-          i) bootipwaittime; NEXT="i" ;;
           q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
             grub-editenv ${USER_GRUBENVFILE} create
             writeConfigKey "directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"

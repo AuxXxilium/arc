@@ -27,10 +27,7 @@ function availableAddons() {
     isAddonAvailable "${ADDON}" "${PLATFORM}" || continue
 
     # Special platform/hardware checks
-    if [ "${MACHINE}" = "physical" ]; then
-      if [ "${ADDON}" = "ledcontrol" ] && ! is_in_array "${PLATFORM}" "${KVER5L[@]}"; then continue; fi
-      if [ "${ADDON}" = "fancontrol" ] && ! is_in_array "${PLATFORM}" "${KVER5L[@]}"; then continue; fi
-    elif [ "${MACHINE}" != "physical" ] && [[ "${ADDON}" =~ ^(cpufreqscaling|fancontrol|ledcontrol)$ ]]; then
+    if [ "${MACHINE}" != "physical" ] && [[ "${ADDON}" =~ ^(cpufreqscaling|fancontrol|ledcontrol)$ ]]; then
       continue
     fi
 

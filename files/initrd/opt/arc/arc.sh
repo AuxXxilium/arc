@@ -187,7 +187,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
 
     write_menu "=" "\Z4===== Misc =====\Zn"
     write_menu "x" "Backup/Restore/Recovery"
-    [ "${ARC_OFFLINE}" = "false" ] && write_menu "z" "Update Menu"
+    write_menu "z" "Update Menu"
     write_menu "I" "Power/Service Menu"
     write_menu "V" "Credits"
     [ "$TERM" != "xterm-256color" ] && WEBCONFIG="Webconfig: http://${IPCON}:${HTTPPORT:-7080}" || WEBCONFIG=""
