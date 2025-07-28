@@ -8,3 +8,8 @@ tasks:
       - git reset --hard
       - git pull
       - ./img-gen.sh evo
+  build-minimal:
+    cmds:
+      - git reset --hard
+      - git pull
+      - ./img-gen.sh minimal
