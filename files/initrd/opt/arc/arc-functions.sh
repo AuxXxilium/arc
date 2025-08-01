@@ -11,7 +11,6 @@ function arcModel() {
   [ "${ARC_OFFLINE}" != "true" ] && checkHardwareID || true
   dialog --backtitle "$(backtitle)" --title "Model" \
     --infobox "Reading Models..." 3 25
-  # Loop menu
   RESTRICT=1
   PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"
   echo -n "" >"${TMP_PATH}/modellist"
@@ -53,18 +52,13 @@ function arcModel() {
         is_in_array "${M}" "${NVMECACHE[@]}" && M_2_CACHE="+" || M_2_CACHE="x"
         [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DVA1622" ]] && M_2_CACHE=""
         [[ "${M}" = "DS220+" || "${M}" = "DS224+" || "${DT}" = "false" ]] && M_2_STORAGE="" || M_2_STORAGE="+"
-        # Check id model is compatible with CPU
         if [ "${RESTRICT}" -eq 1 ]; then
-          # Check required CPU flags
           for F in ${FLAGS}; do
             grep -q "^flags.*${F}.*" /proc/cpuinfo || COMPATIBLE=0
           done
-
           for NF in ${NOFLAGS}; do
             grep -q "^flags.*${NF}.*" /proc/cpuinfo && COMPATIBLE=0
           done
-
-          # Compatibility checks for platforms
           if is_in_array "${A}" "${KVER5L[@]}"; then
             if { [ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "usb" ] && [ "${SATADRIVES}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; } ||
                { [ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "sata" ] && [ "${SATADRIVES}" -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; } ||
@@ -79,8 +73,6 @@ function arcModel() {
               COMPATIBLE=0
             fi
           fi
-
-          # Model and platform existence checks
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
           [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
         fi
@@ -91,9 +83,7 @@ function arcModel() {
           [ "${COMPATIBLE}" -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${DTS}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
         fi
       done < <(cat "${TMP_PATH}/modellist")
-      # Check if menu is empty
       [ ! -s "${TMP_PATH}/menu" ] && echo "No supported models found." >"${TMP_PATH}/menu"
-      # Show Menu
       [ "${RESTRICT} " -eq 1 ] && TITLEMSG="Supported Models for your Hardware" || TITLEMSG="Supported and unsupported Models for your Hardware"
       [ -n "${ARC_CONF}" ] && MSG="${TITLEMSG} (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" || MSG="${TITLEMSG} (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
       [ -n "${ARC_CONF}" ] && TITLEMSG="Arc Model" || TITLEMSG="Model"
@@ -118,7 +108,6 @@ function arcModel() {
       esac
     done
   fi
-  # Reset Model Config if changed
   if [ "${ARC_MODE}" = "config" ] && [ "${MODEL}" != "${resp}" ]; then
     MODEL="${resp}"
     writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
@@ -147,7 +136,6 @@ function arcModel() {
   writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
-  # Read Platform Data
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -215,17 +203,13 @@ function arcVersion() {
     fi
   }
 
-  # Read Model Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  # Get PAT Data from Config
   PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
-  # Check for Custom Build
   if [ "${ARC_MODE}" = "config" ] && [ "${ARCRESTORE}" != "true" ]; then
-    # Select Build for DSM
     CVS="$(readConfigEntriesArray "platforms.${PLATFORM}.productvers" "${P_FILE}")"
     PVS="$(readConfigEntriesArray "${PLATFORM}.\"${MODEL}\"" "${D_FILE}")"
     LVS=""
@@ -245,7 +229,6 @@ function arcVersion() {
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
     fi
 
-    # Always update config keys for version selection
     writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
     writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
@@ -255,7 +238,6 @@ function arcVersion() {
     PAT_URL_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${RESP}\".url" "${D_FILE}")"
     PAT_HASH_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${RESP}\".hash" "${D_FILE}")"
 
-    # Ensure PAT_URL and PAT_HASH are set, ask user if missing
     while [ -z "${PAT_URL_UPDATE}" ] || [ -z "${PAT_HASH_UPDATE}" ]; do
       MSG="Failed to get PAT Data.\n"
       MSG+="Please manually fill in the URL and Hash of PAT.\n"
@@ -268,7 +250,6 @@ function arcVersion() {
       PAT_HASH_UPDATE="$(sed -n '2p' "${TMP_PATH}/resp")"
     done
 
-    # Only update if changed
     if [ "${PAT_URL}" != "${PAT_URL_UPDATE}" ] || [ "${PAT_HASH}" != "${PAT_HASH_UPDATE}" ]; then
       PAT_URL="${PAT_URL_UPDATE}"
       PAT_HASH="${PAT_HASH_UPDATE}"
@@ -284,7 +265,6 @@ function arcVersion() {
     VALID="true"
   fi
 
-  # Main logic
   if [ "${ONLYVERSION}" != "true" ] && [ "${ARC_MODE}" = "config" ]; then
     if [ "${DT}" = "true" ]; then
       if [ "${SASCONTROLLER}" -ge 1 ]; then
@@ -307,14 +287,12 @@ function arcVersion() {
   if [ "${VALID}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Config" \
       --infobox "Reconfiguring Cmdline, Modules and Synoinfo" 3 60
-
-    # Reset Synoinfo
     writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
+
     while IFS=': ' read -r KEY VALUE; do
       writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
     done < <(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")
 
-    # Reset Modules
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
     is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
     if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
@@ -322,13 +300,11 @@ function arcVersion() {
       mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
     fi
 
-    # Addons
     ADDONS="$(readConfigKey "addons" "${USER_CONFIG_FILE}")"
     if [ "${ADDONS}" = "{}" ]; then
       init_default_addons
     fi
 
-    # Remove unavailable addons
     while IFS=': ' read -r ADDON PARAM; do
       [ -z "${ADDON}" ] && continue
       if ! isAddonAvailable "${ADDON}" "${PLATFORM}"; then
@@ -336,7 +312,6 @@ function arcVersion() {
       fi
     done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
-    # Only Version Mode
     if [ "${ONLYVERSION}" = "true" ]; then
       writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
       BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -358,10 +333,10 @@ function arcVersion() {
 ###############################################################################
 # Arc Patch Section
 function arcPatch() {
-  # Read Model Values
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+  ARC_CONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
 
   if [ "${ARC_MODE}" = "automated" ] && [ "${ARC_PATCH}" != "user" ]; then
     [ -n "${ARC_CONF}" ] && ARC_PATCH="true" || ARC_PATCH="false"
@@ -429,11 +404,10 @@ function arcSettings() {
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
   
-  # Network Config for Loader
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
     --infobox "Generating Network Config..." 3 40
   sleep 2
-  getnet || return
+  getnet
   
   if [ "${ONLYPATCH}" = "true" ]; then
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -441,28 +415,25 @@ function arcSettings() {
     return 0
   fi
   
-  # Select Portmap for Loader
   dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
     --infobox "Generating Storage Map..." 3 40
   sleep 2
-  getmap || return
+  getmap
   if [ "${DT}" = "false" ]; then
-    getmapSelection || return
+    getmapSelection
   fi
   
-  # Select Addons
   if [ "${ARC_MODE}" = "config" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Addons" \
       --infobox "Loading Addons Table..." 3 40
-    addonSelection || return
+    addonSelection
   fi
   
-  # CPU Frequency Scaling & Governor
   if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
     if [ "${ARC_MODE}" = "config" ] && [ "${MEV}" = "physical" ]; then
       dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
         --infobox "Generating Governor Table..." 3 40
-      governorSelection || return
+      governorSelection
     elif [ "${ARC_MODE}" = "automated" ] && [ "${MEV}" = "physical" ]; then
       if [ "${KVER:0:1}" = "5" ]; then
         writeConfigKey "governor" "schedutil" "${USER_CONFIG_FILE}"
@@ -472,7 +443,6 @@ function arcSettings() {
     fi
   fi
 
-  # Warnings and Checks
   if [ "${ARC_MODE}" = "config" ]; then
     DEVICENIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
     MODELNIC="$(readConfigKey "${MODEL}.ports" "${S_FILE}")"
@@ -482,7 +452,6 @@ function arcSettings() {
     [ "${CPUFREQ}" = "false" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling" && dialog --backtitle "$(backtitle)" --title "Arc Warning" --msgbox "WARN: It is possible that CPU Frequency Scaling is not working properly with your System." 6 80
   fi
   
-  # eMMC Boot Support
   EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
   if [ "${EMMCBOOT}" = "true" ]; then
     writeConfigKey "modules.mmc_block" "" "${USER_CONFIG_FILE}"
@@ -492,7 +461,6 @@ function arcSettings() {
     deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
   fi
   
-  # Final Config Check
   if [ -n "${PLATFORM}" ] && [ -n "${MODEL}" ] && [ -n "${KVER}" ] && [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
     writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -528,7 +496,6 @@ function arcSummary() {
   ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
   REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
   
-  # Read remap configurations
   PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
   DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
   PORTREMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
@@ -544,14 +511,12 @@ function arcSummary() {
   EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
   
-  # Check for user-defined remap values
   if [ "${DT}" = "false" ] && [ "${REMAP}" = "user" ] && [ -z "${PORTMAP}${DISKMAP}${PORTREMAP}${AHCIPORTREMAP}" ]; then
     dialog --backtitle "$(backtitle)" --title "Arc Error" \
       --msgbox "ERROR: You selected Portmap: User and not set any values. -> Can't build Loader!\nGo need to go Cmdline Options and add your Values." 6 80
     return 1
   fi
   
-  # Print Summary
   SUMMARY="\Z4> DSM Information\Zn"
   SUMMARY+="\n>> Model: \Zb${MODEL}\Zn"
   SUMMARY+="\n>> Version: \Zb${PRODUCTVER}\Zn"
@@ -598,7 +563,6 @@ function arcSummary() {
 ###############################################################################
 # Building Loader
 function make() {
-  # Read Model Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -606,7 +570,8 @@ function make() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
-  # Check for Arc Patch
+  ARC_OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+  ARC_CONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   if [ -z "${ARC_CONF}" ] || [ "${ARC_PATCH}" = "false" ]; then
     deleteConfigKey "addons.amepatch" "${USER_CONFIG_FILE}"
@@ -617,16 +582,17 @@ function make() {
       deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
-  if [ -n "${IPCON}" ]; then
-    getpatfiles
-  else
-    dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
-      --infobox "Offline Mode disabled!\nNetwork Connection required." 4 40
-    # Set Build to false
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    sleep 2
-    return
+  if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+    if [ "${ARC_OFFLINE}" = "false" ]; then
+      getpatfiles
+    else
+      dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
+        --infobox "Offline Mode disabled!\nNetwork Connection required." 4 40
+      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      sleep 2
+      return
+    fi
   fi
   if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q fancontrol && ! (readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q sensors); then
     writeConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
@@ -641,7 +607,6 @@ function make() {
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
       --infobox "Configuration issue found.\nCould not build Loader!\nExit." 5 40
     rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
-    # Set Build to false
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     sleep 2
@@ -655,7 +620,6 @@ function make() {
   else
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
       --infobox "Could not build Loader!\nExit." 4 40
-    # Set Build to false
     writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     sleep 2
@@ -674,7 +638,6 @@ function arcFinish() {
     if [ "${ARC_MODE}" = "automated" ] || [ "${UPDATEMODE}" = "true" ]; then
       boot
     else
-      # Ask for Boot
       dialog --clear --backtitle "$(backtitle)" --title "Build done" \
         --no-cancel --menu "Boot now?" 7 40 0 \
         1 "Yes - Boot DSM now" \
@@ -761,11 +724,9 @@ function addonMenu() {
 }
 
 function addonSelection() {
-  # read platform and kernel version to check if addon exists
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
 
-  # read addons from user config
   declare -A ADDONS
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
@@ -805,7 +766,6 @@ function modulesMenu() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
   is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
-  # loop menu
   while true; do
     rm -f "${TMP_PATH}/menu"
     {
@@ -845,7 +805,6 @@ function modulesMenu() {
         RET=$?
         case ${RET} in
         0)
-          # ok-button
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           mergeConfigModules "$(cat "${TMP_PATH}/resp" 2>/dev/null)" "${USER_CONFIG_FILE}"
           writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
@@ -853,24 +812,17 @@ function modulesMenu() {
           break
           ;;
         3)
-          # extra-button
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           mergeConfigModules "$(echo "${ALLMODULES}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
           writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
           BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           ;;
         2)
-          # help-button
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
           BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
           ;;
-        1)
-          # cancel-button
-          break
-          ;;
-        255)
-          # ESC
+        *)
           break
           ;;
         esac

@@ -537,7 +537,7 @@ function livepatch() {
   fi
   echo
   if [ "${PVALID}" = "false" ]; then
-    echo -e "Please stay patient for Update."
+    echo -e ">> Please stay patient for Update."
     sleep 5
     exit 1
   elif [ "${PVALID}" = "true" ]; then
