@@ -312,13 +312,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   fi
 
   # Executes DSM kernel via KEXEC
-  KEXECARGS="-a"
-  if [ "${KVER:0:1}" != "4" ] && [ "${KVER:0:1}" != "5" ] && [ "${EFI}" = "1" ]; then
-    echo -e "\033[1;33mWarning, running kexec with --noefi param, strange things will happen!!\033[0m"
-    KEXECARGS+=" --noefi"
-  fi
-
-  kexec ${KEXECARGS} -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" >"${LOG_FILE}" 2>&1 || die "Failed to load DSM Kernel!"
+  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || die "Failed to load DSM Kernel!"
 
   for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
     if [ -w "/dev/${T}" ]; then
