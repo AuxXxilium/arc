@@ -115,7 +115,7 @@ fi
 
 # Show Loader Info
 if [ "${DSMINFO}" = "true" ]; then
-  echo -e "\033[1;37mDSM:\033[0m"
+  echo -e "\033[1;34mDSM\033[0m"
   echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
   echo -e "Platform: \033[1;37m${PLATFORM}\033[0m"
   echo -e "Version: \033[1;37m${PRODUCTVER} (${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))\033[0m"
@@ -123,7 +123,7 @@ if [ "${DSMINFO}" = "true" ]; then
   echo
 fi
 if [ "${SYSTEMINFO}" = "true" ]; then
-  echo -e "\033[1;37mSystem:\033[0m"
+  echo -e "\033[1;34mSystem\033[0m"
   echo -e "CPU: \033[1;37m${CPU}\033[0m"
   echo -e "Board: \033[1;37m${BOARD}\033[0m"
   echo -e "Memory: \033[1;37m${RAMTOTAL}GB\033[0m"
@@ -133,12 +133,12 @@ if [ "${SYSTEMINFO}" = "true" ]; then
   echo
 fi
 if [ "${DISKINFO}" = "true" ]; then
-  echo -e "\033[1;37mDisks:\033[0m"
+  echo -e "\033[1;34mDisks\033[0m"
   echo -e "Disks: \033[1;37m$(lsblk -dpno NAME | grep -v "${LOADER_DISK}" | wc -l)\033[0m"
   echo
 fi
 if [ "${HWIDINFO}" = "true" ]; then
-  echo -e "\033[1;37mHardwareID:\033[0m"
+  echo -e "\033[1;34mHardwareID\033[0m"
   echo -e "HWID: \033[1;37m$(genHWID)\033[0m"
   echo
 fi
