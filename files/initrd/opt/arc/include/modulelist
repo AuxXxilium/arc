@@ -25,16 +25,6 @@ N cpufreq_powersave.ko
 N cpufreq_userspace.ko
 N cpufreq_stats.ko
 
-# btrfs
-F btrfs.ko
-F encryptfs.ko
-F raid6_pq.ko
-F xor.ko
-F xxhash.ko
-F xxhash_generic.ko
-F zstd_compress.ko
-F zstd_decompress.ko
-
 # misc
 N check_signature.ko
 N rfkill.ko
