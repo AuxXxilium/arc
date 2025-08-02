@@ -27,13 +27,16 @@ function backtitle() {
   BACKTITLE="${ARC_TITLE}$([ -n "${NEWTAG}" ] && [ -n "${ARC_VERSION}" ] && [ ${ARC_VERSION//[!0-9]/} -lt ${NEWTAG//[!0-9]/} ] && echo " > ${NEWTAG}") | "
   BACKTITLE+="${MODEL:-(Model)} | "
   BACKTITLE+="${PRODUCTVER:-(Version)} | "
-  BACKTITLE+="${IPCON:-(no IP)} | "
+  if [ "${ARC_OFFLINE}" = "true" ]; then
+    BACKTITLE+="${IPCON:-(no IP)} (offline) | "
+  else
+    BACKTITLE+="${IPCON:-(no IP)} | "
+  fi
   BACKTITLE+="Patch: ${ARC_PATCH} | "
   BACKTITLE+="Config: ${CONFDONE} | "
   BACKTITLE+="Build: ${BUILDDONE} | "
   BACKTITLE+="${MEV}(${BUS}) | "
-  [ -n "${KEYMAP}" ] && BACKTITLE+="KB: ${KEYMAP}"
-  [ "${ARC_OFFLINE}" = "true" ] && BACKTITLE+=" | Offline"
+  BACKTITLE+="KB: ${KEYMAP}"
   echo "${BACKTITLE}"
 }
 

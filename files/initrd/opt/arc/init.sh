@@ -42,8 +42,8 @@ printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 TITLE="Boot:"
-[ "${EFI}" -eq 1 ] && TITLE+=" [UEFI]" || TITLE+=" [BIOS]"
-TITLE+=" | Device: [${BUS}] | Mode: [${ARC_MODE}]"
+[ "${EFI}" -eq 1 ] && TITLE+=" UEFI" || TITLE+=" BIOS"
+TITLE+=" | Device: ${BUS} | Mode: ${ARC_MODE}"
 printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
 # Check for Config File

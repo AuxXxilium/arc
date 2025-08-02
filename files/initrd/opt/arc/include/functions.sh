@@ -556,6 +556,7 @@ function onlineCheck() {
   TIMEZONE="$(curl -m 10 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
   KEYMAP="$(curl -m 10 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
   [ -z "${KEYMAP}" ] && KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+  [ -z "${KEYMAP}" ] && KEYMAP="us"
   if [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ]; then
     writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
     writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
@@ -567,13 +568,8 @@ function onlineCheck() {
   LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
   if [ -z "${LAYOUT}" ]; then
     [ -n "${KEYMAP}" ] && KEYMAP="$(echo ${KEYMAP} | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]' | tr -d '[:punct:]' | tr -d '[:digit:]')"
-    if loadkeys "${KEYMAP:-us}" 2>/dev/null; then
-      writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
-    else
-      KEYMAP="us"
-      loadkeys "${KEYMAP}" 2>/dev/null
-      writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
-    fi
+    loadkeys "${KEYMAP}" 2>/dev/null
+    writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
   fi
   NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
   if [ -n "${NEWTAG}" ]; then
