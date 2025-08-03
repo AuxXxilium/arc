@@ -171,15 +171,19 @@ function arcVersion() {
       initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
+      CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp' | head -1 | sed -n 's|.*/\(hwmon.*\/temp1_input\).*|\1|p')"; then
+      if [ -n "${CORETEMP}" ]; then
+        initConfigKey "addons.fancontrol" "" "${USER_CONFIG_FILE}"
+      fi
       if is_in_array "${PLATFORM}" "${KVER5L[@]}"; then
-          if command -v dmidecode >/dev/null 2>&1; then
-              UGREEN_CHECK=$(dmidecode --string system-product-name 2>/dev/null)
-              case "${UGREEN_CHECK}" in
-                DXP6800*|DX4600*|DX4700*|DXP2800*|DXP4800*|DXP8800*)
-                  initConfigKey "addons.ledcontrol" "" "${USER_CONFIG_FILE}"
-                  ;;
-              esac
-          fi
+        if command -v dmidecode >/dev/null 2>&1; then
+            UGREEN_CHECK=$(dmidecode --string system-product-name 2>/dev/null)
+            case "${UGREEN_CHECK}" in
+              DXP6800*|DX4600*|DX4700*|DXP2800*|DXP4800*|DXP8800*)
+                initConfigKey "addons.ledcontrol" "" "${USER_CONFIG_FILE}"
+                ;;
+            esac
+        fi
       fi
     else
       initConfigKey "addons.vmtools" "" "${USER_CONFIG_FILE}"
