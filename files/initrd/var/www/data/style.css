@@ -1,0 +1,96 @@
+html,
+body {
+    height: 100%;
+}
+
+body {
+    display: flex;
+    align-items: center;
+    padding-bottom: 75px;
+    color: #ffffff;
+    background: url(./bg.png) center center repeat, center center repeat #282b30;
+    position: relative;
+}
+
+main {
+    width: 100%;
+    max-width: 90%;
+    margin: 50px auto auto auto;
+    border-radius: 10px;
+}
+
+.container {
+    width: 90%;
+    margin: 0 auto;
+}
+
+/** Card **/
+.user-card{
+    max-width: 300px;
+    min-height: 350px;
+    height: 100%;
+    margin-right: 20px;
+    background: #18191c;
+    border-radius: 8px;
+    overflow: hidden;
+    padding: 30px 10px 10px 10px;
+}
+
+.user-card .header-banner{
+    min-height: 60px;
+}
+
+.user-card .header-top{
+    display: block;
+    padding: 64px 16px 16px;
+    position: relative;
+}
+
+.user-card .header-avatar{
+    position: absolute;
+    margin-top: -100px;
+    margin-left: 0px;
+}
+
+.user-card .header-avatar img{
+    padding: 5px;
+    border-radius: 50%;
+    background: #18191c;
+}
+
+.user-card .header-text{
+    font-family: Arial;
+    font-size: 20px;
+    font-weight: 800;
+    margin-right: -6px;
+}
+
+.user-card .header-text .header-username{
+    color: #fff;
+    margin-right: -6px;
+}
+
+.user-card .body-wrapper{
+    padding: 0 16px 14px;
+}
+
+.user-card .body-wrapper .body .btn{
+    margin-top: 20px;
+}
+
+.user-card2{
+    max-width: 1050px;
+    min-height: 600px;
+    background: #18191c;
+    border-radius: 8px;
+    overflow: hidden;
+    padding: 10px 10px 10px 10px;
+}
+
+.text-muted {
+    color: #ffffff;
+}
+
+a:link, a:visited, a:hover, a:active { 
+    text-decoration: none; 
+}

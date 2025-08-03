@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Arc Web Config</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="bootstrap.bundle.min.js"></script>
+    <style>
+        .embed-container {
+            position: relative;
+            width: 100%;
+            height: 750px;
+            overflow: hidden; /* Prevent scrollbars from appearing */
+        }
+        
+        .embed-container embed {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: none;
+            overflow: hidden; /* Ensure no scrollbars appear */
+        }
+        
+        .embed-container embed.active {
+            display: block;
+            overflow: hidden; /* Ensure no scrollbars appear for the active embed */
+        }
+        
+        /* Hide scrollbars for WebKit browsers (e.g., Chrome, Safari) */
+        .embed-container embed::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Hide scrollbars for Firefox */
+        .embed-container embed {
+            scrollbar-width: none;
+        }
+        
+        /* Hide scrollbars for Internet Explorer and Edge (legacy) */
+        .embed-container embed {
+            -ms-overflow-style: none;
+        }
+    </style>
+</head>
+<body>
+    <main class="p-0 base">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 user-card" style="width: 30%;">
+                    <div class="header-banner" style="background-image: url('./arc_loader.png'); background-size: cover; background-position: center;">
+                    </div>
+
+                    <div class="header-top">
+                        <div class="header-text">
+                            <span class="header-username">Arc Web Config</span>
+                        </div>
+                        <p class="text-muted"><small id="page-title">Webterminal</small></p>
+                        <p class="text-muted"><small id="server-ip">Loading IP...</small></p>
+                    </div>
+                    <div class="body-wrapper">
+                        <div id="navigation-container"></div>
+                    </div>
+                </div>
+                <div class="col-md-8 user-card2" style="width: 70%;">
+                    <div class="body-wrapper embed-container">
+                        <embed id="embed-terminal" class="embed" src="" data-page="terminal"></embed>
+                        <embed id="embed-dufs" class="embed" src="" data-page="dufs"></embed>
+                        <div id="sysinfo-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        let embedSources = {};
+        let serverIP = null;
+
+        // Fetch IP once and then initialize everything
+        fetch('./get-ip.cgi')
+            .then(response => response.text())
+            .then(ip => {
+                serverIP = ip.trim();
+                document.getElementById('server-ip').textContent = `Server IP: ${serverIP}`;
+
+                // Now fetch and insert navigation links
+                fetch('./navigation.html')
+                    .then(response => response.text())
+                    .then(data => {
+                        // Replace all occurrences of IP in the navigation HTML
+                        data = data.replace(/IP/g, serverIP);
+                        document.getElementById('navigation-container').innerHTML = data;
+                        setupNavigation();
+                        // Load the default page after navigation is ready
+                        loadPage('terminal');
+                    });
+            })
+            .catch(error => {
+                console.error('Error loading IP:', error);
+                document.getElementById('server-ip').textContent = 'Error loading IP - reload the page';
+            });
+
+        function setupNavigation() {
+            document.querySelectorAll('#navigation-container a').forEach(link => {
+                link.addEventListener('click', function(event) {
+                    if (this.textContent.includes('Go to DSM')) {
+                        event.preventDefault();
+                        window.open(`http://${serverIP}:5000`, '_blank');
+                        return;
+                    }
+                    if (!this.hasAttribute('target') || this.getAttribute('target') !== '_blank') {
+                        event.preventDefault();
+                        loadPage(this.getAttribute('href'));
+                    }
+                });
+            });
+        }
+
+        function loadPage(page) {
+            let pageTitle = '';
+            let portKey = '';
+            let embedId = '';
+
+            if (page === 'terminal') {
+                pageTitle = 'Webterminal';
+                portKey = 'TTYD_PORT';
+                embedId = 'embed-terminal';
+            } else if (page === 'dufs') {
+                pageTitle = 'Webfilemanager';
+                portKey = 'DUFS_PORT';
+                embedId = 'embed-dufs';
+            } else if (page === 'sysinfo') {
+                pageTitle = 'System Information';
+                fetchSysinfo();
+                return;
+            }
+
+            document.getElementById('page-title').textContent = pageTitle;
+            document.getElementById('server-ip').textContent = `Server IP: ${serverIP}`;
+
+            // Fetch config only (no need to fetch IP again)
+            fetch('/etc/arc.conf')
+                .then(response => response.text())
+                .then(configText => {
+                    const config = {};
+                    configText.split('\n').forEach(line => {
+                        const [key, value] = line.split('=');
+                        if (key && value) {
+                            config[key.trim()] = value.trim();
+                        }
+                    });
+
+                    // Set default ports if not defined
+                    if (!config['DUFS_PORT']) {
+                        config['DUFS_PORT'] = '7304';
+                    }
+                    if (!config['TTYD_PORT']) {
+                        config['TTYD_PORT'] = '7681';
+                    }
+
+                    const port = config[portKey];
+                    const embedSrc = `http://${serverIP}:${port}`;
+
+                    // Store the embed source if not already stored
+                    if (!embedSources[page]) {
+                        embedSources[page] = embedSrc;
+                        document.getElementById(embedId).src = embedSrc;
+                    }
+
+                    // Show the selected embed and hide others
+                    document.querySelectorAll('.embed-container embed').forEach(embed => {
+                        embed.classList.remove('active');
+                    });
+                    document.getElementById(embedId).classList.add('active');
+                })
+                .catch(error => {
+                    console.error('Error fetching config:', error);
+                    document.getElementById('server-ip').textContent = 'Error loading config - reload the page';
+                });
+        }
+
+        function fetchSysinfo() {
+            fetch('./get-sysinfo.cgi')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('page-title').textContent = 'System Information';
+                    document.getElementById('sysinfo-container').innerHTML = `<pre>${data}</pre>`;
+                    document.getElementById('sysinfo-container').style.display = 'block';
+                    document.querySelectorAll('.embed-container embed').forEach(embed => {
+                        embed.classList.remove('active');
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching system information:', error);
+                });
+        }
+    </script>
+</body>
+</html>
