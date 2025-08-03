@@ -571,7 +571,7 @@ function onlineCheck() {
     loadkeys "${KEYMAP}" 2>/dev/null
     writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
   fi
-  NEWTAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+  NEWTAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
   if [ -n "${NEWTAG}" ]; then
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
     checkHardwareID

@@ -1671,7 +1671,7 @@ function updateMenu() {
       1)
         # Ask for Tag
         if [ "${ARC_OFFLINE}" = "false" ]; then
-          TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+          TAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
           BETATAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-beta/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
           dialog --clear --backtitle "$(backtitle)" --title "Update Loader" \
             --menu "Current: ${ARC_VERSION}" 7 50 0 \
@@ -1726,7 +1726,7 @@ function updateMenu() {
       2)
         # Ask for Tag
         if [ "${ARC_OFFLINE}" = "false" ]; then
-          TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+          TAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
           BETATAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-beta/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
           dialog --clear --backtitle "$(backtitle)" --title "Upgrade Loader" --colors \
             --menu "\Z1Loader will be reset to defaults after upgrade!\nIf you use Hardware encryption, your key will be deleted!\Zn\nCurrent: ${ARC_VERSION}" 10 50 0 \
@@ -2164,7 +2164,7 @@ function networkdiag() {
       else
         echo -e "Arc UserID API reachable! (${USERIDAPI})"
       fi
-      GITHUBAPI=$(curl --interface "${N}" -skL -m 10 "https://api.github.com/repos/AuxXxilium/arc/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 2>/dev/null)
+      GITHUBAPI=$(curl --interface "${N}" -skL -m 10 "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 2>/dev/null)
       if [[ $? -ne 0 || -z "${GITHUBAPI}" ]]; then
         echo -e "Github API not reachable!"
       else
