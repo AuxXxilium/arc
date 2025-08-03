@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Arc Web Config</title>
+    <title>Web Config</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="bootstrap.min.css">
     <link rel="stylesheet" href="style.css">
@@ -56,9 +56,9 @@
 
                     <div class="header-top">
                         <div class="header-text">
-                            <span class="header-username">Arc Web Config</span>
+                            <span class="header-username">Web Config</span>
                         </div>
-                        <p class="text-muted"><small id="page-title">Webterminal</small></p>
+                        <p class="text-muted"><small id="page-title">Terminal</small></p>
                         <p class="text-muted"><small id="server-ip">Loading IP...</small></p>
                     </div>
                     <div class="body-wrapper">
@@ -125,11 +125,11 @@
             let embedId = '';
 
             if (page === 'terminal') {
-                pageTitle = 'Webterminal';
+                pageTitle = 'Terminal';
                 portKey = 'TTYD_PORT';
                 embedId = 'embed-terminal';
             } else if (page === 'dufs') {
-                pageTitle = 'Webfilemanager';
+                pageTitle = 'File Manager';
                 portKey = 'DUFS_PORT';
                 embedId = 'embed-dufs';
             } else if (page === 'sysinfo') {
