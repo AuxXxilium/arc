@@ -171,7 +171,7 @@ function arcVersion() {
       initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
-      CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp' | head -1 | sed -n 's|.*/\(hwmon.*\/temp1_input\).*|\1|p')"; then
+      CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp' | head -1 | sed -n 's|.*/\(hwmon.*\/temp1_input\).*|\1|p')"
       if [ -n "${CORETEMP}" ]; then
         initConfigKey "addons.fancontrol" "" "${USER_CONFIG_FILE}"
       fi
