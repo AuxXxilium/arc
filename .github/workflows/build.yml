@@ -26,10 +26,14 @@ on:
         type: string
       stable:
         description: "stable"
-        default: true
+        default: false
         type: boolean
       beta:
         description: "beta"
+        default: false
+        type: boolean
+      essential:
+        description: "essential"
         default: false
         type: boolean
 
@@ -59,7 +63,8 @@ jobs:
           df -h
 
       # Get extractor, LKM, Addons, Modules, Theme and Configs
-      - name: Get Dependencies for all Image
+      - name: Get Dependencies for Evolution Image
+        if: ${{ inputs.essential == false }}
         run: |
           . scripts/functions.sh "${{ secrets.BUILD_TOKEN }}"
 
@@ -87,15 +92,64 @@ jobs:
 
           echo "OK"
 
-       # Build incremental
-      - name: Build Image Evo
+      # Get extractor, LKM, Addons, Modules, Theme and Configs
+      - name: Get Dependencies for Essential Image
+        if: ${{ inputs.essential == true }}
+        run: |
+          . scripts/functions.sh "${{ secrets.BUILD_TOKEN }}"
+
+          echo "Get Dependencies"
+          getAddons "files/p3/addons"
+          getModules "files/p3/modules"
+          getConfigs "files/p3/configs"
+          getPatches "files/p3/patches"
+          getCustom "files/p3/custom"
+          getOffline "files/p3/configs"
+          getLKMs "files/p3/lkms"
+          getTheme "files/p1/boot/grub"
+          getBuildroot "essential" "bre"
+          echo "BRETAG=${BRTAG}" >> $GITHUB_ENV
+
+          # Export Dependencies Version to env
+          echo "ADDONTAG=${ADDONTAG}" >> $GITHUB_ENV
+          echo "MODULETAG=${MODULETAG}" >> $GITHUB_ENV
+          echo "CONFIGTAG=${CONFIGTAG}" >> $GITHUB_ENV
+          echo "PATCHTAG=${PATCHTAG}" >> $GITHUB_ENV
+          echo "CUSTOMTAG=${CUSTOMTAG}" >> $GITHUB_ENV
+          echo "LKMTAG=${LKMTAG}" >> $GITHUB_ENV
+          echo "THEMETAG=${THEMETAG}" >> $GITHUB_ENV
+          echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
+
+          # Cleanup
+          rm -f files/p3/modules/*-4.4.180.tgz
+          rm -f files/p3/modules/*-4.4.302.tgz
+          rm -f files/p3/lkms/*-4.4.180-*.tgz
+          rm -f files/p3/lkms/*-4.4.302-*.tgz
+          sed -i 's|ARC_TITLE="Arc ${ARC_VERSION}"|ARC_TITLE="Arc Essential ${ARC_VERSION}"|g' files/initrd/opt/arc/include/consts.sh
+          sed -i 's|P_FILE="${MODEL_CONFIG_PATH}/platforms.yml"|P_FILE="${MODEL_CONFIG_PATH}/platforms-essential.yml"|g' files/initrd/opt/arc/include/consts.sh
+          sed -i 's|https://api.github.com/repos/AuxXxilium/arc/releases|https://api.github.com/repos/AuxXxilium/arc-essential/releases|g' files/initrd/opt/arc/include/consts.sh
+          sed -i 's|https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip|https://github.com/AuxXxilium/arc-essential/releases/download/${TAG}/arc-${TAG}.img.zip|g' files/initrd/opt/arc/include/consts.sh
+          sed -i 's|https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}.zip|https://github.com/AuxXxilium/arc-essential/releases/download/${TAG}/update-${TAG}.zip|g' files/initrd/opt/arc/include/consts.sh
+          sed -i 's|https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}.hash|https://github.com/AuxXxilium/arc-essential/releases/download/${TAG}/update-${TAG}.hash|g' files/initrd/opt/arc/include/consts.sh
+          sed -i '/2 "Beta \${BETATAG}" \\/d' files/initrd/opt/arc/arc-functions.sh
+          sed -i '/3 "Update Dependencies \\Z1(maybe not stable)\\Zn" \\/d' files/initrd/opt/arc/arc-functions.sh
+
+          echo "OK"
+
+      # Build incremental
+      - name: Build Image
         run: |
           . scripts/functions.sh
 
           # Modify Source File
           ARC_BUILD="$(date +'%y%m%d')"
-          ARC_VERSION="${{ inputs.version }}"
-          ARC_BRANCH="evo"
+          if ${{ inputs.essential }}; then
+            ARC_VERSION="${{ inputs.version }}-essential"
+            ARC_BRANCH="essential"
+          else
+            ARC_VERSION="${{ inputs.version }}"
+            ARC_BRANCH="evo"
+          fi
           echo "${ARC_BUILD}" > "files/p1/ARC-BUILD"
           echo "ARC_BUILD=${ARC_BUILD}" >> $GITHUB_ENV
           echo "${ARC_VERSION}" > "files/p1/ARC-VERSION"
@@ -115,8 +169,8 @@ jobs:
           sudo mount ${LOOPX}p1 "/tmp/p1"
           sudo mount ${LOOPX}p3 "/tmp/p3"
 
-          [ ! -f "bre/bzImage-arc" ] || [ ! -f "bre/initrd-arc" ] && return 1
-          
+          [ ! -f "bre/bzImage-arc" ] || [ ! -f "bre/initrd-arc" ] && exit 1
+
           echo "Repack initrd"
           cp -f "bre/bzImage-arc" "files/p3/bzImage-arc"
           repackInitrd "bre/initrd-arc" "files/initrd" "files/p3/initrd-arc"
@@ -151,7 +205,7 @@ jobs:
           convertova "${IMAGE_FILE}" "arc.ova"
 
       # Zip image and generate checksum
-      - name: Pack Image Evo
+      - name: Pack Image
         run: |
           if [ -n "${{ env.ARC_VERSION }}" ]; then
             zip -9 "arc-${{ env.ARC_VERSION }}.img.zip" arc.img
@@ -227,6 +281,42 @@ jobs:
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
               - Basesystem Evolution: ${{ env.BRETAG }}
+
+            ### Release
+              - ${{ env.BUILD_TIME }}
+          artifacts: |
+            arc-*.zip
+            update-*.zip
+            update-*.hash
+
+      # Publish a release if essential is true
+      - name: Essential Release
+        if: success() && env.ARC_VERSION != '' && inputs.essential == true
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.ARC_VERSION }}
+          makeLatest: true
+          allowUpdates: true
+          owner: ${{ github.repo.owner }}
+          repo: arc-essential
+          token: ${{ secrets.BUILD_TOKEN }}
+          body: |
+            ### Note:
+              - ${{ inputs.notice }}
+
+            ### Information:
+              - Discord Account for Arc Patch needed
+              - Changelog is available in my Discord
+              - Based on VisionZ Essential Code
+
+            ### Dependencies:
+              - Addons: ${{ env.ADDONTAG }}
+              - Modules: ${{ env.MODULETAG }}
+              - Configs: ${{ env.CONFIGTAG }}
+              - Patches: ${{ env.PATCHTAG }}
+              - Custom: ${{ env.CUSTOMTAG }}
+              - LKMs: ${{ env.LKMTAG }}
+              - Basesystem Essential: ${{ env.BRETAG }}
 
             ### Release
               - ${{ env.BUILD_TIME }}

@@ -29,7 +29,7 @@ getTheme "files/p1/boot/grub"
 getOffline "files/p3/configs"
 case "${1}" in
   evo) getBuildroot "${1}" "br" ;;
-  minimal) getBuildroot "${1}" "br" ;;
+  essential) getBuildroot "${1}" "br" ;;
   *) echo "Invalid option specified" ;;
 esac
 

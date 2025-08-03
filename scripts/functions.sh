@@ -186,7 +186,7 @@ function getTheme() {
 }
 
 # Get latest Buildroot
-# $1 type (min for S, ext for X, micro for M)
+# $1 type
 # $2 path
 function getBuildroot() {
   local TYPE="${1}"
