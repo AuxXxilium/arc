@@ -1813,29 +1813,7 @@ function sysinfo() {
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}')"
-  board="$(dmidecode -s system-product-name 2>/dev/null)"
-  if [ -z "${board}" ] || [ "${board}" = "To Be Filled By O.E.M." ]; then
-      board="$(dmidecode -s baseboard-product-name 2>/dev/null)"
-      if [ -z "${board}" ] || [ "${board}" = "To Be Filled By O.E.M." ]; then
-          board=""
-      fi
-  fi
-  vendor="$(dmidecode -s system-manufacturer 2>/dev/null)"
-  if [ -z "${vendor}" ] || [ "${vendor}" = "To Be Filled By O.E.M." ]; then
-      vendor="$(dmidecode -s baseboard-manufacturer 2>/dev/null)"
-      if [ -z "${vendor}" ] || [ "${vendor}" = "To Be Filled By O.E.M." ]; then
-          vendor=""
-      fi
-  fi
-  if [ -n "${vendor}" ] && [ -n "${board}" ]; then
-      BOARD="${vendor} ${board}"
-  elif [ -n "${vendor}" ]; then
-      BOARD="${vendor}"
-  elif [ -n "${board}" ]; then
-      BOARD="${board}"
-  else
-      BOARD="not available"
-  fi
+  BOARD="$(getBoardName)"
   RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
   [ -z "${RAMTOTAL}" ] && RAMTOTAL="N/A"
   GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"

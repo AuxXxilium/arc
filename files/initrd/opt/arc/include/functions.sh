@@ -795,3 +795,33 @@ function sendDiscord() {
   curl -skL "https://arc.auxxxilium.tech/notify.php?id=${USERID}&message=${ENCODED_MSG}" >/dev/null 2>&1
   return $?
 }
+
+###############################################################################
+# Get Board Name
+function getBoardName() {
+  local board="$(/usr/bin/arcsu dmidecode -s system-product-name 2>/dev/null)"
+  if [ -z "${board}" ] || echo "${board}" | grep -Eq "O\.E\.M\.|System"; then
+      board="$(/usr/bin/arcsu dmidecode -s baseboard-product-name 2>/dev/null)"
+      if [ -z "${board}" ] || echo "${board}" | grep -Eq "O\.E\.M\.|System"; then
+          board=""
+      fi
+  fi
+  local vendor="$(/usr/bin/arcsu dmidecode -s system-manufacturer 2>/dev/null)"
+  if [ -z "${vendor}" ] || echo "${vendor}" | grep -Eq "O\.E\.M\.|System|To Be Filled By O\.E\.M\."; then
+      vendor="$(/usr/bin/arcsu dmidecode -s baseboard-manufacturer 2>/dev/null)"
+      if [ -z "${vendor}" ] || echo "${vendor}" | grep -Eq "O\.E\.M\.|System|To Be Filled By O\.E\.M\."; then
+          vendor=""
+      fi
+  fi
+  if [ -n "${vendor}" ] && [ -n "${board}" ]; then
+      BOARD="${vendor} ${board}"
+  elif [ -n "${vendor}" ]; then
+      BOARD="${vendor}"
+  elif [ -n "${board}" ]; then
+      BOARD="${board}"
+  else
+      BOARD="not available"
+  fi
+  echo "${BOARD}"
+  return 0
+}
