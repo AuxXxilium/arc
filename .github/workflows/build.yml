@@ -143,11 +143,10 @@ jobs:
 
           # Modify Source File
           ARC_BUILD="$(date +'%y%m%d')"
+          ARC_VERSION="${{ inputs.version }}"
           if ${{ inputs.essential }}; then
-            ARC_VERSION="${{ inputs.version }}-essential"
             ARC_BRANCH="essential"
           else
-            ARC_VERSION="${{ inputs.version }}"
             ARC_BRANCH="evo"
           fi
           echo "${ARC_BUILD}" > "files/p1/ARC-BUILD"
