@@ -176,15 +176,11 @@ for KEY in "${!SYNOINFO[@]}"; do
   _set_conf_kv "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || exit 1
 done
 rm -f "${RAMDISK_PATH}/usr/bin/get_key_value"
-if [ ! -x "${RAMDISK_PATH}/usr/bin/get_key_value" ]; then
-  printf '#!/usr/bin/env sh\n%s\n_get_conf_kv "$@"' "$(declare -f _get_conf_kv)" >"${RAMDISK_PATH}/usr/bin/get_key_value"
-  chmod a+x "${RAMDISK_PATH}/usr/bin/get_key_value"
-fi
+printf '#!/bin/sh\n%s\n_get_conf_kv "$@"' "$(declare -f _get_conf_kv)" >"${RAMDISK_PATH}/usr/bin/get_key_value"
+chmod a+x "${RAMDISK_PATH}/usr/bin/get_key_value"
 rm -f "${RAMDISK_PATH}/usr/bin/set_key_value"
-if [ ! -x "${RAMDISK_PATH}/usr/bin/set_key_value" ]; then
-  printf '#!/usr/bin/env sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
-  chmod a+x "${RAMDISK_PATH}/usr/bin/set_key_value"
-fi
+printf '#!/bin/sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
+chmod a+x "${RAMDISK_PATH}/usr/bin/set_key_value"
 
 # Copying modulelist
 if [ -f "${USER_UP_PATH}/modulelist" ]; then
