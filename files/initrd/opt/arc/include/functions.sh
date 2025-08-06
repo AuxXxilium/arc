@@ -799,17 +799,17 @@ function sendDiscord() {
 ###############################################################################
 # Get Board Name
 function getBoardName() {
-  local board="$(/usr/bin/arcsu dmidecode -s system-product-name 2>/dev/null)"
+  local board="$(dmidecode -s system-product-name 2>/dev/null)"
   if [ -z "${board}" ] || echo "${board}" | grep -Eq "O\.E\.M\.|System"; then
-      board="$(/usr/bin/arcsu dmidecode -s baseboard-product-name 2>/dev/null)"
+      board="$(dmidecode -s baseboard-product-name 2>/dev/null)"
       if [ -z "${board}" ] || echo "${board}" | grep -Eq "O\.E\.M\.|System"; then
           board=""
       fi
   fi
-  local vendor="$(/usr/bin/arcsu dmidecode -s system-manufacturer 2>/dev/null)"
-  if [ -z "${vendor}" ] || echo "${vendor}" | grep -Eq "O\.E\.M\.|System|To Be Filled By O\.E\.M\."; then
-      vendor="$(/usr/bin/arcsu dmidecode -s baseboard-manufacturer 2>/dev/null)"
-      if [ -z "${vendor}" ] || echo "${vendor}" | grep -Eq "O\.E\.M\.|System|To Be Filled By O\.E\.M\."; then
+  local vendor="$(dmidecode -s system-manufacturer 2>/dev/null)"
+  if [ -z "${vendor}" ] || echo "${vendor}" | grep -Eq "O\.E\.M\.|System"; then
+      vendor="$(dmidecode -s baseboard-manufacturer 2>/dev/null)"
+      if [ -z "${vendor}" ] || echo "${vendor}" | grep -Eq "O\.E\.M\.|System"; then
           vendor=""
       fi
   fi
