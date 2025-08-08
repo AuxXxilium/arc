@@ -481,9 +481,9 @@ function rebootTo() {
   [ -z "${1}" ] && exit 1
   if ! echo "${MODES}" | grep -wq "${1}"; then exit 1; fi
   [ "${1}" = "automated" ] && echo "arc-${MODEL}-${PRODUCTVER}-${ARC_VERSION}" >"${PART3_PATH}/automated"
-  [ ! -f "${USER_GRUBENVFILE}" ] && grub-editenv ${USER_GRUBENVFILE} create
+  [ ! -f "${USER_GRUBENVFILE}" ] && grub-editenv "${USER_GRUBENVFILE}" create
   # echo -e "Rebooting to ${1} mode..."
-  grub-editenv ${USER_GRUBENVFILE} set next_entry="${1}"
+  grub-editenv "${USER_GRUBENVFILE}" set next_entry="${1}"
   exec reboot
 }
 

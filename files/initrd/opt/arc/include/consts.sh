@@ -58,6 +58,6 @@ TTYDPORT=$(grep -i '^TTYD_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
 [ -z "${TTYDPORT}" ] && TTYDPORT="7681"
 
 API_URL="https://api.github.com/repos/AuxXxilium/arc/releases"
-UPGRADE_URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip"
-UPDATE_URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}.zip"
-HASH_URL="https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}.hash"
+UPDATE_URL="https://github.com/AuxXxilium/arc/releases/download"
+BETA_API_URL="https://api.github.com/repos/AuxXxilium/arc-beta/releases"
+BETA_URL="https://github.com/AuxXxilium/arc-beta/releases/download"

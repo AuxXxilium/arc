@@ -94,8 +94,8 @@ elif [ "${ARC_MODE}" = "config" ]; then
 
     if [ "${CONFDONE}" = "true" ]; then
       if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
+        write_menu "9" "Build Loader (clean)"
         write_menu "2" "Rebuild Loader (existing)"
-        write_menu "9" "Rebuild Loader (clean)"
       else
         write_menu "2" "Build Loader"
       fi

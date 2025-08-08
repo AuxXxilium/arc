@@ -1672,7 +1672,7 @@ function updateMenu() {
         # Ask for Tag
         if [ "${ARC_OFFLINE}" = "false" ]; then
           TAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-          BETATAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-beta/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+          BETATAG="$(curl -m 10 -skL "${BETA_API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
           dialog --clear --backtitle "$(backtitle)" --title "Update Loader" \
             --menu "Current: ${ARC_VERSION}" 7 50 0 \
             1 "Latest ${TAG}" \
@@ -1727,7 +1727,7 @@ function updateMenu() {
         # Ask for Tag
         if [ "${ARC_OFFLINE}" = "false" ]; then
           TAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-          BETATAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-beta/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+          BETATAG="$(curl -m 10 -skL "${BETA_API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
           dialog --clear --backtitle "$(backtitle)" --title "Upgrade Loader" --colors \
             --menu "\Z1Loader will be reset to defaults after upgrade!\nIf you use Hardware encryption, your key will be deleted!\Zn\nCurrent: ${ARC_VERSION}" 10 50 0 \
             1 "Latest ${TAG}" \

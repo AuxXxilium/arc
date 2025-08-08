@@ -128,9 +128,7 @@ jobs:
           sed -i 's|ARC_TITLE="Arc ${ARC_VERSION}"|ARC_TITLE="Arc Essential ${ARC_VERSION}"|g' files/initrd/opt/arc/include/consts.sh
           sed -i 's|P_FILE="${MODEL_CONFIG_PATH}/platforms.yml"|P_FILE="${MODEL_CONFIG_PATH}/platforms-essential.yml"|g' files/initrd/opt/arc/include/consts.sh
           sed -i 's|https://api.github.com/repos/AuxXxilium/arc/releases|https://api.github.com/repos/AuxXxilium/arc-essential/releases|g' files/initrd/opt/arc/include/consts.sh
-          sed -i 's|https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip|https://github.com/AuxXxilium/arc-essential/releases/download/${TAG}/arc-${TAG}.img.zip|g' files/initrd/opt/arc/include/consts.sh
-          sed -i 's|https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}.zip|https://github.com/AuxXxilium/arc-essential/releases/download/${TAG}/update-${TAG}.zip|g' files/initrd/opt/arc/include/consts.sh
-          sed -i 's|https://github.com/AuxXxilium/arc/releases/download/${TAG}/update-${TAG}.hash|https://github.com/AuxXxilium/arc-essential/releases/download/${TAG}/update-${TAG}.hash|g' files/initrd/opt/arc/include/consts.sh
+          sed -i 's|https://github.com/AuxXxilium/arc/releases/download|https://github.com/AuxXxilium/arc-essential/releases/download|g' files/initrd/opt/arc/include/consts.sh
           sed -i '/2 "Beta \${BETATAG}" \\/d' files/initrd/opt/arc/arc-functions.sh
           sed -i '/3 "Update Dependencies \\Z1(maybe not stable)\\Zn" \\/d' files/initrd/opt/arc/arc-functions.sh
 

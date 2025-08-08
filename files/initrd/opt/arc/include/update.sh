@@ -17,11 +17,9 @@ function updateLoader() {
       done
     fi
     if [ -n "${TAG}" ]; then
-      export URL="${UPDATE_URL}"
-      export TAG="${TAG}"
       {
         {
-          curl -kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&3 3>&-
+          curl -kL "${UPDATE_URL}/${TAG}/update-${TAG}.zip" -o "${TMP_PATH}/update.zip" 2>&3 3>&-
         } 3>&1 >&4 4>&- |
         perl -C -lane '
           BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -40,8 +38,7 @@ function updateLoader() {
   fi
   if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 300000 ]; then
     if [ "${TAG}" != "zip" ]; then
-      HASHURL="${HASH_URL}"
-      HASH="$(curl -skL "${HASHURL}" | awk '{print $1}')"
+      HASH="$(curl -skL "${UPDATE_URL}/${TAG}/update-${TAG}.hash" | awk '{print $1}')"
       if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
           --infobox "Update failed - Hash mismatch!\nTry again later." 0 0
@@ -110,7 +107,7 @@ function updateLoaderBeta() {
     if [ -z "${TAG}" ]; then
       idx=0
       while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
-        TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-beta/releases" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+        TAG="$(curl -m 10 -skL "${BETA_API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
         if [ -n "${TAG}" ]; then
           break
         fi
@@ -119,11 +116,9 @@ function updateLoaderBeta() {
       done
     fi
     if [ -n "${TAG}" ]; then
-      export URL="https://github.com/AuxXxilium/arc-beta/releases/download/${TAG}/update-${TAG}.zip"
-      export TAG="${TAG}"
       {
         {
-          curl -kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&3 3>&-
+          curl -kL "${BETA_URL}/${TAG}/update-${TAG}.zip" -o "${TMP_PATH}/update.zip" 2>&3 3>&-
         } 3>&1 >&4 4>&- |
         perl -C -lane '
           BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -142,8 +137,7 @@ function updateLoaderBeta() {
   fi
   if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 300000 ]; then
     if [ "${TAG}" != "zip" ]; then
-      HASHURL="https://github.com/AuxXxilium/arc-beta/releases/download/${TAG}/update-${TAG}.hash"
-      HASH="$(curl -skL "${HASHURL}" | awk '{print $1}')"
+      HASH="$(curl -skL "${BETA_URL}/${TAG}/update-${TAG}.hash" | awk '{print $1}')"
       if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
           --infobox "Update failed - Hash mismatch!\nTry again later." 0 0
@@ -196,7 +190,7 @@ function upgradeLoader() {
     if [ -z "${TAG}" ]; then
       idx=0
       while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
-        TAG="$(curl -m 10 -skL "${UPGRADE_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+        TAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
         if [ -n "${TAG}" ]; then
           break
         fi
@@ -205,11 +199,9 @@ function upgradeLoader() {
       done
     fi
     if [ -n "${TAG}" ]; then
-      export URL="${ARC_URL}"
-      export TAG="${TAG}"
       {
         {
-          curl -kL "${URL}" -o "${TMP_PATH}/arc.img.zip" 2>&3 3>&-
+          curl -kL "${UPDATE_URL}/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc.img.zip" 2>&3 3>&-
         } 3>&1 >&4 4>&- |
         perl -C -lane '
           BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -240,12 +232,12 @@ function upgradeLoader() {
     DEV2=$(blkid | grep 'LABEL="ARC2"' | cut -d: -f1)
     DEV3=$(blkid | grep 'LABEL="ARC3"' | cut -d: -f1)
     # Get the base device (e.g., /dev/sda from /dev/sda1)
-    DEV=$(echo "$DEV1" | sed 's/[0-9]*$//')
+    DEV=$(echo "${DEV1}" | sed 's/[0-9]*$//')
 
-    if [ -b "$DEV" ] && [ -f "$IMG_FILE" ]; then
+    if [ -b "${DEV}" ] && [ -f "${IMG_FILE}" ]; then
       # Write the whole image to the device (overwriting all partitions)
-      if dd if="$IMG_FILE" of="$DEV" bs=1M conv=fsync; then
-        rm -f "$IMG_FILE"
+      if dd if="${IMG_FILE}" of="${DEV}" bs=1M conv=fsync; then
+        rm -f "${IMG_FILE}"
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
           --infobox "Upgrade done! -> Rebooting..." 3 50
         sleep 2
@@ -284,11 +276,9 @@ function updateAddons() {
     idx=$((${idx} + 1))
   done
   if [ -n "${TAG}" ]; then
-    export URL="https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons-${TAG}.zip"
-    export TAG="${TAG}"
     {
       {
-      curl -kL "${URL}" -o "${TMP_PATH}/addons.zip" 2>&3 3>&-
+        curl -kL "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons-${TAG}.zip" -o "${TMP_PATH}/addons.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
       BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -338,11 +328,9 @@ function updatePatches() {
     idx=$((${idx} + 1))
   done
   if [ -n "${TAG}" ]; then
-    export URL="https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches-${TAG}.zip"
-    export TAG="${TAG}"
     {
       {
-        curl -kL "${URL}" -o "${TMP_PATH}/patches.zip" 2>&3 3>&-
+        curl -kL "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches-${TAG}.zip" -o "${TMP_PATH}/patches.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
         BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -391,11 +379,9 @@ function updateCustom() {
     idx=$((${idx} + 1))
   done
   if [ -n "${TAG}" ]; then
-    export URL="https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/custom-${TAG}.zip"
-    export TAG="${TAG}"
     {
       {
-        curl -kL "${URL}" -o "${TMP_PATH}/custom.zip" 2>&3 3>&-
+        curl -kL "https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/custom-${TAG}.zip" -o "${TMP_PATH}/custom.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
         BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -450,11 +436,9 @@ function updateModules() {
   if [ -n "${TAG}" ]; then
     rm -rf "${MODULES_PATH}"
     mkdir -p "${MODULES_PATH}"
-    export URL="https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules-${TAG}.zip"
-    export TAG="${TAG}"
     {
       {
-        curl -kL "${URL}" -o "${TMP_PATH}/modules.zip" 2>&3 3>&-
+        curl -kL "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules-${TAG}.zip" -o "${TMP_PATH}/modules.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
         BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -518,11 +502,9 @@ function updateConfigs() {
     local TAG="${1}"
   fi
   if [ -n "${TAG}" ]; then
-    export URL="https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs-${TAG}.zip"
-    export TAG="${TAG}"
     {
       {
-        curl -kL "${URL}" -o "${TMP_PATH}/configs.zip" 2>&3 3>&-
+        curl -kL "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs-${TAG}.zip" -o "${TMP_PATH}/configs.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
         BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -575,11 +557,9 @@ function updateLKMs() {
     local TAG="${1}"
   fi
   if [ -n "${TAG}" ]; then
-    export URL="https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip"
-    export TAG="${TAG}"
     {
       {
-        curl -kL "${URL}" -o "${TMP_PATH}/rp-lkms.zip" 2>&3 3>&-
+        curl -kL "https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
         BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
