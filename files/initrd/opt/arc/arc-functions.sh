@@ -2190,16 +2190,15 @@ function networkdiag() {
 ###############################################################################
 # Shows Credits to user
 function credits() {
-  # Print Credits Informations
   TEXT=""
   TEXT+="\n\Z4> Arc Loader:\Zn"
   TEXT+="\n  Github: \Zbhttps://github.com/AuxXxilium\Zn"
-  TEXT+="\n  Website: \Zbhttps://auxxxilium.tech\Zn"
+  TEXT+="\n  Web: \Zbhttps://auxxxilium.tech | https://xpenology.tech\Zn"
   TEXT+="\n  Wiki: \Zbhttps://auxxxilium.tech/wiki\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4>> Developer:\Zn"
   TEXT+="\n   Arc Loader: \ZbAuxXxilium / Fulcrum\Zn"
-  TEXT+="\n   Arc Evo Base: \ZbVisionZ\Zn"
+  TEXT+="\n   Arc Basesystem: \ZbVisionZ / AuxXxilium\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4>> Based on:\Zn"
   TEXT+="\n   Redpill: \ZbTTG / Pocopico\Zn"
@@ -2208,14 +2207,12 @@ function credits() {
   TEXT+="\n   DSM: \ZbSynology Inc.\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4>> Note:\Zn"
-  TEXT+="\n   Arc and all not encrypted Parts are OpenSource."
-  TEXT+="\n   The encrypted Parts and DSM are licensed to"
-  TEXT+="\n   Synology Inc. and are not under GPL!"
-  TEXT+="\n"
-  TEXT+="\n   Commercial use is not permitted!"
+  TEXT+="\n   DSM are licensed to Synology Inc."
   TEXT+="\n"
   TEXT+="\n   This Loader is FREE and it is forbidden"
   TEXT+="\n   to sell Arc or Parts of it."
+  TEXT+="\n"
+  TEXT+="\n   Commercial use is not permitted!"
   TEXT+="\n"
   dialog --backtitle "$(backtitle)" --colors --title "Credits" \
     --msgbox "${TEXT}" 0 0
