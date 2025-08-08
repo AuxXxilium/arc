@@ -200,11 +200,6 @@ function arcVersion() {
     if [ "${SASDRIVES}" -gt 0 ] && [ "${DT}" = "true" ]; then
       initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
     fi
-    WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
-    DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
-    if [ "${WEBHOOKNOTIFY}" = "true" ] || [ "${DISCORDNOTIFY}" = "true" ]; then
-      initConfigKey "addons.notification" "" "${USER_CONFIG_FILE}"
-    fi
   }
 
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -280,6 +275,19 @@ function arcVersion() {
         dialog --backtitle "$(backtitle)" --title "Arc Warning" \
           --yesno "WARN: You use a Raid/SCSI Controller and selected a DT Model.\nThis is not supported.\n\nContinue anyway?" 8 70
         [ $? -ne 0 ] && return
+      fi
+    fi
+    USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
+    ADDONS_LIST="$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
+    if [ -n "${USERID}" ] && ! echo "${ADDONS_LIST}" | grep -q "notification"; then
+      MSG="Enable Discord Notification for Loader Mode and DSM Status?"
+      dialog --backtitle "$(backtitle)" --colors --title "Notification" \
+        --yesno "${MSG}" 5 65
+      [ $? -eq 0 ] && writeConfigKey "arc.discordnotify" "true" "${USER_CONFIG_FILE}"
+      WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
+      DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
+      if [ "${WEBHOOKNOTIFY}" = "true" ] || [ "${DISCORDNOTIFY}" = "true" ]; then
+        initConfigKey "addons.notification" "" "${USER_CONFIG_FILE}"
       fi
     fi
     MSG="Do you want to use Automated Mode?\nIf yes, Loader will configure, build and boot DSM."
@@ -3136,9 +3144,9 @@ function governorSelection () {
   rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
   # Selectable CPU governors
-  [ "${KVER:0:1}" = "5" ] && echo -e "schedutil \"use schedutil to scale frequency *\"" >>"${TMP_PATH}/opts"
-  [ "${KVER:0:1}" = "4" ] && echo -e "conservative \"use conservative to scale frequency *\"" >>"${TMP_PATH}/opts"
-  [ "${KVER:0:1}" = "4" ] && echo -e "ondemand \"use ondemand to scale frequency\"" >>"${TMP_PATH}/opts"
+  [ "${KVER:0:1}" = "5" ] && echo -e "schedutil \"use efficient frequency scaling *\"" >>"${TMP_PATH}/opts"
+  [ "${KVER:0:1}" = "4" ] && echo -e "conservative \"use dynamic frequency scaling *\"" >>"${TMP_PATH}/opts"
+  [ "${KVER:0:1}" = "4" ] && echo -e "ondemand \"use dynamic frequency boost\"" >>"${TMP_PATH}/opts"
   echo -e "performance \"always run at max frequency\"" >>"${TMP_PATH}/opts"
   echo -e "powersave \"always run at lowest frequency\"" >>"${TMP_PATH}/opts"
   dialog --backtitle "$(backtitle)" --title "CPU Frequency Scaling" \
@@ -3309,7 +3317,7 @@ function genHardwareID() {
       writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
       writeConfigKey "bootscreen.hwidinfo" "true" "${USER_CONFIG_FILE}"
       dialog --backtitle "$(backtitle)" --title "HardwareID" \
-        --msgbox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!\nMake sure you select Arc Patch while configure." 7 70
+        --msgbox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!\nMake sure you select Arc Patch while configure the Loader." 7 70
       break
     else
       USERID=""

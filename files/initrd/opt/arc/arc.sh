@@ -86,8 +86,8 @@ elif [ "${ARC_MODE}" = "config" ]; then
 
     write_menu "=" "\Z4===== Main =====\Zn"
 
-    if [ -z "${USERID}" ] && [ "${ARC_OFFLINE}" = "false" ]; then
-      write_menu "0" "HardwareID for Arc Patch"
+    if [ "${ARC_OFFLINE}" = "false" ]; then
+      write_menu_value "0" "HardwareID" "$([ -n "$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")" ] && echo "registered" || echo "register for Arc Patch")"
     fi
 
     write_menu "1" "Choose Model"
@@ -114,9 +114,9 @@ elif [ "${ARC_MODE}" = "config" ]; then
         write_menu "5" "\Z1Hide Arc Options\Zn"
         write_menu "b" "Addons"
         write_menu "d" "Modules"
-        write_menu "e" "Version"
-        write_menu "p" "SN/Mac Options"
-    
+        write_menu_value "e" "Version" "${PRODUCTVER:-unknown}"
+        write_menu_value "p" "SN/Mac Options" "$([ -n "${ARC_CONF}" ] && echo "arc" || echo "random/user")"
+
         if [ "${DT}" = "false" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
           write_menu "S" "PortMap (Sata Controller)"
         fi
@@ -125,14 +125,14 @@ elif [ "${ARC_MODE}" = "config" ]; then
           write_menu "o" "DTS Map Options"
         fi
 
-        for addon in "cpufreqscaling" "storagepanel"; do
-          if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "${addon}"; then
-            case "${addon}" in
-              "cpufreqscaling") write_menu "g" "Scaling Governor" ;;
-              "storagepanel") write_menu "P" "StoragePanel" ;;
-            esac
-          fi
-        done
+        addons_list="$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
+        if echo "${addons_list}" | grep -q "cpufreqscaling"; then
+          GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
+          write_menu_value "g" "Scaling Governor" "${GOVERNOR:-performance}"
+        fi
+        if echo "${addons_list}" | grep -q "storagepanel"; then
+          write_menu_value "P" "StoragePanel" "${STORAGEPANEL:-auto}"
+        fi
 
         if [ "${PLATFORM}" = "epyc7002" ] && [ "${PRODUCTVER}" = "7.2" ]; then
           write_menu_value "K" "Kernel" "${KERNEL}"

@@ -212,24 +212,17 @@ elif [ "${ARC_MODE}" = "config" ]; then
   while true; do
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
     write_menu "=" "\Z4===== Main =====\Zn"
-    if [ -z "${USERID}" ] && [ "${ARC_OFFLINE}" = "false" ]; then
-      write_menu_value "0" "HardwareID" "${HARDWAREID}"
+    if [ "${ARC_OFFLINE}" = "false" ]; then
+      write_menu_value "0" "HardwareID" "$([ -n "$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")" ] && echo "registered" || echo "register for Arc Patch")"
     fi
 
     write_menu_value "1" "Model" "${MODEL}"
 
     if [ "${CONFDONE}" = "true" ]; then
-      write_menu_value "e" "Version" "${PRODUCTVER}"
+      write_menu_value "e" "Version" "${PRODUCTVER:-unknown}"
       write_menu_value "=" "DT" "${DT}"
       write_menu_value "=" "Platform" "${PLATFORM}"
-
-      if [ -n "${USERID}" ] && [ "${ARC_OFFLINE}" = "false" ]; then
-        write_menu_value "p" "Arc Patch" "${ARC_PATCH}"
-      elif [ "${ARC_OFFLINE}" = "false" ]; then
-        write_menu "p" "Arc Patch: \Z4Register HardwareID first\Zn"
-      else
-        write_menu "p" "SN/Mac Options"
-      fi
+      write_menu_value "p" "SN/Mac Options" "$([ -n "${ARC_CONF}" ] && echo "arc" || echo "random/user")"
 
       if [ "${PLATFORM}" = "epyc7002" ]; then
         CPUINFO="$(cat /proc/cpuinfo | grep MHz | wc -l)"
@@ -241,14 +234,14 @@ elif [ "${ARC_MODE}" = "config" ]; then
 
       write_menu "b" "Addons"
 
-      for addon in "cpufreqscaling" "storagepanel"; do
-        if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "${addon}"; then
-          case "${addon}" in
-            "cpufreqscaling") write_menu_value "g" "Scaling Governor" "${GOVERNOR}" ;;
-            "storagepanel") write_menu_value "P" "StoragePanel" "${STORAGEPANEL:-auto}" ;;
-          esac
-        fi
-      done
+      addons_list="$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
+      if echo "${addons_list}" | grep -q "cpufreqscaling"; then
+        GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
+        write_menu_value "g" "Scaling Governor" "${GOVERNOR:-performance}"
+      fi
+      if echo "${addons_list}" | grep -q "storagepanel"; then
+        write_menu_value "P" "StoragePanel" "${STORAGEPANEL:-auto}"
+      fi
 
       write_menu "d" "Modules"
       write_menu_value "O" "Official Driver Priority" "${ODP}"

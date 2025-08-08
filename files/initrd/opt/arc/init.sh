@@ -25,7 +25,7 @@ fi
 checkBootLoader || die "The loader is corrupted, please rewrite it!"
 arc_mode || die "No bootmode found!"
 
-[ -f "${HOME}/.initialized" ] && exec arc.sh || true
+[ -f "${HOME}/.initialized" ] && arc.sh && exit 0 || true
 
 BUS=$(getBus "${LOADER_DISK}")
 EFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)
@@ -139,10 +139,6 @@ writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
 echo
 [ "${ETHN}" -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
 
-# Get the VID/PID if we are in USB
-VID="0x46f4"
-PID="0x0001"
-
 BUSLIST="usb sata sas scsi nvme mmc ide virtio vmbus xen"
 if [ "${BUS}" = "usb" ]; then
   VID="0x$(udevadm info --query property --name "${LOADER_DISK}" 2>/dev/null | grep "ID_VENDOR_ID" | cut -d= -f2)"
@@ -152,8 +148,8 @@ elif ! (echo "${BUSLIST}" | grep -wq "${BUS}"); then
 fi
 
 # Save variables to user config file
-writeConfigKey "vid" "${VID}" "${USER_CONFIG_FILE}"
-writeConfigKey "pid" "${PID}" "${USER_CONFIG_FILE}"
+writeConfigKey "vid" "${VID:-"0x46f4"}" "${USER_CONFIG_FILE}"
+writeConfigKey "pid" "${PID:-"0x0001"}" "${USER_CONFIG_FILE}"
 
 # Inform user and check bus
 echo -e "Loader Disk: \033[1;34m${LOADER_DISK}\033[0m"
@@ -176,7 +172,7 @@ case "${ARC_MODE}" in
   dsm|reinstall|recovery)
     if [ "${BUILDDONE}" = "true" ]; then
       echo -e "\033[1;34mStarting DSM Mode...\033[0m"
-      exec boot.sh && exit 0
+      boot.sh && exit 0
     else
       echo -e "\033[1;34mRebooting to Config Mode...\033[0m"
       rebootTo "config" || die "Reboot to Config Mode failed!"
@@ -241,8 +237,8 @@ if [ "${RAM:-0}" -le 3500 ]; then
   echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m"
   read -rp "Press Enter to continue..."
   if [ $? -eq 0 ]; then
-    exec arc.sh
+    arc.sh
   fi
 else
-  exec arc.sh
+  arc.sh
 fi
