@@ -1710,12 +1710,12 @@ function updateMenu() {
           [ -z "${TAG}" ] && return 1
           updateLoader "${TAG}"
         elif [ "${opts}" -eq 4 ]; then
-          mkdir -p "${PART3_PATH}/users"
+          mkdir -p "/tmp/update"
           dialog --backtitle "$(backtitle)" --title "Update Loader" \
-            --msgbox "Upload the update-*.zip File to ${PART3_PATH}/users\nand press OK after upload is done." 0 0
+            --msgbox "Upload the update-*.zip File to /tmp/update\nand press OK after upload is done." 0 0
           [ $? -ne 0 ] && return 1
           UPDATEFOUND="false"
-          for UPDATEFILE in ${PART3_PATH}/users/update-*.zip; do
+          for UPDATEFILE in /tmp/update/update-*.zip; do
             if [ -e "${UPDATEFILE}" ]; then
               mv -f "${UPDATEFILE}" "${TMP_PATH}/update.zip"
               TAG="zip"
@@ -1737,14 +1737,14 @@ function updateMenu() {
           TAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
           BETATAG="$(curl -m 10 -skL "${BETA_API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
           dialog --clear --backtitle "$(backtitle)" --title "Upgrade Loader" --colors \
-            --menu "\Z1Loader will be reset to defaults after upgrade!\nIf you use Hardware encryption, your key will be deleted!\Zn\nCurrent: ${ARC_VERSION}" 10 50 0 \
+            --menu "\Z1Loader will be reset to defaults after upgrade!\nIf you use Hardware encryption, your key will be deleted!\Zn\nCurrent: ${ARC_VERSION}" 10 65 0 \
             1 "Latest ${TAG}" \
             2 "Select Version" \
             3 "Upload .zip File" \
             2>"${TMP_PATH}/opts"
         else
           dialog --clear --backtitle "$(backtitle)" --title "Upgrade Loader" --colors \
-            --menu "\Z1Loader will be reset to default after upgrade!\nIf you use Hardware encryption, your key will be deleted!\Zn\nCurrent: ${ARC_VERSION}" 10 50 0 \
+            --menu "\Z1Loader will be reset to default after upgrade!\nIf you use Hardware encryption, your key will be deleted!\Zn\nCurrent: ${ARC_VERSION}" 10 65 0 \
             3 "Upload .zip File" \
             2>"${TMP_PATH}/opts"
         fi
@@ -1761,14 +1761,14 @@ function updateMenu() {
           [ -z "${TAG}" ] && return 1
           upgradeLoader "${TAG}"
         elif [ "${opts}" -eq 3 ]; then
-          mkdir -p "${PART3_PATH}/users"
+          mkdir -p "/tmp/update"
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
-            --msgbox "Upload the arc-*.zip File to ${PART3_PATH}/users\nand press OK after upload is done." 0 0
+            --msgbox "Upload the arc-*.zip File to /tmp/update\nand press OK after upload is done." 0 0
           [ $? -ne 0 ] && return 1
           UPDATEFOUND="false"
-          for UPDATEFILE in ${PART3_PATH}/users/arc-*.zip; do
+          for UPDATEFILE in /tmp/update/arc-*.zip; do
             if [ -e "${UPDATEFILE}" ]; then
-              mv -f "${UPDATEFILE}" "${TMP_PATH}/arc.zip"
+              mv -f "${UPDATEFILE}" "${TMP_PATH}/arc.img.zip"
               TAG="zip"
               UPDATEFOUND="true"
               break
