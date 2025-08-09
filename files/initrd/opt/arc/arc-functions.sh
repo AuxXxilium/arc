@@ -200,6 +200,11 @@ function arcVersion() {
     if [ "${SASDRIVES}" -gt 0 ] && [ "${DT}" = "true" ]; then
       initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
     fi
+    WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
+    DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
+    if [ "${WEBHOOKNOTIFY}" = "true" ] || [ "${DISCORDNOTIFY}" = "true" ]; then
+      initConfigKey "addons.notification" "" "${USER_CONFIG_FILE}"
+    fi
   }
 
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -284,11 +289,6 @@ function arcVersion() {
       dialog --backtitle "$(backtitle)" --colors --title "Notification" \
         --yesno "${MSG}" 5 65
       [ $? -eq 0 ] && writeConfigKey "arc.discordnotify" "true" "${USER_CONFIG_FILE}"
-      WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
-      DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
-      if [ "${WEBHOOKNOTIFY}" = "true" ] || [ "${DISCORDNOTIFY}" = "true" ]; then
-        initConfigKey "addons.notification" "" "${USER_CONFIG_FILE}"
-      fi
     fi
     MSG="Do you want to use Automated Mode?\nIf yes, Loader will configure, build and boot DSM."
     dialog --backtitle "$(backtitle)" --colors --title "Automated Mode" \
