@@ -17,9 +17,11 @@ function updateLoader() {
       done
     fi
     if [ -n "${TAG}" ]; then
+      export TAG="${TAG}"
+      export URL="${UPDATE_URL}/${TAG}/update-${TAG}.zip"
       {
         {
-          curl -kL "${UPDATE_URL}/${TAG}/update-${TAG}.zip" -o "${TMP_PATH}/update.zip" 2>&3 3>&-
+          curl -kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&3 3>&-
         } 3>&1 >&4 4>&- |
         perl -C -lane '
           BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -116,9 +118,11 @@ function updateLoaderBeta() {
       done
     fi
     if [ -n "${TAG}" ]; then
+      export TAG="${TAG}"
+      export URL="${BETA_URL}/${TAG}/update-${TAG}.zip"
       {
         {
-          curl -kL "${BETA_URL}/${TAG}/update-${TAG}.zip" -o "${TMP_PATH}/update.zip" 2>&3 3>&-
+          curl -kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&3 3>&-
         } 3>&1 >&4 4>&- |
         perl -C -lane '
           BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -199,9 +203,11 @@ function upgradeLoader() {
       done
     fi
     if [ -n "${TAG}" ]; then
+      export TAG="${TAG}"
+      export URL="${UPDATE_URL}/${TAG}/arc-${TAG}.img.zip"
       {
         {
-          curl -kL "${UPDATE_URL}/${TAG}/arc-${TAG}.img.zip" -o "${TMP_PATH}/arc.img.zip" 2>&3 3>&-
+          curl -kL "${URL}" -o "${TMP_PATH}/arc.img.zip" 2>&3 3>&-
         } 3>&1 >&4 4>&- |
         perl -C -lane '
           BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -276,9 +282,11 @@ function updateAddons() {
     idx=$((${idx} + 1))
   done
   if [ -n "${TAG}" ]; then
+    export TAG="${TAG}"
+    export URL="https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons-${TAG}.zip"
     {
       {
-        curl -kL "https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons-${TAG}.zip" -o "${TMP_PATH}/addons.zip" 2>&3 3>&-
+        curl -kL "${URL}" -o "${TMP_PATH}/addons.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
       BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -328,9 +336,11 @@ function updatePatches() {
     idx=$((${idx} + 1))
   done
   if [ -n "${TAG}" ]; then
+    export TAG="${TAG}"
+    export URL="https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches-${TAG}.zip"
     {
       {
-        curl -kL "https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches-${TAG}.zip" -o "${TMP_PATH}/patches.zip" 2>&3 3>&-
+        curl -kL "${URL}" -o "${TMP_PATH}/patches.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
         BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -379,9 +389,11 @@ function updateCustom() {
     idx=$((${idx} + 1))
   done
   if [ -n "${TAG}" ]; then
+    export TAG="${TAG}"
+    export URL="https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/custom-${TAG}.zip"
     {
       {
-        curl -kL "https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/custom-${TAG}.zip" -o "${TMP_PATH}/custom.zip" 2>&3 3>&-
+        curl -kL "${URL}" -o "${TMP_PATH}/custom.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
         BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -434,11 +446,13 @@ function updateModules() {
     idx=$((${idx} + 1))
   done
   if [ -n "${TAG}" ]; then
+    export TAG="${TAG}"
+    export URL="https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules-${TAG}.zip"
     rm -rf "${MODULES_PATH}"
     mkdir -p "${MODULES_PATH}"
     {
       {
-        curl -kL "https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules-${TAG}.zip" -o "${TMP_PATH}/modules.zip" 2>&3 3>&-
+        curl -kL "${URL}" -o "${TMP_PATH}/modules.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
         BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -502,9 +516,11 @@ function updateConfigs() {
     local TAG="${1}"
   fi
   if [ -n "${TAG}" ]; then
+    export TAG="${TAG}"
+    export URL="https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs-${TAG}.zip"
     {
       {
-        curl -kL "https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs-${TAG}.zip" -o "${TMP_PATH}/configs.zip" 2>&3 3>&-
+        curl -kL "${URL}" -o "${TMP_PATH}/configs.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
         BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
@@ -557,9 +573,11 @@ function updateLKMs() {
     local TAG="${1}"
   fi
   if [ -n "${TAG}" ]; then
+    export TAG="${TAG}"
+    export URL="https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip"
     {
       {
-        curl -kL "https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip" -o "${TMP_PATH}/rp-lkms.zip" 2>&3 3>&-
+        curl -kL "${URL}" -o "${TMP_PATH}/rp-lkms.zip" 2>&3 3>&-
       } 3>&1 >&4 4>&- |
       perl -C -lane '
         BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
