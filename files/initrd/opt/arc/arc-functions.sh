@@ -2916,7 +2916,7 @@ function resetLoader() {
   [ -f "${ARC_RAMDISK_USER_FILE}" ] && rm -f "${ARC_RAMDISK_USER_FILE}" >/dev/null 2>&1
   [ -f "${HOME}/.initialized" ] && rm -f "${HOME}/.initialized" >/dev/null 2>&1
   dialog --backtitle "$(backtitle)" --title "Reset Loader" --aspect 18 \
-    --yesno "Reset successful.\nReboot required!" 0 0
+    --yesno "Reset successful.\nReloading...!" 0 0
   [ $? -ne 0 ] && return
   exec init.sh
 }
