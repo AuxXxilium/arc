@@ -241,7 +241,7 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              - Basesystem Evolution: ${{ env.BRETAG }}
+              - Basesystem: ${{ env.BRETAG }}
 
             ### Release
               - ${{ env.BUILD_TIME }}
@@ -277,7 +277,7 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              - Basesystem Evolution: ${{ env.BRETAG }}
+              - Basesystem: ${{ env.BRETAG }}
 
             ### Release
               - ${{ env.BUILD_TIME }}
@@ -313,7 +313,7 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              - Basesystem Essential: ${{ env.BRETAG }}
+              - Basesystem: ${{ env.BRETAG }}
 
             ### Release
               - ${{ env.BUILD_TIME }}
