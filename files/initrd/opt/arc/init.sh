@@ -54,6 +54,7 @@ initConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.dev" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.discordnotify" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
@@ -202,6 +203,14 @@ mkdir -p "${MODEL_CONFIG_PATH}"
 mkdir -p "${MODULES_PATH}"
 mkdir -p "${PATCH_PATH}"
 mkdir -p "${USER_UP_PATH}"
+
+DEVELOPMENT_MODE="$(readConfigKey "arc.dev" "${USER_CONFIG_FILE}")"
+if [ "${DEVELOPMENT_MODE}" = "true" ]; then
+  echo -e "\033[1;34mDevelopment Mode is enabled.\033[0m"
+  curl -skL https://github.com/AuxXxilium/arc/archive/refs/heads/dev.zip -o /tmp/arc-dev.zip >/dev/null 2>&1 || true
+  unzip -q /tmp/arc-dev.zip -d /tmp/arc-dev >/dev/null 2>&1 || true
+  cp -rf /tmp/arc-dev/initrd/opt/arc/ /opt/arc/ >/dev/null 2>&1 || true
+fi
 
 # Tell webterminal that the loader is ready
 touch "${HOME}/.initialized"

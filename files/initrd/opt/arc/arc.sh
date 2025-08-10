@@ -196,6 +196,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       write_menu "n" "Grub Bootloader Config"
       write_menu "y" "Choose a Keymap for Loader"
       write_menu "F" "\Z1Formate Disks\Zn"
+      write_menu_value "M" "\Z1Development Mode\Zn" "${DEVELOPMENT_MODE:-false}"
     else
       write_menu "8" "\Z1Show Loader Options\Zn"
     fi
@@ -378,6 +379,14 @@ elif [ "${ARC_MODE}" = "config" ]; then
             n) editGrubCfg; NEXT="n" ;;
             y) keymapMenu; NEXT="y" ;;
             F) formatDisks; NEXT="F" ;;
+            M)
+              [ "${DEVELOPMENT_MODE}" = "true" ] && DEVELOPMENT_MODE='false' || DEVELOPMENT_MODE='true'
+              writeConfigKey "arc.dev" "${DEVELOPMENT_MODE}" "${USER_CONFIG_FILE}"
+              dialog --backtitle "$(backtitle)" --title "Development Mode" \
+                --infobox "Rebooting to Development Mode! Stay patient..." 3 50
+              sleep 2
+              rebootTo config
+              ;;
             # Misc Settings
             x) backupMenu; NEXT="x" ;;
             z) updateMenu; NEXT="z" ;;

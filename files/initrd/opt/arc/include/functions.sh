@@ -739,6 +739,9 @@ function readData() {
   # Get Config/Build Status
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+
+  # Development Mode
+  DEVELOPMENT_MODE="$(readConfigKey "arc.dev" "${USER_CONFIG_FILE}")"
 }
 
 ###############################################################################
