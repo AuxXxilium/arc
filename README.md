@@ -15,7 +15,7 @@ Arc is a customized Redpill Loader for DSM 7.x (Xpenology) with enhanced hardwar
 
 ### Bugreport
 
-- Before you report an issue or bug please read the <a href="https://auxxxilium.tech/wiki">FAQ & Wiki</a> and make sure your setting are correct.
+- Before you report an issue or bug please read the <a href="https://xpenology.tech/wiki">FAQ & Wiki</a> and make sure your setting are correct.
 - If you have to report an issue or bug:
     - Hardware you use (Networkchip, Sata/HBA/Raid Controller)
     - Screenshot the Systeminfo (Arc - Sysinfo) !!! <- IMPORTANT
@@ -23,7 +23,7 @@ Arc is a customized Redpill Loader for DSM 7.x (Xpenology) with enhanced hardwar
 ### Links
 
 - <a href="https://github.com/AuxXxilium">Overview</a>
-- <a href="https://auxxxilium.tech/wiki">FAQ & Wiki</a>
+- <a href="https://xpenology.tech/wiki">FAQ & Wiki</a>
 - <a href="https://github.com/AuxXxilium/arc/releases?q=prerelease%3Afalse&expanded=true">Download latest Build</a>
 
 ### Developer
