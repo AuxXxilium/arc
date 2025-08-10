@@ -125,11 +125,11 @@ jobs:
           rm -f files/p3/modules/*-4.4.302.tgz
           rm -f files/p3/lkms/*-4.4.180-*.tgz
           rm -f files/p3/lkms/*-4.4.302-*.tgz
-          sed -i 's|ARC_TITLE="Arc ${ARC_VERSION}"|ARC_TITLE="Arc Essential ${ARC_VERSION}"|g' files/initrd/opt/arc/include/consts.sh
-          sed -i 's|P_FILE="${MODEL_CONFIG_PATH}/platforms.yml"|P_FILE="${MODEL_CONFIG_PATH}/platforms-essential.yml"|g' files/initrd/opt/arc/include/consts.sh
+          sed -i 's|Arc |Arc Essential |' files/initrd/opt/arc/include/consts.sh
+          sed -i 's|platforms.yml|platforms-essential.yml|g' files/initrd/opt/arc/include/consts.sh
           sed -i 's|https://api.github.com/repos/AuxXxilium/arc/releases|https://api.github.com/repos/AuxXxilium/arc-essential/releases|g' files/initrd/opt/arc/include/consts.sh
           sed -i 's|https://github.com/AuxXxilium/arc/releases/download|https://github.com/AuxXxilium/arc-essential/releases/download|g' files/initrd/opt/arc/include/consts.sh
-          sed -i '/2 "Beta \${BETATAG}" \\/d' files/initrd/opt/arc/arc-functions.sh
+          sed -i '/2 \"Beta \${BETATAG}\" \\/d' files/initrd/opt/arc/arc-functions.sh
           sed -i '/3 "Update Dependencies \\Z1(maybe not stable)\\Zn" \\/d' files/initrd/opt/arc/arc-functions.sh
 
           echo "OK"
@@ -230,8 +230,8 @@ jobs:
               - ${{ inputs.notice }}
 
             ### Information:
-              - Discord Account for Arc Patch needed
-              - Changelog is available in my Discord
+              - Discord account required to use Arc Patch
+              - Full changelog is available in Discord
               - Based on VisionZ Evolution Code
 
             ### Dependencies:
@@ -266,8 +266,8 @@ jobs:
               - ${{ inputs.notice }}
 
             ### Information:
-              - Discord Account for Arc Patch needed
-              - Changelog is available in my Discord
+              - Discord account required to use Arc Patch
+              - Full changelog is available in Discord
               - Based on VisionZ Evolution Code
 
             ### Dependencies:
@@ -302,8 +302,8 @@ jobs:
               - ${{ inputs.notice }}
 
             ### Information:
-              - Discord Account for Arc Patch needed
-              - Changelog is available in my Discord
+              - Discord account required to use Arc Patch
+              - Full changelog is available in Discord
               - Based on VisionZ Essential Code
 
             ### Dependencies:
