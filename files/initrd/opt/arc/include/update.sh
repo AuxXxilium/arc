@@ -53,9 +53,9 @@ function updateLoader() {
     dialog --backtitle "$(backtitle)" --title "Update Loader" \
       --infobox "Updating Loader..." 3 50
     if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update"; then
-      rm -rf "/mnt/addons" "/mnt/modules" "/mnt/custom" "/mnt/patches" "/mnt/lkms"
-      mkdir -p "/mnt/addons" "/mnt/modules" "/mnt/custom" "/mnt/patches" "/mnt/lkms"
-      find "${TMP_PATH}/update" -mindepth 1 -maxdepth 1 -exec cp -rf {} "/mnt" \;
+      rm -rf "/mnt/p3/addons" "/mnt/p3/modules" "/mnt/p3/custom" "/mnt/p3/patches" "/mnt/p3/lkms"
+      cp -rf "${TMP_PATH}/update"/* "/mnt"
+      sleep 2
       rm -rf "${TMP_PATH}/update"
       rm -f "${TMP_PATH}/update.zip"
     fi
@@ -154,9 +154,9 @@ function updateLoaderBeta() {
     dialog --backtitle "$(backtitle)" --title "Update Loader" \
       --infobox "Updating Loader..." 3 50
     if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update"; then
-      rm -rf "/mnt/addons" "/mnt/modules" "/mnt/custom" "/mnt/patches" "/mnt/lkms"
-      mkdir -p "/mnt/addons" "/mnt/modules" "/mnt/custom" "/mnt/patches" "/mnt/lkms"
-      find "${TMP_PATH}/update" -mindepth 1 -maxdepth 1 -exec cp -rf {} "/mnt" \;
+      rm -rf "/mnt/p3/addons" "/mnt/p3/modules" "/mnt/p3/custom" "/mnt/p3/patches" "/mnt/p3/lkms"
+      cp -rf "${TMP_PATH}/update"/* "/mnt"
+      sleep 2
       rm -rf "${TMP_PATH}/update"
       rm -f "${TMP_PATH}/update.zip"
     fi
