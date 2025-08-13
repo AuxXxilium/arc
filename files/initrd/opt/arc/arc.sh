@@ -87,7 +87,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
     write_menu "=" "\Z4===== Main =====\Zn"
 
     if [ "${ARC_OFFLINE}" = "false" ]; then
-      write_menu_value "0" "HardwareID" "$([ -n "$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")" ] && echo "registered" || echo "register for Arc Patch")"
+      write_menu_value "0" "HardwareID" "$([ -n "$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")" ] && echo "registered" || echo "register")"
     fi
 
     write_menu "1" "Choose Model"

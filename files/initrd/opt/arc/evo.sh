@@ -213,7 +213,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
     write_menu "=" "\Z4===== Main =====\Zn"
     if [ "${ARC_OFFLINE}" = "false" ]; then
-      write_menu_value "0" "HardwareID" "$([ -n "$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")" ] && echo "registered" || echo "register for Arc Patch")"
+      write_menu_value "0" "HardwareID" "$([ -n "$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")" ] && echo "registered" || echo "register")"
     fi
 
     write_menu_value "1" "Model" "${MODEL}"
