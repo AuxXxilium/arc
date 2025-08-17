@@ -125,15 +125,15 @@ if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   HASATA=0
   for D in $(lsblk -dpno NAME); do
     [ "${D}" = "${LOADER_DISK}" ] && continue
-    if echo "sata sas scsi" | grep -qw "$(getBus "${D}")"; then
+    if echo "sata sas scsi nvme virtio vmbus" | grep -qw "$(getBus "${D}")"; then
       HASATA=1
       break
     fi
   done
-  [ "${HASATA}" -eq 0 ] && echo -e "\033[1;31m*** Note: Please insert at least one Sata/SAS/SCSI Disk for System installation, except the Bootloader Disk. ***\033[0m"
+  [ ${HASATA} = "0" ] && echo -e "\033[1;31m*** Note: Please insert at least one Sata/SAS/SCSI Disk for System installation, except the Bootloader Disk. ***\033[0m"
 fi
 
-if checkBIOS_VT_d && [ "${KVER:0:1}" = "4" ]; then
+if checkBIOS_VT_d && [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
   echo -e "\033[1;31m*** Notice: Disable Intel(VT-d)/AMD(AMD-V) in BIOS/UEFI settings if you encounter a boot issues. ***\033[0m"
   echo
 fi
@@ -178,14 +178,14 @@ elif [ "${ARC_MODE}" = "recovery" ]; then
   CMDLINE['force_junior']=""
 fi
 
-if [ "${EFI}" = "1" ]; then
+if [ "${EFI:-0}" = "1" ]; then
   CMDLINE['withefi']=""
 else
   CMDLINE['noefi']=""
 fi
 
 # DSM Cmdline
-if [ "${KVER:0:1}" = "4" ]; then
+if [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
   if [ "${BUS}" != "usb" ]; then
     SZ=$(blockdev --getsz "${LOADER_DISK}" 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
     SS=$(blockdev --getss "${LOADER_DISK}" 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
