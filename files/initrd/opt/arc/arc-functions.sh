@@ -585,9 +585,6 @@ function make() {
   ARC_OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   ARC_CONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  if [ -z "${ARC_CONF}" ] || [ "${ARC_PATCH}" = "false" ]; then
-    deleteConfigKey "addons.amepatch" "${USER_CONFIG_FILE}"
-  fi
   while IFS=': ' read -r ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
     if ! isAddonAvailable "${ADDON}" "${PLATFORM}"; then
@@ -749,11 +746,7 @@ function addonSelection() {
 
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
-    if [[ "${ADDON}" = "amepatch" && -z "${ARC_CONF}" ]]; then
-      continue
-    else
-      echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
-    fi
+    echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
   done < <(availableAddons "${PLATFORM}")
 
   dialog --backtitle "$(backtitle)" --title "Addons" --colors --aspect 18 \
