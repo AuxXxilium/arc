@@ -782,7 +782,7 @@ function modulesMenu() {
       echo "6 \"Blacklist Modules to prevent loading in DSM\""
     } >"${TMP_PATH}/menu"
     dialog --backtitle "$(backtitle)" --title "Modules" \
-      --cancel-label "Exit" --menu "Choose an option" 0 0 0 --file "${TMP_PATH}/menu" \
+      --cancel-label "Exit" --menu "Choose an option (Only edit Modules if you know what you do)" 0 0 0 --file "${TMP_PATH}/menu" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat "${TMP_PATH}/resp" 2>/dev/null)" in
@@ -1053,7 +1053,7 @@ function cmdlineMenu() {
     echo "7 \"NVMe Optimization\""                                >>"${TMP_PATH}/menu"
     echo "8 \"CPU Performance Optimization\""                     >>"${TMP_PATH}/menu"
     echo "9 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
-    dialog --backtitle "$(backtitle)" --title "Cmdline"  --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
+    dialog --backtitle "$(backtitle)" --title "Cmdline"  --cancel-label "Exit" --menu "Choose an Option (Only edit Cmdline if you know what you do)" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat "${TMP_PATH}/resp" 2>/dev/null)" in
@@ -1309,7 +1309,7 @@ function synoinfoMenu() {
   while true; do
     echo "1 \"Add/edit Synoinfo item\""     >"${TMP_PATH}/menu"
     echo "2 \"Delete Synoinfo item(s)\""    >>"${TMP_PATH}/menu"
-    dialog --backtitle "$(backtitle)" --title "Synoinfo" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
+    dialog --backtitle "$(backtitle)" --title "Synoinfo" --cancel-label "Exit" --menu "Choose an Option (Only edit Synoinfo if you know what you do)" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     case "$(cat "${TMP_PATH}/resp" 2>/dev/null)" in
