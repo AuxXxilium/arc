@@ -2782,6 +2782,9 @@ function formatDisks() {
     fi
   done 2>&1 | dialog --backtitle "$(backtitle)" --title "Format Disks" \
     --progressbox "Formatting ..." 20 100
+  rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --title "Format Disks" \
     --msgbox "Formatting is complete." 0 0
   return
