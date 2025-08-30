@@ -1835,8 +1835,13 @@ function sysinfo() {
     PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
     DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-    ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-    ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
+    ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+    ADDONS_RAW="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
+    if [ -n "${ADDONS_RAW}" ]; then
+      ADDONSINFO="$(echo "${ADDONS_RAW}" | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')"
+    else
+      ADDONSINFO=""
+    fi
     REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
     if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
       PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
@@ -1846,10 +1851,12 @@ function sysinfo() {
     elif [ "${REMAP}" = "ahci" ]; then
       AHCIPORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
     fi
-    USERCMDLINEINFO="$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
-    USERSYNOINFO="$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
+    USERCMDLINEINFO_RAW="$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
+    USERCMDLINEINFO="$(echo "${USERCMDLINEINFO_RAW}" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g' | sed 's/^ //;s/ $//')"
+    USERSYNOINFO_RAW="$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
+    USERSYNOINFO="$(echo "${USERSYNOINFO_RAW}" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g' | sed 's/^ //;s/ $//')"
+    BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
   fi
-  [ "${CONFDONE}" = "true" ] && BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
   DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"

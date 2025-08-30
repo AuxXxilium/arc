@@ -802,29 +802,35 @@ function sendDiscord() {
 ###############################################################################
 # Get Board Name
 function getBoardName() {
-  local board="$(dmidecode -s system-product-name 2>/dev/null)"
-  if [ -z "${board}" ] || echo "${board}" | grep -Eq "O\.E\.M\.|System"; then
-      board="$(dmidecode -s baseboard-product-name 2>/dev/null)"
-      if [ -z "${board}" ] || echo "${board}" | grep -Eq "O\.E\.M\.|System"; then
-          board=""
-      fi
+  local b v
+  if [ -r /sys/class/dmi/id/product_name ]; then
+    b="$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)"
+    b="$(echo "${b}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
   fi
-  local vendor="$(dmidecode -s system-manufacturer 2>/dev/null)"
-  if [ -z "${vendor}" ] || echo "${vendor}" | grep -Eq "O\.E\.M\.|System"; then
-      vendor="$(dmidecode -s baseboard-manufacturer 2>/dev/null)"
-      if [ -z "${vendor}" ] || echo "${vendor}" | grep -Eq "O\.E\.M\.|System"; then
-          vendor=""
-      fi
+  if [ -z "${b}" ] || echo "${b}" | grep -Eq "O\.E\.M\.|System|To Be Filled By O\.E\.M\."; then
+    if [ -r /sys/class/dmi/id/board_name ]; then
+      b="$(cat /sys/class/dmi/id/board_name 2>/dev/null || true)"
+      b="$(echo "${b}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    fi
   fi
-  if [ -n "${vendor}" ] && [ -n "${board}" ]; then
-      BOARD="${vendor} ${board}"
-  elif [ -n "${vendor}" ]; then
-      BOARD="${vendor}"
-  elif [ -n "${board}" ]; then
-      BOARD="${board}"
+  if [ -r /sys/class/dmi/id/sys_vendor ]; then
+    v="$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null || true)"
+    v="$(echo "${v}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+  fi
+  if [ -z "${v}" ] || echo "${v}" | grep -Eq "O\.E\.M\.|System|To Be Filled By O\.E\.M\."; then
+    if [ -r /sys/class/dmi/id/board_vendor ]; then
+      v="$(cat /sys/class/dmi/id/board_vendor 2>/dev/null || true)"
+      v="$(echo "${v}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    fi
+  fi
+  if [ -n "${v}" ] && [ -n "${b}" ]; then
+    BOARD="${v} ${b}"
+  elif [ -n "${v}" ]; then
+    BOARD="${v}"
+  elif [ -n "${b}" ]; then
+    BOARD="${b}"
   else
-      BOARD="not available"
+    BOARD="not available"
   fi
   echo "${BOARD}"
-  return 0
 }

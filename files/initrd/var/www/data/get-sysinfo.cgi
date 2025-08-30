@@ -99,43 +99,35 @@ function getSysinfo() {
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-  # Get board/vendor: try dmidecode, then sysfs fallbacks, trim results and ignore generic OEM placeholder
-  board="$(/usr/sbin/dmidecode -s system-product-name 2>/dev/null || true)"
-  board="$(echo "${board}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-  if [ -z "${board}" ] || [ "${board}" = "To Be Filled By O.E.M." ]; then
-    if [ -r /sys/class/dmi/id/product_name ]; then
-      board="$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)"
-      board="$(echo "${board}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-    fi
+  local b v
+  if [ -r /sys/class/dmi/id/product_name ]; then
+    b="$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)"
+    b="$(echo "${b}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
   fi
-  if [ -z "${board}" ] || [ "${board}" = "To Be Filled By O.E.M." ]; then
+  if [ -z "${b}" ] || echo "${b}" | grep -Eq "O\.E\.M\.|System|To Be Filled By O\.E\.M\."; then
     if [ -r /sys/class/dmi/id/board_name ]; then
-      board="$(cat /sys/class/dmi/id/board_name 2>/dev/null || true)"
-      board="$(echo "${board}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+      b="$(cat /sys/class/dmi/id/board_name 2>/dev/null || true)"
+      b="$(echo "${b}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
     fi
   fi
-  vendor="$(/usr/sbin/dmidecode -s system-manufacturer 2>/dev/null || true)"
-  vendor="$(echo "${vendor}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-  if [ -z "${vendor}" ] || [ "${vendor}" = "To Be Filled By O.E.M." ]; then
-    if [ -r /sys/class/dmi/id/sys_vendor ]; then
-      vendor="$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null || true)"
-      vendor="$(echo "${vendor}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-    fi
+  if [ -r /sys/class/dmi/id/sys_vendor ]; then
+    v="$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null || true)"
+    v="$(echo "${v}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
   fi
-  if [ -z "${vendor}" ] || [ "${vendor}" = "To Be Filled By O.E.M." ]; then
+  if [ -z "${v}" ] || echo "${v}" | grep -Eq "O\.E\.M\.|System|To Be Filled By O\.E\.M\."; then
     if [ -r /sys/class/dmi/id/board_vendor ]; then
-      vendor="$(cat /sys/class/dmi/id/board_vendor 2>/dev/null || true)"
-      vendor="$(echo "${vendor}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+      v="$(cat /sys/class/dmi/id/board_vendor 2>/dev/null || true)"
+      v="$(echo "${v}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
     fi
   fi
-  if [ -n "${vendor}" ] && [ -n "${board}" ]; then
-      BOARD="${vendor} ${board}"
-  elif [ -n "${vendor}" ]; then
-      BOARD="${vendor}"
-  elif [ -n "${board}" ]; then
-      BOARD="${board}"
+  if [ -n "${v}" ] && [ -n "${b}" ]; then
+    BOARD="${v} ${b}"
+  elif [ -n "${v}" ]; then
+    BOARD="${v}"
+  elif [ -n "${b}" ]; then
+    BOARD="${b}"
   else
-      BOARD="not available"
+    BOARD="not available"
   fi
   RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
   [ -z "${RAMTOTAL}" ] && RAMTOTAL="N/A"
@@ -153,7 +145,12 @@ function getSysinfo() {
     DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
     ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-    ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
+    ADDONS_RAW="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
+    if [ -n "${ADDONS_RAW}" ]; then
+      ADDONSINFO="$(echo "${ADDONS_RAW}" | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')"
+    else
+      ADDONSINFO=""
+    fi
     REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
     if [ "${REMAP}" = "acports" ] || [ "${REMAP}" = "maxports" ]; then
       PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
@@ -163,10 +160,12 @@ function getSysinfo() {
     elif [ "${REMAP}" = "ahci" ]; then
       AHCIPORTMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
     fi
-    USERCMDLINEINFO="$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
-    USERSYNOINFO="$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
+    USERCMDLINEINFO_RAW="$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
+    USERCMDLINEINFO="$(echo "${USERCMDLINEINFO_RAW}" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g' | sed 's/^ //;s/ $//')"
+    USERSYNOINFO_RAW="$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
+    USERSYNOINFO="$(echo "${USERSYNOINFO_RAW}" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g' | sed 's/^ //;s/ $//')"
+    BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
   fi
-  [ "${CONFDONE}" = "true" ] && BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
   DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
