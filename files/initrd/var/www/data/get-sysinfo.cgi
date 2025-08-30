@@ -98,20 +98,35 @@ function getSysinfo() {
   # Get System Informations
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
-  CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}')"
-    board="$(dmidecode -s system-product-name 2>/dev/null)"
+  CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+  # Get board/vendor: try dmidecode, then sysfs fallbacks, trim results and ignore generic OEM placeholder
+  board="$(/usr/sbin/dmidecode -s system-product-name 2>/dev/null || true)"
+  board="$(echo "${board}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
   if [ -z "${board}" ] || [ "${board}" = "To Be Filled By O.E.M." ]; then
-      board="$(dmidecode -s baseboard-product-name 2>/dev/null)"
-      if [ -z "${board}" ] || [ "${board}" = "To Be Filled By O.E.M." ]; then
-          board=""
-      fi
+    if [ -r /sys/class/dmi/id/product_name ]; then
+      board="$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)"
+      board="$(echo "${board}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    fi
   fi
-  vendor="$(dmidecode -s system-manufacturer 2>/dev/null)"
+  if [ -z "${board}" ] || [ "${board}" = "To Be Filled By O.E.M." ]; then
+    if [ -r /sys/class/dmi/id/board_name ]; then
+      board="$(cat /sys/class/dmi/id/board_name 2>/dev/null || true)"
+      board="$(echo "${board}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    fi
+  fi
+  vendor="$(/usr/sbin/dmidecode -s system-manufacturer 2>/dev/null || true)"
+  vendor="$(echo "${vendor}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
   if [ -z "${vendor}" ] || [ "${vendor}" = "To Be Filled By O.E.M." ]; then
-      vendor="$(dmidecode -s baseboard-manufacturer 2>/dev/null)"
-      if [ -z "${vendor}" ] || [ "${vendor}" = "To Be Filled By O.E.M." ]; then
-          vendor=""
-      fi
+    if [ -r /sys/class/dmi/id/sys_vendor ]; then
+      vendor="$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null || true)"
+      vendor="$(echo "${vendor}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    fi
+  fi
+  if [ -z "${vendor}" ] || [ "${vendor}" = "To Be Filled By O.E.M." ]; then
+    if [ -r /sys/class/dmi/id/board_vendor ]; then
+      vendor="$(cat /sys/class/dmi/id/board_vendor 2>/dev/null || true)"
+      vendor="$(echo "${vendor}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    fi
   fi
   if [ -n "${vendor}" ] && [ -n "${board}" ]; then
       BOARD="${vendor} ${board}"
@@ -250,7 +265,7 @@ function getSysinfo() {
   elif [ "${REMAP}" = "ahci" ]; then
     TEXT+="\n  AhciRemap: ${AHCIPORTMAP}"
   elif [ "${REMAP}" = "user" ]; then
-    TEXT+="\n  PortMap: "User""
+    TEXT+="\n  PortMap: User"
     [ -n "${PORTMAP}" ] && TEXT+="\n  SataPortmap: ${PORTMAP}"
     [ -n "${DISKMAP}" ] && TEXT+="\n  DiskIdxMap: ${DISKMAP}"
     [ -n "${PORTREMAP}" ] && TEXT+="\n  SataRemap: ${PORTREMAP}"
