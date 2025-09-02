@@ -139,7 +139,6 @@ function getSysinfo() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
     MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-    MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
     PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
     DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
@@ -239,7 +238,7 @@ function getSysinfo() {
   TEXT+="\n  Offline Mode: ${ARCOFFLINE}"
   [ "${ARCOFFLINE}" = "true" ] && TEXT+="\n  Offline Mode: ${ARCOFFLINE}"
   if [ "${CONFDONE}" = "true" ]; then
-    TEXT+="\n> DSM ${PRODUCTVER} (${BUILDNUM}): ${MODELID:-${MODEL}}"
+    TEXT+="\n> DSM ${PRODUCTVER} (${BUILDNUM}): ${MODEL}"
     TEXT+="\n  Kernel | LKM: ${KVER} | ${LKM}"
     TEXT+="\n  Platform | DeviceTree: ${PLATFORM} | ${DT}"
     TEXT+="\n  Arc Patch: ${ARCPATCH}"

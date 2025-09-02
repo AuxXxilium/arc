@@ -266,7 +266,7 @@ function arrayExistItem() {
 # 1 - file
 # 2 - key
 function _get_conf_kv() {
-  grep "^${2}=" "${1}" 2>/dev/null | cut -d'=' -f2- | sed 's/^"//;s/"$//' 2>/dev/null
+  grep "^$2=" "$1" 2>/dev/null | cut -d'=' -f2- | sed 's/^"//;s/"$//' 2>/dev/null
   return $?
 }
 
@@ -277,20 +277,20 @@ function _get_conf_kv() {
 # 3 - value
 function _set_conf_kv() {
   # Delete
-  if [ -z "${3}" ]; then
-    sed -i "/^${2}=/d" "${1}" 2>/dev/null
+  if [ -z "$3" ]; then
+    sed -i "/^$2=/d" "$1" 2>/dev/null
     return $?
   fi
 
   # Replace
-  if grep -q "^${2}=" "${1}" 2>/dev/null; then
-    sed -i "s#^${2}=.*#${2}=\"${3}\"#" "${1}" 2>/dev/null
+  if grep -q "^$2=" "$1" 2>/dev/null; then
+    sed -i "s#^$2=.*#$2=\"$3\"#" "$1" 2>/dev/null
     return $?
   fi
 
-  # Add if doesn't exist
-  mkdir -p "$(dirname "${1}" 2>/dev/null)" 2>/dev/null
-  echo "${2}=\"${3}\"" >>"${1}" 2>/dev/null
+  # Add if it doesn't exist
+  mkdir -p "$(dirname "$1" 2>/dev/null)" 2>/dev/null
+  echo "$2=\"$3\"" >>"$1" 2>/dev/null
   return $?
 }
 
@@ -482,7 +482,6 @@ function rebootTo() {
   if ! echo "${MODES}" | grep -wq "${1}"; then exit 1; fi
   [ "${1}" = "automated" ] && echo "arc-${MODEL}-${PRODUCTVER}-${ARC_VERSION}" >"${PART3_PATH}/automated"
   [ ! -f "${USER_GRUBENVFILE}" ] && grub-editenv "${USER_GRUBENVFILE}" create
-  # echo -e "Rebooting to ${1} mode..."
   grub-editenv "${USER_GRUBENVFILE}" set next_entry="${1}"
   exec reboot
 }
@@ -697,7 +696,6 @@ function fixDSMRootPart() {
 function readData() {
   # Get DSM Data from Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   if [ -n "${MODEL}" ]; then
     PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"

@@ -202,7 +202,7 @@ if [ "${ARC_MODE}" = "update" ]; then
     exec reboot
   fi
 elif [ "${ARC_MODE}" = "automated" ]; then
-  if [ "${BUILDDONE}" = "false" ] || [ "${MODEL}" != "${MODELID}" ]; then
+  if [ "${BUILDDONE}" = "false" ]; then
     arcModel
   else
     make

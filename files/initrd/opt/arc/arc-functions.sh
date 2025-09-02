@@ -121,7 +121,6 @@ function arcModel() {
     writeConfigKey "kernel" "official" "${USER_CONFIG_FILE}"
     writeConfigKey "odp" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
-    writeConfigKey "modelid" "" "${USER_CONFIG_FILE}"
     writeConfigKey "paturl" "" "${USER_CONFIG_FILE}"
     writeConfigKey "pathash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
@@ -622,8 +621,6 @@ function make() {
     return
   fi
   if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
-    MODELID="$(echo ${MODEL} | sed 's/d$/D/; s/rp$/RP/; s/rp+/RP+/')"
-    writeConfigKey "modelid" "${MODELID}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
     arcFinish
   else
@@ -639,13 +636,11 @@ function make() {
 ###############################################################################
 # Finish Building Loader
 function arcFinish() {
-  MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
-  if [ -n "${MODELID}" ] && [ "${MODELID}" = "${MODEL}" ]; then
+  if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-  
     if [ "${ARC_MODE}" = "automated" ] || [ "${UPDATEMODE}" = "true" ]; then
-      boot
+      bootcheck
     else
       dialog --clear --backtitle "$(backtitle)" --title "Build done" \
         --no-cancel --menu "Boot now?" 7 40 0 \
@@ -663,8 +658,7 @@ function arcFinish() {
 function juniorboot() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
-  if [[ "${BUILDDONE}" = "false" && "${ARC_MODE}" != "automated" ]] || [ "${MODEL}" != "${MODELID}" ]; then
+  if [ "${BUILDDONE}" = "false" ] && [ "${ARC_MODE}" != "automated" ]; then
     dialog --backtitle "$(backtitle)" --title "Alert" \
       --yesno "Config changed, you need to rebuild the Loader?" 0 0
     if [ $? -eq 0 ]; then
@@ -680,11 +674,10 @@ function juniorboot() {
 
 ###############################################################################
 # Calls boot.sh to boot into DSM kernel/ramdisk
-function boot() {
+function bootcheck() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
-  if [[ "${BUILDDONE}" = "false" && "${ARC_MODE}" != "automated" ]] || [ "${MODEL}" != "${MODELID}" ]; then
+  if [ "${ARC_MODE}" != "automated" ] && [ "${BUILDDONE}" = "false" ]; then
     dialog --backtitle "$(backtitle)" --title "Alert" \
       --yesno "Config changed, you need to rebuild the Loader?" 0 0
     if [ $? -eq 0 ]; then
@@ -1508,10 +1501,9 @@ function backupMenu() {
             cp -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" "${USER_CONFIG_FILE}"
             sleep 2
             MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-            MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
             PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
             if [ -n "${MODEL}" ] && [ -n "${PRODUCTVER}" ]; then
-              TEXT="Config found:\nModel: ${MODELID:-${MODEL}}\nVersion: ${PRODUCTVER}"
+              TEXT="Config found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
               SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
               TEXT+="\nSerial: ${SN}"
               ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
@@ -1609,10 +1601,9 @@ function backupMenu() {
           [ -f "${USER_CONFIG_FILE}.bak" ] && mv -f "${USER_CONFIG_FILE}.bak" "${USER_CONFIG_FILE}"
         fi
         MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-        MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
         PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
         if [ -n "${MODEL}" ] && [ -n "${PRODUCTVER}" ]; then
-          TEXT="Config found:\nModel: ${MODELID:-${MODEL}}\nVersion: ${PRODUCTVER}"
+          TEXT="Config found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
           SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
           TEXT+="\nSerial: ${SN}"
           ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
@@ -1830,7 +1821,6 @@ function sysinfo() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
     MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-    MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
     PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
     DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
@@ -1937,7 +1927,7 @@ function sysinfo() {
   TEXT+="\n  Offline Mode: \Zb${ARC_OFFLINE}\Zn"
   TEXT+="\n"
   if [ "${CONFDONE}" = "true" ]; then
-    TEXT+="\n\Z4> DSM ${PRODUCTVER} (${BUILDNUM}): ${MODELID:-${MODEL}}\Zn"
+    TEXT+="\n\Z4> DSM ${PRODUCTVER} (${BUILDNUM}): ${MODEL}\Zn"
     TEXT+="\n"
     TEXT+="\n  Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
     TEXT+="\n  Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"

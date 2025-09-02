@@ -54,7 +54,6 @@ fi
 # Read model/system variables
 PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
 MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-MODELID="$(readConfigKey "modelid" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
 SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
@@ -82,19 +81,12 @@ if [ "${BUILDDONE}" = "false" ]; then
   sleep 10
   rebootTo "config"
   exit 0
-elif [ -z "${MODELID}" ] || [ "${MODELID}" != "${MODEL}" ]; then
-  echo "Build not completed! Model mismatch! -> Rebuild loader!"
-  echo "Please run the loader build script again!"
-  echo "Rebooting to config mode in 10 seconds..."
-  sleep 10
-  rebootTo "config"
-  exit 0
 fi
 
 # Show Loader Info
 if [ "${DSMINFO}" = "true" ]; then
   echo -e "\033[1;34mDSM\033[0m"
-  echo -e "Model: \033[1;37m${MODELID:-${MODEL}}\033[0m"
+  echo -e "Model: \033[1;37m${MODEL}\033[0m"
   echo -e "Platform: \033[1;37m${PLATFORM}\033[0m"
   echo -e "Version: \033[1;37m${PRODUCTVER} (${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))\033[0m"
   echo -e "Kernel: \033[1;37m${KVER} (${KERNEL})\033[0m"
@@ -151,7 +143,7 @@ MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 declare -A CMDLINE
 
 # Automated Cmdline
-CMDLINE['syno_hw_version']="${MODELID:-${MODEL}}"
+CMDLINE['syno_hw_version']="${MODEL}"
 CMDLINE['vid']="${VID:-"0x46f4"}"
 CMDLINE['pid']="${PID:-"0x0001"}"
 CMDLINE['sn']="${SN}"

@@ -6,6 +6,8 @@
 # See /LICENSE for more information.
 #
 
+# shellcheck disable=SC2034
+
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
 . "${ARC_PATH}/include/functions.sh"
@@ -135,13 +137,18 @@ echo "Create addons.sh" >>"${LOG_FILE}"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
-for ADDON in $( [ "${KVER:0:1}" = "5" ] && echo "redpill" ; echo "revert misc eudev disks localrss notify mountloader" ); do
+SYSADDONS="revert misc eudev disks localrss notify mountloader"
+if [ "${KVER:0:1}" = "5" ]; then
+  SYSADDONS="redpill ${SYSADDONS}"
+fi
+
+for ADDON in ${SYSADDONS}; do
   if [ "${ADDON}" = "disks" ]; then
     [ -f "${USER_UP_PATH}/model.dts" ] && cp -f "${USER_UP_PATH}/model.dts" "${RAMDISK_PATH}/addons/model.dts"
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   fi
   installAddon "${ADDON}" "${PLATFORM}" "${KVERP}" || exit 1
-  echo "/addons/${ADDON}.sh \${1}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+  echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
 done
 
 # User Addons
@@ -217,20 +224,20 @@ done
 
 # Network card configuration file
 for N in $(seq 0 7); do
-  echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=dhcp\nIPV6_ACCEPT_RA=1" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
+  echo -e "DEVICE=eth${N}\nBOOTPROTO=dhcp\nONBOOT=yes\nIPV6INIT=no\nIPV6_ACCEPT_RA=0" >"${RAMDISK_PATH}/etc/sysconfig/network-scripts/ifcfg-eth${N}"
 done
 
 # Kernel 5.x patches
 if [ "${KVER:0:1}" = "5" ]; then
   echo -e ">>> apply Kernel 5.x Fixes"
-  sed -i 's#/dev/console#/var/log/lrc#g' ${RAMDISK_PATH}/usr/bin/busybox
-  sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' ${RAMDISK_PATH}/linuxrc.syno
+  sed -i 's#/dev/console#/var/log/lrc#g' "${RAMDISK_PATH}/usr/bin/busybox"
+  sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' "${RAMDISK_PATH}/linuxrc.syno"
 fi
 
 # Broadwellntbap patches
 if [ "${PLATFORM}" = "broadwellntbap" ]; then
   echo -e ">>> apply Broadwellntbap Fixes"
-  sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' ${RAMDISK_PATH}/usr/syno/share/environments.sh
+  sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' "${RAMDISK_PATH}/usr/syno/share/environments.sh"
 fi
 
 # Reassembly ramdisk
