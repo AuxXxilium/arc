@@ -591,16 +591,7 @@ function make() {
     fi
   done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
   if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-    if [ "${ARC_OFFLINE}" = "false" ]; then
-      getpatfiles
-    else
-      dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
-        --infobox "Offline Mode disabled!\nNetwork Connection required." 4 40
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-      sleep 2
-      return
-    fi
+    getpatfiles
   fi
   if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q fancontrol && ! (readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q sensors); then
     writeConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
