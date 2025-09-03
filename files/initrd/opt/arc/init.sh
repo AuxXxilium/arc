@@ -195,6 +195,9 @@ echo
 checkNIC
 echo
 
+# Tell webterminal that the loader is ready
+touch "${HOME}/.initialized"
+
 mkdir -p "${ADDONS_PATH}"
 mkdir -p "${CUSTOM_PATH}"
 mkdir -p "${LKMS_PATH}"
@@ -210,9 +213,6 @@ if [ "${DEVELOPMENT_MODE}" = "true" ]; then
   unzip -q /tmp/arc-dev.zip -d /tmp >/dev/null 2>&1 || true
   cp -rf /tmp/arc-dev/files/initrd/opt/arc /opt/arc >/dev/null 2>&1 || true
 fi
-
-# Tell webterminal that the loader is ready
-touch "${HOME}/.initialized"
 
 # Load Arc Overlay
 echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
