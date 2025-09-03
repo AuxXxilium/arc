@@ -209,9 +209,9 @@ mkdir -p "${USER_UP_PATH}"
 DEVELOPMENT_MODE="$(readConfigKey "arc.dev" "${USER_CONFIG_FILE}")"
 if [ "${DEVELOPMENT_MODE}" = "true" ]; then
   echo -e "\033[1;34mDevelopment Mode is enabled.\033[0m"
-  curl -skL https://github.com/AuxXxilium/arc/archive/refs/heads/dev.zip -o /tmp/arc-dev.zip >/dev/null 2>&1 || true
-  unzip -q /tmp/arc-dev.zip -d /tmp >/dev/null 2>&1 || true
-  cp -rf /tmp/arc-dev/files/initrd/opt/arc /opt/arc >/dev/null 2>&1 || true
+  curl -skL https://github.com/AuxXxilium/arc/archive/refs/heads/dev.zip -o /tmp/arc-dev.zip 2>/dev/null || true
+  unzip -q /tmp/arc-dev.zip -d /tmp 2>/dev/null || true
+  cp -rf /tmp/arc-dev/files/initrd/opt/arc /opt/arc 2>/dev/null || true
 fi
 
 # Load Arc Overlay
