@@ -612,22 +612,6 @@ function make() {
     return
   fi
   if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
-    writeConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
-    arcFinish
-  else
-    dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
-      --infobox "Could not build Loader!\nExit." 4 40
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-    sleep 2
-    return
-  fi
-}
-
-###############################################################################
-# Finish Building Loader
-function arcFinish() {
-  if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     if [ "${ARC_MODE}" = "automated" ] || [ "${UPDATEMODE}" = "true" ]; then
@@ -641,6 +625,13 @@ function arcFinish() {
       resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
       [ "${resp}" -eq 1 ] && boot || return
     fi
+  else
+    dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
+      --infobox "Could not build Loader!\nExit." 4 40
+    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    sleep 2
+    return
   fi
 }
 
