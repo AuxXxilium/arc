@@ -485,7 +485,7 @@ function arcSettings() {
       [ -z "${resp}" ] && return
       [ "${resp}" -eq 1 ] && arcSummary || dialog --clear --no-items --backtitle "$(backtitle)"
     else
-      make
+      makearc
     fi
   else
     dialog --backtitle "$(backtitle)" --title "Config failed" --msgbox "ERROR: Config failed!\nExit." 6 40
@@ -563,7 +563,7 @@ function arcSummary() {
   RET=$?
   case ${RET} in
     0)
-      make
+      makearc
       ;;
     *)
       return 0
@@ -573,7 +573,7 @@ function arcSummary() {
 
 ###############################################################################
 # Building Loader
-function make() {
+function makearc() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -623,7 +623,7 @@ function make() {
         2 "No - I want to make changes" \
       2>"${TMP_PATH}/resp"
       resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
-      [ "${resp}" -eq 1 ] && boot || return
+      [ "${resp}" -eq 1 ] && bootcheck || return
     fi
   else
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \

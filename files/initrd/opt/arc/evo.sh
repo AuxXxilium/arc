@@ -205,7 +205,7 @@ elif [ "${ARC_MODE}" = "automated" ]; then
   if [ "${BUILDDONE}" = "false" ]; then
     arcModel
   else
-    make
+    makearc
   fi
 elif [ "${ARC_MODE}" = "config" ]; then
   NEXT="1"
@@ -364,7 +364,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
         elif [ "${CONFDONE}" = "true" ]; then
           arcSummary
         elif [ "${BUILDDONE}" = "true" ]; then
-          boot
+          bootcheck
         fi
         ;;
       *)
