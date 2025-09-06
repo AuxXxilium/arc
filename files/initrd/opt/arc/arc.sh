@@ -85,11 +85,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
 
     write_menu "=" "\Z4===== Main =====\Zn"
-
-    if [ "${ARC_OFFLINE}" = "false" ]; then
-      write_menu_value "0" "HardwareID" "$([ -n "$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")" ] && echo "registered" || echo "register")"
-    fi
-
     write_menu "1" "Choose Model"
 
     if [ "${CONFDONE}" = "true" ]; then
@@ -115,7 +110,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
         write_menu "b" "Addons"
         write_menu "d" "Modules"
         write_menu_value "e" "Version" "${PRODUCTVER:-unknown}"
-        write_menu_value "p" "SN/Mac Options" "$([ -n "${ARC_CONF}" ] && echo "arc" || echo "random/user")"
+        write "p" "SN/Mac Options"
 
         if [ "${DT}" = "false" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
           write_menu "S" "PortMap (Sata Controller)"
@@ -178,6 +173,10 @@ elif [ "${ARC_MODE}" = "config" ]; then
       fi
     fi
 
+    if [ "${ARC_OFFLINE}" = "false" ]; then
+      write_menu "Q" "Online Settings"
+    fi
+
     if [ "${LOADEROPTS}" = "true" ]; then
       write_menu "8" "\Z1Hide Loader Options\Zn"
       write_menu_value "c" "Offline Mode" "${ARC_OFFLINE}"
@@ -218,7 +217,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
           [ -z "${resp}" ] && return
           case ${resp} in
             # Main Section
-            0) genHardwareID; NEXT="0" ;;
             1) arcModel; NEXT="2" ;;
             2) arcSummary; NEXT="3" ;;
             9)
@@ -240,7 +238,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
             b) addonMenu; NEXT="b" ;;
             d) modulesMenu; NEXT="d" ;;
             e) ONLYVERSION="true" && writeConfigKey "productver" "" "${USER_CONFIG_FILE}" && arcVersion; NEXT="e" ;;
-            p) ONLYPATCH="true" && checkHardwareID && arcPatch; NEXT="p" ;;
+            p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
             S) storageMenu; NEXT="S" ;;
             o) dtsMenu; NEXT="o" ;;
             g) governorMenu; NEXT="g" ;;
@@ -338,6 +336,8 @@ elif [ "${ARC_MODE}" = "config" ]; then
                 NEXT="O"
                 ;;
             B) getbackup; NEXT="B" ;;
+            # Online Settings
+            Q) onlineMenu; NEXT="Q" ;;
             # Loader Section
             8)
                 [ "${LOADEROPTS}" = "true" ] && LOADEROPTS='false' || LOADEROPTS='true'
@@ -355,7 +355,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
                 NEXT="c"
                 ;;
             D) staticIPMenu; NEXT="D" ;;
-            Q) notificationMenu; NEXT="Q" ;;
             Z) loaderPorts; NEXT="Z" ;;
             U) loaderPassword; NEXT="U" ;;
             W)

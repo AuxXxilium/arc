@@ -3,7 +3,6 @@
 function updateLoader() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   local TAG="${1}"
-  [ -n "${ARC_CONF}" ] && cp -f "${S_FILE}" "${TMP_PATH}/bak.yml"
   if [ "${TAG}" != "zip" ]; then
     if [ -z "${TAG}" ]; then
       idx=0
@@ -83,7 +82,6 @@ function updateLoader() {
       return 1
     fi
   fi
-  [ -n "${ARC_CONF}" ] && cp -f "${TMP_PATH}/bak.yml" "${S_FILE}"
   if [ "${ARC_MODE}" = "update" ] && [ "${CONFDONE}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
       --infobox "Update Loader successful! -> Reboot to automated Build Mode..." 3 60
@@ -104,7 +102,6 @@ function updateLoader() {
 function updateLoaderBeta() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   local TAG="${1}"
-  [ -n "${ARC_CONF}" ] && cp -f "${S_FILE}" "${TMP_PATH}/bak.yml"
   if [ "${TAG}" != "zip" ]; then
     if [ -z "${TAG}" ]; then
       idx=0
@@ -170,7 +167,6 @@ function updateLoaderBeta() {
   else
     return 1
   fi
-  [ -n "${ARC_CONF}" ] && cp -f "${TMP_PATH}/bak.yml" "${S_FILE}"
   if [ "${ARC_MODE}" = "update" ] && [ "${CONFDONE}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
       --infobox "Update Loader successful! -> Reboot to automated Build Mode..." 3 60

@@ -79,7 +79,6 @@ function checkNIC() {
       sleep 1
     done
   done
-  return 0
 }
 
 ###############################################################################
@@ -117,131 +116,25 @@ function arrayExistItem() {
 }
 
 ###############################################################################
-# Generate a number with 6 digits from 1 to 30000
-function random() {
-  printf "%06d" $((${RANDOM} % 30000 + 1))
-}
-
-###############################################################################
-# Generate a hexa number from 0x00 to 0xFF
-function randomhex() {
-  printf "&02X" "$((${RANDOM} % 255 + 1))"
-}
-
-###############################################################################
-# Generate a random digit (0-9A-Z)
-function genRandomDigit() {
-  echo {0..9} | tr ' ' '\n' | sort -R | head -1
-}
-
-###############################################################################
-# Generate a random letter
-function genRandomLetter() {
-  for i in A B C D E F G H J K L M N P Q R S T V W X Y Z; do
-    echo ${i}
-  done | sort -R | tail -1
-}
-
-###############################################################################
-# Generate a random digit (0-9A-Z)
-function genRandomValue() {
-  for i in 0 1 2 3 4 5 6 7 8 9 A B C D E F G H J K L M N P Q R S T V W X Y Z; do
-    echo ${i}
-  done | sort -R | tail -1
-}
-
-###############################################################################
 # Generate a random serial number for a model
-# 1 - Model
-# 2 - Arc
+# 1 - Arc Patch
+# 2 - Model
 # Returns serial number
 function generateSerial() {
-  PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}" | sort -R | tail -1)"
-  MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}" | sort -R | tail -1)"
-  if [ "${2}" = "true" ]; then
-    SUFFIX="arc"
-  else
-    SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}")"
-  fi
-
-  local SERIAL="${PREFIX:-"0000"}${MIDDLE:-"XXX"}"
-  case "${SUFFIX:-"alpha"}" in
-    numeric)
-      SERIAL+="$(random)"
-      ;;
-    alpha)
-      SERIAL+="$(genRandomLetter)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)$(genRandomValue)"
-      ;;
-    arc)
-      SERIAL+="$(readConfigKey "${1}.serial" "${S_FILE}")"
-      ;;
-  esac
-
-  SERIAL="$(echo "${SERIAL}" | tr '[:lower:]' '[:upper:]')"
+  genArc "${1}" "${2}" serial
   echo "${SERIAL}"
-  return 0
 }
 
 ###############################################################################
 # Generate a MAC address for a model
-# 1 - Model
-# 2 - Amount of MACs to generate
-# 3 - Arc MAC
+# 1 - Arc Patch
+# 2 - Model
+# 3 - Amount
 # Returns serial number
 function generateMacAddress() {
-  MACPRE="$(readConfigKey "${1}.macpre" "${S_FILE}")"
-  if [ "${3}" = "true" ]; then
-    MACSUF="$(readConfigKey "${1}.mac" "${S_FILE}")"
-  else
-    MACSUF="$(printf '%02x%02x%02x' $((${RANDOM} % 256)) $((${RANDOM} % 256)) $((${RANDOM} % 256)))"
-  fi
-  NUM="${2}"
-  MACS=""
-  for I in $(seq 1 ${NUM}); do
-    MACS+="$(printf '%06x%06x' $((0x${MACPRE:-"001132"})) $((0x${MACSUF:-"000000"} + ${I})))"
-    [ "${I}" -lt "${NUM}" ] && MACS+=" "
-  done
-
+  MACS=$(genArc "${1}" "${2}" mac "${3}")
   MACS="$(echo "${MACS}" | tr '[:upper:]' '[:lower:]')"
   echo "${MACS}"
-  return 0
-}
-
-###############################################################################
-# Validate a serial number for a model
-# 1 - Model
-# 2 - Serial number to test
-# Returns 1 if serial number is invalid
-function validateSerial() {
-  PREFIX="$(readConfigArray "${1}.prefix" "${S_FILE}")"
-  MIDDLE="$(readConfigArray "${1}.middle" "${S_FILE}")"
-  SUFFIX="$(readConfigKey "${1}.suffix" "${S_FILE}")"
-  P=${2:0:4}
-  M=${2:4:3}
-  S=${2:7}
-  L=${#2}
-  if [ "${L}" -ne 13 ]; then
-    return 1
-  fi
-  if ! arrayExistItem "${P}" "${PREFIX}"; then
-    return 1
-  fi
-  if ! arrayExistItem "${M}" "${MIDDLE}"; then
-    return 1
-  fi
-  case "${SUFFIX:-"alpha"}" in
-    numeric)
-      if ! echo "${S}" | grep -q "^[0-9]\{6\}$"; then
-        return 1
-      fi
-      ;;
-    alpha)
-      if ! echo "${S}" | grep -q "^[A-Z][0-9][0-9][0-9][0-9][A-Z]$"; then
-        return 1
-      fi
-      ;;
-  esac
-  return 0
 }
 
 ###############################################################################
@@ -334,7 +227,6 @@ function _sort_netif() {
     /etc/init.d/S40network start >/dev/null 2>&1
     /etc/init.d/S41dhcpcd start >/dev/null 2>&1
   fi
-  return 0
 }
 
 ###############################################################################
@@ -348,7 +240,6 @@ function getBus() {
   [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep "${1} " | awk '{print $2}' | awk -F':' '{print $(NF-1)}' | sed 's/_host//' | sed 's/^.*xen.*$/xen/')
   [ -z "${BUS}" ] && BUS="unknown"
   echo "${BUS}"
-  return 0
 }
 
 ###############################################################################
@@ -364,24 +255,6 @@ function getIP() {
     [ -z "${IP}" ] && IP=$(ip route show 2>/dev/null | sed -n 's/.* via .* src \(.*\) metric .*/\1/p' | head -1)
   fi
   echo "${IP}"
-  return 0
-}
-
-###############################################################################
-# get logo of model
-# 1 - model
-function getLogo() {
-  local MODEL="${1}"
-  rm -f "${PART3_PATH}/logo.png"
-  STATUS=$(curl -skL -m 10 -w "%{http_code}" "https://www.synology.com/api/products/getPhoto?product=${MODEL/+/%2B}&type=img_s&sort=0" -o "${PART3_PATH}/logo.png")
-  if [ $? -ne 0 -o ${STATUS:-0} -ne 200 -o ! -f "${PART3_PATH}/logo.png" ]; then
-    rm -f "${PART3_PATH}/logo.png"
-    return 1
-  fi
-  convert -rotate 180 "${PART3_PATH}/logo.png" "${PART3_PATH}/logo.png" 2>/dev/null
-  magick montage "${PART3_PATH}/logo.png" -background 'none' -tile '3x3' -geometry '350x210' "${PART3_PATH}/logo.png" 2>/dev/null
-  convert -rotate 180 "${PART3_PATH}/logo.png" "${PART3_PATH}/logo.png" 2>/dev/null
-  return 0
 }
 
 ###############################################################################
@@ -391,7 +264,6 @@ function findDSMRoot() {
   [ -z "${DSMROOTS}" ] && DSMROOTS="$(mdadm --detail --scan 2>/dev/null | grep -v "INACTIVE-ARRAY" | grep -E "name=SynologyNAS:0|name=DiskStation:0|name=SynologyNVR:0|name=BeeStation:0" | awk '{print $2}' | uniq)"
   [ -z "${DSMROOTS}" ] && DSMROOTS="$(lsblk -pno KNAME,PARTN,FSTYPE,FSVER,LABEL | grep -E "sd[a-z]{1,2}1" | grep -w "linux_raid_member" | grep "0.9" | awk '{print $1}')"
   echo "${DSMROOTS}"
-  return 0
 }
 
 ###############################################################################
@@ -601,8 +473,6 @@ function systemCheck () {
     CPUFREQ="false"
   fi
   # Check for Arc Patch
-  ARC_CONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
-  [ -z "${ARC_CONF}" ] && writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
   arc_mode
@@ -672,7 +542,6 @@ function _bootwait() {
   done
   rm -f WB WC
   echo -en "\r$(printf "%$((${#MSG} * 2))s" " ")\n"
-  return 0
 }
 
 ###############################################################################

@@ -77,17 +77,12 @@ function arcModel() {
           [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
         fi
         [ -n "$(grep -w "${M}" "${S_FILE}")" ] && BETA="Arc" || BETA="Syno"
-        if [ -n "${ARC_CONF}" ]; then
-          [ "${COMPATIBLE}" -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
-        else
-          [ "${COMPATIBLE}" -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${DTS}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
-        fi
+        [ "${COMPATIBLE}" -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
       done < <(cat "${TMP_PATH}/modellist")
       [ ! -s "${TMP_PATH}/menu" ] && echo "No supported models found." >"${TMP_PATH}/menu"
-      [ "${RESTRICT} " -eq 1 ] && TITLEMSG="Supported Models for your Hardware" || TITLEMSG="Supported and unsupported Models for your Hardware"
-      [ -n "${ARC_CONF}" ] && MSG="${TITLEMSG} (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" || MSG="${TITLEMSG} (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
-      [ -n "${ARC_CONF}" ] && TITLEMSG="Arc Model" || TITLEMSG="Model"
-      dialog --backtitle "$(backtitle)" --title "${TITLEMSG}" --colors \
+      [ "${RESTRICT}" -eq 1 ] && TITLEMSG="Supported Models for your Hardware" || TITLEMSG="Supported and unsupported Models for your Hardware"
+      [ "${RESTRICT}" -eq 1 ] && MSG="${TITLEMSG} (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" || MSG="${TITLEMSG} (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
+      dialog --backtitle "$(backtitle)" --title "DSM Model" --colors \
         --cancel-label "Show all" --help-button --help-label "Exit" \
         --menu "${MSG}" 0 115 0 \
         --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
@@ -192,9 +187,6 @@ function arcVersion() {
     fi
     if echo "${PAT_URL}" 2>/dev/null | grep -qE "7\.2\.[2-9]|7\.[3-9]\.|[8-9]\."; then
       initConfigKey "addons.allowdowngrade" "" "${USER_CONFIG_FILE}"
-    fi
-    if [ -n "${ARC_CONF}" ]; then
-      initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
     fi
     if [ "${SASDRIVES}" -gt 0 ] && [ "${DT}" = "true" ]; then
       initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
@@ -347,40 +339,32 @@ function arcPatch() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  ARC_CONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
 
   if [ "${ARC_MODE}" = "automated" ] && [ "${ARC_PATCH}" != "user" ]; then
-    [ -n "${ARC_CONF}" ] && ARC_PATCH="true" || ARC_PATCH="false"
-    SN="$(generateSerial "${MODEL}" "${ARC_PATCH}")"
+    SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
     writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.patch" "${ARC_PATCH}" "${USER_CONFIG_FILE}"
   elif [ "${ARC_MODE}" = "config" ]; then
-    dialog_options=(
-      2 "Use random SN/Mac (Reduced DSM Features)"
-      3 "Use my own SN/Mac (Be sure your Data is valid)"
-    )
-    [ -n "${ARC_CONF}" ] && dialog_options=(1 "Use Arc Patch (AME, QC, Push Notify and more)" "${dialog_options[@]}")
-
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "SN/Mac Options" \
       --menu "Choose an Option" 7 60 0 \
-      "${dialog_options[@]}" 2>"${TMP_PATH}/resp"
-
+      1 "Use Arc Patch (AME, QC, Push Notify and more)" \
+      2 "Use random SN/Mac (Reduced DSM Features)" \
+      3 "Use my own SN/Mac (Be sure your Data is valid)" \
+      2>"${TMP_PATH}/resp"
     resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${resp}" ] && return 1
 
     case ${resp} in
       1)
-        [ -n "${ARC_CONF}" ] && ARC_PATCH="true" || ARC_PATCH="false"
-        SN="$(generateSerial "${MODEL}" "${ARC_PATCH}")"
+        ARC_PATCH="true"
+        SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
         writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.patch" "${ARC_PATCH}" "${USER_CONFIG_FILE}"
+        
         ;;
       2)
         ARC_PATCH="false"
-        SN="$(generateSerial "${MODEL}" "${ARC_PATCH}")"
+        SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
         writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-        writeConfigKey "arc.patch" "${ARC_PATCH}" "${USER_CONFIG_FILE}"
         ;;
       3)
         while true; do
@@ -392,12 +376,13 @@ function arcPatch() {
           [ -z "${SN}" ] && return
           break
         done
-        writeConfigKey "arc.patch" "user" "${USER_CONFIG_FILE}"
+        ARC_PATCH="user"
         writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
         ;;
     esac
   fi
 
+  writeConfigKey "arc.patch" "${ARC_PATCH}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
@@ -581,8 +566,8 @@ function makearc() {
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
+  ARC_BACKUP="$(readConfigKey "arc.backup" "${USER_CONFIG_FILE}")"
   ARC_OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
-  ARC_CONF="$(readConfigKey "${MODEL}.serial" "${S_FILE}")"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   while IFS=': ' read -r ADDON PARAM; do
     [ -z "${ADDON}" ] && continue
@@ -593,7 +578,7 @@ function makearc() {
   if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
     getpatfiles
   fi
-  if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q fancontrol && ! (readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q sensors); then
+  if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q fancontrol; then
     writeConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
   fi
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ "${CONFDONE}" = "true" ] && [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
@@ -612,6 +597,18 @@ function makearc() {
     return
   fi
   if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
+    USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
+    if [ "${ARC_OFFLINE}" = "false" ] && [ "${ARC_BACKUP}" = "true" ] && [ -n "${USERID}" ]; then
+      HWID="$(genHWID)"
+      curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${HWID}&userid=${USERID}" 2>/dev/null
+      if [ $? -eq 0 ]; then
+        dialog --backtitle "$(backtitle)" --title "Online Backup" --infobox "Online Backup successful!" 5 40
+        sleep 2
+      else
+        dialog --backtitle "$(backtitle)" --title "Online Backup" --infobox "Online Backup failed!" 5 40
+        sleep 2
+      fi
+    fi
     writeConfigKey "arc.builddone" "true" "${USER_CONFIG_FILE}"
     BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
     if [ "${ARC_MODE}" = "automated" ] || [ "${UPDATEMODE}" = "true" ]; then
@@ -917,17 +914,17 @@ function modulesMenu() {
           FIRMWARE_URL="https://github.com/AuxXxilium/arc-modules-ex/releases/download/${TAG}/firmware.tgz"
           FIRMWARE_PATH="${MODULES_TMP_PATH}/firmware.tgz"
           FIRMWARE_TMP="$(mktemp -d)"
-          curl -skL "$FIRMWARE_URL" -o "$FIRMWARE_PATH"
-          if [ -f "$FIRMWARE_PATH" ]; then
-            tar -xzf "$FIRMWARE_PATH" -C "$FIRMWARE_TMP"
-            tar -czf "${MODULES_PATH}/firmware.tgz" -C "$FIRMWARE_TMP" .
-            rm -rf "$FIRMWARE_TMP"
+          curl -skL "${FIRMWARE_URL}" -o "${FIRMWARE_PATH}"
+          if [ -f "${FIRMWARE_PATH}" ]; then
+            tar -xzf "${FIRMWARE_PATH}" -C "${FIRMWARE_TMP}"
+            tar -czf "${MODULES_PATH}/firmware.tgz" -C "${FIRMWARE_TMP}" .
+            rm -rf "${FIRMWARE_TMP}"
           fi
         fi
 
         dialog --title "Expanded Modules" --msgbox "Replaced Modules:\n$REPLACED_LIST" 20 60
 
-        rm -rf "$TMP1" "$TMP2" "$TMPOUT" "$CHECKLIST" "${TMP_PATH}/modsel"
+        rm -rf "${TMP1}" "${TMP2}" "${TMPOUT}" "${CHECKLIST}" "${TMP_PATH}/modsel"
         writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
         BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
       fi
@@ -1577,7 +1574,6 @@ function backupMenu() {
         HWID="$(genHWID)"
         if curl -skL "https://arc.auxxxilium.tech?cdown=${HWID}" -o "${USER_CONFIG_FILE}" 2>/dev/null; then
           dialog --backtitle "$(backtitle)" --title "Online Restore" --msgbox "Online Restore successful!" 5 40
-          ARC_CONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
         else
           dialog --backtitle "$(backtitle)" --title "Online Restore" --msgbox "Online Restore failed!" 5 40
           [ -f "${USER_CONFIG_FILE}.bak" ] && mv -f "${USER_CONFIG_FILE}.bak" "${USER_CONFIG_FILE}"
@@ -1612,7 +1608,7 @@ function backupMenu() {
           dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup failed!" 5 40
           return 1
         fi
-        return
+        return 0
         ;;
       *)
         break
@@ -1799,6 +1795,7 @@ function sysinfo() {
   ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
   ETHN=$(echo ${ETHX} | wc -w)
   HWID="$(genHWID)"
+  ARC_BACKUP="$(readConfigKey "arc.backup" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ]; then
@@ -1833,6 +1830,7 @@ function sysinfo() {
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
+  EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
   USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
@@ -1905,7 +1903,7 @@ function sysinfo() {
   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"
-  TEXT+="\n  HardwareID: \Zb${HWID}\Zn"
+  TEXT+="\n  HardwareID: \Zb${HWID} $( [ -n "${USERID}" ] && echo "true" || echo "false" )\Zn"
   TEXT+="\n  Offline Mode: \Zb${ARC_OFFLINE}\Zn"
   TEXT+="\n"
   if [ "${CONFDONE}" = "true" ]; then
@@ -1914,8 +1912,10 @@ function sysinfo() {
     TEXT+="\n  Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
     TEXT+="\n  Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
     TEXT+="\n  Arc Patch: \Zb${ARC_PATCH}\Zn"
+    TEXT+="\n  Arc Backup: \Zb${ARC_BACKUP}\Zn"
     TEXT+="\n  Kernelload: \Zb${KERNELLOAD}\Zn"
     TEXT+="\n  Directboot: \Zb${DIRECTBOOT}\Zn"
+    TEXT+="\n  eMMC Boot: \Zb${EMMCBOOT}\Zn"
     TEXT+="\n  Addons selected: \Zb${ADDONSINFO}\Zn"
   else
     TEXT+="\n  Config not completed!"
@@ -2142,7 +2142,7 @@ function networkdiag() {
       if [[ $? -ne 0 || -z "${USERIDAPI}" ]]; then
         echo -e "Arc UserID API not reachable!"
       else
-        echo -e "Arc UserID API reachable! (${USERIDAPI})"
+        echo -e "Arc UserID API reachable!"
       fi
       GITHUBAPI=$(curl --interface "${N}" -skL -m 10 "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 2>/dev/null)
       if [[ $? -ne 0 || -z "${GITHUBAPI}" ]]; then
@@ -2151,7 +2151,7 @@ function networkdiag() {
         echo -e "Github API reachable!"
       fi
       if [ "${CONFDONE}" = "true" ]; then
-        SYNOAPI=$(curl --interface "${N}" -skL -m 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url')
+        SYNOAPI=$(curl --interface "${N}" -skL -m 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url' 2>/dev/null)
         if [[ $? -ne 0 || -z "${SYNOAPI}" ]]; then
           echo -e "Syno API not reachable!"
         else
@@ -2174,7 +2174,8 @@ function credits() {
   TEXT+="\n\Z4> Arc Loader:\Zn"
   TEXT+="\n  Github: \Zbhttps://github.com/AuxXxilium\Zn"
   TEXT+="\n  Web: \Zbhttps://auxxxilium.tech | https://xpenology.tech\Zn"
-  TEXT+="\n  Wiki: \Zbhttps://auxxxilium.tech/wiki\Zn"
+  TEXT+="\n  Wiki: \Zbhttps://xpenology.tech/wiki\Zn"
+  TEXT+="\n  FAQ: \Zbhttps://xpenology.tech/faq\Zn"
   TEXT+="\n"
   TEXT+="\n\Z4>> Developer:\Zn"
   TEXT+="\n   Arc Loader: \ZbAuxXxilium / Fulcrum\Zn"
@@ -3305,7 +3306,6 @@ function genHardwareID() {
       continue
     fi
   done
-  ARC_CONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
   writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   return
@@ -3316,7 +3316,6 @@ function genHardwareID() {
 function checkHardwareID() {
   HWID="$(genHWID)"
   USERID="$(curl -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
-  [ ! -f "${S_FILE}.bak" ] && cp -f "${S_FILE}" "${S_FILE}.bak" 2>/dev/null || true
   if echo "${USERID}" | grep -qE '^[0-9]+$'; then
     if curl -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}&userid=${USERID}" -o "${S_FILE}" 2>/dev/null; then
       writeConfigKey "arc.hardwareid" "${HWID}" "${USER_CONFIG_FILE}"
@@ -3325,20 +3324,15 @@ function checkHardwareID() {
     else
       USERID=""
       writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
       writeConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
-      [ -f "${S_FILE}.bak" ] && mv -f "${S_FILE}.bak" "${S_FILE}" 2>/dev/null
     fi
   else
     USERID=""
     writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
     writeConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
-    [ -f "${S_FILE}.bak" ] && mv -f "${S_FILE}.bak" "${S_FILE}" 2>/dev/null
   fi
-  ARC_CONF="$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")"
   return
 }
 
@@ -3407,7 +3401,7 @@ function getnet() {
       done
     done
   else
-    macs=($(generateMacAddress "${MODEL}" "${#ETHX[@]}" "${ARC_PATCH}"))
+    macs=($(generateMacAddress "${ARC_PATCH}" "${MODEL}" "${#ETHX[@]}"))
 
     for N in "${!ETHX[@]}"; do
       mac="${macs[$N]}"
@@ -3785,4 +3779,40 @@ function notificationMenu() {
   fi
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+}
+
+function onlineMenu() {
+  while true; do
+    ARC_UID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
+    ARC_BACKUP="$(readConfigKey "arc.backup" "${USER_CONFIG_FILE}")"
+    WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
+    DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
+
+    write_menu_value 1 "HardwareID:" "$( [ -n "${ARC_UID}" ] && echo "registered" || echo "register" )"
+    write_menu_value 2 "Online Backup:" "$( [ "${ARC_BACKUP}" = "true" ] && echo "enabled" || echo "disabled" )"
+    write_menu_value 3 "Notification Settings:" "$( [ "${WEBHOOKNOTIFY}" = "true" ] && echo "enabled" || echo "disabled" ) / $( [ "${DISCORDNOTIFY}" = "true" ] && echo "enabled" || echo "disabled" )"
+
+    dialog --backtitle "$(backtitle)" --title "Online Settings" \
+      --menu "Online Settings for registered HardwareID" 10 60 2 \
+      --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && break
+    resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+    [ -z "${resp}" ] && break
+    case ${resp} in
+      1)
+        if [ -n "${ARC_UID}" ]; then
+          dialog --msgbox "HardwareID is already registered." 6 40
+        else
+          genHardwareID
+        fi
+        ;;
+      2)
+        [ "${ARC_BACKUP}" = "true" ] && ARC_BACKUP='false' || ARC_BACKUP='true'
+        writeConfigKey "arc.backup" "${ARC_BACKUP}" "${USER_CONFIG_FILE}"
+        ;;
+      3)
+        notificationMenu
+        ;;
+    esac
+  done
 }
