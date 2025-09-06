@@ -138,6 +138,7 @@ function arcModel() {
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
   ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
   arcVersion
+  return
 }
 
 ###############################################################################
@@ -331,6 +332,7 @@ function arcVersion() {
     sleep 5
     return
   fi
+  return
 }
 
 ###############################################################################
@@ -387,6 +389,7 @@ function arcPatch() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   arcSettings
+  return
 }
 
 ###############################################################################
@@ -476,6 +479,7 @@ function arcSettings() {
     dialog --backtitle "$(backtitle)" --title "Config failed" --msgbox "ERROR: Config failed!\nExit." 6 40
     return 1
   fi
+  return
 }
 
 ###############################################################################
@@ -554,6 +558,7 @@ function arcSummary() {
       return 0
       ;;
   esac
+  return
 }
 
 ###############################################################################
@@ -630,6 +635,7 @@ function makearc() {
     sleep 2
     return
   fi
+  return
 }
 
 ###############################################################################
@@ -649,6 +655,7 @@ function juniorboot() {
     sleep 3
     rebootTo junior
   fi
+  return
 }
 
 ###############################################################################
@@ -668,6 +675,7 @@ function bootcheck() {
     sleep 2
     exec reboot
   fi
+  return
 }
 
 ###############################################################################
@@ -733,6 +741,7 @@ function addonSelection() {
     ADDONS["${ADDON}"]=""
     writeConfigKey "addons.\"${ADDON}\"" "" "${USER_CONFIG_FILE}"
   done
+  return
 }
 
 ###############################################################################
@@ -914,7 +923,7 @@ function modulesMenu() {
           FIRMWARE_URL="https://github.com/AuxXxilium/arc-modules-ex/releases/download/${TAG}/firmware.tgz"
           FIRMWARE_PATH="${MODULES_TMP_PATH}/firmware.tgz"
           FIRMWARE_TMP="$(mktemp -d)"
-          curl -skL "${FIRMWARE_URL}" -o "${FIRMWARE_PATH}"
+          curl -skL --http1.1 "${FIRMWARE_URL}" -o "${FIRMWARE_PATH}"
           if [ -f "${FIRMWARE_PATH}" ]; then
             tar -xzf "${FIRMWARE_PATH}" -C "${FIRMWARE_TMP}"
             tar -czf "${MODULES_PATH}/firmware.tgz" -C "${FIRMWARE_TMP}" .
@@ -1009,6 +1018,7 @@ function modulesMenu() {
       ;;
     esac
   done
+  return
 }
 
 ###############################################################################
@@ -1572,7 +1582,7 @@ function backupMenu() {
       4)
         [ -f "${USER_CONFIG_FILE}" ] && mv -f "${USER_CONFIG_FILE}" "${USER_CONFIG_FILE}.bak"
         HWID="$(genHWID)"
-        if curl -skL "https://arc.auxxxilium.tech?cdown=${HWID}" -o "${USER_CONFIG_FILE}" 2>/dev/null; then
+        if curl -skL --http1.1 "https://arc.auxxxilium.tech?cdown=${HWID}" -o "${USER_CONFIG_FILE}" 2>/dev/null; then
           dialog --backtitle "$(backtitle)" --title "Online Restore" --msgbox "Online Restore successful!" 5 40
         else
           dialog --backtitle "$(backtitle)" --title "Online Restore" --msgbox "Online Restore failed!" 5 40
@@ -1615,6 +1625,7 @@ function backupMenu() {
         ;;
     esac
   done
+  return
 }
 
 ###############################################################################
@@ -2265,6 +2276,7 @@ function staticIPMenu() {
   done
   IP="$(getIP)"
   [ -z "${IPCON}" ] && IPCON="${IP}"
+  return
 }
 
 ###############################################################################
@@ -2711,6 +2723,7 @@ function bootipwaittime() {
   [ -z "${resp}" ] && return 1
   BOOTIPWAIT=${resp}
   writeConfigKey "bootipwait" "${BOOTIPWAIT}" "${USER_CONFIG_FILE}"
+  return
 }
 
 
@@ -3133,6 +3146,7 @@ function governorSelection () {
   [ -z "${resp}" ] && return
   GOVERNOR=${resp}
   writeConfigKey "governor" "${GOVERNOR}" "${USER_CONFIG_FILE}"
+  return
 }
 
 ###############################################################################
@@ -3232,6 +3246,7 @@ function dtsMenu() {
       ;;
     esac
   done
+  return
 }
 
 ###############################################################################
@@ -3251,7 +3266,12 @@ function getpatfiles() {
       --infobox "Downloading DSM Boot Files..." 3 40
     # Get new Files
     DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
-    if curl -skL "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null; then
+    SPACELEFT=$(df --block-size=1 "${PART3_PATH}" 2>/dev/null | awk 'NR==2 {print $4}')
+    FILESIZE=$(curl -skLI --http1.1 -m 10 "${DSM_URL}" | grep -i Content-Length | tail -n 1 | tr -d '\r\n' | awk '{print $2}')
+    if [ ${FILESIZE:-0} -ge ${SPACELEFT:-0} ]; then
+      DSM_FILE="${TMP_PATH}/${PAT_HASH}.tar"
+    fi
+    if curl -skL --http1.1 "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null; then
       VALID="true"
     fi
   elif [ ! -f "${DSM_FILE}" ] && [ "${ARC_OFFLINE}" = "true" ]; then
@@ -3287,7 +3307,7 @@ function getpatfiles() {
 function genHardwareID() {
   HWID="$(genHWID)"
   while true; do
-    USERID="$(curl -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
+    USERID="$(curl -skL --http1.1 -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
     if echo "${USERID}" | grep -qE '^[0-9]+$'; then
       writeConfigKey "arc.hardwareid" "${HWID}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
@@ -3315,18 +3335,11 @@ function genHardwareID() {
 # Check HardwareID
 function checkHardwareID() {
   HWID="$(genHWID)"
-  USERID="$(curl -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
+  USERID="$(curl -skL --http1.1 -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
   if echo "${USERID}" | grep -qE '^[0-9]+$'; then
-    if curl -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}&userid=${USERID}" -o "${S_FILE}" 2>/dev/null; then
-      writeConfigKey "arc.hardwareid" "${HWID}" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
-      writeConfigKey "bootscreen.hwidinfo" "true" "${USER_CONFIG_FILE}"
-    else
-      USERID=""
-      writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
-    fi
+    writeConfigKey "arc.hardwareid" "${HWID}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
+    writeConfigKey "bootscreen.hwidinfo" "true" "${USER_CONFIG_FILE}"
   else
     USERID=""
     writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
@@ -3372,6 +3385,7 @@ EOL
       writeConfigKey "bootscreen.${BOOTSCREEN}" "false" "${USER_CONFIG_FILE}"
     fi
   done
+  return
 }
 
 ###############################################################################
@@ -3408,6 +3422,7 @@ function getnet() {
       writeConfigKey "${ETHX[$N]}" "${mac}" "${USER_CONFIG_FILE}"
     done
   fi
+  return
 }
 
 ###############################################################################
@@ -3554,6 +3569,7 @@ function getmap() {
       fi
     done < "${TMP_PATH}/ports"
   fi
+  return
 }
 
 ###############################################################################
@@ -3655,6 +3671,7 @@ function getdiskinfo() {
     fi
   done
   writeConfigKey "device.externalcontroller" "${external_controller}" "${USER_CONFIG_FILE}"
+  return
 }
 
 ###############################################################################
@@ -3683,6 +3700,7 @@ function getnetinfo() {
     done
   done
   IPCON="${IPCON:-noip}"
+  return
 }
 
 ###############################################################################
@@ -3779,8 +3797,11 @@ function notificationMenu() {
   fi
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  return
 }
 
+###############################################################################
+# Online Menu
 function onlineMenu() {
   while true; do
     ARC_UID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
@@ -3815,4 +3836,5 @@ function onlineMenu() {
         ;;
     esac
   done
+  return
 }
