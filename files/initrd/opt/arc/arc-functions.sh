@@ -28,10 +28,9 @@ function arcModel() {
         DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
         FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
         NOFLAGS="$(readConfigArray "platforms.${A}.noflags" "${P_FILE}")"
-        ARC_CONFM="$(readConfigKey "${M}.serial" "${S_FILE}")"
-        ARC=""
         BETA=""
-        [ -n "${ARC_CONFM}" ] && ARC="x" || ARC=""
+        ARC_CONFM="$(genArc true "${M}" sn 2>/dev/null)"
+        [ "${#ARC_CONFM}" -eq 13 ] && ARC="x" || ARC=""
         [ "${DT}" = "true" ] && DTS="x" || DTS=""
         IGPU=""
         IGPUS=""
@@ -76,12 +75,12 @@ function arcModel() {
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
           [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
         fi
-        [ -n "$(grep -w "${M}" "${S_FILE}")" ] && BETA="Arc" || BETA="Syno"
+        [ -n "$(grep -w "${M}" "${S_FILE}")" ] && BETA="Loader" || BETA="Syno"
         [ "${COMPATIBLE}" -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
       done < <(cat "${TMP_PATH}/modellist")
       [ ! -s "${TMP_PATH}/menu" ] && echo "No supported models found." >"${TMP_PATH}/menu"
       [ "${RESTRICT}" -eq 1 ] && TITLEMSG="Supported Models for your Hardware" || TITLEMSG="Supported and unsupported Models for your Hardware"
-      [ "${RESTRICT}" -eq 1 ] && MSG="${TITLEMSG} (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")" || MSG="${TITLEMSG} (x = supported / + = need Addons) | Syno Models can have faulty Values.\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
+      MSG="${TITLEMSG} (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc Patch" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
       dialog --backtitle "$(backtitle)" --title "DSM Model" --colors \
         --cancel-label "Show all" --help-button --help-label "Exit" \
         --menu "${MSG}" 0 115 0 \
@@ -607,10 +606,10 @@ function makearc() {
       HWID="$(genHWID)"
       curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${HWID}&userid=${USERID}" 2>/dev/null
       if [ $? -eq 0 ]; then
-        dialog --backtitle "$(backtitle)" --title "Online Backup" --infobox "Online Backup successful!" 5 40
+        dialog --backtitle "$(backtitle)" --title "Online Backup" --infobox "Config Online Backup successful!" 3 45
         sleep 2
       else
-        dialog --backtitle "$(backtitle)" --title "Online Backup" --infobox "Online Backup failed!" 5 40
+        dialog --backtitle "$(backtitle)" --title "Online Backup" --infobox "Config Online Backup failed!" 3 45
         sleep 2
       fi
     fi
@@ -1613,9 +1612,9 @@ function backupMenu() {
         HWID="$(genHWID)"
         curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${HWID}&userid=${USERID}" 2>/dev/null
         if [ $? -eq 0 ]; then
-          dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup successful!" 5 40
+          dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Config Online Backup successful!" 5 45
         else
-          dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Online Backup failed!" 5 40
+          dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Config Online Backup failed!" 5 45
           return 1
         fi
         return 0
@@ -3809,12 +3808,13 @@ function onlineMenu() {
     WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
     DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
 
-    write_menu_value 1 "HardwareID:" "$( [ -n "${ARC_UID}" ] && echo "registered" || echo "register" )"
-    write_menu_value 2 "Online Backup:" "$( [ "${ARC_BACKUP}" = "true" ] && echo "enabled" || echo "disabled" )"
-    write_menu_value 3 "Notification Settings:" "$( [ "${WEBHOOKNOTIFY}" = "true" ] && echo "enabled" || echo "disabled" ) / $( [ "${DISCORDNOTIFY}" = "true" ] && echo "enabled" || echo "disabled" )"
+    rm -f "${TMP_PATH}/menu"
+    write_menu_value 1 "HardwareID" "$( [ -n "${ARC_UID}" ] && echo "registered" || echo "register" )"
+    write_menu_value 2 "Config Online Backup" "$( [ "${ARC_BACKUP}" = "true" ] && echo "enabled" || echo "disabled" )"
+    write_menu_value 3 "Notify Webhook / Discord" "$( [ "${WEBHOOKNOTIFY}" = "true" ] && echo "enabled" || echo "disabled" ) / $( [ "${DISCORDNOTIFY}" = "true" ] && echo "enabled" || echo "disabled" )"
 
-    dialog --backtitle "$(backtitle)" --title "Online Settings" \
-      --menu "Online Settings for registered HardwareID" 10 60 2 \
+    dialog --backtitle "$(backtitle)" --title "Online Settings" --colors \
+      --menu "Online Settings require HardwareID registration" 20 55 2 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -3822,7 +3822,7 @@ function onlineMenu() {
     case ${resp} in
       1)
         if [ -n "${ARC_UID}" ]; then
-          dialog --msgbox "HardwareID is already registered." 6 40
+          dialog --msgbox "HardwareID is already registered." 5 40
         else
           genHardwareID
         fi

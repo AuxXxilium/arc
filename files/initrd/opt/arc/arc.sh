@@ -36,17 +36,26 @@ function backtitle() {
     fi
   fi
   BACKTITLE+=" | "
-  BACKTITLE+="${MODEL:-(Model)} | "
-  BACKTITLE+="${PRODUCTVER:-(Version)} | "
   if [ "${ARC_OFFLINE}" = "true" ]; then
     BACKTITLE+="${IPCON:-(no IP)} (offline) | "
   else
     BACKTITLE+="${IPCON:-(no IP)} | "
   fi
-  BACKTITLE+="Patch: ${ARC_PATCH} | "
-  BACKTITLE+="Config: ${CONFDONE} | "
-  BACKTITLE+="Build: ${BUILDDONE} | "
-  BACKTITLE+="${MEV}(${BUS}) | "
+  BACKTITLE+="${MODEL:-(Model)} | "
+  BACKTITLE+="${PRODUCTVER:-(Version)} | "
+
+  if [ "${ARC_PATCH}" = "true" ]; then
+    PATCH_STATUS="Arc"
+  elif [ "${ARC_PATCH}" = "user" ]; then
+    PATCH_STATUS="User"
+  else
+    PATCH_STATUS="Random"
+  fi
+  BACKTITLE+="SN/MAC: ${PATCH_STATUS} | "
+
+  BACKTITLE+="Config: $( [ "${CONFDONE}" = "true" ] && echo "yes" || echo "no" ) | "
+  BACKTITLE+="Build: $( [ "${BUILDDONE}" = "true" ] && echo "yes" || echo "no" ) | "
+  BACKTITLE+="Boot: ${MEV} (${BUS}) | "
   BACKTITLE+="KB: ${KEYMAP}"
   echo "${BACKTITLE}"
 }
@@ -103,6 +112,10 @@ elif [ "${ARC_MODE}" = "config" ]; then
     write_menu "=" "\Z4===== Info =====\Zn"
     write_menu "a" "Sysinfo"
     write_menu "A" "Networkdiag"
+
+    if [ "${ARC_OFFLINE}" != "true" ]; then
+      write_menu "Q" "Online Options"
+    fi
     
     if [ "${CONFDONE}" = "true" ]; then
       if [ "${ARCOPTS}" = "true" ]; then
@@ -110,14 +123,10 @@ elif [ "${ARC_MODE}" = "config" ]; then
         write_menu "b" "Addons"
         write_menu "d" "Modules"
         write_menu_value "e" "Version" "${PRODUCTVER:-unknown}"
-        write "p" "SN/Mac Options"
+        write_menu_value "p" "SN/Mac" "$( [ "${ARC_PATCH}" = "true" ] && echo "Arc" || [ "${ARC_PATCH}" = "user" ] && echo "User" || echo "Random" )"
 
         if [ "${DT}" = "false" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
           write_menu "S" "PortMap (Sata Controller)"
-        fi
-
-        if [ "${DT}" = "true" ]; then
-          write_menu "o" "DTS Map Options"
         fi
 
         addons_list="$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
@@ -134,9 +143,13 @@ elif [ "${ARC_MODE}" = "config" ]; then
         fi
 
         if [ "${DT}" = "true" ]; then
-          write_menu_value "H" "Hotplug/SortDrives" "${HDDSORT}"
+          write_menu_value "H" "Hotplug/SortDrives" "$( [ "${HDDSORT}" = "true" ] && echo "enabled" || echo "disabled" )"
         else
-          write_menu_value "h" "USB Disk(s) as Internal" "${USBMOUNT}"
+          write_menu_value "h" "USB Disk(s) as Internal" "$( [ "${USBMOUNT}" = "true" ] && echo "enabled" || echo "disabled" )"
+        fi
+
+        if [ "${DT}" = "true" ]; then
+          write_menu "o" "DTS Map Options"
         fi
       else
         write_menu "5" "\Z1Show Arc DSM Options\Zn"
@@ -146,11 +159,11 @@ elif [ "${ARC_MODE}" = "config" ]; then
         write_menu "6" "\Z1Hide Boot Options\Zn"
         write_menu "f" "Bootscreen Options"
         write_menu_value "m" "Boot Kernelload" "${KERNELLOAD}"
-        write_menu_value "E" "DSM on eMMC Boot Support" "${EMMCBOOT}"
+        write_menu_value "E" "eMMC Boot Support" "$( [ "${EMMCBOOT}" = "true" ] && echo "enabled" || echo "disabled" )"
         if [ "${DIRECTBOOT}" = "false" ]; then
           write_menu_value "i" "Boot IP Waittime" "${BOOTIPWAIT}"
         fi
-        write_menu_value "q" "Directboot" "${DIRECTBOOT}"
+        write_menu_value "q" "Directboot" "$( [ "${DIRECTBOOT}" = "true" ] && echo "enabled" || echo "disabled" )"
       else
         write_menu "6" "\Z1Show Boot Options\Zn"
       fi
@@ -167,43 +180,38 @@ elif [ "${ARC_MODE}" = "config" ]; then
         write_menu "v" "Force enable SSH"
         write_menu "l" "Edit User Config"
         write_menu "s" "Allow Downgrade Version"
-        write_menu_value "O" "Official Driver Priority" "${ODP}"
+        write_menu_value "O" "Official Driver Priority" "$( [ "${ODP}" = "true" ] && echo "enabled" || echo "disabled" )"
       else
         write_menu "7" "\Z1Show DSM Options\Zn"
       fi
     fi
 
-    if [ "${ARC_OFFLINE}" = "false" ]; then
-      write_menu "Q" "Online Settings"
-    fi
-
     if [ "${LOADEROPTS}" = "true" ]; then
       write_menu "8" "\Z1Hide Loader Options\Zn"
-      write_menu_value "c" "Offline Mode" "${ARC_OFFLINE}"
+      write_menu_value "c" "Offline Mode" "$( [ "${ARC_OFFLINE}" = "true" ] && echo "enabled" || echo "disabled" )"
       write_menu "D" "StaticIP for Loader/DSM"
-      write_menu "Q" "Notification Settings"
       write_menu "U" "Change Loader Password"
       write_menu "Z" "Change Loader Ports"
       write_menu "w" "Reset Loader to Defaults"
       write_menu "L" "Grep Logs from dbgutils"
       write_menu "B" "Grep DSM Config from Backup"
       write_menu "=" "\Z1== Edit with caution! ==\Zn"
-      write_menu_value "W" "Ramdisk Compression" "${RD_COMPRESSED}"
+      write_menu_value "W" "Ramdisk Compression" "$( [ "${RD_COMPRESSED}" = "true" ] && echo "enabled" || echo "disabled" )"
       write_menu_value "X" "Sata DOM" "${SATADOM}"
       write_menu_value "u" "LKM Version" "${LKM}"
       write_menu "C" "Clone Loader to another Disk"
       write_menu "n" "Grub Bootloader Config"
       write_menu "y" "Choose a Keymap for Loader"
       write_menu "F" "\Z1Formate Disks\Zn"
-      write_menu_value "M" "\Z1Development Mode\Zn" "${DEVELOPMENT_MODE:-false}"
+      write_menu_value "M" "\Z1Development Mode\Zn" "$( [ "${DEVELOPMENT_MODE}" = "true" ] && echo "enabled" || echo "disabled" )"
     else
       write_menu "8" "\Z1Show Loader Options\Zn"
     fi
 
     write_menu "=" "\Z4===== Misc =====\Zn"
     write_menu "x" "Backup/Restore/Recovery"
-    write_menu "z" "Update Menu"
-    write_menu "I" "Power/Service Menu"
+    write_menu "z" "Update"
+    write_menu "I" "Power & Service"
     write_menu "V" "Credits"
     [ "$TERM" != "xterm-256color" ] && WEBCONFIG="Webconfig: http://${IPCON}:${HTTPPORT:-7080}" || WEBCONFIG=""
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Advanced UI" --colors \

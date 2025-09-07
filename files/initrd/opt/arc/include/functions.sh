@@ -121,7 +121,7 @@ function arrayExistItem() {
 # 2 - Model
 # Returns serial number
 function generateSerial() {
-  genArc "${1}" "${2}" serial
+  SERIAL="$(genArc "${1}" "${2}" sn)"
   echo "${SERIAL}"
   return
 }

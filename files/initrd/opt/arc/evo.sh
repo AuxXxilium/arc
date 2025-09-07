@@ -36,17 +36,26 @@ function backtitle() {
     fi
   fi
   BACKTITLE+=" | "
-  BACKTITLE+="${MODEL:-(Model)} | "
-  BACKTITLE+="${PRODUCTVER:-(Version)} | "
   if [ "${ARC_OFFLINE}" = "true" ]; then
     BACKTITLE+="${IPCON:-(no IP)} (offline) | "
   else
     BACKTITLE+="${IPCON:-(no IP)} | "
   fi
-  BACKTITLE+="Patch: ${ARC_PATCH} | "
-  BACKTITLE+="Config: ${CONFDONE} | "
-  BACKTITLE+="Build: ${BUILDDONE} | "
-  BACKTITLE+="${MEV}(${BUS}) | "
+  BACKTITLE+="${MODEL:-(Model)} | "
+  BACKTITLE+="${PRODUCTVER:-(Version)} | "
+
+  if [ "${ARC_PATCH}" = "true" ]; then
+    PATCH_STATUS="Arc"
+  elif [ "${ARC_PATCH}" = "user" ]; then
+    PATCH_STATUS="User"
+  else
+    PATCH_STATUS="Random"
+  fi
+  BACKTITLE+="SN/MAC: ${PATCH_STATUS} | "
+
+  BACKTITLE+="Config: $( [ "${CONFDONE}" = "true" ] && echo "yes" || echo "no" ) | "
+  BACKTITLE+="Build: $( [ "${BUILDDONE}" = "true" ] && echo "yes" || echo "no" ) | "
+  BACKTITLE+="Boot: ${MEV} (${BUS}) | "
   BACKTITLE+="KB: ${KEYMAP}"
   echo "${BACKTITLE}"
 }
@@ -63,8 +72,8 @@ function advancedMenu() {
       if [ "${BOOTOPTS}" = "true" ]; then
         write_menu "6" "\Z1Hide Boot Options\Zn"
         write_menu_value "m" "Kernelload" "${KERNELLOAD}"
-        write_menu_value "E" "eMMC Boot Support" "${EMMCBOOT}"
-        write_menu_value "q" "Directboot" "${DIRECTBOOT}"
+        write_menu_value "E" "eMMC Boot Support" "$( [ "${EMMCBOOT}" = "true" ] && echo "enabled" || echo "disabled" )"
+        write_menu_value "q" "Directboot" "$( [ "${DIRECTBOOT}" = "true" ] && echo "enabled" || echo "disabled" )"
         write_menu_value "u" "LKM Version" "${LKM}"
       else
         write_menu "6" "\Z1Show Boot Options\Zn"
@@ -222,7 +231,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       write_menu_value "e" "Version" "${PRODUCTVER:-unknown}"
       write_menu_value "=" "DT" "${DT}"
       write_menu_value "=" "Platform" "${PLATFORM}"
-      write_menu_value "p" "SN/Mac Options" "$([ -n "${ARC_CONF}" ] && echo "arc" || echo "random/user")"
+      write_menu_value "p" "SN/Mac" "$( [ "${ARC_PATCH}" = "true" ] && echo "Arc" || [ "${ARC_PATCH}" = "user" ] && echo "User" || echo "Random" )"
 
       if [ "${PLATFORM}" = "epyc7002" ]; then
         CPUINFO="$(cat /proc/cpuinfo | grep MHz | wc -l)"
@@ -252,9 +261,9 @@ elif [ "${ARC_MODE}" = "config" ]; then
       fi
 
       if [ "${DT}" = "true" ]; then
-        write_menu_value "H" "Hotplug/SortDrives" "${HDDSORT}"
+        write_menu_value "H" "Hotplug/SortDrives" "$( [ "${HDDSORT}" = "true" ] && echo "enabled" || echo "disabled" )"
       else
-        write_menu_value "h" "USB Disk(s) as Internal" "${USBMOUNT}"
+        write_menu_value "h" "USB Disk(s) as Internal" "$( [ "${USBMOUNT}" = "true" ] && echo "enabled" || echo "disabled" )"
       fi
     fi
 
