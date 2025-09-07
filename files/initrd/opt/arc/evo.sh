@@ -291,7 +291,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       WEBCONFIG=""
     fi
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Easy UI" --colors \
-          --cancel-label "Advanced UI" --help-button --help-label "Exit" \
+          --cancel-label "Advanced" --help-button --help-label "Exit" \
           --extra-button --extra-label "${EXTRA_LABEL}" \
           --menu "${WEBCONFIG}" 0 0 0 --file "${TMP_PATH}/menu" \
           2>"${TMP_PATH}/resp"
@@ -371,7 +371,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
         if [ "${CONFDONE}" = "false" ]; then
           arcModel
         elif [ "${CONFDONE}" = "true" ]; then
-          arcSummary
+          makearc
         elif [ "${BUILDDONE}" = "true" ]; then
           bootcheck
         fi

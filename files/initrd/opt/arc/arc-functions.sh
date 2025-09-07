@@ -80,7 +80,7 @@ function arcModel() {
       done < <(cat "${TMP_PATH}/modellist")
       [ ! -s "${TMP_PATH}/menu" ] && echo "No supported models found." >"${TMP_PATH}/menu"
       [ "${RESTRICT}" -eq 1 ] && TITLEMSG="Supported Models for your Hardware" || TITLEMSG="Supported and unsupported Models for your Hardware"
-      MSG="${TITLEMSG} (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc Patch" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
+      MSG="${TITLEMSG} (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
       dialog --backtitle "$(backtitle)" --title "DSM Model" --colors \
         --cancel-label "Show all" --help-button --help-label "Exit" \
         --menu "${MSG}" 0 115 0 \
@@ -348,10 +348,16 @@ function arcPatch() {
     fi
   elif [ "${ARC_MODE}" = "config" ]; then
     SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
+    if [ "${#SN}" -eq 13 ]; then
+      OPTIONS="1 \"Use Arc Patch (AME, QC, Push Notify and more)\""
+    else
+      OPTIONS=""
+    fi
+    
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "SN/Mac Options" \
       --menu "Choose an Option" 7 60 0 \
-      $( [ "${#SN}" -eq 13 ] && echo '1 "Use Arc Patch (AME, QC, Push Notify and more)"' ) \
+      ${OPTIONS} \
       2 "Use random SN/Mac (Reduced DSM Features)" \
       3 "Use my own SN/Mac (Be sure your Data is valid)" \
       2>"${TMP_PATH}/resp"
@@ -472,7 +478,7 @@ function arcSettings() {
       2>"${TMP_PATH}/resp"
       resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
       [ -z "${resp}" ] && return
-      [ "${resp}" -eq 1 ] && arcSummary || dialog --clear --no-items --backtitle "$(backtitle)"
+      [ "${resp}" -eq 1 ] && makearc || dialog --clear --no-items --backtitle "$(backtitle)"
     else
       makearc
     fi
@@ -480,85 +486,6 @@ function arcSettings() {
     dialog --backtitle "$(backtitle)" --title "Config failed" --msgbox "ERROR: Config failed!\nExit." 6 40
     return 1
   fi
-  return
-}
-
-###############################################################################
-# Show Summary of Config
-function arcSummary() {
-  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-  DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-  PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
-  PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
-  ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  ADDONSINFO="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
-  REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
-  
-  PORTMAP="$(readConfigKey "cmdline.SataPortMap" "${USER_CONFIG_FILE}")"
-  DISKMAP="$(readConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}")"
-  PORTREMAP="$(readConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}")"
-  AHCIPORTREMAP="$(readConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}")"
-  
-  DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
-  KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
-  HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
-  NIC="$(readConfigKey "device.nic" "${USER_CONFIG_FILE}")"
-  EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
-  HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
-  DRIVES="$(readConfigKey "device.drives" "${USER_CONFIG_FILE}")"
-  EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
-  KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
-  
-  if [ "${DT}" = "false" ] && [ "${REMAP}" = "user" ] && [ -z "${PORTMAP}${DISKMAP}${PORTREMAP}${AHCIPORTREMAP}" ]; then
-    dialog --backtitle "$(backtitle)" --title "Arc Error" \
-      --msgbox "ERROR: You selected Portmap: User and not set any values. -> Can't build Loader!\nGo need to go Cmdline Options and add your Values." 6 80
-    return 1
-  fi
-  
-  SUMMARY="\Z4> DSM Information\Zn"
-  SUMMARY+="\n>> Model: \Zb${MODEL}\Zn"
-  SUMMARY+="\n>> Version: \Zb${PRODUCTVER}\Zn"
-  SUMMARY+="\n>> Platform: \Zb${PLATFORM}\Zn"
-  SUMMARY+="\n>> DT: \Zb${DT}\Zn"
-  SUMMARY+="\n>> PAT URL: \Zb${PAT_URL}\Zn"
-  SUMMARY+="\n>> PAT Hash: \Zb${PAT_HASH}\Zn"
-  [ "${MODEL}" = "SA6400" ] && SUMMARY+="\n>> Kernel: \Zb${KERNEL}\Zn"
-  SUMMARY+="\n>> Kernel Version: \Zb${KVER}\Zn"
-  SUMMARY+="\n"
-  SUMMARY+="\n\Z4> Arc Information\Zn"
-  SUMMARY+="\n>> Arc Patch: \Zb${ARC_PATCH}\Zn"
-  [ -n "${PORTMAP}" ] && SUMMARY+="\n>> SataPortmap: \Zb${PORTMAP}\Zn"
-  [ -n "${DISKMAP}" ] && SUMMARY+="\n>> DiskIdxMap: \Zb${DISKMAP}\Zn"
-  [ -n "${PORTREMAP}" ] && SUMMARY+="\n>> SataRemap: \Zb${PORTREMAP}\Zn"
-  [ -n "${AHCIPORTREMAP}" ] && SUMMARY+="\n>> AhciRemap: \Zb${AHCIPORTREMAP}\Zn"
-  [ "${DT}" = "true" ] && SUMMARY+="\n>> Sort Drives: \Zb${HDDSORT}\Zn"
-  SUMMARY+="\n>> Directboot: \Zb${DIRECTBOOT}\Zn"
-  SUMMARY+="\n>> eMMC Boot: \Zb${EMMCBOOT}\Zn"
-  SUMMARY+="\n>> Kernelload: \Zb${KERNELLOAD}\Zn"
-  SUMMARY+="\n>> Addons: \Zb${ADDONSINFO}\Zn"
-  SUMMARY+="\n"
-  SUMMARY+="\n\Z4> Device Information\Zn"
-  SUMMARY+="\n>> NIC: \Zb${NIC}\Zn"
-  SUMMARY+="\n>> Total Disks: \Zb${DRIVES}\Zn"
-  SUMMARY+="\n>> Internal Disks: \Zb${HARDDRIVES}\Zn"
-  SUMMARY+="\n>> Additional Controller: \Zb${EXTERNALCONTROLLER}\Zn"
-  SUMMARY+="\n"
-  
-  dialog --backtitle "$(backtitle)" --colors --title "Config Summary" \
-    --extra-button --extra-label "Cancel" --msgbox "${SUMMARY}" 0 0
-  
-  RET=$?
-  case ${RET} in
-    0)
-      makearc
-      ;;
-    *)
-      return 0
-      ;;
-  esac
   return
 }
 
@@ -648,7 +575,7 @@ function juniorboot() {
     dialog --backtitle "$(backtitle)" --title "Alert" \
       --yesno "Config changed, you need to rebuild the Loader?" 0 0
     if [ $? -eq 0 ]; then
-      arcSummary
+      makearc
     fi
   else
     dialog --backtitle "$(backtitle)" --title "Arc Boot" \
@@ -668,7 +595,7 @@ function bootcheck() {
     dialog --backtitle "$(backtitle)" --title "Alert" \
       --yesno "Config changed, you need to rebuild the Loader?" 0 0
     if [ $? -eq 0 ]; then
-      arcSummary
+      makearc
     fi
   else
     dialog --backtitle "$(backtitle)" --title "Arc Boot" \
