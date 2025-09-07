@@ -37,7 +37,7 @@ function backtitle() {
   fi
   BACKTITLE+=" | "
   if [ "${ARC_OFFLINE}" = "true" ]; then
-    BACKTITLE+="${IPCON:-(no IP)} (offline) | "
+    BACKTITLE+="${IPCON:-(offline)} | "
   else
     BACKTITLE+="${IPCON:-(no IP)} | "
   fi

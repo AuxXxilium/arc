@@ -145,6 +145,7 @@ function arcModel() {
 function arcVersion() {
   init_default_addons() {
     initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
+    initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.hdddb" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.reducelogs" "" "${USER_CONFIG_FILE}"
@@ -349,15 +350,15 @@ function arcPatch() {
   elif [ "${ARC_MODE}" = "config" ]; then
     SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
     if [ "${#SN}" -eq 13 ]; then
-      OPTIONS="1 \"Use Arc Patch (AME, QC, Push Notify and more)\""
+      OPTIONS=(1 "Use Arc Patch (AME, QC, Push Notify and more)")
     else
-      OPTIONS=""
+      OPTIONS=()
     fi
     
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "SN/Mac Options" \
       --menu "Choose an Option" 7 60 0 \
-      ${OPTIONS} \
+      "${OPTIONS[@]}" \
       2 "Use random SN/Mac (Reduced DSM Features)" \
       3 "Use my own SN/Mac (Be sure your Data is valid)" \
       2>"${TMP_PATH}/resp"
@@ -3269,7 +3270,7 @@ function genHardwareID() {
       writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
       writeConfigKey "bootscreen.hwidinfo" "true" "${USER_CONFIG_FILE}"
       dialog --backtitle "$(backtitle)" --title "HardwareID" \
-        --msgbox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!\nMake sure you select Arc Patch while configure the Loader." 7 70
+        --msgbox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!\nYou can use the Online Options now." 7 70
       break
     else
       USERID=""

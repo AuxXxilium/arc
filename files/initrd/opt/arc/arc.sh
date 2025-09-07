@@ -37,7 +37,7 @@ function backtitle() {
   fi
   BACKTITLE+=" | "
   if [ "${ARC_OFFLINE}" = "true" ]; then
-    BACKTITLE+="${IPCON:-(no IP)} (offline) | "
+    BACKTITLE+="${IPCON:-(offline)} | "
   else
     BACKTITLE+="${IPCON:-(no IP)} | "
   fi
@@ -145,7 +145,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
         if [ "${DT}" = "true" ]; then
           write_menu_value "H" "Hotplug/SortDrives" "$( [ "${HDDSORT}" = "true" ] && echo "enabled" || echo "disabled" )"
         else
-          write_menu_value "h" "USB Disk(s) as Internal" "$( [ "${USBMOUNT}" = "true" ] && echo "enabled" || echo "disabled" )"
+          write_menu_value "h" "USB Disks internal" "$( [ "${USBMOUNT}" = "true" ] && echo "enabled" || echo "disabled" )"
         fi
 
         if [ "${DT}" = "true" ]; then
@@ -174,13 +174,13 @@ elif [ "${ARC_MODE}" = "config" ]; then
         write_menu "k" "Synoinfo"
         write_menu "N" "Add new User"
         write_menu "t" "Change User Password"
+        write_menu "s" "Allow Downgrade DSM"
         write_menu "J" "Reset Network Config"
-        write_menu "T" "Disable all scheduled Tasks"
-        write_menu "r" "Remove Blocked IP Database"
+        write_menu "T" "Delete Scheduled Tasks"
+        write_menu "r" "Delete Blocked IP Database"
         write_menu "v" "Force enable SSH"
+        write_menu_value "O" "Official Drivers" "$( [ "${ODP}" = "true" ] && echo "enabled" || echo "disabled" )"
         write_menu "l" "Edit User Config"
-        write_menu "s" "Allow Downgrade Version"
-        write_menu_value "O" "Official Driver Priority" "$( [ "${ODP}" = "true" ] && echo "enabled" || echo "disabled" )"
       else
         write_menu "7" "\Z1Show DSM Options\Zn"
       fi
