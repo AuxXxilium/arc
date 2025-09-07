@@ -135,7 +135,9 @@ VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
 PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
 ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-[ -z "${SN}" ] && SN="$(genArc "${ARC_PATCH}" "${MODEL}" sn 2>/dev/null)"
+if [ -z "${SN}" ] || [ "${#SN}" -ne 13 ]; then
+  SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
+fi
 KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
 DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"

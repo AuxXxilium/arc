@@ -29,7 +29,7 @@ function arcModel() {
         FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
         NOFLAGS="$(readConfigArray "platforms.${A}.noflags" "${P_FILE}")"
         BETA=""
-        ARC_CONFM="$(genArc true "${M}" sn 2>/dev/null)"
+        ARC_CONFM="$(generateSerial true "${MODEL}")"
         [ "${#ARC_CONFM}" -eq 13 ] && ARC="x" || ARC=""
         [ "${DT}" = "true" ] && DTS="x" || DTS=""
         IGPU=""
@@ -342,13 +342,16 @@ function arcPatch() {
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
   if [ "${ARC_MODE}" = "automated" ] && [ "${ARC_PATCH}" != "user" ]; then
-    SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
-    writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+    if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+      SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
+      writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+    fi
   elif [ "${ARC_MODE}" = "config" ]; then
+    SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "SN/Mac Options" \
       --menu "Choose an Option" 7 60 0 \
-      1 "Use Arc Patch (AME, QC, Push Notify and more)" \
+      $( [ "${#SN}" -eq 13 ] && echo '1 "Use Arc Patch (AME, QC, Push Notify and more)"' ) \
       2 "Use random SN/Mac (Reduced DSM Features)" \
       3 "Use my own SN/Mac (Be sure your Data is valid)" \
       2>"${TMP_PATH}/resp"
@@ -360,7 +363,6 @@ function arcPatch() {
         ARC_PATCH="true"
         SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
         writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-        
         ;;
       2)
         ARC_PATCH="false"
@@ -2361,13 +2363,13 @@ function resetPassword() {
       --inputbox "Type a new password for user ${USER}" 0 70 \
     2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break 2
-    VALUE="$(cat "${TMP_PATH}/resp")"
-    [ -n "${VALUE}" ] && break
+    STRPASSWD="$(cat "${TMP_PATH}/resp")"
+    [ -n "${STRPASSWD}" ] && break
     dialog --backtitle "$(backtitle)" --title "Reset Password" \
       --msgbox "Invalid password" 0 0
   done
   #NEWPASSWD="$(python -c "from passlib.hash import sha512_crypt;pw=\"${VALUE}\";print(sha512_crypt.using(rounds=5000).hash(pw))")"
-  NEWPASSWD="$(openssl passwd -6 -salt $(openssl rand -hex 8) "${VALUE}")"
+  NEWPASSWD="$(openssl passwd -6 -salt $(openssl rand -hex 8) "${STRPASSWD}")"
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
@@ -2379,14 +2381,29 @@ function resetPassword() {
       sed -i "/^${USER}:/ s/^\(${USER}:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:\)[^:]*:/\1:/" "${TMP_PATH}/mdX/etc/shadow"
       sed -i "s|status=on|status=off|g" "${TMP_PATH}/mdX/usr/syno/etc/packages/SecureSignIn/preference/${USER}/method.config" 2>/dev/null
       sed -i "s|list=*$|list=|; s|type=*$|type=none|" "${TMP_PATH}/mdX/usr/syno/etc/packages/SecureSignIn/secure_signin.conf" 2>/dev/null
+
+      mkdir -p "${TMP_PATH}/mdX/usr/arc/once.d"
+      {
+        echo "#!/usr/bin/env bash"
+        echo "synowebapi -s --exec api=SYNO.Core.OTP.EnforcePolicy method=set version=1 enable_otp_enforcement=false otp_enforce_option='\"none\"'"
+        echo "synowebapi -s --exec api=SYNO.SecureSignIn.AMFA.Policy method=set version=1 type='\"none\"'"
+				echo "synowebapi -s --exec api=SYNO.Core.SmartBlock method=set version=1 enabled=false untrust_try=5 untrust_minute=1 untrust_lock=30 trust_try=10 trust_minute=1 trust_lock=30"
+				echo "synowebapi -s --exec api=SYNO.SecureSignIn.Method.Admin method=reset version=1 account='\"${USER}\"' keep_amfa_settings=true"
+      } >"${TMP_PATH}/mdX/usr/arc/once.d/addNewDSMUser.sh"
       sync
+      echo "true" >"${TMP_PATH}/isOk"
       umount "${TMP_PATH}/mdX"
     done
     rm -rf "${TMP_PATH}/mdX" >/dev/null
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Reset Password" \
     --progressbox "Resetting ..." 20 100
-  dialog --backtitle "$(backtitle)" --title "Reset Password" \
-    --msgbox "Password Reset completed." 0 0
+  if [ -f "${TMP_PATH}/isOk" ]; then
+    MSG="Reset password for user ${USER} completed."
+  else
+    MSG="Reset password for user ${USER} failed."
+  fi
+  dialog --title "$(TEXT "Advanced")" \
+    --msgbox "${MSG}" 0 0
   return
 }
 
@@ -3099,21 +3116,34 @@ function resetDSMNetwork {
       --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
     return
   fi
+  rm -f "${TMP_PATH}/isOk"
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
-      #fixDSMRootPart "${I}"
+      fixDSMRootPart "${I}"
       T="$(blkid -o value -s TYPE "${I}" 2>/dev/null | sed 's/linux_raid_member/ext4/')"
       mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
-      rm -f "${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-bond"* "${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-eth"*
+      for F in ${TMP_PATH}/mdX/etc/sysconfig/network-scripts/ifcfg-* ${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-*; do
+        [ ! -e "${F}" ] && continue
+        echo "${F}" | grep -Eq "\-lo$|\-tun$|\-eth99$" && continue
+        sed -i "s|^BOOTPROTO=.*|BOOTPROTO=dhcp|; s|^ONBOOT=.*|ONBOOT=yes|; s|^IPV6INIT=.*|IPV6INIT=dhcp|; /^IPADDR/d; /NETMASK/d; /GATEWAY/d; /DNS1/d; /DNS2/d" "${F}"
+        sed -i "s|^BOOTPROTO=.*|BOOTPROTO=dhcp|; s|^ONBOOT=.*|ONBOOT=yes|; s|^IPV6INIT=.*|IPV6INIT=auto_dhcp|; /^IPADDR/d; /NETMASK/d; /GATEWAY/d; /DNS1/d; /DNS2/d" "${F}"
+      done
+      sed -i 's/_mtu=".*"$/_mtu="1500"/g' ${TMP_PATH}/mdX/etc/synoinfo.conf ${TMP_PATH}/mdX/etc.defaults/synoinfo.conf
+      # systemctl restart rc-network.service
       sync
+      echo "true" >"${TMP_PATH}/isOk"
       umount "${TMP_PATH}/mdX"
     done
     rm -rf "${TMP_PATH}/mdX"
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Reset DSM Network" \
     --progressbox "Resetting ..." 20 100
-  MSG="The network settings have been resetted."
+  if [ -f "${TMP_PATH}/isOk" ]; then
+    MSG="Reset DSM network settings completed."
+  else
+    MSG="Reset DSM network settings failed."
+  fi
   dialog --backtitle "$(backtitle)" --title "Reset DSM Network" \
     --msgbox "${MSG}" 0 0
   return
