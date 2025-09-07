@@ -29,7 +29,7 @@ function arcModel() {
         FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
         NOFLAGS="$(readConfigArray "platforms.${A}.noflags" "${P_FILE}")"
         BETA=""
-        ARC_CONFM="$(generateSerial true "${MODEL}")"
+        ARC_CONFM="$(generateSerial true "${M}")"
         [ "${#ARC_CONFM}" -eq 13 ] && ARC="x" || ARC=""
         [ "${DT}" = "true" ] && DTS="x" || DTS=""
         IGPU=""

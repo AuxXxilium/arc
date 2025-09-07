@@ -121,7 +121,7 @@ function arrayExistItem() {
 # 2 - Model
 # Returns serial number
 function generateSerial() {
-  SERIAL="$(genArc "${1}" "${2}" sn)"
+  SERIAL="$(genArc "${1}" "${2}" sn 2>/dev/null)"
   echo "${SERIAL}"
   return
 }
@@ -133,7 +133,7 @@ function generateSerial() {
 # 3 - Amount
 # Returns serial number
 function generateMacAddress() {
-  MACS=$(genArc "${1}" "${2}" mac "${3}")
+  MACS="$(genArc "${1}" "${2}" mac "${3}" 2>/dev/null)"
   MACS="$(echo "${MACS}" | tr '[:upper:]' '[:lower:]')"
   echo "${MACS}"
   return
