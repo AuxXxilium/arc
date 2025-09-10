@@ -344,37 +344,35 @@ function arcPatch() {
 
   if [ "${ARC_MODE}" = "automated" ] && [ "${ARC_PATCH}" != "user" ]; then
     if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-      SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
-      writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
+      SN="$(generateSerial "true" "${MODEL}")"
+      ARC_PATCH="false"
+      [ "${#SN}" -eq 13 ] && ARC_PATCH="true" || SN="$(generateSerial "false" "${MODEL}")"
     fi
   elif [ "${ARC_MODE}" = "config" ]; then
-    SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
-    if [ "${#SN}" -eq 13 ]; then
-      OPTIONS=(1 "Use Arc Patch (AME, QC, Push Notify and more)")
-    else
-      OPTIONS=()
-    fi
+    SN="$(generateSerial "true" "${MODEL}")"
+    OPTIONS=(
+      2 "Use random SN/Mac (Reduced DSM Features)"
+      3 "Use my own SN/Mac (Be sure your Data is valid)"
+    )
+    [ "${#SN}" -eq 13 ] && OPTIONS=(1 "Use Arc Patch (AME, QC, Push Notify and more)" "${OPTIONS[@]}")
     
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "SN/Mac Options" \
       --menu "Choose an Option" 7 60 0 \
       "${OPTIONS[@]}" \
-      2 "Use random SN/Mac (Reduced DSM Features)" \
-      3 "Use my own SN/Mac (Be sure your Data is valid)" \
       2>"${TMP_PATH}/resp"
+    
     resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${resp}" ] && return 1
-
+    
     case ${resp} in
       1)
         ARC_PATCH="true"
         SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
-        writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
         ;;
       2)
         ARC_PATCH="false"
         SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
-        writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
         ;;
       3)
         while true; do
@@ -384,14 +382,13 @@ function arcPatch() {
           [ $? -ne 0 ] && break 2
           SN="$(cat "${TMP_PATH}/resp" | tr '[:lower:]' '[:upper:]')"
           [ -z "${SN}" ] && return
-          break
+          [ "${#SN}" -eq 13 ] && break
         done
         ARC_PATCH="user"
-        writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
         ;;
     esac
   fi
-
+  writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.patch" "${ARC_PATCH}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1612,13 +1609,13 @@ function updateMenu() {
           [ -z "${TAG}" ] && return 1
           updateLoader "${TAG}"
         elif [ "${opts}" -eq 4 ]; then
-          mkdir -p "/tmp/update"
+          mkdir -p "/${TMP_PATH}/update"
           dialog --backtitle "$(backtitle)" --title "Update Loader" \
-            --msgbox "Upload the update-*.zip File to /tmp/update\nand press OK after upload is done." 0 0
+            --msgbox "Upload the update-*.zip File to /${TMP_PATH}/update\nand press OK after upload is done." 0 0
           [ $? -ne 0 ] && return 1
           UPDATEFOUND="false"
-          for UPDATEFILE in /tmp/update/update-*.zip; do
-            if [ -e "${UPDATEFILE}" ]; then
+          for UPDATEFILE in /${TMP_PATH}/update/update-*.zip; do
+            if [ -f "${UPDATEFILE}" ]; then
               mv -f "${UPDATEFILE}" "${TMP_PATH}/update.zip"
               TAG="zip"
               UPDATEFOUND="true"
@@ -1663,13 +1660,13 @@ function updateMenu() {
           [ -z "${TAG}" ] && return 1
           upgradeLoader "${TAG}"
         elif [ "${opts}" -eq 3 ]; then
-          mkdir -p "/tmp/update"
+          mkdir -p "/${TMP_PATH}/update"
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
-            --msgbox "Upload the arc-*.zip File to /tmp/update\nand press OK after upload is done." 0 0
+            --msgbox "Upload the arc-*.zip File to /${TMP_PATH}/update\nand press OK after upload is done." 0 0
           [ $? -ne 0 ] && return 1
           UPDATEFOUND="false"
-          for UPDATEFILE in /tmp/update/arc-*.zip; do
-            if [ -e "${UPDATEFILE}" ]; then
+          for UPDATEFILE in /${TMP_PATH}/update/arc-*.zip; do
+            if [ -f "${UPDATEFILE}" ]; then
               mv -f "${UPDATEFILE}" "${TMP_PATH}/arc.img.zip"
               TAG="zip"
               UPDATEFOUND="true"
@@ -1843,7 +1840,7 @@ function sysinfo() {
   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"
-  TEXT+="\n  HardwareID: \Zb${HWID} $( [ -n "${USERID}" ] && echo "true" || echo "false" )\Zn"
+  TEXT+="\n  HWID registered: \Zb$( [ -n "${USERID}" ] && echo "true" || echo "false" )\Zn"
   TEXT+="\n  Offline Mode: \Zb${ARC_OFFLINE}\Zn"
   TEXT+="\n"
   if [ "${CONFDONE}" = "true" ]; then
@@ -2956,9 +2953,9 @@ function getbackup() {
 # SataDOM Menu
 function satadomMenu() {
   rm -f "${TMP_PATH}/opts" 2>/dev/null
-  echo "0 \"Create SATA node(ARC)\"" >>"${TMP_PATH}/opts"
-  echo "1 \"Native SATA Disk(SYNO)\"" >>"${TMP_PATH}/opts"
-  echo "2 \"Fake SATA DOM(Redpill)\"" >>"${TMP_PATH}/opts"
+  echo "0 \"Create SATA node (ARC)\"" >>"${TMP_PATH}/opts"
+  echo "1 \"Native SATA Disk (SYNO)\"" >>"${TMP_PATH}/opts"
+  echo "2 \"Fake SATA DOM (Redpill)\"" >>"${TMP_PATH}/opts"
   dialog --backtitle "$(backtitle)" --title "Switch SATA DOM" \
     --default-item "${SATADOM}" --menu  "Choose an Option" 0 0 0 --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
@@ -3054,9 +3051,14 @@ function resetDSMNetwork {
       [ $? -ne 0 ] && continue
       for F in ${TMP_PATH}/mdX/etc/sysconfig/network-scripts/ifcfg-* ${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-*; do
         [ ! -e "${F}" ] && continue
-        echo "${F}" | grep -Eq "\-lo$|\-tun$|\-eth99$" && continue
-        sed -i "s|^BOOTPROTO=.*|BOOTPROTO=dhcp|; s|^ONBOOT=.*|ONBOOT=yes|; s|^IPV6INIT=.*|IPV6INIT=dhcp|; /^IPADDR/d; /NETMASK/d; /GATEWAY/d; /DNS1/d; /DNS2/d" "${F}"
-        sed -i "s|^BOOTPROTO=.*|BOOTPROTO=dhcp|; s|^ONBOOT=.*|ONBOOT=yes|; s|^IPV6INIT=.*|IPV6INIT=auto_dhcp|; /^IPADDR/d; /NETMASK/d; /GATEWAY/d; /DNS1/d; /DNS2/d" "${F}"
+        case "${F}" in
+        *ovs_* | *-bond*) rm -f "${F}" ;;
+        *-eth*)
+          ETHX=$(echo "${F}" | sed -E 's/.*ifcfg-(eth[0-9]+)$/\1/')
+          echo -e "DEVICE=${ETHX}\nONBOOT=yes\nBOOTPROTO=dhcp\nIPV6INIT=auto_dhcp\nIPV6_ACCEPT_RA=1" >"${F}"
+          ;;
+        *) ;;
+        esac
       done
       sed -i 's/_mtu=".*"$/_mtu="1500"/g' ${TMP_PATH}/mdX/etc/synoinfo.conf ${TMP_PATH}/mdX/etc.defaults/synoinfo.conf
       # systemctl restart rc-network.service
