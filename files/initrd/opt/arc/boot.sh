@@ -72,6 +72,16 @@ USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
+if [ -z "${SN}" ] || [ "${#SN}" -ne 13 ]; then
+  SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
+fi
+VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
+PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
+KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
+DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
+EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
+MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 
 # Build Sanity Check
 if [ "${BUILDDONE}" = "false" ]; then
@@ -129,20 +139,6 @@ if checkBIOS_VT_d && [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
   echo -e "\033[1;31m*** Notice: Disable Intel(VT-d)/AMD(AMD-V) in BIOS/UEFI settings if you encounter a boot issues. ***\033[0m"
   echo
 fi
-
-# Read necessary variables
-VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
-PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
-ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-if [ -z "${SN}" ] || [ "${#SN}" -ne 13 ]; then
-  SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
-fi
-KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
-DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
-MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 
 declare -A CMDLINE
 
