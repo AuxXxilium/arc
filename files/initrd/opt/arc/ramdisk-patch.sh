@@ -68,7 +68,7 @@ if [ -n "${PRODUCTVER}" ] && [ -n "${BUILDNUM}" ] && [ -n "${SMALLNUM}" ] &&
   NEWVER="${majorversion}.${minorversion}(${buildnumber}$([[ ${smallfixnumber:-0} -ne 0 ]] && echo "u${smallfixnumber}"))"
   PAT_URL=""
   PAT_HASH=""
-  echo -e "Version changed from ${OLDVER} to ${NEWVER}"
+  echo -e ">> Version changed from ${OLDVER} to ${NEWVER}"
 fi
 
 # Update buildnumber
@@ -229,14 +229,14 @@ done
 
 # Kernel 5.x patches
 if [ "${KVER:0:1}" = "5" ]; then
-  echo -e ">>> apply Kernel 5.x Fixes"
+  echo -e ">> apply Kernel 5.x Fixes"
   sed -i 's#/dev/console#/var/log/lrc#g' "${RAMDISK_PATH}/usr/bin/busybox"
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' "${RAMDISK_PATH}/linuxrc.syno"
 fi
 
 # Broadwellntbap patches
 if [ "${PLATFORM}" = "broadwellntbap" ]; then
-  echo -e ">>> apply Broadwellntbap Fixes"
+  echo -e ">> apply Broadwellntbap Fixes"
   sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' "${RAMDISK_PATH}/usr/syno/share/environments.sh"
 fi
 
