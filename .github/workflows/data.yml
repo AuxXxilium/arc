@@ -47,49 +47,58 @@ jobs:
 
       - name: Get Addon Data for Arc
         run: |
-          REPO="https://github.com/AuxXxilium/arc-addons"
-          PRERELEASE="true"
+          set -e  # Exit immediately if a command exits with a non-zero status
 
-          TAG=""
-          if [ "${PRERELEASE}" = "true" ]; then
-            TAG="$(curl -skL --connect-timeout 10 "${REPO}/tags" | grep /refs/tags/.*\.zip  | sed -r 's/.*\/refs\/tags\/(.*)\.zip.*$/\1/' | sort -rV | head -1)"
-          else
-            LATESTURL="$(curl -skL --connect-timeout 10 -w %{url_effective} -o /dev/null "${REPO}/releases/latest")"
-            TAG="${LATESTURL##*/}"
-          fi
-          [ "${TAG:0:1}" = "v" ] && TAG="${TAG:1}"
-          rm -f addons.zip
-          STATUS=$(curl -kL --connect-timeout 10 -w "%{http_code}" "${REPO}/releases/download/${TAG}/addons-${TAG}.zip" -o "addons.zip")
-          if [ $? -ne 0 -o ${STATUS:-0} -ne 200 ]; then
-            echo "Download failed"
-            exit 1
-          fi
-          
+          REPO="https://github.com/AuxXxilium/arc-addons"
+
+          # Determine the tag to use
+          TAG=$(curl -skL --connect-timeout 10 -w '%{url_effective}' -o /dev/null "${REPO}/releases/latest" | awk -F'/' '{print $NF}')
+
+          # Remove leading 'v' if present
+          TAG="${TAG#v}"
+
+          # Download the addons zip file
+          ZIP_URL="${REPO}/releases/download/${TAG}/addons-${TAG}.zip"
+          echo "Downloading ${ZIP_URL}..."
+          curl -kL --connect-timeout 10 -o addons.zip "${ZIP_URL}" || { echo "Download failed"; exit 1; }
+
+          # Extract the addons
           mkdir -p "mnt/p3/addons"
-          unzip addons.zip -d "mnt/p3/addons"
-          for i in $(find "mnt/p3/addons" -type f -name "*.addon"); do
-            if [ -f "${i}" ]; then
-              mkdir -p "mnt/p3/addons/$(basename "${i}" .addon)"
-              tar -xaf "${i}" -C "mnt/p3/addons/$(basename "${i}" .addon)"
-            fi
+          unzip -q addons.zip -d "mnt/p3/addons" || { echo "Failed to unzip addons.zip"; exit 1; }
+
+          # Process .addon files
+          find "mnt/p3/addons" -type f -name "*.addon" | while read -r addon_file; do
+            addon_dir="mnt/p3/addons/$(basename "${addon_file}" .addon)"
+            mkdir -p "${addon_dir}"
+            tar -xaf "${addon_file}" -C "${addon_dir}" || { echo "Failed to extract ${addon_file}"; exit 1; }
           done
+
+          # Clean up
           rm -f addons.zip
 
       - name: Get Config Data for Arc
         run: |
+          set -e  # Exit immediately if a command exits with a non-zero status
+
           REPO="https://github.com/AuxXxilium/arc-configs"
-          LATESTURL="$(curl -skL --connect-timeout 10 -w %{url_effective} -o /dev/null "${REPO}/releases/latest")"
-          TAG="${LATESTURL##*/}"
-          [ "${TAG:0:1}" = "v" ] && TAG="${TAG:1}"
-          rm -f configs.zip
-          STATUS=$(curl -kL --connect-timeout 10 -w "%{http_code}" "${REPO}/releases/download/${TAG}/configs-${TAG}.zip" -o "configs.zip")
-          if [ $? -ne 0 -o ${STATUS:-0} -ne 200 ]; then
-            echo "Download failed"
-            exit 1
-          fi
-          
+
+          # Determine the latest tag
+          LATEST_URL=$(curl -skL --connect-timeout 10 -w '%{url_effective}' -o /dev/null "${REPO}/releases/latest")
+          TAG="${LATEST_URL##*/}"
+
+          # Remove leading 'v' if present
+          TAG="${TAG#v}"
+
+          # Download the configs zip file
+          ZIP_URL="${REPO}/releases/download/${TAG}/configs-${TAG}.zip"
+          echo "Downloading ${ZIP_URL}..."
+          curl -kL --connect-timeout 10 -o configs.zip "${ZIP_URL}" || { echo "Download failed"; exit 1; }
+
+          # Extract the configs
           mkdir -p "mnt/p3/configs"
-          unzip configs.zip -d "mnt/p3/configs"
+          unzip -q configs.zip -d "mnt/p3/configs" || { echo "Failed to unzip configs.zip"; exit 1; }
+
+          # Clean up
           rm -f configs.zip
 
       - name: Get Data
