@@ -59,26 +59,6 @@
             "v1000nk"
         ]
     },
-    "amepatch": {
-        "system": false,
-        "description": "Dynamic Licensepatch for AME (only for AME 3.1.0)",
-        "platforms": [
-            "apollolake",
-            "broadwell",
-            "broadwellnk",
-            "broadwellnkv2",
-            "broadwellntbap",
-            "denverton",
-            "geminilake",
-            "purley",
-            "r1000",
-            "v1000",
-            "epyc7002",
-            "geminilakenk",
-            "r1000nk",
-            "v1000nk"
-        ]
-    },
     "apppatch": {
         "system": false,
         "description": "Fix Synology Photos and local_display",
@@ -420,7 +400,7 @@
     },
     "lsiutil": {
         "system": false,
-        "description": "A tool for working with some LSI RAID controllers",
+        "description": "Commandline interaction with some LSI RAID controllers",
         "platforms": [
             "apollolake",
             "broadwell",
@@ -452,6 +432,26 @@
     "misc": {
         "system": true,
         "description": "Miscellaneous functions",
+        "platforms": [
+            "apollolake",
+            "broadwell",
+            "broadwellnk",
+            "broadwellnkv2",
+            "broadwellntbap",
+            "denverton",
+            "geminilake",
+            "purley",
+            "r1000",
+            "v1000",
+            "epyc7002",
+            "geminilakenk",
+            "r1000nk",
+            "v1000nk"
+        ]
+    },
+    "monitor": {
+        "system": false,
+        "description": "Monitor Power Management (Only for supported graphics card drivers).",
         "platforms": [
             "apollolake",
             "broadwell",
@@ -800,26 +800,6 @@
     "vmtools": {
         "system": false,
         "description": "qemu-ga & &open-vm-tools (replacement for apps)",
-        "platforms": [
-            "apollolake",
-            "broadwell",
-            "broadwellnk",
-            "broadwellnkv2",
-            "broadwellntbap",
-            "denverton",
-            "geminilake",
-            "purley",
-            "r1000",
-            "v1000",
-            "epyc7002",
-            "geminilakenk",
-            "r1000nk",
-            "v1000nk"
-        ]
-    },
-    "wol": {
-        "system": true,
-        "description": "Force enable the Wake-on-lan on all nic",
         "platforms": [
             "apollolake",
             "broadwell",
