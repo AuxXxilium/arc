@@ -75,7 +75,7 @@ jobs:
           issue-number: ${{ github.event.issue.number }}
           body: |
             Hi @${{ github.event.issue.user.login }}.  
-            building arc-${{ env.MODEL }}-${{ env.VERSION }}, it will be uploaded here and sent to your email later..  
+            building arc-${{ env.MODEL }}-${{ env.VERSION }}, it will be uploaded to..  
             > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}  
             ----
 
@@ -181,9 +181,6 @@ jobs:
             zip -9 "arc-${{ env.MODEL }}-${{ env.VERSION }}.ova.zip" arc.ova
           fi
 
-          EMAIL=$(curl -s -H "Authorization: token ${{ secrets.ACTION }}" "https://api.github.com/users/${{ github.event.issue.user.login }}" | jq -r '.email')
-          echo "EMAIL=${EMAIL}" >> $GITHUB_ENV
-
       # Upload artifact
       - name: Upload to Artifacts
         uses: actions/upload-artifact@v4
@@ -192,25 +189,6 @@ jobs:
           path: |
             arc-*.zip
           retention-days: 1
-
-      - name: Send mail
-        if: success() && env.EMAIL != 'null'
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 587
-          username: ${{ secrets.MAIL_USERNAME }}
-          password: ${{ secrets.MAIL_PASSWORD }}
-          subject: arc-${{ env.model }}-${{ env.VERSION }}
-          to: ${{ env.EMAIL }}
-          from: ${{ secrets.MAIL_USERNAME }}
-          body: |
-            Hi @${{ github.event.issue.user.login }}.  
-            arc-${{ env.MODEL }}-${{ env.VERSION }} is ready to download:
-            > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-            If this isn't working, do not use customized Versions!
-            ----
 
       - name: Update Comment Success
         if: success()
@@ -222,7 +200,7 @@ jobs:
           update-mode: replace
           body: |
             Hi @${{ github.event.issue.user.login }}.  
-            arc-${{ env.MODEL }}-${{ env.VERSION }} is ready to download:
+            arc-${{ env.MODEL }}-${{ env.VERSION }} is ready to download at:
             > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
             If this isn't working, do not use customized Versions!
@@ -239,7 +217,6 @@ jobs:
           body: |
             Hi @${{ github.event.issue.user.login }}.  
             arc-${{ env.MODEL }}-${{ env.PRODUCTVER }}-${{ env.VERSION }} failed to build and package, please try again later.  
-            > ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} 
             ----
 
       - name: Close Issues
