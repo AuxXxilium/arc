@@ -93,84 +93,47 @@ def getmodels(platforms=None):
 @click.option("-m", "--model", type=str, required=True, help="The model of Syno.")
 @click.option("-v", "--version", type=str, required=True, help="The version of Syno.")
 def getpats4mv(model, version):
-    import json, requests, urllib3
-    from requests.adapters import HTTPAdapter
-    from requests.packages.urllib3.util.retry import Retry  # type: ignore
+    import json
+    import requests
 
-    adapter = HTTPAdapter(max_retries=Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504]))
-    session = requests.Session()
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    # URL to the pats.json file
+    pats_url = "https://raw.githubusercontent.com/AuxXxilium/arc/refs/heads/page/docs/pats.json"
 
-    pats = {}
+    # Fetch the pats.json file from the web
     try:
-        urlInfo = "https://www.synology.com/api/support/findDownloadInfo?lang=en-us"
-        urlSteps = "https://www.synology.com/api/support/findUpgradeSteps?"
-        #urlInfo = "https://www.synology.cn/api/support/findDownloadInfo?lang=zh-cn"
-        #urlSteps = "https://www.synology.cn/api/support/findUpgradeSteps?"
+        response = requests.get(pats_url, timeout=10)
+        response.raise_for_status()  # Raise an error for HTTP issues
+        pats_data = response.json()  # Parse the JSON directly
+    except requests.RequestException as e:
+        print(json.dumps({"error": f"Failed to fetch pats.json: {e}"}, indent=4))
+        return
+    except json.JSONDecodeError:
+        print(json.dumps({"error": "Invalid JSON in fetched pats.json"}, indent=4))
+        return
 
-        major = f"&major={version.split('.')[0]}" if len(version.split('.')) > 0 else ""
-        minor = f"&minor={version.split('.')[1]}" if len(version.split('.')) > 1 else ""
-        req = session.get(f"{urlInfo}&product={model.replace('+', '%2B')}{major}{minor}", timeout=10, verify=False)
-        req.encoding = "utf-8"
-        data = json.loads(req.text)
+    # Check if the model exists in the JSON
+    if model not in pats_data:
+        print(json.dumps({"error": f"Model '{model}' not found in pats.json"}, indent=4))
+        return
 
-        build_ver = data['info']['system']['detail'][0]['items'][0]['build_ver']
-        build_num = data['info']['system']['detail'][0]['items'][0]['build_num']
-        buildnano = data['info']['system']['detail'][0]['items'][0]['nano']
-        V = __fullversion(f"{build_ver}-{build_num}-{buildnano}")
-        if V not in pats:
-            pats[V] = {
-                'url': data['info']['system']['detail'][0]['items'][0]['files'][0]['url'].split('?')[0],
-                'sum': data['info']['system']['detail'][0]['items'][0]['files'][0]['checksum']
-            }
+    # Check if the version exists for the model
+    model_data = pats_data[model]
+    if version not in model_data:
+        print(json.dumps({"error": f"Version '{version}' not found for model '{model}' in pats.json"}, indent=4))
+        return
 
-        from_ver = min(I['build'] for I in data['info']['pubVers'])
+    # Extract the URL and checksum
+    url = model_data[version].get("url", "null")
+    checksum = model_data[version].get("sum", "null")
 
-        for I in data['info']['productVers']:
-            if not I['version'].startswith(version):
-                continue
-            if not major or not minor:
-                majorTmp = f"&major={I['version'].split('.')[0]}" if len(I['version'].split('.')) > 0 else ""
-                minorTmp = f"&minor={I['version'].split('.')[1]}" if len(I['version'].split('.')) > 1 else ""
-                reqTmp = session.get(f"{urlInfo}&product={model.replace('+', '%2B')}{majorTmp}{minorTmp}", timeout=10, verify=False)
-                reqTmp.encoding = "utf-8"
-                dataTmp = json.loads(reqTmp.text)
-
-                build_ver = dataTmp['info']['system']['detail'][0]['items'][0]['build_ver']
-                build_num = dataTmp['info']['system']['detail'][0]['items'][0]['build_num']
-                buildnano = dataTmp['info']['system']['detail'][0]['items'][0]['nano']
-                V = __fullversion(f"{build_ver}-{build_num}-{buildnano}")
-                if V not in pats:
-                    pats[V] = {
-                        'url': dataTmp['info']['system']['detail'][0]['items'][0]['files'][0]['url'].split('?')[0],
-                        'sum': dataTmp['info']['system']['detail'][0]['items'][0]['files'][0]['checksum']
-                    }
-
-            for J in I['versions']:
-                to_ver = J['build']
-                reqSteps = session.get(f"{urlSteps}&product={model.replace('+', '%2B')}&from_ver={from_ver}&to_ver={to_ver}", timeout=10, verify=False)
-                if reqSteps.status_code != 200:
-                    continue
-                reqSteps.encoding = "utf-8"
-                dataSteps = json.loads(reqSteps.text)
-                for S in dataSteps['upgrade_steps']:
-                    if not S.get('full_patch') or not S['build_ver'].startswith(version):
-                        continue
-                    V = __fullversion(f"{S['build_ver']}-{S['build_num']}-{S['nano']}")
-                    if V not in pats:
-                        pats[V] = {
-                            'url': S['files'][0]['url'].split('?')[0],
-                            'sum': S['files'][0]['checksum']
-                        }
-    except Exception as e:
-        # click.echo(f"Error: {e}")
-        pass
-
-    pats = {k: pats[k] for k in sorted(pats.keys(), reverse=True)}
-    print(json.dumps(pats, indent=4))
-
+    # Output the result as JSON
+    result = {
+        version: {
+            "url": url,
+            "sum": checksum
+        }
+    }
+    print(json.dumps(result, indent=4))
 
 @cli.command()
 @click.option("-p", "--models", type=str, help="The models of Syno.")

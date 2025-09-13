@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2023 AuxXxilium <https://github.com/AuxXxilium>
+# Copyright (C) 2025 AuxXxilium <https://github.com/AuxXxilium>
 #
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
@@ -119,9 +119,9 @@ jobs:
           MODEL="${{ env.MODEL }}"
           writeConfigKey "model" "${MODEL}" "${PRESET_CONFIG_FILE}"
           PRODUCTVER="${{ env.PRODUCTVER }}"
-          PJ="$(python scripts/functions.py getpats4mv -m "${MODEL}" -v "${PRODUCTVER:0:3}")"
-          PAT_URL=$(echo "${PJ}" | jq -r ".\"${PRODUCTVER}\".url")
-          PAT_HASH=$(echo "${PJ}" | jq -r ".\"${PRODUCTVER}\".sum")
+          PJ="$(python scripts/functions.py getpats4mv -m "${MODEL}" -v "${PRODUCTVER}")"
+          PAT_URL="$(echo "${PJ}" | jq -r ".\"${PRODUCTVER}\".url")"
+          PAT_HASH="$(echo "${PJ}" | jq -r ".\"${PRODUCTVER}\".sum")"
           writeConfigKey "productver" "${PRODUCTVER:0:3}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "paturl" "${PAT_URL}" "${PRESET_CONFIG_FILE}"
           writeConfigKey "pathash" "${PAT_HASH}" "${PRESET_CONFIG_FILE}"
