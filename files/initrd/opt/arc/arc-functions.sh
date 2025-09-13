@@ -1558,6 +1558,7 @@ function backupMenu() {
 # Shows update menu to user
 function updateMenu() {
   NEXT="1"
+  BETA="false"
   while true; do
     if [ "${ARC_OFFLINE}" = "false" ]; then
       dialog --backtitle "$(backtitle)" --title "Update" --colors --cancel-label "Exit" \
@@ -1597,17 +1598,18 @@ function updateMenu() {
         opts="$(cat "${TMP_PATH}/opts")"
         if [ "${opts}" -eq 1 ]; then
           [ -z "${TAG}" ] && return 1
-          updateLoader "${TAG}"
+          updateLoader "${BETA}" "${TAG}"
         elif [ "${opts}" -eq 2 ]; then
           [ -z "${BETATAG}" ] && return 1
-          updateLoaderBeta "${BETATAG}"
+          BETA="true"
+          updateLoader "${BETA}" "${BETATAG}"
         elif [ "${opts}" -eq 3 ]; then
           dialog --backtitle "$(backtitle)" --title "Update Loader" \
           --inputbox "Which Version?" 0 0 \
           2>"${TMP_PATH}/input"
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
-          updateLoader "${TAG}"
+          updateLoader "${BETA}" "${TAG}"
         elif [ "${opts}" -eq 4 ]; then
           mkdir -p "/${TMP_PATH}/update"
           dialog --backtitle "$(backtitle)" --title "Update Loader" \
@@ -1777,7 +1779,7 @@ function sysinfo() {
   MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")"
   ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")"
   LKMVERSION="$(cat "${LKMS_PATH}/VERSION")"
-  CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")"
+  CONFIGSVERSION="$(cat "${CONFIGS_PATH}/VERSION")"
   PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")"
   TIMEOUT=5
   # Print System Informations

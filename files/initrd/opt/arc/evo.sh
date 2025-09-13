@@ -203,7 +203,7 @@ function advancedMenu() {
 # Main loop
 if [ "${ARC_MODE}" = "update" ]; then
   if [ "${ARC_OFFLINE}" != "true" ]; then
-    updateLoader
+    updateLoader "false"
   else
     dialog --backtitle "$(backtitle)" --title "Arc Update" \
       --infobox "Update is not possible in Offline Mode!" 5 40

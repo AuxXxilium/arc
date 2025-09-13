@@ -217,7 +217,6 @@ CMDLINE['pcie_aspm']="off"
 CMDLINE['nowatchdog']=""
 CMDLINE['intel_pstate']="disable"
 CMDLINE['amd_pstate']="disable"
-CMDLINE['acpi_osi']="Linux"
 CMDLINE['mev']="${MEV:-"physical"}"
 CMDLINE['governor']="${GOVERNOR:-"performance"}"
 
@@ -273,30 +272,41 @@ done
 CMDLINE_LINE="${CMDLINE_LINE# }"
 echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
+BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
+[ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
+if [ "${ARC_PATCH}" = "true" ]; then
+  echo -e "\033[1;37mDetected ${ETHN} NIC / ${NIC} NIC for Arc Patch:\033[0m"
+else
+  echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
+fi
+[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
+IPCON=""
+checkNIC || true
+echo
+
 # Boot
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
-if [ "${DIRECTBOOT}" = "true" ]; then
+if [ "${DIRECTBOOT}" = "true" ] || [ "${MEV:-physical}" = "parallels" ]; then
+  grub-editenv "${USER_RSYSENVFILE}" create
+  grub-editenv "${USER_RSYSENVFILE}" set arc_version="${WTITLE}"
+  grub-editenv "${USER_RSYSENVFILE}" set dsm_model="${MODEL}(${PLATFORM})"
+  grub-editenv "${USER_RSYSENVFILE}" set dsm_version="${PRODUCTVER}(${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))"
+  grub-editenv "${USER_RSYSENVFILE}" set dsm_kernel="${KERNEL}(${KVER})"
+  grub-editenv "${USER_RSYSENVFILE}" set sys_mev="${MEV:-physical}"
+  grub-editenv "${USER_RSYSENVFILE}" set sys_cpu="${CPU}"
+  grub-editenv "${USER_RSYSENVFILE}" set sys_board="${BOARD}"
+  grub-editenv "${USER_RSYSENVFILE}" set sys_mem="${MEM}"
+  grub-editenv "${USER_RSYSENVFILE}" set sys_ip="${IPCON}"
+
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
   grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
   grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
   echo -e "\033[1;34mReboot with Directboot\033[0m"
   reboot
   exit 0
-elif [ "${DIRECTBOOT}" = "false" ]; then
+else
   grub-editenv ${USER_GRUBENVFILE} unset dsm_cmdline
   grub-editenv ${USER_GRUBENVFILE} unset next_entry
-  BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
-  [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-  if [ "${ARC_PATCH}" = "true" ]; then
-    echo -e "\033[1;37mDetected ${ETHN} NIC / ${NIC} NIC for Arc Patch:\033[0m"
-  else
-    echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
-  fi
-
-  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
-  IPCON=""
-  checkNIC || true
-  echo
 
   DSMLOGO="$(readConfigKey "bootscreen.dsmlogo" "${USER_CONFIG_FILE}")"
   if [ "${DSMLOGO}" = "true" ] && [ -c "/dev/fb0" ]; then
@@ -307,7 +317,7 @@ elif [ "${DIRECTBOOT}" = "false" ]; then
   fi
 
   # Executes DSM kernel via KEXEC
-  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || die "Failed to load DSM Kernel!"
+  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" >"${LOG_FILE}" 2>&1 || die "Failed to load DSM Kernel!"
 
   for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
     if [ -w "/dev/${T}" ]; then

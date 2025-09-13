@@ -1,12 +1,20 @@
 ###############################################################################
 # Update Loader
 function updateLoader() {
+  local BETA="${1:-false}"
+  local API_URL="${UPDATE_URL}"
+  local TAG="${2}"
+
+  if [ "${BETA}" = "true" ]; then
+    API_URL="${BETA_API_URL}"
+  fi
+
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-  local TAG="${1}"
+
   if [ "${TAG}" != "zip" ]; then
     if [ -z "${TAG}" ]; then
       idx=0
-      while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
+      while [ "${idx}" -le 5 ]; do
         TAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
         if [ -n "${TAG}" ]; then
           break
@@ -18,6 +26,10 @@ function updateLoader() {
     if [ -n "${TAG}" ]; then
       export TAG="${TAG}"
       export URL="${UPDATE_URL}/${TAG}/update-${TAG}.zip"
+      if [ "${BETA}" = "true" ]; then
+        URL="${BETA_URL}/${TAG}/update-${TAG}.zip"
+      fi
+
       {
         {
           curl -kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&3 3>&-
@@ -37,9 +49,14 @@ function updateLoader() {
       } 4>&1
     fi
   fi
+
   if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 300000 ]; then
     if [ "${TAG}" != "zip" ]; then
       HASH="$(curl -skL "${UPDATE_URL}/${TAG}/update-${TAG}.hash" | awk '{print $1}')"
+      if [ "${BETA}" = "true" ]; then
+        HASH="$(curl -skL "${BETA_URL}/${TAG}/update-${TAG}.hash" | awk '{print $1}')"
+      fi
+
       if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
           --infobox "Update failed - Hash mismatch!\nTry again later." 0 0
@@ -47,17 +64,57 @@ function updateLoader() {
         exec reboot
       fi
     fi
+
+    # Create the update directory and log file
+    LOG_FILE="${TMP_PATH}/updatelog"
+    rm -f "${LOG_FILE}"
+    touch "${LOG_FILE}"
     rm -rf "${TMP_PATH}/update"
     mkdir -p "${TMP_PATH}/update"
-    dialog --backtitle "$(backtitle)" --title "Update Loader" \
-      --infobox "Updating Loader..." 3 50
-    if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update"; then
-      rm -rf "/mnt/p3/addons" "/mnt/p3/modules" "/mnt/p3/custom" "/mnt/p3/patches" "/mnt/p3/lkms"
-      cp -rf "${TMP_PATH}/update"/* "/mnt"
-      sleep 2
-      rm -rf "${TMP_PATH}/update"
-      rm -f "${TMP_PATH}/update.zip"
+
+    # Extract files and copy them, showing progress in a dialog window and logging the output
+    (
+      echo "Extracting files from update.zip..."
+      if unzip -o "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update" >> "${LOG_FILE}" 2>&1; then
+        echo "Extraction completed successfully." >> "${LOG_FILE}"
+      else
+        echo "Error: Failed to extract files from update.zip." >> "${LOG_FILE}"
+        exit 1
+      fi
+
+      if [ ! -d "${TMP_PATH}/update" ] || [ -z "$(ls -A "${TMP_PATH}/update")" ]; then
+        echo "Error: No files to copy. Extraction may have failed." >> "${LOG_FILE}"
+        exit 1
+      fi
+
+      echo "Cleanup old files..."
+      rm -rf "${ADDONS_PATH}" "${CONFIGS_PATH}" "${CUSTOM_PATH}" "${LKMS_PATH}" "${MODULES_PATH}" "${PATCH_PATH}"
+      rm -f "${ARC_RAMDISK_FILE}" "${ARC_BZIMAGE_FILE}"
+      mkdir -p "${ADDONS_PATH}" "${CONFIGS_PATH}" "${CUSTOM_PATH}" "${LKMS_PATH}" "${MODULES_PATH}" "${PATCH_PATH}"
+
+      echo "Copying files to /mnt..."
+      if cp -vrf "${TMP_PATH}/update/"* "/mnt/" >> "${LOG_FILE}" 2>&1; then
+        echo "Files copied successfully." >> "${LOG_FILE}"
+      else
+        echo "Error: Failed to copy files." >> "${LOG_FILE}"
+        exit 1
+      fi
+    ) 2>&1 | tee -a "${LOG_FILE}" | dialog --backtitle "$(backtitle)" --title "Processing Update" \
+      --progressbox "Processing update..." 10 70
+    sleep 2
+
+    # Check the exit status of the update process
+    if [ $? -ne 0 ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Failed" \
+        --infobox "Update failed! The system will now reboot." 5 50
+      sleep 3
+      exec reboot
     fi
+
+    # Cleanup
+    rm -rf "${TMP_PATH}/update"
+    rm -f "${TMP_PATH}/update.zip"
+
     if [ "$(cat "${PART1_PATH}/ARC-VERSION")" = "${TAG}" ] || [ "${TAG}" = "zip" ]; then
       dialog --backtitle "$(backtitle)" --title "Update Loader" \
       --infobox "Update Loader successful!" 3 50
@@ -82,102 +139,18 @@ function updateLoader() {
       return 1
     fi
   fi
-  if [ "${ARC_MODE}" = "update" ] && [ "${CONFDONE}" = "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-      --infobox "Update Loader successful! -> Reboot to automated Build Mode..." 3 60
-    sleep 3
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    rebootTo automated
-  else
-    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-      --infobox "Update Loader successful! -> Reboot to Config Mode..." 3 50
-    sleep 3
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    rebootTo config
-  fi
-}
 
-###############################################################################
-# Update Loader Beta
-function updateLoaderBeta() {
-  CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-  local TAG="${1}"
-  if [ "${TAG}" != "zip" ]; then
-    if [ -z "${TAG}" ]; then
-      idx=0
-      while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
-        TAG="$(curl -m 10 -skL "${BETA_API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-        if [ -n "${TAG}" ]; then
-          break
-        fi
-        sleep 3
-        idx=$((${idx} + 1))
-      done
-    fi
-    if [ -n "${TAG}" ]; then
-      export TAG="${TAG}"
-      export URL="${BETA_URL}/${TAG}/update-${TAG}.zip"
-      {
-        {
-          curl -kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&3 3>&-
-        } 3>&1 >&4 4>&- |
-        perl -C -lane '
-          BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
-          $pcent = $F[0];
-          $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-          s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
-          if ($. <= 3) {
-            $header .= "$_\n";
-            $/ = "\r" if $. == 2
-          } else {
-            print "XXX\n$pcent\n$header$_\nXXX"
-          }' 4>&- |
-        dialog --gauge "Download Update: ${TAG}..." 14 72 4>&-
-      } 4>&1
-    fi
-  fi
-  if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 300000 ]; then
-    if [ "${TAG}" != "zip" ]; then
-      HASH="$(curl -skL "${BETA_URL}/${TAG}/update-${TAG}.hash" | awk '{print $1}')"
-      if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
-        dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-          --infobox "Update failed - Hash mismatch!\nTry again later." 0 0
-        sleep 3
-        exec reboot
-      fi
-    fi
-    rm -rf "${TMP_PATH}/update"
-    mkdir -p "${TMP_PATH}/update"
-    dialog --backtitle "$(backtitle)" --title "Update Loader" \
-      --infobox "Updating Loader..." 3 50
-    if unzip -oq "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update"; then
-      rm -rf "/mnt/p3/addons" "/mnt/p3/modules" "/mnt/p3/custom" "/mnt/p3/patches" "/mnt/p3/lkms"
-      cp -rf "${TMP_PATH}/update"/* "/mnt"
-      sleep 2
-      rm -rf "${TMP_PATH}/update"
-      rm -f "${TMP_PATH}/update.zip"
-    fi
-    if [ "$(cat "${PART1_PATH}/ARC-VERSION")" = "${TAG}" ] || [ "${TAG}" = "zip" ]; then
-      dialog --backtitle "$(backtitle)" --title "Update Loader" \
-      --infobox "Update Loader successful!" 3 50
-      sleep 2
-    else
-      return 1
-    fi
-  else
-    return 1
-  fi
+  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+
   if [ "${ARC_MODE}" = "update" ] && [ "${CONFDONE}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
       --infobox "Update Loader successful! -> Reboot to automated Build Mode..." 3 60
     sleep 3
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     rebootTo automated
   else
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
       --infobox "Update Loader successful! -> Reboot to Config Mode..." 3 50
     sleep 3
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     rebootTo config
   fi
 }
@@ -496,7 +469,7 @@ function updateModules() {
 ###############################################################################
 # Update Configs
 function updateConfigs() {
-  [ -f "${MODEL_CONFIG_PATH}/VERSION" ] && local CONFIGSVERSION="$(cat "${MODEL_CONFIG_PATH}/VERSION")" || CONFIGSVERSION="0.0.0"
+  [ -f "${CONFIGS_PATH}/VERSION" ] && local CONFIGSVERSION="$(cat "${CONFIGS_PATH}/VERSION")" || CONFIGSVERSION="0.0.0"
   local USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   if [ -z "${1}" ]; then
     idx=0
