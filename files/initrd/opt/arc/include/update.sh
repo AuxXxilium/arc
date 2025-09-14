@@ -78,7 +78,7 @@ function updateLoader() {
       if unzip -o "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update" >> "${LOG_FILE}" 2>&1; then
         echo "Extraction completed successfully." >> "${LOG_FILE}"
       else
-        echo "Error: Failed to extract files from update.zip." >> "${LOG_FILE}"
+        echo "Error: Failed to extract files." >> "${LOG_FILE}"
         exit 1
       fi
 
@@ -114,6 +114,7 @@ function updateLoader() {
     # Cleanup
     rm -rf "${TMP_PATH}/update"
     rm -f "${TMP_PATH}/update.zip"
+    rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
 
     if [ "$(cat "${PART1_PATH}/ARC-VERSION")" = "${TAG}" ] || [ "${TAG}" = "zip" ]; then
       dialog --backtitle "$(backtitle)" --title "Update Loader" \
@@ -140,7 +141,7 @@ function updateLoader() {
     fi
   fi
 
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  resetBuild
 
   if [ "${ARC_MODE}" = "update" ] && [ "${CONFDONE}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
@@ -643,7 +644,7 @@ function dependenciesUpdate() {
     dialog --infobox "Some updates failed! Try again later." 3 40
   else
     dialog --infobox "All selected updates completed successfully!" 3 40
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    resetBuild
   fi
 
   sleep 3

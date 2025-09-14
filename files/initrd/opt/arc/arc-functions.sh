@@ -127,10 +127,9 @@ function arcModel() {
   fi
   PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -1)"
   writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  resetBuild
   writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
@@ -317,8 +316,7 @@ function arcVersion() {
     done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
     if [ "${ONLYVERSION}" = "true" ]; then
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      resetBuild
       ONLYVERSION="false"
       return
     else
@@ -390,8 +388,7 @@ function arcPatch() {
   fi
   writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.patch" "${ARC_PATCH}" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  resetBuild
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   arcSettings
   return
@@ -414,7 +411,7 @@ function arcSettings() {
   getnet
   
   if [ "${ONLYPATCH}" = "true" ]; then
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+    resetBuild
     ONLYPATCH="false"
     return 0
   fi
@@ -522,8 +519,7 @@ function makearc() {
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
       --infobox "Configuration issue found.\nCould not build Loader!\nExit." 5 40
     rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    resetBuild
     sleep 2
     return
   fi
@@ -556,8 +552,7 @@ function makearc() {
   else
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
       --infobox "Could not build Loader!\nExit." 4 40
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    resetBuild
     sleep 2
     return
   fi
@@ -620,11 +615,9 @@ function editUserConfig() {
   POSTHASH="$(sha256sum "${USER_CONFIG_FILE}" | awk '{print $1}')"
   if [ "${POSTHASH}" != "${PREHASH}" ]; then
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
     dialog --backtitle "$(backtitle)" --title "User Config" \
       --msgbox "User Config changed!\nYou need to rebuild the Loader." 6 40
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    resetBuild
   fi
   return
 }
@@ -633,8 +626,7 @@ function editUserConfig() {
 # Shows option to manage Addons
 function addonMenu() {
   addonSelection
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  resetBuild
   return
 }
 
@@ -719,20 +711,17 @@ function modulesMenu() {
         0)
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           mergeConfigModules "$(cat "${TMP_PATH}/resp" 2>/dev/null)" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          resetBuild
           break
           ;;
         3)
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
           mergeConfigModules "$(echo "${ALLMODULES}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          resetBuild
           ;;
         2)
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          resetBuild
           ;;
         *)
           break
@@ -860,8 +849,7 @@ function modulesMenu() {
         dialog --title "Expanded Modules" --msgbox "Replaced Modules:\n$REPLACED_LIST" 20 60
 
         rm -rf "${TMP1}" "${TMP2}" "${TMPOUT}" "${CHECKLIST}" "${TMP_PATH}/modsel"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        resetBuild
       fi
       ;;
     3)
@@ -876,8 +864,7 @@ function modulesMenu() {
       for ID in ${KOLIST[@]}; do
         writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
       done
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      resetBuild
       ;;
     4)
       DEPS="$(getdepends "${PLATFORM}" "${KVERP}" i915) i915"
@@ -898,8 +885,7 @@ function modulesMenu() {
         dialog --backtitle "$(backtitle)" --title "Modules" \
           --msgbox "$(printf "Module %s deselected." "${DELS[@]}")" 0 0
       fi
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      resetBuild
       ;;
     5)
       if [ -f ${USER_UP_PATH}/modulelist ]; then
@@ -915,8 +901,7 @@ function modulesMenu() {
         [ ! -d "${USER_UP_PATH}" ] && mkdir -p "${USER_UP_PATH}"
         mv -f "${TMP_PATH}/modulelist.user" "${USER_UP_PATH}/modulelist"
         dos2unix "${USER_UP_PATH}/modulelist"
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        resetBuild
         break
       done
       ;;
@@ -1014,8 +999,7 @@ function cmdlineMenu() {
               ;;
           esac
         done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        resetBuild
         ;;
       2)
         while true; do
@@ -1042,8 +1026,7 @@ function cmdlineMenu() {
             unset 'CMDLINE[${I}]'
             deleteConfigKey "cmdline.\"${I}\"" "${USER_CONFIG_FILE}"
           done
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          resetBuild
         done
         ;;
       3)
@@ -1067,8 +1050,7 @@ function cmdlineMenu() {
               --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
           fi
         done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        resetBuild
         ;;
       4)
         while true; do
@@ -1091,8 +1073,7 @@ function cmdlineMenu() {
               --aspect 18 --msgbox "Fix removed from Cmdline" 0 0
           fi
         done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        resetBuild
         ;;
       5)
         while true; do
@@ -1113,8 +1094,7 @@ function cmdlineMenu() {
               --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
           fi
         done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        resetBuild
         ;;
       6)
         while true; do
@@ -1135,8 +1115,7 @@ function cmdlineMenu() {
               --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
           fi
         done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        resetBuild
         ;;
       7)
         while true; do
@@ -1159,8 +1138,7 @@ function cmdlineMenu() {
               --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
           fi
         done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        resetBuild
         ;;
       8)
         while true; do
@@ -1181,8 +1159,7 @@ function cmdlineMenu() {
               --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
           fi
         done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        resetBuild
         ;;
       9)
         while true; do
@@ -1199,8 +1176,7 @@ function cmdlineMenu() {
           KERNELPANIC=${resp}
           writeConfigKey "kernelpanic" "${KERNELPANIC}" "${USER_CONFIG_FILE}"
         done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        resetBuild
         ;;
       *)
         break
@@ -1265,8 +1241,7 @@ function synoinfoMenu() {
               ;;
           esac
         done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        resetBuild
         ;;
       2)
         # Read synoinfo from user config
@@ -1294,8 +1269,7 @@ function synoinfoMenu() {
           unset SYNOINFO[${I}]
           deleteConfigKey "synoinfo.\"${I}\"" "${USER_CONFIG_FILE}"
         done
-        writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-        BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+        resetBuild
         ;;
       *)
         break
@@ -1359,8 +1333,7 @@ function storagepanelMenu() {
       writeConfigKey "addons.storagepanel" "${STORAGEPANEL}" "${USER_CONFIG_FILE}"
       break
     done
-    writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-    BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+    resetBuild
   fi
   return
 }
@@ -1428,8 +1401,7 @@ function backupMenu() {
               PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
               DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
               CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-              writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-              BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+              resetBuild
               break
             fi
           fi
@@ -1527,8 +1499,7 @@ function backupMenu() {
           PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
           DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
           CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          resetBuild
         fi
         dialog --backtitle "$(backtitle)" --title "Online Restore" \
           --aspect 18 --infobox "Restore successful! -> Reload Arc Init now" 5 50
@@ -1704,8 +1675,7 @@ function storageMenu() {
   if [ "${DT}" = "false" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
     getmapSelection
   fi
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  resetBuild
   return
 }
 
@@ -1714,8 +1684,7 @@ function storageMenu() {
 function networkMenu() {
   # Get Network Config for Loader
   getnet
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  resetBuild
   return
 }
 
@@ -2187,8 +2156,7 @@ function staticIPMenu() {
             fi
             sleep 1
           fi
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          resetBuild
         ) 2>&1 | dialog --backtitle "$(backtitle)" --title "StaticIP" \
           --progressbox "Set Network ..." 20 100
         break
@@ -2373,8 +2341,7 @@ function addNewDSMUser() {
   [ "$(cat ${TMP_PATH}/isOk 2>/dev/null)" = "true" ] && MSG="Add DSM User successful." || MSG="Add DSM User failed."
   dialog --backtitle "$(backtitle)" --title "Add DSM User" \
     --msgbox "${MSG}" 0 0
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  resetBuild
   return
 }
 
@@ -2650,8 +2617,7 @@ function disablescheduledTasks {
   fi
   dialog --backtitle "$(backtitle)" --title "Scheduled Tasks" \
     --msgbox "${MSG}" 0 0
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  resetBuild
   return
 }
 
@@ -2712,8 +2678,7 @@ function formatDisks() {
   done 2>&1 | dialog --backtitle "$(backtitle)" --title "Format Disks" \
     --progressbox "Formatting ..." 20 100
   rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  resetBuild
   dialog --backtitle "$(backtitle)" --title "Format Disks" \
     --msgbox "Formatting is complete." 0 0
   return
@@ -2966,8 +2931,7 @@ function satadomMenu() {
   [ -z "${resp}" ] && return
   SATADOM=${resp}
   writeConfigKey "satadom" "${SATADOM}" "${USER_CONFIG_FILE}"
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  resetBuild
   return
 }
 
@@ -3085,8 +3049,7 @@ function resetDSMNetwork {
 # CPU Governor Menu
 function governorMenu () {
   governorSelection
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  resetBuild
   return
 }
 
@@ -3161,13 +3124,11 @@ function dtsMenu() {
           --msgbox "A valid dts file, Automatically import at compile time." 0 0
       fi
       rm -rf "${DTC_ERRLOG}"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      resetBuild
       ;;
     2)
       rm -f "${USER_UP_PATH}/model.dts"
-      writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-      BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+      resetBuild
       ;;
     3)
       rm -rf "${TMP_PATH}/model.dts"
@@ -3196,8 +3157,7 @@ function dtsMenu() {
           mkdir -p "${USER_UP_PATH}"
           cp -f "${TMP_PATH}/modelEdit.dts" "${USER_UP_PATH}/model.dts"
           rm -r "${TMP_PATH}/model.dts" "${TMP_PATH}/modelEdit.dts"
-          writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-          BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+          resetBuild
           break
         fi
       done
@@ -3756,8 +3716,7 @@ function notificationMenu() {
       DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
     done
   fi
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  resetBuild
   return
 }
 

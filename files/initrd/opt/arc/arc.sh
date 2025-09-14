@@ -277,8 +277,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
               writeConfigKey "synoinfo.support_emmc_boot" "yes" "${USER_CONFIG_FILE}"
               writeConfigKey "synoinfo.support_install_only_dev" "yes" "${USER_CONFIG_FILE}"
             fi
-            writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-            BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+resetBuild
             NEXT="E"
             ;;
           i) bootipwaittime; NEXT="i" ;;
@@ -318,29 +317,25 @@ elif [ "${ARC_MODE}" = "config" ]; then
                 writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
                 mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
             fi
-            writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-            BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+resetBuild
             NEXT="K"
             ;;
           H)
             [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
             writeConfigKey "hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
-            writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-            BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+resetBuild
             NEXT="H"
             ;;
           h)
             [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
             writeConfigKey "usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
-            writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-            BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+resetBuild
             NEXT="h"
             ;;
           O)
             [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
             writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
-            writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-            BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+resetBuild
             NEXT="O"
             ;;
           B) getbackup; NEXT="B" ;;
@@ -363,16 +358,14 @@ elif [ "${ARC_MODE}" = "config" ]; then
           W)
             RD_COMPRESSED=$([ "${RD_COMPRESSED}" = "true" ] && echo 'false' || echo 'true')
             writeConfigKey "rd-compressed" "${RD_COMPRESSED}" "${USER_CONFIG_FILE}"
-            writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-            BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+resetBuild
             NEXT="W"
             ;;
           X) satadomMenu; NEXT="X" ;;
           u)
             [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
             writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
-            writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-            BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+resetBuild
             NEXT="u"
             ;;
           L) greplogs; NEXT="L" ;;

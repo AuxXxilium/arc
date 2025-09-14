@@ -724,3 +724,11 @@ function getBoardName() {
   echo "${BOARD}"
   return
 }
+
+###############################################################################
+# Reset build
+function resetBuild() {
+  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  return
+}
