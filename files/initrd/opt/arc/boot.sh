@@ -125,9 +125,9 @@ fi
 
 if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   HASATA=0
-  for D in $(lsblk -dpno NAME); do
+  for D in $(lsblk -dpno KNAME); do
     [ "${D}" = "${LOADER_DISK}" ] && continue
-    if echo "sata sas scsi nvme virtio vmbus" | grep -qw "$(getBus "${D}")"; then
+    if echo "sata sas scsi" | grep -wq "$(getBus "${D}")"; then
       HASATA=1
       break
     fi

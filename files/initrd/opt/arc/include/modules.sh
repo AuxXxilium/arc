@@ -54,7 +54,7 @@ function getAllModules() {
     local N DESC
     N="$(basename "${F}" .ko)"
     DESC="$(modinfo -F description "${F}" 2>/dev/null)"
-    DESC="$(echo "${DESC}" | sed -E 's/[\n]/ /g')"
+    DESC="$(echo "${DESC}" | sed -E 's/[\n]/ /g' | sed -E 's/\(Compiled by RR for DSM\)//g')"
     echo "${N} \"${DESC:-${N}}\""
   done
   rm -rf "${TMP_PATH}/modules"

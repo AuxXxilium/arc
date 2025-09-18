@@ -185,9 +185,6 @@ function arcVersion() {
     if is_in_array "${PLATFORM}" "${IGPU1L[@]}" && grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids"; then
       initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
     fi
-    if echo "${PAT_URL}" 2>/dev/null | grep -qE "7\.2\.[2-9]|7\.[3-9]\.|[8-9]\."; then
-      initConfigKey "addons.allowdowngrade" "" "${USER_CONFIG_FILE}"
-    fi
     if [ "${SASDRIVES}" -gt 0 ] && [ "${DT}" = "true" ]; then
       initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
     fi
@@ -776,65 +773,66 @@ function modulesMenu() {
         TMP2="$(mktemp -d)"
         TMPOUT="$(mktemp -d)"
         CHECKLIST="${TMP_PATH}/modcompare"
-        rm -f "$CHECKLIST"
+        rm -f "${CHECKLIST}"
 
-        tar -xzf "$TGZ1" -C "$TMP1"
-        tar -xzf "$TGZ2" -C "$TMP2"
+        tar -xzf "$TGZ1" -C "${TMP1}"
+        tar -xzf "$TGZ2" -C "${TMP2}"
 
-        MODS1=($(find "$TMP1" -type f -name '*.ko' -exec basename {} \; | sort -u))
-        MODS2=($(find "$TMP2" -type f -name '*.ko' -exec basename {} \; | sort -u))
+        MODS1=($(find "${TMP1}" -type f -name '*.ko' -exec basename {} \; | sort -u))
+        MODS2=($(find "${TMP2}" -type f -name '*.ko' -exec basename {} \; | sort -u))
         ALL_MODS=($(printf "%s\n%s\n" "${MODS1[@]}" "${MODS2[@]}" | sort -u))
 
         for MOD in "${ALL_MODS[@]}"; do
           DESC=""
           MODNAME="${MOD%.ko}"
-          if [ -f "$TMP2/$MOD" ]; then
-            DESC="$(modinfo -F description "$TMP2/$MOD" 2>/dev/null | head -1)"
-            [ -z "$DESC" ] && DESC="No description"
+          if [ -f "${TMP2}/${MOD}" ]; then
+            DESC="$(modinfo -F description "${TMP2}/${MOD}" 2>/dev/null)"
+            DESC="$(echo "${DESC}" | sed -E 's/[\n]/ /g' | sed -E 's/\(Compiled by RR for DSM\)//g')"
+            [ -z "${DESC}" ] && DESC="No description"
           fi
         
           if [[ " ${MODS1[*]} " == *" $MOD "* && " ${MODS2[*]} " == *" $MOD "* ]]; then
-            if ! cmp -s "$TMP1/$MOD" "$TMP2/$MOD"; then
-              echo "\"$MODNAME\" \"\Z1Different\Zn - $DESC\" off" >>"$CHECKLIST"
+            if ! cmp -s "${TMP1}/${MOD}" "${TMP2}/${MOD}"; then
+              echo "\"${MODNAME}\" \"\Z1Different\Zn - $DESC\" off" >>"$CHECKLIST"
             fi
           elif [[ " ${MODS2[*]} " == *" $MOD "* ]]; then
-            echo "\"$MODNAME\" \"\Z1Only in Expanded\Zn - $DESC\" off" >>"$CHECKLIST"
+            echo "\"${MODNAME}\" \"\Z1Only in Expanded\Zn - $DESC\" off" >>"$CHECKLIST"
           else
-            echo "\"$MODNAME\" \"\Z1Only in Loader\Zn\" off" >>"$CHECKLIST"
+            echo "\"${MODNAME}\" \"\Z1Only in Loader\Zn\" off" >>"$CHECKLIST"
           fi
         done
 
         dialog --title "Expanded Modules" --colors \
           --checklist "Select modules to REPLACE in Loader with version from Expanded:" 0 0 0 \
-          --file "$CHECKLIST" 2>"${TMP_PATH}/modsel"
+          --file "${CHECKLIST}" 2>"${TMP_PATH}/modsel"
 
-        [ $? -ne 0 ] && { rm -rf "$TMP1" "$TMP2" "$TMPOUT"; return 1; }
+        [ $? -ne 0 ] && { rm -rf "${TMP1}" "${TMP2}" "${TMPOUT}"; return 1; }
         SELMODS=$(cat "${TMP_PATH}/modsel" | tr -d '"')
 
-        cp -f "$TMP1"/*.ko "$TMPOUT/" 2>/dev/null
+        cp -f "${TMP1}"/*.ko "${TMPOUT}/" 2>/dev/null
 
         REPLACED_LIST=""
         DEPS_TO_COPY=()
-        for MOD in $SELMODS; do
+        for MOD in ${SELMODS}; do
           MODNAME="${MOD//[[:space:]]/}"
-          DEPS_TO_COPY+=("$MODNAME")
+          DEPS_TO_COPY+=("${MODNAME}")
           for DEP in $(getdepends "${PLATFORM}" "${KVERP}" "${MODNAME}"); do
-            DEPS_TO_COPY+=("$DEP")
-            REPLACED_LIST+="$DEP\n"
+            DEPS_TO_COPY+=("${DEP}")
+            REPLACED_LIST+="${DEP}\n"
           done
         done
         
         DEPS_TO_COPY=($(printf "%s\n" "${DEPS_TO_COPY[@]}" | sort -u))
         REPLACED_LIST="$(printf "%s\n" "${REPLACED_LIST}" | sort -u  | sed 's/^\s*//; s/\s*$//')"
-        [ -z "$REPLACED_LIST" ] && REPLACED_LIST="No modules replaced."
+        [ -z "${REPLACED_LIST}" ] && REPLACED_LIST="No modules replaced."
 
         for DEP in "${DEPS_TO_COPY[@]}"; do
-          [ -f "$TMP2/$DEP" ] && cp -f "$TMP2/$DEP" "$TMPOUT/$DEP"
+          [ -f "${TMP2}/${DEP}" ] && cp -f "${TMP2}/${DEP}" "${TMPOUT}/${DEP}"
         done
 
-        tar -czf "$TGZ1" -C "$TMPOUT" .
+        tar -czf "${TGZ1}" -C "${TMPOUT}" .
 
-        if [ -n "$SELMODS" ]; then
+        if [ -n "${SELMODS}" ]; then
           FIRMWARE_URL="https://github.com/AuxXxilium/arc-modules-ex/releases/download/${TAG}/firmware.tgz"
           FIRMWARE_PATH="${MODULES_TMP_PATH}/firmware.tgz"
           FIRMWARE_TMP="$(mktemp -d)"
@@ -846,7 +844,7 @@ function modulesMenu() {
           fi
         fi
 
-        dialog --title "Expanded Modules" --msgbox "Replaced Modules:\n$REPLACED_LIST" 20 60
+        dialog --title "Expanded Modules" --msgbox "Replaced Modules:\n${REPLACED_LIST}" 20 60
 
         rm -rf "${TMP1}" "${TMP2}" "${TMPOUT}" "${CHECKLIST}" "${TMP_PATH}/modsel"
         resetBuild
@@ -3017,10 +3015,17 @@ function resetDSMNetwork {
       [ $? -ne 0 ] && continue
       for F in ${TMP_PATH}/mdX/etc/sysconfig/network-scripts/ifcfg-* ${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-*; do
         [ ! -e "${F}" ] && continue
-        case "${F}" in
-        *ovs_* | *-bond*) rm -f "${F}" ;;
-        *-eth*)
-          ETHX=$(echo "${F}" | sed -E 's/.*ifcfg-(eth[0-9]+)$/\1/')
+        ETHX=$(echo "${F}" | sed -E 's/.*ifcfg-(.*)$/\1/')
+        case "${ETHX}" in
+        ovs_bond*)
+          rm -f "${F}"
+          ;;
+        ovs_eth*)
+          ovs-vsctl del-br ${ETHX}
+          sed -i "/${ETHX##ovs_}/"d ${TMP_PATH}/mdX/usr/syno/etc/synoovs/ovs_interface.conf
+          rm -f "${F}"
+          ;;
+        eth*)
           echo -e "DEVICE=${ETHX}\nONBOOT=yes\nBOOTPROTO=dhcp\nIPV6INIT=auto_dhcp\nIPV6_ACCEPT_RA=1" >"${F}"
           ;;
         *) ;;
@@ -3118,7 +3123,7 @@ function dtsMenu() {
         dialog --backtitle "$(backtitle)" --title "Custom DTS" \
           --msgbox "Not a valid dts file, please try again!\n\n$(cat "${DTC_ERRLOG}")" 0 0
       else
-        [ -d "{USER_UP_PATH}" ] || mkdir -p "${USER_UP_PATH}"
+        [ -d "${USER_UP_PATH}" ] || mkdir -p "${USER_UP_PATH}"
         cp -f "${USER_FILE}" "${USER_UP_PATH}/model.dts"
         dialog --backtitle "$(backtitle)" --title "$(TEXT "Custom DTS")" \
           --msgbox "A valid dts file, Automatically import at compile time." 0 0
@@ -3721,6 +3726,64 @@ function notificationMenu() {
 }
 
 ###############################################################################
+# Remote Assistance Menu
+function remoteAssistance() {
+  # lock
+  exec 911>"${TMP_PATH}/remote.lock"
+  flock -n 911 || {
+    MSG="Another instance is already running."
+    dialog --colors --aspect 50 --title "Remote Assistance" --msgbox "${MSG}" 0 0
+    exit 1
+  }
+  trap 'flock -u 911; rm -f "${TMP_PATH}/remote.lock"' EXIT INT TERM HUP
+
+  {
+    printf "Closing this window or press 'ctrl + c' to exit the assistance.\n"
+    printf "Please give the following link to the helper. (Click to open and copy)\n"
+    printf "        👇\n"
+    LINK=$(sshx -q --name "Arc Remote" 2>&1)
+    echo "${LINK}"
+    [ $? -ne 0 ] && while true; do sleep 1; done
+
+    # Send the link if notifications are enabled
+    if [ "$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")" = "true" ]; then
+      USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
+      sendDiscord "${USERID}" "Remote is running at: ${LINK}"
+    fi
+    if [ "$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")" = "true" ]; then
+      WEBHOOKURL="$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")"
+      sendWebhook "${WEBHOOKURL}" "Remote is running at: ${LINK}"
+    fi
+  } | dialog --colors --aspect 50 --title "Remote Assistance" --progressbox "Notice: Please keep this window open." 20 100 2>&1
+
+  clear
+  "${ARC_PATH}/init.sh"
+}
+
+###############################################################################
+# Remote Assistance Boot Menu
+function remoteAssistanceBootMenu() {
+  while true; do
+    dialog --backtitle "$(backtitle)" --title "Remote Assistance" \
+      --yesno "Do you want to enable remote assistance at boot?" 7 60
+    case $? in
+      0)
+        writeConfigKey "arc.remoteassistance" "true" "${USER_CONFIG_FILE}"
+        break
+        ;;
+      1)
+        writeConfigKey "arc.remoteassistance" "false" "${USER_CONFIG_FILE}"
+        break
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+  return
+}
+
+###############################################################################
 # Online Menu
 function onlineMenu() {
   while true; do
@@ -3733,6 +3796,8 @@ function onlineMenu() {
     write_menu_value 1 "HardwareID" "$( [ -n "${ARC_UID}" ] && echo "registered" || echo "register" )"
     write_menu_value 2 "Config Online Backup" "$( [ "${ARC_BACKUP}" = "true" ] && echo "enabled" || echo "disabled" )"
     write_menu_value 3 "Notify Webhook / Discord" "$( [ "${WEBHOOKNOTIFY}" = "true" ] && echo "enabled" || echo "disabled" ) / $( [ "${DISCORDNOTIFY}" = "true" ] && echo "enabled" || echo "disabled" )"
+    write_menu 4 "Start Remote Assistance Session"
+    write_menu_value 5 "Start Remote Assistance at Boot" "$( [ "${REMOTEASSISTANCE}" = "true" ] && echo "enabled" || echo "disabled" )"
 
     dialog --backtitle "$(backtitle)" --title "Online Settings" --colors \
       --menu "Online Settings require HardwareID registration" 20 55 2 \
@@ -3754,6 +3819,12 @@ function onlineMenu() {
         ;;
       3)
         notificationMenu
+        ;;
+      4)
+        remoteAssistance
+        ;;
+      5)
+        remoteAssistanceBootMenu
         ;;
     esac
   done

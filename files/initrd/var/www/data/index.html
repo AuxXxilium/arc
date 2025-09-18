@@ -95,8 +95,8 @@
                         <embed id="embed-terminal" class="embed" src="" data-page="terminal"></embed>
                         <embed id="embed-dufs" class="embed" src="" data-page="dufs"></embed>
                     </div>
-                    <!-- Sysinfo placed outside embed-container so it won't be clipped -->
                     <div id="sysinfo-container"></div>
+                    <div id="remote-assistance-container"></div>
                  </div>
              </div>
          </div>
@@ -105,22 +105,18 @@
         let embedSources = {};
         let serverIP = null;
 
-        // Fetch IP once and then initialize everything
         fetch('./get-ip.cgi')
             .then(response => response.text())
             .then(ip => {
                 serverIP = ip.trim();
                 document.getElementById('server-ip').textContent = `Server IP: ${serverIP}`;
 
-                // Now fetch and insert navigation links
                 fetch('./navigation.html')
                     .then(response => response.text())
                     .then(data => {
-                        // Replace all occurrences of IP in the navigation HTML
                         data = data.replace(/IP/g, serverIP);
                         document.getElementById('navigation-container').innerHTML = data;
                         setupNavigation();
-                        // Load the default page after navigation is ready
                         loadPage('terminal');
                     });
             })
@@ -162,15 +158,19 @@
                 pageTitle = 'System Information';
                 fetchSysinfo();
                 return;
+            } else if (page === 'remote_assistance') {
+                pageTitle = 'Remote Assistance';
+                fetchRemoteAssistance();
+                return;
             }
 
             document.getElementById('page-title').textContent = pageTitle;
             document.getElementById('server-ip').textContent = `Server IP: ${serverIP}`;
-            // hide sysinfo when switching back to embedded pages
             const sysinfoEl = document.getElementById('sysinfo-container');
+            const remoteAssistanceEl = document.getElementById('remote-assistance-container');
             if (sysinfoEl) sysinfoEl.style.display = 'none';
+            if (remoteAssistanceEl) remoteAssistanceEl.style.display = 'none';
 
-             // Fetch config only (no need to fetch IP again)
              fetch('/etc/arc.conf')
                  .then(response => response.text())
                  .then(configText => {
@@ -182,7 +182,6 @@
                         }
                     });
 
-                    // Set default ports if not defined
                     if (!config['DUFS_PORT']) {
                         config['DUFS_PORT'] = '7304';
                     }
@@ -193,16 +192,14 @@
                     const port = config[portKey];
                     const embedSrc = `http://${serverIP}:${port}`;
 
-                    // Store the embed source if not already stored
                     if (!embedSources[page]) {
                         embedSources[page] = embedSrc;
                         document.getElementById(embedId).src = embedSrc;
                     }
 
-                    // Show the selected embed and hide others
                     document.querySelectorAll('.embed-container embed').forEach(embed => {
                         embed.classList.remove('active');
-                        embed.style.display = 'none'; // make sure embed won't capture pointer/scroll events
+                        embed.style.display = 'none';
                     });
                     const chosen = document.getElementById(embedId);
                     chosen.classList.add('active');
@@ -223,20 +220,9 @@
                      el.innerHTML = `<pre>${data}</pre>`;
                      el.style.display = 'block';
 
-                     // Make sure we measure the full content (remove any cap), then set a max bounded by viewport.
-                     const topOffset = 120; // adjust if header size changes
-                     el.style.maxHeight = 'none'; // temporarily remove cap so scrollHeight is accurate
-                     // Force layout/read the value to ensure scrollHeight is updated
-                     const contentHeight = el.scrollHeight;
-                     const available = Math.max(window.innerHeight - topOffset, 100); // never negative
-                     const desired = Math.min(contentHeight + 16, available); // +16 breathing room
-                     el.style.maxHeight = desired + 'px';
-                     el.style.overflow = 'auto';
- 
-                     // hide embeds when showing sysinfo
                      document.querySelectorAll('.embed-container embed').forEach(embed => {
                          embed.classList.remove('active');
-                         embed.style.display = 'none'; // ensure embeds don't capture scroll/pointer events
+                         embed.style.display = 'none';
                      });
                  })
                  .catch(error => {
@@ -244,7 +230,25 @@
                  });
          }
 
-         // Recompute max-height when the window is resized so content remains visible
+         function fetchRemoteAssistance() {
+             fetch('./remote_assistance.cgi')
+                 .then(response => response.text())
+                 .then(data => {
+                     document.getElementById('page-title').textContent = 'Remote Assistance';
+                     const el = document.getElementById('remote-assistance-container');
+                     el.innerHTML = `<pre>${data}</pre>`;
+                     el.style.display = 'block';
+
+                     document.querySelectorAll('.embed-container embed').forEach(embed => {
+                         embed.classList.remove('active');
+                         embed.style.display = 'none';
+                     });
+                 })
+                 .catch(error => {
+                     console.error('Error fetching remote assistance:', error);
+                 });
+         }
+
          window.addEventListener('resize', () => {
              const el = document.getElementById('sysinfo-container');
              if (el && el.style.display === 'block') {

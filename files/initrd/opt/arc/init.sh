@@ -57,9 +57,10 @@ initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.dev" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.discordnotify" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
+initConfigKey "arc.remoteassistance" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.version" "${ARC_VERSION}" "${USER_CONFIG_FILE}"
 initConfigKey "arc.webhooknotify" "false" "${USER_CONFIG_FILE}"
@@ -104,11 +105,14 @@ initConfigKey "usbmount" "false" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 
 # Sort network interfaces
-if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
-  echo -e "NIC sorting: \033[1;34menabled\033[0m"
-  _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
-  echo
+if [ ! -f "/.dockerenv" ]; then
+  if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
+    echo -e "NIC sorting: \033[1;34menabled\033[0m"
+    _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
+    echo
+  fi
 fi
+
 # Read/Write IP/Mac to config
 ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
 for N in ${ETHX}; do
@@ -140,11 +144,13 @@ writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
 echo
 [ "${ETHN}" -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
 
-BUSLIST="usb sata sas scsi nvme mmc ide virtio vmbus xen"
+BUSLIST="usb sata sas scsi nvme mmc ide virtio vmbus xen docker"
 if [ "${BUS}" = "usb" ]; then
   VID="0x$(udevadm info --query property --name "${LOADER_DISK}" 2>/dev/null | grep "ID_VENDOR_ID" | cut -d= -f2)"
   PID="0x$(udevadm info --query property --name "${LOADER_DISK}" 2>/dev/null | grep "ID_MODEL_ID" | cut -d= -f2)"
   [ "${VID}" = "0x" ] || [ "${PID}" = "0x" ] && die "The loader disk does not support the current USB Portable Hard Disk."
+elif [ "${BUS}" = "docker" ]; then
+  TYPE="PC"
 elif ! (echo "${BUSLIST}" | grep -wq "${BUS}"); then
   die "$(printf "The loader disk does not support the current %s, only %s are supported." "${BUS}" "${BUSLIST// /\/}")"
 fi
@@ -239,7 +245,6 @@ if [ "${DISCORDNOTIFY}" = "true" ]; then
     echo
   fi
 fi
-
 
 # Check memory and load Arc
 RAM=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
