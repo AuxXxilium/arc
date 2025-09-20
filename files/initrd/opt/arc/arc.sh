@@ -112,10 +112,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
     write_menu "=" "\Z4===== Info =====\Zn"
     write_menu "a" "Sysinfo"
     write_menu "A" "Networkdiag"
-
-    if [ "${ARC_OFFLINE}" != "true" ]; then
-      write_menu "Q" "Online Options"
-    fi
     
     if [ "${CONFDONE}" = "true" ]; then
       if [ "${ARCOPTS}" = "true" ]; then
@@ -209,6 +205,9 @@ elif [ "${ARC_MODE}" = "config" ]; then
     fi
 
     write_menu "=" "\Z4===== Misc =====\Zn"
+    if [ "${ARC_OFFLINE}" != "true" ]; then
+      write_menu "Q" "Online Options"
+    fi
     write_menu "x" "Backup/Restore/Recovery"
     write_menu "z" "Update"
     write_menu "I" "Power & Service"
@@ -277,7 +276,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
               writeConfigKey "synoinfo.support_emmc_boot" "yes" "${USER_CONFIG_FILE}"
               writeConfigKey "synoinfo.support_install_only_dev" "yes" "${USER_CONFIG_FILE}"
             fi
-resetBuild
+            resetBuild
             NEXT="E"
             ;;
           i) bootipwaittime; NEXT="i" ;;
@@ -317,25 +316,25 @@ resetBuild
                 writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
                 mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
             fi
-resetBuild
+            resetBuild
             NEXT="K"
             ;;
           H)
             [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
             writeConfigKey "hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
-resetBuild
+            resetBuild
             NEXT="H"
             ;;
           h)
             [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
             writeConfigKey "usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
-resetBuild
+            resetBuild
             NEXT="h"
             ;;
           O)
             [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
             writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
-resetBuild
+            resetBuild
             NEXT="O"
             ;;
           B) getbackup; NEXT="B" ;;
@@ -358,14 +357,14 @@ resetBuild
           W)
             RD_COMPRESSED=$([ "${RD_COMPRESSED}" = "true" ] && echo 'false' || echo 'true')
             writeConfigKey "rd-compressed" "${RD_COMPRESSED}" "${USER_CONFIG_FILE}"
-resetBuild
+            resetBuild
             NEXT="W"
             ;;
           X) satadomMenu; NEXT="X" ;;
           u)
             [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
             writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
-resetBuild
+            resetBuild
             NEXT="u"
             ;;
           L) greplogs; NEXT="L" ;;

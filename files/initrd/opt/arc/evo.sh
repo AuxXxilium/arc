@@ -173,12 +173,12 @@ function advancedMenu() {
               writeConfigKey "synoinfo.support_emmc_boot" "yes" "${USER_CONFIG_FILE}"
               writeConfigKey "synoinfo.support_install_only_dev" "yes" "${USER_CONFIG_FILE}"
             fi
-resetBuild
+            resetBuild
             NEXT="E"
             ;;
           u) [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
             writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
-resetBuild
+            resetBuild
             NEXT="u"
             ;;
           q) [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
@@ -324,22 +324,22 @@ elif [ "${ARC_MODE}" = "config" ]; then
               writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
               mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
             fi
-resetBuild
+            resetBuild
             NEXT="K"
             ;;
           H) [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
             writeConfigKey "hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
-resetBuild
+            resetBuild
             NEXT="H"
             ;;
           h) [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
             writeConfigKey "usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
-resetBuild
+            resetBuild
             NEXT="h"
             ;;
           O) [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
             writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
-resetBuild
+            resetBuild
             NEXT="O"
             ;;
           c) ARC_OFFLINE=$([ "${ARC_OFFLINE}" = "true" ] && echo 'false' || echo 'true')
