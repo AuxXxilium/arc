@@ -2728,9 +2728,9 @@ function cloneLoader() {
     fdisk -l "${resp}"
     sleep 1
 
-    NEW_BLDISK_P1="$(lsblk "${resp}" -pno KNAME,LABEL 2>/dev/null | grep 'ARC1' | awk '{print $1}')"
-    NEW_BLDISK_P2="$(lsblk "${resp}" -pno KNAME,LABEL 2>/dev/null | grep 'ARC2' | awk '{print $1}')"
-    NEW_BLDISK_P3="$(lsblk "${resp}" -pno KNAME,LABEL 2>/dev/null | grep 'ARC3' | awk '{print $1}')"
+    NEW_BLDISK_P1="$(blkid | grep -v "${LOADER_DISK_PART1}:" | awk -F: '/LABEL="RR1"/ {print $1}')"
+    NEW_BLDISK_P2="$(blkid | grep -v "${LOADER_DISK_PART2}:" | awk -F: '/LABEL="RR2"/ {print $1}')"
+    NEW_BLDISK_P3="$(blkid | grep -v "${LOADER_DISK_PART3}:" | awk -F: '/LABEL="RR3"/ {print $1}')"
     SIZEOFDISK=$(cat /sys/block/${resp/\/dev\//}/size)
     ENDSECTOR=$(($(fdisk -l ${resp} | grep "${NEW_BLDISK_P3}" | awk '{print $3}') + 1))
 
@@ -3732,40 +3732,39 @@ function remoteAssistance() {
   exec 911>"${TMP_PATH}/remote.lock"
   flock -n 911 || {
     MSG="Another instance is already running."
-    dialog --colors --aspect 50 --title "Remote Assistance" --msgbox "${MSG}" 0 0
+    dialog --colors --aspect 50 --title "Arc Assistance" --msgbox "${MSG}" 0 0
     exit 1
   }
-  trap 'flock -u 911; rm -f "${TMP_PATH}/remote.lock"' EXIT INT TERM HUP
+  trap 'flock -u 911; rm -f "${TMP_PATH}/remote.lock"; clear; echo "Reinitializing..."; exec "${ARC_PATH}/init.sh"' EXIT INT TERM HUP
 
+  # Start the remote assistance mode
   {
-    printf "Closing this window or press 'ctrl + c' to exit the assistance.\n"
-    printf "Please give the following link to the helper. (Click to open and copy)\n"
-    printf "        👇\n"
-    LINK=$(sshx -q --name "Arc Remote" 2>&1)
-    echo "${LINK}"
-    [ $? -ne 0 ] && while true; do sleep 1; done
+    printf "Press 'ctrl + c' to exit the assistance mode.\n"
+    printf "Please give the following link to the assistant. (Click to open and copy)\n\n"
+    sshx -q --name "Arc Assistance" 2>&1 &
+    SSHX_PID=$!
 
-    # Send the link if notifications are enabled
-    if [ "$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")" = "true" ]; then
-      USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
-      sendDiscord "${USERID}" "Remote is running at: ${LINK}"
+    # Wait for the sshx process to finish or handle Ctrl+C
+    wait ${SSHX_PID}
+    if [ $? -ne 0 ]; then
+      echo "Failed to generate the remote assistance link."
+      while true; do sleep 1; done
     fi
-    if [ "$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")" = "true" ]; then
-      WEBHOOKURL="$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")"
-      sendWebhook "${WEBHOOKURL}" "Remote is running at: ${LINK}"
-    fi
-  } | dialog --colors --aspect 50 --title "Remote Assistance" --progressbox "Notice: Please keep this window open." 20 100 2>&1
+  } | dialog --backtitle "$(backtitle)" --colors --aspect 50 --title "Arc Assistance" \
+    --progressbox "Notice: Please keep this window open." 20 100 2>&1
 
   clear
-  "${ARC_PATH}/init.sh"
+  echo -e "Reinitializing..."
+  rm -f "${TMP_PATH}/remote.lock"
+  exec "${ARC_PATH}/init.sh"
 }
 
 ###############################################################################
 # Remote Assistance Boot Menu
 function remoteAssistanceBootMenu() {
   while true; do
-    dialog --backtitle "$(backtitle)" --title "Remote Assistance" \
-      --yesno "Do you want to enable remote assistance at boot?" 7 60
+    dialog --backtitle "$(backtitle)" --title "Arc Assistance" \
+      --yesno "Do you want to enable remote assistance at boot?" 5 60
     case $? in
       0)
         writeConfigKey "arc.remoteassistance" "true" "${USER_CONFIG_FILE}"
@@ -3792,11 +3791,20 @@ function onlineMenu() {
     WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
     DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
 
+    # Check if the remote session is running
+    if pgrep -f "sshx -q" 2>/dev/null; then
+      REMOTE_SESSION_RUNNING=true
+      REMOTE_SESSION_OPTION="Stop Remote Assistance Session"
+    else
+      REMOTE_SESSION_RUNNING=false
+      REMOTE_SESSION_OPTION="Start Remote Assistance Session"
+    fi
+
     rm -f "${TMP_PATH}/menu"
     write_menu_value 1 "HardwareID" "$( [ -n "${ARC_UID}" ] && echo "registered" || echo "register" )"
     write_menu_value 2 "Config Online Backup" "$( [ "${ARC_BACKUP}" = "true" ] && echo "enabled" || echo "disabled" )"
     write_menu_value 3 "Notify Webhook / Discord" "$( [ "${WEBHOOKNOTIFY}" = "true" ] && echo "enabled" || echo "disabled" ) / $( [ "${DISCORDNOTIFY}" = "true" ] && echo "enabled" || echo "disabled" )"
-    write_menu 4 "Start Remote Assistance Session"
+    write_menu 4 "${REMOTE_SESSION_OPTION}"
     write_menu_value 5 "Start Remote Assistance at Boot" "$( [ "${REMOTEASSISTANCE}" = "true" ] && echo "enabled" || echo "disabled" )"
 
     dialog --backtitle "$(backtitle)" --title "Online Settings" --colors \
@@ -3821,7 +3829,14 @@ function onlineMenu() {
         notificationMenu
         ;;
       4)
-        remoteAssistance
+        if [ "${REMOTE_SESSION_RUNNING}" = true ]; then
+          # Stop the remote session
+          pkill -f "sshx -q"
+          dialog --msgbox "Remote Assistance Session stopped." 5 40
+        else
+          # Start the remote session
+          remoteAssistance
+        fi
         ;;
       5)
         remoteAssistanceBootMenu
