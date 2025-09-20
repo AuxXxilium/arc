@@ -16,60 +16,53 @@
             overflow: hidden; /* Prevent scrollbars from appearing */
         }
         
-         .embed-container embed {
-             position: relative;
-             width: 100%;
-             height: 100%;
-             border: none;
-             display: none;
-             overflow: hidden; /* Ensure no scrollbars appear */
-         }
-         
-         .embed-container embed.active {
-             display: block;
-             overflow: hidden; /* Ensure no scrollbars appear for the active embed */
-         }
+        .embed-container embed {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: none;
+            overflow: hidden; /* Ensure no scrollbars appear */
+        }
         
-        /* System info container — sits outside the fixed embed area so it can expand */
+        .embed-container embed.active {
+            display: block;
+            overflow: hidden; /* Ensure no scrollbars appear for the active embed */
+        }
+        
         #sysinfo-container {
-            /* place below the embed area (no negative overlap) */
             margin-top: -750px;
             position: relative;
-            z-index: 50; /* ensure it sits above embed if overlap happens */
-             display: none;
-             padding: 12px;
-             background: #0f1113;
-             border-radius: 6px;
-             color: #fff;
-             /* allow the container to expand to content but keep it bounded by viewport */
-             /* default CSS cap to viewport minus header; JS will override with exact content height */
-             max-height: calc(100vh - 120px);
-             overflow: auto; /* scroll if very long */
-             white-space: pre-wrap; /* wrap long lines but keep formatting */
-             word-break: break-word;
-         }
+            z-index: 50;
+            display: none;
+            padding: 12px;
+            background: #0f1113;
+            border-radius: 6px;
+            color: #fff;
+            max-height: calc(100vh - 120px);
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
         
         #sysinfo-container pre {
             margin: 0;
             white-space: pre-wrap;
             overflow-wrap: anywhere;
         }
-         
-         /* Hide scrollbars for WebKit browsers (e.g., Chrome, Safari) */
-         .embed-container embed::-webkit-scrollbar {
-             display: none;
-         }
-         
-         /* Hide scrollbars for Firefox */
-         .embed-container embed {
-             scrollbar-width: none;
-         }
-         
-         /* Hide scrollbars for Internet Explorer and Edge (legacy) */
-         .embed-container embed {
-             -ms-overflow-style: none;
-         }
-     </style>
+        
+        .embed-container embed::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .embed-container embed {
+            scrollbar-width: none;
+        }
+        
+        .embed-container embed {
+            -ms-overflow-style: none;
+        }
+    </style>
 </head>
 <body>
     <main class="p-0 base">
@@ -96,12 +89,11 @@
                         <embed id="embed-dufs" class="embed" src="" data-page="dufs"></embed>
                     </div>
                     <div id="sysinfo-container"></div>
-                    <div id="remote-assistance-container"></div>
-                 </div>
-             </div>
-         </div>
-     </main>
-     <script>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
         let embedSources = {};
         let serverIP = null;
 
@@ -158,22 +150,16 @@
                 pageTitle = 'System Information';
                 fetchSysinfo();
                 return;
-            } else if (page === 'remote_assistance') {
-                pageTitle = 'Remote Assistance';
-                fetchRemoteAssistance();
-                return;
             }
 
             document.getElementById('page-title').textContent = pageTitle;
             document.getElementById('server-ip').textContent = `Server IP: ${serverIP}`;
             const sysinfoEl = document.getElementById('sysinfo-container');
-            const remoteAssistanceEl = document.getElementById('remote-assistance-container');
             if (sysinfoEl) sysinfoEl.style.display = 'none';
-            if (remoteAssistanceEl) remoteAssistanceEl.style.display = 'none';
 
-             fetch('/etc/arc.conf')
-                 .then(response => response.text())
-                 .then(configText => {
+            fetch('/etc/arc.conf')
+                .then(response => response.text())
+                .then(configText => {
                     const config = {};
                     configText.split('\n').forEach(line => {
                         const [key, value] = line.split('=');
@@ -204,61 +190,42 @@
                     const chosen = document.getElementById(embedId);
                     chosen.classList.add('active');
                     chosen.style.display = 'block';
-                  })
-                 .catch(error => {
-                     console.error('Error fetching config:', error);
-                     document.getElementById('server-ip').textContent = 'Error loading config - reload the page';
-                 });
-         }
+                })
+                .catch(error => {
+                    console.error('Error fetching config:', error);
+                    document.getElementById('server-ip').textContent = 'Error loading config - reload the page';
+                });
+        }
 
-         function fetchSysinfo() {
-             fetch('./get-sysinfo.cgi')
-                 .then(response => response.text())
-                 .then(data => {
-                     document.getElementById('page-title').textContent = 'System Information';
-                     const el = document.getElementById('sysinfo-container');
-                     el.innerHTML = `<pre>${data}</pre>`;
-                     el.style.display = 'block';
+        function fetchSysinfo() {
+            fetch('./get-sysinfo.cgi')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('page-title').textContent = 'System Information';
+                    const el = document.getElementById('sysinfo-container');
+                    el.innerHTML = `<pre>${data}</pre>`;
+                    el.style.display = 'block';
 
-                     document.querySelectorAll('.embed-container embed').forEach(embed => {
-                         embed.classList.remove('active');
-                         embed.style.display = 'none';
-                     });
-                 })
-                 .catch(error => {
-                     console.error('Error fetching system information:', error);
-                 });
-         }
+                    document.querySelectorAll('.embed-container embed').forEach(embed => {
+                        embed.classList.remove('active');
+                        embed.style.display = 'none';
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching system information:', error);
+                });
+        }
 
-         function fetchRemoteAssistance() {
-             fetch('./remote_assistance.cgi')
-                 .then(response => response.text())
-                 .then(data => {
-                     document.getElementById('page-title').textContent = 'Remote Assistance';
-                     const el = document.getElementById('remote-assistance-container');
-                     el.innerHTML = `<pre>${data}</pre>`;
-                     el.style.display = 'block';
-
-                     document.querySelectorAll('.embed-container embed').forEach(embed => {
-                         embed.classList.remove('active');
-                         embed.style.display = 'none';
-                     });
-                 })
-                 .catch(error => {
-                     console.error('Error fetching remote assistance:', error);
-                 });
-         }
-
-         window.addEventListener('resize', () => {
-             const el = document.getElementById('sysinfo-container');
-             if (el && el.style.display === 'block') {
-                 const topOffset = 120;
-                 const contentHeight = el.scrollHeight;
-                 const available = window.innerHeight - topOffset;
-                 const desired = Math.min(contentHeight + 16, available);
-                 el.style.maxHeight = desired + 'px';
-             }
-         });
-     </script>
- </body>
- </html>
+        window.addEventListener('resize', () => {
+            const el = document.getElementById('sysinfo-container');
+            if (el && el.style.display === 'block') {
+                const topOffset = 120;
+                const contentHeight = el.scrollHeight;
+                const available = window.innerHeight - topOffset;
+                const desired = Math.min(contentHeight + 16, available);
+                el.style.maxHeight = desired + 'px';
+            }
+        });
+    </script>
+</body>
+</html>
