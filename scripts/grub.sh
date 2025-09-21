@@ -6,69 +6,75 @@
 # See /LICENSE for more information.
 #
 
+# Variables
 GRUB=${1:-"grub-2.12"}
 BIOS=${2:-"i386-pc i386-efi x86_64-efi"}
 NAME=${3:-"ARC"}
+GRUB_URL="https://ftp.gnu.org/gnu/grub/${GRUB}.tar.gz"
 
-curl -#kLO https://ftp.gnu.org/gnu/grub/${GRUB}.tar.gz
-tar -zxvf ${GRUB}.tar.gz
+# Download and extract GRUB
+curl -#kLO "${GRUB_URL}"
+tar -zxf "${GRUB}.tar.gz"
 
-pushd ${GRUB}
-echo depends bli part_gpt > grub-core/extra_deps.lst
+# Build GRUB for each platform
+pushd "${GRUB}" > /dev/null
+echo "depends part_gpt lvm" > grub-core/extra_deps.lst
 for B in ${BIOS}; do
-  b=${B}
-  b=(${b//-/ })
-  echo "Make ${b[@]} ..."
-  mkdir -p ${B}
-  pushd ${B}
-  ../configure --prefix=$PWD/usr -sbindir=$PWD/sbin --sysconfdir=$PWD/etc --disable-werror --target=${b[0]} --with-platform=${b[1]}
-  make
+  PLATFORM=(${B//-/ }) # Split target and platform
+  echo "Building for ${PLATFORM[@]}..."
+  mkdir -p "${B}"
+  pushd "${B}" > /dev/null
+  ../configure --prefix="$PWD/usr" --sbindir="$PWD/sbin" --sysconfdir="$PWD/etc" \
+    --disable-werror --target="${PLATFORM[0]}" --with-platform="${PLATFORM[1]}"
+  make -j$(nproc)
   make install
-  popd
+  popd > /dev/null
 done
-popd
+popd > /dev/null
 
+# Create GRUB disk image
 rm -f grub.img
 dd if=/dev/zero of=grub.img bs=1M seek=1850 count=0
 echo -e "n\np\n1\n\n+50M\nn\np\n2\n\n+50M\nn\np\n3\n\n\na\n1\nw\nq\n" | fdisk grub.img
 fdisk -l grub.img
 
+# Setup loop device
 LOOPX=$(sudo losetup -f)
-sudo losetup -P ${LOOPX} grub.img
-sudo mkdosfs -F32 -n ${NAME}1 ${LOOPX}p1
-sudo mkfs.ext2 -F -L ${NAME}2 ${LOOPX}p2
-sudo mkfs.ext4 -F -L ${NAME}3 ${LOOPX}p3
+sudo losetup -P "${LOOPX}" grub.img
 
-rm -rf ${NAME}1
-mkdir -p ${NAME}1
-sudo mount ${LOOPX}p1 ${NAME}1
+# Format partitions
+sudo mkdosfs -F32 -n "${NAME}1" "${LOOPX}p1"
+sudo mkfs.ext2 -F -L "${NAME}2" "${LOOPX}p2"
+sudo mkfs.ext4 -F -L "${NAME}3" "${LOOPX}p3"
 
-sudo mkdir -p ${NAME}1/EFI
-sudo mkdir -p ${NAME}1/boot/grub
-cat >device.map <<EOF
+# Mount and prepare GRUB installation
+MOUNT_DIR="${NAME}1"
+rm -rf "${MOUNT_DIR}"
+mkdir -p "${MOUNT_DIR}"
+sudo mount "${LOOPX}p1" "${MOUNT_DIR}"
+
+sudo mkdir -p "${MOUNT_DIR}/EFI" "${MOUNT_DIR}/boot/grub"
+cat > device.map <<EOF
 (hd0)   ${LOOPX}
 EOF
-sudo mv device.map ${NAME}1/boot/grub/device.map
+sudo mv device.map "${MOUNT_DIR}/boot/grub/device.map"
 
+# Install GRUB for each platform
 for B in ${BIOS}; do
-  args=""
-  args+=" ${LOOPX} --target=${B} --no-floppy --recheck --grub-mkdevicemap=${NAME}1/boot/grub/device.map --boot-directory=${NAME}1/boot"
-  if [[ "${B}" == *"efi" ]]; then
-    args+=" --efi-directory=${NAME}1 --removable --no-nvram"
-  else
-    args+=" --root-directory=${NAME}1"
-  fi
-  sudo ${GRUB}/${B}/grub-install ${args}
+  INSTALL_ARGS=("${LOOPX}" "--target=${B}" "--no-floppy" "--recheck" "--grub-mkdevicemap=${MOUNT_DIR}/boot/grub/device.map" "--boot-directory=${MOUNT_DIR}/boot")
+  [[ "${B}" == *"efi" ]] && INSTALL_ARGS+=("--efi-directory=${MOUNT_DIR}" "--removable" "--no-nvram") || INSTALL_ARGS+=("--root-directory=${MOUNT_DIR}")
+  sudo "${GRUB}/${B}/grub-install" "${INSTALL_ARGS[@]}"
 done
 
-if [ -d ${NAME}1/boot/grub/fonts ] && [ -f /usr/share/grub/unicode.pf2 ]; then
-  sudo cp /usr/share/grub/unicode.pf2 ${NAME}1/boot/grub/fonts
+# Copy GRUB font if available
+if [[ -d "${MOUNT_DIR}/boot/grub/fonts" && -f /usr/share/grub/unicode.pf2 ]]; then
+  sudo cp /usr/share/grub/unicode.pf2 "${MOUNT_DIR}/boot/grub/fonts"
 fi
 
+# Finalize and cleanup
 sudo sync
-
-sudo umount ${LOOPX}p1
-sudo losetup -d ${LOOPX}
-sudo rm -rf ${NAME}1
+sudo umount "${LOOPX}p1"
+sudo losetup -d "${LOOPX}"
+sudo rm -rf "${MOUNT_DIR}"
 
 gzip grub.img
