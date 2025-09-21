@@ -14,7 +14,6 @@ F kvm.ko
 
 # acpi
 N acpi_call.ko
-N acpi_cpufreq.ko
 
 # cpufreq
 N cpufreq_governor.ko
@@ -42,7 +41,7 @@ N adt7475.ko
 N nct6683.ko
 N nct6775.ko
 
-# network
+# rndis
 F mii.ko
 F cdc_ether.ko
 F rndis_host.ko
@@ -53,6 +52,7 @@ F aqc111.ko
 F ax88179_178a.ko
 F aic_load_fw.ko
 F aic8800_fdrv.ko
+F tg3.ko
 
 ## i915
 #N dmabuf.ko

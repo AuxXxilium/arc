@@ -6,8 +6,6 @@
 # See /LICENSE for more information.
 #
 
-# shellcheck disable=SC2034
-
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
 . "${ARC_PATH}/include/functions.sh"
@@ -113,7 +111,6 @@ for PE in "${PATCHES[@]}"; do
     RET=$?
     [ ${RET} -eq 0 ] && break
   done
-  [ ${MATCHED} -eq 0 ] && continue # skip if no patch files found
   [ ${RET} -ne 0 ] && exit 1
 done
 
@@ -182,12 +179,14 @@ for KEY in "${!SYNOINFO[@]}"; do
   _set_conf_kv "${RAMDISK_PATH}/etc/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || exit 1
   _set_conf_kv "${RAMDISK_PATH}/etc.defaults/synoinfo.conf" "${KEY}" "${SYNOINFO[${KEY}]}" || exit 1
 done
-rm -f "${RAMDISK_PATH}/usr/bin/get_key_value"
-printf '#!/bin/sh\n%s\n_get_conf_kv "$@"' "$(declare -f _get_conf_kv)" >"${RAMDISK_PATH}/usr/bin/get_key_value"
-chmod a+x "${RAMDISK_PATH}/usr/bin/get_key_value"
-rm -f "${RAMDISK_PATH}/usr/bin/set_key_value"
-printf '#!/bin/sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
-chmod a+x "${RAMDISK_PATH}/usr/bin/set_key_value"
+if [ ! -x "${RAMDISK_PATH}/usr/bin/get_key_value" ]; then
+  printf '#!/bin/sh\n%s\n_get_conf_kv "$@"' "$(declare -f _get_conf_kv)" >"${RAMDISK_PATH}/usr/bin/get_key_value"
+  chmod a+x "${RAMDISK_PATH}/usr/bin/get_key_value"
+fi
+if [ ! -x "${RAMDISK_PATH}/usr/bin/set_key_value" ]; then
+  printf '#!/bin/sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
+  chmod a+x "${RAMDISK_PATH}/usr/bin/set_key_value"
+fi
 
 # Copying modulelist
 if [ -f "${USER_UP_PATH}/modulelist" ]; then

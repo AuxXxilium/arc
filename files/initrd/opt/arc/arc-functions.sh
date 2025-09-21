@@ -2728,9 +2728,9 @@ function cloneLoader() {
     fdisk -l "${resp}"
     sleep 1
 
-    NEW_BLDISK_P1="$(blkid | grep -v "${LOADER_DISK_PART1}:" | awk -F: '/LABEL="RR1"/ {print $1}')"
-    NEW_BLDISK_P2="$(blkid | grep -v "${LOADER_DISK_PART2}:" | awk -F: '/LABEL="RR2"/ {print $1}')"
-    NEW_BLDISK_P3="$(blkid | grep -v "${LOADER_DISK_PART3}:" | awk -F: '/LABEL="RR3"/ {print $1}')"
+    NEW_BLDISK_P1="$(blkid | grep -v "${LOADER_DISK_PART1}:" | awk -F: '/LABEL="ARC1"/ {print $1}')"
+    NEW_BLDISK_P2="$(blkid | grep -v "${LOADER_DISK_PART2}:" | awk -F: '/LABEL="ARC2"/ {print $1}')"
+    NEW_BLDISK_P3="$(blkid | grep -v "${LOADER_DISK_PART3}:" | awk -F: '/LABEL="ARC3"/ {print $1}')"
     SIZEOFDISK=$(cat /sys/block/${resp/\/dev\//}/size)
     ENDSECTOR=$(($(fdisk -l ${resp} | grep "${NEW_BLDISK_P3}" | awk '{print $3}') + 1))
 
