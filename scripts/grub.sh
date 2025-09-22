@@ -18,14 +18,14 @@ tar -zxf "${GRUB}.tar.gz"
 
 # Build GRUB for each platform
 pushd "${GRUB}" > /dev/null
-echo "depends part_gpt lvm" > grub-core/extra_deps.lst
+echo "depends part_gpt bli" > grub-core/extra_deps.lst
 for B in ${BIOS}; do
   PLATFORM=(${B//-/ }) # Split target and platform
   echo "Building for ${PLATFORM[@]}..."
   mkdir -p "${B}"
   pushd "${B}" > /dev/null
   ../configure --prefix="$PWD/usr" --sbindir="$PWD/sbin" --sysconfdir="$PWD/etc" \
-    --disable-werror --target="${PLATFORM[0]}" --with-platform="${PLATFORM[1]}"
+    --disable-werror --disable-nls --target="${PLATFORM[0]}" --with-platform="${PLATFORM[1]}"
   make -j$(nproc)
   make install
   popd > /dev/null
