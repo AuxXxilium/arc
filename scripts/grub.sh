@@ -18,16 +18,26 @@ tar -zxf "${GRUB}.tar.gz"
 
 # Build GRUB for each platform
 pushd "${GRUB}" > /dev/null
-echo "depends part_gpt bli" > grub-core/extra_deps.lst
+# Restore the modification to extra_deps.lst
+echo "depends bli part_gpt lvm" > grub-core/extra_deps.lst
 for B in ${BIOS}; do
-  PLATFORM=(${B//-/ }) # Split target and platform
-  echo "Building for ${PLATFORM[@]}..."
+  b=${B}
+  b=(${b//-/ }) # Split target and platform
+  echo "Building for ${b[@]}..."
   mkdir -p "${B}"
   pushd "${B}" > /dev/null
   ../configure --prefix="$PWD/usr" --sbindir="$PWD/sbin" --sysconfdir="$PWD/etc" \
-    --disable-werror --disable-nls --target="${PLATFORM[0]}" --with-platform="${PLATFORM[1]}"
+    --disable-werror --target="${b[0]}" --with-platform="${b[1]}"
   make -j$(nproc)
   make install
+
+  # Remove locale files if generated
+  LOCALE_DIR="$PWD/usr/share/locale"
+  if [[ -d "${LOCALE_DIR}" ]]; then
+    echo "Removing locale files..."
+    rm -rf "${LOCALE_DIR}"
+  fi
+
   popd > /dev/null
 done
 popd > /dev/null
@@ -61,9 +71,13 @@ sudo mv device.map "${MOUNT_DIR}/boot/grub/device.map"
 
 # Install GRUB for each platform
 for B in ${BIOS}; do
-  INSTALL_ARGS=("${LOOPX}" "--target=${B}" "--no-floppy" "--recheck" "--grub-mkdevicemap=${MOUNT_DIR}/boot/grub/device.map" "--boot-directory=${MOUNT_DIR}/boot")
-  [[ "${B}" == *"efi" ]] && INSTALL_ARGS+=("--efi-directory=${MOUNT_DIR}" "--removable" "--no-nvram") || INSTALL_ARGS+=("--root-directory=${MOUNT_DIR}")
-  sudo "${GRUB}/${B}/grub-install" "${INSTALL_ARGS[@]}"
+  args=("${LOOPX}" "--target=${B}" "--no-floppy" "--recheck" "--grub-mkdevicemap=${MOUNT_DIR}/boot/grub/device.map" "--boot-directory=${MOUNT_DIR}/boot")
+  if [[ "${B}" == *"efi" ]]; then
+    args+=("--efi-directory=${MOUNT_DIR}" "--removable" "--no-nvram")
+  else
+    args+=("--root-directory=${MOUNT_DIR}")
+  fi
+  sudo "${GRUB}/${B}/grub-install" "${args[@]}"
 done
 
 # Copy GRUB font if available

@@ -41,7 +41,7 @@ N adt7475.ko
 N nct6683.ko
 N nct6775.ko
 
-# rndis
+# network
 F mii.ko
 F cdc_ether.ko
 F rndis_host.ko
@@ -52,7 +52,6 @@ F aqc111.ko
 F ax88179_178a.ko
 F aic_load_fw.ko
 F aic8800_fdrv.ko
-F tg3.ko
 
 ## i915
 #N dmabuf.ko
