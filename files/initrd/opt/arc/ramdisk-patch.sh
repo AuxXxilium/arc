@@ -125,7 +125,7 @@ echo "Create addons.sh" >>"${LOG_FILE}"
   echo "export LOADERBUILD=\"${ARC_BUILD}\""
   echo "export PLATFORM=\"${PLATFORM}\""
   echo "export MODEL=\"${MODEL}\""
-  echo "export PRODUCTVER=\"${PRODUCTVER}\""
+  echo "export PRODUCTVERL=\"${PRODUCTVERL}\""
   echo "export MLINK=\"${PAT_URL}\""
   echo "export MCHECKSUM=\"${PAT_HASH}\""
   echo "export LAYOUT=\"${LAYOUT:-qwerty}\""
@@ -134,7 +134,7 @@ echo "Create addons.sh" >>"${LOG_FILE}"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
-SYSADDONS="revert misc eudev disks localrss notify mountloader"
+SYSADDONS="revert misc eudev disks localrss notify"
 if [ "${KVER:0:1}" = "5" ]; then
   SYSADDONS="redpill ${SYSADDONS}"
 fi
@@ -188,6 +188,9 @@ if [ ! -x "${RAMDISK_PATH}/usr/bin/set_key_value" ]; then
   chmod a+x "${RAMDISK_PATH}/usr/bin/set_key_value"
 fi
 
+# Remove function from scripts
+[ "2" = "${BUILDNUM:0:1}" ] && find "${RAMDISK_PATH}/addons/" -type f -name "*.sh" -exec sed -i 's/function //g' {} \;
+
 # Copying modulelist
 if [ -f "${USER_UP_PATH}/modulelist" ]; then
   cp -f "${USER_UP_PATH}/modulelist" "${RAMDISK_PATH}/addons/modulelist"
@@ -198,7 +201,7 @@ fi
 # backup current loader configs
 mkdir -p "${RAMDISK_PATH}/usr/arc"
 {
-  echo "LOADERLABEL=\"Arc\""
+  echo "LOADERLABEL=\"ARC\""
   echo "LOADERVERSION=\"${ARC_VERSION}\""
   echo "LOADERBUILD=\"${ARC_BUILD}\""
 } >"${RAMDISK_PATH}/usr/arc/VERSION"
@@ -238,6 +241,14 @@ if [ "${PLATFORM}" = "broadwellntbap" ]; then
   echo -e ">> apply Broadwellntbap Fixes"
   sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' "${RAMDISK_PATH}/usr/syno/share/environments.sh"
 fi
+
+# Call user patch scripts
+for F in ${SCRIPTS_PATH}/*.sh; do
+  [ ! -e "${F}" ] && continue
+  echo "Calling ${F}" >"${LOG_FILE}"
+  # shellcheck source=/dev/null
+  . "${F}" >>"${LOG_FILE}" 2>&1 || exit 1
+done
 
 # Reassembly ramdisk
 rm -f "${MOD_RDGZ_FILE}"

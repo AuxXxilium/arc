@@ -147,6 +147,8 @@ function arcVersion() {
     initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.hdddb" "" "${USER_CONFIG_FILE}"
+    initConfigKey "addons.mountloader" "" "${USER_CONFIG_FILE}"
+    initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.reducelogs" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
@@ -163,7 +165,6 @@ function arcVersion() {
     fi
     if [ "${MEV}" = "physical" ]; then
       initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
-      initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
       initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
       CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp' | head -1 | sed -n 's|.*/\(hwmon.*\/temp1_input\).*|\1|p')"
       if [ -n "${CORETEMP}" ]; then
@@ -213,7 +214,7 @@ function arcVersion() {
     dialog --clear --no-items --nocancel --title "DSM Version" --backtitle "$(backtitle)" \
       --no-items --menu "Select DSM Version" 7 30 0 ${LVS} \
     2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return
+    [ $? -ne 0 ] && return 1
     RESP="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${RESP}" ] && return
      if [ "${PRODUCTVER}" != "${RESP:0:3}" ]; then
@@ -237,7 +238,7 @@ function arcVersion() {
       dialog --backtitle "$(backtitle)" --colors --title "Arc Build" --default-button "OK" \
         --form "${MSG}" 11 120 2 "Url" 1 1 "${PAT_URL_UPDATE}" 1 8 110 0 "Hash" 2 1 "${PAT_HASH_UPDATE}" 2 8 110 0 \
         2>"${TMP_PATH}/resp"
-      [ $? -ne 0 ] && return
+      [ $? -ne 0 ] && return 1
       PAT_URL_UPDATE="$(sed -n '1p' "${TMP_PATH}/resp")"
       PAT_HASH_UPDATE="$(sed -n '2p' "${TMP_PATH}/resp")"
     done
@@ -262,12 +263,12 @@ function arcVersion() {
       if [ "${SASCONTROLLER}" -ge 1 ]; then
         dialog --backtitle "$(backtitle)" --title "Arc Warning" \
           --yesno "WARN: You use a HBA Controller and selected a DT Model.\nThis is an experimental feature.\n\nContinue anyway?" 8 70
-        [ $? -ne 0 ] && return
+        [ $? -ne 0 ] && return 1
       fi
       if [ "${SCSICONTROLLER}" -ge 1 ] || [ "${RAIDCONTROLLER}" -ge 1 ]; then
         dialog --backtitle "$(backtitle)" --title "Arc Warning" \
           --yesno "WARN: You use a Raid/SCSI Controller and selected a DT Model.\nThis is not supported.\n\nContinue anyway?" 8 70
-        [ $? -ne 0 ] && return
+        [ $? -ne 0 ] && return 1
       fi
     fi
     USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
@@ -603,7 +604,7 @@ function editUserConfig() {
   while true; do
     dialog --backtitle "$(backtitle)" --title "Edit with caution" \
       --ok-label "Save" --editbox "${USER_CONFIG_FILE}" 0 0 2>"${TMP_PATH}/userconfig"
-    [ $? -ne 0 ] && return 1
+    [ $? -ne 0 ] && return 1 1
     mv -f "${TMP_PATH}/userconfig" "${USER_CONFIG_FILE}"
     ERRORS=$(yq eval "${USER_CONFIG_FILE}" 2>&1)
     [ $? -eq 0 ] && break || continue
@@ -647,7 +648,7 @@ function addonSelection() {
   dialog --backtitle "$(backtitle)" --title "Addons" --colors --aspect 18 \
     --checklist "Select Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return 1
+  [ $? -ne 0 ] && return 1 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
 
   declare -A ADDONS
@@ -1285,7 +1286,7 @@ function keymapMenu() {
     "azerty" "bepo" "carpalx" "colemak" \
     "dvorak" "fgGIod" "neo" "olpc" "qwerty" "qwertz" \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return 1
+  [ $? -ne 0 ] && return 1 1
   LAYOUT="$(cat "${TMP_PATH}/resp")"
   OPTIONS=""
   while read -r KM; do
@@ -1294,7 +1295,7 @@ function keymapMenu() {
   dialog --backtitle "$(backtitle)" --no-items --default-item "${KEYMAP}" \
     --menu "Choice a keymap" 0 0 0 ${OPTIONS} \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return 1
+  [ $? -ne 0 ] && return 1 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   [ -z "${resp}" ] && return 1
   KEYMAP=${resp}
@@ -1426,7 +1427,7 @@ function backupMenu() {
       2)
         dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" \
           --msgbox "Upload the machine.key or machine.key.tar.gz file to ${PART3_PATH}/users\nand press OK after the upload is done." 0 0
-        [ $? -ne 0 ] && return 1
+        [ $? -ne 0 ] && return 1 1
         if [ -f "${PART3_PATH}/users/machine.key.tar.gz" ]; then
           tar -xzf "${PART3_PATH}/users/machine.key.tar.gz" -C "${PART2_PATH}" machine.key 2>/dev/null
           if [ -f "${PART2_PATH}/machine.key" ]; then
@@ -1458,7 +1459,7 @@ function backupMenu() {
       3)
         dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" \
           --msgbox "To backup the Encryption Key press OK." 0 0
-        [ $? -ne 0 ] && return 1
+        [ $? -ne 0 ] && return 1 1
         
         if [ -f "${PART2_PATH}/machine.key" ]; then
           mkdir -p /var/www/data
@@ -1583,7 +1584,7 @@ function updateMenu() {
           mkdir -p "/${TMP_PATH}/update"
           dialog --backtitle "$(backtitle)" --title "Update Loader" \
             --msgbox "Upload the update-*.zip File to /${TMP_PATH}/update\nand press OK after upload is done." 0 0
-          [ $? -ne 0 ] && return 1
+          [ $? -ne 0 ] && return 1 1
           UPDATEFOUND="false"
           for UPDATEFILE in /${TMP_PATH}/update/update-*.zip; do
             if [ -f "${UPDATEFILE}" ]; then
@@ -1634,7 +1635,7 @@ function updateMenu() {
           mkdir -p "/${TMP_PATH}/update"
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
             --msgbox "Upload the arc-*.zip File to /${TMP_PATH}/update\nand press OK after upload is done." 0 0
-          [ $? -ne 0 ] && return 1
+          [ $? -ne 0 ] && return 1 1
           UPDATEFOUND="false"
           for UPDATEFILE in /${TMP_PATH}/update/arc-*.zip; do
             if [ -f "${UPDATEFILE}" ]; then
@@ -2182,7 +2183,7 @@ function downgradeMenu() {
   TEXT+="Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?"
   dialog --backtitle "$(backtitle)" --title "Allow Downgrade" \
       --yesno "${TEXT}" 0 0
-  [ $? -ne 0 ] && return 1
+  [ $? -ne 0 ] && return 1 1
   DSMROOTS="$(findDSMRoot)"
   if [ -z "${DSMROOTS}" ]; then
     dialog --backtitle "$(backtitle)" --title "Allow Downgrade" \
@@ -2248,7 +2249,7 @@ function resetPassword() {
   dialog --backtitle "$(backtitle)" --title "Reset Password" \
     --no-items --menu  "Choose a User" 0 0 0 --file "${TMP_PATH}/menu" \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   USER="$(cat "${TMP_PATH}/resp" 2>/dev/null | awk '{print $1}')"
   [ -z "${USER}" ] && return
   while true; do
@@ -2313,7 +2314,7 @@ function addNewDSMUser() {
   dialog --backtitle "$(backtitle)" --title "Add DSM User" \
     --form "${MSG}" 8 60 3 "username:" 1 1 "user" 1 10 50 0 "password:" 2 1 "passwd" 2 10 50 0 \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   username="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
   password="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
   (
@@ -2551,7 +2552,7 @@ function removeBlockIPDB {
   MSG+="Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?"
   dialog --backtitle "$(backtitle)" --title "Remove Blocked IP Database" \
     --yesno "${MSG}" 0 0
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   DSMROOTS="$(findDSMRoot)"
   if [ -z "${DSMROOTS}" ]; then
     dialog --backtitle "$(backtitle)" --title "Remove Blocked IP Database" \
@@ -2652,16 +2653,16 @@ function formatDisks() {
   dialog --backtitle "$(backtitle)" --title "Format Disks" \
     --checklist "Select Disks" 0 0 0 --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   [ -z "${resp}" ] && return
   dialog --backtitle "$(backtitle)" --title "Format Disks" \
     --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   if [ $(ls /dev/md[0-9]* 2>/dev/null | wc -l) -gt 0 ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --yesno "Warning:\nThe current disks are in raid, do you still want to format them?" 0 0
-    [ $? -ne 0 ] && return
+    [ $? -ne 0 ] && return 1
     for I in $(ls /dev/md[0-9]* 2>/dev/null); do
       mdadm -S "${I}" >/dev/null 2>&1
     done
@@ -2701,7 +2702,7 @@ function cloneLoader() {
   dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
     --radiolist "Choose a Destination" 0 0 0 --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   if [ -z "${resp}" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
@@ -2718,7 +2719,7 @@ function cloneLoader() {
     MSG+="Warning:\nDisk ${resp} will be formatted and written to the bootloader. Please confirm that important data has been backed up. \nDo you want to continue?"
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --yesno "${MSG}" 0 0
-    [ $? -ne 0 ] && return
+    [ $? -ne 0 ] && return 1
   fi
   (
     CLEARCACHE=0
@@ -2812,7 +2813,7 @@ function resetLoader() {
   [ -f "${HOME}/.initialized" ] && rm -f "${HOME}/.initialized" >/dev/null 2>&1
   dialog --backtitle "$(backtitle)" --title "Reset Loader" --aspect 18 \
     --yesno "Reset successful.\nReloading...!" 0 0
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   exec init.sh
 }
 
@@ -2822,8 +2823,9 @@ function editGrubCfg() {
   while true; do
     dialog --backtitle "$(backtitle)" --title "Edit with caution" \
       --ok-label "Save" --editbox "${USER_GRUB_CONFIG}" 0 0 2>"${TMP_PATH}/usergrub.cfg"
-    [ $? -ne 0 ] && return
+    [ $? -ne 0 ] && return 1
     mv -f "${TMP_PATH}/usergrub.cfg" "${USER_GRUB_CONFIG}"
+    dos2unix "${USER_GRUB_CONFIG}" 2>/dev/null || true
     break
   done
   return
@@ -2924,7 +2926,7 @@ function satadomMenu() {
   dialog --backtitle "$(backtitle)" --title "Switch SATA DOM" \
     --default-item "${SATADOM}" --menu  "Choose an Option" 0 0 0 --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   [ -z "${resp}" ] && return
   SATADOM=${resp}
@@ -2953,7 +2955,7 @@ function rebootMenu() {
   dialog --backtitle "$(backtitle)" --title "Power Menu" \
     --menu  "Choose a Destination" 0 0 0 --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   [ -z "${resp}" ] && return
 
@@ -2998,7 +3000,7 @@ function resetDSMNetwork {
   MSG+="Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?"
   dialog --backtitle "$(backtitle)" --title "Reset DSM Network" \
     --yesno "${MSG}" 0 0
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   DSMROOTS="$(findDSMRoot)"
   if [ -z "${DSMROOTS}" ]; then
     dialog --backtitle "$(backtitle)" --title "Reset DSM Network" \
@@ -3070,7 +3072,7 @@ function governorSelection () {
   dialog --backtitle "$(backtitle)" --title "CPU Frequency Scaling" \
     --menu  "Choose a Governor\n* Recommended Option" 0 0 0 --file "${TMP_PATH}/opts" \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   [ -z "${resp}" ] && return
   GOVERNOR=${resp}
@@ -3302,7 +3304,7 @@ EOL
   dialog --backtitle "$(backtitle)" --title "Bootscreen" --colors --aspect 18 \
     --checklist "Select Bootscreen Informations\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return 1
+  [ $? -ne 0 ] && return 1 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   for BOOTSCREEN in dsminfo systeminfo diskinfo hwidinfo dsmlogo; do
     if echo "${resp}" | grep -q "${BOOTSCREEN}"; then
@@ -3510,7 +3512,7 @@ function getmapSelection() {
       4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
       5 "Set my own Portmap in Config" \
     2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1
+    [ $? -ne 0 ] && return 1 1
     resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${resp}" ] && return 1
 
@@ -3640,7 +3642,7 @@ function notificationMenu() {
     1 "Webhook Notification (${WEBHOOKNOTIFY})" \
     2 "Discord Notification (${DISCORDNOTIFY})" \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return
+  [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   [ -z "${resp}" ] && return
 
