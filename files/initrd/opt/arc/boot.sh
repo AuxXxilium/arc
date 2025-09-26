@@ -136,16 +136,10 @@ if [ "${HWIDINFO}" = "true" ]; then
   echo
 fi
 
-if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
-  HASATA=0
-  for D in $(lsblk -dpno KNAME); do
-    [ "${D}" = "${LOADER_DISK}" ] && continue
-    if echo "sata sas scsi" | grep -wq "$(getBus "${D}")"; then
-      HASATA=1
-      break
-    fi
-  done
-  [ ${HASATA} = "0" ] && echo -e "\033[1;31m*** Note: Please insert at least one Sata/SAS/SCSI Disk for System installation, except the Bootloader Disk. ***\033[0m"
+if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
+  [ -z "$(ls /dev/nvme* | grep -vE "${LOADER_DISK}[0-9]?$" 2>/dev/null)" ] && printf "\033[1;33m*** %s ***\033[0m\n" "Notice: Please insert at least one m.2 disk for system installation."
+else
+	[ -z "$(ls /dev/sd* | grep -vE "${LOADER_DISK}[0-9]?$" 2>/dev/null)" ] && printf "\033[1;33m*** %s ***\033[0m\n" "Notice: Please insert at least one sata disk for system installation."
 fi
 
 if checkBIOS_VT_d && [ ${KVER:0:1} -lt 5 ]; then
@@ -286,7 +280,7 @@ echo
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
 if [ "${DIRECTBOOT}" = "true" ] || [ "${MEV:-physical}" = "parallels" ]; then
   grub-editenv "${USER_RSYSENVFILE}" create
-  grub-editenv "${USER_RSYSENVFILE}" set arc_version="${WTITLE}"
+  grub-editenv "${USER_RSYSENVFILE}" set arc_version="${ARC_VERSION} (${ARC_BUILD})"
   grub-editenv "${USER_RSYSENVFILE}" set dsm_model="${MODEL}(${PLATFORM})"
   grub-editenv "${USER_RSYSENVFILE}" set dsm_version="${PRODUCTVER}(${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))"
   grub-editenv "${USER_RSYSENVFILE}" set dsm_kernel="${KERNEL}(${KVER})"
