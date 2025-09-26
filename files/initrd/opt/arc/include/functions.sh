@@ -12,7 +12,7 @@ function checkBootLoader() {
     [ -z "${KNAME}" ] && continue
     [ "${RO}" = "0" ] && continue
     hdparm -r0 "${KNAME}" >/dev/null 2>&1 || true
-  done < <(lsblk -pno KNAME,RO 2>/dev/null)
+  done <<<"$(lsblk -pno KNAME,RO 2>/dev/null)"
   [ ! -w "${PART1_PATH}" ] && return 1
   [ ! -w "${PART2_PATH}" ] && return 1
   [ ! -w "${PART3_PATH}" ] && return 1

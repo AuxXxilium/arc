@@ -63,6 +63,7 @@ CPU="$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | sed -E 's
 RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
 BOARD="$(getBoardName)"
 MEV="$(virt-what 2>/dev/null | head -1)"
+ETHX=($(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort | head -n 2))
 DSMINFO="$(readConfigKey "bootscreen.dsminfo" "${USER_CONFIG_FILE}")"
 SYSTEMINFO="$(readConfigKey "bootscreen.systeminfo" "${USER_CONFIG_FILE}")"
 DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
@@ -75,7 +76,19 @@ ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 if [ -z "${SN}" ] || [ "${#SN}" -ne 13 ]; then
   SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
+  writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
 fi
+MACS="$(generateMacAddress "${ARC_PATCH}" "${MODEL}" "${#ETHX[@]}")"
+for N in $(seq 1 "${#ETHX[@]}"); do
+  CURRENT_MAC="$(readConfigKey "mac${N}" "${USER_CONFIG_FILE}")"
+  if [ -z "${CURRENT_MAC}" ]; then
+    NEW_MAC="$(echo ${MACS} | cut -d' ' -f${N})"
+    writeConfigKey "mac${N}" "${NEW_MAC}" "${USER_CONFIG_FILE}"
+    eval "MAC${N}=${NEW_MAC}"
+  else
+    eval "MAC${N}=${CURRENT_MAC}"
+  fi
+done
 VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
 PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
@@ -107,8 +120,8 @@ if [ "${SYSTEMINFO}" = "true" ]; then
   echo -e "CPU: \033[1;37m${CPU}\033[0m"
   echo -e "Board: \033[1;37m${BOARD}\033[0m"
   echo -e "Memory: \033[1;37m${RAMTOTAL}GB\033[0m"
-  echo -e "Governor: \033[1;37m${GOVERNOR:-"performance"}\033[0m"
-  echo -e "Type: \033[1;37m${MEV:-"physical"}\033[0m"
+  echo -e "Governor: \033[1;37m${GOVERNOR:-performance}\033[0m"
+  echo -e "Type: \033[1;37m${MEV:-physical}\033[0m"
   [ "${USBMOUNT}" = "true" ] && echo -e "USB Mount: \033[1;37m${USBMOUNT}\033[0m"
   echo
 fi
@@ -135,7 +148,7 @@ if ! readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   [ ${HASATA} = "0" ] && echo -e "\033[1;31m*** Note: Please insert at least one Sata/SAS/SCSI Disk for System installation, except the Bootloader Disk. ***\033[0m"
 fi
 
-if checkBIOS_VT_d && [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
+if checkBIOS_VT_d && [ ${KVER:0:1} -lt 5 ]; then
   echo -e "\033[1;31m*** Notice: Disable Intel(VT-d)/AMD(AMD-V) in BIOS/UEFI settings if you encounter a boot issues. ***\033[0m"
   echo
 fi
@@ -143,24 +156,13 @@ fi
 declare -A CMDLINE
 
 # Automated Cmdline
-CMDLINE['syno_hw_version']="${MODEL}"
 CMDLINE['vid']="${VID:-"0x46f4"}"
 CMDLINE['pid']="${PID:-"0x0001"}"
+CMDLINE['syno_hw_version']="${MODEL}"
 CMDLINE['sn']="${SN}"
-
-# NIC Cmdline
-ETHX=$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)
-ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}")
-ETHN=$(wc -w <<< "${ETHX}")
-ETHM=${ETHM:-${ETHN}}
-NIC=0
-for N in ${ETHX}; do
-  MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
-  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null)"
-  CMDLINE["mac$((++NIC))"]="${MAC}"
-  [ "${NIC}" -ge "${ETHM}" ] && break
-done
-CMDLINE['netif_num']="${NIC}"
+[ -n "${MAC1}" ] && CMDLINE['mac1']="${MAC1}" && CMDLINE['netif_num']="1"
+[ -n "${MAC2}" ] && CMDLINE['mac2']="${MAC2}" && CMDLINE['netif_num']="2"
+CMDLINE['skip_vender_mac_interfaces']="$(seq -s, 0 $((${CMDLINE['netif_num']:-1} - 1)))"
 
 # Boot Cmdline
 if [ "${ARC_MODE}" = "reinstall" ]; then
@@ -170,14 +172,14 @@ elif [ "${ARC_MODE}" = "recovery" ]; then
   CMDLINE['force_junior']=""
 fi
 
-if [ "${EFI:-0}" = "1" ]; then
+if [ ${EFI} -eq 1 ]; then
   CMDLINE['withefi']=""
 else
   CMDLINE['noefi']=""
 fi
 
 # DSM Cmdline
-if [ "$(echo "${KVER:-4}" | cut -d'.' -f1)" -lt 5 ]; then
+if [ ${KVER:0:1} -lt 5 ]; then
   if [ "${BUS}" != "usb" ]; then
     SZ=$(blockdev --getsz "${LOADER_DISK}" 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
     SS=$(blockdev --getss "${LOADER_DISK}" 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
@@ -215,10 +217,11 @@ CMDLINE['rootwait']=""
 CMDLINE['panic']="${KERNELPANIC:-0}"
 CMDLINE['pcie_aspm']="off"
 CMDLINE['nowatchdog']=""
-CMDLINE['intel_pstate']="disable"
-CMDLINE['amd_pstate']="disable"
-CMDLINE['mev']="${MEV:-"physical"}"
-CMDLINE['governor']="${GOVERNOR:-"performance"}"
+# CMDLINE['intel_pstate']="disable"
+# CMDLINE['amd_pstate']="disable"
+CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
+CMDLINE['mev']="${MEV:-physical}"
+CMDLINE['governor']="${GOVERNOR:-performance}"
 
 if [ "${MEV}" = "vmware" ]; then
   CMDLINE['tsc']="reliable"
@@ -229,7 +232,7 @@ if [ "${HDDSORT}" = "true" ]; then
   CMDLINE['hddsort']=""
 fi
 if [ "${USBMOUNT}" = "true" ]; then
-  CMDLINE['usbinternal']=""
+  CMDLINE['usbasinternal']=""
 fi
 
 if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
@@ -244,10 +247,9 @@ if [ "${PLATFORM}" = "purley" ] || [ "${PLATFORM}" = "broadwellnkv2" ]; then
   CMDLINE['SASmodel']="1"
 fi
 
-CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 if [ "${DT}" = "true" ] && ! is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
-    [ -n "${CMDLINE['modprobe.blacklist']}" ] && CMDLINE['modprobe.blacklist']+=","
+    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
     CMDLINE['modprobe.blacklist']+="mpt3sas"
   fi
 fi
@@ -255,12 +257,12 @@ fi
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["network.${KEY}"]="${VALUE}"
-done < <(readConfigMap "network" "${USER_CONFIG_FILE}")
+done <<<"$(readConfigMap "network" "${USER_CONFIG_FILE}")"
 
 # Read user cmdline
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
+done <<<"$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
 
 # Prepare command line
 CMDLINE_LINE=""
@@ -269,16 +271,12 @@ for KEY in "${!CMDLINE[@]}"; do
   CMDLINE_LINE+=" ${KEY}"
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
-CMDLINE_LINE="${CMDLINE_LINE# }"
+CMDLINE_LINE="$(echo "${CMDLINE_LINE}" | sed 's/^ //')"
 echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-if [ "${ARC_PATCH}" = "true" ]; then
-  echo -e "\033[1;37mDetected ${ETHN} NIC / ${NIC} NIC for Arc Patch:\033[0m"
-else
-  echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
-fi
+echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
 [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
 IPCON=""
 checkNIC || true

@@ -18,8 +18,8 @@ function arcModel() {
     PM="$(readConfigEntriesArray "${P}" "${D_FILE}" | sort)"
     while read -r M; do
       echo "${M} ${P}" >>"${TMP_PATH}/modellist"
-    done < <(echo "${PM}")
-  done < <(echo "${PS}")
+    done <<<"$(echo "${PM}")"
+  done <<<"$(echo "${PS}")"
   if [ "${ARC_MODE}" = "config" ]; then
     while true; do
       echo -n "" >"${TMP_PATH}/menu"
@@ -77,7 +77,7 @@ function arcModel() {
         fi
         [ -n "$(grep -w "${M}" "${S_FILE}")" ] && BETA="Loader" || BETA="Syno"
         [ "${COMPATIBLE}" -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
-      done < <(cat "${TMP_PATH}/modellist")
+      done <<<"$(cat "${TMP_PATH}/modellist")"
       [ ! -s "${TMP_PATH}/menu" ] && echo "No supported models found." >"${TMP_PATH}/menu"
       [ "${RESTRICT}" -eq 1 ] && TITLEMSG="Supported Models for your Hardware" || TITLEMSG="Supported and unsupported Models for your Hardware"
       MSG="${TITLEMSG} (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
@@ -292,7 +292,7 @@ function arcVersion() {
 
     while IFS=': ' read -r KEY VALUE; do
       writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
-    done < <(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")
+    done <<<"$(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")"
 
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
     is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
@@ -311,7 +311,7 @@ function arcVersion() {
       if ! isAddonAvailable "${ADDON}" "${PLATFORM}"; then
         deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
       fi
-    done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+    done <<<"$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
 
     if [ "${ONLYVERSION}" = "true" ]; then
       resetBuild
@@ -500,7 +500,7 @@ function makearc() {
     if ! isAddonAvailable "${ADDON}" "${PLATFORM}"; then
       deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
     fi
-  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+  done <<<"$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
   if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
     getpatfiles
   fi
@@ -635,7 +635,7 @@ function addonSelection() {
   declare -A ADDONS
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
-  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
+  done <<<"$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
 
   rm -f "${TMP_PATH}/opts"
   touch "${TMP_PATH}/opts"
@@ -643,7 +643,7 @@ function addonSelection() {
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
-  done < <(availableAddons "${PLATFORM}")
+  done <<<"$(availableAddons "${PLATFORM}")"
 
   dialog --backtitle "$(backtitle)" --title "Addons" --colors --aspect 18 \
     --checklist "Select Addons to include.\nAddons: \Z1System Addon\Zn | \Z4App Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
@@ -692,12 +692,12 @@ function modulesMenu() {
         declare -A USERMODULES
         while IFS=': ' read -r KEY VALUE; do
           [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
-        done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
+        done <<<"$(readConfigMap "modules" "${USER_CONFIG_FILE}")"
         rm -f "${TMP_PATH}/opts"
         while read -r ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
           echo "${ID} ${DESC} ${ACT}" >>"${TMP_PATH}/opts"
-        done <<<${ALLMODULES}
+        done <<<"${ALLMODULES}"
         dialog --backtitle "$(backtitle)" --title "Modules" \
           --cancel-label "Exit" \
           --extra-button --extra-label "Select all" \
@@ -873,7 +873,7 @@ function modulesMenu() {
         if echo "${DEPS}" | grep -wq "${KEY}"; then
           DELS+=("${KEY}")
         fi
-      done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
+      done <<<"$(readConfigMap "modules" "${USER_CONFIG_FILE}")"
       if [ "${#DELS[@]}" -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Modules" \
           --msgbox "No i915 with dependencies module to deselect." 0 0
@@ -1006,7 +1006,7 @@ function cmdlineMenu() {
           declare -A CMDLINE
           while IFS=': ' read -r KEY VALUE; do
             [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-          done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
+          done <<<"$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
           if [ "${#CMDLINE[@]}" -eq 0 ]; then
             dialog --backtitle "$(backtitle)" --msgbox "No user cmdline to remove" 0 0
             break
@@ -1248,7 +1248,7 @@ function synoinfoMenu() {
         declare -A SYNOINFO
         while IFS=': ' read KEY VALUE; do
           [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
-        done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
+        done <<<"$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
         if [ "${#SYNOINFO[@]}" -eq 0 ]; then
           dialog --backtitle "$(backtitle)" --title "Synoinfo" \
             --msgbox "No synoinfo entries to remove" 0 0
@@ -1291,7 +1291,7 @@ function keymapMenu() {
   OPTIONS=""
   while read -r KM; do
     OPTIONS+="${KM::-7} "
-  done < <(cd /usr/share/keymaps/i386/${LAYOUT}; ls *.map.gz)
+  done <<<"$(cd /usr/share/keymaps/i386/${LAYOUT}; ls *.map.gz)"
   dialog --backtitle "$(backtitle)" --no-items --default-item "${KEYMAP}" \
     --menu "Choice a keymap" 0 0 0 ${OPTIONS} \
     2>"${TMP_PATH}/resp"
@@ -2234,7 +2234,7 @@ function resetPassword() {
         grep -q "status=on" "${TMP_PATH}/mdX/usr/syno/etc/packages/SecureSignIn/preference/${U}/method.config" 2>/dev/null
         [ $? -eq 0 ] && S="SecureSignIn" || S="            "
         printf "\"%-36s %-10s %-14s\"\n" "${U}" "${E}" "${S}" >>"${TMP_PATH}/menu"
-      done < <(cat "${TMP_PATH}/mdX/etc/shadow" 2>/dev/null)
+      done <<<"$(cat "${TMP_PATH}/mdX/etc/shadow" 2>/dev/null)"
       break
     fi
     umount "${TMP_PATH}/mdX"
@@ -2644,7 +2644,7 @@ function formatDisks() {
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
     printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/opts"
-  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)
+  done <<<"$(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)"
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --msgbox "No disk found!" 0 0
@@ -2692,7 +2692,7 @@ function cloneLoader() {
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
     printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/opts"
-  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)
+  done <<<"$(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)"
 
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
@@ -3319,7 +3319,7 @@ EOL
 ###############################################################################
 # Get Network Config for Loader
 function getnet() {
-  ETHX=($(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort))
+  ETHX=($(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort | head -n 2))
   MODEL=$(readConfigKey "model" "${USER_CONFIG_FILE}")
   ARC_PATCH=$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")
 
@@ -3343,7 +3343,7 @@ function getnet() {
       done
     done
   else
-    macs=($(generateMacAddress "${ARC_PATCH}" "${MODEL}" "${#ETHX[@]}"))
+    macs=($(generateMacAddress "${ARC_PATCH}" "${MODEL}" "2"))
 
     for N in "${!ETHX[@]}"; do
       mac="${macs[$N]}"
@@ -3378,14 +3378,14 @@ function getmap() {
         ATAPORT="$(echo "${LINE}" | grep -o 'ata[0-9]*')"
         PORT=$(echo "${ATAPORT}" | sed 's/ata//')
         HOSTPORTS["${PORT}"]=$(echo "${LINE}" | grep -o 'host[0-9]*$')
-      done < <(ls -l /sys/class/scsi_host | grep -F "${PCI}")
+      done <<<$(ls -l /sys/class/scsi_host | grep -F "${PCI}")
       while read -r PORT; do
         ls -l /sys/block | grep -F -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
         PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
         [ "${PCMD}" = 0 ] && DUMMY=1 || DUMMY=0
         [[ "${ATTACH}" = 1 && "${DUMMY}" = 0 ]] && CONPORTS="$((${CONPORTS} + 1))" && echo "$((${PORT} - 1))" >>"${TMP_PATH}/ports"
         NUMPORTS=$((${NUMPORTS} + 1))
-      done < <(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
+      done <<<$(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)
       [ "${NUMPORTS}" -gt 8 ] && NUMPORTS=8
       [ "${CONPORTS}" -gt 8 ] && CONPORTS=8
       echo -n "${NUMPORTS}" >>"${TMP_PATH}/drivesmax"

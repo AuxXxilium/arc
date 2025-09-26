@@ -458,7 +458,7 @@ function updateModules() {
       writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
       while read -r ID DESC; do
         writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-      done < <(getAllModules "${PLATFORM}" "${KVERP}")
+      done <<<"$(getAllModules "${PLATFORM}" "${KVERP}")"
       dialog --backtitle "$(backtitle)" --title "Update Modules" \
         --infobox "Rewrite successful!" 3 50
       sleep 2
