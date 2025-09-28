@@ -28,7 +28,7 @@ function arcModel() {
         DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
         FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
         NOFLAGS="$(readConfigArray "platforms.${A}.noflags" "${P_FILE}")"
-        KVERM="$(readConfigKey "platforms.${A}.kver" "${P_FILE}" | awk -F'.' '{print $1".x"}')"
+        KVERM="$(readConfigKey "platforms.${A}.productvers.\"7.2\".kver" "${P_FILE}" | awk -F'.' '{print $1".x"}')"
         BETA=""
         ARC_CONFM="$(generateSerial true "${M}")"
         [ "${#ARC_CONFM}" -eq 13 ] && ARC="x" || ARC=""
@@ -84,7 +84,7 @@ function arcModel() {
       MSG="${TITLEMSG} (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-8s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "Kernel" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
       dialog --backtitle "$(backtitle)" --title "DSM Model" --colors \
         --cancel-label "Show all" --help-button --help-label "Exit" \
-        --menu "${MSG}" 0 115 0 \
+        --menu "${MSG}" 0 120 0 \
         --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       RET=$?
       case ${RET} in
