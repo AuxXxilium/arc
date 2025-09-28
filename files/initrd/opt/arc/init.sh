@@ -12,7 +12,7 @@
 
 # VMware time sync
 if type vmware-toolbox-cmd >/dev/null 2>&1; then
-  if [ "Disable" = "$(vmware-toolbox-cmd timesync status 2>/dev/null)" ]; then
+  if [ "Disabled" = "$(vmware-toolbox-cmd timesync status 2>/dev/null)" ]; then
     vmware-toolbox-cmd timesync enable >/dev/null 2>&1 || true
   fi
   if [ "Enabled" = "$(vmware-toolbox-cmd timesync status 2>/dev/null)" ]; then
