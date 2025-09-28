@@ -78,15 +78,15 @@ if [ -z "${SN}" ] || [ "${#SN}" -ne 13 ]; then
   SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
   writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
 fi
-MACS="$(generateMacAddress "${ARC_PATCH}" "${MODEL}" "${#ETHX[@]}")"
-for N in $(seq 1 "${#ETHX[@]}"); do
-  CURRENT_MAC="$(readConfigKey "mac${N}" "${USER_CONFIG_FILE}")"
+MACS=($(generateMacAddress "${ARC_PATCH}" "${MODEL}" "${#ETHX[@]}"))
+for N in "${!ETHX[@]}"; do
+  MAC="${MACS[$N]}"
+  CURRENT_MAC="$(readConfigKey "${ETHX[$N]}" "${USER_CONFIG_FILE}")"
   if [ -z "${CURRENT_MAC}" ]; then
-    NEW_MAC="$(echo ${MACS} | cut -d' ' -f${N})"
-    writeConfigKey "mac${N}" "${NEW_MAC}" "${USER_CONFIG_FILE}"
-    eval "MAC${N}=${NEW_MAC}"
+    writeConfigKey "${ETHX[$N]}" "${MAC}" "${USER_CONFIG_FILE}"
+    eval "MAC$((N + 1))=${MAC}"
   else
-    eval "MAC${N}=${CURRENT_MAC}"
+    eval "MAC$((N + 1))=${CURRENT_MAC}"
   fi
 done
 VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"

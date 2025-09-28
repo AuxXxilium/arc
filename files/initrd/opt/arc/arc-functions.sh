@@ -3344,11 +3344,11 @@ function getnet() {
       done
     done
   else
-    macs=($(generateMacAddress "${ARC_PATCH}" "${MODEL}" "2"))
+    MACS=($(generateMacAddress "${ARC_PATCH}" "${MODEL}" "2"))
 
     for N in "${!ETHX[@]}"; do
-      mac="${macs[$N]}"
-      writeConfigKey "${ETHX[$N]}" "${mac}" "${USER_CONFIG_FILE}"
+      MAC="${MACS[$N]}"
+      writeConfigKey "${ETHX[$N]}" "${MAC}" "${USER_CONFIG_FILE}"
     done
   fi
   return
