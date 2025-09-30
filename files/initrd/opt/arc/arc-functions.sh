@@ -3286,7 +3286,7 @@ function bootScreen () {
   declare -A BOOTSCREENS
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && BOOTSCREENS["${KEY}"]="${VALUE}"
-  done < <(readConfigMap "bootscreen" "${USER_CONFIG_FILE}")
+  done <<<"$(readConfigMap "bootscreen" "${USER_CONFIG_FILE}")"
   cat <<EOL >"${TMP_PATH}/bootscreen"
 dsminfo: DSM Information
 systeminfo: System Information
@@ -3321,8 +3321,8 @@ EOL
 # Get Network Config for Loader
 function getnet() {
   ETHX=($(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort | head -n 2))
-  MODEL=$(readConfigKey "model" "${USER_CONFIG_FILE}")
-  ARC_PATCH=$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
   if [ "${ARC_PATCH}" = "user" ]; then
     for N in "${ETHX[@]}"; do
@@ -3344,8 +3344,8 @@ function getnet() {
       done
     done
   else
-    MACS=($(generateMacAddress "${ARC_PATCH}" "${MODEL}" "2"))
-
+    # Properly split the MACS output into an array
+    IFS=' ' read -r -a MACS <<< "$(generateMacAddress "${ARC_PATCH}" "${MODEL}" "2")"
     for N in "${!ETHX[@]}"; do
       MAC="${MACS[$N]}"
       writeConfigKey "${ETHX[$N]}" "${MAC}" "${USER_CONFIG_FILE}"

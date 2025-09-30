@@ -96,6 +96,11 @@ DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
 MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 
+if [ -f "${PART1_PATH}/GRUB_VER" ]; then
+  SYS_MODEL="$(_get_conf_kv "${PART1_PATH}/GRUB_VER" "MODEL")"
+  [ -n "${SYS_MODEL}" ] && [ "${MODEL}" != "${SYS_MODEL}" ] && BUILDDONE="false" || true
+fi
+
 # Build Sanity Check
 if [ "${BUILDDONE}" = "false" ]; then
   echo "Build not completed!"
@@ -199,7 +204,6 @@ fi
 
 CMDLINE['HddHotplug']="1"
 CMDLINE['vender_format_version']="2"
-CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
 CMDLINE['console']="ttyS0,115200n8"

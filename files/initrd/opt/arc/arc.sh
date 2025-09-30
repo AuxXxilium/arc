@@ -225,27 +225,42 @@ elif [ "${ARC_MODE}" = "config" ]; then
         case ${resp} in
           # Main Section
           1) arcModel; NEXT="2" ;;
-          2) makearc; NEXT="4" ;;
+          2)
+            if [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
+              rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+            fi
+            makearc
+            NEXT="4"
+            ;;
           3)
             if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
               rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
             fi
-            makearc; NEXT="4";
+            makearc
+            NEXT="4"
             ;;
           4) bootcheck; NEXT="4" ;;
           # Info Section
           a) sysinfo; NEXT="a" ;;
           A) networkdiag; NEXT="A" ;;
           # System Section
-          # Arc Section
           5)
             [ "${ARCOPTS}" = "true" ] && ARCOPTS='false' || ARCOPTS='true'
             NEXT="5"
             ;;
           b) addonMenu; NEXT="b" ;;
           d) modulesMenu; NEXT="d" ;;
-          e) ONLYVERSION="true" && writeConfigKey "productver" "" "${USER_CONFIG_FILE}" && arcVersion; NEXT="e" ;;
-          p) ONLYPATCH="true" && arcPatch; NEXT="p" ;;
+          e)
+            ONLYVERSION="true"
+            writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
+            arcVersion
+            NEXT="e"
+            ;;
+          p)
+            ONLYPATCH="true"
+            arcPatch
+            NEXT="p"
+            ;;
           S) storageMenu; NEXT="S" ;;
           o) dtsMenu; NEXT="o" ;;
           g) governorMenu; NEXT="g" ;;
@@ -282,7 +297,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
           i) bootipwaittime; NEXT="i" ;;
           q)
             [ "${DIRECTBOOT}" = "false" ] && DIRECTBOOT='true' || DIRECTBOOT='false'
-            grub-editenv ${USER_GRUBENVFILE} create
+            grub-editenv "${USER_GRUBENVFILE}" create
             writeConfigKey "directboot" "${DIRECTBOOT}" "${USER_CONFIG_FILE}"
             NEXT="q"
             ;;
@@ -313,8 +328,8 @@ elif [ "${ARC_MODE}" = "config" ]; then
             KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
             is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
             if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
-                writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-                mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+              writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+              mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
             fi
             resetBuild
             NEXT="K"
@@ -395,7 +410,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
         break
         ;;
     esac
-  done
   clear
 else
   echo "Unknown Mode: ${ARCMODE} - Rebooting to Config Mode"
