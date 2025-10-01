@@ -410,6 +410,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
         break
         ;;
     esac
+  done
   clear
 else
   echo "Unknown Mode: ${ARCMODE} - Rebooting to Config Mode"
