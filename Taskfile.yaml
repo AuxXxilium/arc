@@ -8,7 +8,7 @@ tasks:
       - git reset --hard
       - git pull
       - ./img-gen.sh evo
-  build-essential:
+  build:
     cmds:
       - git reset --hard
       - git pull
