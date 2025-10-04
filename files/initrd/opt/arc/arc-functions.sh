@@ -187,7 +187,7 @@ function arcVersion() {
     if is_in_array "${PLATFORM}" "${IGPU1L[@]}" && grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids"; then
       initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
     fi
-    if [ "${SASDRIVES}" -gt 0 ] && [ "${DT}" = "true" ]; then
+    if [ "${EXTERNALCONTROLLER}" = "true" ]; then
       initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
     fi
     WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"

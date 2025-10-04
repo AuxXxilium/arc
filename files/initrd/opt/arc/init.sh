@@ -135,7 +135,6 @@ for N in ${ETHX}; do
     sleep 1
   fi
   [ "${N::3}" = "eth" ] && ethtool -s "${N}" wol g 2>/dev/null || true
-  # [ "${N::3}" = "eth" ] && ethtool -K ${N} rxhash off 2>/dev/null || true
   initConfigKey "${N}" "${MACR}" "${USER_CONFIG_FILE}"
 done
 ETHN=$(echo ${ETHX} | wc -w)

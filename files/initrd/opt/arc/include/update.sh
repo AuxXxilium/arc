@@ -631,7 +631,7 @@ function dependenciesUpdate() {
     --checklist "Use SPACE to select and ENTER to confirm:" 15 50 6 \
     "${CHECKLIST_OPTS[@]}" 3>&1 1>&2 2>&3)
 
-  [ $? -ne 0 ] && dialog --infobox "Update canceled by the user." 3 40 && sleep 2 && clear && return
+  [ $? -ne 0 ] && return
 
   FAILED=false
   for idx in $CHOICES; do
