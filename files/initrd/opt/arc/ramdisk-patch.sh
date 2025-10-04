@@ -134,7 +134,7 @@ echo "Create addons.sh" >>"${LOG_FILE}"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
-SYSADDONS="revert misc eudev disks localrss notify"
+SYSADDONS="revert misc eudev disks localrss notify mountloader"
 if [ "${KVER:0:1}" = "5" ]; then
   SYSADDONS="redpill ${SYSADDONS}"
 fi
@@ -144,8 +144,11 @@ for ADDON in ${SYSADDONS}; do
     [ -f "${USER_UP_PATH}/model.dts" ] && cp -f "${USER_UP_PATH}/model.dts" "${RAMDISK_PATH}/addons/model.dts"
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   fi
-  installAddon "${ADDON}" "${PLATFORM}" "${KVERP}" || exit 1
-  echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+  if installAddon "${ADDON}" "${PLATFORM}" "${KVERP}"; then
+    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+  else
+    echo "Addon ${ADDON} not found"
+  fi
 done
 
 # User Addons
@@ -159,8 +162,11 @@ for ADDON in "${!ADDONS[@]}"; do
   else
     PARAMS="${ADDONS[${ADDON}]}"
   fi
-  installAddon "${ADDON}" "${PLATFORM}" "${KVERP}" || echo "Addon ${ADDON} not found"
-  echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+  if installAddon "${ADDON}" "${PLATFORM}" "${KVERP}"; then
+    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}"
+  else
+    echo "Addon ${ADDON} not found"
+  fi
 done
 
 # Extract modules to ramdisk
