@@ -123,6 +123,12 @@ jobs:
           echo "${ARC_BUILD}" > "files/p1/ARC-BUILD"
           echo "ARC_BUILD=${ARC_BUILD}" >> $GITHUB_ENV
           echo "${ARC_VERSION}" > "files/p1/ARC-VERSION"
+          if ${{ inputs.essential }}; then
+            echo "essential" > "files/p1/ARC-BRANCH"
+          else
+            echo "full" > "files/p1/ARC-BRANCH"
+          fi
+          echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
           echo "ARC_VERSION=${ARC_VERSION}" >> $GITHUB_ENV
 
           echo "Create Arc Image"
@@ -197,8 +203,7 @@ jobs:
               - ${{ inputs.notice }}
 
             ### Information:
-              - Full changelog is available in Discord
-              - Based on VisionZ Eternity Code
+              - Beta Release may not be stable. Use with caution as it is intended for testing purposes only.
 
             ### Dependencies:
               - Addons: ${{ env.ADDONTAG }}
@@ -208,9 +213,7 @@ jobs:
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
               - Basesystem: ${{ env.BRETAG }}
-
-            ### Release
-              - ${{ env.BUILD_TIME }}
+              - Build: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
             update-*.zip
@@ -232,8 +235,7 @@ jobs:
               - ${{ inputs.notice }}
 
             ### Information:
-              - Full changelog is available in Discord
-              - Based on VisionZ Eternity Code
+              - [Release Notes](https://xpenology.tech/release/${{ env.ARC_VERSION }}.txt)
 
             ### Dependencies:
               - Addons: ${{ env.ADDONTAG }}
@@ -243,9 +245,7 @@ jobs:
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
               - Basesystem: ${{ env.BRETAG }}
-
-            ### Release
-              - ${{ env.BUILD_TIME }}
+              - Build: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
             update-*.zip
@@ -267,8 +267,7 @@ jobs:
               - ${{ inputs.notice }}
 
             ### Information:
-              - Full changelog is available in Discord
-              - Based on VisionZ Eternity Code
+              - [Release Notes](https://xpenology.tech/release/${{ env.ARC_VERSION }}.txt)
 
             ### Dependencies:
               - Addons: ${{ env.ADDONTAG }}
@@ -278,9 +277,7 @@ jobs:
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
               - Basesystem: ${{ env.BRETAG }}
-
-            ### Release
-              - ${{ env.BUILD_TIME }}
+              - Build: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
             update-*.zip

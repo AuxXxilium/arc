@@ -198,7 +198,7 @@ function getBuildroot() {
 
   echo "Getting Buildroot-${TYPE} begin"
   TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/${REPO}/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
-  export BRTAG="${TAG}-${TYPE}"
+  export BRTAG="${TAG}"
   [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
   rm -f "${DEST_PATH}/bzImage-arc"
   rm -f "${DEST_PATH}/initrd-arc"
