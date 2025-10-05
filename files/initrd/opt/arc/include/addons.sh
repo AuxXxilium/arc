@@ -34,8 +34,8 @@ function availableAddons() {
     local DESC="$(readConfigKey "description" "${D}/manifest.yml")"
     local BETA="$(readConfigKey "beta" "${D}/manifest.yml")"
     case "${BETA}" in
-      false)    echo -e "${ADDON}\t\Z4${BETA}${DESC}\Zn" ;;
-      true) echo -e "${ADDON}\t\Z1${BETA}${DESC}\Zn" ;;
+      false)    echo -e "${ADDON}\t\Z4${DESC}\Zn" ;;
+      true) echo -e "${ADDON}\t\Z1${DESC}\Zn" ;;
     esac
   done
 }
