@@ -198,7 +198,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       write_menu "C" "Clone Loader to another Disk"
       write_menu "n" "Grub Bootloader Config"
       write_menu "y" "Choose a Keymap for Loader"
-      write_menu "F" "\Z1Formate Disks\Zn"
+      write_menu "F" "\Z1Format Disks\Zn"
       write_menu_value "M" "\Z1Development Mode\Zn" "$( [ "${DEVELOPMENT_MODE}" = "true" ] && echo "enabled" || echo "disabled" )"
     else
       write_menu "8" "\Z1Show Loader Options\Zn"

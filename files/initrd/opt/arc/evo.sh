@@ -107,7 +107,7 @@ function advancedMenu() {
       write_menu "C" "Clone Loader to another Disk"
       write_menu "n" "Grub Bootloader Config"
       write_menu "y" "Choose a Keymap for Loader"
-      write_menu "F" "\Z1Formate Disks\Zn"
+      write_menu "F" "\Z1Format Disks\Zn"
     else
       write_menu "8" "\Z1Show Loader Options\Zn"
     fi
