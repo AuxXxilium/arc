@@ -56,9 +56,9 @@ function arcModel() {
           for F in ${FLAGS}; do
             grep -q "^flags.*${F}.*" /proc/cpuinfo || COMPATIBLE=0
           done
-          for NF in ${NOFLAGS}; do
-            grep -q "^flags.*${NF}.*" /proc/cpuinfo && COMPATIBLE=0
-          done
+          # for NF in ${NOFLAGS}; do
+          #   grep -q "^flags.*${NF}.*" /proc/cpuinfo && COMPATIBLE=0
+          # done
           if is_in_array "${A}" "${KVER5L[@]}"; then
             if { [ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "usb" ] && [ "${SATADRIVES}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; } ||
                { [ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "sata" ] && [ "${SATADRIVES}" -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; } ||

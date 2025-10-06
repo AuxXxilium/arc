@@ -64,14 +64,9 @@ RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/me
 BOARD="$(getBoardName)"
 MEV="$(virt-what 2>/dev/null | head -1)"
 ETHX=($(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort | head -n 2))
-DSMINFO="$(readConfigKey "bootscreen.dsminfo" "${USER_CONFIG_FILE}")"
-SYSTEMINFO="$(readConfigKey "bootscreen.systeminfo" "${USER_CONFIG_FILE}")"
-DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
-HWIDINFO="$(readConfigKey "bootscreen.hwidinfo" "${USER_CONFIG_FILE}")"
 GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
-BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 if [ -z "${SN}" ] || [ "${#SN}" -ne 13 ]; then
@@ -96,12 +91,8 @@ DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
 MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 
-if [ -f "${PART1_PATH}/GRUB_VER" ]; then
-  SYS_MODEL="$(_get_conf_kv "${PART1_PATH}/GRUB_VER" "MODEL")"
-  [ -n "${SYS_MODEL}" ] && [ "${MODEL}" != "${SYS_MODEL}" ] && BUILDDONE="false" || true
-fi
-
 # Build Sanity Check
+BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 if [ "${BUILDDONE}" = "false" ]; then
   echo "Build not completed!"
   echo "Please run the loader build script again!"
@@ -112,9 +103,17 @@ if [ "${BUILDDONE}" = "false" ]; then
 fi
 
 # Show Loader Info
+DSMINFO="$(readConfigKey "bootscreen.dsminfo" "${USER_CONFIG_FILE}")"
+SYSTEMINFO="$(readConfigKey "bootscreen.systeminfo" "${USER_CONFIG_FILE}")"
+DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
+HWIDINFO="$(readConfigKey "bootscreen.hwidinfo" "${USER_CONFIG_FILE}")"
+if [ -f "${PART1_PATH}/GRUB_VER" ]; then
+  SYS_MODEL="$(_get_conf_kv "${PART1_PATH}/GRUB_VER" "MODEL")"
+fi
 if [ "${DSMINFO}" = "true" ]; then
   echo -e "\033[1;34mDSM\033[0m"
   echo -e "Model: \033[1;37m${MODEL}\033[0m"
+  echo -e "System: \033[1;37m${SYS_MODEL}\033[0m"
   echo -e "Platform: \033[1;37m${PLATFORM}\033[0m"
   echo -e "Version: \033[1;37m${PRODUCTVER} (${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))\033[0m"
   echo -e "Kernel: \033[1;37m${KVER} (${KERNEL})\033[0m"
@@ -313,7 +312,7 @@ else
   fi
 
   # Executes DSM kernel via KEXEC
-  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" >"${LOG_FILE}" 2>&1 || die "Failed to load DSM Kernel!"
+  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || die "Failed to load DSM Kernel!"
 
   for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
     if [ -w "/dev/${T}" ]; then
