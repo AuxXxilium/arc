@@ -53,37 +53,49 @@ function arcModel() {
         [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DVA1622" ]] && M_2_CACHE=""
         [[ "${M}" = "DS220+" || "${M}" = "DS224+" || "${DT}" = "false" ]] && M_2_STORAGE="" || M_2_STORAGE="+"
         if [ "${RESTRICT}" -eq 1 ]; then
-          for F in ${FLAGS}; do
-            grep -q "^flags.*${F}.*" /proc/cpuinfo || COMPATIBLE=0
-          done
-          # for NF in ${NOFLAGS}; do
-          #   grep -q "^flags.*${NF}.*" /proc/cpuinfo && COMPATIBLE=0
-          # done
           if is_in_array "${A}" "${KVER5L[@]}"; then
             if { [ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "usb" ] && [ "${SATADRIVES}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; } ||
                { [ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "sata" ] && [ "${SATADRIVES}" -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; } ||
                [ "${SCSICONTROLLER}" -ge 1 ] || [ "${RAIDCONTROLLER}" -ge 1 ]; then
-              COMPATIBLE=0
+                COMPATIBLE=0
             fi
           else
             if { [ "${DT}" = "true" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; } ||
                { [ "${SATACONTROLLER}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; } ||
                { [ "${NVMEDRIVES}" -gt 0 ] && [ "${BUS}" = "usb" ] && [ "${SATADRIVES}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; } ||
                { [ "${NVMEDRIVES}" -gt 0 ] && [ "${BUS}" = "sata" ] && [ "${SATADRIVES}" -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; }; then
-              COMPATIBLE=0
+                COMPATIBLE=0
+            fi
+          fi
+          WARN="" && rm -f "${TMP_PATH}/${M}_warn"
+          if [ -n "${FLAGS}" ]; then
+            for F in ${FLAGS}; do
+              grep -q "^flags.*${F}.*" /proc/cpuinfo || echo -e "${WARN}- Missing required CPU flag: ${F}\n" >>"${TMP_PATH}/${M}_warn"
+            done
+          fi
+          if [ -n "${NOFLAGS}" ]; then
+            for NF in ${NOFLAGS}; do
+              grep -q "^flags.*${NF}.*" /proc/cpuinfo && echo -e "${WARN}- Disable the following CPU flag: ${NF}\n" >>"${TMP_PATH}/${M}_warn"
+            done
+          fi
+          if [ "${DT}" = "true" ]; then
+            if [[ "${SCSICONTROLLER}" -ge 1 || "${RAIDCONTROLLER}" -ge 1 ]]; then
+              echo -e "${WARN}- DT Model selected: Raid/SCSI will not work\n" >>"${TMP_PATH}/${M}_warn"
             fi
           fi
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
           [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
         fi
         [ -n "$(grep -w "${M}" "${S_FILE}")" ] && BETA="Loader" || BETA="Syno"
-        [ "${COMPATIBLE}" -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-15s\Zn \Zb%-8s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${KVERM}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
+        [ -s "${TMP_PATH}/${M}_warn" ] && A="\Z1${A}\Zn" || A="\Z4${A}\Zn"
+        [ "${COMPATIBLE}" -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-21s\Zn \Zb%-8s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${KVERM}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
       done <<<"$(cat "${TMP_PATH}/modellist")"
-      [ ! -s "${TMP_PATH}/menu" ] && echo "No supported models found." >"${TMP_PATH}/menu"
-      [ "${RESTRICT}" -eq 1 ] && TITLEMSG="Supported Models for your Hardware" || TITLEMSG="Supported and unsupported Models for your Hardware"
-      MSG="${TITLEMSG} (x = supported / + = need Addons)\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-8s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "Kernel" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
+      [ ! -s "${TMP_PATH}/menu" ] && echo "No supported Models found." >"${TMP_PATH}/menu"
+      [ "${RESTRICT}" -eq 1 ] && TITLEMSG="\Z4Supported\Zn and \Z1Unsupported\Zn Platforms for your Hardware" || TITLEMSG="All Platorms"
+      MSG="${TITLEMSG} | Features: \Z4x = supported\Zn / \Z1+ = need Addon\Zn\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-8s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "Kernel" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
+      [ "${RESTRICT}" -eq 1 ] && SHOWMSG="Show all" || SHOWMSG="Show supported"
       dialog --backtitle "$(backtitle)" --title "DSM Model" --colors \
-        --cancel-label "Show all" --help-button --help-label "Exit" \
+        --cancel-label "${SHOWMSG}" --help-button --help-label "Exit" \
         --menu "${MSG}" 0 120 0 \
         --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       RET=$?
@@ -91,7 +103,17 @@ function arcModel() {
         0)
           resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
           [ -z "${resp}" ] && return
-          break
+          if [ -s "${TMP_PATH}/${resp}_warn" ]; then
+            MSG="Your Hardware is not compatible with the selected Model!\n\n\Z1$(cat "${TMP_PATH}/${resp}_warn")\Zn\n\nDo you still want to proceed?"
+            dialog --backtitle "$(backtitle)" --title "Arc Warning" --colors \
+              --yesno "${MSG}" 0 0
+            RET=$?
+            if [ $RET -eq 0 ]; then
+              break
+            fi
+          else
+            break
+          fi
           ;;
         1)
           [ "${RESTRICT}" -eq 1 ] && RESTRICT=0 || RESTRICT=1
@@ -260,18 +282,6 @@ function arcVersion() {
   fi
 
   if [ "${ONLYVERSION}" != "true" ] && [ "${ARC_MODE}" = "config" ]; then
-    if [ "${DT}" = "true" ]; then
-      if [ "${SASCONTROLLER}" -ge 1 ]; then
-        dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-          --yesno "WARN: You use a HBA Controller and selected a DT Model.\nThis is an experimental feature.\n\nContinue anyway?" 8 70
-        [ $? -ne 0 ] && return 1
-      fi
-      if [ "${SCSICONTROLLER}" -ge 1 ] || [ "${RAIDCONTROLLER}" -ge 1 ]; then
-        dialog --backtitle "$(backtitle)" --title "Arc Warning" \
-          --yesno "WARN: You use a Raid/SCSI Controller and selected a DT Model.\nThis is not supported.\n\nContinue anyway?" 8 70
-        [ $? -ne 0 ] && return 1
-      fi
-    fi
     USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
     ADDONS_LIST="$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
     if [ -n "${USERID}" ] && ! echo "${ADDONS_LIST}" | grep -q "notification"; then
