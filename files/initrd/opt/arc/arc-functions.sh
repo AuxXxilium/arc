@@ -8,7 +8,6 @@
 ###############################################################################
 # Model Selection
 function arcModel() {
-  [ "${ARC_OFFLINE}" != "true" ] && checkHardwareID || true
   dialog --backtitle "$(backtitle)" --title "Model" \
     --infobox "Reading Models..." 3 25
   RESTRICT=1
@@ -91,7 +90,7 @@ function arcModel() {
         [ "${COMPATIBLE}" -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-21s\Zn \Zb%-8s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${KVERM}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
       done <<<"$(cat "${TMP_PATH}/modellist")"
       [ ! -s "${TMP_PATH}/menu" ] && echo "No supported Models found." >"${TMP_PATH}/menu"
-      [ "${RESTRICT}" -eq 1 ] && TITLEMSG="\Z4Supported\Zn and \Z1Unsupported\Zn Platforms for your Hardware" || TITLEMSG="All Platorms"
+      [ "${RESTRICT}" -eq 1 ] && TITLEMSG="\Z4Supported\Zn and \Z1partially supported\Zn Platforms for your Hardware" || TITLEMSG="All Platorms"
       MSG="${TITLEMSG} | Features: \Z4x = supported\Zn / \Z1+ = need Addon\Zn\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-8s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "Kernel" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
       [ "${RESTRICT}" -eq 1 ] && SHOWMSG="Show all" || SHOWMSG="Show supported"
       dialog --backtitle "$(backtitle)" --title "DSM Model" --colors \
@@ -3330,7 +3329,8 @@ EOL
 ###############################################################################
 # Get Network Config for Loader
 function getnet() {
-  ETHX=($(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort | head -n 2))
+  ETHX=$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)
+  ETHN=$(echo "${ETHX}" | wc -w)
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
@@ -3354,11 +3354,19 @@ function getnet() {
       done
     done
   else
-    # Properly split the MACS output into an array
-    IFS=' ' read -r -a MACS <<< "$(generateMacAddress "${ARC_PATCH}" "${MODEL}" "2")"
-    for N in "${!ETHX[@]}"; do
-      MAC="${MACS[$N]}"
-      writeConfigKey "${ETHX[$N]}" "${MAC}" "${USER_CONFIG_FILE}"
+    # Find all network interfaces starting with 'eth'
+    ETHX=$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)
+    ETHN=$(echo "${ETHX}" | wc -w)
+    MACS=$(generateMacAddress "${ARC_PATCH}" "${MODEL}" "${ETHN}")
+
+    read -r -a ETHX_ARRAY <<< "${ETHX}"
+    read -r -a MACS_ARRAY <<< "${MACS}"
+
+    for i in "${!ETHX_ARRAY[@]}"; do
+      N="${ETHX_ARRAY[$i]}"
+      MAC="${MACS_ARRAY[$i]}"
+
+      writeConfigKey "${N}" "${MAC}" "${USER_CONFIG_FILE}"
     done
   fi
   return

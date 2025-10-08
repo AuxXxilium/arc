@@ -63,36 +63,13 @@ CPU="$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | sed -E 's
 RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
 BOARD="$(getBoardName)"
 MEV="$(virt-what 2>/dev/null | head -1)"
-ETHX=($(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort | head -n 2))
 GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
+BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-if [ -z "${SN}" ] || [ "${#SN}" -ne 13 ]; then
-  SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
-  writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
-fi
-MACS=($(generateMacAddress "${ARC_PATCH}" "${MODEL}" "${#ETHX[@]}"))
-for N in "${!ETHX[@]}"; do
-  MAC="${MACS[$N]}"
-  CURRENT_MAC="$(readConfigKey "${ETHX[$N]}" "${USER_CONFIG_FILE}")"
-  if [ -z "${CURRENT_MAC}" ]; then
-    writeConfigKey "${ETHX[$N]}" "${MAC}" "${USER_CONFIG_FILE}"
-    eval "MAC$((N + 1))=${MAC}"
-  else
-    eval "MAC$((N + 1))=${CURRENT_MAC}"
-  fi
-done
-VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
-PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
-KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
-DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
-MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 
 # Build Sanity Check
-BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 if [ "${BUILDDONE}" = "false" ]; then
   echo "Build not completed!"
   echo "Please run the loader build script again!"
@@ -151,6 +128,16 @@ if checkBIOS_VT_d && [ ${KVER:0:1} -lt 5 ]; then
   echo
 fi
 
+# Read boot variables
+VID="$(readConfigKey "vid" "${USER_CONFIG_FILE}")"
+PID="$(readConfigKey "pid" "${USER_CONFIG_FILE}")"
+SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
+KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
+DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
+KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
+MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
+
 declare -A CMDLINE
 
 # Automated Cmdline
@@ -158,9 +145,20 @@ CMDLINE['vid']="${VID:-"0x46f4"}"
 CMDLINE['pid']="${PID:-"0x0001"}"
 CMDLINE['syno_hw_version']="${MODEL}"
 CMDLINE['sn']="${SN}"
-[ -n "${MAC1}" ] && CMDLINE['mac1']="${MAC1}" && CMDLINE['netif_num']="1"
-[ -n "${MAC2}" ] && CMDLINE['mac2']="${MAC2}" && CMDLINE['netif_num']="2"
-CMDLINE['skip_vender_mac_interfaces']="$(seq -s, 0 $((${CMDLINE['netif_num']:-1} - 1)))"
+
+# NIC Cmdline
+ETHX=$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)
+ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}")
+ETHN=$(wc -w <<< "${ETHX}")
+ETHM=${ETHM:-${ETHN}}
+NIC=0
+for N in ${ETHX}; do
+  MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
+  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null)"
+  CMDLINE["mac$((++NIC))"]="${MAC}"
+  [ "${NIC}" -ge "${ETHM}" ] && break
+done
+CMDLINE['netif_num']="${NIC}"
 
 # Boot Cmdline
 if [ "${ARC_MODE}" = "reinstall" ]; then
@@ -203,6 +201,7 @@ fi
 
 CMDLINE['HddHotplug']="1"
 CMDLINE['vender_format_version']="2"
+CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
 CMDLINE['console']="ttyS0,115200n8"
@@ -271,17 +270,9 @@ done
 CMDLINE_LINE="$(echo "${CMDLINE_LINE}" | sed 's/^ //')"
 echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
-BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
-[ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
-[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
-IPCON=""
-checkNIC || true
-echo
-
 # Boot
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
-if [ "${DIRECTBOOT}" = "true" ] || [ "${MEV:-physical}" = "parallels" ]; then
+if [ "${DIRECT}" = "true" ] || echo "parallels xen" | grep -qw "${MEV:-physical}"; then
   grub-editenv "${USER_RSYSENVFILE}" create
   grub-editenv "${USER_RSYSENVFILE}" set arc_version="${ARC_VERSION} (${ARC_BUILD})"
   grub-editenv "${USER_RSYSENVFILE}" set dsm_model="${MODEL}(${PLATFORM})"
@@ -291,7 +282,6 @@ if [ "${DIRECTBOOT}" = "true" ] || [ "${MEV:-physical}" = "parallels" ]; then
   grub-editenv "${USER_RSYSENVFILE}" set sys_cpu="${CPU}"
   grub-editenv "${USER_RSYSENVFILE}" set sys_board="${BOARD}"
   grub-editenv "${USER_RSYSENVFILE}" set sys_mem="${MEM}"
-  grub-editenv "${USER_RSYSENVFILE}" set sys_ip="${IPCON}"
 
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
   grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
@@ -302,6 +292,14 @@ if [ "${DIRECTBOOT}" = "true" ] || [ "${MEV:-physical}" = "parallels" ]; then
 else
   grub-editenv ${USER_GRUBENVFILE} unset dsm_cmdline
   grub-editenv ${USER_GRUBENVFILE} unset next_entry
+
+  BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
+  [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
+  echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
+  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
+  IPCON=""
+  checkNIC || true
+  echo
 
   DSMLOGO="$(readConfigKey "bootscreen.dsmlogo" "${USER_CONFIG_FILE}")"
   if [ "${DSMLOGO}" = "true" ] && [ -c "/dev/fb0" ]; then

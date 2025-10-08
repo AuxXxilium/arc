@@ -62,7 +62,6 @@ function backtitle() {
 
 ###############################################################################
 # Main loop
-
 if [ "${ARC_MODE}" = "update" ] || [ "${ARC_MODE}" = "automated" ]; then
   LOCKFILE="/tmp/arc_menu.lock"
   exec 200>"$LOCKFILE"
