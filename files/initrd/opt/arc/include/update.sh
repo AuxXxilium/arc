@@ -2,7 +2,6 @@
 # Update Loader
 function updateLoader() {
   local BETA="${1:-false}"
-  local API_URL="${UPDATE_URL}"
   local TAG="${2}"
 
   if [ "${BETA}" = "true" ]; then
@@ -15,9 +14,14 @@ function updateLoader() {
     if [ -z "${TAG}" ]; then
       idx=0
       while [ "${idx}" -le 5 ]; do
-        TAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-        if [ -n "${TAG}" ]; then
-          break
+        RESPONSE=$(curl -m 10 -skL "${API_URL}")
+        if echo "${RESPONSE}" | jq empty 2>/dev/null; then
+          TAG=$(echo "${RESPONSE}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)
+          if [ -n "${TAG}" ]; then
+            break
+          fi
+        else
+          echo "Invalid JSON response or network error"
         fi
         sleep 3
         idx=$((${idx} + 1))
@@ -471,7 +475,6 @@ function updateModules() {
 # Update Configs
 function updateConfigs() {
   [ -f "${CONFIGS_PATH}/VERSION" ] && local CONFIGSVERSION="$(cat "${CONFIGS_PATH}/VERSION")" || CONFIGSVERSION="0.0.0"
-  local USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   if [ -z "${1}" ]; then
     idx=0
     while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
@@ -514,7 +517,6 @@ function updateConfigs() {
         dialog --backtitle "$(backtitle)" --title "Update Configs" \
           --infobox "Update Configs successful!" 3 50
         sleep 2
-        [ -n "${USERID}" ] && checkHardwareID || true
       else
         return 1
       fi
