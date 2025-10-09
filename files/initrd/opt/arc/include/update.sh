@@ -509,10 +509,10 @@ function updateConfigs() {
       dialog --gauge "Download Configs: ${TAG}..." 14 72 4>&-
     } 4>&1
     if [ -f "${TMP_PATH}/configs.zip" ]; then
-      mkdir -p "${MODEL_CONFIG_PATH}"
+      mkdir -p "${CONFIGS_PATH}"
       dialog --backtitle "$(backtitle)" --title "Update Configs" \
         --infobox "Updating Configs..." 3 50
-      if unzip -oq "${TMP_PATH}/configs.zip" -d "${MODEL_CONFIG_PATH}"; then
+      if unzip -oq "${TMP_PATH}/configs.zip" -d "${CONFIGS_PATH}"; then
         rm -f "${TMP_PATH}/configs.zip"
         dialog --backtitle "$(backtitle)" --title "Update Configs" \
           --infobox "Update Configs successful!" 3 50
@@ -587,16 +587,16 @@ function updateLKMs() {
 ###############################################################################
 # Update Offline
 function updateOffline() {
-  [ -f "${MODEL_CONFIG_PATH}/data.yml" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml" "${MODEL_CONFIG_PATH}/data.yml.bak" || true
-  if curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/refs/heads/main/data.yml" -o "${MODEL_CONFIG_PATH}/data.yml"; then
-    if [ -f "${MODEL_CONFIG_PATH}/data.yml" ]; then
-      local FILESIZE=$(stat -c%s "${MODEL_CONFIG_PATH}/data.yml")
+  [ -f "${CONFIGS_PATH}/data.yml" ] && cp -f "${CONFIGS_PATH}/data.yml" "${CONFIGS_PATH}/data.yml.bak" || true
+  if curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/refs/heads/main/data.yml" -o "${CONFIGS_PATH}/data.yml"; then
+    if [ -f "${CONFIGS_PATH}/data.yml" ]; then
+      local FILESIZE=$(stat -c%s "${CONFIGS_PATH}/data.yml")
       if [ "${FILESIZE}" -lt 3072 ]; then
-        [ -f "${MODEL_CONFIG_PATH}/data.yml.bak" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml.bak" "${MODEL_CONFIG_PATH}/data.yml"
+        [ -f "${CONFIGS_PATH}/data.yml.bak" ] && cp -f "${CONFIGS_PATH}/data.yml.bak" "${CONFIGS_PATH}/data.yml"
       fi
     fi
   else
-    [ -f "${MODEL_CONFIG_PATH}/data.yml.bak" ] && cp -f "${MODEL_CONFIG_PATH}/data.yml.bak" "${MODEL_CONFIG_PATH}/data.yml"
+    [ -f "${CONFIGS_PATH}/data.yml.bak" ] && cp -f "${CONFIGS_PATH}/data.yml.bak" "${CONFIGS_PATH}/data.yml"
   fi
   return 0
 }
