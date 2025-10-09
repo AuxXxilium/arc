@@ -614,7 +614,7 @@ function editUserConfig() {
   while true; do
     dialog --backtitle "$(backtitle)" --title "Edit with caution" \
       --ok-label "Save" --editbox "${USER_CONFIG_FILE}" 0 0 2>"${TMP_PATH}/userconfig"
-    [ $? -ne 0 ] && return 1 1
+    [ $? -ne 0 ] && return 1
     mv -f "${TMP_PATH}/userconfig" "${USER_CONFIG_FILE}"
     ERRORS=$(yq eval "${USER_CONFIG_FILE}" 2>&1)
     [ $? -eq 0 ] && break || continue
@@ -658,7 +658,7 @@ function addonSelection() {
   dialog --backtitle "$(backtitle)" --title "Addons" --colors --aspect 18 \
     --checklist "Select Addons to include: \Z4Stable Addon\Zn | \Z1Beta Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return 1 1
+  [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
 
   declare -A ADDONS
@@ -1296,7 +1296,7 @@ function keymapMenu() {
     "azerty" "bepo" "carpalx" "colemak" \
     "dvorak" "fgGIod" "neo" "olpc" "qwerty" "qwertz" \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return 1 1
+  [ $? -ne 0 ] && return 1
   LAYOUT="$(cat "${TMP_PATH}/resp")"
   OPTIONS=""
   while read -r KM; do
@@ -1305,7 +1305,7 @@ function keymapMenu() {
   dialog --backtitle "$(backtitle)" --no-items --default-item "${KEYMAP}" \
     --menu "Choice a keymap" 0 0 0 ${OPTIONS} \
     2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return 1 1
+  [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   [ -z "${resp}" ] && return 1
   KEYMAP=${resp}
@@ -1437,7 +1437,7 @@ function backupMenu() {
       2)
         dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" \
           --msgbox "Upload the machine.key or machine.key.tar.gz file to ${PART3_PATH}/users\nand press OK after the upload is done." 0 0
-        [ $? -ne 0 ] && return 1 1
+        [ $? -ne 0 ] && return 1
         if [ -f "${PART3_PATH}/users/machine.key.tar.gz" ]; then
           tar -xzf "${PART3_PATH}/users/machine.key.tar.gz" -C "${PART2_PATH}" machine.key 2>/dev/null
           if [ -f "${PART2_PATH}/machine.key" ]; then
@@ -1469,7 +1469,7 @@ function backupMenu() {
       3)
         dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" \
           --msgbox "To backup the Encryption Key press OK." 0 0
-        [ $? -ne 0 ] && return 1 1
+        [ $? -ne 0 ] && return 1
         
         if [ -f "${PART2_PATH}/machine.key" ]; then
           mkdir -p /var/www/data
@@ -1594,7 +1594,7 @@ function updateMenu() {
           mkdir -p "/${TMP_PATH}/update"
           dialog --backtitle "$(backtitle)" --title "Update Loader" \
             --msgbox "Upload the update-*.zip File to /${TMP_PATH}/update\nand press OK after upload is done." 0 0
-          [ $? -ne 0 ] && return 1 1
+          [ $? -ne 0 ] && return 1
           UPDATEFOUND="false"
           for UPDATEFILE in /${TMP_PATH}/update/update-*.zip; do
             if [ -f "${UPDATEFILE}" ]; then
@@ -1645,7 +1645,7 @@ function updateMenu() {
           mkdir -p "/${TMP_PATH}/update"
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
             --msgbox "Upload the arc-*.zip File to /${TMP_PATH}/update\nand press OK after upload is done." 0 0
-          [ $? -ne 0 ] && return 1 1
+          [ $? -ne 0 ] && return 1
           UPDATEFOUND="false"
           for UPDATEFILE in /${TMP_PATH}/update/arc-*.zip; do
             if [ -f "${UPDATEFILE}" ]; then
@@ -2193,7 +2193,7 @@ function downgradeMenu() {
   TEXT+="Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?"
   dialog --backtitle "$(backtitle)" --title "Allow Downgrade" \
       --yesno "${TEXT}" 0 0
-  [ $? -ne 0 ] && return 1 1
+  [ $? -ne 0 ] && return 1
   DSMROOTS="$(findDSMRoot)"
   if [ -z "${DSMROOTS}" ]; then
     dialog --backtitle "$(backtitle)" --title "Allow Downgrade" \
@@ -3314,7 +3314,7 @@ EOL
   dialog --backtitle "$(backtitle)" --title "Bootscreen" --colors --aspect 18 \
     --checklist "Select Bootscreen Informations\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && return 1 1
+  [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   for BOOTSCREEN in dsminfo systeminfo diskinfo hwidinfo dsmlogo; do
     if echo "${resp}" | grep -q "${BOOTSCREEN}"; then
@@ -3531,7 +3531,7 @@ function getmapSelection() {
       4 "AhciRemap: Remove empty Ports (new) ${REMAP4}" \
       5 "Set my own Portmap in Config" \
     2>"${TMP_PATH}/resp"
-    [ $? -ne 0 ] && return 1 1
+    [ $? -ne 0 ] && return 1
     resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${resp}" ] && return 1
 

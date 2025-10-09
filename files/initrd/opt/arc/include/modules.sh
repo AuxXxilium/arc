@@ -3,8 +3,8 @@
 # 1 - Platform
 # 2 - Kernel Version
 function unpackModules() {
-  local PLATFORM=${1}
-  local KVERP=${2}
+  local PLATFORM="${1}"
+  local KVERP="${2}"
   local KERNEL
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 
@@ -22,8 +22,8 @@ function unpackModules() {
 # 1 - Platform
 # 2 - Kernel Version
 function packModules() {
-  local PLATFORM=${1}
-  local KVERP=${2}
+  local PLATFORM="${1}"
+  local KVERP="${2}"
   local KERNEL
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 
@@ -39,8 +39,8 @@ function packModules() {
 # 1 - Platform
 # 2 - Kernel Version
 function getAllModules() {
-  local PLATFORM=${1}
-  local KVERP=${2}
+  local PLATFORM="${1}"
+  local KVERP="${2}"
 
   if [ -z "${PLATFORM}" ] || [ -z "${KVERP}" ]; then
     return 1
@@ -66,8 +66,8 @@ function getAllModules() {
 # 2 - Kernel Version
 # 3 - Module list
 function installModules() {
-  local PLATFORM=${1}
-  local KVERP=${2}
+  local PLATFORM="${1}"
+  local KVERP="${2}"
 
   if [ -z "${PLATFORM}" ] || [ -z "${KVERP}" ]; then
     echo "ERROR: Platform or Kernel Version not defined" >"${LOG_FILE}"
@@ -112,9 +112,9 @@ function installModules() {
 # 2 - Kernel Version
 # 3 - ko file
 function addToModules() {
-  local PLATFORM=${1}
-  local KVERP=${2}
-  local KOFILE=${3}
+  local PLATFORM="${1}"
+  local KVERP="${2}"
+  local KOFILE="${3}"
 
   if [ -z "${PLATFORM}" ] || [ -z "${KVERP}" ] || [ -z "${KOFILE}" ]; then
     echo ""
@@ -134,9 +134,9 @@ function addToModules() {
 # 2 - Kernel Version
 # 3 - ko name
 function delToModules() {
-  local PLATFORM=${1}
-  local KVERP=${2}
-  local KONAME=${3}
+  local PLATFORM="${1}"
+  local KVERP="${2}"
+  local KONAME="${3}"
 
   if [ -z "${PLATFORM}" ] || [ -z "${KVERP}" ] || [ -z "${KONAME}" ]; then
     echo ""
@@ -169,9 +169,9 @@ function getdepends() {
     fi
   }
 
-  local PLATFORM=${1}
-  local KVERP=${2}
-  local KONAME=${3}
+  local PLATFORM="${1}"
+  local KVERP="${2}"
+  local KONAME="${3}"
 
   if [ -z "${PLATFORM}" ] || [ -z "${KVERP}" ] || [ -z "${KONAME}" ]; then
     echo ""
