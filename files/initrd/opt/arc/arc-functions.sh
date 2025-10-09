@@ -798,7 +798,7 @@ function modulesMenu() {
           MODNAME="${MOD%.ko}"
           if [ -f "${TMP2}/${MOD}" ]; then
             DESC="$(modinfo -F description "${TMP2}/${MOD}" 2>/dev/null)"
-            DESC="$(echo "${DESC}" | sed -E 's/[\n]/ /g' | sed -E 's/\(Compiled by RR for DSM\)//g')"
+            DESC="$(echo "${DESC}" | sed -E 's/[\n]/ /g' | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')"
             [ -z "${DESC}" ] && DESC="No description"
           fi
         
