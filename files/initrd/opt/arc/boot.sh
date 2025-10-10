@@ -147,10 +147,10 @@ CMDLINE['syno_hw_version']="${MODEL}"
 CMDLINE['sn']="${SN}"
 
 # NIC Cmdline
-ETHX=$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)
-ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}")
-ETHN=$(wc -w <<< "${ETHX}")
-ETHM=${ETHM:-${ETHN}}
+ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
+ETHM="$(readConfigKey "${MODEL}.ports" "${S_FILE}")"
+ETHN="$(wc -w <<< "${ETHX}")"
+ETHM="${ETHM:-${ETHN}}"
 NIC=0
 for N in ${ETHX}; do
   MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
