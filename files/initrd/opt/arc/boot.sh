@@ -281,7 +281,7 @@ echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
 # Boot
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
-if [ "${DIRECT}" = "true" ] || echo "parallels xen" | grep -qw "${MEV:-physical}"; then
+if [ "${DIRECTBOOT}" = "true" ] || echo "parallels xen" | grep -qw "${MEV:-physical}"; then
   grub-editenv "${USER_RSYSENVFILE}" create
   grub-editenv "${USER_RSYSENVFILE}" set arc_version="${ARC_VERSION} (${ARC_BUILD})"
   grub-editenv "${USER_RSYSENVFILE}" set dsm_model="${MODEL}(${PLATFORM})"
