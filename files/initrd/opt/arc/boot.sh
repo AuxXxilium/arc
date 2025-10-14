@@ -120,7 +120,9 @@ fi
 if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   [ -z "$(ls /dev/nvme* | grep -vE "${LOADER_DISK}[0-9]?$" 2>/dev/null)" ] && printf "\033[1;33m*** %s ***\033[0m\n" "Notice: Please insert at least one m.2 disk for system installation."
 else
-	[ -z "$(ls /dev/sd* | grep -vE "${LOADER_DISK}[0-9]?$" 2>/dev/null)" ] && printf "\033[1;33m*** %s ***\033[0m\n" "Notice: Please insert at least one sata disk for system installation."
+  if [ -z "$(ls /dev/sd* /dev/sg* | grep -vE "${LOADER_DISK}[0-9]?$" 2>/dev/null)" ]; then
+    printf "\033[1;33m*** %s ***\033[0m\n" "Notice: Please insert at least one SATA, SAS, or SCSI disk for system installation."
+  fi
 fi
 
 if checkBIOS_VT_d && [ ${KVER:0:1} -lt 5 ]; then
@@ -253,12 +255,12 @@ fi
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["network.${KEY}"]="${VALUE}"
-done <<<"$(readConfigMap "network" "${USER_CONFIG_FILE}")"
+done < <(readConfigMap "network" "${USER_CONFIG_FILE}")
 
 # Read user cmdline
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-done <<<"$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
+done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
 
 # Prepare command line
 CMDLINE_LINE=""

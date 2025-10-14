@@ -84,15 +84,15 @@ declare -A SYNOINFO
 
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
-done <<<"$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
+done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && MODULES["${KEY}"]="${VALUE}"
-done <<<"$(readConfigMap "modules" "${USER_CONFIG_FILE}")"
+done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
 
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
-done <<<"$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
+done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
 
 # Patches (diff -Naru OLDFILE NEWFILE > xxx.patch)
 PATCHES=(

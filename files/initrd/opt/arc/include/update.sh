@@ -34,6 +34,27 @@ function updateLoader() {
         URL="${BETA_URL}/${TAG}/update-${TAG}.zip"
       fi
 
+      # Check available space on TMP_PATH
+      local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
+      TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
+
+      # Get the size of the update file
+      local FILE_SIZE=$(curl -sI "${URL}" | grep -i "Content-Length" | awk '{print $2}' | tr -d '\r')
+
+      if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
+        dialog --backtitle "$(backtitle)" --title "Update Loader" \
+          --infobox "Failed to retrieve file size. Aborting update." 3 50
+        sleep 3
+        return 1
+      fi
+
+      if [ "${TMP_AVAILABLE}" -lt "${FILE_SIZE}" ]; then
+        dialog --backtitle "$(backtitle)" --title "Update Loader" \
+          --infobox "Not enough space (RAM) in tmp folder. Required: $((FILE_SIZE / 1024 / 1024)) MB, Available: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 60
+        sleep 3
+        return 1
+      fi
+
       {
         {
           curl -kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&3 3>&-
@@ -73,34 +94,19 @@ function updateLoader() {
     LOG_FILE="${TMP_PATH}/updatelog"
     rm -f "${LOG_FILE}"
     touch "${LOG_FILE}"
-    rm -rf "${TMP_PATH}/update"
-    mkdir -p "${TMP_PATH}/update"
 
-    # Extract files and copy them, showing progress in a dialog window and logging the output
+    # Extract files, showing progress in a dialog window and logging the output
     (
-      echo "Extracting files from update.zip..."
-      if unzip -o "${TMP_PATH}/update.zip" -d "${TMP_PATH}/update" >> "${LOG_FILE}" 2>&1; then
-        echo "Extraction completed successfully." >> "${LOG_FILE}"
-      else
-        echo "Error: Failed to extract files." >> "${LOG_FILE}"
-        exit 1
-      fi
-
-      if [ ! -d "${TMP_PATH}/update" ] || [ -z "$(ls -A "${TMP_PATH}/update")" ]; then
-        echo "Error: No files to copy. Extraction may have failed." >> "${LOG_FILE}"
-        exit 1
-      fi
-
       echo "Cleanup old files..."
       rm -rf "${ADDONS_PATH}" "${CONFIGS_PATH}" "${CUSTOM_PATH}" "${LKMS_PATH}" "${MODULES_PATH}" "${PATCH_PATH}"
       rm -f "${ARC_RAMDISK_FILE}" "${ARC_BZIMAGE_FILE}"
       mkdir -p "${ADDONS_PATH}" "${CONFIGS_PATH}" "${CUSTOM_PATH}" "${LKMS_PATH}" "${MODULES_PATH}" "${PATCH_PATH}"
 
-      echo "Copying files to /mnt..."
-      if cp -vrf "${TMP_PATH}/update/"* "/mnt/" >> "${LOG_FILE}" 2>&1; then
-        echo "Files copied successfully." >> "${LOG_FILE}"
+      echo "Extracting files from update.zip..."
+      if unzip -o "${TMP_PATH}/update.zip" -d "/mnt" >> "${LOG_FILE}" 2>&1; then
+        echo "Extraction completed successfully." >> "${LOG_FILE}"
       else
-        echo "Error: Failed to copy files." >> "${LOG_FILE}"
+        echo "Error: Failed to extract files." >> "${LOG_FILE}"
         exit 1
       fi
     ) 2>&1 | tee -a "${LOG_FILE}" | dialog --backtitle "$(backtitle)" --title "Processing Update" \
@@ -179,6 +185,28 @@ function upgradeLoader() {
     if [ -n "${TAG}" ]; then
       export TAG="${TAG}"
       export URL="${UPDATE_URL}/${TAG}/arc-${TAG}.img.zip"
+
+      # Check available space on TMP_PATH
+      local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
+      TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
+
+      # Get the size of the update file
+      local FILE_SIZE=$(curl -sI "${URL}" | grep -i "Content-Length" | awk '{print $2}' | tr -d '\r')
+
+      if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
+        dialog --backtitle "$(backtitle)" --title "Update Loader" \
+          --infobox "Failed to retrieve file size. Aborting update." 3 50
+        sleep 3
+        return 1
+      fi
+
+      if [ "${TMP_AVAILABLE}" -lt "${FILE_SIZE}" ]; then
+        dialog --backtitle "$(backtitle)" --title "Update Loader" \
+          --infobox "Not enough space (RAM) in tmp folder. Required: $((FILE_SIZE / 1024 / 1024)) MB, Available: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 60
+        sleep 3
+        return 1
+      fi
+
       {
         {
           curl -kL "${URL}" -o "${TMP_PATH}/arc.img.zip" 2>&3 3>&-
@@ -199,6 +227,22 @@ function upgradeLoader() {
     fi
   fi
   if [ -f "${TMP_PATH}/arc.img.zip" ] && [ $(ls -s "${TMP_PATH}/arc.img.zip" | cut -d' ' -f1) -gt 300000 ]; then
+    # Check available space on TMP_PATH before unzipping
+    local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
+    TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
+
+    # Estimate the required space for extraction (e.g., 2x the zip file size)
+    local FILE_SIZE=$(stat -c%s "${TMP_PATH}/arc.img.zip")
+    local REQUIRED_SPACE=$((FILE_SIZE * 2)) # Adjust multiplier based on expected extraction size
+
+    if [ "${TMP_AVAILABLE}" -lt "${REQUIRED_SPACE}" ]; then
+      dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
+        --infobox "Not enough space (RAM) to extract the archive. Required: $((REQUIRED_SPACE / 1024 / 1024)) MB, Available: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 60
+      sleep 3
+      return 1
+    fi
+
+    # Proceed with unzipping
     unzip -oq "${TMP_PATH}/arc.img.zip" -d "${TMP_PATH}"
     rm -f "${TMP_PATH}/arc.img.zip"
     dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
@@ -258,6 +302,28 @@ function updateAddons() {
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons-${TAG}.zip"
+
+    # Check available space on TMP_PATH
+    local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
+    TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
+
+    # Get the size of the update file
+    local FILE_SIZE=$(curl -sI "${URL}" | grep -i "Content-Length" | awk '{print $2}' | tr -d '\r')
+
+    if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" \
+        --infobox "Failed to retrieve file size. Aborting update." 3 50
+      sleep 3
+      return 1
+    fi
+
+    if [ "${TMP_AVAILABLE}" -lt "${FILE_SIZE}" ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" \
+        --infobox "Not enough space (RAM) in tmp folder. Required: $((FILE_SIZE / 1024 / 1024)) MB, Available: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 60
+      sleep 3
+      return 1
+    fi
+
     {
       {
         curl -kL "${URL}" -o "${TMP_PATH}/addons.zip" 2>&3 3>&-
@@ -312,6 +378,28 @@ function updatePatches() {
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches-${TAG}.zip"
+
+    # Check available space on TMP_PATH
+    local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
+    TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
+
+    # Get the size of the update file
+    local FILE_SIZE=$(curl -sI "${URL}" | grep -i "Content-Length" | awk '{print $2}' | tr -d '\r')
+
+    if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" \
+        --infobox "Failed to retrieve file size. Aborting update." 3 50
+      sleep 3
+      return 1
+    fi
+
+    if [ "${TMP_AVAILABLE}" -lt "${FILE_SIZE}" ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" \
+        --infobox "Not enough space (RAM) in tmp folder. Required: $((FILE_SIZE / 1024 / 1024)) MB, Available: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 60
+      sleep 3
+      return 1
+    fi
+
     {
       {
         curl -kL "${URL}" -o "${TMP_PATH}/patches.zip" 2>&3 3>&-
@@ -365,6 +453,28 @@ function updateCustom() {
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/custom-${TAG}.zip"
+
+    # Check available space on TMP_PATH
+    local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
+    TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
+
+    # Get the size of the update file
+    local FILE_SIZE=$(curl -sI "${URL}" | grep -i "Content-Length" | awk '{print $2}' | tr -d '\r')
+
+    if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" \
+        --infobox "Failed to retrieve file size. Aborting update." 3 50
+      sleep 3
+      return 1
+    fi
+
+    if [ "${TMP_AVAILABLE}" -lt "${FILE_SIZE}" ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" \
+        --infobox "Not enough space (RAM) in tmp folder. Required: $((FILE_SIZE / 1024 / 1024)) MB, Available: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 60
+      sleep 3
+      return 1
+    fi
+
     {
       {
         curl -kL "${URL}" -o "${TMP_PATH}/custom.zip" 2>&3 3>&-
@@ -422,6 +532,28 @@ function updateModules() {
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules-${TAG}.zip"
+
+    # Check available space on TMP_PATH
+    local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
+    TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
+
+    # Get the size of the update file
+    local FILE_SIZE=$(curl -sI "${URL}" | grep -i "Content-Length" | awk '{print $2}' | tr -d '\r')
+
+    if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" \
+        --infobox "Failed to retrieve file size. Aborting update." 3 50
+      sleep 3
+      return 1
+    fi
+
+    if [ "${TMP_AVAILABLE}" -lt "${FILE_SIZE}" ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" \
+        --infobox "Not enough space (RAM) in tmp folder. Required: $((FILE_SIZE / 1024 / 1024)) MB, Available: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 60
+      sleep 3
+      return 1
+    fi
+
     rm -rf "${MODULES_PATH}"
     mkdir -p "${MODULES_PATH}"
     {
@@ -462,7 +594,7 @@ function updateModules() {
       writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
       while read -r ID DESC; do
         writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-      done <<<"$(getAllModules "${PLATFORM}" "${KVERP}")"
+      done < <(getAllModules "${PLATFORM}" "${KVERP}")
       dialog --backtitle "$(backtitle)" --title "Update Modules" \
         --infobox "Rewrite successful!" 3 50
       sleep 2
@@ -491,6 +623,28 @@ function updateConfigs() {
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs-${TAG}.zip"
+
+    # Check available space on TMP_PATH
+    local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
+    TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
+
+    # Get the size of the update file
+    local FILE_SIZE=$(curl -sI "${URL}" | grep -i "Content-Length" | awk '{print $2}' | tr -d '\r')
+
+    if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" \
+        --infobox "Failed to retrieve file size. Aborting update." 3 50
+      sleep 3
+      return 1
+    fi
+
+    if [ "${TMP_AVAILABLE}" -lt "${FILE_SIZE}" ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" \
+        --infobox "Not enough space (RAM) in tmp folder. Required: $((FILE_SIZE / 1024 / 1024)) MB, Available: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 60
+      sleep 3
+      return 1
+    fi
+
     {
       {
         curl -kL "${URL}" -o "${TMP_PATH}/configs.zip" 2>&3 3>&-
@@ -547,6 +701,28 @@ function updateLKMs() {
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip"
+
+    # Check available space on TMP_PATH
+    local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
+    TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
+
+    # Get the size of the update file
+    local FILE_SIZE=$(curl -sI "${URL}" | grep -i "Content-Length" | awk '{print $2}' | tr -d '\r')
+
+    if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" \
+        --infobox "Failed to retrieve file size. Aborting update." 3 50
+      sleep 3
+      return 1
+    fi
+
+    if [ "${TMP_AVAILABLE}" -lt "${FILE_SIZE}" ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Loader" \
+        --infobox "Not enough space (RAM) in tmp folder. Required: $((FILE_SIZE / 1024 / 1024)) MB, Available: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 60
+      sleep 3
+      return 1
+    fi
+
     {
       {
         curl -kL "${URL}" -o "${TMP_PATH}/rp-lkms.zip" 2>&3 3>&-

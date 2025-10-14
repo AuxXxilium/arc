@@ -17,16 +17,21 @@ function arcModel() {
     PM="$(readConfigEntriesArray "${P}" "${D_FILE}" | sort)"
     while read -r M; do
       echo "${M} ${P}" >>"${TMP_PATH}/modellist"
-    done <<<"$(echo "${PM}")"
-  done <<<"$(echo "${PS}")"
+    done < <(echo "${PM}")
+  done < <(echo "${PS}")
   if [ "${ARC_MODE}" = "config" ]; then
     while true; do
       echo -n "" >"${TMP_PATH}/menu"
       while read -r M A; do
         COMPATIBLE=1
-        DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
         FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
-        NOFLAGS="$(readConfigArray "platforms.${A}.noflags" "${P_FILE}")"
+        for F in ${FLAGS}; do
+          if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
+            COMPATIBLE=0
+            break
+          fi
+        done
+        DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
         KVERM="$(readConfigKey "platforms.${A}.productvers.\"7.2\".kver" "${P_FILE}" | awk -F'.' '{print $1".x"}')"
         BETA=""
         ARC_CONFM="$(generateSerial true "${M}")"
@@ -66,17 +71,6 @@ function arcModel() {
                 COMPATIBLE=0
             fi
           fi
-          WARN="" && rm -f "${TMP_PATH}/${M}_warn"
-          if [ -n "${FLAGS}" ]; then
-            for F in ${FLAGS}; do
-              grep -q "^flags.*${F}.*" /proc/cpuinfo || echo -e "${WARN}- Missing required CPU flag: ${F}\n" >>"${TMP_PATH}/${M}_warn"
-            done
-          fi
-          if [ -n "${NOFLAGS}" ]; then
-            for NF in ${NOFLAGS}; do
-              grep -q "^flags.*${NF}.*" /proc/cpuinfo && echo -e "${WARN}- Disable the following CPU flag: ${NF}\n" >>"${TMP_PATH}/${M}_warn"
-            done
-          fi
           if [ "${DT}" = "true" ]; then
             if [[ "${SCSICONTROLLER}" -ge 1 || "${RAIDCONTROLLER}" -ge 1 ]]; then
               echo -e "${WARN}- DT Model selected: Raid/SCSI will not work\n" >>"${TMP_PATH}/${M}_warn"
@@ -84,13 +78,19 @@ function arcModel() {
           fi
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
           [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
+        else
+          WARN="" && rm -f "${TMP_PATH}/${M}_warn"
+          if [ -n "${FLAGS}" ]; then
+            for F in ${FLAGS}; do
+              grep -q "^flags.*${F}.*" /proc/cpuinfo || echo -e "${WARN}- Missing required CPU flag: ${F}\n" >>"${TMP_PATH}/${M}_warn"
+            done
+          fi
         fi
         [ -n "$(grep -w "${M}" "${S_FILE}")" ] && BETA="Loader" || BETA="Syno"
-        [ -s "${TMP_PATH}/${M}_warn" ] && A="\Z1${A}\Zn" || A="\Z4${A}\Zn"
-        [ "${COMPATIBLE}" -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-21s\Zn \Zb%-8s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${KVERM}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
-      done <<<"$(cat "${TMP_PATH}/modellist")"
+        [ "${COMPATIBLE}" -eq 1 ] && echo -e "${M} \"\t$(printf "\Zb%-15s\Zn \Zb%-8s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "${A}" "${KVERM}" "${DTS}" "${ARC}" "${IGPUS}" "${HBAS}" "${M_2_CACHE}" "${M_2_STORAGE}" "${USBS}" "${BETA}")\" ">>"${TMP_PATH}/menu"
+      done < <(cat "${TMP_PATH}/modellist")
       [ ! -s "${TMP_PATH}/menu" ] && echo "No supported Models found." >"${TMP_PATH}/menu"
-      [ "${RESTRICT}" -eq 1 ] && TITLEMSG="\Z4Supported\Zn and \Z1partially supported\Zn Platforms for your Hardware" || TITLEMSG="All Platorms"
+      [ "${RESTRICT}" -eq 1 ] && TITLEMSG="Supported Models/Platforms for your Hardware" || TITLEMSG="All Models/Platforms"
       MSG="${TITLEMSG} | Features: \Z4x = supported\Zn / \Z1+ = need Addon\Zn\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-8s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-5s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-10s\Zn" "Model" "Platform" "Kernel" "DT" "Arc" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
       [ "${RESTRICT}" -eq 1 ] && SHOWMSG="Show all" || SHOWMSG="Show supported"
       dialog --backtitle "$(backtitle)" --title "DSM Model" --colors \
@@ -302,7 +302,7 @@ function arcVersion() {
 
     while IFS=': ' read -r KEY VALUE; do
       writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
-    done <<<"$(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")"
+    done < <(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")
 
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
     is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
@@ -321,7 +321,7 @@ function arcVersion() {
       if ! isAddonAvailable "${ADDON}" "${PLATFORM}"; then
         deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
       fi
-    done <<<"$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
+    done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
     if [ "${ONLYVERSION}" = "true" ]; then
       resetBuild
@@ -510,7 +510,7 @@ function makearc() {
     if ! isAddonAvailable "${ADDON}" "${PLATFORM}"; then
       deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
     fi
-  done <<<"$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
+  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
   if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
     getpatfiles
   fi
@@ -645,7 +645,7 @@ function addonSelection() {
   declare -A ADDONS
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && ADDONS["${KEY}"]="${VALUE}"
-  done <<<"$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
+  done < <(readConfigMap "addons" "${USER_CONFIG_FILE}")
 
   rm -f "${TMP_PATH}/opts"
   touch "${TMP_PATH}/opts"
@@ -653,7 +653,7 @@ function addonSelection() {
   while read -r ADDON DESC; do
     arrayExistItem "${ADDON}" "${!ADDONS[@]}" && ACT="on" || ACT="off"
     echo -e "${ADDON} \"${DESC}\" ${ACT}" >>"${TMP_PATH}/opts"
-  done <<<"$(availableAddons "${PLATFORM}")"
+  done < <(availableAddons "${PLATFORM}")
 
   dialog --backtitle "$(backtitle)" --title "Addons" --colors --aspect 18 \
     --checklist "Select Addons to include: \Z4Stable Addon\Zn | \Z1Beta Addon\Zn\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
@@ -702,12 +702,12 @@ function modulesMenu() {
         declare -A USERMODULES
         while IFS=': ' read -r KEY VALUE; do
           [ -n "${KEY}" ] && USERMODULES["${KEY}"]="${VALUE}"
-        done <<<"$(readConfigMap "modules" "${USER_CONFIG_FILE}")"
+        done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
         rm -f "${TMP_PATH}/opts"
         while read -r ID DESC; do
           arrayExistItem "${ID}" "${!USERMODULES[@]}" && ACT="on" || ACT="off"
           echo "${ID} ${DESC} ${ACT}" >>"${TMP_PATH}/opts"
-        done <<<"${ALLMODULES}"
+        done < <(echo "${ALLMODULES}")
         dialog --backtitle "$(backtitle)" --title "Modules" \
           --cancel-label "Exit" \
           --extra-button --extra-label "Select all" \
@@ -798,7 +798,7 @@ function modulesMenu() {
           MODNAME="${MOD%.ko}"
           if [ -f "${TMP2}/${MOD}" ]; then
             DESC="$(modinfo -F description "${TMP2}/${MOD}" 2>/dev/null)"
-            DESC="$(echo "${DESC}" | sed -E 's/[\n]/ /g' | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')"
+            DESC="$(echo "${DESC}" | sed -E 's/[\n]/ /g' | sed -E 's/\(Compiled by RR for DSM\)//g')"
             [ -z "${DESC}" ] && DESC="No description"
           fi
         
@@ -883,7 +883,7 @@ function modulesMenu() {
         if echo "${DEPS}" | grep -wq "${KEY}"; then
           DELS+=("${KEY}")
         fi
-      done <<<"$(readConfigMap "modules" "${USER_CONFIG_FILE}")"
+      done < <(readConfigMap "modules" "${USER_CONFIG_FILE}")
       if [ "${#DELS[@]}" -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Modules" \
           --msgbox "No i915 with dependencies module to deselect." 0 0
@@ -1016,7 +1016,7 @@ function cmdlineMenu() {
           declare -A CMDLINE
           while IFS=': ' read -r KEY VALUE; do
             [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-          done <<<"$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
+          done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
           if [ "${#CMDLINE[@]}" -eq 0 ]; then
             dialog --backtitle "$(backtitle)" --msgbox "No user cmdline to remove" 0 0
             break
@@ -1258,7 +1258,7 @@ function synoinfoMenu() {
         declare -A SYNOINFO
         while IFS=': ' read KEY VALUE; do
           [ -n "${KEY}" ] && SYNOINFO["${KEY}"]="${VALUE}"
-        done <<<"$(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")"
+        done < <(readConfigMap "synoinfo" "${USER_CONFIG_FILE}")
         if [ "${#SYNOINFO[@]}" -eq 0 ]; then
           dialog --backtitle "$(backtitle)" --title "Synoinfo" \
             --msgbox "No synoinfo entries to remove" 0 0
@@ -1301,7 +1301,7 @@ function keymapMenu() {
   OPTIONS=""
   while read -r KM; do
     OPTIONS+="${KM::-7} "
-  done <<<"$(cd /usr/share/keymaps/i386/${LAYOUT}; ls *.map.gz)"
+  done < <(cd /usr/share/keymaps/i386/${LAYOUT}; ls *.map.gz)
   dialog --backtitle "$(backtitle)" --no-items --default-item "${KEYMAP}" \
     --menu "Choice a keymap" 0 0 0 ${OPTIONS} \
     2>"${TMP_PATH}/resp"
@@ -2244,7 +2244,7 @@ function resetPassword() {
         grep -q "status=on" "${TMP_PATH}/mdX/usr/syno/etc/packages/SecureSignIn/preference/${U}/method.config" 2>/dev/null
         [ $? -eq 0 ] && S="SecureSignIn" || S="            "
         printf "\"%-36s %-10s %-14s\"\n" "${U}" "${E}" "${S}" >>"${TMP_PATH}/menu"
-      done <<<"$(cat "${TMP_PATH}/mdX/etc/shadow" 2>/dev/null)"
+      done < <(cat "${TMP_PATH}/mdX/etc/shadow" 2>/dev/null)
       break
     fi
     umount "${TMP_PATH}/mdX"
@@ -2654,7 +2654,7 @@ function formatDisks() {
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
     printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/opts"
-  done <<<"$(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)"
+  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --msgbox "No disk found!" 0 0
@@ -2702,7 +2702,7 @@ function cloneLoader() {
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
     printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/opts"
-  done <<<"$(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)"
+  done < <(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)
 
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
@@ -3295,7 +3295,7 @@ function bootScreen () {
   declare -A BOOTSCREENS
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && BOOTSCREENS["${KEY}"]="${VALUE}"
-  done <<<"$(readConfigMap "bootscreen" "${USER_CONFIG_FILE}")"
+  done < <(readConfigMap "bootscreen" "${USER_CONFIG_FILE}")
   cat <<EOL >"${TMP_PATH}/bootscreen"
 dsminfo: DSM Information
 systeminfo: System Information
