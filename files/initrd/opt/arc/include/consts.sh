@@ -48,6 +48,7 @@ IGPU1L=(apollolake geminilake)
 IGPU2L=(epyc7002 geminilakenk r1000nk v1000nk)
 NVMECACHE=(DS719+ DS918+ DS1019+ DS1621xs+ RS1619xs+)
 MPT3PL=(purley broadwellnkv2 epyc7002 geminilakenk r1000nk v1000nk)
+MPT3RL=(broadwell broadwellnk broadwellbap)
 IGFXRL=(apollolake geminilake geminilakenk)
 XAPICRL=(apollolake geminilake purley geminilakenk)
 
@@ -62,3 +63,6 @@ API_URL="https://api.github.com/repos/AuxXxilium/arc/releases"
 UPDATE_URL="https://github.com/AuxXxilium/arc/releases/download"
 BETA_API_URL="https://api.github.com/repos/AuxXxilium/arc-beta/releases"
 BETA_URL="https://github.com/AuxXxilium/arc-beta/releases/download"
+ADDONS_API_URL="https://api.github.com/repos/AuxXxilium/arc-addons/releases"
+MODULES_API_URL="https://api.github.com/repos/AuxXxilium/arc-modules/releases"
+CUSTOM_API_URL="https://api.github.com/repos/AuxXxilium/arc-custom/releases"

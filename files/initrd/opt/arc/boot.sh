@@ -252,6 +252,13 @@ if [ "${DT}" = "true" ] && ! is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
   fi
 fi
 
+if is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
+  if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "scsi_transport_sas"; then
+    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+    CMDLINE['modprobe.blacklist']+="scsi_transport_sas"
+  fi
+fi
+
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["network.${KEY}"]="${VALUE}"

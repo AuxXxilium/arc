@@ -72,6 +72,7 @@ function arcModel() {
             fi
           fi
           if [ "${DT}" = "true" ]; then
+            WARN="" && rm -f "${TMP_PATH}/${M}_warn"
             if [[ "${SCSICONTROLLER}" -ge 1 || "${RAIDCONTROLLER}" -ge 1 ]]; then
               echo -e "${WARN}- DT Model selected: Raid/SCSI will not work\n" >>"${TMP_PATH}/${M}_warn"
             fi
