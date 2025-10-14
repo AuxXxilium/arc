@@ -511,7 +511,7 @@ function updateModules() {
     local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
 
-    local FILE_SIZE=$(curl -skL "${MODULES_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"update-${TAG}.zip\") | .size")
+    local FILE_SIZE=$(curl -skL "${MODULES_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"modules-${TAG}.zip\") | .size")
 
     if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
       dialog --backtitle "$(backtitle)" --title "Update Modules" \
