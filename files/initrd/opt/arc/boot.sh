@@ -104,6 +104,7 @@ if [ "${SYSTEMINFO}" = "true" ]; then
   echo -e "Governor: \033[1;37m${GOVERNOR:-performance}\033[0m"
   echo -e "Type: \033[1;37m${MEV:-physical}\033[0m"
   [ "${USBMOUNT}" = "true" ] && echo -e "USB Mount: \033[1;37m${USBMOUNT}\033[0m"
+  echo -e "Boottime: \033[1;37m$(date +"%Y-%m-%d %H:%M:%S")\033[0m"
   echo
 fi
 if [ "${DISKINFO}" = "true" ]; then
@@ -290,7 +291,7 @@ if [ "${DIRECTBOOT}" = "true" ] || echo "parallels xen" | grep -qw "${MEV:-physi
   grub-editenv "${USER_RSYSENVFILE}" set sys_mev="${MEV:-physical}"
   grub-editenv "${USER_RSYSENVFILE}" set sys_cpu="${CPU}"
   grub-editenv "${USER_RSYSENVFILE}" set sys_board="${BOARD}"
-  grub-editenv "${USER_RSYSENVFILE}" set sys_mem="${MEM}"
+  grub-editenv "${USER_RSYSENVFILE}" set sys_mem="${RAMTOTAL}"
 
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
   grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
