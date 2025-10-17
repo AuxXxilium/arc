@@ -195,7 +195,7 @@ if [ ! -x "${RAMDISK_PATH}/usr/bin/set_key_value" ]; then
 fi
 
 # Remove function from scripts
-[[ "2" = "${BUILDNUM:0:1}"  ||  "3" = "${BUILDNUM:0:1}" ]] && find "${RAMDISK_PATH}/addons/" -type f -name "*.sh" -exec sed -i 's/function //g' {} \;
+find "${RAMDISK_PATH}/addons/" -type f -name "*.sh" -exec sed -i 's/function //g' {} \;
 
 # Copying modulelist
 if [ -f "${USER_UP_PATH}/modulelist" ]; then
