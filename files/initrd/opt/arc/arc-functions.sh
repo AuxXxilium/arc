@@ -240,7 +240,7 @@ function arcVersion() {
     [ $? -ne 0 ] && return 1
     RESP="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${RESP}" ] && return
-     if [ "${PRODUCTVER}" != "${RESP:0:3}" ]; then
+    if [ "${PRODUCTVER}" != "${RESP:0:3}" ]; then
       PRODUCTVER="${RESP:0:3}"
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
     fi
