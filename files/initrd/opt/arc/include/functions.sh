@@ -36,6 +36,8 @@ function arc_mode() {
     ARC_MODE="reinstall"
   elif grep -q "recovery" /proc/cmdline; then
     ARC_MODE="recovery"
+  elif [ -f "/usr/arc/.mountloader" ]; then
+    ARC_MODE="config"
   else
     ARC_MODE="dsm"
   fi
@@ -470,6 +472,7 @@ function onlineCheck() {
 # Check System
 function systemCheck () {
   # Get Loader Disk Bus
+  [ -f "/usr/arc/.mountloader" ] && . "/usr/arc/.mountloader"
   BUS=$(getBus "${LOADER_DISK}")
   [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
   # Check for Hypervisor
