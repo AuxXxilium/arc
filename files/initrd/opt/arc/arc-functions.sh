@@ -171,7 +171,6 @@ function arcVersion() {
     initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.hdddb" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.mountloader" "" "${USER_CONFIG_FILE}"
-    initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.reducelogs" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
