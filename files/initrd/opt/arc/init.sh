@@ -215,6 +215,28 @@ mkdir -p "${MODULES_PATH}"
 mkdir -p "${PATCH_PATH}"
 mkdir -p "${USER_UP_PATH}"
 
+if [ -d "${MODULES_PATH}/" ]; then
+  while IFS= read -r -d '' MSRC; do
+    MSRCB="$(basename "$MSRC")"
+    MTARB="${MSRCB/-7.2-/-7.3-}"
+    MTAR="${MODULES_PATH}/${MTARB}"
+    if [ "$MTAR" != "$MSRC" ] && [ ! -e "$MTAR" ]; then
+      ln -sf "$MSRC" "$MTAR" || true
+    fi
+  done < <(find "${MODULES_PATH}" -maxdepth 1 -type f -name '*-7.2-*.tgz' -print0)
+fi
+
+if [ -d "${LKMS_PATH}/" ]; then
+  while IFS= read -r -d '' LSRC; do
+    LSRCB="$(basename "$LSRC")"
+    LTARB="${LSRCB/-7.2-/-7.3-}"
+    LTAR="${LKMS_PATH}/${LTARB}"
+    if [ "$LTAR" != "$LSRC" ] && [ ! -e "$LTAR" ]; then
+      ln -sf "$LSRC" "$LTAR" || true
+    fi
+  done < <(find "${LKMS_PATH}" -maxdepth 1 -type f -name '*-7.2-*.gz' -print0)
+fi
+
 DEVELOPMENT_MODE="$(readConfigKey "arc.dev" "${USER_CONFIG_FILE}")"
 if [ "${DEVELOPMENT_MODE}" = "true" ]; then
   echo -e "\033[1;34mDevelopment Mode is enabled.\033[0m"
