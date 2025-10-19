@@ -194,8 +194,8 @@ else
 fi
 
 if [ "${DT}" = "true" ]; then
-  CMDLINE['syno_ttyS0']="serial,0x3f8"
-  CMDLINE['syno_ttyS1']="serial,0x2f8"
+  # CMDLINE['syno_ttyS0']="serial,0x3f8"
+  # CMDLINE['syno_ttyS1']="serial,0x2f8"
 else
   CMDLINE['SMBusHddDynamicPower']="1"
   CMDLINE['syno_hdd_detect']="0"
