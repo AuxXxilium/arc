@@ -286,9 +286,9 @@ DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
 if [ "${DIRECTBOOT}" = "true" ] || echo "parallels xen" | grep -qw "${MEV:-physical}"; then
   grub-editenv "${USER_RSYSENVFILE}" create
   grub-editenv "${USER_RSYSENVFILE}" set arc_version="${ARC_VERSION} (${ARC_BUILD})"
-  grub-editenv "${USER_RSYSENVFILE}" set dsm_model="${MODEL}(${PLATFORM})"
-  grub-editenv "${USER_RSYSENVFILE}" set dsm_version="${PRODUCTVER}(${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))"
-  grub-editenv "${USER_RSYSENVFILE}" set dsm_kernel="${KERNEL}(${KVER})"
+  grub-editenv "${USER_RSYSENVFILE}" set dsm_model="${MODEL} (${PLATFORM})"
+  grub-editenv "${USER_RSYSENVFILE}" set dsm_version="${PRODUCTVER} (${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))"
+  grub-editenv "${USER_RSYSENVFILE}" set dsm_kernel="${KERNEL} (${KVER})"
   grub-editenv "${USER_RSYSENVFILE}" set sys_mev="${MEV:-physical}"
   grub-editenv "${USER_RSYSENVFILE}" set sys_cpu="${CPU}"
   grub-editenv "${USER_RSYSENVFILE}" set sys_board="${BOARD}"
