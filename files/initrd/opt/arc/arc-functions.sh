@@ -34,7 +34,7 @@ function arcModel() {
         DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
         KVERM="$(readConfigKey "platforms.${A}.productvers.\"7.2\".kver" "${P_FILE}" | awk -F'.' '{print $1".x"}')"
         BETA=""
-        ARC_CONFM="$(generateSerial true "${M}")"
+        ARC_CONFM="$(genArc true "${M}" sn 2>/dev/null)"
         [ "${#ARC_CONFM}" -eq 13 ] && ARC="x" || ARC=""
         [ "${DT}" = "true" ] && DTS="x" || DTS=""
         IGPU=""
@@ -351,12 +351,12 @@ function arcPatch() {
 
   if [ "${ARC_MODE}" = "automated" ] && [ "${ARC_PATCH}" != "user" ]; then
     if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
-      SN="$(generateSerial "true" "${MODEL}")"
+      SN="$(genArc "true" "${MODEL}" sn 2>/dev/null)"
       ARC_PATCH="false"
-      [ "${#SN}" -eq 13 ] && ARC_PATCH="true" || SN="$(generateSerial "false" "${MODEL}")"
+      [ "${#SN}" -eq 13 ] && ARC_PATCH="true" || SN="$(genArc "false" "${MODEL}" sn 2>/dev/null)"
     fi
   elif [ "${ARC_MODE}" = "config" ]; then
-    SN="$(generateSerial "true" "${MODEL}")"
+    SN="$(genArc "true" "${MODEL}" sn 2>/dev/null)"
     OPTIONS=(
       2 "Use random SN/Mac (Reduced DSM Features)"
       3 "Use my own SN/Mac (Be sure your Data is valid)"
@@ -375,11 +375,11 @@ function arcPatch() {
     case ${resp} in
       1)
         ARC_PATCH="true"
-        SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
+        SN="$(genArc "${ARC_PATCH}" "${MODEL}" sn 2>/dev/null)"
         ;;
       2)
         ARC_PATCH="false"
-        SN="$(generateSerial "${ARC_PATCH}" "${MODEL}")"
+        SN="$(genArc "${ARC_PATCH}" "${MODEL}" sn 2>/dev/null)"
         ;;
       3)
         while true; do
@@ -3355,18 +3355,17 @@ function getnet() {
       done
     done
   else
-    # Find all network interfaces starting with 'eth'
-    ETHX=$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)
-    ETHN=$(echo "${ETHX}" | wc -w)
-    MACS=$(generateMacAddress "${ARC_PATCH}" "${MODEL}" "${ETHN}")
+    readarray -t ETHX_ARRAY < <(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)
+    ETHN=${#ETHX_ARRAY[@]}
 
-    read -r -a ETHX_ARRAY <<< "${ETHX}"
-    read -r -a MACS_ARRAY <<< "${MACS}"
+    MACS_OUTPUT=$(genArc "${ARC_PATCH}" "${MODEL}" mac "${ETHN}" 2>/dev/null)
+    MACS_OUTPUT=${MACS_OUTPUT//$'\r'/}
+    MACS_OUTPUT=$(printf '%s' "$MACS_OUTPUT" | tr -s '[:space:]' $'\n' | sed '/^$/d')
+    readarray -t MACS_ARRAY <<< "$MACS_OUTPUT"
 
     for i in "${!ETHX_ARRAY[@]}"; do
       N="${ETHX_ARRAY[$i]}"
       MAC="${MACS_ARRAY[$i]}"
-
       writeConfigKey "${N}" "${MAC}" "${USER_CONFIG_FILE}"
     done
   fi

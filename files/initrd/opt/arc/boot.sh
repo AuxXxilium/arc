@@ -230,6 +230,7 @@ fi
 if [ "${HDDSORT}" = "true" ]; then
   CMDLINE['hddsort']=""
 fi
+
 if [ "${USBMOUNT}" = "true" ]; then
   CMDLINE['usbasinternal']=""
 fi

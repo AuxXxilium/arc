@@ -118,30 +118,6 @@ function arrayExistItem() {
 }
 
 ###############################################################################
-# Generate a random serial number for a model
-# 1 - Arc Patch
-# 2 - Model
-# Returns serial number
-function generateSerial() {
-  SERIAL="$(genArc "${1}" "${2}" sn 2>/dev/null)"
-  echo "${SERIAL}"
-  return
-}
-
-###############################################################################
-# Generate a MAC address for a model
-# 1 - Arc Patch
-# 2 - Model
-# 3 - Amount
-# Returns serial number
-function generateMacAddress() {
-  MACS="$(genArc "${1}" "${2}" mac "${3}" 2>/dev/null)"
-  MACS="$(echo "${MACS}" | tr '[:upper:]' '[:lower:]')"
-  echo "${MACS}"
-  return
-}
-
-###############################################################################
 # Check if a item exists into array
 # 1 - Item
 # 2.. - Array
