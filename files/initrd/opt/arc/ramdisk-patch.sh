@@ -247,6 +247,7 @@ if [ "${PLATFORM}" = "broadwellntbap" ]; then
   sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' "${RAMDISK_PATH}/usr/syno/share/environments.sh"
 fi
 
+
 # Call user patch scripts
 for F in ${SCRIPTS_PATH}/*.sh; do
   [ ! -e "${F}" ] && continue

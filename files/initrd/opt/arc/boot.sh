@@ -171,14 +171,14 @@ elif [ "${ARC_MODE}" = "recovery" ]; then
   CMDLINE['force_junior']=""
 fi
 
-if [ ${EFI} -eq 1 ]; then
+if [ "${EFI}" -eq 1 ]; then
   CMDLINE['withefi']=""
 else
   CMDLINE['noefi']=""
 fi
 
 # DSM Cmdline
-if [ ${KVER:0:1} -lt 5 ]; then
+if [ "${KVER:0:1}" -lt 5 ]; then
   if [ "${BUS}" != "usb" ]; then
     SZ=$(blockdev --getsz "${LOADER_DISK}" 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
     SS=$(blockdev --getss "${LOADER_DISK}" 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
@@ -193,7 +193,10 @@ else
   CMDLINE['split_lock_detect']="off"
 fi
 
-if [ "${DT}" = "false" ]; then
+if [ "${DT}" = "true" ]; then
+  CMDLINE['syno_ttyS0']="serial,0x3f8" # to check because of issues with msi (possible fix 0x3e8)
+  CMDLINE['syno_ttyS1']="serial,0x2f8" # to check because of issues with msi (possible fix 0x2e8)
+else
   CMDLINE['SMBusHddDynamicPower']="1"
   CMDLINE['syno_hdd_detect']="0"
   CMDLINE['syno_hdd_powerup_seq']="0"
@@ -251,13 +254,6 @@ if [ "${DT}" = "true" ] && ! is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
   fi
 fi
 
-#if is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
-#  if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "scsi_transport_sas"; then
-#    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
-#    CMDLINE['modprobe.blacklist']+="scsi_transport_sas"
-#  fi
-#fi
-
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["network.${KEY}"]="${VALUE}"
@@ -281,7 +277,7 @@ echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 # Boot
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
 if [ "${DIRECTBOOT}" = "true" ] || echo "parallels xen" | grep -qw "${MEV:-physical}"; then
-  grub-editenv "${USER_RSYSENVFILE}" create
+  grub-editenv "${USER_RSYSENVFILE}" create 2>/dev/null || true
   grub-editenv "${USER_RSYSENVFILE}" set arc_version="${ARC_VERSION} (${ARC_BUILD})"
   grub-editenv "${USER_RSYSENVFILE}" set dsm_model="${MODEL} (${PLATFORM})"
   grub-editenv "${USER_RSYSENVFILE}" set dsm_version="${PRODUCTVER} (${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))"
@@ -294,12 +290,15 @@ if [ "${DIRECTBOOT}" = "true" ] || echo "parallels xen" | grep -qw "${MEV:-physi
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
   grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
   grub-editenv ${USER_GRUBENVFILE} set next_entry="direct"
+
+  sleep 2
+
   echo -e "\033[1;34mReboot with Directboot\033[0m"
-  reboot
+  exec reboot
   exit 0
 else
-  grub-editenv ${USER_GRUBENVFILE} unset dsm_cmdline
-  grub-editenv ${USER_GRUBENVFILE} unset next_entry
+  grub-editenv ${USER_GRUBENVFILE} unset dsm_cmdline 2>/dev/null || true
+  grub-editenv ${USER_GRUBENVFILE} unset next_entry 2>/dev/null || true
 
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
@@ -318,7 +317,7 @@ else
   fi
 
   # Executes DSM kernel via KEXEC
-  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || die "Failed to load DSM Kernel!"
+  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" >"${LOG_FILE}" 2>&1 || die "Failed to load DSM Kernel!"
 
   for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
     if [ -w "/dev/${T}" ]; then
@@ -329,9 +328,8 @@ else
 
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
   # _bootwait
-
-  # Unload all network drivers
-  # for F in $(realpath /sys/class/net/*/device/driver); do [ ! -e "${F}" ] && continue; rmmod -f "$(basename ${F})" 2>/dev/null || true; done
+  
+  sleep 2
 
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   [ -z "${KERNELLOAD}" ] && KERNELLOAD="kexec"

@@ -48,7 +48,6 @@ IGPU1L=(apollolake geminilake)
 IGPU2L=(epyc7002 geminilakenk r1000nk v1000nk)
 NVMECACHE=(DS719+ DS918+ DS1019+ DS1621xs+ RS1619xs+)
 MPT3PL=(purley broadwellnkv2 epyc7002 geminilakenk r1000nk v1000nk)
-MPT3RL=(broadwell broadwellnk broadwellbap)
 IGFXRL=(apollolake geminilake geminilakenk)
 XAPICRL=(apollolake geminilake purley geminilakenk)
 
