@@ -59,7 +59,7 @@ BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
 SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-CPU="$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | sed -E 's/@ [0-9.]+[[:space:]]*GHz//g' | sed -E 's/ CPU//g')"
+CPU="$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | sed -E 's/@ [0-9.]+[[:space:]]*GHz//g' | sed -E 's/ CPU//g' | sed -E 's/^[[:space:]]*//')"
 RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
 BOARD="$(getBoardName)"
 MEV="$(virt-what 2>/dev/null | head -1)"
@@ -193,10 +193,7 @@ else
   CMDLINE['split_lock_detect']="off"
 fi
 
-if [ "${DT}" = "true" ]; then
-  # CMDLINE['syno_ttyS0']="serial,0x3f8"
-  # CMDLINE['syno_ttyS1']="serial,0x2f8"
-else
+if [ "${DT}" = "false" ]; then
   CMDLINE['SMBusHddDynamicPower']="1"
   CMDLINE['syno_hdd_detect']="0"
   CMDLINE['syno_hdd_powerup_seq']="0"
@@ -292,7 +289,7 @@ if [ "${DIRECTBOOT}" = "true" ] || echo "parallels xen" | grep -qw "${MEV:-physi
   grub-editenv "${USER_RSYSENVFILE}" set sys_mev="${MEV:-physical}"
   grub-editenv "${USER_RSYSENVFILE}" set sys_cpu="${CPU}"
   grub-editenv "${USER_RSYSENVFILE}" set sys_board="${BOARD}"
-  grub-editenv "${USER_RSYSENVFILE}" set sys_mem="${RAMTOTAL}"
+  grub-editenv "${USER_RSYSENVFILE}" set sys_mem="${RAMTOTAL} GiB"
 
   CMDLINE_DIRECT=$(echo ${CMDLINE_LINE} | sed 's/>/\\\\>/g') # Escape special chars
   grub-editenv ${USER_GRUBENVFILE} set dsm_cmdline="${CMDLINE_DIRECT}"
