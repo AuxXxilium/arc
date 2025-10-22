@@ -87,6 +87,11 @@ elif [ "${ARC_MODE}" = "automated" ]; then
     makearc
   fi
 elif [ "${ARC_MODE}" = "config" ]; then
+  if [ -z "${MODEL}" ] && [ -z "${PRODUCTVER}" ] && [ -n "$(findDSMRoot)" ]; then
+    dialog --backtitle "$(backtitle)" --title "Arc Recovery" \
+      --yesno "An installed DSM is detected on your disk. Do you want to try to restore it?" 0 0
+    [ $? -eq 0 ] && recoverDSM
+  fi
   [ "${CONFDONE}" = "true" ] && NEXT="2" || NEXT="1"
   [ "${BUILDDONE}" = "true" ] && NEXT="4" || NEXT="1"
   while true; do

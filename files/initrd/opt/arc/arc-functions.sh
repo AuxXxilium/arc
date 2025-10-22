@@ -1324,14 +1324,14 @@ function storagepanelMenu() {
       STORAGEPANELUSER="$(readConfigKey "addons.storagepanel" "${USER_CONFIG_FILE}")"
       [ -n "${STORAGEPANELUSER}" ] && DISKPANELUSER="$(echo ${STORAGEPANELUSER} | cut -d' ' -f1)" || DISKPANELUSER="RACK_24_Bay"
       [ -n "${STORAGEPANELUSER}" ] && M2PANELUSER="$(echo ${STORAGEPANELUSER} | cut -d' ' -f2)" || M2PANELUSER="1X4"
-      ITEMS="$(echo -e "RACK_2_Bay \nRACK_4_Bay \nRACK_8_Bay \nRACK_12_Bay \nRACK_16_Bay \nRACK_24_Bay \nRACK_60_Bay \nTOWER_1_Bay \nTOWER_2_Bay \nTOWER_4_Bay \nTOWER_6_Bay \nTOWER_8_Bay \nTOWER_12_Bay \n")"
+      ITEMS="$(echo -e "RACK_0_Bay \nRACK_2_Bay \nRACK_4_Bay \nRACK_8_Bay \nRACK_10_Bay \nRACK_12_Bay \nRACK_12_Bay_2 \nRACK_16_Bay \nRACK_20_Bay \nRACK_24_Bay \nRACK_60_Bay \nTOWER_1_Bay \nTOWER_2_Bay \nTOWER_4_Bay \nTOWER_4_Bay_J \nTOWER_4_Bay_S \nTOWER_5_Bay \nTOWER_6_Bay \nTOWER_8_Bay \nTOWER_12_Bay \n")"
       dialog --backtitle "$(backtitle)" --title "StoragePanel" \
         --default-item "${DISKPANELUSER}" --no-items --menu "Choose a Disk Panel" 0 0 0 ${ITEMS} \
         2>"${TMP_PATH}/resp"
       resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
       [ -z "${resp}" ] && break
       STORAGE=${resp}
-      ITEMS="$(echo -e "1X2 \n1X4 \n1X8 \n")"
+      ITEMS="$(echo -e "1X1 \n1X2 \n1X3 \n1X4 \n1X6 \n1X8 \n2X2 \n2X3 \n2X4 \n2X6 \n2X8 \n3X4 \n4X4 \n")"
       dialog --backtitle "$(backtitle)" --title "StoragePanel" \
         --default-item "${M2PANELUSER}" --no-items --menu "Choose a M.2 Panel" 0 0 0 ${ITEMS} \
         2>"${TMP_PATH}/resp"
@@ -1357,7 +1357,7 @@ function backupMenu() {
   while true; do
     if [ -n "${USERID}" ] && [ "${ARC_OFFLINE}" != "true" ] && [ "${CONFDONE}" = "true" ]; then
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
-        1 "Restore Arc Config (from DSM)" \
+        1 "Restore Loader (from DSM Disk)" \
         2 "Restore Hardware Key (local)" \
         3 "Backup Hardware Key (local)" \
         4 "Restore Arc Config (from Online)" \
@@ -1365,14 +1365,14 @@ function backupMenu() {
         2>"${TMP_PATH}/resp"
     elif [ -n "${USERID}" ] && [ "${ARC_OFFLINE}" != "true" ]; then
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
-        1 "Restore Arc Config (from DSM)" \
+        1 "Restore Loader (from DSM Disk)" \
         2 "Restore Hardware Key (local)" \
         3 "Backup Hardware Key (local)" \
         4 "Restore Arc Config (from Online)" \
         2>"${TMP_PATH}/resp"
     else
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
-        1 "Restore Arc Config (from DSM)" \
+        1 "Restore Loader (from DSM Disk)" \
         2 "Restore Hardware Key (local)" \
         3 "Backup Hardware Key (local)" \
         2>"${TMP_PATH}/resp"
@@ -1383,56 +1383,10 @@ function backupMenu() {
         DSMROOTS="$(findDSMRoot)"
         if [ -z "${DSMROOTS}" ]; then
           dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
-            --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
-          return
+            --msgbox "No DSM system found!\nPlease insert all disks before continuing." 0 0
+          return 1
         fi
-        mkdir -p "${TMP_PATH}/mdX"
-        for I in ${DSMROOTS}; do
-          #fixDSMRootPart "${I}"
-          T="$(blkid -o value -s TYPE "${I}" 2>/dev/null | sed 's/linux_raid_member/ext4/')"
-          mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
-          [ $? -ne 0 ] && continue
-          MODEL=""
-          PRODUCTVER=""
-          if [ -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" ]; then
-            cp -f "${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml" "${USER_CONFIG_FILE}"
-            sleep 2
-            MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-            PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-            if [ -n "${MODEL}" ] && [ -n "${PRODUCTVER}" ]; then
-              TEXT="Config found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
-              SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
-              TEXT+="\nSerial: ${SN}"
-              ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-              TEXT+="\nArc Patch: ${ARC_PATCH}"
-              dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
-                --aspect 18 --msgbox "${TEXT}" 0 0
-              PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-              DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-              CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
-              resetBuild
-              break
-            fi
-          fi
-          umount "${TMP_PATH}/mdX"
-        done
-        rm -rf "${TMP_PATH}/mdX" 2>/dev/null
-        if [ -f "${USER_CONFIG_FILE}" ]; then
-          PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-          if [ -n "${PRODUCTVER}" ]; then
-            PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-            KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-            is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
-            if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
-              writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-              mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
-            fi
-          fi
-        fi
-        dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
-          --aspect 18 --infobox "Restore successful! -> Reload Arc Init now" 5 50
-        sleep 2
-        rm -f "${HOME}/.initialized" && exec init.sh
+        recoverDSM
         ;;
       2)
         dialog --backtitle "$(backtitle)" --title "Restore Encryption Key" \
@@ -3864,4 +3818,64 @@ function onlineMenu() {
     esac
   done
   return
+}
+
+###############################################################################
+# Recover DSM files
+function recoverDSM() {
+  DSMROOTS="$(findDSMRoot)"
+  [ -z "${DSMROOTS}" ] && return
+  mkdir -p "${TMP_PATH}/mdX"
+  for I in ${DSMROOTS}; do
+    # fixDSMRootPart "${I}"
+    T="$(blkid -o value -s TYPE "${I}" 2>/dev/null | sed 's/linux_raid_member/ext4/')"
+    mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
+    [ $? -ne 0 ] && continue
+    MODEL=""
+    PRODUCTVER=""
+    BACKUP_CONFIG="${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml"
+    
+    # Check if BACKUP_CONFIG exists before proceeding
+    if [ ! -f "${BACKUP_CONFIG}" ]; then
+      umount "${TMP_PATH}/mdX"
+      break && return
+    fi
+
+    MODEL="$(readConfigKey "model" "${BACKUP_CONFIG}")"
+    PRODUCTVER="$(readConfigKey "productver" "${BACKUP_CONFIG}")"
+    if [ -n "${MODEL}" ] && [ -n "${PRODUCTVER}" ]; then
+      TEXT="Config found:\nModel: ${MODEL}\nVersion: ${PRODUCTVER}"
+      PLATFORM="$(readConfigKey "platform" "${BACKUP_CONFIG}")"
+      TEXT+="\nPlatform: ${PLATFORM}"
+      SN="$(readConfigKey "sn" "${BACKUP_CONFIG}")"
+      TEXT+="\nSerial: ${SN}"
+      ARC_PATCH="$(readConfigKey "arc.patch" "${BACKUP_CONFIG}")"
+      TEXT+="\nArc Patch: ${ARC_PATCH}"
+      CONFDONE="$(readConfigKey "arc.confdone" "${BACKUP_CONFIG}")"
+      dialog --backtitle "$(backtitle)" --title "Restore Arc" \
+        --aspect 18 --msgbox "${TEXT}" 0 0
+      [ $? -ne 0 ] && break
+      cp -af "${TMP_PATH}/mdX/usr/arc/backup/p1/"* "${PART1_PATH}" 2>/dev/null
+      cp -af "${TMP_PATH}/mdX/usr/arc/backup/p2/"* "${PART2_PATH}" 2>/dev/null
+      resetBuild
+      break
+    fi
+    umount -f "${TMP_PATH}/mdX" 2>/dev/null
+  done
+  if [ -f "${USER_CONFIG_FILE}" ]; then
+    PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+    if [ -n "${PRODUCTVER}" ]; then
+      PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+      KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+      is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+      if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+        writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+        mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+      fi
+    fi
+    dialog --backtitle "$(backtitle)" --title "Restore Arc" \
+    --aspect 18 --infobox "Restore successful! -> Reload Arc Init now" 3 50
+    sleep 2
+    rm -f "${HOME}/.initialized" && exec init.sh
+  fi
 }

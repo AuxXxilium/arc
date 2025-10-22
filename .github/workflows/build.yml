@@ -171,6 +171,7 @@ jobs:
           echo "Create Arc vhd"
           createvmc "arc.vmc"
           qemu-img convert -p -f raw -O vpc ${IMAGE_FILE} arc.vhd
+          qemu-img convert -p -f raw -O vhdx ${IMAGE_FILE} arc.vhdx
 
           echo "Create Arc ova"
           convertova "${IMAGE_FILE}" "arc.ova"
@@ -183,6 +184,7 @@ jobs:
           zip -9 "arc-${{ env.ARC_VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
           zip -9 "arc-${{ env.ARC_VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
           zip -9 "arc-${{ env.ARC_VERSION }}.vhd.zip" arc.vhd arc.vmc
+          zip -9 "arc-${{ env.ARC_VERSION }}.vhdx.zip" arc.vhdx
           zip -9 "arc-${{ env.ARC_VERSION }}.ova.zip" arc.ova
           (cd files && zip -r ../update-${{ env.ARC_VERSION }}.zip ./p1 ./p3)
           sha256sum update-${{ env.ARC_VERSION }}.zip >"update-${{ env.ARC_VERSION }}.hash"
