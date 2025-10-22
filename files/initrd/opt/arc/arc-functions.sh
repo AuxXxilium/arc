@@ -3837,7 +3837,8 @@ function recoverDSM() {
     
     # Check if BACKUP_CONFIG exists before proceeding
     if [ ! -f "${BACKUP_CONFIG}" ]; then
-      umount "${TMP_PATH}/mdX"
+      sleep 3
+      umount -f "${TMP_PATH}/mdX"
       break && return
     fi
 
@@ -3860,6 +3861,7 @@ function recoverDSM() {
       resetBuild
       break
     fi
+    sleep 3
     umount -f "${TMP_PATH}/mdX" 2>/dev/null
   done
   if [ -f "${USER_CONFIG_FILE}" ]; then

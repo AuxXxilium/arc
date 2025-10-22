@@ -87,6 +87,8 @@ function updateLoader() {
         sleep 3
         exec reboot
       fi
+    else
+      rm -f "${TMP_PATH}/update.zip"
     fi
 
     # Create the update directory and log file
@@ -276,6 +278,7 @@ function upgradeLoader() {
       exec reboot
     fi
   else
+    rm -f "${TMP_PATH}/arc.img.zip"
     dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
       --infobox "Upgrade failed!\nTry again later." 0 0
     sleep 3
