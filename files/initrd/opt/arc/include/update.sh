@@ -74,7 +74,7 @@ function updateLoader() {
     fi
   fi
 
-  if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 300000 ]; then
+  if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 250000 ]; then
     if [ "${TAG}" != "zip" ]; then
       HASH="$(curl -skL "${UPDATE_URL}/${TAG}/update-${TAG}.hash" | awk '{print $1}')"
       if [ "${BETA}" = "true" ]; then
@@ -225,7 +225,7 @@ function upgradeLoader() {
       } 4>&1
     fi
   fi
-  if [ -f "${TMP_PATH}/arc.img.zip" ] && [ $(ls -s "${TMP_PATH}/arc.img.zip" | cut -d' ' -f1) -gt 300000 ]; then
+  if [ -f "${TMP_PATH}/arc.img.zip" ] && [ $(ls -s "${TMP_PATH}/arc.img.zip" | cut -d' ' -f1) -gt 250000 ]; then
     # Check available space on TMP_PATH before unzipping
     local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
