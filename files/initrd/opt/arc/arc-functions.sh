@@ -150,7 +150,7 @@ function arcModel() {
   fi
   PLATFORM="$(grep -w "${MODEL}" "${TMP_PATH}/modellist" | awk '{print $2}' | head -1)"
   writeConfigKey "platform" "${PLATFORM}" "${USER_CONFIG_FILE}"
-  resetBuild
+  resetBuildstatus
   writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -398,7 +398,7 @@ function arcPatch() {
   fi
   writeConfigKey "sn" "${SN}" "${USER_CONFIG_FILE}"
   writeConfigKey "arc.patch" "${ARC_PATCH}" "${USER_CONFIG_FILE}"
-  resetBuild
+  resetBuildstatus
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   arcSettings
   return
@@ -421,7 +421,7 @@ function arcSettings() {
   getnet
   
   if [ "${ONLYPATCH}" = "true" ]; then
-    resetBuild
+    resetBuildstatus
     ONLYPATCH="false"
     return 0
   fi
@@ -627,7 +627,7 @@ function editUserConfig() {
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
     dialog --backtitle "$(backtitle)" --title "User Config" \
       --msgbox "User Config changed!\nYou need to rebuild the Loader." 6 40
-    resetBuild
+    resetBuildstatus
   fi
   return
 }
@@ -636,7 +636,7 @@ function editUserConfig() {
 # Shows option to manage Addons
 function addonMenu() {
   addonSelection
-  resetBuild
+  resetBuildstatus
   return
 }
 
@@ -1037,7 +1037,7 @@ function cmdlineMenu() {
             unset 'CMDLINE[${I}]'
             deleteConfigKey "cmdline.\"${I}\"" "${USER_CONFIG_FILE}"
           done
-          resetBuild
+          resetBuildstatus
         done
         ;;
       3)
@@ -1061,7 +1061,7 @@ function cmdlineMenu() {
               --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
           fi
         done
-        resetBuild
+        resetBuildstatus
         ;;
       4)
         while true; do
@@ -1084,7 +1084,7 @@ function cmdlineMenu() {
               --aspect 18 --msgbox "Fix removed from Cmdline" 0 0
           fi
         done
-        resetBuild
+        resetBuildstatus
         ;;
       5)
         while true; do
@@ -1105,7 +1105,7 @@ function cmdlineMenu() {
               --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
           fi
         done
-        resetBuild
+        resetBuildstatus
         ;;
       6)
         while true; do
@@ -1126,7 +1126,7 @@ function cmdlineMenu() {
               --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
           fi
         done
-        resetBuild
+        resetBuildstatus
         ;;
       7)
         while true; do
@@ -1149,7 +1149,7 @@ function cmdlineMenu() {
               --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
           fi
         done
-        resetBuild
+        resetBuildstatus
         ;;
       8)
         while true; do
@@ -1170,7 +1170,7 @@ function cmdlineMenu() {
               --aspect 18 --msgbox "Fix uninstalled from Cmdline" 0 0
           fi
         done
-        resetBuild
+        resetBuildstatus
         ;;
       9)
         while true; do
@@ -1187,7 +1187,7 @@ function cmdlineMenu() {
           KERNELPANIC=${resp}
           writeConfigKey "kernelpanic" "${KERNELPANIC}" "${USER_CONFIG_FILE}"
         done
-        resetBuild
+        resetBuildstatus
         ;;
       *)
         break
@@ -1252,7 +1252,7 @@ function synoinfoMenu() {
               ;;
           esac
         done
-        resetBuild
+        resetBuildstatus
         ;;
       2)
         # Read synoinfo from user config
@@ -1280,7 +1280,7 @@ function synoinfoMenu() {
           unset SYNOINFO[${I}]
           deleteConfigKey "synoinfo.\"${I}\"" "${USER_CONFIG_FILE}"
         done
-        resetBuild
+        resetBuildstatus
         ;;
       *)
         break
@@ -1344,7 +1344,7 @@ function storagepanelMenu() {
       writeConfigKey "addons.storagepanel" "${STORAGEPANEL}" "${USER_CONFIG_FILE}"
       break
     done
-    resetBuild
+    resetBuildstatus
   fi
   return
 }
@@ -1640,7 +1640,7 @@ function storageMenu() {
   if [ "${DT}" = "false" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
     getmapSelection
   fi
-  resetBuild
+  resetBuildstatus
   return
 }
 
@@ -1649,7 +1649,7 @@ function storageMenu() {
 function networkMenu() {
   # Get Network Config for Loader
   getnet
-  resetBuild
+  resetBuildstatus
   return
 }
 
@@ -2121,7 +2121,7 @@ function staticIPMenu() {
             fi
             sleep 1
           fi
-          resetBuild
+          resetBuildstatus
         ) 2>&1 | dialog --backtitle "$(backtitle)" --title "StaticIP" \
           --progressbox "Set Network ..." 20 100
         break
@@ -2306,7 +2306,7 @@ function addNewDSMUser() {
   [ "$(cat ${TMP_PATH}/isOk 2>/dev/null)" = "true" ] && MSG="Add DSM User successful." || MSG="Add DSM User failed."
   dialog --backtitle "$(backtitle)" --title "Add DSM User" \
     --msgbox "${MSG}" 0 0
-  resetBuild
+  resetBuildstatus
   return
 }
 
@@ -2582,7 +2582,7 @@ function disablescheduledTasks {
   fi
   dialog --backtitle "$(backtitle)" --title "Scheduled Tasks" \
     --msgbox "${MSG}" 0 0
-  resetBuild
+  resetBuildstatus
   return
 }
 
@@ -2897,7 +2897,6 @@ function satadomMenu() {
   [ -z "${resp}" ] && return
   SATADOM=${resp}
   writeConfigKey "satadom" "${SATADOM}" "${USER_CONFIG_FILE}"
-  resetBuild
   return
 }
 
@@ -3022,7 +3021,7 @@ function resetDSMNetwork {
 # CPU Governor Menu
 function governorMenu () {
   governorSelection
-  resetBuild
+  resetBuildstatus
   return
 }
 
@@ -3697,7 +3696,7 @@ function notificationMenu() {
       DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
     done
   fi
-  resetBuild
+  resetBuildstatus
   return
 }
 
