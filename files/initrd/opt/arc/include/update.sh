@@ -34,9 +34,8 @@ function updateLoader() {
         URL="${BETA_URL}/${TAG}/update-${TAG}.zip"
       fi
 
-      # Check available space on TMP_PATH
       local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
-      TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
+      TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
       local FILE_SIZE=$(curl -skL "${API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"update-${TAG}.zip\") | .size")
       
@@ -91,12 +90,10 @@ function updateLoader() {
       rm -f "${TMP_PATH}/update.zip"
     fi
 
-    # Create the update directory and log file
     LOG_FILE="${TMP_PATH}/updatelog"
     rm -f "${LOG_FILE}"
     touch "${LOG_FILE}"
 
-    # Extract files, showing progress in a dialog window and logging the output
     (
       echo "Cleanup old files..."
       rm -rf "${ADDONS_PATH}" "${CONFIGS_PATH}" "${CUSTOM_PATH}" "${LKMS_PATH}" "${MODULES_PATH}" "${PATCH_PATH}"
@@ -114,7 +111,6 @@ function updateLoader() {
       --progressbox "Processing update..." 10 70
     sleep 2
 
-    # Check the exit status of the update process
     if [ $? -ne 0 ]; then
       dialog --backtitle "$(backtitle)" --title "Update Failed" \
         --infobox "Update failed! The system will now reboot." 5 50
@@ -173,7 +169,7 @@ function upgradeLoader() {
   if [ "${TAG}" != "zip" ]; then
     if [ -z "${TAG}" ]; then
       idx=0
-      while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
+      while [ "${idx}" -le 5 ]; do
         TAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
         if [ -n "${TAG}" ]; then
           break
@@ -186,9 +182,8 @@ function upgradeLoader() {
       export TAG="${TAG}"
       export URL="${UPDATE_URL}/${TAG}/arc-${TAG}.img.zip"
 
-      # Check available space on TMP_PATH
       local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
-      TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
+      TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
       local FILE_SIZE=$(curl -skL "${API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"arc-${TAG}.img.zip\") | .size")
       
@@ -226,13 +221,10 @@ function upgradeLoader() {
     fi
   fi
   if [ -f "${TMP_PATH}/arc.img.zip" ] && [ $(ls -s "${TMP_PATH}/arc.img.zip" | cut -d' ' -f1) -gt 250000 ]; then
-    # Check available space on TMP_PATH before unzipping
     local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
-    TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
-
-    # Estimate the required space for extraction (e.g., 2x the zip file size)
+    TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
     local FILE_SIZE=$(stat -c%s "${TMP_PATH}/arc.img.zip")
-    local REQUIRED_SPACE=$((FILE_SIZE * 2)) # Adjust multiplier based on expected extraction size
+    local REQUIRED_SPACE=$((FILE_SIZE * 2))
 
     if [ "${TMP_AVAILABLE}" -lt "${REQUIRED_SPACE}" ]; then
       dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
@@ -241,7 +233,6 @@ function upgradeLoader() {
       return 1
     fi
 
-    # Proceed with unzipping
     unzip -oq "${TMP_PATH}/arc.img.zip" -d "${TMP_PATH}"
     rm -f "${TMP_PATH}/arc.img.zip"
     dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
@@ -249,16 +240,13 @@ function upgradeLoader() {
     umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
 
     local IMG_FILE="${TMP_PATH}/arc.img"
-    # Find the parent device (e.g., /dev/sda) for ARC1
     local DEV1 DEV2 DEV3 DEV
     DEV1=$(blkid | grep 'LABEL="ARC1"' | cut -d: -f1)
     DEV2=$(blkid | grep 'LABEL="ARC2"' | cut -d: -f1)
     DEV3=$(blkid | grep 'LABEL="ARC3"' | cut -d: -f1)
-    # Get the base device (e.g., /dev/sda from /dev/sda1)
     DEV=$(echo "${DEV1}" | sed 's/[0-9]*$//')
 
     if [ -b "${DEV}" ] && [ -f "${IMG_FILE}" ]; then
-      # Write the whole image to the device (overwriting all partitions)
       if dd if="${IMG_FILE}" of="${DEV}" bs=1M conv=fsync; then
         rm -f "${IMG_FILE}"
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
@@ -303,9 +291,8 @@ function updateAddons() {
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons-${TAG}.zip"
 
-    # Check available space on TMP_PATH
     local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
-    TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
+    TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
       local FILE_SIZE=$(curl -skL "${ADDONS_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"addons-${TAG}.zip\") | .size")
       
@@ -366,7 +353,7 @@ function updateAddons() {
 function updatePatches() {
   [ -f "${PATCH_PATH}/VERSION" ] && local PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")" || PATCHESVERSION="0.0.0"
   idx=0
-  while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
+  while [ "${idx}" -le 5 ]; do
     local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
     if [ -n "${TAG}" ]; then
       break
@@ -420,7 +407,7 @@ function updatePatches() {
 function updateCustom() {
   [ -f "${CUSTOM_PATH}/VERSION" ] && local CUSTOMVERSION="$(cat "${CUSTOM_PATH}/VERSION")" || CUSTOMVERSION="0.0.0"
   idx=0
-  while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
+  while [ "${idx}" -le 5 ]; do
     local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-custom/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
     if [ -n "${TAG}" ]; then
       break
@@ -432,9 +419,8 @@ function updateCustom() {
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/custom-${TAG}.zip"
 
-    # Check available space on TMP_PATH
     local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
-    TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
+    TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
     local FILE_SIZE=$(curl -skL "${CUSTOM_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"custom-${TAG}.zip\") | .size")
     
@@ -498,7 +484,7 @@ function updateModules() {
   local KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
   is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
   idx=0
-  while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
+  while [ "${idx}" -le 5 ]; do
     local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
     if [ -n "${TAG}" ]; then
       break
@@ -510,9 +496,8 @@ function updateModules() {
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules-${TAG}.zip"
 
-    # Check available space on TMP_PATH
     local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
-    TMP_AVAILABLE=$((TMP_AVAILABLE * 1024)) # Convert to bytes
+    TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
     local FILE_SIZE=$(curl -skL "${MODULES_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"modules-${TAG}.zip\") | .size")
 
@@ -585,7 +570,7 @@ function updateConfigs() {
   [ -f "${CONFIGS_PATH}/VERSION" ] && local CONFIGSVERSION="$(cat "${CONFIGS_PATH}/VERSION")" || CONFIGSVERSION="0.0.0"
   if [ -z "${1}" ]; then
     idx=0
-    while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
+    while [ "${idx}" -le 5 ]; do
       local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       if [ -n "${TAG}" ]; then
         break
@@ -642,7 +627,7 @@ function updateLKMs() {
   [ -f "${LKMS_PATH}/VERSION" ] && local LKMVERSION="$(cat "${LKMS_PATH}/VERSION")" || LKMVERSION="0.0.0"
   if [ -z "${1}" ]; then
     idx=0
-    while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
+    while [ "${idx}" -le 5 ]; do
       local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
       if [ -n "${TAG}" ]; then
         break
@@ -711,7 +696,6 @@ function updateOffline() {
   return 0
 }
 
-# Define descriptions and their corresponding functions
 DEPENDENCY_DESCRIPTIONS=(
   "Update Addons"
   "Update Modules"
@@ -732,13 +716,11 @@ DEPENDENCY_FUNCTIONS=(
 )
 
 function dependenciesUpdate() {
-  # Build checklist options: index as tag, description as item
   CHECKLIST_OPTS=()
   for i in "${!DEPENDENCY_DESCRIPTIONS[@]}"; do
     CHECKLIST_OPTS+=("$i" "${DEPENDENCY_DESCRIPTIONS[$i]}" "off")
   done
 
-  # Show dialog with only descriptions
   CHOICES=$(dialog --backtitle "$(backtitle)" --title "Select Dependencies to Update" \
     --checklist "Use SPACE to select and ENTER to confirm:" 15 50 6 \
     "${CHECKLIST_OPTS[@]}" 3>&1 1>&2 2>&3)
@@ -747,7 +729,6 @@ function dependenciesUpdate() {
 
   FAILED=false
   for idx in $CHOICES; do
-    # Remove quotes if any
     idx=${idx//\"/}
     ${DEPENDENCY_FUNCTIONS[$idx]} || FAILED=true
   done
