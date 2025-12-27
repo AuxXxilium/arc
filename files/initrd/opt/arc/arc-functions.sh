@@ -1825,7 +1825,7 @@ function sysinfo() {
       PORTS=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       for P in ${PORTS}; do
         if lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep -q "\[${P}:"; then
-          if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" -eq 0 ]; then
+          if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ]; then
             TEXT+="\Z1\Zb$(printf "%02d" ${P})\Zn "
           else
             TEXT+="\Z2\Zb$(printf "%02d" ${P})\Zn "
@@ -3333,7 +3333,7 @@ function getmap() {
       while read -r PORT; do
         ls -l /sys/block | grep -F -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
         PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
-        [ "${PCMD}" -eq 0 ] && DUMMY=1 || DUMMY=0
+        [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
         [[ "${ATTACH}" -eq 1 && "${DUMMY}" -eq 0 ]] && CONPORTS="$((${CONPORTS} + 1))" && echo "$((${PORT} - 1))" >>"${TMP_PATH}/ports"
         NUMPORTS="$((${NUMPORTS} + 1))"
       done <<<"$(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)"

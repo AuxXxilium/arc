@@ -9,8 +9,8 @@ function unpackModules() {
   local KERNEL
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 
-  rm -rf "${UNPATH}"
-  mkdir -p "${UNPATH}"
+  rm -rf "${TMP_PATH}/modules"
+  mkdir -p "${TMP_PATH}/modules"
   if [ "${KERNEL}" = "custom" ]; then
     tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVERP}.tgz" -C "${TMP_PATH}/modules"
   else

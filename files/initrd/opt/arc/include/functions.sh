@@ -388,7 +388,7 @@ function livepatch() {
   fi
   echo
   if [ "${PVALID}" = "false" ]; then
-    echo -e ">> Patch failed."
+    echo -e ">> DSM Image patching failed."
     sleep 5
     exit 1
   elif [ "${PVALID}" = "true" ]; then
