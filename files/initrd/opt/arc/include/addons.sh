@@ -48,7 +48,6 @@ function availableAddons() {
 function installAddon() {
   local ADDON="${1:-}"
   local PLATFORM="${2:-}"
-  local KVER="${3:-}"
   [ -z "${ADDON}" ] && echo "ERROR: Addon not defined" && return 1
   isAddonAvailable "${ADDON}" "${PLATFORM}" || {
     deleteConfigKey "addon.${ADDON}" "${USER_CONFIG_FILE}"
@@ -57,7 +56,7 @@ function installAddon() {
   local TMP_ADDON="${TMP_PATH}/${ADDON}"
   mkdir -p "${TMP_ADDON}"
   local HAS_FILES=0
-  for TGZ in "${ADDONS_PATH}/${ADDON}/all.tgz" "${ADDONS_PATH}/${ADDON}/${PLATFORM}-${KVER}.tgz"; do
+  for TGZ in "${ADDONS_PATH}/${ADDON}/all.tgz"; do
     [ -f "${TGZ}" ] && tar -zxf "${TGZ}" -C "${TMP_ADDON}" 2>>"${LOG_FILE}" && HAS_FILES=1
   done
   [ "${HAS_FILES}" -ne 1 ] && deleteConfigKey "addon.${ADDON}" "${USER_CONFIG_FILE}" && rm -rf "${TMP_ADDON}" && return 0
@@ -71,7 +70,7 @@ function installAddon() {
 # Detect if has new local plugins to install/reinstall
 function updateAddon() {
   for F in $(ls ${ADDONS_PATH}/*.addon 2>/dev/null); do
-    local ADDON=$(basename "${F}" | sed 's|.addon||')
+    local ADDON="$(basename "${F}" | sed 's|.addon||')"
     rm -rf "${ADDONS_PATH}/${ADDON}"
     mkdir -p "${ADDONS_PATH}/${ADDON}"
     tar -zxf "${F}" -C "${ADDONS_PATH}/${ADDON}"

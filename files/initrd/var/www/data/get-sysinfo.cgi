@@ -99,6 +99,8 @@ function getSysinfo() {
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+  CPUCNT="$(cat /sys/devices/system/cpu/cpu[0-9]*/topology/{core_cpus_list,thread_siblings_list} | sort -u | wc -l 2>/dev/null)"
+  CPUCHT="$(cat /proc/cpuinfo | grep -c 'core id' 2>/dev/null)"
   local b v
   if [ -r /sys/class/dmi/id/product_name ]; then
     b="$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)"
@@ -165,6 +167,7 @@ function getSysinfo() {
     USERSYNOINFO="$(echo "${USERSYNOINFO_RAW}" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g' | sed 's/^ //;s/ $//')"
     BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
   fi
+  ALTCONSOLE="$(readConfigKey "arc.altconsole" "${USER_CONFIG_FILE}")"
   DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
@@ -185,7 +188,7 @@ function getSysinfo() {
   # Print System Informations
   TEXT="\n> System: ${MACHINE} | ${BOOTSYS}"
   TEXT+="\n  Board: ${BOARD}"
-  TEXT+="\n  CPU: ${CPU}"
+  TEXT+="\n  CPU: {CPU} (Cores: ${CPUCNT} | Threads: ${CPUCHT})"
   if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
     GPUNAME=""
     for PCI in $(lspci -d ::300 | awk '{print $1}'); do
@@ -202,18 +205,18 @@ function getSysinfo() {
   for N in ${ETHX}; do
     COUNT=0
     DRIVER="$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
-    MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
+    MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | tr '[:upper:]' '[:lower:]')"
     while true; do
       if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        TEXT+="\n   ${DRIVER} (${MAC}): DOWN"
+        TEXT+="\n  ${DRIVER} (${MAC}): DOWN"
         break
       fi
       if [ "0" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        TEXT+="\n   ${DRIVER} (${MAC}): NOT CONNECTED"
+        TEXT+="\n  ${DRIVER} (${MAC}): NOT CONNECTED"
         break
       fi
-      if [ ${COUNT} -ge ${TIMEOUT} ]; then
-        TEXT+="\n   ${DRIVER} (${MAC}): TIMEOUT"
+      if [ "${COUNT}" -ge "${TIMEOUT}" ]; then
+        TEXT+="\n  ${DRIVER} (${MAC}): TIMEOUT"
         break
       fi
       COUNT=$((${COUNT} + 1))
@@ -221,9 +224,9 @@ function getSysinfo() {
       if [ -n "${IP}" ]; then
         SPEED="$(/usr/sbin/ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')"
         if [[ "${IP}" =~ ^169\.254\..* ]]; then
-          TEXT+="\n   ${DRIVER} (${SPEED} | ${MAC}): LINK LOCAL (No DHCP server found.)"
+          TEXT+="\n  ${DRIVER} (${SPEED} | ${MAC}): LINK LOCAL (No DHCP server found.)"
         else
-          TEXT+="\n   ${DRIVER} (${SPEED} | ${MAC}): ${IP}"
+          TEXT+="\n  ${DRIVER} (${SPEED} | ${MAC}): ${IP}"
         fi
         break
       fi
@@ -236,7 +239,7 @@ function getSysinfo() {
   TEXT+="\n  Config | Build: ${CONFDONE} | ${BUILDDONE}"
   TEXT+="\n  Config Version: ${CONFIGVER}"
   TEXT+="\n  Offline Mode: ${ARCOFFLINE}"
-  [ "${ARCOFFLINE}" = "true" ] && TEXT+="\n  Offline Mode: ${ARCOFFLINE}"
+  TEXT+="\n  Switch Serialport: ${ALTCONSOLE}"
   if [ "${CONFDONE}" = "true" ]; then
     TEXT+="\n> DSM ${PRODUCTVER} (${BUILDNUM}): ${MODEL}"
     TEXT+="\n  Kernel | LKM: ${KVER} | ${LKM}"

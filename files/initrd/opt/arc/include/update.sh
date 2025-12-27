@@ -16,7 +16,7 @@ function updateLoader() {
       while [ "${idx}" -le 5 ]; do
         RESPONSE=$(curl -m 10 -skL "${API_URL}")
         if echo "${RESPONSE}" | jq empty 2>/dev/null; then
-          TAG=$(echo "${RESPONSE}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)
+          TAG=$(echo "${RESPONSE}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 | sed 's/^[v|V]//g')
           if [ -n "${TAG}" ]; then
             break
           fi
@@ -170,7 +170,7 @@ function upgradeLoader() {
     if [ -z "${TAG}" ]; then
       idx=0
       while [ "${idx}" -le 5 ]; do
-        TAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
+        TAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 | sed 's/^[v|V]//g')"
         if [ -n "${TAG}" ]; then
           break
         fi
@@ -280,7 +280,7 @@ function updateAddons() {
   [ -f "${ADDONS_PATH}/VERSION" ] && local ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")" || ADDONSVERSION="0.0.0"
   idx=0
   while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
-    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
     if [ -n "${TAG}" ]; then
       break
     fi
@@ -354,7 +354,7 @@ function updatePatches() {
   [ -f "${PATCH_PATH}/VERSION" ] && local PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")" || PATCHESVERSION="0.0.0"
   idx=0
   while [ "${idx}" -le 5 ]; do
-    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
     if [ -n "${TAG}" ]; then
       break
     fi
@@ -408,7 +408,7 @@ function updateCustom() {
   [ -f "${CUSTOM_PATH}/VERSION" ] && local CUSTOMVERSION="$(cat "${CUSTOM_PATH}/VERSION")" || CUSTOMVERSION="0.0.0"
   idx=0
   while [ "${idx}" -le 5 ]; do
-    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-custom/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-custom/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
     if [ -n "${TAG}" ]; then
       break
     fi
@@ -485,7 +485,7 @@ function updateModules() {
   is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
   idx=0
   while [ "${idx}" -le 5 ]; do
-    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
     if [ -n "${TAG}" ]; then
       break
     fi
@@ -555,7 +555,7 @@ function updateModules() {
       writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
       while read -r ID DESC; do
         writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-      done < <(getAllModules "${PLATFORM}" "${KVERP}")
+      done <<<"$(getAllModules "${PLATFORM}" "${KVERP}")"
       dialog --backtitle "$(backtitle)" --title "Update Modules" \
         --infobox "Rewrite successful!" 3 50
       sleep 2
@@ -571,7 +571,7 @@ function updateConfigs() {
   if [ -z "${1}" ]; then
     idx=0
     while [ "${idx}" -le 5 ]; do
-      local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+      local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
       if [ -n "${TAG}" ]; then
         break
       fi
@@ -628,7 +628,7 @@ function updateLKMs() {
   if [ -z "${1}" ]; then
     idx=0
     while [ "${idx}" -le 5 ]; do
-      local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r ".[].tag_name" | sort -rV | head -1)"
+      local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
       if [ -n "${TAG}" ]; then
         break
       fi
@@ -737,7 +737,7 @@ function dependenciesUpdate() {
     dialog --infobox "Some updates failed! Try again later." 3 40
   else
     dialog --infobox "All selected updates completed successfully!" 3 40
-    resetBuild
+    resetBuildstatus
   fi
 
   sleep 3

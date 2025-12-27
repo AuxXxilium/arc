@@ -64,7 +64,6 @@ ZIMAGE_MOD=${2}
 
 KVER=$(strings "${VMLINUX_MOD}" | grep -Eo "Linux version [0-9]+\.[0-9]+\.[0-9]+" | head -1 | awk '{print $3}')
 if [ "${KVER:0:1}" = "4" ]; then
-  echo -e ">> patching Kernel 4.x"
   gzip -dc "${ARC_PATH}/bzImage-template-v4.gz" >"${ZIMAGE_MOD}" 2>/dev/null || exit 1
 
   dd if="${VMLINUX_MOD}" of="${ZIMAGE_MOD}" bs=16494 seek=1 conv=notrunc 2>/dev/null || exit 1
@@ -75,7 +74,6 @@ if [ "${KVER:0:1}" = "4" ]; then
   size_le "${RUN_SIZE}" | dd of="${ZIMAGE_MOD}" bs=15745210 seek=1 conv=notrunc 2>/dev/null || exit 1
   size_le "$((16#$(crc32 "${ZIMAGE_MOD}" | awk '{print $1}') ^ 0xFFFFFFFF))" | dd of="${ZIMAGE_MOD}" conv=notrunc oflag=append 2>/dev/null || exit 1
 elif [ "${KVER:0:1}" = "5" ]; then
-  echo -e ">> patching Kernel 5.x"
   gzip -dc "${ARC_PATH}/bzImage-template-v5.gz" >"${ZIMAGE_MOD}" 2>/dev/null || exit 1
 
   dd if="${VMLINUX_MOD}" of="${ZIMAGE_MOD}" bs=14561 seek=1 conv=notrunc 2>/dev/null || exit 1

@@ -37,7 +37,7 @@ function backtitle() {
   fi
   BACKTITLE+=" | "
   if [ "${ARC_OFFLINE}" = "true" ]; then
-    BACKTITLE+="${IPCON:-(offline)} | "
+    BACKTITLE+="${IPCON} (offline) | "
   else
     BACKTITLE+="${IPCON:-(no IP)} | "
   fi
@@ -57,6 +57,7 @@ function backtitle() {
   BACKTITLE+="Build: $( [ "${BUILDDONE}" = "true" ] && echo "yes" || echo "no" ) | "
   BACKTITLE+="Boot: ${MEV} (${BUS}) | "
   BACKTITLE+="KB: ${KEYMAP}"
+  arc_mode
   echo "${BACKTITLE}"
 }
 
@@ -66,7 +67,7 @@ if [ "${ARC_MODE}" = "update" ] || [ "${ARC_MODE}" = "automated" ]; then
   LOCKFILE="/tmp/arc_menu.lock"
   exec 200>"$LOCKFILE"
   flock -n 200 || {
-    echo "Another Arc instance is running in this mode."
+    echo "Another Arc instance is running in ${ARC_MODE} mode."
     exit 1
   }
 fi
@@ -134,11 +135,8 @@ elif [ "${ARC_MODE}" = "config" ]; then
           GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
           write_menu_value "g" "Scaling Governor" "${GOVERNOR:-performance}"
         fi
-        if echo "${addons_list}" | grep -q "storagepanel"; then
-          write_menu_value "P" "StoragePanel" "${STORAGEPANEL:-auto}"
-        fi
 
-        if [ "${PLATFORM}" = "epyc7002" ] && [ "${PRODUCTVER}" = "7.2" ]; then
+        if [ "${MODEL}" = "SA6400" ] && [[ "${PRODUCTVER}" = "7.2" || "${PRODUCTVER}" = "7.3" ]]; then
           write_menu_value "K" "Kernel" "${KERNEL}"
         fi
 
@@ -152,12 +150,13 @@ elif [ "${ARC_MODE}" = "config" ]; then
           write_menu "o" "DTS Map Options"
         fi
       else
-        write_menu "5" "\Z1Show Arc DSM Options\Zn"
+        write_menu "5" "\Z1Show Arc Options\Zn"
       fi
 
       if [ "${BOOTOPTS}" = "true" ]; then
         write_menu "6" "\Z1Hide Boot Options\Zn"
         write_menu "f" "Bootscreen Options"
+        write_menu_value "Y" "Screen Timeout" "${CONSOLEBLANK}"
         write_menu_value "m" "Boot Kernelload" "${KERNELLOAD}"
         write_menu_value "E" "eMMC Boot Support" "$( [ "${EMMCBOOT}" = "true" ] && echo "enabled" || echo "disabled" )"
         if [ "${DIRECTBOOT}" = "false" ]; then
@@ -178,7 +177,8 @@ elif [ "${ARC_MODE}" = "config" ]; then
         write_menu "J" "Reset Network Config"
         write_menu "T" "Delete Scheduled Tasks"
         write_menu "r" "Delete Blocked IP Database"
-        write_menu "v" "Force enable SSH"
+        write_menu "G" "Clean DSM Update Cache"
+        write_menu "R" "Force enable SSH"
         write_menu_value "O" "Official Drivers" "$( [ "${ODP}" = "true" ] && echo "enabled" || echo "disabled" )"
         write_menu "l" "Edit User Config"
       else
@@ -266,9 +266,28 @@ elif [ "${ARC_MODE}" = "config" ]; then
             NEXT="p"
             ;;
           S) storageMenu; NEXT="S" ;;
-          o) dtsMenu; NEXT="o" ;;
           g) governorMenu; NEXT="g" ;;
           P) storagepanelMenu; NEXT="P" ;;
+          K)
+            KERNEL=$([ "${KERNEL}" = "official" ] && echo 'custom' || echo 'official')
+            writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
+            customKernel
+            resetBuild
+            NEXT="K"
+            ;;
+          H)
+            [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
+            writeConfigKey "hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
+            resetBuild
+            NEXT="H"
+            ;;
+          h)
+            [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
+            writeConfigKey "usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
+            resetBuild
+            NEXT="h"
+            ;;
+          o) dtsMenu; NEXT="o" ;;
           # Boot Section
           6)
             [ "${BOOTOPTS}" = "true" ] && BOOTOPTS='false' || BOOTOPTS='true'
@@ -279,6 +298,11 @@ elif [ "${ARC_MODE}" = "config" ]; then
             [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
             writeConfigKey "kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
             NEXT="m"
+            ;;
+          v)
+            [ "${ALTCONSOLE}" = "true" ] && ALTCONSOLE='false' || ALTCONSOLE='true'
+            writeConfigKey "arc.altconsole" "${ALTCONSOLE}" "${USER_CONFIG_FILE}"
+            NEXT="v"
             ;;
           E)
             [ "${EMMCBOOT}" = "true" ] && EMMCBOOT='false' || EMMCBOOT='true'
@@ -312,51 +336,21 @@ elif [ "${ARC_MODE}" = "config" ]; then
             ;;
           j) cmdlineMenu; NEXT="j" ;;
           k) synoinfoMenu; NEXT="k" ;;
-          l) editUserConfig; NEXT="l" ;;
-          s) downgradeMenu; NEXT="s" ;;
-          t) resetPassword; NEXT="t" ;;
           N) addNewDSMUser; NEXT="N" ;;
+          t) resetPassword; NEXT="t" ;;
+          s) downgradeMenu; NEXT="s" ;;
           J) resetDSMNetwork; NEXT="J" ;;
           T) disablescheduledTasks; NEXT="T" ;;
-          K)
-            KERNEL=$([ "${KERNEL}" = "official" ] && echo 'custom' || echo 'official')
-            writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
-            dialog --backtitle "$(backtitle)" --title "Kernel" \
-              --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 50
-            if [ "${ODP}" = "true" ]; then
-              ODP="false"
-              writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
-            fi
-            PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-            PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-            KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-            is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
-            if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
-              writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-              mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
-            fi
-            resetBuild
-            NEXT="K"
-            ;;
-          H)
-            [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
-            writeConfigKey "hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
-            resetBuild
-            NEXT="H"
-            ;;
-          h)
-            [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
-            writeConfigKey "usbmount" "${USBMOUNT}" "${USER_CONFIG_FILE}"
-            resetBuild
-            NEXT="h"
-            ;;
+          r) removeBlockIPDB; NEXT="r" ;;
+          G) cleanDSMRoot; NEXT="G" ;;
+          R) forceEnableDSMTelnetSSH; NEXT="R" ;;
           O)
             [ "${ODP}" = "false" ] && ODP='true' || ODP='false'
             writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
             resetBuild
             NEXT="O"
             ;;
-          B) getbackup; NEXT="B" ;;
+          l) editUserConfig; NEXT="l" ;;
           # Online Settings
           Q) onlineMenu; NEXT="Q" ;;
           # Loader Section
@@ -371,8 +365,11 @@ elif [ "${ARC_MODE}" = "config" ]; then
             NEXT="c"
             ;;
           D) staticIPMenu; NEXT="D" ;;
-          Z) loaderPorts; NEXT="Z" ;;
           U) loaderPassword; NEXT="U" ;;
+          Z) loaderPorts; NEXT="Z" ;;
+          w) resetLoader; NEXT="w" ;;
+          L) greplogs; NEXT="L" ;;
+          B) getbackup; NEXT="B" ;;
           W)
             RD_COMPRESSED=$([ "${RD_COMPRESSED}" = "true" ] && echo 'false' || echo 'true')
             writeConfigKey "rd-compressed" "${RD_COMPRESSED}" "${USER_CONFIG_FILE}"
@@ -383,11 +380,9 @@ elif [ "${ARC_MODE}" = "config" ]; then
           u)
             [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
             writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
-            resetBuild
+            resetBuildstatus
             NEXT="u"
             ;;
-          L) greplogs; NEXT="L" ;;
-          w) resetLoader; NEXT="w" ;;
           C) cloneLoader; NEXT="C" ;;
           n) editGrubCfg; NEXT="n" ;;
           y) keymapMenu; NEXT="y" ;;

@@ -2,14 +2,15 @@
 # Unpack modules from a tgz file
 # 1 - Platform
 # 2 - Kernel Version
+# 3 - Path
 function unpackModules() {
   local PLATFORM="${1}"
   local KVERP="${2}"
   local KERNEL
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 
-  rm -rf "${TMP_PATH}/modules"
-  mkdir -p "${TMP_PATH}/modules"
+  rm -rf "${UNPATH}"
+  mkdir -p "${UNPATH}"
   if [ "${KERNEL}" = "custom" ]; then
     tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVERP}.tgz" -C "${TMP_PATH}/modules"
   else
@@ -18,9 +19,10 @@ function unpackModules() {
 }
 
 ###############################################################################
-# Packag modules to a tgz file
+# Pack modules to a tgz file
 # 1 - Platform
 # 2 - Kernel Version
+# 3 - Path
 function packModules() {
   local PLATFORM="${1}"
   local KVERP="${2}"
@@ -48,7 +50,6 @@ function getAllModules() {
 
   unpackModules "${PLATFORM}" "${KVERP}"
 
-  # Get list of all modules
   for F in $(ls ${TMP_PATH}/modules/*.ko 2>/dev/null); do
     [ ! -e "${F}" ] && continue
     local N DESC
@@ -82,7 +83,7 @@ function installModules() {
   ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
   for F in ${TMP_PATH}/modules/*.ko; do
     [ ! -e "${F}" ] && continue
-    M=$(basename "${F}")
+    M="$(basename "${F}")"
     [ "${ODP}" = "true" ] && [ -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ] && continue
     if echo "${MLIST}" | grep -wq "$(basename "${M}" .ko)"; then
       cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}" 2>"${LOG_FILE}"
@@ -157,9 +158,9 @@ function delToModules() {
 # 3 - ko name
 function getdepends() {
   function _getdepends() {
-    if [ -f "${TMP_PATH}/modules/${1}.ko" ]; then
+    if [ -f "${UNPATH}/${1}.ko" ]; then
       local depends
-      depends="$(modinfo -F depends "${TMP_PATH}/modules/${1}.ko" 2>/dev/null | sed 's/,/\n/g')"
+      depends="$(modinfo -F depends "${UNPATH}/${1}.ko" 2>/dev/null | sed 's/,/\n/g')"
       if [ "$(echo "${depends}" | wc -w)" -gt 0 ]; then
         for k in ${depends}; do
           echo "${k}"

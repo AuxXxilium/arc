@@ -34,11 +34,11 @@ TITLE+=" ${ARC_VERSION} (${ARC_BUILD})"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
-printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
+printf "\033[1;37m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 TITLE="Boot:"
-[ "${EFI}" = "1" ] && TITLE+=" UEFI" || TITLE+=" BIOS"
+[ "${EFI}" -eq 1 ] && TITLE+=" UEFI" || TITLE+=" BIOS"
 TITLE+=" | Device: ${BUS} | Mode: ${ARC_MODE}"
-printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
+printf "\033[1;37m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
 # Check if DSM zImage/Ramdisk is changed, patch it if necessary, update Files if necessary
 ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
@@ -46,10 +46,10 @@ ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
 RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
 RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
 if [ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" ] || [ "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]; then
-  echo -e "\033[1;31mDSM zImage/Ramdisk changed!\033[0m"
-  livepatch
   echo
+  livepatch
 fi
+echo
 
 # Read model/system variables
 PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
@@ -60,14 +60,14 @@ SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 CPU="$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | sed -E 's/@ [0-9.]+[[:space:]]*GHz//g' | sed -E 's/ CPU//g' | sed -E 's/^[[:space:]]*//')"
+CPUCNT="$(cat /sys/devices/system/cpu/cpu[0-9]*/topology/{core_cpus_list,thread_siblings_list} | sort -u | wc -l 2>/dev/null)"
+CPUCHT="$(cat /proc/cpuinfo | grep -c 'core id' 2>/dev/null)"
 RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
 BOARD="$(getBoardName)"
 MEV="$(virt-what 2>/dev/null | head -1)"
 GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
-HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
-ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
 # Build Sanity Check
 if [ "${BUILDDONE}" = "false" ]; then
@@ -89,16 +89,15 @@ if [ -f "${PART1_PATH}/GRUB_VER" ]; then
 fi
 if [ "${DSMINFO}" = "true" ]; then
   echo -e "\033[1;34mDSM\033[0m"
-  echo -e "Model: \033[1;37m${MODEL}\033[0m"
-  echo -e "System: \033[1;37m${SYS_MODEL}\033[0m"
+  echo -e "Model: \033[1;37m${MODEL} (${SYS_MODEL})\033[0m"
   echo -e "Platform: \033[1;37m${PLATFORM}\033[0m"
   echo -e "Version: \033[1;37m${PRODUCTVER} (${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))\033[0m"
-  echo -e "Kernel: \033[1;37m${KVER} (${KERNEL})\033[0m"
+  echo -e "Kernel: \033[1;37m${KERNEL} (${KVER})\033[0m"
   echo
 fi
 if [ "${SYSTEMINFO}" = "true" ]; then
   echo -e "\033[1;34mSystem\033[0m"
-  echo -e "CPU: \033[1;37m${CPU}\033[0m"
+  echo -e "CPU: \033[1;37m${CPU} (Cores: ${CPUCNT} | Threads: ${CPUCHT})\033[0m"
   echo -e "Board: \033[1;37m${BOARD}\033[0m"
   echo -e "Memory: \033[1;37m${RAMTOTAL}GB\033[0m"
   echo -e "Governor: \033[1;37m${GOVERNOR:-performance}\033[0m"
@@ -121,12 +120,12 @@ fi
 if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
   [ -z "$(ls /dev/nvme* | grep -vE "${LOADER_DISK}[0-9]?$" 2>/dev/null)" ] && printf "\033[1;33m*** %s ***\033[0m\n" "Notice: Please insert at least one m.2 disk for system installation."
 else
-  if [ -z "$(ls /dev/sd* /dev/sg* | grep -vE "${LOADER_DISK}[0-9]?$" 2>/dev/null)" ]; then
+  if [ -z "$(ls /dev/sd* /dev/sg* 2>/dev/null | grep -vE "${LOADER_DISK}[0-9]?$")" ]; then
     printf "\033[1;33m*** %s ***\033[0m\n" "Notice: Please insert at least one SATA, SAS, or SCSI disk for system installation."
   fi
 fi
 
-if checkBIOS_VT_d && [ ${KVER:0:1} -lt 5 ]; then
+if checkBIOS_VT_d && [ "${KVER:0:1}" -lt 5 ]; then
   echo -e "\033[1;31m*** Notice: Disable Intel(VT-d)/AMD(AMD-V) in BIOS/UEFI settings if you encounter a boot issues. ***\033[0m"
   echo
 fi
@@ -139,7 +138,6 @@ KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
 DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
-MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 
 declare -A CMDLINE
 
@@ -151,17 +149,26 @@ CMDLINE['sn']="${SN}"
 
 # NIC Cmdline
 ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
-ETHM="$(readConfigKey "${MODEL}.ports" "${S_FILE}")"
-ETHN="$(wc -w <<< "${ETHX}")"
-ETHM="${ETHM:-${ETHN}}"
-NIC=0
+ETHNA="$(wc -w <<< "${ETHX}")"
+ETHN=0
 for N in ${ETHX}; do
   MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
-  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null)"
-  CMDLINE["mac$((++NIC))"]="${MAC}"
-  [ "${NIC}" -ge "${ETHM}" ] && break
+  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
+  CMDLINE["mac$((++ETHN))"]="${MAC}"
 done
-CMDLINE['netif_num']="${NIC}"
+CMDLINE['netif_num']="${ETHN}"
+[ "${ETHN}" -ne "${ETHNA}" ] && echo "Warning: Network interface count mismatch!" || true
+
+NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
+if [ "${NETFIX}" = "true" ]; then
+  for N in ${ETHX}; do
+    NMAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null || echo "00:00:00:00:00:00")"
+    NBUS="$(ethtool -i "${N}" 2>/dev/null | grep "bus-info" | cut -d' ' -f2 || echo "0000:00:00.0")"
+    if [ "${NMAC}" != "00:00:00:00:00:00" ] && [ "${NBUS}" != "0000:00:00.0" ]; then
+      CMDLINE["R${NBUS}"]="${NMAC}"
+    fi
+  done
+fi
 
 # Boot Cmdline
 if [ "${ARC_MODE}" = "reinstall" ]; then
@@ -178,6 +185,10 @@ else
 fi
 
 # DSM Cmdline
+if [ -z "${KVER}" ]; then
+  echo "Error: DSM ${PRODUCTVER} on ${PLATFORM} is not supported."
+  exit 1
+fi
 if [ "${KVER:0:1}" -lt 5 ]; then
   if [ "${BUS}" != "usb" ]; then
     SZ=$(blockdev --getsz "${LOADER_DISK}" 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
@@ -194,8 +205,8 @@ else
 fi
 
 if [ "${DT}" = "true" ]; then
-  CMDLINE['syno_ttyS0']="serial,0x3f8" # to check because of issues with msi (possible fix 0x3e8)
-  CMDLINE['syno_ttyS1']="serial,0x2f8" # to check because of issues with msi (possible fix 0x2e8)
+  CMDLINE['syno_ttyS0']="serial,0x3f8"
+  CMDLINE['syno_ttyS1']="serial,0x2f8"
 else
   CMDLINE['SMBusHddDynamicPower']="1"
   CMDLINE['syno_hdd_detect']="0"
@@ -208,7 +219,8 @@ CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
 CMDLINE['console']="ttyS0,115200n8"
-CMDLINE['consoleblank']="600"
+CONSOLEBLANK="$(readConfigKey "arc.consoleblank" "${USER_CONFIG_FILE}")"
+CMDLINE['consoleblank']="${CONSOLEBLANK:-600}"
 CMDLINE['root']="/dev/md0"
 CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
@@ -218,6 +230,7 @@ CMDLINE['pcie_aspm']="off"
 CMDLINE['nowatchdog']=""
 # CMDLINE['intel_pstate']="disable"
 # CMDLINE['amd_pstate']="disable"
+MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 CMDLINE['mev']="${MEV:-physical}"
 CMDLINE['governor']="${GOVERNOR:-performance}"
@@ -227,12 +240,14 @@ if [ "${MEV}" = "vmware" ]; then
   CMDLINE['pmtmr']="0x0"
 fi
 
+HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
 if [ "${HDDSORT}" = "true" ]; then
   CMDLINE['hddsort']=""
 fi
 
+USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 if [ "${USBMOUNT}" = "true" ]; then
-  CMDLINE['usbasinternal']=""
+  CMDLINE['usbinternal']=""
 fi
 
 if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
@@ -257,12 +272,12 @@ fi
 # Read user network settings
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["network.${KEY}"]="${VALUE}"
-done < <(readConfigMap "network" "${USER_CONFIG_FILE}")
+done <<<"$(readConfigMap "network" "${USER_CONFIG_FILE}")"
 
 # Read user cmdline
 while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
-done < <(readConfigMap "cmdline" "${USER_CONFIG_FILE}")
+done <<<"$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
 
 # Prepare command line
 CMDLINE_LINE=""
@@ -283,7 +298,7 @@ if [ "${DIRECTBOOT}" = "true" ] || echo "parallels xen" | grep -qw "${MEV:-physi
   grub-editenv "${USER_RSYSENVFILE}" set dsm_version="${PRODUCTVER} (${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))"
   grub-editenv "${USER_RSYSENVFILE}" set dsm_kernel="${KERNEL} (${KVER})"
   grub-editenv "${USER_RSYSENVFILE}" set sys_mev="${MEV:-physical}"
-  grub-editenv "${USER_RSYSENVFILE}" set sys_cpu="${CPU}"
+  grub-editenv "${USER_RSYSENVFILE}" set sys_cpu="${CPU} (Cores: ${CPUCNT} | Threads: ${CPUCHT})"
   grub-editenv "${USER_RSYSENVFILE}" set sys_board="${BOARD}"
   grub-editenv "${USER_RSYSENVFILE}" set sys_mem="${RAMTOTAL} GiB"
 
@@ -302,19 +317,11 @@ else
 
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
-  echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
-  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && sleep 3 || true
+  echo -e "\033[1;34mNetwork (${ETHN} NIC)\033[0m"
+  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
   IPCON=""
   checkNIC || true
   echo
-
-  DSMLOGO="$(readConfigKey "bootscreen.dsmlogo" "${USER_CONFIG_FILE}")"
-  if [ "${DSMLOGO}" = "true" ] && [ -c "/dev/fb0" ]; then
-    [[ "${IPCON}" =~ ^169\.254\..* ]] && IPCON=""
-    [ -n "${IPCON}" ] && URL="http://${IPCON}:5000" || URL="http://find.synology.com/"
-    python3 "${ARC_PATH}/include/functions.py" "makeqr" -d "${URL}" -l "6" -o "${TMP_PATH}/qrcode_boot.png"
-    [ -f "${TMP_PATH}/qrcode_boot.png" ] && echo | fbv -acufi "${TMP_PATH}/qrcode_boot.png" >/dev/null 2>/dev/null || true
-  fi
 
   # Executes DSM kernel via KEXEC
   kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" >"${LOG_FILE}" 2>&1 || die "Failed to load DSM Kernel!"
@@ -327,13 +334,12 @@ else
   done
 
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
-  # _bootwait
-  
+
   sleep 2
 
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   [ -z "${KERNELLOAD}" ] && KERNELLOAD="kexec"
-  [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
   echo -e "\033[1;37mBooting DSM...\033[0m"
+  [ "${KERNELLOAD}" = "kexec" ] && kexec -e || poweroff
   exit 0
 fi

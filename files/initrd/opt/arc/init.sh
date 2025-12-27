@@ -40,11 +40,11 @@ TITLE+=" ${ARC_VERSION} (${ARC_BUILD})"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
-printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
+printf "\033[1;37m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 TITLE="Boot:"
-[ "${EFI}" -eq 1 ] && TITLE+=" UEFI" || TITLE+=" BIOS"
+[ "${EFI}" = "1" ] && TITLE+=" UEFI" || TITLE+=" BIOS"
 TITLE+=" | Device: ${BUS} | Mode: ${ARC_MODE}"
-printf "\033[1;34m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
+printf "\033[1;37m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
 # Check for Config File
 if [ ! -f "${USER_CONFIG_FILE}" ]; then
@@ -52,13 +52,16 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
 fi
 initConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
+initConfigKey "arc.altconsole" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.backup" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.consoleblank" "600" "${USER_CONFIG_FILE}"
 initConfigKey "arc.dev" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.discordnotify" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.netfix" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.remoteassistance" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
@@ -115,8 +118,9 @@ fi
 
 # Read/Write IP/Mac to config
 ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
+ETHN=0
 for N in ${ETHX}; do
-  MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g')"
+  MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
   IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
   if [ -n "${IPR}" ]; then
     if [ ! "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
@@ -134,14 +138,13 @@ for N in ${ETHX}; do
     fi
     sleep 1
   fi
-  [ "${N::3}" = "eth" ] && ethtool -s "${N}" wol g 2>/dev/null || true
+  [ "${N:0:3}" = "eth" ] && ethtool -s "${N}" wol g 2>/dev/null || true
   initConfigKey "${N}" "${MACR}" "${USER_CONFIG_FILE}"
+  ETHN=$((ETHN + 1))
 done
-ETHN=$(echo ${ETHX} | wc -w)
-writeConfigKey "device.nic" "${ETHN}" "${USER_CONFIG_FILE}"
 # No network devices
 echo
-[ "${ETHN}" -le 0 ] && die "No NIC found! - Loader does not work without Network connection."
+[ "${ETHN}" = "0" ] && die "No NIC found! - Loader does not work without Network connection."
 
 BUSLIST="usb sata sas scsi nvme mmc ide virtio vmbus xen docker"
 if [ "${BUS}" = "usb" ]; then
@@ -177,9 +180,10 @@ case "${ARC_MODE}" in
     echo -e "\033[1;34mStarting Update Mode...\033[0m"
     ;;
   dsm|reinstall|recovery)
-    if [ "${BUILDDONE}" = "true" ]; then
+    if [ "${BUILDDONE}" = "true" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
       echo -e "\033[1;34mStarting DSM Mode...\033[0m"
-      boot.sh && exit 0
+      boot.sh
+      exit 0
     else
       echo -e "\033[1;34mRebooting to Config Mode...\033[0m"
       rebootTo "config" || die "Reboot to Config Mode failed!"
@@ -194,13 +198,11 @@ echo
 
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
-IPCON=""
-echo -e "\033[1;37mDetected ${ETHN} NIC:\033[0m"
-echo
-
-[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
-[ ! -f /var/run/thttpd.pid ] && /etc/init.d/S90thttpd restart >/dev/null 2>&1 || true
-sleep 3
+echo -e "\033[1;34mNetwork (${ETHN} NIC)\033[0m"
+RESTARTED=0
+[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && RESTARTED=1
+[ ! -f /var/run/thttpd.pid ] && /etc/init.d/S90thttpd restart >/dev/null 2>&1 && RESTARTED=1
+[ "${RESTARTED}" = "1" ] && sleep 3
 checkNIC
 echo
 
@@ -215,41 +217,14 @@ mkdir -p "${MODULES_PATH}"
 mkdir -p "${PATCH_PATH}"
 mkdir -p "${USER_UP_PATH}"
 
-if [ -d "${MODULES_PATH}/" ]; then
-  while IFS= read -r -d '' MSRC; do
-    MSRCB="$(basename "$MSRC")"
-    MTARB="${MSRCB/-7.2-/-7.3-}"
-    MTAR="${MODULES_PATH}/${MTARB}"
-    if [ "$MTAR" != "$MSRC" ] && [ ! -e "$MTAR" ]; then
-      ln -sf "$MSRC" "$MTAR" || true
-    fi
-  done < <(find "${MODULES_PATH}" -maxdepth 1 -type f -name '*-7.2-*.tgz' -print0)
-fi
-
-if [ -d "${LKMS_PATH}/" ]; then
-  while IFS= read -r -d '' LSRC; do
-    LSRCB="$(basename "$LSRC")"
-    LTARB="${LSRCB/-7.2-/-7.3-}"
-    LTAR="${LKMS_PATH}/${LTARB}"
-    if [ "$LTAR" != "$LSRC" ] && [ ! -e "$LTAR" ]; then
-      ln -sf "$LSRC" "$LTAR" || true
-    fi
-  done < <(find "${LKMS_PATH}" -maxdepth 1 -type f -name '*-7.2-*.gz' -print0)
-fi
-
 DEVELOPMENT_MODE="$(readConfigKey "arc.dev" "${USER_CONFIG_FILE}")"
 if [ "${DEVELOPMENT_MODE}" = "true" ]; then
   echo -e "\033[1;34mDevelopment Mode is enabled.\033[0m"
   curl -skL https://github.com/AuxXxilium/arc/archive/refs/heads/dev.zip -o /tmp/arc-dev.zip 2>/dev/null || true
   unzip -q /tmp/arc-dev.zip -d /tmp 2>/dev/null || true
   cp -rf /tmp/arc-dev/files/initrd/opt/arc /opt 2>/dev/null || true
+  rm -rf /tmp/arc-dev /tmp/arc-dev.zip
 fi
-
-# Load Arc Overlay
-echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
-echo
-echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}:${HTTPPORT:-7080}\033[0m to configure Loader."
-echo
 
 # Notification System
 WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
@@ -269,9 +244,15 @@ if [ "${DISCORDNOTIFY}" = "true" ]; then
   fi
 fi
 
+# Load Arc Overlay
+echo -e "\033[1;34mLoading Arc Overlay...\033[0m"
+echo
+echo -e "Use \033[1;34mDisplay Output\033[0m or \033[1;34mhttp://${IPCON}:${HTTPPORT:-7080}\033[0m to configure Loader."
+echo
+
 # Check memory and load Arc
 RAM=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
-if [ "${RAM:-0}" -le 3500 ]; then
+if [ "${RAM:-0}" -le "3500" ]; then
   echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m"
   read -rp "Press Enter to continue..."
   if [ $? -eq 0 ]; then

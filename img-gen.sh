@@ -30,6 +30,7 @@ getOffline "files/p3/configs"
 case "${1}" in
   evo) getBuildroot "${1}" "br" ;;
   essential) getBuildroot "${1}" "br" ;;
+  local) mkdir -p br && cp -f /root/buildroot/output/images/rootfs.cpio.zst br/initrd-arc && cp -f /root/buildroot/output/images/bzImage br/bzImage-arc ;;
   *) echo "Invalid option specified" ;;
 esac
 

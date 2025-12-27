@@ -13,3 +13,8 @@ tasks:
       - git reset --hard
       - git pull
       - ./img-gen.sh essential
+  build-local:
+    cmds:
+      - git reset --hard
+      - git pull
+      - ./img-gen.sh local
