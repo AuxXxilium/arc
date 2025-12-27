@@ -158,7 +158,7 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 # System Addons
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: install addons"
 
-for ADDON in "redpill" "revert" "misc" "eudev" "netfix" "disks" "localrss" "notify" "mountloader"; do
+for ADDON in "redpill" "revert" "misc" "eudev" "disks" "localrss" "notify" "mountloader"; do
   if [ "${ADDON}" = "disks" ]; then
     [ -f "${USER_UP_PATH}/model.dts" ] && cp -f "${USER_UP_PATH}/model.dts" "${RAMDISK_PATH}/addons/model.dts"
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
