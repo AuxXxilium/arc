@@ -276,41 +276,6 @@ function arcVersion() {
   dialog --backtitle "$(backtitle)" --title "Arc Config" \
     --infobox "Reconfiguring Addons, Modules and Synoinfo" 3 60
 
-  writeConfigKey "kernel" "official" "${USER_CONFIG_FILE}"
-  if [ "${MODEL}" = "SA6400" ]; then
-    PLTCNT="$(readConfigKey "platforms.${PLATFORM}.ccnt" "${P_FILE}")"
-    if [ "${CPUCHT:-0}" -gt "${PLTCNT:-0}" ]; then
-      dialog --backtitle "$(backtitle)" --title "Custom Kernel" \
-        --yesno "CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}).\nDo you want to enable the custom kernel?" 6 65
-      [ $? -eq 0 ] && writeConfigKey "kernel" "custom" "${USER_CONFIG_FILE}"
-    elif [ "${MEV}" = "hyperv" ]; then
-      dialog --backtitle "$(backtitle)" --title "Custom Kernel" \
-        --yesno "Hyper-V detected. Do you want to enable the custom kernel?" 6 65
-      [ $? -eq 0 ] && writeConfigKey "kernel" "custom" "${USER_CONFIG_FILE}"
-    elif [ "${PRODUCTVER}" = "7.3" ]; then
-      dialog --backtitle "$(backtitle)" --title "Custom Kernel" \
-        --yesno "DSM 7.3 selected. Do you want to enable the custom kernel?" 6 65
-      [ $? -eq 0 ] && writeConfigKey "kernel" "custom" "${USER_CONFIG_FILE}"
-    fi
-  fi
-
-  KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
-  if [ "${KERNEL}" = "custom" ]; then
-    customKernel
-  else
-    KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-    is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
-    if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
-      writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-      mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
-    fi
-  fi
-
-  writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
-  while IFS=': ' read -r KEY VALUE; do
-    writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
-  done <<<"$(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")"
-
   ADDONS="$(readConfigKey "addons" "${USER_CONFIG_FILE}")"
   if [ "${ADDONS}" = "{}" ]; then
     init_default_addons
@@ -322,6 +287,18 @@ function arcVersion() {
       deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
     fi
   done <<<"$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
+
+  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+  is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+  if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+    writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+    mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+  fi
+
+  writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
+  while IFS=': ' read -r KEY VALUE; do
+    writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
+  done <<<"$(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")"
 
   if [ "${ONLYVERSION}" = "true" ]; then
     resetBuild
