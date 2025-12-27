@@ -10,7 +10,6 @@ LOCKFILE="/tmp/.bootlock"
 exec 200>"$LOCKFILE"
 flock -n 200 || { echo "Boot is in progress. Exiting."; exit 0; }
 
-set -e
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
 . "${ARC_PATH}/include/functions.sh"
