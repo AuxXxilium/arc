@@ -41,23 +41,21 @@ jobs:
   build:
     strategy:
       matrix:
-        include:
-          - bre: apex
-          - bre: evo
+        bre: [apex, evo] # Define the matrix values for bre
 
     runs-on: ${{ inputs.runs }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@main
 
-      # Install Dependencies
       - name: Install Dependencies
         if: ${{ inputs.runs == 'ubuntu-latest' }}
         run: |
           git config --global user.email "info@auxxxilium.tech"
           git config --global user.name "AuxXxilium"
           sudo timedatectl set-timezone "Europe/Berlin"
-
+          
           sudo apt update
           sudo apt install -y locales busybox dialog gettext sed gawk jq curl
           sudo apt install -y python-is-python3 python3-pip libelf-dev qemu-utils cpio xz-utils lz4 lzma bzip2 gzip zstd
@@ -65,24 +63,22 @@ jobs:
             sudo curl -kL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/bin/yq && sudo chmod a+x /usr/bin/yq
           fi
 
-          df -h
-
-      # Get Dependencies
       - name: Get Dependencies
         run: |
           . scripts/functions.sh "${{ secrets.BUILD_TOKEN }}"
 
           echo "Get Dependencies"
-          getAddons "files/p3/addons"
-          getModules "files/p3/modules"
-          getConfigs "files/p3/configs"
-          getPatches "files/p3/patches"
-          getCustom "files/p3/custom"
-          getOffline "files/p3/configs"
-          getLKMs "files/p3/lkms"
-          getTheme "files/p1/boot/grub"
-          getBuildroot "${{ matrix.bre }}" "${{ matrix.bre }}"
-          echo "BRETAG=${BRTAG}" >> $GITHUB_ENV
+          mkdir -vp "${{ matrix.bre }}/files"
+          cp -vrf "files" "${{ matrix.bre }}/"
+          getAddons "${{ matrix.bre }}/files/p3/addons"
+          getModules "${{ matrix.bre }}/files/p3/modules"
+          getConfigs "${{ matrix.bre }}/files/p3/configs"
+          getPatches "${{ matrix.bre }}/files/p3/patches"
+          getCustom "${{ matrix.bre }}/files/p3/custom"
+          getOffline "${{ matrix.bre }}/files/p3/configs"
+          getLKMs "${{ matrix.bre }}/files/p3/lkms"
+          getTheme "${{ matrix.bre }}/files/p1/boot/grub"
+          getBuildroot "${{ matrix.bre }}" "${{ matrix.bre }}/buildroot"
 
           # Export Dependencies Version to env
           echo "ADDONTAG=${ADDONTAG}" >> $GITHUB_ENV
@@ -94,13 +90,13 @@ jobs:
           echo "THEMETAG=${THEMETAG}" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
-          echo "OK"
+          echo "OK"          
 
-      # Cleanup Dependencies for Essential Image
-      - name: Cleanup Dependencies
+      - name: Cleanup Dependencies for Essential Image
         if: ${{ inputs.essential == true }}
         run: |
           # Cleanup
+          cd ${{ matrix.bre }}
           rm -f files/p3/modules/*-4.4.180.tgz
           rm -f files/p3/modules/*-4.4.302.tgz
           rm -f files/p3/lkms/*-4.4.180-*.tgz
@@ -114,10 +110,11 @@ jobs:
 
           echo "Cleaned"
 
-      # Build incremental
       - name: Build Image
         run: |
           . scripts/functions.sh
+
+          cd ${{ matrix.bre }}
 
           ARC_BUILD="$(date +'%y%m%d')"
           ARC_VERSION="${{ inputs.version }}"
@@ -127,6 +124,7 @@ jobs:
             ARC_BRANCH="evo"
           fi
           echo "${ARC_BUILD}" > "files/p1/ARC-BUILD"
+          echo "${{ matrix.bre }}" > "files/p1/ARC-BASE"
           echo "ARC_BUILD=${ARC_BUILD}" >> $GITHUB_ENV
           echo "${ARC_VERSION}" > "files/p1/ARC-VERSION"
           if ${{ inputs.essential }}; then
@@ -146,27 +144,27 @@ jobs:
           sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
 
           echo "Mounting Image File"
-          mkdir -p "/tmp/p1"
-          mkdir -p "/tmp/p3"
-          sudo mount ${LOOPX}p1 "/tmp/p1"
-          sudo mount ${LOOPX}p3 "/tmp/p3"
+          mkdir -p "/tmp/p1-${{ matrix.bre }}"
+          mkdir -p "/tmp/p3-${{ matrix.bre }}"
+          sudo mount ${LOOPX}p1 "/tmp/p1-${{ matrix.bre }}"
+          sudo mount ${LOOPX}p3 "/tmp/p3-${{ matrix.bre }}"
 
-          [ ! -f "${{ matrix.bre }}/bzImage-arc" ] || [ ! -f "${{ matrix.bre }}/initrd-arc" ] && exit 1
+          [ ! -f "buildroot/bzImage-arc" ] || [ ! -f "buildroot/initrd-arc" ] && exit 1
 
           echo "Repack initrd"
-          cp -f "${{ matrix.bre }}/bzImage-arc" "files/p3/bzImage-arc"
-          repackInitrd "${{ matrix.bre }}/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+          cp -f "buildroot/bzImage-arc" "files/p3/bzImage-arc"
+          repackInitrd "buildroot/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
-          sudo cp -rf "files/p1/"* "/tmp/p1"
-          sudo cp -rf "files/p3/"* "/tmp/p3"
+          sudo cp -rf "files/p1/"* "/tmp/p1-${{ matrix.bre }}"
+          sudo cp -rf "files/p3/"* "/tmp/p3-${{ matrix.bre }}"
           sudo sync
 
           echo "Unmount image file"
-          sudo umount "/tmp/p1"
-          sudo umount "/tmp/p3"
-          rmdir "/tmp/p1"
-          rmdir "/tmp/p3"
+          sudo umount "/tmp/p1-${{ matrix.bre }}"
+          sudo umount "/tmp/p3-${{ matrix.bre }}"
+          rmdir "/tmp/p1-${{ matrix.bre }}"
+          rmdir "/tmp/p3-${{ matrix.bre }}"
 
           sudo losetup --detach ${LOOPX}
 
@@ -184,20 +182,22 @@ jobs:
 
       # Zip image and generate checksum
       - name: Pack Image
-        if: success() && env.ARC_VERSION != ''
+        if: success()
         run: |
-          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.img.zip" arc.img
-          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vmdk-dyn.zip" arc-dyn.vmdk
-          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vhd.zip" arc.vhd arc.vmc
-          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vhdx.zip" arc.vhdx
-          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.ova.zip" arc.ova
+          # Zip other image files
+          cd ${{ matrix.bre }}
+          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.img.zip" "arc.img"
+          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vmdk-dyn.zip" "arc-dyn.vmdk"
+          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vmdk-flat.zip" "arc.vmdk"
+          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vhd.zip" "arc.vhd" "arc.vmc"
+          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vhdx.zip" "arc.vhdx"
+          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.ova.zip" "arc.ova"
           (cd files && zip -r ../update-${{ env.ARC_VERSION }}-${{ matrix.bre }}.zip ./p1 ./p3)
           sha256sum update-${{ env.ARC_VERSION }}-${{ matrix.bre }}.zip >"update-${{ env.ARC_VERSION }}-${{ matrix.bre }}.hash"
 
       # Beta Release
       - name: Beta Release
-        if: success() && env.ARC_VERSION != '' && inputs.beta == true
+        if: inputs.beta == true
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.ARC_VERSION }}
@@ -221,14 +221,16 @@ jobs:
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
               - Build: ${{ env.BUILD_TIME }}
+              - Apex: Reduced hardware support to match DSM compatible hardware
+              - Evo: Full hardware support including not DSM compatible hardware
           artifacts: |
-            arc-*.zip
-            update-*.zip
-            update-*.hash
+            ${{ matrix.bre }}/arc-*.zip
+            ${{ matrix.bre }}/update-*.zip
+            ${{ matrix.bre }}/update-*.hash
 
       # Stable Release
       - name: Stable Release
-        if: success() && env.ARC_VERSION != '' && inputs.stable == true
+        if: inputs.stable == true
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.ARC_VERSION }}
@@ -252,14 +254,16 @@ jobs:
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
               - Build: ${{ env.BUILD_TIME }}
+              - Apex: Reduced hardware support to match DSM compatible hardware
+              - Evo: Full hardware support including not DSM compatible hardware
           artifacts: |
-            arc-*.zip
-            update-*.zip
-            update-*.hash
+            ${{ matrix.bre }}/arc-*.zip
+            ${{ matrix.bre }}/update-*.zip
+            ${{ matrix.bre }}/update-*.hash
 
       # Essential Release
       - name: Essential Release
-        if: success() && env.ARC_VERSION != '' && inputs.essential == true
+        if: inputs.essential == true
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.ARC_VERSION }}
@@ -283,7 +287,9 @@ jobs:
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
               - Build: ${{ env.BUILD_TIME }}
+              - Apex: Reduced hardware support to match DSM compatible hardware
+              - Evo: Full hardware support including not DSM compatible hardware
           artifacts: |
-            arc-*.zip
-            update-*.zip
-            update-*.hash
+            ${{ matrix.bre }}/arc-*.zip
+            ${{ matrix.bre }}/update-*.zip
+            ${{ matrix.bre }}/update-*.hash

@@ -206,7 +206,7 @@ function getBuildroot() {
   while read -r ID NAME; do
     if [ "${NAME}" = "buildroot-${TAG}.zip" ]; then
       curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/${REPO}/releases/assets/${ID}" -o "${DEST_PATH}/br.zip"
-      echo "Buildroot: ${TAG}-${TYPE}"
+      echo "Buildroot: ${TAG}"
       unzip -o "${DEST_PATH}/br.zip" -d "${DEST_PATH}"
       mv -f "${DEST_PATH}/bzImage" "${DEST_PATH}/bzImage-arc"
       mv -f "${DEST_PATH}/rootfs.cpio.zst" "${DEST_PATH}/initrd-arc"
