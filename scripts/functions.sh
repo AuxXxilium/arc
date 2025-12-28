@@ -194,7 +194,8 @@ function getBuildroot() {
   local REPO=""
   local ZIP_NAME=""
   local TAG_VAR=""
-  local REPO="arc-buildroot-${TYPE}"
+  [ "${TYPE}" = "apex" ] && REPO="arc-buildroot-essential"
+  [ "${TYPE}" = "evo" ] && REPO="arc-buildroot-evo"
 
   echo "Getting Buildroot-${TYPE} begin"
   TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/${REPO}/releases" | jq -r ".[].tag_name" | sort -rV | head -1)

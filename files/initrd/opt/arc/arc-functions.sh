@@ -3846,8 +3846,6 @@ function recoverDSM() {
       resetBuild
       break
     fi
-    sleep 3
-    umount -f "${TMP_PATH}/mdX" 2>/dev/null
   done
   if [ -f "${USER_CONFIG_FILE}" ]; then
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
@@ -3868,7 +3866,8 @@ function recoverDSM() {
     fi
     dialog --backtitle "$(backtitle)" --title "Restore Arc" \
       --aspect 18 --infobox "Restore successful! -> Reload Arc Init now" 3 50
-    sleep 2
+    sleep 3
+    umount -f "${TMP_PATH}/mdX" 2>/dev/null
     rm -f "${HOME}/.initialized" && exec init.sh
   fi
 }

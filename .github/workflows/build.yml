@@ -39,6 +39,12 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        include:
+          - bre: apex
+          - bre: evo
+
     runs-on: ${{ inputs.runs }}
     steps:
       - name: Checkout
@@ -75,7 +81,7 @@ jobs:
           getOffline "files/p3/configs"
           getLKMs "files/p3/lkms"
           getTheme "files/p1/boot/grub"
-          getBuildroot "essential" "bre"
+          getBuildroot "${{ matrix.bre }}" "${{ matrix.bre }}"
           echo "BRETAG=${BRTAG}" >> $GITHUB_ENV
 
           # Export Dependencies Version to env
@@ -145,11 +151,11 @@ jobs:
           sudo mount ${LOOPX}p1 "/tmp/p1"
           sudo mount ${LOOPX}p3 "/tmp/p3"
 
-          [ ! -f "bre/bzImage-arc" ] || [ ! -f "bre/initrd-arc" ] && exit 1
+          [ ! -f "${{ matrix.bre }}/bzImage-arc" ] || [ ! -f "${{ matrix.bre }}/initrd-arc" ] && exit 1
 
           echo "Repack initrd"
-          cp -f "bre/bzImage-arc" "files/p3/bzImage-arc"
-          repackInitrd "bre/initrd-arc" "files/initrd" "files/p3/initrd-arc"
+          cp -f "${{ matrix.bre }}/bzImage-arc" "files/p3/bzImage-arc"
+          repackInitrd "${{ matrix.bre }}/initrd-arc" "files/initrd" "files/p3/initrd-arc"
 
           echo "Copying files"
           sudo cp -rf "files/p1/"* "/tmp/p1"
@@ -180,14 +186,14 @@ jobs:
       - name: Pack Image
         if: success() && env.ARC_VERSION != ''
         run: |
-          zip -9 "arc-${{ env.ARC_VERSION }}.img.zip" arc.img
-          zip -9 "arc-${{ env.ARC_VERSION }}.vmdk-dyn.zip" arc-dyn.vmdk
-          zip -9 "arc-${{ env.ARC_VERSION }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
-          zip -9 "arc-${{ env.ARC_VERSION }}.vhd.zip" arc.vhd arc.vmc
-          zip -9 "arc-${{ env.ARC_VERSION }}.vhdx.zip" arc.vhdx
-          zip -9 "arc-${{ env.ARC_VERSION }}.ova.zip" arc.ova
-          (cd files && zip -r ../update-${{ env.ARC_VERSION }}.zip ./p1 ./p3)
-          sha256sum update-${{ env.ARC_VERSION }}.zip >"update-${{ env.ARC_VERSION }}.hash"
+          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.img.zip" arc.img
+          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vmdk-dyn.zip" arc-dyn.vmdk
+          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vmdk-flat.zip" arc.vmdk arc-flat.vmdk
+          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vhd.zip" arc.vhd arc.vmc
+          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vhdx.zip" arc.vhdx
+          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.ova.zip" arc.ova
+          (cd files && zip -r ../update-${{ env.ARC_VERSION }}-${{ matrix.bre }}.zip ./p1 ./p3)
+          sha256sum update-${{ env.ARC_VERSION }}-${{ matrix.bre }}.zip >"update-${{ env.ARC_VERSION }}-${{ matrix.bre }}.hash"
 
       # Beta Release
       - name: Beta Release
@@ -214,7 +220,6 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              - Basesystem: ${{ env.BRETAG }}
               - Build: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
@@ -246,7 +251,6 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              - Basesystem: ${{ env.BRETAG }}
               - Build: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
@@ -278,7 +282,6 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              - Basesystem: ${{ env.BRETAG }}
               - Build: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
