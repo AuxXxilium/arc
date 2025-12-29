@@ -103,11 +103,9 @@ PATCHES=(
 )
 
 for PE in "${PATCHES[@]}"; do
-  RET=2
-  MATCHED=0
+  RET=1
   for PF in ${PATCH_PATH}/${PE}; do
     [ ! -e "${PF}" ] && continue
-    MATCHED=1
     (cd "${RAMDISK_PATH}" && busybox patch -p1 -i "${PF}") >>"${LOG_FILE}" 2>&1
     RET=$?
     [ ${RET} -eq 0 ] && break
@@ -132,7 +130,9 @@ fi
 
 # DSM 7.3
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: apply DSM ${PRODUCTVER:0:3} fixes"
-sed -i 's#/usr/syno/sbin/broadcom_update.sh#/usr/syno/sbin/broadcom_update.sh.arc#g' "${RAMDISK_PATH}/linuxrc.syno.impl"
+if [ "${PRODUCTVER}" = "7.3" ]; then
+  sed -i 's#/usr/syno/sbin/broadcom_update.sh#/usr/syno/sbin/broadcom_update.sh.arc#g' "${RAMDISK_PATH}/linuxrc.syno.impl"
+fi
 
 # Addons
 mkdir -p "${RAMDISK_PATH}/addons"
@@ -157,7 +157,7 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: install addons"
 
 # System Addons
-SYSADDONS="revert misc eudev disks localrss notify mountloader"
+SYSADDONS="revert misc eudev netfix disks localrss notify mountloader"
 if [ "${KVER:0:1}" -eq 5 ]; then
   SYSADDONS="redpill ${SYSADDONS}"
 fi
@@ -176,6 +176,7 @@ done
 
 # User Addons
 for ADDON in "${!ADDONS[@]}"; do
+  PARAMS=""
   if [ "${ADDON}" = "notification" ]; then
     WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
     [ "${WEBHOOKNOTIFY}" = "true" ] && WEBHOOK="$(readConfigKey "arc.webhook" "${USER_CONFIG_FILE}")"
