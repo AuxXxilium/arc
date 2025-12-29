@@ -968,15 +968,17 @@ function modulesMenu() {
 function cmdlineMenu() {
   # Loop menu
   while true; do
-    echo "1 \"Add a Cmdline item\""                               >"${TMP_PATH}/menu"
-    echo "2 \"Delete Cmdline item(s)\""                           >>"${TMP_PATH}/menu"
-    echo "3 \"CPU Fix\""                                          >>"${TMP_PATH}/menu"
-    echo "4 \"RAM Fix\""                                          >>"${TMP_PATH}/menu"
-    echo "5 \"PCI/IRQ Fix\""                                      >>"${TMP_PATH}/menu"
-    echo "6 \"C-State Fix\""                                      >>"${TMP_PATH}/menu"
-    echo "7 \"NVMe Optimization\""                                >>"${TMP_PATH}/menu"
-    echo "8 \"CPU Performance Optimization\""                     >>"${TMP_PATH}/menu"
-    echo "9 \"Kernelpanic Behavior\""                             >>"${TMP_PATH}/menu"
+    NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
+    echo "1 \"Add a Cmdline item\""                                                             >"${TMP_PATH}/menu"
+    echo "2 \"Delete Cmdline item(s)\""                                                         >>"${TMP_PATH}/menu"
+    echo "3 \"CPU Fix\""                                                                        >>"${TMP_PATH}/menu"
+    echo "4 \"RAM Fix\""                                                                        >>"${TMP_PATH}/menu"
+    echo "5 \"PCI/IRQ Fix\""                                                                    >>"${TMP_PATH}/menu"
+    echo "6 \"C-State Fix\""                                                                    >>"${TMP_PATH}/menu"
+    echo "7 \"NVMe Optimization\""                                                              >>"${TMP_PATH}/menu"
+    echo "8 \"CPU Performance Optimization\""                                                   >>"${TMP_PATH}/menu"
+    echo "9 \"Kernelpanic Behavior\""                                                           >>"${TMP_PATH}/menu"
+    echo "0 \"Netfix: "$( [ "${NETFIX}" = "true" ] && echo "enabled" || echo "disabled" )"\""   >>"${TMP_PATH}/menu"
     dialog --backtitle "$(backtitle)" --title "Cmdline"  --cancel-label "Exit" --menu "Choose an Option (Only edit Cmdline if you know what you do)" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
@@ -1208,6 +1210,26 @@ function cmdlineMenu() {
           writeConfigKey "kernelpanic" "${KERNELPANIC}" "${USER_CONFIG_FILE}"
         done
         resetBuildstatus
+        ;;
+      0)
+        while true; do
+          dialog --clear --backtitle "$(backtitle)" \
+            --title "Netfix" --menu "Enable?" 0 0 0 \
+            1 "Yes" \
+            2 "No" \
+          2>"${TMP_PATH}/resp"
+          resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+          [ -z "${resp}" ] && break
+          if [ "${resp}" -eq 1 ]; then
+            writeConfigKey "arc.netfix" "true" "${USER_CONFIG_FILE}"
+            dialog --backtitle "$(backtitle)" --title "Netfix" \
+              --aspect 18 --msgbox "Netfix activated" 0 0
+          elif [ "${resp}" -eq 2 ]; then
+            writeConfigKey "arc.netfix" "false" "${USER_CONFIG_FILE}"
+            dialog --backtitle "$(backtitle)" --title "Netfix" \
+              --aspect 18 --msgbox "Netfix deactivated" 0 0
+          fi
+        done
         ;;
       *)
         break

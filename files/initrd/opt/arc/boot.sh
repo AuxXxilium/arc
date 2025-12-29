@@ -30,7 +30,7 @@ COLUMNS=$(ttysize 2>/dev/null | awk '{print $1}')
 COLUMNS=${COLUMNS:-120}
 BANNER="$(figlet -c -w "${COLUMNS}" "Arc Loader")"
 TITLE="Version:"
-TITLE+=" ${ARC_VERSION} (${ARC_BUILD})"
+TITLE+=" ${ARC_VERSION} (${ARC_BUILD} @ ${ARC_BASE})"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
@@ -162,10 +162,10 @@ CMDLINE['netif_num']="${ETHN}"
 NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
 if [ "${NETFIX}" = "true" ]; then
   for N in ${ETHX}; do
-    NMAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null || echo "00:00:00:00:00:00")"
-    NBUS="$(ethtool -i "${N}" 2>/dev/null | grep "bus-info" | cut -d' ' -f2 || echo "0000:00:00.0")"
-    if [ "${NMAC}" != "00:00:00:00:00:00" ] && [ "${NBUS}" != "0000:00:00.0" ]; then
-      CMDLINE["R${NBUS}"]="${NMAC}"
+    RMAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null || echo "00:00:00:00:00:00")"
+    RBUS="$(ethtool -i "${N}" 2>/dev/null | grep "bus-info" | cut -d' ' -f2 || echo "0000:00:00.0")"
+    if [ "${RMAC}" != "00:00:00:00:00:00" ] && [ "${RBUS}" != "0000:00:00.0" ]; then
+      CMDLINE["R${RBUS}"]="${RMAC}"
     fi
   done
 fi
