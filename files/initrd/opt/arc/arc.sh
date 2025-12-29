@@ -289,6 +289,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
             NEXT="6"
             ;;
           f) bootScreen; NEXT="f" ;;
+          Y) setScreenTimeout; NEXT="Y" ;;
           m)
             [ "${KERNELLOAD}" = "kexec" ] && KERNELLOAD='power' || KERNELLOAD='kexec'
             writeConfigKey "kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"

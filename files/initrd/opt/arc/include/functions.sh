@@ -572,6 +572,7 @@ function readData() {
   RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
   SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
   REMAP="$(readConfigKey "arc.remap" "${USER_CONFIG_FILE}")"
+  CONSOLEBLANK="$(readConfigKey "arc.consoleblank" "${USER_CONFIG_FILE}")"
 
   # Get Config/Build Status
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"

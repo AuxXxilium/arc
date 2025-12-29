@@ -7,6 +7,7 @@ TMP_PATH="/tmp"
 [ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1 || true
 [ -f "${PART1_PATH}/ARC-VERSION" ] && ARC_VERSION="$(cat "${PART1_PATH}/ARC-VERSION")" || ARC_VERSION="null"
 [ -f "${PART1_PATH}/ARC-BUILD" ] && ARC_BUILD="$(cat "${PART1_PATH}/ARC-BUILD")" || ARC_BUILD="null"
+[ -f "${PART1_PATH}/ARC-BASE" ] && ARC_BASE="$(cat "${PART1_PATH}/ARC-BASE")" || ARC_BASE="null"
 ARC_TITLE="Arc ${ARC_VERSION}"
 
 RAMDISK_PATH="${TMP_PATH}/ramdisk"

@@ -1758,7 +1758,7 @@ function sysinfo() {
     done
   done
   # Print Config Informations
-  TEXT+="\n\n\Z4> Arc: ${ARC_VERSION} (${ARC_BUILD})\Zn"
+  TEXT+="\n\n\Z4> Arc: ${ARC_VERSION} (${ARC_BUILD} @ ${ARC_BASE})\Zn"
   TEXT+="\n"
   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
@@ -3936,12 +3936,12 @@ function customKernel() {
 ###############################################################################
 # Screen Timeout
 function setScreenTimeout() {
-  CONSOLEBLANK="$(readConfigKey "arc.screentimeout" "${USER_CONFIG_FILE}")"
+  CONSOLEBLANK="$(readConfigKey "arc.consoleblank" "${USER_CONFIG_FILE}")"
   dialog --backtitle "$(backtitle)" --title "Screen Timeout" \
     --inputbox "Set screen timeout in seconds (0 = never turn off):" 8 60 "${CONSOLEBLANK:-0}" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
   [ -z "${resp}" ] && return
   CONSOLEBLANK="${resp}"
-  writeConfigKey "arc.screentimeout" "${CONSOLEBLANK}" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.consoleblank" "${CONSOLEBLANK}" "${USER_CONFIG_FILE}"
 }
