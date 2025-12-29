@@ -29,7 +29,7 @@ function updateLoader() {
     fi
     if [ -n "${TAG}" ]; then
       export TAG="${TAG}"
-      export URL="${UPDATE_URL}/${TAG}/update-${TAG}.zip"
+      export URL="${UPDATE_URL}/${TAG}/update-${TAG}-${ARC_BASE}.zip"
       if [ "${BETA}" = "true" ]; then
         URL="${BETA_URL}/${TAG}/update-${TAG}.zip"
       fi
@@ -37,8 +37,8 @@ function updateLoader() {
       local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
       TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
-      local FILE_SIZE=$(curl -skL "${API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"update-${TAG}.zip\") | .size")
-      
+      local FILE_SIZE=$(curl -skL "${API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"update-${TAG}-${ARC_BASE}.zip\") | .size")
+
       if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" \
           --infobox "Failed to retrieve file size. Aborting update." 3 50
@@ -48,7 +48,7 @@ function updateLoader() {
 
       if [ "${TMP_AVAILABLE}" -lt "${FILE_SIZE}" ]; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" \
-          --infobox "Not enough space (RAM) in tmp folder. Required: $((FILE_SIZE / 1024 / 1024)) MB, Available: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 60
+          --infobox "Not enough space or RAM.\nRequired: $((FILE_SIZE / 1024 / 1024)) MB\nAvailable: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 50
         sleep 3
         return 1
       fi
@@ -75,16 +75,15 @@ function updateLoader() {
 
   if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 250000 ]; then
     if [ "${TAG}" != "zip" ]; then
-      HASH="$(curl -skL "${UPDATE_URL}/${TAG}/update-${TAG}.hash" | awk '{print $1}')"
+      HASH="$(curl -skL "${UPDATE_URL}/${TAG}/update-${TAG}-${ARC_BASE}.hash" | awk '{print $1}')"
       if [ "${BETA}" = "true" ]; then
-        HASH="$(curl -skL "${BETA_URL}/${TAG}/update-${TAG}.hash" | awk '{print $1}')"
+        HASH="$(curl -skL "${BETA_URL}/${TAG}/update-${TAG}-${ARC_BASE}.hash" | awk '{print $1}')"
       fi
 
       if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
           --infobox "Update failed - Hash mismatch!\nTry again later." 0 0
         sleep 3
-        exec reboot
       fi
     else
       rm -f "${TMP_PATH}/update.zip"
@@ -102,10 +101,13 @@ function updateLoader() {
 
       echo "Extracting files from update.zip..."
       if unzip -o "${TMP_PATH}/update.zip" -d "/mnt" >> "${LOG_FILE}" 2>&1; then
-        echo "Extraction completed successfully." >> "${LOG_FILE}"
+        echo "Extraction completed successfully."
+        sleep 3
+        return 0
       else
-        echo "Error: Failed to extract files." >> "${LOG_FILE}"
-        exit 1
+        echo "Error: Failed to extract files."
+        sleep 3
+        return 1
       fi
     ) 2>&1 | tee -a "${LOG_FILE}" | dialog --backtitle "$(backtitle)" --title "Processing Update" \
       --progressbox "Processing update..." 10 70
@@ -180,12 +182,12 @@ function upgradeLoader() {
     fi
     if [ -n "${TAG}" ]; then
       export TAG="${TAG}"
-      export URL="${UPDATE_URL}/${TAG}/arc-${TAG}.img.zip"
+      export URL="${UPDATE_URL}/${TAG}/arc-${TAG}-${ARC_BASE}.img.zip"
 
       local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
       TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
-      local FILE_SIZE=$(curl -skL "${API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"arc-${TAG}.img.zip\") | .size")
+      local FILE_SIZE=$(curl -skL "${API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"arc-${TAG}-${ARC_BASE}.img.zip\") | .size")
       
       if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
@@ -196,7 +198,7 @@ function upgradeLoader() {
 
       if [ "${TMP_AVAILABLE}" -lt "${FILE_SIZE}" ]; then
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
-          --infobox "Not enough space (RAM) in tmp folder. Required: $((FILE_SIZE / 1024 / 1024)) MB, Available: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 60
+          --infobox "Not enough space or RAM. Required: $((FILE_SIZE / 1024 / 1024)) MB, Available: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 60
         sleep 3
         return 1
       fi
@@ -228,7 +230,7 @@ function upgradeLoader() {
 
     if [ "${TMP_AVAILABLE}" -lt "${REQUIRED_SPACE}" ]; then
       dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
-        --infobox "Not enough space (RAM) to extract the archive. Required: $((REQUIRED_SPACE / 1024 / 1024)) MB, Available: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 60
+        --infobox "Not enough space or RAM.\nRequired: $((REQUIRED_SPACE / 1024 / 1024)) MB\nAvailable: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 50
       sleep 3
       return 1
     fi
@@ -236,7 +238,7 @@ function upgradeLoader() {
     unzip -oq "${TMP_PATH}/arc.img.zip" -d "${TMP_PATH}"
     rm -f "${TMP_PATH}/arc.img.zip"
     dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
-      --infobox "Installing new Loader Image to all partitions..." 3 60
+      --infobox "Installing new Loader Image..." 3 50
     umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
 
     local IMG_FILE="${TMP_PATH}/arc.img"
