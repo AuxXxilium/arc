@@ -54,6 +54,11 @@ ARC_BUILD="$(date +'%y%m%d')"
 ARC_VERSION="13.3.7"
 echo "${ARC_VERSION}" >"files/p1/ARC-VERSION"
 echo "${ARC_BUILD}" >"files/p1/ARC-BUILD"
+case "${1}" in
+  evo) echo "evo" > "files/p1/ARC-BASE" ;;
+  essential) echo "apex" > "files/p1/ARC-BASE" ;;
+  local) echo "local" > "files/p1/ARC-BASE" ;;
+esac
 
 echo "Repack initrd"
 if [ -f "br/bzImage-arc" ] && [ -f "br/initrd-arc" ]; then
