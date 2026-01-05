@@ -188,7 +188,7 @@ jobs:
           cd ${{ matrix.bre }}
           zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.img.zip" "arc.img"
           zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vmdk-dyn.zip" "arc-dyn.vmdk"
-          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vmdk-flat.zip" "arc.vmdk"
+          zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vmdk-flat.zip" "arc.vmdk" "arc-flat.vmdk"
           zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vhd.zip" "arc.vhd" "arc.vmc"
           zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.vhdx.zip" "arc.vhdx"
           zip -9 "arc-${{ env.ARC_VERSION }}-${{ matrix.bre }}.ova.zip" "arc.ova"
