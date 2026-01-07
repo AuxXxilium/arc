@@ -1557,12 +1557,12 @@ function updateMenu() {
           [ -z "${TAG}" ] && return 1
           updateLoader "${BETA}" "${TAG}"
         elif [ "${opts}" -eq 4 ]; then
-          mkdir -p "/${TMP_PATH}/update"
+          mkdir -p "${TMP_PATH}/update"
           dialog --backtitle "$(backtitle)" --title "Update Loader" \
-            --msgbox "Upload the update-*.zip File to /${TMP_PATH}/update\nand press OK after upload is done." 0 0
+            --msgbox "Upload the update-*.zip File to ${TMP_PATH}/update\nand press OK after upload is done." 0 0
           [ $? -ne 0 ] && return 1
           UPDATEFOUND="false"
-          for UPDATEFILE in /${TMP_PATH}/update/update-*.zip; do
+          for UPDATEFILE in ${TMP_PATH}/update/update-*.zip; do
             if [ -f "${UPDATEFILE}" ]; then
               mv -f "${UPDATEFILE}" "${TMP_PATH}/update.zip"
               TAG="zip"
@@ -1610,10 +1610,10 @@ function updateMenu() {
         elif [ "${opts}" -eq 3 ]; then
           mkdir -p "/${TMP_PATH}/update"
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
-            --msgbox "Upload the arc-*.zip File to /${TMP_PATH}/update\nand press OK after upload is done." 0 0
+            --msgbox "Upload the arc-*.zip File to ${TMP_PATH}/update\nand press OK after upload is done." 0 0
           [ $? -ne 0 ] && return 1
           UPDATEFOUND="false"
-          for UPDATEFILE in /${TMP_PATH}/update/arc-*.zip; do
+          for UPDATEFILE in ${TMP_PATH}/update/arc-*.zip; do
             if [ -f "${UPDATEFILE}" ]; then
               mv -f "${UPDATEFILE}" "${TMP_PATH}/arc.img.zip"
               TAG="zip"

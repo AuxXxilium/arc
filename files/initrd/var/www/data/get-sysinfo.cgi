@@ -234,7 +234,7 @@ function getSysinfo() {
     done
   done
   # Print Config Informations
-  TEXT+="\n\n> Arc: ${ARC_VERSION} (${ARC_BUILD}) ${ARC_BRANCH}"
+  TEXT+="\n\n> Arc: ${ARC_VERSION} (${ARC_BUILD} @ ${ARC_BASE})"
   TEXT+="\n  Subversion: Addons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}"
   TEXT+="\n  Config | Build: ${CONFDONE} | ${BUILDDONE}"
   TEXT+="\n  Config Version: ${CONFIGVER}"
@@ -300,6 +300,7 @@ function getSysinfo() {
         fi
       done
     done
+    TEXT+="\n"
   fi
   [ $(lspci -d ::104 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  RAID Controller:\n"
   for PCI in $(lspci -d ::104 2>/dev/null | awk '{print $1}'); do

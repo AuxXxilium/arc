@@ -31,7 +31,7 @@ function updateLoader() {
       export TAG="${TAG}"
       export URL="${UPDATE_URL}/${TAG}/update-${TAG}-${ARC_BASE}.zip"
       if [ "${BETA}" = "true" ]; then
-        URL="${BETA_URL}/${TAG}/update-${TAG}.zip"
+        URL="${BETA_URL}/${TAG}/update-${TAG}-${ARC_BASE}.zip"
       fi
 
       local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
