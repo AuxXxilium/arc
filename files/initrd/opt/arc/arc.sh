@@ -295,11 +295,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
             writeConfigKey "kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
             NEXT="m"
             ;;
-          v)
-            [ "${ALTCONSOLE}" = "true" ] && ALTCONSOLE='false' || ALTCONSOLE='true'
-            writeConfigKey "arc.altconsole" "${ALTCONSOLE}" "${USER_CONFIG_FILE}"
-            NEXT="v"
-            ;;
           E)
             [ "${EMMCBOOT}" = "true" ] && EMMCBOOT='false' || EMMCBOOT='true'
             if [ "${EMMCBOOT}" = "false" ]; then
@@ -347,8 +342,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
             NEXT="O"
             ;;
           l) editUserConfig; NEXT="l" ;;
-          # Online Settings
-          Q) onlineMenu; NEXT="Q" ;;
           # Loader Section
           8)
             [ "${LOADEROPTS}" = "true" ] && LOADEROPTS='false' || LOADEROPTS='true'
@@ -392,6 +385,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
             rebootTo config
             ;;
           # Misc Settings
+          Q) onlineMenu; NEXT="Q" ;;
           x) backupMenu; NEXT="x" ;;
           z) updateMenu; NEXT="z" ;;
           I) rebootMenu; NEXT="I" ;;
