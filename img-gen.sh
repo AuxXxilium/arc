@@ -19,6 +19,12 @@ sudo umount "/tmp/p3" 2>/dev/null || true
 
 # Get extractor, LKM, addons and Modules
 echo "Get Dependencies"
+case "${1}" in
+  evo) getBuildroot "${1}" "br" ;;
+  essential) getBuildroot "${1}" "br" ;;
+  local) mkdir -p br && cp -f /root/buildroot/output/images/rootfs.cpio.zst br/initrd-arc && cp -f /root/buildroot/output/images/bzImage br/bzImage-arc ;;
+  *) echo "Invalid option specified" ;;
+esac
 getAddons "files/p3/addons"
 getModules "files/p3/modules"
 getConfigs "files/p3/configs"
@@ -27,12 +33,6 @@ getCustom "files/p3/custom"
 getLKMs "files/p3/lkms"
 getTheme "files/p1/boot/grub"
 getOffline "files/p3/configs"
-case "${1}" in
-  evo) getBuildroot "${1}" "br" ;;
-  essential) getBuildroot "${1}" "br" ;;
-  local) mkdir -p br && cp -f /root/buildroot/output/images/rootfs.cpio.zst br/initrd-arc && cp -f /root/buildroot/output/images/bzImage br/bzImage-arc ;;
-  *) echo "Invalid option specified" ;;
-esac
 
 # Sbase
 IMAGE_FILE="arc.img"
