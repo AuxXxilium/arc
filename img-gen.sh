@@ -21,7 +21,7 @@ sudo umount "/tmp/p3" 2>/dev/null || true
 echo "Get Dependencies"
 case "${1}" in
   evo) getBuildroot "${1}" "br" ;;
-  essential) getBuildroot "${1}" "br" ;;
+  apex) getBuildroot "${1}" "br" ;;
   local) mkdir -p br && cp -f /root/buildroot/output/images/rootfs.cpio.zst br/initrd-arc && cp -f /root/buildroot/output/images/bzImage br/bzImage-arc ;;
   *) echo "Invalid option specified" ;;
 esac
@@ -56,7 +56,7 @@ echo "${ARC_VERSION}" >"files/p1/ARC-VERSION"
 echo "${ARC_BUILD}" >"files/p1/ARC-BUILD"
 case "${1}" in
   evo) echo "evo" > "files/p1/ARC-BASE" ;;
-  essential) echo "apex" > "files/p1/ARC-BASE" ;;
+  apex) echo "apex" > "files/p1/ARC-BASE" ;;
   local) echo "local" > "files/p1/ARC-BASE" ;;
 esac
 

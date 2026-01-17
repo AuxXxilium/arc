@@ -8,11 +8,11 @@ tasks:
       - git reset --hard
       - git pull
       - ./img-gen.sh evo
-  build:
+  build-apex:
     cmds:
       - git reset --hard
       - git pull
-      - ./img-gen.sh essential
+      - ./img-gen.sh apex
   build-local:
     cmds:
       - git reset --hard
