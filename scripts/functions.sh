@@ -52,7 +52,7 @@ function getAddons() {
       if unzip -o "${CACHE_FILE}" -d "${CACHE_DIR}"; then
         echo "Installing Addons to ${DEST_PATH}"
         [ -f /tmp/addons/VERSION ] && cp -f /tmp/addons/VERSION ${DEST_PATH}/
-        for PKG in $(ls ${CACHE_DIR}/*.addon); do
+        for PKG in $(LC_ALL=C printf '%s\n' ${CACHE_DIR}/*.addon | sort -V); do
           ADDON=$(basename "${PKG}" .addon)
           mkdir -p "${DEST_PATH}/${ADDON}"
           echo "Extracting ${PKG} to ${DEST_PATH}/${ADDON}"

@@ -148,7 +148,7 @@ CMDLINE['syno_hw_version']="${MODEL}"
 CMDLINE['sn']="${SN}"
 
 # NIC Cmdline
-ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
+ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
 ETHNA="$(wc -w <<< "${ETHX}")"
 ETHN=0
 for N in ${ETHX}; do

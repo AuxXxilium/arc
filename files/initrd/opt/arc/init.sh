@@ -117,7 +117,7 @@ if [ ! -f "/.dockerenv" ]; then
 fi
 
 # Read/Write IP/Mac to config
-ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
+ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
 ETHN=0
 for N in ${ETHX}; do
   MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"

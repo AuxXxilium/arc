@@ -1677,7 +1677,7 @@ function sysinfo() {
   [ -z "${RAMTOTAL}" ] && RAMTOTAL="N/A"
   GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
   SECURE=$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')
-  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
+  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
   ETHN=$(echo ${ETHX} | wc -w)
   HWID="$(genHWID)"
   ARC_BACKUP="$(readConfigKey "arc.backup" "${USER_CONFIG_FILE}")"
@@ -1984,7 +1984,7 @@ function uploadDiag () {
 # Shows Networkdiag to user
 function networkdiag() {
   (
-  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
+  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
   for N in ${ETHX}; do
     echo
     DRIVER="$(basename "$(realpath "/sys/class/net/${N}/device/driver" 2>/dev/null)" 2>/dev/null)"
@@ -2086,7 +2086,7 @@ function credits() {
 ###############################################################################
 # Setting Static IP for Loader
 function staticIPMenu() {
-  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
+  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
   IPCON=""
   for N in ${ETHX}; do
     MACR="$(cat "/sys/class/net/${N}/address" 2>/dev/null | sed 's/://g')"
@@ -2981,7 +2981,7 @@ function resetDSMNetwork {
       T="$(blkid -o value -s TYPE "${I}" 2>/dev/null | sed 's/linux_raid_member/ext4/')"
       mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
-      for F in ${TMP_PATH}/mdX/etc/sysconfig/network-scripts/ifcfg-* ${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-*; do
+      for F in $(LC_ALL=C printf '%s\n' ${TMP_PATH}/mdX/etc/sysconfig/network-scripts/ifcfg-* ${TMP_PATH}/mdX/etc.defaults/sysconfig/network-scripts/ifcfg-* | sort -V); do
         [ ! -e "${F}" ] && continue
         ETHX=$(echo "${F}" | sed -E 's/.*ifcfg-(.*)$/\1/')
         case "${ETHX}" in
@@ -3284,7 +3284,7 @@ EOL
 ###############################################################################
 # Get Network Config for Loader
 function getnet() {
-  ETHX=$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)
+  ETHX=$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)
   ETHN=$(echo "${ETHX}" | wc -w)
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
@@ -3581,7 +3581,7 @@ function getdiskinfo() {
 function getnetinfo() {
   BOOTIPWAIT=3
   IPCON=""
-  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
+  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
   for N in ${ETHX}; do
     COUNT=0
     while true; do

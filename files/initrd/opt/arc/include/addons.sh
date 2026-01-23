@@ -69,7 +69,7 @@ function installAddon() {
 ###############################################################################
 # Detect if has new local plugins to install/reinstall
 function updateAddon() {
-  for F in $(ls ${ADDONS_PATH}/*.addon 2>/dev/null); do
+  for F in $(LC_ALL=C printf '%s\n' ${ADDONS_PATH}/*.addon 2>/dev/null | sort -V); do
     local ADDON="$(basename "${F}" | sed 's|.addon||')"
     rm -rf "${ADDONS_PATH}/${ADDON}"
     mkdir -p "${ADDONS_PATH}/${ADDON}"

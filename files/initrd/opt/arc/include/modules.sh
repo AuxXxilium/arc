@@ -50,7 +50,7 @@ function getAllModules() {
 
   unpackModules "${PLATFORM}" "${KVERP}"
 
-  for F in $(ls ${TMP_PATH}/modules/*.ko 2>/dev/null); do
+  for F in $(LC_ALL=C printf '%s\n' ${TMP_PATH}/modules/*.ko | sort -V); do
     [ ! -e "${F}" ] && continue
     local N DESC
     N="$(basename "${F}" .ko)"
@@ -81,7 +81,7 @@ function installModules() {
   unpackModules "${PLATFORM}" "${KVERP}"
 
   ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
-  for F in ${TMP_PATH}/modules/*.ko; do
+  for F in $(LC_ALL=C printf '%s\n' ${TMP_PATH}/modules/*.ko | sort -V); do
     [ ! -e "${F}" ] && continue
     M="$(basename "${F}")"
     [ "${ODP}" = "true" ] && [ -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ] && continue

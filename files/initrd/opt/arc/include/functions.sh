@@ -49,7 +49,7 @@ function checkNIC() {
   IPCON=""
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT="20"
-  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
+  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
   for N in ${ETHX}; do
     COUNT=0
     DRIVER="$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
@@ -173,7 +173,7 @@ function _set_conf_kv() {
 # @1 -mac1,mac2,mac3...
 function _sort_netif() {
   ETHLIST=""
-  for F in /sys/class/net/eth*; do
+  for F in $(LC_ALL=C printf '%s\n' /sys/class/net/eth* | sort -V); do
     [ ! -e "${F}" ] && continue
     local ETH MAC BUS
     ETH="$(basename "${F}")"
@@ -182,7 +182,7 @@ function _sort_netif() {
     ETHLIST="${ETHLIST}${BUS} ${MAC} ${ETH}\n"
   done
   ETHLISTTMPM=""
-  ETHLISTTMPB="$(echo -e "${ETHLIST}" | sort)"
+  ETHLISTTMPB="$(echo -e "${ETHLIST}" | sort -V)"
   if [ -n "${1}" ]; then
     MACS="$(echo "${1}" | sed 's/://g; s/,/ /g; s/.*/\L&/')"
     for MACX in ${MACS}; do
