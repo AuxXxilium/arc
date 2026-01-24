@@ -661,16 +661,16 @@ function sendDiscord() {
 # Get Board Name
 function getBoardName() {
 local b v
-b="$(arcsu dmidecode -s system-product-name 2>/dev/null || true)"
+b="$(dmidecode -s system-product-name 2>/dev/null || true)"
 b="$(echo "${b}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 if [ -z "${b}" ] || echo "${b}" | grep -Eq "O\.E\.M\.|System|To Be Filled By O\.E\.M\.|Synoden|Default string"; then
-  b="$(arcsu dmidecode -s baseboard-product-name 2>/dev/null || true)"
+  b="$(dmidecode -s baseboard-product-name 2>/dev/null || true)"
   b="$(echo "${b}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 fi
-v="$(arcsu dmidecode -s system-manufacturer 2>/dev/null || true)"
+v="$(dmidecode -s system-manufacturer 2>/dev/null || true)"
 v="$(echo "${v}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 if [ -z "${v}" ] || echo "${v}" | grep -Eq "O\.E\.M\.|System|To Be Filled By O\.E\.M\.|Synoden|Default string"; then
-  v="$(arcsu dmidecode -s baseboard-manufacturer 2>/dev/null || true)"
+  v="$(dmidecode -s baseboard-manufacturer 2>/dev/null || true)"
   v="$(echo "${v}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 fi
   if [ -n "${v}" ] && [ -n "${b}" ]; then
