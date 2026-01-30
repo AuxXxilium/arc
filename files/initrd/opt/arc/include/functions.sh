@@ -660,19 +660,19 @@ function sendDiscord() {
 ###############################################################################
 # Get Board Name
 function getBoardName() {
-local b v
-b="$(dmidecode -s system-product-name 2>/dev/null || true)"
-b="$(echo "${b}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-if [ -z "${b}" ] || echo "${b}" | grep -Eq "O\.E\.M\.|System|To Be Filled By O\.E\.M\.|Synoden|Default string"; then
-  b="$(dmidecode -s baseboard-product-name 2>/dev/null || true)"
-  b="$(echo "${b}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-fi
-v="$(dmidecode -s system-manufacturer 2>/dev/null || true)"
-v="$(echo "${v}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-if [ -z "${v}" ] || echo "${v}" | grep -Eq "O\.E\.M\.|System|To Be Filled By O\.E\.M\.|Synoden|Default string"; then
-  v="$(dmidecode -s baseboard-manufacturer 2>/dev/null || true)"
-  v="$(echo "${v}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-fi
+  local b v
+  b="$(dmidecode -s system-product-name 2>/dev/null || true)"
+  b="$(echo "${b}" | awk '{$1=$1; print}')"
+  if [ -z "${b}" ] || echo "${b}" | grep -Eq "O\.E\.M\.|System|Synoden|Default string"; then
+    b="$(dmidecode -s baseboard-product-name 2>/dev/null || true)"
+    b="$(echo "${b}" | awk '{$1=$1; print}')"
+  fi
+  v="$(dmidecode -s system-manufacturer 2>/dev/null || true)"
+  v="$(echo "${v}" | awk '{$1=$1; print}')"
+  if [ -z "${v}" ] || echo "${v}" | grep -Eq "O\.E\.M\.|System|Synoden|Default string"; then
+    v="$(dmidecode -s baseboard-manufacturer 2>/dev/null || true)"
+    v="$(echo "${v}" | awk '{$1=$1; print}')"
+  fi
   if [ -n "${v}" ] && [ -n "${b}" ]; then
     BOARD="${v} ${b}"
   elif [ -n "${v}" ]; then
@@ -682,7 +682,7 @@ fi
   else
     BOARD="not available"
   fi
-  echo "${BOARD}"
+  echo "${BOARD}" | awk '{$1=$1; print}'
 }
 
 ###############################################################################
