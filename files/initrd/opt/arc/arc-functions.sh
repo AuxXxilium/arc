@@ -3290,7 +3290,7 @@ function getnet() {
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
   if [ "${ARC_PATCH}" = "user" ]; then
-    for N in "${ETHX[@]}"; do
+    for N in ${ETHX}; do
       while true; do
         dialog --backtitle "$(backtitle)" --title "Mac Setting" \
           --inputbox "Type a custom Mac for ${N} (Eq. 001132a1b2c3).\nThe Mac will not be applied to NIC!" 8 50 \
