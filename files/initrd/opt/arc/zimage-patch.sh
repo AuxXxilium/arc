@@ -18,7 +18,7 @@ PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || true
 if [ "${KERNEL}" = "custom" ] || [ "${KERNEL}" = "apex" ]; then
-  [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Kernel: customized ${PLATFORM} (${KVER})"
+  [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Kernel: ${KERNEL} ${PLATFORM} (${KVER})"
   # Extract bzImage from tgz
   tar -xzf "${CUSTOM_PATH}/${KERNEL}-bzImage-${PLATFORM}-${KVERP}.tgz" -O >"${MOD_ZIMAGE_FILE}"
 else
