@@ -264,8 +264,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
           g) governorMenu; NEXT="g" ;;
           P) storagepanelMenu; NEXT="P" ;;
           K)
-            KERNEL=$([ "${KERNEL}" = "official" ] && echo 'custom' || echo 'official')
-            writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
             customKernel
             resetBuild
             NEXT="K"

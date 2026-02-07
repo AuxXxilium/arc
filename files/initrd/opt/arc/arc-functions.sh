@@ -3937,25 +3937,6 @@ function cleanDSMRoot() {
 }
 
 ###############################################################################
-# Custom Kernel
-function customKernel() {
-  dialog --backtitle "$(backtitle)" --title "Kernel" \
-    --infobox "Configuring ${KERNEL} Kernel! Stay patient..." 3 50
-  if [ "${ODP}" = "true" ]; then
-    ODP="false"
-    writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
-  fi
-  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-  is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
-  if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
-    writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-    mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
-  fi
-}
-
-###############################################################################
 # Screen Timeout
 function setScreenTimeout() {
   CONSOLEBLANK="$(readConfigKey "arc.consoleblank" "${USER_CONFIG_FILE}")"

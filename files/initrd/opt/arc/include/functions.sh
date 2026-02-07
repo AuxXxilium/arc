@@ -697,3 +697,59 @@ function resetBuildstatus() {
   writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 }
+
+###############################################################################
+# Custom Kernel
+function customKernel() {
+  while true; do
+    dialog --clear --backtitle "$(backtitle)" \
+      --title "Kernel Selection" --menu "Choose a kernel option:" 15 50 3 \
+      1 "Official Kernel" \
+      2 "Custom Kernel" \
+      3 "Apex Kernel" \
+      2>"${TMP_PATH}/resp"
+    resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+    [ -z "${resp}" ] && break
+
+    case "${resp}" in
+      1)
+        KERNEL="official"
+        writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
+        dialog --backtitle "$(backtitle)" --title "Kernel" \
+          --aspect 18 --msgbox "Official Kernel selected!" 0 0
+        ;;
+      2)
+        KERNEL="custom"
+        writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
+        dialog --backtitle "$(backtitle)" --title "Kernel" \
+          --aspect 18 --msgbox "Custom Kernel selected!" 0 0
+        ;;
+      3)
+        KERNEL="apex"
+        writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
+        dialog --backtitle "$(backtitle)" --title "Kernel" \
+          --aspect 18 --msgbox "Apex Kernel selected!" 0 0
+        ;;
+      *)
+        break
+        ;;
+    esac
+
+    # Reset ODP if necessary
+    if [ "${ODP}" = "true" ]; then
+      ODP="false"
+      writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
+    fi
+
+    # Update kernel-related configurations
+    PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+    PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+    KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+    is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+    if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+      writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+      mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+    fi
+  done
+}
+}
