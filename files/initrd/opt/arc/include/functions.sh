@@ -735,6 +735,9 @@ function customKernel() {
         ;;
     esac
 
+    dialog --backtitle "$(backtitle)" --title "Kernel" \
+      --infobox "Kernel changed. Reconfiguring..." 3 40
+
     # Reset ODP if necessary
     if [ "${ODP}" = "true" ]; then
       ODP="false"
