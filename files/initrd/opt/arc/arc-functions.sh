@@ -968,7 +968,7 @@ function modulesMenu() {
 function cmdlineMenu() {
   # Loop menu
   while true; do
-    NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
+    # NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
     echo "1 \"Add a Cmdline item\""                                                             >"${TMP_PATH}/menu"
     echo "2 \"Delete Cmdline item(s)\""                                                         >>"${TMP_PATH}/menu"
     echo "3 \"CPU Fix\""                                                                        >>"${TMP_PATH}/menu"
@@ -978,7 +978,7 @@ function cmdlineMenu() {
     echo "7 \"NVMe Optimization\""                                                              >>"${TMP_PATH}/menu"
     echo "8 \"CPU Performance Optimization\""                                                   >>"${TMP_PATH}/menu"
     echo "9 \"Kernelpanic Behavior\""                                                           >>"${TMP_PATH}/menu"
-    echo "0 \"Netfix: "$( [ "${NETFIX}" = "true" ] && echo "enabled" || echo "disabled" )"\""   >>"${TMP_PATH}/menu"
+    # echo "0 \"Netfix: "$( [ "${NETFIX}" = "true" ] && echo "enabled" || echo "disabled" )"\""   >>"${TMP_PATH}/menu"
     dialog --backtitle "$(backtitle)" --title "Cmdline"  --cancel-label "Exit" --menu "Choose an Option (Only edit Cmdline if you know what you do)" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break

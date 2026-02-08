@@ -159,16 +159,16 @@ done
 CMDLINE['netif_num']="${ETHN}"
 [ "${ETHN}" -ne "${ETHNA}" ] && echo "Warning: Network interface count mismatch!" || true
 
-NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
-if [ "${NETFIX}" = "true" ]; then
-  for N in ${ETHX}; do
-    RMAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null || echo "00:00:00:00:00:00")"
-    RBUS="$(ethtool -i "${N}" 2>/dev/null | grep "bus-info" | cut -d' ' -f2 || echo "0000:00:00.0")"
-    if [ "${RMAC}" != "00:00:00:00:00:00" ] && [ "${RBUS}" != "0000:00:00.0" ]; then
-      CMDLINE["R${RBUS}"]="${RMAC}"
-    fi
-  done
-fi
+# NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
+# if [ "${NETFIX}" = "true" ]; then
+#   for N in ${ETHX}; do
+#     RMAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null || echo "00:00:00:00:00:00")"
+#     RBUS="$(ethtool -i "${N}" 2>/dev/null | grep "bus-info" | cut -d' ' -f2 || echo "0000:00:00.0")"
+#     if [ "${RMAC}" != "00:00:00:00:00:00" ] && [ "${RBUS}" != "0000:00:00.0" ]; then
+#       CMDLINE["R${RBUS}"]="${RMAC}"
+#     fi
+#   done
+# fi
 
 # Boot Cmdline
 if [ "${ARC_MODE}" = "reinstall" ]; then

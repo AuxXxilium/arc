@@ -156,8 +156,8 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 # System Addons
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: install addons"
 
-# System Addons
-SYSADDONS="revert misc eudev netfix disks localrss notify mountloader"
+# System Addons ( netfix )
+SYSADDONS="revert misc eudev disks localrss notify mountloader"
 if [ "${KVER:0:1}" -eq 5 ]; then
   SYSADDONS="redpill ${SYSADDONS}"
 fi
