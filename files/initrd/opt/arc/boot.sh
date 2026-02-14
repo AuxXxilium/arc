@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2025 AuxXxilium <https://github.com/AuxXxilium>
+# Copyright (C) 2026 AuxXxilium <https://github.com/AuxXxilium>
 #
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
 #
 
+###############################################################################
+# Initialize environment
 LOCKFILE="/tmp/.bootlock"
 exec 200>"$LOCKFILE"
 flock -n 200 || { echo "Boot is in progress. Exiting."; exit 0; }
@@ -42,9 +44,9 @@ printf "\033[1;37m%*s\033[0m\n" $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}"
 
 # Check if DSM zImage/Ramdisk is changed, patch it if necessary, update Files if necessary
 ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
-ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
+ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" 2>/dev/null | awk '{print $1}')"
 RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
-RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
+RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" 2>/dev/null | awk '{print $1}')"
 if [ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" ] || [ "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]; then
   echo
   livepatch
@@ -91,7 +93,7 @@ if [ "${DSMINFO}" = "true" ]; then
   echo -e "\033[1;34mDSM\033[0m"
   echo -e "Model: \033[1;37m${MODEL} (${SYS_MODEL})\033[0m"
   echo -e "Platform: \033[1;37m${PLATFORM}\033[0m"
-  echo -e "Version: \033[1;37m${PRODUCTVER} (${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))\033[0m"
+  echo -e "Version: \033[1;37m${PRODUCTVER} (${BUILDNUM}$([ "${SMALLNUM:-0}" = "0" ] && echo "u${SMALLNUM:-0}"))\033[0m"
   echo -e "Kernel: \033[1;37m${KERNEL} (${KVER})\033[0m"
   echo
 fi
@@ -295,7 +297,7 @@ if [ "${DIRECTBOOT}" = "true" ] || echo "parallels xen" | grep -qw "${MEV:-physi
   grub-editenv "${USER_RSYSENVFILE}" create 2>/dev/null || true
   grub-editenv "${USER_RSYSENVFILE}" set arc_version="${ARC_VERSION} (${ARC_BUILD})"
   grub-editenv "${USER_RSYSENVFILE}" set dsm_model="${MODEL} (${PLATFORM})"
-  grub-editenv "${USER_RSYSENVFILE}" set dsm_version="${PRODUCTVER} (${BUILDNUM}$([ ${SMALLNUM:-0} -ne 0 ] && echo "u${SMALLNUM}"))"
+  grub-editenv "${USER_RSYSENVFILE}" set dsm_version="${PRODUCTVER} (${BUILDNUM}$([ "${SMALLNUM:-0}" = "0" ] && echo "u${SMALLNUM:-0}"))"
   grub-editenv "${USER_RSYSENVFILE}" set dsm_kernel="${KERNEL} (${KVER})"
   grub-editenv "${USER_RSYSENVFILE}" set sys_mev="${MEV:-physical}"
   grub-editenv "${USER_RSYSENVFILE}" set sys_cpu="${CPU} (Cores: ${CPUCNT} | Threads: ${CPUCHT})"

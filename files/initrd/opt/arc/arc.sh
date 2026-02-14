@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2025 AuxXxilium <https://github.com/AuxXxilium>
+# Copyright (C) 2026 AuxXxilium <https://github.com/AuxXxilium>
 #
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
@@ -10,11 +10,9 @@
 # Overlay Init Section
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
-. "${ARC_PATH}/arc-functions.sh"
 . "${ARC_PATH}/include/functions.sh"
-. "${ARC_PATH}/include/addons.sh"
-. "${ARC_PATH}/include/modules.sh"
 . "${ARC_PATH}/include/update.sh"
+. "${ARC_PATH}/arc-functions.sh"
 
 # Check System
 onlineCheck
@@ -42,7 +40,7 @@ function backtitle() {
     BACKTITLE+="${IPCON:-(no IP)} | "
   fi
   BACKTITLE+="${MODEL:-(Model)} | "
-  BACKTITLE+="${PRODUCTVER:-(Version)} | "
+  BACKTITLE+="(${BUILDNUM}$([ "${SMALLNUM:-0}" = "0" ] || echo "u${SMALLNUM:-0}")) | "
 
   if [ "${ARC_PATCH}" = "true" ]; then
     PATCH_STATUS="Arc"

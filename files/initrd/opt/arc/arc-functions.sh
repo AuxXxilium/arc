@@ -1,5 +1,6 @@
+#!/usr/bin/env bash
 #
-# Copyright (C) 2025 AuxXxilium <https://github.com/AuxXxilium>
+# Copyright (C) 2026 AuxXxilium <https://github.com/AuxXxilium>
 #
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
@@ -190,6 +191,8 @@ function arcVersion() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
+  BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
+  SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
 
   if [ "${ARC_MODE}" = "config" ]; then
     CVS="$(readConfigEntriesArray "platforms.${PLATFORM}.productvers" "${P_FILE}")"
@@ -231,16 +234,23 @@ function arcVersion() {
       [ "${RET}" -ne 0 ] && return 1
     
       resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
-      if [ "${PRODUCTVER}" != "${resp:0:3}" ]; then
-        PRODUCTVER="${resp:0:3}"
-        rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+      if [ -n "${resp}" ]; then
+        PRODUCTVER="${resp%%-*}"
+        BUILDNUM="${resp#*-}"
+        BUILDNUM="${BUILDNUM%-*}"
+        SMALLNUM="${resp##*-}"
+
+        if [ "${PRODUCTVER}" != "${resp%%-*}" ] || [ "${BUILDNUM}" != "${resp#*-}" ] || [ "${SMALLNUM}" != "${resp##*-}" ]; then
+          rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+          resetBuildstatus
+        fi
       fi
       break
     done
 
     writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-    writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "buildnum" "${BUILDNUM:-0}" "${USER_CONFIG_FILE}"
+    writeConfigKey "smallnum" "${SMALLNUM:-0}" "${USER_CONFIG_FILE}"
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 

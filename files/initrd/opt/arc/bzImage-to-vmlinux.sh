@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
+#
+# Copyright (C) 2026 AuxXxilium <https://github.com/AuxXxilium>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
 
+###############################################################################
+# Convert bzImage to vmlinux
 read_u8() {
   dd if="${1}" bs=1 skip="$((${2}))" count=1 2>/dev/null | od -An -tu1 | grep -Eo '[0-9]+'
 }

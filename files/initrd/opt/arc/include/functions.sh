@@ -1,3 +1,13 @@
+#!/usr/bin/env bash
+#
+# Copyright (C) 2026 AuxXxilium <https://github.com/AuxXxilium>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+
+###############################################################################
+# Initialize environment
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/../" 2>/dev/null && pwd)"
 
 . "${ARC_PATH}/include/consts.sh"
@@ -392,9 +402,9 @@ function livepatch() {
     sleep 5
     exit 1
   elif [ "${PVALID}" = "true" ]; then
-    ZIMAGE_HASH="$(sha256sum "${ORI_ZIMAGE_FILE}" | awk '{print $1}')"
+    ZIMAGE_HASH="$(sha256sum "${ORI_ZIMAGE_FILE}" 2>/dev/null | awk '{print $1}')"
     writeConfigKey "zimage-hash" "${ZIMAGE_HASH}" "${USER_CONFIG_FILE}"
-    RAMDISK_HASH="$(sha256sum "${ORI_RDGZ_FILE}" | awk '{print $1}')"
+    RAMDISK_HASH="$(sha256sum "${ORI_RDGZ_FILE}" 2>/dev/null | awk '{print $1}')"
     writeConfigKey "ramdisk-hash" "${RAMDISK_HASH}" "${USER_CONFIG_FILE}"
     echo -e ">> DSM Image patched!"
   fi
@@ -541,6 +551,8 @@ function readData() {
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
     is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+    BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
+    SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
   fi
 
   # Get Arc Data from Config

@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2025 AuxXxilium <https://github.com/AuxXxilium>
+# Copyright (C) 2026 AuxXxilium <https://github.com/AuxXxilium>
 #
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
 #
 
+###############################################################################
+# Initialize environment
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
 . "${ARC_PATH}/include/functions.sh"
@@ -142,10 +144,12 @@ for N in ${ETHX}; do
   initConfigKey "${N}" "${MACR}" "${USER_CONFIG_FILE}"
   ETHN=$((ETHN + 1))
 done
+
 # No network devices
 echo
 [ "${ETHN}" = "0" ] && die "No NIC found! - Loader does not work without Network connection."
 
+# Bus Check
 BUSLIST="usb sata sas scsi nvme mmc ide virtio vmbus xen docker"
 if [ "${BUS}" = "usb" ]; then
   VID="0x$(udevadm info --query property --name "${LOADER_DISK}" 2>/dev/null | grep "ID_VENDOR_ID" | cut -d= -f2)"
@@ -217,6 +221,7 @@ mkdir -p "${MODULES_PATH}"
 mkdir -p "${PATCH_PATH}"
 mkdir -p "${USER_UP_PATH}"
 
+# Symlink Modules for DSM 7.3
 if [ -d "${MODULES_PATH}/" ]; then
   while IFS= read -r -d '' MSRC; do
     MSRCB="$(basename "$MSRC")"
@@ -228,6 +233,7 @@ if [ -d "${MODULES_PATH}/" ]; then
   done < <(find "${MODULES_PATH}" -maxdepth 1 -type f -name '*-7.2-*.tgz' -print0)
 fi
 
+# Symlink Custom for DSM 7.3
 if [ -d "${CUSTOM_PATH}/" ]; then
   while IFS= read -r -d '' CSRC; do
     CSRCB="$(basename "$CSRC")"
@@ -239,6 +245,7 @@ if [ -d "${CUSTOM_PATH}/" ]; then
   done < <(find "${CUSTOM_PATH}" -maxdepth 1 -type f \( -name '*-7.2-*.tgz' -o -name '*-7.2-*.gz' \) -print0)
 fi
 
+# Development Mode
 DEVELOPMENT_MODE="$(readConfigKey "arc.dev" "${USER_CONFIG_FILE}")"
 if [ "${DEVELOPMENT_MODE}" = "true" ]; then
   echo -e "\033[1;34mDevelopment Mode is enabled.\033[0m"

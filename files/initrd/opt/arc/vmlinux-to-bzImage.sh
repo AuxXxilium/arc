@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
+#
+# Copyright (C) 2026 AuxXxilium <https://github.com/AuxXxilium>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
 # Based on code and ideas from @jumkey
 
+###############################################################################
+# Initialize environment
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
 . "${ARC_PATH}/include/functions.sh"
