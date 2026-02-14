@@ -235,12 +235,11 @@ function arcVersion() {
     
       resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
       if [ -n "${resp}" ]; then
-        PRODUCTVER="${resp%%-*}"
-        BUILDNUM="${resp#*-}"
-        BUILDNUM="${BUILDNUM%-*}"
-        SMALLNUM="${resp##*-}"
+        PRODUCTVER="${resp:0:3}"
+        BUILDNUM="$(echo "${resp}" | cut -d'-' -f2 | tr -d '-')"
+        SMALLNUM="$(echo "${resp}" | cut -d'-' -f3 | tr -d '-')"
 
-        if [ "${PRODUCTVER}" != "${resp%%-*}" ] || [ "${BUILDNUM}" != "${resp#*-}" ] || [ "${SMALLNUM}" != "${resp##*-}" ]; then
+        if [ "${PRODUCTVER}" != "${resp:0:3}" ] || [ "${BUILDNUM}" != "$(echo "${resp}" | cut -d'-' -f2 | tr -d '-')" ] || [ "${SMALLNUM}" != "$(echo "${resp}" | cut -d'-' -f3 | tr -d '-')" ]; then
           rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
           resetBuildstatus
         fi

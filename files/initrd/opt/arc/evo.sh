@@ -40,7 +40,7 @@ function backtitle() {
     BACKTITLE+="${IPCON:-(no IP)} | "
   fi
   BACKTITLE+="${MODEL:-(Model)} | "
-  BACKTITLE+="(${BUILDNUM}$([ "${SMALLNUM:-0}" = "0" ] || echo "u${SMALLNUM:-0}")) | "
+  [ -n "${BUILDNUM}" ] && BACKTITLE+="${PRODUCTVER:-(Version)} (${BUILDNUM}$([ "${SMALLNUM:-0}" = "0" ] || echo "u${SMALLNUM:-0}")) | " || BACKTITLE+="${PRODUCTVER:-(Version)} | "
 
   if [ "${ARC_PATCH}" = "true" ]; then
     PATCH_STATUS="Arc"
