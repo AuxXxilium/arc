@@ -584,10 +584,10 @@ function init_default_addons() {
   else
     initConfigKey "addons.vmtools" "" "${USER_CONFIG_FILE}"
   fi
-  #IGPUID="$(lspci -nd ::300 2>/dev/null | grep "8086" | cut -d' ' -f3 | sed 's/://g')"
-  #if is_in_array "${PLATFORM}" "${IGPU1L[@]}" && grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids"; then
-  #  initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
-  #fi
+  IGPUID="$(lspci -nd ::300 2>/dev/null | grep "8086" | cut -d' ' -f3 | sed 's/://g')"
+  if is_in_array "${PLATFORM}" "${IGPU1L[@]}" && grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids"; then
+    initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
+  fi
   if [ "${EXTERNALCONTROLLER}" = "true" ]; then
     initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
   fi
