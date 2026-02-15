@@ -235,14 +235,13 @@ function arcVersion() {
     
       resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
       if [ -n "${resp}" ]; then
-        PRODUCTVER="${resp:0:3}"
-        BUILDNUM="$(echo "${resp}" | cut -d'-' -f2 | tr -d '-')"
-        SMALLNUM="$(echo "${resp}" | cut -d'-' -f3 | tr -d '-')"
-
         if [ "${PRODUCTVER}" != "${resp:0:3}" ] || [ "${BUILDNUM}" != "$(echo "${resp}" | cut -d'-' -f2 | tr -d '-')" ] || [ "${SMALLNUM}" != "$(echo "${resp}" | cut -d'-' -f3 | tr -d '-')" ]; then
           rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
           resetBuildstatus
         fi
+        PRODUCTVER="${resp:0:3}"
+        BUILDNUM="$(echo "${resp}" | cut -d'-' -f2 | tr -d '-')"
+        SMALLNUM="$(echo "${resp}" | cut -d'-' -f3 | tr -d '-')"
       fi
       break
     done
@@ -297,17 +296,32 @@ function arcVersion() {
     fi
   done <<<"$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
 
-  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-  is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
-  if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
-    writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-    mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
-  fi
-
   writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
   while IFS=': ' read -r KEY VALUE; do
     writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
   done <<<"$(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")"
+
+  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+  is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+  if [ "${MODEL}" = "SA6400" ] && [ "${PRODUCTVER}" = "7.3" ]; then
+    KERNEL="custom"
+    writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
+    dialog --backtitle "$(backtitle)" --title "Kernel" \
+      --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 50
+    if [ "${ODP}" = "true" ]; then
+      ODP="false"
+      writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
+    fi
+  elif [ "${KVER:0:1}" -eq 5 ] && [ "${MODEL}" != "SA6400" ] && [ "${PRODUCTVER}" = "7.3" ] && [ "${MEV}" = "physical" ]; then
+    dialog --backtitle "$(backtitle)" --title "Kernel" \
+      --infobox "DSM ${PRODUCTVER} will not work with ${MODEL}! Stay patient..." 3 50
+    sleep 3
+    return
+  fi
+  if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+    writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+    mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+  fi
 
   if [ "${ONLYVERSION}" = "true" ]; then
     resetBuild
@@ -423,7 +437,7 @@ function arcSettings() {
         --infobox "Generating Governor Table..." 3 40
       governorSelection
     elif [ "${ARC_MODE}" = "automated" ] && [ "${MEV}" = "physical" ]; then
-      if [ "${KVER:0:1}" = "5" ]; then
+      if [ "${KVER:0:1}" -eq 5 ]; then
         writeConfigKey "governor" "schedutil" "${USER_CONFIG_FILE}"
       else
         writeConfigKey "governor" "conservative" "${USER_CONFIG_FILE}"
@@ -3885,7 +3899,17 @@ function recoverDSM() {
       KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
       is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
       if [ "${KERNEL}" = "custom" ]; then
-        customKernel
+        dialog --backtitle "$(backtitle)" --title "Kernel" \
+          --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 50
+        if [ "${ODP}" = "true" ]; then
+          ODP="false"
+          writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
+        fi
+        is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+        if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+          writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+          mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+        fi
       else
         KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
         is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"

@@ -19,8 +19,8 @@ function unpackModules() {
 
   rm -rf "${TMP_PATH}/modules"
   mkdir -p "${TMP_PATH}/modules"
-  if [ "${KERNEL}" = "custom" ] || [ "${KERNEL}" = "apex" ]; then
-    tar -zxf "${CUSTOM_PATH}/${KERNEL}-modules-${PLATFORM}-${KVERP}.tgz" -C "${TMP_PATH}/modules"
+  if [ "${KERNEL}" = "custom" ]; then
+    tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVERP}.tgz" -C "${TMP_PATH}/modules"
   else
     tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVERP}.tgz" -C "${TMP_PATH}/modules"
   fi
@@ -37,8 +37,8 @@ function packModules() {
   local KERNEL
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 
-  if [ "${KERNEL}" = "custom" ] || [ "${KERNEL}" = "apex" ]; then
-    tar -zcf "${CUSTOM_PATH}/${KERNEL}-modules-${PLATFORM}-${KVERP}.tgz" -C "${TMP_PATH}/modules" .
+  if [ "${KERNEL}" = "custom" ]; then
+    tar -zcf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVERP}.tgz" -C "${TMP_PATH}/modules" .
   else
     tar -zcf "${MODULES_PATH}/${PLATFORM}-${KVERP}.tgz" -C "${TMP_PATH}/modules" .
   fi
@@ -102,8 +102,8 @@ function installModules() {
 
   mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
   KERNEL=$(readConfigKey "kernel" "${USER_CONFIG_FILE}")
-  if [ "${KERNEL}" = "custom" ] || [ "${KERNEL}" = "apex" ]; then
-    tar -zxf "${CUSTOM_PATH}/${KERNEL}-firmware-${PLATFORM}-${KVERP}.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
+  if [ "${KERNEL}" = "custom" ]; then
+    tar -zxf "${CUSTOM_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
   else
     tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
   fi

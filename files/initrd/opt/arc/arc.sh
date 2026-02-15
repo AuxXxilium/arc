@@ -262,7 +262,22 @@ elif [ "${ARC_MODE}" = "config" ]; then
           g) governorMenu; NEXT="g" ;;
           P) storagepanelMenu; NEXT="P" ;;
           K)
-            customKernel
+            KERNEL=$([ "${KERNEL}" = "official" ] && echo 'custom' || echo 'official')
+            writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
+            dialog --backtitle "$(backtitle)" --title "Kernel" \
+              --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 50
+            if [ "${ODP}" = "true" ]; then
+              ODP="false"
+              writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
+            fi
+            PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+            PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+            KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+            is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+            if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+              writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+              mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+            fi
             resetBuild
             NEXT="K"
             ;;
