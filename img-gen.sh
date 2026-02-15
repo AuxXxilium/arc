@@ -9,7 +9,7 @@
 set -e
 
 # Clean cached Files
-sudo git clean -fdx
+sudo git clean -fdx 2>/dev/null || true
 
 . scripts/functions.sh "${AUX_TOKEN}"
 
