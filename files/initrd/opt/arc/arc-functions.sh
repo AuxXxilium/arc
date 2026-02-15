@@ -312,7 +312,7 @@ function arcVersion() {
       ODP="false"
       writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
     fi
-  elif [ "${KVER:0:1}" -eq 5 ] && [ "${MODEL}" != "SA6400" ] && [ "${PRODUCTVER}" = "7.3" ] && [ "${MEV}" = "physical" ]; then
+  elif [ "${KVER:0:1}" -eq 5 ] && [ "${MODEL}" != "SA6400" ] && [ "${PRODUCTVER}" = "7.3" ]; then
     dialog --backtitle "$(backtitle)" --title "Kernel" \
       --infobox "DSM ${PRODUCTVER} will not work with ${MODEL}! Stay patient..." 3 50
     sleep 3
