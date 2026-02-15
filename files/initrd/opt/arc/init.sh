@@ -109,7 +109,7 @@ initConfigKey "usbmount" "false" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 
 # HardwareID
-HWID="$(getHWID)"
+HWID="$(genHWID)"
 writeConfigKey "arc.hardwareid" "${HWID}" "${USER_CONFIG_FILE}"
 
 # Sort network interfaces
