@@ -245,7 +245,7 @@ if [ -d "${CUSTOM_PATH}/" ]; then
     if [ "$CTAR" != "$CSRC" ] && [ ! -e "$CTAR" ]; then
       ln -sf "$CSRC" "$CTAR" || true
     fi
-  done < <(find "${CUSTOM_PATH}" -maxdepth 1 -type f \( -name '*-7.2-*.tgz' -o -name '*-7.2-*.gz' \) -print0)
+  done < <(find "${CUSTOM_PATH}" -maxdepth 1 -type f \( -name '*-7.2-*.tgz' \) -print0)
 fi
 
 # Development Mode
