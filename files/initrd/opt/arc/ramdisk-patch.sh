@@ -29,6 +29,7 @@ BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
 SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
 DT="$(readConfigKey "dt" "${USER_CONFIG_FILE}")"
+HWID="$(readConfigKey "arc.hardwareid" "${USER_CONFIG_FILE}")"
 
 # Read kver data
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
@@ -143,9 +144,9 @@ echo "Create addons.sh" >>"${LOG_FILE}"
 {
   echo "#!/bin/sh"
   echo 'echo "addons.sh called with params ${@}"'
-  echo "export LOADERLABEL=\"ARC\""
-  echo "export LOADERVERSION=\"${ARC_VERSION}\""
-  echo "export LOADERBUILD=\"${ARC_BUILD}\""
+  echo "export LLABEL=\"ARC\""
+  echo "export LVERSION=\"${ARC_VERSION}\""
+  echo "export LBUILD=\"${ARC_BUILD}\""
   echo "export PLATFORM=\"${PLATFORM}\""
   echo "export MODEL=\"${MODEL}\""
   echo "export PRODUCTVERL=\"${PRODUCTVERL}\""
@@ -232,10 +233,11 @@ fi
 # backup current loader configs
 mkdir -p "${RAMDISK_PATH}/usr/arc"
 {
-  echo "LOADERLABEL=\"ARC\""
-  echo "LOADERVERSION=\"${ARC_VERSION}\""
-  echo "LOADERBUILD=\"${ARC_BUILD}\""
-  echo "LOADERBASE=\"${ARC_BASE}\""
+  echo "LLABEL=\"ARC\""
+  echo "LVERSION=\"${ARC_VERSION}\""
+  echo "LBUILD=\"${ARC_BUILD}\""
+  echo "LBASE=\"${ARC_BASE}\""
+  echo "LHWID=\"${HWID}\""
 } >"${RAMDISK_PATH}/usr/arc/VERSION"
 BACKUP_PATH="${RAMDISK_PATH}/usr/arc/backup"
 rm -rf "${BACKUP_PATH}"
