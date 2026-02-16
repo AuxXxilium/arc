@@ -43,7 +43,7 @@ function arcModel() {
         IGPU=""
         IGPUS=""
         IGPUID="$(lspci -nd ::300 2>/dev/null | grep "8086" | cut -d' ' -f3 | sed 's/://g')"
-        if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" ${ARC_PATH}/include/i915ids && IGPU="all" || IGPU="igpuv5"; else IGPU=""; fi
+        if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids" && IGPU="all" || IGPU="igpuv5"; else IGPU=""; fi
         if [[ " ${IGPU1L[@]} " =~ " ${A} " ]] && [ "${IGPU}" = "all" ]; then
           IGPUS="+"
         elif [[ " ${IGPU2L[@]} " =~ " ${A} " ]] && [[ "${IGPU}" = "igpuv5" || "${IGPU}" = "all" ]]; then
@@ -599,7 +599,7 @@ function init_default_addons() {
     initConfigKey "addons.vmtools" "" "${USER_CONFIG_FILE}"
   fi
   IGPUID="$(lspci -nd ::300 2>/dev/null | grep "8086" | cut -d' ' -f3 | sed 's/://g')"
-  if is_in_array "${PLATFORM}" "${IGPU1L[@]}" && grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids"; then
+  if [ -n "${IGPUID}" ] && is_in_array "${PLATFORM}" "${IGPU1L[@]}" && grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids"; then
     initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
   fi
   if [ "${EXTERNALCONTROLLER}" = "true" ]; then
@@ -1757,7 +1757,7 @@ function sysinfo() {
   TEXT+="\n"
   TEXT+="\n  Board: \Zb${BOARD}\Zn"
   TEXT+="\n  CPU: \Zb${CPU} (Cores: ${CPUCNT} | Threads: ${CPUCHT})\Zn"
-  if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
+  if [ "$(lspci -d ::300 | wc -l)" -gt 0 ]; then
     GPUNAME=""
     for PCI in $(lspci -d ::300 | awk '{print $1}'); do
       GPUNAME+="$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')"
