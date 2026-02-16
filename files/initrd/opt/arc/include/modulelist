@@ -27,32 +27,37 @@ N cpufreq_stats.ko
 
 # misc
 N check_signature.ko
+N dca.ko
+N drivetemp.ko
 N rfkill.ko
 N rfkill-gpio.ko
 N scsi_debug.ko
-N drivetemp.ko
 
 # sensors
 N coretemp.ko
 N k10temp.ko
 N hwmon-vid.ko
 N it87.ko
+N adm1021.ko
+N adm1031.ko
+N adm9240.ko
 N adt7470.ko
 N adt7475.ko
+N lm75.ko
+N lm78.ko
+N lm90.ko
 N nct6683.ko
 N nct6775.ko
 
 # network
-F mii.ko
+F aqc111.ko
+F ax88179_178a.ko
 F cdc_ether.ko
+F mii.ko
+F r8152.ko
 F rndis_host.ko
 F thunderbolt.ko
 F thunderbolt-net.ko
-F r8152.ko
-F aqc111.ko
-F ax88179_178a.ko
-F aic_load_fw.ko
-F aic8800_fdrv.ko
 
 ## i915
 #N dmabuf.ko
