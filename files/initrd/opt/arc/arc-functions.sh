@@ -1699,9 +1699,9 @@ function sysinfo() {
   RAMTOTAL="$(awk '/MemTotal:/ {printf "%.0f\n", $2 / 1024 / 1024 + 0.5}' /proc/meminfo 2>/dev/null)"
   [ -z "${RAMTOTAL}" ] && RAMTOTAL="N/A"
   GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
-  SECURE=$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')
+  SECURE="$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')"
   ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
-  ETHN=$(echo ${ETHX} | wc -w)
+  ETHN="$(echo ${ETHX} | wc -w)"
   HWID="$(genHWID)"
   ARC_BACKUP="$(readConfigKey "arc.backup" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -1734,7 +1734,7 @@ function sysinfo() {
     USERSYNOINFO="$(echo "${USERSYNOINFO_RAW}" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g' | sed 's/^ //;s/ $//')"
     BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
   fi
-  ALTCONSOLE="$(readConfigKey "arc.altconsole" "${USER_CONFIG_FILE}")"
+  KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
   DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
@@ -1810,12 +1810,11 @@ function sysinfo() {
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"
   TEXT+="\n  HWID registered: \Zb$( [ -n "${USERID}" ] && echo "true" || echo "false" )\Zn"
   TEXT+="\n  Offline Mode: \Zb${ARC_OFFLINE}\Zn"
-  TEXT+="\n  Switch Serialport: \Zb${ALTCONSOLE}\Zn"
   TEXT+="\n"
   if [ "${CONFDONE}" = "true" ]; then
     TEXT+="\n\Z4> DSM ${PRODUCTVER} (${BUILDNUM}): ${MODEL}\Zn"
     TEXT+="\n"
-    TEXT+="\n  Kernel | LKM: \Zb${KVER} | ${LKM}\Zn"
+    TEXT+="\n  Kernel | LKM: \Zb${KERNEL} (${KVER}) | ${LKM}\Zn"
     TEXT+="\n  Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
     TEXT+="\n  Arc Patch: \Zb${ARC_PATCH}\Zn"
     TEXT+="\n  Arc Backup: \Zb${ARC_BACKUP}\Zn"
