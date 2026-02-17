@@ -61,6 +61,7 @@ initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.consoleblank" "600" "${USER_CONFIG_FILE}"
 initConfigKey "arc.dev" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.discordnotify" "false" "${USER_CONFIG_FILE}"
+initConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
 # initConfigKey "arc.netfix" "true" "${USER_CONFIG_FILE}"
 initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
@@ -107,10 +108,6 @@ initConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "usbmount" "false" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
-
-# HardwareID
-HWID="$(genHWID)"
-writeConfigKey "arc.hardwareid" "${HWID}" "${USER_CONFIG_FILE}"
 
 # Sort network interfaces
 if [ ! -f "/.dockerenv" ]; then
