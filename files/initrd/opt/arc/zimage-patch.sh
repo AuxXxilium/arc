@@ -28,7 +28,7 @@ is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || tru
 if [ "${KERNEL}" = "custom" ]; then
   [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Kernel: ${KERNEL} ${PLATFORM} (${KVER})"
   # Extract bzImage from tgz
-  tar -xzf "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KVERP}.tgz" -O >"${MOD_ZIMAGE_FILE}" >/dev/null 2>&1 || dieLog
+  tar -xzf "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KVERP}.tgz" -O > "${MOD_ZIMAGE_FILE}" || dieLog
 else
   [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Kernel: official ${PLATFORM} (${KVER})"
   # Extract vmlinux
