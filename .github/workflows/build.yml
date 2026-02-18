@@ -20,10 +20,6 @@ on:
         description: "version (1.0.0)"
         required: true
         type: string
-      notice:
-        description: "Notice here"
-        required: false
-        type: string
       stable:
         description: "stable"
         default: false
@@ -199,11 +195,8 @@ jobs:
           repo: arc-beta
           token: ${{ secrets.BUILD_TOKEN }}
           body: |
-            ### Note:
-              - ${{ inputs.notice }}
-
             ### Information:
-              - Beta Release may not be stable. Use with caution as it is intended for testing purposes only.
+              - Beta Release may not be stable. Use with caution as it is intended for testing purposes only. Check Discord for more information.
 
             ### Dependencies:
               - Addons: ${{ env.ADDONTAG }}
@@ -232,9 +225,6 @@ jobs:
           repo: arc
           token: ${{ secrets.BUILD_TOKEN }}
           body: |
-            ### Note:
-              - ${{ inputs.notice }}
-
             ### Information:
               - [Release Notes](https://xpenology.tech/release/${{ env.ARC_VERSION }}.txt)
 
@@ -265,9 +255,6 @@ jobs:
           repo: arc-essential
           token: ${{ secrets.BUILD_TOKEN }}
           body: |
-            ### Note:
-              - ${{ inputs.notice }}
-
             ### Information:
               - [Release Notes](https://xpenology.tech/release/${{ env.ARC_VERSION }}.txt)
 
