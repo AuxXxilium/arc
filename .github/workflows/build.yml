@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2025 AuxXxilium
+# Copyright (C) 2026 AuxXxilium
 #
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
@@ -212,9 +212,9 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              - Build: ${{ env.BUILD_TIME }}
               - Apex: ${{env.APEX}} (Reduced hardware support to match DSM compatible hardware)
               - Evo: ${{env.EVO}} (Full hardware support including not DSM compatible hardware)
+              - Build: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
             update-*.zip
@@ -245,9 +245,9 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              - Build: ${{ env.BUILD_TIME }}
               - Apex: ${{env.APEX}} (Reduced hardware support to match DSM compatible hardware)
               - Evo: ${{env.EVO}} (Full hardware support including not DSM compatible hardware)
+              - Build: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
             update-*.zip
@@ -278,9 +278,9 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              - Build: ${{ env.BUILD_TIME }}
               - Apex: ${{env.APEX}} (Reduced hardware support to match DSM compatible hardware)
               - Evo: ${{env.EVO}} (Full hardware support including not DSM compatible hardware)
+              - Build: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
             update-*.zip
