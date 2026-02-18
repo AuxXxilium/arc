@@ -2204,6 +2204,7 @@ function downgradeMenu() {
     --progressbox "Removing Version lock..." 20 70
   dialog --backtitle "$(backtitle)" --title "Allow Downgrade"  \
     --msgbox "Allow Downgrade Settings completed." 0 0
+  resetBuild
   return
 }
 
@@ -2291,8 +2292,9 @@ function resetPassword() {
   else
     MSG="Reset password for user ${USER} failed."
   fi
-  dialog --title "$(TEXT "Advanced")" \
+  dialog --title "Reset Password" \
     --msgbox "${MSG}" 0 0
+  resetBuildstatus
   return
 }
 
@@ -3115,7 +3117,7 @@ function dtsMenu() {
       else
         [ -d "${USER_UP_PATH}" ] || mkdir -p "${USER_UP_PATH}"
         cp -f "${USER_FILE}" "${USER_UP_PATH}/model.dts"
-        dialog --backtitle "$(backtitle)" --title "$(TEXT "Custom DTS")" \
+        dialog --backtitle "$(backtitle)" --title "Custom DTS" \
           --msgbox "A valid dts file, Automatically import at compile time." 0 0
       fi
       rm -rf "${DTC_ERRLOG}"
