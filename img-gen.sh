@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2025 AuxXxilium <https://github.com/AuxXxilium>
+# Copyright (C) 2026 AuxXxilium <https://github.com/AuxXxilium>
 #
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
@@ -19,12 +19,8 @@ sudo umount "/tmp/p3" 2>/dev/null || true
 
 # Get extractor, LKM, addons and Modules
 echo "Get Dependencies"
-case "${1}" in
-  evo) getBuildroot "${1}" "br" ;;
-  apex) getBuildroot "${1}" "br" ;;
-  local) mkdir -p br && cp -f /root/buildroot/output/images/rootfs.cpio.zst br/initrd-arc && cp -f /root/buildroot/output/images/bzImage br/bzImage-arc ;;
-  *) echo "Invalid option specified" ;;
-esac
+getBuildroot "apex"
+getBuildroot "evo"
 getAddons "files/p3/addons"
 getModules "files/p3/modules"
 getConfigs "files/p3/configs"
@@ -54,19 +50,16 @@ ARC_BUILD="$(date +'%y%m%d')"
 ARC_VERSION="13.3.7"
 echo "${ARC_VERSION}" >"files/p1/ARC-VERSION"
 echo "${ARC_BUILD}" >"files/p1/ARC-BUILD"
-case "${1}" in
-  evo) echo "evo" > "files/p1/ARC-BASE" ;;
-  apex) echo "apex" > "files/p1/ARC-BASE" ;;
-  local) echo "local" > "files/p1/ARC-BASE" ;;
-esac
 
 echo "Repack initrd"
-if [ -f "br/bzImage-arc" ] && [ -f "br/initrd-arc" ]; then
-    cp -f "br/bzImage-arc" "files/p3/bzImage-arc"
-    repackInitrd "br/initrd-arc" "files/initrd" "files/p3/initrd-arc"
-else
-    exit 1
-fi
+for TYPE in "apex" "evo"; do
+  if [ -f "br/bzImage-${TYPE}" ] && [ -f "br/initrd-${TYPE}" ]; then
+      cp -f "br/bzImage-${TYPE}" "files/p3/bzImage-${TYPE}"
+      repackInitrd "br/initrd-${TYPE}" "files/initrd" "files/p3/initrd-${TYPE}"
+  else
+      exit 1
+  fi
+done
 
 echo "Copying files"
 sudo cp -rf "files/p1/"* "/tmp/p1"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2025 AuxXxilium <https://github.com/AuxXxilium>
+# Copyright (C) 2026 AuxXxilium <https://github.com/AuxXxilium>
 #
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
@@ -190,7 +190,7 @@ function getTheme() {
 # $2 path
 function getBuildroot() {
   local TYPE="${1}"
-  local DEST_PATH="${2}"
+  local DEST_PATH="br"
   local REPO=""
   local ZIP_NAME=""
   local TAG_VAR=""
@@ -199,18 +199,18 @@ function getBuildroot() {
 
   echo "Getting Buildroot-${TYPE} begin"
   TAG=$(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/${REPO}/releases" | jq -r ".[].tag_name" | sort -rV | head -1)
-  export BRTAG="${TAG}"
+  export BRTAG-${TYPE}="${TAG}"
   [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
-  rm -f "${DEST_PATH}/bzImage-arc"
-  rm -f "${DEST_PATH}/initrd-arc"
+  rm -f "${DEST_PATH}/bzImage-"*
+  rm -f "${DEST_PATH}/initrd-"*
   while read -r ID NAME; do
     if [ "${NAME}" = "buildroot-${TAG}.zip" ]; then
-      curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/${REPO}/releases/assets/${ID}" -o "${DEST_PATH}/br.zip"
+      curl -kL -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/${REPO}/releases/assets/${ID}" -o "${DEST_PATH}/br-${TYPE}.zip"
       echo "Buildroot: ${TAG}"
-      unzip -o "${DEST_PATH}/br.zip" -d "${DEST_PATH}"
-      mv -f "${DEST_PATH}/bzImage" "${DEST_PATH}/bzImage-arc"
-      mv -f "${DEST_PATH}/rootfs.cpio.zst" "${DEST_PATH}/initrd-arc"
-      [ -f "${DEST_PATH}/bzImage-arc" ] && [ -f "${DEST_PATH}/initrd-arc" ] && break
+      unzip -o "${DEST_PATH}/br-${TYPE}.zip" -d "${DEST_PATH}"
+      mv -f "${DEST_PATH}/bzImage" "${DEST_PATH}/bzImage-${TYPE}"
+      mv -f "${DEST_PATH}/rootfs.cpio.zst" "${DEST_PATH}/initrd-${TYPE}"
+      [ -f "${DEST_PATH}/bzImage-${TYPE}" ] && [ -f "${DEST_PATH}/initrd-${TYPE}" ] && break
     fi
   done < <(curl -skL -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/AuxXxilium/${REPO}/releases/tags/${TAG}" | jq -r '.assets[] | "\(.id) \(.name)"')
 }

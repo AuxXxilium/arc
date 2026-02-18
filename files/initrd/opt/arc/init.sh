@@ -27,6 +27,10 @@ fi
 checkBootLoader || die "The loader is corrupted, please rewrite it!"
 arc_mode || die "No bootmode found!"
 
+# Basesystem
+ARC_BASE="$(grub-editenv /boot/grub/grubenv list | grep kernel_version | cut -d '=' -f2)"
+echo "${ARC_BASE}" > /mnt/p1/ARC-BASE
+
 [ -f "${HOME}/.initialized" ] && arc.sh && exit 0 || true
 
 BUS=$(getBus "${LOADER_DISK}")
@@ -38,7 +42,7 @@ COLUMNS=$(ttysize 2>/dev/null | awk '{print $1}')
 COLUMNS=${COLUMNS:-120}
 BANNER="$(figlet -c -w "${COLUMNS}" "Arc Loader")"
 TITLE="Version:"
-TITLE+=" ${ARC_VERSION} (${ARC_BUILD})"
+TITLE+=" ${ARC_VERSION} (${ARC_BUILD} @ ${ARC_BASE})"
 printf "\033[1;30m%*s\n" ${COLUMNS} ""
 printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
 printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"

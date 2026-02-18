@@ -3,16 +3,11 @@
 version: "3"
 
 tasks:
-  build-evo:
+  build:
     cmds:
       - git reset --hard
       - git pull
-      - ./img-gen.sh evo
-  build-apex:
-    cmds:
-      - git reset --hard
-      - git pull
-      - ./img-gen.sh apex
+      - ./img-gen.sh
   build-local:
     cmds:
       - git reset --hard

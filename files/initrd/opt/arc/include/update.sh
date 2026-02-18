@@ -37,15 +37,15 @@ function updateLoader() {
     fi
     if [ -n "${TAG}" ]; then
       export TAG="${TAG}"
-      export URL="${UPDATE_URL}/${TAG}/update-${TAG}-${ARC_BASE}.zip"
+      export URL="${UPDATE_URL}/${TAG}/update-${TAG}.zip"
       if [ "${BETA}" = "true" ]; then
-        URL="${BETA_URL}/${TAG}/update-${TAG}-${ARC_BASE}.zip"
+        URL="${BETA_URL}/${TAG}/update-${TAG}.zip"
       fi
 
       local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
       TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
-      local FILE_SIZE=$(curl -skL "${API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"update-${TAG}-${ARC_BASE}.zip\") | .size")
+      local FILE_SIZE=$(curl -skL "${API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"update-${TAG}.zip\") | .size")
 
       if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" \
@@ -83,9 +83,9 @@ function updateLoader() {
 
   if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 250000 ]; then
     if [ "${TAG}" != "zip" ]; then
-      HASH="$(curl -skL "${UPDATE_URL}/${TAG}/update-${TAG}-${ARC_BASE}.hash" | awk '{print $1}')"
+      HASH="$(curl -skL "${UPDATE_URL}/${TAG}/update-${TAG}.hash" | awk '{print $1}')"
       if [ "${BETA}" = "true" ]; then
-        HASH="$(curl -skL "${BETA_URL}/${TAG}/update-${TAG}-${ARC_BASE}.hash" | awk '{print $1}')"
+        HASH="$(curl -skL "${BETA_URL}/${TAG}/update-${TAG}.hash" | awk '{print $1}')"
       fi
 
       if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
@@ -190,12 +190,12 @@ function upgradeLoader() {
     fi
     if [ -n "${TAG}" ]; then
       export TAG="${TAG}"
-      export URL="${UPDATE_URL}/${TAG}/arc-${TAG}-${ARC_BASE}.img.zip"
+      export URL="${UPDATE_URL}/${TAG}/arc-${TAG}.img.zip"
 
       local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
       TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
-      local FILE_SIZE=$(curl -skL "${API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"arc-${TAG}-${ARC_BASE}.img.zip\") | .size")
+      local FILE_SIZE=$(curl -skL "${API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"arc-${TAG}.img.zip\") | .size")
       
       if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
