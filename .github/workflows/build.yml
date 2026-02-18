@@ -39,10 +39,6 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        bre: [apex, evo] # Define the matrix values for bre
-
     runs-on: ${{ inputs.runs }}
 
     steps:
