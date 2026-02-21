@@ -367,7 +367,10 @@ elif [ "${ARC_MODE}" = "config" ]; then
             ;;
           v)
             ARC_BASE=$([ "${ARC_BASE}" = "apex" ] && echo 'evo' || echo 'apex')
+            dialog --backtitle "$(backtitle)" --title "Basesystem" \
+              --infobox "Rebooting to ${ARC_BASE} Basesystem! Stay patient..." 3 50
             grub-editenv "${USER_GRUBENVFILE}" set system_version="${ARC_BASE}"
+            rebootTo config
             NEXT="v"
             ;;
           D) staticIPMenu; NEXT="D" ;;
