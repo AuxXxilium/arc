@@ -58,11 +58,11 @@ rm -rf "${RAMDISK_PATH}" # Force clean
 mkdir -p "${RAMDISK_PATH}"
 (cd "${RAMDISK_PATH}" && xz -dc <"${ORI_RDGZ_FILE}" | cpio -idm) >/dev/null 2>&1
 
-# Check if DSM Version changed
+# Check for DSM Version
 . "${RAMDISK_PATH}/etc/VERSION"
 
 if [ -f "${MOD_RDGZ_FILE}" ]; then
-  if [ -n "${PRODUCTVER}" ] && [ -n "${BUILDNUM}" ] && [ -n "${SMALLNUM}" ] && ([ ! "${PRODUCTVER}" = "${majorversion:-0}.${minorversion:-0}" ] || [ ! "${BUILDNUM}" = "${buildnumber:-0}" ] || [ ! "${SMALLNUM}" = "${smallfixnumber:-0}" ]); then
+  if [ -n "${PRODUCTVER}" ] && [ -n "${BUILDNUM}" ] && [ -n "${SMALLNUM}" ] && ([ "${PRODUCTVER}" != "${majorversion:-0}.${minorversion:-0}" ] || [ "${BUILDNUM}" != "${buildnumber:-0}" ] || [ "${SMALLNUM}" != "${smallfixnumber:-0}" ]); then
     OLDVER="${PRODUCTVER}(${BUILDNUM}$([[ ${SMALLNUM:-0} -ne 0 ]] && echo "u${SMALLNUM}"))"
     NEWVER="${majorversion}.${minorversion}(${buildnumber}$([[ ${smallfixnumber:-0} -ne 0 ]] && echo "u${smallfixnumber}"))"
     PAT_URL_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${major}.${minor}.${micro}-${buildnumber}-${smallfixnumber:-0}\".url" "${D_FILE}")"
@@ -158,17 +158,8 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: install addons"
-
-# System Addons
 NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
-if [ "${NETFIX}" = "true" ]; then
-  SYSADDONS="revert misc eudev disks netfix localrss notify mountloader"
-else
-  SYSADDONS="revert misc eudev disks localrss notify mountloader"
-fi
-if [ "${KVER:0:1}" -eq 5 ]; then
-  SYSADDONS="redpill ${SYSADDONS}"
-fi
+SYSADDONS=$(echo "$( [ "${KVER:0:1}" -eq 5 ] && echo "redpill" ) revert misc eudev disks $( [ "${NETFIX}" = "true" ] && echo "netfix" ) localrss notify mountloader")
 
 for ADDON in ${SYSADDONS}; do
   if [ "${ADDON}" = "disks" ]; then
@@ -176,9 +167,9 @@ for ADDON in ${SYSADDONS}; do
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   fi
   if installAddon "${ADDON}" "${PLATFORM}"; then
-    echo "/addons/${ADDON}.sh \${1}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || exit 1
+    echo "/addons/${ADDON}.sh \${1}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || { echo "Addon ${ADDON} failed to install" && exit 1; }
   else
-    echo "Addon ${ADDON} not found"
+    echo "Addon ${ADDON} not found, please check your configuration"
   fi
 done
 
@@ -193,9 +184,9 @@ for ADDON in "${!ADDONS[@]}"; do
     PARAMS="${WEBHOOK:-false} ${DISCORDUSERID:-false}"
   fi
   if installAddon "${ADDON}" "${PLATFORM}"; then
-    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}"
+    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || { echo "Addon ${ADDON} failed to install" && exit 1; }
   else
-    echo "Addon ${ADDON} not found"
+    echo "Addon ${ADDON} not found, please check your configuration"
   fi
 done
 
