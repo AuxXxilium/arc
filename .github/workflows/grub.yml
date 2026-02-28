@@ -28,13 +28,12 @@ jobs:
           sudo timedatectl set-timezone "Europe/Berlin"
 
           sudo apt update
-          sudo apt install -y autoconf automake autopoint build-essential pkg-config bison flex gettext gawk libtool dosfstools e2fsprogs
-          sudo apt install -y libfreetype6-dev unifont fonts-dejavu libfuse-dev libzfslinux-dev liblzma-dev libdevmapper-dev
+          sudo apt install -y build-essential autoconf automake autopoint pkg-config bison flex gettext gawk libtool dosfstools e2fsprogs libfreetype6-dev unifont fonts-dejavu libfuse-dev libzfslinux-dev liblzma-dev zlib1g-dev libdevmapper-dev libssl-dev
 
       - name: Make Grub
         run: |
           rm -f "files/initrd/opt/arc/grub.img.gz"
-          . scripts/grub.sh "grub-2.12" "i386-pc i386-efi x86_64-efi" "ARC"
+          . scripts/grub.sh "grub-2.14" "i386-pc i386-efi x86_64-efi" "ARC"
 
       - name: Check and Push
         if: success() && inputs.push == true

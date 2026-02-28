@@ -7,7 +7,7 @@
 #
 
 # Variables
-GRUB=${1:-"grub-2.12"}
+GRUB=${1:-"grub-2.14"}
 BIOS=${2:-"i386-pc i386-efi x86_64-efi"}
 NAME=${3:-"ARC"}
 GRUB_URL="https://ftp.gnu.org/gnu/grub/${GRUB}.tar.gz"
@@ -26,17 +26,25 @@ for B in ${BIOS}; do
   echo "Building for ${b[@]}..."
   mkdir -p "${B}"
   pushd "${B}" > /dev/null
+  
+  # Ensure grub-core/extra_deps.lst exists in this build dir so 'make install' finds it
+  if [[ -f ../grub-core/extra_deps.lst ]]; then
+    mkdir -p grub-core
+    cp ../grub-core/extra_deps.lst grub-core/extra_deps.lst
+  fi
+  
   ../configure --prefix="$PWD/usr" --sbindir="$PWD/sbin" --sysconfdir="$PWD/etc" \
     --disable-werror --target="${b[0]}" --with-platform="${b[1]}"
+
   make -j$(nproc)
   make install
 
   # Remove locale files if generated
-  LOCALE_DIR="$PWD/usr/share/locale"
-  if [[ -d "${LOCALE_DIR}" ]]; then
-    echo "Removing locale files..."
-    rm -rf "${LOCALE_DIR}"
-  fi
+  #LOCALE_DIR="$PWD/usr/share/locale"
+  #if [[ -d "${LOCALE_DIR}" ]]; then
+  #  echo "Removing locale files..."
+  #  rm -rf "${LOCALE_DIR}"
+  #fi
 
   popd > /dev/null
 done
