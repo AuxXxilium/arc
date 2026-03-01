@@ -198,7 +198,7 @@ function advancedMenu() {
 ###############################################################################
 # Main loop
 if [ "${ARC_MODE}" = "update" ]; then
-  if [ "${ARC_OFFLINE}" != "true" ]; then
+  if [ ! "${ARC_OFFLINE}" = "true" ]; then
     updateLoader "false"
   else
     dialog --backtitle "$(backtitle)" --title "Arc Update" \
@@ -281,7 +281,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
     elif [ "${BUILDDONE}" = "true" ]; then
       EXTRA_LABEL="Boot"
     fi
-    if [ "$TERM" != "xterm-256color" ]; then
+    if [ ! "${TERM}" = "xterm-256color" ]; then
       WEBCONFIG="Webconfig: http://${IPCON}:${HTTPPORT:-7080}"
     else
       WEBCONFIG=""

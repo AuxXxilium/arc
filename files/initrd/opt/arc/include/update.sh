@@ -18,7 +18,7 @@ function updateLoader() {
 
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
 
-  if [ "${TAG}" != "zip" ]; then
+  if [ ! "${TAG}" = "zip" ]; then
     if [ -z "${TAG}" ]; then
       idx=0
       while [ "${idx}" -le 5 ]; do
@@ -82,13 +82,13 @@ function updateLoader() {
   fi
 
   if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 250000 ]; then
-    if [ "${TAG}" != "zip" ]; then
+    if [ ! "${TAG}" = "zip" ]; then
       HASH="$(curl -skL "${UPDATE_URL}/${TAG}/update-${TAG}.hash" | awk '{print $1}')"
       if [ "${BETA}" = "true" ]; then
         HASH="$(curl -skL "${BETA_URL}/${TAG}/update-${TAG}.hash" | awk '{print $1}')"
       fi
 
-      if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
+      if [ ! "${HASH}" = "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
           --infobox "Update failed - Hash mismatch!\nTry again later." 0 0
         sleep 3
@@ -176,7 +176,7 @@ function updateLoader() {
 # Upgrade Loader
 function upgradeLoader() {
   local TAG="${1}"
-  if [ "${TAG}" != "zip" ]; then
+  if [ ! "${TAG}" = "zip" ]; then
     if [ -z "${TAG}" ]; then
       idx=0
       while [ "${idx}" -le 5 ]; do
