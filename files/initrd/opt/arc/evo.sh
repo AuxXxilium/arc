@@ -217,10 +217,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
   while true; do
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
     write_menu "=" "\Z4===== Main =====\Zn"
-    if [ "${ARC_OFFLINE}" = "false" ]; then
-      write_menu_value "0" "HardwareID" "$([ -n "$(readConfigKey "${MODEL:-SA6400}.serial" "${S_FILE}")" ] && echo "registered" || echo "register")"
-    fi
-
     write_menu_value "1" "Model" "${MODEL}"
 
     if [ "${CONFDONE}" = "true" ]; then
@@ -249,7 +245,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
       fi
 
       write_menu "d" "Modules"
-      write_menu_value "O" "Official Driver Priority" "${ODP}"
 
       if [ "${DT}" = "false" ] && [ "${SATACONTROLLER}" -gt 0 ]; then
         write_menu_value "S" "PortMap" "${REMAP}"
