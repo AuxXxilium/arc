@@ -225,30 +225,6 @@ mkdir -p "${MODULES_PATH}"
 mkdir -p "${PATCH_PATH}"
 mkdir -p "${USER_UP_PATH}"
 
-# Symlink Modules for DSM 7.3
-if [ -d "${MODULES_PATH}/" ]; then
-  while IFS= read -r -d '' MSRC; do
-    MSRCB="$(basename "$MSRC")"
-    MTARB="${MSRCB/-7.2-/-7.3-}"
-    MTAR="${MODULES_PATH}/${MTARB}"
-    if [ "$MTAR" != "$MSRC" ] && [ ! -e "$MTAR" ]; then
-      ln -sf "$MSRC" "$MTAR" || true
-    fi
-  done < <(find "${MODULES_PATH}" -maxdepth 1 -type f -name '*-7.2-*.tgz' -print0)
-fi
-
-# Symlink Custom for DSM 7.3
-if [ -d "${CUSTOM_PATH}/" ]; then
-  while IFS= read -r -d '' CSRC; do
-    CSRCB="$(basename "$CSRC")"
-    CTARB="${CSRCB/-7.2-/-7.3-}"
-    CTAR="${CUSTOM_PATH}/${CTARB}"
-    if [ "$CTAR" != "$CSRC" ] && [ ! -e "$CTAR" ]; then
-      ln -sf "$CSRC" "$CTAR" || true
-    fi
-  done < <(find "${CUSTOM_PATH}" -maxdepth 1 -type f \( -name '*-7.2-*.tgz' \) -print0)
-fi
-
 # Development Mode
 DEVELOPMENT_MODE="$(readConfigKey "arc.dev" "${USER_CONFIG_FILE}")"
 if [ "${DEVELOPMENT_MODE}" = "true" ]; then
