@@ -71,7 +71,7 @@ if [ "${ARC_MODE}" = "update" ] || [ "${ARC_MODE}" = "automated" ]; then
 fi
 
 if [ "${ARC_MODE}" = "update" ]; then
-  if [ ! "${ARC_OFFLINE}" = "true" ]; then
+  if [ "${ARC_OFFLINE}" != "true" ]; then
     updateLoader "false"
   else
     dialog --backtitle "$(backtitle)" --title "Arc Update" \
@@ -203,14 +203,14 @@ elif [ "${ARC_MODE}" = "config" ]; then
     fi
 
     write_menu "=" "\Z4===== Misc =====\Zn"
-    if [ ! "${ARC_OFFLINE}" = "true" ]; then
+    if [ "${ARC_OFFLINE}" != "true" ]; then
       write_menu "Q" "Online Options"
     fi
     write_menu "x" "Backup/Restore/Recovery"
     write_menu "z" "Update"
     write_menu "I" "Power & Service"
     write_menu "V" "Credits"
-    [ ! "${TERM}" = "xterm-256color" ] && WEBCONFIG="Webconfig: http://${IPCON}:${HTTPPORT:-7080}" || WEBCONFIG=""
+    [ "$TERM" != "xterm-256color" ] && WEBCONFIG="Webconfig: http://${IPCON}:${HTTPPORT:-7080}" || WEBCONFIG=""
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Advanced UI" --colors \
       --cancel-label "Easy" --help-button --help-label "Exit" \
       --menu "${WEBCONFIG}" 0 0 0 --file "${TMP_PATH}/menu" \

@@ -47,7 +47,7 @@ ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"
 ZIMAGE_HASH_CUR="$(sha256sum "${ORI_ZIMAGE_FILE}" 2>/dev/null | awk '{print $1}')"
 RAMDISK_HASH="$(readConfigKey "ramdisk-hash" "${USER_CONFIG_FILE}")"
 RAMDISK_HASH_CUR="$(sha256sum "${ORI_RDGZ_FILE}" 2>/dev/null | awk '{print $1}')"
-if [ ! "${ZIMAGE_HASH_CUR}" = "${ZIMAGE_HASH}" ] || [ ! "${RAMDISK_HASH_CUR}" = "${RAMDISK_HASH}" ]; then
+if [ "${ZIMAGE_HASH_CUR}" != "${ZIMAGE_HASH}" ] || [ "${RAMDISK_HASH_CUR}" != "${RAMDISK_HASH}" ]; then
   echo
   livepatch
 fi
@@ -166,7 +166,7 @@ if [ "${NETFIX}" = "true" ]; then
   for N in ${ETHX}; do
     RMAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null || echo "00:00:00:00:00:00")"
     RBUS="$(ethtool -i "${N}" 2>/dev/null | grep "bus-info" | cut -d' ' -f2 || echo "0000:00:00.0")"
-    if [ ! "${RMAC}" = "00:00:00:00:00:00" ] && [ ! "${RBUS}" = "0000:00:00.0" ]; then
+    if [ "${RMAC}" != "00:00:00:00:00:00" ] && [ "${RBUS}" != "0000:00:00.0" ]; then
       CMDLINE["R${RBUS}"]="${RMAC}"
     fi
   done
@@ -192,7 +192,7 @@ if [ -z "${KVER}" ]; then
   exit 1
 fi
 if [ "${KVER:0:1}" -lt 5 ]; then
-  if [ ! "${BUS}" = "usb" ]; then
+  if [ "${BUS}" != "usb" ]; then
     SZ=$(blockdev --getsz "${LOADER_DISK}" 2>/dev/null) # SZ=$(cat /sys/block/${LOADER_DISK/\/dev\//}/size)
     SS=$(blockdev --getss "${LOADER_DISK}" 2>/dev/null) # SS=$(cat /sys/block/${LOADER_DISK/\/dev\//}/queue/hw_sector_size)
     SIZE=$((${SZ:-0} * ${SS:-0} / 1024 / 1024 + 10))

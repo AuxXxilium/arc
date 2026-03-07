@@ -62,7 +62,7 @@ mkdir -p "${RAMDISK_PATH}"
 . "${RAMDISK_PATH}/etc/VERSION"
 
 if [ -f "${MOD_RDGZ_FILE}" ]; then
-  if [ -n "${PRODUCTVER}" ] && [ -n "${BUILDNUM}" ] && [ -n "${SMALLNUM}" ] && ([ ! "${PRODUCTVER}" = "${majorversion:-0}.${minorversion:-0}" ] || [ ! "${BUILDNUM}" = "${buildnumber:-0}" ] || [ ! "${SMALLNUM}" = "${smallfixnumber:-0}" ]); then
+  if [ -n "${PRODUCTVER}" ] && [ -n "${BUILDNUM}" ] && [ -n "${SMALLNUM}" ] && ([ "${PRODUCTVER}" != "${majorversion:-0}.${minorversion:-0}" ] || [ "${BUILDNUM}" != "${buildnumber:-0}" ] || [ "${SMALLNUM}" != "${smallfixnumber:-0}" ]); then
     OLDVER="${PRODUCTVER}(${BUILDNUM}$([[ ${SMALLNUM:-0} -ne 0 ]] && echo "u${SMALLNUM}"))"
     NEWVER="${majorversion}.${minorversion}(${buildnumber}$([[ ${smallfixnumber:-0} -ne 0 ]] && echo "u${smallfixnumber}"))"
     PAT_URL_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${major}.${minor}.${micro}-${buildnumber}-${smallfixnumber:-0}\".url" "${D_FILE}")"
@@ -117,7 +117,7 @@ for PE in "${PATCHES[@]}"; do
 done
 
 # Kernel patches
-[ ! "${ARC_MODE}" = "dsm" ] && echo -e ">> Ramdisk: apply Linux ${KVER:0:1}.x fixes"
+[ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: apply Linux ${KVER:0:1}.x fixes"
 if [ "${KVER:0:1}" -eq 5 ]; then
   sed -i 's#/dev/console#/var/log/lrc#g' "${RAMDISK_PATH}/usr/bin/busybox"
   sed -i '/^echo "START/a \\nmknod -m 0666 /dev/console c 1 3' "${RAMDISK_PATH}/linuxrc.syno"
@@ -126,13 +126,13 @@ else
 fi
 
 # Broadwellntbap patches
-[ ! "${ARC_MODE}" = "dsm" ] && echo -e ">> Ramdisk: apply ${PLATFORM} fixes"
+[ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: apply ${PLATFORM} fixes"
 if [ "${PLATFORM}" = "broadwellntbap" ]; then
   sed -i 's/IsUCOrXA="yes"/XIsUCOrXA="yes"/g; s/IsUCOrXA=yes/XIsUCOrXA=yes/g' "${RAMDISK_PATH}/usr/syno/share/environments.sh"
 fi
 
 # DSM 7.3
-[ ! "${ARC_MODE}" = "dsm" ] && echo -e ">> Ramdisk: apply DSM ${PRODUCTVER:0:3} fixes"
+[ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: apply DSM ${PRODUCTVER:0:3} fixes"
 if [ "${PRODUCTVER}" = "7.3" ]; then
   sed -i 's#/usr/syno/sbin/broadcom_update.sh#/usr/syno/sbin/broadcom_update.sh.arc#g' "${RAMDISK_PATH}/linuxrc.syno.impl"
 fi
@@ -157,7 +157,7 @@ echo "Create addons.sh" >>"${LOG_FILE}"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
-[ ! "${ARC_MODE}" = "dsm" ] && echo -e ">> Ramdisk: install addons"
+[ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: install addons"
 NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
 SYSADDONS=$(echo "$( [ "${KVER:0:1}" -eq 5 ] && echo "redpill" ) revert misc eudev disks $( [ "${NETFIX}" = "true" ] && echo "netfix" ) localrss notify mountloader")
 
@@ -191,7 +191,7 @@ for ADDON in "${!ADDONS[@]}"; do
 done
 
 # Extract modules to ramdisk
-[ ! "${ARC_MODE}" = "dsm" ] && echo -e ">> Ramdisk: install modules"
+[ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: install modules"
 installModules "${PLATFORM}" "${KVERP}" "${!MODULES[@]}" || exit 1
 gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KVERP}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>>"${LOG_FILE}" || exit 1
 

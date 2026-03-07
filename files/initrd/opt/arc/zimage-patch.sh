@@ -26,11 +26,11 @@ PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || true
 if [ "${KERNEL}" = "custom" ]; then
-  [ ! "${ARC_MODE}" = "dsm" ] && echo -e ">> Kernel: ${KERNEL} ${PLATFORM} (${KVER})"
+  [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Kernel: ${KERNEL} ${PLATFORM} (${KVER})"
   # Extract bzImage from tgz
   tar -xzf "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KVERP}.tgz" -O > "${MOD_ZIMAGE_FILE}" || dieLog
 else
-  [ ! "${ARC_MODE}" = "dsm" ] && echo -e ">> Kernel: official ${PLATFORM} (${KVER})"
+  [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Kernel: official ${PLATFORM} (${KVER})"
   # Extract vmlinux
   "${ARC_PATH}/bzImage-to-vmlinux.sh" "${ORI_ZIMAGE_FILE}" "${TMP_PATH}/vmlinux" >/dev/null 2>&1 || dieLog
   # Patch boot params and ramdisk check

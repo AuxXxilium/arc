@@ -93,7 +93,7 @@ function arcModel() {
               echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT})\n" >>"${TMP_PATH}/${M}_warn"
             fi
           fi
-          if [ ! "${M}" = "SA6400" ] && [ "${MEV}" = "hyperv" ]; then
+          if [ "${M}" != "SA6400" ] && [ "${MEV}" = "hyperv" ]; then
             COMPATIBLE=0
           elif [ "${M}" = "SA6400" ] && [ "${MEV}" = "hyperv" ]; then
             echo -e "${WARN}- Hyper-V VM: You need to enable the custom kernel\n" >>"${TMP_PATH}/${M}_warn"
@@ -144,7 +144,7 @@ function arcModel() {
     done
   fi
 
-  if [ "${ARC_MODE}" = "config" ] && [ ! "${MODEL}" = "${resp}" ]; then
+  if [ "${ARC_MODE}" = "config" ] && [ "${MODEL}" != "${resp}" ]; then
     MODEL="${resp}"
     writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
@@ -235,7 +235,7 @@ function arcVersion() {
     
       resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
       if [ -n "${resp}" ]; then
-        if [ ! "${PRODUCTVER}" = "${resp:0:3}" ] || [ ! "${BUILDNUM}" = "$(echo "${resp}" | cut -d'-' -f2 | tr -d '-')" ] || [ ! "${SMALLNUM}" = "$(echo "${resp}" | cut -d'-' -f3 | tr -d '-')" ]; then
+        if [ "${PRODUCTVER}" != "${resp:0:3}" ] || [ "${BUILDNUM}" != "$(echo "${resp}" | cut -d'-' -f2 | tr -d '-')" ] || [ "${SMALLNUM}" != "$(echo "${resp}" | cut -d'-' -f3 | tr -d '-')" ]; then
           rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
           resetBuildstatus
         fi
@@ -255,7 +255,7 @@ function arcVersion() {
     PAT_URL_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${resp}\".url" "${D_FILE}")"
     PAT_HASH_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${resp}\".hash" "${D_FILE}")"
 
-    if [ ! "${PAT_URL}" = "${PAT_URL_UPDATE}" ] || [ ! "${PAT_HASH}" = "${PAT_HASH_UPDATE}" ]; then
+    if [ "${PAT_URL}" != "${PAT_URL_UPDATE}" ] || [ "${PAT_HASH}" != "${PAT_HASH_UPDATE}" ]; then
       PAT_URL="${PAT_URL_UPDATE}"
       PAT_HASH="${PAT_HASH_UPDATE}"
       writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
@@ -266,7 +266,7 @@ function arcVersion() {
     fi
   fi
 
-  if [ ! "${ONLYVERSION}" = "true" ] && [ "${ARC_MODE}" = "config" ]; then
+  if [ "${ONLYVERSION}" != "true" ] && [ "${ARC_MODE}" = "config" ]; then
     USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
     ADDONS_LIST="$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
     if [ -n "${USERID}" ] && ! echo "${ADDONS_LIST}" | grep -q "notification"; then
@@ -343,7 +343,7 @@ function arcPatch() {
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 
-  if [ "${ARC_MODE}" = "automated" ] && [ ! "${ARC_PATCH}" = "user" ]; then
+  if [ "${ARC_MODE}" = "automated" ] && [ "${ARC_PATCH}" != "user" ]; then
     if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
       SN="$(genArc "true" "${MODEL}" sn 2>/dev/null)"
       ARC_PATCH="false"
@@ -568,8 +568,8 @@ function init_default_addons() {
   initConfigKey "addons.reducelogs" "" "${USER_CONFIG_FILE}"
   initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
   initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
-  if [[ "${NVMEDRIVES}" -gt 0 && ! "${BUS}" = "nvme" ]] || [[ "${NVMEDRIVES}" -gt 1 && "${BUS}" = "nvme" ]]; then
-    if is_in_array "${PLATFORM}" "${KVER5L[@]}" && [ "${SATADRIVES}" -eq 0 ] && [ "${SASDRIVES}" -eq 0 ] && [ ! "${BUS}" = "sata" ]; then
+  if [[ "${NVMEDRIVES}" -gt 0 && "${BUS}" != "nvme" ]] || [[ "${NVMEDRIVES}" -gt 1 && "${BUS}" = "nvme" ]]; then
+    if is_in_array "${PLATFORM}" "${KVER5L[@]}" && [ "${SATADRIVES}" -eq 0 ] && [ "${SASDRIVES}" -eq 0 ] && [ "${BUS}" != "sata" ]; then
       initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
     elif is_in_array "${PLATFORM}" "${KVER5L[@]}" && [ "${SATADRIVES}" -le 1 ] && [ "${SASDRIVES}" -eq 0 ] && [ "${BUS}" = "sata" ]; then
       initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
@@ -619,7 +619,7 @@ function init_default_addons() {
 function juniorboot() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  if [ "${BUILDDONE}" = "false" ] && [ ! "${ARC_MODE}" = "automated" ]; then
+  if [ "${BUILDDONE}" = "false" ] && [ "${ARC_MODE}" != "automated" ]; then
     dialog --backtitle "$(backtitle)" --title "Alert" \
       --yesno "Config changed, you need to rebuild the Loader?" 0 0
     if [ $? -eq 0 ]; then
@@ -639,7 +639,7 @@ function juniorboot() {
 function bootcheck() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  if [ ! "${ARC_MODE}" = "automated" ] && [ "${BUILDDONE}" = "false" ]; then
+  if [ "${ARC_MODE}" != "automated" ] && [ "${BUILDDONE}" = "false" ]; then
     dialog --backtitle "$(backtitle)" --title "Alert" \
       --yesno "Config changed, you need to rebuild the Loader?" 0 0
     if [ $? -eq 0 ]; then
@@ -668,7 +668,7 @@ function editUserConfig() {
     dialog --backtitle "$(backtitle)" --title "Invalid YAML format" --msgbox "${ERRORS}" 0 0
   done
   POSTHASH="$(sha256sum "${USER_CONFIG_FILE}" | awk '{print $1}')"
-  if [ ! "${POSTHASH}" = "${PREHASH}" ]; then
+  if [ "${POSTHASH}" != "${PREHASH}" ]; then
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
     dialog --backtitle "$(backtitle)" --title "User Config" \
       --msgbox "User Config changed!\nYou need to rebuild the Loader." 6 40
@@ -1392,7 +1392,7 @@ function backupMenu() {
   ARC_OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   while true; do
-    if [ -n "${USERID}" ] && [ ! "${ARC_OFFLINE}" = "true" ] && [ "${CONFDONE}" = "true" ]; then
+    if [ -n "${USERID}" ] && [ "${ARC_OFFLINE}" != "true" ] && [ "${CONFDONE}" = "true" ]; then
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
         1 "Restore Loader (from DSM Disk)" \
         2 "Restore Hardware Key (local)" \
@@ -1400,7 +1400,7 @@ function backupMenu() {
         4 "Restore Arc Config (from Online)" \
         5 "Backup Arc Config (to Online)" \
         2>"${TMP_PATH}/resp"
-    elif [ -n "${USERID}" ] && [ ! "${ARC_OFFLINE}" = "true" ]; then
+    elif [ -n "${USERID}" ] && [ "${ARC_OFFLINE}" != "true" ]; then
       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
         1 "Restore Loader (from DSM Disk)" \
         2 "Restore Hardware Key (local)" \
@@ -2433,9 +2433,9 @@ function loaderPorts() {
         [ $? -eq 0 ] && continue || break
       fi
       rm -f "/etc/arc.conf"
-      [ ! "${HTTPPORT:-7080}" = "7080" ] && echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf"
-      [ ! "${DUFSPORT:-7304}" = "7304" ] && echo "DUFS_PORT=${DUFS}" >>"/etc/arc.conf"
-      [ ! "${TTYDPORT:-7681}" = "7681" ] && echo "TTYD_PORT=${TTYD}" >>"/etc/arc.conf"
+      [ "${HTTPPORT:-7080}" != "7080" ] && echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf"
+      [ "${DUFSPORT:-7304}" != "7304" ] && echo "DUFS_PORT=${DUFSPORT}" >>"/etc/arc.conf"
+      [ "${TTYDPORT:-7681}" != "7681" ] && echo "TTYD_PORT=${TTYDPORT}" >>"/etc/arc.conf"
       RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
       rm -rf "${RDXZ_PATH}"
       mkdir -p "${RDXZ_PATH}"
@@ -3486,7 +3486,7 @@ function getmap() {
   if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
     LASTDRIVE=0
     while read -r D; do
-      if [ "${BUS}" = "sata" ] && [ ! "${MEV}" = "physical" ] && [ "${D}" -eq 0 ]; then
+      if [ "${BUS}" = "sata" ] && [ "${MEV}" != "physical" ] && [ "${D}" -eq 0 ]; then
         MAXDISKS=${DRIVES}
         echo -n "${D}>${MAXDISKS}:" >>"${TMP_PATH}/remap"
       elif [ "${D}" -ne "${LASTDRIVE}" ]; then
