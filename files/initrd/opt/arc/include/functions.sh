@@ -103,16 +103,6 @@ function die() {
 }
 
 ###############################################################################
-# Show error message with log content and dies
-function dieLog() {
-  echo -en "\n\033[1;41mUNRECOVERY ERROR: "
-  cat "${LOG_FILE}"
-  echo -e "\033[0m"
-  sleep 3
-  exit 1
-}
-
-###############################################################################
 # Check if a item exists into array
 # 1 - Item
 # 2.. - Array
@@ -347,7 +337,7 @@ function rebootTo() {
   BUILDDONE="$(readConfigKey "builddone" "${USER_CONFIG_FILE}")"
   if [ "${BUILDDONE}" != "true" ] || [ ! -f "${MOD_ZIMAGE_FILE}" ] || [ ! -f "${MOD_RDGZ_FILE}" ]; then
     dialog --backtitle "$(backtitle)" --title "Reboot" \
-      --aspect 18 --msgbox "Build is not complete! Do you want to continue?" 0 0
+      --aspect 18 --yesno "Build is not complete!\nDSM will not boot properly.\nDo you want to continue?" 0 0
     if [ $? -ne 0 ]; then
       return 1
     fi

@@ -472,6 +472,17 @@ function updateCustom() {
         --infobox "Updating Custom Kernel..." 3 50
       if unzip -oq "${TMP_PATH}/custom.zip" -d "${CUSTOM_PATH}"; then
         rm -f "${TMP_PATH}/custom.zip"
+        # Symlink Custom for DSM 7.3
+        if [ -d "${CUSTOM_PATH}/" ]; then
+          while IFS= read -r -d '' CSRC; do
+            CSRCB="$(basename "$CSRC")"
+            CTARB="${CSRCB/-7.2-/-7.3-}"
+            CTAR="${CUSTOM_PATH}/${CTARB}"
+            if [ "$CTAR" != "$CSRC" ] && [ ! -e "$CTAR" ]; then
+              ln -sf "$CSRC" "$CTAR" || true
+            fi
+          done < <(find "${CUSTOM_PATH}" -maxdepth 1 -type f \( -name '*-7.2-*.tgz' \) -print0)
+        fi
         dialog --backtitle "$(backtitle)" --title "Update Custom Kernel" \
           --infobox "Update Custom successful!" 3 50
         sleep 2
