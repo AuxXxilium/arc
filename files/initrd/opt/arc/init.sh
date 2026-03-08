@@ -174,6 +174,18 @@ echo -e "Loader Disk: \033[1;34m${LOADER_DISK}\033[0m"
 echo -e "Loader Disk Type: \033[1;34m${BUS}\033[0m"
 echo
 
+# Symlink Custom for DSM 7.3
+if [ -d "${CUSTOM_PATH}/" ]; then
+  while IFS= read -r -d '' CSRC; do
+    CSRCB="$(basename "$CSRC")"
+    CTARB="${CSRCB/-7.2-/-7.3-}"
+    CTAR="${CUSTOM_PATH}/${CTARB}"
+    if [ "$CTAR" != "$CSRC" ] && [ ! -e "$CTAR" ]; then
+      ln -sf "$CSRC" "$CTAR" || true
+    fi
+  done < <(find "${CUSTOM_PATH}" -maxdepth 1 -type f \( -name '*-7.2-*.tgz' \) -print0)
+fi
+
 # Decide if boot automatically
 BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
 
