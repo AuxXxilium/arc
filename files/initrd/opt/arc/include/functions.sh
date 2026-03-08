@@ -357,8 +357,8 @@ function rebootTo() {
 function copyDSMFiles() {
   if [ -f "${1}/VERSION" ] && [ -f "${1}/grub_cksum.syno" ] && [ -f "${1}/GRUB_VER" ] && [ -f "${1}/zImage" ] && [ -f "${1}/rd.gz" ]; then
     # Remove old model files
-    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/grub_cksum.syno" "${PART2_PATH}/GRUB_VER"
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}"
+    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" "${PART2_PATH}/grub_cksum.syno" "${PART2_PATH}/GRUB_VER" >/dev/null
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" >/dev/null
     # Remove old build files
     rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
     # Copy new model files
@@ -378,6 +378,11 @@ function copyDSMFiles() {
 # Livepatch
 function livepatch() {
   PVALID="false"
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  if [ "${PLATFORM}" = "SA6400" ] && [ "${PRODUCTVER}" = "7.3" ]; then
+    writeConfigKey "kernel" "custom" "${USER_CONFIG_FILE}"
+  fi
   # Patch zImage
   echo -e ">> patching Kernel..."
   if ${ARC_PATH}/zimage-patch.sh; then
