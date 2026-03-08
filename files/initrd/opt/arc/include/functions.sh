@@ -56,6 +56,7 @@ function arc_mode() {
 ###############################################################################
 # Check for NIC and IP
 function checkNIC() {
+  sleep 3 # Wait for network to initialize
   IPCON=""
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT="20"
