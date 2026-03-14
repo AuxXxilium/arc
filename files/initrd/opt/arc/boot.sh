@@ -337,6 +337,8 @@ else
 
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
 
+  # Unload all network drivers
+  for F in $(realpath /sys/class/net/*/device/driver); do [ ! -e "${F}" ] && continue; rmmod -f "$(basename ${F})" 2>/dev/null || true; done
   sleep 2
 
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
