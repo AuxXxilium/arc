@@ -27,8 +27,8 @@ KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver"
 is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || true
 if [ "${KERNEL}" = "custom" ]; then
   [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Kernel: ${KERNEL} ${PLATFORM} (${KVER})"
-  # Extract bzImage from tgz
-  tar -xzf "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KVERP}.tgz" -O > "${MOD_ZIMAGE_FILE}" || die
+  # Extract bzImage
+  gzip -dc "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KVERP}.gz" >"${MOD_ZIMAGE_FILE}" || die
 else
   [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Kernel: official ${PLATFORM} (${KVER})"
   # Extract vmlinux
