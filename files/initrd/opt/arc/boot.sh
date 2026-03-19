@@ -339,9 +339,11 @@ else
 
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
 
-  # Unload all network drivers
-  for F in $(realpath /sys/class/net/*/device/driver); do [ ! -e "${F}" ] && continue; rmmod -f "$(basename ${F})" 2>/dev/null || true; done
-  sleep 2
+  # Unload all modules to prevent potential issues, especially for network drivers. DSM will load necessary modules after booting.
+  #for MODULE in $(lsmod | awk '{print $1}' | tail -n +2); do
+  #  modprobe -r "${MODULE}" 2>/dev/null || true
+  #done
+  #sleep 3
 
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   [ -z "${KERNELLOAD}" ] && KERNELLOAD="kexec"
