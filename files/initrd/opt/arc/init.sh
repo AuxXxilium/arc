@@ -222,7 +222,8 @@ echo -e "\033[1;34mNetwork (${ETHN} NIC)\033[0m"
 RESTARTED=0
 [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && RESTARTED=1
 [ ! -f /var/run/thttpd.pid ] && /etc/init.d/S90thttpd restart >/dev/null 2>&1 && RESTARTED=1
-[ "${RESTARTED}" = "1" ] && sleep 3
+[ "${RESTARTED}" = "1" ] && sleep 5
+IPCON=""
 checkNIC
 echo
 

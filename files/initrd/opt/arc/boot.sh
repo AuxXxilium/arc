@@ -320,7 +320,9 @@ else
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
   echo -e "\033[1;34mNetwork (${ETHN} NIC)\033[0m"
-  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 || true
+  RESTARTED=0
+  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && RESTARTED=1
+  [ "${RESTARTED}" = "1" ] && sleep 5
   IPCON=""
   checkNIC || true
   echo
