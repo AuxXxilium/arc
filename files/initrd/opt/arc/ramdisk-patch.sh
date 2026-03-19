@@ -29,6 +29,7 @@ BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
 SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
 ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
 DT="$(readConfigKey "dt" "${USER_CONFIG_FILE}")"
+ARC_BASE="$(cat "${PART1_PATH}/ARC-BASE" 2>/dev/null)"
 
 # Read kver data
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
