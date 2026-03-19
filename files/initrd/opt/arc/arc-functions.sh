@@ -729,11 +729,10 @@ function modulesMenu() {
     rm -f "${TMP_PATH}/menu"
     {
       echo "1 \"Show/Select Modules\""
-      echo "2 \"Add from expanded Modules\""
-      echo "3 \"Only select loaded Modules\""
-      echo "4 \"Deselect i915 with dependencies\""
-      echo "5 \"Edit Moduleslist for Modules copied to DSM\""
-      echo "6 \"Blacklist Modules to prevent loading in DSM\""
+      echo "2 \"Select loaded Modules only\""
+      echo "3 \"Deselect i915 with dependencies\""
+      echo "4 \"Edit Moduleslist for Modules copied to DSM\""
+      echo "5 \"Blacklist Modules to prevent loading in DSM\""
     } >"${TMP_PATH}/menu"
     dialog --backtitle "$(backtitle)" --title "Modules" \
       --cancel-label "Exit" --menu "Choose an option (Only edit Modules if you know what you do)" 0 0 0 --file "${TMP_PATH}/menu" \
@@ -785,130 +784,6 @@ function modulesMenu() {
       done
       ;;
     2)
-      PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-      PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-      KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-      is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
-      MODULES_TMP_PATH="/tmp/arc-modules-ex"
-      if [ -z "${KVERP}" ]; then
-        dialog --backtitle "$(backtitle)" --title "Modules" \
-          --msgbox "No Kernel Version found, please select a Model and Version first." 0 0
-        continue
-      fi
-      idx=0
-      while (( idx <= 5 )); do
-        local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules-ex/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
-        if [ -n "${TAG}" ]; then
-          break
-        fi
-        sleep 3
-        idx=$((${idx} + 1))
-      done
-      if [ -n "${TAG}" ]; then
-        mkdir -p "${MODULES_TMP_PATH}"
-        export URL="https://github.com/AuxXxilium/arc-modules-ex/releases/download/${TAG}/${PLATFORM}-${KVERP}.tgz"
-        export TAG="${TAG}"
-        {
-          {
-            curl -kL "${URL}" -o "${MODULES_TMP_PATH}/${PLATFORM}-${KVERP}.tgz" 2>&3 3>&-
-          } 3>&1 >&4 4>&- |
-          perl -C -lane '
-            BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
-            $pcent = $F[0];
-            $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-            s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
-            if ($. <= 3) {
-              $header .= "$_\n";
-              $/ = "\r" if $. == 2
-            } else {
-              print "XXX\n$pcent\n$header$_\nXXX"
-            }' 4>&- |
-          dialog --gauge "Download Modules: ${TAG}..." 14 72 4>&-
-        } 4>&1
-        TGZ1="${MODULES_PATH}/${PLATFORM}-${KVERP}.tgz"
-        TGZ2="${MODULES_TMP_PATH}/${PLATFORM}-${KVERP}.tgz"
-        TMP1="$(mktemp -d)"
-        TMP2="$(mktemp -d)"
-        TMPOUT="$(mktemp -d)"
-        CHECKLIST="${TMP_PATH}/modcompare"
-        rm -f "${CHECKLIST}"
-
-        tar -xzf "$TGZ1" -C "${TMP1}"
-        tar -xzf "$TGZ2" -C "${TMP2}"
-
-        MODS1=($(find "${TMP1}" -type f -name '*.ko' -exec basename {} \; | sort -u))
-        MODS2=($(find "${TMP2}" -type f -name '*.ko' -exec basename {} \; | sort -u))
-        ALL_MODS=($(printf "%s\n%s\n" "${MODS1[@]}" "${MODS2[@]}" | sort -u))
-
-        for MOD in "${ALL_MODS[@]}"; do
-          DESC=""
-          MODNAME="${MOD%.ko}"
-          if [ -f "${TMP2}/${MOD}" ]; then
-            DESC="$(modinfo -F description "${TMP2}/${MOD}" 2>/dev/null)"
-            DESC="$(echo "${DESC}" | sed -E 's/[\n]/ /g' | sed -E 's/\(Compiled by RR for DSM\)//g')"
-            [ -z "${DESC}" ] && DESC="No description"
-          fi
-        
-          if [[ " ${MODS1[*]} " == *" $MOD "* && " ${MODS2[*]} " == *" $MOD "* ]]; then
-            if ! cmp -s "${TMP1}/${MOD}" "${TMP2}/${MOD}"; then
-              echo "\"${MODNAME}\" \"\Z1Different\Zn - $DESC\" off" >>"$CHECKLIST"
-            fi
-          elif [[ " ${MODS2[*]} " == *" $MOD "* ]]; then
-            echo "\"${MODNAME}\" \"\Z1Only in Expanded\Zn - $DESC\" off" >>"$CHECKLIST"
-          else
-            echo "\"${MODNAME}\" \"\Z1Only in Loader\Zn\" off" >>"$CHECKLIST"
-          fi
-        done
-
-        dialog --title "Expanded Modules" --colors \
-          --checklist "Select modules to REPLACE in Loader with version from Expanded:" 0 0 0 \
-          --file "${CHECKLIST}" 2>"${TMP_PATH}/modsel"
-
-        [ $? -ne 0 ] && { rm -rf "${TMP1}" "${TMP2}" "${TMPOUT}"; return 1; }
-        SELMODS=$(cat "${TMP_PATH}/modsel" | tr -d '"')
-
-        cp -f "${TMP1}"/*.ko "${TMPOUT}/" 2>/dev/null
-
-        REPLACED_LIST=""
-        DEPS_TO_COPY=()
-        for MOD in ${SELMODS}; do
-          MODNAME="${MOD//[[:space:]]/}"
-          DEPS_TO_COPY+=("${MODNAME}")
-          for DEP in $(getdepends "${PLATFORM}" "${KVERP}" "${MODNAME}"); do
-            DEPS_TO_COPY+=("${DEP}")
-            REPLACED_LIST+="${DEP}\n"
-          done
-        done
-        
-        DEPS_TO_COPY=($(printf "%s\n" "${DEPS_TO_COPY[@]}" | sort -u))
-        REPLACED_LIST="$(printf "%s\n" "${REPLACED_LIST}" | sort -u  | sed 's/^\s*//; s/\s*$//')"
-        [ -z "${REPLACED_LIST}" ] && REPLACED_LIST="No modules replaced."
-
-        for DEP in "${DEPS_TO_COPY[@]}"; do
-          [ -f "${TMP2}/${DEP}" ] && cp -f "${TMP2}/${DEP}" "${TMPOUT}/${DEP}"
-        done
-
-        tar -czf "${TGZ1}" -C "${TMPOUT}" .
-
-        if [ -n "${SELMODS}" ]; then
-          FIRMWARE_URL="https://github.com/AuxXxilium/arc-modules-ex/releases/download/${TAG}/firmware.tgz"
-          FIRMWARE_PATH="${MODULES_TMP_PATH}/firmware.tgz"
-          FIRMWARE_TMP="$(mktemp -d)"
-          curl -skL --http1.1 "${FIRMWARE_URL}" -o "${FIRMWARE_PATH}"
-          if [ -f "${FIRMWARE_PATH}" ]; then
-            tar -xzf "${FIRMWARE_PATH}" -C "${FIRMWARE_TMP}"
-            tar -czf "${MODULES_PATH}/firmware.tgz" -C "${FIRMWARE_TMP}" .
-            rm -rf "${FIRMWARE_TMP}"
-          fi
-        fi
-
-        dialog --title "Expanded Modules" --msgbox "Replaced Modules:\n${REPLACED_LIST}" 20 60
-
-        rm -rf "${TMP1}" "${TMP2}" "${TMPOUT}" "${CHECKLIST}" "${TMP_PATH}/modsel"
-        resetBuild
-      fi
-      ;;
-    3)
       dialog --backtitle "$(backtitle)" --title "Modules" \
         --infobox "Only select loaded modules" 0 0
       KOLIST=""
@@ -922,7 +797,7 @@ function modulesMenu() {
       done
       resetBuild
       ;;
-    4)
+    3)
       DEPS="$(getdepends "${PLATFORM}" "${KVERP}" i915) i915"
       DELS=()
       while IFS=': ' read -r KEY VALUE; do
@@ -943,7 +818,7 @@ function modulesMenu() {
       fi
       resetBuild
       ;;
-    5)
+    4)
       if [ -f ${USER_UP_PATH}/modulelist ]; then
         cp -f "${USER_UP_PATH}/modulelist" "${TMP_PATH}/modulelist.tmp"
       else
@@ -961,7 +836,7 @@ function modulesMenu() {
         break
       done
       ;;
-    6)
+    5)
       # modprobe.blacklist
       MSG=""
       MSG+="The blacklist is used to prevent the kernel from loading specific modules.\n"
