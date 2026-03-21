@@ -80,3 +80,4 @@ sudo losetup --detach ${LOOPX}
 # rm -f "${IMAGE_FILE}.tmp"
 
 qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
+echo "Build done at $(date +'%Y-%m-%d %H:%M:%S')"
