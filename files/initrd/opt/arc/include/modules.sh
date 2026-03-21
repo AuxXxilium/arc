@@ -236,3 +236,4 @@ function getdepends() {
   _getdepends "${KONAME}" | sort -u
   echo "${KONAME}"
   rm -rf "${UNPATH}"
+}
