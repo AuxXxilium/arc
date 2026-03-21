@@ -14,15 +14,16 @@
 function unpackModules() {
   local PLATFORM="${1}"
   local KVERP="${2}"
+  local UNPATH=${3:-"${TMP_PATH}/modules"}
   local KERNEL
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 
-  rm -rf "${TMP_PATH}/modules"
-  mkdir -p "${TMP_PATH}/modules"
+  rm -rf "${UNPATH}"
+  mkdir -p "${UNPATH}"
   if [ "${KERNEL}" = "custom" ]; then
-    tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVERP}.tgz" -C "${TMP_PATH}/modules"
+    tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVERP}.tgz" -C "${UNPATH}"
   else
-    tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVERP}.tgz" -C "${TMP_PATH}/modules"
+    tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVERP}.tgz" -C "${UNPATH}"
   fi
 }
 
@@ -32,15 +33,16 @@ function unpackModules() {
 # 2 - Kernel Version
 # 3 - Path
 function packModules() {
-  local PLATFORM="${1}"
-  local KVERP="${2}"
+  local PLATFORM=${1}
+  local KVERP=${2}
   local KERNEL
+  local UNPATH=${3:-"${TMP_PATH}/modules"}
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 
   if [ "${KERNEL}" = "custom" ]; then
-    tar -zcf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVERP}.tgz" -C "${TMP_PATH}/modules" .
+    tar -zcf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVERP}.tgz" -C "${UNPATH}" .
   else
-    tar -zcf "${MODULES_PATH}/${PLATFORM}-${KVERP}.tgz" -C "${TMP_PATH}/modules" .
+    tar -zcf "${MODULES_PATH}/${PLATFORM}-${KVERP}.tgz" -C "${UNPATH}" .
   fi
 }
 
@@ -49,24 +51,59 @@ function packModules() {
 # 1 - Platform
 # 2 - Kernel Version
 function getAllModules() {
-  local PLATFORM="${1}"
-  local KVERP="${2}"
+  local PLATFORM=${1}
+  local KVERP=${2}
 
   if [ -z "${PLATFORM}" ] || [ -z "${KVERP}" ]; then
     return 1
   fi
 
+  UNPATH="${TMP_PATH}/modules"
   unpackModules "${PLATFORM}" "${KVERP}"
 
-  for F in $(LC_ALL=C printf '%s\n' ${TMP_PATH}/modules/*.ko | sort -V); do
-    [ ! -e "${F}" ] && continue
-    local N DESC
-    N="$(basename "${F}" .ko)"
-    DESC="$(modinfo -F description "${F}" 2>/dev/null)"
-    DESC="$(echo "${DESC}" | sed -E 's/[\n]/ /g' | sed -E 's/\(Compiled by RR for DSM\)//g')"
-    echo "${N} \"${DESC:-${N}}\""
+  for D in "" "update"; do
+    for F in $(LC_ALL=C printf '%s\n' ${UNPATH}/${D:+${D}/}*.ko | sort -V); do
+      [ ! -e "${F}" ] && continue
+      local N DESC
+      N="$(basename "${F}" .ko)"
+      DESC="$(modinfo -F description "${F}" 2>/dev/null)"
+      DESC="$(echo "${DESC}" | tr -d '\n\r\t\\' | sed "s/\"/'/g" | sed -E 's/\(Compiled by RR for DSM\)//g')"
+      echo "${D:+${D}/}${N} \"${DESC:-${D:+${D}/}${N}}\""
+    done
   done
   rm -rf "${TMP_PATH}/modules"
+}
+
+###############################################################################
+# Return list of loaded modules
+# 1 - Platform
+# 2 - Kernel Version
+function getLoadedModules() {
+  local PLATFORM=${1}
+  local PKVER=${2}
+
+  if [ -z "${PLATFORM}" ] || [ -z "${PKVER}" ]; then
+    return 1
+  fi
+
+  UNPATH="${TMP_PATH}/lib/modules/$(uname -r)"
+  unpackModules "${PLATFORM}" "${PKVER}" "${UNPATH}"
+  depmod -a -b "${TMP_PATH}" >/dev/null 2>&1
+
+  ALL_KO=$(
+    find /sys/devices -name modalias -exec cat {} \; | while read -r modalias; do
+      modprobe -d "${TMP_PATH}" --resolve-alias "${modalias}" 2>/dev/null
+    done | sort -u
+  )
+  rm -rf "${UNPATH}"
+
+  ALL_DEPS=""
+  for M in ${ALL_KO}; do
+    ALL_DEPS="${ALL_DEPS} $(getdepends "${PLATFORM}" "${PKVER}" "${M}")"
+  done
+
+  echo "${ALL_DEPS}" | tr ' ' '\n' | grep -v '^$' | sort -u
+  return 0
 }
 
 ###############################################################################
@@ -75,8 +112,8 @@ function getAllModules() {
 # 2 - Kernel Version
 # 3 - Module list
 function installModules() {
-  local PLATFORM="${1}"
-  local KVERP="${2}"
+  local PLATFORM=${1}
+  local KVERP=${2}
 
   if [ -z "${PLATFORM}" ] || [ -z "${KVERP}" ]; then
     echo "ERROR: Platform or Kernel Version not defined" >"${LOG_FILE}"
@@ -86,22 +123,26 @@ function installModules() {
   shift 2
   MLIST="${*}"
 
+  UNPATH="${TMP_PATH}/modules"
   unpackModules "${PLATFORM}" "${KVERP}"
 
   ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
-  for F in $(LC_ALL=C printf '%s\n' ${TMP_PATH}/modules/*.ko | sort -V); do
-    [ ! -e "${F}" ] && continue
-    M="$(basename "${F}")"
-    [ "${ODP}" = "true" ] && [ -f "${RAMDISK_PATH}/usr/lib/modules/${M}" ] && continue
-    if echo "${MLIST}" | grep -wq "$(basename "${M}" .ko)"; then
-      cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${M}" 2>"${LOG_FILE}"
-    else
-      rm -f "${RAMDISK_PATH}/usr/lib/modules/${M}" 2>"${LOG_FILE}"
-    fi
+  for D in "" "update"; do
+    for F in $(LC_ALL=C printf '%s\n' ${UNPATH}/${D:+${D}/}*.ko | sort -V); do
+      [ ! -e "${F}" ] && continue
+      M=$(basename "${F}")
+      [ "${ODP}" = "true" ] && [ -f "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}${M}" ] && continue # TODO: check if module is already loaded
+      if echo "${MLIST}" | grep -wq "${D:+${D}/}$(basename "${M}" .ko)"; then
+        mkdir -p "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}"
+        cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}${M}" 2>"${LOG_FILE}"
+      else
+        rm -f "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}${M}" 2>"${LOG_FILE}"
+      fi
+    done
   done
 
   mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
-  KERNEL=$(readConfigKey "kernel" "${USER_CONFIG_FILE}")
+  KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
   if [ "${KERNEL}" = "custom" ]; then
     tar -zxf "${CUSTOM_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
   else
@@ -121,20 +162,21 @@ function installModules() {
 # 2 - Kernel Version
 # 3 - ko file
 function addToModules() {
-  local PLATFORM="${1}"
-  local KVERP="${2}"
-  local KOFILE="${3}"
+  local PLATFORM=${1}
+  local PKVER=${2}
+  local KOFILE=${3}
 
-  if [ -z "${PLATFORM}" ] || [ -z "${KVERP}" ] || [ -z "${KOFILE}" ]; then
+  if [ -z "${PLATFORM}" ] || [ -z "${PKVER}" ] || [ -z "${KOFILE}" ]; then
     echo ""
     return 1
   fi
 
-  unpackModules "${PLATFORM}" "${KVERP}"
+  UNPATH="${TMP_PATH}/modules"
+  unpackModules "${PLATFORM}" "${PKVER}" "${UNPATH}"
 
-  cp -f "${KOFILE}" "${TMP_PATH}/modules"
+  cp -f "${KOFILE}" "${UNPATH}"
 
-  packModules "${PLATFORM}" "${KVERP}"
+  packagModules "${PLATFORM}" "${PKVER}" "${UNPATH}"
 }
 
 ###############################################################################
@@ -143,20 +185,21 @@ function addToModules() {
 # 2 - Kernel Version
 # 3 - ko name
 function delToModules() {
-  local PLATFORM="${1}"
-  local KVERP="${2}"
-  local KONAME="${3}"
+  local PLATFORM=${1}
+  local PKVER=${2}
+  local KONAME=${3}
 
-  if [ -z "${PLATFORM}" ] || [ -z "${KVERP}" ] || [ -z "${KONAME}" ]; then
+  if [ -z "${PLATFORM}" ] || [ -z "${PKVER}" ] || [ -z "${KONAME}" ]; then
     echo ""
     return 1
   fi
 
-  unpackModules "${PLATFORM}" "${KVERP}"
+  UNPATH="${TMP_PATH}/modules"
+  unpackModules "${PLATFORM}" "${PKVER}" "${UNPATH}"
 
-  rm -f "${TMP_PATH}/modules/${KONAME}"
+  rm -f "${UNPATH}/${KONAME}"
 
-  packModules "${PLATFORM}" "${KVERP}"
+  packagModules "${PLATFORM}" "${PKVER}" "${UNPATH}"
 }
 
 ###############################################################################
@@ -178,18 +221,18 @@ function getdepends() {
     fi
   }
 
-  local PLATFORM="${1}"
-  local KVERP="${2}"
-  local KONAME="${3}"
+  local PLATFORM=${1}
+  local PKVER=${2}
+  local KONAME=${3}
 
-  if [ -z "${PLATFORM}" ] || [ -z "${KVERP}" ] || [ -z "${KONAME}" ]; then
+  if [ -z "${PLATFORM}" ] || [ -z "${PKVER}" ] || [ -z "${KONAME}" ]; then
     echo ""
     return 1
   fi
 
-  unpackModules "${PLATFORM}" "${KVERP}"
+  UNPATH="${TMP_PATH}/modules"
+  unpackModules "${PLATFORM}" "${PKVER}" "${UNPATH}"
 
   _getdepends "${KONAME}" | sort -u
   echo "${KONAME}"
-  rm -rf "${TMP_PATH}/modules"
-}
+  rm -rf "${UNPATH}"
