@@ -58,7 +58,6 @@ if [ ! -f "${USER_CONFIG_FILE}" ]; then
 fi
 initConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "arc" "{}" "${USER_CONFIG_FILE}"
-initConfigKey "arc.altconsole" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.backup" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
