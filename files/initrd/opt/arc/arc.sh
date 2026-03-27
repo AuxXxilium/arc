@@ -151,6 +151,9 @@ elif [ "${ARC_MODE}" = "config" ]; then
         write_menu "f" "Bootscreen Options"
         write_menu_value "Y" "Screen Timeout" "${CONSOLEBLANK}"
         write_menu_value "m" "Boot Kernelload" "${KERNELLOAD}"
+        write_menu_value "W" "Ramdisk Compression" "$( [ "${RD_COMPRESSED}" = "true" ] && echo "enabled" || echo "disabled" )"
+        write_menu_value "X" "Sata DOM" "${SATADOM}"
+        write_menu_value "u" "LKM Version" "${LKM}"
         write_menu_value "E" "eMMC Boot Support" "$( [ "${EMMCBOOT}" = "true" ] && echo "enabled" || echo "disabled" )"
         if [ "${DIRECTBOOT}" = "false" ]; then
           write_menu_value "i" "Boot IP Waittime" "${BOOTIPWAIT}"
@@ -190,9 +193,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
       write_menu "L" "Grep Logs from dbgutils"
       write_menu "B" "Grep DSM Config from Backup"
       write_menu "=" "\Z1== Edit with caution! ==\Zn"
-      write_menu_value "W" "Ramdisk Compression" "$( [ "${RD_COMPRESSED}" = "true" ] && echo "enabled" || echo "disabled" )"
-      write_menu_value "X" "Sata DOM" "${SATADOM}"
-      write_menu_value "u" "LKM Version" "${LKM}"
       write_menu "C" "Clone Loader to another Disk"
       write_menu "n" "Grub Bootloader Config"
       write_menu "y" "Choose a Keymap for Loader"
@@ -307,6 +307,19 @@ elif [ "${ARC_MODE}" = "config" ]; then
             writeConfigKey "kernelload" "${KERNELLOAD}" "${USER_CONFIG_FILE}"
             NEXT="m"
             ;;
+          W)
+            RD_COMPRESSED=$([ "${RD_COMPRESSED}" = "true" ] && echo 'false' || echo 'true')
+            writeConfigKey "rd-compressed" "${RD_COMPRESSED}" "${USER_CONFIG_FILE}"
+            resetBuild
+            NEXT="W"
+            ;;
+          X) satadomMenu; NEXT="X" ;;
+          u)
+            [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
+            writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
+            resetBuildstatus
+            NEXT="u"
+            ;;
           E)
             [ "${EMMCBOOT}" = "true" ] && EMMCBOOT='false' || EMMCBOOT='true'
             if [ "${EMMCBOOT}" = "false" ]; then
@@ -379,19 +392,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
           w) resetLoader; NEXT="w" ;;
           L) greplogs; NEXT="L" ;;
           B) getbackup; NEXT="B" ;;
-          W)
-            RD_COMPRESSED=$([ "${RD_COMPRESSED}" = "true" ] && echo 'false' || echo 'true')
-            writeConfigKey "rd-compressed" "${RD_COMPRESSED}" "${USER_CONFIG_FILE}"
-            resetBuild
-            NEXT="W"
-            ;;
-          X) satadomMenu; NEXT="X" ;;
-          u)
-            [ "${LKM}" = "prod" ] && LKM='dev' || LKM='prod'
-            writeConfigKey "lkm" "${LKM}" "${USER_CONFIG_FILE}"
-            resetBuildstatus
-            NEXT="u"
-            ;;
           C) cloneLoader; NEXT="C" ;;
           n) editGrubCfg; NEXT="n" ;;
           y) keymapMenu; NEXT="y" ;;
