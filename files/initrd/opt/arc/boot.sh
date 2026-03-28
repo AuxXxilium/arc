@@ -140,6 +140,11 @@ KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
 DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
+NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
+MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
+CONSOLEBLANK="$(readConfigKey "arc.consoleblank" "${USER_CONFIG_FILE}")"
+HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
+USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 
 declare -A CMDLINE
 
@@ -161,7 +166,6 @@ done
 CMDLINE['netif_num']="${ETHN}"
 [ "${ETHN}" -ne "${ETHNA}" ] && echo "Warning: Network interface count mismatch!" || true
 
-NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
 if [ "${NETFIX}" = "true" ]; then
   for N in ${ETHX}; do
     RMAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null || echo "00:00:00:00:00:00")"
@@ -221,7 +225,6 @@ CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
 CMDLINE['console']="ttyS0,115200n8"
-CONSOLEBLANK="$(readConfigKey "arc.consoleblank" "${USER_CONFIG_FILE}")"
 CMDLINE['consoleblank']="${CONSOLEBLANK:-600}"
 CMDLINE['root']="/dev/md0"
 CMDLINE['loglevel']="15"
@@ -232,39 +235,36 @@ CMDLINE['pcie_aspm']="off"
 CMDLINE['nowatchdog']=""
 CMDLINE['intel_pstate']="disable"
 CMDLINE['amd_pstate']="disable"
-MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 CMDLINE['mev']="${MEV:-physical}"
 CMDLINE['governor']="${GOVERNOR:-performance}"
 
-if [ "${MEV}" = "vmware" ]; then
+if [ "${MEV:-physical}" = "vmware" ]; then
   CMDLINE['tsc']="reliable"
   CMDLINE['pmtmr']="0x0"
 fi
 
-HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
 if [ "${HDDSORT}" = "true" ]; then
   CMDLINE['hddsort']=""
 fi
 
-USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 if [ "${USBMOUNT}" = "true" ]; then
   CMDLINE['usbinternal']=""
 fi
 
-if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
+if echo "apollolake geminilake purley geminilakenk" | grep -wq "${PLATFORM}"; then
   CMDLINE['nox2apic']=""
 fi
 
-if is_in_array "${PLATFORM}" "${IGFXRL[@]}"; then
+if echo "apollolake geminilake geminilakenk" | grep -wq "${PLATFORM}"; then
   CMDLINE['intel_iommu']="igfx_off"
 fi
 
-if [ "${PLATFORM}" = "purley" ] || [ "${PLATFORM}" = "broadwellnkv2" ]; then
+if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
   CMDLINE['SASmodel']="1"
 fi
 
-if [ "${DT}" = "true" ] && ! is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
+if [ "${DT}" = "true" ] && ! echo "purley broadwellnkv2 epyc7002 geminilakenk r1000nk v1000nk" | grep -wq "${PLATFORM}"; then
   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
     [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
     CMDLINE['modprobe.blacklist']+="mpt3sas"
