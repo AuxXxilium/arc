@@ -261,7 +261,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
             ;;
           S) storageMenu; NEXT="S" ;;
           g) governorMenu; NEXT="g" ;;
-          P) storagepanelMenu; NEXT="P" ;;
           K)
             KERNEL=$([ "${KERNEL}" = "official" ] && echo 'custom' || echo 'official')
             writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
