@@ -156,7 +156,6 @@ CMDLINE['sn']="${SN}"
 
 # NIC Cmdline
 ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
-ETHNA="$(wc -w <<< "${ETHX}")"
 ETHN=0
 for N in ${ETHX}; do
   MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
@@ -164,7 +163,6 @@ for N in ${ETHX}; do
   CMDLINE["mac$((++ETHN))"]="${MAC}"
 done
 CMDLINE['netif_num']="${ETHN}"
-[ "${ETHN}" -ne "${ETHNA}" ] && echo "Warning: Network interface count mismatch!" || true
 
 if [ "${NETFIX}" = "true" ]; then
   for N in ${ETHX}; do
@@ -205,23 +203,23 @@ if [ "${KVER:0:1}" -lt 5 ]; then
     CMDLINE['synoboot_satadom']="${SATADOM:-2}"
     CMDLINE['dom_szmax']="${SIZE}"
   fi
-  CMDLINE['elevator']="elevator"
+  CMDLINE["elevator"]="elevator"
 else
-  CMDLINE['split_lock_detect']="off"
+  CMDLINE["split_lock_detect"]="off"
 fi
 
 if [ "${DT}" = "true" ]; then
-  CMDLINE['syno_ttyS0']="serial,0x3f8"
-  CMDLINE['syno_ttyS1']="serial,0x2f8"
+  CMDLINE["syno_ttyS0"]="serial,0x3f8"
+  CMDLINE["syno_ttyS1"]="serial,0x2f8"
 else
-  CMDLINE['SMBusHddDynamicPower']="1"
-  CMDLINE['syno_hdd_detect']="0"
-  CMDLINE['syno_hdd_powerup_seq']="0"
+  CMDLINE["SMBusHddDynamicPower"]="1"
+  CMDLINE["syno_hdd_detect"]="0"
+  CMDLINE["syno_hdd_powerup_seq"]="0"
 fi
 
-CMDLINE['HddHotplug']="1"
-CMDLINE['vender_format_version']="2"
-CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
+CMDLINE["HddHotplug"]="1"
+CMDLINE["vender_format_version"]="2"
+CMDLINE['skip_vender_mac_interfaces']="$(seq -s, 0 $((ETHN - 1)))"
 CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
 CMDLINE['console']="ttyS0,115200n8"
@@ -233,8 +231,6 @@ CMDLINE['rootwait']=""
 CMDLINE['panic']="${KERNELPANIC:-0}"
 CMDLINE['pcie_aspm']="off"
 CMDLINE['nowatchdog']=""
-CMDLINE['intel_pstate']="disable"
-CMDLINE['amd_pstate']="disable"
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 CMDLINE['mev']="${MEV:-physical}"
 CMDLINE['governor']="${GOVERNOR:-performance}"
@@ -253,15 +249,7 @@ if [ "${USBMOUNT}" = "true" ]; then
 fi
 
 if echo "apollolake geminilake purley geminilakenk" | grep -wq "${PLATFORM}"; then
-  CMDLINE['nox2apic']=""
-fi
-
-if echo "apollolake geminilake geminilakenk" | grep -wq "${PLATFORM}"; then
-  CMDLINE['intel_iommu']="igfx_off"
-fi
-
-if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
-  CMDLINE['SASmodel']="1"
+  CMDLINE["nox2apic"]=""
 fi
 
 if [ "${DT}" = "true" ] && ! echo "purley broadwellnkv2 epyc7002 geminilakenk r1000nk v1000nk" | grep -wq "${PLATFORM}"; then
@@ -269,6 +257,14 @@ if [ "${DT}" = "true" ] && ! echo "purley broadwellnkv2 epyc7002 geminilakenk r1
     [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
     CMDLINE['modprobe.blacklist']+="mpt3sas"
   fi
+fi
+
+if echo "apollolake geminilake geminilakenk" | grep -wq "${PLATFORM}"; then
+  CMDLINE["intel_iommu"]="igfx_off"
+fi
+
+if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
+  CMDLINE["SASmodel"]="1"
 fi
 
 # Read user network settings
@@ -348,29 +344,6 @@ else
   done
   for I in $(find /sys/devices -name uevent -exec bash -c 'cat {} 2>/dev/null | grep -Eq "PCI_CLASS=0?30[0|1|2]00" && dirname {}' \;); do
     [ -e ${I}/reset ] && cat "${I}/vendor" >/dev/null | grep -iq 0x10de && echo 1 >${I}/reset || true # Proc open nvidia driver when booting
-  done
-  
-  # Unlink devices based on PCI class codes and unload their modules
-  for CLASS in ::104 ::107 ::100; do
-    for DEVICE in $(lspci -d ${CLASS} | awk '{print $1}'); do
-      DEVICE_PATH="/sys/bus/pci/devices/0000:${DEVICE}"
-      if [ -d "${DEVICE_PATH}" ]; then
-        DRIVER_PATH="${DEVICE_PATH}/driver/unbind"
-        MODULE=$(basename "$(readlink "${DEVICE_PATH}/driver/module" 2>/dev/null)" 2>/dev/null)
-        
-        # Unlink the device from its driver
-        if [ -e "${DRIVER_PATH}" ]; then
-          echo "Unlinking device 0000:${DEVICE} from its driver"
-          echo "0000:${DEVICE}" >"${DRIVER_PATH}" 2>/dev/null || echo "Failed to unlink device 0000:${DEVICE}"
-        fi
-  
-        # Unload the module
-        if [ -n "${MODULE}" ]; then
-          echo "Unloading module ${MODULE} for device 0000:${DEVICE} (Class ${CLASS})"
-          rmmod -f "${MODULE}" 2>/dev/null || echo "Failed to unload module ${MODULE}"
-        fi
-      fi
-    done
   done
 
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
