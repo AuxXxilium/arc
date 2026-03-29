@@ -343,9 +343,34 @@ else
   # for F in $(realpath /sys/class/net/*/device/driver); do [ ! -e "${F}" ] && continue; rmmod -f "$(basename ${F})" 2>/dev/null || true; done
 
   # Unload all graphics drivers
-  for D in $(lsmod | grep -E '^(nouveau|amdgpu|radeon|i915)' | awk '{print $1}'); do rmmod -f "${D}" 2>/dev/null || true; done
+  for D in $(lsmod | grep -E '^(nouveau|amdgpu|radeon|i915)' | awk '{print $1}'); do
+    rmmod -f "${D}" 2>/dev/null || true
+  done
   for I in $(find /sys/devices -name uevent -exec bash -c 'cat {} 2>/dev/null | grep -Eq "PCI_CLASS=0?30[0|1|2]00" && dirname {}' \;); do
     [ -e ${I}/reset ] && cat "${I}/vendor" >/dev/null | grep -iq 0x10de && echo 1 >${I}/reset || true # Proc open nvidia driver when booting
+  done
+  
+  # Unlink devices based on PCI class codes and unload their modules
+  for CLASS in ::104 ::107 ::100; do
+    for DEVICE in $(lspci -d ${CLASS} | awk '{print $1}'); do
+      DEVICE_PATH="/sys/bus/pci/devices/0000:${DEVICE}"
+      if [ -d "${DEVICE_PATH}" ]; then
+        DRIVER_PATH="${DEVICE_PATH}/driver/unbind"
+        MODULE=$(basename "$(readlink "${DEVICE_PATH}/driver/module" 2>/dev/null)" 2>/dev/null)
+        
+        # Unlink the device from its driver
+        if [ -e "${DRIVER_PATH}" ]; then
+          echo "Unlinking device 0000:${DEVICE} from its driver"
+          echo "0000:${DEVICE}" >"${DRIVER_PATH}" 2>/dev/null || echo "Failed to unlink device 0000:${DEVICE}"
+        fi
+  
+        # Unload the module
+        if [ -n "${MODULE}" ]; then
+          echo "Unloading module ${MODULE} for device 0000:${DEVICE} (Class ${CLASS})"
+          rmmod -f "${MODULE}" 2>/dev/null || echo "Failed to unload module ${MODULE}"
+        fi
+      fi
+    done
   done
 
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
