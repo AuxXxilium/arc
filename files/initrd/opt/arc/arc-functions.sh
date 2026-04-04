@@ -30,12 +30,6 @@ function arcModel() {
         KVERM="$(readConfigKey "platforms.${A}.productvers.\"7.2\".kver" "${P_FILE}" | awk -F'.' '{print $1".x"}')"
         PLTCNT="$(readConfigKey "platforms.${A}.ccnt" "${P_FILE}")"
         FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
-        for F in ${FLAGS}; do
-          if ! grep -q "^flags.*${F}.*" /proc/cpuinfo; then
-            COMPATIBLE=0
-            break
-          fi
-        done
         BETA=""
         ARC_CONFM="$(genArc true "${M}" sn 2>/dev/null)"
         [ "${#ARC_CONFM}" -eq 13 ] && ARC="x" || ARC=""
@@ -77,32 +71,37 @@ function arcModel() {
           if [ "${DT}" = "true" ]; then
             WARN="" && rm -f "${TMP_PATH}/${M}_warn"
             if [[ "${SCSICONTROLLER}" -ge 1 || "${RAIDCONTROLLER}" -ge 1 ]]; then
-              echo -e "${WARN}- DT Model selected: Raid/SCSI is not supported\n" >>"${TMP_PATH}/${M}_warn"
+              echo -e "${WARN}- DT Model selected: Raid/SCSI is not supported.\n" >>"${TMP_PATH}/${M}_warn"
             fi
             if [ "${SASCONTROLLER}" -ge 1 ]; then
-              echo -e "${WARN}- DT Model selected: HBA/SAS is experimental supported\n" >>"${TMP_PATH}/${M}_warn"
+              echo -e "${WARN}- DT Model selected: HBA/SAS is experimental supported.\n" >>"${TMP_PATH}/${M}_warn"
             fi
           fi
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
           [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
           if [ "${CPUCHT:-0}" -gt "${PLTCNT:-0}" ]; then
             if [ "${M}" = "SA6400" ]; then
-              echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT})\nYou should enable the custom kernel\n" >>"${TMP_PATH}/${M}_warn"
+              echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT})\nYou should enable the custom kernel.\n" >>"${TMP_PATH}/${M}_warn"
             else
               COMPATIBLE=0
-              echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT})\n" >>"${TMP_PATH}/${M}_warn"
+              echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}).\n" >>"${TMP_PATH}/${M}_warn"
             fi
           fi
           if [ "${M}" != "SA6400" ] && [ "${MEV}" = "hyperv" ]; then
             COMPATIBLE=0
           elif [ "${M}" = "SA6400" ] && [ "${MEV}" = "hyperv" ]; then
-            echo -e "${WARN}- Hyper-V VM: You need to enable the custom kernel\n" >>"${TMP_PATH}/${M}_warn"
+            echo -e "${WARN}- Hyper-V VM: You need to enable the custom kernel.\n" >>"${TMP_PATH}/${M}_warn"
+          fi
+          if [ -n "${FLAGS}" ]; then
+            for F in ${FLAGS}; do
+              grep -q "^flags.*${F}.*" /proc/cpuinfo || COMPATIBLE=0
+            done
           fi
         else
           WARN="" && rm -f "${TMP_PATH}/${M}_warn"
           if [ -n "${FLAGS}" ]; then
             for F in ${FLAGS}; do
-              grep -q "^flags.*${F}.*" /proc/cpuinfo || echo -e "${WARN}- Missing required CPU flag: ${F}\n" >>"${TMP_PATH}/${M}_warn"
+              grep -q "^flags.*${F}.*" /proc/cpuinfo || echo -e "${WARN}- ${F} support required.\n" >>"${TMP_PATH}/${M}_warn"
             done
           fi
         fi
