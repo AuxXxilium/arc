@@ -335,11 +335,13 @@ function checkBIOS_VT_d() {
 # Rebooting
 function rebootTo() {
   BUILDDONE="$(readConfigKey "builddone" "${USER_CONFIG_FILE}")"
-  if [ "${BUILDDONE}" != "true" ] || [ ! -f "${MOD_ZIMAGE_FILE}" ] || [ ! -f "${MOD_RDGZ_FILE}" ]; then
-    dialog --backtitle "$(backtitle)" --title "Reboot" \
-      --aspect 18 --yesno "Build is not complete!\nDSM will not boot.\nDo you want to continue?" 0 0
-    if [ $? -ne 0 ]; then
-      return 1
+  if ["${CONFDONE}" = "true" ]; then
+    if [ "${BUILDDONE}" != "true" ] || [ ! -f "${MOD_ZIMAGE_FILE}" ] || [ ! -f "${MOD_RDGZ_FILE}" ]; then
+      dialog --backtitle "$(backtitle)" --title "Reboot" \
+        --aspect 18 --yesno "Build is not complete!\nDSM will not boot.\nDo you want to continue?" 0 0
+      if [ $? -ne 0 ]; then
+        return 1
+      fi
     fi
   fi
   local MODES="config recovery junior automated update uefi memtest"
