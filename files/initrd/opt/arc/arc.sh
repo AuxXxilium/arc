@@ -22,6 +22,7 @@ readData
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
+  BACKTITLE="${ARC_TITLE}"
   if [ -n "${NEWTAG}" ] && [ "${ARC_VERSION}" != "${NEWTAG}" ]; then
     BACKTITLE+=" > ${NEWTAG}"
   fi

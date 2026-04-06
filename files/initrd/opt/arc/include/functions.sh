@@ -439,14 +439,16 @@ function onlineCheck() {
   local ARC_VERSION_BASE="${ARC_VERSION%%[a-z]*}"
   local ARC_VERSION_BETA="${ARC_VERSION#${ARC_VERSION_BASE}}"
   NEWTAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-  # If current version is beta, also check BETA_API_URL
+  if [ -n "${NEWTAG}" ]; then
+    writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
+  else
+    writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
+  fi
   if [ -n "${ARC_VERSION_BETA}" ] && [ -n "${BETA_API_URL}" ]; then
     local BETANEWTAG="$(curl -m 10 -skL "${BETA_API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1)"
-    # Compare the two versions and use the newer one
     if [ -n "${BETANEWTAG}" ] && [ -n "${NEWTAG}" ]; then
       local stable_base="${NEWTAG%%[a-z]*}"
       local beta_base="${BETANEWTAG%%[a-z]*}"
-      # Use sort -rV to compare - if NEWTAG sorts first, it's newer
       local newer_version="$(printf '%s\n' "${stable_base}" "${beta_base}" | sort -rV | head -1)"
       [ "${newer_version}" = "${stable_base}" ] && NEWTAG="${NEWTAG}" || NEWTAG="${BETANEWTAG}"
     elif [ -n "${BETANEWTAG}" ]; then
@@ -454,9 +456,9 @@ function onlineCheck() {
     fi
   fi
   if [ -n "${NEWTAG}" ]; then
-    writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
-  else
-    writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
+    local new_base="${NEWTAG%%[a-z]*}"
+    local newer="$(printf '%s\n' "${ARC_VERSION_BASE}" "${new_base}" | sort -rV | head -1)"
+    [ "${newer}" = "${ARC_VERSION_BASE}" ] && NEWTAG=""
   fi
 }
 
