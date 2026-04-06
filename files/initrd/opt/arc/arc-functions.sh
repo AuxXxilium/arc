@@ -3661,6 +3661,7 @@ function remoteAssistanceBootMenu() {
 ###############################################################################
 # Online Menu
 function onlineMenu() {
+  checkHardwareID
   while true; do
     ARC_UID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
     ARC_BACKUP="$(readConfigKey "arc.backup" "${USER_CONFIG_FILE}")"

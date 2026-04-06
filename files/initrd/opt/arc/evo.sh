@@ -22,16 +22,8 @@ readData
 ###############################################################################
 # Mounts backtitle dynamically
 function backtitle() {
-  local v1="${ARC_VERSION:-0.0.0}"
-  local v2="${NEWTAG:-0.0.0}"
-  local v1a v1b v1c v2a v2b v2c
-  IFS='.' read -r v1a v1b v1c <<< "${v1}"
-  IFS='.' read -r v2a v2b v2c <<< "${v2}"
-  BACKTITLE="${ARC_TITLE}"
-  if [ -n "${NEWTAG}" ] && [ -n "${ARC_VERSION}" ]; then
-    if [ "${v1a}" -lt "${v2a}" ] || { [ "${v1a}" -eq "${v2a}" ] && [ "${v1b}" -lt "${v2b}" ]; } || { [ "${v1a}" -eq "${v2a}" ] && [ "${v1b}" -eq "${v2b}" ] && [ "${v1c}" -lt "${v2c}" ]; }; then
-      BACKTITLE+=" > ${NEWTAG}"
-    fi
+  if [ -n "${NEWTAG}" ] && [ "${ARC_VERSION}" != "${NEWTAG}" ]; then
+    BACKTITLE+=" > ${NEWTAG}"
   fi
   BACKTITLE+=" | "
   if [ "${ARC_OFFLINE}" = "true" ]; then
