@@ -500,10 +500,10 @@ function updateCustom() {
 # Update Modules
 function updateModules() {
   [ -f "${MODULES_PATH}/VERSION" ] && local MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")" || MODULESVERSION="0.0.0"
-  local PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  local PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-  local KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-  is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+  KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
   idx=0
   while [ "${idx}" -le 5 ]; do
     local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
@@ -569,14 +569,14 @@ function updateModules() {
     else
       return 1
     fi
-    if [ -f "${MODULES_PATH}/${PLATFORM}-${KVERP}.tgz" ] && [ -f "${MODULES_PATH}/firmware.tgz" ]; then
+    if [ -f "${MODULES_PATH}/${PLATFORM}-${KPRE:+${KPRE}-}${KVER}.tgz" ] && [ -f "${MODULES_PATH}/firmware.tgz" ]; then
       dialog --backtitle "$(backtitle)" --title "Update Modules" \
         --infobox "Rewrite Modules..." 3 50
       sleep 2
       writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
       while read -r ID DESC; do
         writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
-      done <<<"$(getAllModules "${PLATFORM}" "${KVERP}")"
+      done <<<"$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}")"
       dialog --backtitle "$(backtitle)" --title "Update Modules" \
         --infobox "Rewrite successful!" 3 50
       sleep 2

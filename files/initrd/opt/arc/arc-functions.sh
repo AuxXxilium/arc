@@ -204,12 +204,18 @@ function arcVersion() {
       echo -n "" >"${TMP_PATH}/menu"
       for V in $(echo "${PVS}" | sort -r); do
         if echo "${CVS}" | grep -qx "${V:0:3}"; then
-          if [ "${SHOW_ALL}" -eq 1 ] || [[ "${V}" == 7.2.2-* ]]; then
-            if [[ "${V:0:3}" < "7.3" ]]; then
-              STATUS="stable"
-            else
+          if [[ "${V:0:3}" < "7.3" ]]; then
+            STATUS="supported"
+          else
+            # Check for movbe CPU flag for versions > 7.2
+            if grep -q "^flags.*movbe.*" /proc/cpuinfo; then
               STATUS="beta"
+            else
+              STATUS="unsupported"
             fi
+          fi
+          # Show all versions if SHOW_ALL, otherwise hide unsupported ones
+          if [ "${SHOW_ALL}" -eq 1 ] || [ "${STATUS}" != "unsupported" ]; then
             printf "%s\t%s\n" "${V}" "${STATUS}" >>"${TMP_PATH}/menu"
           fi
         fi
@@ -301,7 +307,7 @@ function arcVersion() {
   done <<<"$(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")"
 
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-  is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+  KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
   if [ "${KVER:0:1}" -eq 5 ] && [ "${PRODUCTVER}" = "7.3" ]; then
     if [ "${PLATFORM}" = "epyc7002" ]; then
       KERNEL="custom"
@@ -319,9 +325,9 @@ function arcVersion() {
       return
     fi
   fi
-  if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+  if [ -n "${PLATFORM}" ] && [ -n "${KPRE:+${KPRE}-}${KVER}" ]; then
     writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-    mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+    mergeConfigModules "$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
   fi
 
   if [ "${ONLYVERSION}" = "true" ]; then
@@ -723,7 +729,7 @@ function modulesMenu() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-  is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+  KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
   while true; do
     rm -f "${TMP_PATH}/menu"
     {
@@ -742,7 +748,7 @@ function modulesMenu() {
       while true; do
         dialog --backtitle "$(backtitle)" --title "Modules" \
           --infobox "Reading Modules ..." 3 25
-        ALLMODULES=$(getAllModules "${PLATFORM}" "${KVERP}")
+        ALLMODULES=$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}")
         unset USERMODULES
         declare -A USERMODULES
         while IFS=': ' read -r KEY VALUE; do
@@ -787,7 +793,7 @@ function modulesMenu() {
         --infobox "Only select loaded modules" 0 0
       KOLIST=""
       for I in $(lsmod 2>/dev/null | awk -F' ' '{print $1}' | grep -v 'Module'); do
-        KOLIST+="$(getdepends "${PLATFORM}" "${KVERP}" "${I}") ${I} "
+        KOLIST+="$(getdepends "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" "${I}") ${I} "
       done
       KOLIST=($(echo ${KOLIST} | tr ' ' '\n' | sort -u))
       writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
@@ -797,7 +803,7 @@ function modulesMenu() {
       resetBuild
       ;;
     3)
-      DEPS="$(getdepends "${PLATFORM}" "${KVERP}" i915) i915"
+      DEPS="$(getdepends "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" i915) i915"
       DELS=()
       while IFS=': ' read -r KEY VALUE; do
         [ -z "${KEY}" ] && continue
@@ -3775,7 +3781,7 @@ function recoverDSM() {
     if [ -n "${PRODUCTVER}" ]; then
       PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
       KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-      is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+      KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
       if [ "${KERNEL}" = "custom" ]; then
         dialog --backtitle "$(backtitle)" --title "Kernel" \
           --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 50
@@ -3783,17 +3789,16 @@ function recoverDSM() {
           ODP="false"
           writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
         fi
-        is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
-        if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+        if [ -n "${PLATFORM}" ] && [ -n "${KPRE:+${KPRE}-}${KVER}" ]; then
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-          mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+          mergeConfigModules "$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
         fi
       else
         KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-        is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
-        if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+        KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
+        if [ -n "${PLATFORM}" ] && [ -n "${KPRE:+${KPRE}-}${KVER}" ]; then
           writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-          mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+          mergeConfigModules "$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
         fi
       fi
     fi

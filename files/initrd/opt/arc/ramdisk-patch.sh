@@ -33,7 +33,7 @@ ARC_BASE="$(cat "${PART1_PATH}/ARC-BASE" 2>/dev/null)"
 
 # Read kver data
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
 
 # Sanity check
 if [ -z "${PLATFORM}" ] || [ -z "${KVER}" ]; then
@@ -197,8 +197,8 @@ done
 
 # Extract modules to ramdisk
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: install modules"
-installModules "${PLATFORM}" "${KVERP}" "${!MODULES[@]}" || exit 1
-gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${PRODUCTVER}-${KVER}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>>"${LOG_FILE}" || exit 1
+installModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" "${!MODULES[@]}" || exit 1
+gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>>"${LOG_FILE}" || exit 1
 
 # Copying modulelist
 if [ -f "${USER_UP_PATH}/modulelist" ]; then

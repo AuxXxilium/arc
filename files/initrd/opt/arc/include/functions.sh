@@ -573,7 +573,7 @@ function readData() {
     DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-    is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
+    KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
     BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
     SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
   fi
@@ -783,10 +783,10 @@ function customKernel() {
     PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
     PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-    is_in_array "${PLATFORM}" "${KVER5L[@]}" && KVERP="${PRODUCTVER}-${KVER}" || KVERP="${KVER}"
-    if [ -n "${PLATFORM}" ] && [ -n "${KVERP}" ]; then
+    KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
+    if [ -n "${PLATFORM}" ] && [ -n "${KPRE:+${KPRE}-}${KVER}" ]; then
       writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-      mergeConfigModules "$(getAllModules "${PLATFORM}" "${KVERP}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+      mergeConfigModules "$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
     fi
   done
 }
