@@ -382,21 +382,21 @@ function livepatch() {
   PVALID="false"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  if [ "${PLATFORM}" = "SA6400" ] && [ "${PRODUCTVER}" = "7.3" ]; then
+  if [[ "${PLATFORM}" = "epyc7002" || "${PLATFORM}" = "geminilakenk" ]] && [ "${PRODUCTVER}" = "7.3" ]; then
     writeConfigKey "kernel" "custom" "${USER_CONFIG_FILE}"
   fi
-  # Patch zImage
-  echo -e ">> patching Kernel..."
-  if ${ARC_PATH}/zimage-patch.sh; then
+  # Patch Ramdisk
+  echo -e ">> patching Ramdisk..."
+  if ${ARC_PATH}/ramdisk-patch.sh; then
     PVALID="true"
   else
     PVALID="false"
   fi
   echo
   if [ "${PVALID}" = "true" ]; then
-    # Patch Ramdisk
-    echo -e ">> patching Ramdisk..."
-    if ${ARC_PATH}/ramdisk-patch.sh; then
+    # Patch Kernel
+    echo -e ">> patching Kernel..."
+    if ${ARC_PATH}/zimage-patch.sh; then
       PVALID="true"
     else
       PVALID="false"
