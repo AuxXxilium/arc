@@ -200,6 +200,7 @@ done
 installModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" "${!MODULES[@]}" || exit 1
 gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>>"${LOG_FILE}" || exit 1
 
+
 # Copying modulelist
 if [ -f "${USER_UP_PATH}/modulelist" ]; then
   cp -f "${USER_UP_PATH}/modulelist" "${RAMDISK_PATH}/addons/modulelist"
@@ -224,10 +225,6 @@ if [ ! -x "${RAMDISK_PATH}/usr/bin/set_key_value" ]; then
   rm -rf "${RAMDISK_PATH}/usr/bin/set_key_value"
   printf '#!/bin/sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
   chmod a+x "${RAMDISK_PATH}/usr/bin/set_key_value"
-fi
-
-if [ -d "${RAMDISK_PATH}/addons/" ] && [ "${BUILDNUM}" -le 25556 ]; then
-  find "${RAMDISK_PATH}/addons/" -type f -name "*.sh" -exec sed -i 's/function //g' {} \;
 fi
 
 # backup current loader configs

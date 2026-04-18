@@ -380,11 +380,7 @@ function copyDSMFiles() {
 # Livepatch
 function livepatch() {
   PVALID="false"
-  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-  if [[ "${PLATFORM}" = "epyc7002" || "${PLATFORM}" = "geminilakenk" ]] && [ "${PRODUCTVER}" = "7.3" ]; then
-    writeConfigKey "kernel" "custom" "${USER_CONFIG_FILE}"
-  fi
   # Patch Ramdisk
   echo -e ">> patching Ramdisk..."
   if ${ARC_PATH}/ramdisk-patch.sh; then

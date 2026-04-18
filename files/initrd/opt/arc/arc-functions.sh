@@ -309,7 +309,7 @@ function arcVersion() {
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
   KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
   if [ "${KVER:0:1}" -eq 5 ] && [ "${PRODUCTVER}" = "7.3" ]; then
-    if [ "${PLATFORM}" = "epyc7002" ]; then
+    if [ "${PLATFORM}" = "epyc7002" ] || [ "${PLATFORM}" = "geminilakenk" ]; then
       KERNEL="custom"
       writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
       dialog --backtitle "$(backtitle)" --title "Kernel" \
