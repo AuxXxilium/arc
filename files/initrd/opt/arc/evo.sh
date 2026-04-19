@@ -65,7 +65,7 @@ function advancedMenu() {
         write_menu_value "m" "Kernelload" "${KERNELLOAD}"
         write_menu_value "E" "eMMC Boot Support" "$( [ "${EMMCBOOT}" = "true" ] && echo "enabled" || echo "disabled" )"
         write_menu_value "q" "Directboot" "$( [ "${DIRECTBOOT}" = "true" ] && echo "enabled" || echo "disabled" )"
-        # write_menu_value "u" "LKM Version" "${LKM}"
+        write_menu_value "u" "LKM Version" "${LKM}"
       else
         write_menu "6" "\Z1Show Boot Options\Zn"
       fi

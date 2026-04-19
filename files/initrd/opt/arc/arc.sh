@@ -146,7 +146,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
         write_menu_value "m" "Boot Kernelload" "${KERNELLOAD}"
         write_menu_value "W" "Ramdisk Compression" "$( [ "${RD_COMPRESSED}" = "true" ] && echo "enabled" || echo "disabled" )"
         write_menu_value "X" "Sata DOM" "${SATADOM}"
-        # write_menu_value "u" "LKM Version" "${LKM}"
+        write_menu_value "u" "LKM Version" "${LKM}"
         write_menu_value "E" "eMMC Boot Support" "$( [ "${EMMCBOOT}" = "true" ] && echo "enabled" || echo "disabled" )"
         if [ "${DIRECTBOOT}" = "false" ]; then
           write_menu_value "i" "Boot IP Waittime" "${BOOTIPWAIT}"
