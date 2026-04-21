@@ -198,7 +198,7 @@ done
 # Extract modules to ramdisk
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: install modules"
 installModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" "${!MODULES[@]}" || exit 1
-gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/rp.ko" 2>>"${LOG_FILE}" || exit 1
+gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/redpill.ko" 2>>"${LOG_FILE}" || exit 1
 
 
 # Copying modulelist
