@@ -3,229 +3,524 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Web Config</title>
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="bootstrap.min.css">
-    <link rel="stylesheet" href="style.css">
-    <script src="bootstrap.bundle.min.js"></script>
+    <title>Arc Web Config</title>
+    <link rel="icon" href="favicon.ico?v=" type="image/x-icon" id="favicon">
     <style>
-        .embed-container {
-            position: relative;
-            width: 100%;
-            height: 750px;
-            overflow: hidden; /* Prevent scrollbars from appearing */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
-        .embed-container embed {
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        /* Top Navigation Bar - DSM Style */
+        .topbar {
+            background: #333333;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px 0 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            gap: 10px;
+            margin-left: 0;
+        }
+        
+        .topbar-logo img {
+            height: 26px;
+            border-radius: 4px;
+        }
+        
+        .topbar-info {
+            margin-left: auto;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .back-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            display: none;
+        }
+        
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .back-button.active {
+            display: inline-block;
+        }
+        
+        /* Main Layout - Split View */
+        .main-layout {
+            display: flex;
+            margin-top: 48px;
+            height: calc(100vh - 48px);
+            overflow: hidden;
+        }
+        
+        /* Left Sidebar with Apps */
+        .sidebar {
+            width: 320px;
+            background: #f5f5f5;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #e0e0e0;
+        }
+        
+        /* App Cards in Sidebar */
+        .card-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .app-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .app-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+            border-color: #e24a4a;
+        }
+        
+        .app-card.active {
+            border-color: #e24a4a;
+            background: #fff0f0;
+        }
+        
+        .app-card-icon {
+            width: 48px;
+            height: 48px;
+            background: #333333;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .app-card-icon.terminal {
+            background: #333333;
+        }
+        
+        .app-card-icon.files {
+            background: #333333;
+        }
+        
+        .app-card-icon.info {
+            background: #333333;
+        }
+        
+        .app-card-icon.dsm {
+            background: #333333;
+        }
+        
+        .app-card-icon.wiki {
+            background: #333333;
+        }
+        
+        .app-card-info {
+            flex: 1;
+        }
+        
+        .app-card-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 3px;
+        }
+        
+        .app-card-desc {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        /* Right Content Area */
+        .content-area {
+            flex: 1;
+            background: white;
+            overflow: hidden;
             position: relative;
+        }
+        
+        .content-view {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .content-view.active {
+            display: block;
+        }
+        
+        .welcome-view.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .welcome-view {
+            color: #999;
+            font-size: 18px;
+            text-align: center;
+        }
+        
+        /* Full Screen View Container */
+        .fullscreen-view {
+            display: none;
+        }
+        
+        #view-terminal,
+        #view-files {
+            padding: 30px;
+        }
+        
+        .embed-container {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .embed-container iframe {
             width: 100%;
             height: 100%;
             border: none;
-            display: none;
-            overflow: hidden; /* Ensure no scrollbars appear */
+            border-radius: 8px;
         }
         
-        .embed-container embed.active {
-            display: block;
-            overflow: hidden; /* Ensure no scrollbars appear for the active embed */
+        .sysinfo-view {
+            padding: 30px;
+            height: 100%;
+            overflow-y: auto;
         }
         
-        #sysinfo-container {
-            margin-top: -750px;
-            position: relative;
-            z-index: 50;
-            display: none;
-            padding: 12px;
-            background: #0f1113;
-            border-radius: 6px;
-            color: #fff;
-            max-height: calc(100vh - 120px);
-            overflow: auto;
+        .sysinfo-content {
+            background: #1e1e1e;
+            border-radius: 8px;
+            padding: 20px;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
             white-space: pre-wrap;
             word-break: break-word;
         }
         
-        #sysinfo-container pre {
-            margin: 0;
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
-        }
-        
-        .embed-container embed::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .embed-container embed {
-            scrollbar-width: none;
-        }
-        
-        .embed-container embed {
-            -ms-overflow-style: none;
+        @media (max-width: 768px) {
+            .main-layout {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 40vh;
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+            }
+            
+            .card-grid {
+                flex-direction: row;
+                overflow-x: auto;
+            }
+            
+            .app-card {
+                min-width: 200px;
+            }
+            
+            .topbar-info {
+                font-size: 11px;
+                gap: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <main class="p-0 base">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-4 user-card" style="width: 30%;">
-                    <div class="header-banner" style="background-image: url('./arc_loader.png'); background-size: cover; background-position: center;">
-                    </div>
-
-                    <div class="header-top">
-                        <div class="header-text">
-                            <span class="header-username">Web Config</span>
-                        </div>
-                        <p class="text-muted"><small id="page-title">Terminal</small></p>
-                        <p class="text-muted"><small id="server-ip">Loading IP...</small></p>
-                    </div>
-                    <div class="body-wrapper">
-                        <div id="navigation-container"></div>
+    <!-- Top Navigation Bar -->
+    <div class="topbar">
+        <div class="topbar-logo">
+            <img src="arc_loader.png?v=" alt="Arc" id="logo">
+        </div>
+        <div class="topbar-info">
+            <span id="server-ip">Loading...</span>
+        </div>
+    </div>
+    
+    <!-- Main Split Layout -->
+    <div class="main-layout">
+        <!-- Left Sidebar with App Cards -->
+        <div class="sidebar">
+            <div class="card-grid">
+                <div class="app-card active" data-app="terminal" onclick="openApp('terminal')">
+                    <div class="app-card-icon terminal">⌘</div>
+                    <div class="app-card-info">
+                        <div class="app-card-title">Terminal</div>
+                        <div class="app-card-desc">SSH Terminal Access</div>
                     </div>
                 </div>
-                <div class="col-md-8 user-card2" style="width: 70%;">
-                    <div class="body-wrapper embed-container">
-                        <embed id="embed-terminal" class="embed" src="" data-page="terminal"></embed>
-                        <embed id="embed-dufs" class="embed" src="" data-page="dufs"></embed>
+                
+                <div class="app-card" data-app="files" onclick="openApp('files')">
+                    <div class="app-card-icon files">📁</div>
+                    <div class="app-card-info">
+                        <div class="app-card-title">File Manager</div>
+                        <div class="app-card-desc">Browse and Manage Files</div>
                     </div>
-                    <div id="sysinfo-container"></div>
+                </div>
+                
+                <div class="app-card" data-app="sysinfo" onclick="openApp('sysinfo')">
+                    <div class="app-card-icon info">ℹ️</div>
+                    <div class="app-card-info">
+                        <div class="app-card-title">System Info</div>
+                        <div class="app-card-desc">Hardware & Software Details</div>
+                    </div>
+                </div>
+                
+                <div class="app-card" onclick="openDSM()">
+                    <div class="app-card-icon dsm">🌐</div>
+                    <div class="app-card-info">
+                        <div class="app-card-title">Go to DSM</div>
+                        <div class="app-card-desc">Open Xpenology DSM</div>
+                    </div>
+                </div>
+                
+                <div class="app-card" onclick="openWiki()">
+                    <div class="app-card-icon wiki">📚</div>
+                    <div class="app-card-info">
+                        <div class="app-card-title">Wiki</div>
+                        <div class="app-card-desc">Xpenology Documentation</div>
+                    </div>
                 </div>
             </div>
         </div>
-    </main>
+        
+        <!-- Right Content Area -->
+        <div class="content-area">
+            <!-- Welcome/Default View -->
+            <div class="content-view welcome-view">
+                <div>Select an app from the left sidebar</div>
+            </div>
+            
+            <!-- Terminal View -->
+            <div class="content-view active" id="view-terminal">
+                <div class="embed-container">
+                    <iframe id="iframe-terminal"></iframe>
+                </div>
+            </div>
+            
+            <!-- File Manager View -->
+            <div class="content-view" id="view-files">
+                <div class="embed-container">
+                    <iframe id="iframe-files"></iframe>
+                </div>
+            </div>
+            
+            <!-- System Info View -->
+            <div class="content-view" id="view-sysinfo">
+                <div class="sysinfo-view">
+                    <div class="sysinfo-content" id="sysinfo-content">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <script>
-        let embedSources = {};
+        // Cache-busting for images - force reload on page refresh
+        (function() {
+            const timestamp = Date.now();
+            const favicon = document.getElementById('favicon');
+            const logo = document.getElementById('logo');
+            
+            if (favicon) {
+                favicon.href = 'favicon.ico?v=' + timestamp;
+            }
+            if (logo) {
+                logo.src = 'arc_loader.png?v=' + timestamp;
+            }
+        })();
+        
         let serverIP = null;
-
+        let config = {};
+        
+        // Load server IP and configuration
         fetch('./get-ip.cgi')
             .then(response => response.text())
             .then(ip => {
                 serverIP = ip.trim();
-                document.getElementById('server-ip').textContent = `Server IP: ${serverIP}`;
-
-                fetch('./navigation.html')
-                    .then(response => response.text())
-                    .then(data => {
-                        data = data.replace(/IP/g, serverIP);
-                        document.getElementById('navigation-container').innerHTML = data;
-                        setupNavigation();
-                        loadPage('terminal');
-                    });
+                document.getElementById('server-ip').textContent = `IP: ${serverIP}`;
+                loadConfig();
             })
             .catch(error => {
                 console.error('Error loading IP:', error);
-                document.getElementById('server-ip').textContent = 'Error loading IP - reload the page';
+                document.getElementById('server-ip').textContent = 'Error loading IP';
             });
-
-        function setupNavigation() {
-            document.querySelectorAll('#navigation-container a').forEach(link => {
-                link.addEventListener('click', function(event) {
-                    if (this.textContent.includes('Go to DSM')) {
-                        event.preventDefault();
-                        window.open(`http://${serverIP}:5000`, '_blank');
-                        return;
-                    }
-                    if (!this.hasAttribute('target') || this.getAttribute('target') !== '_blank') {
-                        event.preventDefault();
-                        loadPage(this.getAttribute('href'));
-                    }
-                });
-            });
-        }
-
-        function loadPage(page) {
-            let pageTitle = '';
-            let portKey = '';
-            let embedId = '';
-
-            if (page === 'terminal') {
-                pageTitle = 'Terminal';
-                portKey = 'TTYD_PORT';
-                embedId = 'embed-terminal';
-            } else if (page === 'dufs') {
-                pageTitle = 'File Manager';
-                portKey = 'DUFS_PORT';
-                embedId = 'embed-dufs';
-            } else if (page === 'sysinfo') {
-                pageTitle = 'System Information';
-                fetchSysinfo();
-                return;
-            }
-
-            document.getElementById('page-title').textContent = pageTitle;
-            document.getElementById('server-ip').textContent = `Server IP: ${serverIP}`;
-            const sysinfoEl = document.getElementById('sysinfo-container');
-            if (sysinfoEl) sysinfoEl.style.display = 'none';
-
+        
+        function loadConfig() {
             fetch('/etc/arc.conf')
                 .then(response => response.text())
                 .then(configText => {
-                    const config = {};
                     configText.split('\n').forEach(line => {
                         const [key, value] = line.split('=');
                         if (key && value) {
                             config[key.trim()] = value.trim();
                         }
                     });
-
-                    if (!config['DUFS_PORT']) {
-                        config['DUFS_PORT'] = '7304';
-                    }
-                    if (!config['TTYD_PORT']) {
-                        config['TTYD_PORT'] = '7681';
-                    }
-
-                    const port = config[portKey];
-                    const embedSrc = `http://${serverIP}:${port}`;
-
-                    if (!embedSources[page]) {
-                        embedSources[page] = embedSrc;
-                        document.getElementById(embedId).src = embedSrc;
-                    }
-
-                    document.querySelectorAll('.embed-container embed').forEach(embed => {
-                        embed.classList.remove('active');
-                        embed.style.display = 'none';
-                    });
-                    const chosen = document.getElementById(embedId);
-                    chosen.classList.add('active');
-                    chosen.style.display = 'block';
+                    
+                    // Set defaults
+                    if (!config['DUFS_PORT']) config['DUFS_PORT'] = '7304';
+                    if (!config['TTYD_PORT']) config['TTYD_PORT'] = '7681';
+                    
+                    // Load terminal by default
+                    openApp('terminal');
                 })
                 .catch(error => {
-                    console.error('Error fetching config:', error);
-                    document.getElementById('server-ip').textContent = 'Error loading config - reload the page';
+                    console.error('Error loading config:', error);
+                    // Still try to load terminal with defaults
+                    openApp('terminal');
                 });
         }
-
-        function fetchSysinfo() {
+        
+        function openApp(app) {
+            // Hide all content views
+            document.querySelectorAll('.content-view').forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            // Remove active state from all cards
+            document.querySelectorAll('.app-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            // Add active state to clicked card
+            const activeCard = document.querySelector(`.app-card[data-app="${app}"]`);
+            if (activeCard) {
+                activeCard.classList.add('active');
+            }
+            
+            if (app === 'terminal') {
+                const iframe = document.getElementById('iframe-terminal');
+                if (!iframe.src || iframe.src === 'about:blank' || iframe.src === window.location.href) {
+                    const port = config['TTYD_PORT'] || '7681';
+                    iframe.src = `http://${serverIP}:${port}`;
+                    console.log('Loading terminal:', iframe.src);
+                    
+                    // Force iframe to resize by triggering reflow
+                    iframe.onload = function() {
+                        setTimeout(() => {
+                            // Force reflow by temporarily hiding and showing
+                            iframe.style.display = 'none';
+                            iframe.offsetHeight; // Trigger reflow
+                            iframe.style.display = '';
+                            
+                            // Also dispatch resize events
+                            window.dispatchEvent(new Event('resize'));
+                        }, 300);
+                        
+                        // Additional resize triggers
+                        setTimeout(() => {
+                            iframe.style.display = 'none';
+                            iframe.offsetHeight;
+                            iframe.style.display = '';
+                            window.dispatchEvent(new Event('resize'));
+                        }, 800);
+                    };
+                }
+                document.getElementById('view-terminal').classList.add('active');
+            } else if (app === 'files') {
+                const iframe = document.getElementById('iframe-files');
+                if (!iframe.src || iframe.src === 'about:blank' || iframe.src === window.location.href) {
+                    const port = config['DUFS_PORT'] || '7304';
+                    iframe.src = `http://${serverIP}:${port}`;
+                    console.log('Loading file manager:', iframe.src);
+                    
+                    // Force iframe to resize by triggering reflow
+                    iframe.onload = function() {
+                        setTimeout(() => {
+                            iframe.style.display = 'none';
+                            iframe.offsetHeight;
+                            iframe.style.display = '';
+                            window.dispatchEvent(new Event('resize'));
+                        }, 300);
+                        
+                        setTimeout(() => {
+                            iframe.style.display = 'none';
+                            iframe.offsetHeight;
+                            iframe.style.display = '';
+                            window.dispatchEvent(new Event('resize'));
+                        }, 800);
+                    };
+                }
+                document.getElementById('view-files').classList.add('active');
+            } else if (app === 'sysinfo') {
+                loadSystemInfo();
+                document.getElementById('view-sysinfo').classList.add('active');
+            }
+        }
+        
+        function openDSM() {
+            window.open(`http://${serverIP}:5000`, '_blank');
+        }
+        
+        function openWiki() {
+            window.open('https://xpenology.tech/wiki', '_blank');
+        }
+        
+        function loadSystemInfo() {
+            const content = document.getElementById('sysinfo-content');
+            content.textContent = 'Loading system information...';
+            
             fetch('./get-sysinfo.cgi')
                 .then(response => response.text())
                 .then(data => {
-                    document.getElementById('page-title').textContent = 'System Information';
-                    const el = document.getElementById('sysinfo-container');
-                    el.innerHTML = `<pre>${data}</pre>`;
-                    el.style.display = 'block';
-
-                    document.querySelectorAll('.embed-container embed').forEach(embed => {
-                        embed.classList.remove('active');
-                        embed.style.display = 'none';
-                    });
+                    content.textContent = data;
                 })
                 .catch(error => {
                     console.error('Error fetching system information:', error);
+                    content.textContent = 'Error loading system information';
                 });
         }
-
-        window.addEventListener('resize', () => {
-            const el = document.getElementById('sysinfo-container');
-            if (el && el.style.display === 'block') {
-                const topOffset = 120;
-                const contentHeight = el.scrollHeight;
-                const available = window.innerHeight - topOffset;
-                const desired = Math.min(contentHeight + 16, available);
-                el.style.maxHeight = desired + 'px';
-            }
-        });
     </script>
 </body>
 </html>
