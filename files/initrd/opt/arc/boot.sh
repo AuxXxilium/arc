@@ -259,6 +259,13 @@ if [ "${DT}" = "true" ] && ! echo "purley broadwellnkv2 epyc7002 geminilakenk r1
   fi
 fi
 
+if echo "broadwell broadwellnk" | grep -wq "${PLATFORM}"; then
+  if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "scsi_transport_sas"; then
+    [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
+    CMDLINE['modprobe.blacklist']+="scsi_transport_sas"
+  fi
+fi
+
 if echo "apollolake geminilake geminilakenk" | grep -wq "${PLATFORM}"; then
   CMDLINE["intel_iommu"]="igfx_off"
 fi
