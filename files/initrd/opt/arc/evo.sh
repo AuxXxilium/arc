@@ -105,7 +105,7 @@ function advancedMenu() {
 
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Easy UI Advanced" --colors \
           --cancel-label "Back" \
-          --menu "" 0 0 0 --file "${TMP_PATH}/menu" \
+          --menu "" 0 50 0 --file "${TMP_PATH}/menu" \
           2>"${TMP_PATH}/resp"
     RET=$?
     case ${RET} in

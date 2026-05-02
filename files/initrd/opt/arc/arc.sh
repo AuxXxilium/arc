@@ -206,7 +206,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
     [ "$TERM" != "xterm-256color" ] && WEBCONFIG="Webconfig: http://${IPCON}:${HTTPPORT:-7080}" || WEBCONFIG=""
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Advanced UI" --colors \
       --cancel-label "Easy" --help-button --help-label "Exit" \
-      --menu "${WEBCONFIG}" 0 0 0 --file "${TMP_PATH}/menu" \
+      --menu "${WEBCONFIG}" 0 50 0 --file "${TMP_PATH}/menu" \
       2>"${TMP_PATH}/resp"
     RET=$?
     case ${RET} in
