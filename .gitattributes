@@ -1,1 +1,13 @@
+# Force Unix (LF) line endings for scripts
 *.sh eol=lf
+*.cgi eol=lf
+*.py eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.gz binary
+*.img binary

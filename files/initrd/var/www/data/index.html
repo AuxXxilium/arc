@@ -249,6 +249,279 @@
             word-break: break-word;
         }
         
+        /* Login Overlay */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+        
+        .login-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .login-box {
+            background: #333333;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+            animation: slideUp 0.4s ease;
+            border: 1px solid #444;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .login-logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-logo img {
+            height: 48px;
+            max-width: 80%;
+            object-fit: contain;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        
+        .login-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .login-subtitle {
+            font-size: 14px;
+            color: #ccc;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #ddd;
+            margin-bottom: 8px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #555;
+            background: #444;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #e24a4a;
+            box-shadow: 0 0 0 3px rgba(226, 74, 74, 0.2);
+        }
+        
+        .form-group input::placeholder {
+            color: #999;
+        }
+        
+        .form-group input:-webkit-autofill,
+        .form-group input:-webkit-autofill:hover,
+        .form-group input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #fff;
+            -webkit-box-shadow: 0 0 0px 1000px #444 inset;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+        
+        .login-button {
+            width: 100%;
+            padding: 14px;
+            background: #e24a4a;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+        
+        .login-button:hover {
+            background: #d43c3c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(226, 74, 74, 0.4);
+        }
+        
+        .login-button:active {
+            transform: translateY(0);
+        }
+        
+        .login-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            background: #999;
+        }
+        
+        .login-error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+            text-align: center;
+            border: 1px solid #fcc;
+        }
+        
+        .login-error.show {
+            display: block;
+            animation: shake 0.4s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        .logout-button,
+        .change-password-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        
+        .logout-button:hover,
+        .change-password-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Change Password Modal */
+        .password-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        
+        .password-modal.show {
+            display: flex;
+        }
+        
+        .password-modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            animation: slideUp 0.3s ease;
+        }
+        
+        .password-modal-header {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .password-modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .password-modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .password-cancel-button {
+            background: #f0f0f0;
+            color: #666;
+        }
+        
+        .password-cancel-button:hover {
+            background: #e0e0e0;
+        }
+        
+        .password-save-button {
+            background: #333333;
+            color: white;
+        }
+        
+        .password-save-button:hover {
+            background: #e24a4a;
+        }
+        
+        .password-save-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .password-success {
+            background: #efe;
+            color: #363;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+            text-align: center;
+            border: 1px solid #cfc;
+        }
+        
+        .password-success.show {
+            display: block;
+        }
+        
         @media (max-width: 768px) {
             .main-layout {
                 flex-direction: column;
@@ -275,10 +548,84 @@
                 font-size: 11px;
                 gap: 10px;
             }
+            
+            .change-password-button,
+            .logout-button {
+                padding: 4px 10px;
+                font-size: 11px;
+            }
+            
+            .login-box {
+                margin: 20px;
+                padding: 30px 20px;
+            }
+            
+            .login-logo img {
+                height: 40px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Login Overlay -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <div class="login-logo">
+                <img src="arc_loader.png" alt="Arc">
+            </div>
+            <div class="login-title">Arc Web Config</div>
+            <div class="login-subtitle">Sign in to continue</div>
+            
+            <div class="login-error" id="loginError">Invalid username or password</div>
+            
+            <form id="loginForm" onsubmit="return handleLogin(event)">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" autocomplete="username" required autofocus>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
+                </div>
+                
+                <button type="submit" class="login-button" id="loginButton">Sign In</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Change Password Modal -->
+    <div class="password-modal" id="passwordModal">
+        <div class="password-modal-content">
+            <div class="password-modal-header">Change Password</div>
+            
+            <div class="password-success" id="passwordSuccess">Password changed successfully!</div>
+            <div class="login-error" id="passwordError">Error changing password</div>
+            
+            <form id="passwordForm" onsubmit="return handlePasswordChange(event)">
+                <div class="form-group">
+                    <label for="currentPassword">Current Password</label>
+                    <input type="password" id="currentPassword" name="currentPassword" autocomplete="current-password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="newPassword">New Password</label>
+                    <input type="password" id="newPassword" name="newPassword" autocomplete="new-password" required minlength="4">
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm New Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required minlength="4">
+                </div>
+                
+                <div class="password-modal-buttons">
+                    <button type="button" class="password-cancel-button" onclick="hidePasswordModal()">Cancel</button>
+                    <button type="submit" class="password-save-button" id="passwordSaveButton">Change Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <!-- Top Navigation Bar -->
     <div class="topbar">
         <div class="topbar-logo">
@@ -286,6 +633,8 @@
         </div>
         <div class="topbar-info">
             <span id="server-ip">Loading...</span>
+            <button class="change-password-button" onclick="showPasswordModal()" id="changePasswordButton">Change Password</button>
+            <button class="logout-button" onclick="handleLogout()" id="logoutButton">Logout</button>
         </div>
     </div>
     
@@ -367,6 +716,278 @@
     </div>
     
     <script>
+        // Session and Authentication Management
+        const SESSION_KEY = 'arc_session_token';
+        const USERNAME_KEY = 'arc_username';
+        
+        // Check if user is already logged in
+        function checkSession() {
+            const token = localStorage.getItem(SESSION_KEY);
+            const username = localStorage.getItem(USERNAME_KEY);
+            
+            if (token && username) {
+                // Verify session with backend
+                fetch('./auth.cgi', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=verify&token=${encodeURIComponent(token)}&username=${encodeURIComponent(username)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        startServices().then(() => {
+                            showMainInterface();
+                            loadConfig();
+                        });
+                    } else {
+                        showLoginInterface();
+                    }
+                })
+                .catch(error => {
+                    console.error('Session verification error:', error);
+                    showLoginInterface();
+                });
+            } else {
+                showLoginInterface();
+            }
+        }
+        
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginButton = document.getElementById('loginButton');
+            const loginError = document.getElementById('loginError');
+            
+            // Disable button and show loading
+            loginButton.disabled = true;
+            loginButton.textContent = 'Signing in...';
+            loginError.classList.remove('show');
+            
+            // Send credentials to backend
+            fetch('./auth.cgi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Store session token
+                    localStorage.setItem(SESSION_KEY, data.token);
+                    localStorage.setItem(USERNAME_KEY, username);
+                    
+                    // Start services (ttyd, dufs) and wait for them to be ready
+                    startServices().then(() => {
+                        // Show main interface after services are ready
+                        showMainInterface();
+                        loadConfig();
+                    });
+                } else {
+                    // Show error
+                    loginError.textContent = data.message || 'Invalid username or password';
+                    loginError.classList.add('show');
+                    loginButton.disabled = false;
+                    loginButton.textContent = 'Sign In';
+                    document.getElementById('password').value = '';
+                    document.getElementById('password').focus();
+                }
+            })
+            .catch(error => {
+                console.error('Login error:', error);
+                loginError.textContent = 'Connection error. Please try again.';
+                loginError.classList.add('show');
+                loginButton.disabled = false;
+                loginButton.textContent = 'Sign In';
+            });
+            
+            return false;
+        }
+        
+        function handleLogout() {
+            const token = localStorage.getItem(SESSION_KEY);
+            const username = localStorage.getItem(USERNAME_KEY);
+            
+            // Stop services
+            fetch('./stop-services.cgi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            }).catch(error => console.error('Error stopping services:', error));
+            
+            // Notify backend
+            if (token && username) {
+                fetch('./auth.cgi', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=logout&token=${encodeURIComponent(token)}&username=${encodeURIComponent(username)}`
+                }).catch(error => console.error('Logout error:', error));
+            }
+            
+            // Clear session
+            localStorage.removeItem(SESSION_KEY);
+            localStorage.removeItem(USERNAME_KEY);
+            
+            // Show login interface
+            showLoginInterface();
+        }
+        
+        function showLoginInterface() {
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            
+            // Reset login form
+            const loginButton = document.getElementById('loginButton');
+            loginButton.disabled = false;
+            loginButton.textContent = 'Sign In';
+            
+            const loginError = document.getElementById('loginError');
+            loginError.classList.remove('show');
+            
+            // Clear password field
+            document.getElementById('password').value = '';
+            
+            // Focus username
+            document.getElementById('username').focus();
+        }
+        
+        function showMainInterface() {
+            document.getElementById('loginOverlay').classList.add('hidden');
+        }
+        
+        function startServices() {
+            // Start ttyd and dufs services after successful authentication
+            return fetch('./start-services.cgi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            })
+            .then(response => {
+                // Check if response is OK first
+                if (!response.ok) {
+                    console.error('CGI script returned error:', response.status, response.statusText);
+                    return response.text().then(text => {
+                        console.error('Response body:', text);
+                        throw new Error(`CGI error: ${response.status}`);
+                    });
+                }
+                return response.text();
+            })
+            .then(text => {
+                // Try to parse as JSON
+                try {
+                    const data = JSON.parse(text);
+                    if (data.success) {
+                        // Update config with actual ports
+                        if (data.ttyd) config['TTYD_PORT'] = data.ttyd.port;
+                        if (data.dufs) config['DUFS_PORT'] = data.dufs.port;
+                        
+                        // Wait a bit for services to be fully ready
+                        return new Promise(resolve => setTimeout(resolve, 1000));
+                    } else {
+                        console.warn('Failed to start services:', data);
+                    }
+                } catch (e) {
+                    console.error('Invalid JSON response from start-services.cgi:', text.substring(0, 200));
+                    throw new Error('CGI script not executing properly. Check line endings and permissions.');
+                }
+            })
+            .catch(error => {
+                console.error('Error starting services:', error);
+                alert('Failed to start services. Please check console for details.');
+            });
+        }
+        
+        function showPasswordModal() {
+            document.getElementById('passwordModal').classList.add('show');
+            document.getElementById('passwordError').classList.remove('show');
+            document.getElementById('passwordSuccess').classList.remove('show');
+            document.getElementById('passwordForm').reset();
+            document.getElementById('currentPassword').focus();
+        }
+        
+        function hidePasswordModal() {
+            document.getElementById('passwordModal').classList.remove('show');
+            document.getElementById('passwordForm').reset();
+        }
+        
+        function handlePasswordChange(event) {
+            event.preventDefault();
+            
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const passwordSaveButton = document.getElementById('passwordSaveButton');
+            const passwordError = document.getElementById('passwordError');
+            const passwordSuccess = document.getElementById('passwordSuccess');
+            const username = localStorage.getItem(USERNAME_KEY);
+            
+            // Clear previous messages
+            passwordError.classList.remove('show');
+            passwordSuccess.classList.remove('show');
+            
+            // Validate passwords match
+            if (newPassword !== confirmPassword) {
+                passwordError.textContent = 'New passwords do not match';
+                passwordError.classList.add('show');
+                return false;
+            }
+            
+            // Validate password length
+            if (newPassword.length < 4) {
+                passwordError.textContent = 'Password must be at least 4 characters';
+                passwordError.classList.add('show');
+                return false;
+            }
+            
+            // Disable button and show loading
+            passwordSaveButton.disabled = true;
+            passwordSaveButton.textContent = 'Changing...';
+            
+            // Send request to backend
+            fetch('./change-password.cgi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `username=${encodeURIComponent(username)}&currentPassword=${encodeURIComponent(currentPassword)}&newPassword=${encodeURIComponent(newPassword)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    passwordSuccess.textContent = 'Password changed successfully!';
+                    passwordSuccess.classList.add('show');
+                    document.getElementById('passwordForm').reset();
+                    
+                    // Close modal after 2 seconds
+                    setTimeout(() => {
+                        hidePasswordModal();
+                    }, 2000);
+                } else {
+                    passwordError.textContent = data.message || 'Failed to change password';
+                    passwordError.classList.add('show');
+                }
+                passwordSaveButton.disabled = false;
+                passwordSaveButton.textContent = 'Change Password';
+            })
+            .catch(error => {
+                console.error('Password change error:', error);
+                passwordError.textContent = 'Connection error. Please try again.';
+                passwordError.classList.add('show');
+                passwordSaveButton.disabled = false;
+                passwordSaveButton.textContent = 'Change Password';
+            });
+            
+            return false;
+        }
+        
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('passwordModal');
+            if (event.target === modal) {
+                hidePasswordModal();
+            }
+        });
+        
+        // Initialize session check on page load
+        checkSession();
+        
         // Cache-busting for images - force reload on page refresh
         (function() {
             const timestamp = Date.now();
@@ -384,13 +1005,12 @@
         let serverIP = null;
         let config = {};
         
-        // Load server IP and configuration
+        // Load server IP
         fetch('./get-ip.cgi')
             .then(response => response.text())
             .then(ip => {
                 serverIP = ip.trim();
                 document.getElementById('server-ip').textContent = `IP: ${serverIP}`;
-                loadConfig();
             })
             .catch(error => {
                 console.error('Error loading IP:', error);
@@ -398,7 +1018,7 @@
             });
         
         function loadConfig() {
-            fetch('/etc/arc.conf')
+            fetch('./get-config.cgi')
                 .then(response => response.text())
                 .then(configText => {
                     configText.split('\n').forEach(line => {
@@ -444,7 +1064,6 @@
                 if (!iframe.src || iframe.src === 'about:blank' || iframe.src === window.location.href) {
                     const port = config['TTYD_PORT'] || '7681';
                     iframe.src = `http://${serverIP}:${port}`;
-                    console.log('Loading terminal:', iframe.src);
                     
                     // Force iframe to resize by triggering reflow
                     iframe.onload = function() {
@@ -473,7 +1092,6 @@
                 if (!iframe.src || iframe.src === 'about:blank' || iframe.src === window.location.href) {
                     const port = config['DUFS_PORT'] || '7304';
                     iframe.src = `http://${serverIP}:${port}`;
-                    console.log('Loading file manager:', iframe.src);
                     
                     // Force iframe to resize by triggering reflow
                     iframe.onload = function() {
