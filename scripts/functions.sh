@@ -267,6 +267,60 @@ function repackInitrd() {
   sudo rm -f "${RDXZ_PATH}/etc/init.d/S99ttyd"
   sudo rm -f "${RDXZ_PATH}/etc/init.d/S99dufs"
   
+  # Update S90thttpd to run as root with CGI support for web authentication
+  sudo tee "${RDXZ_PATH}/etc/init.d/S90thttpd" >/dev/null <<'EOF'
+#!/bin/sh
+
+DAEMON="thttpd"
+PIDFILE="/var/run/$DAEMON.pid"
+HTTPPORT=$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
+HTTPPORT=${HTTPPORT:-7080}
+
+start() {
+  printf 'Starting %s: ' "$DAEMON"
+  # Run as root with CGI support for authentication
+  /usr/sbin/thttpd -h 0.0.0.0 -p ${HTTPPORT} -d /var/www/data -u root -c '**.cgi' -i "$PIDFILE" 2>/dev/null
+  status=$?
+  if [ "$status" -eq 0 ]; then
+    echo "OK"
+  else
+    echo "FAIL"
+  fi
+  return "$status"
+}
+
+stop() {
+  printf 'Stopping %s: ' "$DAEMON"
+  if [ -f "$PIDFILE" ]; then
+    kill $(cat "$PIDFILE") 2>/dev/null
+    rm -f "$PIDFILE"
+    echo "OK"
+  else
+    echo "FAIL"
+  fi
+}
+
+restart() {
+  stop
+  sleep 1
+  start
+}
+
+case "$1" in
+start | stop | restart)
+  "$1"
+  ;;
+reload)
+  restart
+  ;;
+*)
+  echo "Usage: $0 {start|stop|restart|reload}"
+  exit 1
+  ;;
+esac
+EOF
+  sudo chmod +x "${RDXZ_PATH}/etc/init.d/S90thttpd"
+  
   [ -f "${OUTPUT_PATH}" ] && rm -rf "${OUTPUT_PATH}"
 
   case "${INITRD_FORMAT}" in
