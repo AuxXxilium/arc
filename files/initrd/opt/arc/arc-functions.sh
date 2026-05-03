@@ -285,9 +285,17 @@ function arcVersion() {
         --yesno "${MSG}" 5 65
       [ $? -eq 0 ] && writeConfigKey "arc.discordnotify" "true" "${USER_CONFIG_FILE}"
     fi
-    MSG="Do you want to use Automated Mode?\nIf yes, Loader will configure, build and boot DSM."
+    KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+    KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
+    if [ "${KVER:0:1}" -eq 5 ]; then
+      if [ "${PLATFORM}" = "epyc7002" ] || [ "${PLATFORM}" = "geminilakenk" ]; then
+        dialog --backtitle "$(backtitle)" --title "DSM 7.3 Warning" \
+          --msgbox "You selected a Linux 5.x based platform and DSM 7.3!\nIf you encounter issues, switch to custom kernel." 5 60
+      fi
+    fi
+    MSG="Do you want to use Automated Mode?\nThe Loader will automatically configure, build and boot DSM."
     dialog --backtitle "$(backtitle)" --colors --title "Automated Mode" \
-      --yesno "${MSG}" 6 55
+      --yesno "${MSG}" 6 60
     ARC_MODE=$([ $? -eq 0 ] && echo "automated" || echo "config")
   fi
 
@@ -311,25 +319,6 @@ function arcVersion() {
     writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
   done <<<"$(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")"
 
-  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-  KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
-  if [ "${KVER:0:1}" -eq 5 ] && [ "${PRODUCTVER}" = "7.3" ]; then
-    if [ "${PLATFORM}" = "epyc7002" ] || [ "${PLATFORM}" = "geminilakenk" ]; then
-      KERNEL="custom"
-      writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
-      dialog --backtitle "$(backtitle)" --title "Kernel" \
-        --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 50
-      if [ "${ODP}" = "true" ]; then
-        ODP="false"
-        writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
-      fi
-    else
-      dialog --backtitle "$(backtitle)" --title "Kernel" \
-        --infobox "DSM ${PRODUCTVER} will not work with ${MODEL}! Stay patient..." 3 50
-      sleep 3
-      return
-    fi
-  fi
   if [ -n "${PLATFORM}" ] && [ -n "${KPRE:+${KPRE}-}${KVER}" ]; then
     writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
     mergeConfigModules "$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
