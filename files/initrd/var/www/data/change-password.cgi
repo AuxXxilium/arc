@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Change Password CGI script for Arc Web Config
-# Updates user password using passwd command
+# Updates user password and persists to initrd
 
 # JSON response function
 send_json() {
@@ -47,9 +47,9 @@ if [ ${#NEW_PASSWORD} -lt 4 ]; then
     exit 0
 fi
 
-# Change password using passwd (expects password entered twice)
-if printf '%s\n%s\n' "$NEW_PASSWORD" "$NEW_PASSWORD" | passwd "$USERNAME" >/dev/null 2>&1; then
-    send_json '{"success": true, "message": "Password changed successfully"}'
+# Call loaderPassword using command-line interface (consistent approach)
+if /opt/arc/arc-functions.sh loaderPassword "${USERNAME}" "${NEW_PASSWORD}" "false" 2>/dev/null; then
+    send_json '{"success": true, "message": "Password changed and persisted successfully"}'
 else
     send_json '{"success": false, "message": "Failed to change password"}'
 fi

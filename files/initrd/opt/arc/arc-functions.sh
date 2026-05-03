@@ -2225,19 +2225,33 @@ function addNewDSMUser() {
 ###############################################################################
 # Change Arc Loader Password
 function loaderPassword() {
-  dialog --backtitle "$(backtitle)" --title "Loader Password" \
-    --inputbox "New password: (Empty value 'arc')" 0 70 \
-    2>"${TMP_PATH}/resp"
-  [ $? -ne 0 ] && continue
-  STRPASSWD="$(cat "${TMP_PATH}/resp")"
-  NEWPASSWD="$(openssl passwd -6 -salt $(openssl rand -hex 8) "${STRPASSWD:-arc}")"
-  cp -p /etc/shadow /etc/shadow-
-  sed -i "s|^root:[^:]*|root:${NEWPASSWD}|" /etc/shadow
-  RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
+  local USERNAME="${1:-root}"
+  local STRPASSWD="${2}"
+  local SHOW_DIALOG="${3:-true}"
+  
+  # Interactive mode: ask via dialog if no password provided
+  if [ "${SHOW_DIALOG}" = "true" ] && [ -z "${STRPASSWD}" ]; then
+    dialog --backtitle "$(backtitle)" --title "Loader Password" \
+      --inputbox "New password: (Empty value 'arc')" 0 70 \
+      2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && return 1
+    STRPASSWD="$(cat "${TMP_PATH}/resp")"
+  fi
+  
+  # Generate encrypted password
+  local NEWPASSWD="$(openssl passwd -6 -salt $(openssl rand -hex 8) "${STRPASSWD:-arc}")"
+  
+  # Update /etc/shadow
+  cp -p /etc/shadow /etc/shadow- 2>/dev/null || return 1
+  sed -i "s|^${USERNAME}:[^:]*|${USERNAME}:${NEWPASSWD}|" /etc/shadow || return 1
+  
+  # Update initrd
+  local RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
   rm -rf "${RDXZ_PATH}"
   mkdir -p "${RDXZ_PATH}"
+  
   if [ -f "${ARC_RAMDISK_USER_FILE}" ]; then
-    INITRD_FORMAT=$(file -b --mime-type "${ARC_RAMDISK_USER_FILE}")
+    local INITRD_FORMAT=$(file -b --mime-type "${ARC_RAMDISK_USER_FILE}")
     (
       cd "${RDXZ_PATH}"
       case "${INITRD_FORMAT}" in
@@ -2252,38 +2266,64 @@ function loaderPassword() {
       esac
     ) >/dev/null 2>&1 || true
   else
-    INITRD_FORMAT="application/zstd"
+    local INITRD_FORMAT="application/zstd"
   fi
+  
   if [ "${STRPASSWD:-arc}" = "arc" ]; then
     rm -f ${RDXZ_PATH}/etc/shadow* 2>/dev/null
   else
     mkdir -p "${RDXZ_PATH}/etc"
     cp -p /etc/shadow* ${RDXZ_PATH}/etc && chown root:root ${RDXZ_PATH}/etc/shadow* && chmod 600 ${RDXZ_PATH}/etc/shadow*
   fi
+  
   if [ -n "$(ls -A "${RDXZ_PATH}" 2>/dev/null)" ] && [ -n "$(ls -A "${RDXZ_PATH}/etc" 2>/dev/null)" ]; then
-    (
-      cd "${RDXZ_PATH}"
-      local RDSIZE=$(du -sb ${RDXZ_PATH} 2>/dev/null | awk '{print $1}')
-      case "${INITRD_FORMAT}" in
-      *'x-cpio'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} >"${RR_RAMUSER_FILE}" ;;
-      *'x-xz'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | xz -9 -C crc32 -c - >"${RR_RAMUSER_FILE}" ;;
-      *'x-lz4'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | lz4 -9 -l -c - >"${RR_RAMUSER_FILE}" ;;
-      *'x-lzma'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | lzma -9 -c - >"${RR_RAMUSER_FILE}" ;;
-      *'x-bzip2'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | bzip2 -9 -c - >"${RR_RAMUSER_FILE}" ;;
-      *'gzip'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | gzip -9 -c - >"${RR_RAMUSER_FILE}" ;;
-      *'zstd'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | zstd -19 -T0 -f -c - >"${RR_RAMUSER_FILE}" ;;
-      *) ;;
-      esac
-    ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Loader Password" \
-      --progressbox "Changing Loader password..." 30 100
+    if [ "${SHOW_DIALOG}" = "true" ]; then
+      (
+        cd "${RDXZ_PATH}"
+        local RDSIZE=$(du -sb ${RDXZ_PATH} 2>/dev/null | awk '{print $1}')
+        case "${INITRD_FORMAT}" in
+        *'x-cpio'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-xz'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | xz -9 -C crc32 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-lz4'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | lz4 -9 -l -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-lzma'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | lzma -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-bzip2'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | bzip2 -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'gzip'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | gzip -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'zstd'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | zstd -19 -T0 -f -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *) ;;
+        esac
+      ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Loader Password" \
+        --progressbox "Changing Loader password..." 30 100
+    else
+      (
+        cd "${RDXZ_PATH}"
+        case "${INITRD_FORMAT}" in
+        *'x-cpio'*) find . 2>/dev/null | cpio -o -H newc -R root:root >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-xz'*) find . 2>/dev/null | cpio -o -H newc -R root:root | xz -9 -C crc32 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-lz4'*) find . 2>/dev/null | cpio -o -H newc -R root:root | lz4 -9 -l -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-lzma'*) find . 2>/dev/null | cpio -o -H newc -R root:root | lzma -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-bzip2'*) find . 2>/dev/null | cpio -o -H newc -R root:root | bzip2 -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'gzip'*) find . 2>/dev/null | cpio -o -H newc -R root:root | gzip -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'zstd'*) find . 2>/dev/null | cpio -o -H newc -R root:root | zstd -19 -T0 -f -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *) ;;
+        esac
+      ) >/dev/null 2>&1
+    fi
   else
     rm -f "${ARC_RAMDISK_USER_FILE}"
   fi
+  
   rm -rf "${RDXZ_PATH}"
-  [ "${STRPASSWD:-arc}" = "arc" ] && MSG="Loader Password for root restored." || MSG="Loader Password for root changed."
-  dialog --backtitle "$(backtitle)" --title "Loader Password" \
-    --msgbox "${MSG}" 0 0
-  return
+  
+  # Show completion message
+  if [ "${SHOW_DIALOG}" = "true" ]; then
+    [ "${STRPASSWD:-arc}" = "arc" ] && MSG="Loader Password for ${USERNAME} restored." || MSG="Loader Password for ${USERNAME} changed."
+    dialog --backtitle "$(backtitle)" --title "Loader Password" \
+      --msgbox "${MSG}" 0 0
+  else
+    [ "${STRPASSWD:-arc}" = "arc" ] && echo "Password for ${USERNAME} restored." || echo "Password for ${USERNAME} changed successfully."
+  fi
+  
+  return 0
 }
 
 ###############################################################################
@@ -3864,3 +3904,21 @@ function setScreenTimeout() {
   CONSOLEBLANK="${resp}"
   writeConfigKey "arc.consoleblank" "${CONSOLEBLANK}" "${USER_CONFIG_FILE}"
 }
+
+###############################################################################
+# Command-line interface handler
+# Allows calling functions directly: arc-functions.sh functionName [args...]
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+  # Script is being executed directly, not sourced
+  FUNCTION_NAME="${1}"
+  shift
+  
+  # Try to call the function if it exists
+  if type "${FUNCTION_NAME}" >/dev/null 2>&1; then
+    "${FUNCTION_NAME}" "$@"
+  else
+    echo "Error: Function '${FUNCTION_NAME}' not found."
+    echo "Usage: $0 <function_name> [arguments...]"
+    exit 1
+  fi
+fi
