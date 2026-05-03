@@ -218,6 +218,8 @@ function _sort_netif() {
 function getBus() {
   local BUS=""
   [ -f "/.dockerenv" ] && BUS="docker"
+  # PXE: loop device → treat as virtio (no VID/PID needed)
+  [ -z "${BUS}" ] && [[ "${1}" == /dev/loop* ]] && BUS="virtio" && echo "${BUS}" && return 0
   # usb/ata(ide)/sata/sas/spi(scsi)/virtio/mmc/nvme
   [ -z "${BUS}" ] && BUS=$(lsblk -dpno KNAME,TRAN 2>/dev/null | grep "${1} " | awk '{print $2}' | sed 's/^ata$/ide/' | sed 's/^spi$/scsi/')
   # usb/scsi(ide/sata/sas)/virtio/mmc/nvme/vmbus/xen(xvd)
