@@ -26,7 +26,6 @@ parse_qs() {
         local value="${param#*=}"
         case "$key" in
             username) USERNAME=$(urldecode "$value") ;;
-            currentPassword) CURRENT_PASSWORD=$(urldecode "$value") ;;
             newPassword) NEW_PASSWORD=$(urldecode "$value") ;;
         esac
     done
@@ -36,7 +35,7 @@ parse_qs() {
 parse_qs
 
 # Validate input
-if [ -z "$USERNAME" ] || [ -z "$CURRENT_PASSWORD" ] || [ -z "$NEW_PASSWORD" ]; then
+if [ -z "$USERNAME" ] || [ -z "$NEW_PASSWORD" ]; then
     send_json '{"success": false, "message": "All fields are required"}'
     exit 0
 fi

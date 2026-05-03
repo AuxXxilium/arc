@@ -603,11 +603,6 @@
             
             <form id="passwordForm" onsubmit="return handlePasswordChange(event)">
                 <div class="form-group">
-                    <label for="currentPassword">Current Password</label>
-                    <input type="password" id="currentPassword" name="currentPassword" autocomplete="current-password" required>
-                </div>
-                
-                <div class="form-group">
                     <label for="newPassword">New Password</label>
                     <input type="password" id="newPassword" name="newPassword" autocomplete="new-password" required minlength="4">
                 </div>
@@ -911,7 +906,7 @@
             document.getElementById('passwordError').classList.remove('show');
             document.getElementById('passwordSuccess').classList.remove('show');
             document.getElementById('passwordForm').reset();
-            document.getElementById('currentPassword').focus();
+            document.getElementById('newPassword').focus();
         }
         
         function hidePasswordModal() {
@@ -922,7 +917,6 @@
         function handlePasswordChange(event) {
             event.preventDefault();
             
-            const currentPassword = document.getElementById('currentPassword').value;
             const newPassword = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             const passwordSaveButton = document.getElementById('passwordSaveButton');
@@ -936,8 +930,10 @@
             
             // Validate passwords match
             if (newPassword !== confirmPassword) {
-                passwordError.textContent = 'New passwords do not match';
+                passwordError.textContent = 'Passwords do not match';
                 passwordError.classList.add('show');
+                document.getElementById('confirmPassword').value = '';
+                document.getElementById('confirmPassword').focus();
                 return false;
             }
             
@@ -953,7 +949,7 @@
             passwordSaveButton.textContent = 'Changing...';
             
             // Send request to backend (GET method for thttpd CGI compatibility)
-            fetch(`./change-password.cgi?username=${encodeURIComponent(username)}&currentPassword=${encodeURIComponent(currentPassword)}&newPassword=${encodeURIComponent(newPassword)}`, {
+            fetch(`./change-password.cgi?username=${encodeURIComponent(username)}&newPassword=${encodeURIComponent(newPassword)}`, {
                 method: 'GET'
             })
             .then(response => response.json())
