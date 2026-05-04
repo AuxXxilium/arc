@@ -167,7 +167,6 @@ function getSysinfo() {
     USERSYNOINFO="$(echo "${USERSYNOINFO_RAW}" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g' | sed 's/^ //;s/ $//')"
     BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
   fi
-  ALTCONSOLE="$(readConfigKey "arc.altconsole" "${USER_CONFIG_FILE}")"
   DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
@@ -188,7 +187,7 @@ function getSysinfo() {
   # Print System Informations
   TEXT="\n> System: ${MACHINE} | ${BOOTSYS}"
   TEXT+="\n  Board: ${BOARD}"
-  TEXT+="\n  CPU: {CPU} (Cores: ${CPUCNT} | Threads: ${CPUCHT})"
+  TEXT+="\n  CPU: ${CPU} (Cores: ${CPUCNT} | Threads: ${CPUCHT})"
   if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
     GPUNAME=""
     for PCI in $(lspci -d ::300 | awk '{print $1}'); do
@@ -239,7 +238,6 @@ function getSysinfo() {
   TEXT+="\n  Config | Build: ${CONFDONE} | ${BUILDDONE}"
   TEXT+="\n  Config Version: ${CONFIGVER}"
   TEXT+="\n  Offline Mode: ${ARCOFFLINE}"
-  TEXT+="\n  Switch Serialport: ${ALTCONSOLE}"
   if [ "${CONFDONE}" = "true" ]; then
     TEXT+="\n> DSM ${PRODUCTVER} (${BUILDNUM}): ${MODEL}"
     TEXT+="\n  Kernel | LKM: ${KVER} | ${LKM}"
