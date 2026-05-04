@@ -31,13 +31,16 @@ clear
 COLUMNS=$(ttysize 2>/dev/null | awk '{print $1}')
 COLUMNS=${COLUMNS:-120}
 BANNER="$(figlet -c -w "${COLUMNS}" "Arc Loader")"
-TITLE="Version: ${ARC_VERSION} (${ARC_BUILD} @ ${ARC_BASE})"
-printf "\033[1;30m%*s\n" ${COLUMNS} ""
-printf "\033[1;30m%*s\033[A\n" ${COLUMNS} ""
-printf "\033[1;34m%*s\033[0m\n" ${COLUMNS} "${BANNER}"
-printf "%*s\n" $(( (${COLUMNS} + ${#TITLE}) / 2 )) "\033[1;37m${TITLE}\033[0m"
-TITLE="Boot: $([ "${EFI}" -eq 1 ] && echo "UEFI" || echo "BIOS") | Device: ${BUS} | Mode: ${ARC_MODE}"
-printf "%*s\n" $(( (${COLUMNS} + ${#TITLE}) / 2 )) "\033[1;37m${TITLE}\033[0m"
+TITLE="Version:"
+TITLE+=" ${ARC_VERSION} (${ARC_BUILD} @ ${ARC_BASE})"
+echo -e "\033[1;30m$(printf '%*s' ${COLUMNS} '')\033[0m"
+echo -e "\033[1;30m$(printf '%*s' ${COLUMNS} '')\033[A\033[0m"
+echo -e "\033[1;34m${BANNER}\033[0m"
+echo -e "\033[1;37m$(printf '%*s' $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}")\033[0m"
+TITLE="Boot:"
+[ "${EFI}" -eq 1 ] && TITLE+=" UEFI" || TITLE+=" BIOS"
+TITLE+=" | Device: ${BUS} | Mode: ${ARC_MODE}"
+echo -e "\033[1;37m$(printf '%*s' $(((${#TITLE} + ${COLUMNS}) / 2)) "${TITLE}")\033[0m"
 
 # Check if DSM zImage/Ramdisk is changed, patch it if necessary, update Files if necessary
 ZIMAGE_HASH="$(readConfigKey "zimage-hash" "${USER_CONFIG_FILE}")"

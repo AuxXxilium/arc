@@ -286,8 +286,7 @@ function arcVersion() {
       [ $? -eq 0 ] && writeConfigKey "arc.discordnotify" "true" "${USER_CONFIG_FILE}"
     fi
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-    KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
-    if [ "${KVER:0:1}" -eq 5 ]; then
+    if [ "${KVER:0:1}" -eq 5 ] && [ "${PRODUCTVER}" = "7.3" ]; then
       if [ "${PLATFORM}" = "epyc7002" ] || [ "${PLATFORM}" = "geminilakenk" ]; then
         dialog --backtitle "$(backtitle)" --title "DSM 7.3 Warning" \
           --msgbox "You selected a Linux 5.x based platform and DSM 7.3!\nIf you encounter issues, switch to custom kernel." 5 60
@@ -319,6 +318,8 @@ function arcVersion() {
     writeConfigKey "synoinfo.\"${KEY}\"" "${VALUE}" "${USER_CONFIG_FILE}"
   done <<<"$(readConfigMap "platforms.${PLATFORM}.synoinfo" "${P_FILE}")"
 
+  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+  KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
   if [ -n "${PLATFORM}" ] && [ -n "${KPRE:+${KPRE}-}${KVER}" ]; then
     writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
     mergeConfigModules "$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
