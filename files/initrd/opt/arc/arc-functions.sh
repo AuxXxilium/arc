@@ -289,12 +289,12 @@ function arcVersion() {
     if [ "${KVER:0:1}" -eq 5 ] && [ "${PRODUCTVER}" = "7.3" ]; then
       if [ "${PLATFORM}" = "epyc7002" ] || [ "${PLATFORM}" = "geminilakenk" ]; then
         dialog --backtitle "$(backtitle)" --title "DSM 7.3 Warning" \
-          --msgbox "You selected a Linux 5.x based platform and DSM 7.3!\nIf you encounter issues, switch to custom kernel." 5 60
+          --msgbox "You selected a Linux 5.x based platform and DSM 7.3!\nIf you encounter issues, switch to custom kernel." 5 65
       fi
     fi
-    MSG="Do you want to use Automated Mode?\nThe Loader will automatically configure, build and boot DSM."
+    MSG="Do you want to use Automated Mode?\nLoader will automatically configure, build and boot DSM."
     dialog --backtitle "$(backtitle)" --colors --title "Automated Mode" \
-      --yesno "${MSG}" 6 60
+      --yesno "${MSG}" 6 65
     ARC_MODE=$([ $? -eq 0 ] && echo "automated" || echo "config")
   fi
 
