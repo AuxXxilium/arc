@@ -2,8 +2,8 @@
 set -e
 cd /root && mkdir -p pxe-final && cd pxe-final
 
-echo '=== [1] Extract kernel + initrd from FRESH arc.img ==='
-losetup -P /dev/loop0 /mnt/d/software/Synology_Arc/arc.img
+echo '=== [1] Extract kernel + initrd from arc-configured.img ==='
+losetup -P /dev/loop0 /mnt/d/software/Synology_Arc/arc-configured.img
 mkdir -p p3 && mount /dev/loop0p3 p3
 cp p3/bzImage-apex bzImage
 cp p3/initrd-apex initrd-original
@@ -18,7 +18,7 @@ mv init init.buildroot
 cp /mnt/d/software/Synology_Arc/pxe/init-pxe.sh init
 chmod +x init
 
-cp /mnt/d/software/Synology_Arc/arc/files/initrd/opt/arc/include/functions.sh opt/arc/include/functions.sh
+cp /mnt/d/software/Synology_Arc/files/initrd/opt/arc/include/functions.sh opt/arc/include/functions.sh
 echo '  getBus patch:' && grep 'loop' opt/arc/include/functions.sh
 
 echo '=== [4] Compress CONFIGURED arc.img and embed ==='
