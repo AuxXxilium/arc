@@ -9,6 +9,12 @@ docker/syno-compiler/Dockerfile
 cache
 *.bak
 *.o
+arc-configured.img
+.claude/
+pxe/pxe-output/*
+!pxe/pxe-output/boot.ipxe
+!pxe/pxe-output/
+!pxe/pxe-output/boot.ipxe
 /files/board/arc/p3/addons
 /files/board/arc/p3/lkms
 /files/board/arc/p3/modules
