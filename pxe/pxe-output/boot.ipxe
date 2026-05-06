@@ -1,0 +1,28 @@
+#!ipxe
+#
+# Arc Loader - iPXE boot script
+#
+# File placement:
+#   TFTP (/jffs/pxe/):        undionly.kpxe, boot.ipxe
+#   HTTP (192.168.2.203:8081): bzImage, initrd
+#
+# dnsmasq chain: PXE -> undionly.kpxe -> boot.ipxe -> HTTP download
+
+set http-path http://192.168.2.203:8081
+
+# Arc kernel cmdline (matches ARC_CMDLINE from grub.cfg)
+set cmdline "earlyprintk earlycon=uart8250,io,0x3f8,115200n8 console=ttyS0,115200n8 root=/dev/ram rootwait net.ifnames=0 panic=5 split_lock_detect=off pcie_aspm=off intel_pstate=disable amd_pstate=disable nox2apic nomodeset nowatchdog vga=792"
+
+echo ========================================
+echo  Arc Loader - PXE Network Boot
+echo ========================================
+echo
+
+echo Loading Arc Kernel via HTTP...
+kernel ${http-path}/bzImage ${cmdline} dsm_arc
+
+echo Loading Arc Initrd via HTTP...
+initrd ${http-path}/initrd
+
+echo Booting Arc Loader...
+boot
