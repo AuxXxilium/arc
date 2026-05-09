@@ -204,7 +204,7 @@ function arcVersion() {
     LVS=""
     SHOW_ALL=0
     EXTRA_LABEL="Show all"
-    
+
     while true; do
       echo -n "" >"${TMP_PATH}/menu"
       for V in $(echo "${PVS}" | sort -r); do
@@ -225,12 +225,12 @@ function arcVersion() {
           fi
         fi
       done
-    
+
       dialog --nocancel --title "DSM Version" --backtitle "$(backtitle)" \
         --extra-button --extra-label "${EXTRA_LABEL}" \
         --menu "Select DSM Version" 7 50 0 --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
       RET=$?
-    
+
       if [ "${RET}" -eq 3 ]; then
         SHOW_ALL=$((1 - SHOW_ALL))
         if [ "${SHOW_ALL}" -eq 1 ]; then
@@ -240,9 +240,9 @@ function arcVersion() {
         fi
         continue
       fi
-    
+
       [ "${RET}" -ne 0 ] && return 1
-    
+
       resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
       if [ -n "${resp}" ]; then
         if [ "${PRODUCTVER}" != "${resp:0:3}" ] || [ "${BUILDNUM}" != "$(echo "${resp}" | cut -d'-' -f2 | tr -d '-')" ] || [ "${SMALLNUM}" != "$(echo "${resp}" | cut -d'-' -f3 | tr -d '-')" ]; then
@@ -289,7 +289,7 @@ function arcVersion() {
     if [ "${KVER:0:1}" -eq 5 ] && [ "${PRODUCTVER}" = "7.3" ]; then
       if [ "${PLATFORM}" = "epyc7002" ] || [ "${PLATFORM}" = "geminilakenk" ]; then
         dialog --backtitle "$(backtitle)" --title "DSM 7.3 Warning" \
-          --msgbox "You selected a Linux 5.x based platform and DSM 7.3!\nIf you encounter issues, switch to custom kernel." 5 65
+          --msgbox "You selected a Linux 5.x based platform and DSM 7.3!\nIf you encounter issues, switch to custom kernel." 6 65
       fi
     fi
     MSG="Do you want to use Automated Mode?\nLoader will automatically configure, build and boot DSM."
@@ -356,16 +356,16 @@ function arcPatch() {
       3 "Use my own SN/Mac (Be sure your Data is valid)"
     )
     [ "${#SN}" -eq 13 ] && OPTIONS=(1 "Use Arc Patch (AME, QC, Push Notify and more)" "${OPTIONS[@]}")
-    
+
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "SN/Mac Options" \
       --menu "Choose an Option" 7 60 0 \
       "${OPTIONS[@]}" \
       2>"${TMP_PATH}/resp"
-    
+
     resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
     [ -z "${resp}" ] && return 1
-    
+
     case ${resp} in
       1)
         ARC_PATCH="true"
@@ -407,18 +407,18 @@ function arcSettings() {
   PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
   DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
-  
+
   dialog --backtitle "$(backtitle)" --colors --title "Network Config" \
     --infobox "Generating Network Config..." 3 40
   sleep 2
   getnet
-  
+
   if [ "${ONLYPATCH}" = "true" ]; then
     resetBuildstatus
     ONLYPATCH="false"
     return 0
   fi
-  
+
   dialog --backtitle "$(backtitle)" --colors --title "Storage Map" \
     --infobox "Generating Storage Map..." 3 40
   sleep 2
@@ -426,13 +426,13 @@ function arcSettings() {
   if [ "${DT}" = "false" ]; then
     getmapSelection
   fi
-  
+
   if [ "${ARC_MODE}" = "config" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Addons" \
       --infobox "Loading Addons Table..." 3 40
     addonSelection
   fi
-  
+
   if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling"; then
     if [ "${ARC_MODE}" = "config" ] && [ "${MEV}" = "physical" ]; then
       dialog --backtitle "$(backtitle)" --colors --title "CPU Frequency Scaling" \
@@ -451,7 +451,7 @@ function arcSettings() {
     [ "${AESSYS}" = "false" ] && dialog --backtitle "$(backtitle)" --title "Arc Warning" --msgbox "WARN: Your System doesn't support Hardware encryption in DSM. (AES)" 5 70
     [ "${CPUFREQ}" = "false" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling" && dialog --backtitle "$(backtitle)" --title "Arc Warning" --msgbox "WARN: It is possible that CPU Frequency Scaling is not working properly with your System." 6 80
   fi
-  
+
   EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
   if [ "${EMMCBOOT}" = "true" ]; then
     writeConfigKey "modules.mmc_block" "" "${USER_CONFIG_FILE}"
@@ -460,7 +460,7 @@ function arcSettings() {
     deleteConfigKey "modules.mmc_block" "${USER_CONFIG_FILE}"
     deleteConfigKey "modules.mmc_core" "${USER_CONFIG_FILE}"
   fi
-  
+
   if [ -n "${PLATFORM}" ] && [ -n "${MODEL}" ] && [ -n "${KVER}" ] && [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
     writeConfigKey "arc.confdone" "true" "${USER_CONFIG_FILE}"
     CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -1336,7 +1336,7 @@ function backupMenu() {
         dialog --backtitle "$(backtitle)" --title "Backup Encryption Key" \
           --msgbox "To backup the Encryption Key press OK." 0 0
         [ $? -ne 0 ] && return 1
-        
+
         if [ -f "${PART2_PATH}/machine.key" ]; then
           mkdir -p /var/www/data
           tar -czf /var/www/data/machine.key.tar.gz -C "${PART2_PATH}" machine.key
@@ -2223,7 +2223,7 @@ function loaderPassword() {
   local USERNAME="${1:-root}"
   local STRPASSWD="${2}"
   local SHOW_DIALOG="${3:-true}"
-  
+
   # Interactive mode: ask via dialog if no password provided
   if [ "${SHOW_DIALOG}" = "true" ] && [ -z "${STRPASSWD}" ]; then
     dialog --backtitle "$(backtitle)" --title "Loader Password" \
@@ -2232,19 +2232,19 @@ function loaderPassword() {
     [ $? -ne 0 ] && return 1
     STRPASSWD="$(cat "${TMP_PATH}/resp")"
   fi
-  
+
   # Generate encrypted password
   local NEWPASSWD="$(openssl passwd -6 -salt $(openssl rand -hex 8) "${STRPASSWD:-arc}")"
-  
+
   # Update /etc/shadow
   cp -p /etc/shadow /etc/shadow- 2>/dev/null || return 1
   sed -i "s|^${USERNAME}:[^:]*|${USERNAME}:${NEWPASSWD}|" /etc/shadow || return 1
-  
+
   # Update initrd
   local RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
   rm -rf "${RDXZ_PATH}"
   mkdir -p "${RDXZ_PATH}"
-  
+
   if [ -f "${ARC_RAMDISK_USER_FILE}" ]; then
     local INITRD_FORMAT=$(file -b --mime-type "${ARC_RAMDISK_USER_FILE}")
     (
@@ -2263,14 +2263,14 @@ function loaderPassword() {
   else
     local INITRD_FORMAT="application/zstd"
   fi
-  
+
   if [ "${STRPASSWD:-arc}" = "arc" ]; then
     rm -f ${RDXZ_PATH}/etc/shadow* 2>/dev/null
   else
     mkdir -p "${RDXZ_PATH}/etc"
     cp -p /etc/shadow* ${RDXZ_PATH}/etc && chown root:root ${RDXZ_PATH}/etc/shadow* && chmod 600 ${RDXZ_PATH}/etc/shadow*
   fi
-  
+
   if [ -n "$(ls -A "${RDXZ_PATH}" 2>/dev/null)" ] && [ -n "$(ls -A "${RDXZ_PATH}/etc" 2>/dev/null)" ]; then
     if [ "${SHOW_DIALOG}" = "true" ]; then
       (
@@ -2306,9 +2306,9 @@ function loaderPassword() {
   else
     rm -f "${ARC_RAMDISK_USER_FILE}"
   fi
-  
+
   rm -rf "${RDXZ_PATH}"
-  
+
   # Show completion message
   if [ "${SHOW_DIALOG}" = "true" ]; then
     [ "${STRPASSWD:-arc}" = "arc" ] && MSG="Loader Password for ${USERNAME} restored." || MSG="Loader Password for ${USERNAME} changed."
@@ -2317,7 +2317,7 @@ function loaderPassword() {
   else
     [ "${STRPASSWD:-arc}" = "arc" ] && echo "Password for ${USERNAME} restored." || echo "Password for ${USERNAME} changed successfully."
   fi
-  
+
   return 0
 }
 
@@ -3444,7 +3444,7 @@ function getmapSelection() {
   SATAPORTMAP="$(awk '{print $1}' "${TMP_PATH}/drivescon")"
   SATAREMAP="$(awk '{print $1}' "${TMP_PATH}/remap" | sed 's/.$//')"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
-  
+
   if [ "${ARC_MODE}" = "config" ]; then
     # Show recommended Option to user
     if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ "${MEV}" = "physical" ]; then
@@ -3471,7 +3471,7 @@ function getmapSelection() {
   deleteConfigKey "cmdline.DiskIdxMap" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.sata_remap" "${USER_CONFIG_FILE}"
   deleteConfigKey "cmdline.ahci_remap" "${USER_CONFIG_FILE}"
-  
+
   case "${REMAP}" in
     "acports")
       writeConfigKey "cmdline.SataPortMap" "${SATAPORTMAP}" "${USER_CONFIG_FILE}"
@@ -3781,7 +3781,7 @@ function recoverDSM() {
     MODEL=""
     PRODUCTVER=""
     BACKUP_CONFIG="${TMP_PATH}/mdX/usr/arc/backup/p1/user-config.yml"
-    
+
     # Check if BACKUP_CONFIG exists before proceeding
     if [ ! -f "${BACKUP_CONFIG}" ]; then
       sleep 3
@@ -3907,7 +3907,7 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
   # Script is being executed directly, not sourced
   FUNCTION_NAME="${1}"
   shift
-  
+
   # Try to call the function if it exists
   if type "${FUNCTION_NAME}" >/dev/null 2>&1; then
     "${FUNCTION_NAME}" "$@"
