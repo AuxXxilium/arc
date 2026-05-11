@@ -256,8 +256,8 @@ function findDSMRoot() {
 # 1 - Netmask
 function convert_netmask() {
   bits=0
-  for octet in $(echo $1| sed 's/\./ /g'); do 
-      binbits=$(echo "obase=2; ibase=10; ${octet}"| bc | sed 's/0//g') 
+  for octet in $(echo $1| sed 's/\./ /g'); do
+      binbits=$(echo "obase=2; ibase=10; ${octet}"| bc | sed 's/0//g')
       bits=$((${bits} + ${#binbits}))
   done
   echo "${bits}"
@@ -335,7 +335,7 @@ function checkBIOS_VT_d() {
 # Rebooting
 function rebootTo() {
   BUILDDONE="$(readConfigKey "builddone" "${USER_CONFIG_FILE}")"
-  if [ "${CONFDONE}" = "true" ]; then
+  if [ "${CONFDONE}" = "true" ] && ([ "${1}" = "automated" ] || [ "${1}" = "junior" ] || [ "${1}" = "dsm" ]); then
     if [ "${BUILDDONE}" != "true" ] || [ ! -f "${MOD_ZIMAGE_FILE}" ] || [ ! -f "${MOD_RDGZ_FILE}" ]; then
       dialog --backtitle "$(backtitle)" --title "Reboot" \
         --aspect 18 --yesno "Build is not complete!\nDSM will not boot.\nDo you want to continue?" 0 0
@@ -344,7 +344,7 @@ function rebootTo() {
       fi
     fi
   fi
-  local MODES="config recovery junior automated update uefi memtest"
+  local MODES="config recovery junior automated update uefi memtest dsm"
   [ -z "${1}" ] && exit 1
   if ! echo "${MODES}" | grep -wq "${1}"; then exit 1; fi
   [ "${1}" = "automated" ] && echo "arc-${MODEL}-${PRODUCTVER}-${ARC_VERSION}" >"${PART3_PATH}/automated"
@@ -625,7 +625,7 @@ function readData() {
 function write_menu() {
   echo "${1} \"${2}\" " >>"${TMP_PATH}/menu"
 }
-    
+
 function write_menu_value() {
   echo "${1} \"${2}: \Z4${3:-none}\Zn\" " >>"${TMP_PATH}/menu"
 }

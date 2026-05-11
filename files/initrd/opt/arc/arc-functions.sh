@@ -639,7 +639,7 @@ function juniorboot() {
 function bootcheck() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
-  if [ "${ARC_MODE}" != "automated" ] && [ "${BUILDDONE}" = "false" ]; then
+  if [ "${ARC_MODE}" != "automated" ] && ([ "${BUILDDONE}" = "false" ] || [ ! -f "${MOD_ZIMAGE_FILE}" ] || [ ! -f "${MOD_RDGZ_FILE}" ]); then
     dialog --backtitle "$(backtitle)" --title "Alert" \
       --yesno "Config changed, you need to rebuild the Loader?" 0 0
     if [ $? -eq 0 ]; then
