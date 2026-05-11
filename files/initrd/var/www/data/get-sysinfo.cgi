@@ -88,6 +88,11 @@ function getSysinfo() {
   else
     AESSYS="true"
   fi
+  if grep -q "^flags.*movbe.*" /proc/cpuinfo; then
+    MOVBE="true"
+  else
+    MOVBE="false"
+  fi
   # Check for CPU Frequency Scaling
   CPUFREQUENCIES=$(ls -ltr /sys/devices/system/cpu/cpufreq/* 2>/dev/null | wc -l)
   if [ ${CPUFREQUENCIES} -gt 1 ]; then
@@ -196,7 +201,7 @@ function getSysinfo() {
     TEXT+="\n  GPU: ${GPUNAME}"
   fi
   TEXT+="\n  Memory: $((${RAMTOTAL}))GB"
-  TEXT+="\n  AES: ${AESSYS}"
+  TEXT+="\n  AES | MOVBE: ${AESSYS} | ${MOVBE}"
   TEXT+="\n  CPU Scaling | Governor: ${CPUFREQ} | ${GOVERNOR}"
   TEXT+="\n  Secure Boot: ${SECURE:-not found}"
   TEXT+="\n"

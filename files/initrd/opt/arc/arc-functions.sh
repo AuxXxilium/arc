@@ -1577,6 +1577,11 @@ function sysinfo() {
   [ -z "${RAMTOTAL}" ] && RAMTOTAL="N/A"
   GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
   SECURE="$(dmesg 2>/dev/null | grep -i "Secure Boot" | awk -F'] ' '{print $2}')"
+  if grep -q "^flags.*movbe.*" /proc/cpuinfo; then
+    MOVBE="true"
+  else
+    MOVBE="false"
+  fi
   ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
   ETHN="$(echo ${ETHX} | wc -w)"
   HWID="$(genHWID)"
@@ -1642,7 +1647,7 @@ function sysinfo() {
     TEXT+="\n  GPU: \Zb${GPUNAME}\Zn"
   fi
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL}))GB\Zn"
-  TEXT+="\n  AES: \Zb${AESSYS}\Zn"
+  TEXT+="\n  AES | MOVBE: \Zb${AESSYS} | ${MOVBE}\Zn"
   TEXT+="\n  CPU Scaling | Governor: \Zb${CPUFREQ} | ${GOVERNOR}\Zn"
   TEXT+="\n  Secure Boot: \Zb${SECURE}\Zn"
   TEXT+="\n  Bootdisk: \Zb${LOADER_DISK}\Zn"
