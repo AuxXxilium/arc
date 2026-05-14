@@ -1,0 +1,451 @@
+:root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface-muted: #f1f5f9;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+    --primary: #0ea5e9;
+    --primary-dark: #0284c7;
+    --danger: #ef4444;
+    --success: #10b981;
+    --shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body, #app {
+    height: 100%;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--surface);
+    color: var(--text);
+    min-height: 100%;
+    overflow-x: hidden;
+}
+
+button {
+    font: inherit;
+}
+
+.app-shell {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    z-index: 1000;
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+.topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.topbar-logo img {
+    width: 38px;
+    height: 38px;
+    border-radius: 14px;
+    object-fit: cover;
+    background: none;
+}
+
+.topbar-label {
+    display: grid;
+    gap: 2px;
+}
+
+.topbar-title {
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.topbar-subtitle {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.topbar-actions span {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.topbar-actions button {
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.topbar-actions button:hover {
+    background: #eff6ff;
+}
+
+.primary-button {
+    background: var(--primary);
+    color: white;
+    border-color: transparent;
+}
+
+.primary-button:hover {
+    background: var(--primary-dark);
+}
+
+.main-layout {
+    display: flex;
+    margin-top: 64px;
+    flex: 1;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 280px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.card-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.app-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: var(--surface);
+    border: 1px solid transparent;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    cursor: pointer;
+}
+
+.app-card:hover {
+    transform: translateY(-1px);
+    background: #f8fbff;
+}
+
+.app-card.active {
+    background: rgba(14, 165, 233, 0.08);
+    border-color: rgba(14, 165, 233, 0.35);
+    box-shadow: inset 4px 0 0 0 rgba(14, 165, 233, 0.65);
+}
+
+.app-card-icon {
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    background: transparent;
+    color: var(--primary);
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.app-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.app-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.app-card-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.4;
+}
+
+.content-area {
+    flex: 1;
+    background: var(--surface);
+    padding: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel {
+    flex: 1;
+    background: var(--surface);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-body {
+    flex: 1;
+    overflow: hidden;
+}
+
+.embed-container {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #f8fafc;
+}
+
+.embed-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.sysinfo-view {
+    padding: 28px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.sysinfo-content {
+    width: 100%;
+    min-height: 100%;
+    border-radius: 18px;
+    background: #0f172a;
+    padding: 22px;
+    color: #e2e8f0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.login-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 10000;
+}
+
+.login-card,
+.password-card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--surface);
+    border-radius: 24px;
+    padding: 36px 32px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+}
+
+.login-logo {
+    display: grid;
+    place-items: center;
+    margin-bottom: 24px;
+}
+
+.login-logo img {
+    width: 50%;
+    max-width: 280px;
+    height: auto;
+    border-radius: 20px;
+    object-fit: contain;
+    background: none;
+}
+
+.login-title,
+.password-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.login-subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.field-group {
+    margin-bottom: 18px;
+}
+
+.field-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.field-input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    background: var(--surface-muted);
+    color: var(--text);
+    font-size: 14px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
+    outline: none;
+}
+
+.field-input::placeholder {
+    color: #94a3b8;
+}
+
+.button-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.button-row button,
+.button-full {
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    padding: 14px 18px;
+}
+
+.button-row .secondary-button,
+.secondary-button {
+    background: white;
+    color: var(--text);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.button-row .secondary-button:hover,
+.secondary-button:hover {
+    background: #f1f5f9;
+    transform: translateY(-1px);
+}
+
+.button-row .primary-button {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 12px 32px rgba(14, 165, 233, 0.18);
+}
+
+.button-row .primary-button:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.button-full {
+    width: 100%;
+    padding: 14px;
+}
+
+.message-box {
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    line-height: 1.5;
+}
+
+.message-error {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.message-success {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+@media (max-width: 900px) {
+    .main-layout {
+        flex-direction: column;
+        min-height: auto;
+    }
+
+    .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 18px 16px;
+    }
+
+    .content-area {
+        padding: 18px;
+    }
+}
+
+@media (max-width: 640px) {
+    .topbar {
+        flex-direction: column;
+        align-items: stretch;
+        height: auto;
+        padding: 18px;
+        gap: 12px;
+    }
+
+    .topbar-actions {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+}
