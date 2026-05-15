@@ -88,7 +88,7 @@ function arcModel() {
             if [ "${M}" = "SA6400" ]; then
               echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT})\nYou should enable the custom kernel.\n" >>"${TMP_PATH}/${M}_warn"
             else
-              COMPATIBLE=0
+              # COMPATIBLE=0
               echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}).\n" >>"${TMP_PATH}/${M}_warn"
             fi
           fi
