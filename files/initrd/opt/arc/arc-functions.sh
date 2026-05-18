@@ -2330,32 +2330,26 @@ function loaderPassword() {
 # Change Arc Loader Ports
 function loaderPorts() {
   MSG="Modify Ports (0-65535) (Leave empty for default):"
-  unset HTTPPORT DUFSPORT TTYDPORT
+  unset HTTPPORT
   [ -f "/etc/arc.conf" ] && source "/etc/arc.conf" 2>/dev/null
   local HTTP=${HTTPPORT:-7080}
-  local DUFS=${DUFSPORT:-7304}
-  local TTYD=${TTYDPORT:-7681}
   while true; do
     dialog --backtitle "$(backtitle)" --title "Loader Ports" \
-      --form "${MSG}" 11 70 3 "HTTP" 1 1 "${HTTPPORT:-7080}" 1 10 55 0 "DUFS" 2 1 "${DUFSPORT:-7304}" 2 10 55 0 "TTYD" 3 1 "${TTYDPORT:-7681}" 3 10 55 0 \
+      --form "${MSG}" 9 70 1 "HTTP" 1 1 "${HTTPPORT:-7080}" 1 10 55 0 \
       2>"${TMP_PATH}/resp"
     RET=$?
     case ${RET} in
     0)
       HTTP="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
-      DUFS="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
-      TTYD="$(sed -n '3p' "${TMP_PATH}/resp" 2>/dev/null)"
       EP=""
-      for P in "${HTTPPORT}" "${DUFSPORT}" "${TTYDPORT}"; do check_port "${P}" || EP="${EP} ${P}"; done
+      check_port "${HTTP}" || EP="${EP} ${HTTP}"
       if [ -n "${EP}" ]; then
         dialog --backtitle "$(backtitle)" --title "Loader Ports" \
           --yesno "Invalid ${EP} Port, retry?" 0 0
         [ $? -eq 0 ] && continue || break
       fi
       rm -f "/etc/arc.conf"
-      [ "${HTTPPORT:-7080}" != "7080" ] && echo "HTTP_PORT=${HTTPPORT}" >>"/etc/arc.conf"
-      [ "${DUFSPORT:-7304}" != "7304" ] && echo "DUFS_PORT=${DUFSPORT}" >>"/etc/arc.conf"
-      [ "${TTYDPORT:-7681}" != "7681" ] && echo "TTYD_PORT=${TTYDPORT}" >>"/etc/arc.conf"
+      [ "${HTTP:-7080}" != "7080" ] && echo "HTTP_PORT=${HTTP}" >>"/etc/arc.conf"
       RDXZ_PATH="${TMP_PATH}/rdxz_tmp"
       rm -rf "${RDXZ_PATH}"
       mkdir -p "${RDXZ_PATH}"
@@ -2403,17 +2397,12 @@ function loaderPorts() {
         rm -f "${ARC_RAMDISK_USER_FILE}"
       fi
       rm -rf "${RDXZ_PATH}"
-      [ ! -f "/etc/arc.conf" ] && MSG="Ports for TTYD/DUFS/HTTP restored." || MSG="Ports for TTYD/DUFS/HTTP changed."
+      [ ! -f "/etc/arc.conf" ] && MSG="HTTP Port restored." || MSG="HTTP Port changed."
       dialog --backtitle "$(backtitle)" --title "Loader Ports" \
         --msgbox "${MSG}" 0 0
-      rm -f "${TMP_PATH}/restartS.sh"
-      {
-        [ ! "${HTTP:-7080}" = "${HTTPPORT:-7080}" ] && echo "/etc/init.d/S90thttpd restart"
-        [ ! "${DUFS:-7304}" = "${DUFSPORT:-7304}" ] && echo "/etc/init.d/S99dufs restart"
-        [ ! "${TTYD:-7681}" = "${TTYDPORT:-7681}" ] && echo "/etc/init.d/S99ttyd restart"
-      } >"${TMP_PATH}/restartS.sh"
-      chmod +x "${TMP_PATH}/restartS.sh"
-      nohup "${TMP_PATH}/restartS.sh" >/dev/null 2>&1
+      if [ ! "${HTTP:-7080}" = "${HTTPPORT:-7080}" ]; then
+        /etc/init.d/S90thttpd restart
+      fi
       break
       ;;
     *)
