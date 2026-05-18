@@ -238,8 +238,10 @@ jobs:
           sudo timedatectl set-timezone "Europe/Berlin"
 
       - name: Check Issues
+        env:
+            ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          if echo "${{ github.event.issue.body }}" | grep -q "Screenshots"; then 
+          if echo "$ISSUE_BODY" | grep -q "Screenshots"; then 
             echo "FALG=true" >> $GITHUB_ENV
           else
             echo "FALG=false" >> $GITHUB_ENV
