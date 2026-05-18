@@ -173,7 +173,7 @@ button {
 
 .app-card.active {
     background: rgba(14, 165, 233, 0.08);
-    border-color: rgba(14, 165, 233, 0.35);
+    border-color: transparent;
     box-shadow: inset 4px 0 0 0 rgba(14, 165, 233, 0.65);
 }
 
