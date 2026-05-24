@@ -245,6 +245,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       if [ "${DT}" = "true" ]; then
         write_menu_value "H" "Hotplug/SortDrives" "$( [ "${HDDSORT}" = "true" ] && echo "enabled" || echo "disabled" )"
       else
+        write_menu_value "H" "SortDrives" "$( [ "${HDDSORT}" = "true" ] && echo "enabled" || echo "disabled" )"
         write_menu_value "h" "USB Disk(s) as Internal" "$( [ "${USBMOUNT}" = "true" ] && echo "enabled" || echo "disabled" )"
       fi
     fi

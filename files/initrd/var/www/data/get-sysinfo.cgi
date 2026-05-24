@@ -276,8 +276,9 @@ function getSysinfo() {
     [ -n "${AHCIPORTREMAP}" ] && TEXT+="\n  AhciRemap: ${AHCIPORTREMAP}"
   fi
   if [ "${DT}" = "true" ]; then
-    TEXT+="\n  Hotplug: ${HDDSORT}"
+    TEXT+="\n  Hotplug/SortDrives: ${HDDSORT}"
   else
+    TEXT+="\n  SortDrives: ${HDDSORT}"
     TEXT+="\n  USB Mount: ${USBMOUNT}"
   fi
   TEXT+="\n"
