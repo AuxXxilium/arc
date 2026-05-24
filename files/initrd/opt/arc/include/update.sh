@@ -6,6 +6,106 @@
 # See /LICENSE for more information.
 #
 
+function githubApiJsonRetry() {
+  local URL="${1}"
+  local MAX_RETRIES="${2:-6}"
+  local SLEEP_SECONDS="${3:-3}"
+  local RESPONSE=""
+  local IDX=0
+
+  while [ "${IDX}" -lt "${MAX_RETRIES}" ]; do
+    RESPONSE="$(curl -m 10 -fsSL "${URL}" 2>/dev/null || true)"
+    if [ -n "${RESPONSE}" ] && echo "${RESPONSE}" | jq -e . >/dev/null 2>&1; then
+      printf '%s\n' "${RESPONSE}"
+      return 0
+    fi
+    sleep "${SLEEP_SECONDS}"
+    IDX=$((IDX + 1))
+  done
+
+  return 1
+}
+
+function githubLatestTagRetry() {
+  local RELEASES_API_URL="${1}"
+  local EXCLUDE_DEV="${2:-false}"
+  local RESPONSE=""
+  local TAG=""
+
+  RESPONSE="$(githubApiJsonRetry "${RELEASES_API_URL}")" || return 1
+  TAG="$(echo "${RESPONSE}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' | sort -rV | head -1)"
+  if [ "${EXCLUDE_DEV}" = "true" ]; then
+    TAG="$(echo "${RESPONSE}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' | grep -v "dev" | sort -rV | head -1)"
+  fi
+
+  TAG="$(echo "${TAG}" | sed 's/^[v|V]//g')"
+  [ -n "${TAG}" ] || return 1
+  printf '%s\n' "${TAG}"
+}
+
+function githubAssetSizeRetry() {
+  local RELEASES_API_URL="${1}"
+  local TAG="${2}"
+  local ASSET_NAME="${3}"
+  local RESPONSE=""
+  local FILE_SIZE=""
+
+  RESPONSE="$(githubApiJsonRetry "${RELEASES_API_URL}/tags/${TAG}")" || return 1
+  FILE_SIZE="$(echo "${RESPONSE}" | jq -r --arg asset "${ASSET_NAME}" '.assets[]? | select(.name == $asset) | .size' | head -1)"
+
+  if ! [[ "${FILE_SIZE}" =~ ^[0-9]+$ ]]; then
+    return 1
+  fi
+  [ "${FILE_SIZE}" -gt 0 ] || return 1
+  printf '%s\n' "${FILE_SIZE}"
+}
+
+function downloadWithGauge() {
+  local DOWNLOAD_URL="${1}"
+  local OUTPUT_PATH="${2}"
+  local GAUGE_TITLE="${3}"
+  local TMP_OUTPUT_PATH="${OUTPUT_PATH}.part"
+
+  rm -f "${OUTPUT_PATH}" "${TMP_OUTPUT_PATH}"
+
+  {
+    {
+      curl -kL --fail --retry 3 --retry-delay 2 --retry-all-errors "${DOWNLOAD_URL}" -o "${TMP_OUTPUT_PATH}" 2>&3 3>&-
+    } 3>&1 >&4 4>&- |
+    DOWNLOAD_URL="${DOWNLOAD_URL}" perl -C -lane '
+      BEGIN {$header = "Downloading $ENV{DOWNLOAD_URL}...\n\n"; $| = 1}
+      $pcent = $F[0];
+      $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
+      s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
+      if ($. <= 3) {
+        $header .= "$_\n";
+        $/ = "\r" if $. == 2
+      } else {
+        print "XXX\n$pcent\n$header$_\nXXX"
+      }' 4>&- |
+    dialog --gauge "${GAUGE_TITLE}" 14 72 4>&-
+  } 4>&1
+
+  if [ ! -s "${TMP_OUTPUT_PATH}" ]; then
+    rm -f "${TMP_OUTPUT_PATH}" "${OUTPUT_PATH}"
+    return 1
+  fi
+
+  mv -f "${TMP_OUTPUT_PATH}" "${OUTPUT_PATH}"
+}
+
+function validateZipFile() {
+  local ZIP_PATH="${1}"
+  local MIN_SIZE_BYTES="${2:-1024}"
+  local ZIP_SIZE="0"
+
+  [ -f "${ZIP_PATH}" ] || return 1
+  ZIP_SIZE=$(stat -c%s "${ZIP_PATH}" 2>/dev/null || echo 0)
+  [ "${ZIP_SIZE}" -ge "${MIN_SIZE_BYTES}" ] || return 1
+  unzip -tqq "${ZIP_PATH}" >/dev/null 2>&1 || return 1
+  return 0
+}
+
 ###############################################################################
 # Update Loader
 function updateLoader() {
@@ -20,20 +120,7 @@ function updateLoader() {
 
   if [ "${TAG}" != "zip" ]; then
     if [ -z "${TAG}" ]; then
-      idx=0
-      while [ "${idx}" -le 5 ]; do
-        RESPONSE=$(curl -m 10 -skL "${API_URL}")
-        if echo "${RESPONSE}" | jq empty 2>/dev/null; then
-          TAG=$(echo "${RESPONSE}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 | sed 's/^[v|V]//g')
-          if [ -n "${TAG}" ]; then
-            break
-          fi
-        else
-          echo "Invalid JSON response or network error"
-        fi
-        sleep 3
-        idx=$((${idx} + 1))
-      done
+      TAG="$(githubLatestTagRetry "${API_URL}" "true" || true)"
     fi
     if [ -n "${TAG}" ]; then
       export TAG="${TAG}"
@@ -45,7 +132,8 @@ function updateLoader() {
       local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
       TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
-      local FILE_SIZE=$(curl -skL "${API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"update-${TAG}.zip\") | .size")
+      local FILE_SIZE
+      FILE_SIZE="$(githubAssetSizeRetry "${API_URL}" "${TAG}" "update-${TAG}.zip" || true)"
 
       if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Update Loader" \
@@ -61,27 +149,16 @@ function updateLoader() {
         return 1
       fi
 
-      {
-        {
-          curl -kL "${URL}" -o "${TMP_PATH}/update.zip" 2>&3 3>&-
-        } 3>&1 >&4 4>&- |
-        perl -C -lane '
-          BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
-          $pcent = $F[0];
-          $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-          s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
-          if ($. <= 3) {
-            $header .= "$_\n";
-            $/ = "\r" if $. == 2
-          } else {
-            print "XXX\n$pcent\n$header$_\nXXX"
-          }' 4>&- |
-        dialog --gauge "Download Update: ${TAG}..." 14 72 4>&-
-      } 4>&1
+      if ! downloadWithGauge "${URL}" "${TMP_PATH}/update.zip" "Download Update: ${TAG}..."; then
+        dialog --backtitle "$(backtitle)" --title "Update Loader" \
+          --infobox "Download failed! Check network and try again." 3 50
+        sleep 3
+        return 1
+      fi
     fi
   fi
 
-  if [ -f "${TMP_PATH}/update.zip" ] && [ $(ls -s "${TMP_PATH}/update.zip" | cut -d' ' -f1) -gt 250000 ]; then
+  if validateZipFile "${TMP_PATH}/update.zip" 1048576; then
     if [ "${TAG}" != "zip" ]; then
       HASH="$(curl -skL "${UPDATE_URL}/${TAG}/update-${TAG}.hash" | awk '{print $1}')"
       if [ "${BETA}" = "true" ]; then
@@ -92,9 +169,9 @@ function updateLoader() {
         dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
           --infobox "Update failed - Hash mismatch!\nTry again later." 0 0
         sleep 3
+        rm -f "${TMP_PATH}/update.zip"
+        return 1
       fi
-    else
-      rm -f "${TMP_PATH}/update.zip"
     fi
 
     LOG_FILE="${TMP_PATH}/updatelog"
@@ -178,15 +255,7 @@ function upgradeLoader() {
   local TAG="${1}"
   if [ "${TAG}" != "zip" ]; then
     if [ -z "${TAG}" ]; then
-      idx=0
-      while [ "${idx}" -le 5 ]; do
-        TAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 | sed 's/^[v|V]//g')"
-        if [ -n "${TAG}" ]; then
-          break
-        fi
-        sleep 3
-        idx=$((${idx} + 1))
-      done
+      TAG="$(githubLatestTagRetry "${API_URL}" "true" || true)"
     fi
     if [ -n "${TAG}" ]; then
       export TAG="${TAG}"
@@ -195,7 +264,8 @@ function upgradeLoader() {
       local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
       TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
-      local FILE_SIZE=$(curl -skL "${API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"arc-${TAG}.img.zip\") | .size")
+      local FILE_SIZE
+      FILE_SIZE="$(githubAssetSizeRetry "${API_URL}" "${TAG}" "arc-${TAG}.img.zip" || true)"
       
       if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
@@ -211,26 +281,15 @@ function upgradeLoader() {
         return 1
       fi
 
-      {
-        {
-          curl -kL "${URL}" -o "${TMP_PATH}/arc.img.zip" 2>&3 3>&-
-        } 3>&1 >&4 4>&- |
-        perl -C -lane '
-          BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
-          $pcent = $F[0];
-          $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-          s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
-          if ($. <= 3) {
-            $header .= "$_\n";
-            $/ = "\r" if $. == 2
-          } else {
-            print "XXX\n$pcent\n$header$_\nXXX"
-          }' 4>&- |
-        dialog --gauge "Download Loader: ${TAG}..." 14 72 4>&-
-      } 4>&1
+      if ! downloadWithGauge "${URL}" "${TMP_PATH}/arc.img.zip" "Download Loader: ${TAG}..."; then
+        dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
+          --infobox "Download failed! Check network and try again." 3 50
+        sleep 3
+        return 1
+      fi
     fi
   fi
-  if [ -f "${TMP_PATH}/arc.img.zip" ] && [ $(ls -s "${TMP_PATH}/arc.img.zip" | cut -d' ' -f1) -gt 250000 ]; then
+  if validateZipFile "${TMP_PATH}/arc.img.zip" 1048576; then
     local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
     local FILE_SIZE=$(stat -c%s "${TMP_PATH}/arc.img.zip")
@@ -288,15 +347,8 @@ function upgradeLoader() {
 # Update Addons
 function updateAddons() {
   [ -f "${ADDONS_PATH}/VERSION" ] && local ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")" || ADDONSVERSION="0.0.0"
-  idx=0
-  while [ "${idx}" -le 5 ]; do # Loop 5 times, if successful, break
-    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
-    if [ -n "${TAG}" ]; then
-      break
-    fi
-    sleep 3
-    idx=$((${idx} + 1))
-  done
+  local TAG=""
+  TAG="$(githubLatestTagRetry "${ADDONS_API_URL}" || true)"
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons-${TAG}.zip"
@@ -304,7 +356,8 @@ function updateAddons() {
     local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
-      local FILE_SIZE=$(curl -skL "${ADDONS_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"addons-${TAG}.zip\") | .size")
+      local FILE_SIZE
+      FILE_SIZE="$(githubAssetSizeRetry "${ADDONS_API_URL}" "${TAG}" "addons-${TAG}.zip" || true)"
       
       if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Update Addons" \
@@ -320,24 +373,10 @@ function updateAddons() {
       return 1
     fi
 
-    {
-      {
-        curl -kL "${URL}" -o "${TMP_PATH}/addons.zip" 2>&3 3>&-
-      } 3>&1 >&4 4>&- |
-      perl -C -lane '
-      BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
-      $pcent = $F[0];
-      $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-      s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
-      if ($. <= 3) {
-        $header .= "$_\n";
-        $/ = "\r" if $. == 2
-      } else {
-        print "XXX\n$pcent\n$header$_\nXXX"
-      }' 4>&- |
-      dialog --gauge "Download Addons: ${TAG}..." 14 72 4>&-
-    } 4>&1
-    if [ -f "${TMP_PATH}/addons.zip" ]; then
+    if ! downloadWithGauge "${URL}" "${TMP_PATH}/addons.zip" "Download Addons: ${TAG}..."; then
+      return 1
+    fi
+    if validateZipFile "${TMP_PATH}/addons.zip" 1024; then
       rm -rf "${ADDONS_PATH}"
       mkdir -p "${ADDONS_PATH}"
       dialog --backtitle "$(backtitle)" --title "Update Addons" \
@@ -362,37 +401,16 @@ function updateAddons() {
 # Update Patches
 function updatePatches() {
   [ -f "${PATCH_PATH}/VERSION" ] && local PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")" || PATCHESVERSION="0.0.0"
-  idx=0
-  while [ "${idx}" -le 5 ]; do
-    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
-    if [ -n "${TAG}" ]; then
-      break
-    fi
-    sleep 3
-    idx=$((${idx} + 1))
-  done
+  local TAG=""
+  TAG="$(githubLatestTagRetry "https://api.github.com/repos/AuxXxilium/arc-patches/releases" || true)"
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches-${TAG}.zip"
 
-    {
-      {
-        curl -kL "${URL}" -o "${TMP_PATH}/patches.zip" 2>&3 3>&-
-      } 3>&1 >&4 4>&- |
-      perl -C -lane '
-        BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
-        $pcent = $F[0];
-        $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-        s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
-        if ($. <= 3) {
-          $header .= "$_\n";
-          $/ = "\r" if $. == 2
-        } else {
-          print "XXX\n$pcent\n$header$_\nXXX"
-        }' 4>&- |
-      dialog --gauge "Download Patches: ${TAG}..." 14 72 4>&-
-    } 4>&1
-    if [ -f "${TMP_PATH}/patches.zip" ]; then
+    if ! downloadWithGauge "${URL}" "${TMP_PATH}/patches.zip" "Download Patches: ${TAG}..."; then
+      return 1
+    fi
+    if validateZipFile "${TMP_PATH}/patches.zip" 1024; then
       rm -rf "${PATCH_PATH}"
       mkdir -p "${PATCH_PATH}"
       dialog --backtitle "$(backtitle)" --title "Update Patches" \
@@ -416,15 +434,8 @@ function updatePatches() {
 # Update Custom
 function updateCustom() {
   [ -f "${CUSTOM_PATH}/VERSION" ] && local CUSTOMVERSION="$(cat "${CUSTOM_PATH}/VERSION")" || CUSTOMVERSION="0.0.0"
-  idx=0
-  while [ "${idx}" -le 5 ]; do
-    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-custom/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
-    if [ -n "${TAG}" ]; then
-      break
-    fi
-    sleep 3
-    idx=$((${idx} + 1))
-  done
+  local TAG=""
+  TAG="$(githubLatestTagRetry "${CUSTOM_API_URL}" || true)"
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/custom-${TAG}.zip"
@@ -432,7 +443,8 @@ function updateCustom() {
     local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
-    local FILE_SIZE=$(curl -skL "${CUSTOM_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"custom-${TAG}.zip\") | .size")
+    local FILE_SIZE
+    FILE_SIZE="$(githubAssetSizeRetry "${CUSTOM_API_URL}" "${TAG}" "custom-${TAG}.zip" || true)"
     
     if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
       dialog --backtitle "$(backtitle)" --title "Update Custom" \
@@ -448,24 +460,10 @@ function updateCustom() {
       return 1
     fi
 
-    {
-      {
-        curl -kL "${URL}" -o "${TMP_PATH}/custom.zip" 2>&3 3>&-
-      } 3>&1 >&4 4>&- |
-      perl -C -lane '
-        BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
-        $pcent = $F[0];
-        $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-        s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
-        if ($. <= 3) {
-          $header .= "$_\n";
-          $/ = "\r" if $. == 2
-        } else {
-          print "XXX\n$pcent\n$header$_\nXXX"
-        }' 4>&- |
-      dialog --gauge "Download Custom: ${TAG}..." 14 72 4>&-
-    } 4>&1
-    if [ -f "${TMP_PATH}/custom.zip" ]; then
+    if ! downloadWithGauge "${URL}" "${TMP_PATH}/custom.zip" "Download Custom: ${TAG}..."; then
+      return 1
+    fi
+    if validateZipFile "${TMP_PATH}/custom.zip" 1024; then
       rm -rf "${CUSTOM_PATH}"
       mkdir -p "${CUSTOM_PATH}"
       dialog --backtitle "$(backtitle)" --title "Update Custom Kernel" \
@@ -504,15 +502,8 @@ function updateModules() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
   KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
-  idx=0
-  while [ "${idx}" -le 5 ]; do
-    local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
-    if [ -n "${TAG}" ]; then
-      break
-    fi
-    sleep 3
-    idx=$((${idx} + 1))
-  done
+  local TAG=""
+  TAG="$(githubLatestTagRetry "${MODULES_API_URL}" || true)"
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules-${TAG}.zip"
@@ -520,7 +511,8 @@ function updateModules() {
     local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
-    local FILE_SIZE=$(curl -skL "${MODULES_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"modules-${TAG}.zip\") | .size")
+    local FILE_SIZE
+    FILE_SIZE="$(githubAssetSizeRetry "${MODULES_API_URL}" "${TAG}" "modules-${TAG}.zip" || true)"
 
     if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
       dialog --backtitle "$(backtitle)" --title "Update Modules" \
@@ -538,24 +530,10 @@ function updateModules() {
 
     rm -rf "${MODULES_PATH}"
     mkdir -p "${MODULES_PATH}"
-    {
-      {
-        curl -kL "${URL}" -o "${TMP_PATH}/modules.zip" 2>&3 3>&-
-      } 3>&1 >&4 4>&- |
-      perl -C -lane '
-        BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
-        $pcent = $F[0];
-        $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-        s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
-        if ($. <= 3) {
-          $header .= "$_\n";
-          $/ = "\r" if $. == 2
-        } else {
-          print "XXX\n$pcent\n$header$_\nXXX"
-        }' 4>&- |
-      dialog --gauge "Download Modules: ${TAG}..." 14 72 4>&-
-    } 4>&1
-    if [ -f "${TMP_PATH}/modules.zip" ]; then
+    if ! downloadWithGauge "${URL}" "${TMP_PATH}/modules.zip" "Download Modules: ${TAG}..."; then
+      return 1
+    fi
+    if validateZipFile "${TMP_PATH}/modules.zip" 1024; then
       dialog --backtitle "$(backtitle)" --title "Update Modules" \
         --infobox "Updating Modules..." 3 50
       if unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}"; then
@@ -589,41 +567,20 @@ function updateModules() {
 # Update Configs
 function updateConfigs() {
   [ -f "${CONFIGS_PATH}/VERSION" ] && local CONFIGSVERSION="$(cat "${CONFIGS_PATH}/VERSION")" || CONFIGSVERSION="0.0.0"
+  local TAG=""
   if [ -z "${1}" ]; then
-    idx=0
-    while [ "${idx}" -le 5 ]; do
-      local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
-      if [ -n "${TAG}" ]; then
-        break
-      fi
-      sleep 3
-      idx=$((${idx} + 1))
-    done
+    TAG="$(githubLatestTagRetry "https://api.github.com/repos/AuxXxilium/arc-configs/releases" || true)"
   else
-    local TAG="${1}"
+    TAG="${1}"
   fi
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-configs/releases/download/${TAG}/configs-${TAG}.zip"
 
-    {
-      {
-        curl -kL "${URL}" -o "${TMP_PATH}/configs.zip" 2>&3 3>&-
-      } 3>&1 >&4 4>&- |
-      perl -C -lane '
-        BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
-        $pcent = $F[0];
-        $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-        s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
-        if ($. <= 3) {
-          $header .= "$_\n";
-          $/ = "\r" if $. == 2
-        } else {
-          print "XXX\n$pcent\n$header$_\nXXX"
-        }' 4>&- |
-      dialog --gauge "Download Configs: ${TAG}..." 14 72 4>&-
-    } 4>&1
-    if [ -f "${TMP_PATH}/configs.zip" ]; then
+    if ! downloadWithGauge "${URL}" "${TMP_PATH}/configs.zip" "Download Configs: ${TAG}..."; then
+      return 1
+    fi
+    if validateZipFile "${TMP_PATH}/configs.zip" 1024; then
       mkdir -p "${CONFIGS_PATH}"
       dialog --backtitle "$(backtitle)" --title "Update Configs" \
         --infobox "Updating Configs..." 3 50
@@ -646,41 +603,20 @@ function updateConfigs() {
 # Update LKMs
 function updateLKMs() {
   [ -f "${LKMS_PATH}/VERSION" ] && local LKMVERSION="$(cat "${LKMS_PATH}/VERSION")" || LKMVERSION="0.0.0"
+  local TAG=""
   if [ -z "${1}" ]; then
-    idx=0
-    while [ "${idx}" -le 5 ]; do
-      local TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
-      if [ -n "${TAG}" ]; then
-        break
-      fi
-      sleep 3
-      idx=$((${idx} + 1))
-    done
+    TAG="$(githubLatestTagRetry "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" || true)"
   else
-    local TAG="${1}"
+    TAG="${1}"
   fi
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-lkm/releases/download/${TAG}/rp-lkms.zip"
 
-    {
-      {
-        curl -kL "${URL}" -o "${TMP_PATH}/rp-lkms.zip" 2>&3 3>&-
-      } 3>&1 >&4 4>&- |
-      perl -C -lane '
-        BEGIN {$header = "Downloading $ENV{URL}...\n\n"; $| = 1}
-        $pcent = $F[0];
-        $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-        s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
-        if ($. <= 3) {
-          $header .= "$_\n";
-          $/ = "\r" if $. == 2
-        } else {
-          print "XXX\n$pcent\n$header$_\nXXX"
-        }' 4>&- |
-      dialog --gauge "Download LKMs: ${TAG}..." 14 72 4>&-
-    } 4>&1
-    if [ -f "${TMP_PATH}/rp-lkms.zip" ]; then
+    if ! downloadWithGauge "${URL}" "${TMP_PATH}/rp-lkms.zip" "Download LKMs: ${TAG}..."; then
+      return 1
+    fi
+    if validateZipFile "${TMP_PATH}/rp-lkms.zip" 1024; then
       rm -rf "${LKMS_PATH}"
       mkdir -p "${LKMS_PATH}"
       dialog --backtitle "$(backtitle)" --title "Update LKMs" \

@@ -1464,6 +1464,22 @@ function updateMenu() {
           UPDATEFOUND="false"
           for UPDATEFILE in ${TMP_PATH}/update/update-*.zip; do
             if [ -f "${UPDATEFILE}" ]; then
+              STABLE=0
+              PREV_SIZE=0
+              for _ in 1 2 3 4 5; do
+                CUR_SIZE=$(stat -c%s "${UPDATEFILE}" 2>/dev/null || echo 0)
+                if [ "${CUR_SIZE}" -gt 0 ] && [ "${CUR_SIZE}" -eq "${PREV_SIZE}" ]; then
+                  STABLE=1
+                  break
+                fi
+                PREV_SIZE="${CUR_SIZE}"
+                sleep 1
+              done
+              if [ "${STABLE}" -ne 1 ]; then
+                dialog --backtitle "$(backtitle)" --title "Update Loader" \
+                  --msgbox "Upload seems incomplete. Please wait for upload to finish and try again." 0 0
+                return 1
+              fi
               mv -f "${UPDATEFILE}" "${TMP_PATH}/update.zip"
               TAG="zip"
               UPDATEFOUND="true"
@@ -1475,7 +1491,7 @@ function updateMenu() {
               --msgbox "File not found!" 0 0
             return 1
           fi
-          updateLoader "${TAG}"
+          updateLoader "false" "${TAG}"
         fi
         ;;
       2)
