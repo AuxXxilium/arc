@@ -14,7 +14,7 @@ function githubApiJsonRetry() {
   local IDX=0
 
   while [ "${IDX}" -lt "${MAX_RETRIES}" ]; do
-    RESPONSE="$(curl -m 10 -fsSL "${URL}" 2>/dev/null || true)"
+    RESPONSE="$(curl -m 10 -skL "${URL}" 2>/dev/null || true)"
     if [ -n "${RESPONSE}" ] && echo "${RESPONSE}" | jq -e . >/dev/null 2>&1; then
       printf '%s\n' "${RESPONSE}"
       return 0
@@ -70,7 +70,7 @@ function downloadWithGauge() {
 
   {
     {
-      curl -kL --fail --retry 3 --retry-delay 2 --retry-all-errors "${DOWNLOAD_URL}" -o "${TMP_OUTPUT_PATH}" 2>&3 3>&-
+      curl -kL --retry 3 --retry-delay 2 --retry-all-errors "${DOWNLOAD_URL}" -o "${TMP_OUTPUT_PATH}" 2>&3 3>&-
     } 3>&1 >&4 4>&- |
     DOWNLOAD_URL="${DOWNLOAD_URL}" perl -C -lane '
       BEGIN {$header = "Downloading $ENV{DOWNLOAD_URL}...\n\n"; $| = 1}
@@ -255,7 +255,15 @@ function upgradeLoader() {
   local TAG="${1}"
   if [ "${TAG}" != "zip" ]; then
     if [ -z "${TAG}" ]; then
-      TAG="$(githubLatestTagRetry "${API_URL}" "true" || true)"
+      idx=0
+      while [ "${idx}" -le 5 ]; do
+        TAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+        if [ -n "${TAG}" ]; then
+          break
+        fi
+        sleep 3
+        idx=$((${idx} + 1))
+      done
     fi
     if [ -n "${TAG}" ]; then
       export TAG="${TAG}"
@@ -265,8 +273,8 @@ function upgradeLoader() {
       TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
       local FILE_SIZE
-      FILE_SIZE="$(githubAssetSizeRetry "${API_URL}" "${TAG}" "arc-${TAG}.img.zip" || true)"
-      
+      FILE_SIZE=$(curl -skL "${API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"arc-${TAG}.img.zip\") | .size")
+
       if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
           --infobox "Failed to retrieve file size. Aborting update." 3 50
@@ -348,7 +356,15 @@ function upgradeLoader() {
 function updateAddons() {
   [ -f "${ADDONS_PATH}/VERSION" ] && local ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")" || ADDONSVERSION="0.0.0"
   local TAG=""
-  TAG="$(githubLatestTagRetry "${ADDONS_API_URL}" || true)"
+  idx=0
+  while [ "${idx}" -le 5 ]; do
+    TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+    if [ -n "${TAG}" ]; then
+      break
+    fi
+    sleep 3
+    idx=$((${idx} + 1))
+  done
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons-${TAG}.zip"
@@ -356,15 +372,15 @@ function updateAddons() {
     local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
-      local FILE_SIZE
-      FILE_SIZE="$(githubAssetSizeRetry "${ADDONS_API_URL}" "${TAG}" "addons-${TAG}.zip" || true)"
-      
-      if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
-        dialog --backtitle "$(backtitle)" --title "Update Addons" \
-          --infobox "Failed to retrieve file size. Aborting update." 3 50
-        sleep 3
-        return 1
-      fi
+    local FILE_SIZE
+    FILE_SIZE=$(curl -skL "${ADDONS_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"addons-${TAG}.zip\") | .size")
+
+    if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
+      dialog --backtitle "$(backtitle)" --title "Update Addons" \
+        --infobox "Failed to retrieve file size. Aborting update." 3 50
+      sleep 3
+      return 1
+    fi
 
     if [ "${TMP_AVAILABLE}" -lt "${FILE_SIZE}" ]; then
       dialog --backtitle "$(backtitle)" --title "Update Addons" \
@@ -402,7 +418,15 @@ function updateAddons() {
 function updatePatches() {
   [ -f "${PATCH_PATH}/VERSION" ] && local PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")" || PATCHESVERSION="0.0.0"
   local TAG=""
-  TAG="$(githubLatestTagRetry "https://api.github.com/repos/AuxXxilium/arc-patches/releases" || true)"
+    idx=0
+    while [ "${idx}" -le 5 ]; do
+      TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+      if [ -n "${TAG}" ]; then
+        break
+      fi
+      sleep 3
+      idx=$((${idx} + 1))
+    done
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-patches/releases/download/${TAG}/patches-${TAG}.zip"
@@ -435,7 +459,15 @@ function updatePatches() {
 function updateCustom() {
   [ -f "${CUSTOM_PATH}/VERSION" ] && local CUSTOMVERSION="$(cat "${CUSTOM_PATH}/VERSION")" || CUSTOMVERSION="0.0.0"
   local TAG=""
-  TAG="$(githubLatestTagRetry "${CUSTOM_API_URL}" || true)"
+  idx=0
+  while [ "${idx}" -le 5 ]; do
+    TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-custom/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+    if [ -n "${TAG}" ]; then
+      break
+    fi
+    sleep 3
+    idx=$((${idx} + 1))
+  done
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/custom-${TAG}.zip"
@@ -444,8 +476,8 @@ function updateCustom() {
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
     local FILE_SIZE
-    FILE_SIZE="$(githubAssetSizeRetry "${CUSTOM_API_URL}" "${TAG}" "custom-${TAG}.zip" || true)"
-    
+    FILE_SIZE=$(curl -skL "${CUSTOM_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"custom-${TAG}.zip\") | .size")
+
     if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
       dialog --backtitle "$(backtitle)" --title "Update Custom" \
         --infobox "Failed to retrieve file size. Aborting update." 3 50
@@ -503,7 +535,15 @@ function updateModules() {
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
   KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
   local TAG=""
-  TAG="$(githubLatestTagRetry "${MODULES_API_URL}" || true)"
+  idx=0
+  while [ "${idx}" -le 5 ]; do
+    TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+    if [ -n "${TAG}" ]; then
+      break
+    fi
+    sleep 3
+    idx=$((${idx} + 1))
+  done
   if [ -n "${TAG}" ]; then
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules-${TAG}.zip"
@@ -512,7 +552,7 @@ function updateModules() {
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
     local FILE_SIZE
-    FILE_SIZE="$(githubAssetSizeRetry "${MODULES_API_URL}" "${TAG}" "modules-${TAG}.zip" || true)"
+    FILE_SIZE=$(curl -skL "${MODULES_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"modules-${TAG}.zip\") | .size")
 
     if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
       dialog --backtitle "$(backtitle)" --title "Update Modules" \
@@ -569,7 +609,15 @@ function updateConfigs() {
   [ -f "${CONFIGS_PATH}/VERSION" ] && local CONFIGSVERSION="$(cat "${CONFIGS_PATH}/VERSION")" || CONFIGSVERSION="0.0.0"
   local TAG=""
   if [ -z "${1}" ]; then
-    TAG="$(githubLatestTagRetry "https://api.github.com/repos/AuxXxilium/arc-configs/releases" || true)"
+    idx=0
+    while [ "${idx}" -le 5 ]; do
+      TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+      if [ -n "${TAG}" ]; then
+        break
+      fi
+      sleep 3
+      idx=$((${idx} + 1))
+    done
   else
     TAG="${1}"
   fi
@@ -605,7 +653,15 @@ function updateLKMs() {
   [ -f "${LKMS_PATH}/VERSION" ] && local LKMVERSION="$(cat "${LKMS_PATH}/VERSION")" || LKMVERSION="0.0.0"
   local TAG=""
   if [ -z "${1}" ]; then
-    TAG="$(githubLatestTagRetry "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" || true)"
+    idx=0
+    while [ "${idx}" -le 5 ]; do
+      TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+      if [ -n "${TAG}" ]; then
+        break
+      fi
+      sleep 3
+      idx=$((${idx} + 1))
+    done
   else
     TAG="${1}"
   fi
