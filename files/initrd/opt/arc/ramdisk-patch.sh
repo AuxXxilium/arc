@@ -161,9 +161,12 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: install addons"
 NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
 if [ "${NETFIX}" = "true" ]; then
-  SYSADDONS="redpill revert misc eudev disks netfix localrss notify mountloader"
+  SYSADDONS="revert misc eudev disks netfix localrss notify mountloader"
 else
-  SYSADDONS="redpill revert misc eudev disks localrss notify mountloader"
+  SYSADDONS="revert misc eudev disks localrss notify mountloader"
+fi
+if [ "${KVER:0:1}" = "5" ]; then
+  SYSADDONS="redpill ${SYSADDONS}"
 fi
 
 for ADDON in ${SYSADDONS}; do

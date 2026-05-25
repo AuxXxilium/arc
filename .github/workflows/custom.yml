@@ -90,15 +90,20 @@ jobs:
       # Build incremental
       - name: Build image
         run: |
+          set -euo pipefail
+          . scripts/github_release.sh
+
           . scripts/functions.sh
 
           function writeConfigKey() {
             [ "${2}" = "{}" ] && sudo yq eval '.'${1}' = {}' --inplace "${3}" 2>/dev/null || sudo yq eval '.'${1}' = "'"${2}"'"' --inplace "${3}" 2>/dev/null
           }
 
-          TAG="$(curl -m 5 -kL https://api.github.com/repos/AuxXxilium/arc/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')"
-          curl -kL "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" -o "/tmp/arc.img.zip"
-          unzip -o "/tmp/arc.img.zip" -d "/tmp"
+          TAG="$(github_api_json_retry "https://api.github.com/repos/AuxXxilium/arc/releases/latest" | jq -r '.tag_name // empty' | sed 's/^v//')"
+          [ -n "${TAG}" ] || exit 1
+          download_validated_zip "https://github.com/AuxXxilium/arc/releases/download/${TAG}/arc-${TAG}.img.zip" "/tmp/arc.img.zip" 1048576
+          unzip -oq "/tmp/arc.img.zip" -d "/tmp"
+          [ -f "/tmp/arc.img" ] || exit 1
 
           echo "Modify Arc Image"
           IMAGE_FILE="/tmp/arc.img"
@@ -140,8 +145,8 @@ jobs:
           sudo mv -f "/tmp/automated" "/tmp/p3/automated"
           DSM_FILE="${PAT_HASH}.tar"
           DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER:0:3}/${PAT_HASH}.tar"
-          sudo curl -skL "${DSM_URL}" -o "/tmp/${DSM_FILE}"
-          [ -f "/tmp/${DSM_FILE}" ] && echo "dsm: download successful" || exit 1
+          sudo curl -fsSL --connect-timeout 10 --retry 5 --retry-delay 2 --retry-all-errors "${DSM_URL}" -o "/tmp/${DSM_FILE}"
+          [ -s "/tmp/${DSM_FILE}" ] && echo "dsm: download successful" || exit 1
           sudo mkdir -p "/tmp/p3/users"
           sudo mv -f "/tmp/${DSM_FILE}" "/tmp/p3/users/${DSM_FILE}"
           echo "Syncing files"
