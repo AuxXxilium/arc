@@ -161,14 +161,16 @@ button {
     padding: 16px 18px;
     border-radius: 18px;
     background: var(--surface);
-    border: 1px solid transparent;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     cursor: pointer;
 }
 
 .app-card:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     background: #f8fbff;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
 }
 
 .app-card.active {
