@@ -1500,30 +1500,35 @@ function updateMenu() {
           TAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 | sed 's/^[v|V]//g')"
           BETATAG="$(curl -m 10 -skL "${BETA_API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 | sed 's/^[v|V]//g')"
           dialog --clear --backtitle "$(backtitle)" --title "Upgrade Loader" --colors \
-            --menu "\Z1Loader will be reset to defaults after upgrade!\nIf you use Hardware encryption, your key will be deleted!\Zn\nCurrent: ${ARC_VERSION}" 10 65 0 \
+            --menu "\Z1Loader will be reset to defaults after upgrade!\nIf you use Hardware encryption, your key will be deleted!\Zn\nCurrent: ${ARC_VERSION}" 11 65 0 \
             1 "Latest ${TAG}" \
-            2 "Select Version" \
-            3 "Upload .zip File" \
+            2 "Beta ${BETATAG}" \
+            3 "Select Version" \
+            4 "Upload .zip File" \
             2>"${TMP_PATH}/opts"
         else
           dialog --clear --backtitle "$(backtitle)" --title "Upgrade Loader" --colors \
             --menu "\Z1Loader will be reset to default after upgrade!\nIf you use Hardware encryption, your key will be deleted!\Zn\nCurrent: ${ARC_VERSION}" 10 65 0 \
-            3 "Upload .zip File" \
+            4 "Upload .zip File" \
             2>"${TMP_PATH}/opts"
         fi
         [ $? -ne 0 ] && break
         opts="$(cat "${TMP_PATH}/opts")"
         if [ "${opts}" -eq 1 ]; then
           [ -z "${TAG}" ] && return 1
-          upgradeLoader "${TAG}"
+          upgradeLoader "false" "${TAG}"
         elif [ "${opts}" -eq 2 ]; then
+          [ -z "${BETATAG}" ] && return 1
+          BETA="true"
+          upgradeLoader "${BETA}" "${BETATAG}"
+        elif [ "${opts}" -eq 3 ]; then
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
           --inputbox "Which Version?" 0 0 \
           2>"${TMP_PATH}/input"
           TAG=$(cat "${TMP_PATH}/input")
           [ -z "${TAG}" ] && return 1
-          upgradeLoader "${TAG}"
-        elif [ "${opts}" -eq 3 ]; then
+          upgradeLoader "false" "${TAG}"
+        elif [ "${opts}" -eq 4 ]; then
           mkdir -p "/${TMP_PATH}/update"
           dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
             --msgbox "Upload the arc-*.zip File to ${TMP_PATH}/update\nand press OK after upload is done." 0 0
@@ -1542,7 +1547,7 @@ function updateMenu() {
               --msgbox "File not found!" 0 0
             return 1
           fi
-          upgradeLoader "${TAG}"
+          upgradeLoader "false" "${TAG}"
         fi
         ;;
       3)

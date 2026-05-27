@@ -252,7 +252,13 @@ function updateLoader() {
 ###############################################################################
 # Upgrade Loader
 function upgradeLoader() {
-  local TAG="${1}"
+  local BETA="${1:-false}"
+  local TAG="${2}"
+
+  if [ "${BETA}" = "true" ]; then
+    API_URL="${BETA_API_URL}"
+  fi
+
   if [ "${TAG}" != "zip" ]; then
     if [ -z "${TAG}" ]; then
       idx=0
@@ -268,6 +274,9 @@ function upgradeLoader() {
     if [ -n "${TAG}" ]; then
       export TAG="${TAG}"
       export URL="${UPDATE_URL}/${TAG}/arc-${TAG}.img.zip"
+      if [ "${BETA}" = "true" ]; then
+        URL="${BETA_URL}/${TAG}/arc-${TAG}.img.zip"
+      fi
 
       local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
       TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
