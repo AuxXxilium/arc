@@ -156,13 +156,17 @@ CMDLINE['sn']="${SN}"
 
 # NIC Cmdline
 ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
-ETHN=0
+ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}")
+ETHN=$(wc -w <<< "${ETHX}")
+ETHM=${ETHM:-${ETHN}}
+NIC=0
 for N in ${ETHX}; do
   MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
   [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
-  CMDLINE["mac$((++ETHN))"]="${MAC}"
+  CMDLINE["mac$((++NIC))"]="${MAC}"
+  [ "${NIC}" -ge "${ETHM}" ] && break
 done
-CMDLINE['netif_num']="${ETHN}"
+CMDLINE['netif_num']="${NIC}"
 
 if [ "${NETFIX}" = "true" ]; then
   for N in ${ETHX}; do
@@ -219,7 +223,7 @@ fi
 
 CMDLINE["HddHotplug"]="1"
 CMDLINE["vender_format_version"]="2"
-CMDLINE['skip_vender_mac_interfaces']="$(seq -s, 0 $((ETHN - 1)))"
+CMDLINE['skip_vender_mac_interfaces']="$(seq -s, 0 $((NIC - 1)))"
 CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
 CMDLINE['console']="ttyS0,115200n8"
