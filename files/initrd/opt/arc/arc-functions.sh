@@ -2566,11 +2566,11 @@ function bootipwaittime() {
 function formatDisks() {
   rm -f "${TMP_PATH}/opts" "${TMP_PATH}/format-disk-list"
   while read -r KNAME SIZE TYPE DMODEL PKNAME; do
-    [ "${KNAME}" = "N/A" ] || [ "${SIZE:0:1}" -eq 0 ] && continue
+    [[ "${KNAME}" = "null" || "${SIZE:0:1}" -eq 0 ]] && continue
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
-    printf "%s\t%s\t%-6s %-4s %s\n" "${KNAME}" "${TYPE}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/format-disk-list"
-  done <<<"$(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)"
+    printf "%s\t%s\t%-6s %-4s %s\n" "${KNAME}" "${TYPE}" "${SIZE}" "${TYPE}" "${DMODEL/null/}" >>"${TMP_PATH}/format-disk-list"
+  done <<<"$(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)"
   if [ ! -f "${TMP_PATH}/format-disk-list" ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --msgbox "No disk found!" 0 0
@@ -2581,15 +2581,15 @@ function formatDisks() {
   while true; do
     rm -f "${TMP_PATH}/opts"
     while IFS=$'\t' read -r KNAME TYPE DESC; do
-      arrayExistItem "${KNAME}" ${SELECTED_DISKS} && ACT="on" || ACT="off"
+      [[ " ${SELECTED_DISKS} " == *" ${KNAME} "* ]] && ACT="on" || ACT="off"
       printf '"%s" "%s" "%s"\n' "${KNAME}" "${DESC}" "${ACT}" >>"${TMP_PATH}/opts"
     done <"${TMP_PATH}/format-disk-list"
+    [ -n "${SELECTED_DISKS}" ] && TOGGLE_LABEL="Deselect all" || TOGGLE_LABEL="Select all"
 
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --cancel-label "Exit" \
-      --extra-button --extra-label "Select all" \
-      --help-button --help-label "Deselect all" \
-      --checklist "Select Disks" 0 0 0 --file "${TMP_PATH}/opts" \
+      --extra-button --extra-label "${TOGGLE_LABEL}" \
+      --checklist "Select Disks" 0 60 0 --file "${TMP_PATH}/opts" \
       2>"${TMP_PATH}/resp"
     RET=$?
     case ${RET} in
@@ -2598,10 +2598,11 @@ function formatDisks() {
         break
         ;;
       3)
-        SELECTED_DISKS="$(awk -F '\t' '$2 == "disk" {print $1}' "${TMP_PATH}/format-disk-list" | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
-        ;;
-      2)
-        SELECTED_DISKS=""
+        if [ -n "${SELECTED_DISKS}" ]; then
+          SELECTED_DISKS=""
+        else
+          SELECTED_DISKS="$(awk -F '\t' '$2 == "disk" {print $1}' "${TMP_PATH}/format-disk-list" | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
+        fi
         ;;
       *)
         return 1
