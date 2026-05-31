@@ -242,6 +242,7 @@ function getSysinfo() {
   TEXT+="\n  Subversion: Addons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}"
   TEXT+="\n  Config | Build: ${CONFDONE} | ${BUILDDONE}"
   TEXT+="\n  Config Version: ${CONFIGVER}"
+  TEXT+="\n  Access Token registered: $( [ -n "${USERID}" ] && echo "true" || echo "false" )"
   TEXT+="\n  Offline Mode: ${ARCOFFLINE}"
   if [ "${CONFDONE}" = "true" ]; then
     TEXT+="\n> DSM ${PRODUCTVER} (${BUILDNUM}): ${MODEL}"
