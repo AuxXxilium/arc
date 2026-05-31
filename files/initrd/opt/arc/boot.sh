@@ -281,10 +281,24 @@ while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
 done <<<"$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
 
-# Prepare command line
-CMDLINE_LINE=""
+# Prepare command line - start from grub's cmdline, then overlay Arc's keys (deduplicating)
+declare -A CMDLINE_MERGED
+# Parse /proc/cmdline (grub-provided) into associative array
+while IFS= read -r -d ' ' ENTRY; do
+  [ -z "${ENTRY}" ] && continue
+  KEY="${ENTRY%%=*}"
+  VALUE="${ENTRY#*=}"
+  [ "${KEY}" = "${ENTRY}" ] && VALUE=""   # no '=' means flag-only
+  CMDLINE_MERGED["${KEY}"]="${VALUE}"
+done < <(cat /proc/cmdline | tr '\n' ' '; echo ' ')
+# Overlay/overwrite with Arc's computed CMDLINE (Arc keys take precedence, deduplicates)
 for KEY in "${!CMDLINE[@]}"; do
-  VALUE="${CMDLINE[${KEY}]}"
+  CMDLINE_MERGED["${KEY}"]="${CMDLINE[${KEY}]}"
+done
+# Build final command line string
+CMDLINE_LINE=""
+for KEY in "${!CMDLINE_MERGED[@]}"; do
+  VALUE="${CMDLINE_MERGED[${KEY}]}"
   CMDLINE_LINE+=" ${KEY}"
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
@@ -328,7 +342,7 @@ else
   echo
 
   # Executes DSM kernel via KEXEC
-  kexec -a -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" >"${LOG_FILE}" 2>&1 || die "Failed to load DSM Kernel!"
+  kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE} kexecboot" >"${LOG_FILE}" 2>&1 || die "Failed to load DSM Kernel!"
 
   for T in $(busybox w 2>/dev/null | grep -v 'TTY' | awk '{print $2}'); do
     if [ -w "/dev/${T}" ]; then
