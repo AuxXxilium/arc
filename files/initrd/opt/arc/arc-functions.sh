@@ -524,8 +524,8 @@ function makearc() {
   if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
     if [ "${ARC_OFFLINE}" = "false" ] && [ "${ARC_BACKUP}" = "true" ] && [ -n "${USERID}" ]; then
-      HWID="$(genHWID)"
-      curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${HWID}&userid=${USERID}" 2>/dev/null
+      ACCESS_TOKEN="$(genAccessToken)"
+      curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${ACCESS_TOKEN}&userid=${USERID}" 2>/dev/null
       if [ $? -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Online Backup" --infobox "Config Online Backup successful!" 3 45
         sleep 2
@@ -1354,8 +1354,8 @@ function backupMenu() {
         ;;
       4)
         [ -f "${USER_CONFIG_FILE}" ] && mv -f "${USER_CONFIG_FILE}" "${USER_CONFIG_FILE}.bak"
-        HWID="$(genHWID)"
-        if curl -skL --http1.1 "https://arc.auxxxilium.tech?cdown=${HWID}" -o "${USER_CONFIG_FILE}" 2>/dev/null; then
+        ACCESS_TOKEN="$(genAccessToken)"
+        if curl -skL --http1.1 "https://arc.auxxxilium.tech?cdown=${ACCESS_TOKEN}" -o "${USER_CONFIG_FILE}" 2>/dev/null; then
           dialog --backtitle "$(backtitle)" --title "Online Restore" --msgbox "Online Restore successful!" 5 40
         else
           dialog --backtitle "$(backtitle)" --title "Online Restore" --msgbox "Online Restore failed!" 5 40
@@ -1382,8 +1382,8 @@ function backupMenu() {
         rm -f "${HOME}/.initialized" && exec init.sh
         ;;
       5)
-        HWID="$(genHWID)"
-        curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${HWID}&userid=${USERID}" 2>/dev/null
+        ACCESS_TOKEN="$(genAccessToken)"
+        curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${ACCESS_TOKEN}&userid=${USERID}" 2>/dev/null
         if [ $? -eq 0 ]; then
           dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Config Online Backup successful!" 5 45
         else
@@ -1605,7 +1605,7 @@ function sysinfo() {
   fi
   ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
   ETHN="$(echo ${ETHX} | wc -w)"
-  HWID="$(genHWID)"
+  ACCESS_TOKEN="$(genAccessToken)"
   ARC_BACKUP="$(readConfigKey "arc.backup" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -1711,7 +1711,7 @@ function sysinfo() {
   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
   TEXT+="\n  Config Version: \Zb${CONFIGVER}\Zn"
-  TEXT+="\n  HWID registered: \Zb$( [ -n "${USERID}" ] && echo "true" || echo "false" )\Zn"
+  TEXT+="\n  Access Token registered: \Zb$( [ -n "${USERID}" ] && echo "true" || echo "false" )\Zn"
   TEXT+="\n  Offline Mode: \Zb${ARC_OFFLINE}\Zn"
   TEXT+="\n"
   if [ "${CONFDONE}" = "true" ]; then
@@ -1893,10 +1893,10 @@ function getCMDline () {
 
 function uploadDiag () {
   if [ -f "${TMP_PATH}/sysinfo.yml" ]; then
-    HWID="$(genHWID)"
-    curl -sk -m 20 -X POST -F "file=@${TMP_PATH}/sysinfo.yml" "https://arc.auxxxilium.tech?sysinfo=${HWID}&userid=${USERID}" 2>/dev/null
+    ACCESS_TOKEN="$(genAccessToken)"
+    curl -sk -m 20 -X POST -F "file=@${TMP_PATH}/sysinfo.yml" "https://arc.auxxxilium.tech?sysinfo=${ACCESS_TOKEN}&userid=${USERID}" 2>/dev/null
     if [ $? -eq 0 ]; then
-      dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Your Code: ${HWID}" 5 40
+      dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Your Code: ${ACCESS_TOKEN}" 5 40
     else
       dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Failed to upload diag file!" 0 0
     fi
@@ -1946,8 +1946,8 @@ function networkdiag() {
         fi
       done
       echo
-      HWID="$(genHWID)"
-      USERIDAPI="$(curl --interface "${N}" -skL -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
+      ACCESS_TOKEN="$(genAccessToken)"
+      USERIDAPI="$(curl --interface "${N}" -skL -m 10 "https://arc.auxxxilium.tech?hwid=${ACCESS_TOKEN}" 2>/dev/null)"
       if [[ $? -ne 0 || -z "${USERIDAPI}" ]]; then
         echo -e "Arc UserID API not reachable!"
       else
@@ -3183,25 +3183,25 @@ function getpatfiles() {
 }
 
 ###############################################################################
-# Generate HardwareID
-function genHardwareID() {
-  HWID="$(genHWID)"
+# Register Access Token
+function registerAccessToken() {
+  ACCESS_TOKEN="$(genAccessToken)"
   while true; do
-    USERID="$(curl -skL --http1.1 -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
+    USERID="$(curl -skL --http1.1 -m 10 "https://arc.auxxxilium.tech?hwid=${ACCESS_TOKEN}" 2>/dev/null)"
     if echo "${USERID}" | grep -qE '^[0-9]+$'; then
-      writeConfigKey "arc.hardwareid" "${HWID}" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.accesstoken" "${ACCESS_TOKEN}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
-      writeConfigKey "bootscreen.hwidinfo" "true" "${USER_CONFIG_FILE}"
-      dialog --backtitle "$(backtitle)" --title "HardwareID" \
-        --msgbox "HardwareID: ${HWID}\nYour HardwareID is registered to UserID: ${USERID}!\nYou can use the Online Options now." 7 70
+      writeConfigKey "bootscreen.accesstokeninfo" "true" "${USER_CONFIG_FILE}"
+      dialog --backtitle "$(backtitle)" --title "Access Token" \
+        --msgbox "Access Token: ${ACCESS_TOKEN}\nYour Access Token is registered to UserID: ${USERID}!\nYou can use the Online Options now." 7 70
       break
     else
       USERID=""
-      writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "arc.accesstoken" "" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
-      writeConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
-      dialog --backtitle "$(backtitle)" --title "HardwareID" \
-        --yes-label "Retry" --no-label "Cancel" --yesno "HardwareID: ${HWID}\nRegister your HardwareID at\nhttps://arc.auxxxilium.tech (Discord Account needed).\nPress Retry after you registered it." 8 60
+      writeConfigKey "bootscreen.accesstokeninfo" "false" "${USER_CONFIG_FILE}"
+      dialog --backtitle "$(backtitle)" --title "Access Token" \
+        --yes-label "Retry" --no-label "Cancel" --yesno "Access Token: ${ACCESS_TOKEN}\nRegister your Access Token at\nhttps://arc.auxxxilium.tech (Discord Account needed).\nPress Retry after you registered it." 8 60
       [ $? -ne 0 ] && break
       continue
     fi
@@ -3212,19 +3212,19 @@ function genHardwareID() {
 }
 
 ###############################################################################
-# Check HardwareID
-function checkHardwareID() {
-  HWID="$(genHWID)"
-  USERID="$(curl -skL --http1.1 -m 10 "https://arc.auxxxilium.tech?hwid=${HWID}" 2>/dev/null)"
+# Check Access Token
+function checkAccessToken() {
+  ACCESS_TOKEN="$(genAccessToken)"
+  USERID="$(curl -skL --http1.1 -m 10 "https://arc.auxxxilium.tech?hwid=${ACCESS_TOKEN}" 2>/dev/null)"
   if echo "${USERID}" | grep -qE '^[0-9]+$'; then
-    writeConfigKey "arc.hardwareid" "${HWID}" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.accesstoken" "${ACCESS_TOKEN}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
-    writeConfigKey "bootscreen.hwidinfo" "true" "${USER_CONFIG_FILE}"
+    writeConfigKey "bootscreen.accesstokeninfo" "true" "${USER_CONFIG_FILE}"
   else
     USERID=""
-    writeConfigKey "arc.hardwareid" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "arc.accesstoken" "" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "bootscreen.hwidinfo" "false" "${USER_CONFIG_FILE}"
+    writeConfigKey "bootscreen.accesstokeninfo" "false" "${USER_CONFIG_FILE}"
   fi
   return
 }
@@ -3242,7 +3242,7 @@ function bootScreen () {
 dsminfo: DSM Information
 systeminfo: System Information
 diskinfo: Disk Information
-hwidinfo: HardwareID Information
+accesstokeninfo: Access Token Information
 EOL
   while IFS=': ' read -r BOOTSCREEN BOOTDESCRIPTION; do
     if [ "${BOOTSCREENS[${BOOTSCREEN}]}" = "true" ]; then
@@ -3257,7 +3257,7 @@ EOL
     --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
-  for BOOTSCREEN in dsminfo systeminfo diskinfo hwidinfo; do
+  for BOOTSCREEN in dsminfo systeminfo diskinfo accesstokeninfo; do
     if echo "${resp}" | grep -q "${BOOTSCREEN}"; then
       writeConfigKey "bootscreen.${BOOTSCREEN}" "true" "${USER_CONFIG_FILE}"
     else
@@ -3649,7 +3649,7 @@ function notificationMenu() {
       DISCORDUSER="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
       if [ -z "${DISCORDUSER}" ]; then
         dialog --backtitle "$(backtitle)" --title "Discord Notification" \
-          --msgbox "Please register HardwareID first!\n" 6 60
+          --msgbox "Please register Access Token first!\n" 6 60
         break
       fi
       dialog --backtitle "$(backtitle)" --title "Discord Notification Settings" \
@@ -3747,7 +3747,7 @@ function remoteAssistanceBootMenu() {
 ###############################################################################
 # Online Menu
 function onlineMenu() {
-  checkHardwareID
+  checkAccessToken
   while true; do
     ARC_UID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
     ARC_BACKUP="$(readConfigKey "arc.backup" "${USER_CONFIG_FILE}")"
@@ -3764,14 +3764,14 @@ function onlineMenu() {
     fi
 
     rm -f "${TMP_PATH}/menu"
-    write_menu_value 1 "HardwareID" "$( [ -n "${ARC_UID}" ] && echo "registered" || echo "register" )"
+    write_menu_value 1 "Access Token" "$( [ -n "${ARC_UID}" ] && echo "registered" || echo "register" )"
     write_menu_value 2 "Config Online Backup" "$( [ "${ARC_BACKUP}" = "true" ] && echo "enabled" || echo "disabled" )"
     write_menu_value 3 "Notify Webhook / Discord" "$( [ "${WEBHOOKNOTIFY}" = "true" ] && echo "enabled" || echo "disabled" ) / $( [ "${DISCORDNOTIFY}" = "true" ] && echo "enabled" || echo "disabled" )"
     write_menu 4 "${REMOTE_SESSION_OPTION}"
     write_menu_value 5 "Start Remote Assistance at Boot" "$( [ "${REMOTEASSISTANCE}" = "true" ] && echo "enabled" || echo "disabled" )"
 
     dialog --backtitle "$(backtitle)" --title "Online Settings" --colors \
-      --menu "Online Settings require HardwareID registration" 20 55 2 \
+      --menu "Online Settings require Access Token registration" 20 55 2 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
     resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -3779,9 +3779,9 @@ function onlineMenu() {
     case ${resp} in
       1)
         if [ -n "${ARC_UID}" ]; then
-          dialog --msgbox "HardwareID is already registered." 5 40
+          dialog --msgbox "Access Token is already registered." 5 40
         else
-          genHardwareID
+          registerAccessToken
         fi
         ;;
       2)

@@ -85,7 +85,7 @@ fi
 DSMINFO="$(readConfigKey "bootscreen.dsminfo" "${USER_CONFIG_FILE}")"
 SYSTEMINFO="$(readConfigKey "bootscreen.systeminfo" "${USER_CONFIG_FILE}")"
 DISKINFO="$(readConfigKey "bootscreen.diskinfo" "${USER_CONFIG_FILE}")"
-HWIDINFO="$(readConfigKey "bootscreen.hwidinfo" "${USER_CONFIG_FILE}")"
+ACCESSTOKENINFO="$(readConfigKey "bootscreen.accesstokeninfo" "${USER_CONFIG_FILE}")"
 if [ -f "${PART1_PATH}/GRUB_VER" ]; then
   SYS_MODEL="$(_get_conf_kv "${PART1_PATH}/GRUB_VER" "MODEL")"
 fi
@@ -113,9 +113,9 @@ if [ "${DISKINFO}" = "true" ]; then
   echo -e "Disks: \033[1;37m$(lsblk -dpno NAME | grep -v "${LOADER_DISK}" | wc -l)\033[0m"
   echo
 fi
-if [ "${HWIDINFO}" = "true" ]; then
-  echo -e "\033[1;34mHardwareID\033[0m"
-  echo -e "HWID: \033[1;37m$(genHWID)\033[0m"
+if [ "${ACCESSTOKENINFO}" = "true" ]; then
+  echo -e "\033[1;34mAccess Token\033[0m"
+  echo -e "Access Token: \033[1;37m$(genAccessToken)\033[0m"
   echo
 fi
 

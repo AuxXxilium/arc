@@ -495,8 +495,8 @@ function systemCheck () {
 }
 
 ###############################################################################
-# Generate HardwareID
-function genHWID () {
+# Generate Access Token
+function genAccessToken () {
   CPU_ID="$(dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g' | head -1)"
   NIC_MACS=$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort | while read NIC; do
     MAC=$(cat "/sys/class/net/${NIC}/address" 2>/dev/null | sed 's/://g')
@@ -576,7 +576,7 @@ function readData() {
 
   # Get Arc Data from Config
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  HARDWAREID="$(genHWID)"
+  ACCESS_TOKEN="$(genAccessToken)"
   USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   SATACONTROLLER="$(readConfigKey "device.satacontroller" "${USER_CONFIG_FILE}")"

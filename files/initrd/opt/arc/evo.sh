@@ -284,12 +284,12 @@ elif [ "${ARC_MODE}" = "config" ]; then
         resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
         [ -z "${resp}" ] && return
         case ${resp} in
-          0) genHardwareID; NEXT="0" ;;
+          0) registerAccessToken; NEXT="0" ;;
           1) arcModel; NEXT="2" ;;
           b) addonMenu; NEXT="b" ;;
           d) modulesMenu; NEXT="d" ;;
           e) ONLYVERSION="true" && writeConfigKey "productver" "" "${USER_CONFIG_FILE}" && arcVersion; NEXT="e" ;;
-          p) ONLYPATCH="true" && checkHardwareID && arcPatch; NEXT="p" ;;
+          p) ONLYPATCH="true" && checkAccessToken && arcPatch; NEXT="p" ;;
           S) storageMenu; NEXT="S" ;;
           g) governorMenu; NEXT="g" ;;
           P) storagepanelMenu; NEXT="P" ;;
