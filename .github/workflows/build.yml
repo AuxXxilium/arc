@@ -74,7 +74,6 @@ jobs:
           getLKMs "files/p3/lkms"
           getTheme "files/p1/boot/grub"
           getBuildroot "apex"
-          getBuildroot "evo"
 
           # Export Dependencies Version to env
           echo "ADDONTAG=${ADDONTAG}" >> $GITHUB_ENV
@@ -85,7 +84,6 @@ jobs:
           echo "LKMTAG=${LKMTAG}" >> $GITHUB_ENV
           echo "THEMETAG=${THEMETAG}" >> $GITHUB_ENV
           echo "APEX=${apex}" >> $GITHUB_ENV
-          echo "EVO=${evo}" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
           echo "OK"          
@@ -139,7 +137,7 @@ jobs:
           sudo mount ${LOOPX}p1 "/tmp/p1"
           sudo mount ${LOOPX}p3 "/tmp/p3"
 
-          for TYPE in "apex" "evo"; do
+          for TYPE in "apex"; do
             if [ -f "br/bzImage-${TYPE}" ] && [ -f "br/initrd-${TYPE}" ]; then
                 cp -f "br/bzImage-${TYPE}" "files/p3/bzImage-${TYPE}"
                 repackInitrd "br/initrd-${TYPE}" "files/initrd" "files/p3/initrd-${TYPE}"
@@ -209,8 +207,7 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              - Apex: ${{env.APEX}} (Reduced hardware support to match DSM compatible hardware)
-              - Evo: ${{env.EVO}} (Full hardware support including not DSM compatible hardware)
+              - Apex: ${{env.APEX}}
               - Build: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
@@ -239,8 +236,7 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              - Apex: ${{env.APEX}} (Reduced hardware support to match DSM compatible hardware)
-              - Evo: ${{env.EVO}} (Full hardware support including not DSM compatible hardware)
+              - Apex: ${{env.APEX}}
               - Build: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip
@@ -269,8 +265,7 @@ jobs:
               - Patches: ${{ env.PATCHTAG }}
               - Custom: ${{ env.CUSTOMTAG }}
               - LKMs: ${{ env.LKMTAG }}
-              - Apex: ${{env.APEX}} (Reduced hardware support to match DSM compatible hardware)
-              - Evo: ${{env.EVO}} (Full hardware support including not DSM compatible hardware)
+              - Apex: ${{env.APEX}}
               - Build: ${{ env.BUILD_TIME }}
           artifacts: |
             arc-*.zip

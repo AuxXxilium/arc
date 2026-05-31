@@ -177,7 +177,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
     if [ "${LOADEROPTS}" = "true" ]; then
       write_menu "8" "\Z1Hide Loader Options\Zn"
       write_menu_value "c" "Offline Mode" "$( [ "${ARC_OFFLINE}" = "true" ] && echo "enabled" || echo "disabled" )"
-      write_menu_value "v" "Basesystem" "${ARC_BASE}"
       write_menu "D" "StaticIP for Loader/DSM"
       write_menu "U" "Change Loader Password"
       write_menu "Z" "Change Loader Ports"
@@ -368,14 +367,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
             writeConfigKey "arc.offline" "${ARC_OFFLINE}" "${USER_CONFIG_FILE}"
             [ "${ARC_OFFLINE}" = "false" ] && exec arc.sh
             NEXT="c"
-            ;;
-          v)
-            ARC_BASE=$([ "${ARC_BASE}" = "apex" ] && echo 'evo' || echo 'apex')
-            dialog --backtitle "$(backtitle)" --title "Basesystem" \
-              --infobox "Rebooting to ${ARC_BASE} Basesystem! Stay patient..." 3 50
-            grub-editenv "${USER_GRUBENVFILE}" set system_version="${ARC_BASE}"
-            rebootTo config
-            NEXT="v"
             ;;
           D) staticIPMenu; NEXT="D" ;;
           U) loaderPassword; NEXT="U" ;;

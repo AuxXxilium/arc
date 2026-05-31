@@ -20,7 +20,6 @@ sudo umount "/tmp/p3" 2>/dev/null || true
 # Get extractor, LKM, addons and Modules
 echo "Get Dependencies"
 getBuildroot "apex"
-getBuildroot "evo"
 getAddons "files/p3/addons"
 getModules "files/p3/modules"
 getConfigs "files/p3/configs"
@@ -52,7 +51,7 @@ echo "${ARC_VERSION}" >"files/p1/ARC-VERSION"
 echo "${ARC_BUILD}" >"files/p1/ARC-BUILD"
 
 echo "Repack initrd"
-for TYPE in "apex" "evo"; do
+for TYPE in "apex"; do
   if [ -f "br/bzImage-${TYPE}" ] && [ -f "br/initrd-${TYPE}" ]; then
       cp -f "br/bzImage-${TYPE}" "files/p3/bzImage-${TYPE}"
       repackInitrd "br/initrd-${TYPE}" "files/initrd" "files/p3/initrd-${TYPE}"
