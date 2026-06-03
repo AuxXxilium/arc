@@ -120,7 +120,7 @@ if [ "${ACCESSTOKENINFO}" = "true" ]; then
 fi
 
 if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
-  [ -z "$(ls /dev/nvme* | grep -vE "${LOADER_DISK}[0-9]?$" 2>/dev/null)" ] && printf "\033[1;33m*** %s ***\033[0m\n" "Notice: Please insert at least one m.2 disk for system installation."
+  [ -z "$(ls /dev/nvme* 2>/dev/null | grep -vE "${LOADER_DISK}[0-9]?$")" ] && printf "\033[1;33m*** %s ***\033[0m\n" "Notice: Please insert at least one m.2 disk for system installation."
 else
   if [ -z "$(ls /dev/sd* /dev/sg* 2>/dev/null | grep -vE "${LOADER_DISK}[0-9]?$")" ]; then
     printf "\033[1;33m*** %s ***\033[0m\n" "Notice: Please insert at least one SATA, SAS, or SCSI disk for system installation."
