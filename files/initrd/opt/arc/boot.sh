@@ -207,23 +207,23 @@ if [ "${KVER:0:1}" -lt 5 ]; then
     CMDLINE['synoboot_satadom']="${SATADOM:-2}"
     CMDLINE['dom_szmax']="${SIZE}"
   fi
-  CMDLINE["elevator"]="elevator"
+  CMDLINE['elevator']="elevator"
 else
-  CMDLINE["split_lock_detect"]="off"
+  CMDLINE['split_lock_detect']="off"
 fi
 
 if [ "${DT}" = "true" ]; then
-  CMDLINE["syno_ttyS0"]="serial,0x3f8"
-  CMDLINE["syno_ttyS1"]="serial,0x2f8"
+  CMDLINE['syno_ttyS0']="serial,0x3f8"
+  CMDLINE['syno_ttyS1']="serial,0x2f8"
 else
-  CMDLINE["SMBusHddDynamicPower"]="1"
-  CMDLINE["syno_hdd_detect"]="0"
-  CMDLINE["syno_hdd_powerup_seq"]="0"
+  CMDLINE['SMBusHddDynamicPower']="1"
+  CMDLINE['syno_hdd_detect']="0"
+  CMDLINE['syno_hdd_powerup_seq']="0"
 fi
 
-CMDLINE["HddHotplug"]="1"
-CMDLINE["vender_format_version"]="2"
-CMDLINE['skip_vender_mac_interfaces']="$(seq -s, 0 $((NIC - 1)))"
+CMDLINE['HddHotplug']="1"
+CMDLINE['vender_format_version']="2"
+CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
 CMDLINE['console']="ttyS0,115200n8"
