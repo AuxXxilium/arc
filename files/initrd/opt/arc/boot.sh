@@ -283,10 +283,11 @@ done <<<"$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
 
 # Prepare command line - start from grub's cmdline, then overlay Arc's keys (deduplicating)
 declare -A CMDLINE_MERGED
-# Parse /proc/cmdline (grub-provided) into associative array
+# Parse /proc/cmdline (grub-provided) into associative array, stripping nomodeset
 while IFS= read -r -d ' ' ENTRY; do
   [ -z "${ENTRY}" ] && continue
   KEY="${ENTRY%%=*}"
+  [ "${KEY}" = "nomodeset" ] && continue
   VALUE="${ENTRY#*=}"
   [ "${KEY}" = "${ENTRY}" ] && VALUE=""   # no '=' means flag-only
   CMDLINE_MERGED["${KEY}"]="${VALUE}"
