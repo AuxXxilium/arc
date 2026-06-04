@@ -238,7 +238,7 @@ function getSysinfo() {
     done
   done
   # Print Config Informations
-  TEXT+="\n\n> Arc: ${ARC_VERSION} (${ARC_BUILD} @ ${ARC_BASE})"
+  TEXT+="\n\n> Arc: ${ARC_VERSION} (${ARC_BUILD})"
   TEXT+="\n  Subversion: Addons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}"
   TEXT+="\n  Config | Build: ${CONFDONE} | ${BUILDDONE}"
   TEXT+="\n  Config Version: ${CONFIGVER}"

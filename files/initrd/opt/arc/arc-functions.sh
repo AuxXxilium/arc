@@ -1706,7 +1706,7 @@ function sysinfo() {
     done
   done
   # Print Config Informations
-  TEXT+="\n\n\Z4> Arc: ${ARC_VERSION} (${ARC_BUILD} @ ${ARC_BASE})\Zn"
+  TEXT+="\n\n\Z4> Arc: ${ARC_VERSION} (${ARC_BUILD})\Zn"
   TEXT+="\n"
   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"

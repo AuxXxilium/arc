@@ -27,10 +27,6 @@ fi
 checkBootLoader || die "The loader is corrupted, please rewrite it!"
 arc_mode || die "No bootmode found!"
 
-# Basesystem
-ARC_BASE="$(grub-editenv ${PART1_PATH}/boot/grub/grubenv list | grep system_version | cut -d '=' -f2)"
-echo "${ARC_BASE}" > ${PART1_PATH}/ARC-BASE
-
 [ -f "${HOME}/.initialized" ] && arc.sh && exit 0 || true
 
 BUS=$(getBus "${LOADER_DISK}")
