@@ -1661,11 +1661,16 @@ function sysinfo() {
   TEXT+="\n  Board: \Zb${BOARD}\Zn"
   TEXT+="\n  CPU: \Zb${CPU} (Cores: ${CPUCNT} | Threads: ${CPUCHT})\Zn"
   if [ "$(lspci -d ::300 | wc -l)" -gt 0 ]; then
-    GPUNAME=""
+    FIRST_GPU=true
     for PCI in $(lspci -d ::300 | awk '{print $1}'); do
-      GPUNAME+="$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')"
+      GPUNAME="$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')"
+      if [ "${FIRST_GPU}" = "true" ]; then
+        TEXT+="\n  GPU: \Zb${GPUNAME}\Zn"
+        FIRST_GPU=false
+      else
+        TEXT+="\n       \Zb${GPUNAME}\Zn"
+      fi
     done
-    TEXT+="\n  GPU: \Zb${GPUNAME}\Zn"
   fi
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL}))GB\Zn"
   TEXT+="\n  AES | MOVBE: \Zb${AESSYS} | ${MOVBE}\Zn"

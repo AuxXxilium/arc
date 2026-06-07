@@ -194,11 +194,16 @@ function getSysinfo() {
   TEXT+="\n  Board: ${BOARD}"
   TEXT+="\n  CPU: ${CPU} (Cores: ${CPUCNT} | Threads: ${CPUCHT})"
   if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
-    GPUNAME=""
+    FIRST_GPU=true
     for PCI in $(lspci -d ::300 | awk '{print $1}'); do
-      GPUNAME+="$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')"
+      GPUNAME="$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')"
+      if [ "${FIRST_GPU}" = "true" ]; then
+        TEXT+="\n  GPU: ${GPUNAME}"
+        FIRST_GPU=false
+      else
+        TEXT+="\n       ${GPUNAME}"
+      fi
     done
-    TEXT+="\n  GPU: ${GPUNAME}"
   fi
   TEXT+="\n  Memory: $((${RAMTOTAL}))GB"
   TEXT+="\n  AES | MOVBE: ${AESSYS} | ${MOVBE}"
