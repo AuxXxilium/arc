@@ -35,9 +35,10 @@ button {
 }
 
 .app-shell {
-    min-height: 100%;
+    height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .topbar {
@@ -128,6 +129,7 @@ button {
     margin-top: 64px;
     flex: 1;
     overflow: hidden;
+    height: calc(100vh - 64px);
 }
 
 .sidebar {
