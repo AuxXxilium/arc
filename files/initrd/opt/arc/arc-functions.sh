@@ -32,7 +32,7 @@ function arcModel() {
       while read -r M A; do
         COMPATIBLE=1
         DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
-        KVERM="$(readConfigKey "platforms.${A}.productvers.\"7.2\".kver" "${P_FILE}" | awk -F'.' '{print $1".x"}')"
+        KVERM="$(for V in "7.2" "7.3" "7.4"; do K="$(readConfigKey "platforms.${A}.productvers.\"${V}\".kver" "${P_FILE}")"; [ -n "${K}" ] && echo "${K}" && break; done | awk -F'.' '{print $1".x"}')"
         PLTCNT="$(readConfigKey "platforms.${A}.ccnt" "${P_FILE}")"
         FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
         BETA=""
