@@ -38,7 +38,7 @@ COLUMNS=$(ttysize 2>/dev/null | awk '{print $1}')
 COLUMNS=${COLUMNS:-120}
 BANNER="$(figlet -c -w "${COLUMNS}" "Arc Loader")"
 TITLE="Version:"
-TITLE+=" ${ARC_VERSION} (${ARC_BUILD} @ ${ARC_BASE})"
+TITLE+=" ${ARC_VERSION} (${ARC_BUILD})"
 echo -e "\033[1;30m$(printf '%*s' ${COLUMNS} '')\033[0m"
 echo -e "\033[1;30m$(printf '%*s' ${COLUMNS} '')\033[A\033[0m"
 echo -e "\033[1;34m${BANNER}\033[0m"
