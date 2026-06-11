@@ -281,9 +281,8 @@ while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
 done <<<"$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
 
-# Prepare command line - start from grub's cmdline, then overlay Arc's keys (deduplicating)
+# Prepare command line - start from grub's cmdline, then overlay Arc's key
 declare -A CMDLINE_MERGED
-# Parse /proc/cmdline (grub-provided) into associative array, stripping nomodeset
 while IFS= read -r -d ' ' ENTRY; do
   [ -z "${ENTRY}" ] && continue
   KEY="${ENTRY%%=*}"
@@ -292,7 +291,6 @@ while IFS= read -r -d ' ' ENTRY; do
   [ "${KEY}" = "${ENTRY}" ] && VALUE=""   # no '=' means flag-only
   CMDLINE_MERGED["${KEY}"]="${VALUE}"
 done < <(cat /proc/cmdline | tr '\n' ' '; echo ' ')
-# Overlay/overwrite with Arc's computed CMDLINE (Arc keys take precedence, deduplicates)
 for KEY in "${!CMDLINE[@]}"; do
   CMDLINE_MERGED["${KEY}"]="${CMDLINE[${KEY}]}"
 done
