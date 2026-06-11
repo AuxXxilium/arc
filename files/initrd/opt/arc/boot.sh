@@ -252,9 +252,9 @@ if [ "${USBMOUNT}" = "true" ]; then
   CMDLINE['usbinternal']=""
 fi
 
-# if echo "apollolake geminilake purley geminilakenk" | grep -wq "${PLATFORM}"; then
-#   CMDLINE["nox2apic"]=""
-# fi
+if echo "apollolake geminilake purley geminilakenk" | grep -wq "${PLATFORM}"; then
+  CMDLINE["nox2apic"]=""
+fi
 
 if [ "${DT}" = "true" ] && ! echo "purley broadwellnkv2 epyc7002 geminilakenk r1000nk v1000nk" | grep -wq "${PLATFORM}"; then
   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
@@ -355,7 +355,7 @@ else
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
 
   # Unload all network drivers
-  # for F in $(realpath /sys/class/net/*/device/driver); do [ ! -e "${F}" ] && continue; rmmod -f "$(basename ${F})" 2>/dev/null || true; done
+  for F in $(realpath /sys/class/net/*/device/driver); do [ ! -e "${F}" ] && continue; rmmod -f "$(basename ${F})" 2>/dev/null || true; done
 
   # Unload all graphics drivers
   for D in $(lsmod | grep -E '^(nouveau|amdgpu|radeon|i915)' | awk '{print $1}'); do
