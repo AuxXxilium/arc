@@ -208,8 +208,8 @@ if [ "${KVER:0:1}" -lt 5 ]; then
     CMDLINE['dom_szmax']="${SIZE}"
   fi
   CMDLINE['elevator']="elevator"
-# else
-#   CMDLINE['split_lock_detect']="off"
+else
+  CMDLINE['split_lock_detect']="off"
 fi
 
 if [ "${DT}" = "true" ]; then
@@ -224,7 +224,7 @@ fi
 CMDLINE['HddHotplug']="1"
 CMDLINE['vender_format_version']="2"
 CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
-# CMDLINE['earlyprintk']=""
+CMDLINE['earlyprintk']=""
 CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
 CMDLINE['console']="ttyS0,115200n8"
 CMDLINE['consoleblank']="${CONSOLEBLANK:-600}"
@@ -233,8 +233,8 @@ CMDLINE['loglevel']="15"
 CMDLINE['log_buf_len']="32M"
 CMDLINE['rootwait']=""
 CMDLINE['panic']="${KERNELPANIC:-0}"
-# CMDLINE['pcie_aspm']="off"
-# CMDLINE['nowatchdog']=""
+CMDLINE['pcie_aspm']="off"
+CMDLINE['nowatchdog']=""
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 CMDLINE['mev']="${MEV:-physical}"
 CMDLINE['governor']="${GOVERNOR:-performance}"
