@@ -2841,7 +2841,7 @@ function greplogs() {
     if [ -f "/var/www/data/logs.tar.gz" ]; then
       chmod 644 "/var/www/data/logs.tar.gz"
       URL="http://${IPCON}:${HTTPPORT:-7080}/logs.tar.gz"
-      MSG+="Please via ${URL} to download the logs,\nAnd go to Github or Discord to create an issue and upload the logs."
+      MSG+="Please via ${URL} to download the logs,\nand go to Community Discord to create an issue and upload the logs and your Sysinfo."
     else
       MSG+="Can't find logs!\n"
     fi
