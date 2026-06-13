@@ -27,7 +27,6 @@ getPatches "files/p3/patches"
 getCustom "files/p3/custom"
 getLKMs "files/p3/lkms"
 getTheme "files/p1/boot/grub"
-getOffline "files/p3/configs"
 
 # Sbase
 IMAGE_FILE="arc.img"

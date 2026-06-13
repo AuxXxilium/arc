@@ -276,22 +276,6 @@ function getBuildroot() {
   [ -f "${DEST_PATH}/bzImage-${TYPE}" ] && [ -f "${DEST_PATH}/initrd-${TYPE}" ] || return 1
 }
 
-# Get latest Offline
-# $1 path
-function getOffline() {
-  echo "Getting Offline begin"
-  local DEST_PATH="${1}"
-
-  [ ! -d "${DEST_PATH}" ] && mkdir -p "${DEST_PATH}"
-  rm -f "${DEST_PATH}/data.yml"
-  if curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/refs/heads/main/data.yml" -o "${DEST_PATH}/data.yml"; then
-    echo "Getting Offline end"
-  else
-    echo "Failed to get Offline"
-    exit 1
-  fi
-}
-
 # repack initrd
 # $1 initrd file
 # $2 plugin path
