@@ -701,31 +701,29 @@ function updateLKMs() {
   return 0
 }
 
-###############################################################################
-# Update Offline
-function updateOffline() {
-  [ -f "${CONFIGS_PATH}/data.yml" ] && cp -f "${CONFIGS_PATH}/data.yml" "${CONFIGS_PATH}/data.yml.bak" || true
-  if curl -skL "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/refs/heads/main/data.yml" -o "${CONFIGS_PATH}/data.yml"; then
-    if [ -f "${CONFIGS_PATH}/data.yml" ]; then
-      local FILESIZE=$(stat -c%s "${CONFIGS_PATH}/data.yml")
-      if [ "${FILESIZE}" -lt 3072 ]; then
-        [ -f "${CONFIGS_PATH}/data.yml.bak" ] && cp -f "${CONFIGS_PATH}/data.yml.bak" "${CONFIGS_PATH}/data.yml"
-      fi
-    fi
-  else
-    [ -f "${CONFIGS_PATH}/data.yml.bak" ] && cp -f "${CONFIGS_PATH}/data.yml.bak" "${CONFIGS_PATH}/data.yml"
-  fi
-  return 0
-}
-
-DEPENDENCY_DESCRIPTIONS=(
-  "Update Addons"
-  "Update Modules"
-  "Update Custom Kernel"
-  "Update Configs"
-  "Update Patches"
-  "Update LKMs"
-  "Update ModelDB"
+DEPENDENCY_NAMES=(
+  "Addons"
+  "Modules"
+  "Custom Kernel"
+  "Configs"
+  "Patches"
+  "LKMs"
+)
+DEPENDENCY_VERSION_FILES=(
+  "${ADDONS_PATH}/VERSION"
+  "${MODULES_PATH}/VERSION"
+  "${CUSTOM_PATH}/VERSION"
+  "${CONFIGS_PATH}/VERSION"
+  "${PATCH_PATH}/VERSION"
+  "${LKMS_PATH}/VERSION"
+)
+DEPENDENCY_REPOS=(
+  "AuxXxilium/arc-addons"
+  "AuxXxilium/arc-modules"
+  "AuxXxilium/arc-custom"
+  "AuxXxilium/arc-configs"
+  "AuxXxilium/arc-patches"
+  "AuxXxilium/arc-lkm"
 )
 DEPENDENCY_FUNCTIONS=(
   "updateAddons"
@@ -734,17 +732,25 @@ DEPENDENCY_FUNCTIONS=(
   "updateConfigs"
   "updatePatches"
   "updateLKMs"
-  "updateOffline"
 )
 
 function dependenciesUpdate() {
+  dialog --backtitle "$(backtitle)" --title "Select Dependencies to Update" \
+    --infobox "Fetching latest versions..." 3 35
   CHECKLIST_OPTS=()
-  for i in "${!DEPENDENCY_DESCRIPTIONS[@]}"; do
-    CHECKLIST_OPTS+=("$i" "${DEPENDENCY_DESCRIPTIONS[$i]}" "off")
+  for i in "${!DEPENDENCY_NAMES[@]}"; do
+    local VERFILE="${DEPENDENCY_VERSION_FILES[$i]}"
+    local LOCAL="n/a"
+    [ -n "${VERFILE}" ] && [ -f "${VERFILE}" ] && LOCAL="$(cat "${VERFILE}")"
+    local REPO="${DEPENDENCY_REPOS[$i]}"
+    local REMOTE="n/a"
+    [ -n "${REPO}" ] && REMOTE="$(curl -m 10 -skL "https://api.github.com/repos/${REPO}/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+    [ -z "${REMOTE}" ] && REMOTE="n/a"
+    CHECKLIST_OPTS+=("$i" "${DEPENDENCY_NAMES[$i]} (${LOCAL} -> ${REMOTE})" "off")
   done
 
   CHOICES=$(dialog --backtitle "$(backtitle)" --title "Select Dependencies to Update" \
-    --checklist "Use SPACE to select and ENTER to confirm:" 15 50 6 \
+    --checklist "Use SPACE to select and ENTER to confirm:" 15 70 6 \
     "${CHECKLIST_OPTS[@]}" 3>&1 1>&2 2>&3)
 
   [ $? -ne 0 ] && return
