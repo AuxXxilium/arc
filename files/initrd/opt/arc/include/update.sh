@@ -326,11 +326,7 @@ function upgradeLoader() {
     umount "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"
 
     local IMG_FILE="${TMP_PATH}/arc.img"
-    local DEV1 DEV2 DEV3 DEV
-    DEV1=$(blkid | grep 'LABEL="ARC1"' | cut -d: -f1)
-    DEV2=$(blkid | grep 'LABEL="ARC2"' | cut -d: -f1)
-    DEV3=$(blkid | grep 'LABEL="ARC3"' | cut -d: -f1)
-    DEV=$(echo "${DEV1}" | sed 's/[0-9]*$//')
+    local DEV="${LOADER_DISK}"
 
     if [ -b "${DEV}" ] && [ -f "${IMG_FILE}" ]; then
       if dd if="${IMG_FILE}" of="${DEV}" bs=1M conv=fsync; then

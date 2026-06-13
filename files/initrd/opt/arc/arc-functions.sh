@@ -2755,7 +2755,7 @@ function cloneLoader() {
   ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
     --progressbox "Cloning ..." 20 100
   dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
-    --msgbox "Bootloader has been cloned to Disk ${resp},\nremove the current Bootloader Disk!\nReboot?" 0 0
+    --msgbox "Bootloader has been cloned to Disk ${resp}.\nReboot to boot from the internal disk or keep the USB connected to boot from it." 0 0
   rebootTo config
   return
 }
