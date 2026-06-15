@@ -208,8 +208,6 @@ if [ "${KVER:0:1}" -lt 5 ]; then
     CMDLINE['dom_szmax']="${SIZE}"
   fi
   CMDLINE['elevator']="elevator"
-  CMDLINE['intremap']="off"
-  CMDLINE['amd_iommu_intr']="legacy"
 else
   CMDLINE['split_lock_detect']="off"
 fi
