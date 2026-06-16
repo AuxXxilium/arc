@@ -286,7 +286,7 @@ declare -A CMDLINE_MERGED
 while IFS= read -r -d ' ' ENTRY; do
   [ -z "${ENTRY}" ] && continue
   KEY="${ENTRY%%=*}"
-  [ "${KEY}" = "nomodeset" ] && continue
+  [[ " nomodeset intremap amd_iommu_intr " == *" ${KEY} "* ]] && continue
   VALUE="${ENTRY#*=}"
   [ "${KEY}" = "${ENTRY}" ] && VALUE=""   # no '=' means flag-only
   CMDLINE_MERGED["${KEY}"]="${VALUE}"
