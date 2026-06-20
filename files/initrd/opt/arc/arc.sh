@@ -120,7 +120,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
           write_menu_value "g" "Scaling Governor" "${GOVERNOR:-performance}"
         fi
 
-        if echo "${addons_list}" | grep -q "sensors" && find "/sys/devices/platform/" -name "temp1_input" 2>/dev/null | grep -qE 'coretemp|k10temp|zenpower'; then
+        if [ "${MEV}" = "physical" ]; then
           write_menu_value "P" "Fan Control" "${FANCONTROL:-false}"
         fi
 
