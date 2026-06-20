@@ -525,7 +525,7 @@ function makearc() {
       --progressbox "Patching DSM Image..." 20 70
   else
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
-      --infobox "Configuration issue found.\nCould not build Loader!\nExit." 5 40
+      --infobox "Configuration issue found.\nReset the Loader to defaults\nand try again!" 5 40
     rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
     resetBuild
     sleep 2
