@@ -124,6 +124,20 @@ button {
     background: var(--primary-dark);
 }
 
+.danger-button,
+.topbar-actions .danger-button,
+.button-row .danger-button {
+    background: var(--danger);
+    color: white;
+    border-color: transparent;
+}
+
+.danger-button:hover,
+.topbar-actions .danger-button:hover,
+.button-row .danger-button:hover {
+    background: #dc2626;
+}
+
 .main-layout {
     display: flex;
     margin-top: 64px;

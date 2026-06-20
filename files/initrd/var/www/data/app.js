@@ -57,6 +57,7 @@ function App() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [passwordSaving, setPasswordSaving] = useState(false);
+  const [shutdownOpen, setShutdownOpen] = useState(false);
   const [systemInfo, setSystemInfo] = useState('Loading system information...');
 
   useEffect(() => {
@@ -176,6 +177,11 @@ function App() {
         setLoginError(error.message || 'Connection error. Please try again.');
       })
       .finally(() => setLoginSaving(false));
+  }
+
+  function handleShutdown() {
+    setShutdownOpen(false);
+    fetch('./shutdown.cgi', { method: 'POST' }).catch(() => {});
   }
 
   function handleLogout() {
@@ -397,7 +403,8 @@ function App() {
             { className: 'secondary-button', type: 'button', onClick: () => setPasswordOpen(true) },
             'Change Password'
           ),
-          h('button', { className: 'secondary-button', type: 'button', onClick: handleLogout }, 'Logout')
+          h('button', { className: 'secondary-button', type: 'button', onClick: handleLogout }, 'Logout'),
+          h('button', { className: 'danger-button', type: 'button', onClick: () => setShutdownOpen(true) }, 'Shutdown')
         )
       ),
     authenticated ? activeContent : null,
@@ -453,6 +460,19 @@ function App() {
                 passwordSaving ? 'Changing...' : 'Change Password'
               )
             )
+          )
+        )
+      ),
+    shutdownOpen &&
+      h('div', { className: 'login-overlay' },
+        h('div', { className: 'password-card' },
+          h('div', { className: 'password-title' }, 'Shutdown'),
+          h('div', { style: { textAlign: 'center', color: 'var(--muted)', fontSize: '14px', marginBottom: '24px' } },
+            'Are you sure you want to shut down the system?'
+          ),
+          h('div', { className: 'button-row' },
+            h('button', { type: 'button', className: 'secondary-button', onClick: () => setShutdownOpen(false) }, 'Cancel'),
+            h('button', { type: 'button', className: 'danger-button', onClick: handleShutdown }, 'Shutdown')
           )
         )
       )
