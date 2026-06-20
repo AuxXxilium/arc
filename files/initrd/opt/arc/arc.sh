@@ -131,6 +131,10 @@ elif [ "${ARC_MODE}" = "config" ]; then
           write_menu_value "h" "USB Disks internal" "$( [ "${USBMOUNT}" = "true" ] && echo "enabled" || echo "disabled" )"
         fi
 
+        if echo "${addons_list}" | grep -q "sensors"; then
+          write_menu "P" "Fan Control"
+        fi
+
         if [ "${DT}" = "true" ]; then
           write_menu "o" "DTS Map Options"
         fi
@@ -251,7 +255,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
             NEXT="p"
             ;;
           S) storageMenu; NEXT="S" ;;
-          g) governorMenu; NEXT="g" ;;
+          g) governorSelection; NEXT="g" ;;
           K)
             KERNEL=$([ "${KERNEL}" = "official" ] && echo 'custom' || echo 'official')
             writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
@@ -284,6 +288,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
             resetBuild
             NEXT="h"
             ;;
+          P) fancontrolSelection; NEXT="P" ;;
           o) dtsMenu; NEXT="o" ;;
           # Boot Section
           6)

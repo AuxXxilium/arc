@@ -145,6 +145,7 @@ MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 CONSOLEBLANK="$(readConfigKey "arc.consoleblank" "${USER_CONFIG_FILE}")"
 HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
 USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
+FANCONTROL="$(readConfigKey "fancontrol" "${USER_CONFIG_FILE}")"
 
 declare -A CMDLINE
 
@@ -250,6 +251,10 @@ fi
 
 if [ "${USBMOUNT}" = "true" ]; then
   CMDLINE['usbinternal']=""
+fi
+
+if [ "${FANCONTROL}" = "true" ]; then
+  CMDLINE['fancontrol']=""
 fi
 
 if echo "apollolake geminilake purley geminilakenk" | grep -wq "${PLATFORM}"; then

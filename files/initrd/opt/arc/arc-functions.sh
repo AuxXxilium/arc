@@ -447,6 +447,17 @@ function arcSettings() {
     fi
   fi
 
+  if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sensors"; then
+    if [ "${ARC_MODE}" = "config" ] && [ "${MEV}" = "physical" ]; then
+      fancontrolSelection
+    elif [ "${ARC_MODE}" = "automated" ] && [ "${MEV}" = "physical" ]; then
+      CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp|zenpower' | head -1)"
+      if [ -n "${CORETEMP}" ]; then
+        writeConfigKey "fancontrol" "true" "${USER_CONFIG_FILE}"
+      fi
+    fi
+  fi
+
   if [ "${ARC_MODE}" = "config" ]; then
     [ "${AESSYS}" = "false" ] && dialog --backtitle "$(backtitle)" --title "Arc Warning" --msgbox "WARN: Your System doesn't support Hardware encryption in DSM. (AES)" 5 70
     [ "${CPUFREQ}" = "false" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling" && dialog --backtitle "$(backtitle)" --title "Arc Warning" --msgbox "WARN: It is possible that CPU Frequency Scaling is not working properly with your System." 6 80
@@ -503,9 +514,6 @@ function makearc() {
   done <<<"$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
   if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
     getpatfiles
-  fi
-  if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q fancontrol; then
-    writeConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
   fi
   if [ -f "${ORI_ZIMAGE_FILE}" ] && [ -f "${ORI_RDGZ_FILE}" ] && [ "${CONFDONE}" = "true" ] && [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
     (
@@ -583,9 +591,9 @@ function init_default_addons() {
     initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
-    CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp' | head -1 | sed -n 's|.*/\(hwmon.*\/temp1_input\).*|\1|p')"
+    CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp|zenpower' | head -1 | sed -n 's|.*/\(hwmon.*\/temp1_input\).*|\1|p')"
     if [ -n "${CORETEMP}" ]; then
-      initConfigKey "addons.fancontrol" "" "${USER_CONFIG_FILE}"
+      writeConfigKey "fancontrol" "true" "${USER_CONFIG_FILE}"
     fi
     if is_in_array "${PLATFORM}" "${KVER5L[@]}"; then
       if command -v dmidecode >/dev/null 2>&1; then
@@ -1576,7 +1584,7 @@ function storageMenu() {
 }
 
 ###############################################################################
-# Show Storagemenu to user
+# Show Networkmenu to user
 function networkMenu() {
   # Get Network Config for Loader
   getnet
@@ -1644,6 +1652,7 @@ function sysinfo() {
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
+  FANCONTROL="$(readConfigKey "fancontrol" "${USER_CONFIG_FILE}")"
   USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
   HARDDRIVES="$(readConfigKey "device.harddrives" "${USER_CONFIG_FILE}")"
@@ -1761,6 +1770,7 @@ function sysinfo() {
     TEXT+="\n  SortDrives: \Zb${HDDSORT}\Zn"
     TEXT+="\n  USB Mount: \Zb${USBMOUNT}\Zn"
   fi
+  TEXT+="\n  Fan Control: \Zb${FANCONTROL}\Zn"
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
   TEXT+="\n\Z4> Storage\Zn"
@@ -3011,12 +3021,6 @@ function resetDSMNetwork {
 
 ###############################################################################
 # CPU Governor Menu
-function governorMenu () {
-  governorSelection
-  resetBuildstatus
-  return
-}
-
 function governorSelection () {
   rm -f "${TMP_PATH}/opts" >/dev/null
   touch "${TMP_PATH}/opts"
@@ -3035,6 +3039,25 @@ function governorSelection () {
   GOVERNOR=${resp}
   writeConfigKey "governor" "${GOVERNOR}" "${USER_CONFIG_FILE}"
   return
+}
+
+###############################################################################
+# Fan Control Menu
+function fancontrolSelection () {
+  CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp|zenpower' | head -1)"
+  if [ -z "${CORETEMP}" ]; then
+    dialog --backtitle "$(backtitle)" --title "Fan Control" \
+      --msgbox "No compatible temperature sensor found.\nFan Control addon will not be enabled." 6 60
+    writeConfigKey "fancontrol" "false" "${USER_CONFIG_FILE}"
+    return
+  fi
+  dialog --backtitle "$(backtitle)" --title "Fan Control" \
+    --yesno "A compatible temperature sensor was detected.\nDo you want to enable the Fan Control addon?" 6 60
+  if [ $? -eq 0 ]; then
+    writeConfigKey "fancontrol" "true" "${USER_CONFIG_FILE}"
+  else
+    writeConfigKey "fancontrol" "false" "${USER_CONFIG_FILE}"
+  fi
 }
 
 ###############################################################################

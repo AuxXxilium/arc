@@ -177,6 +177,7 @@ function getSysinfo() {
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
   HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
+  FANCONTROL="$(readConfigKey "fancontrol" "${USER_CONFIG_FILE}")"
   USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
   ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
@@ -287,6 +288,7 @@ function getSysinfo() {
     TEXT+="\n  SortDrives: ${HDDSORT}"
     TEXT+="\n  USB Mount: ${USBMOUNT}"
   fi
+  TEXT+="\n  Fan Control: ${FANCONTROL}"
   TEXT+="\n"
   # Check for Controller // 104=RAID // 106=SATA // 107=SAS // 100=SCSI // c03=USB
   TEXT+="\n> Storage"
