@@ -250,6 +250,7 @@ function arcVersion() {
           resetBuildstatus
         fi
         PRODUCTVER="${resp:0:3}"
+        DSMFULLVER="$(echo "${resp}" | cut -d'-' -f1)"
         BUILDNUM="$(echo "${resp}" | cut -d'-' -f2 | tr -d '-')"
         SMALLNUM="$(echo "${resp}" | cut -d'-' -f3 | tr -d '-')"
       fi
@@ -257,6 +258,7 @@ function arcVersion() {
     done
 
     writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+    writeConfigKey "dsmfullver" "${DSMFULLVER:-${PRODUCTVER}}" "${USER_CONFIG_FILE}"
     writeConfigKey "buildnum" "${BUILDNUM:-0}" "${USER_CONFIG_FILE}"
     writeConfigKey "smallnum" "${SMALLNUM:-0}" "${USER_CONFIG_FILE}"
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
@@ -524,7 +526,7 @@ function makearc() {
   else
     dialog --backtitle "$(backtitle)" --title "Build Loader" --aspect 18 \
       --infobox "Configuration issue found.\nCould not build Loader!\nExit." 5 40
-    rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
     resetBuild
     sleep 2
     return
@@ -3163,6 +3165,8 @@ function getpatfiles() {
   ARC_OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  DSMFULLVER="$(readConfigKey "dsmfullver" "${USER_CONFIG_FILE}")"
+  [ -z "${DSMFULLVER}" ] && DSMFULLVER="${PRODUCTVER}"
   PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
   mkdir -p "${USER_UP_PATH}"
@@ -3173,19 +3177,27 @@ function getpatfiles() {
     dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files" \
       --infobox "Downloading DSM Boot Files..." 3 40
     # Get new Files
-    DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/main/files/${MODEL/+/%2B}/${PRODUCTVER}/${PAT_HASH}.tar"
+    DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/new/files/${MODEL/+/%2B}/${DSMFULLVER}/${PAT_HASH}.tar"
     SPACELEFT=$(df --block-size=1 "${PART3_PATH}" 2>/dev/null | awk 'NR==2 {print $4}')
-    FILESIZE=$(curl -skLI --http1.1 -m 10 "${DSM_URL}" | grep -i Content-Length | tail -n 1 | tr -d '\r\n' | awk '{print $2}')
+    FILESIZE=$(curl -skLI -m 10 "${DSM_URL}" | grep -i Content-Length | tail -n 1 | tr -d '\r\n' | awk '{print $2}')
     if [ ${FILESIZE:-0} -ge ${SPACELEFT:-0} ]; then
       DSM_FILE="${TMP_PATH}/${PAT_HASH}.tar"
     fi
-    if curl -skL --http1.1 "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null; then
-      VALID="true"
+    if curl -skL --retry 3 --retry-delay 5 -m 300 "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null; then
+      DLSIZE=$(stat -c%s "${DSM_FILE}" 2>/dev/null || echo 0)
+      if [ -n "${FILESIZE}" ] && [ "${FILESIZE}" -gt 0 ] && [ "${DLSIZE}" -lt "${FILESIZE}" ]; then
+        rm -f "${DSM_FILE}"
+        dialog --backtitle "$(backtitle)" --title "DSM Boot Files" --aspect 18 \
+          --infobox "Download incomplete (${DLSIZE}/${FILESIZE} bytes). Please retry." 4 55
+        sleep 3
+      else
+        VALID="true"
+      fi
     fi
   elif [ ! -f "${DSM_FILE}" ] && [ "${ARC_OFFLINE}" = "true" ]; then
     rm -f ${USER_UP_PATH}/*.tar
     dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files" \
-      --msgbox "Please upload the DSM Boot File to ${USER_UP_PATH}.\nUse ${IPCON}:7304 to upload the file below and press OK.\nLink: https://github.com/AuxXxilium/arc-dsm/blob/main/files/${MODEL}/${PRODUCTVER}/${PAT_HASH}.tar" 8 120
+      --msgbox "Please upload the DSM Boot File to ${USER_UP_PATH}.\nUse ${IPCON}:7304 to upload the file below and press OK.\nLink: https://raw.githubusercontent.com/AuxXxilium/arc-dsm/new/files/${MODEL}/${DSMFULLVER}/${PAT_HASH}.tar" 8 120
     [ $? -ne 0 ] && VALID="false"
     if [ -f "${DSM_FILE}" ]; then
       VALID="true"
