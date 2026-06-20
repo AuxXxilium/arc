@@ -75,10 +75,12 @@ if [ -f "${MOD_RDGZ_FILE}" ]; then
 fi
 
 # Update buildnumber
-PRODUCTVER="${majorversion}.${minorversion}"
+PRODUCTVER="${major}.${minor}"
+DSMFULLVER="${major}.${minor}.${micro:-0}"
 BUILDNUM="${buildnumber}"
 SMALLNUM="${smallfixnumber}"
 writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
+writeConfigKey "dsmfullver" "${DSMFULLVER}" "${USER_CONFIG_FILE}"
 writeConfigKey "buildnum" "${BUILDNUM}" "${USER_CONFIG_FILE}"
 writeConfigKey "smallnum" "${SMALLNUM}" "${USER_CONFIG_FILE}"
 
