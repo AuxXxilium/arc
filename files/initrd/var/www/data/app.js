@@ -471,8 +471,8 @@ function App() {
             'Are you sure you want to shut down the system?'
           ),
           h('div', { className: 'button-row' },
-            h('button', { type: 'button', className: 'secondary-button', onClick: () => setShutdownOpen(false) }, 'Cancel'),
-            h('button', { type: 'button', className: 'danger-button', onClick: handleShutdown }, 'Shutdown')
+            h('button', { type: 'button', className: 'danger-button', onClick: handleShutdown }, 'Shutdown'),
+            h('button', { type: 'button', className: 'secondary-button', onClick: () => setShutdownOpen(false) }, 'Cancel')
           )
         )
       )
