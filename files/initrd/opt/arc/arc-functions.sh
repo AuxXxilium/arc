@@ -453,7 +453,12 @@ function arcSettings() {
     if [ "${ARC_MODE}" = "config" ] && [ "${MEV}" = "physical" ]; then
       fancontrolSelection
     elif [ "${ARC_MODE}" = "automated" ] && [ "${MEV}" = "physical" ]; then
-      writeConfigKey "fancontrol" "true" "${USER_CONFIG_FILE}"
+      CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp|zenpower' | head -1)"
+      if [ -n "${CORETEMP}" ]; then
+        writeConfigKey "fancontrol" "true" "${USER_CONFIG_FILE}"
+      else
+        writeConfigKey "fancontrol" "false" "${USER_CONFIG_FILE}"
+      fi
     fi
   fi
 
@@ -590,7 +595,10 @@ function init_default_addons() {
     initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "fancontrol" "true" "${USER_CONFIG_FILE}"
+    CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp|zenpower' | head -1 | sed -n 's|.*/\(hwmon.*\/temp1_input\).*|\1|p')"
+    if [ -n "${CORETEMP}" ]; then
+      writeConfigKey "fancontrol" "true" "${USER_CONFIG_FILE}"
+    fi
     if is_in_array "${PLATFORM}" "${KVER5L[@]}"; then
       if command -v dmidecode >/dev/null 2>&1; then
           UGREEN_CHECK=$(dmidecode --string system-product-name 2>/dev/null)
