@@ -3048,8 +3048,6 @@ function governorSelection () {
 function fancontrolSelection () {
   CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp|zenpower' | head -1)"
   if [ -z "${CORETEMP}" ]; then
-    dialog --backtitle "$(backtitle)" --title "Fan Control" \
-      --msgbox "No compatible temperature sensor found.\nFan Control addon will not be enabled." 6 60
     writeConfigKey "fancontrol" "false" "${USER_CONFIG_FILE}"
     return
   fi
