@@ -120,6 +120,10 @@ elif [ "${ARC_MODE}" = "config" ]; then
           write_menu_value "g" "Scaling Governor" "${GOVERNOR:-performance}"
         fi
 
+        if echo "${addons_list}" | grep -q "sensors"; then
+          write_menu_value "P" "Fan Control" "${FANCONTROL:-false}"
+        fi
+
         if [ "${MODEL}" = "SA6400" ] && [[ "${PRODUCTVER}" = "7.2" || "${PRODUCTVER}" = "7.3" ]]; then
           write_menu_value "K" "Kernel" "${KERNEL}"
         fi
@@ -129,10 +133,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
         else
           write_menu_value "H" "SortDrives" "$( [ "${HDDSORT}" = "true" ] && echo "enabled" || echo "disabled" )"
           write_menu_value "h" "USB Disks internal" "$( [ "${USBMOUNT}" = "true" ] && echo "enabled" || echo "disabled" )"
-        fi
-
-        if echo "${addons_list}" | grep -q "sensors"; then
-          write_menu "P" "Fan Control"
         fi
 
         if [ "${DT}" = "true" ]; then
