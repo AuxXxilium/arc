@@ -12,6 +12,16 @@
     --shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
 }
 
+html.dark {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-muted: #0f172a;
+    --border: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -111,7 +121,7 @@ button {
 }
 
 .topbar-actions button:hover {
-    background: #eff6ff;
+    background: var(--surface-muted);
 }
 
 .primary-button {
@@ -185,7 +195,7 @@ button {
 
 .app-card:hover {
     transform: translateY(-2px);
-    background: #f8fbff;
+    background: var(--surface-muted);
     border-color: transparent;
     box-shadow: none;
 }
@@ -254,7 +264,7 @@ button {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: #f8fafc;
+    background: var(--bg);
 }
 
 .embed-container iframe {
@@ -387,7 +397,7 @@ button {
 
 .button-row .secondary-button,
 .secondary-button {
-    background: white;
+    background: var(--surface);
     color: var(--text);
     border: 1px solid var(--border);
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
@@ -395,7 +405,7 @@ button {
 
 .button-row .secondary-button:hover,
 .secondary-button:hover {
-    background: #f1f5f9;
+    background: var(--surface-muted);
     transform: translateY(-1px);
 }
 
@@ -423,16 +433,47 @@ button {
     line-height: 1.5;
 }
 
+.theme-toggle {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    color: var(--text);
+    cursor: pointer;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.theme-toggle:hover {
+    background: var(--surface-muted);
+}
+
 .message-error {
     background: #fee2e2;
     color: #b91c1c;
     border: 1px solid #fecaca;
 }
 
+html.dark .message-error {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
 .message-success {
     background: #dcfce7;
     color: #166534;
     border: 1px solid #bbf7d0;
+}
+
+html.dark .message-success {
+    background: rgba(16, 185, 129, 0.15);
+    color: #6ee7b7;
+    border-color: rgba(16, 185, 129, 0.3);
 }
 
 @media (max-width: 900px) {

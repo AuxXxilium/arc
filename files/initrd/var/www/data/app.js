@@ -44,6 +44,8 @@ const parseConfig = (text) => {
   return parsed;
 };
 
+const DARK_MODE_KEY = 'arc_dark_mode';
+
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
@@ -59,6 +61,16 @@ function App() {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [shutdownOpen, setShutdownOpen] = useState(false);
   const [systemInfo, setSystemInfo] = useState('Loading system information...');
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem(DARK_MODE_KEY) === 'true');
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem(DARK_MODE_KEY, darkMode);
+  }, [darkMode]);
 
   useEffect(() => {
     const storedToken = localStorage.getItem(SESSION_KEY);
@@ -398,6 +410,16 @@ function App() {
         ),
         h('div', { className: 'topbar-actions' },
           h('span', null, `IP: ${serverIp}`),
+          h(
+            'button',
+            {
+              className: 'theme-toggle',
+              type: 'button',
+              onClick: () => setDarkMode(!darkMode),
+              title: darkMode ? 'Switch to light mode' : 'Switch to dark mode'
+            },
+            darkMode ? '☀️' : '🌙'
+          ),
           h(
             'button',
             { className: 'secondary-button', type: 'button', onClick: () => setPasswordOpen(true) },
