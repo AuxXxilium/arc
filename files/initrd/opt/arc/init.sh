@@ -223,7 +223,7 @@ mkdir -p "${MODULES_PATH}"
 mkdir -p "${PATCH_PATH}"
 mkdir -p "${USER_UP_PATH}"
 
-# Symlink *-7.3-* files to *-7.4-* in modules and custom
+# Symlink *-7.3-* files to *-7.4-* in custom, modules and lkms
 for DIR in "${MODULES_PATH}" "${CUSTOM_PATH}" "${LKMS_PATH}"; do
   while IFS= read -r -d '' SRC; do
     SRCB="$(basename "${SRC}")"
