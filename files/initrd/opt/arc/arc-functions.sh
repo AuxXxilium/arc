@@ -2164,17 +2164,17 @@ function resetPassword() {
   if [ ! -f "${TMP_PATH}/menu" ]; then
     dialog --backtitle "$(backtitle)" --title "Reset Password" \
       --msgbox "All existing users have been disabled. Please try adding new user." 0 0
-    return
+    return 1
   fi
   dialog --backtitle "$(backtitle)" --title "Reset Password" \
     --no-items --menu  "Choose a User" 0 0 0 --file "${TMP_PATH}/menu" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
-  USER="$(cat "${TMP_PATH}/resp" 2>/dev/null | awk '{print $1}')"
-  [ -z "${USER}" ] && return
+  M_USER="$(cat "${TMP_PATH}/resp" 2>/dev/null | awk '{print $1}')"
+  [ -z "${M_USER}" ] && return 1
   while true; do
     dialog --backtitle "$(backtitle)" --title "Reset Password" \
-      --inputbox "Type a new password for user ${USER}" 0 70 \
+      --inputbox "Type a new password for user ${M_USER}" 0 70 \
     2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break 2
     STRPASSWD="$(cat "${TMP_PATH}/resp")"
@@ -2190,9 +2190,9 @@ function resetPassword() {
       T="$(blkid -o value -s TYPE "${I}" 2>/dev/null | sed 's/linux_raid_member/ext4/')"
       mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
-      sed -i "s|^${USER}:[^:]*|${USER}:${NEWPASSWD}|" "${TMP_PATH}/mdX/etc/shadow"
-      sed -i "/^${USER}:/ s/^\(${USER}:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:\)[^:]*:/\1:/" "${TMP_PATH}/mdX/etc/shadow"
-      sed -i "s|status=on|status=off|g" "${TMP_PATH}/mdX/usr/syno/etc/packages/SecureSignIn/preference/${USER}/method.config" 2>/dev/null
+      sed -i "s|^${M_USER}:[^:]*|${M_USER}:${NEWPASSWD}|" "${TMP_PATH}/mdX/etc/shadow"
+      sed -i "/^${M_USER}:/ s/^\(${M_USER}:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:\)[^:]*:/\1:/" "${TMP_PATH}/mdX/etc/shadow"
+      sed -i "s|status=on|status=off|g" "${TMP_PATH}/mdX/usr/syno/etc/packages/SecureSignIn/preference/${M_USER}/method.config" 2>/dev/null
       sed -i "s|list=*$|list=|; s|type=*$|type=none|" "${TMP_PATH}/mdX/usr/syno/etc/packages/SecureSignIn/secure_signin.conf" 2>/dev/null
 
       mkdir -p "${TMP_PATH}/mdX/usr/arc/once.d"
@@ -2201,7 +2201,7 @@ function resetPassword() {
         echo "synowebapi -s --exec api=SYNO.Core.OTP.EnforcePolicy method=set version=1 enable_otp_enforcement=false otp_enforce_option='\"none\"'"
         echo "synowebapi -s --exec api=SYNO.SecureSignIn.AMFA.Policy method=set version=1 type='\"none\"'"
 				echo "synowebapi -s --exec api=SYNO.Core.SmartBlock method=set version=1 enabled=false untrust_try=5 untrust_minute=1 untrust_lock=30 trust_try=10 trust_minute=1 trust_lock=30"
-				echo "synowebapi -s --exec api=SYNO.SecureSignIn.Method.Admin method=reset version=1 account='\"${USER}\"' keep_amfa_settings=true"
+				echo "synowebapi -s --exec api=SYNO.SecureSignIn.Method.Admin method=reset version=1 account='\"${M_USER}\"' keep_amfa_settings=true"
       } >"${TMP_PATH}/mdX/usr/arc/once.d/addNewDSMUser.sh"
       sync
       echo "true" >"${TMP_PATH}/isOk"
@@ -2211,9 +2211,9 @@ function resetPassword() {
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Reset Password" \
     --progressbox "Resetting ..." 20 100
   if [ -f "${TMP_PATH}/isOk" ]; then
-    MSG="Reset password for user ${USER} completed."
+    MSG="Reset password for user ${M_USER} completed."
   else
-    MSG="Reset password for user ${USER} failed."
+    MSG="Reset password for user ${M_USER} failed."
   fi
   dialog --title "Reset Password" \
     --msgbox "${MSG}" 0 0
@@ -2235,8 +2235,8 @@ function addNewDSMUser() {
     --form "${MSG}" 8 60 3 "username:" 1 1 "user" 1 10 50 0 "password:" 2 1 "passwd" 2 10 50 0 \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
-  username="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
-  password="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
+  M_USER="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
+  M_PASSWD="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
   (
     mkdir -p "${TMP_PATH}/mdX"
     for I in ${DSMROOTS}; do
@@ -2246,8 +2246,8 @@ function addNewDSMUser() {
       mkdir -p "${TMP_PATH}/mdX/usr/arc/once.d"
       {
         echo "#!/usr/bin/env bash"
-        echo "if synouser --enum local | grep -q ^${username}\$; then synouser --setpw ${username} ${password}; else synouser --add ${username} ${password} rr 0 user@rr.com 1; fi"
-        echo "synogroup --memberadd administrators ${username}"
+        echo "if synouser --enum local | grep -q ^${M_USER}\$; then synouser --setpw ${M_USER} ${M_PASSWD}; else synouser --add ${M_USER} ${M_PASSWD} rr 0 user@rr.com 1; fi"
+        echo "synogroup --memberadd administrators ${M_USER}"
       } >"${TMP_PATH}/mdX/usr/arc/once.d/addNewDSMUser.sh"
       sync
       echo "true" >"${TMP_PATH}/isOk"
