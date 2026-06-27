@@ -2790,23 +2790,37 @@ function cloneLoader() {
 # without a separate USB loader. Creates 3 new partitions after the existing
 # DSM system/swap partitions and copies p1/p2/p3 content into them.
 function injectLoader() {
-  # Find DSM disks: look for disks that have linux_raid_member partitions (sda1)
-  # but are not the current loader disk.
+  # Only show disks that have free space for injection:
+  # - Not the loader disk
+  # - Have sdb1+sdb2 (DSM system+swap) but NO sdb3 (data partition)
+  #   A disk with sdb3 is part of a storage pool — no tail space available.
+  # - Already-injected disks (have ARC1 label) are also shown for re-injection.
   rm -f "${TMP_PATH}/opts" 2>/dev/null
   while read -r KNAME SIZE TYPE DMODEL PKNAME; do
-    [ "${KNAME}" = "N/A" ] || [ "${SIZE:0:1}" -eq 0 ] && continue
+    [ "${KNAME}" = "N/A" ] && continue
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
-    [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
-    # Only show whole disks, not partitions
     [ "${TYPE}" != "disk" ] && continue
-    # Must have linux_raid_member partitions (DSM system disk signature)
-    lsblk -pno KNAME,FSTYPE "${KNAME}" 2>/dev/null | grep -q "linux_raid_member" || continue
-    printf "\"%s\" \"%-6s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${DMODEL}" >>"${TMP_PATH}/opts"
+    [ "${KNAME}" = "${LOADER_DISK}" ] && continue
+    [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
+    # Determine partition 3 name
+    if echo "${KNAME}" | grep -qE 'nvme|mmcblk'; then
+      P3="${KNAME}p3"
+    else
+      P3="${KNAME}3"
+    fi
+    # Already injected — show for re-injection
+    if blkid "${KNAME}"* 2>/dev/null | grep -q 'LABEL="ARC1"'; then
+      printf "\"%s\" \"%-6s %s [already injected]\" \"off\"\n" "${KNAME}" "${SIZE}" "${DMODEL:-unknown}" >>"${TMP_PATH}/opts"
+    # Has no data partition — free tail space available
+    elif ! fdisk -l "${KNAME}" 2>/dev/null | grep -q "^${P3}"; then
+      printf "\"%s\" \"%-6s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${DMODEL:-unknown}" >>"${TMP_PATH}/opts"
+    fi
+    # Skip disks with sdb3 — storage pool present, no free tail space
   done <<<"$(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)"
 
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Inject Loader to DSM Disk" \
-      --msgbox "No DSM data disk found!\nMake sure DSM is installed and all disks are connected." 0 0
+      --msgbox "No eligible disk found for injection.\n\nDisks with a storage pool (partition 3) cannot be used — there is no free space at the tail.\nInjection requires a DSM disk with only system+swap partitions (no storage pool)." 0 0
     return
   fi
 
@@ -2838,118 +2852,76 @@ function injectLoader() {
   fi
 
   (
-    # Determine partition table type
-    PTTYPE="$(blkid -o value -s PTTYPE "${IDISK}" 2>/dev/null)"
-    [ -z "${PTTYPE}" ] && PTTYPE="$(fdisk -l "${IDISK}" 2>/dev/null | grep -oE 'dos|gpt' | head -1)"
-
-    if [ "${REINJECT}" = "false" ]; then
-      echo "Partition table type: ${PTTYPE}"
-
-      # Place Arc partitions at the tail of the disk so unallocated space in
-      # the middle remains available for DSM storage pool creation.
-      # Match grub.img layout: p1=50M p2=50M p3=1750M (total 1850M)
-      SECTOR_SIZE=512
-      ARC_P3_MB=1750
-      ARC_P2_MB=50
-      ARC_P1_MB=50
-      ARC_TOTAL_SECTORS=$(( (ARC_P1_MB + ARC_P2_MB + ARC_P3_MB) * 1024 * 1024 / SECTOR_SIZE ))
-
-      # Total disk sectors
-      DISK_SECTORS="$(cat /sys/block/${IDISK/\/dev\//}/size 2>/dev/null)"
-      if [ -z "${DISK_SECTORS}" ]; then
-        echo "ERROR: Cannot determine disk size for ${IDISK}." >"${LOG_FILE}"
-        exit 1
-      fi
-
-      # Align to 2048-sector (1MiB) boundary
-      # Start of p1 = disk end - total arc sectors, aligned down to 2048
-      RAW_START=$(( DISK_SECTORS - ARC_TOTAL_SECTORS ))
-      START_P1=$(( (RAW_START / 2048) * 2048 ))
-      START_P2=$(( START_P1 + ARC_P1_MB * 1024 * 1024 / SECTOR_SIZE ))
-      START_P3=$(( START_P2 + ARC_P2_MB * 1024 * 1024 / SECTOR_SIZE ))
-      END_P1=$(( START_P2 - 1 ))
-      END_P2=$(( START_P3 - 1 ))
-      END_P3=$(( DISK_SECTORS - 34 ))  # GPT: leave 33 sectors for backup header; MBR: harmless
-
-      echo "Disk sectors: ${DISK_SECTORS}"
-      echo "Arc partitions: p1=${START_P1}-${END_P1} p2=${START_P2}-${END_P2} p3=${START_P3}-${END_P3}"
-
-      if [ "${PTTYPE}" = "gpt" ]; then
-        END_P3=$(( DISK_SECTORS - 34 ))
-        echo -e "n\n\n${START_P1}\n${END_P1}\n0700\nw\ny\n" | gdisk "${IDISK}" >/dev/null 2>&1
-        sleep 1
-        blockdev --rereadpt "${IDISK}" 2>/dev/null
-        sleep 2
-        echo -e "n\n\n${START_P2}\n${END_P2}\n8300\nw\ny\n" | gdisk "${IDISK}" >/dev/null 2>&1
-        sleep 1
-        blockdev --rereadpt "${IDISK}" 2>/dev/null
-        sleep 2
-        echo -e "n\n\n${START_P3}\n${END_P3}\n8300\nw\ny\n" | gdisk "${IDISK}" >/dev/null 2>&1
-      else
-        # MBR: 4 primary slots; DSM uses 1+2 (system+swap), possibly 3 (data).
-        # Use an extended partition to hold our 3 logical partitions in the tail.
-        EXT_CNT="$(fdisk -l "${IDISK}" 2>/dev/null | grep -c "Extended")"
-        if [ "${EXT_CNT}" -eq 0 ]; then
-          echo -e "n\ne\n\n${START_P1}\n\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1
-          sleep 1
-          blockdev --rereadpt "${IDISK}" 2>/dev/null
-          sleep 2
-        fi
-        echo -e "n\nl\n${START_P1}\n${END_P1}\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1
-        sleep 1
-        blockdev --rereadpt "${IDISK}" 2>/dev/null
-        sleep 2
-        echo -e "n\nl\n${START_P2}\n${END_P2}\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1
-        sleep 1
-        blockdev --rereadpt "${IDISK}" 2>/dev/null
-        sleep 2
-        echo -e "n\nl\n${START_P3}\n\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1
-      fi
-
-      sleep 2
-      blockdev --rereadpt "${IDISK}" 2>/dev/null
-      sleep 2
-      fdisk -l "${IDISK}"
+    if echo "${IDISK}" | grep -qE 'nvme|mmcblk'; then
+      PSEP="p"
+    else
+      PSEP=""
     fi
 
-    # Find the new ARC partitions — they don't have labels yet, so find the
-    # 3 highest-numbered partitions on this disk that are NOT linux_raid_member
-    mapfile -t ALL_PARTS < <(lsblk -pno KNAME,FSTYPE "${IDISK}" 2>/dev/null | awk '$1 ~ /^'"${IDISK}"'/ && $2 != "linux_raid_member" && $1 != "'"${IDISK}"'" {print $1}' | sort -V)
-    INJECT_P1="${ALL_PARTS[-3]}"
-    INJECT_P2="${ALL_PARTS[-2]}"
-    INJECT_P3="${ALL_PARTS[-1]}"
+    PTTYPE="$(blkid -o value -s PTTYPE "${IDISK}" 2>/dev/null)"
+    if [ "${PTTYPE}" != "gpt" ]; then
+      printf "w\ny\n" | gdisk "${IDISK}" >/dev/null 2>&1
+      sleep 1
+      blockdev --rereadpt "${IDISK}" 2>/dev/null
+      sleep 1
+    fi
 
-    if [ -z "${INJECT_P1}" ] || [ -z "${INJECT_P2}" ] || [ -z "${INJECT_P3}" ]; then
-      echo "ERROR: Could not identify target partitions on ${IDISK}." >"${LOG_FILE}"
+    SECTOR_SIZE=512
+    ARC_P1_SECTORS=$(( 50 * 1024 * 1024 / SECTOR_SIZE ))
+    ARC_P2_SECTORS=$(( 50 * 1024 * 1024 / SECTOR_SIZE ))
+    ARC_P3_SECTORS=$(( 1750 * 1024 * 1024 / SECTOR_SIZE ))
+    ARC_TOTAL_SECTORS=$(( ARC_P1_SECTORS + ARC_P2_SECTORS + ARC_P3_SECTORS ))
+
+    DISK_SECTORS="$(cat "/sys/block/${IDISK/\/dev\//}/size" 2>/dev/null)"
+    if [ -z "${DISK_SECTORS}" ]; then
+      echo "ERROR: Cannot read disk size for ${IDISK}."
       exit 1
     fi
 
-    echo "Formatting Arc partitions: ${INJECT_P1} ${INJECT_P2} ${INJECT_P3}"
+    RAW_START=$(( DISK_SECTORS - ARC_TOTAL_SECTORS - 34 ))
+    START_P4=$(( (RAW_START / 2048) * 2048 ))
+    START_P5=$(( START_P4 + ARC_P1_SECTORS ))
+    START_P6=$(( START_P5 + ARC_P2_SECTORS ))
+    END_P6=$(( DISK_SECTORS - 34 - 1 ))
+
+    while true; do
+      LAST_PART="$(gdisk -l "${IDISK}" 2>/dev/null | awk '/^[[:space:]]*[0-9]/ {print $1}' | sort -n | tail -1)"
+      [ -z "${LAST_PART}" ] && break
+      [ "${LAST_PART}" -le 3 ] && break
+      printf "d\n%s\nw\ny\n" "${LAST_PART}" | gdisk "${IDISK}" >/dev/null 2>&1
+      sleep 1
+      blockdev --rereadpt "${IDISK}" 2>/dev/null
+      sleep 1
+    done
+
+    printf "n\n4\n%s\n%s\nEF00\nw\ny\n" "${START_P4}" "$(( START_P5 - 1 ))" | gdisk "${IDISK}" >/dev/null 2>&1
+    sleep 1; blockdev --rereadpt "${IDISK}" 2>/dev/null; sleep 2
+    printf "n\n5\n%s\n%s\n8300\nw\ny\n" "${START_P5}" "$(( START_P6 - 1 ))" | gdisk "${IDISK}" >/dev/null 2>&1
+    sleep 1; blockdev --rereadpt "${IDISK}" 2>/dev/null; sleep 2
+    printf "n\n6\n%s\n%s\n8300\nw\ny\n" "${START_P6}" "${END_P6}" | gdisk "${IDISK}" >/dev/null 2>&1
+    sleep 2
+    blockdev --rereadpt "${IDISK}" 2>/dev/null
+    sleep 2
+
+    INJECT_P1="${IDISK}${PSEP}4"
+    INJECT_P2="${IDISK}${PSEP}5"
+    INJECT_P3="${IDISK}${PSEP}6"
+    for P in "${INJECT_P1}" "${INJECT_P2}" "${INJECT_P3}"; do
+      [ ! -b "${P}" ] && { echo "ERROR: Partition ${P} not found after creation."; exit 1; }
+    done
+
     mkdosfs -F32 -n "ARC1" "${INJECT_P1}" >/dev/null 2>&1
     mkfs.ext2 -F -L "ARC2" "${INJECT_P2}" >/dev/null 2>&1
     mkfs.ext4 -F -L "ARC3" "${INJECT_P3}" >/dev/null 2>&1
 
     mkdir -p "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3"
-    mount "${INJECT_P1}" "${TMP_PATH}/idX1" || { echo "ERROR: Cannot mount ${INJECT_P1}." >"${LOG_FILE}"; exit 1; }
-    mount "${INJECT_P2}" "${TMP_PATH}/idX2" || { echo "ERROR: Cannot mount ${INJECT_P2}." >"${LOG_FILE}"; umount "${TMP_PATH}/idX1" 2>/dev/null; exit 1; }
-    mount "${INJECT_P3}" "${TMP_PATH}/idX3" || { echo "ERROR: Cannot mount ${INJECT_P3}." >"${LOG_FILE}"; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" 2>/dev/null; exit 1; }
+    mount "${INJECT_P1}" "${TMP_PATH}/idX1" || { echo "ERROR: Cannot mount ${INJECT_P1}."; exit 1; }
+    mount "${INJECT_P2}" "${TMP_PATH}/idX2" || { echo "ERROR: Cannot mount ${INJECT_P2}."; umount "${TMP_PATH}/idX1" 2>/dev/null; exit 1; }
+    mount "${INJECT_P3}" "${TMP_PATH}/idX3" || { echo "ERROR: Cannot mount ${INJECT_P3}."; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" 2>/dev/null; exit 1; }
 
-    echo "Copying bootloader content ..."
-    cp -vRf "${PART1_PATH}/." "${TMP_PATH}/idX1/" || { echo "ERROR: Copy to ${INJECT_P1} failed." >"${LOG_FILE}"; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null; exit 1; }
-    cp -vRf "${PART2_PATH}/." "${TMP_PATH}/idX2/" || { echo "ERROR: Copy to ${INJECT_P2} failed." >"${LOG_FILE}"; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null; exit 1; }
-    cp -vRf "${PART3_PATH}/." "${TMP_PATH}/idX3/" || { echo "ERROR: Copy to ${INJECT_P3} failed." >"${LOG_FILE}"; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null; exit 1; }
-
-    # Install GRUB onto the DSM disk MBR/ESP so it can boot from it
-    if [ "${PTTYPE}" = "gpt" ]; then
-      if [ -d /sys/firmware/efi ]; then
-        grub-install --target=x86_64-efi --efi-directory="${TMP_PATH}/idX1" \
-          --boot-directory="${TMP_PATH}/idX1/boot" --removable --no-nvram "${IDISK}" >/dev/null 2>&1
-      else
-        grub-install --target=i386-pc --boot-directory="${TMP_PATH}/idX1/boot" "${IDISK}" >/dev/null 2>&1
-      fi
-    else
-      grub-install --target=i386-pc --boot-directory="${TMP_PATH}/idX1/boot" "${IDISK}" >/dev/null 2>&1
-    fi
+    cp -Rf "${PART1_PATH}/." "${TMP_PATH}/idX1/" || { echo "ERROR: Copy to ${INJECT_P1} failed."; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null; exit 1; }
+    cp -Rf "${PART2_PATH}/." "${TMP_PATH}/idX2/" || { echo "ERROR: Copy to ${INJECT_P2} failed."; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null; exit 1; }
+    cp -Rf "${PART3_PATH}/." "${TMP_PATH}/idX3/" || { echo "ERROR: Copy to ${INJECT_P3} failed."; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null; exit 1; }
 
     sync
     umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null
@@ -2957,10 +2929,11 @@ function injectLoader() {
     echo "Done."
   ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Inject Loader to DSM Disk" \
     --progressbox "Injecting bootloader ..." 20 100
+  RET=$?
 
-  if [ -f "${LOG_FILE}" ] && grep -q "ERROR" "${LOG_FILE}"; then
+  if [ ${RET} -ne 0 ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Inject Loader to DSM Disk" \
-      --msgbox "Injection failed!\n$(cat "${LOG_FILE}")" 0 0
+      --msgbox "Injection failed." 0 0
     return
   fi
 
