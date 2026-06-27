@@ -307,7 +307,7 @@ function repackInitrd() {
   *) ;;
   esac
 
-  sudo cp -rf "${PLUGIN_PATH}/"* "${RDXZ_PATH}/"
+  sudo cp -rfp "${PLUGIN_PATH}/"* "${RDXZ_PATH}/"
   
   # Remove ttyd and dufs autostart scripts (services now start via web login)
   sudo rm -f "${RDXZ_PATH}/etc/init.d/S99ttyd"
