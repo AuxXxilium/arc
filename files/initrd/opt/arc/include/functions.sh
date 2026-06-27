@@ -334,7 +334,7 @@ function checkBIOS_VT_d() {
 ###############################################################################
 # Rebooting
 function rebootTo() {
-  BUILDDONE="$(readConfigKey "builddone" "${USER_CONFIG_FILE}")"
+  BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
   if [ "${CONFDONE}" = "true" ] && ([ "${1}" = "automated" ] || [ "${1}" = "junior" ] || [ "${1}" = "dsm" ]); then
     if [ "${BUILDDONE}" != "true" ] || [ ! -f "${MOD_ZIMAGE_FILE}" ] || [ ! -f "${MOD_RDGZ_FILE}" ]; then
       dialog --backtitle "$(backtitle)" --title "Reboot" \

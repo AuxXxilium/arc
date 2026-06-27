@@ -190,7 +190,11 @@ case "${ARC_MODE}" in
       boot.sh
       exit 0
     else
-      echo -e "\033[1;34mRebooting to Config Mode...\033[0m"
+      [ "${BUILDDONE}" != "true" ] && echo -e "\033[1;31mBuild not completed.\033[0m"
+      [ ! -f "${MOD_ZIMAGE_FILE}" ] && echo -e "\033[1;31mMissing patched zImage: ${MOD_ZIMAGE_FILE}\033[0m"
+      [ ! -f "${MOD_RDGZ_FILE}" ] && echo -e "\033[1;31mMissing patched ramdisk: ${MOD_RDGZ_FILE}\033[0m"
+      echo -e "\033[1;34mRebooting to Config Mode to complete build...\033[0m"
+      sleep 5
       rebootTo "config" || die "Reboot to Config Mode failed!"
       exit 0
     fi
