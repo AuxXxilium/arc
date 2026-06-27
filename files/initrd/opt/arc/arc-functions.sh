@@ -2845,54 +2845,65 @@ function injectLoader() {
     if [ "${REINJECT}" = "false" ]; then
       echo "Partition table type: ${PTTYPE}"
 
-      # Find the last used sector on the disk to know where to start new partitions
-      LAST_SECTOR="$(fdisk -l "${IDISK}" 2>/dev/null | awk '/^'"${IDISK}"'/ {print $3}' | sort -n | tail -1)"
-      if [ -z "${LAST_SECTOR}" ]; then
-        echo "ERROR: Cannot determine last used sector on ${IDISK}." >"${LOG_FILE}"
+      # Place Arc partitions at the tail of the disk so unallocated space in
+      # the middle remains available for DSM storage pool creation.
+      # Match grub.img layout: p1=50M p2=50M p3=1750M (total 1850M)
+      SECTOR_SIZE=512
+      ARC_P3_MB=1750
+      ARC_P2_MB=50
+      ARC_P1_MB=50
+      ARC_TOTAL_SECTORS=$(( (ARC_P1_MB + ARC_P2_MB + ARC_P3_MB) * 1024 * 1024 / SECTOR_SIZE ))
+
+      # Total disk sectors
+      DISK_SECTORS="$(cat /sys/block/${IDISK/\/dev\//}/size 2>/dev/null)"
+      if [ -z "${DISK_SECTORS}" ]; then
+        echo "ERROR: Cannot determine disk size for ${IDISK}." >"${LOG_FILE}"
         exit 1
       fi
 
-      START_P1=$((LAST_SECTOR + 1))
+      # Align to 2048-sector (1MiB) boundary
+      # Start of p1 = disk end - total arc sectors, aligned down to 2048
+      RAW_START=$(( DISK_SECTORS - ARC_TOTAL_SECTORS ))
+      START_P1=$(( (RAW_START / 2048) * 2048 ))
+      START_P2=$(( START_P1 + ARC_P1_MB * 1024 * 1024 / SECTOR_SIZE ))
+      START_P3=$(( START_P2 + ARC_P2_MB * 1024 * 1024 / SECTOR_SIZE ))
+      END_P1=$(( START_P2 - 1 ))
+      END_P2=$(( START_P3 - 1 ))
+      END_P3=$(( DISK_SECTORS - 34 ))  # GPT: leave 33 sectors for backup header; MBR: harmless
 
-      echo "Creating 3 Arc bootloader partitions starting at sector ${START_P1} ..."
+      echo "Disk sectors: ${DISK_SECTORS}"
+      echo "Arc partitions: p1=${START_P1}-${END_P1} p2=${START_P2}-${END_P2} p3=${START_P3}-${END_P3}"
 
       if [ "${PTTYPE}" = "gpt" ]; then
-        # GPT: use gdisk, add 3 partitions after existing ones
-        # p1: +50M FAT32, p2: +50M ext2, p3: rest
-        echo -e "n\n\n${START_P1}\n+50M\n0700\nw\ny\n" | gdisk "${IDISK}" >/dev/null 2>&1
+        END_P3=$(( DISK_SECTORS - 34 ))
+        echo -e "n\n\n${START_P1}\n${END_P1}\n0700\nw\ny\n" | gdisk "${IDISK}" >/dev/null 2>&1
         sleep 1
         blockdev --rereadpt "${IDISK}" 2>/dev/null
         sleep 2
-        P1_LAST="$(fdisk -l "${IDISK}" 2>/dev/null | awk '/^'"${IDISK}"'/ {print $3}' | sort -n | tail -1)"
-        START_P2=$((P1_LAST + 1))
-        echo -e "n\n\n${START_P2}\n+50M\n8300\nw\ny\n" | gdisk "${IDISK}" >/dev/null 2>&1
+        echo -e "n\n\n${START_P2}\n${END_P2}\n8300\nw\ny\n" | gdisk "${IDISK}" >/dev/null 2>&1
         sleep 1
         blockdev --rereadpt "${IDISK}" 2>/dev/null
         sleep 2
-        P2_LAST="$(fdisk -l "${IDISK}" 2>/dev/null | awk '/^'"${IDISK}"'/ {print $3}' | sort -n | tail -1)"
-        START_P3=$((P2_LAST + 1))
-        echo -e "n\n\n${START_P3}\n\n8300\nw\ny\n" | gdisk "${IDISK}" >/dev/null 2>&1
+        echo -e "n\n\n${START_P3}\n${END_P3}\n8300\nw\ny\n" | gdisk "${IDISK}" >/dev/null 2>&1
       else
-        # MBR: use fdisk — create logical partitions inside extended if needed
-        # Check if we already have an extended partition
+        # MBR: 4 primary slots; DSM uses 1+2 (system+swap), possibly 3 (data).
+        # Use an extended partition to hold our 3 logical partitions in the tail.
         EXT_CNT="$(fdisk -l "${IDISK}" 2>/dev/null | grep -c "Extended")"
         if [ "${EXT_CNT}" -eq 0 ]; then
-          # Create extended partition first to hold logical partitions
           echo -e "n\ne\n\n${START_P1}\n\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1
           sleep 1
           blockdev --rereadpt "${IDISK}" 2>/dev/null
           sleep 2
         fi
-        # Add logical partitions: +50M, +50M, rest
-        echo -e "n\nl\n\n+50M\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1
+        echo -e "n\nl\n${START_P1}\n${END_P1}\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1
         sleep 1
         blockdev --rereadpt "${IDISK}" 2>/dev/null
         sleep 2
-        echo -e "n\nl\n\n+50M\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1
+        echo -e "n\nl\n${START_P2}\n${END_P2}\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1
         sleep 1
         blockdev --rereadpt "${IDISK}" 2>/dev/null
         sleep 2
-        echo -e "n\nl\n\n\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1
+        echo -e "n\nl\n${START_P3}\n\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1
       fi
 
       sleep 2
