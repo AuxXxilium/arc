@@ -189,6 +189,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       write_menu "B" "Grep DSM Config from Backup"
       write_menu "=" "\Z1== Edit with caution! ==\Zn"
       write_menu "C" "Clone Loader to another Disk"
+      write_menu "I" "Inject Loader to DSM Disk"
       write_menu "n" "Grub Bootloader Config"
       write_menu "y" "Choose a Keymap for Loader"
       write_menu "F" "\Z1Format Disks\Zn"
@@ -380,6 +381,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
           L) greplogs; NEXT="L" ;;
           B) getbackup; NEXT="B" ;;
           C) cloneLoader; NEXT="C" ;;
+          I) injectLoader; NEXT="I" ;;
           n) editGrubCfg; NEXT="n" ;;
           y) keymapMenu; NEXT="y" ;;
           F) formatDisks; NEXT="F" ;;

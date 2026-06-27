@@ -2786,6 +2786,194 @@ function cloneLoader() {
 }
 
 ###############################################################################
+# Inject Arc bootloader partitions onto a DSM data disk so the NAS can boot
+# without a separate USB loader. Creates 3 new partitions after the existing
+# DSM system/swap partitions and copies p1/p2/p3 content into them.
+function injectLoader() {
+  # Find DSM disks: look for disks that have linux_raid_member partitions (sda1)
+  # but are not the current loader disk.
+  rm -f "${TMP_PATH}/opts" 2>/dev/null
+  while read -r KNAME SIZE TYPE DMODEL PKNAME; do
+    [ "${KNAME}" = "N/A" ] || [ "${SIZE:0:1}" -eq 0 ] && continue
+    [ "${KNAME:0:7}" = "/dev/md" ] && continue
+    [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
+    # Only show whole disks, not partitions
+    [ "${TYPE}" != "disk" ] && continue
+    # Must have linux_raid_member partitions (DSM system disk signature)
+    lsblk -pno KNAME,FSTYPE "${KNAME}" 2>/dev/null | grep -q "linux_raid_member" || continue
+    printf "\"%s\" \"%-6s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${DMODEL}" >>"${TMP_PATH}/opts"
+  done <<<"$(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)"
+
+  if [ ! -f "${TMP_PATH}/opts" ]; then
+    dialog --backtitle "$(backtitle)" --colors --title "Inject Loader to DSM Disk" \
+      --msgbox "No DSM data disk found!\nMake sure DSM is installed and all disks are connected." 0 0
+    return
+  fi
+
+  dialog --backtitle "$(backtitle)" --colors --title "Inject Loader to DSM Disk" \
+    --radiolist "Choose a DSM disk to inject the bootloader into" 0 0 0 --file "${TMP_PATH}/opts" \
+    2>"${TMP_PATH}/resp"
+  [ $? -ne 0 ] && return
+  IDISK="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+  if [ -z "${IDISK}" ]; then
+    dialog --backtitle "$(backtitle)" --colors --title "Inject Loader to DSM Disk" \
+      --msgbox "No disk selected!" 0 0
+    return
+  fi
+
+  # Warn user clearly
+  dialog --backtitle "$(backtitle)" --colors --title "Inject Loader to DSM Disk" \
+    --yesno "Warning:\nThis will add new partitions to ${IDISK} to store the Arc bootloader.\nExisting DSM data on this disk will NOT be touched.\n\nAfter injection the NAS can boot Arc directly from this disk without a USB loader.\nYou can remove the injected partitions later via this same menu.\n\nDo you want to continue?" 0 0
+  [ $? -ne 0 ] && return
+
+  # Check if already injected (ARC1/ARC2/ARC3 labels on this disk)
+  ALREADY="$(blkid | grep "${IDISK}" | grep -E 'LABEL="ARC[123]"' | wc -l)"
+  if [ "${ALREADY}" -ge 3 ]; then
+    dialog --backtitle "$(backtitle)" --colors --title "Inject Loader to DSM Disk" \
+      --yesno "Arc bootloader partitions (ARC1/ARC2/ARC3) already exist on ${IDISK}.\n\nDo you want to re-inject (overwrite) them?" 0 0
+    [ $? -ne 0 ] && return
+    REINJECT="true"
+  else
+    REINJECT="false"
+  fi
+
+  (
+    # Determine partition table type
+    PTTYPE="$(blkid -o value -s PTTYPE "${IDISK}" 2>/dev/null)"
+    [ -z "${PTTYPE}" ] && PTTYPE="$(fdisk -l "${IDISK}" 2>/dev/null | grep -oE 'dos|gpt' | head -1)"
+
+    if [ "${REINJECT}" = "false" ]; then
+      echo "Partition table type: ${PTTYPE}"
+
+      # Find the last used sector on the disk to know where to start new partitions
+      LAST_SECTOR="$(fdisk -l "${IDISK}" 2>/dev/null | awk '/^'"${IDISK}"'/ {print $3}' | sort -n | tail -1)"
+      if [ -z "${LAST_SECTOR}" ]; then
+        echo "ERROR: Cannot determine last used sector on ${IDISK}." >"${LOG_FILE}"
+        exit 1
+      fi
+
+      START_P1=$((LAST_SECTOR + 1))
+
+      echo "Creating 3 Arc bootloader partitions starting at sector ${START_P1} ..."
+
+      if [ "${PTTYPE}" = "gpt" ]; then
+        # GPT: use gdisk, add 3 partitions after existing ones
+        # p1: +50M FAT32, p2: +50M ext2, p3: rest
+        echo -e "n\n\n${START_P1}\n+50M\n0700\nw\ny\n" | gdisk "${IDISK}" >/dev/null 2>&1
+        sleep 1
+        blockdev --rereadpt "${IDISK}" 2>/dev/null
+        sleep 2
+        P1_LAST="$(fdisk -l "${IDISK}" 2>/dev/null | awk '/^'"${IDISK}"'/ {print $3}' | sort -n | tail -1)"
+        START_P2=$((P1_LAST + 1))
+        echo -e "n\n\n${START_P2}\n+50M\n8300\nw\ny\n" | gdisk "${IDISK}" >/dev/null 2>&1
+        sleep 1
+        blockdev --rereadpt "${IDISK}" 2>/dev/null
+        sleep 2
+        P2_LAST="$(fdisk -l "${IDISK}" 2>/dev/null | awk '/^'"${IDISK}"'/ {print $3}' | sort -n | tail -1)"
+        START_P3=$((P2_LAST + 1))
+        echo -e "n\n\n${START_P3}\n\n8300\nw\ny\n" | gdisk "${IDISK}" >/dev/null 2>&1
+      else
+        # MBR: use fdisk — create logical partitions inside extended if needed
+        # Check if we already have an extended partition
+        EXT_CNT="$(fdisk -l "${IDISK}" 2>/dev/null | grep -c "Extended")"
+        if [ "${EXT_CNT}" -eq 0 ]; then
+          # Create extended partition first to hold logical partitions
+          echo -e "n\ne\n\n${START_P1}\n\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1
+          sleep 1
+          blockdev --rereadpt "${IDISK}" 2>/dev/null
+          sleep 2
+        fi
+        # Add logical partitions: +50M, +50M, rest
+        echo -e "n\nl\n\n+50M\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1
+        sleep 1
+        blockdev --rereadpt "${IDISK}" 2>/dev/null
+        sleep 2
+        echo -e "n\nl\n\n+50M\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1
+        sleep 1
+        blockdev --rereadpt "${IDISK}" 2>/dev/null
+        sleep 2
+        echo -e "n\nl\n\n\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1
+      fi
+
+      sleep 2
+      blockdev --rereadpt "${IDISK}" 2>/dev/null
+      sleep 2
+      fdisk -l "${IDISK}"
+    fi
+
+    # Find the new ARC partitions — they don't have labels yet, so find the
+    # 3 highest-numbered partitions on this disk that are NOT linux_raid_member
+    mapfile -t ALL_PARTS < <(lsblk -pno KNAME,FSTYPE "${IDISK}" 2>/dev/null | awk '$1 ~ /^'"${IDISK}"'/ && $2 != "linux_raid_member" && $1 != "'"${IDISK}"'" {print $1}' | sort -V)
+    INJECT_P1="${ALL_PARTS[-3]}"
+    INJECT_P2="${ALL_PARTS[-2]}"
+    INJECT_P3="${ALL_PARTS[-1]}"
+
+    if [ -z "${INJECT_P1}" ] || [ -z "${INJECT_P2}" ] || [ -z "${INJECT_P3}" ]; then
+      echo "ERROR: Could not identify target partitions on ${IDISK}." >"${LOG_FILE}"
+      exit 1
+    fi
+
+    echo "Formatting Arc partitions: ${INJECT_P1} ${INJECT_P2} ${INJECT_P3}"
+    mkdosfs -F32 -n "ARC1" "${INJECT_P1}" >/dev/null 2>&1
+    mkfs.ext2 -F -L "ARC2" "${INJECT_P2}" >/dev/null 2>&1
+    mkfs.ext4 -F -L "ARC3" "${INJECT_P3}" >/dev/null 2>&1
+
+    mkdir -p "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3"
+    mount "${INJECT_P1}" "${TMP_PATH}/idX1" || { echo "ERROR: Cannot mount ${INJECT_P1}." >"${LOG_FILE}"; exit 1; }
+    mount "${INJECT_P2}" "${TMP_PATH}/idX2" || { echo "ERROR: Cannot mount ${INJECT_P2}." >"${LOG_FILE}"; umount "${TMP_PATH}/idX1" 2>/dev/null; exit 1; }
+    mount "${INJECT_P3}" "${TMP_PATH}/idX3" || { echo "ERROR: Cannot mount ${INJECT_P3}." >"${LOG_FILE}"; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" 2>/dev/null; exit 1; }
+
+    echo "Copying bootloader content ..."
+    cp -vRf "${PART1_PATH}/." "${TMP_PATH}/idX1/" || { echo "ERROR: Copy to ${INJECT_P1} failed." >"${LOG_FILE}"; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null; exit 1; }
+    cp -vRf "${PART2_PATH}/." "${TMP_PATH}/idX2/" || { echo "ERROR: Copy to ${INJECT_P2} failed." >"${LOG_FILE}"; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null; exit 1; }
+    cp -vRf "${PART3_PATH}/." "${TMP_PATH}/idX3/" || { echo "ERROR: Copy to ${INJECT_P3} failed." >"${LOG_FILE}"; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null; exit 1; }
+
+    # Install GRUB onto the DSM disk MBR/ESP so it can boot from it
+    if [ "${PTTYPE}" = "gpt" ]; then
+      if [ -d /sys/firmware/efi ]; then
+        grub-install --target=x86_64-efi --efi-directory="${TMP_PATH}/idX1" \
+          --boot-directory="${TMP_PATH}/idX1/boot" --removable --no-nvram "${IDISK}" >/dev/null 2>&1
+      else
+        grub-install --target=i386-pc --boot-directory="${TMP_PATH}/idX1/boot" "${IDISK}" >/dev/null 2>&1
+      fi
+    else
+      grub-install --target=i386-pc --boot-directory="${TMP_PATH}/idX1/boot" "${IDISK}" >/dev/null 2>&1
+    fi
+
+    sync
+    umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null
+    rm -rf "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null
+    echo "Done."
+  ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Inject Loader to DSM Disk" \
+    --progressbox "Injecting bootloader ..." 20 100
+
+  if [ -f "${LOG_FILE}" ] && grep -q "ERROR" "${LOG_FILE}"; then
+    dialog --backtitle "$(backtitle)" --colors --title "Inject Loader to DSM Disk" \
+      --msgbox "Injection failed!\n$(cat "${LOG_FILE}")" 0 0
+    return
+  fi
+
+  writeConfigKey "loader-on-disk" "true" "${USER_CONFIG_FILE}"
+
+  # DSM's kernel uses synoboot_satadom + dom_szmax to find its own boot device
+  # after it takes over from Arc. When booting from a data disk (not USB) with
+  # kernel < 5, mode 2 (fake/size-scan) risks matching wrong disks since the
+  # injected disk is large. Mode 1 (native) scans by dom_szmax = disk size + 10,
+  # which uniquely identifies the injected disk. Kernel >= 5 (DT platforms like
+  # v1000, r1000, epyc7002, geminilake) don't use synoboot_satadom at all.
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+  if [ -n "${KVER}" ] && [ "${KVER:0:1}" -lt 5 ]; then
+    writeConfigKey "satadom" "1" "${USER_CONFIG_FILE}"
+  fi
+
+  dialog --backtitle "$(backtitle)" --colors --title "Inject Loader to DSM Disk" \
+    --msgbox "Bootloader injected successfully to ${IDISK}.\n\nThe NAS can now boot Arc directly from this disk.\nYou may remove the USB loader after verifying boot works." 0 0
+  return
+}
+
+###############################################################################
 # let user delete Loader Boot Files
 function resetLoader() {
   if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
