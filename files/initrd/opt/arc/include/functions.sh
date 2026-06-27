@@ -387,6 +387,8 @@ function livepatch() {
     PVALID="true"
   else
     PVALID="false"
+    echo -e ">> Ramdisk patching failed!"
+    [ -f "${LOG_FILE}" ] && echo -e ">> Error details:" && cat "${LOG_FILE}"
   fi
   echo
   if [ "${PVALID}" = "true" ]; then
@@ -396,11 +398,13 @@ function livepatch() {
       PVALID="true"
     else
       PVALID="false"
+      echo -e ">> Kernel patching failed!"
+      [ -f "${LOG_FILE}" ] && echo -e ">> Error details:" && cat "${LOG_FILE}"
     fi
   fi
   echo
   if [ "${PVALID}" = "false" ]; then
-    echo -e ">> DSM Image patching failed."
+    echo -e ">> DSM Image patching failed - aborting build."
     sleep 5
     exit 1
   elif [ "${PVALID}" = "true" ]; then

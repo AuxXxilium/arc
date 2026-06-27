@@ -211,9 +211,16 @@ function arcVersion() {
         if echo "${CVS}" | grep -qx "${V:0:3}"; then
           if [[ "${V:0:3}" < "7.3" ]]; then
             STATUS="supported"
-          else
-            # Check for movbe CPU flag for versions > 7.2
+          elif [[ "${V:0:3}" < "7.4" ]]; then
+            # Check for movbe CPU flag for versions >= 7.3
             if grep -q "^flags.*movbe.*" /proc/cpuinfo; then
+              STATUS="beta"
+            else
+              STATUS="unsupported"
+            fi
+          else
+            # Check for movbe + bmi2 CPU flags for versions >= 7.4
+            if grep -q "^flags.*movbe.*" /proc/cpuinfo && grep -q "^flags.*bmi2.*" /proc/cpuinfo; then
               STATUS="beta"
             else
               STATUS="unsupported"
@@ -1615,6 +1622,11 @@ function sysinfo() {
   else
     MOVBE="false"
   fi
+  if grep -q "^flags.*bmi2.*" /proc/cpuinfo; then
+    BMI2="true"
+  else
+    BMI2="false"
+  fi
   ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
   ETHN="$(echo ${ETHX} | wc -w)"
   ACCESS_TOKEN="$(genAccessToken)"
@@ -1686,7 +1698,7 @@ function sysinfo() {
     done
   fi
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL}))GB\Zn"
-  TEXT+="\n  AES | MOVBE: \Zb${AESSYS} | ${MOVBE}\Zn"
+  TEXT+="\n  AES | MOVBE | BMI2: \Zb${AESSYS} | ${MOVBE} | ${BMI2}\Zn"
   TEXT+="\n  CPU Scaling | Governor: \Zb${CPUFREQ} | ${GOVERNOR}\Zn"
   TEXT+="\n  Secure Boot: \Zb${SECURE}\Zn"
   TEXT+="\n  Bootdisk: \Zb${LOADER_DISK}\Zn"

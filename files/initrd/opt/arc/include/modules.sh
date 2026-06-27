@@ -127,6 +127,7 @@ function installModules() {
   unpackModules "${PLATFORM}" "${KVERP}"
 
   ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
+  local MISSING_MODULES=""
   for D in "" "update"; do
     for F in $(LC_ALL=C printf '%s\n' ${UNPATH}/${D:+${D}/}*.ko | sort -V); do
       [ ! -e "${F}" ] && continue
@@ -134,12 +135,28 @@ function installModules() {
       [ "${ODP}" = "true" ] && [ -f "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}${M}" ] && continue # TODO: check if module is already loaded
       if echo "${MLIST}" | grep -wq "${D:+${D}/}$(basename "${M}" .ko)"; then
         mkdir -p "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}"
-        cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}${M}" 2>"${LOG_FILE}"
+        cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}${M}" 2>>"${LOG_FILE}"
       else
-        rm -f "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}${M}" 2>"${LOG_FILE}"
+        rm -f "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}${M}" 2>>"${LOG_FILE}"
       fi
     done
   done
+
+  # Check that every requested module was actually installed
+  for MOD in ${MLIST}; do
+    local FOUND=false
+    for D in "" "update"; do
+      [ -f "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}${MOD}.ko" ] && FOUND=true && break
+    done
+    if [ "${FOUND}" = "false" ]; then
+      echo "ERROR: Module ${MOD} not found for ${PLATFORM}-${KVERP}" | tee -a "${LOG_FILE}"
+      MISSING_MODULES="${MISSING_MODULES} ${MOD}"
+    fi
+  done
+  if [ -n "${MISSING_MODULES}" ]; then
+    echo "ERROR: Missing modules:${MISSING_MODULES}" | tee -a "${LOG_FILE}"
+    return 1
+  fi
 
   mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"

@@ -176,10 +176,19 @@ for ADDON in ${SYSADDONS}; do
     [ -f "${USER_UP_PATH}/model.dts" ] && cp -f "${USER_UP_PATH}/model.dts" "${RAMDISK_PATH}/addons/model.dts"
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && cp -f "${USER_UP_PATH}/${MODEL}.dts" "${RAMDISK_PATH}/addons/model.dts"
   fi
+  if ! isAddonAvailable "${ADDON}" "${PLATFORM}"; then
+    echo "ERROR: System addon ${ADDON} not available for ${PLATFORM}" | tee -a "${LOG_FILE}"
+    exit 1
+  fi
   if installAddon "${ADDON}" "${PLATFORM}"; then
-    echo "/addons/${ADDON}.sh \${1}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || { echo "Addon ${ADDON} failed to install" && exit 1; }
+    if [ ! -f "${RAMDISK_PATH}/addons/${ADDON}.sh" ]; then
+      echo "ERROR: System addon ${ADDON} install.sh missing after install" | tee -a "${LOG_FILE}"
+      exit 1
+    fi
+    echo "/addons/${ADDON}.sh \${1}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || { echo "ERROR: Addon ${ADDON} failed to register" | tee -a "${LOG_FILE}" && exit 1; }
   else
-    echo "Addon ${ADDON} not found, please check your configuration"
+    echo "ERROR: System addon ${ADDON} failed to install" | tee -a "${LOG_FILE}"
+    exit 1
   fi
 done
 
@@ -193,17 +202,28 @@ for ADDON in "${!ADDONS[@]}"; do
     [ "${DISCORDNOTIFY}" = "true" ] && DISCORDUSERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
     PARAMS="${WEBHOOK:-false} ${DISCORDUSERID:-false}"
   fi
+  if ! isAddonAvailable "${ADDON}" "${PLATFORM}"; then
+    echo "WARNING: User addon ${ADDON} not available for ${PLATFORM}, skipping" | tee -a "${LOG_FILE}"
+    continue
+  fi
   if installAddon "${ADDON}" "${PLATFORM}"; then
-    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || { echo "Addon ${ADDON} failed to install" && exit 1; }
+    if [ ! -f "${RAMDISK_PATH}/addons/${ADDON}.sh" ]; then
+      echo "WARNING: User addon ${ADDON} has no install.sh, skipping" | tee -a "${LOG_FILE}"
+      continue
+    fi
+    echo "/addons/${ADDON}.sh \${1} ${PARAMS}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || { echo "ERROR: Addon ${ADDON} failed to register" | tee -a "${LOG_FILE}" && exit 1; }
   else
-    echo "Addon ${ADDON} not found, please check your configuration"
+    echo "WARNING: User addon ${ADDON} failed to install, skipping" | tee -a "${LOG_FILE}"
   fi
 done
 
 # Extract modules to ramdisk
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: install modules"
 installModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" "${!MODULES[@]}" || exit 1
-gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/redpill.ko" 2>>"${LOG_FILE}" || exit 1
+if ! gzip -dc "${LKMS_PATH}/rp-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-${LKM}.ko.gz" >"${RAMDISK_PATH}/usr/lib/modules/redpill.ko" 2>>"${LOG_FILE}"; then
+  echo "ERROR: redpill LKM not found: rp-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-${LKM}.ko.gz" | tee -a "${LOG_FILE}"
+  exit 1
+fi
 
 
 # Copying modulelist

@@ -93,6 +93,11 @@ function getSysinfo() {
   else
     MOVBE="false"
   fi
+  if grep -q "^flags.*bmi2.*" /proc/cpuinfo; then
+    BMI2="true"
+  else
+    BMI2="false"
+  fi
   # Check for CPU Frequency Scaling
   CPUFREQUENCIES=$(ls -ltr /sys/devices/system/cpu/cpufreq/* 2>/dev/null | wc -l)
   if [ ${CPUFREQUENCIES} -gt 1 ]; then
@@ -207,7 +212,7 @@ function getSysinfo() {
     done
   fi
   TEXT+="\n  Memory: $((${RAMTOTAL}))GB"
-  TEXT+="\n  AES | MOVBE: ${AESSYS} | ${MOVBE}"
+  TEXT+="\n  AES | MOVBE | BMI2: ${AESSYS} | ${MOVBE} | ${BMI2}"
   TEXT+="\n  CPU Scaling | Governor: ${CPUFREQ} | ${GOVERNOR}"
   TEXT+="\n  Secure Boot: ${SECURE:-not found}"
   TEXT+="\n"

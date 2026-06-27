@@ -140,12 +140,6 @@ KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
 DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
-NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
-MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
-CONSOLEBLANK="$(readConfigKey "arc.consoleblank" "${USER_CONFIG_FILE}")"
-HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
-USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
-FANCONTROL="$(readConfigKey "fancontrol" "${USER_CONFIG_FILE}")"
 
 declare -A CMDLINE
 
@@ -157,18 +151,17 @@ CMDLINE['sn']="${SN}"
 
 # NIC Cmdline
 ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
-ETHM=$(readConfigKey "${MODEL}.ports" "${S_FILE}")
-ETHN=$(wc -w <<< "${ETHX}")
-ETHM=${ETHM:-${ETHN}}
-NIC=0
+ETHNA="$(wc -w <<< "${ETHX}")"
+ETHN=0
 for N in ${ETHX}; do
   MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
   [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
-  CMDLINE["mac$((++NIC))"]="${MAC}"
-  [ "${NIC}" -ge "${ETHM}" ] && break
+  CMDLINE["mac$((++ETHN))"]="${MAC}"
 done
-CMDLINE['netif_num']="${NIC}"
+CMDLINE['netif_num']="${ETHN}"
+[ "${ETHN}" -ne "${ETHNA}" ] && echo "Warning: Network interface count mismatch!" || true
 
+NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
 if [ "${NETFIX}" = "true" ]; then
   for N in ${ETHX}; do
     RMAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null || echo "00:00:00:00:00:00")"
@@ -236,44 +229,60 @@ CMDLINE['rootwait']=""
 CMDLINE['panic']="${KERNELPANIC:-0}"
 CMDLINE['pcie_aspm']="off"
 CMDLINE['nowatchdog']=""
+MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 CMDLINE['mev']="${MEV:-physical}"
 CMDLINE['governor']="${GOVERNOR:-performance}"
 
-if [ "${MEV:-physical}" = "vmware" ]; then
+# Set pstate mode based on governor
+case "${GOVERNOR:-performance}" in
+  schedutil)
+    CMDLINE['intel_pstate']="passive"
+    CMDLINE['amd_pstate']="passive"
+    ;;
+  performance|powersave)
+    CMDLINE['intel_pstate']="disable"
+    CMDLINE['amd_pstate']="disable"
+    ;;
+esac
+
+if [ "${MEV}" = "vmware" ]; then
   CMDLINE['tsc']="reliable"
   CMDLINE['pmtmr']="0x0"
 fi
 
+HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
 if [ "${HDDSORT}" = "true" ]; then
   CMDLINE['hddsort']=""
 fi
 
+USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 if [ "${USBMOUNT}" = "true" ]; then
   CMDLINE['usbinternal']=""
 fi
 
+FANCONTROL="$(readConfigKey "fancontrol" "${USER_CONFIG_FILE}")"
 if [ "${FANCONTROL}" = "true" ]; then
   CMDLINE['fancontrol']=""
 fi
 
-if echo "apollolake geminilake purley geminilakenk" | grep -wq "${PLATFORM}"; then
-  CMDLINE["nox2apic"]=""
+if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
+  CMDLINE['nox2apic']=""
 fi
 
-if [ "${DT}" = "true" ] && ! echo "purley broadwellnkv2 epyc7002 geminilakenk r1000nk v1000nk" | grep -wq "${PLATFORM}"; then
+if is_in_array "${PLATFORM}" "${IGFXRL[@]}"; then
+  CMDLINE['intel_iommu']="igfx_off"
+fi
+
+if [ "${PLATFORM}" = "purley" ] || [ "${PLATFORM}" = "broadwellnkv2" ]; then
+  CMDLINE['SASmodel']="1"
+fi
+
+if [ "${DT}" = "true" ] && ! is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
   if ! echo "${CMDLINE['modprobe.blacklist']}" | grep -q "mpt3sas"; then
     [ ! "${CMDLINE['modprobe.blacklist']}" = "" ] && CMDLINE['modprobe.blacklist']+=","
     CMDLINE['modprobe.blacklist']+="mpt3sas"
   fi
-fi
-
-if echo "apollolake geminilake geminilakenk" | grep -wq "${PLATFORM}"; then
-  CMDLINE["intel_iommu"]="igfx_off"
-fi
-
-if echo "purley broadwellnkv2" | grep -wq "${PLATFORM}"; then
-  CMDLINE["SASmodel"]="1"
 fi
 
 # Read user network settings
@@ -286,23 +295,10 @@ while IFS=': ' read -r KEY VALUE; do
   [ -n "${KEY}" ] && CMDLINE["${KEY}"]="${VALUE}"
 done <<<"$(readConfigMap "cmdline" "${USER_CONFIG_FILE}")"
 
-# Prepare command line - start from grub's cmdline, then overlay Arc's key
-declare -A CMDLINE_MERGED
-while IFS= read -r -d ' ' ENTRY; do
-  [ -z "${ENTRY}" ] && continue
-  KEY="${ENTRY%%=*}"
-  [[ " nomodeset intremap amd_iommu_intr intel_pstate amd_pstate " == *" ${KEY} "* ]] && continue
-  VALUE="${ENTRY#*=}"
-  [ "${KEY}" = "${ENTRY}" ] && VALUE=""   # no '=' means flag-only
-  CMDLINE_MERGED["${KEY}"]="${VALUE}"
-done < <(cat /proc/cmdline | tr '\n' ' '; echo ' ')
-for KEY in "${!CMDLINE[@]}"; do
-  CMDLINE_MERGED["${KEY}"]="${CMDLINE[${KEY}]}"
-done
-# Build final command line string
+# Prepare command line
 CMDLINE_LINE=""
-for KEY in "${!CMDLINE_MERGED[@]}"; do
-  VALUE="${CMDLINE_MERGED[${KEY}]}"
+for KEY in "${!CMDLINE[@]}"; do
+  VALUE="${CMDLINE[${KEY}]}"
   CMDLINE_LINE+=" ${KEY}"
   [ -n "${VALUE}" ] && CMDLINE_LINE+="=${VALUE}"
 done
