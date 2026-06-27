@@ -272,6 +272,9 @@ fi
 
 if is_in_array "${PLATFORM}" "${IGFXRL[@]}"; then
   CMDLINE['intel_iommu']="igfx_off"
+  if [ "${KVER:0:1}" -lt 5 ]; then
+    CMDLINE['i915.enable_guc']="2"
+  fi
 fi
 
 if [ "${PLATFORM}" = "purley" ] || [ "${PLATFORM}" = "broadwellnkv2" ]; then

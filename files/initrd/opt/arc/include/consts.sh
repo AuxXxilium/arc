@@ -57,7 +57,7 @@ IGPU1L=(apollolake geminilake)
 IGPU2L=(epyc7002 geminilakenk r1000nk v1000nk)
 NVMECACHE=(DS719+ DS918+ DS1019+ DS1621xs+ RS1619xs+)
 MPT3PL=(purley broadwellnkv2 epyc7002 geminilakenk r1000nk v1000nk)
-IGFXRL=(apollolake geminilake geminilakenk)
+IGFXRL=(apollolake epyc7002 geminilake geminilakenk)
 XAPICRL=(apollolake geminilake purley geminilakenk)
 
 HTTPPORT=$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
