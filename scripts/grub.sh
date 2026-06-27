@@ -19,7 +19,7 @@ tar -zxf "${GRUB}.tar.gz"
 # Build GRUB for each platform
 pushd "${GRUB}" > /dev/null
 # Restore the modification to extra_deps.lst
-echo "depends bli part_gpt lvm" > grub-core/extra_deps.lst
+echo "depends bli part_gpt part_msdos lvm" > grub-core/extra_deps.lst
 for B in ${BIOS}; do
   b=${B}
   b=(${b//-/ }) # Split target and platform

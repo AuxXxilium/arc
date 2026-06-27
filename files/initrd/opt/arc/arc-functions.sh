@@ -2852,84 +2852,172 @@ function injectLoader() {
   fi
 
   (
+    set -e
     if echo "${IDISK}" | grep -qE 'nvme|mmcblk'; then
       PSEP="p"
     else
       PSEP=""
     fi
 
-    PTTYPE="$(blkid -o value -s PTTYPE "${IDISK}" 2>/dev/null)"
-    if [ "${PTTYPE}" != "gpt" ]; then
-      printf "w\ny\n" | gdisk "${IDISK}" >/dev/null 2>&1
-      sleep 1
-      blockdev --rereadpt "${IDISK}" 2>/dev/null
-      sleep 1
-    fi
-
-    SECTOR_SIZE=512
-    ARC_P1_SECTORS=$(( 50 * 1024 * 1024 / SECTOR_SIZE ))
-    ARC_P2_SECTORS=$(( 50 * 1024 * 1024 / SECTOR_SIZE ))
-    ARC_P3_SECTORS=$(( 1750 * 1024 * 1024 / SECTOR_SIZE ))
-    ARC_TOTAL_SECTORS=$(( ARC_P1_SECTORS + ARC_P2_SECTORS + ARC_P3_SECTORS ))
-
+    # /sys/block/.../size is always in 512-byte units regardless of physical sector size
     DISK_SECTORS="$(cat "/sys/block/${IDISK/\/dev\//}/size" 2>/dev/null)"
     if [ -z "${DISK_SECTORS}" ]; then
       echo "ERROR: Cannot read disk size for ${IDISK}."
       exit 1
     fi
 
-    RAW_START=$(( DISK_SECTORS - ARC_TOTAL_SECTORS - 34 ))
-    START_P4=$(( (RAW_START / 2048) * 2048 ))
-    START_P5=$(( START_P4 + ARC_P1_SECTORS ))
-    START_P6=$(( START_P5 + ARC_P2_SECTORS ))
-    END_P6=$(( DISK_SECTORS - 34 - 1 ))
+    # Determine current partition table type
+    PTTYPE="$(blkid -o value -s PTTYPE "${IDISK}" 2>/dev/null)"
 
-    while true; do
-      LAST_PART="$(gdisk -l "${IDISK}" 2>/dev/null | awk '/^[[:space:]]*[0-9]/ {print $1}' | sort -n | tail -1)"
-      [ -z "${LAST_PART}" ] && break
-      [ "${LAST_PART}" -le 3 ] && break
-      printf "d\n%s\nw\ny\n" "${LAST_PART}" | gdisk "${IDISK}" >/dev/null 2>&1
-      sleep 1
-      blockdev --rereadpt "${IDISK}" 2>/dev/null
-      sleep 1
-    done
+    if [ "${PTTYPE}" = "gpt" ]; then
+      # GPT disk: remove any previously injected Arc partitions (slots > 3)
+      echo "GPT disk detected."
+      while true; do
+        LAST_PART="$(sgdisk -p "${IDISK}" 2>/dev/null | awk '/^[[:space:]]*[0-9]/ {print $1}' | sort -n | tail -1)"
+        [ -z "${LAST_PART}" ] && break
+        [ "${LAST_PART}" -le 3 ] && break
+        sgdisk -d "${LAST_PART}" "${IDISK}" >/dev/null 2>&1
+        sleep 1; blockdev --rereadpt "${IDISK}" 2>/dev/null; udevadm settle 2>/dev/null; sleep 1
+      done
 
-    printf "n\n4\n%s\n%s\nEF00\nw\ny\n" "${START_P4}" "$(( START_P5 - 1 ))" | gdisk "${IDISK}" >/dev/null 2>&1
-    sleep 1; blockdev --rereadpt "${IDISK}" 2>/dev/null; sleep 2
-    printf "n\n5\n%s\n%s\n8300\nw\ny\n" "${START_P5}" "$(( START_P6 - 1 ))" | gdisk "${IDISK}" >/dev/null 2>&1
-    sleep 1; blockdev --rereadpt "${IDISK}" 2>/dev/null; sleep 2
-    printf "n\n6\n%s\n%s\n8300\nw\ny\n" "${START_P6}" "${END_P6}" | gdisk "${IDISK}" >/dev/null 2>&1
-    sleep 2
-    blockdev --rereadpt "${IDISK}" 2>/dev/null
-    sleep 2
+      # Arc partition sizes in 512-byte sectors
+      ARC_P1_SECTORS=$(( 50 * 1024 * 1024 / 512 ))
+      ARC_P2_SECTORS=$(( 50 * 1024 * 1024 / 512 ))
+      ARC_P3_SECTORS=$(( 1750 * 1024 * 1024 / 512 ))
+      ARC_TOTAL_SECTORS=$(( ARC_P1_SECTORS + ARC_P2_SECTORS + ARC_P3_SECTORS ))
 
-    INJECT_P1="${IDISK}${PSEP}4"
-    INJECT_P2="${IDISK}${PSEP}5"
-    INJECT_P3="${IDISK}${PSEP}6"
+      # Place Arc partitions at the tail, 2048-sector aligned.
+      # GPT secondary header occupies the last 34 sectors.
+      RAW_START=$(( DISK_SECTORS - ARC_TOTAL_SECTORS - 34 ))
+      START_P4=$(( (RAW_START / 2048) * 2048 ))
+      START_P5=$(( START_P4 + ARC_P1_SECTORS ))
+      START_P6=$(( START_P5 + ARC_P2_SECTORS ))
+      END_P6=$(( DISK_SECTORS - 34 - 1 ))
+
+      EFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)
+
+      # For BIOS/CSM on GPT we need an EF02 BIOS Boot Partition to hold GRUB core.img.
+      # Check if one already exists; if not, add a 1MiB EF02 partition.
+      if [ "${EFI}" -eq 0 ]; then
+        if ! sgdisk -p "${IDISK}" 2>/dev/null | grep -q 'EF02'; then
+          echo "Adding BIOS Boot Partition (EF02)..."
+          sgdisk -n "128:34:2047" -t "128:EF02" "${IDISK}" >/dev/null 2>&1 || { echo "ERROR: Failed to create EF02 partition."; exit 1; }
+          sleep 1; blockdev --rereadpt "${IDISK}" 2>/dev/null; udevadm settle 2>/dev/null; sleep 2
+        fi
+      fi
+
+      echo "Creating Arc partitions (GPT slots 4/5/6)..."
+      sgdisk -n "4:${START_P4}:$(( START_P5 - 1 ))" -t "4:EF00" -c "4:ARC1" "${IDISK}" >/dev/null 2>&1 || { echo "ERROR: Failed to create partition 4."; exit 1; }
+      sleep 1; blockdev --rereadpt "${IDISK}" 2>/dev/null; udevadm settle 2>/dev/null; sleep 2
+      sgdisk -n "5:${START_P5}:$(( START_P6 - 1 ))" -t "5:8300" -c "5:ARC2" "${IDISK}" >/dev/null 2>&1 || { echo "ERROR: Failed to create partition 5."; exit 1; }
+      sleep 1; blockdev --rereadpt "${IDISK}" 2>/dev/null; udevadm settle 2>/dev/null; sleep 2
+      sgdisk -n "6:${START_P6}:${END_P6}"            -t "6:8300" -c "6:ARC3" "${IDISK}" >/dev/null 2>&1 || { echo "ERROR: Failed to create partition 6."; exit 1; }
+      sleep 2; blockdev --rereadpt "${IDISK}" 2>/dev/null; udevadm settle 2>/dev/null; sleep 2
+
+      INJECT_P1="${IDISK}${PSEP}4"
+      INJECT_P2="${IDISK}${PSEP}5"
+      INJECT_P3="${IDISK}${PSEP}6"
+
+    else
+      # MBR disk: DSM uses slots 1+2. We keep it MBR and use extended/logical partitions.
+      # Remove previously injected logical partitions (5+) and the extended container (3) if present.
+      echo "MBR disk detected."
+      for N in 7 6 5 3; do
+        P="${IDISK}${PSEP}${N}"
+        if [ -b "${P}" ]; then
+          echo "Removing existing partition ${P}..."
+          printf "d\n${N}\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1 || true
+          sleep 1; blockdev --rereadpt "${IDISK}" 2>/dev/null; udevadm settle 2>/dev/null; sleep 1
+        fi
+      done
+
+      # Arc partition sizes in 512-byte sectors
+      ARC_P1_SECTORS=$(( 50 * 1024 * 1024 / 512 ))
+      ARC_P2_SECTORS=$(( 50 * 1024 * 1024 / 512 ))
+      ARC_P3_SECTORS=$(( 1750 * 1024 * 1024 / 512 ))
+      ARC_TOTAL_SECTORS=$(( ARC_P1_SECTORS + ARC_P2_SECTORS + ARC_P3_SECTORS + 2048 ))  # +2048 for extended overhead
+
+      # Find the end of the last DSM partition to place the extended container after it
+      LAST_END="$(fdisk -l "${IDISK}" 2>/dev/null | awk '/^\/dev\// {print $3}' | sort -n | tail -1)"
+      EXT_START=$(( ((LAST_END + 2048) / 2048) * 2048 ))
+
+      echo "Creating extended container and logical partitions (MBR slots 5/6/7)..."
+      # Create extended partition covering the tail of the disk
+      printf "n\ne\n3\n${EXT_START}\n\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1 || { echo "ERROR: Failed to create extended partition."; exit 1; }
+      sleep 1; blockdev --rereadpt "${IDISK}" 2>/dev/null; udevadm settle 2>/dev/null; sleep 2
+
+      # Logical partitions inside extended: fdisk auto-assigns 5, 6, 7
+      printf "n\nl\n\n+50M\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1 || { echo "ERROR: Failed to create logical partition 5."; exit 1; }
+      sleep 1; blockdev --rereadpt "${IDISK}" 2>/dev/null; udevadm settle 2>/dev/null; sleep 2
+      printf "n\nl\n\n+50M\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1 || { echo "ERROR: Failed to create logical partition 6."; exit 1; }
+      sleep 1; blockdev --rereadpt "${IDISK}" 2>/dev/null; udevadm settle 2>/dev/null; sleep 2
+      printf "n\nl\n\n\nw\n" | fdisk "${IDISK}" >/dev/null 2>&1 || { echo "ERROR: Failed to create logical partition 7."; exit 1; }
+      sleep 2; blockdev --rereadpt "${IDISK}" 2>/dev/null; udevadm settle 2>/dev/null; sleep 2
+
+      INJECT_P1="${IDISK}${PSEP}5"
+      INJECT_P2="${IDISK}${PSEP}6"
+      INJECT_P3="${IDISK}${PSEP}7"
+    fi
+
     for P in "${INJECT_P1}" "${INJECT_P2}" "${INJECT_P3}"; do
       [ ! -b "${P}" ] && { echo "ERROR: Partition ${P} not found after creation."; exit 1; }
     done
 
-    mkdosfs -F32 -n "ARC1" "${INJECT_P1}" >/dev/null 2>&1
-    mkfs.ext2 -F -L "ARC2" "${INJECT_P2}" >/dev/null 2>&1
-    mkfs.ext4 -F -L "ARC3" "${INJECT_P3}" >/dev/null 2>&1
+    echo "Formatting Arc partitions..."
+    mkdosfs -F32 -n "ARC1" "${INJECT_P1}" >/dev/null 2>&1 || { echo "ERROR: mkdosfs failed on ${INJECT_P1}."; exit 1; }
+    mkfs.ext2 -F -L "ARC2" "${INJECT_P2}" >/dev/null 2>&1 || { echo "ERROR: mkfs.ext2 failed on ${INJECT_P2}."; exit 1; }
+    mkfs.ext4 -F -L "ARC3" "${INJECT_P3}" >/dev/null 2>&1 || { echo "ERROR: mkfs.ext4 failed on ${INJECT_P3}."; exit 1; }
 
+    echo "Copying loader files..."
     mkdir -p "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3"
     mount "${INJECT_P1}" "${TMP_PATH}/idX1" || { echo "ERROR: Cannot mount ${INJECT_P1}."; exit 1; }
     mount "${INJECT_P2}" "${TMP_PATH}/idX2" || { echo "ERROR: Cannot mount ${INJECT_P2}."; umount "${TMP_PATH}/idX1" 2>/dev/null; exit 1; }
     mount "${INJECT_P3}" "${TMP_PATH}/idX3" || { echo "ERROR: Cannot mount ${INJECT_P3}."; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" 2>/dev/null; exit 1; }
 
-    cp -Rf "${PART1_PATH}/." "${TMP_PATH}/idX1/" || { echo "ERROR: Copy to ${INJECT_P1} failed."; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null; exit 1; }
-    cp -Rf "${PART2_PATH}/." "${TMP_PATH}/idX2/" || { echo "ERROR: Copy to ${INJECT_P2} failed."; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null; exit 1; }
-    cp -Rf "${PART3_PATH}/." "${TMP_PATH}/idX3/" || { echo "ERROR: Copy to ${INJECT_P3} failed."; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null; exit 1; }
+    cp -Rf "${PART1_PATH}/." "${TMP_PATH}/idX1/" || { echo "ERROR: Copy to p1 failed."; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null; exit 1; }
+    cp -Rf "${PART2_PATH}/." "${TMP_PATH}/idX2/" || { echo "ERROR: Copy to p2 failed."; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null; exit 1; }
+    cp -Rf "${PART3_PATH}/." "${TMP_PATH}/idX3/" || { echo "ERROR: Copy to p3 failed."; umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null; exit 1; }
 
     sync
     umount "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null
     rm -rf "${TMP_PATH}/idX1" "${TMP_PATH}/idX2" "${TMP_PATH}/idX3" 2>/dev/null
+
+    # Install GRUB boot code from grub.img.gz.
+    # grub.img.gz is an MBR image: bytes 0-445 = boot.img, sectors 1-2047 = core.img.
+    # core.img uses label-based search so it works on any disk.
+    # For MBR disks: write boot.img (0-445) and core.img (sectors 1-2047) into the post-MBR gap.
+    # For GPT+BIOS: the EF02 partition stores core.img; we only write boot.img to MBR sector 0.
+    #   (A full grub-install would be ideal but is not available in the initrd.)
+    # For GPT+EFI: the EFI System Partition (slot 4, EF00) is used; no MBR boot code needed.
+    echo "Installing GRUB boot code..."
+    GRUB_IMG="${TMP_PATH}/grub_inject.img"
+    gzip -dc "${ARC_PATH}/grub.img.gz" > "${GRUB_IMG}" || { echo "ERROR: Failed to extract grub.img.gz."; exit 1; }
+
+    EFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)
+    if [ "${PTTYPE}" = "gpt" ]; then
+      if [ "${EFI}" -eq 0 ]; then
+        # BIOS+GPT: write only the MBR bootstrap code (preserves partition table).
+        # core.img needs to be written into the EF02 partition by grub-install,
+        # but since grub-install is unavailable we write it there directly.
+        dd if="${GRUB_IMG}" of="${IDISK}" bs=1 count=446 conv=notrunc 2>/dev/null
+        EF02_PART="$(blkid -o device "${IDISK}"* 2>/dev/null | xargs -I{} sh -c 'sgdisk -i $(echo {} | grep -o "[0-9]*$") '"${IDISK}"' 2>/dev/null | grep -q "EF02" && echo {}' 2>/dev/null | head -1)"
+        [ -z "${EF02_PART}" ] && EF02_PART="${IDISK}${PSEP}128"
+        dd if="${GRUB_IMG}" of="${EF02_PART}" bs=512 skip=1 conv=fsync 2>/dev/null
+      fi
+      # EFI: no MBR boot code needed; firmware boots from EFI System Partition directly
+    else
+      # MBR: safe to write boot.img + core.img into post-MBR gap (sectors 1-2047).
+      # DSM partition 1 always starts at or after sector 2048.
+      dd if="${GRUB_IMG}" of="${IDISK}" bs=1 count=446 conv=notrunc 2>/dev/null
+      dd if="${GRUB_IMG}" of="${IDISK}" bs=512 skip=1 seek=1 count=2047 conv=notrunc 2>/dev/null
+    fi
+    rm -f "${GRUB_IMG}"
+    sync
+
     echo "Done."
   ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Inject Loader to DSM Disk" \
     --progressbox "Injecting bootloader ..." 20 100
-  RET=$?
+  RET=${PIPESTATUS[0]}
 
   if [ ${RET} -ne 0 ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Inject Loader to DSM Disk" \
