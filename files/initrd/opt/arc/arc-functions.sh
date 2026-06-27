@@ -32,7 +32,8 @@ function arcModel() {
       while read -r M A; do
         COMPATIBLE=1
         DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
-        KVERM="$(for V in "7.2" "7.3" "7.4"; do K="$(readConfigKey "platforms.${A}.productvers.\"${V}\".kver" "${P_FILE}")"; [ -n "${K}" ] && echo "${K}" && break; done | awk -F'.' '{print $1".x"}')"
+        KVER="$(for V in "7.2" "7.3" "7.4"; do K="$(readConfigKey "platforms.${A}.productvers.\"${V}\".kver" "${P_FILE}")"; [ -n "${K}" ] && echo "${K}" && break; done)"
+        KVERM="$(echo "${KVER}" | awk -F'.' '{print $1".x"}')"
         PLTCNT="$(readConfigKey "platforms.${A}.ccnt" "${P_FILE}")"
         FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
         BETA=""
@@ -51,15 +52,13 @@ function arcModel() {
           IGPUS=""
         fi
         [ "${DT}" = "true" ] && HBAS="" || HBAS="x"
-        if echo "${KVER5L[@]}" | grep -wq "${A}"; then
-          HBAS="x"
-        fi
+        [ "${KVER:0:1}" = "5" ] && HBAS="x"
         [ "${DT}" = "false" ] && USBS="int/ext" || USBS="ext"
         is_in_array "${M}" "${NVMECACHE[@]}" && M_2_CACHE="+" || M_2_CACHE="x"
         [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DVA1622" ]] && M_2_CACHE=""
         [[ "${M}" = "DS220+" || "${M}" = "DS224+" || "${DT}" = "false" ]] && M_2_STORAGE="" || M_2_STORAGE="+"
         if [ "${RESTRICT}" -eq 1 ]; then
-          if is_in_array "${A}" "${KVER5L[@]}"; then
+          if [ "${KVER:0:1}" = "5" ]; then
             if { [ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "usb" ] && [ "${SATADRIVES}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; } ||
                { [ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "sata" ] && [ "${SATADRIVES}" -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; } ||
                [ "${SCSICONTROLLER}" -ge 1 ] || [ "${RAIDCONTROLLER}" -ge 1 ]; then
@@ -588,9 +587,9 @@ function init_default_addons() {
   initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
   initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
   if [[ "${NVMEDRIVES}" -gt 0 && "${BUS}" != "nvme" ]] || [[ "${NVMEDRIVES}" -gt 1 && "${BUS}" = "nvme" ]]; then
-    if is_in_array "${PLATFORM}" "${KVER5L[@]}" && [ "${SATADRIVES}" -eq 0 ] && [ "${SASDRIVES}" -eq 0 ] && [ "${BUS}" != "sata" ]; then
+    if [ "${KVER:0:1}" = "5" ] && [ "${SATADRIVES}" -eq 0 ] && [ "${SASDRIVES}" -eq 0 ] && [ "${BUS}" != "sata" ]; then
       initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
-    elif is_in_array "${PLATFORM}" "${KVER5L[@]}" && [ "${SATADRIVES}" -le 1 ] && [ "${SASDRIVES}" -eq 0 ] && [ "${BUS}" = "sata" ]; then
+    elif [ "${KVER:0:1}" = "5" ] && [ "${SATADRIVES}" -le 1 ] && [ "${SASDRIVES}" -eq 0 ] && [ "${BUS}" = "sata" ]; then
       initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
     elif [ "${DT}" = "true" ]; then
       initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
@@ -606,7 +605,7 @@ function init_default_addons() {
     if [ -n "${CORETEMP}" ]; then
       writeConfigKey "fancontrol" "true" "${USER_CONFIG_FILE}"
     fi
-    if is_in_array "${PLATFORM}" "${KVER5L[@]}"; then
+    if [ "${KVER:0:1}" = "5" ]; then
       if command -v dmidecode >/dev/null 2>&1; then
           UGREEN_CHECK=$(dmidecode --string system-product-name 2>/dev/null)
           case "${UGREEN_CHECK}" in

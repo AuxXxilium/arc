@@ -52,7 +52,6 @@ D_FILE="${CONFIGS_PATH}/data.yml"
 EXTRACTOR_PATH="${PART3_PATH}/extractor"
 EXTRACTOR_BIN="syno_extract_system_patch"
 
-KVER5L=(epyc7002 geminilakenk r1000nk v1000nk)
 IGPU1L=(apollolake geminilake)
 IGPU2L=(epyc7002 geminilakenk r1000nk v1000nk)
 NVMECACHE=(DS719+ DS918+ DS1019+ DS1621xs+ RS1619xs+)
