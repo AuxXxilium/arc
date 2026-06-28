@@ -136,7 +136,7 @@ fi
 
 # DSM 7.3
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: apply DSM ${PRODUCTVER:0:3} fixes"
-if [ "${PRODUCTVER}" = "7.3" ]; then
+if [[ "${PRODUCTVER}" > "7.2" ]]; then
   sed -i 's#/usr/syno/sbin/broadcom_update.sh#/usr/syno/sbin/broadcom_update.sh.arc#g' "${RAMDISK_PATH}/linuxrc.syno.impl"
 fi
 

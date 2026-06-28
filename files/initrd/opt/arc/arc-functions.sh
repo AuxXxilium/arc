@@ -32,7 +32,7 @@ function arcModel() {
       while read -r M A; do
         COMPATIBLE=1
         DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
-        KVER="$(for V in "7.2" "7.3" "7.4"; do K="$(readConfigKey "platforms.${A}.productvers.\"${V}\".kver" "${P_FILE}")"; [ -n "${K}" ] && echo "${K}" && break; done)"
+        KVER="$(readConfigEntriesArray "platforms.${A}.productvers" "${P_FILE}" | while read -r V; do K="$(readConfigKey "platforms.${A}.productvers.\"${V}\".kver" "${P_FILE}")"; [ -n "${K}" ] && echo "${K}" && break; done)"
         KVERM="$(echo "${KVER}" | awk -F'.' '{print $1".x"}')"
         PLTCNT="$(readConfigKey "platforms.${A}.ccnt" "${P_FILE}")"
         FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
@@ -84,16 +84,16 @@ function arcModel() {
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
           [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
           if [ "${CPUCHT:-0}" -gt "${PLTCNT:-0}" ]; then
-            if [ "${M}" = "SA6400" ]; then
+            if [[ "${A}" = "epyc7002" || "${A}" = "geminilakenk" ]]; then
               echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT})\nYou should enable the custom kernel.\n" >>"${TMP_PATH}/${M}_warn"
             else
               # COMPATIBLE=0
               echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}).\n" >>"${TMP_PATH}/${M}_warn"
             fi
           fi
-          if [ "${M}" != "SA6400" ] && [ "${MEV}" = "hyperv" ]; then
+          if [[ "${A}" != "epyc7002" && "${A}" != "geminilakenk" && "${MEV}" = "hyperv" ]]; then
             COMPATIBLE=0
-          elif [ "${M}" = "SA6400" ] && [ "${MEV}" = "hyperv" ]; then
+          elif [[ "${A}" = "epyc7002" || "${A}" = "geminilakenk" ]] && [[ "${MEV}" = "hyperv" ]]; then
             echo -e "${WARN}- Hyper-V VM: You need to enable the custom kernel.\n" >>"${TMP_PATH}/${M}_warn"
           fi
           if [ -n "${FLAGS}" ]; then
@@ -294,10 +294,10 @@ function arcVersion() {
       [ $? -eq 0 ] && writeConfigKey "arc.discordnotify" "true" "${USER_CONFIG_FILE}"
     fi
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-    if [ "${KVER:0:1}" -eq 5 ] && [ "${PRODUCTVER}" = "7.3" ]; then
+    if [ "${KVER:0:1}" -eq 5 ] && [[ "${PRODUCTVER}" > "7.2" ]]; then
       if [ "${PLATFORM}" = "epyc7002" ] || [ "${PLATFORM}" = "geminilakenk" ]; then
-        dialog --backtitle "$(backtitle)" --title "DSM 7.3 Warning" \
-          --msgbox "You selected a Linux 5.x based platform and DSM 7.3!\nIf you encounter issues, switch to custom kernel." 6 65
+        dialog --backtitle "$(backtitle)" --title "DSM 7.3+ Warning" \
+          --msgbox "You selected a Linux 5.x based platform and DSM ${PRODUCTVER}!\nIf you encounter issues, switch to custom kernel." 6 65
       fi
     fi
     MSG="Do you want to use Automated Mode?\nLoader will automatically configure, build and boot DSM."
