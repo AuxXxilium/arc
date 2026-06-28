@@ -181,7 +181,6 @@ function getSysinfo() {
   LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
-  HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
   FANCONTROL="$(readConfigKey "fancontrol" "${USER_CONFIG_FILE}")"
   USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
   ARCOFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
@@ -287,10 +286,7 @@ function getSysinfo() {
     [ -n "${PORTREMAP}" ] && TEXT+="\n  SataRemap: ${PORTREMAP}"
     [ -n "${AHCIPORTREMAP}" ] && TEXT+="\n  AhciRemap: ${AHCIPORTREMAP}"
   fi
-  if [ "${DT}" = "true" ]; then
-    TEXT+="\n  Hotplug/SortDrives: ${HDDSORT}"
-  else
-    TEXT+="\n  SortDrives: ${HDDSORT}"
+  if [ "${DT}" = "false" ]; then
     TEXT+="\n  USB Mount: ${USBMOUNT}"
   fi
   TEXT+="\n  Fan Control: ${FANCONTROL}"

@@ -157,7 +157,6 @@ function arcModel() {
     writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
     writeConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "governor" "" "${USER_CONFIG_FILE}"
-    writeConfigKey "hddsort" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "kernel" "official" "${USER_CONFIG_FILE}"
     writeConfigKey "odp" "false" "${USER_CONFIG_FILE}"
     writeConfigKey "model" "${MODEL}" "${USER_CONFIG_FILE}"
@@ -179,7 +178,6 @@ function arcModel() {
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
-  HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
   ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
   arcVersion
@@ -1666,7 +1664,6 @@ function sysinfo() {
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   CONFIGVER="$(readConfigKey "arc.version" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
-  HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
   FANCONTROL="$(readConfigKey "fancontrol" "${USER_CONFIG_FILE}")"
   USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
   EXTERNALCONTROLLER="$(readConfigKey "device.externalcontroller" "${USER_CONFIG_FILE}")"
@@ -1779,10 +1776,7 @@ function sysinfo() {
     [ -n "${PORTREMAP}" ] && TEXT+="\n  SataRemap: \Zb${PORTREMAP}\Zn"
     [ -n "${AHCIPORTREMAP}" ] && TEXT+="\n  AhciRemap: \Zb${AHCIPORTREMAP}\Zn"
   fi
-  if [ "${DT}" = "true" ]; then
-    TEXT+="\n  Hotplug/SortDrives: \Zb${HDDSORT}\Zn"
-  else
-    TEXT+="\n  SortDrives: \Zb${HDDSORT}\Zn"
+  if [ "${DT}" = "false" ]; then
     TEXT+="\n  USB Mount: \Zb${USBMOUNT}\Zn"
   fi
   TEXT+="\n  Fan Control: \Zb${FANCONTROL}\Zn"

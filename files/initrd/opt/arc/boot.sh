@@ -251,10 +251,6 @@ if [ "${MEV}" = "vmware" ]; then
   CMDLINE['pmtmr']="0x0"
 fi
 
-HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
-if [ "${HDDSORT}" = "true" ]; then
-  CMDLINE['hddsort']=""
-fi
 
 USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 if [ "${USBMOUNT}" = "true" ]; then

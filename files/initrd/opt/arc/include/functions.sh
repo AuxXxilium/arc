@@ -596,7 +596,6 @@ function readData() {
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
   DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
   EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
-  HDDSORT="$(readConfigKey "hddsort" "${USER_CONFIG_FILE}")"
   USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
   FANCONTROL="$(readConfigKey "fancontrol" "${USER_CONFIG_FILE}")"
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"

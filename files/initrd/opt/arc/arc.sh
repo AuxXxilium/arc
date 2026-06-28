@@ -128,10 +128,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
           write_menu_value "K" "Kernel" "${KERNEL}"
         fi
 
-        if [ "${DT}" = "true" ]; then
-          write_menu_value "H" "Hotplug/SortDrives" "$( [ "${HDDSORT}" = "true" ] && echo "enabled" || echo "disabled" )"
-        else
-          write_menu_value "H" "SortDrives" "$( [ "${HDDSORT}" = "true" ] && echo "enabled" || echo "disabled" )"
+        if [ "${DT}" = "false" ]; then
           write_menu_value "h" "USB Disks internal" "$( [ "${USBMOUNT}" = "true" ] && echo "enabled" || echo "disabled" )"
         fi
 
@@ -275,12 +272,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
             fi
             resetBuild
             NEXT="K"
-            ;;
-          H)
-            [ "${HDDSORT}" = "true" ] && HDDSORT='false' || HDDSORT='true'
-            writeConfigKey "hddsort" "${HDDSORT}" "${USER_CONFIG_FILE}"
-            resetBuild
-            NEXT="H"
             ;;
           h)
             [ "${USBMOUNT}" = "true" ] && USBMOUNT='false' || USBMOUNT='true'
