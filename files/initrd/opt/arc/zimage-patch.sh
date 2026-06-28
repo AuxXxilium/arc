@@ -32,11 +32,11 @@ if [ "${KERNEL}" = "custom" ]; then
 else
   [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Kernel: official ${PLATFORM} (${KVER})"
   # Extract vmlinux
-  /usr/sbin/extract-vmlinux "${ORI_ZIMAGE_FILE}" >"${TMP_PATH}/vmlinux" 2>"${LOG_FILE}" || die
+  "${ARC_PATH}/extract-vmlinux" "${ORI_ZIMAGE_FILE}" >"${TMP_PATH}/vmlinux" 2>"${LOG_FILE}" || die
   # Patch boot params and ramdisk check
-  /usr/sbin/kpatch "${TMP_PATH}/vmlinux" "${TMP_PATH}/vmlinux-mod" >"${LOG_FILE}" 2>&1 || die
+  "${ARC_PATH}/kpatch" "${TMP_PATH}/vmlinux" "${TMP_PATH}/vmlinux-mod" >"${LOG_FILE}" 2>&1 || die
   # Rebuild zImage
-  /usr/sbin/build-bzImage "${ORI_ZIMAGE_FILE}" "${TMP_PATH}/vmlinux-mod" "${MOD_ZIMAGE_FILE}" >"${LOG_FILE}" 2>&1 || die
+  "${ARC_PATH}/vmlinux-to-bzImage.sh" "${TMP_PATH}/vmlinux-mod" "${MOD_ZIMAGE_FILE}" >"${LOG_FILE}" 2>&1 || die
 fi
 
 sync
