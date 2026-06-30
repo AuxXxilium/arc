@@ -507,17 +507,12 @@ function updateCustom() {
         --infobox "Updating Custom Kernel..." 3 50
       if unzip -oq "${TMP_PATH}/custom.zip" -d "${CUSTOM_PATH}"; then
         rm -f "${TMP_PATH}/custom.zip"
-        # Symlink Custom for DSM 7.3
-        if [ -d "${CUSTOM_PATH}/" ]; then
-          while IFS= read -r -d '' CSRC; do
-            CSRCB="$(basename "$CSRC")"
-            CTARB="${CSRCB/-7.2-/-7.3-}"
-            CTAR="${CUSTOM_PATH}/${CTARB}"
-            if [ "$CTAR" != "$CSRC" ] && [ ! -e "$CTAR" ]; then
-              ln -sf "$CSRC" "$CTAR" || true
-            fi
-          done < <(find "${CUSTOM_PATH}" -maxdepth 1 -type f \( -name '*-7.2-*.tgz' \) -print0)
-        fi
+        while IFS= read -r -d '' SRC; do
+          SRCB="$(basename "${SRC}")"
+          DSTB="${SRCB/-7.3-/-7.4-}"
+          DST="${CUSTOM_PATH}/${DSTB}"
+          [ "${DST}" != "${SRC}" ] && [ ! -e "${DST}" ] && ln -sf "${SRC}" "${DST}" || true
+        done < <(find "${CUSTOM_PATH}" -maxdepth 1 -type f -name '*-7.3-*' -print0)
         dialog --backtitle "$(backtitle)" --title "Update Custom Kernel" \
           --infobox "Update Custom successful!" 3 50
         sleep 2
@@ -583,6 +578,12 @@ function updateModules() {
         --infobox "Updating Modules..." 3 50
       if unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}"; then
         rm -f "${TMP_PATH}/modules.zip"
+        while IFS= read -r -d '' SRC; do
+          SRCB="$(basename "${SRC}")"
+          DSTB="${SRCB/-7.3-/-7.4-}"
+          DST="${MODULES_PATH}/${DSTB}"
+          [ "${DST}" != "${SRC}" ] && [ ! -e "${DST}" ] && ln -sf "${SRC}" "${DST}" || true
+        done < <(find "${MODULES_PATH}" -maxdepth 1 -type f -name '*-7.3-*' -print0)
         dialog --backtitle "$(backtitle)" --title "Update Modules" \
           --infobox "Update Modules successful!" 3 50
         sleep 2
@@ -684,6 +685,12 @@ function updateLKMs() {
         --infobox "Updating LKMs..." 3 50
       if unzip -oq "${TMP_PATH}/rp-lkms.zip" -d "${LKMS_PATH}"; then
         rm -f "${TMP_PATH}/rp-lkms.zip"
+        while IFS= read -r -d '' SRC; do
+          SRCB="$(basename "${SRC}")"
+          DSTB="${SRCB/-7.3-/-7.4-}"
+          DST="${LKMS_PATH}/${DSTB}"
+          [ "${DST}" != "${SRC}" ] && [ ! -e "${DST}" ] && ln -sf "${SRC}" "${DST}" || true
+        done < <(find "${LKMS_PATH}" -maxdepth 1 -type f -name '*-7.3-*' -print0)
         dialog --backtitle "$(backtitle)" --title "Update LKMs" \
           --infobox "Update LKMs successful!" 3 50
         sleep 2
