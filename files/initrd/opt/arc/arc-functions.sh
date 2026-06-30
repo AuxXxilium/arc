@@ -589,10 +589,6 @@ function init_default_addons() {
       initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
     elif [ "${KVER:0:1}" = "5" ] && [ "${SATADRIVES}" -le 1 ] && [ "${SASDRIVES}" -eq 0 ] && [ "${BUS}" = "sata" ]; then
       initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
-    elif [ "${DT}" = "true" ]; then
-      initConfigKey "addons.nvmevolume" "" "${USER_CONFIG_FILE}"
-    elif is_in_array "${MODEL}" "${NVMECACHE[@]}"; then
-      initConfigKey "addons.nvmecache" "" "${USER_CONFIG_FILE}"
     fi
   fi
   if [ "${MEV}" = "physical" ]; then
