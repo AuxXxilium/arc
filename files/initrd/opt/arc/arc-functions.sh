@@ -206,22 +206,22 @@ function arcVersion() {
       echo -n "" >"${TMP_PATH}/menu"
       for V in $(echo "${PVS}" | sort -r); do
         if echo "${CVS}" | grep -qx "${V:0:3}"; then
-          if [[ "${V:0:3}" < "7.3" ]]; then
-            STATUS="supported"
-          elif [[ "${V:0:3}" < "7.4" ]]; then
-            # Check for movbe CPU flag for versions >= 7.3
+          if [[ "${V:0:3}" = "7.3" ]]; then
+            # Check for movbe CPU flag for version 7.3
             if grep -q "^flags.*movbe.*" /proc/cpuinfo; then
               STATUS="beta"
             else
               STATUS="unsupported"
             fi
-          else
-            # Check for movbe + bmi2 CPU flags for versions >= 7.4
+          elif [[ "${V:0:3}" = "7.4" ]]; then
+            # Check for movbe + bmi2 CPU flags for version 7.4
             if grep -q "^flags.*movbe.*" /proc/cpuinfo && grep -q "^flags.*bmi2.*" /proc/cpuinfo; then
               STATUS="beta"
             else
               STATUS="unsupported"
             fi
+          else
+            STATUS="supported"
           fi
           # Show all versions if SHOW_ALL, otherwise hide unsupported ones
           if [ "${SHOW_ALL}" -eq 1 ] || [ "${STATUS}" != "unsupported" ]; then
