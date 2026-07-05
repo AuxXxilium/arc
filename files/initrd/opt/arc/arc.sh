@@ -121,7 +121,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
         fi
 
         if echo "${addons_list}" | grep -q "sensors" && find "/sys/devices/platform/" -name "temp1_input" 2>/dev/null | grep -qE 'coretemp|k10temp|zenpower'; then
-          write_menu_value "P" "Fan Control" "${FANCONTROL:-false}"
+          write_menu_value "P" "Fan Control" "$( [ "${FANCONTROL}" = "true" ] && echo "enabled" || echo "disabled" )"
         fi
 
         if [ "${PLATFORM}" = "epyc7002" ] || [ "${PLATFORM}" = "geminilakenk" ]; then
@@ -146,7 +146,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
         write_menu_value "m" "Boot Kernelload" "${KERNELLOAD}"
         write_menu_value "W" "Ramdisk Compression" "$( [ "${RD_COMPRESSED}" = "true" ] && echo "enabled" || echo "disabled" )"
         write_menu_value "X" "Sata DOM" "${SATADOM}"
-        # write_menu_value "u" "LKM Version" "${LKM}"
+        write_menu_value "u" "LKM" "${LKM}"
         write_menu_value "E" "eMMC Boot Support" "$( [ "${EMMCBOOT}" = "true" ] && echo "enabled" || echo "disabled" )"
         if [ "${DIRECTBOOT}" = "false" ]; then
           write_menu_value "i" "Boot IP Waittime" "${BOOTIPWAIT}"
