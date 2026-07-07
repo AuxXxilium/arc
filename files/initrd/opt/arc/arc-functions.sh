@@ -3209,8 +3209,14 @@ function getpatfiles() {
   if [ "${VALID}" = "true" ]; then
     dialog --backtitle "$(backtitle)" --title "DSM Boot Files" --aspect 18 \
       --infobox "Copying DSM Boot Files..." 3 40
-    tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" 2>/dev/null
-    copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null
+    if ! tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" 2>/dev/null || ! copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null; then
+      dialog --backtitle "$(backtitle)" --title "DSM Boot Files" --aspect 18 \
+        --infobox "DSM Boot Files are corrupt or incomplete: Exit!" 4 55
+      rm -f "${DSM_FILE}"
+      sleep 2
+      [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
+      return 1
+    fi
   else
     dialog --backtitle "$(backtitle)" --title "DSM Boot Files" --aspect 18 \
       --infobox "DSM Boot Files extraction failed: Exit!" 4 45

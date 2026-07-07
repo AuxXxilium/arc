@@ -364,12 +364,21 @@ function copyDSMFiles() {
     # Remove old build files
     rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null
     # Copy new model files
-    cp -f "${1}/grub_cksum.syno" "${PART1_PATH}"
-    cp -f "${1}/GRUB_VER" "${PART1_PATH}"
-    cp -f "${1}/grub_cksum.syno" "${PART2_PATH}"
-    cp -f "${1}/GRUB_VER" "${PART2_PATH}"
-    cp -f "${1}/zImage" "${ORI_ZIMAGE_FILE}"
-    cp -f "${1}/rd.gz" "${ORI_RDGZ_FILE}"
+    cp -f "${1}/grub_cksum.syno" "${PART1_PATH}" || return 1
+    cp -f "${1}/GRUB_VER" "${PART1_PATH}" || return 1
+    cp -f "${1}/grub_cksum.syno" "${PART2_PATH}" || return 1
+    cp -f "${1}/GRUB_VER" "${PART2_PATH}" || return 1
+    cp -f "${1}/zImage" "${ORI_ZIMAGE_FILE}" || return 1
+    cp -f "${1}/rd.gz" "${ORI_RDGZ_FILE}" || return 1
+    # Verify copies landed intact (catch truncation from I/O errors, full disk, etc.)
+    SRC_ZIMAGE_SIZE="$(stat -c%s "${1}/zImage" 2>/dev/null || echo 0)"
+    DST_ZIMAGE_SIZE="$(stat -c%s "${ORI_ZIMAGE_FILE}" 2>/dev/null || echo 0)"
+    SRC_RDGZ_SIZE="$(stat -c%s "${1}/rd.gz" 2>/dev/null || echo 0)"
+    DST_RDGZ_SIZE="$(stat -c%s "${ORI_RDGZ_FILE}" 2>/dev/null || echo 0)"
+    if [ "${SRC_ZIMAGE_SIZE}" -eq 0 ] || [ "${DST_ZIMAGE_SIZE}" -ne "${SRC_ZIMAGE_SIZE}" ] || [ "${SRC_RDGZ_SIZE}" -eq 0 ] || [ "${DST_RDGZ_SIZE}" -ne "${SRC_RDGZ_SIZE}" ]; then
+      rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" >/dev/null 2>&1
+      return 1
+    fi
     return 0
   else
     return 1
