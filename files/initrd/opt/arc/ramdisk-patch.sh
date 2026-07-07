@@ -57,7 +57,8 @@ fi
 # Unzipping ramdisk
 rm -rf "${RAMDISK_PATH}" # Force clean
 mkdir -p "${RAMDISK_PATH}"
-if ! (cd "${RAMDISK_PATH}" && xz -dc <"${ORI_RDGZ_FILE}" | cpio -idm) >"${LOG_FILE}" 2>&1; then
+(cd "${RAMDISK_PATH}" && xz -dc <"${ORI_RDGZ_FILE}" | cpio -idm; exit "${PIPESTATUS[1]}") >"${LOG_FILE}" 2>&1
+if [ $? -ne 0 ] || [ ! -f "${RAMDISK_PATH}/etc/VERSION" ]; then
   echo "Error: failed to unpack ${ORI_RDGZ_FILE}!" | tee -a "${LOG_FILE}"
   exit 1
 fi

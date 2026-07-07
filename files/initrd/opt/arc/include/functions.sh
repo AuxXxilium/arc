@@ -370,12 +370,13 @@ function copyDSMFiles() {
     cp -f "${1}/GRUB_VER" "${PART2_PATH}" || return 1
     cp -f "${1}/zImage" "${ORI_ZIMAGE_FILE}" || return 1
     cp -f "${1}/rd.gz" "${ORI_RDGZ_FILE}" || return 1
-    # Verify copies landed intact (catch truncation from I/O errors, full disk, etc.)
-    SRC_ZIMAGE_SIZE="$(stat -c%s "${1}/zImage" 2>/dev/null || echo 0)"
-    DST_ZIMAGE_SIZE="$(stat -c%s "${ORI_ZIMAGE_FILE}" 2>/dev/null || echo 0)"
-    SRC_RDGZ_SIZE="$(stat -c%s "${1}/rd.gz" 2>/dev/null || echo 0)"
-    DST_RDGZ_SIZE="$(stat -c%s "${ORI_RDGZ_FILE}" 2>/dev/null || echo 0)"
-    if [ "${SRC_ZIMAGE_SIZE}" -eq 0 ] || [ "${DST_ZIMAGE_SIZE}" -ne "${SRC_ZIMAGE_SIZE}" ] || [ "${SRC_RDGZ_SIZE}" -eq 0 ] || [ "${DST_RDGZ_SIZE}" -ne "${SRC_RDGZ_SIZE}" ]; then
+    # Verify copies landed bit-identical (size match alone can't catch silent
+    # bit-flips from flaky media/controllers, so hash the actual content)
+    SRC_ZIMAGE_HASH="$(sha256sum "${1}/zImage" 2>/dev/null | awk '{print $1}')"
+    DST_ZIMAGE_HASH="$(sha256sum "${ORI_ZIMAGE_FILE}" 2>/dev/null | awk '{print $1}')"
+    SRC_RDGZ_HASH="$(sha256sum "${1}/rd.gz" 2>/dev/null | awk '{print $1}')"
+    DST_RDGZ_HASH="$(sha256sum "${ORI_RDGZ_FILE}" 2>/dev/null | awk '{print $1}')"
+    if [ -z "${SRC_ZIMAGE_HASH}" ] || [ "${DST_ZIMAGE_HASH}" != "${SRC_ZIMAGE_HASH}" ] || [ -z "${SRC_RDGZ_HASH}" ] || [ "${DST_RDGZ_HASH}" != "${SRC_RDGZ_HASH}" ]; then
       rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" >/dev/null 2>&1
       return 1
     fi

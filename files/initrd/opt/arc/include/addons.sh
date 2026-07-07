@@ -64,11 +64,32 @@ function installAddon() {
   local TMP_ADDON="${TMP_PATH}/${ADDON}"
   mkdir -p "${TMP_ADDON}"
   local HAS_FILES=0
+  local FOUND_TGZ=0
   for TGZ in "${ADDONS_PATH}/${ADDON}/all.tgz"; do
-    [ -f "${TGZ}" ] && tar -zxf "${TGZ}" -C "${TMP_ADDON}" 2>>"${LOG_FILE}" && HAS_FILES=1
+    if [ -f "${TGZ}" ]; then
+      FOUND_TGZ=1
+      if tar -zxf "${TGZ}" -C "${TMP_ADDON}" 2>>"${LOG_FILE}"; then
+        HAS_FILES=1
+      fi
+    fi
   done
+  if [ "${FOUND_TGZ}" -eq 1 ] && [ "${HAS_FILES}" -ne 1 ]; then
+    echo "ERROR: Addon ${ADDON} failed to extract" | tee -a "${LOG_FILE}"
+    rm -rf "${TMP_ADDON}"
+    return 1
+  fi
   [ "${HAS_FILES}" -ne 1 ] && deleteConfigKey "addon.${ADDON}" "${USER_CONFIG_FILE}" && rm -rf "${TMP_ADDON}" && return 0
-  [ -f "${TMP_ADDON}/install.sh" ] && cp -f "${TMP_ADDON}/install.sh" "${RAMDISK_PATH}/addons/${ADDON}.sh" 2>>"${LOG_FILE}" && chmod +x "${RAMDISK_PATH}/addons/${ADDON}.sh"
+  if [ -f "${TMP_ADDON}/install.sh" ]; then
+    if ! cp -f "${TMP_ADDON}/install.sh" "${RAMDISK_PATH}/addons/${ADDON}.sh" 2>>"${LOG_FILE}"; then
+      echo "ERROR: Addon ${ADDON} failed to copy install.sh" | tee -a "${LOG_FILE}"
+      rm -rf "${TMP_ADDON}"
+      return 1
+    fi
+    chmod +x "${RAMDISK_PATH}/addons/${ADDON}.sh"
+  fi
+  # -n (no-clobber) intentionally skips files that already exist in the
+  # ramdisk and exits non-zero for that; not a real failure, so its result
+  # is not checked here.
   [ -d "${TMP_ADDON}/root" ] && cp -rnf "${TMP_ADDON}/root/"* "${RAMDISK_PATH}/" 2>>"${LOG_FILE}"
   rm -rf "${TMP_ADDON}"
   return 0
