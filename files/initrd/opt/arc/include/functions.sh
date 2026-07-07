@@ -383,7 +383,7 @@ function livepatch() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   # Patch Ramdisk
   echo -e ">> patching Ramdisk..."
-  if ${ARC_PATH}/ramdisk-patch.sh; then
+  if ${ARC_PATH}/ramdisk-patch.sh && [ -s "${MOD_RDGZ_FILE}" ]; then
     PVALID="true"
   else
     PVALID="false"
@@ -394,7 +394,7 @@ function livepatch() {
   if [ "${PVALID}" = "true" ]; then
     # Patch Kernel
     echo -e ">> patching Kernel..."
-    if ${ARC_PATH}/zimage-patch.sh; then
+    if ${ARC_PATH}/zimage-patch.sh && [ -s "${MOD_ZIMAGE_FILE}" ]; then
       PVALID="true"
     else
       PVALID="false"
@@ -405,6 +405,8 @@ function livepatch() {
   echo
   if [ "${PVALID}" = "false" ]; then
     echo -e ">> DSM Image patching failed - aborting build."
+    # Remove partial/invalid build outputs so a stale MOD file is never booted
+    rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1
     sleep 5
     exit 1
   elif [ "${PVALID}" = "true" ]; then

@@ -39,4 +39,12 @@ else
   "${ARC_PATH}/vmlinux-to-bzImage.sh" "${TMP_PATH}/vmlinux-mod" "${MOD_ZIMAGE_FILE}" >"${LOG_FILE}" 2>&1 || die
 fi
 
+# Sanity check: rebuilt zImage must exist and be reasonably sized
+[ -s "${MOD_ZIMAGE_FILE}" ] || die "${MOD_ZIMAGE_FILE} was not created!"
+MOD_ZIMAGE_SIZE="$(stat -c%s "${MOD_ZIMAGE_FILE}" 2>/dev/null || echo 0)"
+ORI_ZIMAGE_SIZE="$(stat -c%s "${ORI_ZIMAGE_FILE}" 2>/dev/null || echo 0)"
+if [ "${MOD_ZIMAGE_SIZE}" -lt $((ORI_ZIMAGE_SIZE / 2)) ]; then
+  die "${MOD_ZIMAGE_FILE} looks truncated (${MOD_ZIMAGE_SIZE} bytes vs original ${ORI_ZIMAGE_SIZE} bytes)!"
+fi
+
 sync

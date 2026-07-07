@@ -57,10 +57,21 @@ fi
 # Unzipping ramdisk
 rm -rf "${RAMDISK_PATH}" # Force clean
 mkdir -p "${RAMDISK_PATH}"
-(cd "${RAMDISK_PATH}" && xz -dc <"${ORI_RDGZ_FILE}" | cpio -idm) >/dev/null 2>&1
+if ! (cd "${RAMDISK_PATH}" && xz -dc <"${ORI_RDGZ_FILE}" | cpio -idm) >"${LOG_FILE}" 2>&1; then
+  echo "Error: failed to unpack ${ORI_RDGZ_FILE}!" | tee -a "${LOG_FILE}"
+  exit 1
+fi
 
 # Check for DSM Version
+if [ ! -f "${RAMDISK_PATH}/etc/VERSION" ]; then
+  echo "Error: ${RAMDISK_PATH}/etc/VERSION not found after unpacking ramdisk!" | tee -a "${LOG_FILE}"
+  exit 1
+fi
 . "${RAMDISK_PATH}/etc/VERSION"
+if [ -z "${majorversion}" ] || [ -z "${minorversion}" ] || [ -z "${buildnumber}" ]; then
+  echo "Error: ${RAMDISK_PATH}/etc/VERSION is incomplete!" | tee -a "${LOG_FILE}"
+  exit 1
+fi
 
 if [ -f "${MOD_RDGZ_FILE}" ]; then
   if [ -n "${PRODUCTVER}" ] && [ -n "${BUILDNUM}" ] && [ -n "${SMALLNUM}" ] && ([ "${PRODUCTVER}" != "${majorversion:-0}.${minorversion:-0}" ] || [ "${BUILDNUM}" != "${buildnumber:-0}" ] || [ "${SMALLNUM}" != "${smallfixnumber:-0}" ]); then
@@ -83,6 +94,16 @@ writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
 writeConfigKey "dsmfullver" "${DSMFULLVER}" "${USER_CONFIG_FILE}"
 writeConfigKey "buildnum" "${BUILDNUM}" "${USER_CONFIG_FILE}"
 writeConfigKey "smallnum" "${SMALLNUM}" "${USER_CONFIG_FILE}"
+
+# Re-read kver data for the actual DSM version found in the ramdisk
+# (KVER/KPRE above were derived from the previously stored productver,
+# which may be stale on a DSM version upgrade)
+KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
+if [ -z "${KVER}" ]; then
+  echo "Error: Configuration for Model ${MODEL} and Version ${PRODUCTVER} not found." | tee -a "${LOG_FILE}"
+  exit 1
+fi
 
 # Read addons, modules and synoinfo
 declare -A ADDONS
@@ -286,6 +307,18 @@ if [ "${RD_COMPRESSED}" = "true" ]; then
   (cd "${RAMDISK_PATH}" && find . 2>/dev/null | cpio -o -H newc -R root:root | xz -9 --format=lzma >"${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || exit 1
 else
   (cd "${RAMDISK_PATH}" && find . 2>/dev/null | cpio -o -H newc -R root:root >"${MOD_RDGZ_FILE}") >"${LOG_FILE}" 2>&1 || exit 1
+fi
+
+# Sanity check: reassembled ramdisk must exist and be reasonably sized
+if [ ! -s "${MOD_RDGZ_FILE}" ]; then
+  echo "Error: ${MOD_RDGZ_FILE} was not created!" | tee -a "${LOG_FILE}"
+  exit 1
+fi
+MOD_RDGZ_SIZE="$(stat -c%s "${MOD_RDGZ_FILE}" 2>/dev/null || echo 0)"
+ORI_RDGZ_SIZE="$(stat -c%s "${ORI_RDGZ_FILE}" 2>/dev/null || echo 0)"
+if [ "${MOD_RDGZ_SIZE}" -lt $((ORI_RDGZ_SIZE / 2)) ]; then
+  echo "Error: ${MOD_RDGZ_FILE} looks truncated (${MOD_RDGZ_SIZE} bytes vs original ${ORI_RDGZ_SIZE} bytes)!" | tee -a "${LOG_FILE}"
+  exit 1
 fi
 
 sync
