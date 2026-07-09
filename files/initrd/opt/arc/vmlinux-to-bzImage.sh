@@ -5,103 +5,116 @@
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
 #
-# Based on code and ideas from @jumkey
+# Rebuilds a bzImage from a patched vmlinux by swapping only the compressed
+# kernel payload inside a copy of the genuine, original bzImage - preserving
+# its real setup code, decompressor stub and boot header verbatim.
+#
+# This replaces the old approach of splicing a raw (uncompressed) vmlinux
+# into a fixed-size prebuilt template at hardcoded byte offsets. That method
+# has no way to know whether the patched vmlinux actually fits inside the
+# template's payload region: if it doesn't, the write silently overflows
+# into the template's trailing fields, producing a bzImage that triple-faults
+# at kexec with no output (see https://github.com/RROrg/rr/issues/32166).
+# Operating on the real, current bzImage instead removes the fixed capacity
+# ceiling entirely, and the size check below turns any remaining mismatch
+# into a loud build-time failure instead of silent corruption.
+#
+# Based on code and ideas from @jumkey and @petersuh-q3
 
 ###############################################################################
 # Initialize environment
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
-calc_run_size() {
-  NUM='\([0-9a-fA-F]*[ \t]*\)'
-  OUT=$(sed -n 's/^[ \t0-9]*.b[sr][sk][ \t]*'"${NUM}${NUM}${NUM}${NUM}"'.*/0x\1 0x\4/p')
-
-  if [ -z "${OUT}" ]; then
-    echo "Never found .bss or .brk file offset" >&2
-    return 1
-  fi
-
-  read -r sizeA offsetA sizeB offsetB <<<"$(echo "${OUT}" | awk '{printf "%d %d %d %d", strtonum($1), strtonum($2), strtonum($3), strtonum($4)}')"
-
-  runSize=$((offsetA + sizeA + sizeB))
-
-  # BFD linker shows the same file offset in ELF.
-  if [ "${offsetA}" -ne "${offsetB}" ]; then
-    # Gold linker shows them as consecutive.
-    endSize=$((offsetB + sizeB))
-    if [ "${endSize}" -ne "${runSize}" ]; then
-      printf "sizeA: 0x%x\n" "${sizeA}" >&2
-      printf "offsetA: 0x%x\n" "${offsetA}" >&2
-      printf "sizeB: 0x%x\n" "${sizeB}" >&2
-      printf "offsetB: 0x%x\n" "${offsetB}" >&2
-      echo ".bss and .brk are non-contiguous" >&2
-      return 1
-    fi
-  fi
-
-  printf "%d\n" ${runSize}
-  return 0
+# Read u8/u32 little-endian integers from the Linux x86 boot header.
+# 1 - file
+# 2 - byte offset
+read_u8() {
+  dd if="${1}" bs=1 skip="$((${2}))" count=1 2>/dev/null | od -An -tu1 | tr -d '[:space:]'
+}
+read_u32() {
+  dd if="${1}" bs=1 skip="$((${2}))" count=4 2>/dev/null | od -An -tu4 --endian=little | tr -d '[:space:]'
 }
 
-# Adapted from: scripts/Makefile.lib
-# Usage: size_append FILE [FILE2] [FILEn]...
-# Output: LE HEX with size of file in bytes (to STDOUT)
-file_size_le() {
-  printf "$(
-    local dec_size=0
-    for F in "$@"; do dec_size=$((dec_size + $(stat -c "%s" "${F}"))); done
-    printf "%08x\n" "${dec_size}" | sed 's/\(..\)/\1 /g' | {
-      read -r ch0 ch1 ch2 ch3
-      for ch in "${ch3}" "${ch2}" "${ch1}" "${ch0}"; do printf '%s%03o' '\' "$((0x${ch}))"; done
-    }
-  )"
-}
-
+# Write a u32 as 4 little-endian bytes to stdout.
 size_le() {
-  printf "$(
-    printf "%08x\n" "${@}" | sed 's/\(..\)/\1 /g' | {
-      read -r ch0 ch1 ch2 ch3
-      for ch in "${ch3}" "${ch2}" "${ch1}" "${ch0}"; do printf '%s%03o' '\' "$((0x${ch}))"; done
-    }
-  )"
+  printf '%08x' "${1}" | sed 's/\(..\)\(..\)\(..\)\(..\)/\4\3\2\1/' | xxd -r -p
 }
 
-VMLINUX_MOD=${1}
-ZIMAGE_MOD=${2}
+VMLINUX_MOD="${1}"
+ZIMAGE_MOD="${2}"
+ORI_ZIMAGE="${3}"
 
-KVER=$(strings "${VMLINUX_MOD}" | grep -Eo "Linux version [0-9]+\.[0-9]+\.[0-9]+" | head -1 | awk '{print $3}')
-if [ "${KVER:0:1}" -lt 5 ]; then
-  # Kernel version 4.x or 3.x (bromolow)
-  # zImage_head           16494
-  # payload(
-  #   vmlinux.bin         x
-  #   padding             0xf00000-x
-  #   vmlinux.bin size    4
-  # )                     0xf00004
-  # zImage_tail(
-  #   unknown             72
-  #   run_size            4
-  #   unknown             30
-  #   vmlinux.bin size    4
-  #   unknown             114460
-  # )                     114570
-  # crc32                 4
-  gzip -dc "${ARC_PATH}/bzImage-template-v4.gz" >"${ZIMAGE_MOD}" || exit 1
+[ -f "${VMLINUX_MOD}" ] || {
+  echo "ERROR: ${VMLINUX_MOD} not found" >&2
+  exit 1
+}
+[ -f "${ORI_ZIMAGE}" ] || {
+  echo "ERROR: ${ORI_ZIMAGE} not found" >&2
+  exit 1
+}
 
-  dd if="${VMLINUX_MOD}" of="${ZIMAGE_MOD}" bs=16494 seek=1 conv=notrunc || exit 1
-  file_size_le "${VMLINUX_MOD}" | dd of="${ZIMAGE_MOD}" bs=15745134 seek=1 conv=notrunc || exit 1
-  file_size_le "${VMLINUX_MOD}" | dd of="${ZIMAGE_MOD}" bs=15745244 seek=1 conv=notrunc || exit 1
+# Linux x86 Boot Protocol header fields (boot protocol >= 2.08, universal
+# since ~2009 and used by every DSM kernel arc supports):
+#   0x1f1 setup_sects (u8)   - size of real-mode setup code, in 512B sectors
+#   0x248 payload_offset (u32) - LZMA payload offset, relative to end of setup
+#   0x24c payload_length (u32) - LZMA payload length, including its trailing
+#                                4-byte little-endian uncompressed-size field
+SETUP_SECTS="$(read_u8 "${ORI_ZIMAGE}" 0x1f1)"
+[ "${SETUP_SECTS}" -eq 0 ] 2>/dev/null && SETUP_SECTS=4
+PAYLOAD_OFFSET="$(read_u32 "${ORI_ZIMAGE}" 0x248)"
+PAYLOAD_LENGTH="$(read_u32 "${ORI_ZIMAGE}" 0x24c)"
+INNER_POS=$(((SETUP_SECTS + 1) * 512))
+PAYLOAD_START=$((INNER_POS + PAYLOAD_OFFSET))
 
-  RUN_SIZE=$(objdump -h "${VMLINUX_MOD}" | calc_run_size)
-  size_le "${RUN_SIZE}" | dd of="${ZIMAGE_MOD}" bs=15745210 seek=1 conv=notrunc || exit 1
-  size_le "$((16#$(crc32 "${ZIMAGE_MOD}" | awk '{print $1}') ^ 0xFFFFFFFF))" | dd of="${ZIMAGE_MOD}" conv=notrunc oflag=append || exit 1
-else
-  # Kernel version 5.x
-  gzip -dc "${ARC_PATH}/bzImage-template-v5.gz" >"${ZIMAGE_MOD}" || exit 1
-
-  dd if="${VMLINUX_MOD}" of="${ZIMAGE_MOD}" bs=14561 seek=1 conv=notrunc || exit 1
-  file_size_le "${VMLINUX_MOD}" | dd of="${ZIMAGE_MOD}" bs=34463421 seek=1 conv=notrunc || exit 1
-  file_size_le "${VMLINUX_MOD}" | dd of="${ZIMAGE_MOD}" bs=34479132 seek=1 conv=notrunc || exit 1
-  #  RUN_SIZE=$(objdump -h "${VMLINUX_MOD}" | calc_run_size)
-  #  size_le "${RUN_SIZE}" | dd of="${ZIMAGE_MOD}" bs=34626904 seek=1 conv=notrunc || exit 1
-  size_le "$((16#$(crc32 "${ZIMAGE_MOD}" | awk '{print $1}') ^ 0xFFFFFFFF))" | dd of="${ZIMAGE_MOD}" conv=notrunc oflag=append || exit 1
+if [ -z "${PAYLOAD_OFFSET}" ] || [ -z "${PAYLOAD_LENGTH}" ] || [ "${PAYLOAD_LENGTH}" -le 4 ]; then
+  echo "ERROR: could not parse bzImage boot header of ${ORI_ZIMAGE}" >&2
+  exit 1
 fi
+
+# Recompress the patched vmlinux the same way the kernel build does for its
+# own bzImage payload: raw LZMA stream, followed by the uncompressed size as
+# a little-endian u32 trailer.
+LZMA_TMP="$(mktemp "${TMP_PATH:-/tmp}/vmlinux-lzma.XXXXXX")"
+trap 'rm -f "${LZMA_TMP}"' EXIT
+
+xz --format=lzma -9e -c "${VMLINUX_MOD}" >"${LZMA_TMP}" || {
+  echo "ERROR: lzma compression of ${VMLINUX_MOD} failed" >&2
+  exit 1
+}
+
+VMLINUX_SIZE="$(stat -c%s "${VMLINUX_MOD}")"
+LZMA_SIZE="$(stat -c%s "${LZMA_TMP}")"
+NEW_PAYLOAD_LENGTH=$((LZMA_SIZE + 4))
+
+# Hard capacity check: fail loudly instead of silently overflowing into
+# adjacent bzImage structures, which is exactly what produced the
+# triple-fault-with-no-output symptom in RROrg/rr#32166.
+if [ "${NEW_PAYLOAD_LENGTH}" -gt "${PAYLOAD_LENGTH}" ]; then
+  echo "ERROR: patched kernel payload (${NEW_PAYLOAD_LENGTH} bytes) does not fit" >&2
+  echo "       in the original bzImage payload region (${PAYLOAD_LENGTH} bytes)." >&2
+  echo "       Refusing to build a corrupt image." >&2
+  exit 1
+fi
+
+# Start from a byte-for-byte copy of the genuine bzImage: setup code,
+# decompressor stub and all other header fields are preserved untouched.
+cp -f "${ORI_ZIMAGE}" "${ZIMAGE_MOD}" || exit 1
+
+# Zero-pad the compressed payload out to the original region's length so
+# every byte of the payload region is deterministically overwritten (no
+# stale bytes left over from the previous, larger or smaller, payload).
+{
+  cat "${LZMA_TMP}"
+  size_le "${VMLINUX_SIZE}"
+  PAD=$((PAYLOAD_LENGTH - NEW_PAYLOAD_LENGTH))
+  [ "${PAD}" -gt 0 ] && dd if=/dev/zero bs=1 count="${PAD}" 2>/dev/null
+} | dd of="${ZIMAGE_MOD}" bs=1 seek="${PAYLOAD_START}" conv=notrunc 2>/dev/null || exit 1
+
+rm -f "${LZMA_TMP}"
+trap - EXIT
+
+# ZIMAGE_MOD is a byte-for-byte copy of the genuine ORI_ZIMAGE with only the
+# payload region overwritten - same total length, everything outside that
+# region (setup code, decompressor stub, boot header, and any trailing
+# container checksum the original image ships) is left exactly as shipped.
+# kexec only reads the standard boot header, so nothing further to fix up.
