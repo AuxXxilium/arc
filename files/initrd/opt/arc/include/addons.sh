@@ -52,10 +52,13 @@ function availableAddons() {
 # Install Addon into ramdisk image
 # 1 - Addon
 # 2 - Platform
-# 3 - Kernel version
+# 3 - DSM version (e.g. 7.4), used to prune non-matching versioned addons/*.tgz
+# 4 - Kernel version (e.g. 5.10.55), used to prune non-matching versioned addons/*.tgz
 function installAddon() {
   local ADDON="${1:-}"
   local PLATFORM="${2:-}"
+  local DSMVER="${3:-}"
+  local KVER="${4:-}"
   [ -z "${ADDON}" ] && echo "ERROR: Addon not defined" && return 1
   isAddonAvailable "${ADDON}" "${PLATFORM}" || {
     deleteConfigKey "addon.${ADDON}" "${USER_CONFIG_FILE}"
@@ -86,6 +89,16 @@ function installAddon() {
       return 1
     fi
     chmod +x "${RAMDISK_PATH}/addons/${ADDON}.sh"
+  fi
+  # Addons ship per DSM/kernel version packages named "<name>-<dsmver>-<kver>.tgz"
+  # (e.g. sensors-7.4-5.10.55.tgz) under root/addons/. Only the one matching the
+  # current build is needed at boot, so drop the rest to save ramdisk space.
+  if [ -d "${TMP_ADDON}/root/addons" ] && [ -n "${DSMVER}" ] && [ -n "${KVER}" ]; then
+    for VERSIONED_TGZ in "${TMP_ADDON}/root/addons/${ADDON}"-*-*.tgz; do
+      [ -f "${VERSIONED_TGZ}" ] || continue
+      [ "${VERSIONED_TGZ}" = "${TMP_ADDON}/root/addons/${ADDON}-${DSMVER}-${KVER}.tgz" ] && continue
+      rm -f "${VERSIONED_TGZ}"
+    done
   fi
   # -n (no-clobber) intentionally skips files that already exist in the
   # ramdisk and exits non-zero for that; not a real failure, so its result

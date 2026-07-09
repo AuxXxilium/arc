@@ -202,7 +202,7 @@ for ADDON in ${SYSADDONS}; do
     echo "ERROR: System addon ${ADDON} not available for ${PLATFORM}" | tee -a "${LOG_FILE}"
     exit 1
   fi
-  if installAddon "${ADDON}" "${PLATFORM}"; then
+  if installAddon "${ADDON}" "${PLATFORM}" "${PRODUCTVER}" "${KVER}"; then
     if [ ! -f "${RAMDISK_PATH}/addons/${ADDON}.sh" ]; then
       echo "ERROR: System addon ${ADDON} install.sh missing after install" | tee -a "${LOG_FILE}"
       exit 1
@@ -228,7 +228,7 @@ for ADDON in "${!ADDONS[@]}"; do
     echo "WARNING: User addon ${ADDON} not available for ${PLATFORM}, skipping" | tee -a "${LOG_FILE}"
     continue
   fi
-  if installAddon "${ADDON}" "${PLATFORM}"; then
+  if installAddon "${ADDON}" "${PLATFORM}" "${PRODUCTVER}" "${KVER}"; then
     if [ ! -f "${RAMDISK_PATH}/addons/${ADDON}.sh" ]; then
       echo "WARNING: User addon ${ADDON} has no install.sh, skipping" | tee -a "${LOG_FILE}"
       continue

@@ -685,12 +685,6 @@ function updateLKMs() {
         --infobox "Updating LKMs..." 3 50
       if unzip -oq "${TMP_PATH}/rp-lkms.zip" -d "${LKMS_PATH}"; then
         rm -f "${TMP_PATH}/rp-lkms.zip"
-        while IFS= read -r -d '' SRC; do
-          SRCB="$(basename "${SRC}")"
-          DSTB="${SRCB/-7.3-/-7.4-}"
-          DST="${LKMS_PATH}/${DSTB}"
-          [ "${DST}" != "${SRC}" ] && [ ! -e "${DST}" ] && ln -sf "${SRC}" "${DST}" || true
-        done < <(find "${LKMS_PATH}" -maxdepth 1 -type f -name '*-7.3-*' -print0)
         dialog --backtitle "$(backtitle)" --title "Update LKMs" \
           --infobox "Update LKMs successful!" 3 50
         sleep 2
