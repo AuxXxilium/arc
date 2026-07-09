@@ -53,9 +53,9 @@ EXTRACTOR_PATH="${PART3_PATH}/extractor"
 EXTRACTOR_BIN="syno_extract_system_patch"
 
 IGPU1L=(apollolake geminilake)
-IGPU2L=(epyc7002 geminilakenk r1000nk v1000nk)
+IGPU2L=(epyc7002 epyc7003 epyc7003ntb geminilakenk icelaked r1000nk v1000nk)
 NVMECACHE=(DS719+ DS918+ DS1019+ DS1621xs+ RS1619xs+)
-MPT3PL=(purley broadwellnkv2 epyc7002 geminilakenk r1000nk v1000nk)
+MPT3PL=(purley broadwellnkv2 epyc7002 epyc7003 epyc7003ntb geminilakenk icelaked r1000nk v1000nk)
 IGFXRL=(apollolake epyc7002 geminilake geminilakenk)
 XAPICRL=(apollolake geminilake purley geminilakenk)
 
