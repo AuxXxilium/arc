@@ -563,7 +563,7 @@ function init_default_addons() {
   initConfigKey "addons.acpid" "" "${USER_CONFIG_FILE}"
   initConfigKey "addons.arcdns" "" "${USER_CONFIG_FILE}"
   initConfigKey "addons.cpuinfo" "" "${USER_CONFIG_FILE}"
-  initConfigKey "addons.hdddb" "" "${USER_CONFIG_FILE}"
+  initConfigKey "addons.diskcompat" "" "${USER_CONFIG_FILE}"
   initConfigKey "addons.mountloader" "" "${USER_CONFIG_FILE}"
   initConfigKey "addons.reducelogs" "" "${USER_CONFIG_FILE}"
   initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
