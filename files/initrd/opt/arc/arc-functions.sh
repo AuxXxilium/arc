@@ -88,7 +88,7 @@ function arcModel() {
           fi
           if [[ "${A}" != "epyc7002" && "${MEV}" = "hyperv" ]]; then
             COMPATIBLE=0
-          elif [ "${A}" = "epyc7002"] && [[ "${MEV}" = "hyperv" ]]; then
+          elif [ "${A}" = "epyc7002" ] && [[ "${MEV}" = "hyperv" ]]; then
             echo -e "${WARN}- Hyper-V VM: You need to enable the custom kernel.\n" >>"${TMP_PATH}/${M}_warn"
           fi
           if [ -n "${FLAGS}" ]; then
