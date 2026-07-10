@@ -84,16 +84,11 @@ function arcModel() {
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
           [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
           if [ "${CPUCHT:-0}" -gt "${PLTCNT:-0}" ]; then
-            if [[ "${A}" = "epyc7002" || "${A}" = "geminilakenk" ]]; then
-              echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT})\nYou should enable the custom kernel.\n" >>"${TMP_PATH}/${M}_warn"
-            else
-              # COMPATIBLE=0
-              echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}).\n" >>"${TMP_PATH}/${M}_warn"
-            fi
+            echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}).\n" >>"${TMP_PATH}/${M}_warn"
           fi
-          if [[ "${A}" != "epyc7002" && "${A}" != "geminilakenk" && "${MEV}" = "hyperv" ]]; then
+          if [[ "${A}" != "epyc7002" && "${MEV}" = "hyperv" ]]; then
             COMPATIBLE=0
-          elif [[ "${A}" = "epyc7002" || "${A}" = "geminilakenk" ]] && [[ "${MEV}" = "hyperv" ]]; then
+          elif [ "${A}" = "epyc7002"] && [[ "${MEV}" = "hyperv" ]]; then
             echo -e "${WARN}- Hyper-V VM: You need to enable the custom kernel.\n" >>"${TMP_PATH}/${M}_warn"
           fi
           if [ -n "${FLAGS}" ]; then
@@ -206,22 +201,11 @@ function arcVersion() {
       echo -n "" >"${TMP_PATH}/menu"
       for V in $(echo "${PVS}" | sort -r); do
         if echo "${CVS}" | grep -qx "${V:0:3}"; then
-          if [[ "${V:0:3}" = "7.3" ]]; then
-            # Check for movbe CPU flag for version 7.3
-            if grep -q "^flags.*movbe.*" /proc/cpuinfo; then
-              STATUS="beta"
-            else
-              STATUS="unsupported"
-            fi
-          elif [[ "${V:0:3}" = "7.4" ]]; then
-            # Check for movbe + bmi2 CPU flags for version 7.4
-            if grep -q "^flags.*movbe.*" /proc/cpuinfo && grep -q "^flags.*bmi2.*" /proc/cpuinfo; then
-              STATUS="beta"
-            else
-              STATUS="unsupported"
-            fi
-          else
-            STATUS="supported"
+          STATUS="supported"
+          if [[ "${V:0:3}" = "7.3" || "${V:0:3}" = "7.4" ]] && ! grep -q "^flags.*movbe.*" /proc/cpuinfo; then
+            STATUS="unsupported"
+          elif [[ "${V:0:3}" = "7.4" ]] && ! grep -q "^flags.*bmi2.*" /proc/cpuinfo; then
+            STATUS="unsupported"
           fi
           # Show all versions if SHOW_ALL, otherwise hide unsupported ones
           if [ "${SHOW_ALL}" -eq 1 ] || [ "${STATUS}" != "unsupported" ]; then
