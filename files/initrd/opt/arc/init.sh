@@ -227,14 +227,14 @@ mkdir -p "${PATCH_PATH}"
 mkdir -p "${USER_UP_PATH}"
 
 # Symlink *-7.3-* files to *-7.4-* in custom, modules and lkms
-for DIR in "${MODULES_PATH}" "${CUSTOM_PATH}"; do
-  while IFS= read -r -d '' SRC; do
-    SRCB="$(basename "${SRC}")"
-    DSTB="${SRCB/-7.3-/-7.4-}"
-    DST="${DIR}/${DSTB}"
-    [ "${DST}" != "${SRC}" ] && [ ! -e "${DST}" ] && ln -sf "${SRC}" "${DST}" || true
-  done < <(find "${DIR}" -maxdepth 1 -type f -name '*-7.3-*' -print0)
-done
+#for DIR in "${MODULES_PATH}" "${CUSTOM_PATH}"; do
+#  while IFS= read -r -d '' SRC; do
+#    SRCB="$(basename "${SRC}")"
+#    DSTB="${SRCB/-7.3-/-7.4-}"
+#    DST="${DIR}/${DSTB}"
+#    [ "${DST}" != "${SRC}" ] && [ ! -e "${DST}" ] && ln -sf "${SRC}" "${DST}" || true
+#  done < <(find "${DIR}" -maxdepth 1 -type f -name '*-7.3-*' -print0)
+#done
 
 # Development Mode
 DEVELOPMENT_MODE="$(readConfigKey "arc.dev" "${USER_CONFIG_FILE}")"
