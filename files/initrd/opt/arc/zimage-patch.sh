@@ -36,7 +36,7 @@ else
   # Patch boot params and ramdisk check
   "${ARC_PATH}/kpatch" "${TMP_PATH}/vmlinux" "${TMP_PATH}/vmlinux-mod" >"${LOG_FILE}" 2>&1 || die
   # Rebuild zImage
-  "${ARC_PATH}/vmlinux-to-bzImage.sh" "${TMP_PATH}/vmlinux-mod" "${MOD_ZIMAGE_FILE}" "${ORI_ZIMAGE_FILE}" >"${LOG_FILE}" 2>&1 || die
+  "${ARC_PATH}/vmlinux-to-bzImage.sh" "${TMP_PATH}/vmlinux-mod" "${MOD_ZIMAGE_FILE}" >"${LOG_FILE}" 2>&1 || die
 fi
 
 # Sanity check: rebuilt zImage must exist and be reasonably sized
