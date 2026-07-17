@@ -208,7 +208,9 @@ BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
 echo -e "\033[1;34mNetwork (${ETHN} NIC)\033[0m"
 RESTARTED=0
-[ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && RESTARTED=1
+if [ ! -f "/.dockerenv" ]; then
+  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && RESTARTED=1
+fi
 [ ! -f /var/run/thttpd.pid ] && /etc/init.d/S90thttpd restart >/dev/null 2>&1 && RESTARTED=1
 [ "${RESTARTED}" = "1" ] && sleep 5
 IPCON=""
@@ -248,14 +250,14 @@ fi
 
 # Notification System
 WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
-if [ "${WEBHOOKNOTIFY}" = "true" ]; then
+if [ "${WEBHOOKNOTIFY}" = "true" ] && [ ! -f "/.dockerenv" ]; then
   WEBHOOKURL="$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")"
   sendWebhook "${WEBHOOKURL}" "${ARC_MODE} is running @ ${IPCON}" || true
   echo -e "\033[1;34mWebhook Notification enabled.\033[0m"
   echo
 fi
 DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
-if [ "${DISCORDNOTIFY}" = "true" ]; then
+if [ "${DISCORDNOTIFY}" = "true" ] && [ ! -f "/.dockerenv" ]; then
   DISCORDUSER="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   if [ -n "${DISCORDUSER}" ]; then
     sendDiscord "${DISCORDUSER}" "${ARC_MODE} is running @ ${IPCON}" || true

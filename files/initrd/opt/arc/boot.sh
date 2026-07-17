@@ -325,7 +325,7 @@ if [ "${DIRECTBOOT}" = "true" ] || echo "parallels xen" | grep -qw "${MEV:-physi
   sleep 2
 
   echo -e "\033[1;34mReboot with Directboot\033[0m"
-  exec reboot
+  [ ! -f "/.dockerenv" ] && exec reboot
   exit 0
 else
   grub-editenv ${USER_GRUBENVFILE} unset dsm_cmdline 2>/dev/null || true
@@ -335,7 +335,9 @@ else
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
   echo -e "\033[1;34mNetwork (${ETHN} NIC)\033[0m"
   RESTARTED=0
-  [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && RESTARTED=1
+  if [ ! -f "/.dockerenv" ]; then
+    [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && RESTARTED=1
+  fi
   [ "${RESTARTED}" = "1" ] && sleep 5
   IPCON=""
   checkNIC || true

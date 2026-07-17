@@ -32,6 +32,10 @@ on:
         description: "essential"
         default: false
         type: boolean
+      docker:
+        description: "push to Docker Hub"
+        default: false
+        type: boolean
 
 jobs:
   build:
@@ -183,6 +187,39 @@ jobs:
           zip -9 "arc-${{ env.ARC_VERSION }}.ova.zip" "arc.ova"
           (cd files && zip -r ../update-${{ env.ARC_VERSION }}.zip ./p1 ./p3)
           sha256sum update-${{ env.ARC_VERSION }}.zip >"update-${{ env.ARC_VERSION }}.hash"
+
+      # Build and push a qemux/qemu wrapper image with this release's
+      # arc.img baked in, so `docker run` boots it with no manual
+      # compose/volume setup. See docker.md for the details and the
+      # manual (bind-mount) alternative.
+      - name: Docker Login
+        if: inputs.docker == true
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Docker Tags
+        if: inputs.docker == true
+        run: |
+          TAGS=("auxxxilium/arc:${ARC_BRANCH}-${ARC_VERSION}")
+          if [ "${{ inputs.stable }}" = "true" ]; then
+            TAGS+=("auxxxilium/arc:${ARC_VERSION}" "auxxxilium/arc:latest")
+          fi
+          {
+            echo "DOCKER_TAGS<<EOF"
+            printf '%s\n' "${TAGS[@]}"
+            echo "EOF"
+          } >> $GITHUB_ENV
+
+      - name: Docker Build and Push
+        if: inputs.docker == true
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ env.DOCKER_TAGS }}
 
       # Beta Release
       - name: Beta Release
