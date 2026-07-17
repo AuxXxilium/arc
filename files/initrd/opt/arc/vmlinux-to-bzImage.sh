@@ -5,11 +5,80 @@
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
 #
-# Based on code and ideas from @jumkey
+# Based on code and ideas from @jumkey and @petersuh-q3
 
 ###############################################################################
 # Initialize environment
 [[ -z "${ARC_PATH}" || ! -d "${ARC_PATH}/include" ]] && ARC_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+
+read_u8() {
+  dd if="${1}" bs=1 skip="$((${2}))" count=1 2>/dev/null | od -An -tu1 | tr -d '[:space:]'
+}
+read_u32() {
+  dd if="${1}" bs=1 skip="$((${2}))" count=4 2>/dev/null | od -An -tu4 --endian=little | tr -d '[:space:]'
+}
+
+splice_bzImage() {
+  local VMLINUX_MOD="${1}" ZIMAGE_MOD="${2}" ORI_ZIMAGE="${3}"
+
+  [ -f "${ORI_ZIMAGE}" ] || {
+    echo "ERROR: ${ORI_ZIMAGE} not found" >&2
+    return 1
+  }
+
+  local SETUP_SECTS PAYLOAD_OFFSET PAYLOAD_LENGTH INNER_POS PAYLOAD_START
+  SETUP_SECTS="$(read_u8 "${ORI_ZIMAGE}" 0x1f1)"
+  [ "${SETUP_SECTS}" -eq 0 ] 2>/dev/null && SETUP_SECTS=4
+  PAYLOAD_OFFSET="$(read_u32 "${ORI_ZIMAGE}" 0x248)"
+  PAYLOAD_LENGTH="$(read_u32 "${ORI_ZIMAGE}" 0x24c)"
+  INNER_POS=$(((SETUP_SECTS + 1) * 512))
+  PAYLOAD_START=$((INNER_POS + PAYLOAD_OFFSET))
+
+  if [ -z "${PAYLOAD_OFFSET}" ] || [ -z "${PAYLOAD_LENGTH}" ] || [ "${PAYLOAD_LENGTH}" -le 4 ]; then
+    echo "ERROR: could not parse bzImage boot header of ${ORI_ZIMAGE}" >&2
+    return 1
+  fi
+
+  local LZMA_TMP
+  LZMA_TMP="$(mktemp "${TMP_PATH:-/tmp}/vmlinux-lzma.XXXXXX")"
+
+  xz --format=lzma -9e -c "${VMLINUX_MOD}" >"${LZMA_TMP}" || {
+    echo "ERROR: lzma compression of ${VMLINUX_MOD} failed" >&2
+    rm -f "${LZMA_TMP}"
+    return 1
+  }
+
+  local VMLINUX_SIZE LZMA_SIZE NEW_PAYLOAD_LENGTH
+  VMLINUX_SIZE="$(stat -c%s "${VMLINUX_MOD}")"
+  LZMA_SIZE="$(stat -c%s "${LZMA_TMP}")"
+  NEW_PAYLOAD_LENGTH=$((LZMA_SIZE + 4))
+
+  if [ "${NEW_PAYLOAD_LENGTH}" -gt "${PAYLOAD_LENGTH}" ]; then
+    echo "ERROR: patched kernel payload (${NEW_PAYLOAD_LENGTH} bytes) does not fit" >&2
+    echo "       in the original bzImage payload region (${PAYLOAD_LENGTH} bytes)." >&2
+    echo "       Refusing to build a corrupt image." >&2
+    rm -f "${LZMA_TMP}"
+    return 1
+  fi
+
+  cp -f "${ORI_ZIMAGE}" "${ZIMAGE_MOD}" || {
+    rm -f "${LZMA_TMP}"
+    return 1
+  }
+
+  {
+    cat "${LZMA_TMP}"
+    size_le "${VMLINUX_SIZE}"
+    PAD=$((PAYLOAD_LENGTH - NEW_PAYLOAD_LENGTH))
+    [ "${PAD}" -gt 0 ] && dd if=/dev/zero bs=1 count="${PAD}" 2>/dev/null
+  } | dd of="${ZIMAGE_MOD}" bs=1 seek="${PAYLOAD_START}" conv=notrunc 2>/dev/null || {
+    rm -f "${LZMA_TMP}"
+    return 1
+  }
+
+  rm -f "${LZMA_TMP}"
+  return 0
+}
 
 calc_run_size() {
   NUM='\([0-9a-fA-F]*[ \t]*\)'
@@ -67,6 +136,13 @@ size_le() {
 
 VMLINUX_MOD=${1}
 ZIMAGE_MOD=${2}
+ORI_ZIMAGE=${3}
+PLATFORM=${4}
+
+if [ "${PLATFORM}" = "epyc7003ntb" ]; then
+  splice_bzImage "${VMLINUX_MOD}" "${ZIMAGE_MOD}" "${ORI_ZIMAGE}" || exit 1
+  exit 0
+fi
 
 KVER=$(strings "${VMLINUX_MOD}" | grep -Eo "Linux version [0-9]+\.[0-9]+\.[0-9]+" | head -1 | awk '{print $3}')
 if [ "${KVER:0:1}" -lt 5 ]; then
