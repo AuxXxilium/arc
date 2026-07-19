@@ -274,7 +274,7 @@ if is_in_array "${PLATFORM}" "${IGFXRL[@]}"; then
   fi
 fi
 
-if [ "${MEV:-physical}" != "physical" ] && [ "$(lspci -d ::300 2>/dev/null | wc -l)" -gt 0 ]; then
+if [ "${MEV:-physical}" = "physical" ] && [ "$(lspci -d ::300 2>/dev/null | wc -l)" -gt 0 ]; then
   CMDLINE['iommu']="pt"
 fi
 
