@@ -84,11 +84,15 @@ function arcModel() {
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
           [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
           if [ "${CPUCHT:-0}" -gt "${PLTCNT:-0}" ]; then
-            echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}).\n" >>"${TMP_PATH}/${M}_warn"
+            if [[ "${A}" = "epyc7002" || "${A}" = "geminilakenk" || "${A}" = "r1000nk" || "${A}" = "v1000nk" ]]; then
+              echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT})\nYou should enable the custom kernel.\n" >>"${TMP_PATH}/${M}_warn"
+            else
+              echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}).\n" >>"${TMP_PATH}/${M}_warn"
+            fi
           fi
-          if [[ "${A}" != "epyc7002" && "${MEV}" = "hyperv" ]]; then
+          if [[ "${A}" != "epyc7002" && "${A}" != "geminilakenk" && "${A}" != "r1000nk" && "${A}" != "v1000nk" && "${MEV}" = "hyperv" ]]; then
             COMPATIBLE=0
-          elif [ "${A}" = "epyc7002" ] && [[ "${MEV}" = "hyperv" ]]; then
+          elif [[ "${A}" = "epyc7002" || "${A}" = "geminilakenk" || "${A}" = "r1000nk" || "${A}" = "v1000nk" ]] && [[ "${MEV}" = "hyperv" ]]; then
             echo -e "${WARN}- Hyper-V VM: You need to enable the custom kernel.\n" >>"${TMP_PATH}/${M}_warn"
           fi
           if [ -n "${FLAGS}" ]; then

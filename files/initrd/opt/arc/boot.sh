@@ -267,6 +267,10 @@ if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
   CMDLINE['nox2apic']=""
 fi
 
+if is_in_array "${PLATFORM}" "${I2CI801BL[@]}"; then
+  CMDLINE['initcall_blacklist']="i2c_i801_init"
+fi
+
 if is_in_array "${PLATFORM}" "${IGFXRL[@]}"; then
   CMDLINE['intel_iommu']="igfx_off"
   if [ "${KVER:0:1}" -lt 5 ]; then

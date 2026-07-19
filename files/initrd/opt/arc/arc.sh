@@ -124,7 +124,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
           write_menu_value "P" "Fan Control" "$( [ "${FANCONTROL}" = "true" ] && echo "enabled" || echo "disabled" )"
         fi
 
-        if [ "${PLATFORM}" = "epyc7002" ] || [ "${PLATFORM}" = "geminilakenk" ]; then
+        if [ "${PLATFORM}" = "epyc7002" ] || [ "${PLATFORM}" = "geminilakenk" ] || [ "${PLATFORM}" = "r1000nk" ] || [ "${PLATFORM}" = "v1000nk" ]; then
           write_menu_value "K" "Kernel" "${KERNEL}"
         fi
 
