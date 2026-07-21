@@ -90,13 +90,21 @@ function installAddon() {
     fi
     chmod +x "${RAMDISK_PATH}/addons/${ADDON}.sh"
   fi
-  # Addons ship per DSM/kernel version packages named "<name>-<dsmver>-<kver>.tgz"
-  # (e.g. sensors-7.4-5.10.55.tgz) under root/addons/. Only the one matching the
-  # current build is needed at boot, so drop the rest to save ramdisk space.
+  # Addons ship either a single version-agnostic package named "<name>-<tag>.tgz"
+  # (e.g. acpid-7.1.tgz - one suffix segment, kept as-is regardless of build) or
+  # per DSM/kernel version packages named "<name>-<dsmver>-<kver>.tgz" (e.g.
+  # sensors-7.4-5.10.55.tgz - two suffix segments). Only the versioned package
+  # matching the current build is needed at boot, so drop the other versioned
+  # ones to save ramdisk space; version-agnostic packages are always kept.
   if [ -d "${TMP_ADDON}/root/addons" ] && [ -n "${DSMVER}" ] && [ -n "${KVER}" ]; then
-    for VERSIONED_TGZ in "${TMP_ADDON}/root/addons/${ADDON}"-*-*.tgz; do
+    for VERSIONED_TGZ in "${TMP_ADDON}/root/addons/${ADDON}"-*.tgz; do
       [ -f "${VERSIONED_TGZ}" ] || continue
-      [ "${VERSIONED_TGZ}" = "${TMP_ADDON}/root/addons/${ADDON}-${DSMVER}-${KVER}.tgz" ] && continue
+      SUFFIX="${VERSIONED_TGZ#"${TMP_ADDON}/root/addons/${ADDON}"-}"
+      SUFFIX="${SUFFIX%.tgz}"
+      # Version-agnostic: suffix has no "-", e.g. "7.1" (only one segment)
+      [ "${SUFFIX}" = "${SUFFIX%-*}" ] && continue
+      # Versioned: keep only the exact match for this build
+      [ "${SUFFIX}" = "${DSMVER}-${KVER}" ] && continue
       rm -f "${VERSIONED_TGZ}"
     done
   fi
