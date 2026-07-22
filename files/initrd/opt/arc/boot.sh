@@ -141,6 +141,7 @@ KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
 DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
 EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
+MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 
 declare -A CMDLINE
 
@@ -230,22 +231,11 @@ CMDLINE['rootwait']=""
 CMDLINE['panic']="${KERNELPANIC:-0}"
 CMDLINE['pcie_aspm']="off"
 CMDLINE['nowatchdog']=""
-MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 CMDLINE['mev']="${MEV:-physical}"
 CMDLINE['governor']="${GOVERNOR:-performance}"
-
-# Set pstate mode based on governor
-case "${GOVERNOR:-performance}" in
-  schedutil)
-    CMDLINE['intel_pstate']="passive"
-    CMDLINE['amd_pstate']="passive"
-    ;;
-  performance|powersave)
-    CMDLINE['intel_pstate']="disable"
-    CMDLINE['amd_pstate']="disable"
-    ;;
-esac
+CMDLINE['intel_pstate']="passive"
+CMDLINE['amd_pstate']="passive"
 
 if [ "${MEV}" = "vmware" ]; then
   CMDLINE['tsc']="reliable"
@@ -273,13 +263,6 @@ fi
 
 if is_in_array "${PLATFORM}" "${IGFXRL[@]}"; then
   CMDLINE['intel_iommu']="igfx_off"
-  if [ "${KVER:0:1}" -lt 5 ]; then
-    CMDLINE['i915.enable_guc']="2"
-  fi
-fi
-
-if [ "${MEV:-physical}" = "physical" ] && [ "$(lspci -d ::300 2>/dev/null | wc -l)" -gt 0 ]; then
-  CMDLINE['iommu']="pt"
 fi
 
 if [ "${PLATFORM}" = "purley" ] || [ "${PLATFORM}" = "broadwellnkv2" ]; then
