@@ -274,8 +274,11 @@ echo
 
 # Check memory and load Arc
 RAM=$(awk '/MemTotal:/ {printf "%.0f", $2 / 1024}' /proc/meminfo 2>/dev/null)
-if [ "${RAM:-0}" -le "3500" ]; then
+if [ "${RAM:-0}" -le 3500 ]; then
   echo -e "\033[1;31mYou have less than 4GB of RAM, if errors occur in loader creation, please increase the amount of RAM.\033[0m"
   sleep 5
+fi
+if [ "${RAM:-0}" -le 7000 ]; then
+  mount -o remount,size=${RAM}M /tmp 2>/dev/null || true
 fi
 arc.sh
