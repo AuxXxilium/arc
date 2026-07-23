@@ -236,12 +236,12 @@ CMDLINE['mev']="${MEV:-physical}"
 CMDLINE['governor']="${GOVERNOR:-performance}"
 CMDLINE['intel_pstate']="passive"
 CMDLINE['amd_pstate']="passive"
+CMDLINE['nox2apic']=""
 
 if [ "${MEV}" = "vmware" ]; then
   CMDLINE['tsc']="reliable"
   CMDLINE['pmtmr']="0x0"
 fi
-
 
 USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
 if [ "${USBMOUNT}" = "true" ]; then
@@ -253,9 +253,9 @@ if [ "${FANCONTROL}" = "true" ]; then
   CMDLINE['fancontrol']=""
 fi
 
-if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
-  CMDLINE['nox2apic']=""
-fi
+# if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
+#   CMDLINE['nox2apic']=""
+# fi
 
 if is_in_array "${PLATFORM}" "${I2CI801BL[@]}"; then
   CMDLINE['initcall_blacklist']="i2c_i801_init"
