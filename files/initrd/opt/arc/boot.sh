@@ -234,28 +234,30 @@ CMDLINE['nowatchdog']=""
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 CMDLINE['mev']="${MEV:-physical}"
 CMDLINE['governor']="${GOVERNOR:-performance}"
-CMDLINE['intel_pstate']="passive"
-CMDLINE['amd_pstate']="passive"
-CMDLINE['nox2apic']=""
 
-if [ "${MEV}" = "vmware" ]; then
+if [ "${MEV:-physical}" = "physical" ]; then
+  CMDLINE['intel_pstate']="passive"
+  CMDLINE['amd_pstate']="passive"
+fi
+
+if [ "${MEV:-physical}" = "vmware" ]; then
   CMDLINE['tsc']="reliable"
   CMDLINE['pmtmr']="0x0"
 fi
 
 USBMOUNT="$(readConfigKey "usbmount" "${USER_CONFIG_FILE}")"
-if [ "${USBMOUNT}" = "true" ]; then
+if [ "${USBMOUNT:-false}" = "true" ]; then
   CMDLINE['usbinternal']=""
 fi
 
 FANCONTROL="$(readConfigKey "fancontrol" "${USER_CONFIG_FILE}")"
-if [ "${FANCONTROL}" = "true" ]; then
+if [ "${FANCONTROL:-false}" = "true" ]; then
   CMDLINE['fancontrol']=""
 fi
 
-# if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
-#   CMDLINE['nox2apic']=""
-# fi
+if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then
+  CMDLINE['nox2apic']=""
+fi
 
 if is_in_array "${PLATFORM}" "${I2CI801BL[@]}"; then
   CMDLINE['initcall_blacklist']="i2c_i801_init"
