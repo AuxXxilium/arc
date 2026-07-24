@@ -134,6 +134,33 @@ for PE in "${PATCHES[@]}"; do
   RET=1
   for PF in ${PATCH_PATH}/${PE}; do
     [ ! -e "${PF}" ] && continue
+
+    # These patches are hand-authored diffs pinned to one specific DSM
+    # build's exact file content (see arc-patches/README), matched here only
+    # by filename glob, not by the ramdisk's actual buildnumber. busybox
+    # patch has no --dry-run, and applying a mismatched build's diff can
+    # still "succeed" via fuzzy context matching while inserting the hunk
+    # at the wrong location - corrupting scripts like /etc/rc or
+    # linuxrc.syno in a way that only surfaces as an unrelated-looking
+    # runtime failure much later in boot. Verify on a scratch copy of just
+    # the target file first, and only touch the real ramdisk if that
+    # verification copy patches cleanly.
+    PATCH_TARGET="$(sed -n '1{s/^--- a\///p}' "${PF}")"
+    if [ -z "${PATCH_TARGET}" ] || [ ! -f "${RAMDISK_PATH}/${PATCH_TARGET}" ]; then
+      echo "ERROR: cannot determine/find patch target for ${PF}" | tee -a "${LOG_FILE}"
+      exit 1
+    fi
+    VERIFY_DIR="$(mktemp -d)"
+    mkdir -p "${VERIFY_DIR}/$(dirname "${PATCH_TARGET}")"
+    cp -f "${RAMDISK_PATH}/${PATCH_TARGET}" "${VERIFY_DIR}/${PATCH_TARGET}"
+    (cd "${VERIFY_DIR}" && busybox patch -p1 -i "${PF}") >>"${LOG_FILE}" 2>&1
+    RET=$?
+    rm -rf "${VERIFY_DIR}"
+    if [ ${RET} -ne 0 ]; then
+      echo "WARNING: ${PF} does not apply cleanly against ${PATCH_TARGET} (build ${BUILDNUM}), skipping" >>"${LOG_FILE}"
+      continue
+    fi
+
     (cd "${RAMDISK_PATH}" && busybox patch -p1 -i "${PF}") >>"${LOG_FILE}" 2>&1
     RET=$?
     [ ${RET} -eq 0 ] && break
