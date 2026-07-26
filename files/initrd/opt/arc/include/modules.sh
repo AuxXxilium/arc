@@ -20,8 +20,8 @@ function unpackModules() {
 
   rm -rf "${UNPATH}"
   mkdir -p "${UNPATH}"
-  if [ "${KERNEL}" = "custom" ]; then
-    tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVERP}.tgz" -C "${UNPATH}"
+  if [ "${KERNEL}" = "legacy" ] || [ "${KERNEL}" = "upstreamed" ]; then
+    tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVERP}-${KERNEL}.tgz" -C "${UNPATH}"
   else
     tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVERP}.tgz" -C "${UNPATH}"
   fi
@@ -39,8 +39,8 @@ function packModules() {
   local UNPATH=${3:-"${TMP_PATH}/modules"}
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 
-  if [ "${KERNEL}" = "custom" ]; then
-    tar -zcf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVERP}.tgz" -C "${UNPATH}" .
+  if [ "${KERNEL}" = "legacy" ] || [ "${KERNEL}" = "upstreamed" ]; then
+    tar -zcf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVERP}-${KERNEL}.tgz" -C "${UNPATH}" .
   else
     tar -zcf "${MODULES_PATH}/${PLATFORM}-${KVERP}.tgz" -C "${UNPATH}" .
   fi
@@ -143,7 +143,7 @@ function installModules() {
 
   mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
-  if [ "${KERNEL}" = "custom" ]; then
+  if [ "${KERNEL}" = "legacy" ] || [ "${KERNEL}" = "upstreamed" ]; then
     tar -zxf "${CUSTOM_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
   else
     tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
