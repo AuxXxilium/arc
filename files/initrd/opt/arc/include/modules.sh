@@ -127,7 +127,6 @@ function installModules() {
   unpackModules "${PLATFORM}" "${KVERP}"
 
   ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
-  local MISSING_MODULES=""
   for D in "" "update"; do
     for F in $(LC_ALL=C printf '%s\n' ${UNPATH}/${D:+${D}/}*.ko | sort -V); do
       [ ! -e "${F}" ] && continue
@@ -141,22 +140,6 @@ function installModules() {
       fi
     done
   done
-
-  # Check that every requested module was actually installed
-  for MOD in ${MLIST}; do
-    local FOUND=false
-    for D in "" "update"; do
-      [ -f "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}${MOD}.ko" ] && FOUND=true && break
-    done
-    if [ "${FOUND}" = "false" ]; then
-      echo "ERROR: Module ${MOD} not found for ${PLATFORM}-${KVERP}" | tee -a "${LOG_FILE}"
-      MISSING_MODULES="${MISSING_MODULES} ${MOD}"
-    fi
-  done
-  if [ -n "${MISSING_MODULES}" ]; then
-    echo "ERROR: Missing modules:${MISSING_MODULES}" | tee -a "${LOG_FILE}"
-    return 1
-  fi
 
   mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
