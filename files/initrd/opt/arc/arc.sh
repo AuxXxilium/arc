@@ -204,7 +204,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
     write_menu "V" "Credits"
     [ "$TERM" != "xterm-256color" ] && WEBCONFIG="Webconfig: http://${IPCON}:${HTTPPORT:-7080}" || WEBCONFIG=""
     dialog --clear --default-item ${NEXT} --backtitle "$(backtitle)" --title "Advanced UI" --colors \
-      --cancel-label "Easy" --help-button --help-label "Exit" \
+      --help-button --help-label "Exit" \
       --menu "${WEBCONFIG}" 0 50 0 --file "${TMP_PATH}/menu" \
       2>"${TMP_PATH}/resp"
     RET=$?
@@ -254,23 +254,32 @@ elif [ "${ARC_MODE}" = "config" ]; then
           S) storageMenu; NEXT="S" ;;
           g) governorSelection; NEXT="g" ;;
           K)
-            KERNEL=$([ "${KERNEL}" = "official" ] && echo 'custom' || echo 'official')
-            writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
-            dialog --backtitle "$(backtitle)" --title "Kernel" \
-              --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 50
-            if [ "${ODP}" = "true" ]; then
-              ODP="false"
-              writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
+            dialog --backtitle "$(backtitle)" --title "Kernel" --colors \
+              --default-item "${KERNEL}" --menu "Choose a kernel:" 0 50 0 \
+              "official" "official (5.10.55)" \
+              "legacy" "legacy (5.10.55)" \
+              "upstreamed" "upstreamed (5.10.260)" \
+              2>"${TMP_PATH}/resp"
+            resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+            if [ -n "${resp}" ] && [ "${resp}" != "${KERNEL}" ]; then
+              KERNEL="${resp}"
+              writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
+              dialog --backtitle "$(backtitle)" --title "Kernel" \
+                --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 50
+              if [ "${ODP}" = "true" ]; then
+                ODP="false"
+                writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
+              fi
+              PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+              KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+              KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
+              if [ -n "${PLATFORM}" ] && [ -n "${KPRE:+${KPRE}-}${KVER}" ]; then
+                writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+                mergeConfigModules "$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+              fi
+              resetBuild
             fi
-            PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-            PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-            KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-            KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
-            if [ -n "${PLATFORM}" ] && [ -n "${KPRE:+${KPRE}-}${KVER}" ]; then
-              writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-              mergeConfigModules "$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
-            fi
-            resetBuild
             NEXT="K"
             ;;
           h)
@@ -389,9 +398,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
           I) rebootMenu; NEXT="I" ;;
           V) credits; NEXT="V" ;;
         esac
-        ;;
-      1)
-        exec evo.sh
         ;;
       *)
         break
