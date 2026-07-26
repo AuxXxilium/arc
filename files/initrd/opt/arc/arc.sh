@@ -254,11 +254,16 @@ elif [ "${ARC_MODE}" = "config" ]; then
           S) storageMenu; NEXT="S" ;;
           g) governorSelection; NEXT="g" ;;
           K)
+            PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+            PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+            KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+            KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
+            KOPTS=("official" "official (${KVER})")
+            [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-legacy.gz" ] && KOPTS+=("legacy" "legacy (${KVER})")
+            [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-upstreamed.gz" ] && KOPTS+=("upstreamed" "upstreamed (5.10.260)")
             dialog --backtitle "$(backtitle)" --title "Kernel" --colors \
               --default-item "${KERNEL}" --menu "Choose a kernel:" 0 50 0 \
-              "official" "official (5.10.55)" \
-              "legacy" "legacy (5.10.55)" \
-              "upstreamed" "upstreamed (5.10.260)" \
+              "${KOPTS[@]}" \
               2>"${TMP_PATH}/resp"
             resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
             if [ -n "${resp}" ] && [ "${resp}" != "${KERNEL}" ]; then
@@ -270,10 +275,6 @@ elif [ "${ARC_MODE}" = "config" ]; then
                 ODP="false"
                 writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
               fi
-              PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
-              PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
-              KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-              KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
               if [ -n "${PLATFORM}" ] && [ -n "${KPRE:+${KPRE}-}${KVER}" ]; then
                 writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
                 mergeConfigModules "$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
