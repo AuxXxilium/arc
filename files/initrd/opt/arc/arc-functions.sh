@@ -3159,6 +3159,13 @@ function getpatfiles() {
   [ -z "${DSMFULLVER}" ] && DSMFULLVER="${PRODUCTVER}"
   PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
+  # Pre-seeded PAT + network: do not block on offline upload dialog (headless/automated installs).
+  if [ "${ARC_OFFLINE}" = "true" ] && [ -n "${PAT_URL}" ] && [ -n "${PAT_HASH}" ]; then
+    if [ "${ARC_MODE}" = "automated" ] || curl -m 10 -skI "https://raw.githubusercontent.com" 2>/dev/null | grep -qi 'HTTP/'; then
+      writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
+      ARC_OFFLINE="false"
+    fi
+  fi
   mkdir -p "${USER_UP_PATH}"
   DSM_FILE="${USER_UP_PATH}/${PAT_HASH}.tar"
   VALID="false"
