@@ -25,6 +25,8 @@ Arc is a customized Redpill Loader for DSM 7.x (Xpenology) with enhanced hardwar
 
 * <a href="https://xpenology.tech/wiki" target="_blank">FAQ & Wiki</a> <- Read me first!!!
 
+* <a href="docs/headless-automated-install.md">Headless / automated install</a> <- Seed user-config + Automated Mode without Config Mode UI
+
 
 ### Arc Control
 
