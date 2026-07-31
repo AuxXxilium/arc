@@ -2770,6 +2770,36 @@ function cloneLoader() {
 }
 
 ###############################################################################
+# Reset build config without wiping user-config.yml (recovery from partial SSH edits)
+function resetBuildConfig() {
+  writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.confdone" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.remap" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "cmdline" "{}" "${USER_CONFIG_FILE}"
+  writeConfigKey "emmcboot" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "governor" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "kernel" "official" "${USER_CONFIG_FILE}"
+  writeConfigKey "odp" "false" "${USER_CONFIG_FILE}"
+  writeConfigKey "paturl" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "pathash" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "sn" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+  writeConfigKey "synoinfo" "{}" "${USER_CONFIG_FILE}"
+  writeConfigKey "network" "{}" "${USER_CONFIG_FILE}"
+  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+  rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+  rm -f ${USER_UP_PATH}/*.tar >/dev/null 2>&1 || true
+  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}" >/dev/null 2>&1 || true
+  resetBuildstatus
+  return 0
+}
+
+###############################################################################
 # let user delete Loader Boot Files
 function resetLoader() {
   if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
