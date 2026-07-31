@@ -120,7 +120,9 @@ elif [ "${ARC_MODE}" = "config" ]; then
           write_menu_value "g" "Scaling Governor" "${GOVERNOR:-performance}"
         fi
 
-        if echo "${addons_list}" | grep -q "sensors" && find "/sys/devices/platform/" -name "temp1_input" 2>/dev/null | grep -qE 'coretemp|k10temp|zenpower'; then
+        CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" 2>/dev/null | grep -E 'coretemp|k10temp|zenpower' | head -1 | sed -n 's|.*/\(hwmon.*\/temp1_input\).*|\1|p')"
+        if echo "${addons_list}" | grep -q "sensors" && [ -n "${CORETEMP}" ]; then
+          FANCONTROL="$(readConfigKey "fancontrol" "${USER_CONFIG_FILE}")"
           write_menu_value "P" "Fan Control" "$( [ "${FANCONTROL}" = "true" ] && echo "enabled" || echo "disabled" )"
         fi
 

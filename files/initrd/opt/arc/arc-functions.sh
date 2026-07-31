@@ -250,11 +250,12 @@ function arcVersion() {
     done
 
     writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
-    writeConfigKey "dsmfullver" "${DSMFULLVER:-${PRODUCTVER}}" "${USER_CONFIG_FILE}"
+    writeConfigKey "dsmfullver" "${DSMFULLVER}" "${USER_CONFIG_FILE}"
     writeConfigKey "buildnum" "${BUILDNUM:-0}" "${USER_CONFIG_FILE}"
     writeConfigKey "smallnum" "${SMALLNUM:-0}" "${USER_CONFIG_FILE}"
     writeConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
     writeConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "kernel" "official" "${USER_CONFIG_FILE}"
 
     PAT_URL_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${resp}\".url" "${D_FILE}")"
     PAT_HASH_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${resp}\".hash" "${D_FILE}")"
@@ -281,9 +282,32 @@ function arcVersion() {
     fi
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
     if [ "${KVER:0:1}" -eq 5 ] && [[ "${PRODUCTVER}" > "7.2" ]]; then
-      if [ "${PLATFORM}" = "epyc7002" ] || [ "${PLATFORM}" = "geminilakenk" ]; then
+      if [[ "${PLATFORM}" = "epyc7002" || "${PLATFORM}" = "geminilakenk" || "${PLATFORM}" = "r1000nk" || "${PLATFORM}" = "v1000nk" ]]; then
         dialog --backtitle "$(backtitle)" --title "DSM 7.3+ Warning" \
-          --msgbox "You selected a Linux 5.x based platform and DSM ${PRODUCTVER}!\nIf you encounter issues, switch to custom kernel." 6 65
+          --yesno "You selected a Linux 5.x based platform and DSM ${PRODUCTVER}!\nIf you encounter issues, switch to custom kernel.\n\nDo you want to select a custom kernel now?" 8 65
+        if [ $? -eq 0 ]; then
+          KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
+          KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
+          KOPTS=("official" "official (${KVER})")
+          [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-legacy.gz" ] && KOPTS+=("legacy" "legacy (${KVER})")
+          [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-upstreamed.gz" ] && KOPTS+=("upstreamed" "upstreamed (5.10.260)")
+          dialog --backtitle "$(backtitle)" --title "Kernel" --colors \
+            --default-item "${KERNEL}" --menu "Choose a kernel:" 0 50 0 \
+            "${KOPTS[@]}" \
+            2>"${TMP_PATH}/resp"
+          resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+          if [ -n "${resp}" ] && [ "${resp}" != "${KERNEL}" ]; then
+            KERNEL="${resp}"
+            writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
+            dialog --backtitle "$(backtitle)" --title "Kernel" \
+              --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 50
+            if [ -n "${PLATFORM}" ] && [ -n "${KPRE:+${KPRE}-}${KVER}" ]; then
+              writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+              mergeConfigModules "$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+            fi
+            resetBuild
+          fi
+        fi
       fi
     fi
     MSG="Do you want to use Automated Mode?\nLoader will automatically configure, build and boot DSM."
@@ -441,11 +465,17 @@ function arcSettings() {
     fi
   fi
 
-  if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sensors"; then
-    if [ "${ARC_MODE}" = "config" ] && [ "${MEV}" = "physical" ]; then
-      fancontrolSelection
-    elif [ "${ARC_MODE}" = "automated" ] && [ "${MEV}" = "physical" ]; then
-      CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp|zenpower' | head -1)"
+  CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" 2>/dev/null | grep -E 'coretemp|k10temp|zenpower' | head -1 | sed -n 's|.*/\(hwmon.*\/temp1_input\).*|\1|p')"
+  if [ "${MEV}" != "physical" ]; then
+    writeConfigKey "fancontrol" "false" "${USER_CONFIG_FILE}"
+  elif readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sensors"; then
+    if [ "${ARC_MODE}" = "config" ]; then
+      if [ -n "${CORETEMP}" ]; then
+        fancontrolSelection
+      else
+        writeConfigKey "fancontrol" "false" "${USER_CONFIG_FILE}"
+      fi
+    elif [ "${ARC_MODE}" = "automated" ]; then
       if [ -n "${CORETEMP}" ]; then
         writeConfigKey "fancontrol" "true" "${USER_CONFIG_FILE}"
       else
@@ -588,14 +618,12 @@ function init_default_addons() {
     initConfigKey "addons.cpufreqscaling" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.powersched" "" "${USER_CONFIG_FILE}"
     initConfigKey "addons.sensors" "" "${USER_CONFIG_FILE}"
-    CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" | grep -E 'coretemp|k10temp|zenpower' | head -1 | sed -n 's|.*/\(hwmon.*\/temp1_input\).*|\1|p')"
-    if [ -n "${CORETEMP}" ]; then
-      writeConfigKey "fancontrol" "true" "${USER_CONFIG_FILE}"
-    fi
     if [ "${KVER:0:1}" = "5" ]; then
       if command -v dmidecode >/dev/null 2>&1; then
           UGREEN_CHECK=$(dmidecode --string system-product-name 2>/dev/null)
           case "${UGREEN_CHECK}" in
+            *GT*)
+              ;;
             DXP6800*|DX4600*|DX4700*|DXP2800*|DXP4800*|DXP8800*)
               initConfigKey "addons.ledcontrol" "" "${USER_CONFIG_FILE}"
               ;;
@@ -1117,24 +1145,8 @@ function cmdlineMenu() {
         resetBuildstatus
         ;;
       0)
-        while true; do
-          dialog --clear --backtitle "$(backtitle)" \
-            --title "Netfix" --menu "Enable?" 0 0 0 \
-            1 "Yes" \
-            2 "No" \
-          2>"${TMP_PATH}/resp"
-          resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
-          [ -z "${resp}" ] && break
-          if [ "${resp}" -eq 1 ]; then
-            writeConfigKey "arc.netfix" "true" "${USER_CONFIG_FILE}"
-            dialog --backtitle "$(backtitle)" --title "Netfix" \
-              --aspect 18 --msgbox "Netfix activated" 0 0
-          elif [ "${resp}" -eq 2 ]; then
-            writeConfigKey "arc.netfix" "false" "${USER_CONFIG_FILE}"
-            dialog --backtitle "$(backtitle)" --title "Netfix" \
-              --aspect 18 --msgbox "Netfix deactivated" 0 0
-          fi
-        done
+        [ "${NETFIX}" = "true" ] && NETFIX='false' || NETFIX='true'
+        writeConfigKey "arc.netfix" "${NETFIX}" "${USER_CONFIG_FILE}"
         ;;
       *)
         break

@@ -13,7 +13,7 @@ PART2_PATH="/mnt/p2"
 PART3_PATH="/mnt/p3"
 TMP_PATH="/tmp"
 
-[ -f "${PART3_PATH}/automated" ] && rm -f "${PART3_PATH}/automated" >/dev/null 2>&1 || true
+[ -f "${PART1_PATH}/automated" ] && rm -f "${PART1_PATH}/automated" >/dev/null 2>&1 || true
 [ -f "${PART1_PATH}/ARC-VERSION" ] && ARC_VERSION="$(cat "${PART1_PATH}/ARC-VERSION")" || ARC_VERSION="null"
 [ -f "${PART1_PATH}/ARC-BUILD" ] && ARC_BUILD="$(cat "${PART1_PATH}/ARC-BUILD")" || ARC_BUILD="null"
 ARC_TITLE="Arc ${ARC_VERSION}"
