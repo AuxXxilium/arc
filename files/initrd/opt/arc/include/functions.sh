@@ -332,6 +332,18 @@ function checkBIOS_VT_d() {
 }
 
 ###############################################################################
+# Resolve loader disk (mountloader addon or p1 mount fallback for SSH sessions)
+function loaderDiskDetect() {
+  [ -f "/usr/arc/.mountloader" ] && . "/usr/arc/.mountloader"
+  if [ -z "${LOADER_DISK}" ] && findmnt -no TARGET "${PART1_PATH}" &>/dev/null; then
+    local _part
+    _part="$(findmnt -no SOURCE --target "${PART1_PATH}")"
+    LOADER_DISK="$(lsblk -no PKNAME "${_part}" 2>/dev/null | head -1)"
+    [ -z "${LOADER_DISK}" ] && LOADER_DISK="$(echo "${_part}" | sed -E 's/p?[0-9]+$//')"
+  fi
+}
+
+###############################################################################
 # Rebooting
 function rebootTo() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
@@ -480,7 +492,7 @@ function onlineCheck() {
 # Check System
 function systemCheck () {
   # Get Loader Disk Bus
-  [ -f "/usr/arc/.mountloader" ] && . "/usr/arc/.mountloader"
+  loaderDiskDetect
   BUS=$(getBus "${LOADER_DISK}")
   [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
   # Check for Hypervisor

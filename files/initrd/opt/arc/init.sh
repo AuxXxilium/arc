@@ -23,6 +23,7 @@ if type vmware-toolbox-cmd >/dev/null 2>&1; then
 fi
 
 # Get Loader Disk Bus
+loaderDiskDetect
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 checkBootLoader || die "The loader is corrupted, please rewrite it!"
 arc_mode || die "No bootmode found!"
