@@ -347,7 +347,7 @@ function rebootTo() {
   local MODES="config recovery junior automated update uefi memtest dsm"
   [ -z "${1}" ] && exit 1
   if ! echo "${MODES}" | grep -wq "${1}"; then exit 1; fi
-  [ "${1}" = "automated" ] && echo "arc-${MODEL}-${PRODUCTVER}-${ARC_VERSION}" >"${PART3_PATH}/automated"
+  [ "${1}" = "automated" ] && echo "arc-${MODEL}-${PRODUCTVER}-${ARC_VERSION}" >"${PART1_PATH}/automated"
   [ ! -f "${USER_GRUBENVFILE}" ] && grub-editenv "${USER_GRUBENVFILE}" create
   grub-editenv "${USER_GRUBENVFILE}" set next_entry="${1}"
   exec reboot
@@ -391,6 +391,27 @@ function copyDSMFiles() {
 function livepatch() {
   PVALID="false"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  DSMFULLVER="$(readConfigKey "dsmfullver" "${USER_CONFIG_FILE}")"
+  BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
+  SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
+  PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
+  PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
+
+  PAT_URL_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${DSMFULLVER}-${BUILDNUM}-${SMALLNUM}\".url" "${D_FILE}")"
+  PAT_HASH_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${DSMFULLVER}-${BUILDNUM}-${SMALLNUM}\".hash" "${D_FILE}")"
+
+  if [ -n "${PAT_URL_UPDATE}" ] && [ -n "${PAT_HASH_UPDATE}" ] && { [ "${PAT_URL}" != "${PAT_URL_UPDATE}" ] || [ "${PAT_HASH}" != "${PAT_HASH_UPDATE}" ]; }; then
+    PAT_URL="${PAT_URL_UPDATE}"
+    PAT_HASH="${PAT_HASH_UPDATE}"
+    writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+    writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
+    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" >/dev/null 2>&1 || true
+    rm -f "${USER_UP_PATH}/"*.tar >/dev/null 2>&1 || true
+  fi
+
   # Patch Ramdisk
   echo -e ">> patching Ramdisk..."
   if ${ARC_PATH}/ramdisk-patch.sh && [ -s "${MOD_RDGZ_FILE}" ]; then
