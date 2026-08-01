@@ -145,6 +145,17 @@ MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 
 declare -A CMDLINE
 
+# Cap CPU threads to what the kernel supports
+if [ "${KERNEL}" != "official" ]; then
+  PLTCNT=128
+else
+  PLTCNT="$(readConfigKey "platforms.${PLATFORM}.ccnt" "${P_FILE}")"
+fi
+if [ -n "${PLTCNT}" ] && [ "${PLTCNT}" -gt 0 ] && [ "${CPUCHT:-0}" -gt "${PLTCNT}" ]; then
+  CMDLINE['maxcpus']="${PLTCNT}"
+  echo "Warning: CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}) for ${KERNEL:-${PLATFORM}}, capping to ${PLTCNT}."
+fi
+
 # Automated Cmdline
 CMDLINE['vid']="${VID:-"0x46f4"}"
 CMDLINE['pid']="${PID:-"0x0001"}"
