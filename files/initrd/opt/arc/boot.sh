@@ -175,7 +175,7 @@ CMDLINE['netif_num']="${ETHN}"
 [ "${ETHN}" -ne "${ETHNA}" ] && echo "Warning: Network interface count mismatch!" || true
 
 NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
-if [ "${NETFIX}" = "true" ]; then
+if [ "${NETFIX}" = "true" ] || [ "${NETFIX}" = "force" ]; then
   for N in ${ETHX}; do
     RMAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null || echo "00:00:00:00:00:00")"
     RBUS="$(ethtool -i "${N}" 2>/dev/null | grep "bus-info" | cut -d' ' -f2 || echo "0000:00:00.0")"
@@ -290,9 +290,11 @@ if [ "${DT}" = "true" ] && ! is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
 fi
 
 # Read user network settings
-while IFS=': ' read -r KEY VALUE; do
-  [ -n "${KEY}" ] && CMDLINE["network.${KEY}"]="${VALUE}"
-done <<<"$(readConfigMap "network" "${USER_CONFIG_FILE}")"
+if [ "${NETFIX}" = "force" ]; then
+  while IFS=': ' read -r KEY VALUE; do
+    [ -n "${KEY}" ] && CMDLINE["network.${KEY}"]="${VALUE}"
+  done <<<"$(readConfigMap "network" "${USER_CONFIG_FILE}")"
+fi
 
 # Read user cmdline
 while IFS=': ' read -r KEY VALUE; do
@@ -366,7 +368,7 @@ else
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
 
   # Unload all network drivers
-  if [ "${NETFIX}" = "true" ]; then
+  if [ "${NETFIX}" = "true" ] || [ "${NETFIX}" = "force" ]; then
     for F in $(realpath /sys/class/net/*/device/driver); do [ ! -e "${F}" ] && continue; rmmod -f "$(basename ${F})" 2>/dev/null || true; done
   fi
 
