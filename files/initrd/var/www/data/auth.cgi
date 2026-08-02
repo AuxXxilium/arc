@@ -1,214 +1,199 @@
-#!/usr/bin/env python3
-"""
-Authentication CGI script for Arc Web Config
-Handles login, logout, and session verification against /etc/shadow
-"""
+#!/usr/bin/env bash
+#
+# Authentication CGI script for Arc Web Config
+# Handles login, logout and session verification against /etc/shadow
+#
 
-import cgi
-import cgitb
-import json
-import os
-import sys
-import hashlib
-import time
-from pathlib import Path
+SESSION_DIR="/tmp/arc_sessions"
+SESSION_LIFETIME=86400 # 24 hours in seconds
 
-# Enable debugging (remove in production)
-cgitb.enable()
+# Always emit a valid header block, even on unexpected failure, so the
+# webserver never sees an empty CGI response.
+send_json() {
+    echo "Content-Type: application/json"
+    echo "Cache-Control: no-cache, no-store, must-revalidate"
+    echo "Pragma: no-cache"
+    echo "Expires: 0"
+    echo ""
+    echo "$1"
+}
 
-# Session storage directory
-SESSION_DIR = '/tmp/arc_sessions'
-SESSION_LIFETIME = 86400  # 24 hours in seconds
+fail_safe() {
+    send_json '{"success": false, "message": "Internal error"}'
+    exit 0
+}
+trap fail_safe ERR
 
-def read_shadow_entry(username):
-    """Read password hash from /etc/shadow for given username"""
-    try:
-        with open('/etc/shadow', 'r') as f:
-            for line in f:
-                parts = line.strip().split(':')
-                if parts[0] == username and len(parts) >= 2:
-                    return parts[1]  # Return the password hash
-    except PermissionError:
-        return None
-    except FileNotFoundError:
-        return None
-    return None
+urldecode() {
+    local URL_ENCODED="${1//+/ }"
+    printf '%b' "${URL_ENCODED//%/\\x}"
+}
 
-def verify_password(username, password):
-    """Verify password against /etc/shadow entry"""
-    shadow_hash = read_shadow_entry(username)
-    
-    if not shadow_hash or shadow_hash in ['*', '!', '!!']:
-        return False
-    
-    # Import crypt for password verification
-    try:
-        import crypt
-        # Verify the password using crypt
-        result = crypt.crypt(password, shadow_hash)
-        return result == shadow_hash
-    except Exception as e:
-        print(f"Error verifying password: {e}", file=sys.stderr)
-        return False
+# Read parameters from POST body (falling back to the query string)
+parse_params() {
+    local DATA=""
+    if [ "${REQUEST_METHOD}" = "POST" ]; then
+        [ -n "${CONTENT_LENGTH}" ] && read -r -N "${CONTENT_LENGTH}" DATA
+    fi
+    [ -z "${DATA}" ] && DATA="${QUERY_STRING}"
 
-def create_session_token(username):
-    """Create a secure session token"""
-    timestamp = str(time.time())
-    random_data = os.urandom(32).hex()
-    token_source = f"{username}{timestamp}{random_data}"
-    token = hashlib.sha256(token_source.encode()).hexdigest()
-    return token
+    local IFS='&'
+    for PARAM in ${DATA}; do
+        local KEY="${PARAM%%=*}"
+        local VALUE="${PARAM#*=}"
+        case "${KEY}" in
+        action) ACTION=$(urldecode "${VALUE}") ;;
+        username) USERNAME=$(urldecode "${VALUE}") ;;
+        password) PASSWORD=$(urldecode "${VALUE}") ;;
+        token) TOKEN=$(urldecode "${VALUE}") ;;
+        esac
+    done
+}
 
-def save_session(username, token):
-    """Save session to filesystem"""
-    try:
-        Path(SESSION_DIR).mkdir(parents=True, exist_ok=True)
-        session_file = os.path.join(SESSION_DIR, token)
-        
-        with open(session_file, 'w') as f:
-            f.write(f"{username}\n{int(time.time())}\n")
-        
-        # Set restrictive permissions
-        os.chmod(session_file, 0o600)
-        return True
-    except Exception as e:
-        print(f"Error saving session: {e}", file=sys.stderr)
-        return False
+# Reject anything that could escape the session directory
+valid_token() {
+    case "$1" in
+    "" | *[!a-f0-9]*) return 1 ;;
+    esac
+    return 0
+}
 
-def verify_session(username, token):
-    """Verify if session token is valid"""
-    try:
-        session_file = os.path.join(SESSION_DIR, token)
-        
-        if not os.path.exists(session_file):
-            return False
-        
-        with open(session_file, 'r') as f:
-            stored_username = f.readline().strip()
-            timestamp = int(f.readline().strip())
-        
-        # Check if session belongs to the user and hasn't expired
-        current_time = int(time.time())
-        if stored_username == username and (current_time - timestamp) < SESSION_LIFETIME:
-            return True
-        else:
-            # Session expired, remove it
-            os.remove(session_file)
-            return False
-            
-    except Exception as e:
-        print(f"Error verifying session: {e}", file=sys.stderr)
-        return False
+verify_password() {
+    local USER="$1"
+    local PASS="$2"
 
-def delete_session(token):
-    """Delete session file"""
-    try:
-        session_file = os.path.join(SESSION_DIR, token)
-        if os.path.exists(session_file):
-            os.remove(session_file)
-        return True
-    except Exception as e:
-        print(f"Error deleting session: {e}", file=sys.stderr)
-        return False
+    local HASH
+    HASH="$(awk -F: -v u="${USER}" '$1 == u {print $2; exit}' /etc/shadow 2>/dev/null)"
 
-def cleanup_expired_sessions():
-    """Remove expired session files"""
-    try:
-        if not os.path.exists(SESSION_DIR):
-            return
-        
-        current_time = int(time.time())
-        for filename in os.listdir(SESSION_DIR):
-            session_file = os.path.join(SESSION_DIR, filename)
-            try:
-                with open(session_file, 'r') as f:
-                    f.readline()  # Skip username
-                    timestamp = int(f.readline().strip())
-                
-                if (current_time - timestamp) >= SESSION_LIFETIME:
-                    os.remove(session_file)
-            except:
-                pass
-    except Exception as e:
-        print(f"Error cleaning up sessions: {e}", file=sys.stderr)
+    # No entry, or a locked/passwordless account
+    case "${HASH}" in
+    "" | '*' | '!' | '!!') return 1 ;;
+    esac
 
-def send_json_response(data):
-    """Send JSON response with proper headers"""
-    print("Content-Type: application/json")
-    print("Cache-Control: no-cache, no-store, must-revalidate")
-    print("Pragma: no-cache")
-    print("Expires: 0")
-    print()
-    print(json.dumps(data))
+    # Hashes are written by loaderPassword as: $id$salt$checksum
+    local ID SALT CHECKSUM
+    IFS='$' read -r _ ID SALT CHECKSUM <<<"${HASH}"
+    if [ -z "${ID}" ] || [ -z "${SALT}" ] || [ -z "${CHECKSUM}" ]; then
+        return 1
+    fi
 
-def main():
-    """Main CGI handler"""
-    
-    # Clean up expired sessions periodically
-    cleanup_expired_sessions()
-    
-    # Parse form data
-    form = cgi.FieldStorage()
-    action = form.getvalue('action', '')
-    
-    if action == 'login':
-        username = form.getvalue('username', '').strip()
-        password = form.getvalue('password', '')
-        
-        if not username or not password:
-            send_json_response({
-                'success': False,
-                'message': 'Username and password are required'
-            })
-            return
-        
-        # Verify credentials
-        if verify_password(username, password):
-            # Create session
-            token = create_session_token(username)
-            if save_session(username, token):
-                send_json_response({
-                    'success': True,
-                    'token': token,
-                    'username': username
-                })
-            else:
-                send_json_response({
-                    'success': False,
-                    'message': 'Failed to create session'
-                })
-        else:
-            send_json_response({
-                'success': False,
-                'message': 'Invalid username or password'
-            })
-    
-    elif action == 'verify':
-        username = form.getvalue('username', '').strip()
-        token = form.getvalue('token', '').strip()
-        
-        if not username or not token:
-            send_json_response({'success': False})
-            return
-        
-        if verify_session(username, token):
-            send_json_response({'success': True})
-        else:
-            send_json_response({'success': False})
-    
-    elif action == 'logout':
-        token = form.getvalue('token', '').strip()
-        
-        if token:
-            delete_session(token)
-        
-        send_json_response({'success': True})
-    
-    else:
-        send_json_response({
-            'success': False,
-            'message': 'Invalid action'
-        })
+    local COMPUTED
+    COMPUTED="$(openssl passwd "-${ID}" -salt "${SALT}" "${PASS}" 2>/dev/null)"
+    [ -n "${COMPUTED}" ] && [ "${COMPUTED}" = "${HASH}" ]
+}
 
-if __name__ == '__main__':
-    main()
+create_session_token() {
+    openssl rand -hex 32 2>/dev/null
+}
+
+save_session() {
+    local USER="$1"
+    local TOK="$2"
+
+    mkdir -p "${SESSION_DIR}" 2>/dev/null || return 1
+    chmod 700 "${SESSION_DIR}" 2>/dev/null
+
+    local SESSION_FILE="${SESSION_DIR}/${TOK}"
+    printf '%s\n%s\n' "${USER}" "$(date +%s)" >"${SESSION_FILE}" 2>/dev/null || return 1
+    chmod 600 "${SESSION_FILE}" 2>/dev/null
+    return 0
+}
+
+verify_session() {
+    local USER="$1"
+    local TOK="$2"
+
+    valid_token "${TOK}" || return 1
+
+    local SESSION_FILE="${SESSION_DIR}/${TOK}"
+    [ -f "${SESSION_FILE}" ] || return 1
+
+    local STORED_USER STAMP
+    { read -r STORED_USER; read -r STAMP; } <"${SESSION_FILE}" 2>/dev/null
+
+    case "${STAMP}" in
+    "" | *[!0-9]*) rm -f "${SESSION_FILE}" 2>/dev/null; return 1 ;;
+    esac
+
+    local NOW
+    NOW="$(date +%s)"
+    if [ "${STORED_USER}" = "${USER}" ] && [ "$((NOW - STAMP))" -lt "${SESSION_LIFETIME}" ]; then
+        return 0
+    fi
+
+    rm -f "${SESSION_FILE}" 2>/dev/null
+    return 1
+}
+
+delete_session() {
+    local TOK="$1"
+    valid_token "${TOK}" || return 0
+    rm -f "${SESSION_DIR}/${TOK}" 2>/dev/null
+    return 0
+}
+
+cleanup_expired_sessions() {
+    [ -d "${SESSION_DIR}" ] || return 0
+
+    local NOW
+    NOW="$(date +%s)"
+    for SESSION_FILE in "${SESSION_DIR}"/*; do
+        [ -f "${SESSION_FILE}" ] || continue
+        local STAMP
+        { read -r _; read -r STAMP; } <"${SESSION_FILE}" 2>/dev/null
+        case "${STAMP}" in
+        "" | *[!0-9]*) rm -f "${SESSION_FILE}" 2>/dev/null; continue ;;
+        esac
+        [ "$((NOW - STAMP))" -ge "${SESSION_LIFETIME}" ] && rm -f "${SESSION_FILE}" 2>/dev/null
+    done
+    return 0
+}
+
+ACTION=""
+USERNAME=""
+PASSWORD=""
+TOKEN=""
+
+parse_params
+cleanup_expired_sessions
+
+case "${ACTION}" in
+login)
+    if [ -z "${USERNAME}" ] || [ -z "${PASSWORD}" ]; then
+        send_json '{"success": false, "message": "Username and password are required"}'
+        exit 0
+    fi
+
+    if verify_password "${USERNAME}" "${PASSWORD}"; then
+        NEW_TOKEN="$(create_session_token)"
+        if [ -n "${NEW_TOKEN}" ] && save_session "${USERNAME}" "${NEW_TOKEN}"; then
+            send_json "{\"success\": true, \"token\": \"${NEW_TOKEN}\", \"username\": \"${USERNAME}\"}"
+        else
+            send_json '{"success": false, "message": "Failed to create session"}'
+        fi
+    else
+        send_json '{"success": false, "message": "Invalid username or password"}'
+    fi
+    ;;
+verify)
+    if [ -z "${USERNAME}" ] || [ -z "${TOKEN}" ]; then
+        send_json '{"success": false}'
+        exit 0
+    fi
+
+    if verify_session "${USERNAME}" "${TOKEN}"; then
+        send_json '{"success": true}'
+    else
+        send_json '{"success": false}'
+    fi
+    ;;
+logout)
+    [ -n "${TOKEN}" ] && delete_session "${TOKEN}"
+    send_json '{"success": true}'
+    ;;
+*)
+    send_json '{"success": false, "message": "Invalid action"}'
+    ;;
+esac
+
+exit 0
