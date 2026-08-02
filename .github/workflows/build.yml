@@ -263,7 +263,7 @@ jobs:
           token: ${{ secrets.BUILD_TOKEN }}
           body: |
             ### Information:
-              - [Release Notes](https://xpenology.tech/release/${{ env.ARC_VERSION }}.txt)
+              - [Release Notes](https://xpenology.tech/release/view.php?f=${{ env.ARC_VERSION }}.txt)
 
             ### Dependencies:
               - Addons: ${{ env.ADDONTAG }}
@@ -292,7 +292,7 @@ jobs:
           token: ${{ secrets.BUILD_TOKEN }}
           body: |
             ### Information:
-              - [Release Notes](https://xpenology.tech/release/${{ env.ARC_VERSION }}.txt)
+              - [Release Notes](https://xpenology.tech/release/view.php?f=${{ env.ARC_VERSION }}.txt)
 
             ### Dependencies:
               - Addons: ${{ env.ADDONTAG }}
