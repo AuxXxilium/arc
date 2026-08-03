@@ -119,7 +119,7 @@ function installModules() {
     echo "ERROR: Platform or Kernel Version not defined" >"${LOG_FILE}"
     return 1
   fi
-  local MLIST ODP KERNEL
+  local MLIST ODP
   shift 2
   MLIST="${*}"
 
@@ -131,7 +131,7 @@ function installModules() {
     for F in $(LC_ALL=C printf '%s\n' ${UNPATH}/${D:+${D}/}*.ko | sort -V); do
       [ ! -e "${F}" ] && continue
       M=$(basename "${F}")
-      [ "${ODP}" = "true" ] && [ -f "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}${M}" ] && continue # TODO: check if module is already loaded
+      [ "${ODP}" = "true" ] && [ -f "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}${M}" ] && continue
       if echo "${MLIST}" | grep -wq "${D:+${D}/}$(basename "${M}" .ko)"; then
         mkdir -p "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}"
         cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}${M}" 2>>"${LOG_FILE}"
@@ -142,12 +142,7 @@ function installModules() {
   done
 
   mkdir -p "${RAMDISK_PATH}/usr/lib/firmware"
-  KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
-  if [ "${KERNEL}" = "legacy" ] || [ "${KERNEL}" = "upstreamed" ]; then
-    tar -zxf "${CUSTOM_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
-  else
-    tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
-  fi
+  tar -zxf "${MODULES_PATH}/firmware.tgz" -C "${RAMDISK_PATH}/usr/lib/firmware" 2>"${LOG_FILE}"
   if [ $? -ne 0 ]; then
     return 1
   fi
