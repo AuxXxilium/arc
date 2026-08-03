@@ -14,23 +14,11 @@ F kvm.ko
 
 # acpi
 N acpi_call.ko
-N acpi_cpufreq.ko
-
-# cpufreq
-N cpufreq_governor.ko
-N cpufreq_ondemand.ko
-N cpufreq_conservative.ko
-N cpufreq_performance.ko
-N cpufreq_powersave.ko
-N cpufreq_userspace.ko
-N cpufreq_stats.ko
+N button.ko
 
 # misc
 N check_signature.ko
-N dca.ko
 N drivetemp.ko
-N rfkill.ko
-N rfkill-gpio.ko
 N scsi_debug.ko
 
 # sensors
@@ -46,8 +34,11 @@ N adt7475.ko
 N lm75.ko
 N lm78.ko
 N lm90.ko
+N lm95245.ko
 N nct6683.ko
 N nct6775.ko
+N dme1737.ko
+N w83781d.ko
 
 # network
 F aqc111.ko
