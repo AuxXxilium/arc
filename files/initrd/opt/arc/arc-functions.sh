@@ -283,8 +283,8 @@ function arcVersion() {
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
     if [ "${KVER:0:1}" -eq 5 ] && [[ "${PRODUCTVER}" > "7.2" ]]; then
       if [[ "${PLATFORM}" = "epyc7002" || "${PLATFORM}" = "geminilakenk" || "${PLATFORM}" = "r1000nk" || "${PLATFORM}" = "v1000nk" ]]; then
-        dialog --backtitle "$(backtitle)" --title "DSM 7.3+ Warning" \
-          --yesno "You selected a Linux 5.x based platform and DSM ${PRODUCTVER}!\nIf you encounter issues, switch to custom kernel.\n\nDo you want to select a custom kernel now?" 8 65
+        dialog --backtitle "$(backtitle)" --title "Custom Kernel" \
+          --yesno "You selected a Linux 5.x based platform and DSM ${PRODUCTVER}!\nA custom kernel is available for this combination.\n\nDo you want to select a custom kernel now?" 8 65
         if [ $? -eq 0 ]; then
           KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
           KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
