@@ -1709,6 +1709,8 @@ function sysinfo() {
   for N in ${ETHX}; do
     COUNT=0
     DRIVER="$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
+    NICID="$(getNicId "${N}")"
+    [ -n "${NICID}" ] && DRIVER="${DRIVER} [${NICID}]"
     MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | tr '[:upper:]' '[:lower:]')"
     while true; do
       if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
@@ -1799,6 +1801,8 @@ function sysinfo() {
     TEXT+="\n  SATA Controller:\n"
     for PCI in $(lspci -d ::106 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
+      PCIID="$(getPciId "${PCI}")"
+      [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
       TEXT+="\Zb  ${NAME}\Zn\n  Ports: "
       PORTS=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       for P in ${PORTS}; do
@@ -1819,6 +1823,8 @@ function sysinfo() {
   [ $(lspci -d ::104 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  RAID Controller:\n"
   for PCI in $(lspci -d ::104 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
+    PCIID="$(getPciId "${PCI}")"
+    [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
     PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
@@ -1827,6 +1833,8 @@ function sysinfo() {
   [ $(lspci -d ::107 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  HBA Controller:\n"
   for PCI in $(lspci -d ::107 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
+    PCIID="$(getPciId "${PCI}")"
+    [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
     PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
@@ -1835,6 +1843,8 @@ function sysinfo() {
   [ $(lspci -d ::100 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  SCSI Controller:\n"
   for PCI in $(lspci -d ::100 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
+    PCIID="$(getPciId "${PCI}")"
+    [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
     PORTNUM=$(ls -l /sys/block/* 2>/dev/null | grep "${PCI}" | wc -l)
     [ "${PORTNUM}" -eq 0 ] && continue
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
@@ -1843,6 +1853,8 @@ function sysinfo() {
   [ $(ls -l /sys/class/scsi_host 2>/dev/null | grep usb | wc -l) -gt 0 ] && TEXT+="\n  USB Controller:\n"
   for PCI in $(lspci -d ::c03 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
+    PCIID="$(getPciId "${PCI}")"
+    [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
     PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
     [ "${PORTNUM}" -eq 0 ] && continue
@@ -1852,6 +1864,8 @@ function sysinfo() {
   [ $(ls -l /sys/block/mmc* 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  MMC Controller:\n"
   for PCI in $(lspci -d ::805 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
+    PCIID="$(getPciId "${PCI}")"
+    [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
     PORTNUM=$(ls -l /sys/block/mmc* 2>/dev/null | grep "${PCI}" | wc -l)
     [ "${PORTNUM}" -eq 0 ] && continue
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
@@ -1860,6 +1874,8 @@ function sysinfo() {
   [ $(lspci -d ::108 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  NVME Controller:\n"
   for PCI in $(lspci -d ::108 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
+    PCIID="$(getPciId "${PCI}")"
+    [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
     PORT=$(ls -l /sys/class/nvme 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
     PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[N:${PORT}:" | wc -l)
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
