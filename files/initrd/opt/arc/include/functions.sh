@@ -243,6 +243,38 @@ function getIP() {
 }
 
 ###############################################################################
+# get vendor:device id of a pci slot
+# 1 - pci slot (e.g. 00:1f.2)
+function getPciId() {
+  local ID=""
+  [ -n "${1}" ] && ID=$(lspci -n -s "${1}" 2>/dev/null | awk '{print $3}' | head -1)
+  echo "${ID}"
+  return 0
+}
+
+###############################################################################
+# get vendor:device id of a network interface
+# 1 - ethN
+function getNicId() {
+  local DEV="" VID="" PID=""
+  [ -n "${1}" ] && DEV="$(realpath "/sys/class/net/${1}/device" 2>/dev/null)"
+  [ -z "${DEV}" ] && return 0
+  if [ -f "${DEV}/vendor" ] && [ -f "${DEV}/device" ]; then
+    # pci device
+    VID="$(cat "${DEV}/vendor" 2>/dev/null)"
+    PID="$(cat "${DEV}/device" 2>/dev/null)"
+  elif [ -f "${DEV}/../idVendor" ] && [ -f "${DEV}/../idProduct" ]; then
+    # usb device, ids live on the parent of the interface
+    VID="$(cat "${DEV}/../idVendor" 2>/dev/null)"
+    PID="$(cat "${DEV}/../idProduct" 2>/dev/null)"
+  fi
+  VID="$(echo "${VID}" | sed 's/^0x//')"
+  PID="$(echo "${PID}" | sed 's/^0x//')"
+  [ -n "${VID}" ] && [ -n "${PID}" ] && echo "${VID}:${PID}"
+  return 0
+}
+
+###############################################################################
 # Find and mount the DSM root filesystem
 function findDSMRoot() {
   local DSMROOTS=""
