@@ -42,7 +42,7 @@ function arcModel() {
         [ "${DT}" = "true" ] && DTS="x" || DTS=""
         IGPU=""
         IGPUS=""
-        IGPUID="$(lspci -nd ::300 2>/dev/null | grep "8086" | cut -d' ' -f3 | sed 's/://g')"
+        IGPUID="$(getIgpuId)"
         if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids" && IGPU="all" || IGPU="igpuv5"; else IGPU=""; fi
         if [[ " ${IGPU1L[@]} " =~ " ${A} " ]] && [ "${IGPU}" = "all" ]; then
           IGPUS="+"
@@ -633,7 +633,7 @@ function init_default_addons() {
   else
     initConfigKey "addons.vmtools" "" "${USER_CONFIG_FILE}"
   fi
-  IGPUID="$(lspci -nd ::300 2>/dev/null | grep "8086" | cut -d' ' -f3 | sed 's/://g')"
+  IGPUID="$(getIgpuId)"
   if [ -n "${IGPUID}" ] && is_in_array "${PLATFORM}" "${IGPU1L[@]}" && grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids"; then
     initConfigKey "addons.i915" "" "${USER_CONFIG_FILE}"
   fi
@@ -1687,18 +1687,16 @@ function sysinfo() {
   TEXT+="\n"
   TEXT+="\n  Board: \Zb${BOARD}\Zn"
   TEXT+="\n  CPU: \Zb${CPU} (Cores: ${CPUCNT} | Threads: ${CPUCHT})\Zn"
-  if [ "$(lspci -d ::300 | wc -l)" -gt 0 ]; then
-    FIRST_GPU=true
-    for PCI in $(lspci -d ::300 | awk '{print $1}'); do
-      GPUNAME="$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')"
-      if [ "${FIRST_GPU}" = "true" ]; then
-        TEXT+="\n  GPU: \Zb${GPUNAME}\Zn"
-        FIRST_GPU=false
-      else
-        TEXT+="\n       \Zb${GPUNAME}\Zn"
-      fi
-    done
-  fi
+  FIRST_GPU=true
+  for PCI in $(getPciClass 03); do
+    GPUNAME="$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')"
+    if [ "${FIRST_GPU}" = "true" ]; then
+      TEXT+="\n  GPU: \Zb${GPUNAME}\Zn"
+      FIRST_GPU=false
+    else
+      TEXT+="\n       \Zb${GPUNAME}\Zn"
+    fi
+  done
   TEXT+="\n  Memory: \Zb$((${RAMTOTAL}))GB\Zn"
   TEXT+="\n  AES | MOVBE | BMI2: \Zb${AESSYS} | ${MOVBE} | ${BMI2}\Zn"
   TEXT+="\n  CPU Scaling | Governor: \Zb${CPUFREQ} | ${GOVERNOR}\Zn"

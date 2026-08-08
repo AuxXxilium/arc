@@ -79,6 +79,26 @@ function getPciId() {
 }
 
 ###############################################################################
+# get pci slots of all devices matching a pci class prefix
+# matches any subclass/prog-if, so 03 covers 0300/0301/0302/0380 ...
+# 1 - class prefix in hex (e.g. 03 for display, 0106 for sata)
+function getPciClass() {
+  local PREFIX="" CLASS="" SLOT=""
+  [ -z "${1}" ] && return 0
+  PREFIX="$(echo "${1}" | tr '[:upper:]' '[:lower:]')"
+  for DEV in /sys/bus/pci/devices/*; do
+    [ -e "${DEV}/class" ] || continue
+    # class is 0xCCSSPP (class, subclass, prog-if)
+    CLASS="$(sed 's/^0x//' "${DEV}/class" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+    [ "${CLASS:0:${#PREFIX}}" = "${PREFIX}" ] || continue
+    # sysfs uses full domain (0000:00:02.0), lspci -s accepts it
+    SLOT="$(basename "${DEV}")"
+    echo "${SLOT}"
+  done
+  return 0
+}
+
+###############################################################################
 # get vendor:device id of a network interface
 # 1 - interface name (e.g. eth0)
 function getNicId() {
@@ -231,18 +251,16 @@ function getSysinfo() {
   TEXT="\n> System: ${MACHINE} | ${BOOTSYS}"
   TEXT+="\n  Board: ${BOARD}"
   TEXT+="\n  CPU: ${CPU} (Cores: ${CPUCNT} | Threads: ${CPUCHT})"
-  if [ $(lspci -d ::300 | wc -l) -gt 0 ]; then
-    FIRST_GPU=true
-    for PCI in $(lspci -d ::300 | awk '{print $1}'); do
-      GPUNAME="$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')"
-      if [ "${FIRST_GPU}" = "true" ]; then
-        TEXT+="\n  GPU: ${GPUNAME}"
-        FIRST_GPU=false
-      else
-        TEXT+="\n       ${GPUNAME}"
-      fi
-    done
-  fi
+  FIRST_GPU=true
+  for PCI in $(getPciClass 03); do
+    GPUNAME="$(lspci -s ${PCI} | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')"
+    if [ "${FIRST_GPU}" = "true" ]; then
+      TEXT+="\n  GPU: ${GPUNAME}"
+      FIRST_GPU=false
+    else
+      TEXT+="\n       ${GPUNAME}"
+    fi
+  done
   TEXT+="\n  Memory: $((${RAMTOTAL}))GB"
   TEXT+="\n  AES | MOVBE | BMI2: ${AESSYS} | ${MOVBE} | ${BMI2}"
   TEXT+="\n  CPU Scaling | Governor: ${CPUFREQ} | ${GOVERNOR}"
