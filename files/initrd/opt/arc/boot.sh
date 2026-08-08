@@ -245,11 +245,8 @@ CMDLINE['nowatchdog']=""
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 CMDLINE['mev']="${MEV:-physical}"
 CMDLINE['governor']="${GOVERNOR:-performance}"
-
-if [ "${MEV:-physical}" = "physical" ]; then
-  CMDLINE['intel_pstate']="passive"
-  CMDLINE['amd_pstate']="passive"
-fi
+#CMDLINE['intel_pstate']="disable"
+#CMDLINE['amd_pstate']="disable"
 
 if [ "${MEV:-physical}" = "vmware" ]; then
   CMDLINE['tsc']="reliable"
