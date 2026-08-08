@@ -47,6 +47,57 @@ function packModules() {
 }
 
 ###############################################################################
+# Search order of module folders inside a modules tgz.
+# "update" comes first, it takes precedence over the root folder just like
+# the kernel does, so a module shipped in both is resolved to the newer one.
+MODULE_DIRS=("update" "")
+
+###############################################################################
+# Resolve a module name to its file inside an unpacked modules folder
+# Accepts a bare name (drm), a folder prefixed name (update/drm) and an
+# optional .ko suffix. Prints the path of the first match, empty if none.
+# 1 - Unpacked modules path
+# 2 - Module name
+function resolveModule() {
+  local UNPATH="${1}"
+  local KONAME="${2}"
+
+  [ -z "${UNPATH}" ] || [ -z "${KONAME}" ] && return 0
+  KONAME="$(basename "${KONAME}" .ko)"
+  for D in "${MODULE_DIRS[@]}"; do
+    if [ -f "${UNPATH}/${D:+${D}/}${KONAME}.ko" ]; then
+      echo "${UNPATH}/${D:+${D}/}${KONAME}.ko"
+      return 0
+    fi
+  done
+  return 0
+}
+
+###############################################################################
+# Resolve a module name to the name used in the module list, that is the
+# name including its folder prefix (i915 -> update/i915). Falls back to the
+# plain name if the module is not part of the tgz.
+# 1 - Unpacked modules path
+# 2 - Module name
+function moduleName() {
+  local UNPATH="${1}"
+  local KONAME="${2}"
+  local KOFILE
+
+  [ -z "${UNPATH}" ] || [ -z "${KONAME}" ] && return 0
+  KONAME="$(basename "${KONAME}" .ko)"
+  KOFILE="$(resolveModule "${UNPATH}" "${KONAME}")"
+  if [ -n "${KOFILE}" ]; then
+    # strip the unpack path and the .ko suffix, keep a leading update/
+    KOFILE="${KOFILE#${UNPATH}/}"
+    echo "${KOFILE%.ko}"
+  else
+    echo "${KONAME}"
+  fi
+  return 0
+}
+
+###############################################################################
 # Return list of all modules available
 # 1 - Platform
 # 2 - Kernel Version
@@ -61,7 +112,7 @@ function getAllModules() {
   UNPATH="${TMP_PATH}/modules"
   unpackModules "${PLATFORM}" "${KVERP}"
 
-  for D in "" "update"; do
+  for D in "${MODULE_DIRS[@]}"; do
     for F in $(LC_ALL=C printf '%s\n' ${UNPATH}/${D:+${D}/}*.ko | sort -V); do
       [ ! -e "${F}" ] && continue
       local N DESC
@@ -127,12 +178,14 @@ function installModules() {
   unpackModules "${PLATFORM}" "${KVERP}"
 
   ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
-  for D in "" "update"; do
+  for D in "${MODULE_DIRS[@]}"; do
     for F in $(LC_ALL=C printf '%s\n' ${UNPATH}/${D:+${D}/}*.ko | sort -V); do
       [ ! -e "${F}" ] && continue
       M=$(basename "${F}")
       [ "${ODP}" = "true" ] && [ -f "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}${M}" ] && continue
-      if echo "${MLIST}" | grep -wq "${D:+${D}/}$(basename "${M}" .ko)"; then
+      # exact token match, a selected update/drm must not also pull in the
+      # older root drm ("grep -w" would treat the slash as a word boundary)
+      if [[ " ${MLIST} " == *" ${D:+${D}/}$(basename "${M}" .ko) "* ]]; then
         mkdir -p "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}"
         cp -f "${F}" "${RAMDISK_PATH}/usr/lib/modules/${D:+${D}/}${M}" 2>>"${LOG_FILE}"
       else
@@ -169,9 +222,17 @@ function addToModules() {
   UNPATH="${TMP_PATH}/modules"
   unpackModules "${PLATFORM}" "${PKVER}" "${UNPATH}"
 
-  cp -f "${KOFILE}" "${UNPATH}"
+  # replace in place if the module already exists, so a ko shipped in
+  # update/ keeps its precedence instead of being shadowed by a root copy
+  local TARGET
+  TARGET="$(resolveModule "${UNPATH}" "$(basename "${KOFILE}")")"
+  if [ -n "${TARGET}" ]; then
+    cp -f "${KOFILE}" "${TARGET}"
+  else
+    cp -f "${KOFILE}" "${UNPATH}"
+  fi
 
-  packagModules "${PLATFORM}" "${PKVER}" "${UNPATH}"
+  packModules "${PLATFORM}" "${PKVER}" "${UNPATH}"
 }
 
 ###############################################################################
@@ -192,9 +253,14 @@ function delToModules() {
   UNPATH="${TMP_PATH}/modules"
   unpackModules "${PLATFORM}" "${PKVER}" "${UNPATH}"
 
-  rm -f "${UNPATH}/${KONAME}"
+  # drop every copy, removing only the update/ one would bring the older
+  # root module back into play
+  KONAME="$(basename "${KONAME}" .ko)"
+  for D in "${MODULE_DIRS[@]}"; do
+    rm -f "${UNPATH}/${D:+${D}/}${KONAME}.ko"
+  done
 
-  packagModules "${PLATFORM}" "${PKVER}" "${UNPATH}"
+  packModules "${PLATFORM}" "${PKVER}" "${UNPATH}"
 }
 
 ###############################################################################
@@ -203,16 +269,26 @@ function delToModules() {
 # 2 - Kernel Version
 # 3 - ko name
 function getdepends() {
+  # resolves each module through MODULE_DIRS, so dependencies living in
+  # update/ are followed and shadowed ones are read from the newer copy.
+  # Names are printed with the folder prefix they were resolved to, that is
+  # what getAllModules stores and what installModules matches against.
   function _getdepends() {
-    if [ -f "${UNPATH}/${1}.ko" ]; then
-      local depends
-      depends="$(modinfo -F depends "${UNPATH}/${1}.ko" 2>/dev/null | sed 's/,/\n/g')"
-      if [ "$(echo "${depends}" | wc -w)" -gt 0 ]; then
-        for k in ${depends}; do
-          echo "${k}"
-          _getdepends "${k}"
-        done
-      fi
+    local KOFILE NAME depends k
+    KOFILE="$(resolveModule "${UNPATH}" "${1}")"
+    [ -z "${KOFILE}" ] && return 0
+    NAME="$(basename "${1}" .ko)"
+    # guard against dependency cycles
+    case " ${_SEEN_KO} " in
+      *" ${NAME} "*) return 0 ;;
+    esac
+    _SEEN_KO="${_SEEN_KO} ${NAME}"
+    depends="$(modinfo -F depends "${KOFILE}" 2>/dev/null | sed 's/,/\n/g')"
+    if [ "$(echo "${depends}" | wc -w)" -gt 0 ]; then
+      for k in ${depends}; do
+        moduleName "${UNPATH}" "${k}"
+        _getdepends "${k}"
+      done
     fi
   }
 
@@ -228,7 +304,8 @@ function getdepends() {
   UNPATH="${TMP_PATH}/modules"
   unpackModules "${PLATFORM}" "${PKVER}" "${UNPATH}"
 
+  _SEEN_KO=""
   _getdepends "${KONAME}" | sort -u
-  echo "${KONAME}"
+  moduleName "${UNPATH}" "${KONAME}"
   rm -rf "${UNPATH}"
 }

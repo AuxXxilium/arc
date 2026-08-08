@@ -821,7 +821,8 @@ function modulesMenu() {
         --infobox "Only select loaded modules" 0 0
       KOLIST=""
       for I in $(lsmod 2>/dev/null | awk -F' ' '{print $1}' | grep -v 'Module'); do
-        KOLIST+="$(getdepends "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" "${I}") ${I} "
+        # getdepends returns the module itself too, folder resolved
+        KOLIST+="$(getdepends "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" "${I}" | tr '\n' ' ') "
       done
       KOLIST=($(echo ${KOLIST} | tr ' ' '\n' | sort -u))
       writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
@@ -831,11 +832,14 @@ function modulesMenu() {
       resetBuild
       ;;
     3)
-      DEPS="$(getdepends "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" i915) i915"
+      # getdepends already returns i915 itself, resolved to its folder
+      DEPS="$(getdepends "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" i915 | tr '\n' ' ')"
       DELS=()
       while IFS=': ' read -r KEY VALUE; do
         [ -z "${KEY}" ] && continue
-        if echo "${DEPS}" | grep -wq "${KEY}"; then
+        # exact token match, "grep -w" would treat the slash as a boundary
+        # and let a bare drm match update/drm
+        if [[ " ${DEPS} " == *" ${KEY} "* ]]; then
           DELS+=("${KEY}")
         fi
       done <<<"$(readConfigMap "modules" "${USER_CONFIG_FILE}")"
