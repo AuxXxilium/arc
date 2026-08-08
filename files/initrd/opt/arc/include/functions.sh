@@ -253,6 +253,40 @@ function getPciId() {
 }
 
 ###############################################################################
+# get pci slots of all devices matching a pci class prefix
+# matches any subclass/prog-if, so 03 covers 0300/0301/0302/0380 ...
+# 1 - class prefix in hex (e.g. 03 for display, 0106 for sata)
+function getPciClass() {
+  local PREFIX="" CLASS="" SLOT=""
+  [ -z "${1}" ] && return 0
+  PREFIX="$(echo "${1}" | tr '[:upper:]' '[:lower:]')"
+  for DEV in /sys/bus/pci/devices/*; do
+    [ -e "${DEV}/class" ] || continue
+    # class is 0xCCSSPP (class, subclass, prog-if)
+    CLASS="$(sed 's/^0x//' "${DEV}/class" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+    [ "${CLASS:0:${#PREFIX}}" = "${PREFIX}" ] || continue
+    # sysfs uses full domain (0000:00:02.0), lspci -s accepts it
+    SLOT="$(basename "${DEV}")"
+    echo "${SLOT}"
+  done
+  return 0
+}
+
+###############################################################################
+# get vendordevice id (8086xxxx) of the first intel display device
+# checks all display subclasses, not only vga (0300)
+function getIgpuId() {
+  local ID=""
+  for SLOT in $(getPciClass 03); do
+    ID="$(getPciId "${SLOT}" | sed 's/://g')"
+    case "${ID}" in
+      8086*) echo "${ID}"; return 0 ;;
+    esac
+  done
+  return 0
+}
+
+###############################################################################
 # get vendor:device id of a network interface
 # 1 - ethN
 function getNicId() {
