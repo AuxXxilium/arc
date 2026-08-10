@@ -3276,8 +3276,7 @@ function registerAccessToken() {
       continue
     fi
   done
-  writeConfigKey "arc.builddone" "false" "${USER_CONFIG_FILE}"
-  CONFDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  resetBuildstatus
   return
 }
 
@@ -3666,6 +3665,10 @@ function getnetinfo() {
 function notificationMenu() {
   WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
   DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
+  # Remember the current Settings to detect real changes
+  WEBHOOKNOTIFYOLD="${WEBHOOKNOTIFY}"
+  WEBHOOKURLOLD="$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")"
+  DISCORDNOTIFYOLD="${DISCORDNOTIFY}"
   # Submenu for notification type
   dialog --backtitle "$(backtitle)" --title "Notification Type" \
     --menu "Choose notification type:" 10 60 2 \
@@ -3753,7 +3756,13 @@ function notificationMenu() {
       DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
     done
   fi
-  resetBuildstatus
+  # Force a Rebuild only if the Notification Settings really changed
+  WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
+  WEBHOOKURL="$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")"
+  DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
+  if [ "${WEBHOOKNOTIFY}" != "${WEBHOOKNOTIFYOLD}" ] || [ "${WEBHOOKURL}" != "${WEBHOOKURLOLD}" ] || [ "${DISCORDNOTIFY}" != "${DISCORDNOTIFYOLD}" ]; then
+    resetBuildstatus
+  fi
   return
 }
 
