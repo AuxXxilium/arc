@@ -151,11 +151,10 @@ if [ "${KERNEL}" = "full" ]; then
 else
   PLTCNT="$(readConfigKey "platforms.${PLATFORM}.ccnt" "${P_FILE}")"
 fi
-# A missing or non-numeric ccnt means no known limit, leave the threads alone
-echo "${PLTCNT}" | grep -qE '^[0-9]+$' || PLTCNT=0
+# Fall back to the lowest count any platform ships if ccnt is missing or invalid
+echo "${PLTCNT}" | grep -qE '^[0-9]+$' || PLTCNT=8
 if [ "${PLTCNT}" -gt 0 ] && [ "${CPUCHT:-0}" -gt "${PLTCNT}" ]; then
-  CMDLINE['maxcpus']="${PLTCNT}"
-  echo "Warning: CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}) for ${KERNEL:-${PLATFORM}}, capping to ${PLTCNT}."
+  echo "Warning: CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}) for ${PLATFORM}."
 fi
 
 # Automated Cmdline
