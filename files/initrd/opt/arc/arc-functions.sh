@@ -2404,6 +2404,8 @@ function loaderPorts() {
   unset HTTPPORT
   [ -f "/etc/arc.conf" ] && source "/etc/arc.conf" 2>/dev/null
   local HTTP=${HTTPPORT:-7080}
+  # Remember the running port, arc.conf gets rewritten below
+  local HTTPOLD=${HTTPPORT:-7080}
   while true; do
     dialog --backtitle "$(backtitle)" --title "Loader Ports" \
       --form "${MSG}" 9 70 1 "HTTP" 1 1 "${HTTPPORT:-7080}" 1 10 55 0 \
@@ -2471,7 +2473,7 @@ function loaderPorts() {
       [ ! -f "/etc/arc.conf" ] && MSG="HTTP Port restored." || MSG="HTTP Port changed."
       dialog --backtitle "$(backtitle)" --title "Loader Ports" \
         --msgbox "${MSG}" 0 0
-      if [ ! "${HTTP:-7080}" = "${HTTPPORT:-7080}" ]; then
+      if [ ! "${HTTP:-7080}" = "${HTTPOLD}" ]; then
         /etc/init.d/S90thttpd restart
       fi
       break

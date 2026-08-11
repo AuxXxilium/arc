@@ -337,13 +337,15 @@ start() {
 
 stop() {
   printf 'Stopping %s: ' "$DAEMON"
-  if [ -f "$PIDFILE" ]; then
-    kill $(cat "$PIDFILE") 2>/dev/null
-    rm -f "$PIDFILE"
-    echo "OK"
+  # Only signal the recorded pid if it is still ours, the pid file outlives a
+  # crashed thttpd and the number may have been recycled by then
+  if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE" 2>/dev/null)" 2>/dev/null; then
+    kill "$(cat "$PIDFILE")" 2>/dev/null
   else
-    echo "FAIL"
+    killall "$DAEMON" 2>/dev/null
   fi
+  rm -f "$PIDFILE"
+  echo "OK"
 }
 
 restart() {
