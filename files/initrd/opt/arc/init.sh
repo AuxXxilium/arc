@@ -215,7 +215,11 @@ RESTARTED=0
 if [ ! -f "/.dockerenv" ]; then
   [ ! -f /var/run/dhcpcd/pid ] && /etc/init.d/S41dhcpcd restart >/dev/null 2>&1 && RESTARTED=1
 fi
-[ ! -f /var/run/thttpd.pid ] && /etc/init.d/S90thttpd restart >/dev/null 2>&1 && RESTARTED=1
+# thttpd leaves its pidfile behind when it dies, so check the process, not the file
+if [ ! -f /var/run/thttpd.pid ] || ! kill -0 "$(cat /var/run/thttpd.pid 2>/dev/null)" 2>/dev/null; then
+  rm -f /var/run/thttpd.pid
+  /etc/init.d/S90thttpd restart >/dev/null 2>&1 && RESTARTED=1
+fi
 [ "${RESTARTED}" = "1" ] && sleep 5
 IPCON=""
 checkNIC
