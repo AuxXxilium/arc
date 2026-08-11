@@ -288,11 +288,12 @@ function arcVersion() {
         if [ $? -eq 0 ]; then
           KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
           KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
-          KOPTS=("official" "official (${KVER})")
-          [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-legacy.gz" ] && KOPTS+=("legacy" "legacy (${KVER})")
-          [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-upstreamed.gz" ] && KOPTS+=("upstreamed" "upstreamed (5.10.260)")
+          KOPTS=("official" "Synology stock kernel (${KVER})")
+          [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-legacy.gz" ] && KOPTS+=("legacy" "5.10.55 + backports, more hardware, better cpu handling")
+          [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-full.gz" ] && KOPTS+=("full" "legacy for up to 128 cores (may break iscsi/shutdown)")
+          [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-upstreamed.gz" ] && KOPTS+=("upstreamed" "5.10.260 + the same additions as legacy")
           dialog --backtitle "$(backtitle)" --title "Kernel" --colors \
-            --default-item "${KERNEL}" --menu "Choose a kernel:" 0 50 0 \
+            --default-item "${KERNEL}" --menu "Choose a kernel:" 0 0 0 \
             "${KOPTS[@]}" \
             2>"${TMP_PATH}/resp"
           resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
