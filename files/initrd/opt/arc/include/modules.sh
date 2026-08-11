@@ -20,7 +20,7 @@ function unpackModules() {
 
   rm -rf "${UNPATH}"
   mkdir -p "${UNPATH}"
-  if [ "${KERNEL}" = "legacy" ] || [ "${KERNEL}" = "upstreamed" ]; then
+  if [ "${KERNEL}" != "official" ]; then
     tar -zxf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVERP}-${KERNEL}.tgz" -C "${UNPATH}"
   else
     tar -zxf "${MODULES_PATH}/${PLATFORM}-${KVERP}.tgz" -C "${UNPATH}"
@@ -39,7 +39,7 @@ function packModules() {
   local UNPATH=${3:-"${TMP_PATH}/modules"}
   KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 
-  if [ "${KERNEL}" = "legacy" ] || [ "${KERNEL}" = "upstreamed" ]; then
+  if [ "${KERNEL}" != "official" ]; then
     tar -zcf "${CUSTOM_PATH}/modules-${PLATFORM}-${KVERP}-${KERNEL}.tgz" -C "${UNPATH}" .
   else
     tar -zcf "${MODULES_PATH}/${PLATFORM}-${KVERP}.tgz" -C "${UNPATH}" .
