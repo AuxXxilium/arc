@@ -246,6 +246,10 @@ CMDLINE['nowatchdog']=""
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 CMDLINE['mev']="${MEV:-physical}"
 CMDLINE['governor']="${GOVERNOR:-performance}"
+# cpufreq.default_governor is checked by cpufreq_init_policy() when each policy
+# is created, so the governor is set before userspace runs. Only exists on 5.9+,
+# so 4.x keeps relying on the cpufreqscaling addon reading governor= above.
+[ "${KVER:0:1}" -ge 5 ] && CMDLINE['cpufreq.default_governor']="${GOVERNOR:-performance}"
 #CMDLINE['intel_pstate']="disable"
 #CMDLINE['amd_pstate']="disable"
 
