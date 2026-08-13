@@ -35,7 +35,7 @@ function availableAddons() {
     isAddonAvailable "${ADDON}" "${PLATFORM}" || continue
 
     # Special platform/hardware checks
-    if [ "${MACHINE}" != "physical" ] && [[ "${ADDON}" =~ ^(cpufreqscaling|fancontrol|ledcontrol)$ ]]; then
+    if [ "${MACHINE}" != "physical" ] && [[ "${ADDON}" =~ ^(cpufreqscaling|ledcontrol)$ ]]; then
       continue
     fi
 
