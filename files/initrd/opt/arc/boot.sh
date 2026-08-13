@@ -265,7 +265,12 @@ fi
 
 FANCONTROL="$(readConfigKey "fancontrol" "${USER_CONFIG_FILE}")"
 if [ "${FANCONTROL:-false}" = "true" ]; then
-  CMDLINE['fancontrol']=""
+  if checkPWMSignal; then
+    CMDLINE['fancontrol']=""
+  else
+    # Config predates the PWM check or the controller is gone - do not arm it
+    writeConfigKey "fancontrol" "false" "${USER_CONFIG_FILE}"
+  fi
 fi
 
 if is_in_array "${PLATFORM}" "${XAPICRL[@]}"; then

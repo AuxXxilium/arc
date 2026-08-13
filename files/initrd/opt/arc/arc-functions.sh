@@ -466,22 +466,17 @@ function arcSettings() {
     fi
   fi
 
-  CORETEMP="$(find "/sys/devices/platform/" -name "temp1_input" 2>/dev/null | grep -E 'coretemp|k10temp|zenpower' | head -1 | sed -n 's|.*/\(hwmon.*\/temp1_input\).*|\1|p')"
   if [ "${MEV}" != "physical" ]; then
     writeConfigKey "fancontrol" "false" "${USER_CONFIG_FILE}"
   elif readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sensors"; then
-    if [ "${ARC_MODE}" = "config" ]; then
-      if [ -n "${CORETEMP}" ]; then
+    if checkPWMSignal; then
+      if [ "${ARC_MODE}" = "config" ]; then
         fancontrolSelection
-      else
-        writeConfigKey "fancontrol" "false" "${USER_CONFIG_FILE}"
-      fi
-    elif [ "${ARC_MODE}" = "automated" ]; then
-      if [ -n "${CORETEMP}" ]; then
+      elif [ "${ARC_MODE}" = "automated" ]; then
         writeConfigKey "fancontrol" "true" "${USER_CONFIG_FILE}"
-      else
-        writeConfigKey "fancontrol" "false" "${USER_CONFIG_FILE}"
       fi
+    else
+      writeConfigKey "fancontrol" "false" "${USER_CONFIG_FILE}"
     fi
   fi
 
@@ -3081,7 +3076,7 @@ function governorSelection () {
 # Fan Control Menu
 function fancontrolSelection () {
   dialog --backtitle "$(backtitle)" --title "Fan Control" \
-    --yesno "A compatible temperature sensor was detected.\nDo you want to enable the Fan Control addon?" 6 60
+    --yesno "A compatible PWM fan controller was detected.\nDo you want to enable the Fan Control addon?" 6 60
   if [ $? -eq 0 ]; then
     writeConfigKey "fancontrol" "true" "${USER_CONFIG_FILE}"
   else
