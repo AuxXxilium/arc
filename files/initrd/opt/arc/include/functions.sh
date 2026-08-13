@@ -374,19 +374,23 @@ function delCmdline() {
 # check for a PWM fan controller or PWM/fan signals
 # Accepts a pwm[0-9] control channel or a fan[0-9]_input tach signal, both of
 # which indicate a fan the addon can work with.
+# The entries under /sys/class/hwmon are symlinks into /sys/devices, so find
+# needs -L to descend into them. Keep -maxdepth 2: the attributes sit directly
+# below the hwmonN symlink, and sysfs symlink cycles (device/wakeup/device/...)
+# would otherwise send find on a long walk through the whole device tree.
 # The loader only autoloads modules by modalias, so ISA/superio hwmon chips
 # (nct6775, it87, ...) are not bound yet. Probe sysfs first and only load the
 # superio drivers as a fallback when nothing is exposed.
 function checkPWMSignal() {
   local SIG
-  SIG="$(find /sys/class/hwmon/ \( -name 'pwm[0-9]' -o -name 'fan[0-9]_input' \) 2>/dev/null | head -1)"
+  SIG="$(find -L /sys/class/hwmon/ -maxdepth 2 \( -name 'pwm[0-9]' -o -name 'fan[0-9]_input' \) 2>/dev/null | head -1)"
   [ -n "${SIG}" ] && return 0
 
   for M in nct6775 it87 w83627ehf f71882fg dell-smm-hwmon asus-wmi-sensors; do
     lsmod | grep -q "^${M} " || modprobe "${M}" 2>/dev/null
   done
 
-  SIG="$(find /sys/class/hwmon/ \( -name 'pwm[0-9]' -o -name 'fan[0-9]_input' \) 2>/dev/null | head -1)"
+  SIG="$(find -L /sys/class/hwmon/ -maxdepth 2 \( -name 'pwm[0-9]' -o -name 'fan[0-9]_input' \) 2>/dev/null | head -1)"
   [ -n "${SIG}" ] && return 0
   return 1
 }
