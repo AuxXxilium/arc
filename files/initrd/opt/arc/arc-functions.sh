@@ -290,7 +290,7 @@ function arcVersion() {
           KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
           KOPTS=("official" "Synology stock kernel (${KVER})")
           [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-legacy.gz" ] && KOPTS+=("legacy" "5.10.55 + backports, more hardware, better cpu handling")
-          [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-full.gz" ] && KOPTS+=("full" "legacy for up to 128 cores (may break iscsi/shutdown)")
+          [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-full.gz" ] && KOPTS+=("full" "legacy for up to 64 cores (may break iscsi/shutdown)")
           [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-upstreamed.gz" ] && KOPTS+=("upstreamed" "5.10.260 + the same additions as legacy")
           dialog --backtitle "$(backtitle)" --title "Kernel" --colors \
             --default-item "${KERNEL}" --menu "Choose a kernel:" 0 0 0 \

@@ -147,7 +147,7 @@ declare -A CMDLINE
 
 # Cap CPU threads to what the kernel supports
 if [ "${KERNEL}" = "full" ]; then
-  PLTCNT=128
+  PLTCNT=64
 else
   PLTCNT="$(readConfigKey "platforms.${PLATFORM}.ccnt" "${P_FILE}")"
 fi
