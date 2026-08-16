@@ -27,8 +27,10 @@ fi
 checkBootLoader || die "The loader is corrupted, please rewrite it!"
 arc_mode || die "No bootmode found!"
 
-if [ -f "${USER_CONFIG_FILE}" ] && [ "$(readConfigKey "kernel" "${USER_CONFIG_FILE}")" = "custom" ]; then
-  writeConfigKey "kernel" "legacy" "${USER_CONFIG_FILE}"
+if [ -f "${USER_CONFIG_FILE}" ]; then
+  case "$(readConfigKey "kernel" "${USER_CONFIG_FILE}")" in
+  custom | full) writeConfigKey "kernel" "legacy" "${USER_CONFIG_FILE}" ;;
+  esac
 fi
 
 [ -f "${HOME}/.initialized" ] && arc.sh && exit 0 || true
