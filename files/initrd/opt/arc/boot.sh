@@ -146,7 +146,7 @@ MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 declare -A CMDLINE
 
 # Cap CPU threads to what the kernel supports
-if [ "${KERNEL}" = "legacy" ]; then
+if [ "${KERNEL}" = "full" ]; then
   PLTCNT=64
 else
   PLTCNT="$(readConfigKey "platforms.${PLATFORM}.ccnt" "${P_FILE}")"
