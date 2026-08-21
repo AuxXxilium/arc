@@ -58,6 +58,13 @@ function arcModel() {
         [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DVA1622" ]] && M_2_CACHE=""
         [[ "${M}" = "DS220+" || "${M}" = "DS224+" || "${DT}" = "false" ]] && M_2_STORAGE="" || M_2_STORAGE="+"
         if [ "${RESTRICT}" -eq 1 ]; then
+          [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
+          [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
+          if [ -n "${FLAGS}" ]; then
+            for F in ${FLAGS}; do
+              grep -q "^flags.*${F}.*" /proc/cpuinfo || COMPATIBLE=0
+            done
+          fi
           if [ "${KVER:0:1}" = "5" ]; then
             if { [ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "usb" ] && [ "${SATADRIVES}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; } ||
                { [ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "sata" ] && [ "${SATADRIVES}" -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; } ||
@@ -81,11 +88,9 @@ function arcModel() {
               echo -e "${WARN}- DT Model selected: HBA/SAS is experimental supported.\n" >>"${TMP_PATH}/${M}_warn"
             fi
           fi
-          [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
-          [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
           if [ "${CPUCHT:-0}" -gt "${PLTCNT:-0}" ]; then
             if [[ "${A}" = "epyc7002" || "${A}" = "geminilakenk" || "${A}" = "r1000nk" || "${A}" = "v1000nk" ]]; then
-              echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT})\nYou should enable the custom kernel.\n" >>"${TMP_PATH}/${M}_warn"
+              echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT})\nYou should enable the custom (full) kernel.\n" >>"${TMP_PATH}/${M}_warn"
             else
               echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}).\n" >>"${TMP_PATH}/${M}_warn"
             fi
@@ -94,11 +99,6 @@ function arcModel() {
             COMPATIBLE=0
           elif [[ "${A}" = "epyc7002" || "${A}" = "geminilakenk" || "${A}" = "r1000nk" || "${A}" = "v1000nk" ]] && [[ "${MEV}" = "hyperv" ]]; then
             echo -e "${WARN}- Hyper-V VM: You need to enable the custom kernel.\n" >>"${TMP_PATH}/${M}_warn"
-          fi
-          if [ -n "${FLAGS}" ]; then
-            for F in ${FLAGS}; do
-              grep -q "^flags.*${F}.*" /proc/cpuinfo || COMPATIBLE=0
-            done
           fi
         else
           WARN="" && rm -f "${TMP_PATH}/${M}_warn"
@@ -208,7 +208,8 @@ function arcVersion() {
           STATUS="supported"
           if [[ "${V:0:3}" = "7.3" || "${V:0:3}" = "7.4" ]] && ! grep -q "^flags.*movbe.*" /proc/cpuinfo; then
             STATUS="unsupported"
-          elif [[ "${V:0:3}" = "7.4" ]] && ! grep -q "^flags.*bmi2.*" /proc/cpuinfo; then
+          fi
+          if [[ "${V:0:3}" = "7.4" ]] && ! grep -q "^flags.*bmi2.*" /proc/cpuinfo; then
             STATUS="unsupported"
           fi
           # Show all versions if SHOW_ALL, otherwise hide unsupported ones
