@@ -14,7 +14,17 @@ F kvm.ko
 
 # acpi
 N acpi_call.ko
+N acpi_cpufreq.ko
 N button.ko
+
+# cpufreq
+N cpufreq_governor.ko
+N cpufreq_ondemand.ko
+N cpufreq_conservative.ko
+N cpufreq_performance.ko
+N cpufreq_powersave.ko
+N cpufreq_userspace.ko
+N cpufreq_stats.ko
 
 # misc
 N check_signature.ko
@@ -46,7 +56,6 @@ F ax88179_178a.ko
 F cdc_ether.ko
 F mii.ko
 F r8152.ko
-F rndis_host.ko
 F thunderbolt.ko
 F thunderbolt-net.ko
 
