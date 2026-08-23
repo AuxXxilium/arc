@@ -57,6 +57,7 @@ function arcModel() {
         is_in_array "${M}" "${NVMECACHE[@]}" && M_2_CACHE="+" || M_2_CACHE="x"
         [[ "${M}" = "DS220+" ||  "${M}" = "DS224+" || "${M}" = "DVA1622" ]] && M_2_CACHE=""
         [[ "${M}" = "DS220+" || "${M}" = "DS224+" || "${DT}" = "false" ]] && M_2_STORAGE="" || M_2_STORAGE="+"
+        WARN="" && rm -f "${TMP_PATH}/${M}_warn"
         if [ "${RESTRICT}" -eq 1 ]; then
           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
           [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
@@ -80,7 +81,6 @@ function arcModel() {
             fi
           fi
           if [ "${DT}" = "true" ]; then
-            WARN="" && rm -f "${TMP_PATH}/${M}_warn"
             if [[ "${SCSICONTROLLER}" -ge 1 || "${RAIDCONTROLLER}" -ge 1 ]]; then
               echo -e "${WARN}- DT Model selected: Raid/SCSI is not supported.\n" >>"${TMP_PATH}/${M}_warn"
             fi
@@ -101,7 +101,6 @@ function arcModel() {
             echo -e "${WARN}- Hyper-V VM: You need to enable the custom kernel.\n" >>"${TMP_PATH}/${M}_warn"
           fi
         else
-          WARN="" && rm -f "${TMP_PATH}/${M}_warn"
           if [ -n "${FLAGS}" ]; then
             for F in ${FLAGS}; do
               grep -q "^flags.*${F}.*" /proc/cpuinfo || echo -e "${WARN}- ${F} support required.\n" >>"${TMP_PATH}/${M}_warn"
