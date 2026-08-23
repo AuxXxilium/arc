@@ -39,12 +39,13 @@ for B in ${BIOS}; do
   make -j$(nproc)
   make install
 
-  # Remove locale files if generated
-  #LOCALE_DIR="$PWD/usr/share/locale"
-  #if [[ -d "${LOCALE_DIR}" ]]; then
-  #  echo "Removing locale files..."
-  #  rm -rf "${LOCALE_DIR}"
-  #fi
+  # Strip what grub-install would otherwise copy into the image. It takes
+  # these from the staged share/grub tree, so pruning share/locale alone
+  # misses the translations that actually reach p1 (~6 MB), and GRUB's
+  # bundled starfield example theme (~2.8 MB) is dead weight: Arc ships its
+  # own theme into boot/grub/theme via getTheme at build time.
+  echo "Removing locale and stock theme files..."
+  rm -rf "$PWD/usr/share/locale" "$PWD/usr/share/grub/locale" "$PWD/usr/share/grub/themes"
 
   popd > /dev/null
 done
