@@ -181,7 +181,18 @@ function updateLoader() {
     (
       echo "Cleanup old files..."
       rm -rf "${ADDONS_PATH}" "${CONFIGS_PATH}" "${CUSTOM_PATH}" "${LKMS_PATH}" "${MODULES_PATH}" "${PATCH_PATH}"
-      rm -f "${ARC_RAMDISK_FILE}" "${ARC_BZIMAGE_FILE}"
+      # Remove every shipped kernel/ramdisk variant, not just the current one, so a
+      # renamed build (bzImage-<variant>) can not leave a stale image behind that
+      # grub would keep booting. initrd-user is generated on the device and must
+      # survive; initrd-dsm/zImage-dsm are rebuilt from the PAT after the update.
+      for F in "${PART3_PATH}"/bzImage-* "${PART3_PATH}"/initrd-*; do
+        [ -f "${F}" ] || continue
+        [ "${F}" = "${ARC_RAMDISK_USER_FILE}" ] && continue
+        rm -f "${F}"
+      done
+      # The theme ships as a whole file set; unzip only overwrites, so drop it
+      # first to avoid orphans from a previous theme release.
+      rm -rf "${GRUB_PATH}/theme"
       mkdir -p "${ADDONS_PATH}" "${CONFIGS_PATH}" "${CUSTOM_PATH}" "${LKMS_PATH}" "${MODULES_PATH}" "${PATCH_PATH}"
 
       echo "Extracting files from update.zip..."
