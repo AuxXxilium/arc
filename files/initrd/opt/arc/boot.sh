@@ -220,8 +220,14 @@ else
   CMDLINE['split_lock_detect']="off"
 fi
 
+MSIFIX="$(readConfigKey "arc.msifix" "${USER_CONFIG_FILE}")"
+
 if [ "${DT}" = "true" ]; then
-  CMDLINE['syno_ttyS0']="serial,0x3f8"
+  if [ "${MSIFIX}" = "true" ]; then
+    CMDLINE['syno_ttyS0']="serial,0x2e8"
+  else
+    CMDLINE['syno_ttyS0']="serial,0x3f8"
+  fi
   CMDLINE['syno_ttyS1']="serial,0x2f8"
 else
   CMDLINE['SMBusHddDynamicPower']="1"
@@ -233,7 +239,12 @@ CMDLINE['HddHotplug']="1"
 CMDLINE['vender_format_version']="2"
 CMDLINE['skip_vender_mac_interfaces']="0,1,2,3,4,5,6,7"
 CMDLINE['earlyprintk']=""
-CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
+if [ "${MSIFIX}" = "true" ]; then
+  CMDLINE['earlycon']="uart8250,io,0x2e8,115200n8"
+else
+  CMDLINE['earlycon']="uart8250,io,0x3f8,115200n8"
+fi
+
 CMDLINE['console']="ttyS0,115200n8"
 CMDLINE['consoleblank']="${CONSOLEBLANK:-600}"
 CMDLINE['root']="/dev/md0"
