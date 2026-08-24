@@ -257,7 +257,6 @@ CMDLINE['nowatchdog']=""
 CMDLINE['modprobe.blacklist']="${MODBLACKLIST}"
 CMDLINE['mev']="${MEV:-physical}"
 CMDLINE['governor']="${GOVERNOR:-performance}"
-[ "${KVER:0:1}" -ge 5 ] && CMDLINE['cpufreq.default_governor']="${GOVERNOR:-performance}"
 #CMDLINE['intel_pstate']="disable"
 #CMDLINE['amd_pstate']="disable"
 
