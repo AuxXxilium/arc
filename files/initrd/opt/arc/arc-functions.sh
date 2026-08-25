@@ -3631,7 +3631,15 @@ function getdiskinfo() {
     writeConfigKey "device.${controller}" "${count:-0}" "${USER_CONFIG_FILE}"
     # Only mark specific controllers as external
     if [[ "${controller}" == "sascontroller" || "${controller}" == "scsicontroller" || "${controller}" == "raidcontroller" ]] && [ "${count}" -gt 0 ]; then
-      external_controller="true"
+      for PCI in $(lspci -d ::${controllers[$controller]} 2>/dev/null | awk '{print $1}'); do
+        PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+        [ -z "${PORT}" ] && continue
+        PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
+        if [ "${PORTNUM:-0}" -gt 0 ]; then
+          external_controller="true"
+          break
+        fi
+      done
     fi
   done
   writeConfigKey "device.externalcontroller" "${external_controller}" "${USER_CONFIG_FILE}"
