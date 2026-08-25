@@ -3568,7 +3568,7 @@ function getmapSelection() {
 
   if [ "${ARC_MODE}" = "config" ]; then
     # Show recommended Option to user
-    if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ "${MEV}" = "physical" ]; then
+    if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
       REMAP2="*"
     elif [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
       REMAP3="*"
@@ -3578,7 +3578,7 @@ function getmapSelection() {
     show_and_set_remap
   else
     # Show recommended Option to user
-    if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "true" ] && [ "${MEV}" = "physical" ]; then
+    if [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "true" ]; then
       writeConfigKey "arc.remap" "maxports" "${USER_CONFIG_FILE}"
     elif [ -n "${SATAREMAP}" ] && [ "${EXTERNALCONTROLLER}" = "false" ]; then
       writeConfigKey "arc.remap" "remap" "${USER_CONFIG_FILE}"
