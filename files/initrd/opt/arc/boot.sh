@@ -377,9 +377,11 @@ else
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
 
   # Unload all network drivers
-  if [ "${NETFIX}" = "true" ] || [ "${NETFIX}" = "force" ]; then
-    for F in $(realpath /sys/class/net/*/device/driver); do [ ! -e "${F}" ] && continue; rmmod -f "$(basename ${F})" 2>/dev/null || true; done
-  fi
+  for N in /sys/class/net/*/device/driver; do
+    [ -e "${N}" ] || continue
+    DRV="$(basename "$(readlink -f "${N}")")"
+    [ -n "${DRV}" ] && modprobe -r "${DRV}" >>"${LOG_FILE}" 2>&1 || true
+  done
 
   # Unload all graphics drivers
   for D in $(lsmod | grep -E '^(nouveau|amdgpu|radeon|i915)' | awk '{print $1}'); do rmmod -f "${D}" 2>/dev/null || true; done
