@@ -912,7 +912,7 @@ function cmdlineMenu() {
     echo "7 \"NVMe Optimization\""                                                              >>"${TMP_PATH}/menu"
     echo "8 \"CPU Performance Optimization\""                                                   >>"${TMP_PATH}/menu"
     echo "9 \"Kernelpanic Behavior\""                                                           >>"${TMP_PATH}/menu"
-    echo "0 \"Netfix: "$( case "${NETFIX}" in true) echo "enabled";; force) echo "forced";; *) echo "disabled";; esac )"\"" >>"${TMP_PATH}/menu"
+    echo "0 \"Netfix: $([ "${NETFIX}" = "true" ] && echo "enabled" || echo "disabled")\""                >>"${TMP_PATH}/menu"
     echo "a \"MSI Board Fix: $([ "${MSIFIX}" = "true" ] && echo "enabled" || echo "disabled")\""            >>"${TMP_PATH}/menu"
     dialog --backtitle "$(backtitle)" --title "Cmdline"  --cancel-label "Exit" --menu "Choose an Option (Only edit Cmdline if you know what you do)" 0 0 0 \
       --file "${TMP_PATH}/menu" 2>"${TMP_PATH}/resp"
@@ -1147,11 +1147,7 @@ function cmdlineMenu() {
         resetBuildstatus
         ;;
       0)
-        case "${NETFIX}" in
-          true) NETFIX='force' ;;
-          force) NETFIX='false' ;;
-          *) NETFIX='true' ;;
-        esac
+        [ "${NETFIX}" = "true" ] && NETFIX="false" || NETFIX="true"
         writeConfigKey "arc.netfix" "${NETFIX}" "${USER_CONFIG_FILE}"
         ;;
       a)
