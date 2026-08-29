@@ -176,7 +176,7 @@ CMDLINE['netif_num']="${ETHN}"
 [ "${ETHN}" -ne "${ETHNA}" ] && echo "Warning: Network interface count mismatch!" || true
 
 NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
-if [ "${NETFIX}" = "true" ] || [ "${NETFIX}" = "force" ]; then
+if [ "${NETFIX}" = "true" ]; then
   for N in ${ETHX}; do
     RMAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null || echo "00:00:00:00:00:00")"
     RBUS="$(ethtool -i "${N}" 2>/dev/null | grep "bus-info" | cut -d' ' -f2 || echo "0000:00:00.0")"
@@ -299,7 +299,7 @@ if [ "${DT}" = "true" ] && ! is_in_array "${PLATFORM}" "${MPT3PL[@]}"; then
 fi
 
 # Read user network settings
-if [ "${NETFIX}" = "force" ]; then
+if [ "${NETFIX}" = "true" ]; then
   while IFS=': ' read -r KEY VALUE; do
     [ -n "${KEY}" ] && CMDLINE["network.${KEY}"]="${VALUE}"
   done <<<"$(readConfigMap "network" "${USER_CONFIG_FILE}")"

@@ -211,7 +211,7 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 # System Addons
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: install addons"
 NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
-if [ "${NETFIX}" = "force" ]; then
+if [ "${NETFIX}" = "true" ]; then
   SYSADDONS="revert misc eudev disks netfix localrss notify mountloader"
 else
   SYSADDONS="revert misc eudev disks localrss notify mountloader"
