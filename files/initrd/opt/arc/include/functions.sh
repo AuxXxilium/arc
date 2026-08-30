@@ -287,6 +287,20 @@ function getIgpuId() {
 }
 
 ###############################################################################
+# get vendordevice id (1002xxxx) of the first amd display device
+# checks all display subclasses, not only vga (0300)
+function getAmdGpuId() {
+  local ID=""
+  for SLOT in $(getPciClass 03); do
+    ID="$(getPciId "${SLOT}" | sed 's/://g')"
+    case "${ID}" in
+      1002*) echo "${ID}"; return 0 ;;
+    esac
+  done
+  return 0
+}
+
+###############################################################################
 # get vendor:device id of a network interface
 # 1 - ethN
 function getNicId() {
