@@ -286,6 +286,9 @@ fi
 
 if is_in_array "${PLATFORM}" "${IGFXRL[@]}"; then
   CMDLINE['intel_iommu']="igfx_off"
+  if [ -n "$(getAmdGpuId)" ]; then
+    CMDLINE['amd_iommu']="off"
+  fi
 fi
 
 if [ "${PLATFORM}" = "purley" ] || [ "${PLATFORM}" = "broadwellnkv2" ]; then
