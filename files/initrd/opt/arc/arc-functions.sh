@@ -283,31 +283,27 @@ function arcVersion() {
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
     if [ "${KVER:0:1}" -eq 5 ] && [[ "${PRODUCTVER}" > "7.2" ]]; then
       if [[ "${PLATFORM}" = "epyc7002" || "${PLATFORM}" = "geminilakenk" || "${PLATFORM}" = "r1000nk" || "${PLATFORM}" = "v1000nk" ]]; then
-        dialog --backtitle "$(backtitle)" --title "Custom Kernel" \
-          --yesno "You selected a Linux 5.x based platform and DSM ${PRODUCTVER}!\nA custom kernel is available for this combination.\n\nDo you want to select a custom kernel now?" 8 65
-        if [ $? -eq 0 ]; then
-          KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
-          KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
-          KOPTS=("official" "Synology stock kernel (${KVER})")
-          [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-legacy.gz" ] && KOPTS+=("legacy" "hybrid cpu support, better hardware support, optimized")
-          [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-full.gz" ] && KOPTS+=("full" "same as legacy + 64 thread support")
-          [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-upstreamed.gz" ] && KOPTS+=("upstreamed" "5.10.260 + the same additions as legacy")
-          dialog --backtitle "$(backtitle)" --title "Kernel" --colors \
-            --default-item "${KERNEL}" --menu "Choose a kernel:" 0 0 0 \
-            "${KOPTS[@]}" \
-            2>"${TMP_PATH}/resp"
-          resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
-          if [ -n "${resp}" ] && [ "${resp}" != "${KERNEL}" ]; then
-            KERNEL="${resp}"
-            writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
-            dialog --backtitle "$(backtitle)" --title "Kernel" \
-              --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 50
-            if [ -n "${PLATFORM}" ] && [ -n "${KPRE:+${KPRE}-}${KVER}" ]; then
-              writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-              mergeConfigModules "$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
-            fi
-            resetBuild
+        KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
+        KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
+        KOPTS=("official" "Synology stock kernel (${KVER})")
+        [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-legacy.gz" ] && KOPTS+=("legacy" "hybrid cpu support, better hardware support, optimized")
+        [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-full.gz" ] && KOPTS+=("full" "same as legacy + 64 thread support")
+        [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-upstreamed.gz" ] && KOPTS+=("upstreamed" "5.10.260 + the same additions as legacy")
+        dialog --backtitle "$(backtitle)" --title "Custom Kernel" --colors \
+          --default-item "${KERNEL}" --menu "You selected a Linux 5.x based platform and DSM ${PRODUCTVER}!\nA custom kernel is available for this combination.\n\nChoose a kernel:" 0 0 0 \
+          "${KOPTS[@]}" \
+          2>"${TMP_PATH}/resp"
+        resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+        if [ -n "${resp}" ] && [ "${resp}" != "${KERNEL}" ]; then
+          KERNEL="${resp}"
+          writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
+          dialog --backtitle "$(backtitle)" --title "Kernel" \
+            --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 50
+          if [ -n "${PLATFORM}" ] && [ -n "${KPRE:+${KPRE}-}${KVER}" ]; then
+            writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+            mergeConfigModules "$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
           fi
+          resetBuild
         fi
       fi
     fi
