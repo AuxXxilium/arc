@@ -154,7 +154,8 @@ fi
 # Fall back to the lowest count any platform ships if ccnt is missing or invalid
 echo "${PLTCNT}" | grep -qE '^[0-9]+$' || PLTCNT=8
 if [ "${PLTCNT}" -gt 0 ] && [ "${CPUCHT:-0}" -gt "${PLTCNT}" ]; then
-  echo "Warning: CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}) for ${PLATFORM}."
+  echo -e "[1;31mWarning: CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}) for ${PLATFORM}.[0m"
+  echo
 fi
 
 # Automated Cmdline
