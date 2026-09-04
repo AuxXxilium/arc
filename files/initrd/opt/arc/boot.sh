@@ -285,7 +285,9 @@ if is_in_array "${PLATFORM}" "${I2CI801BL[@]}"; then
 fi
 
 if is_in_array "${PLATFORM}" "${IGFXRL[@]}"; then
-  CMDLINE['intel_iommu']="igfx_off"
+  if [ -n "$(getIgpuId)" ]; then
+    CMDLINE['intel_iommu']="igfx_off"
+  fi
   if [ -n "$(getAmdGpuId)" ]; then
     CMDLINE['amd_iommu']="off"
   fi
