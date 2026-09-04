@@ -334,7 +334,9 @@ start() {
     echo "include \"$CONF\""
     echo "server.port := ${HTTPPORT}"
   } > "$RUNCONF"
-  /usr/sbin/lighttpd -f "$RUNCONF" 2>/dev/null
+  # Keep stderr: a config or bind failure here is the only thing that
+  # says why the web UI is missing, and it is otherwise invisible.
+  /usr/sbin/lighttpd -f "$RUNCONF" 2>>/var/log/lighttpd-start.log
   status=$?
   if [ "$status" -eq 0 ]; then
     echo "OK"
