@@ -274,18 +274,21 @@ button {
 }
 
 .sysinfo-view {
-    padding: 28px;
     height: 100%;
     overflow-y: auto;
+    background: var(--surface-muted);
 }
 
+/*
+ * No background, radius or shadow here: .panel already draws the framed
+ * card this sits inside, and repeating them rendered a second box within
+ * the first. This element is only the scrolling text surface.
+ */
 .sysinfo-content {
     width: 100%;
     min-height: 100%;
-    border-radius: 18px;
-    background: #0f172a;
-    padding: 22px;
-    color: #e2e8f0;
+    padding: 24px 28px;
+    color: var(--text);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
     font-size: 13px;
     line-height: 1.7;
