@@ -313,19 +313,28 @@ function repackInitrd() {
   sudo rm -f "${RDXZ_PATH}/etc/init.d/S99ttyd"
   sudo rm -f "${RDXZ_PATH}/etc/init.d/S99dufs"
   
-  # Update S90thttpd to run as root with CGI support for web authentication
-  sudo tee "${RDXZ_PATH}/etc/init.d/S90thttpd" >/dev/null <<'EOF'
+  # Update S90lighttpd to run as root with CGI support for web authentication
+  sudo tee "${RDXZ_PATH}/etc/init.d/S90lighttpd" >/dev/null <<'EOF'
 #!/bin/sh
 
-DAEMON="thttpd"
+DAEMON="lighttpd"
+CONF="/etc/lighttpd/lighttpd.conf"
+RUNCONF="/var/run/$DAEMON.conf"
 PIDFILE="/var/run/$DAEMON.pid"
 HTTPPORT=$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
 HTTPPORT=${HTTPPORT:-7080}
 
 start() {
   printf 'Starting %s: ' "$DAEMON"
-  # Run as root with CGI support for authentication
-  /usr/sbin/thttpd -h 0.0.0.0 -p ${HTTPPORT} -d /var/www/data -u root -c '**.cgi' -i "$PIDFILE" 2>/dev/null
+  mkdir -p /var/www/data /var/log
+  # lighttpd reads the port from its config, not argv. ":=" is force-assign;
+  # a plain "=" on a key the included config already set is a fatal
+  # "Duplicate config variable" error.
+  {
+    echo "include \"$CONF\""
+    echo "server.port := ${HTTPPORT}"
+  } > "$RUNCONF"
+  /usr/sbin/lighttpd -f "$RUNCONF" 2>/dev/null
   status=$?
   if [ "$status" -eq 0 ]; then
     echo "OK"
@@ -338,7 +347,7 @@ start() {
 stop() {
   printf 'Stopping %s: ' "$DAEMON"
   # Only signal the recorded pid if it is still ours, the pid file outlives a
-  # crashed thttpd and the number may have been recycled by then
+  # crashed lighttpd and the number may have been recycled by then
   if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE" 2>/dev/null)" 2>/dev/null; then
     kill "$(cat "$PIDFILE")" 2>/dev/null
   else
@@ -367,7 +376,7 @@ reload)
   ;;
 esac
 EOF
-  sudo chmod +x "${RDXZ_PATH}/etc/init.d/S90thttpd"
+  sudo chmod +x "${RDXZ_PATH}/etc/init.d/S90lighttpd"
   
   [ -f "${OUTPUT_PATH}" ] && rm -rf "${OUTPUT_PATH}"
 

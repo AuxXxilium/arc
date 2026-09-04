@@ -2470,7 +2470,7 @@ function loaderPorts() {
       dialog --backtitle "$(backtitle)" --title "Loader Ports" \
         --msgbox "${MSG}" 0 0
       if [ ! "${HTTP:-7080}" = "${HTTPOLD}" ]; then
-        /etc/init.d/S90thttpd restart
+        /etc/init.d/S90lighttpd restart
       fi
       break
       ;;
