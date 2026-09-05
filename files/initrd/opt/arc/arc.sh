@@ -125,6 +125,11 @@ elif [ "${ARC_MODE}" = "config" ]; then
           write_menu_value "P" "Fan Control" "$( [ "${FANCONTROL}" = "true" ] && echo "enabled" || echo "disabled" )"
         fi
 
+        if is_in_array "${PLATFORM}" "${IGFXRL[@]}" && { [ -n "$(getIgpuId)" ] || [ -n "$(getAmdGpuId)" ]; }; then
+          IOMMUPT="$(readConfigKey "iommupt" "${USER_CONFIG_FILE}")"
+          write_menu_value "v" "GPU Passthrough (IOMMU)" "$( [ "${IOMMUPT}" = "true" ] && echo "use in VM" || echo "use in DSM" )"
+        fi
+
         if [ "${PLATFORM}" = "epyc7002" ] || [ "${PLATFORM}" = "geminilakenk" ] || [ "${PLATFORM}" = "r1000nk" ] || [ "${PLATFORM}" = "v1000nk" ]; then
           write_menu_value "K" "Kernel" "${KERNEL}"
         fi
@@ -292,6 +297,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
             NEXT="h"
             ;;
           P) fancontrolSelection; NEXT="P" ;;
+          v) iommuptSelection; NEXT="v" ;;
           o) dtsMenu; NEXT="o" ;;
           # Boot Section
           6)

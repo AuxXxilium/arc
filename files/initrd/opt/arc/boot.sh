@@ -284,7 +284,8 @@ if is_in_array "${PLATFORM}" "${I2CI801BL[@]}"; then
   CMDLINE['initcall_blacklist']="i2c_i801_init"
 fi
 
-if is_in_array "${PLATFORM}" "${IGFXRL[@]}"; then
+IOMMUPT="$(readConfigKey "iommupt" "${USER_CONFIG_FILE}")"
+if is_in_array "${PLATFORM}" "${IGFXRL[@]}" && [ ! "${IOMMUPT:-false}" = "true" ]; then
   if [ -n "$(getIgpuId)" ]; then
     CMDLINE['intel_iommu']="igfx_off"
   fi
