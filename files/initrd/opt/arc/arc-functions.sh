@@ -3086,6 +3086,40 @@ function fancontrolSelection () {
 }
 
 ###############################################################################
+# GPU Passthrough (IOMMU) Menu
+function iommuptSelection() {
+  IOMMUPT="$(readConfigKey "iommupt" "${USER_CONFIG_FILE}")"
+  [ "${IOMMUPT}" = "true" ] && DEFITEM="vm" || DEFITEM="dsm"
+
+  dialog --backtitle "$(backtitle)" --title "GPU Passthrough (IOMMU)" \
+    --default-item "${DEFITEM}" \
+    --menu "Where should the GPU be used?\n\nTranscoding and DSM's own rendering work either way - this only decides whether a virtual machine can take the card." 12 74 2 \
+    "dsm" "Use in DSM  - default" \
+    "vm"  "Use in VM   - allows GPU passthrough" \
+    2>"${TMP_PATH}/resp"
+
+  resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+  [ -z "${resp}" ] && return
+
+  case "${resp}" in
+    vm)
+      [ "${IOMMUPT}" = "true" ] && return
+      dialog --backtitle "$(backtitle)" --title "GPU Passthrough (IOMMU)" \
+        --defaultno \
+        --yesno "Arc sets intel_iommu=igfx_off (or amd_iommu=off) on this platform. Removing it gives the GPU an IOMMU group, which is what a virtual machine needs in order to use it.\n\nIf the NAS stops booting, set this back to \"Use in DSM\".\n\nContinue?" 12 72
+      [ $? -ne 0 ] && return
+      writeConfigKey "iommupt" "true" "${USER_CONFIG_FILE}"
+      resetBuild
+      ;;
+    dsm)
+      [ "${IOMMUPT}" = "true" ] || return
+      writeConfigKey "iommupt" "false" "${USER_CONFIG_FILE}"
+      resetBuild
+      ;;
+  esac
+}
+
+###############################################################################
 # Where the magic happens!
 function dtsMenu() {
   # Loop menu
