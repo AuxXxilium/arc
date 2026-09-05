@@ -19,7 +19,13 @@ DUFS_PORT="${DUFS_PORT:-7304}"
 # Check if ttyd is already running
 if ! pidof ttyd > /dev/null 2>&1; then
     # Start ttyd with login - same as S99ttyd but forces root login
-    /usr/bin/ttyd -p ${TTYD_PORT} -t titleFixed=Arc login -f root > /dev/null 2>&1 &
+    #
+    # -W is required from ttyd 1.7.4 on. The flag inverted: 1.7.3 had
+    # "-R, --readonly" and was writable by default, 1.7.7 has
+    # "-W, --writable" and is READONLY by default. Without it the
+    # terminal renders and the websocket connects, but every keystroke
+    # is silently dropped.
+    /usr/bin/ttyd -W -p ${TTYD_PORT} -t titleFixed=Arc login -f root > /dev/null 2>&1 &
     TTYD_STARTED=true
 else
     TTYD_STARTED=false
