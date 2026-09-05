@@ -10,6 +10,12 @@ const APPS = [
   { id: 'sysinfo', title: 'System Info', desc: 'Hardware and software details', icon: '🩺' }
 ];
 
+const LINKS = [
+  { title: 'Wiki', desc: 'Documentation', icon: '📚', url: 'https://xpenology.tech/wiki' },
+  { title: 'FAQ', desc: 'Frequently asked questions', icon: '❓', url: 'https://xpenology.tech/faq' },
+  { title: 'Arc Management', desc: 'Manage your Arc systems', icon: '🛠️', url: 'https://arc.xpenology.tech' }
+];
+
 const DEFAULT_CONFIG = { DUFS_PORT: '7304', TTYD_PORT: '7681' };
 
 const buildQuery = (params) =>
@@ -289,7 +295,7 @@ function App() {
               )
             )
           ),
-          h('div', { className: 'sidebar-header' }, 'External'),
+          h('div', { className: 'sidebar-header' }, 'DSM'),
           h('div', { className: 'card-grid' },
             h(
               'div',
@@ -302,17 +308,23 @@ function App() {
                 h('div', { className: 'app-card-title' }, 'Go to DSM'),
                 h('div', { className: 'app-card-desc' }, 'Open Xpenology DSM')
               )
-            ),
-            h(
-              'div',
-              {
-                className: 'app-card',
-                onClick: () => window.open('https://xpenology.tech/wiki', '_blank')
-              },
-              h('div', { className: 'app-card-icon' }, '📚'),
-              h('div', { className: 'app-card-info' },
-                h('div', { className: 'app-card-title' }, 'Wiki'),
-                h('div', { className: 'app-card-desc' }, 'Documentation')
+            )
+          ),
+          h('div', { className: 'sidebar-header' }, 'External'),
+          h('div', { className: 'card-grid' },
+            LINKS.map((link) =>
+              h(
+                'div',
+                {
+                  key: link.url,
+                  className: 'app-card',
+                  onClick: () => window.open(link.url, '_blank')
+                },
+                h('div', { className: 'app-card-icon' }, link.icon),
+                h('div', { className: 'app-card-info' },
+                  h('div', { className: 'app-card-title' }, link.title),
+                  h('div', { className: 'app-card-desc' }, link.desc)
+                )
               )
             )
           )
