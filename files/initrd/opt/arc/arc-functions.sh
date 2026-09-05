@@ -3112,7 +3112,7 @@ function iommuptSelection() {
       resetBuild
       ;;
     dsm)
-      [ "${IOMMUPT}" = "true" ] || return
+      [ "${IOMMUPT}" = "false" ] && return
       writeConfigKey "iommupt" "false" "${USER_CONFIG_FILE}"
       resetBuild
       ;;
