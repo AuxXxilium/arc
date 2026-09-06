@@ -396,8 +396,10 @@ EOF
 }
 
 # resizeimg
+# Only grows: the image is truncated before the partition table is touched, so
+# shrinking would cut off partition data.
 # $1 input file
-# $2 changsize MB eg: +50M -50M
+# $2 changsize MB eg: +50M
 # $3 output file
 function resizeImg() {
   local INPUT_FILE="${1}"
@@ -407,24 +409,47 @@ function resizeImg() {
   [ -z "${INPUT_FILE}" ] || [ ! -f "${INPUT_FILE}" ] && exit 1
   [ -z "${CHANGE_SIZE}" ] && exit 1
 
+  if ! type -p parted >/dev/null 2>&1; then
+    sudo apt install -y parted
+  fi
+
   INPUT_FILE="$(realpath "${INPUT_FILE}")"
   OUTPUT_FILE="$(realpath "${OUTPUT_FILE}")"
 
-  local SIZE=$(($(du -sm "${INPUT_FILE}" 2>/dev/null | awk '{print $1}')$(echo "${CHANGE_SIZE}" | sed 's/M//g; s/b//g')))
+  local CURSIZE
+  CURSIZE="$(du -sm "${INPUT_FILE}" 2>/dev/null | awk '{print $1}')"
+  local SIZE=$((${CURSIZE:-0}$(echo "${CHANGE_SIZE}" | sed 's/M//g; s/b//g')))
   [ "${SIZE:-0}" -lt 0 ] && exit 1
+  if [ "${SIZE:-0}" -lt "${CURSIZE:-0}" ]; then
+    echo "resizeImg cannot shrink an image (would truncate partition data)."
+    exit 1
+  fi
 
   if [ ! "${INPUT_FILE}" = "${OUTPUT_FILE}" ]; then
     sudo cp -f "${INPUT_FILE}" "${OUTPUT_FILE}"
   fi
 
   sudo truncate -s ${SIZE}M "${OUTPUT_FILE}"
-  echo -e "d\n\nn\n\n\n\n\nn\nw" | sudo fdisk "${OUTPUT_FILE}" >/dev/null 2>&1
+
+  # Find the last partition and grow it to the end of the image, keeping its
+  # start sector.
+  local LASTPART
+  LASTPART="$(sudo parted -m -s "${OUTPUT_FILE}" unit s print 2>/dev/null | awk -F: 'NR>2 && $1 ~ /^[0-9]+$/ {n=$1} END {print n}')"
+  if [ -z "${LASTPART}" ]; then
+    echo "Failed to find last partition of ${OUTPUT_FILE}!"
+    exit 1
+  fi
+  if ! sudo parted -s "${OUTPUT_FILE}" unit s resizepart "${LASTPART}" 100%; then
+    echo "Failed to resize partition ${LASTPART} of ${OUTPUT_FILE}!"
+    exit 1
+  fi
+
   local LOOPX LOOPXPY
   LOOPX=$(sudo losetup -f)
   sudo losetup -P "${LOOPX}" "${OUTPUT_FILE}"
   LOOPXPY="$(find "${LOOPX}p"* -maxdepth 0 2>/dev/null | sort -n | tail -1)"
-  sudo e2fsck -fp "${LOOPXPY:-${LOOPX}p3}"
-  sudo resize2fs "${LOOPXPY:-${LOOPX}p3}"
+  sudo e2fsck -fp "${LOOPXPY:-${LOOPX}p${LASTPART}}"
+  sudo resize2fs "${LOOPXPY:-${LOOPX}p${LASTPART}}"
   sudo losetup -d "${LOOPX}"
 }
 

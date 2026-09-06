@@ -83,7 +83,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt update
-          sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils busybox dialog curl sed
+          sudo apt install -y jq gawk cpio gettext libelf-dev qemu-utils parted busybox dialog curl sed
           sudo pip install -r scripts/requirements.txt
           sudo snap install yq
 

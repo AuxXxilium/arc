@@ -2728,7 +2728,11 @@ function cloneLoader() {
     CLEARCACHE=0
 
     gzip -dc "${ARC_PATH}/grub.img.gz" | dd of="${resp}" bs=1M conv=fsync status=progress
-    hdparm -z "${resp}" # reset disk cache
+    # hdparm speaks ATA, which eMMC/NVMe/loop devices do not answer to
+    case "${resp}" in
+    *mmcblk* | *nvme[0-9]* | *loop[0-9]* | *nbd[0-9]*) ;;
+    *) hdparm -z "${resp}" ;; # reset disk cache
+    esac
     fdisk -l "${resp}"
     sleep 1
 
@@ -2740,7 +2744,19 @@ function cloneLoader() {
 
     if [ "${SIZEOFDISK}" -ne "${ENDSECTOR}" ]; then
       echo -e "\033[1;36mResizing ${NEW_BLDISK_P3}\033[0m"
-      echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${resp}" >/dev/null 2>&1
+      # Grow partition 3 to the end of the disk, keeping its start sector.
+      # Loaders built before parted was added fall back to deleting and
+      # recreating the partition, where fdisk's defaults reuse the same start.
+      if command -v parted >/dev/null 2>&1; then
+        parted -s "${resp}" unit s resizepart 3 $((SIZEOFDISK - 1)) >/dev/null 2>&1
+      else
+        echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${resp}" >/dev/null 2>&1
+      fi
+      blockdev --rereadpt "${resp}" >/dev/null 2>&1 || true
+      udevadm settle >/dev/null 2>&1 || true
+      # resize2fs refuses a filesystem it considers dirty, which is what p3 is
+      # right after the raw dd above.
+      e2fsck -fy "${NEW_BLDISK_P3}" >/dev/null 2>&1
       resize2fs "${NEW_BLDISK_P3}"
       fdisk -l "${resp}"
       sleep 1
