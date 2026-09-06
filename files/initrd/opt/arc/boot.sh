@@ -383,18 +383,21 @@ else
 
   echo -e "\033[1;37mLoading DSM Kernel...\033[0m"
 
-  # Unload all network drivers
-  for N in /sys/class/net/*/device/driver; do
-    [ -e "${N}" ] || continue
-    DRV="$(basename "$(readlink -f "${N}")")"
-    [ -n "${DRV}" ] && modprobe -r "${DRV}" >>"${LOG_FILE}" 2>&1 || true
-  done
+  MODULESUNLOAD="$(readConfigKey "modulesunload" "${USER_CONFIG_FILE}")"
+  if [ "${MODULESUNLOAD}" = "true" ]; then
+    # Unload all network drivers
+    for N in /sys/class/net/*/device/driver; do
+      [ -e "${N}" ] || continue
+      DRV="$(basename "$(readlink -f "${N}")")"
+      [ -n "${DRV}" ] && modprobe -r "${DRV}" >>"${LOG_FILE}" 2>&1 || true
+    done
 
-  # Unload all graphics drivers
-  for D in $(lsmod | grep -E '^(nouveau|amdgpu|radeon|i915)' | awk '{print $1}'); do rmmod -f "${D}" 2>/dev/null || true; done
-  for I in $(find /sys/devices -name uevent -exec bash -c 'cat {} 2>/dev/null | grep -Eq "PCI_CLASS=0?30[0|1|2]00" && dirname {}' \;); do
-    [ -e "${I}/reset" ] && grep -iq 0x10de "${I}/vendor" && echo 1 >"${I}/reset" || true # Proc open nvidia driver when booting
-  done
+    # Unload all graphics drivers
+    for D in $(lsmod | grep -E '^(nouveau|amdgpu|radeon|i915)' | awk '{print $1}'); do rmmod -f "${D}" 2>/dev/null || true; done
+    for I in $(find /sys/devices -name uevent -exec bash -c 'cat {} 2>/dev/null | grep -Eq "PCI_CLASS=0?30[0|1|2]00" && dirname {}' \;); do
+      [ -e "${I}/reset" ] && grep -iq 0x10de "${I}/vendor" && echo 1 >"${I}/reset" || true # Proc open nvidia driver when booting
+    done
+  fi
 
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   [ -z "${KERNELLOAD}" ] && KERNELLOAD="kexec"

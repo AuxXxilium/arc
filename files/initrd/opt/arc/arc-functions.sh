@@ -758,6 +758,7 @@ function modulesMenu() {
       echo "3 \"Deselect GPU Modules with dependencies\""
       echo "4 \"Edit Moduleslist for Modules copied to DSM\""
       echo "5 \"Blacklist Modules to prevent loading in DSM\""
+      echo "6 \"Unload Modules at Boot: $( [ "$(readConfigKey "modulesunload" "${USER_CONFIG_FILE}")" = "true" ] && echo "enabled" || echo "disabled" )\""
     } >"${TMP_PATH}/menu"
     dialog --backtitle "$(backtitle)" --title "Modules" \
       --cancel-label "Exit" --menu "Choose an option (Only edit Modules if you know what you do)" 0 0 0 --file "${TMP_PATH}/menu" \
@@ -887,6 +888,20 @@ function modulesMenu() {
         writeConfigKey "modblacklist" "${VALUE}" "${USER_CONFIG_FILE}"
         break
       done
+      ;;
+    6)
+      MODULESUNLOAD="$(readConfigKey "modulesunload" "${USER_CONFIG_FILE}")"
+      MSG=""
+      MSG+="Unload the network and graphics drivers just before the DSM Kernel is booted.\n"
+      MSG+="This can help hardware that DSM does not reinitialize cleanly, but it can also\n"
+      MSG+="hang the boot on some systems.\n\n"
+      MSG+="Currently: \Z4$( [ "${MODULESUNLOAD}" = "true" ] && echo "enabled" || echo "disabled" )\Zn\n\n"
+      MSG+="$( [ "${MODULESUNLOAD}" = "true" ] && echo "Disable" || echo "Enable" ) it?"
+      dialog --backtitle "$(backtitle)" --title "Unload Modules at Boot" --colors \
+        --yesno "${MSG}" 12 70
+      [ $? -ne 0 ] && continue
+      [ "${MODULESUNLOAD}" = "true" ] && MODULESUNLOAD="false" || MODULESUNLOAD="true"
+      writeConfigKey "modulesunload" "${MODULESUNLOAD}" "${USER_CONFIG_FILE}"
       ;;
     esac
   done
