@@ -2413,14 +2413,19 @@ function loaderPassword() {
 # Change Arc Loader Ports
 function loaderPorts() {
   MSG="Modify Ports (0-65535) (Leave empty for default):"
-  unset HTTPPORT
-  [ -f "/etc/arc.conf" ] && source "/etc/arc.conf" 2>/dev/null
-  local HTTP=${HTTPPORT:-7080}
+  # arc.conf stores the port as HTTP_PORT, so sourcing the file and reading
+  # HTTPPORT always missed it and both values fell back to 7080: the form
+  # offered 7080 whatever was configured, and a change back to 7080 from
+  # another port compared equal and skipped the restart. Read the key the
+  # same way consts.sh and the init script do, and do not source a file the
+  # user can edit.
+  local HTTPOLD="$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)"
+  HTTPOLD="${HTTPOLD:-7080}"
   # Remember the running port, arc.conf gets rewritten below
-  local HTTPOLD=${HTTPPORT:-7080}
+  local HTTP="${HTTPOLD}"
   while true; do
     dialog --backtitle "$(backtitle)" --title "Loader Ports" \
-      --form "${MSG}" 9 70 1 "HTTP" 1 1 "${HTTPPORT:-7080}" 1 10 55 0 \
+      --form "${MSG}" 9 70 1 "HTTP" 1 1 "${HTTP}" 1 10 55 0 \
       2>"${TMP_PATH}/resp"
     RET=$?
     case ${RET} in
