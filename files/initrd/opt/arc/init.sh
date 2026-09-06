@@ -25,6 +25,7 @@ fi
 # Get Loader Disk Bus
 [ -z "${LOADER_DISK}" ] && die "Loader Disk not found!"
 checkBootLoader || die "The loader is corrupted, please rewrite it!"
+resizeLoaderDisk
 arc_mode || die "No bootmode found!"
 
 if [ -f "${USER_CONFIG_FILE}" ]; then

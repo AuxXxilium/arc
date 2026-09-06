@@ -34,6 +34,44 @@ function checkBootLoader() {
 }
 
 ###############################################################################
+# Grow partition 3 to fill the loader disk
+# The shipped image is sized for a 4GB stick, so on anything larger the space
+# past partition 3 sits unused. Runs once per boot and is a no-op when the
+# partition already reaches the end of the disk, or when the tools to do it
+# are missing.
+function resizeLoaderDisk() {
+  [ -z "${LOADER_DISK}" ] && return 0
+  [ -f "${PART1_PATH}/.noresize" ] && return 0
+  type -p parted >/dev/null 2>&1 || return 0
+  type -p resize2fs >/dev/null 2>&1 || return 0
+
+  local DISKSIZE ENDSECTOR PART3
+  # Take the device from the mount rather than guessing at a suffix, which
+  # differs between sd*3 and mmcblk*p3 style names.
+  PART3="$(awk -v m="${PART3_PATH}" '$2 == m {print $1}' /proc/mounts 2>/dev/null | tail -1)"
+  [ -z "${PART3}" ] || [ ! -b "${PART3}" ] && return 0
+  DISKSIZE="$(blockdev --getsz "${LOADER_DISK}" 2>/dev/null)"
+  [ -z "${DISKSIZE}" ] && return 0
+  # Last sector of partition 3, as parted reports it in machine format
+  ENDSECTOR="$(parted -m -s "${LOADER_DISK}" unit s print 2>/dev/null | awk -F: '$1 == "3" {gsub(/s$/, "", $3); print $3}')"
+  [ -z "${ENDSECTOR}" ] && return 0
+
+  # Leave a little slack so a stick that is only marginally bigger, or one
+  # whose table already ends at the last usable sector, is not touched.
+  [ $((DISKSIZE - ENDSECTOR)) -lt $((16 * 1024 * 1024 / 512)) ] && return 0
+
+  echo -e "\033[1;34mResizing loader partition to fill ${LOADER_DISK}\033[0m"
+  # -s is script mode, and stdin is closed so a surprise prompt can never
+  # stall the boot.
+  parted -s "${LOADER_DISK}" unit s resizepart 3 $((DISKSIZE - 1)) </dev/null >/dev/null 2>&1 || return 0
+  blockdev --rereadpt "${LOADER_DISK}" >/dev/null 2>&1 || true
+  udevadm settle >/dev/null 2>&1 || true
+  # p3 is mounted at this point; ext4 grows online, so no unmount is needed.
+  resize2fs "${PART3}" >/dev/null 2>&1 || true
+  return 0
+}
+
+###############################################################################
 # Check boot mode
 function arc_mode() {
   if grep -q 'automated_arc' /proc/cmdline; then
