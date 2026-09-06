@@ -755,7 +755,7 @@ function modulesMenu() {
     {
       echo "1 \"Show/Select Modules\""
       echo "2 \"Select loaded Modules only\""
-      echo "3 \"Deselect i915 with dependencies\""
+      echo "3 \"Deselect GPU Modules with dependencies\""
       echo "4 \"Edit Moduleslist for Modules copied to DSM\""
       echo "5 \"Blacklist Modules to prevent loading in DSM\""
     } >"${TMP_PATH}/menu"
@@ -824,8 +824,9 @@ function modulesMenu() {
       resetBuild
       ;;
     3)
-      # getdepends already returns i915 itself, resolved to its folder
-      DEPS="$(getdepends "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" i915 | tr '\n' ' ')"
+      # getdepends already returns the modules themselves, resolved to their
+      # folder, and skips the names this platform's tgz does not carry
+      DEPS="$(getdepends "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" "${GPUMODULES[@]}" | tr '\n' ' ')"
       DELS=()
       while IFS=': ' read -r KEY VALUE; do
         [ -z "${KEY}" ] && continue
@@ -837,13 +838,13 @@ function modulesMenu() {
       done <<<"$(readConfigMap "modules" "${USER_CONFIG_FILE}")"
       if [ "${#DELS[@]}" -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Modules" \
-          --msgbox "No i915 with dependencies module to deselect." 0 0
+          --msgbox "No GPU module with dependencies to deselect." 0 0
       else
         for ID in ${DELS[@]}; do
           deleteConfigKey "modules.\"${ID}\"" "${USER_CONFIG_FILE}"
         done
         dialog --backtitle "$(backtitle)" --title "Modules" \
-          --msgbox "$(printf "Module %s deselected." "${DELS[@]}")" 0 0
+          --msgbox "$(printf "Module %s deselected.\n" "${DELS[@]}")" 0 0
       fi
       resetBuild
       ;;

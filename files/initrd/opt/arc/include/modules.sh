@@ -53,6 +53,29 @@ function packModules() {
 MODULE_DIRS=("update" "")
 
 ###############################################################################
+# GPU drivers offered by the "Deselect GPU Modules" entry of the modules menu.
+# Only the top level drivers are listed, getdepends pulls in what they need
+# (drm, drm_kms_helper, ttm, video, ...) and skips the ones a platform's tgz
+# does not carry.
+GPUMODULES=(
+  "i915"          # Intel integrated graphics
+  "xe"            # Intel Xe, Arc and newer integrated graphics
+  "amdgpu"        # AMD GCN 1.2 and newer
+  "radeon"        # AMD/ATI legacy
+  "nouveau"       # Nvidia open source
+  "nvidia"        # Nvidia proprietary
+  "nvidia_drm"
+  "nvidia_modeset"
+  "nvidia_uvm"
+  "ast"           # ASPEED server BMC graphics
+  "mgag200"       # Matrox server BMC graphics
+  "cirrus"        # QEMU/virtual
+  "bochs"
+  "virtio_gpu"
+  "vmwgfx"
+)
+
+###############################################################################
 # Resolve a module name to its file inside an unpacked modules folder
 # Accepts a bare name (drm), a folder prefixed name (update/drm) and an
 # optional .ko suffix. Prints the path of the first match, empty if none.
@@ -267,7 +290,7 @@ function delToModules() {
 # get depends of ko
 # 1 - Platform
 # 2 - Kernel Version
-# 3 - ko name
+# 3.. - ko name(s), the modules are unpacked once for all of them
 function getdepends() {
   # resolves each module through MODULE_DIRS, so dependencies living in
   # update/ are followed and shadowed ones are read from the newer copy.
@@ -294,9 +317,9 @@ function getdepends() {
 
   local PLATFORM=${1}
   local PKVER=${2}
-  local KONAME=${3}
+  shift 2
 
-  if [ -z "${PLATFORM}" ] || [ -z "${PKVER}" ] || [ -z "${KONAME}" ]; then
+  if [ -z "${PLATFORM}" ] || [ -z "${PKVER}" ] || [ $# -eq 0 ]; then
     echo ""
     return 1
   fi
@@ -305,7 +328,15 @@ function getdepends() {
   unpackModules "${PLATFORM}" "${PKVER}" "${UNPATH}"
 
   _SEEN_KO=""
-  _getdepends "${KONAME}" | sort -u
-  moduleName "${UNPATH}" "${KONAME}"
+  {
+    local KONAME
+    for KONAME in "${@}"; do
+      # skip names that are not part of this platform's tgz, moduleName would
+      # fall back to the bare name and produce an entry that matches nothing
+      [ -z "$(resolveModule "${UNPATH}" "${KONAME}")" ] && continue
+      _getdepends "${KONAME}"
+      moduleName "${UNPATH}" "${KONAME}"
+    done
+  } | sort -u
   rm -rf "${UNPATH}"
 }
