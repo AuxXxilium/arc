@@ -321,6 +321,7 @@ DAEMON="lighttpd"
 CONF="/etc/lighttpd/lighttpd.conf"
 RUNCONF="/var/run/$DAEMON.conf"
 PIDFILE="/var/run/$DAEMON.pid"
+MONPID="/var/run/$DAEMON-monitor.pid"
 HTTPPORT=$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
 HTTPPORT=${HTTPPORT:-7080}
 
@@ -340,6 +341,17 @@ start() {
   status=$?
   if [ "$status" -eq 0 ]; then
     echo "OK"
+    # The web UI is the only interface on a headless box, and on hardware
+    # where the physical console is unusable it is the only one at all, so
+    # bring lighttpd back if it dies. stop() kills this first, so a
+    # deliberate stop or restart is not fought by the monitor.
+    (while sleep 5; do
+      if [ ! -f "$PIDFILE" ] || ! kill -0 "$(cat "$PIDFILE" 2>/dev/null)" 2>/dev/null; then
+        rm -f "$PIDFILE"
+        /usr/sbin/lighttpd -f "$RUNCONF" 2>>/var/log/lighttpd-start.log
+      fi
+    done) &
+    echo $! > "$MONPID"
   else
     echo "FAIL"
   fi
@@ -347,6 +359,11 @@ start() {
 }
 
 stop() {
+  # Kill the monitor before lighttpd, or it restarts what we just stopped.
+  if [ -f "$MONPID" ]; then
+    kill "$(cat "$MONPID" 2>/dev/null)" 2>/dev/null
+    rm -f "$MONPID"
+  fi
   printf 'Stopping %s: ' "$DAEMON"
   # Only signal the recorded pid if it is still ours, the pid file outlives a
   # crashed lighttpd and the number may have been recycled by then
