@@ -33,9 +33,9 @@ function githubLatestTagRetry() {
   local TAG=""
 
   RESPONSE="$(githubApiJsonRetry "${RELEASES_API_URL}")" || return 1
-  TAG="$(echo "${RESPONSE}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' | sort -rV | head -1)"
+  TAG="$(echo "${RESPONSE}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | head -1)"
   if [ "${EXCLUDE_DEV}" = "true" ]; then
-    TAG="$(echo "${RESPONSE}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' | grep -v "dev" | sort -rV | head -1)"
+    TAG="$(echo "${RESPONSE}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | head -1)"
   fi
 
   TAG="$(echo "${TAG}" | sed 's/^[v|V]//g')"
@@ -274,7 +274,7 @@ function upgradeLoader() {
     if [ -z "${TAG}" ]; then
       idx=0
       while [ "${idx}" -le 5 ]; do
-        TAG="$(curl -m 10 -skL "${API_URL}" | jq -r ".[].tag_name" | grep -v "dev" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+        TAG="$(curl -m 10 -skL "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | head -1 | sed 's/^[v|V]//g')"
         if [ -n "${TAG}" ]; then
           break
         fi
@@ -374,7 +374,7 @@ function updateAddons() {
   local TAG=""
   idx=0
   while [ "${idx}" -le 5 ]; do
-    TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+    TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | head -1 | sed 's/^[v|V]//g')"
     if [ -n "${TAG}" ]; then
       break
     fi
@@ -436,7 +436,7 @@ function updatePatches() {
   local TAG=""
     idx=0
     while [ "${idx}" -le 5 ]; do
-      TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+      TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | head -1 | sed 's/^[v|V]//g')"
       if [ -n "${TAG}" ]; then
         break
       fi
@@ -477,7 +477,7 @@ function updateCustom() {
   local TAG=""
   idx=0
   while [ "${idx}" -le 5 ]; do
-    TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-custom/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+    TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-custom/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | head -1 | sed 's/^[v|V]//g')"
     if [ -n "${TAG}" ]; then
       break
     fi
@@ -542,7 +542,7 @@ function updateModules() {
   local TAG=""
   idx=0
   while [ "${idx}" -le 5 ]; do
-    TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+    TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | head -1 | sed 's/^[v|V]//g')"
     if [ -n "${TAG}" ]; then
       break
     fi
@@ -616,7 +616,7 @@ function updateConfigs() {
   if [ -z "${1}" ]; then
     idx=0
     while [ "${idx}" -le 5 ]; do
-      TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+      TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | head -1 | sed 's/^[v|V]//g')"
       if [ -n "${TAG}" ]; then
         break
       fi
@@ -660,7 +660,7 @@ function updateLKMs() {
   if [ -z "${1}" ]; then
     idx=0
     while [ "${idx}" -le 5 ]; do
-      TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+      TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | head -1 | sed 's/^[v|V]//g')"
       if [ -n "${TAG}" ]; then
         break
       fi
@@ -740,7 +740,7 @@ function dependenciesUpdate() {
     [ -n "${VERFILE}" ] && [ -f "${VERFILE}" ] && LOCAL="$(cat "${VERFILE}")"
     local REPO="${DEPENDENCY_REPOS[$i]}"
     local REMOTE="n/a"
-    [ -n "${REPO}" ] && REMOTE="$(curl -m 10 -skL "https://api.github.com/repos/${REPO}/releases" | jq -r ".[].tag_name" | sort -rV | head -1 | sed 's/^[v|V]//g')"
+    [ -n "${REPO}" ] && REMOTE="$(curl -m 10 -skL "https://api.github.com/repos/${REPO}/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | head -1 | sed 's/^[v|V]//g')"
     [ -z "${REMOTE}" ] && REMOTE="n/a"
     CHECKLIST_OPTS+=("$i" "${DEPENDENCY_NAMES[$i]} (${LOCAL} -> ${REMOTE})" "off")
   done
