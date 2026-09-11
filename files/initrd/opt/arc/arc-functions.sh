@@ -2759,28 +2759,6 @@ function cloneLoader() {
     NEW_BLDISK_P1="$(blkid | grep -v "${LOADER_DISK_PART1}:" | awk -F: '/LABEL="ARC1"/ {print $1}')"
     NEW_BLDISK_P2="$(blkid | grep -v "${LOADER_DISK_PART2}:" | awk -F: '/LABEL="ARC2"/ {print $1}')"
     NEW_BLDISK_P3="$(blkid | grep -v "${LOADER_DISK_PART3}:" | awk -F: '/LABEL="ARC3"/ {print $1}')"
-    SIZEOFDISK=$(cat /sys/block/${resp/\/dev\//}/size)
-    ENDSECTOR=$(($(fdisk -l ${resp} | grep "${NEW_BLDISK_P3}" | awk '{print $3}') + 1))
-
-    if [ "${SIZEOFDISK}" -ne "${ENDSECTOR}" ]; then
-      echo -e "\033[1;36mResizing ${NEW_BLDISK_P3}\033[0m"
-      # Grow partition 3 to the end of the disk, keeping its start sector.
-      # Loaders built before parted was added fall back to deleting and
-      # recreating the partition, where fdisk's defaults reuse the same start.
-      if command -v parted >/dev/null 2>&1; then
-        parted -s "${resp}" unit s resizepart 3 $((SIZEOFDISK - 1)) >/dev/null 2>&1
-      else
-        echo -e "d\n\nn\n\n\n\n\nn\nw" | fdisk "${resp}" >/dev/null 2>&1
-      fi
-      blockdev --rereadpt "${resp}" >/dev/null 2>&1 || true
-      udevadm settle >/dev/null 2>&1 || true
-      # resize2fs refuses a filesystem it considers dirty, which is what p3 is
-      # right after the raw dd above.
-      e2fsck -fy "${NEW_BLDISK_P3}" >/dev/null 2>&1
-      resize2fs "${NEW_BLDISK_P3}"
-      fdisk -l "${resp}"
-      sleep 1
-    fi
 
     mkdir -p "${TMP_PATH}/sdX1" "${TMP_PATH}/sdX2" "${TMP_PATH}/sdX3"
     mount "${NEW_BLDISK_P1}" "${TMP_PATH}/sdX1" || {
