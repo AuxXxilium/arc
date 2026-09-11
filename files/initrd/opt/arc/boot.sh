@@ -329,7 +329,15 @@ echo "${CMDLINE_LINE}" >"${PART1_PATH}/cmdline.yml"
 
 # Boot
 DIRECTBOOT="$(readConfigKey "directboot" "${USER_CONFIG_FILE}")"
-if [ "${DIRECTBOOT}" = "true" ] || echo "parallels xen" | grep -qw "${MEV:-physical}"; then
+# hyperv joins parallels/xen here: kexec is not reliable on any of them. A
+# Hyper-V guest shares mutable state with the host -- the VP Assist Pages, the
+# hypercall page and the TSC reference page -- and the outgoing kernel has to
+# tear all of it down before the jump, or the hypervisor keeps writing into
+# physical pages the new kernel now owns. That lands as corruption at a random
+# address, so it shows up as a hang or a panic well into DSM rather than as a
+# failed kexec. Directboot sidesteps it: the reboot makes Hyper-V rebuild that
+# state from scratch, and GRUB starts the DSM kernel on a clean machine.
+if [ "${DIRECTBOOT}" = "true" ] || echo "parallels xen hyperv" | grep -qw "${MEV:-physical}"; then
   grub-editenv "${USER_RSYSENVFILE}" create 2>/dev/null || true
   grub-editenv "${USER_RSYSENVFILE}" set arc_version="${ARC_VERSION} (${ARC_BUILD})"
   grub-editenv "${USER_RSYSENVFILE}" set dsm_model="${MODEL} (${PLATFORM})"
