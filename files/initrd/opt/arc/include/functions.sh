@@ -440,12 +440,22 @@ function checkBIOS_VT_d() {
 # Rebooting
 function rebootTo() {
   BUILDDONE="$(readConfigKey "arc.builddone" "${USER_CONFIG_FILE}")"
+  # Update and automated mode run unattended: never block on a prompt there, as
+  # nobody is at the console to answer it. Rebooting to automated Build Mode with
+  # an incomplete build is the expected flow after an update - the build is what
+  # the next boot is for.
   if [ "${CONFDONE}" = "true" ] && ([ "${1}" = "automated" ] || [ "${1}" = "junior" ] || [ "${1}" = "dsm" ]); then
     if [ "${BUILDDONE}" != "true" ] || [ ! -f "${MOD_ZIMAGE_FILE}" ] || [ ! -f "${MOD_RDGZ_FILE}" ]; then
-      dialog --backtitle "$(backtitle)" --title "Reboot" \
-        --aspect 18 --yesno "Build is not complete!\nDSM will not boot.\nDo you want to continue?" 0 0
-      if [ $? -ne 0 ]; then
-        return 1
+      if [ "${ARC_MODE}" = "update" ] || [ "${ARC_MODE}" = "automated" ]; then
+        dialog --backtitle "$(backtitle)" --title "Reboot" \
+          --infobox "Build is not complete.\nRebooting to finish the build..." 4 45
+        sleep 3
+      else
+        dialog --backtitle "$(backtitle)" --title "Reboot" \
+          --aspect 18 --yesno "Build is not complete!\nDSM will not boot.\nDo you want to continue?" 0 0
+        if [ $? -ne 0 ]; then
+          return 1
+        fi
       fi
     fi
   fi

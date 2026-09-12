@@ -207,39 +207,47 @@ function updateLoader() {
       fi
     ) 2>&1 | tee -a "${LOG_FILE}" | dialog --backtitle "$(backtitle)" --title "Processing Update" \
       --progressbox "Processing update..." 10 70
+    # PIPESTATUS[0] is the subshell - $? would be dialog's status, and any
+    # command in between (a sleep, a dialog) would clobber it first.
+    local EXTRACT_RET=${PIPESTATUS[0]}
     sleep 2
 
-    if [ $? -ne 0 ]; then
+    if [ ${EXTRACT_RET} -ne 0 ]; then
+      rm -f "${TMP_PATH}/update.zip"
+      resetBuild
       dialog --backtitle "$(backtitle)" --title "Update Failed" \
-        --infobox "Update failed! The system will now reboot." 5 50
+        --infobox "Update failed!\nReboot to Config Mode..." 5 50
       sleep 3
-      exec reboot
+      rebootTo config
     fi
 
     # Cleanup
     rm -f "${TMP_PATH}/update.zip"
     rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
 
-    if [ "$(cat "${PART1_PATH}/ARC-VERSION")" = "${TAG}" ] || [ "${TAG}" = "zip" ]; then
+    local NEW_VERSION="$(cat "${PART1_PATH}/ARC-VERSION" 2>/dev/null | head -1 | tr -d "[:space:]" | sed 's/^[v|V]//g')"
+    if [ "${TAG}" = "zip" ] || [ "${NEW_VERSION}" = "${TAG}" ]; then
       dialog --backtitle "$(backtitle)" --title "Update Loader" \
       --infobox "Update Loader successful!" 3 50
       sleep 2
     else
       if [ "${ARC_MODE}" = "update" ]; then
+        resetBuild
         dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-          --infobox "Update failed!\nTry again later." 0 0
+          --infobox "Update failed!\nReboot to Config Mode..." 0 0
         sleep 3
-        exec reboot
+        rebootTo config
       else
         return 1
       fi
     fi
   else
     if [ "${ARC_MODE}" = "update" ]; then
+      rm -f "${TMP_PATH}/update.zip"
       dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-        --infobox "Update failed!\nTry again later." 0 0
+        --infobox "Update failed!\nReboot to Config Mode..." 0 0
       sleep 3
-      exec reboot
+      rebootTo config
     else
       return 1
     fi
