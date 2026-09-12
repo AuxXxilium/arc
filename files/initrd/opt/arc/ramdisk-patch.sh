@@ -78,19 +78,22 @@ if [ -f "${MOD_RDGZ_FILE}" ]; then
   if [ -n "${PRODUCTVER}" ] && [ -n "${BUILDNUM}" ] && [ -n "${SMALLNUM}" ] && ([ "${PRODUCTVER}" != "${majorversion:-0}.${minorversion:-0}" ] || [ "${BUILDNUM}" != "${buildnumber:-0}" ] || [ "${SMALLNUM}" != "${smallfixnumber:-0}" ]); then
     OLDVER="${PRODUCTVER}(${BUILDNUM}$([[ ${SMALLNUM:-0} -ne 0 ]] && echo "u${SMALLNUM}"))"
     NEWVER="${majorversion}.${minorversion}(${buildnumber}$([[ ${smallfixnumber:-0} -ne 0 ]] && echo "u${smallfixnumber}"))"
-    PAT_URL_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${major}.${minor}.${micro}-${buildnumber}-${smallfixnumber:-0}\".url" "${D_FILE}")"
+    NEWFULLVER="${productversion:-${majorversion}.${minorversion}.0}"
+    PAT_URL_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${NEWFULLVER}-${buildnumber}-${smallfixnumber:-0}\".url" "${D_FILE}")"
     [ -z "${PAT_URL_UPDATE}" ] && PAT_URL_UPDATE="#UPDATED"
-    PAT_HASH_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${major}.${minor}.${micro}-${buildnumber}-${smallfixnumber:-0}\".hash" "${D_FILE}")"
+    PAT_HASH_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${NEWFULLVER}-${buildnumber}-${smallfixnumber:-0}\".hash" "${D_FILE}")"
     [ -z "${PAT_HASH_UPDATE}" ] && PAT_HASH_UPDATE="#UPDATED"
     echo -e ">> DSM Version changed from ${OLDVER} to ${NEWVER}"
   fi
 fi
 
 # Update buildnumber
-PRODUCTVER="${major}.${minor}"
-DSMFULLVER="${major}.${minor}.${micro:-0}"
+# /etc/VERSION defines majorversion/minorversion/productversion - there are no
+# bare major/minor/micro variables, so those must not be used here.
+PRODUCTVER="${majorversion}.${minorversion}"
+DSMFULLVER="${productversion:-${PRODUCTVER}.0}"
 BUILDNUM="${buildnumber}"
-SMALLNUM="${smallfixnumber}"
+SMALLNUM="${smallfixnumber:-0}"
 writeConfigKey "productver" "${PRODUCTVER}" "${USER_CONFIG_FILE}"
 writeConfigKey "dsmfullver" "${DSMFULLVER}" "${USER_CONFIG_FILE}"
 writeConfigKey "buildnum" "${BUILDNUM}" "${USER_CONFIG_FILE}"
