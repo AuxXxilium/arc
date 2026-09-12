@@ -68,8 +68,7 @@ function arcModel() {
           fi
           if [ "${KVER:0:1}" = "5" ]; then
             if { [ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "usb" ] && [ "${SATADRIVES}" -eq 0 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; } ||
-               { [ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "sata" ] && [ "${SATADRIVES}" -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; } ||
-               [ "${SCSICONTROLLER}" -ge 1 ] || [ "${RAIDCONTROLLER}" -ge 1 ]; then
+               { [ "${NVMEDRIVES}" -eq 0 ] && [ "${BUS}" = "sata" ] && [ "${SATADRIVES}" -eq 1 ] && [ "${EXTERNALCONTROLLER}" = "false" ]; }; then
                 COMPATIBLE=0
             fi
           else
@@ -86,6 +85,10 @@ function arcModel() {
             fi
             if [ "${SASCONTROLLER}" -ge 1 ]; then
               echo -e "${WARN}- DT Model selected: HBA/SAS is experimental supported.\n" >>"${TMP_PATH}/${M}_warn"
+            fi
+          elif [ "${KVER:0:1}" = "5" ]; then
+            if [[ "${SCSICONTROLLER}" -ge 1 || "${RAIDCONTROLLER}" -ge 1 ]]; then
+              echo -e "${WARN}- Linux 5.x Model selected: Raid/SCSI is experimental supported.\n" >>"${TMP_PATH}/${M}_warn"
             fi
           fi
           if [ "${CPUCHT:-0}" -gt "${PLTCNT:-0}" ]; then
