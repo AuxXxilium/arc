@@ -12,13 +12,25 @@
     --shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
 }
 
+/*
+ * Zinc rather than slate. Slate is a blue grey -- its 900 sits at hue 222
+ * with blue 27 points above red -- so a dark surface built from it does not
+ * read as neutral, it reads as faintly blue, and it competes with the sky
+ * accent the buttons and active card already use. Zinc is the same ramp with
+ * the tint taken out: near-hueless, but not the flat black `neutral` gives,
+ * so the sidebar, panel and muted background still separate from each other.
+ *
+ * Step for step against the slate it replaces, so contrast is unchanged:
+ * --muted on --surface was 6.5:1 and is 6.4:1. Light mode is untouched --
+ * its greys are near-white, where the hue does not show.
+ */
 html.dark {
-    --bg: #0f172a;
-    --surface: #1e293b;
-    --surface-muted: #0f172a;
-    --border: #334155;
-    --text: #f1f5f9;
-    --muted: #94a3b8;
+    --bg: #18181b;
+    --surface: #27272a;
+    --surface-muted: #18181b;
+    --border: #3f3f46;
+    --text: #f4f4f5;
+    --muted: #a1a1aa;
     --shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
@@ -299,7 +311,7 @@ button {
 .login-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.75);
+    background: rgba(24, 24, 27, 0.75);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -378,8 +390,11 @@ button {
     outline: none;
 }
 
+/* Was a hardcoded slate-400, the one grey that could not follow the theme
+   and so stayed blue on a neutral field. --muted is that same step in both
+   themes. */
 .field-input::placeholder {
-    color: #94a3b8;
+    color: var(--muted);
 }
 
 .button-row {
