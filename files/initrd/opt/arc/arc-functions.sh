@@ -301,7 +301,7 @@ function arcVersion() {
           KERNEL="${resp}"
           writeConfigKey "kernel" "${KERNEL}" "${USER_CONFIG_FILE}"
           dialog --backtitle "$(backtitle)" --title "Kernel" \
-            --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 50
+            --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 60
           if [ -n "${PLATFORM}" ] && [ -n "${KPRE:+${KPRE}-}${KVER}" ]; then
             writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
             mergeConfigModules "$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
@@ -4002,7 +4002,7 @@ function recoverDSM() {
       KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
       if [ "${KERNEL}" != "official" ]; then
         dialog --backtitle "$(backtitle)" --title "Kernel" \
-          --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 50
+          --infobox "Switching Kernel to ${KERNEL}! Stay patient..." 3 60
         if [ "${ODP}" = "true" ]; then
           ODP="false"
           writeConfigKey "odp" "${ODP}" "${USER_CONFIG_FILE}"
