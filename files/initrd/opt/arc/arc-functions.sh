@@ -3226,6 +3226,13 @@ function dtsMenu() {
         fi
       done
       ;;
+    %)
+      # The `%` row is a status display, not an action, but dialog has no
+      # unselectable row so OK on it lands here. It used to fall into the
+      # catch-all below and leave the menu, which is not what pressing OK on
+      # a label should do.
+      continue
+      ;;
     *)
       break
       ;;

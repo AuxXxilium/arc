@@ -82,7 +82,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
   while true; do
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
 
-    write_menu "=" "\Z4===== Main =====\Zn"
+    write_menu "=1" "\Z4===== Main =====\Zn"
     write_menu "1" "Choose Model"
 
     if [ "${CONFDONE}" = "true" ]; then
@@ -98,7 +98,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       write_menu "4" "Boot Loader"
     fi
 
-    write_menu "=" "\Z4===== Info =====\Zn"
+    write_menu "=2" "\Z4===== Info =====\Zn"
     write_menu "a" "Sysinfo"
     write_menu "A" "Networkdiag"
     
@@ -190,7 +190,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       write_menu "w" "Reset Loader to Defaults"
       write_menu "L" "Grep Logs from dbgutils"
       write_menu "B" "Grep DSM Config from Backup"
-      write_menu "=" "\Z1== Edit with caution! ==\Zn"
+      write_menu "=3" "\Z1== Edit with caution! ==\Zn"
       write_menu "C" "Clone Loader to another Disk"
       write_menu "n" "Grub Bootloader Config"
       write_menu "y" "Choose a Keymap for Loader"
@@ -200,7 +200,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
       write_menu "8" "\Z1Show Loader Options\Zn"
     fi
 
-    write_menu "=" "\Z4===== Misc =====\Zn"
+    write_menu "=4" "\Z4===== Misc =====\Zn"
     if [ "${ARC_OFFLINE}" != "true" ]; then
       write_menu "Q" "Online Options"
     fi
@@ -221,10 +221,17 @@ elif [ "${ARC_MODE}" = "config" ]; then
         # function, so `return` printed an error and fell through to the redraw
         # instead of leaving -- which read as the UI hanging.
         [ -z "${resp}" ] && continue
-        # Remember where the cursor was before dispatching. The separator rows
-        # are written with `=` as their tag and dialog has no unselectable row,
-        # so OK on one yields a resp no branch below matches. Without this,
-        # NEXT kept its previous value and the cursor jumped back to it.
+        # dialog has no unselectable row, so the `===== Main =====` headings
+        # are ordinary items and OK on one returns its tag. Treat that as a
+        # no-op: redraw without touching NEXT, so the cursor stays on the
+        # heading the user is sitting on. The tags are numbered (=1, =2, ...)
+        # because --default-item matches the first row with a given tag, and
+        # with all four sharing `=` the cursor jumped to the topmost one.
+        case "${resp}" in
+          =*) continue ;;
+        esac
+        # Remember where the cursor was before dispatching, so a tag that no
+        # branch below matches still leaves the cursor where it was.
         NEXT="${resp}"
         case ${resp} in
           # Main Section
