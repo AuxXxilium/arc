@@ -291,7 +291,7 @@ function arcVersion() {
         KOPTS=("official" "Synology stock kernel (${KVER})")
         [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-legacy.gz" ] && KOPTS+=("legacy" "hybrid cpu support, better hardware support, optimized")
         [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-full.gz" ] && KOPTS+=("full" "same as legacy + 64 thread support")
-        [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-upstreamed.gz" ] && KOPTS+=("upstreamed" "5.10.260 + the same additions as legacy")
+        [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-upstreamed.gz" ] && KOPTS+=("upstreamed" "based on 5.10.260 + backports from legacy")
         dialog --backtitle "$(backtitle)" --title "Custom Kernel" --colors \
           --default-item "${KERNEL}" --menu "You selected a Linux 5.x based platform and DSM ${PRODUCTVER}!\nA custom kernel is available for this combination.\n\nChoose a kernel:" 0 0 0 \
           "${KOPTS[@]}" \

@@ -267,7 +267,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
             KOPTS=("official" "Synology stock kernel (${KVER})")
             [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-legacy.gz" ] && KOPTS+=("legacy" "hybrid cpu support, better hardware support, optimized")
             [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-full.gz" ] && KOPTS+=("full" "same as legacy + 64 thread support")
-            [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-upstreamed.gz" ] && KOPTS+=("upstreamed" "5.10.260 + the same additions as legacy")
+            [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-upstreamed.gz" ] && KOPTS+=("upstreamed" "based on 5.10.260 + backports from legacy")
             dialog --backtitle "$(backtitle)" --title "Kernel" --colors \
               --default-item "${KERNEL}" --menu "Choose a kernel:" 0 0 0 \
               "${KOPTS[@]}" \
