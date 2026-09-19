@@ -748,7 +748,6 @@ function addonSelection() {
 ###############################################################################
 # Permit user select the modules to include
 function modulesMenu() {
-  NEXT="1"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
@@ -1303,7 +1302,6 @@ function keymapMenu() {
 ###############################################################################
 # Shows backup menu to user
 function backupMenu() {
-  NEXT="1"
   USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
   ARC_OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   CONFDONE="$(readConfigKey "arc.confdone" "${USER_CONFIG_FILE}")"
@@ -1444,7 +1442,6 @@ function backupMenu() {
 ###############################################################################
 # Shows update menu to user
 function updateMenu() {
-  NEXT="1"
   BETA="false"
   while true; do
     if [ "${ARC_OFFLINE}" = "false" ]; then
@@ -3140,19 +3137,28 @@ function iommuptSelection() {
 ###############################################################################
 # Where the magic happens!
 function dtsMenu() {
+  # Own cursor, not the main menu's NEXT. This used to read NEXT, which no
+  # code path here ever sets, so the default item was whatever tag the caller
+  # left behind ("o", for this menu's own row up there) -- never one of the
+  # rows below, so dialog fell back to the first every time.
+  local DTSNEXT="%"
   # Loop menu
   while true; do
     [ -f "${USER_UP_PATH}/${MODEL}.dts" ] && mv -f "${USER_UP_PATH}/${MODEL}.dts" "${USER_UP_PATH}/model.dts"
     [ -f "${USER_UP_PATH}/model.dts" ] && CUSTOMDTS="Yes" || CUSTOMDTS="No"
     dialog --backtitle "$(backtitle)" --title "Custom DTS" \
-      --default-item ${NEXT} --menu "Choose an option" 0 0 0 \
+      --default-item "${DTSNEXT}" --menu "Choose an option" 0 0 0 \
       % "Custom dts: ${CUSTOMDTS}" \
       1 "Upload dts file" \
       2 "Delete dts file" \
       3 "Edit dts file" \
       2>"${TMP_PATH}/resp"
     [ $? -ne 0 ] && break
-    case "$(cat "${TMP_PATH}/resp" 2>/dev/null)" in
+    DTSRESP="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+    # Keep the cursor on the row that was just used, so returning from an
+    # action does not send it back to the top.
+    [ -n "${DTSRESP}" ] && DTSNEXT="${DTSRESP}"
+    case "${DTSRESP}" in
     1)
       if ! tty 2>/dev/null | grep -q "/dev/pts"; then
         MSG=""
@@ -3213,14 +3219,17 @@ function dtsMenu() {
         dialog --backtitle "$(backtitle)" --title "Edit with caution" \
           --editbox "${TMP_PATH}/model.dts" 0 0 2>"${TMP_PATH}/modelEdit.dts"
         [ $? -ne 0 ] && rm -f "${TMP_PATH}/model.dts" "${TMP_PATH}/modelEdit.dts" && return
-        dtc -q -I dts -O dtb "${TMP_PATH}/modelEdit.dts}" >"test.dtb" 2>"${DTC_ERRLOG}"
+        # Into TMP_PATH, not the current directory: unlike the upload branch
+        # above there is no pushd here, so this dropped a stray test.dtb
+        # wherever the loader happened to be running from.
+        dtc -q -I dts -O dtb "${TMP_PATH}/modelEdit.dts" >"${TMP_PATH}/test.dtb" 2>"${DTC_ERRLOG}"
         if [ $? -ne 0 ]; then
           dialog --backtitle "$(backtitle)" --title "Custom DTS" \
             --msgbox "Not a valid dts file, please try again!\n\n$(cat "${DTC_ERRLOG}")" 0 0
         else
           mkdir -p "${USER_UP_PATH}"
           cp -f "${TMP_PATH}/modelEdit.dts" "${USER_UP_PATH}/model.dts"
-          rm -r "${TMP_PATH}/model.dts" "${TMP_PATH}/modelEdit.dts"
+          rm -f "${TMP_PATH}/model.dts" "${TMP_PATH}/modelEdit.dts" "${TMP_PATH}/test.dtb"
           resetBuild
           break
         fi
