@@ -217,7 +217,15 @@ elif [ "${ARC_MODE}" = "config" ]; then
     case ${RET} in
       0)
         resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
-        [ -z "${resp}" ] && return
+        # `continue`, not `return`: this loop is at script top level, not in a
+        # function, so `return` printed an error and fell through to the redraw
+        # instead of leaving -- which read as the UI hanging.
+        [ -z "${resp}" ] && continue
+        # Remember where the cursor was before dispatching. The separator rows
+        # are written with `=` as their tag and dialog has no unselectable row,
+        # so OK on one yields a resp no branch below matches. Without this,
+        # NEXT kept its previous value and the cursor jumped back to it.
+        NEXT="${resp}"
         case ${resp} in
           # Main Section
           1) arcModel; NEXT="2" ;;
