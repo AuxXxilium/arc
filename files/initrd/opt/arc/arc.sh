@@ -78,7 +78,7 @@ elif [ "${ARC_MODE}" = "automated" ]; then
   fi
 elif [ "${ARC_MODE}" = "config" ]; then
   [ "${CONFDONE}" = "true" ] && NEXT="2" || NEXT="1"
-  [ "${BUILDDONE}" = "true" ] && NEXT="4" || NEXT="1"
+  [ "${BUILDDONE}" = "true" ] && NEXT="3" || NEXT="1"
   while true; do
     rm -f "${TMP_PATH}/menu" "${TMP_PATH}/resp" >/dev/null 2>&1 || true
 
@@ -86,16 +86,11 @@ elif [ "${ARC_MODE}" = "config" ]; then
     write_menu "1" "Choose Model"
 
     if [ "${CONFDONE}" = "true" ]; then
-      if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
-        write_menu "2" "Rebuild Loader (existing)"
-        write_menu "3" "Build Loader (clean)"
-      else
-        write_menu "2" "Build Loader"
-      fi
+      write_menu "2" "Build Loader"
     fi
 
     if [ "${BUILDDONE}" = "true" ] && [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
-      write_menu "4" "Boot Loader"
+      write_menu "3" "Boot Loader"
     fi
 
     write_menu "=2" "\Z4===== Info =====\Zn"
@@ -237,20 +232,13 @@ elif [ "${ARC_MODE}" = "config" ]; then
           # Main Section
           1) arcModel; NEXT="2" ;;
           2)
-            if [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
-              rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
-            fi
-            makearc
-            NEXT="4"
-            ;;
-          3)
             if [ -f "${ORI_ZIMAGE_FILE}" ] || [ -f "${ORI_RDGZ_FILE}" ] || [ -f "${MOD_ZIMAGE_FILE}" ] || [ -f "${MOD_RDGZ_FILE}" ]; then
               rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
             fi
             makearc
-            NEXT="4"
+            NEXT="3"
             ;;
-          4) bootcheck; NEXT="4" ;;
+          3) bootcheck; NEXT="3" ;;
           # Info Section
           a) sysinfo; NEXT="a" ;;
           A) networkdiag; NEXT="A" ;;
