@@ -11,8 +11,7 @@ const APPS = [
 ];
 
 const LINKS = [
-  { title: 'Wiki', desc: 'Documentation', icon: '📚', url: 'https://xpenology.tech/wiki' },
-  { title: 'FAQ', desc: 'Frequently asked questions', icon: '❓', url: 'https://xpenology.tech/faq' },
+  { title: 'Documentation', desc: 'Guides and reference', icon: '📚', url: 'https://xpenology.tech/documentation' },
   { title: 'Arc Management', desc: 'Manage your Arc systems', icon: '🛠️', url: 'https://arc.xpenology.tech' }
 ];
 
