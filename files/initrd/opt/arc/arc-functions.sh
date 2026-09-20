@@ -778,21 +778,28 @@ function addonSelection() {
 function sortnetifSelection() {
   SORTNETIF_VALUE="${1}"
 
-  local MAC BUS IP CARRIER LINK N I SLOT PICKED RET ORDER
-  # MAC -> "ethN - bus-id" description, in bus-id order, for the menu rows.
-  declare -A NICDESC
+  local MAC BUS DRV ETHTOOL IP CARRIER LINK N I SLOT PICKED RET ORDER
+  # MAC -> "ethN - driver - bus-id - link" for the rows, and a short
+  # "ethN - driver" form for the order summary, both in bus-id order.
+  declare -A NICDESC NICSHORT
   local ALL=""
   for N in $(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; 2>/dev/null | sort -V); do
     MAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
     [ -z "${MAC}" ] && continue
-    BUS="$(ethtool -i "${N}" 2>/dev/null | grep "bus-info" | cut -d' ' -f2)"
+    # One ethtool call for both fields - it is the slow part of this loop.
+    ETHTOOL="$(ethtool -i "${N}" 2>/dev/null)"
+    BUS="$(echo "${ETHTOOL}" | grep "bus-info" | cut -d' ' -f2)"
+    # The driver tells identical-looking ports apart when several NICs sit on
+    # neighbouring bus-ids, and names the module a NIC would need in DSM.
+    DRV="$(echo "${ETHTOOL}" | grep "^driver" | cut -d' ' -f2)"
     # Link state and IP make the NICs tellable apart when the bus-id alone does
     # not; a cable plugged into just the wanted port is the easiest way to find it.
     CARRIER="$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)"
     [ "${CARRIER}" = "1" ] && LINK="up" || LINK="down"
     IP="$(getIP "${N}")"
     [ -n "${IP}" ] && LINK="${LINK}, ${IP}"
-    NICDESC["${MAC}"]="$(printf 'now %-6s %-14s %s' "${N}" "${BUS:-unknown}" "(${LINK})")"
+    NICDESC["${MAC}"]="$(printf 'now %-6s %-12s %-14s %s' "${N}" "${DRV:-unknown}" "${BUS:-unknown}" "(${LINK})")"
+    NICSHORT["${MAC}"]="$(printf 'now %-6s %-12s' "${N}" "${DRV:-unknown}")"
     ALL="${ALL}${MAC} "
   done
 
@@ -826,13 +833,15 @@ function sortnetifSelection() {
     I=0
     for MAC in ${PICKED}; do
       printf '"%s" "eth%-3d %-7s %s"\n' "${MAC}" "${I}" "picked" "${NICDESC[${MAC}]}" >>"${TMP_PATH}/opts.sortnetif"
-      ORDER="${ORDER}\n  \Z4eth${I}\Zn  ${MAC}  ${NICDESC[${MAC}]}  picked"
+      # Just enough to identify the NIC - the rows below carry the full detail,
+      # and a summary line that wraps would lose its alignment.
+      ORDER="${ORDER}\n  \Z4eth${I}\Zn  ${MAC}  ${NICSHORT[${MAC}]}  picked"
       I=$((I + 1))
     done
     for MAC in ${ALL}; do
       [[ " ${PICKED} " == *" ${MAC} "* ]] && continue
       printf '"%s" "eth%-3d %-7s %s"\n' "${MAC}" "${I}" "by bus" "${NICDESC[${MAC}]}" >>"${TMP_PATH}/opts.sortnetif"
-      ORDER="${ORDER}\n  eth${I}  ${MAC}  ${NICDESC[${MAC}]}  by bus-id"
+      ORDER="${ORDER}\n  eth${I}  ${MAC}  ${NICSHORT[${MAC}]}  by bus"
       I=$((I + 1))
     done
 
