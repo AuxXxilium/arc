@@ -40,4 +40,4 @@ Arc is a customized Redpill Loader for DSM 7.x (Xpenology) with enhanced hardwar
 - <a href="https://github.com/FulcrumCode">Fulcrum</a>
 
 ### Thanks
-Code is based on the work of TTG, pocopico, jumkey, fbelavenuto, wjz304 and others involved in continuing TTG's original redpill-load project.
+Code is based on the work of TTG, pocopico, jumkey, fbelavenuto, wjz304, PeterSuh-Q3 and others involved in continuing TTG's original redpill-load project.
