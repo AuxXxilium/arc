@@ -769,8 +769,8 @@ function addonSelection() {
 # and so on. Order therefore matters, which a checklist cannot express - it
 # always reports its tags in list order, not in the order they were ticked.
 # So build the list one pick at a time instead: each pick takes the next free
-# ethN slot, and the resulting order is summarised above the list, by MAC,
-# because the MAC is what gets stored - ethN names shift as slots are handed out.
+# ethN slot, and the rows are kept in the resulting order, so the list itself
+# shows where every NIC ends up.
 # 1 - current value, used as the starting order
 # Sets SORTNETIF_VALUE to the comma separated MAC list (empty when nothing is
 # pinned). This cannot print the result: dialog itself writes to stdout, so the
@@ -778,10 +778,9 @@ function addonSelection() {
 function sortnetifSelection() {
   SORTNETIF_VALUE="${1}"
 
-  local MAC BUS DRV ETHTOOL IP CARRIER LINK N I SLOT PICKED RET ORDER
-  # MAC -> "ethN - driver - bus-id - link" for the rows, and a short
-  # "ethN - driver" form for the order summary, both in bus-id order.
-  declare -A NICDESC NICSHORT
+  local MAC BUS DRV ETHTOOL IP CARRIER LINK N I SLOT PICKED RET
+  # MAC -> "ethN - driver - bus-id - link" description, in bus-id order.
+  declare -A NICDESC
   local ALL=""
   for N in $(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; 2>/dev/null | sort -V); do
     MAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
@@ -799,7 +798,6 @@ function sortnetifSelection() {
     IP="$(getIP "${N}")"
     [ -n "${IP}" ] && LINK="${LINK}, ${IP}"
     NICDESC["${MAC}"]="$(printf 'now %-6s %-12s %-14s %s' "${N}" "${DRV:-unknown}" "${BUS:-unknown}" "(${LINK})")"
-    NICSHORT["${MAC}"]="$(printf 'now %-6s %-12s' "${N}" "${DRV:-unknown}")"
     ALL="${ALL}${MAC} "
   done
 
@@ -826,22 +824,17 @@ function sortnetifSelection() {
   while true; do
     rm -f "${TMP_PATH}/opts.sortnetif"
     touch "${TMP_PATH}/opts.sortnetif"
-    # Pinned NICs first, in their pinned order, then the rest by bus-id. This
-    # is the order sortnetif itself applies, so walking it once builds both the
-    # menu rows and the summary of where every NIC ends up.
-    ORDER=""
+    # Pinned NICs first, in their pinned order, then the rest by bus-id - the
+    # order sortnetif itself applies, so the rows are already the resulting
+    # order, top to bottom. No separate summary: it would only repeat them.
     I=0
     for MAC in ${PICKED}; do
       printf '"%s" "eth%-3d %-7s %s"\n' "${MAC}" "${I}" "picked" "${NICDESC[${MAC}]}" >>"${TMP_PATH}/opts.sortnetif"
-      # Just enough to identify the NIC - the rows below carry the full detail,
-      # and a summary line that wraps would lose its alignment.
-      ORDER="${ORDER}\n  \Z4eth${I}\Zn  ${MAC}  ${NICSHORT[${MAC}]}  picked"
       I=$((I + 1))
     done
     for MAC in ${ALL}; do
       [[ " ${PICKED} " == *" ${MAC} "* ]] && continue
       printf '"%s" "eth%-3d %-7s %s"\n' "${MAC}" "${I}" "by bus" "${NICDESC[${MAC}]}" >>"${TMP_PATH}/opts.sortnetif"
-      ORDER="${ORDER}\n  eth${I}  ${MAC}  ${NICSHORT[${MAC}]}  by bus"
       I=$((I + 1))
     done
 
@@ -850,8 +843,8 @@ function sortnetifSelection() {
     dialog --backtitle "$(backtitle)" --title "Sort Network Interfaces" --colors --aspect 18 \
       --ok-label "Pick" --cancel-label "Abort" \
       --extra-button --extra-label "Start over" \
-      --help-button --help-label "Done" \
-      --menu "Order at the next boot, by MAC:\n${ORDER}\n\nChoose the NIC that should become \Z4${SLOT}\Zn.\nPress Done at any time - NICs you did not pick keep their bus-id order." 0 0 0 \
+      --help-button --help-label "Save" \
+      --menu "The rows are the order at the next boot, top to bottom.\nChoose the NIC that should become \Z4${SLOT}\Zn.\nSave keeps it as it stands - NICs you did not pick stay in bus-id order." 0 0 0 \
       --file "${TMP_PATH}/opts.sortnetif" 2>"${TMP_PATH}/resp.sortnetif"
     RET=$?
     case ${RET} in
