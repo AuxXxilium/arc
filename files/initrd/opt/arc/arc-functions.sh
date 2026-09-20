@@ -778,7 +778,7 @@ function addonSelection() {
 function sortnetifSelection() {
   SORTNETIF_VALUE="${1}"
 
-  local MAC BUS DRV ETHTOOL IP CARRIER LINK N I SLOT PICKED RET ORDER
+  local MAC BUS DRV ETHTOOL IP CARRIER LINK N I SLOT PICKED RET ORDER ALL2
   # MAC -> "ethN - driver - bus-id - link" for the rows, and the bare
   # "ethN - MAC - driver" the order summary needs, both in bus-id order.
   declare -A NICDESC NICSHORT SLOTOF
@@ -798,7 +798,7 @@ function sortnetifSelection() {
     [ "${CARRIER}" = "1" ] && LINK="up" || LINK="down"
     IP="$(getIP "${N}")"
     [ -n "${IP}" ] && LINK="${LINK}, ${IP}"
-    NICDESC["${MAC}"]="$(printf 'now %-6s %-12s %-14s %s' "${N}" "${DRV:-unknown}" "${BUS:-unknown}" "(${LINK})")"
+    NICDESC["${MAC}"]="$(printf '%-5s %-9s %-13s %-15s' "${N}" "${DRV:-unknown}" "${BUS:-unknown}" "${LINK}")"
     NICSHORT["${MAC}"]="$(printf '%-6s %s  %-12s' "${N}" "${MAC}" "${DRV:-unknown}")"
     ALL="${ALL}${MAC} "
   done
@@ -827,18 +827,17 @@ function sortnetifSelection() {
     rm -f "${TMP_PATH}/opts.sortnetif"
     touch "${TMP_PATH}/opts.sortnetif"
     # Pinned NICs first, in their pinned order, then the rest by bus-id - the
-    # order sortnetif itself applies. Remember the slot each MAC ends up in,
-    # so the summary can name it without repeating the walk.
+    # order sortnetif itself applies, so walking it hands out the slots. Keep
+    # the slot each MAC lands in, so the summary need not repeat the walk.
     SLOTOF=()
-    I=0
-    for MAC in ${PICKED}; do
-      printf '"%s" "eth%-3d %-7s %s"\n' "${MAC}" "${I}" "picked" "${NICDESC[${MAC}]}" >>"${TMP_PATH}/opts.sortnetif"
-      SLOTOF["${MAC}"]="eth${I}"
-      I=$((I + 1))
-    done
+    ALL2="${PICKED}"
     for MAC in ${ALL}; do
       [[ " ${PICKED} " == *" ${MAC} "* ]] && continue
-      printf '"%s" "eth%-3d %-7s %s"\n' "${MAC}" "${I}" "by bus" "${NICDESC[${MAC}]}" >>"${TMP_PATH}/opts.sortnetif"
+      ALL2="${ALL2}${MAC} "
+    done
+    I=0
+    for MAC in ${ALL2}; do
+      printf '"%s" "%s ->  eth%d"\n' "${MAC}" "${NICDESC[${MAC}]}" "${I}" >>"${TMP_PATH}/opts.sortnetif"
       SLOTOF["${MAC}"]="eth${I}"
       I=$((I + 1))
     done
