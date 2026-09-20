@@ -115,6 +115,11 @@ elif [ "${ARC_MODE}" = "config" ]; then
           write_menu_value "g" "Scaling Governor" "${GOVERNOR:-performance}"
         fi
 
+        if echo "${addons_list}" | grep -q "sortnetif"; then
+          SORTNETIF="$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
+          write_menu_value "H" "NIC Order" "$( [ -n "${SORTNETIF}" ] && echo "$(echo "${SORTNETIF}" | tr ',' ' ' | wc -w) pinned" || echo "by bus-id" )"
+        fi
+
         if echo "${addons_list}" | grep -q "sensors" && checkPWMSignal; then
           FANCONTROL="$(readConfigKey "fancontrol" "${USER_CONFIG_FILE}")"
           write_menu_value "P" "Fan Control" "$( [ "${FANCONTROL}" = "true" ] && echo "enabled" || echo "disabled" )"
@@ -262,6 +267,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
             ;;
           S) storageMenu; NEXT="S" ;;
           g) governorSelection; NEXT="g" ;;
+          H) sortnetifMenu; NEXT="H" ;;
           K)
             PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
             PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"

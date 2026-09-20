@@ -850,6 +850,17 @@ function sortnetifSelection() {
 }
 
 ###############################################################################
+# Reopen the NIC order picker from the main menu, so the order can be changed
+# without walking through the whole addon checklist again.
+function sortnetifMenu() {
+  sortnetifSelection "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
+  writeConfigKey "addons.sortnetif" "${SORTNETIF_VALUE}" "${USER_CONFIG_FILE}"
+  # No resetBuildstatus: boot.sh writes the list to the cmdline on every boot,
+  # so a new order applies at the next boot without rebuilding the loader.
+  return
+}
+
+###############################################################################
 # Permit user select the modules to include
 function modulesMenu() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
