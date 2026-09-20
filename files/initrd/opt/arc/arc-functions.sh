@@ -778,9 +778,10 @@ function addonSelection() {
 function sortnetifSelection() {
   SORTNETIF_VALUE="${1}"
 
-  local MAC BUS DRV ETHTOOL IP CARRIER LINK N I SLOT PICKED RET
-  # MAC -> "ethN - driver - bus-id - link" description, in bus-id order.
-  declare -A NICDESC
+  local MAC BUS DRV ETHTOOL IP CARRIER LINK N I SLOT PICKED RET ORDER
+  # MAC -> "ethN - driver - bus-id - link" for the rows, and the bare
+  # "ethN - MAC - driver" the order summary needs, both in bus-id order.
+  declare -A NICDESC NICSHORT SLOTOF
   local ALL=""
   for N in $(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; 2>/dev/null | sort -V); do
     MAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
@@ -798,6 +799,7 @@ function sortnetifSelection() {
     IP="$(getIP "${N}")"
     [ -n "${IP}" ] && LINK="${LINK}, ${IP}"
     NICDESC["${MAC}"]="$(printf 'now %-6s %-12s %-14s %s' "${N}" "${DRV:-unknown}" "${BUS:-unknown}" "(${LINK})")"
+    NICSHORT["${MAC}"]="$(printf '%-6s %s  %-12s' "${N}" "${MAC}" "${DRV:-unknown}")"
     ALL="${ALL}${MAC} "
   done
 
@@ -825,17 +827,27 @@ function sortnetifSelection() {
     rm -f "${TMP_PATH}/opts.sortnetif"
     touch "${TMP_PATH}/opts.sortnetif"
     # Pinned NICs first, in their pinned order, then the rest by bus-id - the
-    # order sortnetif itself applies, so the rows are already the resulting
-    # order, top to bottom. No separate summary: it would only repeat them.
+    # order sortnetif itself applies. Remember the slot each MAC ends up in,
+    # so the summary can name it without repeating the walk.
+    SLOTOF=()
     I=0
     for MAC in ${PICKED}; do
       printf '"%s" "eth%-3d %-7s %s"\n' "${MAC}" "${I}" "picked" "${NICDESC[${MAC}]}" >>"${TMP_PATH}/opts.sortnetif"
+      SLOTOF["${MAC}"]="eth${I}"
       I=$((I + 1))
     done
     for MAC in ${ALL}; do
       [[ " ${PICKED} " == *" ${MAC} "* ]] && continue
       printf '"%s" "eth%-3d %-7s %s"\n' "${MAC}" "${I}" "by bus" "${NICDESC[${MAC}]}" >>"${TMP_PATH}/opts.sortnetif"
+      SLOTOF["${MAC}"]="eth${I}"
       I=$((I + 1))
+    done
+
+    # Summary in current NIC order, so each line reads as that port moving to
+    # its new slot. ALL is already in bus-id order, which is the current one.
+    ORDER=""
+    for MAC in ${ALL}; do
+      ORDER="${ORDER}\n  ${NICSHORT[${MAC}]}  ->  \Z4${SLOTOF[${MAC}]}\Zn"
     done
 
     SLOT="eth$(echo "${PICKED}" | wc -w)"
@@ -844,7 +856,7 @@ function sortnetifSelection() {
       --ok-label "Pick" --cancel-label "Abort" \
       --extra-button --extra-label "Start over" \
       --help-button --help-label "Save" \
-      --menu "The rows are the order at the next boot, top to bottom.\nChoose the NIC that should become \Z4${SLOT}\Zn.\nSave keeps it as it stands - NICs you did not pick stay in bus-id order." 0 0 0 \
+      --menu "Order at the next boot:\n${ORDER}\n\nChoose the NIC that should become \Z4${SLOT}\Zn.\nSave keeps it as it stands - NICs you did not pick stay in bus-id order." 0 0 0 \
       --file "${TMP_PATH}/opts.sortnetif" 2>"${TMP_PATH}/resp.sortnetif"
     RET=$?
     case ${RET} in
