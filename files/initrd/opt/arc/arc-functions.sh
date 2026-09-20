@@ -791,7 +791,7 @@ function sortnetifSelection() {
     [ "${CARRIER}" = "1" ] && LINK="up" || LINK="down"
     IP="$(getIP "${N}")"
     [ -n "${IP}" ] && LINK="${LINK}, ${IP}"
-    NICDESC["${MAC}"]="${N}  ${BUS:-unknown}  (${LINK})"
+    NICDESC["${MAC}"]="$(printf 'now %-6s %-14s %s' "${N}" "${BUS:-unknown}" "(${LINK})")"
     ALL="${ALL}${MAC} "
   done
 
@@ -821,12 +821,12 @@ function sortnetifSelection() {
     # Pinned NICs first, in their pinned order, then the rest by bus-id.
     I=0
     for MAC in ${PICKED}; do
-      printf '"%s" "eth%d  <-  %s"\n' "${MAC}" "${I}" "${NICDESC[${MAC}]}" >>"${TMP_PATH}/opts.sortnetif"
+      printf '"%s" "eth%-3d %-7s %s"\n' "${MAC}" "${I}" "picked" "${NICDESC[${MAC}]}" >>"${TMP_PATH}/opts.sortnetif"
       I=$((I + 1))
     done
     for MAC in ${ALL}; do
       [[ " ${PICKED} " == *" ${MAC} "* ]] && continue
-      printf '"%s" "eth%d  (by bus-id)  %s"\n' "${MAC}" "${I}" "${NICDESC[${MAC}]}" >>"${TMP_PATH}/opts.sortnetif"
+      printf '"%s" "eth%-3d %-7s %s"\n' "${MAC}" "${I}" "by bus" "${NICDESC[${MAC}]}" >>"${TMP_PATH}/opts.sortnetif"
       I=$((I + 1))
     done
 
