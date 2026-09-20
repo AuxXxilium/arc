@@ -518,7 +518,14 @@ function arcSettings() {
       makearc
     fi
   else
-    dialog --backtitle "$(backtitle)" --title "Config failed" --msgbox "ERROR: Config failed!\nExit." 6 40
+    # An automated build has nobody to press OK, so report and return instead.
+    if [ "${ARC_MODE}" = "config" ]; then
+      dialog --backtitle "$(backtitle)" --title "Config failed" --msgbox "ERROR: Config failed!\nExit." 6 40
+    else
+      dialog --backtitle "$(backtitle)" --title "Config failed" --aspect 18 \
+        --infobox "ERROR: Config failed!\nExit." 4 40
+      sleep 3
+    fi
     return 1
   fi
   return
@@ -3411,9 +3418,19 @@ function getpatfiles() {
     fi
   elif [ ! -f "${DSM_FILE}" ] && [ "${ARC_OFFLINE}" = "true" ]; then
     rm -f ${USER_UP_PATH}/*.tar
-    dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files" \
-      --msgbox "Please upload the DSM Boot File to ${USER_UP_PATH}.\nUse ${IPCON}:7304 to upload the file below and press OK.\nLink: https://raw.githubusercontent.com/AuxXxilium/arc-dsm/new/files/${MODEL}/${DSMFULLVER}/${PAT_HASH}.tar" 8 120
-    [ $? -ne 0 ] && VALID="false"
+    if [ "${ARC_MODE}" = "automated" ]; then
+      # Nobody is watching an automated build, so do not wait for an upload that
+      # can only be made by hand. Report it and let the caller fail the build;
+      # the loader drops to a shell where the file can be uploaded, after which
+      # a rebuild picks it up.
+      dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files" --aspect 18 \
+        --infobox "Offline Mode: DSM Boot File is missing.\nUpload it to ${USER_UP_PATH} and build again." 5 60
+      sleep 3
+    else
+      dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files" \
+        --msgbox "Please upload the DSM Boot File to ${USER_UP_PATH}.\nUse ${IPCON}:7304 to upload the file below and press OK.\nLink: https://raw.githubusercontent.com/AuxXxilium/arc-dsm/new/files/${MODEL}/${DSMFULLVER}/${PAT_HASH}.tar" 8 120
+      [ $? -ne 0 ] && VALID="false"
+    fi
     if [ -f "${DSM_FILE}" ]; then
       VALID="true"
     fi
