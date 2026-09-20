@@ -837,8 +837,11 @@ function sortnetifSelection() {
     done
     I=0
     for MAC in ${ALL2}; do
-      printf '"%s" "%s ->  eth%d"\n' "${MAC}" "${NICDESC[${MAC}]}" "${I}" >>"${TMP_PATH}/opts.sortnetif"
       SLOTOF["${MAC}"]="eth${I}"
+      # A picked NIC has its slot already; leaving it in the choices would only
+      # invite picking it twice. The summary above still shows where it went.
+      [[ " ${PICKED} " != *" ${MAC} "* ]] &&
+        printf '"%s" "%s ->  eth%d"\n' "${MAC}" "${NICDESC[${MAC}]}" "${I}" >>"${TMP_PATH}/opts.sortnetif"
       I=$((I + 1))
     done
 
@@ -859,11 +862,11 @@ function sortnetifSelection() {
       --file "${TMP_PATH}/opts.sortnetif" 2>"${TMP_PATH}/resp.sortnetif"
     RET=$?
     case ${RET} in
-      0) # Pick - append, or move an already pinned NIC to the end of the order.
+      0) # Pick - take the next free slot. Only unpicked NICs are listed, so
+         # this always appends; Start over undoes a wrong pick.
         MAC="$(cat "${TMP_PATH}/resp.sortnetif" 2>/dev/null)"
         [ -z "${MAC}" ] && continue
-        PICKED="${PICKED// ${MAC} / }"
-        PICKED="${PICKED#${MAC} }${MAC} "
+        PICKED="${PICKED}${MAC} "
         # One NIC left means its slot is already decided, so there is nothing
         # left to ask: stop rather than offer a menu with a single entry. This
         # also ends the loop once every NIC has been pinned.
