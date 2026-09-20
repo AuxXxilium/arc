@@ -465,6 +465,15 @@ function arcSettings() {
     fi
   fi
 
+  # Ask for the NIC order while configuring the loader, next to the other addon
+  # settings. Automated mode never asks: an empty value means sortnetif sorts
+  # every NIC by bus-id, which is the sane unattended default, and an order that
+  # was configured earlier is left as it is.
+  if [ "${ARC_MODE}" = "config" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sortnetif"; then
+    sortnetifSelection "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
+    writeConfigKey "addons.sortnetif" "${SORTNETIF_VALUE}" "${USER_CONFIG_FILE}"
+  fi
+
   if [ "${MEV}" != "physical" ]; then
     writeConfigKey "fancontrol" "false" "${USER_CONFIG_FILE}"
   elif readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sensors"; then
@@ -741,15 +750,7 @@ function addonSelection() {
   # map would drop them every time this menu is confirmed.
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   for ADDON in ${resp}; do
-    VALUE="${ADDONS["${ADDON}"]}"
-    if [ "${ADDON}" = "sortnetif" ]; then
-      # Not a command substitution: dialog draws its interface on stdout, so
-      # capturing it would hide the checklist and store the escape codes as the
-      # addon value. The picked MACs come back in SORTNETIF_VALUE instead.
-      sortnetifSelection "${VALUE}"
-      VALUE="${SORTNETIF_VALUE}"
-    fi
-    writeConfigKey "addons.\"${ADDON}\"" "${VALUE}" "${USER_CONFIG_FILE}"
+    writeConfigKey "addons.\"${ADDON}\"" "${ADDONS["${ADDON}"]}" "${USER_CONFIG_FILE}"
   done
   return
 }
@@ -787,8 +788,14 @@ function sortnetifSelection() {
     ALL="${ALL}${MAC} "
   done
 
-  # Nothing to choose from - keep whatever was configured before.
+  # Nothing to choose from - keep whatever was configured before. A single NIC
+  # has no order to pick either, and pinning it would only duplicate what the
+  # bus-id sort already does, so store nothing.
   [ -z "${ALL}" ] && return
+  if [ "$(echo "${ALL}" | wc -w)" -le 1 ]; then
+    SORTNETIF_VALUE=""
+    return
+  fi
 
   # Start from the configured order, dropping MACs that are no longer present.
   PICKED=""
@@ -830,8 +837,10 @@ function sortnetifSelection() {
         [ -z "${MAC}" ] && continue
         PICKED="${PICKED// ${MAC} / }"
         PICKED="${PICKED#${MAC} }${MAC} "
-        # Pinning every NIC leaves nothing to sort by bus-id, so we are done.
-        [ "$(echo "${PICKED}" | wc -w)" -eq "$(echo "${ALL}" | wc -w)" ] && break
+        # One NIC left means its slot is already decided, so there is nothing
+        # left to ask: stop rather than offer a menu with a single entry. This
+        # also ends the loop once every NIC has been pinned.
+        [ "$(echo "${PICKED}" | wc -w)" -ge "$(($(echo "${ALL}" | wc -w) - 1))" ] && break
         ;;
       2) # Start over - back to a pure bus-id order.
         PICKED=""
