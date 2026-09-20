@@ -117,12 +117,10 @@ elif [ "${ARC_MODE}" = "config" ]; then
 
         if echo "${addons_list}" | grep -q "sortnetif"; then
           SORTNETIF="$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
-          # A bare count reads as if the rest were unaccounted for, so say how
-          # many NICs the picked ones cover: the last NIC never needs picking,
-          # its slot is whatever the others leave over.
-          SORTNETIFNUM="$(echo "${SORTNETIF}" | tr ',' ' ' | wc -w)"
-          SORTNETIFTOT="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' 2>/dev/null | wc -l)"
-          write_menu_value "H" "NIC Order" "$( [ -n "${SORTNETIF}" ] && echo "custom (${SORTNETIFNUM} of ${SORTNETIFTOT} picked)" || echo "by bus-id" )"
+          # A count here says nothing useful - the picker never asks about the
+          # last NIC, so a complete order always falls short of the total and
+          # looks half done. The order itself is shown in the picker.
+          write_menu_value "H" "NIC Order" "$( [ -n "${SORTNETIF}" ] && echo "custom" || echo "automatic" )"
         fi
 
         if echo "${addons_list}" | grep -q "sensors" && checkPWMSignal; then
