@@ -810,6 +810,11 @@ function sortnetifSelection() {
     [[ " ${ALL} " == *" ${MAC} "* ]] && PICKED="${PICKED}${MAC} "
   done
 
+  # A saved order that already pins every NIC would leave no slot to ask about,
+  # yet the picker still has to be usable to change it: start from a clean
+  # order in that case and let the pinned one be picked again.
+  [ "$(echo "${PICKED}" | wc -w)" -ge "$(($(echo "${ALL}" | wc -w) - 1))" ] && PICKED=""
+
   while true; do
     rm -f "${TMP_PATH}/opts.sortnetif"
     touch "${TMP_PATH}/opts.sortnetif"
@@ -825,11 +830,7 @@ function sortnetifSelection() {
       I=$((I + 1))
     done
 
-    if [ -z "${PICKED}" ]; then
-      SLOT="eth0"
-    else
-      SLOT="eth$(echo "${PICKED}" | wc -w)"
-    fi
+    SLOT="eth$(echo "${PICKED}" | wc -w)"
 
     dialog --backtitle "$(backtitle)" --title "Sort Network Interfaces" --colors --aspect 18 \
       --ok-label "Pick" --cancel-label "Abort" \
