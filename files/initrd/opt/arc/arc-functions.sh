@@ -741,8 +741,46 @@ function addonSelection() {
   # map would drop them every time this menu is confirmed.
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   for ADDON in ${resp}; do
-    writeConfigKey "addons.\"${ADDON}\"" "${ADDONS["${ADDON}"]}" "${USER_CONFIG_FILE}"
+    VALUE="${ADDONS["${ADDON}"]}"
+    [ "${ADDON}" = "sortnetif" ] && VALUE="$(sortnetifSelection "${VALUE}")"
+    writeConfigKey "addons.\"${ADDON}\"" "${VALUE}" "${USER_CONFIG_FILE}"
   done
+  return
+}
+
+###############################################################################
+# Ask which NICs should be pinned to the front of the sortnetif order.
+# Without a selection sortnetif just sorts every NIC by bus-id; the MACs picked
+# here are placed ahead of that, in the order they are listed.
+# 1 - current value, used to preselect
+# Prints the comma separated MAC list (empty when nothing is pinned).
+function sortnetifSelection() {
+  local CURRENT="$(echo "${1}" | sed 's/://g; s/ //g' | tr '[:upper:]' '[:lower:]')"
+
+  rm -f "${TMP_PATH}/opts"
+  touch "${TMP_PATH}/opts"
+  local N MAC BUS ACT
+  for N in $(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; 2>/dev/null | sort -V); do
+    MAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
+    [ -z "${MAC}" ] && continue
+    BUS="$(ethtool -i "${N}" 2>/dev/null | grep "bus-info" | cut -d' ' -f2)"
+    echo "${CURRENT}" | grep -q "${MAC}" && ACT="on" || ACT="off"
+    echo -e "${MAC} \"${N} - ${BUS:-unknown}\" ${ACT}" >>"${TMP_PATH}/opts"
+  done
+
+  # Nothing to choose from - keep whatever was configured before.
+  if [ ! -s "${TMP_PATH}/opts" ]; then
+    echo "${1}"
+    return
+  fi
+
+  dialog --backtitle "$(backtitle)" --title "Sort Network Interfaces" --colors --aspect 18 \
+    --checklist "Pin NICs to the front of the order, in the order selected.\nSelect none to sort every NIC by bus-id.\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
+    --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp.sortnetif"
+  # Cancelled - leave the existing value untouched.
+  [ $? -ne 0 ] && echo "${1}" && return
+
+  echo "$(cat "${TMP_PATH}/resp.sortnetif" 2>/dev/null)" | tr -s ' ' ',' | sed 's/^,//; s/,$//'
   return
 }
 
