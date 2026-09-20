@@ -742,7 +742,13 @@ function addonSelection() {
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   for ADDON in ${resp}; do
     VALUE="${ADDONS["${ADDON}"]}"
-    [ "${ADDON}" = "sortnetif" ] && VALUE="$(sortnetifSelection "${VALUE}")"
+    if [ "${ADDON}" = "sortnetif" ]; then
+      # Not a command substitution: dialog draws its interface on stdout, so
+      # capturing it would hide the checklist and store the escape codes as the
+      # addon value. The picked MACs come back in SORTNETIF_VALUE instead.
+      sortnetifSelection "${VALUE}"
+      VALUE="${SORTNETIF_VALUE}"
+    fi
     writeConfigKey "addons.\"${ADDON}\"" "${VALUE}" "${USER_CONFIG_FILE}"
   done
   return
@@ -753,34 +759,37 @@ function addonSelection() {
 # Without a selection sortnetif just sorts every NIC by bus-id; the MACs picked
 # here are placed ahead of that, in the order they are listed.
 # 1 - current value, used to preselect
-# Prints the comma separated MAC list (empty when nothing is pinned).
+# Sets SORTNETIF_VALUE to the comma separated MAC list (empty when nothing is
+# pinned). This cannot print the result: dialog itself writes to stdout, so the
+# caller must not run it in a command substitution.
 function sortnetifSelection() {
-  local CURRENT="$(echo "${1}" | sed 's/://g; s/ //g' | tr '[:upper:]' '[:lower:]')"
+  SORTNETIF_VALUE="${1}"
 
-  rm -f "${TMP_PATH}/opts"
-  touch "${TMP_PATH}/opts"
-  local N MAC BUS ACT
+  local CURRENT MAC BUS ACT N
+  # Normalise to a comma delimited list so a MAC is matched whole and not as a
+  # substring of its neighbour.
+  CURRENT=",$(echo "${1}" | sed 's/[: ]//g' | tr '[:upper:]' '[:lower:]'),"
+
+  rm -f "${TMP_PATH}/opts.sortnetif"
+  touch "${TMP_PATH}/opts.sortnetif"
   for N in $(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; 2>/dev/null | sort -V); do
     MAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
     [ -z "${MAC}" ] && continue
     BUS="$(ethtool -i "${N}" 2>/dev/null | grep "bus-info" | cut -d' ' -f2)"
-    echo "${CURRENT}" | grep -q "${MAC}" && ACT="on" || ACT="off"
-    echo -e "${MAC} \"${N} - ${BUS:-unknown}\" ${ACT}" >>"${TMP_PATH}/opts"
+    echo "${CURRENT}" | grep -q ",${MAC}," && ACT="on" || ACT="off"
+    echo -e "${MAC} \"${N} - ${BUS:-unknown}\" ${ACT}" >>"${TMP_PATH}/opts.sortnetif"
   done
 
   # Nothing to choose from - keep whatever was configured before.
-  if [ ! -s "${TMP_PATH}/opts" ]; then
-    echo "${1}"
-    return
-  fi
+  [ ! -s "${TMP_PATH}/opts.sortnetif" ] && return
 
-  dialog --backtitle "$(backtitle)" --title "Sort Network Interfaces" --colors --aspect 18 \
-    --checklist "Pin NICs to the front of the order, in the order selected.\nSelect none to sort every NIC by bus-id.\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
-    --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp.sortnetif"
+  dialog --backtitle "$(backtitle)" --title "Sort Network Interfaces" --aspect 18 \
+    --checklist "Pin NICs to the front of the order.\nSelect none to sort every NIC by bus-id.\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
+    --file "${TMP_PATH}/opts.sortnetif" 2>"${TMP_PATH}/resp.sortnetif"
   # Cancelled - leave the existing value untouched.
-  [ $? -ne 0 ] && echo "${1}" && return
+  [ $? -ne 0 ] && return
 
-  echo "$(cat "${TMP_PATH}/resp.sortnetif" 2>/dev/null)" | tr -s ' ' ',' | sed 's/^,//; s/,$//'
+  SORTNETIF_VALUE="$(cat "${TMP_PATH}/resp.sortnetif" 2>/dev/null | tr -s '[:space:]' ',' | sed 's/^,//; s/,$//')"
   return
 }
 
