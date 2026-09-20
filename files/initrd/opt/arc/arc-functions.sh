@@ -756,40 +756,96 @@ function addonSelection() {
 
 ###############################################################################
 # Ask which NICs should be pinned to the front of the sortnetif order.
-# Without a selection sortnetif just sorts every NIC by bus-id; the MACs picked
-# here are placed ahead of that, in the order they are listed.
-# 1 - current value, used to preselect
+# sortnetif pins the MACs it is given, in list order, ahead of the remaining
+# NICs which it sorts by bus-id: the first MAC becomes eth0, the second eth1,
+# and so on. Order therefore matters, which a checklist cannot express - it
+# always reports its tags in list order, not in the order they were ticked.
+# So build the list one pick at a time instead: each pick takes the next free
+# ethN slot, and the menu shows which slot every NIC currently holds.
+# 1 - current value, used as the starting order
 # Sets SORTNETIF_VALUE to the comma separated MAC list (empty when nothing is
 # pinned). This cannot print the result: dialog itself writes to stdout, so the
 # caller must not run it in a command substitution.
 function sortnetifSelection() {
   SORTNETIF_VALUE="${1}"
 
-  local CURRENT MAC BUS ACT N
-  # Normalise to a comma delimited list so a MAC is matched whole and not as a
-  # substring of its neighbour.
-  CURRENT=",$(echo "${1}" | sed 's/[: ]//g' | tr '[:upper:]' '[:lower:]'),"
-
-  rm -f "${TMP_PATH}/opts.sortnetif"
-  touch "${TMP_PATH}/opts.sortnetif"
+  local MAC BUS IP CARRIER LINK N I SLOT PICKED RET
+  # MAC -> "ethN - bus-id" description, in bus-id order, for the menu rows.
+  declare -A NICDESC
+  local ALL=""
   for N in $(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; 2>/dev/null | sort -V); do
     MAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
     [ -z "${MAC}" ] && continue
     BUS="$(ethtool -i "${N}" 2>/dev/null | grep "bus-info" | cut -d' ' -f2)"
-    echo "${CURRENT}" | grep -q ",${MAC}," && ACT="on" || ACT="off"
-    echo -e "${MAC} \"${N} - ${BUS:-unknown}\" ${ACT}" >>"${TMP_PATH}/opts.sortnetif"
+    # Link state and IP make the NICs tellable apart when the bus-id alone does
+    # not; a cable plugged into just the wanted port is the easiest way to find it.
+    CARRIER="$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)"
+    [ "${CARRIER}" = "1" ] && LINK="up" || LINK="down"
+    IP="$(getIP "${N}")"
+    [ -n "${IP}" ] && LINK="${LINK}, ${IP}"
+    NICDESC["${MAC}"]="${N}  ${BUS:-unknown}  (${LINK})"
+    ALL="${ALL}${MAC} "
   done
 
   # Nothing to choose from - keep whatever was configured before.
-  [ ! -s "${TMP_PATH}/opts.sortnetif" ] && return
+  [ -z "${ALL}" ] && return
 
-  dialog --backtitle "$(backtitle)" --title "Sort Network Interfaces" --aspect 18 \
-    --checklist "Pin NICs to the front of the order.\nSelect none to sort every NIC by bus-id.\nSelect with SPACE, Confirm with ENTER!" 0 0 0 \
-    --file "${TMP_PATH}/opts.sortnetif" 2>"${TMP_PATH}/resp.sortnetif"
-  # Cancelled - leave the existing value untouched.
-  [ $? -ne 0 ] && return
+  # Start from the configured order, dropping MACs that are no longer present.
+  PICKED=""
+  for MAC in $(echo "${1}" | sed 's/[: ]//g; s/,/ /g' | tr '[:upper:]' '[:lower:]'); do
+    [[ " ${ALL} " == *" ${MAC} "* ]] && PICKED="${PICKED}${MAC} "
+  done
 
-  SORTNETIF_VALUE="$(cat "${TMP_PATH}/resp.sortnetif" 2>/dev/null | tr -s '[:space:]' ',' | sed 's/^,//; s/,$//')"
+  while true; do
+    rm -f "${TMP_PATH}/opts.sortnetif"
+    touch "${TMP_PATH}/opts.sortnetif"
+    # Pinned NICs first, in their pinned order, then the rest by bus-id.
+    I=0
+    for MAC in ${PICKED}; do
+      printf '"%s" "eth%d  <-  %s"\n' "${MAC}" "${I}" "${NICDESC[${MAC}]}" >>"${TMP_PATH}/opts.sortnetif"
+      I=$((I + 1))
+    done
+    for MAC in ${ALL}; do
+      [[ " ${PICKED} " == *" ${MAC} "* ]] && continue
+      printf '"%s" "eth%d  (by bus-id)  %s"\n' "${MAC}" "${I}" "${NICDESC[${MAC}]}" >>"${TMP_PATH}/opts.sortnetif"
+      I=$((I + 1))
+    done
+
+    if [ -z "${PICKED}" ]; then
+      SLOT="eth0"
+    else
+      SLOT="eth$(echo "${PICKED}" | wc -w)"
+    fi
+
+    dialog --backtitle "$(backtitle)" --title "Sort Network Interfaces" --colors --aspect 18 \
+      --ok-label "Pick" --cancel-label "Abort" \
+      --extra-button --extra-label "Start over" \
+      --help-button --help-label "Done" \
+      --menu "Choose the NIC that should become \Z4${SLOT}\Zn.\nPick them in the order you want: first pick becomes eth0, next eth1, ...\nPress Done at any time - NICs you did not pick keep their bus-id order." 0 0 0 \
+      --file "${TMP_PATH}/opts.sortnetif" 2>"${TMP_PATH}/resp.sortnetif"
+    RET=$?
+    case ${RET} in
+      0) # Pick - append, or move an already pinned NIC to the end of the order.
+        MAC="$(cat "${TMP_PATH}/resp.sortnetif" 2>/dev/null)"
+        [ -z "${MAC}" ] && continue
+        PICKED="${PICKED// ${MAC} / }"
+        PICKED="${PICKED#${MAC} }${MAC} "
+        # Pinning every NIC leaves nothing to sort by bus-id, so we are done.
+        [ "$(echo "${PICKED}" | wc -w)" -eq "$(echo "${ALL}" | wc -w)" ] && break
+        ;;
+      2) # Start over - back to a pure bus-id order.
+        PICKED=""
+        ;;
+      3) # Done - keep what has been picked so far.
+        break
+        ;;
+      *) # Abort - leave the existing value untouched.
+        return
+        ;;
+    esac
+  done
+
+  SORTNETIF_VALUE="$(echo "${PICKED}" | tr -s '[:space:]' ',' | sed 's/^,//; s/,$//')"
   return
 }
 
