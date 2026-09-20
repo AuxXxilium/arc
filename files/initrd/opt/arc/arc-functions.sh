@@ -736,11 +736,12 @@ function addonSelection() {
   [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
 
-  declare -A ADDONS
+  # Keep whatever value a still-selected addon already had. Some addons store
+  # settings here (sortnetif keeps its MAC priority list), and re-declaring the
+  # map would drop them every time this menu is confirmed.
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   for ADDON in ${resp}; do
-    ADDONS["${ADDON}"]=""
-    writeConfigKey "addons.\"${ADDON}\"" "" "${USER_CONFIG_FILE}"
+    writeConfigKey "addons.\"${ADDON}\"" "${ADDONS["${ADDON}"]}" "${USER_CONFIG_FILE}"
   done
   return
 }
