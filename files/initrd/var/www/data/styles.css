@@ -115,25 +115,11 @@ button {
     gap: 12px;
 }
 
-.topbar-actions span {
+.topbar-info {
+    margin-right: 4px;
     color: var(--muted);
     font-size: 13px;
-    font-weight: 600;
-}
-
-.topbar-actions button {
-    border-radius: 14px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    padding: 10px 14px;
-    font-size: 13px;
-    font-weight: 700;
-    transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.topbar-actions button:hover {
-    background: var(--surface-muted);
+    white-space: nowrap;
 }
 
 .primary-button {
@@ -147,7 +133,6 @@ button {
 }
 
 .danger-button,
-.topbar-actions .danger-button,
 .button-row .danger-button {
     background: var(--danger);
     color: white;
@@ -155,7 +140,6 @@ button {
 }
 
 .danger-button:hover,
-.topbar-actions .danger-button:hover,
 .button-row .danger-button:hover {
     background: #dc2626;
 }
@@ -452,22 +436,161 @@ button {
 }
 
 .theme-toggle {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    color: var(--text);
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font-size: 18px;
     cursor: pointer;
-    padding: 8px 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s ease, border-color 0.2s ease;
-    font-size: 16px;
-    line-height: 1;
+    display: grid;
+    place-items: center;
+    transition: background-color 0.15s;
 }
 
 .theme-toggle:hover {
     background: var(--surface-muted);
+}
+
+/* The sun is yellow in dark mode, as in Arc Control's header. */
+html.dark .theme-toggle.theme-icon {
+    color: #eab308;
+}
+
+/* ------------------------------------------------ power and account menu --- */
+
+/*
+ * Both are <details>, so they open and close on a click and on Escape
+ * without any code; the summary is the button, so its marker goes.
+ */
+.power-menu,
+.account-menu {
+    position: relative;
+}
+
+.power-menu > summary,
+.account-menu > summary {
+    list-style: none;
+}
+
+.power-menu > summary::-webkit-details-marker,
+.account-menu > summary::-webkit-details-marker {
+    display: none;
+}
+
+.power-menu-items,
+.account-items {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 6px;
+    z-index: 1100;
+}
+
+.power-menu-items {
+    min-width: 170px;
+}
+
+.account-items {
+    min-width: 220px;
+}
+
+.power-item,
+.account-item {
+    display: block;
+    width: 100%;
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: var(--text);
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.power-item:hover,
+.account-item:hover {
+    background: var(--surface-muted);
+}
+
+.account-item.danger {
+    color: var(--danger);
+}
+
+.power-item.danger:hover,
+.account-item.danger:hover {
+    background: var(--danger);
+    color: #fff;
+}
+
+/* Borderless until hovered, like the other header buttons. */
+.account-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px 4px 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.account-button:hover {
+    background: var(--surface-muted);
+}
+
+.account-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+
+.account-name {
+    font-size: 13px;
+    color: var(--text);
+}
+
+.account-caret {
+    font-size: 10px;
+    color: var(--muted);
+}
+
+.account-head {
+    padding: 8px 10px 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 6px;
+}
+
+.account-head-name {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.account-head-note {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+/* The name is the first thing to go when the header runs out of room;
+   the initial still says who is signed in. */
+@media (max-width: 560px) {
+    .account-name,
+    .account-caret {
+        display: none;
+    }
 }
 
 .message-error {

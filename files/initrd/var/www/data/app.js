@@ -64,9 +64,22 @@ function App() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [passwordSaving, setPasswordSaving] = useState(false);
-  const [shutdownOpen, setShutdownOpen] = useState(false);
+  // 'reboot' or 'poweroff' while its confirmation is open.
+  const [powerAction, setPowerAction] = useState(null);
   const [systemInfo, setSystemInfo] = useState('Loading system information...');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem(DARK_MODE_KEY) === 'true');
+
+  // The header menus are <details>: they close on a second click and on
+  // Escape by themselves, but not on a click somewhere else on the page.
+  useEffect(() => {
+    const closeMenus = (event) => {
+      document.querySelectorAll('.topbar details[open]').forEach((menu) => {
+        if (!menu.contains(event.target)) menu.open = false;
+      });
+    };
+    document.addEventListener('click', closeMenus);
+    return () => document.removeEventListener('click', closeMenus);
+  }, []);
 
   useEffect(() => {
     if (darkMode) {
@@ -196,9 +209,21 @@ function App() {
       .finally(() => setLoginSaving(false));
   }
 
-  function handleShutdown() {
-    setShutdownOpen(false);
-    fetch('./shutdown.cgi', { method: 'POST' }).catch(() => {});
+  function handlePower() {
+    const action = powerAction;
+    setPowerAction(null);
+    fetch('./shutdown.cgi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: buildQuery({ action })
+    }).catch(() => {});
+  }
+
+  // Close the <details> a menu item lives in, so the menu does not stay
+  // open behind whatever the item opened.
+  function closeMenu(el) {
+    const menu = el.closest('details');
+    if (menu) menu.open = false;
   }
 
   function handleLogout() {
@@ -420,24 +445,67 @@ function App() {
           )
         ),
         h('div', { className: 'topbar-actions' },
-          h('span', null, `IP: ${serverIp}`),
+          h('div', { className: 'topbar-info', title: 'Address of this computer' }, serverIp),
           h(
             'button',
             {
-              className: 'theme-toggle',
+              className: 'theme-toggle theme-icon',
               type: 'button',
               onClick: () => setDarkMode(!darkMode),
               title: darkMode ? 'Switch to light mode' : 'Switch to dark mode'
             },
-            darkMode ? '☀️' : '🌙'
+            darkMode ? '☀' : '☾'
           ),
-          h(
-            'button',
-            { className: 'secondary-button', type: 'button', onClick: () => setPasswordOpen(true) },
-            'Change Password'
+          h('details', { className: 'power-menu' },
+            h('summary', { className: 'theme-toggle', title: 'Restart or shut down' }, '⏻'),
+            h('div', { className: 'power-menu-items' },
+              h('button', {
+                className: 'power-item',
+                type: 'button',
+                onClick: (event) => {
+                  closeMenu(event.target);
+                  setPowerAction('reboot');
+                }
+              }, 'Restart'),
+              h('button', {
+                className: 'power-item danger',
+                type: 'button',
+                onClick: (event) => {
+                  closeMenu(event.target);
+                  setPowerAction('poweroff');
+                }
+              }, 'Shut down')
+            )
           ),
-          h('button', { className: 'secondary-button', type: 'button', onClick: handleLogout }, 'Logout'),
-          h('button', { className: 'danger-button', type: 'button', onClick: () => setShutdownOpen(true) }, 'Shutdown')
+          h('details', { className: 'account-menu' },
+            h('summary', { className: 'account-button', title: `Signed in as ${username || 'root'}` },
+              h('span', { className: 'account-avatar' }, (username || 'root').charAt(0).toUpperCase()),
+              h('span', { className: 'account-name' }, username || 'root'),
+              h('span', { className: 'account-caret' }, '▾')
+            ),
+            h('div', { className: 'account-items' },
+              h('div', { className: 'account-head' },
+                h('div', { className: 'account-head-name' }, username || 'root'),
+                h('div', { className: 'account-head-note' }, 'This computer’s own account')
+              ),
+              h('button', {
+                className: 'account-item',
+                type: 'button',
+                onClick: (event) => {
+                  closeMenu(event.target);
+                  setPasswordOpen(true);
+                }
+              }, 'Change password'),
+              h('button', {
+                className: 'account-item danger',
+                type: 'button',
+                onClick: (event) => {
+                  closeMenu(event.target);
+                  handleLogout();
+                }
+              }, 'Sign out')
+            )
+          )
         )
       ),
     authenticated ? activeContent : null,
@@ -496,16 +564,22 @@ function App() {
           )
         )
       ),
-    shutdownOpen &&
+    powerAction &&
       h('div', { className: 'login-overlay' },
         h('div', { className: 'password-card' },
-          h('div', { className: 'password-title' }, 'Shutdown'),
+          h('div', { className: 'password-title' }, powerAction === 'reboot' ? 'Restart' : 'Shut down'),
           h('div', { style: { textAlign: 'center', color: 'var(--muted)', fontSize: '14px', marginBottom: '24px' } },
-            'Are you sure you want to shut down the system?'
+            powerAction === 'reboot'
+              ? 'The page stops responding while the system restarts. Open it again once it is back up.'
+              : 'The system switches off completely. To use it again, turn it on with its power button.'
           ),
           h('div', { className: 'button-row' },
-            h('button', { type: 'button', className: 'danger-button', onClick: handleShutdown }, 'Shutdown'),
-            h('button', { type: 'button', className: 'secondary-button', onClick: () => setShutdownOpen(false) }, 'Cancel')
+            h('button', { type: 'button', className: 'secondary-button', onClick: () => setPowerAction(null) }, 'Cancel'),
+            h(
+              'button',
+              { type: 'button', className: powerAction === 'reboot' ? 'primary-button' : 'danger-button', onClick: handlePower },
+              powerAction === 'reboot' ? 'Restart' : 'Shut down'
+            )
           )
         )
       )
