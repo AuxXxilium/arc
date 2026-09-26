@@ -412,7 +412,9 @@ function App() {
     !authenticated &&
       h('div', { className: 'login-overlay' },
         h('div', { className: 'login-card' },
-          h('img', { className: 'login-mark', src: 'arc_loader.png', alt: 'arc_logo' }),
+          h('div', { className: 'login-logo' },
+            h('img', { src: 'arc_loader.png', alt: 'arc_logo' })
+          ),
           h('div', { className: 'login-title' }, 'Arc Web Config'),
           h('div', { className: 'login-subtitle' }, 'Sign in to continue.'),
           loginError && h('div', { className: 'message-box message-error' }, loginError),
