@@ -85,7 +85,7 @@ Arc also runs in Docker, through a QEMU VM — see [docker.md](docker.md).
 
 Arc updates itself. Under **Update**, **Update Loader** replaces the loader's files in place and keeps your configuration; **Upgrade Loader** reflashes it. Both fetch the latest release or the beta, together with addons, modules, configs, patches and kernels. **Update Dependencies** fetches only those.
 
-Without internet, download `update-*.zip` from the [releases](https://github.com/AuxXxilium/arc/releases/latest), upload it to `/tmp/update` on the loader — the file manager on `:7304` does this — and choose the update file in the same menu.
+No internet on the machine? Arc can also update offline from an update file from the [releases](https://github.com/AuxXxilium/arc/releases/latest).
 
 ---
 
