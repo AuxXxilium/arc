@@ -33,7 +33,7 @@ Arc turns an x86-64 PC, server or VM into a DSM 7.x machine. You write it to a d
 
 * **Guided setup** — Choose Model → Build Loader → Boot Loader, with DSM version, addons and modules picked for you and changeable before the build
 * **Wide hardware support** — 4.4 and 5.10 based platforms, drivers for many controllers and NICs, SATA PortMap and DTS map options for the disk layout
-* **Custom kernels** — on the 5.10 platforms with DSM 7.3 and later, choose between Synology's stock kernel and [arc-custom](https://github.com/AuxXxilium/arc-custom)'s kernels with hybrid CPU, wider hardware and 64 thread support
+* **Custom kernels** — on the 5.10 platforms with DSM 7.3 and later, choose between Synology's stock kernel and [arc-custom](https://github.com/AuxXxilium/arc-custom)'s kernels with hybrid CPU and wider hardware support
 * **Arc Patch** — a serial and MACs for the chosen model, with AME, QuickConnect, push notifications and more; or bring your own, or use random ones
 * **Addons and modules** — select addons (stable and beta) and kernel modules per build
 * **Hardware options** — NIC order, fan control, CPU scaling governor, GPU passthrough (IOMMU), USB disks as internal, eMMC and SATA DOM boot
@@ -62,7 +62,7 @@ Two systems, two jobs: **Arc prepares DSM**, and **DSM runs your NAS**. Arc buil
 | Platform | Kernel | DSM |
 | :-- | :-- | :-- |
 | `apollolake`, `broadwell`, `broadwellnk`, `broadwellnkv2`, `broadwellntbap`, `denverton`, `geminilake`, `purley`, `r1000`, `v1000` | 4.4.302 | 7.2, 7.3, 7.4 |
-| `epyc7002`, `geminilakenk`, `r1000nk`, `v1000nk` | 5.10.55 | 7.2, 7.3, 7.4 — custom kernel from 7.3 |
+| `epyc7002`, `geminilakenk`, `r1000nk`, `v1000nk` | 5.10.55 | 7.2, 7.3, 7.4 |
 | `epyc7003`, `epyc7003ntb`, `icelaked` | 5.10.55 | 7.4 |
 
 The platforms and models come from [arc-configs](https://github.com/AuxXxilium/arc-configs); the menu shows which models fit the machine.
