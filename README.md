@@ -102,7 +102,7 @@ No internet on the machine? Arc can also update offline from an update file from
 | [Arc Loader Essential](https://github.com/AuxXxilium/arc-essential) | Arc with reduced size, only for Linux 5.x models |
 | [Arc Loader Beta](https://github.com/AuxXxilium/arc-beta) | Beta releases of Arc |
 | [Arc Loader Custom](https://auxxxilium.github.io/arc) | Loader with automated installation |
-| [arx](https://github.com/AuxXxilium/arx) | The future of Arc — set up entirely from your browser |
+| [arx](https://github.com/AuxXxilium/arx) | The evolution of Arc — set up entirely from your browser |
 | [Arc Control](https://github.com/AuxXxilium/arc-control) | DSM app for loader settings, monitoring and hardware tuning |
 | [Arc Utilities](https://github.com/AuxXxilium/arc-utils) | Tools to install, patch and activate DSM apps on Xpenology |
 | [AuxXxilium](https://github.com/AuxXxilium) | Everything else from the Arc Project |
