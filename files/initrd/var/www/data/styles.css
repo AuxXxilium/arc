@@ -1,37 +1,42 @@
+/*
+ * Arc Web Config.
+ *
+ * Tokens, shapes and layout follow arx's web UI (and through it Arc
+ * Control), so the loaders' interfaces read as one family.
+ */
+
 :root {
-    --bg: #f8fafc;
-    --surface: #ffffff;
-    --surface-muted: #f1f5f9;
-    --border: #e2e8f0;
-    --text: #0f172a;
-    --muted: #64748b;
-    --primary: #0ea5e9;
-    --primary-dark: #0284c7;
-    --danger: #ef4444;
-    --success: #10b981;
-    --shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+    /* Tailwind zinc for every surface, and a blue-600 accent. */
+    --bg: #fafafa;             /* gray-50: the page */
+    --surface: #ffffff;        /* cards, header */
+    --surface-muted: #f4f4f5;  /* gray-100: hover, wells */
+    --border: #e4e4e7;         /* gray-200 */
+    --text: #18181b;           /* gray-900 */
+    --muted: #71717a;          /* gray-500 */
+    --primary: #2563eb;        /* blue-600: buttons */
+    --primary-dark: #1d4ed8;   /* blue-700: button hover */
+    --primary-soft: #3b82f6;   /* blue-500: the active bar */
+    --primary-tint: rgba(239, 246, 255, 0.8); /* blue-50/80: active item */
+    --danger: #dc2626;
+    --success: #16a34a;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
 }
 
 /*
- * Zinc rather than slate. Slate is a blue grey -- its 900 sits at hue 222
- * with blue 27 points above red -- so a dark surface built from it does not
- * read as neutral, it reads as faintly blue, and it competes with the sky
- * accent the buttons and active card already use. Zinc is the same ramp with
- * the tint taken out: near-hueless, but not the flat black `neutral` gives,
- * so the sidebar, panel and muted background still separate from each other.
- *
- * Step for step against the slate it replaces, so contrast is unchanged:
- * --muted on --surface was 6.5:1 and is 6.4:1. Light mode is untouched --
- * its greys are near-white, where the hue does not show.
+ * The page and the sidebar are gray-900, the header and the cards one step
+ * up at gray-800 -- that step is what separates a card from the page, so
+ * the two must not be the same. Hover goes a step lighter again.
  */
 html.dark {
-    --bg: #18181b;
-    --surface: #27272a;
-    --surface-muted: #18181b;
-    --border: #3f3f46;
-    --text: #f4f4f5;
-    --muted: #a1a1aa;
-    --shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    --bg: #18181b;             /* gray-900 */
+    --surface: #27272a;        /* gray-800 */
+    --surface-muted: #3f3f46;  /* gray-700: hover */
+    --border: #3f3f46;         /* gray-700 */
+    --text: #ffffff;
+    --muted: #a1a1aa;          /* gray-400 */
+    --primary-soft: #60a5fa;   /* blue-400 */
+    --primary-tint: rgba(23, 37, 84, 0.5); /* blue-950/50 */
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 * {
@@ -45,16 +50,19 @@ html, body, #app {
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
     background: var(--surface);
     color: var(--text);
     min-height: 100%;
     overflow-x: hidden;
 }
 
-button {
+button, input, select {
     font: inherit;
 }
+
+/* ------------------------------------------------------------- shell --- */
 
 .app-shell {
     height: 100vh;
@@ -68,29 +76,29 @@ button {
     top: 0;
     left: 0;
     right: 0;
-    height: 64px;
+    height: 60px;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     padding: 0 24px;
     z-index: 1000;
-    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
 }
 
 .topbar-logo {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
 }
 
-.topbar-logo img {
-    width: 38px;
-    height: 38px;
-    border-radius: 14px;
+.topbar-mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
     object-fit: cover;
-    background: none;
+    display: block;
 }
 
 .topbar-label {
@@ -101,12 +109,13 @@ button {
 .topbar-title {
     color: var(--text);
     font-size: 16px;
-    font-weight: 800;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 .topbar-subtitle {
     color: var(--muted);
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .topbar-actions {
@@ -120,319 +129,6 @@ button {
     color: var(--muted);
     font-size: 13px;
     white-space: nowrap;
-}
-
-.primary-button {
-    background: var(--primary);
-    color: white;
-    border-color: transparent;
-}
-
-.primary-button:hover {
-    background: var(--primary-dark);
-}
-
-.danger-button,
-.button-row .danger-button {
-    background: var(--danger);
-    color: white;
-    border-color: transparent;
-}
-
-.danger-button:hover,
-.button-row .danger-button:hover {
-    background: #dc2626;
-}
-
-.main-layout {
-    display: flex;
-    margin-top: 64px;
-    flex: 1;
-    overflow: hidden;
-    height: calc(100vh - 64px);
-}
-
-.sidebar {
-    width: 280px;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    padding: 24px 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    overflow-y: auto;
-}
-
-.sidebar-header {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--muted);
-}
-
-.card-grid {
-    display: grid;
-    gap: 10px;
-}
-
-.app-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 16px 18px;
-    border-radius: 18px;
-    background: var(--surface);
-    border: 1px solid transparent;
-    box-shadow: none;
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-    cursor: pointer;
-}
-
-.app-card:hover {
-    transform: translateY(-2px);
-    background: var(--surface-muted);
-    border-color: transparent;
-    box-shadow: none;
-}
-
-.app-card.active {
-    background: rgba(14, 165, 233, 0.08);
-    border-color: transparent;
-    box-shadow: inset 4px 0 0 0 rgba(14, 165, 233, 0.65);
-}
-
-.app-card-icon {
-    width: 52px;
-    height: 52px;
-    display: grid;
-    place-items: center;
-    border-radius: 16px;
-    background: transparent;
-    color: var(--primary);
-    font-size: 22px;
-    flex-shrink: 0;
-}
-
-.app-card-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.app-card-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text);
-}
-
-.app-card-desc {
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.4;
-}
-
-.content-area {
-    flex: 1;
-    background: var(--surface);
-    padding: 24px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-.panel {
-    flex: 1;
-    background: var(--surface);
-    border-radius: 24px;
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-.panel-body {
-    flex: 1;
-    overflow: hidden;
-}
-
-.embed-container {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: var(--bg);
-}
-
-.embed-container iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-}
-
-.sysinfo-view {
-    height: 100%;
-    overflow-y: auto;
-    background: var(--surface-muted);
-}
-
-/*
- * No background, radius or shadow here: .panel already draws the framed
- * card this sits inside, and repeating them rendered a second box within
- * the first. This element is only the scrolling text surface.
- */
-.sysinfo-content {
-    width: 100%;
-    min-height: 100%;
-    padding: 24px 28px;
-    color: var(--text);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-    font-size: 13px;
-    line-height: 1.7;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-
-.login-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(24, 24, 27, 0.75);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    z-index: 10000;
-}
-
-.login-card,
-.password-card {
-    width: 100%;
-    max-width: 440px;
-    background: var(--surface);
-    border-radius: 24px;
-    padding: 36px 32px;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
-}
-
-.login-logo {
-    display: grid;
-    place-items: center;
-    margin-bottom: 24px;
-}
-
-.login-logo img {
-    width: 30%;
-    max-width: 280px;
-    height: auto;
-    border-radius: 20px;
-    object-fit: contain;
-    background: none;
-}
-
-.login-title,
-.password-title {
-    font-size: 26px;
-    font-weight: 800;
-    color: var(--text);
-    text-align: center;
-    margin-bottom: 8px;
-}
-
-.login-subtitle {
-    color: var(--muted);
-    font-size: 14px;
-    text-align: center;
-    margin-bottom: 28px;
-}
-
-.field-group {
-    margin-bottom: 18px;
-}
-
-.field-label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text);
-}
-
-.field-input {
-    width: 100%;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 14px 16px;
-    background: var(--surface-muted);
-    color: var(--text);
-    font-size: 14px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.field-input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
-    outline: none;
-}
-
-/* Was a hardcoded slate-400, the one grey that could not follow the theme
-   and so stayed blue on a neutral field. --muted is that same step in both
-   themes. */
-.field-input::placeholder {
-    color: var(--muted);
-}
-
-.button-row {
-    display: flex;
-    gap: 12px;
-    margin-top: 24px;
-}
-
-.button-row button,
-.button-full {
-    border-radius: 14px;
-    font-size: 14px;
-    font-weight: 700;
-    border: none;
-    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-    padding: 14px 18px;
-}
-
-.button-row .secondary-button,
-.secondary-button {
-    background: var(--surface);
-    color: var(--text);
-    border: 1px solid var(--border);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
-}
-
-.button-row .secondary-button:hover,
-.secondary-button:hover {
-    background: var(--surface-muted);
-    transform: translateY(-1px);
-}
-
-.button-row .primary-button {
-    background: var(--primary);
-    color: white;
-    box-shadow: 0 12px 32px rgba(14, 165, 233, 0.18);
-}
-
-.button-row .primary-button:hover {
-    background: var(--primary-dark);
-    transform: translateY(-1px);
-}
-
-.button-full {
-    width: 100%;
-    padding: 14px;
-}
-
-.message-box {
-    border-radius: 14px;
-    padding: 14px 16px;
-    font-size: 13px;
-    margin-bottom: 18px;
-    line-height: 1.5;
 }
 
 .theme-toggle {
@@ -456,6 +152,332 @@ button {
 /* The sun is yellow in dark mode, as in Arc Control's header. */
 html.dark .theme-toggle.theme-icon {
     color: #eab308;
+}
+
+.main-layout {
+    display: flex;
+    flex: 1;
+    margin-top: 60px;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 288px;
+    flex-shrink: 0;
+    background: var(--bg);
+    border-right: 1px solid var(--border);
+    padding: 12px 16px 16px;
+    overflow-y: auto;
+}
+
+/* A section heading: small, wide-tracked capitals behind a caret. */
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 12px 16px 4px;
+}
+
+.sidebar-header::before {
+    content: "▼";
+    font-size: 9px;
+    line-height: 1;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 6px 16px;
+    border: 1px solid transparent;
+    border-radius: 18px;
+    background: none;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    margin-bottom: 4px;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.nav-item:hover:not(.active) {
+    background: color-mix(in srgb, var(--surface) 50%, transparent);
+    transform: translateY(-2px);
+}
+
+.nav-item.active {
+    background: var(--primary-tint);
+    box-shadow: inset 4px 0 0 0 color-mix(in srgb, var(--primary-soft) 65%, transparent);
+}
+
+/* The item's icon: a large emoji in a square box. */
+.nav-step {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    font-size: 24px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/*
+ * Unlike arx's pages, which scroll, the terminal and file manager fill the
+ * space they are given, so the content area is a column the panel fills
+ * rather than a scroller.
+ */
+.content-area {
+    flex: 1;
+    min-width: 0;
+    padding: 24px;
+    background: var(--bg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* A page: a large icon, the title and a line under it, above a card. */
+.panel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.panel-icon {
+    font-size: 36px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.panel-title {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.panel-desc {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 2px;
+}
+
+.panel-body {
+    flex: 1;
+    min-height: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.embed-container {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.embed-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+}
+
+.sysinfo-view {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.sysinfo-content {
+    padding: 16px;
+    color: var(--text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* -------------------------------------------------------------- forms --- */
+
+.field-group {
+    margin-bottom: 16px;
+}
+
+.field-label {
+    display: block;
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.field-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d4d4d8;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--text);
+    font-size: 14px;
+}
+
+/* Filled a step lighter than the card it sits in: on a gray-800 card a
+   gray-800 input has no edge at all. */
+html.dark .field-input {
+    background: #3f3f46;
+    border-color: #52525b;
+}
+
+.field-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+.field-input::placeholder {
+    color: var(--muted);
+}
+
+.primary-button,
+.secondary-button,
+.danger-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 0;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.primary-button {
+    background: var(--primary);
+    color: #fff;
+}
+
+.primary-button:hover:not(:disabled) {
+    background: var(--primary-dark);
+}
+
+/* A filled grey, not an outline. */
+.secondary-button {
+    background: #e4e4e7;
+    color: #27272a;
+}
+
+html.dark .secondary-button {
+    background: #3f3f46;
+    color: #fff;
+}
+
+.secondary-button:hover:not(:disabled) {
+    background: #d4d4d8;
+}
+
+html.dark .secondary-button:hover:not(:disabled) {
+    background: #52525b;
+}
+
+.danger-button {
+    background: var(--danger);
+    color: #fff;
+}
+
+.danger-button:hover:not(:disabled) {
+    background: #b91c1c;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled,
+.danger-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.button-full {
+    width: 100%;
+}
+
+.message-box {
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    border: 1px solid transparent;
+}
+
+.message-error {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.message-success {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+/* -------------------------------------------------------------- login --- */
+
+.login-overlay {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: var(--bg);
+    z-index: 2000;
+    padding: 16px;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: var(--shadow);
+}
+
+.login-mark {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    object-fit: contain;
+    display: block;
+    margin-bottom: 18px;
+}
+
+.login-title {
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.login-subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 6px 0 22px;
 }
 
 /* ------------------------------------------------ power and account menu --- */
@@ -584,6 +606,148 @@ html.dark .theme-toggle.theme-icon {
     margin-top: 2px;
 }
 
+/* ----------------------------------------------------------- modal --- */
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.modal {
+    position: relative;
+    width: 100%;
+    max-width: 672px;
+    background: var(--surface);
+    border-radius: 8px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.modal.modal-sm {
+    max-width: 448px;
+}
+
+.modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.modal-close {
+    display: inline-flex;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.modal-close:hover {
+    color: var(--text);
+}
+
+.modal-close svg {
+    width: 20px;
+    height: 20px;
+}
+
+.modal-body {
+    padding: 16px;
+    max-height: 32rem;
+    overflow-y: auto;
+    font-size: 14px;
+    color: var(--text);
+}
+
+.modal-body .field-group:last-child {
+    margin-bottom: 0;
+}
+
+.modal-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+}
+
+/* --------------------------------------------------------- responsive --- */
+
+/*
+ * arx hides its sidebar on a phone and walks the steps with back/next;
+ * here the sidebar is the only way between the tools, so it becomes a
+ * scrolling strip above the content instead.
+ */
+@media (max-width: 900px) {
+    .main-layout {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        display: flex;
+        gap: 4px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 8px 12px;
+        /* Still scrolls by swipe and wheel; the bar was a bright strip
+           across a dark header. */
+        scrollbar-width: none;
+    }
+
+    .sidebar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .sidebar-header {
+        display: none;
+    }
+
+    .nav-item {
+        width: auto;
+        flex-shrink: 0;
+        white-space: nowrap;
+        margin-bottom: 0;
+        gap: 8px;
+        padding: 4px 12px;
+    }
+
+    .nav-step {
+        width: 32px;
+        height: 32px;
+        font-size: 20px;
+    }
+
+    .content-area {
+        padding: 16px;
+    }
+
+    .topbar {
+        padding: 0 16px;
+    }
+
+    .topbar-subtitle {
+        display: none;
+    }
+}
+
 /* The name is the first thing to go when the header runs out of room;
    the initial still says who is signed in. */
 @media (max-width: 560px) {
@@ -591,62 +755,19 @@ html.dark .theme-toggle.theme-icon {
     .account-caret {
         display: none;
     }
-}
 
-.message-error {
-    background: #fee2e2;
-    color: #b91c1c;
-    border: 1px solid #fecaca;
-}
-
-html.dark .message-error {
-    background: rgba(239, 68, 68, 0.15);
-    color: #fca5a5;
-    border-color: rgba(239, 68, 68, 0.3);
-}
-
-.message-success {
-    background: #dcfce7;
-    color: #166534;
-    border: 1px solid #bbf7d0;
-}
-
-html.dark .message-success {
-    background: rgba(16, 185, 129, 0.15);
-    color: #6ee7b7;
-    border-color: rgba(16, 185, 129, 0.3);
-}
-
-@media (max-width: 900px) {
-    .main-layout {
-        flex-direction: column;
-        min-height: auto;
+    .panel-head {
+        margin-bottom: 12px;
     }
 
-    .sidebar {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        padding: 18px 16px;
-    }
-
-    .content-area {
-        padding: 18px;
+    .panel-icon {
+        font-size: 28px;
     }
 }
 
-@media (max-width: 640px) {
-    .topbar {
-        flex-direction: column;
-        align-items: stretch;
-        height: auto;
-        padding: 18px;
-        gap: 12px;
-    }
-
-    .topbar-actions {
-        width: 100%;
-        flex-wrap: wrap;
-        justify-content: flex-start;
+/* A phone has room for the title or the address, not both. */
+@media (max-width: 480px) {
+    .topbar-info {
+        display: none;
     }
 }

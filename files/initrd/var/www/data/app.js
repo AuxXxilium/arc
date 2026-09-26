@@ -51,6 +51,31 @@ const parseConfig = (text) => {
 
 const DARK_MODE_KEY = 'arc_dark_mode';
 
+const CLOSE_ICON = h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' },
+  h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M6 18L18 6M6 6l12 12' })
+);
+
+// arx's dialog: a header with the title and a close button, the content,
+// and a footer, each divided by a rule. A click on the backdrop closes it.
+// With onSubmit the body and footer are one form, so Enter submits.
+function modal({ title, onClose, onSubmit, body, footer }) {
+  return h('div', {
+    className: 'modal-backdrop',
+    onClick: (event) => { if (event.target === event.currentTarget) onClose(); }
+  },
+    h('div', { className: 'modal modal-sm', role: 'dialog', 'aria-modal': 'true' },
+      h('div', { className: 'modal-head' },
+        h('h2', { className: 'modal-title' }, title),
+        h('button', { type: 'button', className: 'modal-close', title: 'Close', onClick: onClose }, CLOSE_ICON)
+      ),
+      h(onSubmit ? 'form' : 'div', onSubmit ? { onSubmit } : null,
+        h('div', { className: 'modal-body' }, body),
+        footer && h('div', { className: 'modal-foot' }, footer)
+      )
+    )
+  );
+}
+
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
@@ -80,6 +105,18 @@ function App() {
     document.addEventListener('click', closeMenus);
     return () => document.removeEventListener('click', closeMenus);
   }, []);
+
+  useEffect(() => {
+    if (!passwordOpen && !powerAction) return undefined;
+    const onKey = (event) => {
+      if (event.key === 'Escape') {
+        closePassword();
+        setPowerAction(null);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [passwordOpen, powerAction]);
 
   useEffect(() => {
     if (darkMode) {
@@ -219,6 +256,12 @@ function App() {
     }).catch(() => {});
   }
 
+  function closePassword() {
+    setPasswordOpen(false);
+    setPasswordError('');
+    setPasswordSuccess('');
+  }
+
   // Close the <details> a menu item lives in, so the menu does not stay
   // open behind whatever the item opened.
   function closeMenu(el) {
@@ -298,63 +341,38 @@ function App() {
     return `http://${serverIp}:${port}`;
   }
 
+  const navItem = (key, icon, label, desc, active, onClick) =>
+    h('button', { key, type: 'button', className: `nav-item${active ? ' active' : ''}`, title: desc, onClick },
+      h('span', { className: 'nav-step' }, icon),
+      label
+    );
+
+  const current = APPS.find((app) => app.id === activeApp) || APPS[0];
+
   const activeContent = authenticated
     ? h('div', { className: 'main-layout' },
-        h('div', { className: 'sidebar' },
+        h('nav', { className: 'sidebar' },
           h('div', { className: 'sidebar-header' }, 'Navigation'),
-          h('div', { className: 'card-grid' },
-            APPS.map((app) =>
-              h(
-                'div',
-                {
-                  key: app.id,
-                  className: `app-card ${activeApp === app.id ? 'active' : ''}`,
-                  onClick: () => setActiveApp(app.id)
-                },
-                h('div', { className: 'app-card-icon' }, app.icon),
-                h('div', { className: 'app-card-info' },
-                  h('div', { className: 'app-card-title' }, app.title),
-                  h('div', { className: 'app-card-desc' }, app.desc)
-                )
-              )
-            )
+          APPS.map((app) =>
+            navItem(app.id, app.icon, app.title, app.desc, activeApp === app.id, () => setActiveApp(app.id))
           ),
           h('div', { className: 'sidebar-header' }, 'DSM'),
-          h('div', { className: 'card-grid' },
-            h(
-              'div',
-              {
-                className: 'app-card',
-                onClick: () => window.open(`http://${serverIp}:5000`, '_blank')
-              },
-              h('div', { className: 'app-card-icon' }, '🌐'),
-              h('div', { className: 'app-card-info' },
-                h('div', { className: 'app-card-title' }, 'Go to DSM'),
-                h('div', { className: 'app-card-desc' }, 'Open Xpenology DSM')
-              )
-            )
-          ),
+          navItem('dsm', '🌐', 'Go to DSM', 'Open Xpenology DSM', false,
+            () => window.open(`http://${serverIp}:5000`, '_blank')),
           h('div', { className: 'sidebar-header' }, 'External'),
-          h('div', { className: 'card-grid' },
-            LINKS.map((link) =>
-              h(
-                'div',
-                {
-                  key: link.url,
-                  className: 'app-card',
-                  onClick: () => window.open(link.url, '_blank')
-                },
-                h('div', { className: 'app-card-icon' }, link.icon),
-                h('div', { className: 'app-card-info' },
-                  h('div', { className: 'app-card-title' }, link.title),
-                  h('div', { className: 'app-card-desc' }, link.desc)
-                )
-              )
-            )
+          LINKS.map((link) =>
+            navItem(link.url, link.icon, link.title, link.desc, false, () => window.open(link.url, '_blank'))
           )
         ),
-        h('div', { className: 'content-area' },
-          h('div', { className: 'panel' },
+        h('main', { className: 'content-area' },
+          h('section', { className: 'panel' },
+            h('div', { className: 'panel-head' },
+              h('span', { className: 'panel-icon' }, current.icon),
+              h('div', null,
+                h('div', { className: 'panel-title' }, current.title),
+                h('div', { className: 'panel-desc' }, current.desc)
+              )
+            ),
             h('div', { className: 'panel-body' },
               h('div', {
                 className: 'embed-container',
@@ -394,11 +412,9 @@ function App() {
     !authenticated &&
       h('div', { className: 'login-overlay' },
         h('div', { className: 'login-card' },
-          h('div', { className: 'login-logo' },
-            h('img', { src: 'arc_loader.png', alt: 'arc_logo' })
-          ),
+          h('img', { className: 'login-mark', src: 'arc_loader.png', alt: 'arc_logo' }),
           h('div', { className: 'login-title' }, 'Arc Web Config'),
-          h('div', { className: 'login-subtitle' }, 'Sign in to continue'),
+          h('div', { className: 'login-subtitle' }, 'Sign in to continue.'),
           loginError && h('div', { className: 'message-box message-error' }, loginError),
           h('form', { onSubmit: handleLogin },
             h('div', { className: 'field-group' },
@@ -430,15 +446,15 @@ function App() {
                 type: 'submit',
                 disabled: loginSaving
               },
-              loginSaving ? 'Signing in...' : 'Sign In'
+              loginSaving ? 'Signing in...' : 'Sign in'
             )
           )
         )
       ),
     authenticated &&
-      h('div', { className: 'topbar' },
+      h('header', { className: 'topbar' },
         h('div', { className: 'topbar-logo' },
-          h('img', { src: 'arc_loader.png?v=1', alt: 'arc_logo' }),
+          h('img', { className: 'topbar-mark', src: 'arc_loader.png?v=1', alt: 'arc_logo' }),
           h('div', { className: 'topbar-label' },
             h('div', { className: 'topbar-title' }, 'Arc Web Config'),
             h('div', { className: 'topbar-subtitle' }, 'Remote system access and tools')
@@ -511,78 +527,65 @@ function App() {
     authenticated ? activeContent : null,
     passwordOpen &&
       authenticated &&
-      h('div', { className: 'login-overlay' },
-        h('div', { className: 'password-card' },
-          h('div', { className: 'password-title' }, 'Change Password'),
+      modal({
+        title: 'Change password',
+        onClose: closePassword,
+        onSubmit: handlePasswordSubmit,
+        body: [
           passwordError && h('div', { className: 'message-box message-error' }, passwordError),
           passwordSuccess && h('div', { className: 'message-box message-success' }, passwordSuccess),
-          h('form', { onSubmit: handlePasswordSubmit },
-            h('div', { className: 'field-group' },
-              h('label', { className: 'field-label', htmlFor: 'newPassword' }, 'New Password'),
-              h('input', {
-                className: 'field-input',
-                id: 'newPassword',
-                name: 'newPassword',
-                type: 'password',
-                autoComplete: 'new-password',
-                required: true,
-                minLength: 4
-              })
-            ),
-            h('div', { className: 'field-group' },
-              h('label', { className: 'field-label', htmlFor: 'confirmPassword' }, 'Confirm New Password'),
-              h('input', {
-                className: 'field-input',
-                id: 'confirmPassword',
-                name: 'confirmPassword',
-                type: 'password',
-                autoComplete: 'new-password',
-                required: true,
-                minLength: 4
-              })
-            ),
-            h('div', { className: 'button-row' },
-              h(
-                'button',
-                {
-                  type: 'button',
-                  className: 'secondary-button',
-                  onClick: () => {
-                    setPasswordOpen(false);
-                    setPasswordError('');
-                    setPasswordSuccess('');
-                  }
-                },
-                'Cancel'
-              ),
-              h(
-                'button',
-                { className: 'primary-button', type: 'submit', disabled: passwordSaving },
-                passwordSaving ? 'Changing...' : 'Change Password'
-              )
-            )
-          )
-        )
-      ),
-    powerAction &&
-      h('div', { className: 'login-overlay' },
-        h('div', { className: 'password-card' },
-          h('div', { className: 'password-title' }, powerAction === 'reboot' ? 'Restart' : 'Shut down'),
-          h('div', { style: { textAlign: 'center', color: 'var(--muted)', fontSize: '14px', marginBottom: '24px' } },
-            powerAction === 'reboot'
-              ? 'The page stops responding while the system restarts. Open it again once it is back up.'
-              : 'The system switches off completely. To use it again, turn it on with its power button.'
+          h('div', { className: 'field-group' },
+            h('label', { className: 'field-label', htmlFor: 'newPassword' }, 'New password'),
+            h('input', {
+              className: 'field-input',
+              id: 'newPassword',
+              name: 'newPassword',
+              type: 'password',
+              autoComplete: 'new-password',
+              required: true,
+              minLength: 4
+            })
           ),
-          h('div', { className: 'button-row' },
-            h('button', { type: 'button', className: 'secondary-button', onClick: () => setPowerAction(null) }, 'Cancel'),
-            h(
-              'button',
-              { type: 'button', className: powerAction === 'reboot' ? 'primary-button' : 'danger-button', onClick: handlePower },
-              powerAction === 'reboot' ? 'Restart' : 'Shut down'
-            )
+          h('div', { className: 'field-group' },
+            h('label', { className: 'field-label', htmlFor: 'confirmPassword' }, 'Confirm new password'),
+            h('input', {
+              className: 'field-input',
+              id: 'confirmPassword',
+              name: 'confirmPassword',
+              type: 'password',
+              autoComplete: 'new-password',
+              required: true,
+              minLength: 4
+            })
           )
-        )
-      )
+        ],
+        footer: [
+          h('button', { type: 'button', className: 'secondary-button', onClick: closePassword }, 'Cancel'),
+          h(
+            'button',
+            { className: 'primary-button', type: 'submit', disabled: passwordSaving },
+            passwordSaving ? 'Changing...' : 'Change password'
+          )
+        ]
+      }),
+    powerAction &&
+      modal({
+        title: powerAction === 'reboot' ? 'Restart this computer?' : 'Shut this computer down?',
+        onClose: () => setPowerAction(null),
+        body: h('p', null,
+          powerAction === 'reboot'
+            ? 'The page stops responding while it restarts. Open it again once the computer is back up.'
+            : 'It switches off completely. To use it again, turn it on with its power button.'
+        ),
+        footer: [
+          h('button', { type: 'button', className: 'secondary-button', onClick: () => setPowerAction(null) }, 'Cancel'),
+          h(
+            'button',
+            { type: 'button', className: powerAction === 'reboot' ? 'primary-button' : 'danger-button', onClick: handlePower },
+            powerAction === 'reboot' ? 'Restart' : 'Shut down'
+          )
+        ]
+      })
   );
 }
 
