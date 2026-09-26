@@ -53,7 +53,7 @@ GRUB → Arc (Buildroot) → menu on screen, web config on :7080
         Boot Loader:  Arc → kexec → DSM 7.x → DSM's own installer
 ```
 
-Arc runs on its own small Linux system; DSM runs on the kernel of its platform — **4.4.302** or **5.10.55**. DSM's identity — model, serial, MACs — goes on the kernel command line, and the `redpill` module does what the command line cannot. On hypervisors where kexec is not reliable, **Directboot** reboots straight into DSM instead.
+Two systems, two jobs: **Arc prepares DSM**, and **DSM runs your NAS**. Arc builds a loader for the model you chose, then starts DSM on it — so DSM sees the Synology it expects, on your own hardware.
 
 ---
 
