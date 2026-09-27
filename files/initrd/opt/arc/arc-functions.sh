@@ -3076,9 +3076,19 @@ function greplogs() {
 ###############################################################################
 # Get DSM Config File from dsmbackup
 function getbackup() {
-  if [ -d "${PART1_PATH}/dsmbackup" ]; then
+  # dsmconfigbackup writes to p3/backup; p1/dsmbackup is where older versions
+  # of the addon left theirs.
+  local BKP_ROOT="" BKP_DIR=""
+  if [ -d "${PART3_PATH}/backup" ]; then
+    BKP_ROOT="${PART3_PATH}"
+    BKP_DIR="backup"
+  elif [ -d "${PART1_PATH}/dsmbackup" ]; then
+    BKP_ROOT="${PART1_PATH}"
+    BKP_DIR="dsmbackup"
+  fi
+  if [ -n "${BKP_DIR}" ]; then
     rm -f "${TMP_PATH}/dsmconfig.tar.gz" >/dev/null
-    tar -czf "${TMP_PATH}/dsmconfig.tar.gz" -C "${PART1_PATH}" dsmbackup
+    tar -czf "${TMP_PATH}/dsmconfig.tar.gz" -C "${BKP_ROOT}" "${BKP_DIR}"
     cp -f "${TMP_PATH}/dsmconfig.tar.gz" "/var/www/data/dsmconfig.tar.gz"
     chmod 644 "/var/www/data/dsmconfig.tar.gz"
     URL="http://${IPCON}:${HTTPPORT:-7080}/dsmconfig.tar.gz"
