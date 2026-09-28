@@ -2846,17 +2846,6 @@ function formatDisks() {
   fi
   for I in ${resp}; do
     umount -l "${I}" 2>/dev/null
-    # mkfs alone leaves the partition table (MBR in sector 0, backup GPT at
-    # the end) and the md superblocks inside DSM's partitions. The installer
-    # then finds the old system partition and keeps its settings, and DSM
-    # takes the upgrade path without installing the builtin packages -
-    # Storage Manager included. Clear those first.
-    for P in $(lsblk -lnpo KNAME,TYPE "${I}" 2>/dev/null | awk '$2 == "part" {print $1}'); do
-      mdadm --zero-superblock "${P}" 2>/dev/null
-      wipefs -af "${P}" 2>/dev/null
-    done
-    wipefs -af "${I}" 2>/dev/null
-    blockdev --rereadpt "${I}" 2>/dev/null
     if [[ "${I}" = /dev/mmc* ]]; then
       echo y | mkfs.ext4 -T largefile4 -E nodiscard "${I}"
     else
