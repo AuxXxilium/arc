@@ -253,6 +253,10 @@ function updateLoader() {
     fi
   fi
 
+  # The release brought its own module packs, which can add or drop modules
+  # from one release to the next, so the selection is made again from them.
+  reselectModules
+
   resetBuild
 
   if [ "${ARC_MODE}" = "update" ] && [ "${CONFDONE}" = "true" ]; then
@@ -266,6 +270,31 @@ function updateLoader() {
     sleep 3
     rebootTo config
   fi
+}
+
+###############################################################################
+# Select every module of the installed pack, as the modules menu's "Select
+# all" does. The platform and kernel are read from the config here, because
+# update mode runs before arc.sh loads them.
+function reselectModules() {
+  local PLATFORM PRODUCTVER KVER KPRE KERNEL PACK
+  PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  [ -z "${PLATFORM}" ] || [ -z "${PRODUCTVER}" ] && return 0
+  KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
+  KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
+  [ -z "${KVER}" ] && return 0
+  # The pack unpackModules reads
+  KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
+  if [ "${KERNEL}" != "official" ]; then
+    PACK="${CUSTOM_PATH}/modules-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-${KERNEL}.tgz"
+  else
+    PACK="${MODULES_PATH}/${PLATFORM}-${KPRE:+${KPRE}-}${KVER}.tgz"
+  fi
+  # No pack, no list: keep the old selection rather than an empty one
+  [ -f "${PACK}" ] || return 0
+  writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
+  mergeConfigModules "$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
 }
 
 ###############################################################################
