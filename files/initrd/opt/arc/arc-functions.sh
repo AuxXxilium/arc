@@ -2784,15 +2784,37 @@ function bootipwaittime() {
 
 
 ###############################################################################
+# is an MBR extended partition, e.g. DSM's p3 holding its data in p5?
+# Read from the disk's own MBR, not lsblk's PARTTYPE, which is empty
+# without udev data: partition numbers 1-4 are the primary entries, and
+# types 05, 0f and 85 are extended.
+function isExtendedPart() {
+  local NAME="${1##*/}" DISK N SIG TYPE
+  [ -f "/sys/class/block/${NAME}/partition" ] || return 1
+  N="$(cat "/sys/class/block/${NAME}/partition" 2>/dev/null)"
+  [[ "${N}" =~ ^[1-4]$ ]] || return 1
+  DISK="$(basename "$(readlink -f "/sys/class/block/${NAME}/..")")"
+  SIG="$(dd if="/dev/${DISK}" bs=1 skip=510 count=2 2>/dev/null | od -An -tx1 | tr -d '[:space:]')"
+  [ "${SIG}" = "55aa" ] || return 1
+  TYPE="$(dd if="/dev/${DISK}" bs=1 skip=$((446 + 16 * (N - 1) + 4)) count=1 2>/dev/null | od -An -tx1 | tr -d '[:space:]')"
+  [[ "${TYPE}" =~ ^(05|0f|85)$ ]]
+}
+
+###############################################################################
 # let user format disks from inside arc
 function formatDisks() {
   rm -f "${TMP_PATH}/opts" "${TMP_PATH}/format-disk-list"
-  while read -r KNAME SIZE TYPE DMODEL PKNAME; do
+  while read -r KNAME SIZE TYPE PKNAME DMODEL; do
     [[ "${KNAME}" = "null" || "${SIZE:0:1}" -eq 0 ]] && continue
     [ "${KNAME:0:7}" = "/dev/md" ] && continue
     [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
+    # An MBR extended partition (DSM's p3, its data in p5 inside it) is only
+    # the container for the logical ones: mkfs fails on it, and wiping it
+    # erases the EBR that chains to p5, so the data would go although p5 was
+    # not chosen. On GPT p3 is DSM's data and stays.
+    [ "${TYPE}" = "part" ] && isExtendedPart "${KNAME}" && continue
     printf "%s\t%s\t%-6s %-4s %s\n" "${KNAME}" "${TYPE}" "${SIZE}" "${TYPE}" "${DMODEL/null/}" >>"${TMP_PATH}/format-disk-list"
-  done <<<"$(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)"
+  done <<<"$(lsblk -Jpno KNAME,SIZE,TYPE,PKNAME,MODEL 2>/dev/null | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.pkname) \(.model)"' 2>/dev/null)"
   if [ ! -f "${TMP_PATH}/format-disk-list" ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --msgbox "No disk found!" 0 0
@@ -2845,7 +2867,25 @@ function formatDisks() {
     done
   fi
   for I in ${resp}; do
+    # Never the extended partition alone: wiping it takes p5, the data,
+    # with it. A partition whose disk is chosen too goes with the disk.
+    isExtendedPart "${I}" && continue
+    PK="$(lsblk -dnpo PKNAME "${I}" 2>/dev/null)"
+    [ -n "${PK}" ] && [[ " ${resp} " == *" ${PK} "* ]] && continue
     umount -l "${I}" 2>/dev/null
+    # mkfs alone leaves the partition table (MBR in sector 0, backup GPT at
+    # the end) and the md superblocks inside DSM's partitions. The installer
+    # then finds the old system partition and keeps its settings, and DSM
+    # takes the upgrade path without installing the builtin packages -
+    # Storage Manager included. wipefs clears both: libblkid knows every md
+    # superblock version. partx -d then drops the partitions the kernel
+    # still holds.
+    PARTS="$(lsblk -lnpo KNAME,PKNAME,TYPE 2>/dev/null | awk -v d="${I}" '$2 == d && $3 == "part" {print $1}' | sort)"
+    for P in ${PARTS}; do
+      wipefs -af "${P}"
+    done
+    wipefs -af "${I}"
+    [ -n "${PARTS}" ] && partx -d "${I}"
     if [[ "${I}" = /dev/mmc* ]]; then
       echo y | mkfs.ext4 -T largefile4 -E nodiscard "${I}"
     else
