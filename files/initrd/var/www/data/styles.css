@@ -448,45 +448,48 @@ html.dark .secondary-button:hover:not(:disabled) {
     background: var(--bg);
     z-index: 2000;
     padding: 16px;
+    overflow-y: auto;
 }
 
-.login-card {
+/* Ignis's sign-in layout: a narrow column of the header row, the card
+   and a line of help under it. */
+.login-panel {
     width: 100%;
-    max-width: 440px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 24px;
-    padding: 36px 32px;
-    box-shadow: var(--shadow);
+    max-width: 384px;
 }
 
-/* The logo centred above the title. */
-.login-logo {
-    display: grid;
-    place-items: center;
+/* The header's own logo block, with the theme switch at the far end. */
+.login-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     margin-bottom: 24px;
 }
 
-.login-logo img {
-    width: 50%;
-    max-width: 280px;
-    height: auto;
-    border-radius: 20px;
-    object-fit: contain;
+/* The header hides its tagline on a narrow screen to make room for the
+   actions; here there is room, and it is most of what the page says. */
+.login-head .topbar-subtitle {
+    display: block;
 }
 
-.login-title {
-    font-size: 26px;
-    font-weight: 800;
-    text-align: center;
-    margin-bottom: 8px;
+.login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.login-subtitle {
+.login-card .button-full {
+    margin-top: 4px;
+}
+
+.login-hint {
+    margin-top: 16px;
     color: var(--muted);
-    font-size: 14px;
+    font-size: 12px;
     text-align: center;
-    margin-bottom: 28px;
 }
 
 /* ------------------------------------------------ power and account menu --- */

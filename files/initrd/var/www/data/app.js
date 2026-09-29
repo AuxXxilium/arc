@@ -410,15 +410,31 @@ function App() {
 
   return h('div', { className: 'app-shell' },
     !authenticated &&
+      // Ignis's sign-in layout: the mark and name above the card, as the
+      // header carries them once signed in, with the theme switch beside
+      // them; the card holds only the form; one line of help below it.
       h('div', { className: 'login-overlay' },
-        h('div', { className: 'login-card' },
-          h('div', { className: 'login-logo' },
-            h('img', { src: 'arc_loader.png', alt: 'arc_logo' })
+        h('div', { className: 'login-panel' },
+          h('div', { className: 'login-head' },
+            h('div', { className: 'topbar-logo' },
+              h('img', { className: 'topbar-mark', src: 'arc_loader.png?v=1', alt: 'arc_logo' }),
+              h('div', { className: 'topbar-label' },
+                h('div', { className: 'topbar-title' }, 'Arc Web Config'),
+                h('div', { className: 'topbar-subtitle' }, 'Remote system access and tools')
+              )
+            ),
+            h(
+              'button',
+              {
+                className: 'theme-toggle theme-icon',
+                type: 'button',
+                onClick: () => setDarkMode(!darkMode),
+                title: darkMode ? 'Switch to light mode' : 'Switch to dark mode'
+              },
+              darkMode ? '☀' : '☾'
+            )
           ),
-          h('div', { className: 'login-title' }, 'Arc Web Config'),
-          h('div', { className: 'login-subtitle' }, 'Sign in to continue.'),
-          loginError && h('div', { className: 'message-box message-error' }, loginError),
-          h('form', { onSubmit: handleLogin },
+          h('form', { className: 'login-card', onSubmit: handleLogin },
             h('div', { className: 'field-group' },
               h('label', { className: 'field-label', htmlFor: 'username' }, 'Username'),
               h('input', {
@@ -441,6 +457,7 @@ function App() {
                 required: true
               })
             ),
+            loginError && h('div', { className: 'message-box message-error' }, loginError),
             h(
               'button',
               {
@@ -450,7 +467,8 @@ function App() {
               },
               loginSaving ? 'Signing in...' : 'Sign in'
             )
-          )
+          ),
+          h('div', { className: 'login-hint' }, 'Sign in to continue.')
         )
       ),
     authenticated &&
