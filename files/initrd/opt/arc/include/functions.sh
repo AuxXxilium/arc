@@ -170,45 +170,222 @@ function _set_conf_kv() {
 }
 
 ###############################################################################
-# sort netif name
-# @1 -mac1,mac2,mac3...
-function _sort_netif() {
-  ETHLIST=""
-  for F in $(LC_ALL=C printf '%s\n' /sys/class/net/eth* | sort -V); do
-    [ ! -e "${F}" ] && continue
-    local ETH MAC BUS
-    ETH="$(basename "${F}")"
-    MAC="$(cat "/sys/class/net/${ETH}/address" 2>/dev/null | sed 's/://g; s/.*/\L&/')"
-    BUS="$(ethtool -i "${ETH}" 2>/dev/null | grep bus-info | cut -d' ' -f2)"
-    ETHLIST="${ETHLIST}${BUS} ${MAC} ${ETH}\n"
-  done
-  ETHLISTTMPM=""
-  ETHLISTTMPB="$(echo -e "${ETHLIST}" | sort -V)"
-  if [ -n "${1}" ]; then
-    MACS="$(echo "${1}" | sed 's/://g; s/,/ /g; s/.*/\L&/')"
-    for MACX in ${MACS}; do
-      ETHLISTTMPM="${ETHLISTTMPM}$(echo -e "${ETHLISTTMPB}" | grep "${MACX}")\n"
-      ETHLISTTMPB="$(echo -e "${ETHLISTTMPB}" | grep -v "${MACX}")\n"
-    done
-  fi
-  ETHLIST="$(echo -e "${ETHLISTTMPM}${ETHLISTTMPB}" | grep -v '^$')"
-  ETHSEQ="$(echo -e "${ETHLIST}" | awk '{print $3}' | sed 's/eth//g')"
-  ETHNUM="$(echo -e "${ETHLIST}" | wc -l)"
+# NIC order. The loader puts its NICs in bus order, pinned MACs first, and
+# boot.sh hands DSM the same order as sortnetif=, so a port is the same ethN
+# in the loader and in DSM, and stays it across boots whatever order the
+# drivers probe in.
 
-  # sort
-  if [ ! "${ETHSEQ}" = "$(seq 0 $((${ETHNUM:0} - 1)))" ]; then
-    /etc/init.d/S41dhcpcd stop >/dev/null 2>&1
-    /etc/init.d/S40network stop >/dev/null 2>&1
-    for i in $(seq 0 $((${ETHNUM:0} - 1))); do
-      ip link set dev "eth${i}" name "tmp${i}"
+# MAC of interface ${1}, lower case without colons.
+function _netif_mac() {
+  cat "/sys/class/net/${1}/address" 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]'
+}
+
+# Sort key of interface ${1}: the PCI address its device sits on, as decimals
+# (bus addresses are hex, which sort -V puts wrong at 09 against 0a), a virtio
+# NIC by the virtio-pci device it is behind. A USB NIC sorts after every PCI
+# one, by its path, and one with no device at all last.
+function _netif_key() {
+  local P A D B S F
+  P="$(readlink -f "/sys/class/net/${1}/device" 2>/dev/null)"
+  [ -z "${P}" ] && echo "3 ${1}" && return
+  case "${P}" in */usb*) echo "2 ${P}" && return ;; esac
+  A="$(echo "${P}" | tr '/' '\n' | grep -E '^[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.[0-7]$' | tail -1)"
+  [ -z "${A}" ] && echo "2 ${P}" && return
+  IFS=':.' read -r D B S F <<<"${A}"
+  printf '1 %05d %03d %03d %d\n' "$((16#${D}))" "$((16#${B}))" "$((16#${S}))" "$((16#${F}))"
+}
+
+# Prints the eth* interfaces in the order they should have: the MACs in ${1}
+# (comma separated) first, in that order, then the rest by _netif_key.
+# 1 - mac1,mac2,mac3...
+function _netif_order() {
+  local N PIN I
+  local -a REST=()
+  while read -r N; do
+    [ -n "${N}" ] && REST+=("${N}")
+  done <<<"$(for N in $(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; 2>/dev/null); do
+    echo "$(_netif_key "${N}") ${N}"
+  done | LC_ALL=C sort | awk '{print $NF}')"
+  for PIN in $(echo "${1}" | sed 's/[: ]//g; s/,/ /g' | tr '[:upper:]' '[:lower:]'); do
+    for I in "${!REST[@]}"; do
+      if [ "$(_netif_mac "${REST[${I}]}")" = "${PIN}" ]; then
+        echo "${REST[${I}]}"
+        unset "REST[${I}]"
+        break
+      fi
     done
-    I=0
-    for i in ${ETHSEQ}; do
-      ip link set dev "tmp${i}" name "eth${I}"
-      I=$((I + 1))
-    done
-    /etc/init.d/S40network start >/dev/null 2>&1
-    /etc/init.d/S41dhcpcd start >/dev/null 2>&1
+  done
+  for N in "${REST[@]}"; do
+    echo "${N}"
+  done
+}
+
+# Renames the eth* interfaces into _netif_order: the first becomes eth0.
+# 1 - mac1,mac2,mac3...
+function _sort_netif() {
+  local -a ORDER=()
+  local N I SORTED=true
+  while read -r N; do
+    [ -n "${N}" ] && ORDER+=("${N}")
+  done <<<"$(_netif_order "${1}")"
+  for I in "${!ORDER[@]}"; do
+    [ "${ORDER[${I}]}" = "eth${I}" ] || SORTED=false
+  done
+  [ "${SORTED}" = "true" ] && return
+
+  /etc/init.d/S41dhcpcd stop >/dev/null 2>&1
+  /etc/init.d/S40network stop >/dev/null 2>&1
+  # Through temporary names: eth0 cannot become eth1 while eth1 is there.
+  for I in "${!ORDER[@]}"; do
+    ip link set dev "${ORDER[${I}]}" down 2>/dev/null
+    ip link set dev "${ORDER[${I}]}" name "arctmp${I}"
+  done
+  for I in "${!ORDER[@]}"; do
+    ip link set dev "arctmp${I}" name "eth${I}"
+  done
+  /etc/init.d/S40network start >/dev/null 2>&1
+  /etc/init.d/S41dhcpcd start >/dev/null 2>&1
+}
+
+###############################################################################
+# Static addresses: network.<mac> in the user config, address/netmask/
+# gateway/dns, keyed by the NIC's MAC. The loader takes them from dhcpcd,
+# which then leaves DHCP alone on that NIC; DSM from boot.sh's network.<mac>
+# cmdline entries, which the misc addon writes into DSM's ifcfg.
+
+# Whether ${1} is an IPv4 address.
+function _ip_valid() {
+  local O
+  [[ "${1}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] || return 1
+  for O in ${1//./ }; do
+    [ "$((10#${O}))" -le 255 ] || return 1
+  done
+}
+
+# IPv4 address ${1} without leading zeros, which some tools read as octal.
+function _ip_norm() {
+  local A B C D
+  IFS='.' read -r A B C D <<<"${1}"
+  echo "$((10#${A})).$((10#${B})).$((10#${C})).$((10#${D}))"
+}
+
+# IPv4 address ${1} as a number.
+function _ip_int() {
+  local A B C D
+  IFS='.' read -r A B C D <<<"${1}"
+  echo "$(((10#${A} << 24) | (10#${B} << 16) | (10#${C} << 8) | 10#${D}))"
+}
+
+# Prefix length of netmask ${1}, given as 255.255.255.0, 24 or /24.
+# Fails for anything that is not a netmask.
+function _mask_bits() {
+  local M="${1#/}" O BITS=0 END=false
+  if [[ "${M}" =~ ^[0-9]{1,2}$ ]]; then
+    [ "$((10#${M}))" -ge 1 ] && [ "$((10#${M}))" -le 32 ] || return 1
+    echo "$((10#${M}))"
+    return
+  fi
+  _ip_valid "${M}" || return 1
+  for O in ${M//./ }; do
+    O="$((10#${O}))"
+    if [ "${END}" = "true" ]; then
+      [ "${O}" -eq 0 ] || return 1
+      continue
+    fi
+    case "${O}" in
+      255) BITS=$((BITS + 8)) ;;
+      254 | 252 | 248 | 240 | 224 | 192 | 128 | 0)
+        while [ "${O}" -gt 0 ]; do
+          BITS=$((BITS + 1))
+          O=$(((O << 1) & 255))
+        done
+        END=true
+        ;;
+      *) return 1 ;;
+    esac
+  done
+  [ "${BITS}" -ge 1 ] || return 1
+  echo "${BITS}"
+}
+
+# Netmask of prefix length ${1}, as 255.255.255.0.
+function _bits_mask() {
+  local M=$(((0xffffffff << (32 - ${1})) & 0xffffffff))
+  echo "$((M >> 24 & 255)).$((M >> 16 & 255)).$((M >> 8 & 255)).$((M & 255))"
+}
+
+# Checks a static address as typed and prints it as stored:
+# address/netmask/gateway/dns, the netmask as a dotted quad. On a problem,
+# prints that instead and fails.
+# 1 - address, 2 - netmask (255.255.255.0, 24 or empty for /24), 3 - gateway, 4 - dns
+function _static_value() {
+  local IP="${1}" MASK="${2}" GW="${3}" DNS="${4}" BITS NET
+  [ -z "${IP}" ] && echo "An address is required." && return 1
+  if [ "${IP}" != "${IP%/*}" ]; then
+    [ -n "${MASK}" ] && echo "Give the prefix or the netmask, not both." && return 1
+    MASK="${IP#*/}"
+    IP="${IP%/*}"
+  fi
+  _ip_valid "${IP}" || { echo "${IP} is not an IPv4 address." && return 1; }
+  IP="$(_ip_norm "${IP}")"
+  BITS="$(_mask_bits "${MASK:-24}")" || { echo "${MASK} is not a netmask." && return 1; }
+  MASK="$(_bits_mask "${BITS}")"
+  NET=$(($(_ip_int "${IP}") & $(_ip_int "${MASK}")))
+  if [ "${BITS}" -lt 31 ] && [ "$(_ip_int "${IP}")" -eq "${NET}" ]; then
+    echo "${IP} is the network address of its subnet, not a host on it." && return 1
+  fi
+  if [ -n "${GW}" ]; then
+    _ip_valid "${GW}" || { echo "Gateway ${GW} is not an IPv4 address." && return 1; }
+    GW="$(_ip_norm "${GW}")"
+    [ "${GW}" = "${IP}" ] && echo "The gateway cannot be the address itself." && return 1
+    if [ $(($(_ip_int "${GW}") & $(_ip_int "${MASK}"))) -ne "${NET}" ]; then
+      echo "Gateway ${GW} is not on ${IP}/${BITS}." && return 1
+    fi
+  fi
+  if [ -n "${DNS}" ]; then
+    _ip_valid "${DNS}" || { echo "DNS server ${DNS} is not an IPv4 address." && return 1; }
+    DNS="$(_ip_norm "${DNS}")"
+  fi
+  echo "${IP}/${MASK}/${GW}/${DNS}"
+}
+
+# Writes the static addresses into dhcpcd.conf, for the NICs this machine
+# has, and prints the interfaces written. Everything from the marker down is
+# replaced, so writing again leaves one copy. With no DNS server the gateway
+# is asked, as before.
+function _static_dhcpcd() {
+  local CONF="/etc/dhcpcd.conf" MARK="# arc: static addresses, rewritten by arc"
+  local N IPR IP MASK GW DNS BITS OUT=""
+  [ -f "${CONF}" ] || return 0
+  sed -i "/^${MARK}\$/,\$d" "${CONF}"
+  for N in $(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; 2>/dev/null | sort -V); do
+    IPR="$(readConfigKey "network.$(_netif_mac "${N}")" "${USER_CONFIG_FILE}")"
+    [ -z "${IPR}" ] && continue
+    IFS='/' read -r IP MASK GW DNS <<<"${IPR}"
+    _ip_valid "${IP}" || continue
+    BITS="$(_mask_bits "${MASK:-24}")" || continue
+    [ -z "${OUT}" ] && echo "${MARK}" >>"${CONF}"
+    {
+      echo
+      echo "interface ${N}"
+      echo "static ip_address=${IP}/${BITS}"
+      [ -n "${GW}" ] && echo "static routers=${GW}"
+      [ -n "${DNS:-${GW}}" ] && echo "static domain_name_servers=${DNS:-${GW}}"
+    } >>"${CONF}"
+    OUT="${OUT} ${N}"
+  done
+  echo "${OUT# }"
+}
+
+# Has dhcpcd take up the current dhcpcd.conf on interfaces ${@}: a NIC newly
+# static drops its lease for the address, one no longer static goes back to
+# DHCP.
+function _dhcpcd_reload() {
+  [ $# -eq 0 ] && return 0
+  if [ -f /var/run/dhcpcd/pid ]; then
+    dhcpcd -n "$@" >/dev/null 2>&1
+  else
+    /etc/init.d/S41dhcpcd restart >/dev/null 2>&1
   fi
 }
 

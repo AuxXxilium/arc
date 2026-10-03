@@ -465,15 +465,6 @@ function arcSettings() {
     fi
   fi
 
-  # Ask for the NIC order while configuring the loader, next to the other addon
-  # settings. Automated mode never asks: an empty value means sortnetif sorts
-  # every NIC by bus-id, which is the sane unattended default, and an order that
-  # was configured earlier is left as it is.
-  if [ "${ARC_MODE}" = "config" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sortnetif"; then
-    sortnetifSelection "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
-    writeConfigKey "addons.sortnetif" "${SORTNETIF_VALUE}" "${USER_CONFIG_FILE}"
-  fi
-
   if [ "${MEV}" != "physical" ]; then
     writeConfigKey "fancontrol" "false" "${USER_CONFIG_FILE}"
   elif readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "sensors"; then
@@ -752,9 +743,9 @@ function addonSelection() {
   [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
 
-  # Keep whatever value a still-selected addon already had. Some addons store
-  # settings here (sortnetif keeps its MAC priority list), and re-declaring the
-  # map would drop them every time this menu is confirmed.
+  # Keep whatever value a still-selected addon already had. An addon can store
+  # settings here, and re-declaring the map would drop them every time this
+  # menu is confirmed.
   writeConfigKey "addons" "{}" "${USER_CONFIG_FILE}"
   for ADDON in ${resp}; do
     writeConfigKey "addons.\"${ADDON}\"" "${ADDONS["${ADDON}"]}" "${USER_CONFIG_FILE}"
@@ -783,7 +774,9 @@ function sortnetifSelection() {
   # "ethN - MAC - driver" the order summary needs, both in bus-id order.
   declare -A NICDESC NICSHORT SLOTOF
   local ALL=""
-  for N in $(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; 2>/dev/null | sort -V); do
+  # In bus order, the order of the NICs nobody pinned; the current names
+  # already carry the pins of the last boot.
+  for N in $(_netif_order ""); do
     MAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
     [ -z "${MAC}" ] && continue
     # One ethtool call for both fields - it is the slow part of this loop.
@@ -845,8 +838,8 @@ function sortnetifSelection() {
       I=$((I + 1))
     done
 
-    # Summary in current NIC order, so each line reads as that port moving to
-    # its new slot. ALL is already in bus-id order, which is the current one.
+    # Summary in bus order, so each line reads as that port, under its name
+    # now, moving to its new slot.
     ORDER=""
     for MAC in ${ALL}; do
       ORDER="${ORDER}\n  ${NICSHORT[${MAC}]}  ->  \Z4${SLOTOF[${MAC}]}\Zn"
@@ -892,10 +885,11 @@ function sortnetifSelection() {
 # Reopen the NIC order picker from the main menu, so the order can be changed
 # without walking through the whole addon checklist again.
 function sortnetifMenu() {
-  sortnetifSelection "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
-  writeConfigKey "addons.sortnetif" "${SORTNETIF_VALUE}" "${USER_CONFIG_FILE}"
-  # No resetBuildstatus: boot.sh writes the list to the cmdline on every boot,
-  # so a new order applies at the next boot without rebuilding the loader.
+  sortnetifSelection "$(readConfigKey "sortnetif" "${USER_CONFIG_FILE}")"
+  writeConfigKey "sortnetif" "${SORTNETIF_VALUE}" "${USER_CONFIG_FILE}"
+  # No resetBuildstatus: boot.sh writes the order to the cmdline on every boot,
+  # so a new one applies to DSM at its next boot without rebuilding the loader,
+  # and to the loader at its own next start.
   return
 }
 
@@ -2225,70 +2219,107 @@ function credits() {
 }
 
 ###############################################################################
-# Setting Static IP for Loader
+# Static IP for Loader/DSM: per NIC, DHCP (the default) or a static address,
+# kept by the NIC's MAC as network.<mac>. The loader takes it from dhcpcd, now
+# or at its next start; DSM at its next start, from boot.sh's cmdline.
 function staticIPMenu() {
-  ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
-  IPCON=""
-  for N in ${ETHX}; do
-    MACR="$(cat "/sys/class/net/${N}/address" 2>/dev/null | sed 's/://g')"
-    IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
-    IFS='/' read -r -a IPRA <<<"${IPR}"
-
-    MSG="Set to ${N}(${MACR}: (Delete if empty)"
-    while true; do
-      dialog --backtitle "$(backtitle)" --title "StaticIP" \
-        --form "${MSG}" 10 60 4 "address" 1 1 "${IPRA[0]}" 1 9 36 16 "netmask" 2 1 "${IPRA[1]}" 2 9 36 16 "gateway" 3 1 "${IPRA[2]}" 3 9 36 16 "dns" 4 1 "${IPRA[3]}" 4 9 36 16 \
-        2>"${TMP_PATH}/resp"
-      RET=$?
-      case ${RET} in
-      0)
-        address="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
-        netmask="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null)"
-        gateway="$(sed -n '3p' "${TMP_PATH}/resp" 2>/dev/null)"
-        dnsname="$(sed -n '4p' "${TMP_PATH}/resp" 2>/dev/null)"
-        (
-          if [ -z "${address}" ]; then
-            if [ -n "$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")" ]; then
-              echo "Deleting IP for ${N}(${MACR})"
-              if [ "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" = "1" ]; then
-                ip addr flush dev ${N}
-              fi
-              deleteConfigKey "network.${MACR}" "${USER_CONFIG_FILE}"
-              sleep 1
-            fi
-          else
-            echo "Setting IP for ${N}(${MACR}) to ${address}/${netmask}/${gateway}/${dnsname}"
-            writeConfigKey "network.${MACR}" "${address}/${netmask}/${gateway}/${dnsname}" "${USER_CONFIG_FILE}"
-            if [ "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" = "1" ]; then
-              ip addr flush dev ${N}
-              ip addr add ${address}/${netmask:-"255.255.255.0"} dev ${N}
-              if [ -n "${gateway}" ]; then
-                ip route replace default via ${gateway} dev ${N}
-              fi
-              if [ -n "${dnsname:-${gateway}}" ]; then
-                sed -i '/^nameserver /d' /etc/resolv.conf
-                echo "nameserver ${dnsname:-${gateway}}" >>/etc/resolv.conf
-              fi
-            fi
-            sleep 1
-          fi
-          resetBuildstatus
-        ) 2>&1 | dialog --backtitle "$(backtitle)" --title "StaticIP" \
-          --progressbox "Set Network ..." 20 100
-        break
-        ;;
-      1)
-        break
-        ;;
-      *)
-        break 2
-        ;;
-      esac
+  local N MACR IPR IP MASK GW DNS MODE NOW
+  while true; do
+    rm -f "${TMP_PATH}/opts"
+    touch "${TMP_PATH}/opts"
+    for N in $(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; 2>/dev/null | sort -V); do
+      MACR="$(_netif_mac "${N}")"
+      IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
+      if [ -n "${IPR}" ]; then
+        IFS='/' read -r IP MASK GW DNS <<<"${IPR}"
+        MODE="static ${IP}/$(_mask_bits "${MASK:-24}")"
+      else
+        MODE="DHCP"
+      fi
+      NOW="$(getIP "${N}")"
+      [ "$(cat "/sys/class/net/${N}/carrier" 2>/dev/null)" = "1" ] || NOW="no link"
+      printf '"%s" "%s  %-22s now: %s"\n' "${N}" "${MACR}" "${MODE}" "${NOW:-no address}" >>"${TMP_PATH}/opts"
     done
+    dialog --backtitle "$(backtitle)" --title "StaticIP for Loader/DSM" --colors \
+      --menu "Each NIC asks for its address by DHCP unless it is given a static one,\nwhich the loader and DSM both use. Choose a NIC:" 0 0 0 \
+      --file "${TMP_PATH}/opts" 2>"${TMP_PATH}/resp"
+    [ $? -ne 0 ] && break
+    N="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+    [ -n "${N}" ] && staticIPNic "${N}"
   done
-  IP="$(getIP)"
-  [ -z "${IPCON}" ] && IPCON="${IP}"
+  IPCON="$(getIP)"
   return
+}
+
+# One NIC of staticIPMenu: DHCP or Static, the address, and when to apply it.
+# 1 - ethN
+function staticIPNic() {
+  local N="${1}" MACR IPR IP MASK GW DNS MODE VALUE RET
+  MACR="$(_netif_mac "${N}")"
+  IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
+  IFS='/' read -r IP MASK GW DNS <<<"${IPR}"
+  [ -n "${IPR}" ] && MODE="static" || MODE="dhcp"
+
+  dialog --backtitle "$(backtitle)" --title "${N} (${MACR})" --default-item "${MODE}" \
+    --menu "Address of ${N}:" 0 0 0 \
+    "dhcp" "DHCP: from the network" \
+    "static" "Static: a fixed address" \
+    2>"${TMP_PATH}/resp"
+  [ $? -ne 0 ] && return
+  MODE="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+
+  VALUE=""
+  if [ "${MODE}" = "static" ]; then
+    MASK="${MASK:-255.255.255.0}"
+    while true; do
+      dialog --backtitle "$(backtitle)" --title "${N} (${MACR})" \
+        --form "Static address. No DNS server: the gateway is asked." 11 60 4 \
+        "Address" 1 1 "${IP}" 1 13 40 18 \
+        "Netmask" 2 1 "${MASK}" 2 13 40 18 \
+        "Gateway" 3 1 "${GW}" 3 13 40 18 \
+        "DNS" 4 1 "${DNS}" 4 13 40 18 \
+        2>"${TMP_PATH}/resp"
+      [ $? -ne 0 ] && return
+      IP="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null | tr -d ' ')"
+      MASK="$(sed -n '2p' "${TMP_PATH}/resp" 2>/dev/null | tr -d ' ')"
+      GW="$(sed -n '3p' "${TMP_PATH}/resp" 2>/dev/null | tr -d ' ')"
+      DNS="$(sed -n '4p' "${TMP_PATH}/resp" 2>/dev/null | tr -d ' ')"
+      VALUE="$(_static_value "${IP}" "${MASK}" "${GW}" "${DNS}")" && break
+      dialog --backtitle "$(backtitle)" --title "${N} (${MACR})" --msgbox "${VALUE}" 0 0
+    done
+  elif [ -z "${IPR}" ]; then
+    # DHCP already: nothing to change.
+    return
+  fi
+
+  dialog --backtitle "$(backtitle)" --title "${N} (${MACR})" \
+    --menu "$([ -n "${VALUE}" ] && echo "${N} to ${VALUE%%/*}" || echo "${N} back to DHCP"):" 0 0 0 \
+    "now" "Apply now: the loader at once, DSM at its next start" \
+    "reboot" "Apply after reboot: the loader and DSM at their next start" \
+    2>"${TMP_PATH}/resp"
+  [ $? -ne 0 ] && return
+  RET="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+
+  if [ -n "${VALUE}" ]; then
+    writeConfigKey "network.${MACR}" "${VALUE}" "${USER_CONFIG_FILE}"
+  else
+    deleteConfigKey "network.${MACR}" "${USER_CONFIG_FILE}"
+  fi
+  # No resetBuildstatus: boot.sh writes the addresses to the cmdline on every
+  # boot, so DSM takes a new one at its next start without a rebuild.
+
+  if [ "${RET}" = "now" ]; then
+    dialog --backtitle "$(backtitle)" --title "${N} (${MACR})" \
+      --infobox "Applying..." 3 30
+    _static_dhcpcd >/dev/null
+    _dhcpcd_reload "${N}"
+    sleep 3
+    dialog --backtitle "$(backtitle)" --title "${N} (${MACR})" \
+      --msgbox "${N} now: $(getIP "${N}" | grep . || echo "no address yet")\nDSM uses it from its next start." 0 0
+  else
+    dialog --backtitle "$(backtitle)" --title "${N} (${MACR})" \
+      --msgbox "Saved. The loader and DSM use it from their next start." 0 0
+  fi
 }
 
 ###############################################################################

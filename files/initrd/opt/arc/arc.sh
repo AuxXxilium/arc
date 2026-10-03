@@ -115,8 +115,10 @@ elif [ "${ARC_MODE}" = "config" ]; then
           write_menu_value "g" "Scaling Governor" "${GOVERNOR:-performance}"
         fi
 
-        if echo "${addons_list}" | grep -q "sortnetif"; then
-          SORTNETIF="$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
+        # sortnetif is a system addon: the order is always kept, and this picks
+        # which ports come first. One NIC has no order to pick.
+        if [ "$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' 2>/dev/null | wc -l)" -gt 1 ]; then
+          SORTNETIF="$(readConfigKey "sortnetif" "${USER_CONFIG_FILE}")"
           # A count here says nothing useful - the picker never asks about the
           # last NIC, so a complete order always falls short of the total and
           # looks half done. The order itself is shown in the picker.

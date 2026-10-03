@@ -110,6 +110,7 @@ initConfigKey "platform" "" "${USER_CONFIG_FILE}"
 initConfigKey "productver" "" "${USER_CONFIG_FILE}"
 initConfigKey "buildnum" "" "${USER_CONFIG_FILE}"
 initConfigKey "smallnum" "" "${USER_CONFIG_FILE}"
+initConfigKey "sortnetif" "" "${USER_CONFIG_FILE}"
 initConfigKey "ramdisk-hash" "" "${USER_CONFIG_FILE}"
 initConfigKey "rd-compressed" "false" "${USER_CONFIG_FILE}"
 initConfigKey "satadom" "2" "${USER_CONFIG_FILE}"
@@ -118,41 +119,39 @@ initConfigKey "time" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "usbmount" "false" "${USER_CONFIG_FILE}"
 initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 
-# Sort network interfaces
+# The NIC order's pinned MACs used to be the sortnetif addon's value. The addon
+# is a system addon now, so it is no longer in the addons map, and the next
+# confirm of the addon checklist would drop the value with it.
+if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
+  [ -z "$(readConfigKey "sortnetif" "${USER_CONFIG_FILE}")" ] &&
+    writeConfigKey "sortnetif" "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")" "${USER_CONFIG_FILE}"
+  deleteConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}"
+fi
+
+# Sort network interfaces: bus order, pinned MACs first. Always, so a port is
+# the same ethN in the loader and in DSM, which boot.sh gives the same order.
 if [ ! -f "/.dockerenv" ]; then
-  if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
-    echo -e "NIC sorting: \033[1;34menabled\033[0m"
-    _sort_netif "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")"
-    echo
-  fi
+  _sort_netif "$(readConfigKey "sortnetif" "${USER_CONFIG_FILE}")"
 fi
 
 # Read/Write IP/Mac to config
 ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
 ETHN=0
 for N in ${ETHX}; do
-  MACR="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
-  IPR="$(readConfigKey "network.${MACR}" "${USER_CONFIG_FILE}")"
-  if [ -n "${IPR}" ]; then
-    if [ ! "1" = "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-      ip link set "${N}" up 2>/dev/null || true
-    fi
-    IFS='/' read -r -a IPRA <<<"${IPR}"
-    ip addr flush dev "${N}" 2>/dev/null || true
-    ip addr add "${IPRA[0]}/${IPRA[1]:-"255.255.255.0"}" dev "${N}" 2>/dev/null || true
-    if [ -n "${IPRA[2]}" ]; then
-      ip route replace default via "${IPRA[2]}" dev "${N}" 2>/dev/null || true
-    fi
-    if [ -n "${IPRA[3]:-${IPRA[2]}}" ]; then
-      sed -i '/^nameserver /d' /etc/resolv.conf
-      echo "nameserver ${IPRA[3]:-${IPRA[2]}}" >>/etc/resolv.conf
-    fi
-    sleep 1
-  fi
+  MACR="$(_netif_mac "${N}")"
   [ "${N:0:3}" = "eth" ] && ethtool -s "${N}" wol g 2>/dev/null || true
   initConfigKey "${N}" "${MACR}" "${USER_CONFIG_FILE}"
   ETHN=$((ETHN + 1))
 done
+
+# Static addresses, by MAC: dhcpcd applies them in place of a lease. Done
+# through dhcpcd rather than with ip, as dhcpcd puts a lease address that
+# disappears back.
+STATICIF="$(_static_dhcpcd)"
+if [ -n "${STATICIF}" ]; then
+  _dhcpcd_reload ${STATICIF}
+  sleep 1
+fi
 
 # No network devices
 echo
