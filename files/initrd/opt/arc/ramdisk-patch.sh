@@ -215,15 +215,8 @@ chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: install addons"
 # sortnetif goes before misc: both run at the "patches" stage, and misc's
 # static address for the installer goes to the ifcfg of whichever interface
-# has the MAC at that moment -- the wrong one after a rename. netfix goes
-# before both: it gives a NIC that came up without a MAC its real one, and
-# the other two find NICs by MAC.
-NETFIX="$(readConfigKey "arc.netfix" "${USER_CONFIG_FILE}")"
-if [ "${NETFIX}" = "true" ]; then
-  SYSADDONS="revert netfix sortnetif misc eudev disks localrss notify mountloader"
-else
-  SYSADDONS="revert sortnetif misc eudev disks localrss notify mountloader"
-fi
+# has the MAC at that moment -- the wrong one after a rename.
+SYSADDONS="revert sortnetif misc eudev disks localrss notify mountloader"
 if [ "${KVER:0:1}" = "5" ]; then
   SYSADDONS="redpill ${SYSADDONS}"
 fi

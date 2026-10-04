@@ -69,7 +69,6 @@ initConfigKey "arc.discordnotify" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.accesstoken" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.msifix" "false" "${USER_CONFIG_FILE}"
-initConfigKey "arc.netfix" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.patch" "false" "${USER_CONFIG_FILE}"
 initConfigKey "arc.remoteassistance" "" "${USER_CONFIG_FILE}"
 initConfigKey "arc.userid" "" "${USER_CONFIG_FILE}"
@@ -127,6 +126,8 @@ if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); 
     writeConfigKey "sortnetif" "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")" "${USER_CONFIG_FILE}"
   deleteConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}"
 fi
+# netfix is gone; drop its switch.
+deleteConfigKey "arc.netfix" "${USER_CONFIG_FILE}"
 
 # Sort network interfaces: bus order, pinned MACs first. Always, so a port is
 # the same ethN in the loader and in DSM, which boot.sh gives the same order.
