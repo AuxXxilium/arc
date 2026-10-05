@@ -171,7 +171,7 @@ if [ "${KVER:0:1}" -lt 5 ]; then
   file_size_le "${VMLINUX_MOD}" | dd of="${ZIMAGE_MOD}" bs=15745134 seek=1 conv=notrunc || exit 1
   file_size_le "${VMLINUX_MOD}" | dd of="${ZIMAGE_MOD}" bs=15745244 seek=1 conv=notrunc || exit 1
 
-  RUN_SIZE=$(objdump -h "${VMLINUX_MOD}" | calc_run_size)
+  RUN_SIZE=$(objdump -h "${VMLINUX_MOD}" | calc_run_size) || exit 1
   size_le "${RUN_SIZE}" | dd of="${ZIMAGE_MOD}" bs=15745210 seek=1 conv=notrunc || exit 1
   size_le "$((16#$(crc32 "${ZIMAGE_MOD}" | awk '{print $1}') ^ 0xFFFFFFFF))" | dd of="${ZIMAGE_MOD}" conv=notrunc oflag=append || exit 1
 else
