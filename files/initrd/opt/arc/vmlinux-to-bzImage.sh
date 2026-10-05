@@ -89,7 +89,11 @@ calc_run_size() {
     return 1
   fi
 
-  read -r sizeA offsetA sizeB offsetB <<<"$(echo "${OUT}" | awk '{printf "%d %d %d %d", strtonum($1), strtonum($2), strtonum($3), strtonum($4)}')"
+  read -r sizeA offsetA sizeB offsetB <<<"${OUT//$'\n'/ }"
+  sizeA=$(printf '%d' "${sizeA}") || return 1
+  offsetA=$(printf '%d' "${offsetA}") || return 1
+  sizeB=$(printf '%d' "${sizeB}") || return 1
+  offsetB=$(printf '%d' "${offsetB}") || return 1
 
   runSize=$((offsetA + sizeA + sizeB))
 
