@@ -1,42 +1,78 @@
 /*
  * Arc Web Config.
  *
- * Tokens, shapes and layout follow arx's web UI (and through it Arc
- * Control), so the loaders' interfaces read as one family.
+ * Tokens, shapes and layout follow Ignis's interface (and through it Arc
+ * Control), so the loaders' interfaces read as one family: a tinted wash
+ * behind the whole page, a header and sidebar that sit on it with no
+ * surface of their own, white cards with rounder corners and a hairline
+ * edge, outline icons, and a white pill for the current page.
  */
 
 :root {
-    /* Tailwind zinc for every surface, and a blue-600 accent. */
-    --bg: #fafafa;             /* gray-50: the page */
-    --surface: #ffffff;        /* cards, header */
-    --surface-muted: #f4f4f5;  /* gray-100: hover, wells */
-    --border: #e4e4e7;         /* gray-200 */
-    --text: #18181b;           /* gray-900 */
-    --muted: #71717a;          /* gray-500 */
-    --primary: #2563eb;        /* blue-600: buttons */
-    --primary-dark: #1d4ed8;   /* blue-700: button hover */
-    --primary-soft: #3b82f6;   /* blue-500: the active bar */
-    --primary-tint: rgba(239, 246, 255, 0.8); /* blue-50/80: active item */
+    /* The accent as Tailwind blue, in channels so a rule can pick its own
+       alpha. Arc's accent stays blue-600; the wash and the active pill's bar
+       are drawn from the same scale. */
+    --accent-50: 239 246 255;
+    --accent-100: 219 234 254;
+    --accent-200: 191 219 254;
+    --accent-300: 147 197 253;
+    --accent-400: 96 165 250;
+    --accent-500: 59 130 246;
+    --accent-600: 37 99 235;
+    --accent-700: 29 78 216;
+    --accent-800: 30 64 175;
+    --accent-900: 30 58 138;
+    --accent-950: 23 37 84;
+    --accent-on: 255 255 255;
+
+    /* Tailwind zinc for every surface. */
+    --bg: #f5f5f7;                            /* the ground under the wash */
+    --surface: #ffffff;                       /* cards, dialogs, menus */
+    --surface-2: rgba(250, 250, 250, 0.8);    /* zinc-50: dialog footer band */
+    --surface-muted: #f4f4f5;                 /* zinc-100: hover, wells */
+    --chrome-hover: rgba(255, 255, 255, 0.7); /* a header button on the wash */
+    --border: rgba(228, 228, 231, 0.8);       /* zinc-200: hairlines */
+    --input-border: #d4d4d8;                  /* zinc-300 */
+    --text: #18181b;                          /* zinc-900 */
+    --text-2: #3f3f46;                        /* zinc-700: labels, nav */
+    --muted: #71717a;                         /* zinc-500 */
+    --primary: rgb(var(--accent-600));
+    --primary-dark: rgb(var(--accent-700));
+    --accent-text: rgb(var(--accent-700));
     --danger: #dc2626;
     --success: #16a34a;
-    --shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    --wash-1: rgb(var(--accent-100) / 0.45);
+    --wash-2: rgb(var(--accent-200) / 0.22);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    --ring: rgba(0, 0, 0, 0.05);
+
+    color-scheme: light;
 }
 
 /*
- * The page and the sidebar are gray-900, the header and the cards one step
- * up at gray-800 -- that step is what separates a card from the page, so
- * the two must not be the same. Hover goes a step lighter again.
+ * Dark: the same two washes from the deep end of the scale on a near-black
+ * zinc ground, with the cards one step up at zinc-800 -- that step is what
+ * separates a card from the page.
  */
 html.dark {
-    --bg: #18181b;             /* gray-900 */
-    --surface: #27272a;        /* gray-800 */
-    --surface-muted: #3f3f46;  /* gray-700: hover */
-    --border: #3f3f46;         /* gray-700 */
-    --text: #ffffff;
-    --muted: #a1a1aa;          /* gray-400 */
-    --primary-soft: #60a5fa;   /* blue-400 */
-    --primary-tint: rgba(23, 37, 84, 0.5); /* blue-950/50 */
-    --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    --bg: #131316;
+    --surface: #27272a;                       /* zinc-800 */
+    --surface-2: rgba(24, 24, 27, 0.3);       /* zinc-900/30 */
+    --surface-muted: #3f3f46;                 /* zinc-700: hover */
+    --chrome-hover: rgba(255, 255, 255, 0.1);
+    --border: rgba(63, 63, 70, 0.7);          /* zinc-700/70 */
+    --input-border: #52525b;                  /* zinc-600 */
+    --text: #fafafa;
+    --text-2: #e4e4e7;                        /* zinc-200 */
+    --muted: #a1a1aa;                         /* zinc-400 */
+    --accent-text: rgb(var(--accent-300));
+    --wash-1: rgb(var(--accent-900) / 0.22);
+    --wash-2: rgb(var(--accent-950) / 0.25);
+    --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    --ring: rgba(255, 255, 255, 0.05);
+
+    color-scheme: dark;
 }
 
 * {
@@ -49,17 +85,50 @@ html, body, #app {
     height: 100%;
 }
 
+/* The ground behind the whole app: a near-white with two soft washes of the
+   accent in opposite corners, so the white cards and the sidebar's active
+   pill have something to lift off. The header and sidebar are transparent
+   and sit on it. */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
         "Helvetica Neue", Arial, sans-serif;
-    background: var(--surface);
+    background-color: var(--bg);
+    background-image:
+        radial-gradient(60rem 40rem at 0% 0%, var(--wash-1), transparent 60%),
+        radial-gradient(50rem 40rem at 100% 100%, var(--wash-2), transparent 60%);
+    background-attachment: fixed;
     color: var(--text);
     min-height: 100%;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
 }
 
 button, input, select {
     font: inherit;
+}
+
+/* Line icons: one 24x24 grid and a shared stroke, coloured by currentColor
+   so a glyph follows the text it stands beside. */
+.icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.icon-sm {
+    width: 16px;
+    height: 16px;
+}
+
+.icon-solid {
+    fill: currentColor;
+    stroke: none;
 }
 
 /* ------------------------------------------------------------- shell --- */
@@ -71,14 +140,14 @@ button, input, select {
     overflow: hidden;
 }
 
+/* No background or bottom border of its own: the bar sits on the wash with
+   the sidebar, so the cards are the only white on the page. */
 .topbar {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: 60px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    height: 64px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -91,19 +160,23 @@ button, input, select {
     display: flex;
     align-items: center;
     gap: 16px;
+    min-width: 0;
 }
 
 .topbar-mark {
     width: 40px;
     height: 40px;
-    border-radius: 8px;
+    border-radius: 12px;
     object-fit: cover;
     display: block;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
 }
 
 .topbar-label {
     display: grid;
     gap: 2px;
+    min-width: 0;
 }
 
 .topbar-title {
@@ -115,19 +188,20 @@ button, input, select {
 
 .topbar-subtitle {
     color: var(--muted);
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .topbar-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 
 .topbar-info {
     margin-right: 4px;
     color: var(--muted);
     font-size: 13px;
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
 
@@ -137,19 +211,28 @@ button, input, select {
     border-radius: 8px;
     border: 0;
     background: none;
-    color: var(--muted);
-    font-size: 18px;
+    color: #52525b;
     cursor: pointer;
     display: grid;
     place-items: center;
     transition: background-color 0.15s;
 }
 
-.theme-toggle:hover {
-    background: var(--surface-muted);
+html.dark .theme-toggle {
+    color: #d4d4d8;
 }
 
-/* The sun is yellow in dark mode, as in Arc Control's header. */
+.theme-toggle:hover {
+    background: var(--chrome-hover);
+}
+
+.theme-toggle:focus-visible,
+.account-button:focus-visible {
+    outline: 2px solid rgb(var(--accent-500));
+    outline-offset: 1px;
+}
+
+/* The sun is yellow in dark mode, as in Ignis's header. */
 html.dark .theme-toggle.theme-icon {
     color: #eab308;
 }
@@ -157,16 +240,17 @@ html.dark .theme-toggle.theme-icon {
 .main-layout {
     display: flex;
     flex: 1;
-    margin-top: 60px;
+    margin-top: 64px;
+    min-height: 0;
     overflow: hidden;
 }
 
+/* Transparent, so it reads as part of the ground rather than as a second
+   panel. */
 .sidebar {
-    width: 288px;
+    width: 256px;
     flex-shrink: 0;
-    background: var(--bg);
-    border-right: 1px solid var(--border);
-    padding: 12px 16px 16px;
+    padding: 8px 12px 16px;
     overflow-y: auto;
 }
 
@@ -175,75 +259,144 @@ html.dark .theme-toggle.theme-icon {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: var(--muted);
+    color: #a1a1aa;
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    padding: 12px 16px 4px;
+    padding: 16px 12px 6px;
+}
+
+html.dark .sidebar-header {
+    color: #71717a;
+}
+
+.sidebar-header:first-child {
+    padding-top: 8px;
 }
 
 .sidebar-header::before {
-    content: "▼";
-    font-size: 9px;
-    line-height: 1;
-}
-
-.nav-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    width: 100%;
-    padding: 6px 16px;
-    border: 1px solid transparent;
-    border-radius: 18px;
-    background: none;
-    color: var(--text);
-    font-size: 15px;
-    font-weight: 600;
-    text-align: left;
-    cursor: pointer;
-    margin-bottom: 4px;
-    transition: background-color 0.2s, transform 0.2s;
-}
-
-.nav-item:hover:not(.active) {
-    background: color-mix(in srgb, var(--surface) 50%, transparent);
-    transform: translateY(-2px);
-}
-
-.nav-item.active {
-    background: var(--primary-tint);
-    box-shadow: inset 4px 0 0 0 color-mix(in srgb, var(--primary-soft) 65%, transparent);
-}
-
-/* The item's icon: a large emoji in a square box. */
-.nav-step {
-    width: 44px;
-    height: 44px;
-    display: grid;
-    place-items: center;
-    font-size: 24px;
-    line-height: 1;
-    flex-shrink: 0;
+    content: "";
+    width: 0;
+    height: 0;
+    border-left: 3.5px solid transparent;
+    border-right: 3.5px solid transparent;
+    border-top: 5px solid currentColor;
 }
 
 /*
- * Unlike arx's pages, which scroll, the terminal and file manager fill the
- * space they are given, so the content area is a column the panel fills
- * rather than a scroller.
+ * Transparent until hovered. The current page is a white pill lifted off
+ * the wash, with its label and glyph in the accent and the accent bar down
+ * its left edge -- an inset shadow rather than a border, so it follows the
+ * pill's rounded corners and takes no width from the row.
+ */
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 12px;
+    background: none;
+    color: var(--text-2);
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.25;
+    text-align: left;
+    cursor: pointer;
+    margin-bottom: 2px;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.nav-item:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.6);
+}
+
+html.dark .nav-item:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-item:focus-visible {
+    outline: 2px solid rgb(var(--accent-500));
+    outline-offset: -2px;
+}
+
+.nav-item.active {
+    background: var(--surface);
+    color: rgb(var(--accent-700));
+    font-weight: 600;
+    box-shadow:
+        inset 4px 0 0 0 rgb(var(--accent-500) / 0.65),
+        0 0 0 1px var(--ring),
+        var(--shadow-sm);
+}
+
+html.dark .nav-item.active {
+    color: rgb(var(--accent-300));
+    box-shadow:
+        inset 4px 0 0 0 rgb(var(--accent-400) / 0.65),
+        0 0 0 1px var(--ring),
+        var(--shadow-sm);
+}
+
+/* The item's glyph: grey until the row is hovered or current. */
+.nav-step {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    color: var(--muted);
+    transition: color 0.15s;
+}
+
+.nav-item:hover .nav-step {
+    color: var(--text-2);
+}
+
+.nav-item.active .nav-step {
+    color: rgb(var(--accent-600));
+}
+
+html.dark .nav-item.active .nav-step {
+    color: rgb(var(--accent-400));
+}
+
+.nav-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Opens somewhere else rather than selecting a page. */
+.nav-external {
+    color: #a1a1aa;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+html.dark .nav-external {
+    color: #71717a;
+}
+
+/*
+ * The terminal and file manager fill the space they are given, so the
+ * content area is a column the panel fills rather than a scroller.
  */
 .content-area {
     flex: 1;
     min-width: 0;
-    padding: 24px;
-    background: var(--bg);
+    padding: 16px 24px 24px 12px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
 }
 
-/* A page: a large icon, the title and a line under it, above a card. */
+/* A page: its glyph on an accent tile, the title and a line under it,
+   above a card. */
 .panel {
     flex: 1;
     min-height: 0;
@@ -255,13 +408,24 @@ html.dark .theme-toggle.theme-icon {
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .panel-icon {
-    font-size: 36px;
-    line-height: 1;
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
     flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    color: rgb(var(--accent-on));
+    background: linear-gradient(to bottom right, rgb(var(--accent-400)), rgb(var(--accent-600)));
+    box-shadow: 0 4px 6px -1px rgb(var(--accent-500) / 0.2), 0 2px 4px -2px rgb(var(--accent-500) / 0.2);
+}
+
+.panel-icon .icon {
+    width: 22px;
+    height: 22px;
 }
 
 .panel-title {
@@ -276,13 +440,14 @@ html.dark .theme-toggle.theme-icon {
     margin-top: 2px;
 }
 
+/* White on the wash, rounded and bordered with a hairline rather than
+   shadowed: with the wash behind it a shadow only muddies the edge. */
 .panel-body {
     flex: 1;
     min-height: 0;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    border-radius: 16px;
     overflow: hidden;
 }
 
@@ -305,7 +470,7 @@ html.dark .theme-toggle.theme-icon {
 }
 
 .sysinfo-content {
-    padding: 16px;
+    padding: 16px 20px;
     color: var(--text);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
     font-size: 13px;
@@ -322,32 +487,33 @@ html.dark .theme-toggle.theme-icon {
 
 .field-label {
     display: block;
-    color: var(--muted);
-    font-size: 13px;
-    margin-bottom: 6px;
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 4px;
 }
 
 .field-input {
     width: 100%;
     padding: 8px 12px;
-    border: 1px solid #d4d4d8;
+    border: 1px solid var(--input-border);
     border-radius: 8px;
     background: #fff;
     color: var(--text);
     font-size: 14px;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-/* Filled a step lighter than the card it sits in: on a gray-800 card a
-   gray-800 input has no edge at all. */
+/* Filled a step lighter than the card it sits in: on a zinc-800 card a
+   zinc-800 input has no edge at all. */
 html.dark .field-input {
     background: #3f3f46;
-    border-color: #52525b;
 }
 
 .field-input:focus {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    border-color: transparent;
+    box-shadow: 0 0 0 2px rgb(var(--accent-500));
 }
 
 .field-input::placeholder {
@@ -360,28 +526,41 @@ html.dark .field-input {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     padding: 8px 16px;
     border-radius: 8px;
     border: 0;
     cursor: pointer;
     font-weight: 500;
     font-size: 14px;
-    transition: background-color 0.2s;
+    line-height: 1.43;
+    transition: background-color 0.15s, box-shadow 0.15s;
+}
+
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.danger-button:focus-visible {
+    outline: 2px solid rgb(var(--accent-500));
+    outline-offset: 2px;
 }
 
 .primary-button {
     background: var(--primary);
-    color: #fff;
+    color: rgb(var(--accent-on));
+    box-shadow: var(--shadow-sm);
 }
 
 .primary-button:hover:not(:disabled) {
     background: var(--primary-dark);
 }
 
-/* A filled grey, not an outline. */
+/* White with a hairline outline rather than a grey fill: a grey block read
+   as a disabled primary. The outline is an inset ring rather than a border
+   so a secondary is exactly as tall as the primary beside it. */
 .secondary-button {
-    background: #e4e4e7;
+    background: #fff;
     color: #27272a;
+    box-shadow: inset 0 0 0 1px var(--input-border), var(--shadow-sm);
 }
 
 html.dark .secondary-button {
@@ -390,7 +569,7 @@ html.dark .secondary-button {
 }
 
 .secondary-button:hover:not(:disabled) {
-    background: #d4d4d8;
+    background: #fafafa;
 }
 
 html.dark .secondary-button:hover:not(:disabled) {
@@ -417,25 +596,39 @@ html.dark .secondary-button:hover:not(:disabled) {
     width: 100%;
 }
 
+/* Callouts take the cards' rounder corners. Status colours stay fixed
+   whatever the accent: green is done and red is failed. */
 .message-box {
-    padding: 12px 14px;
-    border-radius: 8px;
-    font-size: 13px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
     line-height: 1.5;
     margin-bottom: 16px;
     border: 1px solid transparent;
 }
 
 .message-error {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: var(--danger);
-    color: var(--danger);
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #991b1b;
+}
+
+html.dark .message-error {
+    background: rgba(127, 29, 29, 0.2);
+    border-color: #7f1d1d;
+    color: #fca5a5;
 }
 
 .message-success {
-    background: rgba(16, 185, 129, 0.1);
-    border-color: var(--success);
-    color: var(--success);
+    background: #f0fdf4;
+    border-color: #86efac;
+    color: #166534;
+}
+
+html.dark .message-success {
+    background: rgba(20, 83, 45, 0.2);
+    border-color: #14532d;
+    color: #86efac;
 }
 
 /* -------------------------------------------------------------- login --- */
@@ -445,9 +638,8 @@ html.dark .secondary-button:hover:not(:disabled) {
     inset: 0;
     display: grid;
     place-items: center;
-    background: var(--bg);
     z-index: 2000;
-    padding: 16px;
+    padding: 24px 16px;
     overflow-y: auto;
 }
 
@@ -478,7 +670,7 @@ html.dark .secondary-button:hover:not(:disabled) {
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 24px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-sm);
 }
 
 .login-card .button-full {
@@ -520,47 +712,63 @@ html.dark .secondary-button:hover:not(:disabled) {
     right: 0;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 12px;
     box-shadow: var(--shadow);
-    padding: 6px;
+    padding: 4px;
     z-index: 1100;
 }
 
 .power-menu-items {
-    min-width: 170px;
+    min-width: 176px;
 }
 
 .account-items {
-    min-width: 220px;
+    min-width: 224px;
 }
 
 .power-item,
 .account-item {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: 100%;
-    padding: 9px 12px;
+    padding: 6px 10px;
     border: 0;
-    border-radius: 10px;
+    border-radius: 8px;
     background: none;
-    color: var(--text);
+    color: var(--text-2);
     font-size: 14px;
     text-align: left;
     cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
 }
 
 .power-item:hover,
 .account-item:hover {
     background: var(--surface-muted);
+    color: var(--text);
 }
 
+.power-item.danger,
 .account-item.danger {
     color: var(--danger);
 }
 
+html.dark .power-item.danger,
+html.dark .account-item.danger {
+    color: #f87171;
+}
+
 .power-item.danger:hover,
 .account-item.danger:hover {
-    background: var(--danger);
-    color: #fff;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+html.dark .power-item.danger:hover,
+html.dark .account-item.danger:hover {
+    background: rgba(127, 29, 29, 0.3);
+    color: #fca5a5;
 }
 
 /* Borderless until hovered, like the other header buttons. */
@@ -569,42 +777,44 @@ html.dark .secondary-button:hover:not(:disabled) {
     align-items: center;
     gap: 8px;
     padding: 4px 8px 4px 4px;
-    border-radius: 8px;
+    border-radius: 12px;
     cursor: pointer;
     transition: background-color 0.15s;
 }
 
 .account-button:hover {
-    background: var(--surface-muted);
+    background: var(--chrome-hover);
 }
 
 .account-avatar {
     width: 32px;
     height: 32px;
     border-radius: 999px;
-    background: var(--primary);
-    color: #fff;
+    background: linear-gradient(to bottom right, rgb(var(--accent-400)), rgb(var(--accent-600)));
+    color: rgb(var(--accent-on));
     font-size: 13px;
     font-weight: 700;
     display: grid;
     place-items: center;
     flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
 }
 
 .account-name {
     font-size: 13px;
+    font-weight: 500;
     color: var(--text);
 }
 
 .account-caret {
-    font-size: 10px;
+    display: flex;
     color: var(--muted);
 }
 
 .account-head {
     padding: 8px 10px 10px;
     border-bottom: 1px solid var(--border);
-    margin-bottom: 6px;
+    margin: 0 2px 4px;
 }
 
 .account-head-name {
@@ -625,7 +835,9 @@ html.dark .secondary-button:hover:not(:disabled) {
     inset: 0;
     z-index: 2000;
     overflow-y: auto;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.4);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -637,9 +849,13 @@ html.dark .secondary-button:hover:not(:disabled) {
     width: 100%;
     max-width: 672px;
     background: var(--surface);
-    border-radius: 8px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 0 0 1px var(--ring), 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     overflow: hidden;
+}
+
+html.dark .modal {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.6);
 }
 
 .modal.modal-sm {
@@ -650,7 +866,8 @@ html.dark .secondary-button:hover:not(:disabled) {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 16px;
+    gap: 16px;
+    padding: 12px 20px;
     border-bottom: 1px solid var(--border);
 }
 
@@ -662,15 +879,23 @@ html.dark .secondary-button:hover:not(:disabled) {
 
 .modal-close {
     display: inline-flex;
-    padding: 0;
+    padding: 4px;
+    margin-right: -4px;
     border: 0;
+    border-radius: 8px;
     background: none;
-    color: var(--muted);
+    color: #a1a1aa;
     cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
 }
 
 .modal-close:hover {
-    color: var(--text);
+    color: #52525b;
+    background: var(--surface-muted);
+}
+
+html.dark .modal-close:hover {
+    color: #e4e4e7;
 }
 
 .modal-close svg {
@@ -679,31 +904,33 @@ html.dark .secondary-button:hover:not(:disabled) {
 }
 
 .modal-body {
-    padding: 16px;
+    padding: 16px 20px;
     max-height: 32rem;
     overflow-y: auto;
     font-size: 14px;
-    color: var(--text);
+    line-height: 1.5;
+    color: var(--text-2);
 }
 
 .modal-body .field-group:last-child {
     margin-bottom: 0;
 }
 
+/* The footer is tinted a step off the body, like a card's title band. */
 .modal-foot {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    padding: 12px 16px;
+    padding: 12px 20px;
+    background: var(--surface-2);
     border-top: 1px solid var(--border);
 }
 
 /* --------------------------------------------------------- responsive --- */
 
 /*
- * arx hides its sidebar on a phone and walks the steps with back/next;
- * here the sidebar is the only way between the tools, so it becomes a
- * scrolling strip above the content instead.
+ * The sidebar is the only way between the tools, so on a narrow screen it
+ * becomes a scrolling strip of pills above the content.
  */
 @media (max-width: 900px) {
     .main-layout {
@@ -716,11 +943,9 @@ html.dark .secondary-button:hover:not(:disabled) {
         gap: 4px;
         overflow-x: auto;
         overflow-y: hidden;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        padding: 8px 12px;
-        /* Still scrolls by swipe and wheel; the bar was a bright strip
-           across a dark header. */
+        padding: 4px 16px 8px;
+        flex-shrink: 0;
+        /* Still scrolls by swipe and wheel. */
         scrollbar-width: none;
     }
 
@@ -738,17 +963,21 @@ html.dark .secondary-button:hover:not(:disabled) {
         white-space: nowrap;
         margin-bottom: 0;
         gap: 8px;
-        padding: 4px 12px;
+        padding: 6px 12px 6px 10px;
+        font-size: 14px;
+    }
+
+    .nav-label {
+        overflow: visible;
     }
 
     .nav-step {
-        width: 32px;
-        height: 32px;
-        font-size: 20px;
+        width: 24px;
+        height: 24px;
     }
 
     .content-area {
-        padding: 16px;
+        padding: 8px 16px 16px;
     }
 
     .topbar {
@@ -773,7 +1002,14 @@ html.dark .secondary-button:hover:not(:disabled) {
     }
 
     .panel-icon {
-        font-size: 28px;
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+    }
+
+    .panel-icon .icon {
+        width: 18px;
+        height: 18px;
     }
 }
 

@@ -4,15 +4,16 @@ const { useState, useEffect } = preactHooks;
 const SESSION_KEY = 'arc_session_token';
 const USERNAME_KEY = 'arc_username';
 
+// `icon` names a glyph in GLYPHS below.
 const APPS = [
-  { id: 'terminal', title: 'Terminal', desc: 'SSH terminal access', icon: '🖥️' },
-  { id: 'files', title: 'File Manager', desc: 'Browse and manage files', icon: '📂' },
-  { id: 'sysinfo', title: 'System Info', desc: 'Hardware and software details', icon: '🩺' }
+  { id: 'terminal', title: 'Terminal', desc: 'SSH terminal access', icon: 'terminal' },
+  { id: 'files', title: 'File Manager', desc: 'Browse and manage files', icon: 'folder' },
+  { id: 'sysinfo', title: 'System Info', desc: 'Hardware and software details', icon: 'info' }
 ];
 
 const LINKS = [
-  { title: 'Documentation', desc: 'Guides and reference', icon: '📚', url: 'https://xpenology.tech/documentation' },
-  { title: 'Arc Management', desc: 'Manage your Arc systems', icon: '🛠️', url: 'https://arc.xpenology.tech' }
+  { title: 'Documentation', desc: 'Guides and reference', icon: 'book', url: 'https://xpenology.tech/documentation' },
+  { title: 'Arc Management', desc: 'Manage your Arc systems', icon: 'cog', url: 'https://arc.xpenology.tech' }
 ];
 
 const DEFAULT_CONFIG = { DUFS_PORT: '7304', TTYD_PORT: '7681' };
@@ -51,8 +52,46 @@ const parseConfig = (text) => {
 
 const DARK_MODE_KEY = 'arc_dark_mode';
 
+// The file manager is dufs on its own port, so it cannot read this page's
+// localStorage. A cookie is shared across ports, so the choice is left
+// there for it to read on every page it loads; the message repaints the one
+// already open when the switch is flipped.
+const THEME_COOKIE = 'arc_theme';
+
 const CLOSE_ICON = h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' },
   h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M6 18L18 6M6 6l12 12' })
+);
+
+// Line icons, after Ignis's: one 24x24 grid and a shared stroke, coloured by
+// currentColor. They replace the emoji the sidebar and page headings
+// carried, which brought their own palette and rendered differently on
+// every platform. Each entry is a list of path data.
+const GLYPHS = {
+  terminal: ['M4 17l6-5-6-5', 'M12 19h8'],
+  folder: ['M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z'],
+  info: ['M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18z', 'M12 11v5', 'M12 8h.01'],
+  globe: ['M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18z', 'M3 12h18', 'M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18'],
+  book: ['M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z', 'M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z'],
+  cog: ['M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z', 'M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z'],
+  power: ['M12 3v9', 'M6.6 6.6a9 9 0 1 0 10.8 0'],
+  restart: ['M21 12a9 9 0 1 1-3-6.7', 'M21 3v6h-6'],
+  key: ['M15.5 3a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11z', 'M11.5 12.5L3 21', 'M6 18l2 2', 'M8.5 15.5l2 2'],
+  logout: ['M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4', 'M16 17l5-5-5-5', 'M21 12H9'],
+  chevron: ['M6 9l6 6 6-6']
+};
+
+const glyph = (name, small) =>
+  h('svg', { className: small ? 'icon icon-sm' : 'icon', viewBox: '0 0 24 24', 'aria-hidden': 'true' },
+    (GLYPHS[name] || []).map((d) => h('path', { d }))
+  );
+
+// The theme switch's sun and moon, solid as in Ignis's header.
+const SUN_ICON = h('svg', { className: 'icon icon-solid', viewBox: '0 0 20 20', 'aria-hidden': 'true' },
+  h('path', { 'fill-rule': 'evenodd', 'clip-rule': 'evenodd', d: 'M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z' })
+);
+
+const MOON_ICON = h('svg', { className: 'icon icon-solid', viewBox: '0 0 20 20', 'aria-hidden': 'true' },
+  h('path', { d: 'M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z' })
 );
 
 // arx's dialog: a header with the title and a close button, the content,
@@ -125,6 +164,13 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
     localStorage.setItem(DARK_MODE_KEY, darkMode);
+    const theme = darkMode ? 'dark' : 'light';
+    document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=31536000; SameSite=Lax`;
+    document.querySelectorAll('.embed-container iframe').forEach((frame) => {
+      try {
+        if (frame.contentWindow) frame.contentWindow.postMessage({ arcTheme: theme }, '*');
+      } catch (error) { /* not loaded yet: it reads the cookie when it is */ }
+    });
   }, [darkMode]);
 
   useEffect(() => {
@@ -341,10 +387,13 @@ function App() {
     return `http://${serverIp}:${port}`;
   }
 
-  const navItem = (key, icon, label, desc, active, onClick) =>
+  // An external entry opens somewhere else rather than selecting a page,
+  // so it never takes the active treatment and says so with an arrow.
+  const navItem = (key, icon, label, desc, active, onClick, external) =>
     h('button', { key, type: 'button', className: `nav-item${active ? ' active' : ''}`, title: desc, onClick },
-      h('span', { className: 'nav-step' }, icon),
-      label
+      h('span', { className: 'nav-step' }, glyph(icon)),
+      h('span', { className: 'nav-label' }, label),
+      external && h('span', { className: 'nav-external', 'aria-hidden': 'true' }, '↗')
     );
 
   const current = APPS.find((app) => app.id === activeApp) || APPS[0];
@@ -357,17 +406,17 @@ function App() {
             navItem(app.id, app.icon, app.title, app.desc, activeApp === app.id, () => setActiveApp(app.id))
           ),
           h('div', { className: 'sidebar-header' }, 'DSM'),
-          navItem('dsm', '🌐', 'Go to DSM', 'Open Xpenology DSM', false,
-            () => window.open(`http://${serverIp}:5000`, '_blank')),
+          navItem('dsm', 'globe', 'Go to DSM', 'Open Xpenology DSM', false,
+            () => window.open(`http://${serverIp}:5000`, '_blank'), true),
           h('div', { className: 'sidebar-header' }, 'External'),
           LINKS.map((link) =>
-            navItem(link.url, link.icon, link.title, link.desc, false, () => window.open(link.url, '_blank'))
+            navItem(link.url, link.icon, link.title, link.desc, false, () => window.open(link.url, '_blank'), true)
           )
         ),
         h('main', { className: 'content-area' },
           h('section', { className: 'panel' },
             h('div', { className: 'panel-head' },
-              h('span', { className: 'panel-icon' }, current.icon),
+              h('span', { className: 'panel-icon' }, glyph(current.icon)),
               h('div', null,
                 h('div', { className: 'panel-title' }, current.title),
                 h('div', { className: 'panel-desc' }, current.desc)
@@ -431,7 +480,7 @@ function App() {
                 onClick: () => setDarkMode(!darkMode),
                 title: darkMode ? 'Switch to light mode' : 'Switch to dark mode'
               },
-              darkMode ? '☀' : '☾'
+              darkMode ? SUN_ICON : MOON_ICON
             )
           ),
           h('form', { className: 'login-card', onSubmit: handleLogin },
@@ -490,10 +539,10 @@ function App() {
               onClick: () => setDarkMode(!darkMode),
               title: darkMode ? 'Switch to light mode' : 'Switch to dark mode'
             },
-            darkMode ? '☀' : '☾'
+            darkMode ? SUN_ICON : MOON_ICON
           ),
           h('details', { className: 'power-menu' },
-            h('summary', { className: 'theme-toggle', title: 'Restart or shut down' }, '⏻'),
+            h('summary', { className: 'theme-toggle', title: 'Restart or shut down' }, glyph('power')),
             h('div', { className: 'power-menu-items' },
               h('button', {
                 className: 'power-item',
@@ -502,7 +551,7 @@ function App() {
                   closeMenu(event.target);
                   setPowerAction('reboot');
                 }
-              }, 'Restart'),
+              }, glyph('restart', true), 'Restart'),
               h('button', {
                 className: 'power-item danger',
                 type: 'button',
@@ -510,14 +559,14 @@ function App() {
                   closeMenu(event.target);
                   setPowerAction('poweroff');
                 }
-              }, 'Shut down')
+              }, glyph('power', true), 'Shut down')
             )
           ),
           h('details', { className: 'account-menu' },
             h('summary', { className: 'account-button', title: `Signed in as ${username || 'root'}` },
               h('span', { className: 'account-avatar' }, (username || 'root').charAt(0).toUpperCase()),
               h('span', { className: 'account-name' }, username || 'root'),
-              h('span', { className: 'account-caret' }, '▾')
+              h('span', { className: 'account-caret' }, glyph('chevron', true))
             ),
             h('div', { className: 'account-items' },
               h('div', { className: 'account-head' },
@@ -531,7 +580,7 @@ function App() {
                   closeMenu(event.target);
                   setPasswordOpen(true);
                 }
-              }, 'Change password'),
+              }, glyph('key', true), 'Change password'),
               h('button', {
                 className: 'account-item danger',
                 type: 'button',
@@ -539,7 +588,7 @@ function App() {
                   closeMenu(event.target);
                   handleLogout();
                 }
-              }, 'Sign out')
+              }, glyph('logout', true), 'Sign out')
             )
           )
         )
