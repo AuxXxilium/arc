@@ -1,73 +1,235 @@
+/*
+ * The file manager: dufs's own page, restyled to match Arc Web Config,
+ * which embeds it. The look is Ignis's -- zinc surfaces, a blue accent,
+ * hairline borders, rounder corners, white square action buttons and a
+ * quiet sentence-case table header.
+ *
+ * Inside Arc Web Config the page sits in a card already, so it is drawn as
+ * that card's contents (html.embedded): a tinted title band for the
+ * toolbar and the table flush below it. Opened on its own it gets the wash
+ * behind it and the listing on a card of its own.
+ *
+ * Dark follows Arc Web Config's switch when it has been flipped (html.dark
+ * or html.light, from the arc_theme cookie it leaves), and the system's
+ * preference otherwise.
+ */
+
+:root {
+  --accent-100: 219 234 254;
+  --accent-200: 191 219 254;
+  --accent-400: 96 165 250;
+  --accent-500: 59 130 246;
+  --accent-600: 37 99 235;
+  --accent-700: 29 78 216;
+  --accent-900: 30 58 138;
+  --accent-950: 23 37 84;
+
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --band: #fafafa;                       /* zinc-50: the toolbar band */
+  --row-hover: #fafafa;
+  --border: rgba(228, 228, 231, 0.8);
+  --input-border: #d4d4d8;
+  --control: #ffffff;
+  --control-hover: #fafafa;
+  --text: #18181b;
+  --text-2: #3f3f46;
+  --muted: #71717a;
+  --faint: #a1a1aa;
+  --accent-text: rgb(var(--accent-700));
+  --folder: rgb(var(--accent-500));
+  --wash-1: rgb(var(--accent-100) / 0.45);
+  --wash-2: rgb(var(--accent-200) / 0.22);
+  --head-glass: rgba(245, 245, 247, 0.8);
+
+  color-scheme: light;
+}
+
+html.dark {
+  --bg: #131316;
+  --surface: #27272a;
+  --band: #242427;
+  --row-hover: rgba(255, 255, 255, 0.03);
+  --border: rgba(63, 63, 70, 0.7);
+  --input-border: #52525b;
+  --control: #3f3f46;
+  --control-hover: #52525b;
+  --text: #fafafa;
+  --text-2: #d4d4d8;
+  --muted: #a1a1aa;
+  --faint: #71717a;
+  --accent-text: rgb(var(--accent-400));
+  --folder: rgb(var(--accent-400));
+  --wash-1: rgb(var(--accent-900) / 0.22);
+  --wash-2: rgb(var(--accent-950) / 0.25);
+  --head-glass: rgba(19, 19, 22, 0.8);
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light) {
+    --bg: #131316;
+    --surface: #27272a;
+    --band: #242427;
+    --row-hover: rgba(255, 255, 255, 0.03);
+    --border: rgba(63, 63, 70, 0.7);
+    --input-border: #52525b;
+    --control: #3f3f46;
+    --control-hover: #52525b;
+    --text: #fafafa;
+    --text-2: #d4d4d8;
+    --muted: #a1a1aa;
+    --faint: #71717a;
+    --accent-text: rgb(var(--accent-400));
+    --folder: rgb(var(--accent-400));
+    --wash-1: rgb(var(--accent-900) / 0.22);
+    --wash-2: rgb(var(--accent-950) / 0.25);
+    --head-glass: rgba(19, 19, 22, 0.8);
+
+    color-scheme: dark;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
-  font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
   line-height: 1.5;
-  background-color: #2c2c2c;
+  color: var(--text);
+  background-color: var(--bg);
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
   /* prevent premature breadcrumb wrapping on mobile */
   min-width: 538px;
+  min-height: 100vh;
   margin: 0;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(60rem 40rem at 0% 0%, var(--wash-1), transparent 60%),
+    radial-gradient(50rem 40rem at 100% 100%, var(--wash-2), transparent 60%);
+  background-attachment: fixed;
+}
+
+html.embedded,
+html.embedded body {
+  background: var(--surface);
+}
+
+/* The icons are drawn as filled outlines; they take the colour of the
+   control they sit in. */
+svg {
+  fill: currentColor;
 }
 
 .hidden {
   display: none !important;
 }
 
+/* ------------------------------------------------------------ toolbar --- */
+
 .head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  padding: 0.6em 1em;
+  gap: 8px 12px;
+  padding: 10px 24px;
   position: sticky;
   top: 0;
-  background-color: white;
+  z-index: 10;
+  background-color: var(--head-glass);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+/* Inside Arc Web Config: the card's tinted title band. */
+html.embedded .head {
+  padding: 10px 16px;
+  background: var(--band);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-bottom: 1px solid var(--border);
 }
 
 .breadcrumb {
-  font-size: 1.25em;
-  padding-right: 0.6em;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 500;
   word-break: break-all;
 }
 
 .breadcrumb>a {
-  color: #0366d6;
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
   text-decoration: none;
+  border-radius: 6px;
+  transition: color 0.15s;
 }
 
 .breadcrumb>a:hover {
-  text-decoration: underline;
+  color: var(--accent-text);
 }
 
 /* final breadcrumb */
 .breadcrumb>b {
-  color: #24292e;
+  color: var(--text);
+  font-weight: 600;
 }
 
 .breadcrumb>.separator {
-  color: #586069;
-  padding: 0 0.25em;
+  color: var(--faint);
+  padding: 0 6px;
 }
 
 .breadcrumb svg {
-  height: 100%;
-  fill: rgba(3, 47, 98, 0.5);
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 .toolbox {
   display: flex;
-  margin-right: 10px;
+  gap: 6px;
 }
 
-.toolbox>a,
-.toolbox>div {
-  /* vertically align with breadcrumb text */
-  height: 1.1rem;
+/* White square buttons with a hairline ring, as Ignis's action buttons. */
+.toolbox .control,
+.login-btn,
+.logout-btn,
+.save-btn {
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 8px;
+  color: var(--text-2);
+  background: var(--control);
+  box-shadow: inset 0 0 0 1px var(--input-border), 0 1px 2px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s, color 0.15s;
 }
 
 .toolbox .control {
-  cursor: pointer;
-  padding-left: 0.25em;
+  width: 32px;
+}
+
+.toolbox .control:hover,
+.login-btn:hover,
+.logout-btn:hover {
+  background: var(--control-hover);
+  color: var(--text);
 }
 
 .upload-file input {
@@ -75,64 +237,180 @@ body {
 }
 
 .upload-file label {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 
 .searchbar {
   display: flex;
   flex-wrap: nowrap;
+  align-items: center;
   width: 246px;
-  height: 22px;
-  background-color: #fafafa;
-  transition: all .15s;
-  border: 1px #ddd solid;
-  border-radius: 15px;
-  margin-bottom: 2px;
+  height: 32px;
+  background-color: var(--control);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--input-border);
+  transition: box-shadow 0.15s;
+}
+
+.searchbar:focus-within {
+  box-shadow: inset 0 0 0 2px rgb(var(--accent-500));
 }
 
 .searchbar #search {
-  box-sizing: border-box;
   width: 100%;
   height: 100%;
-  font-size: 16px;
-  line-height: 16px;
-  padding: 1px;
+  font: inherit;
+  font-size: 14px;
+  padding: 0 10px 0 0;
+  color: var(--text);
   background-color: transparent;
   border: none;
   outline: none;
 }
 
 .searchbar .icon {
-  color: #9a9a9a;
-  padding: 3px 3px;
+  display: flex;
+  color: var(--faint);
+  padding: 0 8px 0 10px;
   cursor: pointer;
 }
 
+.toolbox-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.login-btn,
+.logout-btn {
+  padding: 0 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Save is the editor's one action, so it is the primary. */
+.save-btn {
+  width: 32px;
+  color: #fff;
+  background: rgb(var(--accent-600));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.save-btn:hover {
+  background: rgb(var(--accent-700));
+}
+
+.save-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* The glyph carries its own grey fill; the button's colour wins. */
+.save-btn svg path {
+  fill: currentColor;
+}
+
+.user-name {
+  padding-left: 0;
+}
+
+/* ------------------------------------------------------------ listing --- */
+
 .main {
-  padding: 0 1em;
-  background-color: #2c2c2c;
+  padding: 8px 24px 24px;
 }
 
-.empty-folder {
-  font-style: italic;
+html.embedded .main {
+  padding: 0;
 }
 
+/* On its own, the listing is a card on the wash. */
+.index-page {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+html.embedded .index-page {
+  border: 0;
+  border-radius: 0;
+}
+
+.empty-folder,
+.not-editable {
+  padding: 32px 16px;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* dufs leaves the note blank; say something rather than show nothing. */
+.empty-folder:empty::before {
+  content: "Nothing to show here.";
+}
+
+.uploaders-table,
+.paths-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.uploaders-table {
+  border-bottom: 1px solid var(--border);
+}
+
+/* A quiet sentence-case header in grey, roomier rows, and a tint under the
+   row the pointer is on. */
 .uploaders-table th,
 .paths-table th {
   text-align: left;
-  font-weight: unset;
-  color: #5c5c5c;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
   white-space: nowrap;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
 }
 
 .uploaders-table td,
 .paths-table td {
   white-space: nowrap;
+  padding: 7px 12px;
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.uploaders-table tr:last-child td,
+.paths-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.uploaders-table th:first-child,
+.uploaders-table td:first-child,
+.paths-table th:first-child,
+.paths-table td:first-child {
+  padding-left: 16px;
+}
+
+.uploaders-table th:last-child,
+.uploaders-table td:last-child,
+.paths-table th:last-child,
+.paths-table td:last-child {
+  padding-right: 16px;
 }
 
 .uploaders-table .cell-status {
   width: 80px;
-  padding-left: 0.6em;
 }
 
 .cell-status span {
@@ -140,50 +418,77 @@ body {
 }
 
 .paths-table thead a {
-  color: unset;
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
   text-decoration: none;
+  transition: color 0.15s;
+}
+
+.paths-table thead a:hover {
+  color: var(--text);
 }
 
 .paths-table thead a>span {
-  padding-left: 2px;
+  display: inline-flex;
+  padding-left: 4px;
+  opacity: 0.7;
+}
+
+.paths-table tbody tr,
+.uploaders-table tr {
+  transition: background-color 0.12s;
 }
 
 .paths-table tbody tr:hover {
-  background-color: #fafafa;
+  background-color: var(--row-hover);
 }
 
+/* Left-aligned so the download, move and delete buttons stand in the same
+   columns whether or not a row also has edit. */
 .paths-table .cell-actions {
-  width: 90px;
-  display: flex;
-  padding-left: 0.5em;
+  width: 1%;
 }
 
 .paths-table .cell-mtime {
-  width: 120px;
-  padding-left: 0.5em;
+  width: 140px;
+  color: var(--muted);
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
 
 .paths-table .cell-size {
   text-align: right;
-  width: 70px;
-  padding-left: 0.5em;
+  width: 90px;
+  color: var(--muted);
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
-}
-
-.path svg {
-  height: 16px;
-  fill: rgba(3, 47, 98, 0.5);
-  padding-right: 0.5em;
-  vertical-align: text-top;
 }
 
 .path {
   list-style: none;
 }
 
+.path.cell-icon {
+  width: 1%;
+  padding-right: 0;
+}
+
+.path svg {
+  display: block;
+  height: 16px;
+  color: var(--faint);
+}
+
+/* A folder in the accent, so the folders stand out of a long list. Picked by
+   the shape's own viewBox, which only the folder glyphs use. */
+.path svg[viewBox="0 0 14 16"] {
+  color: var(--folder);
+}
+
 .path a {
-  color: #0366d6;
+  color: var(--text);
+  font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
@@ -191,118 +496,103 @@ body {
   text-decoration: none;
   max-width: calc(100vw - 375px);
   min-width: 170px;
+  transition: color 0.15s;
 }
 
 .path a:hover {
-  text-decoration: underline;
+  color: var(--accent-text);
 }
 
+/* Quiet until pointed at, then the same white square as the toolbar's. */
 .action-btn {
-  padding-right: 0.3em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 2px;
+  vertical-align: middle;
+  border-radius: 8px;
+  color: var(--muted);
   cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
-.uploaders-table {
-  padding: 0.5em 0;
+.action-btn a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+}
+
+.action-btn:hover {
+  color: var(--text);
+  background: var(--control);
+  box-shadow: inset 0 0 0 1px var(--input-border), 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .uploader {
   padding-right: 1em;
 }
 
-.editor {
-  width: 100%;
-  height: calc(100vh - 5rem);
-  border: 1px solid #ced4da;
-  outline: none;
-  padding: 5px;
-}
-
-.toolbox-right {
-  margin-left: auto;
-  margin-right: 2em;
-}
-
-.login-btn {
-  cursor: pointer;
-}
-
-.save-btn {
-  cursor: pointer;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.logout-btn {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-}
-
-.user-name {
-  padding-left: 3px;
-}
-
-.not-editable {
-  font-style: italic;
+.upload-status {
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 
 .retry-btn {
   cursor: pointer;
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------- editor --- */
+
+.editor-page {
+  padding-top: 8px;
+}
+
+html.embedded .editor-page {
+  padding: 16px;
+}
+
+.editor {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 100px);
+  padding: 12px 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  outline: none;
+  resize: vertical;
+  transition: box-shadow 0.15s;
+}
+
+html.embedded .editor {
+  height: calc(100vh - 86px);
+}
+
+.editor:focus {
+  box-shadow: 0 0 0 2px rgb(var(--accent-500));
+}
+
+.editor-page iframe {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
 }
 
 @media (min-width: 768px) {
   .path a {
     min-width: 400px;
-  }
-}
-
-/* dark theme */
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #000;
-  }
-
-  html,
-  .breadcrumb>b,
-  .searchbar #search {
-    color: #fff;
-  }
-
-  .uploaders-table th,
-  .paths-table th {
-    color: #ddd;
-  }
-
-  svg,
-  .path svg,
-  .breadcrumb svg {
-    fill: #fff;
-  }
-
-  .head {
-    background-color: #2c2c2c;
-  }
-
-  .searchbar {
-    background-color: #2c2c2c;
-    border-color: #fff6;
-  }
-
-  .searchbar svg {
-    fill: #fff6;
-  }
-
-  .path a {
-    color: #3191ff;
-  }
-
-  .paths-table tbody tr:hover {
-    background-color: #1a1a1a;
-  }
-
-  .editor {
-    background: black;
-    color: white;
   }
 }

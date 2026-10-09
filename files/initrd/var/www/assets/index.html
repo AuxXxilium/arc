@@ -6,6 +6,29 @@
   <meta name="viewport" content="width=device-width" />
   <link rel="icon" type="image/x-icon" href="__ASSETS_PREFIX__favicon.ico">
   <link rel="stylesheet" href="__ASSETS_PREFIX__index.css">
+  <script>
+    // Arc Web Config embeds this page and leaves its theme in a cookie
+    // (cookies are shared across ports, its localStorage is not); it posts
+    // the new one when its switch is flipped. Neither: the system decides.
+    (function () {
+      var root = document.documentElement;
+      function apply(theme) {
+        root.classList.toggle('dark', theme === 'dark');
+        root.classList.toggle('light', theme === 'light');
+      }
+      var match = document.cookie.match(/(?:^|;\s*)arc_theme=(dark|light)/);
+      if (match) apply(match[1]);
+      try {
+        if (window.self !== window.top) root.classList.add('embedded');
+      } catch (e) {
+        root.classList.add('embedded');
+      }
+      window.addEventListener('message', function (event) {
+        var theme = event.data && event.data.arcTheme;
+        if (event.source === window.parent && (theme === 'dark' || theme === 'light')) apply(theme);
+      });
+    })();
+  </script>
 </head>
 
 <body>
