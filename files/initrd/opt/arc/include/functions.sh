@@ -998,7 +998,12 @@ function sendWebhook() {
 
   [ -z "${URL}" ] && return 1
 
-  curl -skL -X POST -H "Content-Type: application/json" -d "{\"title\":\"${MSGT}\", \"text\":\"${MSGC}\"}" "${URL}" >/dev/null 2>&1
+  # Discord's webhooks post "content" and answer title and text with 400
+  local DATA="{\"title\":\"${MSGT}\", \"text\":\"${MSGC}\"}"
+  case "${URL}" in
+  *discord.com/api/webhooks* | *discordapp.com/api/webhooks*) DATA="{\"content\":\"**${MSGT}**: ${MSGC}\"}" ;;
+  esac
+  curl -skL -X POST -H "Content-Type: application/json" -d "${DATA}" "${URL}" >/dev/null 2>&1
   return $?
 }
 

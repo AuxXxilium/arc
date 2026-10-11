@@ -249,7 +249,10 @@ for ADDON in "${!ADDONS[@]}"; do
   PARAMS=""
   if [ "${ADDON}" = "notification" ]; then
     WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
-    [ "${WEBHOOKNOTIFY}" = "true" ] && WEBHOOK="$(readConfigKey "arc.webhook" "${USER_CONFIG_FILE}")"
+    [ "${WEBHOOKNOTIFY}" = "true" ] && WEBHOOK="$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")"
+    # Quoted for its addons.sh line, where a bare & or ; would end the command.
+    Q="'\\''"
+    [ -n "${WEBHOOK}" ] && WEBHOOK="'${WEBHOOK//\'/${Q}}'"
     DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
     [ "${DISCORDNOTIFY}" = "true" ] && DISCORDUSERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
     PARAMS="${WEBHOOK:-false} ${DISCORDUSERID:-false}"
