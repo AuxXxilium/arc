@@ -1003,7 +1003,7 @@ function sendWebhook() {
   case "${URL}" in
   *discord.com/api/webhooks* | *discordapp.com/api/webhooks*) DATA="{\"content\":\"**${MSGT}**: ${MSGC}\"}" ;;
   esac
-  curl -skL -X POST -H "Content-Type: application/json" -d "${DATA}" "${URL}" >/dev/null 2>&1
+  curl -skL -m 15 -X POST -H "Content-Type: application/json" -d "${DATA}" "${URL}" >/dev/null 2>&1
   return $?
 }
 
@@ -1019,7 +1019,7 @@ function sendDiscord() {
 
   local MESSAGE="**${MSGT}**: ${MSGC}"
   local ENCODED_MSG=$(echo "${MESSAGE}" | jq -sRr @uri)
-  curl -skL "https://arc.auxxxilium.tech/notify.php?id=${USERID}&message=${ENCODED_MSG}" >/dev/null 2>&1
+  curl -skL -m 15 "https://arc.auxxxilium.tech/notify.php?id=${USERID}&message=${ENCODED_MSG}" >/dev/null 2>&1
   return $?
 }
 

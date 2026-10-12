@@ -382,6 +382,19 @@ else
   checkNIC || true
   echo
 
+  # As the notification addon's "DSM (Arc x.y) is running @ ..." once DSM
+  # is up, without the interface. init.sh's own notification is never
+  # reached on a DSM boot.
+  if [ -n "${IPCON}" ] && [ ! -f "/.dockerenv" ]; then
+    if [ "$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")" = "true" ]; then
+      sendWebhook "$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")" "DSM (${ARC_TITLE}) is booting @ ${IPCON}" || true
+    fi
+    if [ "$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")" = "true" ]; then
+      DISCORDUSER="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
+      [ -n "${DISCORDUSER}" ] && sendDiscord "${DISCORDUSER}" "DSM (${ARC_TITLE}) is booting @ ${IPCON}" || true
+    fi
+  fi
+
   # Executes DSM kernel via KEXEC
   if [ -f "${MOD_ZIMAGE_FILE}" ] && [ -f "${MOD_RDGZ_FILE}" ]; then
     kexec -l "${MOD_ZIMAGE_FILE}" --initrd "${MOD_RDGZ_FILE}" --command-line="${CMDLINE_LINE}" >"${LOG_FILE}" 2>&1 || die "Failed to load DSM Kernel!"
