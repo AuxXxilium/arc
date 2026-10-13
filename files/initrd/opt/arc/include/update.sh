@@ -193,6 +193,9 @@ function updateLoader() {
       # The theme ships as a whole file set; unzip only overwrites, so drop it
       # first to avoid orphans from a previous theme release.
       rm -rf "${GRUB_PATH}/theme"
+      # GRUB itself comes in p3/grub-update (see updateGrub); a leftover from an
+      # update that did not install it must not mix with this one.
+      rm -rf "${PART3_PATH}/grub-update"
       mkdir -p "${ADDONS_PATH}" "${CONFIGS_PATH}" "${CUSTOM_PATH}" "${LKMS_PATH}" "${MODULES_PATH}" "${PATCH_PATH}"
 
       echo "Extracting files from update.zip..."
@@ -253,6 +256,12 @@ function updateLoader() {
     fi
   fi
 
+  if ! updateGrub; then
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+      --infobox "GRUB could not be updated completely!\nIf the loader does not boot, write the image again." 0 0
+    sleep 5
+  fi
+
   # The release brought its own module packs, which can add or drop modules
   # from one release to the next, so the selection is made again from them.
   reselectModules
@@ -270,6 +279,82 @@ function updateLoader() {
     sleep 3
     rebootTo config
   fi
+}
+
+###############################################################################
+# Update GRUB from the update zip. GRUB travels there as p3/grub-update:
+#   bootcode.img         the release image up to p1: MBR boot code and core.img
+#   EFI/BOOT/BOOT*.EFI   the EFI loaders
+#   boot/grub/<target>/  the modules, one directory per target
+# not under p1/, where an older Arc would extract BIOS modules next to the
+# boot code it leaves in place, and that GRUB does not start. It goes on the
+# loader in pairs that must match: the EFI modules with the EFI loaders, and
+# the BIOS modules with the boot code. The BIOS pair stays as it is when the
+# disk's boot code is not GRUB's (a GPT disk, another boot manager) or
+# core.img does not fit before p1; the old GRUB keeps working there.
+function updateGrub() {
+  local SRC="${PART3_PATH}/grub-update"
+  local T F SIZE RET=0
+  [ -d "${SRC}" ] || return 0
+
+  for T in i386-efi x86_64-efi; do
+    replaceGrubDir "${SRC}/boot/grub/${T}" "${GRUB_PATH}/${T}" || RET=1
+  done
+  for F in "${SRC}/EFI/BOOT/"*; do
+    [ -f "${F}" ] || continue
+    case "${F,,}" in *.efi) ;; *) continue ;; esac
+    mkdir -p "${PART1_PATH}/EFI/BOOT"
+    { cp -f "${F}" "${PART1_PATH}/EFI/BOOT/$(basename "${F}").part" &&
+      mv -f "${PART1_PATH}/EFI/BOOT/$(basename "${F}").part" "${PART1_PATH}/EFI/BOOT/$(basename "${F}")"; } || RET=1
+  done
+
+  if [ ${RET} -eq 0 ] && [ -d "${SRC}/boot/grub/i386-pc" ] &&
+    checkGrubBootCode "${LOADER_DISK}" "${SRC}/bootcode.img"; then
+    if replaceGrubDir "${SRC}/boot/grub/i386-pc" "${GRUB_PATH}/i386-pc"; then
+      # core.img into the gap before p1, then the MBR's boot code: its first
+      # 440 bytes, so the disk signature and partition table stay.
+      SIZE=$(stat -c%s "${SRC}/bootcode.img")
+      { dd if="${SRC}/bootcode.img" of="${LOADER_DISK}" bs=512 skip=1 seek=1 count=$((SIZE / 512 - 1)) conv=notrunc,fsync 2>/dev/null &&
+        dd if="${SRC}/bootcode.img" of="${LOADER_DISK}" bs=440 count=1 conv=notrunc,fsync 2>/dev/null; } || RET=1
+    else
+      RET=1
+    fi
+  fi
+
+  sync
+  rm -rf "${SRC}"
+  return ${RET}
+}
+
+# Put a copy of ${1} at ${2}. The copy is made beside ${2} first, so ${2} is
+# the old directory or the whole new one, never half of each.
+function replaceGrubDir() {
+  [ -d "${1}" ] || return 0
+  rm -rf "${2}.new" "${2}.old"
+  cp -r "${1}" "${2}.new" || { rm -rf "${2}.new"; return 1; }
+  if [ -d "${2}" ]; then
+    mv -f "${2}" "${2}.old" || { rm -rf "${2}.new"; return 1; }
+  fi
+  mv -f "${2}.new" "${2}" || return 1
+  rm -rf "${2}.old"
+}
+
+# Whether ${2}, the release image up to p1, can go on disk ${1}: both are MBR
+# disks with GRUB's boot code, and it ends before the disk's p1 begins.
+function checkGrubBootCode() {
+  local DISK="${1}" CODE="${2}" F I SIZE P1START
+  [ -b "${DISK}" ] && [ -f "${CODE}" ] || return 1
+  SIZE=$(stat -c%s "${CODE}" 2>/dev/null || echo 0)
+  [ "${SIZE}" -ge 1024 ] && [ $((SIZE % 512)) -eq 0 ] || return 1
+  for F in "${CODE}" "${DISK}"; do
+    [ "$(od -An -tx1 -j510 -N2 "${F}" | tr -d ' \n')" = "55aa" ] || return 1
+    head -c 440 "${F}" | grep -aq "GRUB" || return 1
+  done
+  for I in 0 1 2 3; do
+    [ "$(od -An -tx1 -j$((446 + 16 * I + 4)) -N1 "${DISK}" | tr -d ' \n')" = "ee" ] && return 1
+  done
+  P1START=$(od -An -tu4 -j454 -N4 "${DISK}" | tr -d ' \n')
+  [ -n "${P1START}" ] && [ $((P1START * 512)) -ge "${SIZE}" ]
 }
 
 ###############################################################################

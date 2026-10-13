@@ -153,6 +153,23 @@ jobs:
           sudo cp -rf "files/p3/"* "/tmp/p3"
           sudo sync
 
+          # GRUB for Update Loader (updateGrub in update.sh): the image up to
+          # p1 -- MBR boot code and core.img --, the EFI loaders and the
+          # modules, as p3/grub-update in the update zip only. Not under p1/:
+          # an older Arc would extract BIOS modules there that do not match
+          # the boot code it leaves in place, and that GRUB does not start.
+          echo "Stage GRUB for the update"
+          GRUB_UPDATE="files/p3/grub-update"
+          rm -rf "${GRUB_UPDATE}"
+          mkdir -p "${GRUB_UPDATE}/boot/grub" "${GRUB_UPDATE}/EFI/BOOT"
+          for T in i386-pc i386-efi x86_64-efi; do
+            [ -d "/tmp/p1/boot/grub/${T}" ] && cp -r "/tmp/p1/boot/grub/${T}" "${GRUB_UPDATE}/boot/grub/"
+          done
+          find "/tmp/p1/EFI/BOOT" -maxdepth 1 -iname 'boot*.efi' -exec cp {} "${GRUB_UPDATE}/EFI/BOOT/" \;
+          P1START="$(od -An -tu4 -j454 -N4 "${IMAGE_FILE}" | tr -d ' \n')"
+          dd if="${IMAGE_FILE}" of="${GRUB_UPDATE}/bootcode.img" bs=512 count="${P1START}" status=none
+          [ -f "${GRUB_UPDATE}/boot/grub/i386-pc/normal.mod" ] && ls "${GRUB_UPDATE}/EFI/BOOT/"* >/dev/null || exit 1
+
           echo "Unmount image file"
           sudo umount "/tmp/p1"
           sudo umount "/tmp/p3"
