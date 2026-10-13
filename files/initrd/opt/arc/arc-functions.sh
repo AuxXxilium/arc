@@ -3650,7 +3650,15 @@ function getnet() {
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
 
-  if [ "${ARC_PATCH}" = "user" ]; then
+  if [ "${ARC_PATCH}" = "user" ] && [ "${ARC_MODE}" != "config" ]; then
+    # An automated build (after an update, say) has nobody to type MACs: keep
+    # the ones set while configuring, and a NIC added since keeps its own.
+    for N in ${ETHX}; do
+      MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
+      [ "${#MAC}" -ne 12 ] && MAC="$(cat "/sys/class/net/${N}/address" 2>/dev/null | sed 's/://g')"
+      writeConfigKey "${N}" "$(echo "${MAC}" | tr '[:upper:]' '[:lower:]')" "${USER_CONFIG_FILE}"
+    done
+  elif [ "${ARC_PATCH}" = "user" ]; then
     for N in ${ETHX}; do
       while true; do
         dialog --backtitle "$(backtitle)" --title "Mac Setting" \

@@ -136,23 +136,17 @@ function updateLoader() {
       FILE_SIZE="$(githubAssetSizeRetry "${API_URL}" "${TAG}" "update-${TAG}.zip" || true)"
 
       if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
-        dialog --backtitle "$(backtitle)" --title "Update Loader" \
-          --infobox "Failed to retrieve file size. Aborting update." 3 50
-        sleep 3
+        updateAborted "Failed to retrieve file size. Aborting update."
         return 1
       fi
 
       if [ "${TMP_AVAILABLE}" -lt "${FILE_SIZE}" ]; then
-        dialog --backtitle "$(backtitle)" --title "Update Loader" \
-          --infobox "Not enough space or RAM.\nRequired: $((FILE_SIZE / 1024 / 1024)) MB\nAvailable: $((TMP_AVAILABLE / 1024 / 1024)) MB." 5 50
-        sleep 3
+        updateAborted "Not enough space or RAM.\nRequired: $((FILE_SIZE / 1024 / 1024)) MB\nAvailable: $((TMP_AVAILABLE / 1024 / 1024)) MB."
         return 1
       fi
 
       if ! downloadWithGauge "${URL}" "${TMP_PATH}/update.zip" "Download Update: ${TAG}..."; then
-        dialog --backtitle "$(backtitle)" --title "Update Loader" \
-          --infobox "Download failed! Check network and try again." 3 50
-        sleep 3
+        updateAborted "Download failed! Check network and try again."
         return 1
       fi
     fi
@@ -160,16 +154,13 @@ function updateLoader() {
 
   if validateZipFile "${TMP_PATH}/update.zip" 1048576; then
     if [ "${TAG}" != "zip" ]; then
-      HASH="$(curl -skL "${UPDATE_URL}/${TAG}/update-${TAG}.hash" | awk '{print $1}')"
-      if [ "${BETA}" = "true" ]; then
-        HASH="$(curl -skL "${BETA_URL}/${TAG}/update-${TAG}.hash" | awk '{print $1}')"
-      fi
+      local HASH_URL="${UPDATE_URL}/${TAG}/update-${TAG}.hash"
+      [ "${BETA}" = "true" ] && HASH_URL="${BETA_URL}/${TAG}/update-${TAG}.hash"
+      HASH="$(curl -skL --retry 3 --retry-delay 2 --retry-all-errors "${HASH_URL}" | awk '{print $1}')"
 
       if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
-        dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-          --infobox "Update failed - Hash mismatch!\nTry again later." 0 0
-        sleep 3
         rm -f "${TMP_PATH}/update.zip"
+        updateAborted "Update failed - Hash mismatch!\nTry again later."
         return 1
       fi
     fi
@@ -245,15 +236,13 @@ function updateLoader() {
       fi
     fi
   else
-    if [ "${ARC_MODE}" = "update" ]; then
-      rm -f "${TMP_PATH}/update.zip"
-      dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
-        --infobox "Update failed!\nReboot to Config Mode..." 0 0
-      sleep 3
-      rebootTo config
+    rm -f "${TMP_PATH}/update.zip"
+    if [ -z "${TAG}" ]; then
+      updateAborted "Could not find the latest release. Aborting update."
     else
-      return 1
+      updateAborted "Update failed - the update file is broken!\nTry again later."
     fi
+    return 1
   fi
 
   if ! updateGrub; then
@@ -279,6 +268,23 @@ function updateLoader() {
     sleep 3
     rebootTo config
   fi
+}
+
+# An update that failed before anything on the loader was changed. Update mode
+# runs with nobody at the console, so it boots DSM with the build the loader
+# already has rather than stop at the shell or in Config Mode; from the menu the
+# caller gets the failure back.
+function updateAborted() {
+  if [ "${ARC_MODE}" = "update" ]; then
+    dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+      --infobox "${1}\nBooting DSM with the current Loader..." 0 0
+    sleep 5
+    rebootTo dsm
+  fi
+  dialog --backtitle "$(backtitle)" --title "Update Loader" --aspect 18 \
+    --infobox "${1}" 0 0
+  sleep 3
+  return 1
 }
 
 ###############################################################################
