@@ -211,28 +211,16 @@ echo "Create addons.sh" >>"${LOG_FILE}"
 } >"${RAMDISK_PATH}/addons/addons.sh"
 chmod +x "${RAMDISK_PATH}/addons/addons.sh"
 
-# An addon's arguments on its addons.sh line. notification's are where it
-# sends to: the webhook URL and the Discord user, each "false" when off.
-addonParams() {
-  local WEBHOOK="" DISCORDUSERID="" Q
-  [ "${1}" = "notification" ] || return 0
-  [ "$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")" = "true" ] && WEBHOOK="$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")"
-  # Quoted for its addons.sh line, where a bare & or ; would end the command.
-  Q="'\\''"
-  [ -n "${WEBHOOK}" ] && WEBHOOK="'${WEBHOOK//\'/${Q}}'"
-  [ "$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")" = "true" ] && DISCORDUSERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
-  echo "${WEBHOOK:-false} ${DISCORDUSERID:-false}"
-}
-
 # System Addons
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: install addons"
 # sortnetif goes before misc: both run at the "patches" stage, and misc's
 # static address for the installer goes to the ifcfg of whichever interface
 # has the MAC at that moment -- the wrong one after a rename.
 # notification is DSM's notification category and the daemon behind the
-# webhook, Discord and DSM notifications and the loader update check. It took
-# over notify and updatenotify, and is installed whether or not a webhook or
-# Discord is on: those only change its arguments.
+# webhook, Discord and DSM notifications and the loader update check, all set
+# in Arc Control. It took over notify and updatenotify. The loader's own
+# webhook and Discord settings are for its messages before DSM runs and are
+# not passed to it.
 SYSADDONS="revert sortnetif misc eudev disks localrss notification mountloader"
 if [ "${KVER:0:1}" = "5" ]; then
   SYSADDONS="redpill ${SYSADDONS}"
@@ -252,7 +240,7 @@ for ADDON in ${SYSADDONS}; do
       echo "ERROR: System addon ${ADDON} install.sh missing after install" | tee -a "${LOG_FILE}"
       exit 1
     fi
-    echo "/addons/${ADDON}.sh \${1} $(addonParams "${ADDON}")" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || { echo "ERROR: Addon ${ADDON} failed to register" | tee -a "${LOG_FILE}" && exit 1; }
+    echo "/addons/${ADDON}.sh \${1}" >>"${RAMDISK_PATH}/addons/addons.sh" 2>>"${LOG_FILE}" || { echo "ERROR: Addon ${ADDON} failed to register" | tee -a "${LOG_FILE}" && exit 1; }
   else
     echo "ERROR: System addon ${ADDON} failed to install" | tee -a "${LOG_FILE}"
     exit 1
@@ -264,7 +252,7 @@ for ADDON in "${!ADDONS[@]}"; do
   # Once a user addon, now a system one (sortnetif, notification): installed
   # above already.
   [[ " ${SYSADDONS} " == *" ${ADDON} "* ]] && continue
-  PARAMS="$(addonParams "${ADDON}")"
+  PARAMS=""
   if ! isAddonAvailable "${ADDON}" "${PLATFORM}"; then
     echo "WARNING: User addon ${ADDON} not available for ${PLATFORM}, skipping" | tee -a "${LOG_FILE}"
     continue

@@ -3976,14 +3976,12 @@ function getnetinfo() {
 }
 
 ###############################################################################
-# Bootloader notifications
+# Bootloader notifications: the loader's own messages, before DSM runs - Arc's
+# config mode and DSM booting. Read at boot, so no rebuild is needed. DSM's
+# notifications, from the notification system addon, are set in Arc Control.
 function notificationMenu() {
   WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
   DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
-  # Remember the current Settings to detect real changes
-  WEBHOOKNOTIFYOLD="${WEBHOOKNOTIFY}"
-  WEBHOOKURLOLD="$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")"
-  DISCORDNOTIFYOLD="${DISCORDNOTIFY}"
   # Submenu for notification type
   dialog --backtitle "$(backtitle)" --title "Notification Type" \
     --menu "Choose notification type:" 10 60 2 \
@@ -4066,13 +4064,6 @@ function notificationMenu() {
       esac
       DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
     done
-  fi
-  # Force a Rebuild only if the Notification Settings really changed
-  WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
-  WEBHOOKURL="$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")"
-  DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
-  if [ "${WEBHOOKNOTIFY}" != "${WEBHOOKNOTIFYOLD}" ] || [ "${WEBHOOKURL}" != "${WEBHOOKURLOLD}" ] || [ "${DISCORDNOTIFY}" != "${DISCORDNOTIFYOLD}" ]; then
-    resetBuildstatus
   fi
   return
 }
