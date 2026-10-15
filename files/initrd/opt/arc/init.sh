@@ -128,6 +128,11 @@ if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); 
 fi
 # netfix is gone; drop its switch.
 deleteConfigKey "arc.netfix" "${USER_CONFIG_FILE}"
+# notification is a system addon, which took over notify and updatenotify:
+# none of the three is the user's to choose any more.
+deleteConfigKey "addons.notification" "${USER_CONFIG_FILE}"
+deleteConfigKey "addons.notify" "${USER_CONFIG_FILE}"
+deleteConfigKey "addons.updatenotify" "${USER_CONFIG_FILE}"
 
 # Sort network interfaces: bus order, pinned MACs first. Always, so a port is
 # the same ethN in the loader and in DSM, which boot.sh gives the same order.

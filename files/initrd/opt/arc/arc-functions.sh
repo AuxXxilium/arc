@@ -276,8 +276,7 @@ function arcVersion() {
 
   if [ "${ONLYVERSION}" != "true" ] && [ "${ARC_MODE}" = "config" ]; then
     USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
-    ADDONS_LIST="$(readConfigMap "addons" "${USER_CONFIG_FILE}")"
-    if [ -n "${USERID}" ] && ! echo "${ADDONS_LIST}" | grep -q "notification"; then
+    if [ -n "${USERID}" ] && [ "$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")" != "true" ]; then
       MSG="Enable Discord Notification for Loader Mode and DSM Status?"
       dialog --backtitle "$(backtitle)" --colors --title "Notification" \
         --yesno "${MSG}" 5 65
@@ -604,7 +603,6 @@ function init_default_addons() {
   initConfigKey "addons.mountloader" "" "${USER_CONFIG_FILE}"
   initConfigKey "addons.reducelogs" "" "${USER_CONFIG_FILE}"
   initConfigKey "addons.storagepanel" "" "${USER_CONFIG_FILE}"
-  initConfigKey "addons.updatenotify" "" "${USER_CONFIG_FILE}"
   if [[ "${NVMEDRIVES}" -gt 0 && "${BUS}" != "nvme" ]] || [[ "${NVMEDRIVES}" -gt 1 && "${BUS}" = "nvme" ]]; then
     if [ "${KVER:0:1}" = "5" ] && [ "${SATADRIVES}" -eq 0 ] && [ "${SASDRIVES}" -eq 0 ] && [ "${BUS}" != "sata" ]; then
       initConfigKey "addons.nvmesystem" "" "${USER_CONFIG_FILE}"
@@ -641,11 +639,6 @@ function init_default_addons() {
   fi
   if [ "${EXTERNALCONTROLLER}" = "true" ]; then
     initConfigKey "addons.smartctl" "" "${USER_CONFIG_FILE}"
-  fi
-  WEBHOOKNOTIFY="$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")"
-  DISCORDNOTIFY="$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")"
-  if [ "${WEBHOOKNOTIFY}" = "true" ] || [ "${DISCORDNOTIFY}" = "true" ]; then
-    initConfigKey "addons.notification" "" "${USER_CONFIG_FILE}"
   fi
 }
 
@@ -4018,7 +4011,6 @@ function notificationMenu() {
         # ok-button
         writeConfigKey "arc.webhooknotify" "true" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.webhookurl" "${WEBHOOKURL}" "${USER_CONFIG_FILE}"
-        writeConfigKey "addons.notification" "" "${USER_CONFIG_FILE}"
         break
         ;;
       3)
@@ -4029,7 +4021,6 @@ function notificationMenu() {
         # cancel-button
         writeConfigKey "arc.webhooknotify" "false" "${USER_CONFIG_FILE}"
         writeConfigKey "arc.webhookurl" "" "${USER_CONFIG_FILE}"
-        deleteConfigKey "addons.notification" "${USER_CONFIG_FILE}"
         break
         ;;
       *)
@@ -4057,7 +4048,6 @@ function notificationMenu() {
       0)
         # ok-button
         writeConfigKey "arc.discordnotify" "true" "${USER_CONFIG_FILE}"
-        writeConfigKey "addons.notification" "" "${USER_CONFIG_FILE}"
         break
         ;;
       3)
@@ -4067,7 +4057,6 @@ function notificationMenu() {
       1)
         # cancel-button
         writeConfigKey "arc.discordnotify" "false" "${USER_CONFIG_FILE}"
-        deleteConfigKey "addons.notification" "${USER_CONFIG_FILE}"
         break
         ;;
       *)
