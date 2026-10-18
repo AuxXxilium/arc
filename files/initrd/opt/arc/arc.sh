@@ -13,7 +13,7 @@
 . "${ARC_PATH}/arc-functions.sh"
 
 # Check System
-onlineCheck
+updateCheck
 systemCheck
 readData
 

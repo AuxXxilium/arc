@@ -233,6 +233,8 @@ fi
 [ "${RESTARTED}" = "1" ] && sleep 5
 IPCON=""
 checkNIC
+onlineCheck
+echo -e "Offline Mode: \033[1;34m$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")\033[0m"
 echo
 
 # Tell webterminal that the loader is ready

@@ -742,35 +742,45 @@ function livepatch() {
 }
 
 ###############################################################################
-# Check NTP and Keyboard Layout
+# Region, Timezone, Keyboard Layout and Offline Mode, once per boot (init.sh).
+# The region lookup is the online check: no answer means offline. The user
+# can switch Offline Mode in the menu afterwards, until the next boot.
 function onlineCheck() {
-  REGION="$(curl -m 10 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f1)"
-  TIMEZONE="$(curl -m 10 -v "http://ip-api.com/line?fields=timezone" 2>/dev/null | tr -d '\n' | cut -d '/' -f2)"
-  KEYMAP="$(curl -m 10 -v "http://ip-api.com/line?fields=countryCode" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
-  [ -z "${KEYMAP}" ] && KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
-  [ -z "${KEYMAP}" ] && KEYMAP="us"
-  if [ -n "${REGION}" ] && [ -n "${TIMEZONE}" ]; then
+  local GEO TZ COUNTRY
+  GEO="$(curl -m 10 -s "http://ip-api.com/line?fields=countryCode,timezone" 2>/dev/null)"
+  TZ="$(echo "${GEO}" | grep -m1 -E '^[A-Za-z_]+/[A-Za-z0-9_/+-]+$')"
+  COUNTRY="$(echo "${GEO}" | grep -m1 -E '^[A-Z]{2}$')"
+  if [ -n "${TZ}" ]; then
+    writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
+    REGION="${TZ%%/*}"
+    TIMEZONE="${TZ#*/}"
     writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
     writeConfigKey "time.timezone" "${TIMEZONE}" "${USER_CONFIG_FILE}"
   else
+    writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
     REGION="$(readConfigKey "time.region" "${USER_CONFIG_FILE}")"
     TIMEZONE="$(readConfigKey "time.timezone" "${USER_CONFIG_FILE}")"
   fi
   [ -n "${TIMEZONE}" ] && [ -n "${REGION}" ] && ln -sf "/usr/share/zoneinfo/${REGION}/${TIMEZONE}" /etc/localtime
+  KEYMAP="$(echo "${COUNTRY}" | tr '[:upper:]' '[:lower:]')"
+  [ -z "${KEYMAP}" ] && KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+  [ -z "${KEYMAP}" ] && KEYMAP="us"
   LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
   if [ -z "${LAYOUT}" ]; then
     [ -n "${KEYMAP}" ] && KEYMAP="$(echo ${KEYMAP} | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]' | tr -d '[:punct:]' | tr -d '[:digit:]')"
     loadkeys "${KEYMAP}" 2>/dev/null
     writeConfigKey "keymap" "${KEYMAP}" "${USER_CONFIG_FILE}"
   fi
+}
+
+###############################################################################
+# Latest release tag into NEWTAG, empty if not newer or in Offline Mode
+function updateCheck() {
+  NEWTAG=""
+  [ "$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")" = "true" ] && return 0
   local ARC_VERSION_BASE="${ARC_VERSION%%[a-z]*}"
   local ARC_VERSION_BETA="${ARC_VERSION#${ARC_VERSION_BASE}}"
   NEWTAG="$(curl -m 10 -skL "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | head -1)"
-  if [ -n "${NEWTAG}" ]; then
-    writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
-  else
-    writeConfigKey "arc.offline" "true" "${USER_CONFIG_FILE}"
-  fi
   if [ -n "${ARC_VERSION_BETA}" ] && [ -n "${BETA_API_URL}" ]; then
     local BETANEWTAG="$(curl -m 10 -skL "${BETA_API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | head -1)"
     if [ -n "${BETANEWTAG}" ] && [ -n "${NEWTAG}" ]; then
