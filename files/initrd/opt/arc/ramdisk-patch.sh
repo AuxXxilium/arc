@@ -192,6 +192,20 @@ if [[ "${PRODUCTVER}" > "7.2" ]]; then
   sed -i 's#/usr/syno/sbin/broadcom_update.sh#/usr/syno/sbin/broadcom_update.sh.arc#g' "${RAMDISK_PATH}/linuxrc.syno.impl"
 fi
 
+# linuxrc compares the ramdisk's VERSION with the installed system's
+# .syno/patch/VERSION on every boot: model, build, small fix, then packing
+# and packing_id. The .pat on Synology's download site, which arc-dsm's
+# boot files come from, has no packing; the one DSM's installer fetches
+# itself, on an install with no .pat uploaded, has packing="Epyc7003web".
+# A system installed that way failed the check on every boot ("root not
+# matched with junior") and DSM showed "Welcome back" with Restore, which
+# reinstalled the same build and failed again. The packing is not compared,
+# as DSM itself skips it when the system has .SkipCheckPackingMatch; the
+# model, build and small fix still are.
+if [ -f "${RAMDISK_PATH}/usr/syno/sbin/check_root_junior_match.sh" ]; then
+  sed -i 's/\[ ! -f \${RootMnt}\.SkipCheckPackingMatch \]/false/' "${RAMDISK_PATH}/usr/syno/sbin/check_root_junior_match.sh"
+fi
+
 # Addons
 mkdir -p "${RAMDISK_PATH}/addons"
 echo "Create addons.sh" >>"${LOG_FILE}"
