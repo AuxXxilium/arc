@@ -61,7 +61,7 @@ function installAddon() {
   local KVER="${4:-}"
   [ -z "${ADDON}" ] && echo "ERROR: Addon not defined" && return 1
   isAddonAvailable "${ADDON}" "${PLATFORM}" || {
-    deleteConfigKey "addon.${ADDON}" "${USER_CONFIG_FILE}"
+    deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
     return 0
   }
   local TMP_ADDON="${TMP_PATH}/${ADDON}"
@@ -81,7 +81,11 @@ function installAddon() {
     rm -rf "${TMP_ADDON}"
     return 1
   fi
-  [ "${HAS_FILES}" -ne 1 ] && deleteConfigKey "addon.${ADDON}" "${USER_CONFIG_FILE}" && rm -rf "${TMP_ADDON}" && return 0
+  if [ "${HAS_FILES}" -ne 1 ]; then
+    deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
+    rm -rf "${TMP_ADDON}"
+    return 0
+  fi
   if [ -f "${TMP_ADDON}/install.sh" ]; then
     if ! cp -f "${TMP_ADDON}/install.sh" "${RAMDISK_PATH}/addons/${ADDON}.sh" 2>>"${LOG_FILE}"; then
       echo "ERROR: Addon ${ADDON} failed to copy install.sh" | tee -a "${LOG_FILE}"
