@@ -165,29 +165,14 @@ CMDLINE['syno_hw_version']="${MODEL}"
 CMDLINE['sn']="${SN}"
 
 # NIC Cmdline
-# DSM's kernel takes mac1= to mac4= only and drops a mac5= and on without a
-# word; past four NICs it needs them all as one macs=, which fills its table
-# of eight. hwid reads netif_num lines from that table, so a netif_num above
-# what it holds fails "init hwid context", and with it Package Center's and
-# the push service's registration. The two forms are never mixed: the LKM
-# reads both, and says mixing them is undefined.
 ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
 ETHNA="$(wc -w <<< "${ETHX}")"
-MACS=()
+ETHN=0
 for N in ${ETHX}; do
-  [ "${#MACS[@]}" -ge 8 ] && break
   MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
   [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
-  MACS+=("${MAC}")
+  CMDLINE["mac$((++ETHN))"]="${MAC}"
 done
-ETHN="${#MACS[@]}"
-if [ "${ETHN}" -gt 4 ]; then
-  CMDLINE['macs']="$(IFS=,; echo "${MACS[*]}")"
-else
-  for I in "${!MACS[@]}"; do
-    CMDLINE["mac$((I + 1))"]="${MACS[${I}]}"
-  done
-fi
 CMDLINE['netif_num']="${ETHN}"
 [ "${ETHN}" -ne "${ETHNA}" ] && echo "Warning: Network interface count mismatch!" || true
 
