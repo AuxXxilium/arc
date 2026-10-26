@@ -372,7 +372,7 @@ function arcPatch() {
       2 "Use random SN/Mac (Reduced DSM Features)"
       3 "Use my own SN/Mac (Be sure your Data is valid)"
     )
-    [ "${#SN}" -eq 13 ] && OPTIONS=(1 "Use Arc Patch (AME, QC, Push Notify and more)" "${OPTIONS[@]}")
+    [ "${#SN}" -eq 13 ] && OPTIONS=(1 "Use Arc Patch (AME, QC and more)" "${OPTIONS[@]}")
 
     dialog --clear --backtitle "$(backtitle)" \
       --nocancel --title "SN/Mac Options" \
