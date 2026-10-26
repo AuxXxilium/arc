@@ -14,6 +14,15 @@
 
 arc_mode
 
+# The build runs from Arc Control as well, inside a chroot under a DSM CGI,
+# and inherits the web server's umask there. Every file created below - the
+# addons.sh redirect, each addon's cp'd install.sh, the files addons copy into
+# the ramdisk - takes it, and a plain "chmod +x" leaves the bits it masks
+# alone. With the owner's x masked, addons.sh goes into the ramdisk as 0600
+# and linuxrc fails every hook with "Permission denied": no addon runs, no
+# model.dtb slots, DISK NOT INSTALLED.
+umask 022
+
 set -o pipefail # Get exit code from process piped
 
 # Read Model Data
@@ -223,7 +232,7 @@ echo "Create addons.sh" >>"${LOG_FILE}"
   echo "export LAYOUT=\"${LAYOUT:-qwerty}\""
   echo "export KEYMAP=\"${KEYMAP:-en}\""
 } >"${RAMDISK_PATH}/addons/addons.sh"
-chmod +x "${RAMDISK_PATH}/addons/addons.sh"
+chmod a+x "${RAMDISK_PATH}/addons/addons.sh"
 
 # System Addons
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: install addons"
