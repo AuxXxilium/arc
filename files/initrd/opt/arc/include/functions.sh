@@ -55,43 +55,58 @@ function arc_mode() {
 
 ###############################################################################
 # Check for NIC and IP
+# Waits up to bootipwait (60s at most) for the NICs' addresses, all NICs at
+# once rather than one after another. A NIC with no cable in holds it up only
+# while no other NIC has an address; one with a link but no lease yet gets 5s
+# more after the first address. Link-local is no address: dhcpcd keeps asking.
 function checkNIC() {
   sleep 3 # Wait for network to initialize
   IPCON=""
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
   [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT="60"
+  [ "${BOOTIPWAIT}" -gt 60 ] 2>/dev/null && BOOTIPWAIT="60"
   ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
-  for N in ${ETHX}; do
-    COUNT=0
-    DRIVER="$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
-    while true; do
-      if [ "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" -eq 0 ]; then
-        echo -e "\r${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
-        break
-      fi
-      if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
-        echo -e "\r${DRIVER}: \033[1;37mDOWN\033[0m"
-        break
-      fi
-      if [ "${COUNT}" -ge "${BOOTIPWAIT}" ]; then
-        echo -e "\r${DRIVER}: \033[1;37mTIMEOUT\033[0m"
-        break
-      fi
-      COUNT=$((COUNT + 1))
+  local N IP WAITING ELAPSED START FIRST=""
+  START="$(date +%s)"
+  while true; do
+    IPCON=""
+    WAITING=0
+    for N in ${ETHX}; do
       IP="$(getIP "${N}")"
-      if [ -n "${IP}" ]; then
-        SPEED="$(/usr/sbin/ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')"
-        if echo "${IP}" | grep -q "^169\.254\."; then
-          echo -e "\r${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
-        else
-          echo -e "\r${DRIVER} (${SPEED}): \033[1;37m${IP}\033[0m"
-          [ -z "${IPCON}" ] && IPCON="${IP}"
-        fi
-        break
+      if [ -n "${IP}" ] && ! echo "${IP}" | grep -q "^169\.254\."; then
+        [ -z "${IPCON}" ] && IPCON="${IP}"
+      elif [ "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" = "1" ]; then
+        WAITING=1
       fi
-      sleep 1
     done
+    ELAPSED=$(($(date +%s) - START))
+    if [ -n "${IPCON}" ]; then
+      [ -z "${FIRST}" ] && FIRST="${ELAPSED}"
+      [ "${WAITING}" = "0" ] && break
+      [ $((ELAPSED - FIRST)) -ge 5 ] && break
+    fi
+    [ "${ELAPSED}" -ge "${BOOTIPWAIT}" ] && break
+    echo -en "\rWaiting for IP: ${ELAPSED}s"
     sleep 1
+  done
+  echo -en "\r\033[K"
+  for N in ${ETHX}; do
+    DRIVER="$(ls -ld /sys/class/net/${N}/device/driver 2>/dev/null | awk -F '/' '{print $NF}')"
+    IP="$(getIP "${N}")"
+    if [ -z "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" ]; then
+      echo -e "${DRIVER}: \033[1;37mDOWN\033[0m"
+    elif [ "$(cat /sys/class/net/${N}/carrier 2>/dev/null)" -eq 0 ]; then
+      echo -e "${DRIVER}: \033[1;37mNOT CONNECTED\033[0m"
+    elif [ -z "${IP}" ]; then
+      echo -e "${DRIVER}: \033[1;37mTIMEOUT\033[0m"
+    else
+      SPEED="$(/usr/sbin/ethtool ${N} 2>/dev/null | grep "Speed:" | awk '{print $2}')"
+      if echo "${IP}" | grep -q "^169\.254\."; then
+        echo -e "${DRIVER} (${SPEED}): \033[1;37mLINK LOCAL (No DHCP server found.)\033[0m"
+      else
+        echo -e "${DRIVER} (${SPEED}): \033[1;37m${IP}\033[0m"
+      fi
+    fi
   done
 }
 
