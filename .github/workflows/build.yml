@@ -183,7 +183,7 @@ jobs:
           qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
 
           echo "Create Arc vhd"
-          createvmc "arc.vmc"
+          createvmc "arc.vhd" "arc.vmc"
           qemu-img convert -p -f raw -O vpc ${IMAGE_FILE} arc.vhd
           qemu-img convert -p -f raw -O vhdx ${IMAGE_FILE} arc.vhdx
 
