@@ -5,11 +5,13 @@ version: "3"
 tasks:
   build:
     cmds:
-      - git reset --hard
-      - git pull
       - ./img-gen.sh
   build-local:
     cmds:
-      - git reset --hard
-      - git pull
-      - ./img-gen.sh local
+      - ./img-gen.sh --rebuild-buildroot
+  release:
+    cmds:
+      - ./img-gen.sh --release
+  release-essential:
+    cmds:
+      - ./img-gen.sh --essential --release

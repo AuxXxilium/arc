@@ -15,3 +15,12 @@ cache
 /files/board/arc/p3/configs
 /files/board/arc/p3/extensions
 /tests
+/work/
+/br/
+/rdxz_tmp/
+/ovftool/
+arc.vhd
+arc.vhdx
+arc.vmc
+arc.ova
+update-*.hash
