@@ -3670,7 +3670,9 @@ function getnet() {
       done
     done
   else
-    readarray -t ETHX_ARRAY <<<"$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
+    # sort -V, as everywhere else: plain sort puts eth10 before eth2, and the
+    # Arc Patch MACs go out by position.
+    readarray -t ETHX_ARRAY <<<"$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
     ETHN=${#ETHX_ARRAY[@]}
 
     MACS_OUTPUT=$(genArc "${ARC_PATCH}" "${MODEL}" mac "${ETHN}" 2>/dev/null)

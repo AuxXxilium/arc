@@ -164,30 +164,48 @@ CMDLINE['pid']="${PID:-"0x0001"}"
 CMDLINE['syno_hw_version']="${MODEL}"
 CMDLINE['sn']="${SN}"
 
-# NIC Cmdline
-ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
-ETHNA="$(wc -w <<< "${ETHX}")"
-ETHN=0
-for N in ${ETHX}; do
-  MAC="$(readConfigKey "${N}" "${USER_CONFIG_FILE}")"
-  [ -z "${MAC}" ] && MAC="$(cat /sys/class/net/${N}/address 2>/dev/null | sed 's/://g' | tr '[:upper:]' '[:lower:]')"
-  CMDLINE["mac$((++ETHN))"]="${MAC}"
-done
-CMDLINE['netif_num']="${ETHN}"
-[ "${ETHN}" -ne "${ETHNA}" ] && echo "Warning: Network interface count mismatch!" || true
-
-# The NIC order: every NIC's MAC in the order init.sh gives the loader's NICs,
-# bus order with the pinned MACs first. The sortnetif system addon hands DSM's
-# eth0..ethN to these MACs in this order, so a port is the same ethN in the
-# loader and in DSM. Worked out from the config rather than read from the
-# current names, so a pin changed since the loader started still applies. On
-# the cmdline rather than as an addon parameter: addons.sh is generated at
-# build time, the cmdline here on every boot.
+# NIC Cmdline. One order for both lists: every NIC, connected or not, in the
+# order init.sh gives the loader's NICs, bus order with the pinned MACs first.
+# Worked out from the config rather than read from the current names, so a
+# pin changed since the loader started still applies.
+#
+# Position i gets mac(i+1), the MAC set for that position (eth<i> in the
+# config, the Arc Patch MACs in order), and its card's real MAC goes to the
+# same position in sortnetif=. The sortnetif system addon hands DSM's
+# eth0..ethN to those real MACs in this order, so DSM's eth<i> is the card
+# the loader gave mac(i+1). Built in one loop, as two lists from two orders
+# put one card's MAC on another. On the cmdline rather than as an addon
+# parameter: addons.sh is generated at build time, the cmdline here on every
+# boot.
+#
+# DSM's kernel takes mac1= to mac4= only and drops a mac5= and on without a
+# word; a real SA6400 reads its MACs from the vendor flash instead, which a
+# loader has none of. Past four NICs every MAC goes in one macs=, the
+# kernel's own list for up to the eight its table holds. The two forms are
+# never mixed: the LKM reads both, and says mixing them is undefined.
+MACS=()
 SORTNETIF=""
 for N in $(_netif_order "$(readConfigKey "sortnetif" "${USER_CONFIG_FILE}")"); do
-  MAC="$(_netif_mac "${N}")"
-  [ -n "${MAC}" ] && [ "${MAC}" != "000000000000" ] && SORTNETIF="${SORTNETIF},${MAC}"
+  REAL="$(_netif_mac "${N}")"
+  MAC="$(readConfigKey "eth${#MACS[@]}" "${USER_CONFIG_FILE}")"
+  [ -z "${MAC}" ] && MAC="${REAL}"
+  MACS+=("${MAC}")
+  if [ -n "${REAL}" ] && [ "${REAL}" != "000000000000" ]; then
+    SORTNETIF="${SORTNETIF},${REAL}"
+  else
+    echo "Warning: ${N} has no MAC of its own; DSM may order the NICs after it differently"
+  fi
 done
+[ "${#MACS[@]}" -gt 8 ] && MACS=("${MACS[@]:0:8}")
+ETHN="${#MACS[@]}"
+if [ "${ETHN}" -gt 4 ]; then
+  CMDLINE['macs']="$(IFS=,; echo "${MACS[*]}")"
+else
+  for I in "${!MACS[@]}"; do
+    CMDLINE["mac$((I + 1))"]="${MACS[${I}]}"
+  done
+fi
+CMDLINE['netif_num']="${ETHN}"
 [ -n "${SORTNETIF}" ] && CMDLINE['sortnetif']="${SORTNETIF#,}" || true
 
 # Boot Cmdline
