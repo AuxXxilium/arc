@@ -1762,7 +1762,7 @@ function sysinfo() {
   # Get System Informations
   [ -d /sys/firmware/efi ] && BOOTSYS="UEFI" || BOOTSYS="BIOS"
   USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
-  CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}')"
+  CPU="$(cat /proc/cpuinfo 2>/dev/null | grep 'model name' | uniq | awk -F':' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
   CPUCHT="$(grep -c ^processor /proc/cpuinfo 2>/dev/null)"
   CPUCNT="$(awk -F': ' '/^physical id/{p=$2} /^core id/{print p","$2}' /proc/cpuinfo 2>/dev/null | sort -u | wc -l)"
   [ -z "${CPUCNT}" ] || [ "${CPUCNT}" -eq 0 ] && CPUCNT="${CPUCHT}"
