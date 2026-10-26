@@ -57,7 +57,7 @@ function arc_mode() {
 # Check for NIC and IP
 # Waits up to bootipwait (60s at most) for the NICs' addresses, all NICs at
 # once rather than one after another. A NIC with no cable in holds it up only
-# while no other NIC has an address; one with a link but no lease yet gets 5s
+# while no other NIC has an address; one with a link but no lease yet gets 10s
 # more after the first address. Link-local is no address: dhcpcd keeps asking.
 function checkNIC() {
   sleep 3 # Wait for network to initialize
@@ -83,7 +83,7 @@ function checkNIC() {
     if [ -n "${IPCON}" ]; then
       [ -z "${FIRST}" ] && FIRST="${ELAPSED}"
       [ "${WAITING}" = "0" ] && break
-      [ $((ELAPSED - FIRST)) -ge 5 ] && break
+      [ $((ELAPSED - FIRST)) -ge 10 ] && break
     fi
     [ "${ELAPSED}" -ge "${BOOTIPWAIT}" ] && break
     echo -en "\rWaiting for IP: ${ELAPSED}s"
