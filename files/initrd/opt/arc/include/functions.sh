@@ -518,7 +518,10 @@ function getNicId() {
 # Find and mount the DSM root filesystem
 function findDSMRoot() {
   local DSMROOTS=""
-  [ -z "${DSMROOTS}" ] && DSMROOTS="$(mdadm --detail --scan 2>/dev/null | grep -v "INACTIVE-ARRAY" | grep -E "name=SynologyNAS:0|name=DiskStation:0|name=SynologyNVR:0|name=BeeStation:0" | awk '{print $2}' | uniq)"
+  # mdadm 4.2 printed "ARRAY /dev/md0 ... name=SynologyNAS:0", mdadm 4.3 (Buildroot 2026.02)
+  # prints the name only in the path, "ARRAY /dev/md/SynologyNAS:0 ...": match both, and
+  # resolve the /dev/md/<name> link to the md device it points to.
+  [ -z "${DSMROOTS}" ] && DSMROOTS="$(mdadm --detail --scan 2>/dev/null | grep -v "INACTIVE-ARRAY" | grep -E "(name=|/dev/md/)(SynologyNAS|DiskStation|SynologyNVR|BeeStation):0( |$)" | awk '{print $2}' | while read -r D; do readlink -f "${D}" 2>/dev/null || echo "${D}"; done | uniq)"
   [ -z "${DSMROOTS}" ] && DSMROOTS="$(lsblk -pno KNAME,PARTN,FSTYPE,FSVER,LABEL | grep -E "sd[a-z]{1,2}1" | grep -w "linux_raid_member" | grep "0.9" | awk '{print $1}')"
   echo "${DSMROOTS}"
 }
