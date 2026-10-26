@@ -81,7 +81,7 @@ initConfigKey "bootscreen.systeminfo" "true" "${USER_CONFIG_FILE}"
 initConfigKey "bootscreen.diskinfo" "false" "${USER_CONFIG_FILE}"
 initConfigKey "bootscreen.accesstokeninfo" "false" "${USER_CONFIG_FILE}"
 initConfigKey "bootscreen.dsmlogo" "true" "${USER_CONFIG_FILE}"
-initConfigKey "bootipwait" "20" "${USER_CONFIG_FILE}"
+initConfigKey "bootipwait" "60" "${USER_CONFIG_FILE}"
 initConfigKey "device" "{}" "${USER_CONFIG_FILE}"
 initConfigKey "directboot" "false" "${USER_CONFIG_FILE}"
 initConfigKey "dsmfullver" "" "${USER_CONFIG_FILE}"
@@ -219,7 +219,7 @@ esac
 echo
 
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
-[ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=30
+[ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=60
 echo -e "\033[1;34mNetwork (${ETHN} NIC)\033[0m"
 RESTARTED=0
 if [ ! -f "/.dockerenv" ]; then

@@ -2788,7 +2788,7 @@ function disablescheduledTasks {
 ###############################################################################
 # modify bootipwaittime
 function bootipwaittime() {
-  ITEMS="$(echo -e "0 \n5 \n10 \n20 \n30 \n60 \n")"
+  ITEMS="$(echo -e "0 \n5 \n10 \n20 \n30 \n60 \n90 \n120 \n")"
   dialog --backtitle "$(backtitle)" --colors --title "Boot IP Waittime" \
     --default-item "${BOOTIPWAIT}" --no-items --menu "Choose Waittime(seconds)\nto get an IP" 0 0 0 ${ITEMS} \
     2>"${TMP_PATH}/resp"

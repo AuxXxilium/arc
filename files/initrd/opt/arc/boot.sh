@@ -389,7 +389,7 @@ else
   grub-editenv ${USER_GRUBENVFILE} unset next_entry 2>/dev/null || true
 
   BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
-  [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=20
+  [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=60
   echo -e "\033[1;34mNetwork (${ETHN} NIC)\033[0m"
   RESTARTED=0
   if [ ! -f "/.dockerenv" ]; then
