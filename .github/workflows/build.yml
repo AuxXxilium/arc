@@ -40,10 +40,22 @@ on:
 jobs:
   build:
     runs-on: ${{ inputs.runs }}
+    # Buildroot is built here, from nothing on a hosted runner.
+    timeout-minutes: 360
 
     steps:
+      # A self-hosted runner keeps work/ between runs, and with it the
+      # buildroot tree build.sh only rebuilds what changed in.
       - name: Checkout
         uses: actions/checkout@main
+        with:
+          clean: ${{ inputs.runs != 'self-hosted' }}
+
+      - name: Free Disk Space
+        if: ${{ inputs.runs == 'ubuntu-latest' }}
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
 
       - name: Install Dependencies
         if: ${{ inputs.runs == 'ubuntu-latest' }}
@@ -51,158 +63,73 @@ jobs:
           git config --global user.email "info@auxxxilium.tech"
           git config --global user.name "AuxXxilium"
           sudo timedatectl set-timezone "Europe/Berlin"
-          
+
+          # What build.sh's check_tools asks for: buildroot, GRUB, the disk
+          # and the release files.
           sudo apt update
-          sudo apt install -y locales busybox dialog gettext sed gawk jq curl
-          sudo apt install -y python-is-python3 python3-pip libelf-dev qemu-utils cpio xz-utils lz4 lzma bzip2 gzip zstd
-          if ! command -v yq &>/dev/null || ! yq --version 2>/dev/null | grep -q "v4."; then
-            sudo rm -f /usr/bin/yq.part
-            sudo curl -fsSL --connect-timeout 10 --retry 5 --retry-delay 2 --retry-all-errors https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/bin/yq.part
-            sudo test -s /usr/bin/yq.part
-            sudo mv -f /usr/bin/yq.part /usr/bin/yq
-            sudo chmod a+x /usr/bin/yq
-          fi
+          sudo apt install -y build-essential bc flex bison rsync patch cpio file perl wget \
+            git curl jq unzip zip tar gzip zstd xz-utils lz4 bzip2 \
+            libelf-dev libssl-dev qemu-utils fdisk dosfstools e2fsprogs \
+            pkg-config gettext gawk python3 libfreetype6-dev unifont \
+            zlib1g-dev liblzma-dev libdevmapper-dev
 
-      - name: Get Dependencies
+      # Buildroot's downloads and the GRUB build. Neither decides what is
+      # built: build.sh checks both against what it needs.
+      - name: Cache
+        if: ${{ inputs.runs == 'ubuntu-latest' }}
+        uses: actions/cache@v4
+        with:
+          path: |
+            work/buildroot/.buildroot-dl
+            work/grub-*
+            work/grub.img.gz
+            work/grub.fingerprint
+          key: build-${{ github.run_id }}
+          restore-keys: build-
+
+      - name: Build
+        env:
+          AUX_TOKEN: ${{ secrets.BUILD_TOKEN }}
+          VERSION: ${{ inputs.version }}
         run: |
-          . scripts/functions.sh "${{ secrets.BUILD_TOKEN }}"
-
-          echo "Get Dependencies"
-          mkdir -vp "files"
-          getAddons "files/p3/addons"
-          getModules "files/p3/modules"
-          getConfigs "files/p3/configs"
-          getPatches "files/p3/patches"
-          getCustom "files/p3/custom"
-          getLKMs "files/p3/lkms"
-          getTheme "files/p1/boot/grub"
-          getBuildroot "apex"
-
-          # Export Dependencies Version to env
-          echo "ADDONTAG=${ADDONTAG}" >> $GITHUB_ENV
-          echo "MODULETAG=${MODULETAG}" >> $GITHUB_ENV
-          echo "CONFIGTAG=${CONFIGTAG}" >> $GITHUB_ENV
-          echo "PATCHTAG=${PATCHTAG}" >> $GITHUB_ENV
-          echo "CUSTOMTAG=${CUSTOMTAG}" >> $GITHUB_ENV
-          echo "LKMTAG=${LKMTAG}" >> $GITHUB_ENV
-          echo "THEMETAG=${THEMETAG}" >> $GITHUB_ENV
-          echo "APEX=${apex}" >> $GITHUB_ENV
-          echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
-
-          echo "OK"          
-
-      - name: Cleanup Dependencies for Essential Image
-        if: ${{ inputs.essential == true }}
-        run: |
-          # Cleanup for Essential Image
-          rm -f files/p3/modules/*-4.4.180.tgz
-          rm -f files/p3/modules/*-4.4.302.tgz
-          rm -f files/p3/lkms/*-4.4.180-*.tgz
-          rm -f files/p3/lkms/*-4.4.302-*.tgz
-          sed -i 's|Arc |Arc Essential |' files/initrd/opt/arc/include/consts.sh
-          sed -i 's|platforms.yml|platforms-essential.yml|g' files/initrd/opt/arc/include/consts.sh
-          sed -i 's|https://api.github.com/repos/AuxXxilium/arc/releases|https://api.github.com/repos/AuxXxilium/arc-essential/releases|g' files/initrd/opt/arc/include/consts.sh
-          sed -i 's|https://github.com/AuxXxilium/arc/releases/download|https://github.com/AuxXxilium/arc-essential/releases/download|g' files/initrd/opt/arc/include/consts.sh
-          sed -i '/2 \"Beta \${BETATAG}\" \\/d' files/initrd/opt/arc/arc-functions.sh
-          sed -i '/3 "Update Dependencies \\Z1(maybe not stable)\\Zn" \\/d' files/initrd/opt/arc/arc-functions.sh
-
-          echo "Cleaned"
-
-      - name: Build Image
-        run: |
-          . scripts/functions.sh
-
-          ARC_BUILD="$(date +'%y%m%d')"
-          ARC_VERSION="${{ inputs.version }}"
+          # One release repository per build: Essential goes to arc-essential,
+          # the full loader to arc or arc-beta. --replace as allowUpdates was.
+          ARGS="--no-pull --release --replace"
           if ${{ inputs.essential }}; then
+            if ${{ inputs.stable }} || ${{ inputs.beta }}; then
+              echo "::error::Essential is published to arc-essential only: leave stable and beta off."
+              exit 1
+            fi
+            ARGS="${ARGS} --essential --publish"
             ARC_BRANCH="essential"
           else
+            if ${{ inputs.stable }} && ${{ inputs.beta }}; then
+              echo "::error::stable or beta, not both."
+              exit 1
+            elif ${{ inputs.stable }}; then
+              ARGS="${ARGS} --stable"
+            elif ${{ inputs.beta }}; then
+              ARGS="${ARGS} --beta"
+            else
+              ARGS="${ARGS} --no-publish"
+            fi
             ARC_BRANCH="full"
           fi
-          echo "${ARC_BUILD}" > "files/p1/ARC-BUILD"
-          echo "ARC_BUILD=${ARC_BUILD}" >> $GITHUB_ENV
-          echo "${ARC_VERSION}" > "files/p1/ARC-VERSION"
-          echo "ARC_BRANCH=${ARC_BRANCH}" >> $GITHUB_ENV
-          echo "ARC_VERSION=${ARC_VERSION}" >> $GITHUB_ENV
+          echo "ARC_BRANCH=${ARC_BRANCH}" >>"${GITHUB_ENV}"
+          echo "ARC_VERSION=${VERSION}" >>"${GITHUB_ENV}"
 
-          echo "Create Arc Image"
-          IMAGE_FILE="arc.img"
-          gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
-          fdisk -l "${IMAGE_FILE}"
-          
-          LOOPX=$(sudo losetup -f)
-          sudo losetup -P "${LOOPX}" "${IMAGE_FILE}"
+          ./build.sh ${ARGS}
 
-          echo "Mounting Image File"
-          mkdir -p "/tmp/p1"
-          mkdir -p "/tmp/p3"
-          sudo mount ${LOOPX}p1 "/tmp/p1"
-          sudo mount ${LOOPX}p3 "/tmp/p3"
-
-          for TYPE in "apex"; do
-            if [ -f "br/bzImage-${TYPE}" ] && [ -f "br/initrd-${TYPE}" ]; then
-                cp -f "br/bzImage-${TYPE}" "files/p3/bzImage-${TYPE}"
-                repackInitrd "br/initrd-${TYPE}" "files/initrd" "files/p3/initrd-${TYPE}"
-            else
-                exit 1
-            fi
-          done
-
-          echo "Copying files"
-          sudo cp -rf "files/p1/"* "/tmp/p1"
-          sudo cp -rf "files/p3/"* "/tmp/p3"
-          sudo sync
-
-          # GRUB for Update Loader (updateGrub in update.sh): the image up to
-          # p1 -- MBR boot code and core.img --, the EFI loaders and the
-          # modules, as p3/grub-update in the update zip only. Not under p1/:
-          # an older Arc would extract BIOS modules there that do not match
-          # the boot code it leaves in place, and that GRUB does not start.
-          echo "Stage GRUB for the update"
-          GRUB_UPDATE="files/p3/grub-update"
-          rm -rf "${GRUB_UPDATE}"
-          mkdir -p "${GRUB_UPDATE}/boot/grub" "${GRUB_UPDATE}/EFI/BOOT"
-          for T in i386-pc i386-efi x86_64-efi; do
-            [ -d "/tmp/p1/boot/grub/${T}" ] && cp -r "/tmp/p1/boot/grub/${T}" "${GRUB_UPDATE}/boot/grub/"
-          done
-          find "/tmp/p1/EFI/BOOT" -maxdepth 1 -iname 'boot*.efi' -exec cp {} "${GRUB_UPDATE}/EFI/BOOT/" \;
-          P1START="$(od -An -tu4 -j454 -N4 "${IMAGE_FILE}" | tr -d ' \n')"
-          dd if="${IMAGE_FILE}" of="${GRUB_UPDATE}/bootcode.img" bs=512 count="${P1START}" status=none
-          [ -f "${GRUB_UPDATE}/boot/grub/i386-pc/normal.mod" ] && ls "${GRUB_UPDATE}/EFI/BOOT/"* >/dev/null || exit 1
-
-          echo "Unmount image file"
-          sudo umount "/tmp/p1"
-          sudo umount "/tmp/p3"
-          rmdir "/tmp/p1"
-          rmdir "/tmp/p3"
-
-          sudo losetup --detach ${LOOPX}
-
-          echo "Image Converter"
-          qemu-img convert -p -f raw -O vmdk ${IMAGE_FILE} arc-dyn.vmdk
-          qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk ${IMAGE_FILE} arc.vmdk
-
-          echo "Create Arc vhd"
-          createvmc "arc.vhd" "arc.vmc"
-          qemu-img convert -p -f raw -O vpc ${IMAGE_FILE} arc.vhd
-          qemu-img convert -p -f raw -O vhdx ${IMAGE_FILE} arc.vhdx
-
-          echo "Create Arc ova"
-          convertova "${IMAGE_FILE}" "arc.ova"
-
-      # Zip image and generate checksum
-      - name: Pack Image
-        if: success()
-        run: |
-          # Zip other image files
-          zip -9 "arc-${{ env.ARC_VERSION }}.img.zip" "arc.img"
-          zip -9 "arc-${{ env.ARC_VERSION }}.vmdk-dyn.zip" "arc-dyn.vmdk"
-          zip -9 "arc-${{ env.ARC_VERSION }}.vmdk-flat.zip" "arc.vmdk" "arc-flat.vmdk"
-          zip -9 "arc-${{ env.ARC_VERSION }}.vhd.zip" "arc.vhd" "arc.vmc"
-          zip -9 "arc-${{ env.ARC_VERSION }}.vhdx.zip" "arc.vhdx"
-          zip -9 "arc-${{ env.ARC_VERSION }}.ova.zip" "arc.ova"
-          (cd files && zip -r ../update-${{ env.ARC_VERSION }}.zip ./p1 ./p3)
-          sha256sum update-${{ env.ARC_VERSION }}.zip >"update-${{ env.ARC_VERSION }}.hash"
+      - name: Upload
+        if: ${{ success() && !inputs.stable && !inputs.beta && !inputs.essential }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: arc-${{ inputs.version }}
+          path: |
+            arc-*.zip
+            update-*.zip
+            update-*.hash
+          retention-days: 7
 
       # Build and push a qemux/qemu wrapper image with this release's
       # arc.img baked in, so `docker run` boots it with no manual
@@ -236,90 +163,3 @@ jobs:
           file: Dockerfile
           push: true
           tags: ${{ env.DOCKER_TAGS }}
-
-      # Beta Release
-      - name: Beta Release
-        if: inputs.beta == true
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ env.ARC_VERSION }}
-          makeLatest: true
-          allowUpdates: true
-          owner: ${{ github.repo.owner }}
-          repo: arc-beta
-          token: ${{ secrets.BUILD_TOKEN }}
-          body: |
-            ### Information:
-              - Beta Release may not be stable. Use with caution as it is intended for testing purposes only. Check Discord for more information.
-
-            ### Dependencies:
-              - Addons: ${{ env.ADDONTAG }}
-              - Modules: ${{ env.MODULETAG }}
-              - Configs: ${{ env.CONFIGTAG }}
-              - Patches: ${{ env.PATCHTAG }}
-              - Custom: ${{ env.CUSTOMTAG }}
-              - LKMs: ${{ env.LKMTAG }}
-              - Apex: ${{env.APEX}}
-              - Build: ${{ env.BUILD_TIME }}
-          artifacts: |
-            arc-*.zip
-            update-*.zip
-            update-*.hash
-
-      # Stable Release
-      - name: Stable Release
-        if: inputs.stable == true
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ env.ARC_VERSION }}
-          makeLatest: true
-          allowUpdates: true
-          owner: ${{ github.repo.owner }}
-          repo: arc
-          token: ${{ secrets.BUILD_TOKEN }}
-          body: |
-            ### Information:
-              - [Release Notes](https://xpenology.tech/release/view.php?f=${{ env.ARC_VERSION }}.txt)
-
-            ### Dependencies:
-              - Addons: ${{ env.ADDONTAG }}
-              - Modules: ${{ env.MODULETAG }}
-              - Configs: ${{ env.CONFIGTAG }}
-              - Patches: ${{ env.PATCHTAG }}
-              - Custom: ${{ env.CUSTOMTAG }}
-              - LKMs: ${{ env.LKMTAG }}
-              - Apex: ${{env.APEX}}
-              - Build: ${{ env.BUILD_TIME }}
-          artifacts: |
-            arc-*.zip
-            update-*.zip
-            update-*.hash
-
-      # Essential Release
-      - name: Essential Release
-        if: inputs.essential == true
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ env.ARC_VERSION }}
-          makeLatest: true
-          allowUpdates: true
-          owner: ${{ github.repo.owner }}
-          repo: arc-essential
-          token: ${{ secrets.BUILD_TOKEN }}
-          body: |
-            ### Information:
-              - [Release Notes](https://xpenology.tech/release/view.php?f=${{ env.ARC_VERSION }}.txt)
-
-            ### Dependencies:
-              - Addons: ${{ env.ADDONTAG }}
-              - Modules: ${{ env.MODULETAG }}
-              - Configs: ${{ env.CONFIGTAG }}
-              - Patches: ${{ env.PATCHTAG }}
-              - Custom: ${{ env.CUSTOMTAG }}
-              - LKMs: ${{ env.LKMTAG }}
-              - Apex: ${{env.APEX}}
-              - Build: ${{ env.BUILD_TIME }}
-          artifacts: |
-            arc-*.zip
-            update-*.zip
-            update-*.hash

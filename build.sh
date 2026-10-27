@@ -8,11 +8,13 @@
 # Build an Arc image locally, end to end:
 #
 #   1. pull       update the working tree (fast-forward only)
-#   2. deps       addons, modules, configs, patches, custom, LKMs, theme
+#   2. deps       addons, modules, configs, patches, custom, LKMs, theme:
+#                 fetched once and reused, again with --refresh or --release
 #   3. buildroot  loader kernel + initramfs, built here from the build's own
 #                 clone of arc-buildroot-essential's main and of Buildroot,
 #                 both in work/ (AUX_TOKEN), only what changed
-#   4. pack       arc.img and arc.vmdk
+#   4. pack       arc.img and arc.vmdk, on a disk made here: GRUB built from
+#                 source once into work/, partitions, ARC1-3, grub-install
 #
 #   ./build.sh                      the build menu on a terminal, else all
 #                                   four. The menu asks whether to pack the
@@ -20,6 +22,7 @@
 #   ./build.sh deps pack            only the stages named
 #   ./build.sh --no-pull            all but the pull (also --no-deps,
 #                                   --no-buildroot, --no-pack)
+#   ./build.sh --refresh            fetch the dependencies again
 #   ./build.sh --clean-buildroot    buildroot from an empty output tree
 #   ./build.sh --essential          the Essential variant, as build.yml makes
 #                                   it: no 4.4 kernel modules or LKMs, the
@@ -28,7 +31,8 @@
 #   ./build.sh --release            then the release files as build.yml packs
 #                                   them: img, vmdk (flat and dynamic), vhd,
 #                                   vhdx and ova zips, the update zip and its
-#                                   hash. Asks for the version, and once the
+#                                   hash, with the latest dependencies.
+#                                   Asks for the version, and once the
 #                                   files are written whether to publish them:
 #                                   as a stable (arc) or beta (arc-beta)
 #                                   release, or for --essential to
@@ -75,6 +79,27 @@ BUILDROOT_REF="${BUILDROOT_REF:-}"
 KERNEL_VERSION="${KERNEL_VERSION:-}"
 BR_CONFIG_REPO="AuxXxilium/arc-buildroot-essential"
 BR_CONFIG="${BR_CONFIG:-}"
+# arc-buildroot-essential's out-of-tree drivers, checked after a build
+# (check_buildroot): the Realtek NICs and the ITE fan chips.
+OOT_DRIVERS="it87 r8125 r8126 r8127 r8168 r8169"
+
+# GRUB, built from source once into work/ (build_grub) and installed on a
+# disk of arc's layout once per GRUB build (make_grub_disk): MBR, p1 FAT32
+# ARC1 (GRUB, active), p2 ext2 ARC2 (DSM's kernel and ramdisk), p3 ext4
+# ARC3 (the loader and everything else). The loader finds its partitions by
+# these labels, and grub.cfg finds p3 by ARC3: not cosmetic.
+GRUB_VERSION="${GRUB_VERSION:-grub-2.14}"
+GRUB_URL="${GRUB_URL:-https://ftp.gnu.org/gnu/grub}"
+GRUB_TARGETS="i386-pc i386-efi x86_64-efi"
+GRUB_SRC="${WORK}/${GRUB_VERSION}"
+LABEL="ARC"
+P1_SIZE=50
+P2_SIZE=50
+IMAGE_SIZE=3700
+# The empty disk, GRUB on it and nothing else: what the pack writes the
+# loader onto, and what Clone Loader writes to another disk (it goes into
+# the initrd as /opt/arc/grub.img.gz).
+GRUB_DISK="${WORK}/grub.img.gz"
 
 STABLE_REPO="${STABLE_REPO:-AuxXxilium/arc}"
 BETA_REPO="${BETA_REPO:-AuxXxilium/arc-beta}"
@@ -120,6 +145,9 @@ remember() {
 
 do_pull=1 do_deps=1 do_buildroot=1 do_pack=1
 do_brclean=0 do_release=0 do_replace=0
+# --refresh: fetch the dependencies again rather than reuse them. A release
+# always does (set in the driver): it ships what is current.
+do_refresh=0
 # full or essential.
 variant="full"
 # Where the release goes: stable, beta or essential without asking, no to
@@ -140,6 +168,7 @@ for arg in "$@"; do
   --no-deps) do_deps=0 ;;
   --no-buildroot) do_buildroot=0 ;;
   --no-pack) do_pack=0 ;;
+  --refresh) do_refresh=1 ;;
   --clean-buildroot) do_brclean=1 ;;
   --essential) variant="essential" ;;
   --release) do_release=1 ;;
@@ -187,6 +216,17 @@ need_header() {
   missing_pkgs="${missing_pkgs} ${2}"
 }
 
+# need_pkg <pkg-config name> <package>
+#
+# For a library found through pkg-config rather than on the include path:
+# freetype, which GRUB's font tool needs.
+need_pkg() {
+  command -v pkg-config >/dev/null 2>&1 || return 0 # reported as pkg-config
+  pkg-config --exists "${1}" 2>/dev/null && return 0
+  missing_cmds="${missing_cmds} ${1}"
+  missing_pkgs="${missing_pkgs} ${2}"
+}
+
 check_tools() {
   need git
   need curl
@@ -221,10 +261,39 @@ check_tools() {
     need file
     need zstd
     need gzip
+    need zip
+    need sha256sum "coreutils"
     if [ "${do_release}" -eq 1 ]; then
-      need zip
       need unzip
-      need sha256sum "coreutils"
+    fi
+
+    # The disk, once per GRUB build.
+    if [ ! -f "${GRUB_DISK}" ] || [ "$(cat "${WORK}/grub.fingerprint" 2>/dev/null)" != "$(grub_fingerprint)" ]; then
+      need fdisk
+      need mkdosfs "dosfstools"
+      need mkfs.ext2 "e2fsprogs"
+      need mkfs.ext4 "e2fsprogs"
+    fi
+    # GRUB, once per work/. A release tarball ships its configure: no
+    # autoconf, automake or libtool.
+    if [ ! -f "${GRUB_SRC}/.built" ]; then
+      need make "build-essential"
+      need gcc "build-essential"
+      need pkg-config
+      need msgfmt "gettext"
+      need gawk
+      need bison
+      need flex
+      need python3
+      need_pkg "freetype2" "libfreetype6-dev"
+      need_header "zlib.h" "zlib1g-dev"
+      need_header "lzma.h" "liblzma-dev"
+      need_header "libdevmapper.h" "libdevmapper-dev"
+      # What GRUB makes fonts/unicode.pf2 from, grub.cfg's font.
+      if [ -z "$(find /usr/share/fonts -iname 'unifont*' -print -quit 2>/dev/null)" ]; then
+        missing_cmds="${missing_cmds} unifont"
+        missing_pkgs="${missing_pkgs} unifont"
+      fi
     fi
   fi
 
@@ -278,6 +347,7 @@ stage_pull() {
   [ "${do_buildroot}" -eq 1 ] || rest="${rest} --no-buildroot"
   [ "${do_pack}" -eq 1 ] || rest="${rest} --no-pack"
   [ "${do_brclean}" -eq 1 ] && rest="${rest} --clean-buildroot"
+  [ "${do_refresh}" -eq 1 ] && rest="${rest} --refresh"
   [ "${do_release}" -eq 1 ] && rest="${rest} --release"
   [ "${do_replace}" -eq 1 ] && rest="${rest} --replace"
   [ "${variant}" = "essential" ] && rest="${rest} --essential"
@@ -295,8 +365,22 @@ stage_pull() {
 
 # ============================================================= 2. deps ===
 
+# Written once every dependency is in files/, so an interrupted fetch is
+# fetched again rather than reused.
+DEPS_DONE="${WORK}/deps.done"
+
 stage_deps() {
   stage "deps"
+
+  # Fetched once and reused, as arx stages its artifacts: they are a few
+  # hundred MB over the API, and a build that only changed the loader does
+  # not need new ones. --refresh, menu 7 and every release fetch them again.
+  if [ "${do_refresh}" -eq 0 ] && [ -f "${DEPS_DONE}" ]; then
+    (. "${STATE}" && info "already fetched: addons ${ADDONTAG}, modules ${MODULETAG}, custom ${CUSTOMTAG}, lkms ${LKMTAG}")
+    info "--refresh (menu 7) fetches them again"
+    return 0
+  fi
+  rm -f "${DEPS_DONE}"
 
   # What an earlier build left: not every get* empties its destination
   # first, and the theme unpacks over p1.
@@ -317,6 +401,7 @@ stage_deps() {
   remember CUSTOMTAG "${CUSTOMTAG}"
   remember LKMTAG "${LKMTAG}"
   remember THEMETAG "${THEMETAG}"
+  touch "${DEPS_DONE}"
 }
 
 # ======================================================== 3. buildroot ===
@@ -531,6 +616,30 @@ rebuild_changed_packages() {
   fi
 }
 
+# What a build that succeeded can still lack, as arx checks it: each is a
+# loader that boots and is found out only on the hardware.
+check_buildroot() {
+  local drv mp
+
+  # The out-of-tree drivers arc_defconfig enables have to be in the
+  # loader's /lib/modules and in modules.order, not only built: a kernel
+  # reinstalled after them empties lib/modules/<ver>/kernel, and the NIC
+  # never comes up.
+  for drv in ${OOT_DRIVERS}; do
+    grep -qx "BR2_PACKAGE_${drv^^}=y" "${BR_OUT}/.config" || continue
+    [ -n "$(find "${BR_OUT}/target/lib/modules" -name "${drv}.ko" 2>/dev/null)" ] ||
+      die "${drv}.ko was built but is not in the loader's /lib/modules."
+    grep -qs "/${drv}\.ko$" "${BR_OUT}"/target/lib/modules/*/modules.order ||
+      die "${drv}.ko is not in modules.order."
+  done
+
+  # kmod's modprobe, not BusyBox's, which fails every call without a word.
+  mp="$(readlink -f "${BR_OUT}/target/sbin/modprobe" 2>/dev/null)"
+  [ "$(basename "${mp}")" = "kmod" ] ||
+    die "the loader's modprobe is not kmod's (${mp:-none}).
+    BR2_PACKAGE_KMOD_TOOLS needs BR2_PACKAGE_BUSYBOX_SHOW_OTHERS."
+}
+
 build_buildroot() {
   local prev="${WORK}/br.config.prev" fpfile="${WORK}/br.fingerprint" fp d
 
@@ -611,6 +720,7 @@ build_buildroot() {
 
     [ -f "${BR_OUT}/images/bzImage" ] || die "buildroot produced no bzImage."
     [ -f "${BR_OUT}/images/rootfs.cpio.zst" ] || die "buildroot produced no rootfs.cpio.zst."
+    check_buildroot
     echo "${fp}" >"${fpfile}"
   fi
 
@@ -630,19 +740,175 @@ stage_buildroot() {
 
 # ============================================================= 4. pack ===
 
+MNT="${WORK}/mnt"
 LOOPX=""
 
 unmount_image() {
-  sudo umount "/tmp/p1" 2>/dev/null || true
-  sudo umount "/tmp/p3" 2>/dev/null || true
+  local p
+  for p in p1 p2 p3; do
+    sudo umount "${MNT}/${p}" 2>/dev/null || true
+    rmdir "${MNT}/${p}" 2>/dev/null || true
+  done
   if [ -n "${LOOPX}" ]; then
     sudo losetup --detach "${LOOPX}" 2>/dev/null || true
     LOOPX=""
   fi
 }
 
-# A failed pack does not leave the image mounted.
+# A failed pack does not leave the image mounted or the loop device set up.
 trap '[ -z "${LOOPX}" ] || unmount_image' EXIT
+
+# attach_image <image>: LOOPX, with its partition nodes there.
+attach_image() {
+  unmount_image
+  LOOPX="$(sudo losetup -P -f --show "${1}")"
+  # losetup -P has the kernel scan the table, but udev makes the
+  # /dev/loopNpN nodes afterwards: a fast machine gets to mkfs first.
+  if command -v udevadm >/dev/null 2>&1; then
+    sudo udevadm settle --timeout=10 2>/dev/null || true
+  fi
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    [ -b "${LOOPX}p3" ] && return 0
+    sleep 0.5
+  done
+  die "the kernel did not create ${LOOPX}p3 for ${1}."
+}
+
+# GRUB for each target, from the release tarball, as scripts/grub.sh built
+# it for the grub.img.gz arc used to carry. Once per work/: .built says the
+# last one finished.
+build_grub() {
+  local t target platform
+
+  if [ -f "${GRUB_SRC}/.built" ]; then
+    info "grub              ${GRUB_VERSION}, already built"
+    return 0
+  fi
+
+  rm -rf "${GRUB_SRC}"
+  mkdir -p "${WORK}"
+  info "fetching ${GRUB_VERSION}"
+  curl -fsSL --retry 3 -o "${WORK}/${GRUB_VERSION}.tar.gz" "${GRUB_URL}/${GRUB_VERSION}.tar.gz" ||
+    die "could not download ${GRUB_URL}/${GRUB_VERSION}.tar.gz."
+  tar -zxf "${WORK}/${GRUB_VERSION}.tar.gz" -C "${WORK}"
+  rm -f "${WORK}/${GRUB_VERSION}.tar.gz"
+
+  # Without these the installed core cannot read the partition table or
+  # find its own partition.
+  echo "depends bli part_gpt part_msdos lvm" >"${GRUB_SRC}/grub-core/extra_deps.lst"
+
+  for t in ${GRUB_TARGETS}; do
+    target="${t%%-*}"
+    platform="${t#*-}"
+    info "building grub ${target} ${platform}"
+    mkdir -p "${GRUB_SRC}/${t}/grub-core"
+    # make install looks for it relative to the build directory.
+    cp "${GRUB_SRC}/grub-core/extra_deps.lst" "${GRUB_SRC}/${t}/grub-core/extra_deps.lst"
+    (
+      cd "${GRUB_SRC}/${t}" &&
+        ../configure --prefix="${PWD}/usr" --sbindir="${PWD}/sbin" --sysconfdir="${PWD}/etc" \
+          --disable-werror --target="${target}" --with-platform="${platform}" >/dev/null &&
+        make -j"${JOBS}" >/dev/null &&
+        make install >/dev/null
+    ) || die "could not build grub for ${t}."
+
+    # grub-install copies from this tree: the translations (~6 MB) and the
+    # stock starfield theme (~2.8 MB) would land on p1. Arc's theme comes
+    # from arc-theme. The locale directory stays, empty, or grub-install
+    # warns that it cannot open it.
+    rm -rf "${GRUB_SRC}/${t}/usr/share/locale" "${GRUB_SRC}/${t}/usr/share/grub/locale" \
+      "${GRUB_SRC}/${t}/usr/share/grub/themes"
+    mkdir -p "${GRUB_SRC}/${t}/usr/share/locale"
+  done
+
+  touch "${GRUB_SRC}/.built"
+}
+
+# What the empty disk is made of. Bump the trailing layout number when
+# make_grub_disk changes what it writes.
+grub_fingerprint() {
+  echo "${GRUB_VERSION} ${GRUB_TARGETS} ${LABEL} ${P1_SIZE} ${P2_SIZE} ${IMAGE_SIZE} 1"
+}
+
+# The empty disk: arc's partitions, formatted, GRUB installed for every
+# target and nothing else, gzipped. Once per GRUB build, as grub.yml made
+# grub.img.gz.
+make_grub_disk() {
+  local img="${WORK}/grub.img" parts t f args
+
+  if [ -f "${GRUB_DISK}" ] && [ "$(cat "${WORK}/grub.fingerprint" 2>/dev/null)" = "$(grub_fingerprint)" ]; then
+    info "grub disk         already made"
+    return 0
+  fi
+  rm -f "${GRUB_DISK}" "${WORK}/grub.fingerprint"
+
+  info "making the grub disk (${IMAGE_SIZE} MB)"
+  rm -f "${img}"
+  dd if=/dev/zero of="${img}" bs=1M seek="${IMAGE_SIZE}" count=0 status=none
+
+  # MBR: p1 and p2 of their sizes, p3 the rest, p1 active for the BIOS
+  # path. fdisk exits non-zero on the trailing q whether or not the write
+  # worked, so the table is checked instead.
+  printf 'n\np\n1\n\n+%sM\nn\np\n2\n\n+%sM\nn\np\n3\n\n\na\n1\nw\nq\n' "${P1_SIZE}" "${P2_SIZE}" |
+    fdisk "${img}" >/dev/null 2>&1 || true
+  # One "Disk <image>:" header line and one line per partition.
+  parts="$(fdisk -l "${img}" 2>/dev/null | grep -cF "$(basename "${img}")" || true)"
+  [ "$((parts - 1))" -eq 3 ] || die "the grub disk has $((parts - 1)) partitions, not 3. Run fdisk ${img} by hand to see why."
+
+  attach_image "${img}"
+  sudo mkdosfs -F32 -n "${LABEL}1" "${LOOPX}p1" >/dev/null
+  sudo mkfs.ext2 -F -L "${LABEL}2" "${LOOPX}p2" >/dev/null 2>&1
+  sudo mkfs.ext4 -F -L "${LABEL}3" "${LOOPX}p3" >/dev/null 2>&1
+
+  mkdir -p "${MNT}/p1"
+  sudo mount "${LOOPX}p1" "${MNT}/p1"
+  sudo mkdir -p "${MNT}/p1/EFI" "${MNT}/p1/boot/grub"
+  echo "(hd0)   ${LOOPX}" | sudo tee "${MNT}/p1/boot/grub/device.map" >/dev/null
+
+  info "installing grub"
+  for t in ${GRUB_TARGETS}; do
+    args=("${LOOPX}" "--target=${t}" "--no-floppy" "--recheck"
+      "--grub-mkdevicemap=${MNT}/p1/boot/grub/device.map" "--boot-directory=${MNT}/p1/boot")
+    if [[ "${t}" == *efi ]]; then
+      # EFI/BOOT/BOOT*.EFI, what firmware boots from a disk it has no NVRAM
+      # entry for; and no NVRAM entry on this machine.
+      args+=("--efi-directory=${MNT}/p1" "--removable" "--no-nvram")
+    else
+      args+=("--root-directory=${MNT}/p1")
+    fi
+    sudo "${GRUB_SRC}/${t}/sbin/grub-install" "${args[@]}" >/dev/null 2>&1 ||
+      die "grub-install --target=${t} failed."
+  done
+
+  # grub.cfg's font, which grub-install places only when GRUB built it.
+  if [ ! -f "${MNT}/p1/boot/grub/fonts/unicode.pf2" ]; then
+    sudo mkdir -p "${MNT}/p1/boot/grub/fonts"
+    for f in "${GRUB_SRC}"/*/usr/share/grub/unicode.pf2 /usr/share/grub/unicode.pf2; do
+      if [ -f "${f}" ]; then
+        sudo cp -f "${f}" "${MNT}/p1/boot/grub/fonts/"
+        break
+      fi
+    done
+  fi
+
+  # grub-install says it succeeded for an install that left nothing to boot.
+  local missing=""
+  [ -f "${MNT}/p1/boot/grub/fonts/unicode.pf2" ] || missing="${missing} boot/grub/fonts/unicode.pf2 (install unifont and remove ${GRUB_SRC})"
+  for t in ${GRUB_TARGETS}; do
+    [ -f "${MNT}/p1/boot/grub/${t}/normal.mod" ] || missing="${missing} boot/grub/${t}/normal.mod"
+  done
+  for f in BOOTX64.EFI BOOTIA32.EFI; do
+    [ -n "$(find "${MNT}/p1/EFI/BOOT" -maxdepth 1 -iname "${f}" -print -quit 2>/dev/null)" ] || missing="${missing} EFI/BOOT/${f}"
+  done
+
+  unmount_image
+  [ -z "${missing}" ] || die "the grub disk is missing:${missing}"
+
+  gzip -c "${img}" >"${GRUB_DISK}.tmp"
+  mv -f "${GRUB_DISK}.tmp" "${GRUB_DISK}"
+  rm -f "${img}"
+  grub_fingerprint >"${WORK}/grub.fingerprint"
+}
 
 # build.yml's Essential cleanup, on the staged copies: no modules or LKMs
 # for the 4.4 kernels, the Essential title and platform list, arc-essential
@@ -680,6 +946,9 @@ stage_pack() {
   [ -n "$(find files/p3/modules -name '*.tgz' -print -quit 2>/dev/null)" ] ||
     die "no modules in files/p3. Run the deps stage first."
 
+  build_grub
+  make_grub_disk
+
   rm -f arc.img arc*.vmdk arc.vhd arc.vhdx arc.vmc arc.ova arc-*.zip update-*.zip update-*.hash
   info "version           ${VERSION} (${BUILD})"
 
@@ -692,6 +961,8 @@ stage_pack() {
     "${STAGE}"/p3/bzImage-* "${STAGE}"/p3/initrd-*
   echo "${VERSION}" >"${STAGE}/p1/ARC-VERSION"
   echo "${BUILD}" >"${STAGE}/p1/ARC-BUILD"
+  # Clone Loader writes it to another disk.
+  cp -f "${GRUB_DISK}" "${STAGE}/initrd/opt/arc/grub.img.gz"
   if [ "${variant}" = "essential" ]; then
     info "essential"
     make_essential
@@ -702,33 +973,55 @@ stage_pack() {
   repackInitrd "br/initrd-apex" "${STAGE}/initrd" "${STAGE}/p3/initrd-apex"
 
   info "writing ${IMAGE_FILE}"
-  gzip -dc "files/initrd/opt/arc/grub.img.gz" >"${IMAGE_FILE}"
-  unmount_image
-  LOOPX="$(sudo losetup -P -f --show "${IMAGE_FILE}")"
-  sudo rm -rf "/tmp/p1" "/tmp/p3"
-  mkdir -p "/tmp/p1" "/tmp/p3"
-  sudo mount "${LOOPX}p1" "/tmp/p1"
-  sudo mount "${LOOPX}p3" "/tmp/p3"
-  sudo cp -rf "${STAGE}/p1/"* "/tmp/p1"
-  sudo cp -rf "${STAGE}/p3/"* "/tmp/p3"
+  gzip -dc "${GRUB_DISK}" >"${IMAGE_FILE}"
+  attach_image "${IMAGE_FILE}"
+  mkdir -p "${MNT}/p1" "${MNT}/p3"
+  sudo mount "${LOOPX}p1" "${MNT}/p1"
+  sudo mount "${LOOPX}p3" "${MNT}/p3"
+
+  # Checked before the copy: cp fills a partition and fails partway,
+  # leaving an image that looks built and lacks whatever came last.
+  local p need avail
+  for p in p1 p3; do
+    need="$(du -sm "${STAGE}/${p}" | cut -f1)"
+    avail="$(df -m --output=avail "${MNT}/${p}" | tail -1 | tr -d ' ')"
+    [ "${need}" -lt "${avail}" ] || die "${p} has ${avail} MB free and needs ${need} MB."
+    info "writing ${p}          ${need} MB into ${avail} MB"
+    sudo cp -rf "${STAGE}/${p}/"* "${MNT}/${p}"
+  done
   sudo sync
+
+  # Every staged file is on the image, and what the loader cannot boot
+  # without is among them.
+  local f missing=""
+  for p in p1 p3; do
+    while IFS= read -r -d '' f; do
+      [ -f "${MNT}/${p}/${f#./}" ] || missing="${missing} ${p}/${f#./}"
+    done < <(cd "${STAGE}/${p}" && find . -type f -print0)
+  done
+  for f in p1/boot/grub/grub.cfg p1/ARC-VERSION p3/bzImage-apex p3/initrd-apex; do
+    [ -f "${MNT}/${f}" ] || missing="${missing} ${f}"
+  done
+  for f in addons configs custom lkms modules patches; do
+    [ -n "$(ls -A "${MNT}/p3/${f}" 2>/dev/null)" ] || missing="${missing} p3/${f}/"
+  done
+  [ -z "${missing}" ] || die "the image is missing:${missing}"
 
   # GRUB for the Update Loader, as build.yml stages it: the image up to p1
   # (MBR boot code and core.img), the EFI loaders and the modules. In the
   # update zip only, never in the image.
   local grub_update="${STAGE}/p3/grub-update" t p1start
   mkdir -p "${grub_update}/boot/grub" "${grub_update}/EFI/BOOT"
-  for t in i386-pc i386-efi x86_64-efi; do
-    [ -d "/tmp/p1/boot/grub/${t}" ] && cp -r "/tmp/p1/boot/grub/${t}" "${grub_update}/boot/grub/"
+  for t in ${GRUB_TARGETS}; do
+    [ -d "${MNT}/p1/boot/grub/${t}" ] && cp -r "${MNT}/p1/boot/grub/${t}" "${grub_update}/boot/grub/"
   done
-  find "/tmp/p1/EFI/BOOT" -maxdepth 1 -iname 'boot*.efi' -exec cp {} "${grub_update}/EFI/BOOT/" \;
+  find "${MNT}/p1/EFI/BOOT" -maxdepth 1 -iname 'boot*.efi' -exec cp {} "${grub_update}/EFI/BOOT/" \;
   p1start="$(od -An -tu4 -j454 -N4 "${IMAGE_FILE}" | tr -d ' \n')"
   dd if="${IMAGE_FILE}" of="${grub_update}/bootcode.img" bs=512 count="${p1start}" status=none
   [ -f "${grub_update}/boot/grub/i386-pc/normal.mod" ] && ls "${grub_update}/EFI/BOOT/"* >/dev/null ||
     die "could not stage GRUB for the update."
 
   unmount_image
-  rmdir "/tmp/p1" "/tmp/p3"
 
   info "writing arc.vmdk"
   qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk "${IMAGE_FILE}" arc.vmdk
@@ -973,7 +1266,7 @@ state_of() {
     git rev-parse --short HEAD 2>/dev/null || echo "not a checkout"
     ;;
   deps)
-    if [ -f "${STATE}" ] && grep -q '^ADDONTAG=' "${STATE}" && [ -n "$(ls -A files/p3/addons 2>/dev/null | grep -v '^\.gitkeep$')" ]; then
+    if [ -f "${DEPS_DONE}" ] && [ -f "${STATE}" ]; then
       (. "${STATE}" && echo "addons ${ADDONTAG}, modules ${MODULETAG}")
     else
       echo "not fetched"
@@ -1029,6 +1322,8 @@ menu() {
     printf '      \033[1m5\033[0m  pack                \033[2m%s\033[0m\n' "$(state_of pack)"
     printf '\n'
     printf '      \033[1m6\033[0m  deps + buildroot + pack  \033[2mall but the pull\033[0m\n'
+    printf '      \033[1m7\033[0m  everything, updated \033[2mas 1, fetching addons, modules, configs,\033[0m\n'
+    printf '                          \033[2mpatches, custom, LKMs and theme again\033[0m\n'
     printf '\n'
     printf '      \033[1mv\033[0m  variant             \033[2m%s\033[0m\n' "${variant}"
     printf '      \033[1mr\033[0m  clean buildroot     \033[2m%s\033[0m\n' \
@@ -1053,6 +1348,7 @@ menu() {
     4) do_pull=0 do_deps=0 do_buildroot=1 do_pack=0; return 0 ;;
     5) do_pull=0 do_deps=0 do_buildroot=0 do_pack=1; return 0 ;;
     6) do_pull=0 do_deps=1 do_buildroot=1 do_pack=1; return 0 ;;
+    7) do_pull=1 do_deps=1 do_buildroot=1 do_pack=1 do_refresh=1; return 0 ;;
     v | V)
       if [ "${variant}" = "full" ]; then variant="essential"; else variant="full"; fi
       ;;
@@ -1071,6 +1367,7 @@ menu_clean() {
   printf '      \033[1ma\033[0m  images and zips     \033[2marc.img, vmdk, vhd(x), ova, release zips\033[0m\n'
   printf '      \033[1mb\033[0m  deps and buildroot  \033[2mfiles/p1, files/p3 output, br/, work/stage\033[0m\n'
   printf '      \033[1mc\033[0m  buildroot output    \033[2mwork/buildroot/output, keeps the clone\033[0m\n'
+  printf '      \033[1me\033[0m  grub                \033[2mthe grub build and the grub disk in work/\033[0m\n'
   printf '      \033[1md\033[0m  everything          \033[2mall of the above and work/\033[0m\n'
   printf '\n'
   printf '    clean what (enter to cancel): '
@@ -1083,12 +1380,16 @@ menu_clean() {
     ;;
   b)
     git clean -fdxq -- files/p1 files/p3
-    rm -rf br "${STAGE}" "${STATE}"
+    rm -rf br "${STAGE}" "${STATE}" "${DEPS_DONE}"
     info "removed the dependencies, br/ and work/stage"
     ;;
   c)
     rm -rf "${BR_OUT}" "${WORK}/br.fingerprint"
     info "removed work/buildroot/output"
+    ;;
+  e)
+    rm -rf "${GRUB_SRC}" "${GRUB_DISK}" "${WORK}/grub.img" "${WORK}/grub.fingerprint"
+    info "removed the grub build and the grub disk"
     ;;
   d)
     printf '    this drops the buildroot clone and its downloads too. type yes: '
@@ -1131,6 +1432,11 @@ if [ "${do_pack}" -eq 1 ] && [ "${do_buildroot}" -eq 0 ] && [ -f br/initrd-apex 
   die "the buildroot in br/ was not built here. Build it too:
 
         ./build.sh buildroot pack"
+fi
+
+# A release ships the dependencies as they are now, as it does buildroot.
+if [ "${do_release}" -eq 1 ] && [ "${do_deps}" -eq 1 ]; then
+  do_refresh=1
 fi
 
 if [ -z "${VERSION}" ]; then
