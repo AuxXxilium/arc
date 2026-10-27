@@ -732,7 +732,7 @@ build_buildroot() {
   mkdir -p br
   cp -f "${BR_OUT}/images/bzImage" "br/bzImage-apex"
   cp -f "${BR_OUT}/images/rootfs.cpio.zst" "br/initrd-apex"
-  remember APEX "local: buildroot ${BUILDROOT_REF}, kernel ${KERNEL_VERSION}, arc-buildroot-essential@${BR_CONFIG_REV}"
+  remember APEX "${BUILDROOT_REF}@${BR_CONFIG_REV}"
 }
 
 stage_buildroot() {
@@ -1433,7 +1433,7 @@ fi
 # A pack without the buildroot stage packs the br/ an earlier build made
 # here, never the arc-buildroot-essential release an older one downloaded.
 if [ "${do_pack}" -eq 1 ] && [ "${do_buildroot}" -eq 0 ] && [ -f br/initrd-apex ] &&
-  ! (. "${STATE}" 2>/dev/null && [ "${APEX#local:}" != "${APEX}" ]); then
+  ! (. "${STATE}" 2>/dev/null && [ "${APEX#*@}" != "${APEX}" ]); then
   die "the buildroot in br/ was not built here. Build it too:
 
         ./build.sh buildroot pack"
