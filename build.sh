@@ -499,7 +499,7 @@ rebuild_changed_packages() {
     sed 's/^[[:space:]]*//; s/=.*//' | sort -u)"
   [ -n "${syms}" ] || return 0
 
-  pkgs="$(make -s -C "${BR_SRC}" show-targets)"
+  pkgs="$(make -s -C "${BR_SRC}" O="${BR_OUT}" show-targets)"
   for sym in ${syms}; do
     rest="${sym#BR2_PACKAGE_}"
     best=""
@@ -523,7 +523,7 @@ rebuild_changed_packages() {
 
   for pkg in ${cleaned}; do
     info "options of ${pkg} changed, rebuilding it"
-    make -s -C "${BR_SRC}" "${pkg}-dirclean"
+    make -s -C "${BR_SRC}" O="${BR_OUT}" "${pkg}-dirclean"
   done
   if [ -n "${orphans}" ]; then
     warn "changed options of packages no longer built:${orphans}
@@ -542,7 +542,7 @@ build_buildroot() {
     git ls-remote --exit-code --tags --refs "${BUILDROOT_URL}" "refs/tags/${BUILDROOT_REF}" >/dev/null ||
       die "buildroot has no release ${BUILDROOT_REF}."
     info "cloning buildroot ${BUILDROOT_REF}"
-    git clone -q --depth 1 --branch "${BUILDROOT_REF}" "${BUILDROOT_URL}" "${BR_SRC}"
+    git -c advice.detachedHead=false clone -q --depth 1 --branch "${BUILDROOT_REF}" "${BUILDROOT_URL}" "${BR_SRC}"
   elif [ "$(buildroot_ref)" != "${BUILDROOT_REF}" ]; then
     # Buildroot rebuilds nothing for a new release's package versions, so
     # the output starts over. The downloads (.buildroot-dl) stay.
@@ -574,12 +574,12 @@ build_buildroot() {
       info "configuring"
       rm -f "${prev}"
       [ -f "${BR_OUT}/.config" ] && cp -f "${BR_OUT}/.config" "${prev}"
-      make -s -C "${BR_SRC}" BR2_EXTERNAL="${BR_SRC}/external" arc_defconfig
+      make -s -C "${BR_SRC}" O="${BR_OUT}" BR2_EXTERNAL="${BR_SRC}/external" arc_defconfig
       if [ -f "${prev}" ]; then
         if [ "$(arch_options "${prev}")" != "$(arch_options "${BR_OUT}/.config")" ]; then
           info "target architecture changed, building everything again"
           rm -rf "${BR_OUT}"
-          make -s -C "${BR_SRC}" BR2_EXTERNAL="${BR_SRC}/external" arc_defconfig
+          make -s -C "${BR_SRC}" O="${BR_OUT}" BR2_EXTERNAL="${BR_SRC}/external" arc_defconfig
         else
           rebuild_changed_packages "${prev}"
         fi
@@ -607,7 +607,7 @@ build_buildroot() {
     # FORCE_UNSAFE_CONFIGURE: host-tar's configure refuses root otherwise.
     # BR2_JLEVEL rather than -j: the top level is .NOTPARALLEL anyway.
     info "building with ${JOBS} jobs (the first build takes a while)"
-    FORCE_UNSAFE_CONFIGURE=1 make -C "${BR_SRC}" BR2_JLEVEL="${JOBS}"
+    FORCE_UNSAFE_CONFIGURE=1 make -C "${BR_SRC}" O="${BR_OUT}" BR2_JLEVEL="${JOBS}"
 
     [ -f "${BR_OUT}/images/bzImage" ] || die "buildroot produced no bzImage."
     [ -f "${BR_OUT}/images/rootfs.cpio.zst" ] || die "buildroot produced no rootfs.cpio.zst."
