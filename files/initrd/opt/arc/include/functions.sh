@@ -616,28 +616,38 @@ function delCmdline() {
 }
 
 ###############################################################################
-# check for a PWM fan controller or PWM/fan signals
-# Accepts a pwm[0-9] control channel or a fan[0-9]_input tach signal, both of
-# which indicate a fan the addon can work with.
+# check for a server's BMC (iDRAC, iLO, XCC, ...): ACPI's IPI0001 device or
+# SPMI table, its IPMI interface. As arx's hwscan.hasBMC.
+function hasBMC() {
+  ls /sys/bus/acpi/devices/IPI0001:* >/dev/null 2>&1 && return 0
+  [ -e /sys/firmware/acpi/tables/SPMI ]
+}
+
+###############################################################################
+# check for a fan the sensors addon can drive: a pwmN control channel. A
+# fanN_input alone is a fan it can only read, like 6.18's acpi_fan.
+# The loader only autoloads modules by modalias, so the Super I/O chips
+# (nct6775, it87, ...) have no driver until one is loaded here: always, once
+# per boot, as arx's hwscan.FanChips, since acpi_fan's fan1_input would
+# otherwise hide an it8613 that was never looked for. Not where a BMC owns
+# the Super I/O and the fans: blind probes poke what it drives.
 # The entries under /sys/class/hwmon are symlinks into /sys/devices, so find
 # needs -L to descend into them. Keep -maxdepth 2: the attributes sit directly
 # below the hwmonN symlink, and sysfs symlink cycles (device/wakeup/device/...)
 # would otherwise send find on a long walk through the whole device tree.
-# The loader only autoloads modules by modalias, so ISA/superio hwmon chips
-# (nct6775, it87, ...) are not bound yet. Probe sysfs first and only load the
-# superio drivers as a fallback when nothing is exposed.
 function checkPWMSignal() {
-  local SIG
-  SIG="$(find -L /sys/class/hwmon/ -maxdepth 2 \( -name 'pwm[0-9]' -o -name 'fan[0-9]_input' \) 2>/dev/null | head -1)"
-  [ -n "${SIG}" ] && return 0
+  local M SIG
+  if [ ! -f "/tmp/.fanprobe" ] && ! hasBMC; then
+    # Not every board has every chip; a driver that finds nothing refuses
+    # to load, which is the expected outcome.
+    for M in it87 nct6683 nct6775 w83627ehf f71882fg dell-smm-hwmon asus-wmi-sensors it5571; do
+      modprobe "${M}" >/dev/null 2>&1
+    done
+  fi
+  touch "/tmp/.fanprobe"
 
-  for M in nct6775 it87 w83627ehf f71882fg dell-smm-hwmon asus-wmi-sensors; do
-    lsmod | grep -q "^${M} " || modprobe "${M}" 2>/dev/null
-  done
-
-  SIG="$(find -L /sys/class/hwmon/ -maxdepth 2 \( -name 'pwm[0-9]' -o -name 'fan[0-9]_input' \) 2>/dev/null | head -1)"
-  [ -n "${SIG}" ] && return 0
-  return 1
+  SIG="$(find -L /sys/class/hwmon/ -maxdepth 2 \( -name 'pwm[0-9]' -o -name 'pwm[0-9][0-9]' \) 2>/dev/null | head -1)"
+  [ -n "${SIG}" ]
 }
 
 ###############################################################################
