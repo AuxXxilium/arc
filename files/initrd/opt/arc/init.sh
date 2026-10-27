@@ -264,8 +264,17 @@ if [ "${DEVELOPMENT_MODE}" = "true" ]; then
   echo -e "\033[1;34mDevelopment Mode is enabled.\033[0m"
   curl -skL https://github.com/AuxXxilium/arc/archive/refs/heads/dev.zip -o /tmp/arc-dev.zip 2>/dev/null || true
   unzip -q /tmp/arc-dev.zip -d /tmp 2>/dev/null || true
-  cp -rf /tmp/arc-dev/files/initrd/opt/arc /opt 2>/dev/null || true
-  rm -rf /tmp/arc-dev /tmp/arc-dev.zip
+  # Swap the directory, never write into it: bash reads this script as it runs,
+  # and an init.sh rewritten in place is read on at the old offset.
+  rm -rf /opt/arc.new
+  if cp -rf /tmp/arc-dev/files/initrd/opt/arc /opt/arc.new 2>/dev/null; then
+    rm -rf /opt/arc.old
+    if mv -f /opt/arc /opt/arc.old; then
+      mv -f /opt/arc.new /opt/arc || mv -f /opt/arc.old /opt/arc
+    fi
+    rm -rf /opt/arc.old
+  fi
+  rm -rf /opt/arc.new /tmp/arc-dev /tmp/arc-dev.zip
 fi
 
 # Notification System
