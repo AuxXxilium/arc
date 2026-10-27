@@ -72,7 +72,9 @@ STATE="${WORK}/versions.env"
 # release of BUILDROOT_SERIES unless BUILDROOT_REF pins one, and the newest
 # kernel of arc_defconfig's series unless KERNEL_VERSION pins one.
 BR_SRC="${WORK}/buildroot"
-BR_OUT="${BR_SRC}/output"
+# Outside the Buildroot tree, as arx keeps it: Buildroot takes O=<tree>/output
+# for an in-tree build and writes .config to the top of the tree instead.
+BR_OUT="${WORK}/br-out"
 BUILDROOT_URL="${BUILDROOT_URL:-https://github.com/buildroot/buildroot.git}"
 BUILDROOT_SERIES="${BUILDROOT_SERIES:-2026.02}"
 BUILDROOT_REF="${BUILDROOT_REF:-}"
@@ -660,6 +662,9 @@ build_buildroot() {
     git -C "${BR_SRC}" checkout -q "${BUILDROOT_REF}"
     rm -rf "${BR_OUT}"
   fi
+  # Left in the tree by builds that kept their output in it; none of them
+  # got past the configure.
+  rm -rf "${BR_SRC}/output" "${BR_SRC}/.config" "${BR_SRC}/.config.old"
   if [ "${do_brclean}" -eq 1 ] && [ -d "${BR_OUT}" ]; then
     info "removing ${BR_OUT}"
     rm -rf "${BR_OUT}"
@@ -1363,7 +1368,7 @@ menu_clean() {
   printf '\n'
   printf '      \033[1ma\033[0m  images and zips     \033[2marc.img, vmdk, vhd(x), ova, release zips\033[0m\n'
   printf '      \033[1mb\033[0m  deps and buildroot  \033[2mfiles/p1, files/p3 output, br/, work/stage\033[0m\n'
-  printf '      \033[1mc\033[0m  buildroot output    \033[2mwork/buildroot/output, keeps the clone\033[0m\n'
+  printf '      \033[1mc\033[0m  buildroot output    \033[2mwork/br-out, keeps the clone\033[0m\n'
   printf '      \033[1me\033[0m  grub                \033[2mthe grub build and the grub disk in work/\033[0m\n'
   printf '      \033[1md\033[0m  everything          \033[2mall of the above and work/\033[0m\n'
   printf '\n'
@@ -1382,7 +1387,7 @@ menu_clean() {
     ;;
   c)
     rm -rf "${BR_OUT}" "${WORK}/br.fingerprint"
-    info "removed work/buildroot/output"
+    info "removed work/br-out"
     ;;
   e)
     rm -rf "${GRUB_SRC}" "${GRUB_DISK}" "${WORK}/grub.img" "${WORK}/grub.fingerprint"
