@@ -25,7 +25,7 @@ release. See the [Dockerfile](Dockerfile) for exactly what this image sets.
 
 ## Option 2: Build and run your own image
 
-Build `arc.img` first (see the main [README](README.md) / `img-gen.sh`), then
+Build `arc.img` first (see the main [README](README.md) / `build.sh`), then
 run it with the following Docker Compose file:
 
 ```yaml

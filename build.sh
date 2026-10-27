@@ -9,41 +9,39 @@
 #
 #   1. pull       update the working tree (fast-forward only)
 #   2. deps       addons, modules, configs, patches, custom, LKMs, theme
-#   3. buildroot  loader kernel + initramfs: the latest arc-buildroot-essential
-#                 release, or built here from source (--rebuild-buildroot)
+#   3. buildroot  loader kernel + initramfs, built here from the build's own
+#                 clone of arc-buildroot-essential's main and of Buildroot,
+#                 both in work/ (AUX_TOKEN), only what changed
 #   4. pack       arc.img and arc.vmdk
 #
-#   ./img-gen.sh                      the build menu on a terminal (dialog),
-#                                     else all four
-#   ./img-gen.sh deps pack            only the stages named
-#   ./img-gen.sh --no-pull            all but the pull (also --no-deps,
-#                                     --no-buildroot, --no-pack)
-#   ./img-gen.sh --rebuild-buildroot  build buildroot instead of downloading
-#                                     it, from the build's own clone of
-#                                     arc-buildroot-essential's main and of
-#                                     Buildroot, both in work/ (AUX_TOKEN)
-#   ./img-gen.sh --clean-buildroot    the same, from an empty output tree
-#   ./img-gen.sh --essential          the Essential variant, as build.yml makes
-#                                     it: no 4.4 kernel modules or LKMs, the
-#                                     Essential platforms, and arc-essential as
-#                                     the loader's update source
-#   ./img-gen.sh --release            then the release files as build.yml packs
-#                                     them: img, vmdk (flat and dynamic), vhd,
-#                                     vhdx and ova zips, the update zip and its
-#                                     hash. Asks for the version, and once the
-#                                     files are written whether to publish them:
-#                                     as a stable (arc) or beta (arc-beta)
-#                                     release, or for --essential to
-#                                     arc-essential (AUX_TOKEN)
-#   ./img-gen.sh --stable             --release, published to arc without asking
-#   ./img-gen.sh --beta               --release, published to arc-beta without
-#                                     asking
-#   ./img-gen.sh --essential --publish
-#                                     --release, published to arc-essential
-#                                     without asking (--publish alone: arc)
-#   --no-publish                      --release, and do not ask
-#   --replace                         a release already published may have its
-#                                     files replaced (build.yml's allowUpdates)
+#   ./build.sh                      the build menu on a terminal, else all
+#                                   four. The menu asks whether to pack the
+#                                   release files too
+#   ./build.sh deps pack            only the stages named
+#   ./build.sh --no-pull            all but the pull (also --no-deps,
+#                                   --no-buildroot, --no-pack)
+#   ./build.sh --clean-buildroot    buildroot from an empty output tree
+#   ./build.sh --essential          the Essential variant, as build.yml makes
+#                                   it: no 4.4 kernel modules or LKMs, the
+#                                   Essential platforms, and arc-essential as
+#                                   the loader's update source
+#   ./build.sh --release            then the release files as build.yml packs
+#                                   them: img, vmdk (flat and dynamic), vhd,
+#                                   vhdx and ova zips, the update zip and its
+#                                   hash. Asks for the version, and once the
+#                                   files are written whether to publish them:
+#                                   as a stable (arc) or beta (arc-beta)
+#                                   release, or for --essential to
+#                                   arc-essential (AUX_TOKEN)
+#   ./build.sh --stable             --release, published to arc without asking
+#   ./build.sh --beta               --release, published to arc-beta without
+#                                   asking
+#   ./build.sh --essential --publish
+#                                   --release, published to arc-essential
+#                                   without asking (--publish alone: arc)
+#   --no-publish                    --release, and do not ask
+#   --replace                       a release already published may have its
+#                                   files replaced (build.yml's allowUpdates)
 #
 # Environment: AUX_TOKEN, VERSION, BUILDROOT_REF (pin a Buildroot tag),
 # KERNEL_VERSION (pin a kernel of arc_defconfig's series), BR_CONFIG (an
@@ -121,7 +119,7 @@ remember() {
 # --------------------------------------------------------------- stages ---
 
 do_pull=1 do_deps=1 do_buildroot=1 do_pack=1
-do_rebuild=0 do_brclean=0 do_release=0 do_replace=0
+do_brclean=0 do_release=0 do_replace=0
 # full or essential.
 variant="full"
 # Where the release goes: stable, beta or essential without asking, no to
@@ -142,8 +140,7 @@ for arg in "$@"; do
   --no-deps) do_deps=0 ;;
   --no-buildroot) do_buildroot=0 ;;
   --no-pack) do_pack=0 ;;
-  --rebuild-buildroot) do_rebuild=1 ;;
-  --clean-buildroot) do_rebuild=1 do_brclean=1 ;;
+  --clean-buildroot) do_brclean=1 ;;
   --essential) variant="essential" ;;
   --release) do_release=1 ;;
   --stable) do_release=1 publish_to="stable" ;;
@@ -198,7 +195,7 @@ check_tools() {
     need unzip
     need tar
   fi
-  if [ "${do_buildroot}" -eq 1 ] && [ "${do_rebuild}" -eq 1 ]; then
+  if [ "${do_buildroot}" -eq 1 ]; then
     need make "build-essential"
     need gcc "build-essential"
     need g++ "build-essential"
@@ -281,7 +278,6 @@ stage_pull() {
   [ "${do_buildroot}" -eq 1 ] || rest="${rest} --no-buildroot"
   [ "${do_pack}" -eq 1 ] || rest="${rest} --no-pack"
   [ "${do_brclean}" -eq 1 ] && rest="${rest} --clean-buildroot"
-  [ "${do_rebuild}" -eq 1 ] && rest="${rest} --rebuild-buildroot"
   [ "${do_release}" -eq 1 ] && rest="${rest} --release"
   [ "${do_replace}" -eq 1 ] && rest="${rest} --replace"
   [ "${variant}" = "essential" ] && rest="${rest} --essential"
@@ -291,10 +287,10 @@ stage_pull() {
   no) rest="${rest} --no-publish" ;;
   esac
 
-  chmod 0755 "${HERE}/img-gen.sh" 2>/dev/null || true
-  info "restarting with the new img-gen.sh"
+  chmod 0755 "${HERE}/build.sh" 2>/dev/null || true
+  info "restarting with the new build.sh"
   # shellcheck disable=SC2086
-  ARC_PULLED=1 exec "${HERE}/img-gen.sh" --no-pull ${rest}
+  ARC_PULLED=1 exec "${HERE}/build.sh" --no-pull ${rest}
 }
 
 # ============================================================= 2. deps ===
@@ -626,16 +622,9 @@ build_buildroot() {
 }
 
 stage_buildroot() {
-  if [ "${do_rebuild}" -eq 1 ]; then
-    stage "buildroot (rebuild)"
-    build_buildroot
-  else
-    stage "buildroot (download)"
-    rm -rf br
-    getBuildroot "apex" || die "could not get the buildroot release."
-    remember APEX "${apex}"
-  fi
-  info "bzImage-apex      $(du -h br/bzImage-apex | cut -f1)"
+  stage "buildroot"
+  build_buildroot
+  info "bzImage-apex     $(du -h br/bzImage-apex | cut -f1)"
   info "initrd-apex       $(du -h br/initrd-apex | cut -f1)"
 }
 
@@ -946,7 +935,7 @@ upload_asset() {
   local again="--${publish_to}"
   [ "${publish_to}" != "essential" ] || again="--essential --publish"
   die "could not upload ${name}. The draft ${VERSION} stays on ${RELEASE_REPO};
-    VERSION=${VERSION} ./img-gen.sh pack ${again} tries again."
+    VERSION=${VERSION} ./build.sh pack ${again} tries again."
 }
 
 publish_release() {
@@ -974,9 +963,10 @@ publish_release() {
 
 # ============================================================== menu ===
 #
-# The build set up in dialog -- stages, variant, buildroot, release,
-# publishing, version -- and then run, with nothing more to answer.
+# A numbered menu, as arx's build.sh has. The variant and a clean buildroot
+# are switched in place; every other choice starts the build.
 
+# What is already built, so the menu can say so.
 state_of() {
   case "${1}" in
   pull)
@@ -990,13 +980,6 @@ state_of() {
     fi
     ;;
   buildroot)
-    if [ -f br/initrd-apex ] && [ -f "${STATE}" ]; then
-      (. "${STATE}" && echo "${APEX:-unknown}")
-    else
-      echo "none"
-    fi
-    ;;
-  rebuild)
     if [ -f "${BR_OUT}/images/rootfs.cpio.zst" ]; then
       echo "built $(date -r "${BR_OUT}/images/rootfs.cpio.zst" +'%d %b %H:%M'), $(buildroot_ref)"
     elif [ -d "${BR_SRC}" ]; then
@@ -1013,59 +996,6 @@ state_of() {
     fi
     ;;
   esac
-}
-
-dlg() {
-  dialog --backtitle "Arc build  $(git rev-parse --abbrev-ref HEAD 2>/dev/null)@$(state_of pull)" \
-    --colors --stdout "$@"
-}
-
-msg() {
-  dlg --title "${1}" --msgbox "${2}" 0 0 || true
-}
-
-# onoff <value> <wanted>: a dialog list's on or off.
-onoff() {
-  if [ "${1}" = "${2}" ]; then echo "on"; else echo "off"; fi
-}
-
-stages_text() {
-  local s="" n v
-  for n in pull deps buildroot pack; do
-    eval "v=\${do_${n}}"
-    if [ "${v}" -eq 1 ]; then s="${s:+${s} + }${n}"; fi
-  done
-  echo "${s:-none}"
-}
-
-br_text() {
-  if [ "${do_rebuild}" -eq 0 ]; then
-    echo "download the latest release"
-  elif [ "${do_brclean}" -eq 1 ]; then
-    echo "rebuild here, from an empty output tree"
-  else
-    echo "rebuild here, only what changed"
-  fi
-}
-
-publish_text() {
-  if [ "${do_release}" -eq 0 ]; then
-    echo "-"
-  elif [ -z "${publish_to}" ]; then
-    echo "ask when the files are written"
-  elif [ "${publish_to}" = "no" ]; then
-    echo "no, keep the files here"
-  else
-    echo "${publish_to} ($(release_repo "${publish_to}"))"
-  fi
-}
-
-version_text() {
-  if [ "${do_release}" -eq 0 ]; then
-    echo "${DEV_VERSION} (dev build)"
-  else
-    echo "${VERSION:-not set}"
-  fi
 }
 
 # The repository this build would be published to, for the version hint.
@@ -1086,198 +1016,94 @@ latest_tag() {
 }
 
 menu() {
-  local choice="b"
-  command -v dialog >/dev/null 2>&1 ||
-    die "the build menu needs dialog: sudo apt install -y dialog
-    Or run without the menu, see ./img-gen.sh --help."
-
+  local choice
   while true; do
-    choice="$(dlg --title "Arc build" --cancel-label "Quit" --default-item "${choice}" \
-      --menu "Set the build up, then start it." 0 0 0 \
-      b "\Zb\Z4Start the build\Zn" \
-      s "Stages         $(stages_text)" \
-      v "Variant        ${variant}" \
-      r "Buildroot      $(br_text)" \
-      f "Release files  $(onoff "${do_release}" 1 | sed 's/on/yes/; s/off/no/')" \
-      p "Publish        $(publish_text)" \
-      n "Version        $(version_text)" \
-      c "Clean          drop build output")" || {
-      clear
+    printf '\n'
+    printf '    \033[1marc build\033[0m  %s@%s\n' "$(git rev-parse --abbrev-ref HEAD 2>/dev/null)" "$(state_of pull)"
+    printf '    \033[2m%s\033[0m\n\n' "$(printf '%.0s-' $(seq 1 46))"
+    printf '      \033[1m1\033[0m  everything          \033[2mall four stages\033[0m\n'
+    printf '\n'
+    printf '      \033[1m2\033[0m  pull                \033[2m%s\033[0m\n' "$(state_of pull)"
+    printf '      \033[1m3\033[0m  deps                \033[2m%s\033[0m\n' "$(state_of deps)"
+    printf '      \033[1m4\033[0m  buildroot           \033[2m%s\033[0m\n' "$(state_of buildroot)"
+    printf '      \033[1m5\033[0m  pack                \033[2m%s\033[0m\n' "$(state_of pack)"
+    printf '\n'
+    printf '      \033[1m6\033[0m  deps + buildroot + pack  \033[2mall but the pull\033[0m\n'
+    printf '\n'
+    printf '      \033[1mv\033[0m  variant             \033[2m%s\033[0m\n' "${variant}"
+    printf '      \033[1mr\033[0m  clean buildroot     \033[2m%s\033[0m\n' \
+      "$([ "${do_brclean}" -eq 1 ] && echo "yes, from an empty output tree" || echo "no, only what changed")"
+    printf '      \033[1mc\033[0m  clean               \033[2mdrop build output\033[0m\n'
+    printf '\n'
+    printf '      \033[1mq\033[0m  quit\n'
+    printf '\n'
+    printf '    choice: '
+
+    read -r choice || {
+      echo
       exit 0
     }
+
+    # The stages return, so a stage's output is not buried under a
+    # redrawn menu. v and r go round again to show what they switched.
     case "${choice}" in
-    b)
-      if menu_start; then
-        clear
-        return 0
-      fi
+    1) do_pull=1 do_deps=1 do_buildroot=1 do_pack=1; return 0 ;;
+    2) do_pull=1 do_deps=0 do_buildroot=0 do_pack=0; return 0 ;;
+    3) do_pull=0 do_deps=1 do_buildroot=0 do_pack=0; return 0 ;;
+    4) do_pull=0 do_deps=0 do_buildroot=1 do_pack=0; return 0 ;;
+    5) do_pull=0 do_deps=0 do_buildroot=0 do_pack=1; return 0 ;;
+    6) do_pull=0 do_deps=1 do_buildroot=1 do_pack=1; return 0 ;;
+    v | V)
+      if [ "${variant}" = "full" ]; then variant="essential"; else variant="full"; fi
       ;;
-    s) menu_stages ;;
-    v) menu_variant ;;
-    r) menu_buildroot ;;
-    f) menu_release ;;
-    p) menu_publish ;;
-    n) menu_version || true ;;
-    c) menu_clean ;;
+    r | R) do_brclean=$((1 - do_brclean)) ;;
+    c | C) menu_clean ;;
+    q | Q) exit 0 ;;
+    *) warn "not a choice: ${choice}" ;;
     esac
   done
 }
 
-menu_stages() {
-  local sel s
-  sel="$(dlg --title "Stages" --separate-output --checklist "Space selects a stage." 0 0 0 \
-    pull "$(state_of pull)" "$(onoff "${do_pull}" 1)" \
-    deps "$(state_of deps)" "$(onoff "${do_deps}" 1)" \
-    buildroot "$(state_of buildroot)" "$(onoff "${do_buildroot}" 1)" \
-    pack "$(state_of pack)" "$(onoff "${do_pack}" 1)")" || return 0
-  do_pull=0 do_deps=0 do_buildroot=0 do_pack=0
-  for s in ${sel}; do
-    eval "do_${s}=1"
-  done
-}
-
-menu_variant() {
-  local sel
-  sel="$(dlg --title "Variant" --radiolist "" 0 0 0 \
-    full "every platform, released to arc or arc-beta" "$(onoff "${variant}" full)" \
-    essential "no 4.4 kernels, released to arc-essential" "$(onoff "${variant}" essential)")" || return 0
-  variant="${sel:-${variant}}"
-  # Essential has one release repository, the full loader two.
-  case "${variant}:${publish_to}" in
-  essential:stable | essential:beta | full:essential) publish_to="" ;;
-  esac
-}
-
-menu_buildroot() {
-  local sel mode="download"
-  if [ "${do_rebuild}" -eq 1 ]; then mode="rebuild"; fi
-  if [ "${do_brclean}" -eq 1 ]; then mode="clean"; fi
-  sel="$(dlg --title "Buildroot" --radiolist "Local tree: $(state_of rebuild)" 0 0 0 \
-    download "the latest arc-buildroot-essential release" "$(onoff "${mode}" download)" \
-    rebuild "build here, only what changed" "$(onoff "${mode}" rebuild)" \
-    clean "build here, from an empty output tree" "$(onoff "${mode}" clean)")" || return 0
-  case "${sel}" in
-  download) do_rebuild=0 do_brclean=0 ;;
-  rebuild) do_rebuild=1 do_brclean=0 ;;
-  clean) do_rebuild=1 do_brclean=1 ;;
-  *) return 0 ;;
-  esac
-  do_buildroot=1
-}
-
-menu_release() {
-  local rc=0
-  dlg --title "Release files" --yesno "Pack the release files too?\n\nimg, vmdk (flat and dynamic), vhd, vhdx and ova zips, the update zip and its hash. A release needs a version." 0 0 || rc=$?
-  case "${rc}" in
-  0)
-    do_release=1
-    do_pack=1
-    ;;
-  1) do_release=0 ;;
-  esac
-}
-
-menu_publish() {
-  local sel cur="${publish_to:-ask}"
-  if [ "${variant}" = "essential" ]; then
-    sel="$(dlg --title "Publish" --radiolist "Where the release files go once they are written." 0 0 0 \
-      ask "ask when the files are written" "$(onoff "${cur}" ask)" \
-      essential "${ESSENTIAL_REPO}" "$(onoff "${cur}" essential)" \
-      no "keep the files here" "$(onoff "${cur}" no)")" || return 0
-  else
-    sel="$(dlg --title "Publish" --radiolist "Where the release files go once they are written." 0 0 0 \
-      ask "ask when the files are written" "$(onoff "${cur}" ask)" \
-      stable "${STABLE_REPO}" "$(onoff "${cur}" stable)" \
-      beta "${BETA_REPO}" "$(onoff "${cur}" beta)" \
-      no "keep the files here" "$(onoff "${cur}" no)")" || return 0
-  fi
-  case "${sel}" in
-  "") return 0 ;;
-  ask) publish_to="" ;;
-  *) publish_to="${sel}" ;;
-  esac
-  do_release=1
-  do_pack=1
-}
-
-menu_version() {
-  local v latest hint=""
-  latest="$(latest_tag)"
-  [ -z "${latest}" ] || hint="\nNewest on $(target_repo): ${latest}"
-  v="$(dlg --title "Version" --inputbox "The release version, major.minor.patch.${hint}" 0 0 "${VERSION}")" || return 1
-  if [[ ! "${v}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    msg "Version" "Not a version: '${v}' (major.minor.patch)."
-    return 1
-  fi
-  VERSION="${v}"
-  do_release=1
-  do_pack=1
-}
-
-# What the build needs, asked for now rather than an hour into it.
-menu_start() {
-  local publishing=0
-  if [ "${do_release}" -eq 1 ] && [ -n "${publish_to}" ] && [ "${publish_to}" != "no" ]; then
-    publishing=1
-  fi
-
-  if [ $((do_pull + do_deps + do_buildroot + do_pack)) -eq 0 ]; then
-    msg "Start" "No stage is selected."
-    return 1
-  fi
-  if [ "${do_release}" -eq 1 ] && [ "${do_pack}" -eq 0 ]; then
-    msg "Start" "The release files are written by the pack stage: select it too, or turn the release files off."
-    return 1
-  fi
-  if [ "${do_release}" -eq 1 ] && [ -z "${VERSION}" ]; then
-    menu_version || return 1
-  fi
-  if [ "${publishing}" -eq 1 ] && [ "${VERSION}" = "${DEV_VERSION}" ]; then
-    msg "Start" "${DEV_VERSION} is the dev build's version and is never published."
-    return 1
-  fi
-  if [ "${publishing}" -eq 1 ] && [ -z "${AUX_TOKEN}" ]; then
-    msg "Start" "AUX_TOKEN is not set: the build cannot be published to $(release_repo "${publish_to}")."
-    return 1
-  fi
-  if [ "${do_buildroot}" -eq 1 ] && [ "${do_rebuild}" -eq 1 ] && [ -z "${AUX_TOKEN}" ] && [ -z "${BR_CONFIG}" ] &&
-    [ ! -d "${WORK}/arc-buildroot-essential/.git" ]; then
-    dlg --title "Start" --yesno "AUX_TOKEN is not set, and cloning ${BR_CONFIG_REPO} may need it.\n\nStart anyway?" 0 0 || return 1
-  fi
-  return 0
-}
-
 # work/buildroot is an hour of building: it goes only when asked for by name.
 menu_clean() {
-  local what
-  what="$(dlg --title "Clean" --menu "Drop what?" 0 0 0 \
-    a "images and zips       arc.img, vmdk, vhd(x), ova, release zips" \
-    b "deps and buildroot    files/p1, files/p3 output, br/, work/stage" \
-    c "buildroot output      work/buildroot/output, keeps the clone and downloads" \
-    d "everything            all of the above and work/")" || return 0
+  local what confirm
+  printf '\n'
+  printf '      \033[1ma\033[0m  images and zips     \033[2marc.img, vmdk, vhd(x), ova, release zips\033[0m\n'
+  printf '      \033[1mb\033[0m  deps and buildroot  \033[2mfiles/p1, files/p3 output, br/, work/stage\033[0m\n'
+  printf '      \033[1mc\033[0m  buildroot output    \033[2mwork/buildroot/output, keeps the clone\033[0m\n'
+  printf '      \033[1md\033[0m  everything          \033[2mall of the above and work/\033[0m\n'
+  printf '\n'
+  printf '    clean what (enter to cancel): '
+  read -r what || return 0
 
   case "${what}" in
   a)
     rm -f arc.img arc*.vmdk arc.vhd arc.vhdx arc.vmc arc.ova arc-*.zip update-*.zip update-*.hash
-    msg "Clean" "Removed the images and zips."
+    info "removed the images and zips"
     ;;
   b)
     git clean -fdxq -- files/p1 files/p3
     rm -rf br "${STAGE}" "${STATE}"
-    msg "Clean" "Removed the dependencies, br/ and work/stage."
+    info "removed the dependencies, br/ and work/stage"
     ;;
   c)
     rm -rf "${BR_OUT}" "${WORK}/br.fingerprint"
-    msg "Clean" "Removed work/buildroot/output."
+    info "removed work/buildroot/output"
     ;;
   d)
-    if dlg --title "Clean" --defaultno --yesno "This drops the buildroot clone and its downloads too: the next rebuild starts from nothing.\n\nRemove everything?" 0 0; then
+    printf '    this drops the buildroot clone and its downloads too. type yes: '
+    read -r confirm || return 0
+    if [ "${confirm}" = "yes" ]; then
       rm -f arc.img arc*.vmdk arc.vhd arc.vhdx arc.vmc arc.ova arc-*.zip update-*.zip update-*.hash
       git clean -fdxq -- files/p1 files/p3
       rm -rf br "${WORK}"
-      msg "Clean" "Removed everything."
+      info "removed everything"
+    else
+      info "cancelled"
     fi
     ;;
+  "") info "cancelled" ;;
+  *) warn "not a choice: ${what}" ;;
   esac
 }
 
@@ -1287,6 +1113,24 @@ menu_clean() {
 # through, so a job with no one to answer does not block.
 if [ "$#" -eq 0 ] && [ -t 0 ]; then
   menu
+
+  # Asked now, not after the pack: the build before it can take an hour.
+  if [ "${do_pack}" -eq 1 ] && [ "${do_release}" -eq 0 ]; then
+    printf '    pack release files (img, vmdk, vhd, vhdx, ova zips, update zip)? [y/N] '
+    read -r answer || answer=""
+    case "${answer}" in
+    y | Y | yes) do_release=1 ;;
+    esac
+  fi
+fi
+
+# A pack without the buildroot stage packs the br/ an earlier build made
+# here, never the arc-buildroot-essential release an older one downloaded.
+if [ "${do_pack}" -eq 1 ] && [ "${do_buildroot}" -eq 0 ] && [ -f br/initrd-apex ] &&
+  ! (. "${STATE}" 2>/dev/null && [ "${APEX#local:}" != "${APEX}" ]); then
+  die "the buildroot in br/ was not built here. Build it too:
+
+        ./build.sh buildroot pack"
 fi
 
 if [ -z "${VERSION}" ]; then

@@ -5,13 +5,10 @@ version: "3"
 tasks:
   build:
     cmds:
-      - ./img-gen.sh
-  build-local:
-    cmds:
-      - ./img-gen.sh --rebuild-buildroot
+      - ./build.sh
   release:
     cmds:
-      - ./img-gen.sh --release
+      - ./build.sh --release
   release-essential:
     cmds:
-      - ./img-gen.sh --essential --release
+      - ./build.sh --essential --release
