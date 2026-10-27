@@ -59,6 +59,9 @@ MPT3PL=(purley broadwellnkv2 epyc7002 epyc7003 epyc7003ntb geminilakenk icelaked
 IGFXRL=(apollolake epyc7002 geminilake geminilakenk r1000nk v1000nk)
 XAPICRL=(apollolake geminilake purley geminilakenk)
 I2CI801BL=(broadwell broadwellnk broadwellnkv2 icelaked purley)
+CUSTOMKERNEL72L=(epyc7002)
+CUSTOMKERNEL73L=(geminilakenk r1000nk v1000nk)
+CUSTOMKERNEL74L=(epyc7003 icelaked)
 
 HTTPPORT=$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)
 [ -z "${HTTPPORT}" ] && HTTPPORT="7080"

@@ -135,7 +135,8 @@ elif [ "${ARC_MODE}" = "config" ]; then
           write_menu_value "v" "GPU Passthrough (IOMMU)" "$( [ "${IOMMUPT}" = "true" ] && echo "use in VM" || echo "use in DSM" )"
         fi
 
-        if [ "${PLATFORM}" = "epyc7002" ] || [ "${PLATFORM}" = "geminilakenk" ] || [ "${PLATFORM}" = "r1000nk" ] || [ "${PLATFORM}" = "v1000nk" ]; then
+        if isCustomKernelPlatform "${PLATFORM}"; then
+          KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
           write_menu_value "K" "Kernel" "${KERNEL}"
         fi
 
@@ -276,6 +277,7 @@ elif [ "${ARC_MODE}" = "config" ]; then
           K)
             PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
             PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+            KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
             KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
             KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
             KOPTS=("official" "Synology stock kernel (${KVER})")

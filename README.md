@@ -59,13 +59,17 @@ Two systems, two jobs: **Arc prepares DSM**, and **DSM runs your NAS**. Arc buil
 
 ## 🖥️ Supported
 
-| Platform | Kernel | DSM |
-| :-- | :-- | :-- |
-| `apollolake`, `broadwell`, `broadwellnk`, `broadwellnkv2`, `broadwellntbap`, `denverton`, `geminilake`, `purley`, `r1000`, `v1000` | 4.4.302 | 7.2, 7.3, 7.4 |
-| `epyc7002`, `geminilakenk`, `r1000nk`, `v1000nk` | 5.10.55 | 7.2, 7.3, 7.4 |
-| `epyc7003`, `epyc7003ntb`, `icelaked` | 5.10.55 | 7.4 |
+| Platform | Kernel | DSM | Custom kernel |
+| :-- | :-- | :-- | :-- |
+| `apollolake`, `broadwell`, `broadwellnk`, `broadwellnkv2`, `broadwellntbap`, `denverton`, `geminilake`, `purley`, `r1000`, `v1000` | 4.4.302 | 7.2, 7.3, 7.4 | — |
+| `epyc7002` | 5.10.55 | 7.2, 7.3, 7.4 | 7.2, 7.3, 7.4 |
+| `geminilakenk`, `r1000nk`, `v1000nk` | 5.10.55 | 7.2, 7.3, 7.4 | 7.3, 7.4 |
+| `epyc7003`, `icelaked` | 5.10.55 | 7.4 | 7.4 |
+| `epyc7003ntb` | 5.10.55 | 7.4 | — |
 
 The platforms and models come from [arc-configs](https://github.com/AuxXxilium/arc-configs); the menu shows which models fit the machine.
+
+A custom kernel replaces Synology's stock kernel: `legacy` adds hybrid CPU and wider hardware support, `full` adds 64-thread support on top, and `upstreamed` is based on 5.10.260 with the legacy backports. Pick it under Kernel in the menu; only the kernels shipped for your version are offered.
 
 ---
 

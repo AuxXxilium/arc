@@ -171,6 +171,23 @@ function arrayExistItem() {
 }
 
 ###############################################################################
+# Check if a custom kernel is offered for the platform
+# 1 - Platform
+# 2 - DSM version (optional, any version if empty)
+# Return 0 if offered
+function isCustomKernelPlatform() {
+  if arrayExistItem "${1}" "${CUSTOMKERNEL72L[@]}"; then
+    [ -z "${2}" ] || [[ ! "${2}" < "7.2" ]]
+  elif arrayExistItem "${1}" "${CUSTOMKERNEL73L[@]}"; then
+    [ -z "${2}" ] || [[ ! "${2}" < "7.3" ]]
+  elif arrayExistItem "${1}" "${CUSTOMKERNEL74L[@]}"; then
+    [ -z "${2}" ] || [[ ! "${2}" < "7.4" ]]
+  else
+    return 1
+  fi
+}
+
+###############################################################################
 # Get values in .conf K=V file
 # 1 - file
 # 2 - key

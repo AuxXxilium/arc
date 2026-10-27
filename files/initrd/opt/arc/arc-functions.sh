@@ -92,15 +92,15 @@ function arcModel() {
             fi
           fi
           if [ "${CPUCHT:-0}" -gt "${PLTCNT:-0}" ]; then
-            if [[ "${A}" = "epyc7002" || "${A}" = "geminilakenk" || "${A}" = "r1000nk" || "${A}" = "v1000nk" ]]; then
+            if isCustomKernelPlatform "${A}"; then
               echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT})\nYou should enable the custom (full) kernel.\n" >>"${TMP_PATH}/${M}_warn"
             else
               echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}).\n" >>"${TMP_PATH}/${M}_warn"
             fi
           fi
-          if [[ "${A}" != "epyc7002" && "${A}" != "geminilakenk" && "${A}" != "r1000nk" && "${A}" != "v1000nk" && "${MEV}" = "hyperv" ]]; then
+          if ! isCustomKernelPlatform "${A}" && [ "${MEV}" = "hyperv" ]; then
             COMPATIBLE=0
-          elif [[ "${A}" = "epyc7002" || "${A}" = "geminilakenk" || "${A}" = "r1000nk" || "${A}" = "v1000nk" ]] && [[ "${MEV}" = "hyperv" ]]; then
+          elif isCustomKernelPlatform "${A}" && [ "${MEV}" = "hyperv" ]; then
             echo -e "${WARN}- Hyper-V VM: You need to enable the custom kernel.\n" >>"${TMP_PATH}/${M}_warn"
           fi
         else
@@ -291,8 +291,8 @@ function arcVersion() {
       [ $? -eq 0 ] && writeConfigKey "arc.discordnotify" "true" "${USER_CONFIG_FILE}"
     fi
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-    if [ "${KVER:0:1}" -eq 5 ] && [[ "${PRODUCTVER}" > "7.2" ]]; then
-      if [[ "${PLATFORM}" = "epyc7002" || "${PLATFORM}" = "geminilakenk" || "${PLATFORM}" = "r1000nk" || "${PLATFORM}" = "v1000nk" ]]; then
+    if [ "${KVER:0:1}" -eq 5 ]; then
+      if isCustomKernelPlatform "${PLATFORM}" "${PRODUCTVER}"; then
         KPRE="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kpre" "${P_FILE}")"
         KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
         KOPTS=("official" "Synology stock kernel (${KVER})")
