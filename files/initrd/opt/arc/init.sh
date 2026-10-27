@@ -29,7 +29,7 @@ arc_mode || die "No bootmode found!"
 
 if [ -f "${USER_CONFIG_FILE}" ]; then
   case "$(readConfigKey "kernel" "${USER_CONFIG_FILE}")" in
-  custom) writeConfigKey "kernel" "legacy" "${USER_CONFIG_FILE}" ;;
+  custom|full|upstreamed) writeConfigKey "kernel" "legacy" "${USER_CONFIG_FILE}" ;;
   esac
 fi
 

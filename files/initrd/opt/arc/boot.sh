@@ -146,11 +146,7 @@ MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 declare -A CMDLINE
 
 # Cap CPU threads to what the kernel supports
-if [ "${KERNEL}" = "full" ]; then
-  PLTCNT=64
-else
-  PLTCNT="$(readConfigKey "platforms.${PLATFORM}.ccnt" "${P_FILE}")"
-fi
+PLTCNT="$(readConfigKey "platforms.${PLATFORM}.ccnt" "${P_FILE}")"
 # Fall back to the lowest count any platform ships if ccnt is missing or invalid
 echo "${PLTCNT}" | grep -qE '^[0-9]+$' || PLTCNT=8
 if [ "${PLTCNT}" -gt 0 ] && [ "${CPUCHT:-0}" -gt "${PLTCNT}" ]; then

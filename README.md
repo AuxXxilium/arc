@@ -69,7 +69,7 @@ Two systems, two jobs: **Arc prepares DSM**, and **DSM runs your NAS**. Arc buil
 
 The platforms and models come from [arc-configs](https://github.com/AuxXxilium/arc-configs); the menu shows which models fit the machine.
 
-A custom kernel replaces Synology's stock kernel: `legacy` adds hybrid CPU and wider hardware support, `full` adds 64-thread support on top, and `upstreamed` is based on 5.10.260 with the legacy backports. Pick it under Kernel in the menu; only the kernels shipped for your version are offered.
+A custom kernel replaces Synology's stock kernel: `legacy` adds hybrid CPU and wider hardware support, and runs under Hyper-V. Pick it under Kernel in the menu when it is shipped for your version.
 
 ---
 

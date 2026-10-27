@@ -79,24 +79,18 @@ function arcModel() {
                 COMPATIBLE=0
             fi
           fi
-          if [ "${DT}" = "true" ]; then
-            if [[ "${SCSICONTROLLER}" -ge 1 || "${RAIDCONTROLLER}" -ge 1 ]]; then
+          if [[ "${SCSICONTROLLER}" -ge 1 || "${RAIDCONTROLLER}" -ge 1 ]]; then
+            if [ "${KVER:0:1}" = "5" ]; then
+              echo -e "${WARN}- Linux 5.x Model selected: Raid/SCSI is experimental supported.\n" >>"${TMP_PATH}/${M}_warn"
+            elif [ "${DT}" = "true" ]; then
               echo -e "${WARN}- DT Model selected: Raid/SCSI is not supported.\n" >>"${TMP_PATH}/${M}_warn"
             fi
-            if [ "${SASCONTROLLER}" -ge 1 ]; then
-              echo -e "${WARN}- DT Model selected: HBA/SAS is experimental supported.\n" >>"${TMP_PATH}/${M}_warn"
-            fi
-          elif [ "${KVER:0:1}" = "5" ]; then
-            if [[ "${SCSICONTROLLER}" -ge 1 || "${RAIDCONTROLLER}" -ge 1 ]]; then
-              echo -e "${WARN}- Linux 5.x Model selected: Raid/SCSI is experimental supported.\n" >>"${TMP_PATH}/${M}_warn"
-            fi
+          fi
+          if [ "${KVER:0:1}" != "5" ] && [ "${DT}" = "true" ] && [ "${SASCONTROLLER}" -ge 1 ]; then
+            echo -e "${WARN}- DT Model selected: HBA/SAS is experimental supported.\n" >>"${TMP_PATH}/${M}_warn"
           fi
           if [ "${CPUCHT:-0}" -gt "${PLTCNT:-0}" ]; then
-            if isCustomKernelPlatform "${A}"; then
-              echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT})\nYou should enable the custom (full) kernel.\n" >>"${TMP_PATH}/${M}_warn"
-            else
-              echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}).\n" >>"${TMP_PATH}/${M}_warn"
-            fi
+            echo -e "${WARN}- CPU Threads (${CPUCHT}) exceed the maximum supported threads (${PLTCNT}).\n" >>"${TMP_PATH}/${M}_warn"
           fi
           if ! isCustomKernelPlatform "${A}" && [ "${MEV}" = "hyperv" ]; then
             COMPATIBLE=0
@@ -297,8 +291,6 @@ function arcVersion() {
         KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
         KOPTS=("official" "Synology stock kernel (${KVER})")
         [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-legacy.gz" ] && KOPTS+=("legacy" "hybrid cpu support, better hardware support, optimized")
-        [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-full.gz" ] && KOPTS+=("full" "same as legacy + 64 thread support")
-        [ -f "${CUSTOM_PATH}/bzImage-${PLATFORM}-${KPRE:+${KPRE}-}${KVER}-upstreamed.gz" ] && KOPTS+=("upstreamed" "based on 5.10.260 + backports from legacy")
         dialog --backtitle "$(backtitle)" --title "Custom Kernel" --colors \
           --default-item "${KERNEL}" --menu "You selected a Linux 5.x based platform and DSM ${PRODUCTVER}!\nA custom kernel is available for this combination.\n\nChoose a kernel:" 0 0 0 \
           "${KOPTS[@]}" \
