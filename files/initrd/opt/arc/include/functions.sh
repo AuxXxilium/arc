@@ -118,6 +118,25 @@ function die() {
 }
 
 ###############################################################################
+# Make a file in the ramdisk executable, or report why not
+# 1 - File
+# Return 0 if it is executable afterwards
+#
+# A script without its execute bit fails at boot as "/addons/addons.sh:
+# Permission denied", and linuxrc then runs no addon at all - so chmod's
+# failure is the build's. Run by Arc Control under DSM's kernel, the loader's
+# chmod failed with "Function not implemented" and the build went on.
+function makeExecutable() {
+  local ERR
+  ERR="$(chmod a+x "${1}" 2>&1)"
+  if [ ! -x "${1}" ]; then
+    echo "ERROR: Ramdisk: cannot make ${1#"${RAMDISK_PATH}"} executable${ERR:+ (${ERR})}" | tee -a "${LOG_FILE}"
+    return 1
+  fi
+  return 0
+}
+
+###############################################################################
 # Check if a item exists into array
 # 1 - Item
 # 2.. - Array

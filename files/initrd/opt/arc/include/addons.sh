@@ -92,7 +92,10 @@ function installAddon() {
       rm -rf "${TMP_ADDON}"
       return 1
     fi
-    chmod a+x "${RAMDISK_PATH}/addons/${ADDON}.sh"
+    if ! makeExecutable "${RAMDISK_PATH}/addons/${ADDON}.sh"; then
+      rm -rf "${TMP_ADDON}"
+      return 1
+    fi
   fi
   # Addons ship either a single version-agnostic package named "<name>-<tag>.tgz"
   # (e.g. acpid-7.1.tgz - one suffix segment, kept as-is regardless of build) or

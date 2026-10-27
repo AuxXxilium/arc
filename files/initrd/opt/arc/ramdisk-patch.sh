@@ -232,7 +232,7 @@ echo "Create addons.sh" >>"${LOG_FILE}"
   echo "export LAYOUT=\"${LAYOUT:-qwerty}\""
   echo "export KEYMAP=\"${KEYMAP:-en}\""
 } >"${RAMDISK_PATH}/addons/addons.sh"
-chmod a+x "${RAMDISK_PATH}/addons/addons.sh"
+makeExecutable "${RAMDISK_PATH}/addons/addons.sh" || exit 1
 
 # System Addons
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: install addons"
@@ -318,12 +318,12 @@ done
 if [ ! -x "${RAMDISK_PATH}/usr/bin/get_key_value" ]; then
   rm -rf "${RAMDISK_PATH}/usr/bin/get_key_value"
   printf '#!/bin/sh\n%s\n_get_conf_kv "$@"' "$(declare -f _get_conf_kv)" >"${RAMDISK_PATH}/usr/bin/get_key_value"
-  chmod a+x "${RAMDISK_PATH}/usr/bin/get_key_value"
+  makeExecutable "${RAMDISK_PATH}/usr/bin/get_key_value" || exit 1
 fi
 if [ ! -x "${RAMDISK_PATH}/usr/bin/set_key_value" ]; then
   rm -rf "${RAMDISK_PATH}/usr/bin/set_key_value"
   printf '#!/bin/sh\n%s\n_set_conf_kv "$@"' "$(declare -f _set_conf_kv)" >"${RAMDISK_PATH}/usr/bin/set_key_value"
-  chmod a+x "${RAMDISK_PATH}/usr/bin/set_key_value"
+  makeExecutable "${RAMDISK_PATH}/usr/bin/set_key_value" || exit 1
 fi
 
 # backup current loader configs
