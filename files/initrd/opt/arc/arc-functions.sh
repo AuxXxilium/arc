@@ -353,6 +353,23 @@ function arcVersion() {
 }
 
 ###############################################################################
+# Random SN and Mac without Arc Patch: makeArc's codes for the model where it
+# has them, serials.yml's rule through genArc where it does not
+function randomSN() {
+  local SN
+  SN="$(makeArc "${1}" sn 2>/dev/null)"
+  [ "${#SN}" -eq 13 ] || SN="$(genArc "false" "${1}" sn 2>/dev/null)"
+  echo "${SN}"
+}
+
+function randomMac() {
+  local MACS
+  MACS="$(makeArc "${1}" mac "${2}" 2>/dev/null)"
+  [ -n "${MACS}" ] || MACS="$(genArc "false" "${1}" mac "${2}" 2>/dev/null)"
+  echo "${MACS}"
+}
+
+###############################################################################
 # Arc Patch Section
 function arcPatch() {
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
@@ -364,7 +381,7 @@ function arcPatch() {
     if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
       SN="$(genArc "true" "${MODEL}" sn 2>/dev/null)"
       ARC_PATCH="false"
-      [ "${#SN}" -eq 13 ] && ARC_PATCH="true" || SN="$(genArc "false" "${MODEL}" sn 2>/dev/null)"
+      [ "${#SN}" -eq 13 ] && ARC_PATCH="true" || SN="$(randomSN "${MODEL}")"
     fi
   elif [ "${ARC_MODE}" = "config" ]; then
     SN="$(genArc "true" "${MODEL}" sn 2>/dev/null)"
@@ -390,7 +407,7 @@ function arcPatch() {
         ;;
       2)
         ARC_PATCH="false"
-        SN="$(genArc "${ARC_PATCH}" "${MODEL}" sn 2>/dev/null)"
+        SN="$(randomSN "${MODEL}")"
         ;;
       3)
         while true; do
@@ -3653,7 +3670,11 @@ function getnet() {
     readarray -t ETHX_ARRAY <<<"$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
     ETHN=${#ETHX_ARRAY[@]}
 
-    MACS_OUTPUT=$(genArc "${ARC_PATCH}" "${MODEL}" mac "${ETHN}" 2>/dev/null)
+    if [ "${ARC_PATCH}" = "true" ]; then
+      MACS_OUTPUT=$(genArc "true" "${MODEL}" mac "${ETHN}" 2>/dev/null)
+    else
+      MACS_OUTPUT=$(randomMac "${MODEL}" "${ETHN}")
+    fi
     MACS_OUTPUT=${MACS_OUTPUT//$'\r'/}
     MACS_OUTPUT=$(printf '%s' "$MACS_OUTPUT" | tr -s '[:space:]' $'\n' | sed '/^$/d')
     readarray -t MACS_ARRAY <<< "$MACS_OUTPUT"
