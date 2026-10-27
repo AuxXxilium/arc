@@ -28,9 +28,9 @@
 #                                   it: no 4.4 kernel modules or LKMs, the
 #                                   Essential platforms, and arc-essential as
 #                                   the loader's update source
-#   ./build.sh --release            then the release files as build.yml packs
-#                                   them: img, vmdk (flat and dynamic), vhd,
-#                                   vhdx and ova zips, the update zip and its
+#   ./build.sh --release            then the release files as arx packs
+#                                   them: img, vmdk (flat and dynamic), vhdx
+#                                   and ova zips, the update zip and its
 #                                   hash, with the latest dependencies.
 #                                   Asks for the version, and once the
 #                                   files are written whether to publish them:
@@ -1034,22 +1034,18 @@ stage_pack() {
   info "${IMAGE_FILE}           $(du -h "${IMAGE_FILE}" | cut -f1)"
 }
 
-# The release files, as build.yml's Build Image and Pack Image steps write
-# them.
+# The release files, the ones arx packs.
 pack_release() {
   local v="${VERSION}" f
 
   info "release files"
   qemu-img convert -p -f raw -O vmdk "${IMAGE_FILE}" arc-dyn.vmdk
-  createvmc "arc.vhd" "arc.vmc"
-  qemu-img convert -p -f raw -O vpc "${IMAGE_FILE}" arc.vhd
   qemu-img convert -p -f raw -O vhdx "${IMAGE_FILE}" arc.vhdx
   convertova "${IMAGE_FILE}" "arc.ova"
 
   zip -q9 "arc-${v}.img.zip" "arc.img"
   zip -q9 "arc-${v}.vmdk-dyn.zip" "arc-dyn.vmdk"
   zip -q9 "arc-${v}.vmdk-flat.zip" "arc.vmdk" "arc-flat.vmdk"
-  zip -q9 "arc-${v}.vhd.zip" "arc.vhd" "arc.vmc"
   zip -q9 "arc-${v}.vhdx.zip" "arc.vhdx"
   zip -q9 "arc-${v}.ova.zip" "arc.ova"
   (cd "${STAGE}" && zip -qr "${HERE}/update-${v}.zip" ./p1 ./p3)
@@ -1369,7 +1365,7 @@ menu() {
 menu_clean() {
   local what confirm
   printf '\n'
-  printf '      \033[1ma\033[0m  images and zips     \033[2marc.img, vmdk, vhd(x), ova, release zips\033[0m\n'
+  printf '      \033[1ma\033[0m  images and zips     \033[2marc.img, vmdk, vhdx, ova, release zips\033[0m\n'
   printf '      \033[1mb\033[0m  deps and buildroot  \033[2mfiles/p1, files/p3 output, br/, work/stage\033[0m\n'
   printf '      \033[1mc\033[0m  buildroot output    \033[2mwork/br-out, keeps the clone\033[0m\n'
   printf '      \033[1me\033[0m  grub                \033[2mthe grub build and the grub disk in work/\033[0m\n'
@@ -1422,7 +1418,7 @@ if [ "$#" -eq 0 ] && [ -t 0 ]; then
 
   # Asked now, not after the pack: the build before it can take an hour.
   if [ "${do_pack}" -eq 1 ] && [ "${do_release}" -eq 0 ]; then
-    printf '    pack release files (img, vmdk, vhd, vhdx, ova zips, update zip)? [y/N] '
+    printf '    pack release files (img, vmdk, vhdx, ova zips, update zip)? [y/N] '
     read -r answer || answer=""
     case "${answer}" in
     y | Y | yes) do_release=1 ;;
