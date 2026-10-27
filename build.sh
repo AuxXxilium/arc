@@ -375,10 +375,10 @@ stage_deps() {
 
   # Fetched once and reused, as arx stages its artifacts: they are a few
   # hundred MB over the API, and a build that only changed the loader does
-  # not need new ones. --refresh, menu 7 and every release fetch them again.
+  # not need new ones. --refresh, menu 7 or 9 and every release fetch them again.
   if [ "${do_refresh}" -eq 0 ] && [ -f "${DEPS_DONE}" ]; then
     (. "${STATE}" && info "already fetched: addons ${ADDONTAG}, modules ${MODULETAG}, custom ${CUSTOMTAG}, lkms ${LKMTAG}")
-    info "--refresh (menu 7) fetches them again"
+    info "--refresh (menu 7 or 9) fetches them again"
     return 0
   fi
   rm -f "${DEPS_DONE}"
@@ -1316,7 +1316,10 @@ menu() {
     printf '\n'
     printf '    \033[1marc build\033[0m  %s@%s\n' "$(git rev-parse --abbrev-ref HEAD 2>/dev/null)" "$(state_of pull)"
     printf '    \033[2m%s\033[0m\n\n' "$(printf '%.0s-' $(seq 1 46))"
+    # arx's numbers, with deps where arx has its interface.
     printf '      \033[1m1\033[0m  everything          \033[2mall four stages\033[0m\n'
+    printf '      \033[1m9\033[0m  everything, updated \033[2mas 1, with the latest addons, modules,\033[0m\n'
+    printf '                          \033[2mconfigs, patches, custom, LKMs and theme\033[0m\n'
     printf '\n'
     printf '      \033[1m2\033[0m  pull                \033[2m%s\033[0m\n' "$(state_of pull)"
     printf '      \033[1m3\033[0m  deps                \033[2m%s\033[0m\n' "$(state_of deps)"
@@ -1324,13 +1327,12 @@ menu() {
     printf '      \033[1m5\033[0m  pack                \033[2m%s\033[0m\n' "$(state_of pack)"
     printf '\n'
     printf '      \033[1m6\033[0m  deps + buildroot + pack  \033[2mall but the pull\033[0m\n'
-    printf '      \033[1m7\033[0m  everything, updated \033[2mas 1, fetching addons, modules, configs,\033[0m\n'
-    printf '                          \033[2mpatches, custom, LKMs and theme again\033[0m\n'
+    printf '      \033[1m7\033[0m  refresh deps        \033[2mfetch them again, nothing else\033[0m\n'
+    printf '      \033[1m8\033[0m  clean               \033[2mdrop build output\033[0m\n'
     printf '\n'
     printf '      \033[1mv\033[0m  variant             \033[2m%s\033[0m\n' "${variant}"
     printf '      \033[1mr\033[0m  clean buildroot     \033[2m%s\033[0m\n' \
       "$([ "${do_brclean}" -eq 1 ] && echo "yes, from an empty output tree" || echo "no, only what changed")"
-    printf '      \033[1mc\033[0m  clean               \033[2mdrop build output\033[0m\n'
     printf '\n'
     printf '      \033[1mq\033[0m  quit\n'
     printf '\n'
@@ -1350,12 +1352,13 @@ menu() {
     4) do_pull=0 do_deps=0 do_buildroot=1 do_pack=0; return 0 ;;
     5) do_pull=0 do_deps=0 do_buildroot=0 do_pack=1; return 0 ;;
     6) do_pull=0 do_deps=1 do_buildroot=1 do_pack=1; return 0 ;;
-    7) do_pull=1 do_deps=1 do_buildroot=1 do_pack=1 do_refresh=1; return 0 ;;
+    7) do_pull=0 do_deps=1 do_buildroot=0 do_pack=0 do_refresh=1; return 0 ;;
+    8) menu_clean ;;
+    9) do_pull=1 do_deps=1 do_buildroot=1 do_pack=1 do_refresh=1; return 0 ;;
     v | V)
       if [ "${variant}" = "full" ]; then variant="essential"; else variant="full"; fi
       ;;
     r | R) do_brclean=$((1 - do_brclean)) ;;
-    c | C) menu_clean ;;
     q | Q) exit 0 ;;
     *) warn "not a choice: ${choice}" ;;
     esac
