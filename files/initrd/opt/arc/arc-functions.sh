@@ -2918,19 +2918,42 @@ function formatDisks() {
 }
 
 ###############################################################################
-# Clone bootloader disk
+# Clone bootloader disk, as arx clones it: the loader disk itself, up to
+# the end of its last partition -- the boot code before p1, the partition
+# table and p1 to p3, labels and UUIDs included -- so the copy boots as
+# this one does. No image of its own to keep in step with the build.
 function cloneLoader() {
+  local NAME P START PSIZE END=0 COUNT KNAME SIZE TYPE DMODEL PKNAME BYTES
+  NAME="$(basename "${LOADER_DISK}")"
+  for P in /sys/block/"${NAME}"/"${NAME}"*; do
+    [ -f "${P}/start" ] && [ -f "${P}/size" ] || continue
+    START="$(cat "${P}/start")"
+    PSIZE="$(cat "${P}/size")"
+    [ $((START + PSIZE)) -gt "${END}" ] && END=$((START + PSIZE))
+  done
+  if [ "${END}" -eq 0 ]; then
+    dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
+      --msgbox "No partitions found on ${LOADER_DISK}!" 0 0
+    return
+  fi
+  # In MiB, rounded up: a partition ends on a sector, dd counts blocks.
+  COUNT=$(((END + 2047) / 2048))
+
+  # Whole disks only, the copy brings its own partition table, and only
+  # those that hold the loader whole.
   rm -f "${TMP_PATH}/opts" 2>/dev/null
   while read -r KNAME SIZE TYPE DMODEL PKNAME; do
     [ "${KNAME}" = "N/A" ] || [ "${SIZE:0:1}" -eq 0 ] && continue
-    [ "${KNAME:0:7}" = "/dev/md" ] && continue
-    [ "${KNAME}" = "${LOADER_DISK}" ] || [ "${PKNAME}" = "${LOADER_DISK}" ] && continue
+    [ "${TYPE}" = "disk" ] || continue
+    [ "${KNAME}" = "${LOADER_DISK}" ] && continue
+    BYTES="$(cat "/sys/block/$(basename "${KNAME}")/size" 2>/dev/null)"
+    [ $((${BYTES:-0} / 2048)) -ge "${COUNT}" ] || continue
     printf "\"%s\" \"%-6s %-4s %s\" \"off\"\n" "${KNAME}" "${SIZE}" "${TYPE}" "${DMODEL}" >>"${TMP_PATH}/opts"
   done <<<"$(lsblk -Jpno KNAME,SIZE,TYPE,MODEL,PKNAME 2>/dev/null | sed 's|null|"N/A"|g' | jq -r '.blockdevices[] | "\(.kname) \(.size) \(.type) \(.model) \(.pkname)"' 2>/dev/null)"
 
   if [ ! -f "${TMP_PATH}/opts" ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
-      --msgbox "No disk found!" 0 0
+      --msgbox "No disk found that can hold the loader (${COUNT} MB)!" 0 0
     return
   fi
   dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
@@ -2942,86 +2965,41 @@ function cloneLoader() {
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
       --msgbox "No disk selected!" 0 0
     return
-  else
-    SIZE=$(df -m "${resp}" 2>/dev/null | awk 'NR=2 {print $2}')
-    if [ "${SIZE:-0}" -lt 1024 ]; then
-      dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
-        --msgbox "Disk ${resp} size is less than 1GB and cannot be cloned!" 0 0
-      return
-    fi
-    MSG=""
-    MSG+="Warning:\nDisk ${resp} will be formatted and written to the bootloader. Please confirm that important data has been backed up. \nDo you want to continue?"
-    dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
-      --yesno "${MSG}" 0 0
-    [ $? -ne 0 ] && return 1
   fi
+  MSG=""
+  MSG+="Warning:\nDisk ${resp} will be formatted and written to the bootloader. Please confirm that important data has been backed up. \nDo you want to continue?"
+  dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
+    --yesno "${MSG}" 0 0
+  [ $? -ne 0 ] && return 1
+
+  rm -f "${TMP_PATH}/cloned"
   (
-    CLEARCACHE=0
-
-    gzip -dc "${ARC_PATH}/grub.img.gz" | dd of="${resp}" bs=1M conv=fsync status=progress
-    # hdparm speaks ATA, which eMMC/NVMe/loop devices do not answer to
-    case "${resp}" in
-    *mmcblk* | *nvme[0-9]* | *loop[0-9]* | *nbd[0-9]*) ;;
-    *) hdparm -z "${resp}" ;; # reset disk cache
-    esac
-    fdisk -l "${resp}"
-    sleep 1
-
-    NEW_BLDISK_P1="$(blkid | grep -v "${LOADER_DISK_PART1}:" | awk -F: '/LABEL="ARC1"/ {print $1}')"
-    NEW_BLDISK_P2="$(blkid | grep -v "${LOADER_DISK_PART2}:" | awk -F: '/LABEL="ARC2"/ {print $1}')"
-    NEW_BLDISK_P3="$(blkid | grep -v "${LOADER_DISK_PART3}:" | awk -F: '/LABEL="ARC3"/ {print $1}')"
-
-    mkdir -p "${TMP_PATH}/sdX1" "${TMP_PATH}/sdX2" "${TMP_PATH}/sdX3"
-    mount "${NEW_BLDISK_P1}" "${TMP_PATH}/sdX1" || {
-      printf "Can't mount %s." "${NEW_BLDISK_P1}" >"${LOG_FILE}"
-      __umountNewBlDisk
-      break
-    }
-    mount "${NEW_BLDISK_P2}" "${TMP_PATH}/sdX2" || {
-      printf "Can't mount %s." "${NEW_BLDISK_P2}" >"${LOG_FILE}"
-      __umountNewBlDisk
-      break
-    }
-    mount "${NEW_BLDISK_P3}" "${TMP_PATH}/sdX3" || {
-      printf "Can't mount %s." "${NEW_BLDISK_P3}" >"${LOG_FILE}"
-      __umountNewBlDisk
-      break
-    }
-
-    SIZEOLD1="$(du -sm "${PART1_PATH}" 2>/dev/null | awk '{print $1}')"
-    SIZEOLD2="$(du -sm "${PART2_PATH}" 2>/dev/null | awk '{print $1}')"
-    SIZEOLD3="$(du -sm "${PART3_PATH}" 2>/dev/null | awk '{print $1}')"
-    SIZENEW1="$(df -m "${NEW_BLDISK_P1}" 2>/dev/null | awk 'NR==2 {print $4}')"
-    SIZENEW2="$(df -m "${NEW_BLDISK_P2}" 2>/dev/null | awk 'NR==2 {print $4}')"
-    SIZENEW3="$(df -m "${NEW_BLDISK_P3}" 2>/dev/null | awk 'NR==2 {print $4}')"
-
-    if [ "${SIZEOLD1:-0}" -ge "${SIZENEW1:-0}" ] || [ "${SIZEOLD2:-0}" -ge "${SIZENEW2:-0}" ] || [ "${SIZEOLD3:-0}" -ge "${SIZENEW3:-0}" ]; then
-      MSG="Cloning failed due to insufficient remaining disk space on the selected hard drive."
-      echo "${MSG}" >"${LOG_FILE}"
-      __umountNewBlDisk
-      break
-    fi
-
-    cp -vRf "${PART1_PATH}/". "${TMP_PATH}/sdX1/" || {
-      printf "Can't copy to %s." "${NEW_BLDISK_P1}" >"${LOG_FILE}"
-      __umountNewBlDisk
-      break
-    }
-    cp -vRf "${PART2_PATH}/". "${TMP_PATH}/sdX2/" || {
-      printf "Can't copy to %s." "${NEW_BLDISK_P2}" >"${LOG_FILE}"
-      __umountNewBlDisk
-      break
-    }
-    cp -vRf "${PART3_PATH}/". "${TMP_PATH}/sdX3/" || {
-      printf "Can't copy to %s." "${NEW_BLDISK_P3}" >"${LOG_FILE}"
-      __umountNewBlDisk
-      break
-    }
+    # Read-only while it is copied, so the copy is of one moment; put back
+    # afterwards.
     sync
-    __umountNewBlDisk
+    RO=""
+    for P in "${PART1_PATH}" "${PART2_PATH}" "${PART3_PATH}"; do
+      mount -o remount,ro "${P}" 2>/dev/null && RO="${RO} ${P}"
+    done
+    # Old signatures on the target, a backup GPT at its end most of all,
+    # would outlive the copy.
+    wipefs -af "${resp}"
+    dd if="${LOADER_DISK}" of="${resp}" bs=1M count="${COUNT}" conv=fsync status=progress && touch "${TMP_PATH}/cloned"
+    for P in ${RO}; do
+      mount -o remount,rw "${P}"
+    done
+    # The kernel still holds the target's old table otherwise.
+    partx -d "${resp}" 2>/dev/null
+    partx -a "${resp}" 2>/dev/null
+    fdisk -l "${resp}"
     sleep 3
   ) 2>&1 | dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
     --progressbox "Cloning ..." 20 100
+  if [ ! -f "${TMP_PATH}/cloned" ]; then
+    dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
+      --msgbox "Cloning to Disk ${resp} failed!" 0 0
+    return 1
+  fi
   dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
     --msgbox "Bootloader has been cloned to Disk ${resp}.\nReboot to boot from the internal disk or keep the USB connected to boot from it." 0 0
   rebootTo config

@@ -96,9 +96,8 @@ LABEL="ARC"
 P1_SIZE=50
 P2_SIZE=50
 IMAGE_SIZE=3700
-# The empty disk, GRUB on it and nothing else: what the pack writes the
-# loader onto, and what Clone Loader writes to another disk (it goes into
-# the initrd as /opt/arc/grub.img.gz).
+# The empty disk, GRUB on it and nothing else, which the pack writes the
+# loader onto.
 GRUB_DISK="${WORK}/grub.img.gz"
 
 STABLE_REPO="${STABLE_REPO:-AuxXxilium/arc}"
@@ -961,8 +960,6 @@ stage_pack() {
     "${STAGE}"/p3/bzImage-* "${STAGE}"/p3/initrd-*
   echo "${VERSION}" >"${STAGE}/p1/ARC-VERSION"
   echo "${BUILD}" >"${STAGE}/p1/ARC-BUILD"
-  # Clone Loader writes it to another disk.
-  cp -f "${GRUB_DISK}" "${STAGE}/initrd/opt/arc/grub.img.gz"
   if [ "${variant}" = "essential" ]; then
     info "essential"
     make_essential
