@@ -370,6 +370,12 @@ stage_pull() {
 # fetched again rather than reused.
 DEPS_DONE="${WORK}/deps.done"
 
+# fetched <name> <tag> [dir]: one line per dependency, as arx-stage reports
+# what it staged; the get* functions themselves say nothing but errors.
+fetched() {
+  info "$(printf '%-17s' "${1}") ${2}${3:+  ($(du -sh "${3}" | cut -f1))}"
+}
+
 stage_deps() {
   stage "deps"
 
@@ -377,8 +383,7 @@ stage_deps() {
   # hundred MB over the API, and a build that only changed the loader does
   # not need new ones. --refresh, menu 7 or 9 and every release fetch them again.
   if [ "${do_refresh}" -eq 0 ] && [ -f "${DEPS_DONE}" ]; then
-    (. "${STATE}" && info "already fetched: addons ${ADDONTAG}, modules ${MODULETAG}, custom ${CUSTOMTAG}, lkms ${LKMTAG}")
-    info "--refresh (menu 7 or 9) fetches them again"
+    (. "${STATE}" && info "already fetched: addons ${ADDONTAG}, modules ${MODULETAG}, custom ${CUSTOMTAG}, lkms ${LKMTAG} (menu 7 or 9, or --refresh, to update)")
     return 0
   fi
   rm -f "${DEPS_DONE}"
@@ -388,12 +393,20 @@ stage_deps() {
   git clean -fdxq -- files/p1 files/p3
 
   getAddons "files/p3/addons" || die "could not get the addons"
+  fetched addons "${ADDONTAG}, $(find files/p3/addons -mindepth 1 -maxdepth 1 -type d | wc -l) addons" files/p3/addons
   getModules "files/p3/modules" || die "could not get the modules"
+  fetched modules "${MODULETAG}" files/p3/modules
   getConfigs "files/p3/configs" || die "could not get the configs"
+  fetched configs "${CONFIGTAG}" files/p3/configs
   getPatches "files/p3/patches" || die "could not get the patches"
+  fetched patches "${PATCHTAG}" files/p3/patches
   getCustom "files/p3/custom" || die "could not get custom"
+  fetched custom "${CUSTOMTAG}" files/p3/custom
   getLKMs "files/p3/lkms" || die "could not get the LKMs"
+  fetched lkms "${LKMTAG}" files/p3/lkms
+  # Unpacked over p1's grub directory, whose size would not be the theme's.
   getTheme "files/p1/boot/grub" || die "could not get the theme"
+  fetched theme "${THEMETAG}"
 
   remember ADDONTAG "${ADDONTAG}"
   remember MODULETAG "${MODULETAG}"
@@ -738,7 +751,7 @@ build_buildroot() {
 stage_buildroot() {
   stage "buildroot"
   build_buildroot
-  info "bzImage-apex     $(du -h br/bzImage-apex | cut -f1)"
+  info "bzImage-apex      $(du -h br/bzImage-apex | cut -f1)"
   info "initrd-apex       $(du -h br/initrd-apex | cut -f1)"
 }
 
@@ -998,7 +1011,7 @@ stage_pack() {
     need="$(du -sm "${STAGE}/${p}" | cut -f1)"
     avail="$(df -m --output=avail "${MNT}/${p}" | tail -1 | tr -d ' ')"
     [ "${need}" -lt "${avail}" ] || die "${p} has ${avail} MB free and needs ${need} MB."
-    info "writing ${p}          ${need} MB into ${avail} MB"
+    info "writing ${p}        ${need} MB into ${avail} MB"
     sudo cp -rf "${STAGE}/${p}/"* "${MNT}/${p}"
   done
   sudo sync
@@ -1035,13 +1048,26 @@ stage_pack() {
 
   unmount_image
 
-  info "writing arc.vmdk"
+  info "converting to vmdk"
   qemu-img convert -p -f raw -o subformat=monolithicFlat -O vmdk "${IMAGE_FILE}" arc.vmdk
 
   if [ "${do_release}" -eq 1 ]; then
     pack_release
   fi
-  info "${IMAGE_FILE}           $(du -h "${IMAGE_FILE}" | cut -f1)"
+}
+
+# What the build made, as arx closes its pack: once the release is
+# published, so its link is among them.
+pack_summary() {
+  log "done"
+  info "image    ${IMAGE_FILE}  ($(du -h "${IMAGE_FILE}" | cut -f1))"
+  [ -f arc.vmdk ] && info "vmdk     arc.vmdk"
+  info "version  ${VERSION}  build ${BUILD}  (${variant})"
+  [ -f "update-${VERSION}.zip" ] && info "update   update-${VERSION}.zip (+ .hash)"
+  [ -n "${RELEASE_URL:-}" ] && info "release  ${RELEASE_URL}"
+  echo
+  info "Write it to a USB stick:"
+  info "  sudo dd if=${IMAGE_FILE} of=/dev/sdX bs=4M status=progress conv=fsync"
 }
 
 # The release files, the ones arx packs.
@@ -1049,10 +1075,14 @@ pack_release() {
   local v="${VERSION}" f
 
   info "release files"
-  qemu-img convert -p -f raw -O vmdk "${IMAGE_FILE}" arc-dyn.vmdk
-  qemu-img convert -p -f raw -O vhdx "${IMAGE_FILE}" arc.vhdx
+  info "  vmdk (dynamic)"
+  qemu-img convert -f raw -O vmdk "${IMAGE_FILE}" arc-dyn.vmdk
+  info "  vhdx"
+  qemu-img convert -f raw -O vhdx "${IMAGE_FILE}" arc.vhdx
+  info "  ova"
   convertova "${IMAGE_FILE}" "arc.ova"
 
+  info "  zips"
   zip -q9 "arc-${v}.img.zip" "arc.img"
   zip -q9 "arc-${v}.vmdk-dyn.zip" "arc-dyn.vmdk"
   zip -q9 "arc-${v}.vmdk-flat.zip" "arc.vmdk" "arc-flat.vmdk"
@@ -1485,6 +1515,7 @@ if [ "${do_pack}" -eq 1 ]; then stage_pack; fi
 if [ "${do_pack}" -eq 1 ] && [ "${do_release}" -eq 1 ] && want_publish; then
   publish_release
 fi
+if [ "${do_pack}" -eq 1 ]; then pack_summary; fi
 
 elapsed=$(($(date +%s) - started))
-printf '\n    build done at %s, %dm %ds\n' "$(date +'%Y-%m-%d %H:%M:%S')" "$((elapsed / 60))" "$((elapsed % 60))"
+printf '\n    %dm %ds\n' "$((elapsed / 60))" "$((elapsed % 60))"

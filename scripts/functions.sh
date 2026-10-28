@@ -75,9 +75,9 @@ function githubDownloadReleaseAsset() {
     if [ "${NAME}" = "${ASSET_NAME}" ]; then
       FOUND=1
       if [ -n "${TOKEN}" ]; then
-        curl -fkL --retry 3 --retry-delay 1 --retry-all-errors -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/${REPO}/releases/assets/${ID}" -o "${OUTPUT_FILE}" || return 1
+        curl -fksSL --retry 3 --retry-delay 1 --retry-all-errors -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/${REPO}/releases/assets/${ID}" -o "${OUTPUT_FILE}" || return 1
       else
-        curl -fkL --retry 3 --retry-delay 1 --retry-all-errors -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/${REPO}/releases/assets/${ID}" -o "${OUTPUT_FILE}" || return 1
+        curl -fksSL --retry 3 --retry-delay 1 --retry-all-errors -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/${REPO}/releases/assets/${ID}" -o "${OUTPUT_FILE}" || return 1
       fi
       break
     fi
@@ -92,7 +92,6 @@ function githubDownloadReleaseAsset() {
 # Get latest LKMs
 # $1 path
 function getLKMs() {
-  echo "Getting LKMs begin"
   local DEST_PATH="${1}"
   local CACHE_FILE="/tmp/rp-lkms.zip"
   local TAG=""
@@ -103,9 +102,8 @@ function getLKMs() {
   # Unzip LKMs
   rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
-  if unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"; then
+  if unzip -qo "${CACHE_FILE}" -d "${DEST_PATH}"; then
     rm -f "${CACHE_FILE}"
-    echo "Getting LKMs end - ${TAG}"
   else
     return 1
   fi
@@ -114,7 +112,6 @@ function getLKMs() {
 # Get latest Addons
 # $1 path
 function getAddons() {
-  echo "Getting Addons begin"
   local DEST_PATH="${1}"
   local CACHE_DIR="/tmp/addons"
   local CACHE_FILE="/tmp/addons.zip"
@@ -127,17 +124,14 @@ function getAddons() {
   rm -rf "${CACHE_DIR}"
   mkdir -p "${CACHE_DIR}"
   mkdir -p "${DEST_PATH}"
-  if unzip -o "${CACHE_FILE}" -d "${CACHE_DIR}"; then
-    echo "Installing Addons to ${DEST_PATH}"
+  if unzip -qo "${CACHE_FILE}" -d "${CACHE_DIR}"; then
     [ -f /tmp/addons/VERSION ] && cp -f /tmp/addons/VERSION ${DEST_PATH}/
     for PKG in $(LC_ALL=C printf '%s\n' ${CACHE_DIR}/*.addon | sort -V); do
       ADDON=$(basename "${PKG}" .addon)
       mkdir -p "${DEST_PATH}/${ADDON}"
-      echo "Extracting ${PKG} to ${DEST_PATH}/${ADDON}"
       tar -xaf "${PKG}" -C "${DEST_PATH}/${ADDON}"
     done
     rm -f "${CACHE_FILE}"
-    echo "Getting Addons end - ${TAG}"
   else
     return 1
   fi
@@ -146,7 +140,6 @@ function getAddons() {
 # Get latest Modules
 # $1 path
 function getModules() {
-  echo "Getting Modules begin"
   local DEST_PATH="${1}"
   local CACHE_FILE="/tmp/modules.zip"
   local TAG=""
@@ -157,9 +150,8 @@ function getModules() {
   # Unzip Modules
   rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
-  if unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"; then
+  if unzip -qo "${CACHE_FILE}" -d "${DEST_PATH}"; then
     rm -f "${CACHE_FILE}"
-    echo "Getting Modules end - ${TAG}"
   else
     return 1
   fi
@@ -168,7 +160,6 @@ function getModules() {
 # Get latest Configs
 # $1 path
 function getConfigs() {
-  echo "Getting Configs begin"
   local DEST_PATH="${1}"
   local CACHE_FILE="/tmp/configs.zip"
   local TAG=""
@@ -179,9 +170,8 @@ function getConfigs() {
   # Unzip Configs
   rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
-  if unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"; then
+  if unzip -qo "${CACHE_FILE}" -d "${DEST_PATH}"; then
     rm -f "${CACHE_FILE}"
-    echo "Getting Configs end - ${TAG}"
   else
     return 1
   fi
@@ -190,7 +180,6 @@ function getConfigs() {
 # Get latest Patches
 # $1 path
 function getPatches() {
-  echo "Getting Patches begin"
   local DEST_PATH="${1}"
   local CACHE_FILE="/tmp/patches.zip"
   local TAG=""
@@ -201,9 +190,8 @@ function getPatches() {
   # Unzip Patches
   rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
-  if unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"; then
+  if unzip -qo "${CACHE_FILE}" -d "${DEST_PATH}"; then
     rm -f "${CACHE_FILE}"
-    echo "Getting Patches end - ${TAG}"
   else
     return 1
   fi
@@ -212,7 +200,6 @@ function getPatches() {
 # Get latest Custom
 # $1 path
 function getCustom() {
-  echo "Getting Custom begin"
   local DEST_PATH="${1}"
   local CACHE_FILE="/tmp/custom.zip"
   local TAG=""
@@ -223,9 +210,8 @@ function getCustom() {
   # Unzip Custom
   rm -rf "${DEST_PATH}"
   mkdir -p "${DEST_PATH}"
-  if unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"; then
+  if unzip -qo "${CACHE_FILE}" -d "${DEST_PATH}"; then
     rm -f "${CACHE_FILE}"
-    echo "Getting Custom end - ${TAG}"
   else
     return 1
   fi
@@ -234,7 +220,6 @@ function getCustom() {
 # Get latest Theme
 # $1 path
 function getTheme() {
-  echo "Getting Theme begin"
   local DEST_PATH="${1}"
   local CACHE_FILE="/tmp/theme.zip"
   local TAG=""
@@ -244,9 +229,8 @@ function getTheme() {
   githubDownloadReleaseAsset "arc-theme" "${TAG}" "arc-theme-${TAG}.zip" "${CACHE_FILE}" || return 1
   # Unzip Theme
   mkdir -p "${DEST_PATH}"
-  if unzip -o "${CACHE_FILE}" -d "${DEST_PATH}"; then
+  if unzip -qo "${CACHE_FILE}" -d "${DEST_PATH}"; then
     rm -f "${CACHE_FILE}"
-    echo "Getting Theme end - ${TAG}"
   else
     return 1
   fi
@@ -427,7 +411,7 @@ function createvmx() {
   rm -rf "VMX_${VMNAME}"
   mkdir -p "VMX_${VMNAME}"
   qemu-img convert -O vmdk -o 'adapter_type=lsilogic,subformat=monolithicSparse,compat6' "${BLIMAGE}" "VMX_${VMNAME}/${VMNAME}-disk1.vmdk"
-  qemu-img create -f vmdk "VMX_${VMNAME}/${VMNAME}-disk2.vmdk" "32G"
+  qemu-img create -q -f vmdk "VMX_${VMNAME}/${VMNAME}-disk2.vmdk" "32G"
 
   # Create VM configuration
   cat <<_EOF_ >"VMX_${VMNAME}/${VMNAME}.vmx"
@@ -525,7 +509,7 @@ function convertova() {
   # Download and install ovftool if it doesn't exist
   if [ ! -x ovftool/ovftool ]; then
     rm -rf ovftool ovftool.zip
-    curl -skL https://github.com/rgl/ovftool-binaries/raw/main/archive/VMware-ovftool-4.6.3-24031167-lin.x86_64.zip -o ovftool.zip
+    curl -fksSL https://github.com/rgl/ovftool-binaries/raw/main/archive/VMware-ovftool-4.6.3-24031167-lin.x86_64.zip -o ovftool.zip
     if [ $? -ne 0 ]; then
       echo "Failed to download ovftool"
       exit 1
@@ -539,7 +523,10 @@ function convertova() {
   fi
 
   rm -f "${OVAPATH}"
-  ovftool/ovftool "VMX_${VMNAME}/${VMNAME}.vmx" "${OVAPATH}"
+  # Not silenced: ovftool says what went wrong on stdout. LC_ALL=C, as arx
+  # runs it: its launcher sets LC_CTYPE=en_US.UTF-8, and a build host
+  # without that locale warns about it in the middle of the build.
+  LC_ALL=C ovftool/ovftool "VMX_${VMNAME}/${VMNAME}.vmx" "${OVAPATH}"
   rm -rf "VMX_${VMNAME}"
 }
 
