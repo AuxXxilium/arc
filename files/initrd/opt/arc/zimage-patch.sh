@@ -34,7 +34,7 @@ else
   # Extract vmlinux
   "${ARC_PATH}/extract-vmlinux" "${ORI_ZIMAGE_FILE}" >"${TMP_PATH}/vmlinux" 2>"${LOG_FILE}" || die
   # Patch boot params and ramdisk check
-  "${ARC_PATH}/kpatch" "${TMP_PATH}/vmlinux" "${TMP_PATH}/vmlinux-mod" >"${LOG_FILE}" 2>&1 || die
+  kpatch "${TMP_PATH}/vmlinux" "${TMP_PATH}/vmlinux-mod" >"${LOG_FILE}" 2>&1 || die
   # Rebuild zImage
   "${ARC_PATH}/vmlinux-to-bzImage.sh" "${TMP_PATH}/vmlinux-mod" "${MOD_ZIMAGE_FILE}" "${ORI_ZIMAGE_FILE}" "${PLATFORM}" >"${LOG_FILE}" 2>&1 || die
 fi

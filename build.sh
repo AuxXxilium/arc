@@ -970,6 +970,16 @@ stage_pack() {
     make_essential
   fi
 
+  # The loader's userland is musl, as buildroot's post-build.sh checks for
+  # its own files: a program from files/initrd that asks for glibc's loader
+  # would fail only on the machine that runs it.
+  local f glibc=""
+  while IFS= read -r f; do
+    [ "$(head -c 4 "${f}" 2>/dev/null)" = "$(printf '\177ELF')" ] || continue
+    grep -qF "ld-linux-x86-64.so.2" "${f}" && glibc="${glibc} ${f#"${STAGE}/initrd"}"
+  done < <(find "${STAGE}/initrd" -type f)
+  [ -z "${glibc}" ] || die "linked against glibc, which the musl loader does not have:${glibc}"
+
   info "repacking initrd"
   cp -f "br/bzImage-apex" "${STAGE}/p3/bzImage-apex"
   repackInitrd "br/initrd-apex" "${STAGE}/initrd" "${STAGE}/p3/initrd-apex"
