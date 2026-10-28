@@ -630,6 +630,44 @@ rebuild_changed_packages() {
   fi
 }
 
+# Buildroot patches a package once, when it extracts it, and never looks at
+# its patch directory again: mdadm's musl patch, pushed after a build that
+# had failed on mdadm, was not applied until its build directory was
+# removed by hand. As arx does, a package whose patches in external/hashes
+# were added, removed or changed since its build directory was patched is
+# dircleaned, to be extracted, patched and built again.
+#
+# Unlike arx, against the list of patches Buildroot applied rather than the
+# directory's mtime, which the kernel's hash files beside the patches change
+# on every kernel bump; and only in the build directory of the version
+# configured now, as one of an older kernel stays behind with its old list.
+rebuild_repatched_packages() {
+  local base dir pkg var vars="" dirs bdir want have
+
+  base="$(cd "${BR_SRC}/external/hashes" && pwd -P)" || return 0
+  for dir in "${base}"/*/; do
+    pkg="$(basename "${dir}")"
+    vars="${vars} $(printf '%s' "${pkg}" | tr 'a-z-' 'A-Z_')_DIR"
+  done
+  [ -n "${vars}" ] || return 0
+  dirs="$(make -s --no-print-directory -C "${BR_SRC}" O="${BR_OUT}" VARS="${vars# }" printvars)"
+
+  for dir in "${base}"/*/; do
+    dir="${dir%/}"
+    pkg="$(basename "${dir}")"
+    var="$(printf '%s' "${pkg}" | tr 'a-z-' 'A-Z_')_DIR"
+    bdir="$(sed -n "s/^${var}=//p" <<<"${dirs}")"
+    [ -n "${bdir}" ] && [ -f "${bdir}/.stamp_patched" ] || continue
+    want="$(find "${dir}" -maxdepth 1 -name '*.patch' | LC_ALL=C sort)"
+    have="$(grep -F "${dir}/" "${bdir}/.applied_patches_list" 2>/dev/null | LC_ALL=C sort || true)"
+    if [ "${want}" != "${have}" ] ||
+      [ -n "$(find "${dir}" -maxdepth 1 -name '*.patch' -newer "${bdir}/.stamp_patched" -print -quit)" ]; then
+      info "patches of ${pkg} changed, rebuilding it"
+      make -s -C "${BR_SRC}" O="${BR_OUT}" "${pkg}-dirclean"
+    fi
+  done
+}
+
 # What a build that succeeded can still lack, as arx checks it: each is a
 # loader that boots and is found out only on the hardware.
 check_buildroot() {
@@ -727,6 +765,7 @@ build_buildroot() {
         rm -rf "${d}"
       fi
     done
+    rebuild_repatched_packages
 
     # Buildroot rebuilds what changed by its stamps, and external.mk makes
     # the out-of-tree drivers follow their sources and the kernel.
