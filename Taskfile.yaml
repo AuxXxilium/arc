@@ -9,6 +9,3 @@ tasks:
   release:
     cmds:
       - ./build.sh --release
-  release-essential:
-    cmds:
-      - ./build.sh --essential --release

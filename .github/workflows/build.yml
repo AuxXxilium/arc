@@ -28,10 +28,6 @@ on:
         description: "beta"
         default: false
         type: boolean
-      essential:
-        description: "essential"
-        default: false
-        type: boolean
       docker:
         description: "push to Docker Hub"
         default: false
@@ -92,36 +88,26 @@ jobs:
           AUX_TOKEN: ${{ secrets.BUILD_TOKEN }}
           VERSION: ${{ inputs.version }}
         run: |
-          # One release repository per build: Essential goes to arc-essential,
-          # the full loader to arc or arc-beta. --replace as allowUpdates was.
+          # One release repository per build: arc or arc-beta. --replace as
+          # allowUpdates was.
           ARGS="--no-pull --release --replace"
-          if ${{ inputs.essential }}; then
-            if ${{ inputs.stable }} || ${{ inputs.beta }}; then
-              echo "::error::Essential is published to arc-essential only: leave stable and beta off."
-              exit 1
-            fi
-            ARGS="${ARGS} --essential --publish"
-            ARC_BRANCH="essential"
+          if ${{ inputs.stable }} && ${{ inputs.beta }}; then
+            echo "::error::stable or beta, not both."
+            exit 1
+          elif ${{ inputs.stable }}; then
+            ARGS="${ARGS} --stable"
+          elif ${{ inputs.beta }}; then
+            ARGS="${ARGS} --beta"
           else
-            if ${{ inputs.stable }} && ${{ inputs.beta }}; then
-              echo "::error::stable or beta, not both."
-              exit 1
-            elif ${{ inputs.stable }}; then
-              ARGS="${ARGS} --stable"
-            elif ${{ inputs.beta }}; then
-              ARGS="${ARGS} --beta"
-            else
-              ARGS="${ARGS} --no-publish"
-            fi
-            ARC_BRANCH="full"
+            ARGS="${ARGS} --no-publish"
           fi
-          echo "ARC_BRANCH=${ARC_BRANCH}" >>"${GITHUB_ENV}"
+          echo "ARC_BRANCH=full" >>"${GITHUB_ENV}"
           echo "ARC_VERSION=${VERSION}" >>"${GITHUB_ENV}"
 
           ./build.sh ${ARGS}
 
       - name: Upload
-        if: ${{ success() && !inputs.stable && !inputs.beta && !inputs.essential }}
+        if: ${{ success() && !inputs.stable && !inputs.beta }}
         uses: actions/upload-artifact@v4
         with:
           name: arc-${{ inputs.version }}

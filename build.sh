@@ -24,10 +24,6 @@
 #                                   --no-buildroot, --no-pack)
 #   ./build.sh --refresh            fetch the dependencies again
 #   ./build.sh --clean-buildroot    buildroot from an empty output tree
-#   ./build.sh --essential          the Essential variant, as build.yml makes
-#                                   it: no 4.4 kernel modules or LKMs, the
-#                                   Essential platforms, and arc-essential as
-#                                   the loader's update source
 #   ./build.sh --release            then the release files as arx packs
 #                                   them: img, vmdk (flat and dynamic), vhdx
 #                                   and ova zips, the update zip and its
@@ -35,14 +31,10 @@
 #                                   Asks for the version, and once the
 #                                   files are written whether to publish them:
 #                                   as a stable (arc) or beta (arc-beta)
-#                                   release, or for --essential to
-#                                   arc-essential (AUX_TOKEN)
+#                                   release (AUX_TOKEN)
 #   ./build.sh --stable             --release, published to arc without asking
 #   ./build.sh --beta               --release, published to arc-beta without
 #                                   asking
-#   ./build.sh --essential --publish
-#                                   --release, published to arc-essential
-#                                   without asking (--publish alone: arc)
 #   --no-publish                    --release, and do not ask
 #   --replace                       a release already published may have its
 #                                   files replaced (build.yml's allowUpdates)
@@ -104,11 +96,10 @@ GRUB_DISK="${WORK}/grub.img.gz"
 
 STABLE_REPO="${STABLE_REPO:-AuxXxilium/arc}"
 BETA_REPO="${BETA_REPO:-AuxXxilium/arc-beta}"
-ESSENTIAL_REPO="${ESSENTIAL_REPO:-AuxXxilium/arc-essential}"
 
 # What goes into the image and the update zip: copies of files/p1, files/p3
-# and files/initrd, so the version files, the Essential edits and the GRUB
-# update never touch the tracked tree or the fetched dependencies.
+# and files/initrd, so the version files and the GRUB update never touch
+# the tracked tree or the fetched dependencies.
 STAGE="${WORK}/stage"
 
 IMAGE_FILE="arc.img"
@@ -149,9 +140,7 @@ do_brclean=0 do_release=0 do_replace=0
 # --refresh: fetch the dependencies again rather than reuse them. A release
 # always does (set in the driver): it ships what is current.
 do_refresh=0
-# full or essential.
-variant="full"
-# Where the release goes: stable, beta or essential without asking, no to
+# Where the release goes: stable or beta without asking, no to
 # keep it local, empty to ask once the files are written.
 publish_to=""
 explicit=0
@@ -171,11 +160,9 @@ for arg in "$@"; do
   --no-pack) do_pack=0 ;;
   --refresh) do_refresh=1 ;;
   --clean-buildroot) do_brclean=1 ;;
-  --essential) variant="essential" ;;
   --release) do_release=1 ;;
   --stable) do_release=1 publish_to="stable" ;;
   --beta) do_release=1 publish_to="beta" ;;
-  --publish) do_release=1 publish_to="auto" ;;
   --no-publish) do_release=1 publish_to="no" ;;
   --replace) do_replace=1 ;;
   -h | --help)
@@ -185,16 +172,6 @@ for arg in "$@"; do
   *) die "unknown argument: ${arg}" ;;
   esac
 done
-
-# Essential has one release repository, the full loader two.
-if [ "${publish_to}" = "auto" ]; then
-  [ "${variant}" = "essential" ] && publish_to="essential" || publish_to="stable"
-fi
-if [ "${variant}" = "essential" ]; then
-  case "${publish_to}" in
-  stable | beta) die "Essential is published to ${ESSENTIAL_REPO} only: --essential --publish." ;;
-  esac
-fi
 
 # ------------------------------------------------------------ toolchecks ---
 
@@ -351,10 +328,8 @@ stage_pull() {
   [ "${do_refresh}" -eq 1 ] && rest="${rest} --refresh"
   [ "${do_release}" -eq 1 ] && rest="${rest} --release"
   [ "${do_replace}" -eq 1 ] && rest="${rest} --replace"
-  [ "${variant}" = "essential" ] && rest="${rest} --essential"
   case "${publish_to}" in
   stable | beta) rest="${rest} --${publish_to}" ;;
-  essential) rest="${rest} --publish" ;;
   no) rest="${rest} --no-publish" ;;
   esac
 
@@ -966,36 +941,8 @@ make_grub_disk() {
   grub_fingerprint >"${WORK}/grub.fingerprint"
 }
 
-# build.yml's Essential cleanup, on the staged copies: no modules or LKMs
-# for the 4.4 kernels, the Essential title and platform list, arc-essential
-# as the update source, and no beta or dependency-only update in the
-# loader's update menu. Every edit has to find its line first: one that no
-# longer matches would ship the full loader under the Essential name.
-make_essential() {
-  local consts="${STAGE}/initrd/opt/arc/include/consts.sh"
-  local functions="${STAGE}/initrd/opt/arc/arc-functions.sh"
-
-  rm -f "${STAGE}"/p3/modules/*-4.4.180.tgz "${STAGE}"/p3/modules/*-4.4.302.tgz
-  rm -f "${STAGE}"/p3/lkms/*-4.4.180-*.tgz "${STAGE}"/p3/lkms/*-4.4.302-*.tgz
-
-  grep -q 'Arc ' "${consts}" &&
-    grep -q 'platforms\.yml' "${consts}" &&
-    grep -q 'https://api.github.com/repos/AuxXxilium/arc/releases' "${consts}" &&
-    grep -q 'https://github.com/AuxXxilium/arc/releases/download' "${consts}" &&
-    grep -qF '2 "Beta ${BETATAG}" \' "${functions}" &&
-    grep -qF '3 "Update Dependencies \Z1(maybe not stable)\Zn" \' "${functions}" ||
-    die "consts.sh or arc-functions.sh no longer has a line the Essential edits change. Update make_essential and build.yml together."
-
-  sed -i 's|Arc |Arc Essential |' "${consts}"
-  sed -i 's|platforms.yml|platforms-essential.yml|g' "${consts}"
-  sed -i 's|https://api.github.com/repos/AuxXxilium/arc/releases|https://api.github.com/repos/AuxXxilium/arc-essential/releases|g' "${consts}"
-  sed -i 's|https://github.com/AuxXxilium/arc/releases/download|https://github.com/AuxXxilium/arc-essential/releases/download|g' "${consts}"
-  sed -i '/2 "Beta ${BETATAG}" \\$/d' "${functions}"
-  sed -i '/3 "Update Dependencies \\Z1(maybe not stable)\\Zn" \\$/d' "${functions}"
-}
-
 stage_pack() {
-  stage "pack (${variant})"
+  stage "pack"
 
   [ -f br/bzImage-apex ] && [ -f br/initrd-apex ] ||
     die "no buildroot in br/. Run the buildroot stage first."
@@ -1017,10 +964,6 @@ stage_pack() {
     "${STAGE}"/p3/bzImage-* "${STAGE}"/p3/initrd-*
   echo "${VERSION}" >"${STAGE}/p1/ARC-VERSION"
   echo "${BUILD}" >"${STAGE}/p1/ARC-BUILD"
-  if [ "${variant}" = "essential" ]; then
-    info "essential"
-    make_essential
-  fi
 
   # The loader's userland is musl, as buildroot's post-build.sh checks for
   # its own files: a program from files/initrd that asks for glibc's loader
@@ -1101,7 +1044,7 @@ pack_summary() {
   log "done"
   info "image    ${IMAGE_FILE}  ($(du -h "${IMAGE_FILE}" | cut -f1))"
   [ -f arc.vmdk ] && info "vmdk     arc.vmdk"
-  info "version  ${VERSION}  build ${BUILD}  (${variant})"
+  info "version  ${VERSION}  build ${BUILD}"
   [ -f "update-${VERSION}.zip" ] && info "update   update-${VERSION}.zip (+ .hash)"
   [ -n "${RELEASE_URL:-}" ] && info "release  ${RELEASE_URL}"
   echo
@@ -1200,14 +1143,12 @@ publish_preflight() {
 release_repo() {
   case "${1}" in
   beta) echo "${BETA_REPO}" ;;
-  essential) echo "${ESSENTIAL_REPO}" ;;
   *) echo "${STABLE_REPO}" ;;
   esac
 }
 
 # Whether the files just written go up, and where: the flags or the menu
-# say, else a terminal is asked -- stable or beta for the full loader,
-# arc-essential for Essential. Never for DEV_VERSION.
+# say, else a terminal is asked, stable or beta. Never for DEV_VERSION.
 #
 # Sets publish_to and RELEASE_REPO.
 want_publish() {
@@ -1217,26 +1158,17 @@ want_publish() {
   [ "${publish_to}" != "no" ] || return 1
   if [ -z "${publish_to}" ]; then
     if [ ! -t 0 ]; then
-      info "not published (no terminal to ask; --stable, --beta or --essential --publish publish without asking)"
+      info "not published (no terminal to ask; --stable or --beta publish without asking)"
       return 1
     fi
-    if [ "${variant}" = "essential" ]; then
-      printf '\n    publish %s as an Essential release (%s)? [y/N] ' "${VERSION}" "${ESSENTIAL_REPO}"
-      read -r answer || answer=""
-      case "${answer}" in
-      y | Y | yes) publish_to="essential" ;;
-      *) return 1 ;;
-      esac
-    else
-      printf '\n    publish %s as a [s]table release (%s), a [b]eta release (%s), or [n]ot? [s/b/N] ' \
-        "${VERSION}" "${STABLE_REPO}" "${BETA_REPO}"
-      read -r answer || answer=""
-      case "${answer}" in
-      s | S | stable) publish_to="stable" ;;
-      b | B | beta) publish_to="beta" ;;
-      *) return 1 ;;
-      esac
-    fi
+    printf '\n    publish %s as a [s]table release (%s), a [b]eta release (%s), or [n]ot? [s/b/N] ' \
+      "${VERSION}" "${STABLE_REPO}" "${BETA_REPO}"
+    read -r answer || answer=""
+    case "${answer}" in
+    s | S | stable) publish_to="stable" ;;
+    b | B | beta) publish_to="beta" ;;
+    *) return 1 ;;
+    esac
   fi
   RELEASE_REPO="$(release_repo "${publish_to}")"
 }
@@ -1302,10 +1234,8 @@ upload_asset() {
     fi
     warn "uploading ${name} failed (attempt ${try} of 3)"
   done
-  local again="--${publish_to}"
-  [ "${publish_to}" != "essential" ] || again="--essential --publish"
   die "could not upload ${name}. The draft ${VERSION} stays on ${RELEASE_REPO};
-    VERSION=${VERSION} ./build.sh pack ${again} tries again."
+    VERSION=${VERSION} ./build.sh pack --${publish_to} tries again."
 }
 
 publish_release() {
@@ -1333,8 +1263,8 @@ publish_release() {
 
 # ============================================================== menu ===
 #
-# A numbered menu, as arx's build.sh has. The variant and a clean buildroot
-# are switched in place; every other choice starts the build.
+# A numbered menu, as arx's build.sh has. A clean buildroot is switched in
+# place; every other choice starts the build.
 
 # What is already built, so the menu can say so.
 state_of() {
@@ -1372,8 +1302,6 @@ state_of() {
 target_repo() {
   if [ -n "${publish_to}" ] && [ "${publish_to}" != "no" ]; then
     release_repo "${publish_to}"
-  elif [ "${variant}" = "essential" ]; then
-    release_repo essential
   else
     release_repo stable
   fi
@@ -1405,7 +1333,6 @@ menu() {
     printf '      \033[1m7\033[0m  refresh deps        \033[2mfetch them again, nothing else\033[0m\n'
     printf '      \033[1m8\033[0m  clean               \033[2mdrop build output\033[0m\n'
     printf '\n'
-    printf '      \033[1mv\033[0m  variant             \033[2m%s\033[0m\n' "${variant}"
     printf '      \033[1mr\033[0m  clean buildroot     \033[2m%s\033[0m\n' \
       "$([ "${do_brclean}" -eq 1 ] && echo "yes, from an empty output tree" || echo "no, only what changed")"
     printf '\n'
@@ -1419,7 +1346,7 @@ menu() {
     }
 
     # The stages return, so a stage's output is not buried under a
-    # redrawn menu. v and r go round again to show what they switched.
+    # redrawn menu. r goes round again to show what it switched.
     case "${choice}" in
     1) do_pull=1 do_deps=1 do_buildroot=1 do_pack=1; return 0 ;;
     2) do_pull=1 do_deps=0 do_buildroot=0 do_pack=0; return 0 ;;
@@ -1430,9 +1357,6 @@ menu() {
     7) do_pull=0 do_deps=1 do_buildroot=0 do_pack=0 do_refresh=1; return 0 ;;
     8) menu_clean ;;
     9) do_pull=1 do_deps=1 do_buildroot=1 do_pack=1 do_refresh=1; return 0 ;;
-    v | V)
-      if [ "${variant}" = "full" ]; then variant="essential"; else variant="full"; fi
-      ;;
     r | R) do_brclean=$((1 - do_brclean)) ;;
     q | Q) exit 0 ;;
     *) warn "not a choice: ${choice}" ;;
