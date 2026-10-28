@@ -72,16 +72,31 @@ function downloadWithGauge() {
     {
       curl -kL --retry 3 --retry-delay 2 --retry-all-errors "${DOWNLOAD_URL}" -o "${TMP_OUTPUT_PATH}" 2>&3 3>&-
     } 3>&1 >&4 4>&- |
-    DOWNLOAD_URL="${DOWNLOAD_URL}" perl -C -lane '
-      BEGIN {$header = "Downloading $ENV{DOWNLOAD_URL}...\n\n"; $| = 1}
-      $pcent = $F[0];
-      $_ = join "", unpack("x3 a7 x4 a9 x8 a9 x7 a*") if length > 20;
-      s/ /\xa0/g; # replacing space with nbsp as dialog squashes spaces
-      if ($. <= 3) {
-        $header .= "$_\n";
-        $/ = "\r" if $. == 2
-      } else {
-        print "XXX\n$pcent\n$header$_\nXXX"
+    # curl ends its two header lines with \n and then redraws its progress
+    # after each \r: lines end at \n until two are read, at \r after.
+    DOWNLOAD_URL="${DOWNLOAD_URL}" awk -v RS='\r' '
+      function emit(s, f) {
+        line++
+        split(s, f, " ")
+        pcent = f[1]
+        # % Total, % Received, Xferd and the rest, without the columns between
+        if (length(s) > 20) s = substr(s, 4, 7) substr(s, 15, 9) substr(s, 32, 9) substr(s, 48)
+        gsub(/ /, "\302\240", s) # replacing space with nbsp as dialog squashes spaces
+        if (line <= 3) {
+          header = header s "\n"
+        } else {
+          printf "XXX\n%s\n%s%s\nXXX\n", pcent, header, s
+          fflush()
+        }
+      }
+      BEGIN { header = "Downloading " ENVIRON["DOWNLOAD_URL"] "...\n\n" }
+      {
+        rec = $0
+        while (line < 2 && (p = index(rec, "\n")) > 0) {
+          emit(substr(rec, 1, p - 1))
+          rec = substr(rec, p + 1)
+        }
+        emit(rec)
       }' 4>&- |
     dialog --gauge "${GAUGE_TITLE}" 14 72 4>&-
   } 4>&1
