@@ -616,6 +616,22 @@ function delCmdline() {
 }
 
 ###############################################################################
+# a ramdisk's format by its magic, in the names file --mime-type gives them:
+# the image has no file(1)
+# 1 - path
+function ramdiskFormat() {
+  case "$(od -An -tx1 -N6 "${1}" 2>/dev/null | tr -d ' \n')" in
+  303730373031* | 303730373032*) echo "application/x-cpio" ;;
+  fd377a585a00*) echo "application/x-xz" ;;
+  04224d18*) echo "application/x-lz4" ;;
+  5d0000*) echo "application/x-lzma" ;;
+  425a68*) echo "application/x-bzip2" ;;
+  1f8b*) echo "application/gzip" ;;
+  28b52ffd*) echo "application/zstd" ;;
+  esac
+}
+
+###############################################################################
 # check for a server's BMC (iDRAC, iLO, XCC, ...): ACPI's IPI0001 device or
 # SPMI table, its IPMI interface. As arx's hwscan.hasBMC.
 function hasBMC() {

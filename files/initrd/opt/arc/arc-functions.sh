@@ -2505,7 +2505,7 @@ function loaderPassword() {
   mkdir -p "${RDXZ_PATH}"
 
   if [ -f "${ARC_RAMDISK_USER_FILE}" ]; then
-    local INITRD_FORMAT=$(file -b --mime-type "${ARC_RAMDISK_USER_FILE}")
+    local INITRD_FORMAT=$(ramdiskFormat "${ARC_RAMDISK_USER_FILE}")
     (
       cd "${RDXZ_PATH}"
       case "${INITRD_FORMAT}" in
@@ -2534,15 +2534,14 @@ function loaderPassword() {
     if [ "${SHOW_DIALOG}" = "true" ]; then
       (
         cd "${RDXZ_PATH}"
-        local RDSIZE=$(du -sb ${RDXZ_PATH} 2>/dev/null | awk '{print $1}')
         case "${INITRD_FORMAT}" in
-        *'x-cpio'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} >"${ARC_RAMDISK_USER_FILE}" ;;
-        *'x-xz'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | xz -9 -C crc32 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
-        *'x-lz4'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | lz4 -9 -l -c - >"${ARC_RAMDISK_USER_FILE}" ;;
-        *'x-lzma'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | lzma -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
-        *'x-bzip2'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | bzip2 -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
-        *'gzip'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | gzip -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
-        *'zstd'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | zstd -19 -T0 -f -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-cpio'*) find . 2>/dev/null | cpio -o -H newc -R root:root >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-xz'*) find . 2>/dev/null | cpio -o -H newc -R root:root | xz -9 -C crc32 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-lz4'*) find . 2>/dev/null | cpio -o -H newc -R root:root | lz4 -9 -l -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-lzma'*) find . 2>/dev/null | cpio -o -H newc -R root:root | lzma -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'x-bzip2'*) find . 2>/dev/null | cpio -o -H newc -R root:root | bzip2 -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'gzip'*) find . 2>/dev/null | cpio -o -H newc -R root:root | gzip -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+        *'zstd'*) find . 2>/dev/null | cpio -o -H newc -R root:root | zstd -19 -T0 -f -c - >"${ARC_RAMDISK_USER_FILE}" ;;
         *) ;;
         esac
       ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Loader Password" \
@@ -2615,7 +2614,7 @@ function loaderPorts() {
       rm -rf "${RDXZ_PATH}"
       mkdir -p "${RDXZ_PATH}"
       if [ -f "${ARC_RAMDISK_USER_FILE}" ]; then
-        INITRD_FORMAT=$(file -b --mime-type "${ARC_RAMDISK_USER_FILE}")
+        INITRD_FORMAT=$(ramdiskFormat "${ARC_RAMDISK_USER_FILE}")
         (
           cd "${RDXZ_PATH}"
           case "${INITRD_FORMAT}" in
@@ -2641,15 +2640,14 @@ function loaderPorts() {
       if [ -n "$(ls -A "${RDXZ_PATH}" 2>/dev/null)" ] && [ -n "$(ls -A "${RDXZ_PATH}/etc" 2>/dev/null)" ]; then
         (
           cd "${RDXZ_PATH}"
-          local RDSIZE=$(du -sb ${RDXZ_PATH} 2>/dev/null | awk '{print $1}')
           case "${INITRD_FORMAT}" in
-          *'x-cpio'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} >"${ARC_RAMDISK_USER_FILE}" ;;
-          *'x-xz'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | xz -9 -C crc32 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
-          *'x-lz4'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | lz4 -9 -l -c - >"${ARC_RAMDISK_USER_FILE}" ;;
-          *'x-lzma'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | lzma -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
-          *'x-bzip2'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | bzip2 -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
-          *'gzip'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | gzip -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
-          *'zstd'*) find . 2>/dev/null | cpio -o -H newc -R root:root | pv -n -s ${RDSIZE:-1} | zstd -19 -T0 -f -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+          *'x-cpio'*) find . 2>/dev/null | cpio -o -H newc -R root:root >"${ARC_RAMDISK_USER_FILE}" ;;
+          *'x-xz'*) find . 2>/dev/null | cpio -o -H newc -R root:root | xz -9 -C crc32 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+          *'x-lz4'*) find . 2>/dev/null | cpio -o -H newc -R root:root | lz4 -9 -l -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+          *'x-lzma'*) find . 2>/dev/null | cpio -o -H newc -R root:root | lzma -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+          *'x-bzip2'*) find . 2>/dev/null | cpio -o -H newc -R root:root | bzip2 -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+          *'gzip'*) find . 2>/dev/null | cpio -o -H newc -R root:root | gzip -9 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
+          *'zstd'*) find . 2>/dev/null | cpio -o -H newc -R root:root | zstd -19 -T0 -f -c - >"${ARC_RAMDISK_USER_FILE}" ;;
           *) ;;
           esac
         ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Loader Ports" \
