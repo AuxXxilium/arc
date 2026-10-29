@@ -2893,14 +2893,14 @@ function formatDisks() {
     # then finds the old system partition and keeps its settings, and DSM
     # takes the upgrade path without installing the builtin packages -
     # Storage Manager included. wipefs clears both: libblkid knows every md
-    # superblock version. partx -d then drops the partitions the kernel
-    # still holds.
+    # superblock version. Erasing the table, wipefs has the kernel re-read
+    # it; partx -d only for the partitions a busy one kept it from dropping.
     PARTS="$(lsblk -lnpo KNAME,PKNAME,TYPE 2>/dev/null | awk -v d="${I}" '$2 == d && $3 == "part" {print $1}' | sort)"
     for P in ${PARTS}; do
       wipefs -af "${P}"
     done
     wipefs -af "${I}"
-    [ -n "${PARTS}" ] && partx -d "${I}"
+    [ -n "$(lsblk -lnpo PKNAME,TYPE 2>/dev/null | awk -v d="${I}" '$1 == d && $2 == "part"')" ] && partx -d "${I}"
     if [[ "${I}" = /dev/mmc* ]]; then
       echo y | mkfs.ext4 -T largefile4 -E nodiscard "${I}"
     else
