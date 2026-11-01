@@ -17,8 +17,13 @@ check_vmlinux() {
   readelf -h $1 >/dev/null 2>&1 || return 1
   # A decompressor that stops early still leaves a valid ELF header, but
   # the section headers sit at the end of vmlinux: they must be in the file.
+  # What stopped it goes to stderr, which zimage-patch.sh shows.
   shend=$(readelf -h $1 2>/dev/null | awk -F: '/Start of section headers/ {o = $2 + 0} /Size of section headers/ {s = $2 + 0} /Number of section headers/ {n = $2 + 0} END {print o + s * n}')
-  [ "${shend:-0}" -gt 0 ] && [ "${shend}" -le "$(wc -c <$1)" ] || return 1
+  if [ "${shend:-0}" -le 0 ] || [ "${shend}" -gt "$(wc -c <$1)" ]; then
+    echo "$me: $2: ELF cut short at $(wc -c <$1) of ${shend:-?} bytes" >&2
+    [ -n "$3" ] && [ -s "$err" ] && echo "$me: $3: $(head -c 300 "$err" | tr '\n' ' ')" >&2
+    return 1
+  fi
 
   cat $1
   exit 0
@@ -31,8 +36,8 @@ try_decompress() {
   # Try to find the header ($1) and decompress from here
   for pos in $(tr "$1\n$2" "\n$2=" <"$img" | grep -abo "^$2"); do
     pos=${pos%%:*}
-    tail -c+$pos "$img" | $3 >$tmp 2>/dev/null
-    check_vmlinux $tmp
+    tail -c+$pos "$img" | $3 >$tmp 2>$err
+    check_vmlinux $tmp "$3 at offset $pos (exit $?)" "$3"
   done
 }
 
@@ -46,7 +51,8 @@ fi
 
 # Prepare temp files:
 tmp=$(mktemp /tmp/vmlinux-XXX)
-trap "rm -f $tmp" 0
+err=$(mktemp /tmp/vmlinux-err-XXX)
+trap "rm -f $tmp $err" 0
 
 # That didn't work, so retry after decompression.
 try_decompress '\037\213\010' xy    gunzip
@@ -62,4 +68,11 @@ check_vmlinux $img
 
 # Bail out:
 echo "$me: Cannot find vmlinux." >&2
+# For a report from a machine the failure cannot be reproduced on: which
+# decompressors ran, and the room they had to write in.
+for d in unlzma unxz gunzip; do
+  echo "$me: $d is $(readlink -f "$(command -v $d)" 2>/dev/null)" >&2
+done
+echo "$me: $img is $(wc -c <"$img") bytes, $(df -k "$img" 2>/dev/null | awk 'NR==2 {print $4 " KiB free of " $2}') on its partition" >&2
+echo "$me: /tmp $(df -k /tmp 2>/dev/null | awk 'NR==2 {print $4 " KiB free of " $2}'), $(awk '/MemAvailable/ {print $2 " KiB"}' /proc/meminfo) RAM available" >&2
 exit 1
