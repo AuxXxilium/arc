@@ -89,9 +89,19 @@ if [ -f "${MOD_RDGZ_FILE}" ]; then
     NEWVER="${majorversion}.${minorversion}(${buildnumber}$([[ ${smallfixnumber:-0} -ne 0 ]] && echo "u${smallfixnumber}"))"
     NEWFULLVER="${productversion:-${majorversion}.${minorversion}.0}"
     PAT_URL_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${NEWFULLVER}-${buildnumber}-${smallfixnumber:-0}\".url" "${D_FILE}")"
-    [ -z "${PAT_URL_UPDATE}" ] && PAT_URL_UPDATE="#UPDATED"
     PAT_HASH_UPDATE="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${NEWFULLVER}-${buildnumber}-${smallfixnumber:-0}\".hash" "${D_FILE}")"
-    [ -z "${PAT_HASH_UPDATE}" ] && PAT_HASH_UPDATE="#UPDATED"
+    # DSM updated itself: the .pat the ramdisk names is the new version's, and
+    # the config follows, or the next livepatch takes the old one for a change.
+    # A version the catalog does not know names none.
+    if [ -n "${PAT_URL_UPDATE}" ] && [ -n "${PAT_HASH_UPDATE}" ]; then
+      PAT_URL="${PAT_URL_UPDATE}"
+      PAT_HASH="${PAT_HASH_UPDATE}"
+      writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
+      writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
+    else
+      PAT_URL=""
+      PAT_HASH=""
+    fi
     echo -e ">> DSM Version changed from ${OLDVER} to ${NEWVER}"
   fi
 fi

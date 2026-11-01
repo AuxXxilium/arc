@@ -779,8 +779,9 @@ function livepatch() {
     PAT_HASH="${PAT_HASH_UPDATE}"
     writeConfigKey "paturl" "${PAT_URL}" "${USER_CONFIG_FILE}"
     writeConfigKey "pathash" "${PAT_HASH}" "${USER_CONFIG_FILE}"
-    rm -f "${ORI_ZIMAGE_FILE}" "${ORI_RDGZ_FILE}" "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}" >/dev/null 2>&1 || true
-    rm -f "${PART1_PATH}/grub_cksum.syno" "${PART1_PATH}/GRUB_VER" >/dev/null 2>&1 || true
+    # The zImage and rd.gz on p2 are the ones DSM's own update wrote, and an
+    # update package has no full boot set to take them from again: they stay
+    # and are what gets patched. Only the old version's kept boot set goes.
     rm -f "${USER_UP_PATH}/"*.tar >/dev/null 2>&1 || true
   fi
 
