@@ -3455,74 +3455,36 @@ function getpatfiles() {
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   DSMFULLVER="$(readConfigKey "dsmfullver" "${USER_CONFIG_FILE}")"
   [ -z "${DSMFULLVER}" ] && DSMFULLVER="${PRODUCTVER}"
-  PAT_URL="$(readConfigKey "paturl" "${USER_CONFIG_FILE}")"
   PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
   mkdir -p "${USER_UP_PATH}"
-  DSM_FILE="${USER_UP_PATH}/${PAT_HASH}.tar"
-  VALID="false"
-  if [ ! -f "${DSM_FILE}" ] && [ "${ARC_OFFLINE}" = "false" ]; then
-    rm -f ${USER_UP_PATH}/*.tar
-    dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files" \
-      --infobox "Downloading DSM Boot Files..." 3 40
-    # Get new Files
-    DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/new/files/${MODEL/+/%2B}/${DSMFULLVER}/${PAT_HASH}.tar"
-    SPACELEFT=$(df --block-size=1 "${PART3_PATH}" 2>/dev/null | awk 'NR==2 {print $4}')
-    FILESIZE=$(curl -skLI -m 10 "${DSM_URL}" | grep -i Content-Length | tail -n 1 | tr -d '\r\n' | awk '{print $2}')
-    if [ ${FILESIZE:-0} -ge ${SPACELEFT:-0} ]; then
-      DSM_FILE="${TMP_PATH}/${PAT_HASH}.tar"
-    fi
-    if curl -skL --retry 3 --retry-delay 5 -m 300 "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null; then
-      DLSIZE=$(stat -c%s "${DSM_FILE}" 2>/dev/null || echo 0)
-      if [ -n "${FILESIZE}" ] && [ "${FILESIZE}" -gt 0 ] && [ "${DLSIZE}" -lt "${FILESIZE}" ]; then
-        rm -f "${DSM_FILE}"
-        dialog --backtitle "$(backtitle)" --title "DSM Boot Files" --aspect 18 \
-          --infobox "Download incomplete (${DLSIZE}/${FILESIZE} bytes). Please retry." 4 55
-        sleep 3
-      else
-        VALID="true"
-      fi
-    fi
-  elif [ ! -f "${DSM_FILE}" ] && [ "${ARC_OFFLINE}" = "true" ]; then
+  if [ ! -f "${USER_UP_PATH}/${PAT_HASH}.tar" ] && [ "${ARC_OFFLINE}" = "true" ]; then
     rm -f ${USER_UP_PATH}/*.tar
     if [ "${ARC_MODE}" = "automated" ]; then
       # Nobody is watching an automated build, so do not wait for an upload that
       # can only be made by hand. Report it and let the caller fail the build;
       # the loader drops to a shell where the file can be uploaded, after which
       # a rebuild picks it up.
-      dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files" --aspect 18 \
-        --infobox "Offline Mode: DSM Boot File is missing.\nUpload it to ${USER_UP_PATH} and build again." 5 60
+      dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files" --aspect 18         --infobox "Offline Mode: DSM Boot File is missing.
+Upload it to ${USER_UP_PATH} and build again." 5 60
       sleep 3
-    else
-      dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files" \
-        --msgbox "Please upload the DSM Boot File to ${USER_UP_PATH}.\nUse ${IPCON}:7304 to upload the file below and press OK.\nLink: https://raw.githubusercontent.com/AuxXxilium/arc-dsm/new/files/${MODEL}/${DSMFULLVER}/${PAT_HASH}.tar" 8 120
-      [ $? -ne 0 ] && VALID="false"
-    fi
-    if [ -f "${DSM_FILE}" ]; then
-      VALID="true"
-    fi
-  elif [ -f "${DSM_FILE}" ]; then
-    VALID="true"
-  fi
-  mkdir -p "${UNTAR_PAT_PATH}"
-  if [ "${VALID}" = "true" ]; then
-    dialog --backtitle "$(backtitle)" --title "DSM Boot Files" --aspect 18 \
-      --infobox "Copying DSM Boot Files..." 3 40
-    if ! tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" 2>/dev/null || ! copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null; then
-      dialog --backtitle "$(backtitle)" --title "DSM Boot Files" --aspect 18 \
-        --infobox "DSM Boot Files are corrupt or incomplete: Exit!" 4 55
-      rm -f "${DSM_FILE}"
-      sleep 2
-      [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
       return 1
     fi
+    dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files"       --msgbox "Please upload the DSM Boot File to ${USER_UP_PATH}.
+Use ${IPCON}:7304 to upload the file below and press OK.
+Link: https://raw.githubusercontent.com/AuxXxilium/arc-dsm/new/files/${MODEL}/${DSMFULLVER}/${PAT_HASH}.tar" 8 120
+  fi
+  if [ -f "${USER_UP_PATH}/${PAT_HASH}.tar" ]; then
+    dialog --backtitle "$(backtitle)" --title "DSM Boot Files" --aspect 18       --infobox "Copying DSM Boot Files..." 3 40
   else
-    dialog --backtitle "$(backtitle)" --title "DSM Boot Files" --aspect 18 \
-      --infobox "DSM Boot Files extraction failed: Exit!" 4 45
-    sleep 2
+    dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files"       --infobox "Downloading DSM Boot Files..." 3 40
+  fi
+  # The same fetch as livepatch's; its last line says why it failed
+  if ! MSG="$(fetchDSMFiles 2>/dev/null)"; then
+    dialog --backtitle "$(backtitle)" --title "DSM Boot Files" --aspect 18       --infobox "$(echo "${MSG}" | tail -1)
+Exit!" 4 55
+    sleep 3
     return 1
   fi
-  # Cleanup
-  [ -d "${UNTAR_PAT_PATH}" ] && rm -rf "${UNTAR_PAT_PATH}"
   return 0
 }
 

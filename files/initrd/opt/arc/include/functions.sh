@@ -759,6 +759,126 @@ function copyDSMFiles() {
 }
 
 ###############################################################################
+# Fetch the DSM boot set of the configured version and copy it to p2: the
+# one kept in users, else arc-dsm's, kept in users for the next build.
+# Progress, and why it failed, go to stdout.
+# Return 0 if zImage and rd.gz are in place
+function fetchDSMFiles() {
+  local MODEL PRODUCTVER DSMFULLVER PAT_HASH ARC_OFFLINE DSM_FILE DSM_URL SPACELEFT FILESIZE DLSIZE
+  MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+  PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
+  DSMFULLVER="$(readConfigKey "dsmfullver" "${USER_CONFIG_FILE}")"
+  [ -z "${DSMFULLVER}" ] && DSMFULLVER="${PRODUCTVER}"
+  PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
+  ARC_OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
+  if [ -z "${PAT_HASH}" ] || [ "${PAT_HASH:0:1}" = "#" ]; then
+    echo "No DSM Boot File is known for this DSM version."
+    return 1
+  fi
+  mkdir -p "${USER_UP_PATH}"
+  DSM_FILE="${USER_UP_PATH}/${PAT_HASH}.tar"
+  if [ ! -f "${DSM_FILE}" ]; then
+    rm -f "${USER_UP_PATH}/"*.tar >/dev/null 2>&1
+    if [ "${ARC_OFFLINE}" = "true" ]; then
+      echo "Offline Mode: DSM Boot File is missing."
+      return 1
+    fi
+    echo "Downloading DSM Boot Files..."
+    DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/new/files/${MODEL/+/%2B}/${DSMFULLVER}/${PAT_HASH}.tar"
+    SPACELEFT=$(df --block-size=1 "${PART3_PATH}" 2>/dev/null | awk 'NR==2 {print $4}')
+    FILESIZE=$(curl -skLI -m 10 "${DSM_URL}" | grep -i Content-Length | tail -n 1 | tr -d '\r\n' | awk '{print $2}')
+    if [ ${FILESIZE:-0} -ge ${SPACELEFT:-0} ]; then
+      DSM_FILE="${TMP_PATH}/${PAT_HASH}.tar"
+    fi
+    # A failed download leaves no partial file to be taken for a kept one
+    if ! curl -skL --retry 3 --retry-delay 5 -m 300 "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null; then
+      rm -f "${DSM_FILE}"
+      echo "DSM Boot Files download failed."
+      return 1
+    fi
+    DLSIZE=$(stat -c%s "${DSM_FILE}" 2>/dev/null || echo 0)
+    if [ -n "${FILESIZE}" ] && [ "${FILESIZE}" -gt 0 ] && [ "${DLSIZE}" -lt "${FILESIZE}" ]; then
+      rm -f "${DSM_FILE}"
+      echo "Download incomplete (${DLSIZE}/${FILESIZE} bytes). Please retry."
+      return 1
+    fi
+  fi
+  echo "Copying DSM Boot Files..."
+  rm -rf "${UNTAR_PAT_PATH}"
+  mkdir -p "${UNTAR_PAT_PATH}"
+  if ! tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" 2>/dev/null || ! copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null; then
+    rm -f "${DSM_FILE}"
+    rm -rf "${UNTAR_PAT_PATH}"
+    echo "DSM Boot Files are corrupt or incomplete."
+    return 1
+  fi
+  rm -rf "${UNTAR_PAT_PATH}"
+  return 0
+}
+
+###############################################################################
+# Patch the DSM ramdisk and kernel on p2 into initrd-dsm and zImage-dsm
+# Return 0 on success, 1 if the ramdisk failed, 2 if the kernel did
+function patchDSMImage() {
+  echo -e ">> patching Ramdisk..."
+  if ! ${ARC_PATH}/ramdisk-patch.sh || [ ! -s "${MOD_RDGZ_FILE}" ]; then
+    echo -e ">> Ramdisk patching failed!"
+    [ -f "${LOG_FILE}" ] && echo -e ">> Error details:" && cat "${LOG_FILE}"
+    echo
+    return 1
+  fi
+  echo
+  echo -e ">> patching Kernel..."
+  if ! ${ARC_PATH}/zimage-patch.sh || [ ! -s "${MOD_ZIMAGE_FILE}" ]; then
+    echo -e ">> Kernel patching failed!"
+    [ -f "${LOG_FILE}" ] && echo -e ">> Error details:" && cat "${LOG_FILE}"
+    echo
+    return 2
+  fi
+  echo
+  return 0
+}
+
+###############################################################################
+# After a failed patch: the version's boot set once more, when it is known to
+# be the version on p2, so a DSM update is never swapped for an older set.
+# - zImage or rd.gz missing: the configured version's, as a build fetches it.
+# - the kernel failed: the ramdisk patched, so the config holds the version
+#   it names; a zImage DSM wrote incompletely, or a damaged copy, is replaced
+#   from a fresh download, or the kept set when offline.
+# A ramdisk that does not unpack names no version, and nothing is fetched.
+# 1 - patchDSMImage's return code
+# Return 0 if the boot set was fetched and copied to p2
+function refetchDSMFiles() {
+  local PLATFORM MODEL DSMFULLVER BUILDNUM SMALLNUM PAT_HASH HASH_CUR
+  PAT_HASH="$(readConfigKey "pathash" "${USER_CONFIG_FILE}")"
+  if [ ! -f "${ORI_ZIMAGE_FILE}" ] || [ ! -f "${ORI_RDGZ_FILE}" ]; then
+    echo -e ">> DSM Boot Files are missing - fetching them..."
+  elif [ "${1}" = "2" ]; then
+    PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+    MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
+    DSMFULLVER="$(readConfigKey "dsmfullver" "${USER_CONFIG_FILE}")"
+    BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
+    SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
+    HASH_CUR="$(readConfigKey "${PLATFORM}.\"${MODEL}\".\"${DSMFULLVER}-${BUILDNUM}-${SMALLNUM}\".hash" "${D_FILE}")"
+    if [ -z "${HASH_CUR}" ] || [ "${HASH_CUR}" != "${PAT_HASH}" ]; then
+      echo -e ">> No DSM Boot Files are known for DSM ${DSMFULLVER}-${BUILDNUM}-${SMALLNUM} - nothing to fetch."
+      return 1
+    fi
+    echo -e ">> fetching the DSM Boot Files of DSM ${DSMFULLVER}-${BUILDNUM}-${SMALLNUM} again..."
+    [ "$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")" = "false" ] && rm -f "${USER_UP_PATH}/${PAT_HASH}.tar" >/dev/null 2>&1
+  else
+    return 1
+  fi
+  if ! fetchDSMFiles; then
+    echo
+    return 1
+  fi
+  echo
+  return 0
+}
+
+###############################################################################
 # Livepatch
 function livepatch() {
   PVALID="false"
@@ -785,28 +905,15 @@ function livepatch() {
     rm -f "${USER_UP_PATH}/"*.tar >/dev/null 2>&1 || true
   fi
 
-  # Patch Ramdisk
-  echo -e ">> patching Ramdisk..."
-  if ${ARC_PATH}/ramdisk-patch.sh && [ -s "${MOD_RDGZ_FILE}" ]; then
-    PVALID="true"
-  else
-    PVALID="false"
-    echo -e ">> Ramdisk patching failed!"
-    [ -f "${LOG_FILE}" ] && echo -e ">> Error details:" && cat "${LOG_FILE}"
+  patchDSMImage
+  PRC=$?
+  if [ ${PRC} -ne 0 ] && refetchDSMFiles ${PRC}; then
+    echo -e ">> patching again with the fetched DSM Boot Files..."
+    echo
+    patchDSMImage
+    PRC=$?
   fi
-  echo
-  if [ "${PVALID}" = "true" ]; then
-    # Patch Kernel
-    echo -e ">> patching Kernel..."
-    if ${ARC_PATH}/zimage-patch.sh && [ -s "${MOD_ZIMAGE_FILE}" ]; then
-      PVALID="true"
-    else
-      PVALID="false"
-      echo -e ">> Kernel patching failed!"
-      [ -f "${LOG_FILE}" ] && echo -e ">> Error details:" && cat "${LOG_FILE}"
-    fi
-  fi
-  echo
+  [ ${PRC} -eq 0 ] && PVALID="true" || PVALID="false"
   if [ "${PVALID}" = "false" ]; then
     echo -e ">> DSM Image patching failed - aborting build."
     # Remove partial/invalid build outputs so a stale MOD file is never booted
