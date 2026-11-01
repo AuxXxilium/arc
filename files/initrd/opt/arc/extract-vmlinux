@@ -15,6 +15,10 @@ check_vmlinux() {
   # TODO: find a better to way to check that it's really vmlinux
   #       and not just an elf
   readelf -h $1 >/dev/null 2>&1 || return 1
+  # A decompressor that stops early still leaves a valid ELF header, but
+  # the section headers sit at the end of vmlinux: they must be in the file.
+  shend=$(readelf -h $1 2>/dev/null | awk -F: '/Start of section headers/ {o = $2 + 0} /Size of section headers/ {s = $2 + 0} /Number of section headers/ {n = $2 + 0} END {print o + s * n}')
+  [ "${shend:-0}" -gt 0 ] && [ "${shend}" -le "$(wc -c <$1)" ] || return 1
 
   cat $1
   exit 0
@@ -58,3 +62,4 @@ check_vmlinux $img
 
 # Bail out:
 echo "$me: Cannot find vmlinux." >&2
+exit 1
