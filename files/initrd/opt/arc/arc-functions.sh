@@ -2466,9 +2466,11 @@ function addNewDSMUser() {
       --msgbox "No DSM system partition(md0) found!\nPlease insert all disks before continuing." 0 0
     return
   fi
+  # Empty fields: prefilled, OK alone made an administrator "user" with
+  # the password "passwd".
   MSG="Add to administrators group by default"
   dialog --backtitle "$(backtitle)" --title "Add DSM User" \
-    --form "${MSG}" 8 60 3 "username:" 1 1 "user" 1 10 50 0 "password:" 2 1 "passwd" 2 10 50 0 \
+    --form "${MSG}" 8 60 3 "username:" 1 1 "" 1 10 50 0 "password:" 2 1 "" 2 10 50 0 \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
   M_USER="$(sed -n '1p' "${TMP_PATH}/resp" 2>/dev/null)"
@@ -2499,7 +2501,8 @@ function addNewDSMUser() {
       mount -t "${T:-ext4}" "${I}" "${TMP_PATH}/mdX"
       [ $? -ne 0 ] && continue
       mkdir -p "${TMP_PATH}/mdX/usr/arc/once.d"
-      # It holds the password until DSM has run it, so root's alone.
+      # It holds the password until DSM has run it, so root's alone. Full
+      # name and mail are left empty, for DSM's user settings.
       (
         umask 077
         {
@@ -2507,7 +2510,7 @@ function addNewDSMUser() {
           echo "if synouser --enum local | grep -Fqx -- ${Q_USER}; then"
           echo "  synouser --setpw ${Q_USER} ${Q_PASSWD}"
           echo "else"
-          echo "  synouser --add ${Q_USER} ${Q_PASSWD} arc 0 user@arc.net 1"
+          echo "  synouser --add ${Q_USER} ${Q_PASSWD} '' 0 '' 1"
           echo "fi"
           echo "synogroup --memberadd administrators ${Q_USER}"
         } >"${TMP_PATH}/mdX/usr/arc/once.d/addNewDSMUser.sh"
@@ -2521,7 +2524,8 @@ function addNewDSMUser() {
     rmdir "${TMP_PATH}/mdX" 2>/dev/null
   ) 2>&1 | dialog --backtitle "$(backtitle)" --title "Add DSM User" \
     --progressbox "Adding ..." 20 100
-  [ "$(cat ${TMP_PATH}/isOk 2>/dev/null)" = "true" ] && MSG="Add DSM User successful." || MSG="Add DSM User failed."
+  [ "$(cat "${TMP_PATH}/isOk" 2>/dev/null)" = "true" ] && MSG="Add DSM User successful." || MSG="Add DSM User failed."
+  rm -f "${TMP_PATH}/isOk"
   dialog --backtitle "$(backtitle)" --title "Add DSM User" \
     --msgbox "${MSG}" 0 0
   resetBuildstatus
