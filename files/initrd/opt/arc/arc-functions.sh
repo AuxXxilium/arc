@@ -2507,7 +2507,7 @@ function addNewDSMUser() {
           echo "if synouser --enum local | grep -Fqx -- ${Q_USER}; then"
           echo "  synouser --setpw ${Q_USER} ${Q_PASSWD}"
           echo "else"
-          echo "  synouser --add ${Q_USER} ${Q_PASSWD} rr 0 user@rr.com 1"
+          echo "  synouser --add ${Q_USER} ${Q_PASSWD} arc 0 user@arc.net 1"
           echo "fi"
           echo "synogroup --memberadd administrators ${Q_USER}"
         } >"${TMP_PATH}/mdX/usr/arc/once.d/addNewDSMUser.sh"
