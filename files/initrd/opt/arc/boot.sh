@@ -401,11 +401,11 @@ else
   # reached on a DSM boot.
   if [ -n "${IPCON}" ] && [ ! -f "/.dockerenv" ]; then
     if [ "$(readConfigKey "arc.webhooknotify" "${USER_CONFIG_FILE}")" = "true" ]; then
-      sendWebhook "$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")" "DSM (${ARC_TITLE}) is booting @ ${IPCON}" || true
+      sendWebhook "$(readConfigKey "arc.webhookurl" "${USER_CONFIG_FILE}")" "DSM is booting @ ${IPCON}" || true
     fi
     if [ "$(readConfigKey "arc.discordnotify" "${USER_CONFIG_FILE}")" = "true" ]; then
       DISCORDUSER="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
-      [ -n "${DISCORDUSER}" ] && sendDiscord "${DISCORDUSER}" "DSM (${ARC_TITLE}) is booting @ ${IPCON}" || true
+      [ -n "${DISCORDUSER}" ] && sendDiscord "${DISCORDUSER}" "DSM is booting @ ${IPCON}" || true
     fi
   fi
 
