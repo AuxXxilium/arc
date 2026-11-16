@@ -278,7 +278,8 @@ function repackInitrd() {
 
   local RDXZ_PATH="rdxz_tmp"
   mkdir -p "${RDXZ_PATH}"
-  local INITRD_FORMAT=$(file -b --mime-type "${INITRD_FILE}")
+  local INITRD_FORMAT
+  INITRD_FORMAT="$(file -b --mime-type "${INITRD_FILE}")"
 
   case "${INITRD_FORMAT}" in
   *'x-cpio'*) (cd "${RDXZ_PATH}" && sudo cpio -idm <"${INITRD_FILE}") >/dev/null 2>&1 ;;
@@ -383,6 +384,7 @@ EOF
   
   [ -f "${OUTPUT_PATH}" ] && rm -rf "${OUTPUT_PATH}"
 
+  # shellcheck disable=SC2024 # the image belongs to the user, only find and cpio need root
   case "${INITRD_FORMAT}" in
   *'x-cpio'*) (cd "${RDXZ_PATH}" && sudo find . 2>/dev/null | sudo cpio -o -H newc -R root:root >"${OUTPUT_PATH}") >/dev/null 2>&1 ;;
   *'x-xz'*) (cd "${RDXZ_PATH}" && sudo find . 2>/dev/null | sudo cpio -o -H newc -R root:root | xz -9 -C crc32 -c - >"${OUTPUT_PATH}") >/dev/null 2>&1 ;;
@@ -485,7 +487,8 @@ function convertvmx() {
 
   BLIMAGE="$(realpath "${BLIMAGE}")"
   VMXPATH="$(realpath "${VMXPATH}")"
-  local VMNAME="$(basename "${VMXPATH}" .vmx)"
+  local VMNAME
+  VMNAME="$(basename "${VMXPATH}" .vmx)"
 
   createvmx "${BLIMAGE}" "${VMNAME}"
 
@@ -502,7 +505,8 @@ function convertova() {
 
   BLIMAGE="$(realpath "${BLIMAGE}")"
   OVAPATH="$(realpath "${OVAPATH}")"
-  local VMNAME="$(basename "${OVAPATH}" .ova)"
+  local VMNAME
+  VMNAME="$(basename "${OVAPATH}" .ova)"
 
   createvmx "${BLIMAGE}" "${VMNAME}"
 

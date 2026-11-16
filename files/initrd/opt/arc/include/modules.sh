@@ -57,6 +57,7 @@ MODULE_DIRS=("update" "")
 # Only the top level drivers are listed, getdepends pulls in what they need
 # (drm, drm_kms_helper, ttm, video, ...) and skips the ones a platform's tgz
 # does not carry.
+# shellcheck disable=SC2034 # read by modulesMenu
 GPUMODULES=(
   "i915"          # Intel integrated graphics
   "xe"            # Intel Xe, Arc and newer integrated graphics

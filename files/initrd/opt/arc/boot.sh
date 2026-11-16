@@ -121,9 +121,9 @@ if [ "${ACCESSTOKENINFO}" = "true" ]; then
 fi
 
 if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q nvmesystem; then
-  [ -z "$(ls /dev/nvme* 2>/dev/null | grep -vE "${LOADER_DISK}[0-9]?$")" ] && printf "\033[1;31m*** %s ***\033[0m\n" "Warning: Please insert at least one m.2 disk for system installation."
+  [ -z "$(find /dev -maxdepth 1 -name 'nvme*' 2>/dev/null | grep -vE "${LOADER_DISK}[0-9]?$")" ] && printf "\033[1;31m*** %s ***\033[0m\n" "Warning: Please insert at least one m.2 disk for system installation."
 else
-  if [ -z "$(ls /dev/sd* /dev/sg* 2>/dev/null | grep -vE "${LOADER_DISK}[0-9]?$")" ]; then
+  if [ -z "$(find /dev -maxdepth 1 \( -name 'sd*' -o -name 'sg*' \) 2>/dev/null | grep -vE "${LOADER_DISK}[0-9]?$")" ]; then
     printf "\033[1;31m*** %s ***\033[0m\n" "Warning: Please insert at least one SATA, SAS or SCSI disk for system installation."
   fi
 fi
@@ -140,7 +140,6 @@ SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
 KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
 DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"
 MODBLACKLIST="$(readConfigKey "modblacklist" "${USER_CONFIG_FILE}")"
 
 declare -A CMDLINE
@@ -438,9 +437,10 @@ else
 
     # Unload all graphics drivers
     for D in $(lsmod | grep -E '^(nouveau|amdgpu|radeon|i915)' | awk '{print $1}'); do rmmod -f "${D}" 2>/dev/null || true; done
-    for I in $(find /sys/devices -name uevent -exec bash -c 'cat {} 2>/dev/null | grep -Eq "PCI_CLASS=0?30[0|1|2]00" && dirname {}' \;); do
+    while read -r I; do
+      I="$(dirname "${I}")"
       [ -e "${I}/reset" ] && grep -iq 0x10de "${I}/vendor" && echo 1 >"${I}/reset" || true # Proc open nvidia driver when booting
-    done
+    done < <(find /sys/devices -name uevent -exec grep -lE "PCI_CLASS=0?30[0|1|2]00" {} + 2>/dev/null)
   fi
 
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"

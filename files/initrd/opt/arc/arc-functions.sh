@@ -44,9 +44,9 @@ function arcModel() {
         IGPUS=""
         IGPUID="$(getIgpuId)"
         if [ -n "${IGPUID}" ]; then grep -iq "${IGPUID}" "${ARC_PATH}/include/i915ids" && IGPU="all" || IGPU="igpuv5"; else IGPU=""; fi
-        if [[ " ${IGPU1L[@]} " =~ " ${A} " ]] && [ "${IGPU}" = "all" ]; then
+        if [[ " ${IGPU1L[*]} " == *" ${A} "* ]] && [ "${IGPU}" = "all" ]; then
           IGPUS="+"
-        elif [[ " ${IGPU2L[@]} " =~ " ${A} " ]] && [[ "${IGPU}" = "igpuv5" || "${IGPU}" = "all" ]]; then
+        elif [[ " ${IGPU2L[*]} " == *" ${A} "* ]] && [[ "${IGPU}" = "igpuv5" || "${IGPU}" = "all" ]]; then
           IGPUS="x"
         else
           IGPUS=""
@@ -193,7 +193,6 @@ function arcVersion() {
   if [ "${ARC_MODE}" = "config" ]; then
     CVS="$(readConfigEntriesArray "platforms.${PLATFORM}.productvers" "${P_FILE}")"
     PVS="$(readConfigEntriesArray "${PLATFORM}.\"${MODEL}\"" "${D_FILE}")"
-    LVS=""
     SHOW_ALL=0
     EXTRA_LABEL="Show all"
 
@@ -323,7 +322,7 @@ function arcVersion() {
     init_default_addons
   fi
 
-  while IFS=': ' read -r ADDON PARAM; do
+  while IFS=': ' read -r ADDON _; do
     [ -z "${ADDON}" ] && continue
     if ! isAddonAvailable "${ADDON}" "${PLATFORM}"; then
       deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
@@ -534,7 +533,7 @@ function makearc() {
   ARC_BACKUP="$(readConfigKey "arc.backup" "${USER_CONFIG_FILE}")"
   ARC_OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
   ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
-  while IFS=': ' read -r ADDON PARAM; do
+  while IFS=': ' read -r ADDON _; do
     if ! isAddonAvailable "${ADDON}" "${PLATFORM}"; then
       deleteConfigKey "addons.\"${ADDON}\"" "${USER_CONFIG_FILE}"
     fi
@@ -959,9 +958,9 @@ function modulesMenu() {
         # getdepends returns the module itself too, folder resolved
         KOLIST+="$(getdepends "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" "${I}" | tr '\n' ' ') "
       done
-      KOLIST=($(echo ${KOLIST} | tr ' ' '\n' | sort -u))
+      mapfile -t KOLIST < <(tr ' ' '\n' <<<"${KOLIST}" | grep -v '^$' | sort -u)
       writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-      for ID in ${KOLIST[@]}; do
+      for ID in "${KOLIST[@]}"; do
         writeConfigKey "modules.\"${ID}\"" "" "${USER_CONFIG_FILE}"
       done
       resetBuild
@@ -983,7 +982,7 @@ function modulesMenu() {
         dialog --backtitle "$(backtitle)" --title "Modules" \
           --msgbox "No GPU module with dependencies to deselect." 0 0
       else
-        for ID in ${DELS[@]}; do
+        for ID in "${DELS[@]}"; do
           deleteConfigKey "modules.\"${ID}\"" "${USER_CONFIG_FILE}"
         done
         dialog --backtitle "$(backtitle)" --title "Modules" \
@@ -1383,7 +1382,7 @@ function synoinfoMenu() {
           continue
         fi
         rm -f "${TMP_PATH}/opts"
-        for I in ${!SYNOINFO[@]}; do
+        for I in "${!SYNOINFO[@]}"; do
           echo "\"${I}\" \"${SYNOINFO[${I}]}\" \"off\"" >>"${TMP_PATH}/opts"
         done
         dialog --backtitle "$(backtitle)" --title "Synoinfo" \
@@ -1393,7 +1392,7 @@ function synoinfoMenu() {
         resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
         [ -z "${resp}" ] && continue
         for I in ${resp}; do
-          unset SYNOINFO[${I}]
+          unset "SYNOINFO[${I}]"
           deleteConfigKey "synoinfo.\"${I}\"" "${USER_CONFIG_FILE}"
         done
         resetBuildstatus
@@ -1416,12 +1415,15 @@ function keymapMenu() {
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
   LAYOUT="$(cat "${TMP_PATH}/resp")"
-  OPTIONS=""
-  while read -r KM; do
-    OPTIONS+="${KM::-7} "
-  done <<<"$(cd /usr/share/keymaps/i386/${LAYOUT}; ls *.map.gz)"
+  local KM
+  local -a KEYMAPS=()
+  for KM in "/usr/share/keymaps/i386/${LAYOUT}"/*.map.gz; do
+    [ -e "${KM}" ] || continue
+    KM="${KM##*/}"
+    KEYMAPS+=("${KM%.map.gz}")
+  done
   dialog --backtitle "$(backtitle)" --no-items --default-item "${KEYMAP}" \
-    --menu "Choice a keymap" 0 0 0 ${OPTIONS} \
+    --menu "Choice a keymap" 0 0 0 "${KEYMAPS[@]}" \
     2>"${TMP_PATH}/resp"
   [ $? -ne 0 ] && return 1
   resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
@@ -1793,7 +1795,7 @@ function sysinfo() {
     PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
     DT="$(readConfigKey "platforms.${PLATFORM}.dt" "${P_FILE}")"
     KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
-    ARCPATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+    ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
     ADDONS_RAW="$(readConfigEntriesArray "addons" "${USER_CONFIG_FILE}")"
     if [ -n "${ADDONS_RAW}" ]; then
       ADDONSINFO="$(echo "${ADDONS_RAW}" | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')"
@@ -1927,7 +1929,7 @@ function sysinfo() {
   elif [ "${REMAP}" = "ahci" ]; then
     TEXT+="\n  AhciRemap: \Zb${AHCIPORTMAP}\Zn"
   elif [ "${REMAP}" = "user" ]; then
-    TEXT+="\n  PortMap: \Zb"User"\Zn"
+    TEXT+="\n  PortMap: \ZbUser\Zn"
     [ -n "${PORTMAP}" ] && TEXT+="\n  SataPortmap: \Zb${PORTMAP}\Zn"
     [ -n "${DISKMAP}" ] && TEXT+="\n  DiskIdxMap: \Zb${DISKMAP}\Zn"
     [ -n "${PORTREMAP}" ] && TEXT+="\n  SataRemap: \Zb${PORTREMAP}\Zn"
@@ -1946,14 +1948,14 @@ function sysinfo() {
   TEXT+="\n"
   # Get Information for Sata Controller
   NUMPORTS=0
-  if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
+  if [ "$(lspci -d ::106 2>/dev/null | wc -l)" -gt 0 ]; then
     TEXT+="\n  SATA Controller:\n"
     for PCI in $(lspci -d ::106 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       PCIID="$(getPciId "${PCI}")"
       [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
       TEXT+="\Zb  ${NAME}\Zn\n  Ports: "
-      PORTS=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORTS=$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       for P in ${PORTS}; do
         if lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep -q "\[${P}:"; then
           if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" = "0" ]; then
@@ -1969,68 +1971,68 @@ function sysinfo() {
       TEXT+="\n  Ports with color \Z1\Zbred\Zn as DUMMY, color \Z2\Zbgreen\Zn has a Disk connected.\n"
     done
   fi
-  [ $(lspci -d ::104 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  RAID Controller:\n"
+  [ "$(lspci -d ::104 2>/dev/null | wc -l)" -gt 0 ] && TEXT+="\n  RAID Controller:\n"
   for PCI in $(lspci -d ::104 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PCIID="$(getPciId "${PCI}")"
     [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
-    PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+    PORT=$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  [ $(lspci -d ::107 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  HBA Controller:\n"
+  [ "$(lspci -d ::107 2>/dev/null | wc -l)" -gt 0 ] && TEXT+="\n  HBA Controller:\n"
   for PCI in $(lspci -d ::107 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PCIID="$(getPciId "${PCI}")"
     [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
-    PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+    PORT=$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  [ $(lspci -d ::100 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  SCSI Controller:\n"
+  [ "$(lspci -d ::100 2>/dev/null | wc -l)" -gt 0 ] && TEXT+="\n  SCSI Controller:\n"
   for PCI in $(lspci -d ::100 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PCIID="$(getPciId "${PCI}")"
     [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
-    PORTNUM=$(ls -l /sys/block/* 2>/dev/null | grep "${PCI}" | wc -l)
+    PORTNUM=$(readlink -f /sys/block/* 2>/dev/null | grep "${PCI}" | wc -l)
     [ "${PORTNUM}" -eq 0 ] && continue
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  [ $(ls -l /sys/class/scsi_host 2>/dev/null | grep usb | wc -l) -gt 0 ] && TEXT+="\n  USB Controller:\n"
+  [ "$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep usb | wc -l)" -gt 0 ] && TEXT+="\n  USB Controller:\n"
   for PCI in $(lspci -d ::c03 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PCIID="$(getPciId "${PCI}")"
     [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
-    PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+    PORT=$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
     [ "${PORTNUM}" -eq 0 ] && continue
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  [ $(ls -l /sys/block/mmc* 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  MMC Controller:\n"
+  [ -n "$(find /sys/block -maxdepth 1 -name 'mmc*' 2>/dev/null)" ] && TEXT+="\n  MMC Controller:\n"
   for PCI in $(lspci -d ::805 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PCIID="$(getPciId "${PCI}")"
     [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
-    PORTNUM=$(ls -l /sys/block/mmc* 2>/dev/null | grep "${PCI}" | wc -l)
+    PORTNUM=$(readlink -f /sys/block/mmc* 2>/dev/null | grep "${PCI}" | wc -l)
     [ "${PORTNUM}" -eq 0 ] && continue
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  [ $(lspci -d ::108 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  NVME Controller:\n"
+  [ "$(lspci -d ::108 2>/dev/null | wc -l)" -gt 0 ] && TEXT+="\n  NVME Controller:\n"
   for PCI in $(lspci -d ::108 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PCIID="$(getPciId "${PCI}")"
     [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
-    PORT=$(ls -l /sys/class/nvme 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
+    PORT=$(readlink -f /sys/class/nvme/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
     PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[N:${PORT}:" | wc -l)
     TEXT+="\Zb   ${NAME}\Zn\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  if [ $(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep 'vmbus:acpi' | wc -l) -gt 0 ]; then
+  if [ "$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep 'vmbus:acpi' | wc -l)" -gt 0 ]; then
     TEXT+="\n  VMBUS Controller:\n"
     NAME="vmbus:acpi"
     PORTNUM="$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep 'vmbus:acpi' | wc -l)"
@@ -2549,7 +2551,8 @@ function loaderPassword() {
   fi
 
   # Generate encrypted password
-  local NEWPASSWD="$(openssl passwd -6 -salt $(openssl rand -hex 8) "${STRPASSWD:-arc}")"
+  local NEWPASSWD
+  NEWPASSWD="$(openssl passwd -6 -salt "$(openssl rand -hex 8)" "${STRPASSWD:-arc}")"
 
   # Update /etc/shadow
   cp -p /etc/shadow /etc/shadow- 2>/dev/null || return 1
@@ -2561,9 +2564,10 @@ function loaderPassword() {
   mkdir -p "${RDXZ_PATH}"
 
   if [ -f "${ARC_RAMDISK_USER_FILE}" ]; then
-    local INITRD_FORMAT=$(ramdiskFormat "${ARC_RAMDISK_USER_FILE}")
+    local INITRD_FORMAT
+    INITRD_FORMAT="$(ramdiskFormat "${ARC_RAMDISK_USER_FILE}")"
     (
-      cd "${RDXZ_PATH}"
+      cd "${RDXZ_PATH}" || exit 1
       case "${INITRD_FORMAT}" in
       *'x-cpio'*) cpio -idm <"${ARC_RAMDISK_USER_FILE}" ;;
       *'x-xz'*) xz -dc "${ARC_RAMDISK_USER_FILE}" | cpio -idm ;;
@@ -2589,7 +2593,7 @@ function loaderPassword() {
   if [ -n "$(ls -A "${RDXZ_PATH}" 2>/dev/null)" ] && [ -n "$(ls -A "${RDXZ_PATH}/etc" 2>/dev/null)" ]; then
     if [ "${SHOW_DIALOG}" = "true" ]; then
       (
-        cd "${RDXZ_PATH}"
+        cd "${RDXZ_PATH}" || exit 1
         case "${INITRD_FORMAT}" in
         *'x-cpio'*) find . 2>/dev/null | cpio -o -H newc -R root:root >"${ARC_RAMDISK_USER_FILE}" ;;
         *'x-xz'*) find . 2>/dev/null | cpio -o -H newc -R root:root | xz -9 -C crc32 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
@@ -2604,7 +2608,7 @@ function loaderPassword() {
         --progressbox "Changing Loader password..." 30 100
     else
       (
-        cd "${RDXZ_PATH}"
+        cd "${RDXZ_PATH}" || exit 1
         case "${INITRD_FORMAT}" in
         *'x-cpio'*) find . 2>/dev/null | cpio -o -H newc -R root:root >"${ARC_RAMDISK_USER_FILE}" ;;
         *'x-xz'*) find . 2>/dev/null | cpio -o -H newc -R root:root | xz -9 -C crc32 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
@@ -2645,7 +2649,8 @@ function loaderPorts() {
   # another port compared equal and skipped the restart. Read the key the
   # same way consts.sh and the init script do, and do not source a file the
   # user can edit.
-  local HTTPOLD="$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)"
+  local HTTPOLD
+  HTTPOLD="$(grep -i '^HTTP_PORT=' /etc/arc.conf 2>/dev/null | cut -d'=' -f2)"
   HTTPOLD="${HTTPOLD:-7080}"
   # Remember the running port, arc.conf gets rewritten below
   local HTTP="${HTTPOLD}"
@@ -2695,7 +2700,7 @@ function loaderPorts() {
       fi
       if [ -n "$(ls -A "${RDXZ_PATH}" 2>/dev/null)" ] && [ -n "$(ls -A "${RDXZ_PATH}/etc" 2>/dev/null)" ]; then
         (
-          cd "${RDXZ_PATH}"
+          cd "${RDXZ_PATH}" || exit 1
           case "${INITRD_FORMAT}" in
           *'x-cpio'*) find . 2>/dev/null | cpio -o -H newc -R root:root >"${ARC_RAMDISK_USER_FILE}" ;;
           *'x-xz'*) find . 2>/dev/null | cpio -o -H newc -R root:root | xz -9 -C crc32 -c - >"${ARC_RAMDISK_USER_FILE}" ;;
@@ -2929,11 +2934,12 @@ function formatDisks() {
   dialog --backtitle "$(backtitle)" --title "Format Disks" \
     --yesno "Warning:\nThis operation is irreversible. Please backup important data. Do you want to continue?" 0 0
   [ $? -ne 0 ] && return 1
-  if [ $(ls /dev/md[0-9]* 2>/dev/null | wc -l) -gt 0 ]; then
+  if [ "$(ls /dev/md[0-9]* 2>/dev/null | wc -l)" -gt 0 ]; then
     dialog --backtitle "$(backtitle)" --title "Format Disks" \
       --yesno "Warning:\nThe current disks are in raid, do you still want to format them?" 0 0
     [ $? -ne 0 ] && return 1
-    for I in $(ls /dev/md[0-9]* 2>/dev/null); do
+    for I in /dev/md[0-9]*; do
+      [ -e "${I}" ] || continue
       mdadm -S "${I}" >/dev/null 2>&1
     done
   fi
@@ -2983,7 +2989,7 @@ function cloneLoader() {
     [ -f "${P}/start" ] && [ -f "${P}/size" ] || continue
     START="$(cat "${P}/start")"
     PSIZE="$(cat "${P}/size")"
-    [ $((START + PSIZE)) -gt "${END}" ] && END=$((START + PSIZE))
+    [ "$((START + PSIZE))" -gt "${END}" ] && END=$((START + PSIZE))
   done
   if [ "${END}" -eq 0 ]; then
     dialog --backtitle "$(backtitle)" --colors --title "Clone Loader" \
@@ -3119,13 +3125,13 @@ function greplogs() {
     MSG+="Can't find system logs!\n"
   fi
 
-  ADDONS=0
+  ADDONLOGS=0
   if [ -d "${PART1_PATH}/logs" ]; then
     mkdir -p "${TMP_PATH}/logs/addons"
     cp -rf "${PART1_PATH}/logs"/* "${TMP_PATH}/logs/addons" 2>/dev/null || true
-    ADDONS=1
+    ADDONLOGS=1
   fi
-  if [ "${ADDONS}" -eq 1 ]; then
+  if [ "${ADDONLOGS}" -eq 1 ]; then
     MSG+="Addons logs found!\n"
   else
     MSG+="Can't find Addon logs!\n"
@@ -3427,16 +3433,17 @@ function dtsMenu() {
       DTC_ERRLOG="/tmp/dtc.log"
       rm -rf "${TMP_UP_PATH}"
       mkdir -p "${TMP_UP_PATH}"
-      pushd "${TMP_UP_PATH}"
+      pushd "${TMP_UP_PATH}" >/dev/null || return 1
       RET=1
       rz -be
-      for F in $(ls -A 2>/dev/null); do
+      for F in * .[!.]*; do
+        [ -e "${F}" ] || continue
         USER_FILE="${TMP_UP_PATH}/${F}"
         dtc -q -I dts -O dtb "${F}" >"test.dtb" 2>"${DTC_ERRLOG}"
         RET=$?
         break
       done
-      popd
+      popd >/dev/null || return 1
       if [ "${RET}" -ne 0 ] || [ -z "${USER_FILE}" ]; then
         dialog --backtitle "$(backtitle)" --title "Custom DTS" \
           --msgbox "Not a valid dts file, please try again!\n\n$(cat "${DTC_ERRLOG}")" 0 0
@@ -3694,11 +3701,11 @@ function getmap() {
 
   # Clean old files
   for file in drivesmax drivescon ports remap; do
-    > "${TMP_PATH}/${file}"
+    : >"${TMP_PATH}/${file}"
   done
 
   # Process SATA Disks
-  if [ $(lspci -d ::106 | wc -l) -gt 0 ]; then
+  if [ "$(lspci -d ::106 | wc -l)" -gt 0 ]; then
     let DISKIDXMAPIDX=0
     DISKIDXMAP=""
     let DISKIDXMAPIDXMAX=0
@@ -3712,14 +3719,14 @@ function getmap() {
         ATAPORT="$(echo "${LINE}" | grep -o 'ata[0-9]*')"
         PORT=$(echo "${ATAPORT}" | sed 's/ata//')
         HOSTPORTS["${PORT}"]=$(echo "${LINE}" | grep -o 'host[0-9]*$')
-      done <<<"$(ls -l /sys/class/scsi_host | grep -F "${PCI}")"
+      done <<<"$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep -F "${PCI}")"
       while read -r PORT; do
-        ls -l /sys/block | grep -F -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
+        readlink -f /sys/block/* 2>/dev/null | grep -F -q "${PCI}/ata${PORT}" && ATTACH=1 || ATTACH=0
         PCMD=$(cat /sys/class/scsi_host/${HOSTPORTS[${PORT}]}/ahci_port_cmd)
         [ "${PCMD}" = "0" ] && DUMMY=1 || DUMMY=0
         [[ "${ATTACH}" -eq 1 && "${DUMMY}" -eq 0 ]] && CONPORTS="$((${CONPORTS} + 1))" && echo "$((${PORT} - 1))" >>"${TMP_PATH}/ports"
         NUMPORTS="$((${NUMPORTS} + 1))"
-      done <<<"$(echo ${!HOSTPORTS[@]} | tr ' ' '\n' | sort -n)"
+      done <<<"$(printf '%s\n' "${!HOSTPORTS[@]}" | sort -n)"
       [ "${NUMPORTS}" -gt 8 ] && NUMPORTS=8
       [ "${CONPORTS}" -gt 8 ] && CONPORTS=8
       echo -n "${NUMPORTS}" >>"${TMP_PATH}/drivesmax"
@@ -3735,10 +3742,10 @@ function getmap() {
 
   # Process NVMe Disks
   NVMEDRIVES=0
-  if [ $(lspci -d ::108 2>/dev/null | wc -l) -gt 0 ]; then
+  if [ "$(lspci -d ::108 2>/dev/null | wc -l)" -gt 0 ]; then
     for PCI in $(lspci -d ::108 2>/dev/null | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
-      PORT=$(ls -l /sys/class/nvme 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
+      PORT=$(readlink -f /sys/class/nvme/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
       PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[N:${PORT}:" | wc -l)
       NVMEDRIVES=$((NVMEDRIVES + PORTNUM))
     done
@@ -3747,10 +3754,10 @@ function getmap() {
 
   # Process MMC Disks
   MMCDRIVES=0
-  if [ $(lspci -d ::805 2>/dev/null | wc -l) -gt 0 ]; then
+  if [ "$(lspci -d ::805 2>/dev/null | wc -l)" -gt 0 ]; then
     for PCI in $(lspci -d ::805 2>/dev/null | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
-      PORT=$(ls -l /sys/block/mmc* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/mmcblk//' | sort -n)
+      PORT=$(readlink -f /sys/block/mmc* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/mmcblk//' | sort -n)
       PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[M:${PORT}:" | wc -l)
       MMCDRIVES=$((MMCDRIVES + PORTNUM))
     done
@@ -3759,10 +3766,10 @@ function getmap() {
 
   # Process SAS Disks
   SASDRIVES=0
-  if [ $(lspci -d ::107 2>/dev/null | wc -l) -gt 0 ]; then
+  if [ "$(lspci -d ::107 2>/dev/null | wc -l)" -gt 0 ]; then
     for PCI in $(lspci -d ::107 2>/dev/null | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
-      PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORT=$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
       SASDRIVES=$((SASDRIVES + PORTNUM))
     done
@@ -3771,10 +3778,10 @@ function getmap() {
 
   # Process SCSI Disks
   SCSIDRIVES=0
-  if [ $(lspci -d ::100 2>/dev/null | wc -l) -gt 0 ]; then
+  if [ "$(lspci -d ::100 2>/dev/null | wc -l)" -gt 0 ]; then
     for PCI in $(lspci -d ::100 2>/dev/null | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
-      PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORT=$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
       SCSIDRIVES=$((SCSIDRIVES + PORTNUM))
     done
@@ -3783,10 +3790,10 @@ function getmap() {
 
   # Process RAID Disks
   RAIDDRIVES=0
-  if [ $(lspci -d ::104 2>/dev/null | wc -l) -gt 0 ]; then
+  if [ "$(lspci -d ::104 2>/dev/null | wc -l)" -gt 0 ]; then
     for PCI in $(lspci -d ::104 2>/dev/null | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
-      PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORT=$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
       RAIDDRIVES=$((RAIDDRIVES + PORTNUM))
     done
@@ -3795,10 +3802,10 @@ function getmap() {
 
   # Process USB Disks
   USBDRIVES=0
-  if [ $(lspci -d ::c03 2>/dev/null | wc -l) -gt 0 ]; then
+  if [ "$(lspci -d ::c03 2>/dev/null | wc -l)" -gt 0 ]; then
     for PCI in $(lspci -d ::c03 2>/dev/null | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
-      PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORT=$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
       USBDRIVES=$((USBDRIVES + PORTNUM))
     done
@@ -3818,7 +3825,7 @@ function getmap() {
   writeConfigKey "device.harddrives" "${HARDDRIVES}" "${USER_CONFIG_FILE}"
 
   # Check for SATA Boot
-  if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
+  if [ "$(lspci -d ::106 2>/dev/null | wc -l)" -gt 0 ]; then
     LASTDRIVE=0
     while read -r D; do
       if [ "${BUS}" = "sata" ] && [ "${MEV}" != "physical" ] && [ "${D}" -eq 0 ]; then
@@ -3931,7 +3938,7 @@ function getdiskinfo() {
     # Only mark specific controllers as external
     if [[ "${controller}" == "sascontroller" || "${controller}" == "scsicontroller" || "${controller}" == "raidcontroller" ]] && [ "${count}" -gt 0 ]; then
       for PCI in $(lspci -d ::${controllers[$controller]} 2>/dev/null | awk '{print $1}'); do
-        PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+        PORT=$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
         [ -z "${PORT}" ] && continue
         PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
         if [ "${PORTNUM:-0}" -gt 0 ]; then
@@ -4040,7 +4047,6 @@ function notificationMenu() {
         --yesno "If you enable this, it will send you a notification to your Discord account after Arc or DSM is booted.\nDiscord ID: ${DISCORDUSER}\nYou can disable this at any time." 8 60 \
         2>"${TMP_PATH}/resp"
       RET=$?
-      resp2="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
       case ${RET} in
       0)
         # ok-button

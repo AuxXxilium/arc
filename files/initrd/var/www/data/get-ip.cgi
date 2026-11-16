@@ -18,7 +18,6 @@ function getIP() {
   return 0
 }
 
-BOOTIPWAIT=3
 ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort)"
 for N in ${ETHX}; do
   COUNT=0

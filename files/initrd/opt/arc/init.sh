@@ -121,7 +121,7 @@ initConfigKey "zimage-hash" "" "${USER_CONFIG_FILE}"
 # The NIC order's pinned MACs used to be the sortnetif addon's value. The addon
 # is a system addon now, so it is no longer in the addons map, and the next
 # confirm of the addon checklist would drop the value with it.
-if arrayExistItem "sortnetif:" $(readConfigMap "addons" "${USER_CONFIG_FILE}"); then
+if readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "^sortnetif:"; then
   [ -z "$(readConfigKey "sortnetif" "${USER_CONFIG_FILE}")" ] &&
     writeConfigKey "sortnetif" "$(readConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}")" "${USER_CONFIG_FILE}"
   deleteConfigKey "addons.sortnetif" "${USER_CONFIG_FILE}"
@@ -170,7 +170,7 @@ if [ "${BUS}" = "usb" ]; then
   PID="0x$(udevadm info --query property --name "${LOADER_DISK}" 2>/dev/null | grep "ID_MODEL_ID" | cut -d= -f2)"
   [ "${VID}" = "0x" ] || [ "${PID}" = "0x" ] && die "The loader disk does not support the current USB Portable Hard Disk."
 elif [ "${BUS}" = "docker" ]; then
-  TYPE="PC"
+  : # Docker has no loader disk bus to check
 elif ! (echo "${BUSLIST}" | grep -wq "${BUS}"); then
   die "$(printf "The loader disk does not support the current %s, only %s are supported." "${BUS}" "${BUSLIST// /\/}")"
 fi

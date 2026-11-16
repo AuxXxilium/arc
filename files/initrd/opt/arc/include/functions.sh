@@ -171,17 +171,26 @@ function arrayExistItem() {
 }
 
 ###############################################################################
+# Version compare, 7.10 counts as newer than 7.9
+# 1 - version
+# 2 - minimum version
+# Return 0 if 1 is 2 or newer
+function versionGE() {
+  [ "$(printf '%s\n' "${2}" "${1}" | sort -V | sed -n 1p)" = "${2}" ]
+}
+
+###############################################################################
 # Check if a custom kernel is offered for the platform
 # 1 - Platform
 # 2 - DSM version (optional, any version if empty)
 # Return 0 if offered
 function isCustomKernelPlatform() {
   if arrayExistItem "${1}" "${CUSTOMKERNEL72L[@]}"; then
-    [ -z "${2}" ] || [[ ! "${2}" < "7.2" ]]
+    [ -z "${2}" ] || versionGE "${2}" "7.2"
   elif arrayExistItem "${1}" "${CUSTOMKERNEL73L[@]}"; then
-    [ -z "${2}" ] || [[ ! "${2}" < "7.3" ]]
+    [ -z "${2}" ] || versionGE "${2}" "7.3"
   elif arrayExistItem "${1}" "${CUSTOMKERNEL74L[@]}"; then
-    [ -z "${2}" ] || [[ ! "${2}" < "7.4" ]]
+    [ -z "${2}" ] || versionGE "${2}" "7.4"
   else
     return 1
   fi
@@ -217,7 +226,6 @@ function _set_conf_kv() {
   # Add if doesn't exist
   mkdir -p "$(dirname "${1}" 2>/dev/null)" 2>/dev/null
   echo "${2}=\"${3}\"" >>"${1}" 2>/dev/null
-  return $?
 }
 
 ###############################################################################
@@ -254,8 +262,9 @@ function _netif_order() {
   local -a REST=()
   while read -r N; do
     [ -n "${N}" ] && REST+=("${N}")
-  done <<<"$(for N in $(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; 2>/dev/null); do
-    echo "$(_netif_key "${N}") ${N}"
+  done <<<"$(for N in /sys/class/net/eth*; do
+    [ -e "${N}" ] || continue
+    echo "$(_netif_key "${N##*/}") ${N##*/}"
   done | LC_ALL=C sort | awk '{print $NF}')"
   for PIN in $(echo "${1}" | sed 's/[: ]//g; s/,/ /g' | tr '[:upper:]' '[:lower:]'); do
     for I in "${!REST[@]}"; do
@@ -361,7 +370,8 @@ function _mask_bits() {
 
 # Netmask of prefix length ${1}, as 255.255.255.0.
 function _bits_mask() {
-  local M=$(((0xffffffff << (32 - ${1})) & 0xffffffff))
+  local M
+  M="$(((0xffffffff << (32 - ${1})) & 0xffffffff))"
   echo "$((M >> 24 & 255)).$((M >> 16 & 255)).$((M >> 8 & 255)).$((M & 255))"
 }
 
@@ -579,7 +589,7 @@ function convert_netmask() {
 # 1 - key name
 # 2 - key string
 function checkCmdline() {
-  return $(grub-editenv ${USER_GRUBENVFILE} list 2>/dev/null | grep "^${1}=" | cut -d'=' -f2- | grep -q "${2}")
+  grub-editenv "${USER_GRUBENVFILE}" list 2>/dev/null | grep "^${1}=" | cut -d'=' -f2- | grep -q "${2}"
 }
 
 ###############################################################################
@@ -601,7 +611,8 @@ function setCmdline() {
 # 1 - key name
 # 2 - key string
 function addCmdline() {
-  local CMDLINE="$(grub-editenv ${USER_GRUBENVFILE} list 2>/dev/null | grep "^${1}=" | cut -d'=' -f2-)"
+  local CMDLINE
+  CMDLINE="$(grub-editenv "${USER_GRUBENVFILE}" list 2>/dev/null | grep "^${1}=" | cut -d'=' -f2-)"
   [ -n "${CMDLINE}" ] && CMDLINE="${CMDLINE} ${2}" || CMDLINE="${2}"
   setCmdline "${1}" "${CMDLINE}"
 }
@@ -610,7 +621,8 @@ function addCmdline() {
 # get logo of model
 # 1 - model
 function delCmdline() {
-  local CMDLINE="$(grub-editenv ${USER_GRUBENVFILE} list 2>/dev/null | grep "^${1}=" | cut -d'=' -f2-)"
+  local CMDLINE
+  CMDLINE="$(grub-editenv "${USER_GRUBENVFILE}" list 2>/dev/null | grep "^${1}=" | cut -d'=' -f2-)"
   CMDLINE="$(echo "${CMDLINE}" | sed "s/ *${2}//; s/^[[:space:]]*//;s/[[:space:]]*$//")"
   setCmdline "${1}" "${CMDLINE}"
 }
@@ -671,10 +683,12 @@ function checkPWMSignal() {
 function checkCPU_VT_d() {
   lsmod | grep -q msr || modprobe msr 2>/dev/null
   if grep -q "GenuineIntel" /proc/cpuinfo 2>/dev/null; then
-    local VT_D_ENABLED=$(rdmsr 0x3a 2>/dev/null)
+    local VT_D_ENABLED
+    VT_D_ENABLED="$(rdmsr 0x3a 2>/dev/null)"
     [ "$((${VT_D_ENABLED:-0x0} & 0x5))" -eq $((0x5)) ] && return 0
   elif grep -q "AuthenticAMD" /proc/cpuinfo 2>/dev/null; then
-    local IOMMU_ENABLED=$(rdmsr 0xC0010114 2>/dev/null)
+    local IOMMU_ENABLED
+    IOMMU_ENABLED="$(rdmsr 0xC0010114 2>/dev/null)"
     [ "$((${IOMMU_ENABLED:-0x0} & 0x1))" -eq $((0x1)) ] && return 0
   else
     return 1
@@ -970,26 +984,23 @@ function updateCheck() {
   local ARC_VERSION_BETA="${ARC_VERSION#${ARC_VERSION_BASE}}"
   NEWTAG="$(curl -m 10 -skL "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p)"
   if [ -n "${ARC_VERSION_BETA}" ] && [ -n "${BETA_API_URL}" ]; then
-    local BETANEWTAG="$(curl -m 10 -skL "${BETA_API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p)"
+    local BETANEWTAG
+    BETANEWTAG="$(curl -m 10 -skL "${BETA_API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p)"
     if [ -n "${BETANEWTAG}" ] && [ -n "${NEWTAG}" ]; then
-      local stable_base="${NEWTAG%%[a-z]*}"
-      local beta_base="${BETANEWTAG%%[a-z]*}"
-      local newer_version="$(printf '%s\n' "${stable_base}" "${beta_base}" | sort -rV | sed -n 1p)"
-      [ "${newer_version}" = "${stable_base}" ] && NEWTAG="${NEWTAG}" || NEWTAG="${BETANEWTAG}"
+      versionGE "${NEWTAG%%[a-z]*}" "${BETANEWTAG%%[a-z]*}" || NEWTAG="${BETANEWTAG}"
     elif [ -n "${BETANEWTAG}" ]; then
       NEWTAG="${BETANEWTAG}"
     fi
   fi
   if [ -n "${NEWTAG}" ]; then
-    local new_base="${NEWTAG%%[a-z]*}"
-    local newer="$(printf '%s\n' "${ARC_VERSION_BASE}" "${new_base}" | sort -rV | sed -n 1p)"
-    [ "${newer}" = "${ARC_VERSION_BASE}" ] && NEWTAG=""
+    versionGE "${ARC_VERSION_BASE}" "${NEWTAG%%[a-z]*}" && NEWTAG=""
   fi
 }
 
 ###############################################################################
 # Check System
-function systemCheck () {
+# shellcheck disable=SC2034 # AESSYS and CPUFREQ are read by sysinfo
+function systemCheck() {
   # Get Loader Disk Bus
   [ -f "/usr/arc/.mountloader" ] && . "/usr/arc/.mountloader"
   BUS=$(getBus "${LOADER_DISK}")
@@ -1088,6 +1099,7 @@ function fixDSMRootPart() {
 
 ###############################################################################
 # Read Data
+# shellcheck disable=SC2034 # the values are read by arc.sh and arc-functions.sh
 function readData() {
   # Get DSM Data from Config
   MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
@@ -1111,9 +1123,6 @@ function readData() {
   SASCONTROLLER="$(readConfigKey "device.sascontroller" "${USER_CONFIG_FILE}")"
   SCSICONTROLLER="$(readConfigKey "device.scsicontroller" "${USER_CONFIG_FILE}")"
   RAIDCONTROLLER="$(readConfigKey "device.raidcontroller" "${USER_CONFIG_FILE}")"
-  NVMECONTROLLER="$(readConfigKey "device.nvmecontroller" "${USER_CONFIG_FILE}")"
-  MMCCONTROLLER="$(readConfigKey "device.mmccontroller" "${USER_CONFIG_FILE}")"
-  USBCONTROLLER="$(readConfigKey "device.usbcontroller" "${USER_CONFIG_FILE}")"
 
   # Advanced Config
   ARC_OFFLINE="$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")"
@@ -1126,7 +1135,6 @@ function readData() {
   KERNELLOAD="$(readConfigKey "kernelload" "${USER_CONFIG_FILE}")"
   KERNELPANIC="$(readConfigKey "kernelpanic" "${USER_CONFIG_FILE}")"
   GOVERNOR="$(readConfigKey "governor" "${USER_CONFIG_FILE}")"
-  STORAGEPANEL="$(readConfigKey "addons.storagepanel" "${USER_CONFIG_FILE}")"
   ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
   RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
   SATADOM="$(readConfigKey "satadom" "${USER_CONFIG_FILE}")"
@@ -1216,7 +1224,8 @@ function sendDiscord() {
   [ -z "${USERID}" ] && return 1
 
   local MESSAGE="**${MSGT}**: ${MSGC}"
-  local ENCODED_MSG=$(echo "${MESSAGE}" | jq -sRr @uri)
+  local ENCODED_MSG
+  ENCODED_MSG="$(echo "${MESSAGE}" | jq -sRr @uri)"
   curl -skL -m 15 "https://arc.auxxxilium.tech/notify.php?id=${USERID}&message=${ENCODED_MSG}" >/dev/null 2>&1
   return $?
 }

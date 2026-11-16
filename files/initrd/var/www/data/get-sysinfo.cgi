@@ -351,14 +351,14 @@ function getSysinfo() {
   TEXT+="\n"
   # Get Information for Sata Controller
   NUMPORTS=0
-  if [ $(lspci -d ::106 2>/dev/null | wc -l) -gt 0 ]; then
+  if [ "$(lspci -d ::106 2>/dev/null | wc -l)" -gt 0 ]; then
     TEXT+="\n  SATA Controller:\n"
     for PCI in $(lspci -d ::106 | awk '{print $1}'); do
       NAME=$(lspci -s "${PCI}" | sed "s/\ .*://" | awk '{$1=""}1' | awk '{$1=$1};1')
       PCIID="$(getPciId "${PCI}")"
       [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
       TEXT+="  ${NAME}\n  Ports: "
-      PORTS=$(ls -l /sys/class/scsi_host | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+      PORTS=$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
       for P in ${PORTS}; do
         if lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep -q "\[${P}:"; then
           if [ "$(cat /sys/class/scsi_host/host${P}/ahci_port_cmd)" != "0" ]; then
@@ -370,68 +370,68 @@ function getSysinfo() {
     done
     TEXT+="\n"
   fi
-  [ $(lspci -d ::104 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  RAID Controller:\n"
+  [ "$(lspci -d ::104 2>/dev/null | wc -l)" -gt 0 ] && TEXT+="\n  RAID Controller:\n"
   for PCI in $(lspci -d ::104 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PCIID="$(getPciId "${PCI}")"
     [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
-    PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+    PORT=$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
     TEXT+="   ${NAME}\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  [ $(lspci -d ::107 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  HBA Controller:\n"
+  [ "$(lspci -d ::107 2>/dev/null | wc -l)" -gt 0 ] && TEXT+="\n  HBA Controller:\n"
   for PCI in $(lspci -d ::107 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PCIID="$(getPciId "${PCI}")"
     [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
-    PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+    PORT=$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
     TEXT+="   ${NAME}\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  [ $(lspci -d ::100 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  SCSI Controller:\n"
+  [ "$(lspci -d ::100 2>/dev/null | wc -l)" -gt 0 ] && TEXT+="\n  SCSI Controller:\n"
   for PCI in $(lspci -d ::100 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PCIID="$(getPciId "${PCI}")"
     [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
-    PORTNUM=$(ls -l /sys/block/* 2>/dev/null | grep "${PCI}" | wc -l)
+    PORTNUM=$(readlink -f /sys/block/* 2>/dev/null | grep "${PCI}" | wc -l)
     [ ${PORTNUM} -eq 0 ] && continue
     TEXT+="   ${NAME}\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  [ $(ls -l /sys/class/scsi_host 2>/dev/null | grep usb | wc -l) -gt 0 ] && TEXT+="\n  USB Controller:\n"
+  [ "$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep usb | wc -l)" -gt 0 ] && TEXT+="\n  USB Controller:\n"
   for PCI in $(lspci -d ::c03 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PCIID="$(getPciId "${PCI}")"
     [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
-    PORT=$(ls -l /sys/class/scsi_host 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
+    PORT=$(readlink -f /sys/class/scsi_host/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/host//' | sort -n)
     PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[${PORT}:" | wc -l)
     [ ${PORTNUM} -eq 0 ] && continue
     TEXT+="   ${NAME}\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  [ $(ls -l /sys/block/mmc* 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  MMC Controller:\n"
+  [ -n "$(find /sys/block -maxdepth 1 -name 'mmc*' 2>/dev/null)" ] && TEXT+="\n  MMC Controller:\n"
   for PCI in $(lspci -d ::805 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PCIID="$(getPciId "${PCI}")"
     [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
-    PORTNUM=$(ls -l /sys/block/mmc* 2>/dev/null | grep "${PCI}" | wc -l)
+    PORTNUM=$(readlink -f /sys/block/mmc* 2>/dev/null | grep "${PCI}" | wc -l)
     [ ${PORTNUM} -eq 0 ] && continue
     TEXT+="   ${NAME}\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  [ $(lspci -d ::108 2>/dev/null | wc -l) -gt 0 ] && TEXT+="\n  NVME Controller:\n"
+  [ "$(lspci -d ::108 2>/dev/null | wc -l)" -gt 0 ] && TEXT+="\n  NVME Controller:\n"
   for PCI in $(lspci -d ::108 2>/dev/null | awk '{print $1}'); do
     NAME=$(lspci -s "${PCI}" 2>/dev/null | sed "s/\ .*://")
     PCIID="$(getPciId "${PCI}")"
     [ -n "${PCIID}" ] && NAME="${NAME} [${PCIID}]"
-    PORT=$(ls -l /sys/class/nvme 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
+    PORT=$(readlink -f /sys/class/nvme/* 2>/dev/null | grep "${PCI}" | awk -F'/' '{print $NF}' | sed 's/nvme//' | sort -n)
     PORTNUM=$(lsscsi -bS 2>/dev/null | awk '$3 != "0"' | grep -v - | grep "\[N:${PORT}:" | wc -l)
     TEXT+="   ${NAME}\n   Disks: ${PORTNUM}\n"
     NUMPORTS=$((${NUMPORTS} + ${PORTNUM}))
   done
-  if [ $(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep 'vmbus:acpi' | wc -l) -gt 0 ]; then
+  if [ "$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep 'vmbus:acpi' | wc -l)" -gt 0 ]; then
     TEXT+="\n  VMBUS Controller:\n"
     NAME="vmbus:acpi"
     PORTNUM=$(lsblk -dpno KNAME,SUBSYSTEMS 2>/dev/null | grep 'vmbus:acpi' | wc -l)

@@ -261,12 +261,14 @@ elif [ "${ARC_MODE}" = "config" ]; then
           b) addonMenu; NEXT="b" ;;
           d) modulesMenu; NEXT="d" ;;
           e)
+            # shellcheck disable=SC2034 # read by arcVersion
             ONLYVERSION="true"
             writeConfigKey "productver" "" "${USER_CONFIG_FILE}"
             arcVersion
             NEXT="e"
             ;;
           p)
+            # shellcheck disable=SC2034 # read by arcPatch
             ONLYPATCH="true"
             arcPatch
             NEXT="p"

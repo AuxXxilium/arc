@@ -31,14 +31,12 @@ MODEL="$(readConfigKey "model" "${USER_CONFIG_FILE}")"
 LKM="$(readConfigKey "lkm" "${USER_CONFIG_FILE}")"
 LAYOUT="$(readConfigKey "layout" "${USER_CONFIG_FILE}")"
 KEYMAP="$(readConfigKey "keymap" "${USER_CONFIG_FILE}")"
+# shellcheck disable=SC2034 # read by unpackModules
 KERNEL="$(readConfigKey "kernel" "${USER_CONFIG_FILE}")"
 RD_COMPRESSED="$(readConfigKey "rd-compressed" "${USER_CONFIG_FILE}")"
 PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
 BUILDNUM="$(readConfigKey "buildnum" "${USER_CONFIG_FILE}")"
 SMALLNUM="$(readConfigKey "smallnum" "${USER_CONFIG_FILE}")"
-ODP="$(readConfigKey "odp" "${USER_CONFIG_FILE}")"
-DT="$(readConfigKey "dt" "${USER_CONFIG_FILE}")"
-ARC_BASE="$(cat "${PART1_PATH}/ARC-BASE" 2>/dev/null)"
 
 # Read kver data
 KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
@@ -207,7 +205,7 @@ fi
 
 # DSM 7.3
 [ "${ARC_MODE}" != "dsm" ] && echo -e ">> Ramdisk: apply DSM ${PRODUCTVER:0:3} fixes"
-if [[ "${PRODUCTVER}" > "7.2" ]]; then
+if [ "${PRODUCTVER}" != "7.2" ] && versionGE "${PRODUCTVER}" "7.2"; then
   sed -i 's#/usr/syno/sbin/broadcom_update.sh#/usr/syno/sbin/broadcom_update.sh.arc#g' "${RAMDISK_PATH}/linuxrc.syno.impl"
 fi
 

@@ -15,7 +15,8 @@ function isAddonAvailable() {
   local PLATFORM="${2:-}"
   local MANIFEST="${ADDONS_PATH}/${ADDON}/manifest.yml"
   [ ! -f "${MANIFEST}" ] && return 1
-  local AVAILABLE="$(readConfigKey "${PLATFORM}" "${MANIFEST}")"
+  local AVAILABLE
+  AVAILABLE="$(readConfigKey "${PLATFORM}" "${MANIFEST}")"
   [ "${AVAILABLE}" = "true" ]
 }
 
@@ -25,12 +26,15 @@ function isAddonAvailable() {
 function availableAddons() {
   local PLATFORM="${1:-}"
   [ -z "${PLATFORM}" ] && return 1
-  local MACHINE="$(virt-what 2>/dev/null | head -1)"
+  local MACHINE
+  MACHINE="$(virt-what 2>/dev/null | head -1)"
   [ -z "${MACHINE}" ] && MACHINE="physical"
   find "${ADDONS_PATH}" -maxdepth 1 -type d 2>/dev/null | sort | while read -r D; do
     [ ! -f "${D}/manifest.yml" ] && continue
-    local ADDON="$(basename "${D}")"
-    local SYSTEM="$(readConfigKey "system" "${D}/manifest.yml")"
+    local ADDON
+    ADDON="$(basename "${D}")"
+    local SYSTEM
+    SYSTEM="$(readConfigKey "system" "${D}/manifest.yml")"
     [ "${SYSTEM}" = "true" ] && continue
     isAddonAvailable "${ADDON}" "${PLATFORM}" || continue
 
@@ -39,8 +43,10 @@ function availableAddons() {
       continue
     fi
 
-    local DESC="$(readConfigKey "description" "${D}/manifest.yml")"
-    local BETA="$(readConfigKey "beta" "${D}/manifest.yml")"
+    local DESC
+    DESC="$(readConfigKey "description" "${D}/manifest.yml")"
+    local BETA
+    BETA="$(readConfigKey "beta" "${D}/manifest.yml")"
     case "${BETA}" in
       false)    echo -e "${ADDON}\t\Z4${DESC}\Zn" ;;
       true) echo -e "${ADDON}\t\Z1${DESC}\Zn" ;;
@@ -68,14 +74,13 @@ function installAddon() {
   mkdir -p "${TMP_ADDON}"
   local HAS_FILES=0
   local FOUND_TGZ=0
-  for TGZ in "${ADDONS_PATH}/${ADDON}/all.tgz"; do
-    if [ -f "${TGZ}" ]; then
-      FOUND_TGZ=1
-      if tar -zxf "${TGZ}" -C "${TMP_ADDON}" 2>>"${LOG_FILE}"; then
-        HAS_FILES=1
-      fi
+  local TGZ="${ADDONS_PATH}/${ADDON}/all.tgz"
+  if [ -f "${TGZ}" ]; then
+    FOUND_TGZ=1
+    if tar -zxf "${TGZ}" -C "${TMP_ADDON}" 2>>"${LOG_FILE}"; then
+      HAS_FILES=1
     fi
-  done
+  fi
   if [ "${FOUND_TGZ}" -eq 1 ] && [ "${HAS_FILES}" -ne 1 ]; then
     echo "ERROR: Addon ${ADDON} failed to extract" | tee -a "${LOG_FILE}"
     rm -rf "${TMP_ADDON}"
@@ -127,8 +132,9 @@ function installAddon() {
 # Detect if has new local plugins to install/reinstall
 function updateAddon() {
   for F in $(LC_ALL=C printf '%s\n' ${ADDONS_PATH}/*.addon 2>/dev/null | sort -V); do
-    local ADDON="$(basename "${F}" | sed 's|.addon||')"
-    rm -rf "${ADDONS_PATH}/${ADDON}"
+    local ADDON
+    ADDON="$(basename "${F}" | sed 's|.addon||')"
+    rm -rf "${ADDONS_PATH:?}/${ADDON:?}"
     mkdir -p "${ADDONS_PATH}/${ADDON}"
     tar -zxf "${F}" -C "${ADDONS_PATH}/${ADDON}"
     rm -f "${F}"

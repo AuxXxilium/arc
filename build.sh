@@ -46,6 +46,7 @@
 # Unlike before, no `git clean -fdx`: the buildroot tree in work/ takes an
 # hour to build. Only the build's own output is removed.
 
+# shellcheck disable=SC1090 # the build state file is sourced from a path set at run time
 set -eo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

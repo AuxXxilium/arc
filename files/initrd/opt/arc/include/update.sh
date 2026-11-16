@@ -144,7 +144,8 @@ function updateLoader() {
         URL="${BETA_URL}/${TAG}/update-${TAG}.zip"
       fi
 
-      local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
+      local TMP_AVAILABLE
+      TMP_AVAILABLE="$(df --output=avail "${TMP_PATH}" | tail -1)"
       TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
       local FILE_SIZE
@@ -234,7 +235,8 @@ function updateLoader() {
     rm -f "${TMP_PATH}/update.zip"
     rm -f "${MOD_ZIMAGE_FILE}" "${MOD_RDGZ_FILE}"
 
-    local NEW_VERSION="$(cat "${PART1_PATH}/ARC-VERSION" 2>/dev/null | head -1 | tr -d "[:space:]" | sed 's/^[v|V]//g')"
+    local NEW_VERSION
+    NEW_VERSION="$(cat "${PART1_PATH}/ARC-VERSION" 2>/dev/null | head -1 | tr -d "[:space:]" | sed 's/^[v|V]//g')"
     if [ "${TAG}" = "zip" ] || [ "${NEW_VERSION}" = "${TAG}" ]; then
       dialog --backtitle "$(backtitle)" --title "Update Loader" \
       --infobox "Update Loader successful!" 3 50
@@ -432,7 +434,8 @@ function upgradeLoader() {
         URL="${BETA_URL}/${TAG}/arc-${TAG}.img.zip"
       fi
 
-      local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
+      local TMP_AVAILABLE
+      TMP_AVAILABLE="$(df --output=avail "${TMP_PATH}" | tail -1)"
       TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
       local FILE_SIZE
@@ -461,10 +464,13 @@ function upgradeLoader() {
     fi
   fi
   if validateZipFile "${TMP_PATH}/arc.img.zip" 1048576; then
-    local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
+    local TMP_AVAILABLE
+    TMP_AVAILABLE="$(df --output=avail "${TMP_PATH}" | tail -1)"
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
-    local FILE_SIZE=$(stat -c%s "${TMP_PATH}/arc.img.zip")
-    local REQUIRED_SPACE=$((FILE_SIZE * 2))
+    local FILE_SIZE
+    FILE_SIZE="$(stat -c%s "${TMP_PATH}/arc.img.zip")"
+    local REQUIRED_SPACE
+    REQUIRED_SPACE="$((FILE_SIZE * 2))"
 
     if [ "${TMP_AVAILABLE}" -lt "${REQUIRED_SPACE}" ]; then
       dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
@@ -513,7 +519,6 @@ function upgradeLoader() {
 ###############################################################################
 # Update Addons
 function updateAddons() {
-  [ -f "${ADDONS_PATH}/VERSION" ] && local ADDONSVERSION="$(cat "${ADDONS_PATH}/VERSION")" || ADDONSVERSION="0.0.0"
   local TAG=""
   idx=0
   while [ "${idx}" -le 5 ]; do
@@ -528,7 +533,8 @@ function updateAddons() {
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-addons/releases/download/${TAG}/addons-${TAG}.zip"
 
-    local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
+    local TMP_AVAILABLE
+    TMP_AVAILABLE="$(df --output=avail "${TMP_PATH}" | tail -1)"
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
     local FILE_SIZE
@@ -575,7 +581,6 @@ function updateAddons() {
 ###############################################################################
 # Update Patches
 function updatePatches() {
-  [ -f "${PATCH_PATH}/VERSION" ] && local PATCHESVERSION="$(cat "${PATCH_PATH}/VERSION")" || PATCHESVERSION="0.0.0"
   local TAG=""
     idx=0
     while [ "${idx}" -le 5 ]; do
@@ -616,7 +621,6 @@ function updatePatches() {
 ###############################################################################
 # Update Custom
 function updateCustom() {
-  [ -f "${CUSTOM_PATH}/VERSION" ] && local CUSTOMVERSION="$(cat "${CUSTOM_PATH}/VERSION")" || CUSTOMVERSION="0.0.0"
   local TAG=""
   idx=0
   while [ "${idx}" -le 5 ]; do
@@ -631,7 +635,8 @@ function updateCustom() {
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-custom/releases/download/${TAG}/custom-${TAG}.zip"
 
-    local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
+    local TMP_AVAILABLE
+    TMP_AVAILABLE="$(df --output=avail "${TMP_PATH}" | tail -1)"
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
     local FILE_SIZE
@@ -677,7 +682,6 @@ function updateCustom() {
 ###############################################################################
 # Update Modules
 function updateModules() {
-  [ -f "${MODULES_PATH}/VERSION" ] && local MODULESVERSION="$(cat "${MODULES_PATH}/VERSION")" || MODULESVERSION="0.0.0"
   PRODUCTVER="$(readConfigKey "productver" "${USER_CONFIG_FILE}")"
   PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
   KVER="$(readConfigKey "platforms.${PLATFORM}.productvers.\"${PRODUCTVER}\".kver" "${P_FILE}")"
@@ -696,7 +700,8 @@ function updateModules() {
     export TAG="${TAG}"
     export URL="https://github.com/AuxXxilium/arc-modules/releases/download/${TAG}/modules-${TAG}.zip"
 
-    local TMP_AVAILABLE=$(df --output=avail "${TMP_PATH}" | tail -1)
+    local TMP_AVAILABLE
+    TMP_AVAILABLE="$(df --output=avail "${TMP_PATH}" | tail -1)"
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
     local FILE_SIZE
@@ -740,7 +745,7 @@ function updateModules() {
         --infobox "Rewrite Modules..." 3 50
       sleep 2
       writeConfigKey "modules" "{}" "${USER_CONFIG_FILE}"
-      while read -r ID DESC; do
+      while read -r ID _; do
         writeConfigKey "modules.${ID}" "" "${USER_CONFIG_FILE}"
       done <<<"$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}")"
       dialog --backtitle "$(backtitle)" --title "Update Modules" \
@@ -754,7 +759,6 @@ function updateModules() {
 ###############################################################################
 # Update Configs
 function updateConfigs() {
-  [ -f "${CONFIGS_PATH}/VERSION" ] && local CONFIGSVERSION="$(cat "${CONFIGS_PATH}/VERSION")" || CONFIGSVERSION="0.0.0"
   local TAG=""
   if [ -z "${1}" ]; then
     idx=0
@@ -798,7 +802,6 @@ function updateConfigs() {
 ###############################################################################
 # Update LKMs
 function updateLKMs() {
-  [ -f "${LKMS_PATH}/VERSION" ] && local LKMVERSION="$(cat "${LKMS_PATH}/VERSION")" || LKMVERSION="0.0.0"
   local TAG=""
   if [ -z "${1}" ]; then
     idx=0

@@ -9,6 +9,7 @@ echo ""
 # Source arc.conf for port configuration
 CONFIG_FILE="/etc/arc.conf"
 if [ -f "${CONFIG_FILE}" ]; then
+    # shellcheck source=/dev/null
     source "${CONFIG_FILE}"
 fi
 

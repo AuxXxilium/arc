@@ -6,6 +6,8 @@
 # See /LICENSE for more information.
 #
 
+# Shared constants, read by the scripts that source this file
+# shellcheck disable=SC2034
 ###############################################################################
 # Define paths
 PART1_PATH="/mnt/p1"
