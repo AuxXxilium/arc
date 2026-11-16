@@ -968,13 +968,13 @@ function updateCheck() {
   [ "$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")" = "true" ] && return 0
   local ARC_VERSION_BASE="${ARC_VERSION%%[a-z]*}"
   local ARC_VERSION_BETA="${ARC_VERSION#${ARC_VERSION_BASE}}"
-  NEWTAG="$(curl -m 10 -skL "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | head -1)"
+  NEWTAG="$(curl -m 10 -skL "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p)"
   if [ -n "${ARC_VERSION_BETA}" ] && [ -n "${BETA_API_URL}" ]; then
-    local BETANEWTAG="$(curl -m 10 -skL "${BETA_API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | head -1)"
+    local BETANEWTAG="$(curl -m 10 -skL "${BETA_API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p)"
     if [ -n "${BETANEWTAG}" ] && [ -n "${NEWTAG}" ]; then
       local stable_base="${NEWTAG%%[a-z]*}"
       local beta_base="${BETANEWTAG%%[a-z]*}"
-      local newer_version="$(printf '%s\n' "${stable_base}" "${beta_base}" | sort -rV | head -1)"
+      local newer_version="$(printf '%s\n' "${stable_base}" "${beta_base}" | sort -rV | sed -n 1p)"
       [ "${newer_version}" = "${stable_base}" ] && NEWTAG="${NEWTAG}" || NEWTAG="${BETANEWTAG}"
     elif [ -n "${BETANEWTAG}" ]; then
       NEWTAG="${BETANEWTAG}"
@@ -982,7 +982,7 @@ function updateCheck() {
   fi
   if [ -n "${NEWTAG}" ]; then
     local new_base="${NEWTAG%%[a-z]*}"
-    local newer="$(printf '%s\n' "${ARC_VERSION_BASE}" "${new_base}" | sort -rV | head -1)"
+    local newer="$(printf '%s\n' "${ARC_VERSION_BASE}" "${new_base}" | sort -rV | sed -n 1p)"
     [ "${newer}" = "${ARC_VERSION_BASE}" ] && NEWTAG=""
   fi
 }
