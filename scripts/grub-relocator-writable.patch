@@ -1,0 +1,25 @@
+GRUB 2.14 on a UEFI with the Memory Attribute Protocol maps a module's
+code read-only (grub_dl_set_mem_attrs). Its relocator keeps the registers
+it hands the kernel inside that code (relocator64.S: grub_relocator64_rax,
+_rip, _rsp), and the x86 linux loader -- the path for a kernel without an
+EFI stub -- writes them there before it boots: the firmware stops it with
+"X64 Exception Type - 0E(#PF)", W:1 P:1, the moment an entry boots. Code
+sections stay writable; data keeps no-execute and read-only data stays
+read-only.
+
+--- a/grub-core/kern/dl.c
++++ b/grub-core/kern/dl.c
+@@ -691,6 +691,13 @@
+ 	{
+ 	  set_attrs |= GRUB_MEM_ATTR_X;
+ 	  clear_attrs &= ~GRUB_MEM_ATTR_X;
++	  /* The relocator keeps the registers it hands the kernel in its own
++	     code (relocator64.S: grub_relocator64_rax, _rip, _rsp), and the x86
++	     linux loader writes them there before it boots a kernel without an
++	     EFI stub. Read-only code turns that write into a page fault in the
++	     firmware, on any UEFI that has the Memory Attribute Protocol. */
++	  set_attrs |= GRUB_MEM_ATTR_W;
++	  clear_attrs &= ~GRUB_MEM_ATTR_W;
+ 	}
+ 
+       err = grub_update_mem_attrs ((grub_addr_t) seg->addr, seg->size,

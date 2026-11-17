@@ -812,7 +812,8 @@ attach_image() {
 build_grub() {
   local t target platform
 
-  if [ -f "${GRUB_SRC}/.built" ]; then
+  # A GRUB from before grub-relocator-writable.patch is built again.
+  if [ -f "${GRUB_SRC}/.built" ] && grep -qF 'The relocator keeps the registers' "${GRUB_SRC}/grub-core/kern/dl.c" 2>/dev/null; then
     info "grub              ${GRUB_VERSION}, already built"
     return 0
   fi
@@ -824,6 +825,12 @@ build_grub() {
     die "could not download ${GRUB_URL}/${GRUB_VERSION}.tar.gz."
   tar -zxf "${WORK}/${GRUB_VERSION}.tar.gz" -C "${WORK}"
   rm -f "${WORK}/${GRUB_VERSION}.tar.gz"
+
+  # Module code stays writable on UEFI, or the x86 linux loader faults in
+  # the firmware the moment it boots our stub-less kernel: see the patch's
+  # header.
+  patch -d "${GRUB_SRC}" -p1 --forward --quiet <"${HERE}/scripts/grub-relocator-writable.patch" ||
+    die "could not apply grub-relocator-writable.patch to ${GRUB_VERSION}."
 
   # Without these the installed core cannot read the partition table or
   # find its own partition.
