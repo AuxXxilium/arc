@@ -843,13 +843,19 @@ build_grub() {
     mkdir -p "${GRUB_SRC}/${t}/grub-core"
     # make install looks for it relative to the build directory.
     cp "${GRUB_SRC}/grub-core/extra_deps.lst" "${GRUB_SRC}/${t}/grub-core/extra_deps.lst"
+    # GRUB 2.14 trips newer bison and gcc into warnings (%pure-parser,
+    # __PIC__ redefined) that change nothing, so the build talks to a log
+    # and only its tail is shown, when it fails.
     (
       cd "${GRUB_SRC}/${t}" &&
         ../configure --prefix="${PWD}/usr" --sbindir="${PWD}/sbin" --sysconfdir="${PWD}/etc" \
-          --disable-werror --target="${target}" --with-platform="${platform}" >/dev/null &&
-        make -j"${JOBS}" >/dev/null &&
-        make install >/dev/null
-    ) || die "could not build grub for ${t}."
+          --disable-werror --target="${target}" --with-platform="${platform}" &&
+        make -j"${JOBS}" &&
+        make install
+    ) >"${GRUB_SRC}/${t}.log" 2>&1 || {
+      tail -n 30 "${GRUB_SRC}/${t}.log" >&2
+      die "could not build grub for ${t}, the whole log is ${GRUB_SRC}/${t}.log."
+    }
 
     # grub-install copies from this tree: the translations (~6 MB) and the
     # stock starfield theme (~2.8 MB) would land on p1. Arc's theme comes
