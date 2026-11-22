@@ -306,6 +306,9 @@ stage_pull() {
   # and they cannot conflict with a fast-forward. A real local edit stops
   # the pull rather than being reset away.
   if [ -n "$(git status --porcelain -uno)" ]; then
+    # A release from a tree the pull could not update would publish old
+    # code under a new version (arc 4.2.10 nearly did, 2026-11-22): stop.
+    [ "${do_release}" -eq 0 ] || die "tracked files have local changes, so the pull cannot update this tree; a release stops here. Commit or restore them: git status"
     warn "tracked files have local changes, skipping pull"
     git status --short -uno | sed 's/^/    /'
     return 0
