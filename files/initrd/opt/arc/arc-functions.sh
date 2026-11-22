@@ -3527,14 +3527,15 @@ function getpatfiles() {
       # can only be made by hand. Report it and let the caller fail the build;
       # the loader drops to a shell where the file can be uploaded, after which
       # a rebuild picks it up.
-      dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files" --aspect 18         --infobox "Offline Mode: DSM Boot File is missing.
-Upload it to ${USER_UP_PATH} and build again." 5 60
+      dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files" --aspect 18 \
+        --infobox "Offline Mode: DSM Boot File is missing.\nUpload it to ${USER_UP_PATH} and build again." 5 60
       sleep 3
       return 1
     fi
-    dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files"       --msgbox "Please upload the DSM Boot File to ${USER_UP_PATH}.
-Use ${IPCON}:7304 to upload the file below and press OK.
-Link: https://raw.githubusercontent.com/AuxXxilium/arc-dsm/new/files/${MODEL}/${DSMFULLVER}/${PAT_HASH}.tar" 8 120
+    # dialog folds real newlines into spaces and wraps only at spaces, so the
+    # link gets a line of its own, wide enough that it is not cut at the edge
+    dialog --backtitle "$(backtitle)" --colors --title "DSM Boot Files" \
+      --msgbox "Please upload the DSM Boot File to ${USER_UP_PATH}.\nUse ${IPCON}:7304 to upload the file below and press OK.\nLink:\nhttps://raw.githubusercontent.com/AuxXxilium/arc-dsm/new/files/${MODEL}/${DSMFULLVER}/${PAT_HASH}.tar" 9 124
   fi
   if [ -f "${USER_UP_PATH}/${PAT_HASH}.tar" ]; then
     dialog --backtitle "$(backtitle)" --title "DSM Boot Files" --aspect 18       --infobox "Copying DSM Boot Files..." 3 40
