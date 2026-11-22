@@ -296,6 +296,12 @@ stage_pull() {
     return 0
   fi
 
+  # The deps stage empties files/p3/*/ and with them the tracked .gitkeep
+  # placeholders; their deletion is no local edit, and left as it is it
+  # made every pull after a refresh skip ("local changes") and build the
+  # old tree. Put them back first.
+  git ls-files -d -- 'files/p3/*/.gitkeep' | xargs -r git checkout --
+
   # Tracked changes only: the build leaves untracked files all over files/,
   # and they cannot conflict with a fast-forward. A real local edit stops
   # the pull rather than being reset away.
