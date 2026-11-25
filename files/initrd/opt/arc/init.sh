@@ -159,9 +159,7 @@ if [ -n "${STATICIF}" ]; then
   sleep 1
 fi
 
-# No network devices
 echo
-[ "${ETHN}" = "0" ] && die "No NIC found! - Loader does not work without Network connection."
 
 # Bus Check
 BUSLIST="usb sata sas scsi nvme mmc ide virtio vmbus xen docker"
@@ -217,6 +215,10 @@ case "${ARC_MODE}" in
     ;;
 esac
 echo
+
+# No network devices: DSM brings its own drivers and boots above without
+# one, the loader's own modes need it
+[ "${ETHN}" = "0" ] && die "No NIC found! - Loader does not work without Network connection."
 
 BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
 [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT=60

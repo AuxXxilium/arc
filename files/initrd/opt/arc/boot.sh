@@ -392,7 +392,13 @@ else
   fi
   [ "${RESTARTED}" = "1" ] && sleep 5
   IPCON=""
-  checkNIC || true
+  # A VM booting DSM only needs one address to show: don't hold the handoff
+  # for NICs that get theirs from DSM later anyway
+  if [ "${ARC_MODE}" = "dsm" ] && echo "kvm qemu" | grep -qw "${MEV:-physical}"; then
+    checkNIC "first" || true
+  else
+    checkNIC || true
+  fi
   echo
 
   # As the notification addon's "DSM (Arc x.y) is running @ ..." once DSM

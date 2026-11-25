@@ -59,13 +59,19 @@ function arc_mode() {
 # once rather than one after another. A NIC with no cable in holds it up only
 # while no other NIC has an address; one with a link but no lease yet gets 10s
 # more after the first address. Link-local is no address: dhcpcd keeps asking.
+# 1 - "first": stop at the first address, without the 10s for the other NICs
+#     (a VM booting DSM needs one address to show, DSM brings up the rest)
 function checkNIC() {
-  sleep 3 # Wait for network to initialize
   IPCON=""
-  BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
-  [ -z "${BOOTIPWAIT}" ] && BOOTIPWAIT="60"
-  [ "${BOOTIPWAIT}" -gt 60 ] 2>/dev/null && BOOTIPWAIT="60"
   ETHX="$(find /sys/class/net/ -mindepth 1 -maxdepth 1 -name 'eth*' -exec basename {} \; | sort -V)"
+  # Without a NIC there is nothing to wait for
+  [ -z "${ETHX}" ] && return 0
+  sleep 3 # Wait for network to initialize
+  BOOTIPWAIT="$(readConfigKey "bootipwait" "${USER_CONFIG_FILE}")"
+  # Anything but a number would never compare as reached and wait forever
+  [[ "${BOOTIPWAIT}" =~ ^[0-9]{1,3}$ ]] || BOOTIPWAIT="60"
+  BOOTIPWAIT=$((10#${BOOTIPWAIT}))
+  [ "${BOOTIPWAIT}" -gt 60 ] && BOOTIPWAIT="60"
   local N IP WAITING ELAPSED START FIRST=""
   START="$(date +%s)"
   while true; do
@@ -83,6 +89,7 @@ function checkNIC() {
     if [ -n "${IPCON}" ]; then
       [ -z "${FIRST}" ] && FIRST="${ELAPSED}"
       [ "${WAITING}" = "0" ] && break
+      [ "${1}" = "first" ] && break
       [ $((ELAPSED - FIRST)) -ge 10 ] && break
     fi
     [ "${ELAPSED}" -ge "${BOOTIPWAIT}" ] && break
