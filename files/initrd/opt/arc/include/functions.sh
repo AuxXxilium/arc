@@ -682,17 +682,20 @@ function checkPWMSignal() {
 # check CPU Intel(VT-d)/AMD(AMD-Vi)
 function checkCPU_VT_d() {
   lsmod | grep -q msr || modprobe msr 2>/dev/null
+  # rdmsr prints bare hex without a 0x prefix: bash arithmetic reads "ff07"
+  # as a variable name (0) and a zero padded "0000000000000008" as octal (an
+  # error). Prefix it and reject anything that is not hex.
+  local MSRVAL
   if grep -q "GenuineIntel" /proc/cpuinfo 2>/dev/null; then
-    local VT_D_ENABLED
-    VT_D_ENABLED="$(rdmsr 0x3a 2>/dev/null)"
-    [ "$((${VT_D_ENABLED:-0x0} & 0x5))" -eq $((0x5)) ] && return 0
+    MSRVAL="$(rdmsr 0x3a 2>/dev/null | tr -d '[:space:]')"
+    case "${MSRVAL}" in '' | *[!0-9A-Fa-f]*) return 1 ;; esac
+    [ "$((0x${MSRVAL} & 0x5))" -eq "$((0x5))" ] && return 0
   elif grep -q "AuthenticAMD" /proc/cpuinfo 2>/dev/null; then
-    local IOMMU_ENABLED
-    IOMMU_ENABLED="$(rdmsr 0xC0010114 2>/dev/null)"
-    [ "$((${IOMMU_ENABLED:-0x0} & 0x1))" -eq $((0x1)) ] && return 0
-  else
-    return 1
+    MSRVAL="$(rdmsr 0xC0010114 2>/dev/null | tr -d '[:space:]')"
+    case "${MSRVAL}" in '' | *[!0-9A-Fa-f]*) return 1 ;; esac
+    [ "$((0x${MSRVAL} & 0x1))" -eq "$((0x1))" ] && return 0
   fi
+  return 1
 }
 
 ###############################################################################
