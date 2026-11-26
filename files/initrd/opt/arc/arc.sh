@@ -140,9 +140,10 @@ elif [ "${ARC_MODE}" = "config" ]; then
           write_menu_value "K" "Kernel" "${KERNEL}"
         fi
 
-        if [ "${DT}" = "false" ]; then
-          write_menu_value "h" "USB Disks internal" "$( [ "${USBMOUNT}" = "true" ] && echo "enabled" || echo "disabled" )"
-        fi
+        # Every platform: non-DT through disks.sh (usbportcfg=0), DT through redpill, which retypes the USB
+        # hosts to SATA - on 5.x, and on 4.4 where its libata guard is in (otherwise it logs why and USB
+        # disks stay USB).
+        write_menu_value "h" "USB Disks internal" "$( [ "${USBMOUNT}" = "true" ] && echo "enabled" || echo "disabled" )"
 
         if [ "${DT}" = "true" ]; then
           write_menu "o" "DTS Map Options"
