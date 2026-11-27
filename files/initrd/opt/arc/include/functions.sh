@@ -783,6 +783,60 @@ function copyDSMFiles() {
 }
 
 ###############################################################################
+# The DSM boot files of a PAT are checked against the loader's DSM table,
+# configs/data.yml: for each PAT (by the md5 that names its tar) it lists the
+# SHA-256 of its zImage and rd.gz ("zimage", "ramdisk"). The tar carries
+# hashes too, but they come with the files they describe: whoever can change
+# the one changes the other. data.yml comes with the configs release, so a
+# tar changed in arc-dsm afterwards does not match it. The same check as
+# fetch_dsm_files in Arc Control's loader-update.lib.sh.
+# 1 - model, 2 - pathash, 3 - zimage|ramdisk
+# Prints the SHA-256, or nothing
+function dsmBootHash() {
+  local H
+  H="$(yq eval "[.[] | select(tag == \"!!map\" and has(\"${1}\")) | .[\"${1}\"][] | select(.hash == \"${2}\") | .${3}] | .[0] // \"\"" \
+    "${D_FILE}" 2>/dev/null | tr -d '[:space:]' | tr 'A-F' 'a-f')"
+  [ "${#H}" -eq 64 ] && [ -z "${H//[0-9a-f]/}" ] && printf '%s' "${H}"
+}
+
+###############################################################################
+# The boot file tar holds only plain files with plain names (and "./"), as
+# arc-dsm makes them, so unpacking it cannot write anywhere else or leave a
+# symlink behind.
+# 1 - tar
+function dsmTarOk() {
+  tar -tvf "${1}" 2>/dev/null | awk '
+    { n++ }
+    NF != 6 { bad = 1 }
+    substr($1, 1, 1) == "d" && $NF != "./" && $NF != "." { bad = 1 }
+    substr($1, 1, 1) != "-" && substr($1, 1, 1) != "d" { bad = 1 }
+    substr($1, 1, 1) == "-" && $NF !~ /^(\.\/)?[A-Za-z0-9._-]+$/ { bad = 1 }
+    END { exit (bad || !n) }'
+}
+
+###############################################################################
+# The boot files unpacked in ${1} are the ones data.yml lists for the PAT.
+# 1 - directory, 2 - model, 3 - pathash
+# Return 0 if both match; the reason goes to stdout otherwise
+function checkDSMFiles() {
+  local HF WANT HAVE
+  for HF in "ramdisk rd.gz" "zimage zImage"; do
+    set -- "${1}" "${2}" "${3}" ${HF}
+    WANT="$(dsmBootHash "${2}" "${3}" "${4}")"
+    if [ -z "${WANT}" ]; then
+      echo "The DSM table (configs/data.yml) lists no checksum for this ${5}: update the Configs or the Loader."
+      return 1
+    fi
+    HAVE="$(sha256sum "${1}/${5}" 2>/dev/null | awk '{print $1}')"
+    if [ "${WANT}" != "${HAVE}" ]; then
+      echo "The DSM Boot File ${5} does not match the checksum in the DSM table."
+      return 1
+    fi
+  done
+  return 0
+}
+
+###############################################################################
 # Fetch the DSM boot set of the configured version and copy it to p2: the
 # one kept in users, else arc-dsm's, kept in users for the next build.
 # Progress, and why it failed, go to stdout.
@@ -810,14 +864,14 @@ function fetchDSMFiles() {
     echo "Downloading DSM Boot Files..."
     DSM_URL="https://raw.githubusercontent.com/AuxXxilium/arc-dsm/new/files/${MODEL/+/%2B}/${DSMFULLVER}/${PAT_HASH}.tar"
     SPACELEFT=$(df --block-size=1 "${PART3_PATH}" 2>/dev/null | awk 'NR==2 {print $4}')
-    FILESIZE=$(curl -skLI -m 10 "${DSM_URL}" | grep -i Content-Length | tail -n 1 | tr -d '\r\n' | awk '{print $2}')
+    FILESIZE=$(curl -sLI --proto '=https' -m 10 "${DSM_URL}" | grep -i Content-Length | tail -n 1 | tr -d '\r\n' | awk '{print $2}')
     if [ ${FILESIZE:-0} -ge ${SPACELEFT:-0} ]; then
       DSM_FILE="${TMP_PATH}/${PAT_HASH}.tar"
     fi
     # A failed download leaves no partial file to be taken for a kept one
-    if ! curl -skL --retry 3 --retry-delay 5 -m 300 "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null; then
+    if ! curl -fsL --proto '=https' --proto-redir '=https' --retry 3 --retry-delay 5 -m 300 "${DSM_URL}" -o "${DSM_FILE}" 2>/dev/null; then
       rm -f "${DSM_FILE}"
-      echo "DSM Boot Files download failed."
+      echo "DSM Boot Files download failed. Check the network, and the date and time (a wrong clock fails the certificate check)."
       return 1
     fi
     DLSIZE=$(stat -c%s "${DSM_FILE}" 2>/dev/null || echo 0)
@@ -830,7 +884,20 @@ function fetchDSMFiles() {
   echo "Copying DSM Boot Files..."
   rm -rf "${UNTAR_PAT_PATH}"
   mkdir -p "${UNTAR_PAT_PATH}"
-  if ! tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" 2>/dev/null || ! copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null; then
+  if ! dsmTarOk "${DSM_FILE}" || ! tar -xf "${DSM_FILE}" -C "${UNTAR_PAT_PATH}" 2>/dev/null; then
+    rm -f "${DSM_FILE}"
+    rm -rf "${UNTAR_PAT_PATH}"
+    echo "DSM Boot Files are corrupt or incomplete."
+    return 1
+  fi
+  # Checked against data.yml before anything reaches p2, also a tar kept from
+  # an earlier download. Until now only against the hashes in the same tar.
+  if ! checkDSMFiles "${UNTAR_PAT_PATH}" "${MODEL}" "${PAT_HASH}"; then
+    rm -f "${DSM_FILE}"
+    rm -rf "${UNTAR_PAT_PATH}"
+    return 1
+  fi
+  if ! copyDSMFiles "${UNTAR_PAT_PATH}" 2>/dev/null; then
     rm -f "${DSM_FILE}"
     rm -rf "${UNTAR_PAT_PATH}"
     echo "DSM Boot Files are corrupt or incomplete."
@@ -957,6 +1024,24 @@ function livepatch() {
 # Region, Timezone, Keyboard Layout and Offline Mode, once per boot (init.sh).
 # The region lookup is the online check: no answer means offline. The user
 # can switch Offline Mode in the menu afterwards, until the next boot.
+###############################################################################
+# Set the clock from NTP once the network is up. The loader checks the
+# certificate of everything it downloads, and a clock far off - a flat CMOS
+# battery, a VM without its host's time - makes every certificate look
+# expired or not yet valid. Only the running loader's clock: the RTC, which
+# DSM reads, is left as it is. A clock still earlier than this loader was
+# built is reported, never worked around.
+function syncClock() {
+  [ -f "/.dockerenv" ] && return 0
+  timeout 15 ntpd -n -q -p pool.ntp.org -p time.cloudflare.com >/dev/null 2>&1 || true
+  local BUILT
+  BUILT="$(stat -c %Y "${ARC_PATH}/init.sh" 2>/dev/null || echo 0)"
+  if [ "$(date +%s)" -lt "${BUILT}" ]; then
+    echo -e "\033[1;31mThe clock reads $(date '+%Y-%m-%d %H:%M'), before this loader was built: downloads will fail their certificate check. Set the date and time in the BIOS.\033[0m"
+  fi
+  return 0
+}
+
 function onlineCheck() {
   local GEO TZ COUNTRY
   GEO="$(curl -m 10 -s "http://ip-api.com/line?fields=countryCode,timezone" 2>/dev/null)"
@@ -964,6 +1049,7 @@ function onlineCheck() {
   COUNTRY="$(echo "${GEO}" | grep -m1 -E '^[A-Z]{2}$')"
   if [ -n "${TZ}" ]; then
     writeConfigKey "arc.offline" "false" "${USER_CONFIG_FILE}"
+    syncClock
     REGION="${TZ%%/*}"
     TIMEZONE="${TZ#*/}"
     writeConfigKey "time.region" "${REGION}" "${USER_CONFIG_FILE}"
@@ -992,10 +1078,10 @@ function updateCheck() {
   [ "$(readConfigKey "arc.offline" "${USER_CONFIG_FILE}")" = "true" ] && return 0
   local ARC_VERSION_BASE="${ARC_VERSION%%[a-z]*}"
   local ARC_VERSION_BETA="${ARC_VERSION#${ARC_VERSION_BASE}}"
-  NEWTAG="$(curl -m 10 -skL "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p)"
+  NEWTAG="$(curl -m 10 -sL "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p)"
   if [ -n "${ARC_VERSION_BETA}" ] && [ -n "${BETA_API_URL}" ]; then
     local BETANEWTAG
-    BETANEWTAG="$(curl -m 10 -skL "${BETA_API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p)"
+    BETANEWTAG="$(curl -m 10 -sL "${BETA_API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p)"
     if [ -n "${BETANEWTAG}" ] && [ -n "${NEWTAG}" ]; then
       versionGE "${NEWTAG%%[a-z]*}" "${BETANEWTAG%%[a-z]*}" || NEWTAG="${BETANEWTAG}"
     elif [ -n "${BETANEWTAG}" ]; then
@@ -1219,7 +1305,7 @@ function sendWebhook() {
   case "${URL}" in
   *discord.com/api/webhooks* | *discordapp.com/api/webhooks*) DATA="{\"content\":\"**${MSGT}**: ${MSGC}\"}" ;;
   esac
-  curl -skL -m 15 -X POST -H "Content-Type: application/json" -d "${DATA}" "${URL}" >/dev/null 2>&1
+  curl -sL -m 15 -X POST -H "Content-Type: application/json" -d "${DATA}" "${URL}" >/dev/null 2>&1
   return $?
 }
 
@@ -1236,7 +1322,7 @@ function sendDiscord() {
   local MESSAGE="**${MSGT}**: ${MSGC}"
   local ENCODED_MSG
   ENCODED_MSG="$(echo "${MESSAGE}" | jq -sRr @uri)"
-  curl -skL -m 15 "https://arc.auxxxilium.tech/notify.php?id=${USERID}&message=${ENCODED_MSG}" >/dev/null 2>&1
+  curl -sL -m 15 "https://arc.auxxxilium.tech/notify.php?id=${USERID}&message=${ENCODED_MSG}" >/dev/null 2>&1
   return $?
 }
 

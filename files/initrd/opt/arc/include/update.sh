@@ -14,7 +14,7 @@ function githubApiJsonRetry() {
   local IDX=0
 
   while [ "${IDX}" -lt "${MAX_RETRIES}" ]; do
-    RESPONSE="$(curl -m 10 -skL "${URL}" 2>/dev/null || true)"
+    RESPONSE="$(curl -m 10 -sL "${URL}" 2>/dev/null || true)"
     if [ -n "${RESPONSE}" ] && echo "${RESPONSE}" | jq -e . >/dev/null 2>&1; then
       printf '%s\n' "${RESPONSE}"
       return 0
@@ -70,7 +70,7 @@ function downloadWithGauge() {
 
   {
     {
-      curl -kL --retry 3 --retry-delay 2 --retry-all-errors "${DOWNLOAD_URL}" -o "${TMP_OUTPUT_PATH}" 2>&3 3>&-
+      curl -fL --proto '=https' --proto-redir '=https' --retry 3 --retry-delay 2 --retry-all-errors "${DOWNLOAD_URL}" -o "${TMP_OUTPUT_PATH}" 2>&3 3>&-
     } 3>&1 >&4 4>&- |
     # curl ends its two header lines with \n and then redraws its progress
     # after each \r: lines end at \n until two are read, at \r after.
@@ -122,6 +122,187 @@ function validateZipFile() {
 }
 
 ###############################################################################
+# zipPathsOk <zip> [<top directory>...]
+#
+# The same check as zip_paths_ok in Arc Control's loader-update.lib.sh,
+# which runs it on the update it installs from DSM.
+#
+# Whether every entry of <zip> stays inside the directory it is unpacked into,
+# and, with top directories given, inside one of them. Read from the archive
+# itself rather than from unzip's listing: the central directory (what a
+# listing shows) and every entry's local header (what BusyBox's unzip goes by
+# when it extracts), which must name the same path. Refused:
+# - an absolute name, a "." or ".." component, an empty one ("a//b"), a
+#   backslash, a control or non-ASCII byte;
+# - a name outside the top directories;
+# - any symlink (release zips carry none: zip -r stores what a link points to);
+# - a local header that names something else than the central directory, a
+#   split or zip64 archive, a central directory that does not add up.
+# unzip's own clean-up is no substitute: it turns "../x" and "/x" into "x" and
+# goes on, so they land beside p1 and p3 - on p2, say - and it makes a symlink
+# to anywhere. ZIP_ERROR says what was refused.
+function zipPathsOk() {
+  local zip="${1}" size tailn eocd list
+  shift
+  local tops="${*}"
+  ZIP_ERROR=""
+  size="$(stat -c%s "${zip}" 2>/dev/null)"
+  if [ -z "${size}" ] || [ "${size}" -lt 22 ]; then
+    ZIP_ERROR="it is not a zip archive"
+    return 1
+  fi
+
+  # The end of central directory record: the last "PK\5\6" in the final
+  # 64 KiB + 22 bytes, the most a comment can push it back.
+  tailn=$((size < 65557 ? size : 65557))
+  eocd="$(tail -c "${tailn}" "${zip}" 2>/dev/null | od -An -v -tu1 | awk -v base="$((size - tailn))" '
+    { for (i = 1; i <= NF; i++) b[n++] = $i }
+    END {
+      for (p = n - 22; p >= 0; p--)
+        if (b[p] == 80 && b[p + 1] == 75 && b[p + 2] == 5 && b[p + 3] == 6) {
+          printf "%d %d %d %d %.0f %.0f %.0f\n", b[p + 4] + 256 * b[p + 5], b[p + 6] + 256 * b[p + 7],
+            b[p + 8] + 256 * b[p + 9], b[p + 10] + 256 * b[p + 11],
+            b[p + 12] + 256 * b[p + 13] + 65536 * b[p + 14] + 16777216 * b[p + 15],
+            b[p + 16] + 256 * b[p + 17] + 65536 * b[p + 18] + 16777216 * b[p + 19], base + p
+          exit
+        }
+    }')"
+  set -- ${eocd}
+  if [ ${#} -ne 7 ]; then
+    ZIP_ERROR="it is not a zip archive (no end of central directory)"
+    return 1
+  fi
+  # disk, central directory disk, entries on this disk, entries, size, offset
+  if [ "${1}" -ne 0 ] || [ "${2}" -ne 0 ] || [ "${3}" -ne "${4}" ] || [ "${4}" -eq 65535 ] ||
+    [ "${6}" -eq 4294967295 ] || [ $(($6 + $5)) -gt "${7}" ]; then
+    ZIP_ERROR="it is a split or zip64 archive, or its central directory is damaged"
+    return 1
+  fi
+
+  # The central directory: one line per entry, "<local header offset>
+  # <name length> <name bytes, comma-separated>", or "BAD <reason>".
+  list="$(dd if="${zip}" bs=65536 iflag=skip_bytes,count_bytes skip="${6}" count="${5}" 2>/dev/null |
+    od -An -v -tu1 | awk -v total="${4}" -v tops="${tops}" '
+    function bad(why) { print "BAD " why; exit }
+    { for (i = 1; i <= NF; i++) b[n++] = $i }
+    END {
+      nt = split(tops, top, " ")
+      p = 0; k = 0
+      while (p < n) {
+        if (p + 46 > n || b[p] != 80 || b[p + 1] != 75 || b[p + 2] != 1 || b[p + 3] != 2)
+          bad("the central directory is damaged")
+        nl = b[p + 28] + 256 * b[p + 29]
+        xl = b[p + 30] + 256 * b[p + 31]
+        cl = b[p + 32] + 256 * b[p + 33]
+        if (p + 46 + nl + xl + cl > n) bad("the central directory is damaged")
+        name = ""; bytes = ""
+        for (i = 0; i < nl; i++) {
+          c = b[p + 46 + i]
+          if (c < 32 || c > 126 || c == 92) bad("an entry has a name with a control, non-ASCII or backslash character")
+          name = name sprintf("%c", c)
+          bytes = bytes (i ? "," : "") c
+        }
+        if (name == "") bad("an entry has no name")
+        # Unix "made by" and S_IFLNK in the upper half of the external attributes
+        if (b[p + 5] == 3 && int((b[p + 40] + 256 * b[p + 41]) / 4096) == 10) bad(name " is a symlink")
+        if (substr(name, 1, 1) == "/") bad(name " is an absolute path")
+        m = split(name, part, "/")
+        for (i = 1; i <= m; i++) {
+          if (part[i] == "." || part[i] == "..") bad(name " leaves the directory it is unpacked into")
+          if (part[i] == "" && i < m) bad(name " has an empty path component")
+        }
+        if (nt) {
+          ok = 0
+          for (i = 1; i <= nt; i++) if (part[1] == top[i] && m > 1) ok = 1
+          if (!ok) bad(name " is outside " tops)
+        }
+        printf "%.0f %d %s\n", b[p + 42] + 256 * b[p + 43] + 65536 * b[p + 44] + 16777216 * b[p + 45], nl, bytes
+        k++
+        p += 46 + nl + xl + cl
+      }
+      if (k != total) bad("the central directory lists " k " entries, the archive says " total)
+    }')"
+  case "${list}" in
+    "") ZIP_ERROR="its central directory could not be read"; return 1 ;;
+    "BAD "* | *"
+BAD "*) ZIP_ERROR="$(printf '%s\n' "${list}" | sed -n 's/^BAD //p' | head -1)"; return 1 ;;
+  esac
+
+  # Every local header, in the same order: its signature, and the same name.
+  local off len bytes res lf
+  # A file, not awk -v: one argument may not exceed 128 KiB, and a release
+  # lists over a thousand entries.
+  lf="$(mktemp 2>/dev/null)" || { ZIP_ERROR="no temporary file"; return 1; }
+  printf '%s\n' "${list}" >"${lf}"
+  res="$(while read -r off len bytes; do
+      dd if="${zip}" bs=4096 iflag=skip_bytes,count_bytes skip="${off}" count="$((30 + len))" 2>/dev/null
+    done <"${lf}" | od -An -v -tu1 | awk -v lf="${lf}" '
+    { for (i = 1; i <= NF; i++) b[n++] = $i }
+    END {
+      ne = 0
+      while ((getline l < lf) > 0) line[++ne] = l
+      p = 0
+      for (e = 1; e <= ne; e++) {
+        split(line[e], f, " "); nl = f[2]; split(f[3], want, ",")
+        if (p + 30 + nl > n || b[p] != 80 || b[p + 1] != 75 || b[p + 2] != 3 || b[p + 3] != 4 ||
+          b[p + 26] + 256 * b[p + 27] != nl) { print "BAD"; exit }
+        for (i = 0; i < nl; i++) if (b[p + 30 + i] != want[i + 1]) { print "BAD"; exit }
+        p += 30 + nl
+      }
+      print (p == n) ? "OK" : "BAD"
+    }')"
+  rm -f "${lf}"
+  if [ "${res}" != "OK" ]; then
+    ZIP_ERROR="an entry is stored under another name than its archive listing shows"
+    return 1
+  fi
+  return 0
+}
+
+###############################################################################
+# The SHA-256 GitHub lists for a release asset ("digest": "sha256:<hex>"), read
+# from the release API over a checked connection, or nothing.
+# 1 - releases API url, 2 - tag, 3 - asset name
+function githubAssetSha256() {
+  local RESPONSE
+  RESPONSE="$(githubApiJsonRetry "${1}/tags/${2}")" || return 1
+  echo "${RESPONSE}" | jq -r --arg asset "${3}" '.assets[]? | select(.name == $asset) | .digest // empty' 2>/dev/null |
+    sed -n 's/^sha256:\([0-9a-f]\{64\}\)$/\1/p' | head -1
+}
+
+###############################################################################
+# A downloaded release zip is the one GitHub lists, and unpacks inside the
+# directory it goes to. The components (addons, modules, custom kernel,
+# configs, patches, LKMs) and the image were installed as downloaded, with
+# curl -k, so whatever answered became part of the loader. On failure the zip
+# is removed and the reason shown; nothing was changed yet.
+# 1 - zip, 2 - releases API url, 3 - tag, 4 - asset name, 5 - dialog title
+function checkReleaseZip() {
+  local WANT HAVE MSG=""
+  WANT="$(githubAssetSha256 "${2}" "${3}" "${4}")"
+  HAVE="$(sha256sum "${1}" 2>/dev/null | awk '{print $1}')"
+  if [ -z "${WANT}" ]; then
+    MSG="GitHub lists no checksum for ${4} (or the release could not be read)"
+  elif [ "${WANT}" != "${HAVE}" ]; then
+    MSG="${4} does not match the checksum GitHub lists for it"
+  elif ! zipPathsOk "${1}"; then
+    MSG="${4} was refused: ${ZIP_ERROR}"
+  else
+    return 0
+  fi
+  rm -f "${1}"
+  dialog --backtitle "$(backtitle)" --title "${5}" --aspect 18 \
+    --infobox "${MSG}.\nNothing was changed." 0 0
+  sleep 3
+  return 1
+}
+
+###############################################################################
+# A download that failed, in a line: a wrong clock is the usual reason a
+# certificate does not verify, and the loader checks certificates.
+DOWNLOAD_FAILED="Download failed! Check the network, and the date and time (a wrong clock fails the certificate check)."
+
+###############################################################################
 # Update Loader
 function updateLoader() {
   local BETA="${1:-false}"
@@ -162,7 +343,7 @@ function updateLoader() {
       fi
 
       if ! downloadWithGauge "${URL}" "${TMP_PATH}/update.zip" "Download Update: ${TAG}..."; then
-        updateAborted "Download failed! Check network and try again."
+        updateAborted "${DOWNLOAD_FAILED}"
         return 1
       fi
     fi
@@ -172,13 +353,30 @@ function updateLoader() {
     if [ "${TAG}" != "zip" ]; then
       local HASH_URL="${UPDATE_URL}/${TAG}/update-${TAG}.hash"
       [ "${BETA}" = "true" ] && HASH_URL="${BETA_URL}/${TAG}/update-${TAG}.hash"
-      HASH="$(curl -skL --retry 3 --retry-delay 2 --retry-all-errors "${HASH_URL}" | awk '{print $1}')"
-
+      # The hash the release publishes beside the zip, with its certificate
+      # checked (until now with -k). One that cannot be had is a failure,
+      # never a reason to skip the check.
+      HASH="$(curl -fsSL --proto '=https' --proto-redir '=https' -m 30 --retry 3 --retry-delay 2 --retry-all-errors "${HASH_URL}" 2>/dev/null | awk 'NR == 1 {print tolower($1)}')"
+      if [ "${#HASH}" -ne 64 ] || [ -n "${HASH//[0-9a-f]/}" ]; then
+        rm -f "${TMP_PATH}/update.zip"
+        updateAborted "Update failed - update-${TAG}.hash, the checksum of the release, could not be fetched.\nNothing was changed. Check the network and the date and time, and try again."
+        return 1
+      fi
       if [ "${HASH}" != "$(sha256sum "${TMP_PATH}/update.zip" | awk '{print $1}')" ]; then
         rm -f "${TMP_PATH}/update.zip"
         updateAborted "Update failed - Hash mismatch!\nTry again later."
         return 1
       fi
+    fi
+
+    # Every entry inside p1/ or p3/, before anything is removed: the zip is
+    # unpacked into /mnt, where p2 - DSM's kernel and ramdisk - is mounted
+    # beside them, and unzip itself turns "../x" into "x" and goes on. Also
+    # for a zip given by hand, which has no published hash.
+    if ! zipPathsOk "${TMP_PATH}/update.zip" p1 p3; then
+      rm -f "${TMP_PATH}/update.zip"
+      updateAborted "Update failed - the update was refused: ${ZIP_ERROR}.\nNothing was changed."
+      return 1
     fi
 
     LOG_FILE="${TMP_PATH}/updatelog"
@@ -419,7 +617,7 @@ function upgradeLoader() {
     if [ -z "${TAG}" ]; then
       idx=0
       while [ "${idx}" -le 5 ]; do
-        TAG="$(curl -m 10 -skL "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
+        TAG="$(curl -m 10 -sL "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
         if [ -n "${TAG}" ]; then
           break
         fi
@@ -439,7 +637,7 @@ function upgradeLoader() {
       TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
       local FILE_SIZE
-      FILE_SIZE=$(curl -skL "${API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"arc-${TAG}.img.zip\") | .size")
+      FILE_SIZE=$(curl -sL --proto '=https' "${API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"arc-${TAG}.img.zip\") | .size")
 
       if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
@@ -456,12 +654,26 @@ function upgradeLoader() {
       fi
 
       if ! downloadWithGauge "${URL}" "${TMP_PATH}/arc.img.zip" "Download Loader: ${TAG}..."; then
-        dialog --backtitle "$(backtitle)" --title "Upgrade Loader" \
-          --infobox "Download failed! Check network and try again." 3 50
+        dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
+          --infobox "${DOWNLOAD_FAILED}" 0 0
         sleep 3
         return 1
       fi
     fi
+  fi
+  # The image is written over the whole loader disk, so it has to be the one
+  # the release lists (until now nothing checked it), and a zip given by hand
+  # still has to unpack inside TMP_PATH.
+  if [ "${TAG}" != "zip" ] && [ -f "${TMP_PATH}/arc.img.zip" ] &&
+    ! checkReleaseZip "${TMP_PATH}/arc.img.zip" "${API_URL}" "${TAG}" "arc-${TAG}.img.zip" "Upgrade Loader"; then
+    return 1
+  fi
+  if [ -f "${TMP_PATH}/arc.img.zip" ] && ! zipPathsOk "${TMP_PATH}/arc.img.zip"; then
+    rm -f "${TMP_PATH}/arc.img.zip"
+    dialog --backtitle "$(backtitle)" --title "Upgrade Loader" --aspect 18 \
+      --infobox "The image was refused: ${ZIP_ERROR}.\nNothing was changed." 0 0
+    sleep 3
+    return 1
   fi
   if validateZipFile "${TMP_PATH}/arc.img.zip" 1048576; then
     local TMP_AVAILABLE
@@ -522,7 +734,7 @@ function updateAddons() {
   local TAG=""
   idx=0
   while [ "${idx}" -le 5 ]; do
-    TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
+    TAG="$(curl -m 10 -sL "https://api.github.com/repos/AuxXxilium/arc-addons/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
     if [ -n "${TAG}" ]; then
       break
     fi
@@ -538,7 +750,7 @@ function updateAddons() {
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
     local FILE_SIZE
-    FILE_SIZE=$(curl -skL "${ADDONS_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"addons-${TAG}.zip\") | .size")
+    FILE_SIZE=$(curl -sL "${ADDONS_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"addons-${TAG}.zip\") | .size")
 
     if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
       dialog --backtitle "$(backtitle)" --title "Update Addons" \
@@ -557,7 +769,8 @@ function updateAddons() {
     if ! downloadWithGauge "${URL}" "${TMP_PATH}/addons.zip" "Download Addons: ${TAG}..."; then
       return 1
     fi
-    if validateZipFile "${TMP_PATH}/addons.zip" 1024; then
+    if validateZipFile "${TMP_PATH}/addons.zip" 1024 &&
+      checkReleaseZip "${TMP_PATH}/addons.zip" "${ADDONS_API_URL}" "${TAG}" "addons-${TAG}.zip" "Update Addons"; then
       rm -rf "${ADDONS_PATH}"
       mkdir -p "${ADDONS_PATH}"
       dialog --backtitle "$(backtitle)" --title "Update Addons" \
@@ -584,7 +797,7 @@ function updatePatches() {
   local TAG=""
     idx=0
     while [ "${idx}" -le 5 ]; do
-      TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
+      TAG="$(curl -m 10 -sL "https://api.github.com/repos/AuxXxilium/arc-patches/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
       if [ -n "${TAG}" ]; then
         break
       fi
@@ -598,7 +811,8 @@ function updatePatches() {
     if ! downloadWithGauge "${URL}" "${TMP_PATH}/patches.zip" "Download Patches: ${TAG}..."; then
       return 1
     fi
-    if validateZipFile "${TMP_PATH}/patches.zip" 1024; then
+    if validateZipFile "${TMP_PATH}/patches.zip" 1024 &&
+      checkReleaseZip "${TMP_PATH}/patches.zip" "https://api.github.com/repos/AuxXxilium/arc-patches/releases" "${TAG}" "patches-${TAG}.zip" "Update Patches"; then
       rm -rf "${PATCH_PATH}"
       mkdir -p "${PATCH_PATH}"
       dialog --backtitle "$(backtitle)" --title "Update Patches" \
@@ -624,7 +838,7 @@ function updateCustom() {
   local TAG=""
   idx=0
   while [ "${idx}" -le 5 ]; do
-    TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-custom/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
+    TAG="$(curl -m 10 -sL "https://api.github.com/repos/AuxXxilium/arc-custom/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
     if [ -n "${TAG}" ]; then
       break
     fi
@@ -640,7 +854,7 @@ function updateCustom() {
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
     local FILE_SIZE
-    FILE_SIZE=$(curl -skL "${CUSTOM_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"custom-${TAG}.zip\") | .size")
+    FILE_SIZE=$(curl -sL "${CUSTOM_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"custom-${TAG}.zip\") | .size")
 
     if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
       dialog --backtitle "$(backtitle)" --title "Update Custom" \
@@ -659,7 +873,8 @@ function updateCustom() {
     if ! downloadWithGauge "${URL}" "${TMP_PATH}/custom.zip" "Download Custom: ${TAG}..."; then
       return 1
     fi
-    if validateZipFile "${TMP_PATH}/custom.zip" 1024; then
+    if validateZipFile "${TMP_PATH}/custom.zip" 1024 &&
+      checkReleaseZip "${TMP_PATH}/custom.zip" "${CUSTOM_API_URL}" "${TAG}" "custom-${TAG}.zip" "Update Custom"; then
       rm -rf "${CUSTOM_PATH}"
       mkdir -p "${CUSTOM_PATH}"
       dialog --backtitle "$(backtitle)" --title "Update Custom Kernel" \
@@ -689,7 +904,7 @@ function updateModules() {
   local TAG=""
   idx=0
   while [ "${idx}" -le 5 ]; do
-    TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
+    TAG="$(curl -m 10 -sL "https://api.github.com/repos/AuxXxilium/arc-modules/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
     if [ -n "${TAG}" ]; then
       break
     fi
@@ -705,7 +920,7 @@ function updateModules() {
     TMP_AVAILABLE=$((TMP_AVAILABLE * 1024))
 
     local FILE_SIZE
-    FILE_SIZE=$(curl -skL "${MODULES_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"modules-${TAG}.zip\") | .size")
+    FILE_SIZE=$(curl -sL "${MODULES_API_URL}/tags/${TAG}" | jq ".assets[] | select(.name == \"modules-${TAG}.zip\") | .size")
 
     if [ -z "${FILE_SIZE}" ] || [ "${FILE_SIZE}" -eq 0 ]; then
       dialog --backtitle "$(backtitle)" --title "Update Modules" \
@@ -721,12 +936,14 @@ function updateModules() {
       return 1
     fi
 
-    rm -rf "${MODULES_PATH}"
-    mkdir -p "${MODULES_PATH}"
     if ! downloadWithGauge "${URL}" "${TMP_PATH}/modules.zip" "Download Modules: ${TAG}..."; then
       return 1
     fi
-    if validateZipFile "${TMP_PATH}/modules.zip" 1024; then
+    if validateZipFile "${TMP_PATH}/modules.zip" 1024 &&
+      checkReleaseZip "${TMP_PATH}/modules.zip" "${MODULES_API_URL}" "${TAG}" "modules-${TAG}.zip" "Update Modules"; then
+      # The old set goes only now, once the new one checked out.
+      rm -rf "${MODULES_PATH}"
+      mkdir -p "${MODULES_PATH}"
       dialog --backtitle "$(backtitle)" --title "Update Modules" \
         --infobox "Updating Modules..." 3 50
       if unzip -oq "${TMP_PATH}/modules.zip" -d "${MODULES_PATH}"; then
@@ -763,7 +980,7 @@ function updateConfigs() {
   if [ -z "${1}" ]; then
     idx=0
     while [ "${idx}" -le 5 ]; do
-      TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
+      TAG="$(curl -m 10 -sL "https://api.github.com/repos/AuxXxilium/arc-configs/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
       if [ -n "${TAG}" ]; then
         break
       fi
@@ -780,7 +997,8 @@ function updateConfigs() {
     if ! downloadWithGauge "${URL}" "${TMP_PATH}/configs.zip" "Download Configs: ${TAG}..."; then
       return 1
     fi
-    if validateZipFile "${TMP_PATH}/configs.zip" 1024; then
+    if validateZipFile "${TMP_PATH}/configs.zip" 1024 &&
+      checkReleaseZip "${TMP_PATH}/configs.zip" "https://api.github.com/repos/AuxXxilium/arc-configs/releases" "${TAG}" "configs-${TAG}.zip" "Update Configs"; then
       mkdir -p "${CONFIGS_PATH}"
       dialog --backtitle "$(backtitle)" --title "Update Configs" \
         --infobox "Updating Configs..." 3 50
@@ -806,7 +1024,7 @@ function updateLKMs() {
   if [ -z "${1}" ]; then
     idx=0
     while [ "${idx}" -le 5 ]; do
-      TAG="$(curl -m 10 -skL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
+      TAG="$(curl -m 10 -sL "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
       if [ -n "${TAG}" ]; then
         break
       fi
@@ -823,7 +1041,8 @@ function updateLKMs() {
     if ! downloadWithGauge "${URL}" "${TMP_PATH}/rp-lkms.zip" "Download LKMs: ${TAG}..."; then
       return 1
     fi
-    if validateZipFile "${TMP_PATH}/rp-lkms.zip" 1024; then
+    if validateZipFile "${TMP_PATH}/rp-lkms.zip" 1024 &&
+      checkReleaseZip "${TMP_PATH}/rp-lkms.zip" "https://api.github.com/repos/AuxXxilium/arc-lkm/releases" "${TAG}" "rp-lkms.zip" "Update LKMs"; then
       rm -rf "${LKMS_PATH}"
       mkdir -p "${LKMS_PATH}"
       dialog --backtitle "$(backtitle)" --title "Update LKMs" \
@@ -886,7 +1105,7 @@ function dependenciesUpdate() {
     [ -n "${VERFILE}" ] && [ -f "${VERFILE}" ] && LOCAL="$(cat "${VERFILE}")"
     local REPO="${DEPENDENCY_REPOS[$i]}"
     local REMOTE="n/a"
-    [ -n "${REPO}" ] && REMOTE="$(curl -m 10 -skL "https://api.github.com/repos/${REPO}/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
+    [ -n "${REPO}" ] && REMOTE="$(curl -m 10 -sL "https://api.github.com/repos/${REPO}/releases" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
     [ -z "${REMOTE}" ] && REMOTE="n/a"
     CHECKLIST_OPTS+=("$i" "${DEPENDENCY_NAMES[$i]} (${LOCAL} -> ${REMOTE})" "off")
   done

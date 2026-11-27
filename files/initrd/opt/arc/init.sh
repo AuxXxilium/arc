@@ -264,7 +264,7 @@ mkdir -p "${USER_UP_PATH}"
 DEVELOPMENT_MODE="$(readConfigKey "arc.dev" "${USER_CONFIG_FILE}")"
 if [ "${DEVELOPMENT_MODE}" = "true" ]; then
   echo -e "\033[1;34mDevelopment Mode is enabled.\033[0m"
-  curl -skL https://github.com/AuxXxilium/arc/archive/refs/heads/dev.zip -o /tmp/arc-dev.zip 2>/dev/null || true
+  curl -sL https://github.com/AuxXxilium/arc/archive/refs/heads/dev.zip -o /tmp/arc-dev.zip 2>/dev/null || true
   unzip -q /tmp/arc-dev.zip -d /tmp 2>/dev/null || true
   # Swap the directory, never write into it: bash reads this script as it runs,
   # and an init.sh rewritten in place is read on at the old offset.

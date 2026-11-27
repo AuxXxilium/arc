@@ -559,7 +559,7 @@ function makearc() {
     USERID="$(readConfigKey "arc.userid" "${USER_CONFIG_FILE}")"
     if [ "${ARC_OFFLINE}" = "false" ] && [ "${ARC_BACKUP}" = "true" ] && [ -n "${USERID}" ]; then
       ACCESS_TOKEN="$(genAccessToken)"
-      curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${ACCESS_TOKEN}&userid=${USERID}" 2>/dev/null
+      curl -s -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${ACCESS_TOKEN}&userid=${USERID}" 2>/dev/null
       if [ $? -eq 0 ]; then
         dialog --backtitle "$(backtitle)" --title "Online Backup" --infobox "Config Online Backup successful!" 3 45
         sleep 2
@@ -1530,7 +1530,7 @@ function backupMenu() {
       4)
         [ -f "${USER_CONFIG_FILE}" ] && mv -f "${USER_CONFIG_FILE}" "${USER_CONFIG_FILE}.bak"
         ACCESS_TOKEN="$(genAccessToken)"
-        if curl -skL --http1.1 "https://arc.auxxxilium.tech?cdown=${ACCESS_TOKEN}" -o "${USER_CONFIG_FILE}" 2>/dev/null; then
+        if curl -sL --http1.1 "https://arc.auxxxilium.tech?cdown=${ACCESS_TOKEN}" -o "${USER_CONFIG_FILE}" 2>/dev/null; then
           dialog --backtitle "$(backtitle)" --title "Online Restore" --msgbox "Online Restore successful!" 5 40
         else
           dialog --backtitle "$(backtitle)" --title "Online Restore" --msgbox "Online Restore failed!" 5 40
@@ -1558,7 +1558,7 @@ function backupMenu() {
         ;;
       5)
         ACCESS_TOKEN="$(genAccessToken)"
-        curl -sk -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${ACCESS_TOKEN}&userid=${USERID}" 2>/dev/null
+        curl -s -X POST -F "file=@${USER_CONFIG_FILE}" "https://arc.auxxxilium.tech?cup=${ACCESS_TOKEN}&userid=${USERID}" 2>/dev/null
         if [ $? -eq 0 ]; then
           dialog --backtitle "$(backtitle)" --title "Online Backup" --msgbox "Config Online Backup successful!" 5 45
         else
@@ -1599,8 +1599,8 @@ function updateMenu() {
       1)
         # Ask for Tag
         if [ "${ARC_OFFLINE}" = "false" ]; then
-          TAG="$(curl -m 10 -skL "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
-          BETATAG="$(curl -m 10 -skL "${BETA_API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
+          TAG="$(curl -m 10 -sL "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
+          BETATAG="$(curl -m 10 -sL "${BETA_API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
           dialog --clear --backtitle "$(backtitle)" --title "Update Loader" \
             --menu "Current: ${ARC_VERSION}" 7 50 0 \
             1 "Latest ${TAG}" \
@@ -1671,8 +1671,8 @@ function updateMenu() {
       2)
         # Ask for Tag
         if [ "${ARC_OFFLINE}" = "false" ]; then
-          TAG="$(curl -m 10 -skL "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
-          BETATAG="$(curl -m 10 -skL "${BETA_API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
+          TAG="$(curl -m 10 -sL "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
+          BETATAG="$(curl -m 10 -sL "${BETA_API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p | sed 's/^[v|V]//g')"
           dialog --clear --backtitle "$(backtitle)" --title "Upgrade Loader" --colors \
             --menu "\Z1Loader will be reset to defaults after upgrade!\nIf you use Hardware encryption, your key will be deleted!\Zn\nCurrent: ${ARC_VERSION}" 11 65 0 \
             1 "Latest ${TAG}" \
@@ -2091,7 +2091,7 @@ function getCMDline () {
 function uploadDiag () {
   if [ -f "${TMP_PATH}/sysinfo.yml" ]; then
     ACCESS_TOKEN="$(genAccessToken)"
-    curl -sk -m 20 -X POST -F "file=@${TMP_PATH}/sysinfo.yml" "https://arc.auxxxilium.tech?sysinfo=${ACCESS_TOKEN}&userid=${USERID}" 2>/dev/null
+    curl -s -m 20 -X POST -F "file=@${TMP_PATH}/sysinfo.yml" "https://arc.auxxxilium.tech?sysinfo=${ACCESS_TOKEN}&userid=${USERID}" 2>/dev/null
     if [ $? -eq 0 ]; then
       dialog --backtitle "$(backtitle)" --title "Sysinfo Upload" --msgbox "Your Code: ${ACCESS_TOKEN}" 5 40
     else
@@ -2144,20 +2144,20 @@ function networkdiag() {
       done
       echo
       ACCESS_TOKEN="$(genAccessToken)"
-      USERIDAPI="$(curl --interface "${N}" -skL -m 10 "https://arc.auxxxilium.tech?hwid=${ACCESS_TOKEN}" 2>/dev/null)"
+      USERIDAPI="$(curl --interface "${N}" -sL -m 10 "https://arc.auxxxilium.tech?hwid=${ACCESS_TOKEN}" 2>/dev/null)"
       if [[ $? -ne 0 || -z "${USERIDAPI}" ]]; then
         echo -e "Arc UserID API not reachable!"
       else
         echo -e "Arc UserID API reachable!"
       fi
-      GITHUBAPI=$(curl --interface "${N}" -skL -m 10 "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p 2>/dev/null)
+      GITHUBAPI=$(curl --interface "${N}" -sL -m 10 "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | sed -n 1p 2>/dev/null)
       if [[ $? -ne 0 || -z "${GITHUBAPI}" ]]; then
         echo -e "Github API not reachable!"
       else
         echo -e "Github API reachable!"
       fi
       if [ "${CONFDONE}" = "true" ]; then
-        SYNOAPI=$(curl --interface "${N}" -skL -m 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url' 2>/dev/null)
+        SYNOAPI=$(curl --interface "${N}" -sL -m 10 "https://www.synology.com/api/support/findDownloadInfo?lang=en-us&product=${MODEL/+/%2B}&major=${PRODUCTVER%%.*}&minor=${PRODUCTVER##*.}" | jq -r '.info.system.detail[0].items[0].files[0].url' 2>/dev/null)
         if [[ $? -ne 0 || -z "${SYNOAPI}" ]]; then
           echo -e "Syno API not reachable!"
         else
@@ -3557,7 +3557,7 @@ Exit!" 4 55
 function registerAccessToken() {
   ACCESS_TOKEN="$(genAccessToken)"
   while true; do
-    USERID="$(curl -skL --http1.1 -m 10 "https://arc.auxxxilium.tech?hwid=${ACCESS_TOKEN}" 2>/dev/null)"
+    USERID="$(curl -sL --http1.1 -m 10 "https://arc.auxxxilium.tech?hwid=${ACCESS_TOKEN}" 2>/dev/null)"
     if echo "${USERID}" | grep -qE '^[0-9]+$'; then
       writeConfigKey "arc.accesstoken" "${ACCESS_TOKEN}" "${USER_CONFIG_FILE}"
       writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
@@ -3584,7 +3584,7 @@ function registerAccessToken() {
 # Check Access Token
 function checkAccessToken() {
   ACCESS_TOKEN="$(genAccessToken)"
-  USERID="$(curl -skL --http1.1 -m 10 "https://arc.auxxxilium.tech?hwid=${ACCESS_TOKEN}" 2>/dev/null)"
+  USERID="$(curl -sL --http1.1 -m 10 "https://arc.auxxxilium.tech?hwid=${ACCESS_TOKEN}" 2>/dev/null)"
   if echo "${USERID}" | grep -qE '^[0-9]+$'; then
     writeConfigKey "arc.accesstoken" "${ACCESS_TOKEN}" "${USER_CONFIG_FILE}"
     writeConfigKey "arc.userid" "${USERID}" "${USER_CONFIG_FILE}"
