@@ -57,16 +57,14 @@ def getmodels(platforms=None):
     session = requests.Session()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     PS = platforms.lower().replace(",", " ").split() if platforms else []
 
     models = []
     try:
-        url = "http://update7.synology.com/autoupdate/genRSS.php?include_beta=1"
-        #url = "https://update7.synology.com/autoupdate/genRSS.php?include_beta=1"
+        url = "https://update7.synology.com/autoupdate/genRSS.php?include_beta=1"
 
-        req = session.get(url, timeout=10, verify=False)
+        req = session.get(url, timeout=10)
         req.encoding = "utf-8"
         p = re.compile(r"<mUnique>(.*?)</mUnique>.*?<mLink>(.*?)</mLink>", re.MULTILINE | re.DOTALL)
 
@@ -147,13 +145,12 @@ def getpats(models=None):
     session = requests.Session()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     MS = models.lower().replace(",", " ").split() if models else []
 
     pats = {}
     try:
-        req = session.get('https://archive.synology.com/download/Os/DSM', timeout=10, verify=False)
+        req = session.get('https://archive.synology.com/download/Os/DSM', timeout=10)
         req.encoding = 'utf-8'
         bs = BeautifulSoup(req.text, 'html.parser')
         p = re.compile(r"(.*?)-(.*?)", re.MULTILINE | re.DOTALL)
@@ -162,7 +159,7 @@ def getpats(models=None):
             ver = i.attrs['href'].split('/')[-1]
             if not ver.startswith('7'):
                 continue
-            req = session.get(f'https://archive.synology.com{i.attrs["href"]}', timeout=10, verify=False)
+            req = session.get(f'https://archive.synology.com{i.attrs["href"]}', timeout=10)
             req.encoding = 'utf-8'
             bs = BeautifulSoup(req.text, 'html.parser')
             p = re.compile(r"DSM_(.*?)_(.*?).pat", re.MULTILINE | re.DOTALL)

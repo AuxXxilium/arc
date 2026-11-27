@@ -75,9 +75,9 @@ function githubDownloadReleaseAsset() {
     if [ "${NAME}" = "${ASSET_NAME}" ]; then
       FOUND=1
       if [ -n "${TOKEN}" ]; then
-        curl -fksSL --retry 3 --retry-delay 1 --retry-all-errors -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/${REPO}/releases/assets/${ID}" -o "${OUTPUT_FILE}" || return 1
+        curl -fsSL --retry 3 --retry-delay 1 --retry-all-errors -H "Authorization: token ${TOKEN}" -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/${REPO}/releases/assets/${ID}" -o "${OUTPUT_FILE}" || return 1
       else
-        curl -fksSL --retry 3 --retry-delay 1 --retry-all-errors -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/${REPO}/releases/assets/${ID}" -o "${OUTPUT_FILE}" || return 1
+        curl -fsSL --retry 3 --retry-delay 1 --retry-all-errors -H "Accept: application/octet-stream" "https://api.github.com/repos/AuxXxilium/${REPO}/releases/assets/${ID}" -o "${OUTPUT_FILE}" || return 1
       fi
       break
     fi
@@ -513,7 +513,7 @@ function convertova() {
   # Download and install ovftool if it doesn't exist
   if [ ! -x ovftool/ovftool ]; then
     rm -rf ovftool ovftool.zip
-    curl -fksSL https://github.com/rgl/ovftool-binaries/raw/main/archive/VMware-ovftool-4.6.3-24031167-lin.x86_64.zip -o ovftool.zip
+    curl -fsSL https://github.com/rgl/ovftool-binaries/raw/main/archive/VMware-ovftool-4.6.3-24031167-lin.x86_64.zip -o ovftool.zip
     if [ $? -ne 0 ]; then
       echo "Failed to download ovftool"
       exit 1
